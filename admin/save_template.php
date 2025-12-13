@@ -4,6 +4,7 @@
  */
 require_once __DIR__ . '/../config.php';
 requireAdmin();
+requireCsrf();
 
 header('Content-Type: application/json');
 

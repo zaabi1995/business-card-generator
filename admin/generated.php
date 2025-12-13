@@ -23,6 +23,7 @@ foreach ($templatesConfig['templates'] as $tpl) {
 
 // Handle deletion
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
+    requireCsrf();
     $entryId = $_POST['entry_id'] ?? '';
     
     $newLog = array_filter($generatedLog, function($entry) use ($entryId) {
@@ -121,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <div class="aspect-video bg-gray-900 relative">
                         <?php if ($entry['front_file']): ?>
                         <img 
-                            src="<?php echo getBasePath(); ?>uploads/cards/<?php echo sanitize($entry['front_file']); ?>" 
+                            src="<?php echo getBasePath(); ?>download_card.php?side=front&front=<?php echo urlencode($entry['front_file']); ?>&disposition=inline" 
                             alt="Front" 
                             class="w-full h-full object-contain"
                         >
@@ -158,8 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         <div class="flex items-center space-x-2">
                             <?php if ($entry['front_file']): ?>
                             <a 
-                                href="<?php echo getBasePath(); ?>uploads/cards/<?php echo sanitize($entry['front_file']); ?>" 
-                                download
+                                href="<?php echo getBasePath(); ?>download_card.php?side=front&front=<?php echo urlencode($entry['front_file']); ?>&disposition=attachment" 
                                 class="flex-1 py-2 text-center text-sm bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors"
                             >
                                 Front
@@ -168,15 +168,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                             
                             <?php if ($entry['back_file']): ?>
                             <a 
-                                href="<?php echo getBasePath(); ?>uploads/cards/<?php echo sanitize($entry['back_file']); ?>" 
-                                download
+                                href="<?php echo getBasePath(); ?>download_card.php?side=back&back=<?php echo urlencode($entry['back_file']); ?>&disposition=attachment" 
                                 class="flex-1 py-2 text-center text-sm bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-colors"
                             >
                                 Back
                             </a>
                             <?php endif; ?>
+
+                            <?php if ($entry['front_file'] || $entry['back_file']): ?>
+                            <a
+                                href="<?php echo getBasePath(); ?>download_card.php?format=pdf&front=<?php echo urlencode($entry['front_file'] ?? ''); ?>&back=<?php echo urlencode($entry['back_file'] ?? ''); ?>"
+                                class="px-3 py-2 text-center text-sm bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors"
+                            >
+                                PDF
+                            </a>
+                            <?php endif; ?>
                             
                             <form method="post" class="inline" onsubmit="return confirm('Delete this entry?')">
+                                <?php echo csrfField(); ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="entry_id" value="<?php echo sanitize($entry['id']); ?>">
                                 <button type="submit" class="p-2 text-gray-500 hover:text-red-400 transition-colors">

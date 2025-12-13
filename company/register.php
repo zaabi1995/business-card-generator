@@ -8,6 +8,7 @@ $error = null;
 $success = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireCsrf();
     $name = $_POST['company_name'] ?? '';
     $email = $_POST['admin_email'] ?? '';
     $password = $_POST['password'] ?? '';
@@ -60,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
 
                 <form method="post" class="space-y-5">
+                    <?php echo csrfField(); ?>
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Company name</label>
                         <input name="company_name" required class="input-bhd w-full px-5 py-4 rounded-xl text-white" placeholder="e.g., Acme Inc">

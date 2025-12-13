@@ -11,6 +11,7 @@ $company = null;
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
+    requireCsrf();
     $email = sanitizeEmail($_POST['email']);
 
     // Multi-tenant: resolve company from submitted code or session
@@ -37,12 +38,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
 
 // If employee found, redirect to card generation
 if ($employee) {
-    $params = http_build_query([
-        'id' => $employee['id'],
-        'email' => $employee['email'],
-        'company' => $_SESSION['company_slug'] ?? null
-    ]);
-    header('Location: generate_card_html.php?' . $params);
+    // Create an employee session so generation endpoints can't be abused via URL tampering.
+    setEmployeeSession($employee, getCurrentCompanyId());
+    header('Location: generate_card_html.php');
     exit;
 }
 ?>
@@ -155,6 +153,7 @@ if ($employee) {
                 <?php endif; ?>
                 
                 <form method="post" class="space-y-6">
+                    <?php echo csrfField(); ?>
                     <?php if (isMultiTenantEnabled()): ?>
                     <div>
                         <label for="company" class="block text-sm font-medium text-gray-300 mb-2">

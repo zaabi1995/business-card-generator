@@ -7,7 +7,10 @@ require_once __DIR__ . '/../config.php';
 requireAdmin();
 
 // Handle logout
-if (isset($_GET['logout'])) {
+if (isset($_GET['logout']) || ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'logout')) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        requireCsrf();
+    }
     if (isMultiTenantEnabled()) {
         logoutCompanyAdmin();
     } else {
@@ -170,9 +173,13 @@ $backTemplates = array_filter($templates, fn($t) => ($t['side'] ?? 'back') === '
                             </svg>
                             <span>Generated</span>
                         </a>
-                        <a href="?logout=1" class="text-gray-500 hover:text-red-400 transition-colors text-sm">
-                            Logout
-                        </a>
+                        <form method="post" class="inline">
+                            <?php echo csrfField(); ?>
+                            <input type="hidden" name="action" value="logout">
+                            <button type="submit" class="text-gray-500 hover:text-red-400 transition-colors text-sm">
+                                Logout
+                            </button>
+                        </form>
                     </nav>
                 </div>
             </div>
@@ -674,6 +681,7 @@ $backTemplates = array_filter($templates, fn($t) => ($t['side'] ?? 'back') === '
                     formData.append('side', this.newTemplate.side);
                     formData.append('image', this.newTemplate.imageFile);
                     formData.append('fields', JSON.stringify(<?php echo json_encode(getDefaultFieldSettings()); ?>));
+                    formData.append('csrf_token', <?php echo json_encode(csrfToken()); ?>);
                     
                     try {
                         const response = await fetch('save_template.php', {
@@ -705,6 +713,7 @@ $backTemplates = array_filter($templates, fn($t) => ($t['side'] ?? 'back') === '
                     formData.append('id', this.selectedTemplate.id);
                     formData.append('name', this.selectedTemplate.name);
                     formData.append('fields', JSON.stringify(this.selectedTemplate.fields));
+                    formData.append('csrf_token', <?php echo json_encode(csrfToken()); ?>);
                     
                     try {
                         const response = await fetch('save_template.php', {
@@ -730,6 +739,7 @@ $backTemplates = array_filter($templates, fn($t) => ($t['side'] ?? 'back') === '
                     formData.append('action', 'activate');
                     formData.append('id', this.selectedTemplate.id);
                     formData.append('side', this.selectedTemplate.side);
+                    formData.append('csrf_token', <?php echo json_encode(csrfToken()); ?>);
                     
                     try {
                         const response = await fetch('save_template.php', {
@@ -759,6 +769,7 @@ $backTemplates = array_filter($templates, fn($t) => ($t['side'] ?? 'back') === '
                     const formData = new FormData();
                     formData.append('action', 'delete');
                     formData.append('id', id);
+                    formData.append('csrf_token', <?php echo json_encode(csrfToken()); ?>);
                     
                     try {
                         const response = await fetch('save_template.php', {

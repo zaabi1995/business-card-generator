@@ -6,11 +6,6 @@
  * IMPORTANT: `config.php` is intentionally excluded from Git (contains secrets).
  */
 
-// Start session for admin authentication
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 // Admin password (change this!)
 define('ADMIN_PASSWORD', 'change-me');
 
@@ -42,5 +37,8 @@ ini_set('display_errors', 1);
 
 // Include helper functions
 require_once BASE_DIR . '/includes/functions.php';
+
+// Start a hardened session (required for auth/CSRF)
+ensureSessionStarted();
 
 

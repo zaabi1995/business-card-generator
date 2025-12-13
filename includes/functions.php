@@ -3,6 +3,89 @@
  * Helper Functions for BHD Business Cards
  */
 
+// ============================================
+// SECURITY BASICS (SESSIONS / CSRF)
+// ============================================
+
+/**
+ * Start a hardened PHP session (idempotent).
+ * Safe to call multiple times.
+ */
+function ensureSessionStarted() {
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        return;
+    }
+
+    // Best-effort session hardening. (Some ini settings may be locked by host.)
+    @ini_set('session.use_strict_mode', '1');
+    @ini_set('session.use_only_cookies', '1');
+    @ini_set('session.cookie_httponly', '1');
+
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443);
+
+    // PHP 7.4+ supports array form.
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'domain' => '',
+        'secure' => $isHttps,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+
+    session_start();
+}
+
+/**
+ * Get (and create) CSRF token for this session.
+ */
+function csrfToken() {
+    ensureSessionStarted();
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * Verify CSRF token for state-changing requests.
+ */
+function verifyCsrfToken($provided = null) {
+    ensureSessionStarted();
+    $expected = $_SESSION['csrf_token'] ?? null;
+    if (!$expected) {
+        return false;
+    }
+    if ($provided === null) {
+        $provided = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null);
+    }
+    if (!is_string($provided) || $provided === '') {
+        return false;
+    }
+    return hash_equals($expected, $provided);
+}
+
+/**
+ * Enforce CSRF on POST/PUT/PATCH/DELETE.
+ */
+function requireCsrf() {
+    $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+    if (in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
+        if (!verifyCsrfToken()) {
+            http_response_code(403);
+            header('Content-Type: text/plain; charset=UTF-8');
+            echo 'Forbidden (CSRF).';
+            exit;
+        }
+    }
+}
+
+function csrfField() {
+    $token = csrfToken();
+    return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($token, ENT_QUOTES, 'UTF-8') . '">';
+}
+
 /**
  * Get base path for assets (works in subdirectories)
  * @return string Base path with trailing slash (e.g., '/' or '/bhd/')
@@ -192,6 +275,7 @@ function findCompanyById($companyId) {
 }
 
 function setCompanyContext($company) {
+    ensureSessionStarted();
     if (!$company || empty($company['id']) || empty($company['slug'])) {
         return false;
     }
@@ -202,10 +286,12 @@ function setCompanyContext($company) {
 }
 
 function clearCompanyContext() {
+    ensureSessionStarted();
     unset($_SESSION['company_id'], $_SESSION['company_slug'], $_SESSION['company_name']);
 }
 
 function getCurrentCompanyId() {
+    ensureSessionStarted();
     return $_SESSION['company_id'] ?? null;
 }
 
@@ -319,6 +405,7 @@ function createCompany($name, $adminEmail, $password) {
 }
 
 function companyAdminLogin($companySlug, $password) {
+    ensureSessionStarted();
     $company = findCompanyBySlug($companySlug);
     if (!$company) {
         return ['success' => false, 'error' => 'Company not found'];
@@ -326,25 +413,91 @@ function companyAdminLogin($companySlug, $password) {
     if (!password_verify($password, $company['password_hash'] ?? '')) {
         return ['success' => false, 'error' => 'Invalid password'];
     }
+    session_regenerate_id(true);
     setCompanyContext($company);
     $_SESSION['company_admin_logged_in'] = true;
     return ['success' => true, 'company' => $company];
 }
 
 function isCompanyAdminLoggedIn() {
+    ensureSessionStarted();
     return !empty($_SESSION['company_admin_logged_in']) && !empty($_SESSION['company_id']);
 }
 
 function requireCompanyAdmin() {
     if (!isCompanyAdminLoggedIn()) {
-        header('Location: ' . getBasePath() . 'admin/login.php');
+        header('Location: ' . getBasePath() . 'company/login.php');
         exit;
     }
 }
 
 function logoutCompanyAdmin() {
+    ensureSessionStarted();
     unset($_SESSION['company_admin_logged_in']);
     clearCompanyContext();
+}
+
+// ============================================
+// EMPLOYEE SESSION (SaaS-safe generation)
+// ============================================
+
+function setEmployeeSession($employee, $companyId = null) {
+    ensureSessionStarted();
+    if (!$employee || empty($employee['id']) || empty($employee['email'])) {
+        return false;
+    }
+    if ($companyId === null) {
+        $companyId = getCurrentCompanyId();
+    }
+    $_SESSION['employee_logged_in'] = true;
+    $_SESSION['employee_id'] = $employee['id'];
+    $_SESSION['employee_email'] = strtolower(trim($employee['email']));
+    $_SESSION['employee_company_id'] = $companyId;
+    $_SESSION['employee_nonce'] = bin2hex(random_bytes(16));
+    // reset last generated files
+    unset($_SESSION['employee_last_front_file'], $_SESSION['employee_last_back_file']);
+    return true;
+}
+
+function clearEmployeeSession() {
+    ensureSessionStarted();
+    unset(
+        $_SESSION['employee_logged_in'],
+        $_SESSION['employee_id'],
+        $_SESSION['employee_email'],
+        $_SESSION['employee_company_id'],
+        $_SESSION['employee_nonce'],
+        $_SESSION['employee_last_front_file'],
+        $_SESSION['employee_last_back_file']
+    );
+}
+
+function isEmployeeLoggedIn() {
+    ensureSessionStarted();
+    return !empty($_SESSION['employee_logged_in']) && !empty($_SESSION['employee_id']);
+}
+
+function requireEmployee($employeeId = null) {
+    if (!isEmployeeLoggedIn()) {
+        http_response_code(403);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo 'Forbidden.';
+        exit;
+    }
+    if ($employeeId !== null && ($_SESSION['employee_id'] ?? null) !== $employeeId) {
+        http_response_code(403);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo 'Forbidden.';
+        exit;
+    }
+    $sessionCompanyId = $_SESSION['employee_company_id'] ?? null;
+    $currentCompanyId = getCurrentCompanyId();
+    if ($sessionCompanyId && $currentCompanyId && $sessionCompanyId !== $currentCompanyId) {
+        http_response_code(403);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo 'Forbidden.';
+        exit;
+    }
 }
 
 // ============================================
@@ -717,6 +870,7 @@ function logGeneratedCard($employeeId, $frontTemplateId, $backTemplateId, $front
  * Check if admin is logged in
  */
 function isAdminLoggedIn() {
+    ensureSessionStarted();
     return isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
 }
 
@@ -741,6 +895,8 @@ function requireAdmin() {
  */
 function loginAdmin($password) {
     if ($password === ADMIN_PASSWORD) {
+        ensureSessionStarted();
+        session_regenerate_id(true);
         $_SESSION['admin_logged_in'] = true;
         return true;
     }
@@ -751,6 +907,7 @@ function loginAdmin($password) {
  * Logout admin
  */
 function logoutAdmin() {
+    ensureSessionStarted();
     $_SESSION['admin_logged_in'] = false;
     session_destroy();
 }
