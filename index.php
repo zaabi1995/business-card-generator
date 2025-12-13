@@ -7,15 +7,27 @@ require_once __DIR__ . '/config.php';
 
 $error = null;
 $employee = null;
+$company = null;
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     $email = sanitizeEmail($_POST['email']);
+
+    // Multi-tenant: resolve company from submitted code or session
+    if (isMultiTenantEnabled()) {
+        $companyCode = $_POST['company'] ?? ($_SESSION['company_slug'] ?? '');
+        $company = findCompanyBySlug($companyCode);
+        if (!$company) {
+            $error = 'Company not found. Please enter a valid company code.';
+        } else {
+            setCompanyContext($company);
+        }
+    }
     
-    if (!isValidEmail($email)) {
+    if (!$error && !isValidEmail($email)) {
         $error = 'Please enter a valid email address.';
-    } else {
-        $employee = findEmployeeByEmail($email);
+    } elseif (!$error) {
+        $employee = findEmployeeByEmail($email, getCurrentCompanyId());
         
         if (!$employee) {
             $error = 'Email not found. Please contact your administrator to be added to the system.';
@@ -27,7 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
 if ($employee) {
     $params = http_build_query([
         'id' => $employee['id'],
-        'email' => $employee['email']
+        'email' => $employee['email'],
+        'company' => $_SESSION['company_slug'] ?? null
     ]);
     header('Location: generate_card_html.php?' . $params);
     exit;
@@ -142,6 +155,22 @@ if ($employee) {
                 <?php endif; ?>
                 
                 <form method="post" class="space-y-6">
+                    <?php if (isMultiTenantEnabled()): ?>
+                    <div>
+                        <label for="company" class="block text-sm font-medium text-gray-300 mb-2">
+                            Company Code
+                        </label>
+                        <input 
+                            type="text" 
+                            id="company" 
+                            name="company" 
+                            required
+                            placeholder="e.g., acme"
+                            class="input-bhd w-full px-5 py-4 rounded-xl text-white placeholder-gray-500 focus:outline-none text-lg"
+                            value="<?php echo isset($_POST['company']) ? sanitize($_POST['company']) : (isset($_SESSION['company_slug']) ? sanitize($_SESSION['company_slug']) : ''); ?>"
+                        >
+                    </div>
+                    <?php endif; ?>
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
                             Email Address
@@ -182,9 +211,17 @@ if ($employee) {
             
             <!-- Admin Link -->
             <div class="text-center mt-8">
-                <a href="<?php echo getBasePath(); ?>admin/" class="text-gray-600 hover:text-amber-400 transition-colors text-sm">
-                    Admin Panel
-                </a>
+                <div class="space-x-4">
+                    <a href="<?php echo getBasePath(); ?>admin/" class="text-gray-600 hover:text-amber-400 transition-colors text-sm">
+                        Admin Panel
+                    </a>
+                    <a href="<?php echo getBasePath(); ?>company/login.php" class="text-gray-600 hover:text-amber-400 transition-colors text-sm">
+                        Company Login
+                    </a>
+                    <a href="<?php echo getBasePath(); ?>company/register.php" class="text-gray-600 hover:text-amber-400 transition-colors text-sm">
+                        Create Company
+                    </a>
+                </div>
             </div>
             
             <!-- Footer -->

@@ -18,7 +18,8 @@ try {
     }
     
     // Get template IDs
-    $config = loadTemplates();
+    $companyId = getCurrentCompanyId();
+    $config = loadTemplates($companyId);
     $frontTemplateId = $config['activeFrontId'] ?? null;
     $backTemplateId = $config['activeBackId'] ?? null;
     
@@ -28,7 +29,9 @@ try {
         $frontTemplateId,
         $backTemplateId,
         $frontUrl ? basename($frontUrl) : null,
-        $backUrl ? basename($backUrl) : null
+        $backUrl ? basename($backUrl) : null,
+        null,
+        $companyId
     );
     
     echo json_encode(['success' => true, 'entry' => $entry]);

@@ -52,7 +52,9 @@ function addNewTemplate() {
         throw new Exception('Background image is required');
     }
     
-    $uploadResult = handleFileUpload($_FILES['image'], TEMPLATES_DIR);
+    $companyId = getCurrentCompanyId();
+    $destination = $companyId ? getCompanyTemplatesDir($companyId) : TEMPLATES_DIR;
+    $uploadResult = handleFileUpload($_FILES['image'], $destination);
     if (!$uploadResult['success']) {
         throw new Exception($uploadResult['error']);
     }
@@ -72,10 +74,10 @@ function addNewTemplate() {
     ];
     
     // Save to config
-    $config = loadTemplates();
+    $config = loadTemplates($companyId);
     $config['templates'][] = $template;
     
-    if (!saveTemplates($config)) {
+    if (!saveTemplates($config, $companyId)) {
         throw new Exception('Failed to save template');
     }
     
@@ -91,7 +93,8 @@ function updateTemplate() {
         throw new Exception('Template ID is required');
     }
     
-    $config = loadTemplates();
+    $companyId = getCurrentCompanyId();
+    $config = loadTemplates($companyId);
     $found = false;
     
     foreach ($config['templates'] as &$template) {
@@ -109,7 +112,8 @@ function updateTemplate() {
             
             // Handle new image upload if provided
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-                $uploadResult = handleFileUpload($_FILES['image'], TEMPLATES_DIR);
+                $destination = $companyId ? getCompanyTemplatesDir($companyId) : TEMPLATES_DIR;
+                $uploadResult = handleFileUpload($_FILES['image'], $destination);
                 if ($uploadResult['success']) {
                     // Delete old image
                     $oldPath = getFilePath($template['backgroundImage']);
@@ -130,7 +134,7 @@ function updateTemplate() {
         throw new Exception('Template not found');
     }
     
-    if (!saveTemplates($config)) {
+    if (!saveTemplates($config, $companyId)) {
         throw new Exception('Failed to save template');
     }
     
@@ -144,7 +148,8 @@ function deleteTemplateAction() {
         throw new Exception('Template ID is required');
     }
     
-    $config = loadTemplates();
+    $companyId = getCurrentCompanyId();
+    $config = loadTemplates($companyId);
     $newTemplates = [];
     $deletedTemplate = null;
     
@@ -176,7 +181,7 @@ function deleteTemplateAction() {
     
     $config['templates'] = $newTemplates;
     
-    if (!saveTemplates($config)) {
+    if (!saveTemplates($config, $companyId)) {
         throw new Exception('Failed to delete template');
     }
     
@@ -191,7 +196,8 @@ function activateTemplate() {
         throw new Exception('Template ID is required');
     }
     
-    $config = loadTemplates();
+    $companyId = getCurrentCompanyId();
+    $config = loadTemplates($companyId);
     
     // Verify template exists
     $found = false;
@@ -212,7 +218,7 @@ function activateTemplate() {
         $config['activeBackId'] = $id;
     }
     
-    if (!saveTemplates($config)) {
+    if (!saveTemplates($config, $companyId)) {
         throw new Exception('Failed to activate template');
     }
     

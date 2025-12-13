@@ -126,18 +126,244 @@ function generateUUID() {
 }
 
 // ============================================
+// MULTI-TENANT (COMPANY) HELPERS
+// ============================================
+
+if (!defined('COMPANIES_JSON')) {
+    define('COMPANIES_JSON', DATA_DIR . '/companies.json');
+}
+if (!defined('COMPANIES_DATA_DIR')) {
+    define('COMPANIES_DATA_DIR', DATA_DIR . '/companies');
+}
+if (!defined('COMPANIES_UPLOADS_DIR')) {
+    define('COMPANIES_UPLOADS_DIR', UPLOADS_DIR . '/companies');
+}
+
+function slugify($value) {
+    $value = strtolower(trim($value));
+    $value = preg_replace('/[^a-z0-9]+/', '-', $value);
+    $value = trim($value, '-');
+    return $value ?: 'company';
+}
+
+function isMultiTenantEnabled() {
+    if (!file_exists(COMPANIES_JSON)) {
+        return false;
+    }
+    $json = file_get_contents(COMPANIES_JSON);
+    $data = json_decode($json, true);
+    return is_array($data) && count($data) > 0;
+}
+
+function loadCompanies() {
+    if (!file_exists(COMPANIES_JSON)) {
+        return [];
+    }
+    $json = file_get_contents(COMPANIES_JSON);
+    $data = json_decode($json, true);
+    return is_array($data) ? $data : [];
+}
+
+function saveCompanies($companies) {
+    if (!is_dir(DATA_DIR)) {
+        mkdir(DATA_DIR, 0755, true);
+    }
+    $json = json_encode(array_values($companies), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    return file_put_contents(COMPANIES_JSON, $json) !== false;
+}
+
+function findCompanyBySlug($slug) {
+    $slug = slugify($slug);
+    foreach (loadCompanies() as $company) {
+        if (($company['slug'] ?? '') === $slug) {
+            return $company;
+        }
+    }
+    return null;
+}
+
+function findCompanyById($companyId) {
+    foreach (loadCompanies() as $company) {
+        if (($company['id'] ?? '') === $companyId) {
+            return $company;
+        }
+    }
+    return null;
+}
+
+function setCompanyContext($company) {
+    if (!$company || empty($company['id']) || empty($company['slug'])) {
+        return false;
+    }
+    $_SESSION['company_id'] = $company['id'];
+    $_SESSION['company_slug'] = $company['slug'];
+    $_SESSION['company_name'] = $company['name'] ?? $company['slug'];
+    return true;
+}
+
+function clearCompanyContext() {
+    unset($_SESSION['company_id'], $_SESSION['company_slug'], $_SESSION['company_name']);
+}
+
+function getCurrentCompanyId() {
+    return $_SESSION['company_id'] ?? null;
+}
+
+function requireCompanyContext() {
+    if (!isMultiTenantEnabled()) {
+        return;
+    }
+    if (!getCurrentCompanyId()) {
+        header('Location: ' . getBasePath() . 'company/login.php');
+        exit;
+    }
+}
+
+function getCompanyDataDir($companyId) {
+    $dir = COMPANIES_DATA_DIR . '/' . $companyId;
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+    return $dir;
+}
+
+function getCompanyUploadsDir($companyId) {
+    $dir = COMPANIES_UPLOADS_DIR . '/' . $companyId;
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+    return $dir;
+}
+
+function getCompanyEmployeesJsonPath($companyId) {
+    return getCompanyDataDir($companyId) . '/employees.json';
+}
+
+function getCompanyTemplatesJsonPath($companyId) {
+    return getCompanyDataDir($companyId) . '/templates.json';
+}
+
+function getCompanyGeneratedJsonPath($companyId) {
+    return getCompanyDataDir($companyId) . '/generated.json';
+}
+
+function getCompanyTemplatesDir($companyId) {
+    $dir = getCompanyUploadsDir($companyId) . '/templates';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+    return $dir;
+}
+
+function getCompanyCardsDir($companyId) {
+    $dir = getCompanyUploadsDir($companyId) . '/cards';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+    return $dir;
+}
+
+function createCompany($name, $adminEmail, $password) {
+    $name = trim($name);
+    $adminEmail = sanitizeEmail($adminEmail);
+    if (empty($name)) {
+        return ['success' => false, 'error' => 'Company name is required'];
+    }
+    if (!isValidEmail($adminEmail)) {
+        return ['success' => false, 'error' => 'Valid admin email is required'];
+    }
+    if (strlen($password) < 6) {
+        return ['success' => false, 'error' => 'Password must be at least 6 characters'];
+    }
+
+    $companies = loadCompanies();
+    $baseSlug = slugify($name);
+    $slug = $baseSlug;
+    $i = 1;
+    while (findCompanyBySlug($slug)) {
+        $i++;
+        $slug = $baseSlug . '-' . $i;
+    }
+
+    $company = [
+        'id' => generateUUID(),
+        'name' => $name,
+        'slug' => $slug,
+        'admin_email' => $adminEmail,
+        'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+        'created_at' => date('Y-m-d H:i:s')
+    ];
+
+    $companies[] = $company;
+    if (!saveCompanies($companies)) {
+        return ['success' => false, 'error' => 'Failed to create company'];
+    }
+
+    // Initialize company data files
+    $cid = $company['id'];
+    if (!file_exists(getCompanyEmployeesJsonPath($cid))) {
+        file_put_contents(getCompanyEmployeesJsonPath($cid), json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+    if (!file_exists(getCompanyTemplatesJsonPath($cid))) {
+        file_put_contents(getCompanyTemplatesJsonPath($cid), json_encode(getDefaultTemplatesConfig(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+    if (!file_exists(getCompanyGeneratedJsonPath($cid))) {
+        file_put_contents(getCompanyGeneratedJsonPath($cid), json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+
+    // Ensure company upload dirs
+    getCompanyTemplatesDir($cid);
+    getCompanyCardsDir($cid);
+
+    return ['success' => true, 'company' => $company];
+}
+
+function companyAdminLogin($companySlug, $password) {
+    $company = findCompanyBySlug($companySlug);
+    if (!$company) {
+        return ['success' => false, 'error' => 'Company not found'];
+    }
+    if (!password_verify($password, $company['password_hash'] ?? '')) {
+        return ['success' => false, 'error' => 'Invalid password'];
+    }
+    setCompanyContext($company);
+    $_SESSION['company_admin_logged_in'] = true;
+    return ['success' => true, 'company' => $company];
+}
+
+function isCompanyAdminLoggedIn() {
+    return !empty($_SESSION['company_admin_logged_in']) && !empty($_SESSION['company_id']);
+}
+
+function requireCompanyAdmin() {
+    if (!isCompanyAdminLoggedIn()) {
+        header('Location: ' . getBasePath() . 'admin/login.php');
+        exit;
+    }
+}
+
+function logoutCompanyAdmin() {
+    unset($_SESSION['company_admin_logged_in']);
+    clearCompanyContext();
+}
+
+// ============================================
 // EMPLOYEE FUNCTIONS
 // ============================================
 
 /**
  * Load employees from JSON
  */
-function loadEmployees() {
-    if (!file_exists(EMPLOYEES_JSON)) {
+function loadEmployees($companyId = null) {
+    if ($companyId === null) {
+        $companyId = getCurrentCompanyId();
+    }
+    $path = $companyId ? getCompanyEmployeesJsonPath($companyId) : EMPLOYEES_JSON;
+    if (!file_exists($path)) {
         return [];
     }
     
-    $json = file_get_contents(EMPLOYEES_JSON);
+    $json = file_get_contents($path);
     $data = json_decode($json, true);
     
     return is_array($data) ? $data : [];
@@ -146,21 +372,22 @@ function loadEmployees() {
 /**
  * Save employees to JSON
  */
-function saveEmployees($employees) {
-    if (!is_dir(DATA_DIR)) {
-        mkdir(DATA_DIR, 0755, true);
+function saveEmployees($employees, $companyId = null) {
+    if ($companyId === null) {
+        $companyId = getCurrentCompanyId();
     }
     
     $json = json_encode(array_values($employees), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    return file_put_contents(EMPLOYEES_JSON, $json) !== false;
+    $path = $companyId ? getCompanyEmployeesJsonPath($companyId) : EMPLOYEES_JSON;
+    return file_put_contents($path, $json) !== false;
 }
 
 /**
  * Find employee by email
  */
-function findEmployeeByEmail($email) {
+function findEmployeeByEmail($email, $companyId = null) {
     $email = trim(strtolower($email));
-    $employees = loadEmployees();
+    $employees = loadEmployees($companyId);
     
     foreach ($employees as $employee) {
         if (strtolower($employee['email'] ?? '') === $email) {
@@ -174,8 +401,8 @@ function findEmployeeByEmail($email) {
 /**
  * Find employee by ID
  */
-function findEmployeeById($id) {
-    $employees = loadEmployees();
+function findEmployeeById($id, $companyId = null) {
+    $employees = loadEmployees($companyId);
     
     foreach ($employees as $employee) {
         if ($employee['id'] === $id) {
@@ -189,8 +416,8 @@ function findEmployeeById($id) {
 /**
  * Add new employee
  */
-function addEmployee($data) {
-    $employees = loadEmployees();
+function addEmployee($data, $companyId = null) {
+    $employees = loadEmployees($companyId);
     
     // Check if email exists
     foreach ($employees as $emp) {
@@ -217,7 +444,7 @@ function addEmployee($data) {
     
     $employees[] = $employee;
     
-    if (saveEmployees($employees)) {
+    if (saveEmployees($employees, $companyId)) {
         return ['success' => true, 'employee' => $employee];
     }
     
@@ -227,8 +454,8 @@ function addEmployee($data) {
 /**
  * Update employee
  */
-function updateEmployee($id, $data) {
-    $employees = loadEmployees();
+function updateEmployee($id, $data, $companyId = null) {
+    $employees = loadEmployees($companyId);
     $found = false;
     
     foreach ($employees as &$employee) {
@@ -262,7 +489,7 @@ function updateEmployee($id, $data) {
         return ['success' => false, 'error' => 'Employee not found'];
     }
     
-    if (saveEmployees($employees)) {
+    if (saveEmployees($employees, $companyId)) {
         return ['success' => true];
     }
     
@@ -272,8 +499,8 @@ function updateEmployee($id, $data) {
 /**
  * Delete employee
  */
-function deleteEmployee($id) {
-    $employees = loadEmployees();
+function deleteEmployee($id, $companyId = null) {
+    $employees = loadEmployees($companyId);
     $newEmployees = array_filter($employees, function($emp) use ($id) {
         return $emp['id'] !== $id;
     });
@@ -282,7 +509,7 @@ function deleteEmployee($id) {
         return ['success' => false, 'error' => 'Employee not found'];
     }
     
-    if (saveEmployees($newEmployees)) {
+    if (saveEmployees($newEmployees, $companyId)) {
         return ['success' => true];
     }
     
@@ -296,12 +523,16 @@ function deleteEmployee($id) {
 /**
  * Load templates from JSON
  */
-function loadTemplates() {
-    if (!file_exists(TEMPLATES_JSON)) {
+function loadTemplates($companyId = null) {
+    if ($companyId === null) {
+        $companyId = getCurrentCompanyId();
+    }
+    $path = $companyId ? getCompanyTemplatesJsonPath($companyId) : TEMPLATES_JSON;
+    if (!file_exists($path)) {
         return getDefaultTemplatesConfig();
     }
     
-    $json = file_get_contents(TEMPLATES_JSON);
+    $json = file_get_contents($path);
     $data = json_decode($json, true);
     
     if ($data === null) {
@@ -314,13 +545,14 @@ function loadTemplates() {
 /**
  * Save templates to JSON
  */
-function saveTemplates($config) {
-    if (!is_dir(DATA_DIR)) {
-        mkdir(DATA_DIR, 0755, true);
+function saveTemplates($config, $companyId = null) {
+    if ($companyId === null) {
+        $companyId = getCurrentCompanyId();
     }
     
     $json = json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    return file_put_contents(TEMPLATES_JSON, $json) !== false;
+    $path = $companyId ? getCompanyTemplatesJsonPath($companyId) : TEMPLATES_JSON;
+    return file_put_contents($path, $json) !== false;
 }
 
 /**
@@ -357,8 +589,8 @@ function getDefaultFieldSettings() {
 /**
  * Get template by ID
  */
-function getTemplateById($id) {
-    $config = loadTemplates();
+function getTemplateById($id, $companyId = null) {
+    $config = loadTemplates($companyId);
     
     foreach ($config['templates'] as $template) {
         if ($template['id'] === $id) {
@@ -372,8 +604,8 @@ function getTemplateById($id) {
 /**
  * Get active front template
  */
-function getActiveFrontTemplate() {
-    $config = loadTemplates();
+function getActiveFrontTemplate($companyId = null) {
+    $config = loadTemplates($companyId);
     $activeId = $config['activeFrontId'] ?? null;
     
     if (!$activeId) return null;
@@ -390,8 +622,8 @@ function getActiveFrontTemplate() {
 /**
  * Get active back template
  */
-function getActiveBackTemplate() {
-    $config = loadTemplates();
+function getActiveBackTemplate($companyId = null) {
+    $config = loadTemplates($companyId);
     $activeId = $config['activeBackId'] ?? null;
     
     if (!$activeId) return null;
@@ -421,12 +653,16 @@ function generateTemplateId($name) {
 /**
  * Load generated cards log
  */
-function loadGeneratedLog() {
-    if (!file_exists(GENERATED_JSON)) {
+function loadGeneratedLog($companyId = null) {
+    if ($companyId === null) {
+        $companyId = getCurrentCompanyId();
+    }
+    $path = $companyId ? getCompanyGeneratedJsonPath($companyId) : GENERATED_JSON;
+    if (!file_exists($path)) {
         return [];
     }
     
-    $json = file_get_contents(GENERATED_JSON);
+    $json = file_get_contents($path);
     $data = json_decode($json, true);
     
     return is_array($data) ? $data : [];
@@ -435,20 +671,21 @@ function loadGeneratedLog() {
 /**
  * Save generated cards log
  */
-function saveGeneratedLog($log) {
-    if (!is_dir(DATA_DIR)) {
-        mkdir(DATA_DIR, 0755, true);
+function saveGeneratedLog($log, $companyId = null) {
+    if ($companyId === null) {
+        $companyId = getCurrentCompanyId();
     }
     
     $json = json_encode($log, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    return file_put_contents(GENERATED_JSON, $json) !== false;
+    $path = $companyId ? getCompanyGeneratedJsonPath($companyId) : GENERATED_JSON;
+    return file_put_contents($path, $json) !== false;
 }
 
 /**
  * Log generated card
  */
-function logGeneratedCard($employeeId, $frontTemplateId, $backTemplateId, $frontFile, $backFile, $pdfFile = null) {
-    $log = loadGeneratedLog();
+function logGeneratedCard($employeeId, $frontTemplateId, $backTemplateId, $frontFile, $backFile, $pdfFile = null, $companyId = null) {
+    $log = loadGeneratedLog($companyId);
     
     $entry = [
         'id' => generateUUID(),
@@ -467,7 +704,7 @@ function logGeneratedCard($employeeId, $frontTemplateId, $backTemplateId, $front
     // Keep only last 500 entries
     $log = array_slice($log, 0, 500);
     
-    saveGeneratedLog($log);
+    saveGeneratedLog($log, $companyId);
     
     return $entry;
 }
@@ -487,6 +724,12 @@ function isAdminLoggedIn() {
  * Require admin login
  */
 function requireAdmin() {
+    // Multi-tenant mode: company admin session
+    if (isMultiTenantEnabled()) {
+        requireCompanyAdmin();
+        return;
+    }
+    // Single-tenant legacy mode
     if (!isAdminLoggedIn()) {
         header('Location: login.php');
         exit;
@@ -580,7 +823,7 @@ function getWebPath($absolutePath) {
  * Ensure directories exist
  */
 function ensureDirectories() {
-    $dirs = [DATA_DIR, TEMPLATES_DIR, CARDS_DIR, EXCEL_DIR, ASSETS_DIR];
+    $dirs = [DATA_DIR, COMPANIES_DATA_DIR, UPLOADS_DIR, COMPANIES_UPLOADS_DIR, TEMPLATES_DIR, CARDS_DIR, EXCEL_DIR, ASSETS_DIR];
     foreach ($dirs as $dir) {
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
@@ -593,6 +836,11 @@ function ensureDirectories() {
  */
 function initializeDataFiles() {
     ensureDirectories();
+
+    if (!file_exists(COMPANIES_JSON)) {
+        // empty companies list by default; multi-tenant activates once a company exists
+        file_put_contents(COMPANIES_JSON, json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
     
     if (!file_exists(EMPLOYEES_JSON)) {
         saveEmployees([]);

@@ -28,8 +28,10 @@ try {
         throw new Exception('Invalid image type');
     }
     
-    // Create output directory
-    $outputDir = CARDS_DIR;
+    $companyId = getCurrentCompanyId();
+
+    // Create output directory (scoped per company in multi-tenant mode)
+    $outputDir = $companyId ? getCompanyCardsDir($companyId) : CARDS_DIR;
     if (!file_exists($outputDir)) {
         mkdir($outputDir, 0755, true);
     }
@@ -44,8 +46,8 @@ try {
     }
     
     // Build correct URL
-    $basePath = getBasePath();
-    $url = $basePath . 'uploads/cards/' . $filename;
+    $storedPath = getWebPath($filePath);
+    $url = imageUrl($storedPath);
     
     echo json_encode([
         'success' => true,

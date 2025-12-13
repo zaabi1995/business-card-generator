@@ -8,8 +8,12 @@ requireAdmin();
 
 // Handle logout
 if (isset($_GET['logout'])) {
-    logoutAdmin();
-    header('Location: login.php');
+    if (isMultiTenantEnabled()) {
+        logoutCompanyAdmin();
+    } else {
+        logoutAdmin();
+    }
+    header('Location: ' . (isMultiTenantEnabled() ? (getBasePath() . 'company/login.php') : 'login.php'));
     exit;
 }
 

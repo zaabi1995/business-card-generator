@@ -6,12 +6,21 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/GoogleFonts.php';
 
+// Multi-tenant: set company context from query param when provided
+$companySlug = $_GET['company'] ?? null;
+if ($companySlug && isMultiTenantEnabled()) {
+    $company = findCompanyBySlug($companySlug);
+    if ($company) {
+        setCompanyContext($company);
+    }
+}
+
 // Get employee data
 $employeeId = $_GET['id'] ?? '';
 $employee = null;
 
 if ($employeeId) {
-    $employee = findEmployeeById($employeeId);
+    $employee = findEmployeeById($employeeId, getCurrentCompanyId());
 }
 
 if (!$employee) {
@@ -20,8 +29,8 @@ if (!$employee) {
 }
 
 // Get active templates
-$frontTemplate = getActiveFrontTemplate();
-$backTemplate = getActiveBackTemplate();
+$frontTemplate = getActiveFrontTemplate(getCurrentCompanyId());
+$backTemplate = getActiveBackTemplate(getCurrentCompanyId());
 
 if (!$frontTemplate && !$backTemplate) {
     die('No active templates configured. Please contact administrator.');

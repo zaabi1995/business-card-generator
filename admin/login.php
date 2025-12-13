@@ -5,7 +5,7 @@
 require_once __DIR__ . '/../config.php';
 
 // Redirect if already logged in
-if (isAdminLoggedIn()) {
+if (isMultiTenantEnabled() ? isCompanyAdminLoggedIn() : isAdminLoggedIn()) {
     header('Location: index.php');
     exit;
 }
@@ -15,12 +15,24 @@ $error = null;
 // Handle login
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
     $password = $_POST['password'];
-    
-    if (loginAdmin($password)) {
-        header('Location: index.php');
-        exit;
+
+    // Multi-tenant: company admin login (company slug + password)
+    if (isMultiTenantEnabled()) {
+        $company = $_POST['company'] ?? '';
+        $result = companyAdminLogin($company, $password);
+        if (!empty($result['success'])) {
+            header('Location: index.php');
+            exit;
+        }
+        $error = $result['error'] ?? 'Invalid company or password. Please try again.';
     } else {
-        $error = 'Invalid password. Please try again.';
+        // Single-tenant legacy login
+        if (loginAdmin($password)) {
+            header('Location: index.php');
+            exit;
+        } else {
+            $error = 'Invalid password. Please try again.';
+        }
     }
 }
 ?>
@@ -117,6 +129,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
                 <?php endif; ?>
                 
                 <form method="post" class="space-y-6">
+                    <?php if (isMultiTenantEnabled()): ?>
+                    <div>
+                        <label for="company" class="block text-sm font-medium text-gray-300 mb-2">
+                            Company Code
+                        </label>
+                        <input 
+                            type="text" 
+                            id="company" 
+                            name="company" 
+                            required
+                            placeholder="e.g., acme"
+                            class="input-bhd w-full px-5 py-4 rounded-xl text-white placeholder-gray-500 focus:outline-none"
+                            value="<?php echo isset($_POST['company']) ? sanitize($_POST['company']) : ''; ?>"
+                        >
+                    </div>
+                    <?php endif; ?>
                     <div>
                         <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
                             Password

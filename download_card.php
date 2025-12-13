@@ -4,6 +4,17 @@
  */
 require_once __DIR__ . '/config.php';
 
+$companySlug = $_GET['company'] ?? null;
+if ($companySlug && isMultiTenantEnabled()) {
+    $company = findCompanyBySlug($companySlug);
+    if ($company) {
+        setCompanyContext($company);
+    }
+}
+
+$companyId = getCurrentCompanyId();
+$cardsDir = $companyId ? getCompanyCardsDir($companyId) : CARDS_DIR;
+
 $format = $_GET['format'] ?? 'png';
 $side = $_GET['side'] ?? 'front';
 $front = $_GET['front'] ?? '';
@@ -33,7 +44,7 @@ if ($format === 'pdf') {
     
     // Front page
     if ($front) {
-        $frontPath = CARDS_DIR . '/' . basename($front);
+        $frontPath = $cardsDir . '/' . basename($front);
         if (file_exists($frontPath)) {
             $pdf->AddPage();
             $pdf->Image($frontPath, 0, 0, 89, 51, '', '', '', false, 300, '', false, false, 0);
@@ -42,7 +53,7 @@ if ($format === 'pdf') {
     
     // Back page
     if ($back) {
-        $backPath = CARDS_DIR . '/' . basename($back);
+        $backPath = $cardsDir . '/' . basename($back);
         if (file_exists($backPath)) {
             $pdf->AddPage();
             $pdf->Image($backPath, 0, 0, 89, 51, '', '', '', false, 300, '', false, false, 0);
@@ -61,7 +72,7 @@ if (empty($filename)) {
     die('File not found');
 }
 
-$filepath = CARDS_DIR . '/' . basename($filename);
+$filepath = $cardsDir . '/' . basename($filename);
 if (!file_exists($filepath)) {
     http_response_code(404);
     die('File not found');
