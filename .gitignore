@@ -1,0 +1,19 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Composer / dependencies
+vendor/
+
+# Local config (contains secrets)
+config.php
+
+# Runtime/user data (multi-tenant SaaS will store these per company)
+data/*.json
+uploads/
+
+

@@ -1,0 +1,17 @@
+{
+    "name": "bhd/business-cards",
+    "description": "Professional Business Card Generator with double-sided templates",
+    "type": "project",
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {},
+    "suggest": {
+        "phpoffice/phpspreadsheet": "For Excel file import support",
+        "tecnickcom/tcpdf": "For PDF export support"
+    },
+    "autoload": {
+        "psr-4": {}
+    }
+}
+
