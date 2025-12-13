@@ -13,6 +13,7 @@ if (isCompanyAdminLoggedIn()) {
 $error = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireCsrf();
     $slug = $_POST['company'] ?? '';
     $password = $_POST['password'] ?? '';
 
@@ -61,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
 
                 <form method="post" class="space-y-5">
+                    <?php echo csrfField(); ?>
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-2">Company code</label>
                         <input name="company" required class="input-bhd w-full px-5 py-4 rounded-xl text-white" placeholder="e.g., acme">

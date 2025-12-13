@@ -266,8 +266,8 @@ $hasTemplates = $frontTemplate || $backTemplate;
                 
                 async generateForEmployee(employee) {
                     const container = document.getElementById('renderContainer');
-                    let frontUrl = null;
-                    let backUrl = null;
+                    let frontFile = null;
+                    let backFile = null;
                     
                     // Generate front
                     if (this.frontTemplate) {
@@ -282,7 +282,7 @@ $hasTemplates = $frontTemplate || $backTemplate;
                             scale: 1
                         });
                         
-                        frontUrl = await this.saveCard(frontCanvas, 'front', employee.id);
+                        frontFile = await this.saveCard(frontCanvas, 'front', employee.id);
                     }
                     
                     // Generate back
@@ -298,17 +298,17 @@ $hasTemplates = $frontTemplate || $backTemplate;
                             scale: 1
                         });
                         
-                        backUrl = await this.saveCard(backCanvas, 'back', employee.id);
+                        backFile = await this.saveCard(backCanvas, 'back', employee.id);
                     }
                     
                     // Log generation
                     await fetch('<?php echo getBasePath(); ?>log_generation.php', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': <?php echo json_encode(csrfToken()); ?> },
                         body: JSON.stringify({
                             employee_id: employee.id,
-                            front_url: frontUrl,
-                            back_url: backUrl
+                            front_file: frontFile,
+                            back_file: backFile
                         })
                     });
                     
@@ -372,6 +372,7 @@ $hasTemplates = $frontTemplate || $backTemplate;
                             formData.append('image', blob, side + '.png');
                             formData.append('side', side);
                             formData.append('employee_id', employeeId);
+                            formData.append('csrf_token', <?php echo json_encode(csrfToken()); ?>);
                             
                             try {
                                 const response = await fetch('<?php echo getBasePath(); ?>save_card_image.php', {
@@ -379,7 +380,7 @@ $hasTemplates = $frontTemplate || $backTemplate;
                                     body: formData
                                 });
                                 const result = await response.json();
-                                resolve(result.success ? result.url : null);
+                                resolve(result.success ? result.filename : null);
                             } catch {
                                 resolve(null);
                             }

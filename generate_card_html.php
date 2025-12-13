@@ -6,22 +6,19 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/GoogleFonts.php';
 
-// Multi-tenant: set company context from query param when provided
-$companySlug = $_GET['company'] ?? null;
-if ($companySlug && isMultiTenantEnabled()) {
-    $company = findCompanyBySlug($companySlug);
-    if ($company) {
-        setCompanyContext($company);
-    }
+// Employee generation is session-based (prevents URL guessing/tampering).
+ensureSessionStarted();
+
+// Multi-tenant: company context must already be established (from index.php or admin session).
+// If multi-tenant is enabled and there is no company context, send user back.
+if (isMultiTenantEnabled() && !getCurrentCompanyId()) {
+    header('Location: ' . getBasePath());
+    exit;
 }
 
-// Get employee data
-$employeeId = $_GET['id'] ?? '';
-$employee = null;
-
-if ($employeeId) {
-    $employee = findEmployeeById($employeeId, getCurrentCompanyId());
-}
+// Get employee data from session
+$employeeId = $_SESSION['employee_id'] ?? '';
+$employee = $employeeId ? findEmployeeById($employeeId, getCurrentCompanyId()) : null;
 
 if (!$employee) {
     header('Location: ' . getBasePath());
@@ -105,6 +102,7 @@ $googleFontsUrl = !empty($googleFonts) ? 'https://fonts.googleapis.com/css2?fami
     <link rel="stylesheet" href="<?php echo assetUrl('css/tailwind.css'); ?>?v=<?php echo filemtime(ASSETS_DIR . '/css/tailwind.css'); ?>">
     
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <meta name="csrf-token" content="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>">
     
     <style>
         .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
@@ -308,9 +306,10 @@ $googleFontsUrl = !empty($googleFonts) ? 'https://fonts.googleapis.com/css2?fami
         const basePath = '<?php echo getBasePath(); ?>';
         const hasFront = <?php echo $frontTemplate ? 'true' : 'false'; ?>;
         const hasBack = <?php echo $backTemplate ? 'true' : 'false'; ?>;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         
-        let frontImageUrl = null;
-        let backImageUrl = null;
+        let frontFile = null;
+        let backFile = null;
         
         async function generateCards() {
             try {
@@ -334,6 +333,7 @@ $googleFontsUrl = !empty($googleFonts) ? 'https://fonts.googleapis.com/css2?fami
                         formData.append('image', blob, 'front.png');
                         formData.append('side', 'front');
                         formData.append('employee_id', employeeId);
+                        formData.append('csrf_token', csrfToken);
                         
                         const response = await fetch(basePath + 'save_card_image.php', {
                             method: 'POST',
@@ -342,10 +342,10 @@ $googleFontsUrl = !empty($googleFonts) ? 'https://fonts.googleapis.com/css2?fami
                         
                         const result = await response.json();
                         if (result.success) {
-                            frontImageUrl = result.url;
-                            document.getElementById('frontCardImage').src = result.url;
+                            frontFile = result.filename;
+                            document.getElementById('frontCardImage').src = result.preview_url || result.url;
                             document.getElementById('frontCardImage').style.display = 'block';
-                            document.getElementById('downloadFrontBtn').href = result.url;
+                            document.getElementById('downloadFrontBtn').href = result.download_url || (result.preview_url || result.url);
                         }
                         
                         checkComplete();
@@ -366,6 +366,7 @@ $googleFontsUrl = !empty($googleFonts) ? 'https://fonts.googleapis.com/css2?fami
                         formData.append('image', blob, 'back.png');
                         formData.append('side', 'back');
                         formData.append('employee_id', employeeId);
+                        formData.append('csrf_token', csrfToken);
                         
                         const response = await fetch(basePath + 'save_card_image.php', {
                             method: 'POST',
@@ -374,10 +375,10 @@ $googleFontsUrl = !empty($googleFonts) ? 'https://fonts.googleapis.com/css2?fami
                         
                         const result = await response.json();
                         if (result.success) {
-                            backImageUrl = result.url;
-                            document.getElementById('backCardImage').src = result.url;
+                            backFile = result.filename;
+                            document.getElementById('backCardImage').src = result.preview_url || result.url;
                             document.getElementById('backCardImage').style.display = 'block';
-                            document.getElementById('downloadBackBtn').href = result.url;
+                            document.getElementById('downloadBackBtn').href = result.download_url || (result.preview_url || result.url);
                         }
                         
                         checkComplete();
@@ -401,12 +402,22 @@ $googleFontsUrl = !empty($googleFonts) ? 'https://fonts.googleapis.com/css2?fami
         }
         
         function checkComplete() {
-            const frontDone = !hasFront || frontImageUrl;
-            const backDone = !hasBack || backImageUrl;
+            const frontDone = !hasFront || frontFile;
+            const backDone = !hasBack || backFile;
             
             if (frontDone && backDone) {
                 // Log generation
                 logGeneration();
+                // Enable PDF download if available (requires TCPDF installed server-side)
+                const pdfBtn = document.getElementById('downloadPdfBtn');
+                if (pdfBtn) {
+                    const params = new URLSearchParams();
+                    params.set('format', 'pdf');
+                    if (frontFile) params.set('front', frontFile);
+                    if (backFile) params.set('back', backFile);
+                    pdfBtn.href = basePath + 'download_card.php?' + params.toString();
+                    pdfBtn.style.display = 'inline-flex';
+                }
                 showContent();
             }
         }
@@ -414,11 +425,11 @@ $googleFontsUrl = !empty($googleFonts) ? 'https://fonts.googleapis.com/css2?fami
         function logGeneration() {
             fetch(basePath + 'log_generation.php', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
                 body: JSON.stringify({
                     employee_id: employeeId,
-                    front_url: frontImageUrl,
-                    back_url: backImageUrl
+                    front_file: frontFile,
+                    back_file: backFile
                 })
             }).catch(() => {}); // Silent fail
         }

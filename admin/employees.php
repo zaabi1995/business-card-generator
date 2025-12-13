@@ -11,6 +11,7 @@ $messageType = 'success';
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireCsrf();
     $action = $_POST['action'] ?? '';
     
     switch ($action) {
@@ -359,6 +360,7 @@ function findColumn($header, $possibleNames) {
                                             </svg>
                                         </button>
                                         <form method="post" class="inline" onsubmit="return confirm('Delete this employee?')">
+                                            <?php echo csrfField(); ?>
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="id" value="<?php echo sanitize($emp['id']); ?>">
                                             <button type="submit" class="p-2 text-gray-500 hover:text-red-400 transition-colors">
@@ -396,6 +398,7 @@ function findColumn($header, $possibleNames) {
                 <h3 class="text-xl font-bold text-white mb-4" x-text="editingEmployee ? 'Edit Employee' : 'Add Employee'"></h3>
                 
                 <form method="post">
+                    <?php echo csrfField(); ?>
                     <input type="hidden" name="action" :value="editingEmployee ? 'update' : 'add'">
                     <input type="hidden" name="id" x-model="formData.id">
                     
@@ -477,6 +480,7 @@ function findColumn($header, $possibleNames) {
                 <h3 class="text-xl font-bold text-white mb-4">Import from Excel/CSV</h3>
                 
                 <form method="post" enctype="multipart/form-data">
+                    <?php echo csrfField(); ?>
                     <input type="hidden" name="action" value="import">
                     
                     <div class="mb-6">

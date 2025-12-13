@@ -8,6 +8,23 @@ require_once __DIR__ . '/config.php';
 header('Content-Type: application/json');
 
 try {
+    requireCsrf();
+
+    // Allow only:
+    // - company admin sessions (batch generation)
+    // - employee session generating their own card
+    $postedEmployeeId = $_POST['employee_id'] ?? null;
+    if (isMultiTenantEnabled()) {
+        // In multi-tenant mode, require company context for file placement/isolation.
+        if (!getCurrentCompanyId()) {
+            throw new Exception('Company context required');
+        }
+    }
+    if (!isCompanyAdminLoggedIn() && !isAdminLoggedIn()) {
+        // Employee flow: must be logged in and match employee_id (if provided)
+        requireEmployee($postedEmployeeId ?: null);
+    }
+
     // Check if image was uploaded
     if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
         throw new Exception('No image uploaded');
@@ -46,12 +63,29 @@ try {
     }
     
     // Build correct URL
-    $storedPath = getWebPath($filePath);
-    $url = imageUrl($storedPath);
+    $previewUrl = getBasePath() . 'download_card.php?side=' . urlencode($side)
+        . '&' . ($side === 'back' ? 'back' : 'front') . '=' . urlencode($filename)
+        . '&disposition=inline';
+    $downloadUrl = getBasePath() . 'download_card.php?side=' . urlencode($side)
+        . '&' . ($side === 'back' ? 'back' : 'front') . '=' . urlencode($filename)
+        . '&disposition=attachment';
+
+    // Remember last generated filenames for employee downloads (prevents guessing).
+    ensureSessionStarted();
+    if (!empty($postedEmployeeId) && isEmployeeLoggedIn() && ($_SESSION['employee_id'] ?? null) === $postedEmployeeId) {
+        if ($side === 'front') {
+            $_SESSION['employee_last_front_file'] = $filename;
+        } else {
+            $_SESSION['employee_last_back_file'] = $filename;
+        }
+    }
     
     echo json_encode([
         'success' => true,
-        'url' => $url,
+        // Backwards-compatible: `url` is usable for previewing in <img>.
+        'url' => $previewUrl,
+        'preview_url' => $previewUrl,
+        'download_url' => $downloadUrl,
         'filename' => $filename,
         'side' => $side
     ]);

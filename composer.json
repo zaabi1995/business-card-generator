@@ -3,7 +3,8 @@
     "description": "Professional Business Card Generator with double-sided templates",
     "type": "project",
     "require": {
-        "php": ">=7.4"
+        "php": ">=7.4",
+        "tecnickcom/tcpdf": "^6.7"
     },
     "require-dev": {},
     "suggest": {

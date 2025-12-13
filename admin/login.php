@@ -14,6 +14,7 @@ $error = null;
 
 // Handle login
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
+    requireCsrf();
     $password = $_POST['password'];
 
     // Multi-tenant: company admin login (company slug + password)
@@ -129,6 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
                 <?php endif; ?>
                 
                 <form method="post" class="space-y-6">
+                    <?php echo csrfField(); ?>
                     <?php if (isMultiTenantEnabled()): ?>
                     <div>
                         <label for="company" class="block text-sm font-medium text-gray-300 mb-2">
