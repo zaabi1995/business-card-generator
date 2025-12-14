@@ -1,0 +1,31 @@
+name: PHP Syntax Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '7.4'
+        coverage: none
+    
+    - name: Check PHP syntax
+      run: |
+        find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \;
+    
+    - name: Check for config.php
+      run: |
+        if [ -f "config.php" ]; then
+          echo "ERROR: config.php should not be committed!"
+          exit 1
+        fi

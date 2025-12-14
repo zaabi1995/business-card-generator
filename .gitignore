@@ -1,19 +1,59 @@
-# OS / editor
+# OS / Editor files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 .idea/
 .vscode/
+*.swp
+*.swo
+*~
 
 # Logs
 *.log
+logs/
+error_log
+access_log
 
-# Composer / dependencies
+# Composer / Dependencies
 vendor/
+composer.lock
 
-# Local config (contains secrets)
+# Configuration (contains secrets)
 config.php
 
 # Runtime/user data (multi-tenant SaaS will store these per company)
 data/*.json
+data/companies/
 uploads/
+!uploads/.gitkeep
 
+# Environment files
+.env
+.env.local
+.env.*.local
 
+# Cache
+cache/
+tmp/
+*.cache
+
+# Backup files
+*.bak
+*.backup
+*.sql.gz
+*.sql.bak
+
+# IDE specific
+.phpunit.result.cache
+.php-cs-fixer.cache
+
+# OS generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes

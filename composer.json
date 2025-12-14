@@ -1,7 +1,22 @@
 {
-    "name": "bhd/business-cards",
-    "description": "Professional Business Card Generator with double-sided templates",
+    "name": "zaabi1995/business-card-generator",
+    "description": "Professional multi-tenant SaaS platform for generating business cards with visual template editor",
     "type": "project",
+    "keywords": [
+        "business-cards",
+        "saas",
+        "multi-tenant",
+        "php",
+        "template-editor",
+        "card-generator"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Business Card Generator Team",
+            "homepage": "https://github.com/zaabi1995/business-card-generator"
+        }
+    ],
     "require": {
         "php": ">=7.4"
     },
@@ -12,6 +27,11 @@
     },
     "autoload": {
         "psr-4": {}
-    }
+    },
+    "support": {
+        "issues": "https://github.com/zaabi1995/business-card-generator/issues",
+        "source": "https://github.com/zaabi1995/business-card-generator"
+    },
+    "homepage": "https://github.com/zaabi1995/business-card-generator"
 }
 

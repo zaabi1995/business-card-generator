@@ -156,6 +156,12 @@ function isMultiTenantEnabled() {
 }
 
 function loadCompanies() {
+    // Use database if available
+    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+        return DatabaseAdapter::loadCompanies();
+    }
+    
+    // Fallback to JSON
     if (!file_exists(COMPANIES_JSON)) {
         return [];
     }
@@ -173,6 +179,12 @@ function saveCompanies($companies) {
 }
 
 function findCompanyBySlug($slug) {
+    // Use database if available
+    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+        return DatabaseAdapter::findCompanyBySlug($slug);
+    }
+    
+    // Fallback to JSON
     $slug = slugify($slug);
     foreach (loadCompanies() as $company) {
         if (($company['slug'] ?? '') === $slug) {
@@ -183,6 +195,12 @@ function findCompanyBySlug($slug) {
 }
 
 function findCompanyById($companyId) {
+    // Use database if available
+    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+        return DatabaseAdapter::findCompanyById($companyId);
+    }
+    
+    // Fallback to JSON
     foreach (loadCompanies() as $company) {
         if (($company['id'] ?? '') === $companyId) {
             return $company;
@@ -264,6 +282,12 @@ function getCompanyCardsDir($companyId) {
 }
 
 function createCompany($name, $adminEmail, $password) {
+    // Use database if available
+    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+        return DatabaseAdapter::createCompany($name, $adminEmail, $password);
+    }
+    
+    // Fallback to JSON
     $name = trim($name);
     $adminEmail = sanitizeEmail($adminEmail);
     if (empty($name)) {
@@ -355,6 +379,12 @@ function logoutCompanyAdmin() {
  * Load employees from JSON
  */
 function loadEmployees($companyId = null) {
+    // Use database if available
+    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+        return DatabaseAdapter::loadEmployees($companyId);
+    }
+    
+    // Fallback to JSON
     if ($companyId === null) {
         $companyId = getCurrentCompanyId();
     }
@@ -386,6 +416,12 @@ function saveEmployees($employees, $companyId = null) {
  * Find employee by email
  */
 function findEmployeeByEmail($email, $companyId = null) {
+    // Use database if available
+    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+        return DatabaseAdapter::findEmployeeByEmail($email, $companyId);
+    }
+    
+    // Fallback to JSON
     $email = trim(strtolower($email));
     $employees = loadEmployees($companyId);
     
@@ -402,6 +438,12 @@ function findEmployeeByEmail($email, $companyId = null) {
  * Find employee by ID
  */
 function findEmployeeById($id, $companyId = null) {
+    // Use database if available
+    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+        return DatabaseAdapter::findEmployeeById($id, $companyId);
+    }
+    
+    // Fallback to JSON
     $employees = loadEmployees($companyId);
     
     foreach ($employees as $employee) {
@@ -417,6 +459,12 @@ function findEmployeeById($id, $companyId = null) {
  * Add new employee
  */
 function addEmployee($data, $companyId = null) {
+    // Use database if available
+    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+        return DatabaseAdapter::addEmployee($data, $companyId);
+    }
+    
+    // Fallback to JSON
     $employees = loadEmployees($companyId);
     
     // Check if email exists
@@ -455,6 +503,12 @@ function addEmployee($data, $companyId = null) {
  * Update employee
  */
 function updateEmployee($id, $data, $companyId = null) {
+    // Use database if available
+    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+        return DatabaseAdapter::updateEmployee($id, $data, $companyId);
+    }
+    
+    // Fallback to JSON
     $employees = loadEmployees($companyId);
     $found = false;
     
@@ -500,6 +554,12 @@ function updateEmployee($id, $data, $companyId = null) {
  * Delete employee
  */
 function deleteEmployee($id, $companyId = null) {
+    // Use database if available
+    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+        return DatabaseAdapter::deleteEmployee($id, $companyId);
+    }
+    
+    // Fallback to JSON
     $employees = loadEmployees($companyId);
     $newEmployees = array_filter($employees, function($emp) use ($id) {
         return $emp['id'] !== $id;
@@ -524,6 +584,12 @@ function deleteEmployee($id, $companyId = null) {
  * Load templates from JSON
  */
 function loadTemplates($companyId = null) {
+    // Use database if available
+    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+        return DatabaseAdapter::loadTemplates($companyId);
+    }
+    
+    // Fallback to JSON
     if ($companyId === null) {
         $companyId = getCurrentCompanyId();
     }
@@ -546,6 +612,12 @@ function loadTemplates($companyId = null) {
  * Save templates to JSON
  */
 function saveTemplates($config, $companyId = null) {
+    // Use database if available
+    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+        return DatabaseAdapter::saveTemplates($config, $companyId);
+    }
+    
+    // Fallback to JSON
     if ($companyId === null) {
         $companyId = getCurrentCompanyId();
     }
@@ -654,6 +726,12 @@ function generateTemplateId($name) {
  * Load generated cards log
  */
 function loadGeneratedLog($companyId = null) {
+    // Use database if available
+    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+        return DatabaseAdapter::loadGeneratedLog($companyId);
+    }
+    
+    // Fallback to JSON
     if ($companyId === null) {
         $companyId = getCurrentCompanyId();
     }
@@ -685,6 +763,12 @@ function saveGeneratedLog($log, $companyId = null) {
  * Log generated card
  */
 function logGeneratedCard($employeeId, $frontTemplateId, $backTemplateId, $frontFile, $backFile, $pdfFile = null, $companyId = null) {
+    // Use database if available
+    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+        return DatabaseAdapter::logGeneratedCard($employeeId, $frontTemplateId, $backTemplateId, $frontFile, $backFile, $pdfFile, $companyId);
+    }
+    
+    // Fallback to JSON
     $log = loadGeneratedLog($companyId);
     
     $entry = [
