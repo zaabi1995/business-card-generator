@@ -115,10 +115,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'save_billing_config':
             $_SESSION['billing_config'] = [
                 'gateway' => $_POST['billing_gateway'] ?? 'amwal',
-                'amwal_api_key' => $_POST['amwal_api_key'] ?? '',
                 'amwal_merchant_id' => $_POST['amwal_merchant_id'] ?? '',
-                'amwal_api_url' => $_POST['amwal_api_url'] ?? 'https://api.amwal.com/v1',
-                'amwal_webhook_secret' => $_POST['amwal_webhook_secret'] ?? '',
+                'amwal_terminal_id' => $_POST['amwal_terminal_id'] ?? '',
+                'amwal_secure_key' => $_POST['amwal_secure_key'] ?? '',
+                'amwal_api_url' => $_POST['amwal_api_url'] ?? 'https://backend.sa.amwal.tech',
                 'stripe_secret_key' => $_POST['stripe_secret_key'] ?? '',
                 'stripe_public_key' => $_POST['stripe_public_key'] ?? ''
             ];
@@ -129,10 +129,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'skip_billing':
             $_SESSION['billing_config'] = [
                 'gateway' => 'none',
-                'amwal_api_key' => '',
                 'amwal_merchant_id' => '',
-                'amwal_api_url' => 'https://api.amwal.com/v1',
-                'amwal_webhook_secret' => '',
+                'amwal_terminal_id' => '',
+                'amwal_secure_key' => '',
+                'amwal_api_url' => 'https://backend.sa.amwal.tech',
                 'stripe_secret_key' => '',
                 'stripe_public_key' => ''
             ];
@@ -302,18 +302,18 @@ function generateConfigFile($dbConfig, $siteConfig, $billingConfig) {
     // Build billing section with proper if (!defined()) checks
     $billingSection = '';
     if ($billingConfig['gateway'] === 'amwal') {
-        $amwalApiKey = addslashes($billingConfig['amwal_api_key'] ?? '');
         $amwalMerchantId = addslashes($billingConfig['amwal_merchant_id'] ?? '');
-        $amwalApiUrl = addslashes($billingConfig['amwal_api_url'] ?? 'https://api.amwal.com/v1');
-        $amwalWebhookSecret = addslashes($billingConfig['amwal_webhook_secret'] ?? '');
+        $amwalTerminalId = addslashes($billingConfig['amwal_terminal_id'] ?? '');
+        $amwalSecureKey = addslashes($billingConfig['amwal_secure_key'] ?? '');
+        $amwalApiUrl = addslashes($billingConfig['amwal_api_url'] ?? 'https://backend.sa.amwal.tech');
         
         $billingSection = "
 // Billing/Payment Gateway Configuration - Amwal Pay
 define('BILLING_GATEWAY', 'amwal');
-if (!defined('AMWAL_API_KEY')) define('AMWAL_API_KEY', '{$amwalApiKey}');
 if (!defined('AMWAL_MERCHANT_ID')) define('AMWAL_MERCHANT_ID', '{$amwalMerchantId}');
+if (!defined('AMWAL_TERMINAL_ID')) define('AMWAL_TERMINAL_ID', '{$amwalTerminalId}');
+if (!defined('AMWAL_SECURE_KEY')) define('AMWAL_SECURE_KEY', '{$amwalSecureKey}');
 if (!defined('AMWAL_API_URL')) define('AMWAL_API_URL', '{$amwalApiUrl}');
-if (!defined('AMWAL_WEBHOOK_SECRET')) define('AMWAL_WEBHOOK_SECRET', '{$amwalWebhookSecret}');
 if (!defined('STRIPE_SECRET_KEY')) define('STRIPE_SECRET_KEY', '');
 if (!defined('STRIPE_PUBLIC_KEY')) define('STRIPE_PUBLIC_KEY', '');";
     } elseif ($billingConfig['gateway'] === 'stripe') {
@@ -323,20 +323,20 @@ if (!defined('STRIPE_PUBLIC_KEY')) define('STRIPE_PUBLIC_KEY', '');";
         $billingSection = "
 // Billing/Payment Gateway Configuration - Stripe
 define('BILLING_GATEWAY', 'stripe');
-if (!defined('AMWAL_API_KEY')) define('AMWAL_API_KEY', '');
 if (!defined('AMWAL_MERCHANT_ID')) define('AMWAL_MERCHANT_ID', '');
-if (!defined('AMWAL_API_URL')) define('AMWAL_API_URL', 'https://api.amwal.com/v1');
-if (!defined('AMWAL_WEBHOOK_SECRET')) define('AMWAL_WEBHOOK_SECRET', '');
+if (!defined('AMWAL_TERMINAL_ID')) define('AMWAL_TERMINAL_ID', '');
+if (!defined('AMWAL_SECURE_KEY')) define('AMWAL_SECURE_KEY', '');
+if (!defined('AMWAL_API_URL')) define('AMWAL_API_URL', 'https://backend.sa.amwal.tech');
 if (!defined('STRIPE_SECRET_KEY')) define('STRIPE_SECRET_KEY', '{$stripeSecretKey}');
 if (!defined('STRIPE_PUBLIC_KEY')) define('STRIPE_PUBLIC_KEY', '{$stripePublicKey}');";
     } else {
         $billingSection = "
 // Billing/Payment Gateway Configuration - Not configured
 define('BILLING_GATEWAY', 'none');
-if (!defined('AMWAL_API_KEY')) define('AMWAL_API_KEY', '');
 if (!defined('AMWAL_MERCHANT_ID')) define('AMWAL_MERCHANT_ID', '');
-if (!defined('AMWAL_API_URL')) define('AMWAL_API_URL', 'https://api.amwal.com/v1');
-if (!defined('AMWAL_WEBHOOK_SECRET')) define('AMWAL_WEBHOOK_SECRET', '');
+if (!defined('AMWAL_TERMINAL_ID')) define('AMWAL_TERMINAL_ID', '');
+if (!defined('AMWAL_SECURE_KEY')) define('AMWAL_SECURE_KEY', '');
+if (!defined('AMWAL_API_URL')) define('AMWAL_API_URL', 'https://backend.sa.amwal.tech');
 if (!defined('STRIPE_SECRET_KEY')) define('STRIPE_SECRET_KEY', '');
 if (!defined('STRIPE_PUBLIC_KEY')) define('STRIPE_PUBLIC_KEY', '');";
     }
@@ -666,30 +666,35 @@ function getBasePath() {
                             <!-- Amwal Pay Fields -->
                             <div id="amwalFields" style="display: none;">
                                 <h3 class="text-lg font-semibold mb-3 mt-4">Amwal Pay Settings</h3>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">API Key</label>
-                                    <input type="text" name="amwal_api_key" value="<?php echo htmlspecialchars($_SESSION['billing_config']['amwal_api_key'] ?? ''); ?>" class="input-bhd w-full px-4 py-3 rounded-xl text-white" placeholder="Your Amwal Pay API Key">
-                                </div>
+                                <p class="text-sm text-gray-400 mb-4">Get these credentials from your Amwal Pay merchant dashboard after signing up.</p>
                                 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-300 mb-2">Merchant ID</label>
-                                    <input type="text" name="amwal_merchant_id" value="<?php echo htmlspecialchars($_SESSION['billing_config']['amwal_merchant_id'] ?? ''); ?>" class="input-bhd w-full px-4 py-3 rounded-xl text-white" placeholder="Your Merchant ID">
+                                    <input type="text" name="amwal_merchant_id" value="<?php echo htmlspecialchars($_SESSION['billing_config']['amwal_merchant_id'] ?? ''); ?>" class="input-bhd w-full px-4 py-3 rounded-xl text-white" placeholder="Your Merchant ID" required>
+                                    <p class="text-xs text-gray-500 mt-1">Provided by Amwal Pay after account setup</p>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Terminal ID</label>
+                                    <input type="text" name="amwal_terminal_id" value="<?php echo htmlspecialchars($_SESSION['billing_config']['amwal_terminal_id'] ?? ''); ?>" class="input-bhd w-full px-4 py-3 rounded-xl text-white" placeholder="Your Terminal ID" required>
+                                    <p class="text-xs text-gray-500 mt-1">Provided by Amwal Pay after account setup</p>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Secure Key</label>
+                                    <input type="password" name="amwal_secure_key" value="<?php echo htmlspecialchars($_SESSION['billing_config']['amwal_secure_key'] ?? ''); ?>" class="input-bhd w-full px-4 py-3 rounded-xl text-white" placeholder="Your Secure Key" required>
+                                    <p class="text-xs text-gray-500 mt-1">Keep this secret! Used for payment signature verification</p>
                                 </div>
                                 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-300 mb-2">API URL</label>
-                                    <input type="text" name="amwal_api_url" value="<?php echo htmlspecialchars($_SESSION['billing_config']['amwal_api_url'] ?? 'https://api.amwal.com/v1'); ?>" class="input-bhd w-full px-4 py-3 rounded-xl text-white">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Webhook Secret</label>
-                                    <input type="text" name="amwal_webhook_secret" value="<?php echo htmlspecialchars($_SESSION['billing_config']['amwal_webhook_secret'] ?? ''); ?>" class="input-bhd w-full px-4 py-3 rounded-xl text-white" placeholder="Webhook secret for verification">
+                                    <input type="text" name="amwal_api_url" value="<?php echo htmlspecialchars($_SESSION['billing_config']['amwal_api_url'] ?? 'https://backend.sa.amwal.tech'); ?>" class="input-bhd w-full px-4 py-3 rounded-xl text-white">
+                                    <p class="text-xs text-gray-500 mt-1">Default: https://backend.sa.amwal.tech</p>
                                 </div>
                                 
                                 <div class="info-box">
-                                    <p><strong>Webhook URL:</strong> <?php echo (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . getBasePath(); ?>webhooks/payment.php</p>
-                                    <p class="mt-2">Set this URL in your Amwal Pay dashboard webhook settings.</p>
+                                    <p><strong>Callback URL:</strong> <?php echo (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . getBasePath(); ?>amwalpay/callback.php</p>
+                                    <p class="mt-2">Configure this URL in your Amwal Pay merchant dashboard settings.</p>
                                 </div>
                             </div>
                             

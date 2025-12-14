@@ -2,6 +2,7 @@
 /**
  * Billing Integration
  * Supports Amwal Pay and other payment gateways
+ * Based on Amwal Pay official API: https://backend.sa.amwal.tech
  */
 class Billing {
     private $gateway = 'amwal';
@@ -56,6 +57,7 @@ class Billing {
             'success' => true,
             'transaction_id' => $transactionId,
             'payment_url' => $paymentResult['payment_url'] ?? null,
+            'payment_data' => $paymentResult['payment_data'] ?? null,
             'amount' => $amount
         ];
     }
@@ -76,55 +78,56 @@ class Billing {
     
     /**
      * Amwal Pay integration
+     * Based on official Amwal Pay API documentation
      */
     private function createAmwalPaymentIntent($amount, $companyId, $planId, $billingCycle) {
-        $apiKey = $this->config['api_key'] ?? '';
         $merchantId = $this->config['merchant_id'] ?? '';
-        $apiUrl = $this->config['api_url'] ?? 'https://api.amwal.com/v1';
+        $terminalId = $this->config['terminal_id'] ?? '';
+        $secureKey = $this->config['secure_key'] ?? '';
+        $apiUrl = $this->config['api_url'] ?? 'https://backend.sa.amwal.tech';
         
-        if (empty($apiKey) || empty($merchantId)) {
-            return ['success' => false, 'error' => 'Amwal Pay credentials not configured'];
+        if (empty($merchantId) || empty($terminalId) || empty($secureKey)) {
+            return ['success' => false, 'error' => 'Amwal Pay credentials not configured. Please set Merchant ID, Terminal ID, and Secure Key.'];
         }
         
-        // Prepare payment data
+        // Generate order ID
+        $orderId = 'SUB_' . $companyId . '_' . time();
+        
+        // Prepare payment data according to Amwal Pay API
         $paymentData = [
-            'merchant_id' => $merchantId,
-            'amount' => $amount,
-            'currency' => 'USD',
-            'order_id' => 'sub_' . $companyId . '_' . time(),
-            'customer_id' => $companyId,
-            'description' => "Subscription: {$planId} ({$billingCycle})",
-            'callback_url' => $this->config['callback_url'] ?? '',
-            'return_url' => $this->config['return_url'] ?? ''
+            'MerchantId' => $merchantId,
+            'TerminalId' => $terminalId,
+            'Amount' => number_format($amount, 2, '.', ''),
+            'Currency' => 'USD',
+            'OrderId' => $orderId,
+            'CustomerId' => (string)$companyId,
+            'Description' => "Subscription: {$planId} ({$billingCycle})",
+            'CallbackUrl' => $this->config['callback_url'] ?? '',
+            'ReturnUrl' => $this->config['return_url'] ?? ''
         ];
         
-        // Make API request to Amwal Pay
-        $ch = curl_init($apiUrl . '/payments/create');
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode($paymentData),
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
-                'Authorization: Bearer ' . $apiKey
-            ]
-        ]);
+        // Generate signature using Secure Key
+        $signatureString = $merchantId . $terminalId . $orderId . $paymentData['Amount'] . $paymentData['Currency'] . $secureKey;
+        $signature = hash('sha256', $signatureString);
+        $paymentData['Signature'] = $signature;
         
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        // Store payment data for process endpoint
+        $_SESSION['amwal_payment_' . $orderId] = [
+            'company_id' => $companyId,
+            'plan_id' => $planId,
+            'billing_cycle' => $billingCycle,
+            'amount' => $amount,
+            'order_id' => $orderId,
+            'payment_data' => $paymentData
+        ];
         
-        if ($httpCode !== 200) {
-            return ['success' => false, 'error' => 'Amwal Pay API error: ' . $response];
-        }
-        
-        $result = json_decode($response, true);
-        
+        // Return payment data to be submitted via form to Amwal Pay
         return [
             'success' => true,
-            'transaction_id' => $result['transaction_id'] ?? null,
-            'payment_url' => $result['payment_url'] ?? null,
-            'gateway_response' => $result
+            'transaction_id' => $orderId,
+            'payment_url' => $apiUrl . '/payment/process',
+            'payment_data' => $paymentData,
+            'form_action' => $apiUrl . '/payment/process'
         ];
     }
     
@@ -144,12 +147,12 @@ class Billing {
     }
     
     /**
-     * Handle payment webhook
+     * Handle payment webhook/callback
      */
     public function handleWebhook($payload, $signature) {
         switch ($this->gateway) {
             case 'amwal':
-                return $this->handleAmwalWebhook($payload, $signature);
+                return $this->handleAmwalCallback($payload, $signature);
             case 'stripe':
                 return $this->handleStripeWebhook($payload, $signature);
             default:
@@ -158,49 +161,148 @@ class Billing {
     }
     
     /**
-     * Handle Amwal Pay webhook
+     * Handle Amwal Pay callback
+     * Amwal Pay sends payment status via callback URL
      */
-    private function handleAmwalWebhook($payload, $signature) {
+    private function handleAmwalCallback($data, $signature = null) {
         $db = Database::getInstance();
         
-        // Verify signature
-        $expectedSignature = hash_hmac('sha256', $payload, $this->config['webhook_secret'] ?? '');
-        if ($signature !== $expectedSignature) {
-            return ['success' => false, 'error' => 'Invalid signature'];
+        // If data is JSON string, decode it
+        if (is_string($data)) {
+            $data = json_decode($data, true);
         }
         
-        $data = json_decode($payload, true);
+        // If data is from POST, use $_POST
+        if (empty($data) && !empty($_POST)) {
+            $data = $_POST;
+        }
         
-        if ($data['status'] === 'success' || $data['status'] === 'completed') {
-            // Update transaction
-            $db->update('payment_transactions', 
-                ['status' => 'completed'],
-                'transaction_id = :tid',
-                ['tid' => $data['transaction_id']]
-            );
-            
-            // Update company subscription
-            $transaction = $db->fetchOne(
-                "SELECT * FROM payment_transactions WHERE transaction_id = :tid",
-                ['tid' => $data['transaction_id']]
-            );
-            
-            if ($transaction) {
-                $expiresAt = date('Y-m-d H:i:s', strtotime('+1 ' . ($transaction['payment_method'] === 'yearly' ? 'year' : 'month')));
+        if (empty($data)) {
+            return ['success' => false, 'error' => 'No callback data received'];
+        }
+        
+        // Extract callback data
+        $orderId = $data['OrderId'] ?? $data['order_id'] ?? null;
+        $status = $data['Status'] ?? $data['status'] ?? null;
+        $transactionId = $data['TransactionId'] ?? $data['transaction_id'] ?? $orderId;
+        $amount = $data['Amount'] ?? $data['amount'] ?? null;
+        
+        if (empty($orderId)) {
+            return ['success' => false, 'error' => 'Order ID missing in callback'];
+        }
+        
+        // Verify signature if provided
+        if (!empty($signature) && !empty($this->config['secure_key'])) {
+            $expectedSignature = $this->generateAmwalSignature($data, $this->config['secure_key']);
+            if ($signature !== $expectedSignature) {
+                return ['success' => false, 'error' => 'Invalid signature'];
+            }
+        }
+        
+        // Find transaction by order_id (stored in transaction_id field)
+        $transaction = $db->fetchOne(
+            "SELECT * FROM payment_transactions WHERE transaction_id = :tid OR gateway_response LIKE :orderId",
+            [
+                'tid' => $transactionId,
+                'orderId' => '%' . $orderId . '%'
+            ]
+        );
+        
+        if (!$transaction) {
+            // Try to find by order ID in session
+            $sessionKey = 'amwal_payment_' . $orderId;
+            if (isset($_SESSION[$sessionKey])) {
+                $sessionData = $_SESSION[$sessionKey];
                 
-                $db->update('companies',
-                    [
-                        'plan' => $transaction['plan_id'],
-                        'subscription_status' => 'active',
-                        'subscription_expires_at' => $expiresAt
-                    ],
-                    'id = :id',
-                    ['id' => $transaction['company_id']]
+                // Create transaction record
+                $transactionId = $this->generateUUID();
+                $db->insert('payment_transactions', [
+                    'id' => $transactionId,
+                    'company_id' => $sessionData['company_id'],
+                    'plan_id' => $sessionData['plan_id'],
+                    'amount' => $sessionData['amount'],
+                    'currency' => 'USD',
+                    'payment_method' => $sessionData['billing_cycle'],
+                    'transaction_id' => $orderId,
+                    'status' => 'pending',
+                    'payment_gateway' => 'amwal',
+                    'gateway_response' => json_encode($data)
+                ]);
+                
+                $transaction = $db->fetchOne(
+                    "SELECT * FROM payment_transactions WHERE id = :id",
+                    ['id' => $transactionId]
                 );
             }
         }
         
-        return ['success' => true];
+        if (!$transaction) {
+            return ['success' => false, 'error' => 'Transaction not found'];
+        }
+        
+        // Update transaction status
+        $transactionStatus = 'pending';
+        if ($status === 'Success' || $status === 'success' || $status === 'Completed' || $status === 'completed') {
+            $transactionStatus = 'completed';
+        } elseif ($status === 'Failed' || $status === 'failed' || $status === 'Cancelled' || $status === 'cancelled') {
+            $transactionStatus = 'failed';
+        }
+        
+        $db->update('payment_transactions', 
+            [
+                'status' => $transactionStatus,
+                'gateway_response' => json_encode($data)
+            ],
+            'id = :id',
+            ['id' => $transaction['id']]
+        );
+        
+        // If payment successful, update company subscription
+        if ($transactionStatus === 'completed') {
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+1 ' . ($transaction['payment_method'] === 'yearly' ? 'year' : 'month')));
+            
+            $db->update('companies',
+                [
+                    'plan' => $transaction['plan_id'],
+                    'subscription_status' => 'active',
+                    'subscription_expires_at' => $expiresAt,
+                    'subscription_id' => $orderId
+                ],
+                'id = :id',
+                ['id' => $transaction['company_id']]
+            );
+            
+            // Clear session
+            unset($_SESSION['amwal_payment_' . $orderId]);
+        }
+        
+        return [
+            'success' => true,
+            'status' => $transactionStatus,
+            'transaction_id' => $transaction['id']
+        ];
+    }
+    
+    /**
+     * Generate Amwal Pay signature for verification
+     */
+    private function generateAmwalSignature($data, $secureKey) {
+        $merchantId = $data['MerchantId'] ?? $data['merchant_id'] ?? '';
+        $terminalId = $data['TerminalId'] ?? $data['terminal_id'] ?? '';
+        $orderId = $data['OrderId'] ?? $data['order_id'] ?? '';
+        $amount = $data['Amount'] ?? $data['amount'] ?? '';
+        $currency = $data['Currency'] ?? $data['currency'] ?? 'USD';
+        
+        $signatureString = $merchantId . $terminalId . $orderId . $amount . $currency . $secureKey;
+        return hash('sha256', $signatureString);
+    }
+    
+    /**
+     * Handle Stripe webhook
+     */
+    private function handleStripeWebhook($payload, $signature) {
+        // Stripe webhook handling would go here
+        return ['success' => false, 'error' => 'Stripe webhook not implemented'];
     }
     
     /**

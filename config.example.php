@@ -50,10 +50,14 @@ ini_set('display_errors', 1);
 
 // Billing/Payment Gateway Configuration
 define('BILLING_GATEWAY', 'amwal'); // 'amwal', 'stripe', 'none'
-if (!defined('AMWAL_API_KEY')) define('AMWAL_API_KEY', ''); // Set your Amwal Pay API key
-if (!defined('AMWAL_MERCHANT_ID')) define('AMWAL_MERCHANT_ID', ''); // Set your Amwal Pay merchant ID
-if (!defined('AMWAL_API_URL')) define('AMWAL_API_URL', 'https://api.amwal.com/v1'); // Amwal Pay API URL
-if (!defined('AMWAL_WEBHOOK_SECRET')) define('AMWAL_WEBHOOK_SECRET', ''); // Webhook secret for verification
+
+// Amwal Pay Configuration (get these from your Amwal Pay merchant dashboard)
+if (!defined('AMWAL_MERCHANT_ID')) define('AMWAL_MERCHANT_ID', ''); // Your Merchant ID from Amwal Pay
+if (!defined('AMWAL_TERMINAL_ID')) define('AMWAL_TERMINAL_ID', ''); // Your Terminal ID from Amwal Pay
+if (!defined('AMWAL_SECURE_KEY')) define('AMWAL_SECURE_KEY', ''); // Your Secure Key from Amwal Pay
+if (!defined('AMWAL_API_URL')) define('AMWAL_API_URL', 'https://backend.sa.amwal.tech'); // Amwal Pay API URL
+
+// Stripe Configuration (alternative payment gateway)
 if (!defined('STRIPE_SECRET_KEY')) define('STRIPE_SECRET_KEY', ''); // Stripe secret key
 if (!defined('STRIPE_PUBLIC_KEY')) define('STRIPE_PUBLIC_KEY', ''); // Stripe public key
 

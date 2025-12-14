@@ -8,16 +8,28 @@ require_once INCLUDES_DIR . '/Billing.php';
 
 $db = Database::getInstance();
 $billing = new Billing(BILLING_GATEWAY ?? 'amwal', [
-    'api_key' => AMWAL_API_KEY ?? '',
     'merchant_id' => AMWAL_MERCHANT_ID ?? '',
-    'api_url' => AMWAL_API_URL ?? 'https://api.amwal.com/v1',
-    'callback_url' => (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . getBasePath() . 'webhooks/payment.php',
-    'return_url' => (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . getBasePath() . 'admin/billing.php?success=1'
+    'terminal_id' => AMWAL_TERMINAL_ID ?? '',
+    'secure_key' => AMWAL_SECURE_KEY ?? '',
+    'api_url' => AMWAL_API_URL ?? 'https://backend.sa.amwal.tech',
+    'callback_url' => (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . getBasePath() . 'amwalpay/callback.php',
+    'return_url' => (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . getBasePath() . 'admin/billing.php'
 ]);
 
 $companyId = getCurrentCompanyId();
 $message = null;
 $messageType = 'success';
+
+// Handle payment callback messages
+if (isset($_GET['payment'])) {
+    if ($_GET['payment'] === 'success') {
+        $message = 'Payment completed successfully! Your subscription has been activated.';
+        $messageType = 'success';
+    } elseif ($_GET['payment'] === 'error') {
+        $message = $_GET['message'] ?? 'Payment processing failed. Please try again.';
+        $messageType = 'error';
+    }
+}
 
 // Get current company
 $company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $companyId]);
@@ -36,8 +48,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     
     $result = $billing->createSubscription($companyId, $planId, $billingCycle);
     
-    if ($result['success'] && !empty($result['payment_url'])) {
-        header('Location: ' . $result['payment_url']);
+    if ($result['success'] && !empty($result['payment_data'])) {
+        // Redirect to process endpoint with order ID
+        $orderId = $result['transaction_id'];
+        header('Location: ' . getBasePath() . 'amwalpay/process.php?order_id=' . urlencode($orderId));
         exit;
     } else {
         $message = $result['error'] ?? 'Failed to create subscription';
