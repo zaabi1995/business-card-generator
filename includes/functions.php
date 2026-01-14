@@ -178,6 +178,46 @@ function slugify($value) {
     return $value ?: 'company';
 }
 
+/**
+ * Generate abbreviation from company name
+ * Example: "Mohsin Haider Darwish" -> "mhd"
+ * Example: "Acme Corporation" -> "ac"
+ * Example: "ABC Company" -> "abc"
+ */
+function generateAbbreviation($name) {
+    $name = trim($name);
+    if (empty($name)) {
+        return '';
+    }
+    
+    // Split into words
+    $words = preg_split('/\s+/', $name);
+    
+    // If multiple words, take first letter of each
+    if (count($words) >= 2) {
+        $abbrev = '';
+        foreach ($words as $word) {
+            $firstChar = mb_substr($word, 0, 1);
+            if (preg_match('/[a-zA-Z0-9]/', $firstChar)) {
+                $abbrev .= strtolower($firstChar);
+            }
+        }
+        return $abbrev;
+    }
+    
+    // Single word: take first 3-5 characters
+    $word = $words[0];
+    $abbrev = '';
+    for ($i = 0; $i < min(5, mb_strlen($word)); $i++) {
+        $char = mb_substr($word, $i, 1);
+        if (preg_match('/[a-zA-Z0-9]/', $char)) {
+            $abbrev .= strtolower($char);
+        }
+    }
+    
+    return $abbrev;
+}
+
 function isMultiTenantEnabled() {
     if (!file_exists(COMPANIES_JSON)) {
         return false;
@@ -234,10 +274,10 @@ function findCompanyById($id) {
     return null;
 }
 
-function createCompany($name, $email, $password, $parentCompanyId = null) {
+function createCompany($name, $email, $password, $parentCompanyId = null, $customSlug = null) {
     // Use database if available
     if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::createCompany($name, $email, $password, $parentCompanyId);
+        return DatabaseAdapter::createCompany($name, $email, $password, $parentCompanyId, $customSlug);
     }
     
     // Fallback to JSON
@@ -250,6 +290,17 @@ function createCompany($name, $email, $password, $parentCompanyId = null) {
     while (findCompanyBySlug($slug)) {
         $slug = $originalSlug . '-' . $counter;
         $counter++;
+    }
+    
+    // Use custom slug if provided
+    if (!empty($customSlug)) {
+        $customSlug = strtolower(trim($customSlug));
+        $customSlug = preg_replace('/[^a-z0-9-]/', '', $customSlug);
+        $customSlug = trim($customSlug, '-');
+        
+        if (!empty($customSlug) && !findCompanyBySlug($customSlug)) {
+            $slug = $customSlug;
+        }
     }
     
     $company = [

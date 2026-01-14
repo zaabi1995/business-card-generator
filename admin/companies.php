@@ -28,9 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = sanitizeEmail($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
         $parentId = $_POST['parent_company_id'] ?? null;
+        $customSlug = $_POST['company_slug'] ?? null;
         
         if (!empty($name) && !empty($email) && !empty($password)) {
-            $result = DatabaseAdapter::createCompany($name, $email, $password, $parentId);
+            $result = DatabaseAdapter::createCompany($name, $email, $password, $parentId, $customSlug);
             if ($result['success']) {
                 $message = 'Company created successfully!';
                 $companies = $db->fetchAll("SELECT * FROM companies ORDER BY company_path, name");
@@ -110,11 +111,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <h2 class="text-xl font-bold mb-4">Create New Company</h2>
                 <form method="post" class="space-y-4">
                     <input type="hidden" name="action" value="create">
-                    <div class="grid md:grid-cols-3 gap-4">
+                    <div class="grid md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Company Name</label>
                             <input type="text" name="name" required class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Company Abbreviation (Slug)</label>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-gray-400 text-sm"><?php echo getBaseUrl(); ?></span>
+                                <input type="text" name="company_slug" pattern="[a-z0-9-]+" maxlength="50" class="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white font-mono" placeholder="auto-generated">
+                                <span class="text-gray-400 text-sm">/</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Leave empty to auto-generate from company name</p>
+                        </div>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Admin Email</label>
                             <input type="email" name="email" required class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">

@@ -50,17 +50,37 @@ class DatabaseAdapter {
         return self::$db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $id]);
     }
     
-    public static function createCompany($name, $adminEmail, $password, $parentCompanyId = null) {
+    public static function createCompany($name, $adminEmail, $password, $parentCompanyId = null, $customSlug = null) {
         if (!self::useDatabase()) {
-            return createCompany($name, $adminEmail, $password, $parentCompanyId);
+            return createCompany($name, $adminEmail, $password, $parentCompanyId, $customSlug);
         }
         
-        $slug = slugify($name);
-        $baseSlug = $slug;
-        $i = 1;
-        while (self::findCompanyBySlug($slug)) {
-            $slug = $baseSlug . '-' . $i;
-            $i++;
+        // Use custom slug if provided, otherwise generate from name
+        if (!empty($customSlug)) {
+            // Validate custom slug
+            $customSlug = strtolower(trim($customSlug));
+            $customSlug = preg_replace('/[^a-z0-9-]/', '', $customSlug);
+            $customSlug = trim($customSlug, '-');
+            
+            if (empty($customSlug)) {
+                return ['success' => false, 'error' => 'Invalid company abbreviation'];
+            }
+            
+            // Check if custom slug is available
+            if (self::findCompanyBySlug($customSlug)) {
+                return ['success' => false, 'error' => 'Company abbreviation already taken. Please choose another.'];
+            }
+            
+            $slug = $customSlug;
+        } else {
+            // Auto-generate slug from name
+            $slug = slugify($name);
+            $baseSlug = $slug;
+            $i = 1;
+            while (self::findCompanyBySlug($slug)) {
+                $slug = $baseSlug . '-' . $i;
+                $i++;
+            }
         }
         
         // Build company path if parent exists
