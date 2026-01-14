@@ -804,4 +804,13 @@ function loginAdmin($password) {
 }
 
 // Initialize on include
-initializeDataFiles();
+// Only initialize data files if database is configured or we're not redirecting to installer
+// Check if we should skip initialization (during installation)
+$skipInit = false;
+if (defined('DB_HOST') && !empty(DB_HOST) && defined('DB_NAME') && !empty(DB_NAME)) {
+    // Database is configured, safe to initialize
+    initializeDataFiles();
+} else {
+    // Database not configured - might be installing, skip initialization to avoid errors
+    // initializeDataFiles() will be called after installation
+}
