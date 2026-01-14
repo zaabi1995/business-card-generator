@@ -271,12 +271,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             require_once __DIR__ . '/../includes/functions.php';
             require_once __DIR__ . '/../includes/DatabaseAdapter.php';
             
-            // Update system settings
-            $db->query("UPDATE system_settings SET setting_value = '1' WHERE setting_key = 'installation_complete'");
-            $db->query("UPDATE system_settings SET setting_value = :value WHERE setting_key = 'site_name'", 
-                ['value' => $siteConfig['site_name']]);
-            $db->query("UPDATE system_settings SET setting_value = :value WHERE setting_key = 'site_description'", 
-                ['value' => $siteConfig['site_description']]);
+            // Update system settings (insert if not exists, update if exists)
+            
+            $settings = [
+                'installation_complete' => '1',
+                'site_name' => $siteConfig['site_name'],
+                'site_description' => $siteConfig['site_description']
+            ];
+            
+            foreach ($settings as $key => $value) {
+                try {
+                    $existing = $db->fetchOne(
+                        "SELECT setting_key FROM system_settings WHERE setting_key = :key",
+                        ['key' => $key]
+                    );
+                    
+                    if ($existing) {
+                        // Update existing setting
+                        $db->update('system_settings',
+                            ['setting_value' => $value],
+                            'setting_key = :key',
+                            ['key' => $key]
+                        );
+                    } else {
+                        // Insert new setting
+                        $db->insert('system_settings', [
+                            'setting_key' => $key,
+                            'setting_value' => $value,
+                            'setting_type' => 'string',
+                            'description' => ucfirst(str_replace('_', ' ', $key))
+                        ]);
+                    }
+                } catch (Exception $e) {
+                    error_log("Failed to set setting {$key}: " . $e->getMessage());
+                }
+            }
             
             // Create admin company if admin config provided
             if ($adminConfig) {
