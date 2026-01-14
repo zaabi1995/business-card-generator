@@ -30,32 +30,33 @@ function getBaseUrl() {
  */
 if (!function_exists('getBasePath')) {
     function getBasePath() {
-    static $basePath = null;
-    
-    if ($basePath === null) {
-        $scriptPath = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '/index.php';
-        $scriptPath = str_replace('\\', '/', $scriptPath);
-        $scriptDir = dirname($scriptPath);
+        static $basePath = null;
         
-        // If script is in admin subdirectory, go up one level
-        if (basename($scriptDir) === 'admin' || basename($scriptDir) === 'includes' || basename($scriptDir) === 'company' || basename($scriptDir) === 'amwalpay' || basename($scriptDir) === 'webhooks') {
-            $scriptDir = dirname($scriptDir);
+        if ($basePath === null) {
+            $scriptPath = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '/index.php';
+            $scriptPath = str_replace('\\', '/', $scriptPath);
+            $scriptDir = dirname($scriptPath);
+            
+            // If script is in admin subdirectory, go up one level
+            if (basename($scriptDir) === 'admin' || basename($scriptDir) === 'includes' || basename($scriptDir) === 'company' || basename($scriptDir) === 'amwalpay' || basename($scriptDir) === 'webhooks') {
+                $scriptDir = dirname($scriptDir);
+            }
+            
+            $scriptDir = str_replace('\\', '/', $scriptDir);
+            
+            if ($scriptDir === '/' || $scriptDir === '.' || $scriptDir === '') {
+                $basePath = '/';
+            } else {
+                $basePath = rtrim($scriptDir, '/') . '/';
+            }
+            
+            if ($basePath[0] !== '/') {
+                $basePath = '/' . $basePath;
+            }
         }
         
-        $scriptDir = str_replace('\\', '/', $scriptDir);
-        
-        if ($scriptDir === '/' || $scriptDir === '.' || $scriptDir === '') {
-            $basePath = '/';
-        } else {
-            $basePath = rtrim($scriptDir, '/') . '/';
-        }
-        
-        if ($basePath[0] !== '/') {
-            $basePath = '/' . $basePath;
-        }
+        return $basePath;
     }
-    
-    return $basePath;
 }
 
 /**
