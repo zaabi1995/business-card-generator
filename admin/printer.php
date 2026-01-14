@@ -5,6 +5,7 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/OdooIntegration.php';
 
 // Only super admin and admin can access printer management
 Auth::requireRole('admin');
@@ -73,12 +74,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $filePath = $uploadDir . '/' . $fileName;
                 
                 if (move_uploaded_file($_FILES['quotation_file']['tmp_name'], $filePath)) {
+                    $quotationPath = getWebPath($filePath);
                     $db->update('print_orders',
-                        ['quotation_file_path' => getWebPath($filePath)],
+                        ['quotation_file_path' => $quotationPath],
                         'id = :id',
                         ['id' => $orderId]
                     );
-                    $message = 'Quotation uploaded successfully';
+                    
+                    // Sync to Odoo if enabled
+                    if (OdooIntegration::isEnabled()) {
+                        $odooResult = OdooIntegration::syncQuotationToOdoo($orderId, $quotationPath);
+                        if ($odooResult['success']) {
+                            $message = 'Quotation uploaded and synced to Odoo successfully';
+                        } else {
+                            $message = 'Quotation uploaded successfully (Odoo sync failed: ' . ($odooResult['error'] ?? 'Unknown') . ')';
+                        }
+                    } else {
+                        $message = 'Quotation uploaded successfully';
+                    }
                 } else {
                     $message = 'Failed to upload quotation';
                     $messageType = 'error';
@@ -101,12 +114,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $filePath = $uploadDir . '/' . $fileName;
                 
                 if (move_uploaded_file($_FILES['invoice_file']['tmp_name'], $filePath)) {
+                    $invoicePath = getWebPath($filePath);
                     $db->update('print_orders',
-                        ['invoice_file_path' => getWebPath($filePath)],
+                        ['invoice_file_path' => $invoicePath],
                         'id = :id',
                         ['id' => $orderId]
                     );
-                    $message = 'Invoice uploaded successfully';
+                    
+                    // Sync to Odoo if enabled
+                    if (OdooIntegration::isEnabled()) {
+                        $odooResult = OdooIntegration::syncInvoiceToOdoo($orderId, $invoicePath);
+                        if ($odooResult['success']) {
+                            $message = 'Invoice uploaded and synced to Odoo successfully';
+                        } else {
+                            $message = 'Invoice uploaded successfully (Odoo sync failed: ' . ($odooResult['error'] ?? 'Unknown') . ')';
+                        }
+                    } else {
+                        $message = 'Invoice uploaded successfully';
+                    }
                 } else {
                     $message = 'Failed to upload invoice';
                     $messageType = 'error';
@@ -129,12 +154,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $filePath = $uploadDir . '/' . $fileName;
                 
                 if (move_uploaded_file($_FILES['delivery_note_file']['tmp_name'], $filePath)) {
+                    $deliveryNotePath = getWebPath($filePath);
                     $db->update('print_orders',
-                        ['delivery_note_file_path' => getWebPath($filePath)],
+                        ['delivery_note_file_path' => $deliveryNotePath],
                         'id = :id',
                         ['id' => $orderId]
                     );
-                    $message = 'Delivery note uploaded successfully';
+                    
+                    // Sync to Odoo if enabled
+                    if (OdooIntegration::isEnabled()) {
+                        $odooResult = OdooIntegration::syncDeliveryNoteToOdoo($orderId, $deliveryNotePath);
+                        if ($odooResult['success']) {
+                            $message = 'Delivery note uploaded and synced to Odoo successfully';
+                        } else {
+                            $message = 'Delivery note uploaded successfully (Odoo sync failed: ' . ($odooResult['error'] ?? 'Unknown') . ')';
+                        }
+                    } else {
+                        $message = 'Delivery note uploaded successfully';
+                    }
                 } else {
                     $message = 'Failed to upload delivery note';
                     $messageType = 'error';

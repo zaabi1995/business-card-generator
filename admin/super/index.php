@@ -109,6 +109,10 @@ $recentTransactions = $db->fetchAll("SELECT pt.*, c.name as company_name FROM pa
                     <h3 class="text-lg font-semibold mb-2">Printer Management</h3>
                     <p class="text-gray-400 text-sm">Manage print orders and PO requirements</p>
                 </a>
+                <a href="../odoo_settings.php" class="glass-card rounded-xl p-6 hover:bg-white/5 transition-colors block">
+                    <h3 class="text-lg font-semibold mb-2">Odoo Integration</h3>
+                    <p class="text-gray-400 text-sm">Connect and sync with Odoo ERP</p>
+                </a>
             </div>
             
             <!-- Recent Activity -->

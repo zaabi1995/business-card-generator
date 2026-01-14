@@ -125,6 +125,31 @@ function migration_004_print_po_whatsapp($pdo) {
             }
         }
         
+        // Insert Odoo integration settings
+        $odooSettings = [
+            ['odoo_url', '', 'Odoo instance URL'],
+            ['odoo_database', '', 'Odoo database name'],
+            ['odoo_username', '', 'Odoo username'],
+            ['odoo_password', '', 'Odoo password (encrypted)'],
+            ['odoo_enabled', '0', 'Enable/disable Odoo integration (1 = enabled, 0 = disabled)']
+        ];
+        
+        foreach ($odooSettings as $setting) {
+            try {
+                $stmt = $pdo->prepare("INSERT INTO system_settings (id, setting_key, setting_value, description) VALUES (?, ?, ?, ?)");
+                $stmt->execute([
+                    generateUUID(),
+                    $setting[0],
+                    $setting[1],
+                    $setting[2]
+                ]);
+            } catch (PDOException $e) {
+                if (strpos($e->getMessage(), 'Duplicate') === false) {
+                    $errors[] = "Error inserting Odoo setting {$setting[0]}: " . $e->getMessage();
+                }
+            }
+        }
+        
         return [
             'success' => empty($errors),
             'errors' => $errors,
