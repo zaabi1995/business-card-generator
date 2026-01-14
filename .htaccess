@@ -14,6 +14,13 @@
     # Redirect www to non-www (if needed)
     # RewriteCond %{HTTP_HOST} ^www\.bc\.bhd\.om$ [NC]
     # RewriteRule ^(.*)$ https://bc.bhd.om/$1 [L,R=301]
+    
+    # Company-specific routing (e.g., bc.bhd.om/mhd/)
+    # Check if request is not for known paths and not a file
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|company|webhooks|amwalpay|assets|uploads|data|generate_card_html\.php|download_card\.php|index\.php|router\.php)
+    RewriteRule ^([a-z0-9-]+)/?$ router.php?company_slug=$1 [L,QSA]
 </IfModule>
 
 # Security Headers

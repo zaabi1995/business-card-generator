@@ -85,9 +85,9 @@ $recentTransactions = $db->fetchAll("SELECT pt.*, c.name as company_name FROM pa
             
             <!-- Quick Actions -->
             <div class="grid md:grid-cols-3 gap-6 mb-8">
-                <a href="companies.php" class="glass-card rounded-xl p-6 hover:bg-white/5 transition-colors block">
+                <a href="../companies.php" class="glass-card rounded-xl p-6 hover:bg-white/5 transition-colors block">
                     <h3 class="text-lg font-semibold mb-2">Manage Companies</h3>
-                    <p class="text-gray-400 text-sm">View and manage all companies</p>
+                    <p class="text-gray-400 text-sm">View and manage all companies and hierarchy</p>
                 </a>
                 <a href="users.php" class="glass-card rounded-xl p-6 hover:bg-white/5 transition-colors block">
                     <h3 class="text-lg font-semibold mb-2">Manage Users</h3>

@@ -50,9 +50,9 @@ class DatabaseAdapter {
         return self::$db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $id]);
     }
     
-    public static function createCompany($name, $adminEmail, $password) {
+    public static function createCompany($name, $adminEmail, $password, $parentCompanyId = null) {
         if (!self::useDatabase()) {
-            return createCompany($name, $adminEmail, $password);
+            return createCompany($name, $adminEmail, $password, $parentCompanyId);
         }
         
         $slug = slugify($name);
@@ -63,8 +63,23 @@ class DatabaseAdapter {
             $i++;
         }
         
+        // Build company path if parent exists
+        $companyPath = $name;
+        $companyType = $parentCompanyId ? 'child' : 'standalone';
+        
+        if ($parentCompanyId) {
+            $parent = self::$db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $parentCompanyId]);
+            if ($parent) {
+                $parentPath = $parent['company_path'] ?? $parent['name'];
+                $companyPath = $parentPath . ' > ' . $name;
+            }
+        }
+        
         $company = [
             'id' => generateUUID(),
+            'parent_company_id' => $parentCompanyId,
+            'company_path' => $companyPath,
+            'company_type' => $companyType,
             'name' => $name,
             'slug' => $slug,
             'admin_email' => $adminEmail,

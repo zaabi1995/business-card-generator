@@ -92,14 +92,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 require_once __DIR__ . '/../database/migrations/002_enhanced_admin.php';
                 $result2 = migration_002_enhanced_admin($db->getConnection());
                 
-                if ($result2['success']) {
+                // Run company hierarchy migration
+                require_once __DIR__ . '/../database/migrations/003_company_hierarchy.php';
+                $result3 = migration_003_company_hierarchy($db->getConnection());
+                
+                if ($result2['success'] && $result3['success']) {
                     $step = 'site_config';
                     $success[] = 'Database migration completed successfully!';
                     $success[] = 'Enhanced admin features installed!';
+                    $success[] = 'Company hierarchy support enabled!';
                 } else {
                     $step = 'site_config';
                     $success[] = 'Database migration completed!';
-                    $errors[] = 'Enhanced admin migration warnings: ' . implode(', ', $result2['errors']);
+                    if (!$result2['success']) {
+                        $errors[] = 'Enhanced admin migration warnings: ' . implode(', ', $result2['errors']);
+                    }
+                    if (!$result3['success']) {
+                        $errors[] = 'Company hierarchy migration warnings: ' . implode(', ', $result3['errors']);
+                    }
                 }
             } else {
                 $errors[] = 'Migration errors: ' . implode(', ', $result['errors']);

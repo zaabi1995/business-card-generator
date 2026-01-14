@@ -14,6 +14,13 @@ if (!Auth::isLoggedIn()) {
 
 $currentUser = Auth::getCurrentUser();
 $userRole = Auth::getCurrentRole();
+
+// Auto-redirect super admin to super admin panel
+if ($userRole === 'super_admin') {
+    header('Location: ' . getBasePath() . 'admin/super/');
+    exit;
+}
+
 $companyId = getCurrentCompanyId();
 
 // Get company theme for styling

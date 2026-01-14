@@ -5,6 +5,12 @@
  */
 require_once __DIR__ . '/config.php';
 
+// Check if this is a company-specific route
+if (isset($_GET['company_slug'])) {
+    require __DIR__ . '/router.php';
+    exit;
+}
+
 $error = null;
 $employee = null;
 $company = null;

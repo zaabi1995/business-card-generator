@@ -234,10 +234,10 @@ function findCompanyById($id) {
     return null;
 }
 
-function createCompany($name, $email, $password) {
+function createCompany($name, $email, $password, $parentCompanyId = null) {
     // Use database if available
     if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::createCompany($name, $email, $password);
+        return DatabaseAdapter::createCompany($name, $email, $password, $parentCompanyId);
     }
     
     // Fallback to JSON
