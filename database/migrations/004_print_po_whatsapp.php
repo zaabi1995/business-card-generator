@@ -10,12 +10,44 @@ function migration_004_print_po_whatsapp($pdo) {
     $errors = [];
     
     try {
-        // Add po_file_path column to print_orders table
+        // Add PO-related columns to print_orders table
         try {
             $pdo->exec("ALTER TABLE print_orders ADD COLUMN po_file_path VARCHAR(500) NULL AFTER notes");
         } catch (PDOException $e) {
             if (strpos($e->getMessage(), 'Duplicate column') === false) {
                 $errors[] = "Error adding po_file_path column: " . $e->getMessage();
+            }
+        }
+        
+        try {
+            $pdo->exec("ALTER TABLE print_orders ADD COLUMN po_required BOOLEAN DEFAULT FALSE AFTER po_file_path");
+        } catch (PDOException $e) {
+            if (strpos($e->getMessage(), 'Duplicate column') === false) {
+                $errors[] = "Error adding po_required column: " . $e->getMessage();
+            }
+        }
+        
+        try {
+            $pdo->exec("ALTER TABLE print_orders ADD COLUMN po_approved BOOLEAN DEFAULT FALSE AFTER po_required");
+        } catch (PDOException $e) {
+            if (strpos($e->getMessage(), 'Duplicate column') === false) {
+                $errors[] = "Error adding po_approved column: " . $e->getMessage();
+            }
+        }
+        
+        try {
+            $pdo->exec("ALTER TABLE print_orders ADD COLUMN po_approved_by VARCHAR(36) NULL AFTER po_approved");
+        } catch (PDOException $e) {
+            if (strpos($e->getMessage(), 'Duplicate column') === false) {
+                $errors[] = "Error adding po_approved_by column: " . $e->getMessage();
+            }
+        }
+        
+        try {
+            $pdo->exec("ALTER TABLE print_orders ADD COLUMN po_approved_at TIMESTAMP NULL AFTER po_approved_by");
+        } catch (PDOException $e) {
+            if (strpos($e->getMessage(), 'Duplicate column') === false) {
+                $errors[] = "Error adding po_approved_at column: " . $e->getMessage();
             }
         }
         

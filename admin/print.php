@@ -231,6 +231,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                         </a>
                                     </div>
                                     <?php endif; ?>
+                                    <?php if (isset($order['po_required']) && $order['po_required']): ?>
+                                    <div class="text-amber-400">
+                                        ⚠ PO Required for Processing
+                                        <?php if (isset($order['po_approved']) && $order['po_approved']): ?>
+                                        <span class="text-green-400">✓ Approved</span>
+                                        <?php elseif (!empty($order['po_file_path'])): ?>
+                                        <span class="text-yellow-400">⏳ Pending Approval</span>
+                                        <?php else: ?>
+                                        <span class="text-red-400">✗ Missing</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <?php endif; ?>
                                     <div>Created: <?php echo date('M d, Y H:i', strtotime($order['created_at'])); ?></div>
                                 </div>
                             </div>
