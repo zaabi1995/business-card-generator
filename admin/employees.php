@@ -560,6 +560,15 @@ function findColumn($header, $possibleNames) {
                     address: ''
                 },
                 
+                getDepartmentName(departmentId) {
+                    <?php if (!empty($departments)): ?>
+                    const depts = <?php echo json_encode(array_column($departments, 'name', 'id')); ?>;
+                    return depts[departmentId] || '-';
+                    <?php else: ?>
+                    return '-';
+                    <?php endif; ?>
+                },
+                
                 matchesSearch(email, nameEn, nameAr) {
                     if (!this.searchQuery) return true;
                     const query = this.searchQuery.toLowerCase();
