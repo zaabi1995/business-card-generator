@@ -88,8 +88,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $result = migration_001_initial_schema($db->getConnection());
             
             if ($result['success']) {
-                $step = 'site_config';
-                $success[] = 'Database migration completed successfully!';
+                // Run enhanced admin migration
+                require_once __DIR__ . '/../database/migrations/002_enhanced_admin.php';
+                $result2 = migration_002_enhanced_admin($db->getConnection());
+                
+                if ($result2['success']) {
+                    $step = 'site_config';
+                    $success[] = 'Database migration completed successfully!';
+                    $success[] = 'Enhanced admin features installed!';
+                } else {
+                    $step = 'site_config';
+                    $success[] = 'Database migration completed!';
+                    $errors[] = 'Enhanced admin migration warnings: ' . implode(', ', $result2['errors']);
+                }
             } else {
                 $errors[] = 'Migration errors: ' . implode(', ', $result['errors']);
                 $step = 'migrate';

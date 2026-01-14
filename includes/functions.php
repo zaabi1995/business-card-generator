@@ -630,5 +630,58 @@ function initializeDataFiles() {
     }
 }
 
+// ============================================
+// AUTHENTICATION FUNCTIONS (Legacy Support)
+// ============================================
+
+function companyAdminLogin($slug, $password) {
+    require_once INCLUDES_DIR . '/Auth.php';
+    $company = findCompanyBySlug($slug);
+    
+    if (!$company) {
+        return ['success' => false, 'error' => 'Company not found'];
+    }
+    
+    // Try unified auth first
+    if (DatabaseAdapter::useDatabase()) {
+        $db = Database::getInstance();
+        $user = $db->fetchOne(
+            "SELECT * FROM users WHERE company_id = :id AND role IN ('company', 'admin') AND status = 'active'",
+            ['id' => $company['id']]
+        );
+        
+        if ($user && password_verify($password, $user['password_hash'])) {
+            $result = Auth::loginUser($user);
+            return $result;
+        }
+    }
+    
+    // Fallback to company password
+    if (password_verify($password, $company['password_hash'])) {
+        setCompanyContext($company);
+        return ['success' => true, 'company' => $company];
+    }
+    
+    return ['success' => false, 'error' => 'Invalid password'];
+}
+
+function isCompanyAdminLoggedIn() {
+    return isset($_SESSION['company_id']) || (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['company', 'admin', 'super_admin']));
+}
+
+function isAdminLoggedIn() {
+    return isset($_SESSION['admin_logged_in']) || isCompanyAdminLoggedIn();
+}
+
+function loginAdmin($password) {
+    // Legacy single-tenant admin login
+    $adminPassword = 'admin'; // Default - should be in config
+    if ($password === $adminPassword) {
+        $_SESSION['admin_logged_in'] = true;
+        return true;
+    }
+    return false;
+}
+
 // Initialize on include
 initializeDataFiles();

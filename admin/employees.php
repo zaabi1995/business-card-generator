@@ -4,6 +4,19 @@
  */
 require_once __DIR__ . '/../config.php';
 requireAdmin();
+require_once INCLUDES_DIR . '/Auth.php';
+
+$db = Database::getInstance();
+$companyId = getCurrentCompanyId();
+
+// Get departments for dropdown
+$departments = [];
+if (DatabaseAdapter::useDatabase() && $companyId) {
+    $departments = $db->fetchAll(
+        "SELECT * FROM departments WHERE company_id = :id ORDER BY name",
+        ['id' => $companyId]
+    );
+}
 
 $employees = loadEmployees();
 $message = null;
@@ -312,9 +325,9 @@ function findColumn($header, $possibleNames) {
                             <tr class="border-b border-white/10">
                                 <th class="text-left p-4 text-gray-400 font-medium text-sm">Name</th>
                                 <th class="text-left p-4 text-gray-400 font-medium text-sm">Position</th>
+                                <th class="text-left p-4 text-gray-400 font-medium text-sm">Department</th>
                                 <th class="text-left p-4 text-gray-400 font-medium text-sm">Email</th>
                                 <th class="text-left p-4 text-gray-400 font-medium text-sm">Phone</th>
-                                <th class="text-left p-4 text-gray-400 font-medium text-sm">Company</th>
                                 <th class="text-right p-4 text-gray-400 font-medium text-sm">Actions</th>
                             </tr>
                         </thead>
@@ -336,6 +349,16 @@ function findColumn($header, $possibleNames) {
                                         <p class="text-gray-500 text-xs" dir="rtl"><?php echo sanitize($emp['position_ar'] ?? ''); ?></p>
                                     </div>
                                 </td>
+                                <td class="p-4 text-gray-300 text-sm">
+                                    <?php 
+                                    if (!empty($emp['department_id']) && DatabaseAdapter::useDatabase()) {
+                                        $dept = $db->fetchOne("SELECT name FROM departments WHERE id = :id", ['id' => $emp['department_id']]);
+                                        echo $dept ? sanitize($dept['name']) : '-';
+                                    } else {
+                                        echo '-';
+                                    }
+                                    ?>
+                                </td>
                                 <td class="p-4 text-gray-300 text-sm"><?php echo sanitize($emp['email'] ?? ''); ?></td>
                                 <td class="p-4">
                                     <div class="text-gray-300 text-sm">
@@ -347,7 +370,6 @@ function findColumn($header, $possibleNames) {
                                         <?php endif; ?>
                                     </div>
                                 </td>
-                                <td class="p-4 text-gray-300 text-sm"><?php echo sanitize($emp['company_en'] ?? ''); ?></td>
                                 <td class="p-4 text-right">
                                     <div class="flex items-center justify-end space-x-2">
                                         <button 
@@ -405,7 +427,19 @@ function findColumn($header, $possibleNames) {
                             <input type="email" name="email" x-model="formData.email" required class="input-bhd w-full px-4 py-3 rounded-xl text-white">
                         </div>
                         
+                        <?php if (!empty($departments)): ?>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Department</label>
+                            <select name="department_id" x-model="formData.department_id" class="input-bhd w-full px-4 py-3 rounded-xl text-white">
+                                <option value="">None</option>
+                                <?php foreach ($departments as $dept): ?>
+                                <option value="<?php echo sanitize($dept['id']); ?>"><?php echo sanitize($dept['name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <?php else: ?>
                         <div></div>
+                        <?php endif; ?>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-2">Name (English) *</label>
@@ -513,6 +547,7 @@ function findColumn($header, $possibleNames) {
                 formData: {
                     id: '',
                     email: '',
+                    department_id: '',
                     name_en: '',
                     name_ar: '',
                     position_en: '',

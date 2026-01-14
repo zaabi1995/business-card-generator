@@ -4,16 +4,37 @@
  * Template Management with Visual Editor
  */
 require_once __DIR__ . '/../config.php';
-requireAdmin();
+require_once INCLUDES_DIR . '/Auth.php';
 
-// Handle logout
+// Check authentication and role
+if (!Auth::isLoggedIn()) {
+    header('Location: ' . getBasePath() . 'login.php');
+    exit;
+}
+
+$currentUser = Auth::getCurrentUser();
+$userRole = Auth::getCurrentRole();
+$companyId = getCurrentCompanyId();
+
+// Get company theme for styling
+$companyTheme = null;
+if ($companyId && DatabaseAdapter::useDatabase()) {
+    $db = Database::getInstance();
+    $companyTheme = $db->fetchOne(
+        "SELECT * FROM company_themes WHERE company_id = :id",
+        ['id' => $companyId]
+    );
+}
+
+// Apply theme colors
+$primaryColor = $companyTheme['primary_color'] ?? '#d4af37';
+$secondaryColor = $companyTheme['secondary_color'] ?? '#0f3460';
+
+// Handle logout (legacy support)
 if (isset($_GET['logout'])) {
-    if (isMultiTenantEnabled()) {
-        logoutCompanyAdmin();
-    } else {
-        logoutAdmin();
-    }
-    header('Location: ' . (isMultiTenantEnabled() ? (getBasePath() . 'company/login.php') : 'login.php'));
+    require_once INCLUDES_DIR . '/Auth.php';
+    Auth::logout();
+    header('Location: ' . getBasePath() . 'login.php');
     exit;
 }
 
@@ -56,6 +77,11 @@ $backTemplates = array_filter($templates, fn($t) => ($t['side'] ?? 'back') === '
     <style>
         [x-cloak] { display: none !important; }
         
+        :root {
+            --primary-color: <?php echo $primaryColor; ?>;
+            --secondary-color: <?php echo $secondaryColor; ?>;
+        }
+        
         .glass-card {
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(20px);
@@ -70,20 +96,33 @@ $backTemplates = array_filter($templates, fn($t) => ($t['side'] ?? 'back') === '
         
         .input-bhd:focus {
             background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(212, 175, 55, 0.6);
+            border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
         }
         
         .btn-bhd {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #16213e 50%, #0f3460 100%);
             transition: all 0.3s ease;
-            border: 1px solid rgba(212, 175, 55, 0.3);
+            border: 1px solid var(--primary-color);
         }
         
         .btn-bhd:hover {
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
-            border-color: rgba(212, 175, 55, 0.5);
+            box-shadow: 0 0 20px var(--primary-color);
+            border-color: var(--primary-color);
         }
+        
+        <?php if ($companyTheme && $companyTheme['custom_css']): ?>
+        <?php echo $companyTheme['custom_css']; ?>
+        <?php endif; ?>
+        
+        :root {
+            --primary-color: <?php echo $primaryColor; ?>;
+            --secondary-color: <?php echo $secondaryColor; ?>;
+        }
+        
+        <?php if ($companyTheme && $companyTheme['custom_css']): ?>
+        <?php echo $companyTheme['custom_css']; ?>
+        <?php endif; ?>
         
         .field-handle {
             cursor: move;
@@ -152,25 +191,83 @@ $backTemplates = array_filter($templates, fn($t) => ($t['side'] ?? 'back') === '
                             </svg>
                         </div>
                         <div>
-                            <h1 class="text-xl font-bold text-white"><?php echo SITE_NAME; ?></h1>
-                            <p class="text-gray-500 text-xs">Admin Dashboard</p>
+                            <h1 class="text-xl font-bold text-white">
+                                <?php echo $companyTheme['header_text'] ?? SITE_NAME; ?>
+                            </h1>
+                            <p class="text-gray-500 text-xs">
+                                <?php 
+                                if ($userRole === 'super_admin') {
+                                    echo 'Super Admin Dashboard';
+                                } elseif ($userRole === 'company' || $userRole === 'admin') {
+                                    echo 'Company Admin Dashboard';
+                                } else {
+                                    echo 'Admin Dashboard';
+                                }
+                                ?>
+                            </p>
                         </div>
                     </div>
                     
-                    <nav class="flex items-center space-x-4">
-                        <a href="employees.php" class="text-gray-400 hover:text-amber-400 transition-colors text-sm flex items-center space-x-2">
+                    <nav class="flex items-center space-x-2 flex-wrap">
+                        <?php if ($userRole === 'super_admin'): ?>
+                        <a href="super/" class="px-3 py-2 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-colors text-sm flex items-center space-x-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                            </svg>
+                            <span>Super Admin</span>
+                        </a>
+                        <?php endif; ?>
+                        
+                        <a href="employees.php" class="px-3 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-amber-400 hover:bg-white/10 transition-colors text-sm flex items-center space-x-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                             </svg>
                             <span>Employees</span>
                         </a>
-                        <a href="generated.php" class="text-gray-400 hover:text-amber-400 transition-colors text-sm flex items-center space-x-2">
+                        
+                        <a href="departments.php" class="px-3 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-amber-400 hover:bg-white/10 transition-colors text-sm flex items-center space-x-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                            <span>Departments</span>
+                        </a>
+                        
+                        <a href="share.php" class="px-3 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-amber-400 hover:bg-white/10 transition-colors text-sm flex items-center space-x-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
+                            </svg>
+                            <span>Share Links</span>
+                        </a>
+                        
+                        <a href="print.php" class="px-3 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-amber-400 hover:bg-white/10 transition-colors text-sm flex items-center space-x-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                            </svg>
+                            <span>Print</span>
+                        </a>
+                        
+                        <a href="theme.php" class="px-3 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-amber-400 hover:bg-white/10 transition-colors text-sm flex items-center space-x-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+                            </svg>
+                            <span>Theme</span>
+                        </a>
+                        
+                        <a href="billing.php" class="px-3 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-amber-400 hover:bg-white/10 transition-colors text-sm flex items-center space-x-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                            </svg>
+                            <span>Billing</span>
+                        </a>
+                        
+                        <a href="generated.php" class="px-3 py-2 rounded-lg bg-white/5 text-gray-400 hover:text-amber-400 hover:bg-white/10 transition-colors text-sm flex items-center space-x-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
                             <span>Generated</span>
                         </a>
-                        <a href="?logout=1" class="text-gray-500 hover:text-red-400 transition-colors text-sm">
+                        
+                        <a href="<?php echo getBasePath(); ?>logout.php" class="px-3 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors text-sm">
                             Logout
                         </a>
                     </nav>
