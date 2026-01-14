@@ -504,78 +504,62 @@ if (!function_exists('getBasePath')) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN (for installer before assets are available) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'alzayani-dark': '#0a1628',
+                        'alzayani-blue': '#1e3a5f',
+                        'alzayani-blue-light': '#2d5a8a',
+                        'alzayani-navy': '#0d1b2a',
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-            color: #ffffff;
-            min-height: 100vh;
-            padding: 2rem 1rem;
-            line-height: 1.6;
-        }
-        .container { 
-            max-width: 900px; 
-            margin: 0 auto; 
-        }
-        .header { 
-            text-align: center; 
-            margin-bottom: 3rem; 
-        }
-        .header h1 { 
-            font-size: 2.5rem; 
-            font-weight: 800; 
-            margin-bottom: 0.5rem; 
-            background: linear-gradient(135deg, #ffffff 0%, #d4af37 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .header p { 
-            color: #94a3b8; 
-            font-size: 1.1rem; 
-        }
-        .glass-card { 
-            background: rgba(255, 255, 255, 0.05); 
-            backdrop-filter: blur(20px); 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-            border-radius: 1.5rem; 
-            padding: 2.5rem; 
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
-        .step-indicator { 
-            display: flex; 
-            justify-content: center; 
-            margin-bottom: 2.5rem; 
-            flex-wrap: wrap; 
-            gap: 0.75rem; 
-        }
-        .step { 
-            width: 45px; 
-            height: 45px; 
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-weight: 700; 
-            font-size: 1rem;
+        .input-bhd {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             transition: all 0.3s ease;
         }
-        .step.active { 
-            background: rgba(212, 175, 55, 0.2); 
-            border: 2px solid rgba(212, 175, 55, 0.8); 
-            color: #d4af37; 
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+        .input-bhd:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(212, 175, 55, 0.6);
+            box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
         }
-        .step.completed { 
-            background: rgba(34, 197, 94, 0.2); 
-            border: 2px solid rgba(34, 197, 94, 0.8); 
-            color: #22c55e; 
+        .btn-bhd {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            transition: all 0.3s ease;
         }
-        .step.pending { 
-            background: rgba(255, 255, 255, 0.05); 
-            border: 2px solid rgba(255, 255, 255, 0.1); 
-            color: #64748b; 
+        .btn-bhd:hover {
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+            border-color: rgba(212, 175, 55, 0.6);
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
         }
         .step-connector {
             width: 30px;
@@ -584,180 +568,55 @@ if (!function_exists('getBasePath')) {
             margin: 0 0.25rem;
             align-self: center;
         }
-        h2 { 
-            font-size: 1.875rem; 
-            font-weight: 700; 
-            margin-bottom: 1rem; 
-            color: #ffffff;
-        }
-        h3 { 
-            font-size: 1.25rem; 
-            font-weight: 600; 
-            margin-bottom: 1rem; 
-            color: #ffffff;
-        }
-        p { 
-            color: #94a3b8; 
-            margin-bottom: 1.5rem; 
-        }
-        .space-y-2 > * + * { margin-top: 0.5rem; }
-        .space-y-4 > * + * { margin-top: 1rem; }
-        .space-y-6 > * + * { margin-top: 1.5rem; }
-        .mb-4 { margin-bottom: 1rem; }
-        .mb-6 { margin-bottom: 1.5rem; }
-        .mb-8 { margin-bottom: 2rem; }
-        .mt-6 { margin-top: 1.5rem; }
-        ul { list-style: none; }
-        li { 
-            display: flex; 
-            align-items: center; 
-            gap: 0.75rem; 
-            padding: 0.75rem 0;
-        }
-        .text-green-400 { color: #4ade80; }
-        .text-red-400 { color: #f87171; }
-        .text-gray-400 { color: #9ca3af; }
-        .text-gray-300 { color: #d1d5db; }
-        .text-gray-500 { color: #6b7280; }
-        .text-white { color: #ffffff; }
-        .text-sm { font-size: 0.875rem; }
-        .text-xs { font-size: 0.75rem; }
-        .text-lg { font-size: 1.125rem; }
-        .font-medium { font-weight: 500; }
-        .font-semibold { font-weight: 600; }
-        .font-bold { font-weight: 700; }
-        label { 
-            display: block; 
-            margin-bottom: 0.5rem; 
-        }
-        .input-bhd { 
-            background: rgba(255, 255, 255, 0.05); 
-            border: 1px solid rgba(255, 255, 255, 0.15); 
-            border-radius: 0.75rem; 
-            padding: 0.875rem 1rem; 
-            width: 100%; 
-            color: #ffffff; 
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-        .input-bhd:focus { 
-            outline: none;
-            background: rgba(255, 255, 255, 0.08); 
-            border-color: rgba(212, 175, 55, 0.6); 
-            box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1); 
-        }
-        .input-bhd::placeholder { color: #64748b; }
-        select.input-bhd { cursor: pointer; }
-        .btn-bhd { 
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); 
-            border: 1px solid rgba(212, 175, 55, 0.3); 
-            border-radius: 0.75rem; 
-            padding: 1rem 1.5rem; 
-            color: #ffffff; 
-            font-weight: 700; 
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-        }
-        .btn-bhd:hover { 
-            box-shadow: 0 0 30px rgba(212, 175, 55, 0.3); 
-            border-color: rgba(212, 175, 55, 0.6); 
-            transform: translateY(-2px);
-        }
-        .btn-secondary { 
-            background: rgba(255, 255, 255, 0.05); 
-            border: 1px solid rgba(255, 255, 255, 0.15); 
-            border-radius: 0.75rem; 
-            padding: 1rem 1.5rem; 
-            color: #ffffff; 
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-        }
-        .btn-secondary:hover { 
-            background: rgba(255, 255, 255, 0.1); 
-        }
-        .flex { display: flex; }
-        .flex-1 { flex: 1; }
-        .space-x-2 > * + * { margin-left: 0.5rem; }
-        .space-x-3 > * + * { margin-left: 0.75rem; }
-        .grid { display: grid; }
-        .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-        .gap-4 { gap: 1rem; }
-        .w-full { width: 100%; }
-        .rounded-xl { border-radius: 0.75rem; }
-        .rounded-2xl { border-radius: 1rem; }
-        .bg-red-500\/10 { background: rgba(239, 68, 68, 0.1); }
-        .bg-green-500\/10 { background: rgba(34, 197, 94, 0.1); }
-        .border-red-500\/30 { border: 1px solid rgba(239, 68, 68, 0.3); }
-        .border-green-500\/30 { border: 1px solid rgba(34, 197, 94, 0.3); }
-        .info-box { 
-            background: rgba(59, 130, 246, 0.1); 
-            border: 1px solid rgba(59, 130, 246, 0.3); 
-            padding: 1rem; 
-            border-radius: 0.75rem; 
-            margin-bottom: 1rem; 
-        }
-        .info-box p { color: #93c5fd; font-size: 0.875rem; }
-        .info-box strong { color: #bfdbfe; }
-        @media (max-width: 768px) {
-            .header h1 { font-size: 2rem; }
-            .glass-card { padding: 1.5rem; }
-            .grid-cols-2 { grid-template-columns: 1fr; }
-            .step-indicator { gap: 0.5rem; }
-            .step { width: 35px; height: 35px; font-size: 0.875rem; }
-        }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Installation Wizard</h1>
-            <p>Complete setup for your Business Card Generator SaaS</p>
-        </div>
-        
-        <!-- Step Indicator -->
-        <div class="step-indicator">
-            <div class="step <?php echo $step === 'welcome' || $step === 'requirements' ? 'active' : ($step !== 'welcome' && $step !== 'requirements' ? 'completed' : 'pending'); ?>">1</div>
-            <div class="step-connector"></div>
-            <div class="step <?php echo $step === 'database' ? 'active' : ($step === 'migrate' || $step === 'site_config' || $step === 'billing' || $step === 'admin' || $step === 'finalize' || $step === 'complete' ? 'completed' : 'pending'); ?>">2</div>
-            <div class="step-connector"></div>
-            <div class="step <?php echo $step === 'migrate' ? 'active' : ($step === 'site_config' || $step === 'billing' || $step === 'admin' || $step === 'finalize' || $step === 'complete' ? 'completed' : 'pending'); ?>">3</div>
-            <div class="step-connector"></div>
-            <div class="step <?php echo $step === 'site_config' ? 'active' : ($step === 'billing' || $step === 'admin' || $step === 'finalize' || $step === 'complete' ? 'completed' : 'pending'); ?>">4</div>
-            <div class="step-connector"></div>
-            <div class="step <?php echo $step === 'billing' ? 'active' : ($step === 'admin' || $step === 'finalize' || $step === 'complete' ? 'completed' : 'pending'); ?>">5</div>
-            <div class="step-connector"></div>
-            <div class="step <?php echo $step === 'admin' ? 'active' : ($step === 'finalize' || $step === 'complete' ? 'completed' : 'pending'); ?>">6</div>
-            <div class="step-connector"></div>
-            <div class="step <?php echo $step === 'finalize' ? 'active' : ($step === 'complete' ? 'completed' : 'pending'); ?>">7</div>
-        </div>
+<body class="bg-gradient-to-br from-alzayani-dark via-slate-900 to-alzayani-dark text-white font-sans min-h-screen antialiased">
+    <div class="min-h-screen flex items-center justify-center px-4 py-12">
+        <div class="w-full max-w-3xl">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-4xl md:text-5xl font-bold text-white mb-2 bg-gradient-to-r from-white to-amber-400 bg-clip-text text-transparent">
+                    Installation Wizard
+                </h1>
+                <p class="text-gray-400 text-lg">Complete setup for your Business Card Generator SaaS</p>
+            </div>
             
-        <!-- Messages -->
-        <?php if (!empty($errors)): ?>
-        <div class="mb-6 glass-card bg-red-500/10 border-red-500/30">
-            <?php foreach ($errors as $error): ?>
-            <p class="text-red-400 text-sm"><?php echo htmlspecialchars($error); ?></p>
-            <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
-        
-        <?php if (!empty($success)): ?>
-        <div class="mb-6 glass-card bg-green-500/10 border-green-500/30">
-            <?php foreach ($success as $msg): ?>
-            <p class="text-green-400 text-sm"><?php echo htmlspecialchars($msg); ?></p>
-            <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
+            <!-- Step Indicator -->
+            <div class="flex justify-center items-center mb-8 flex-wrap gap-2">
+                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'welcome' || $step === 'requirements' ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/30' : ($step !== 'welcome' && $step !== 'requirements' ? 'bg-green-500/20 border-2 border-green-500 text-green-400' : 'bg-white/5 border-2 border-white/10 text-gray-400'); ?>">1</div>
+                <div class="step-connector"></div>
+                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'database' ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/30' : ($step === 'migrate' || $step === 'site_config' || $step === 'billing' || $step === 'admin' || $step === 'finalize' || $step === 'complete' ? 'bg-green-500/20 border-2 border-green-500 text-green-400' : 'bg-white/5 border-2 border-white/10 text-gray-400'); ?>">2</div>
+                <div class="step-connector"></div>
+                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'migrate' ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/30' : ($step === 'site_config' || $step === 'billing' || $step === 'admin' || $step === 'finalize' || $step === 'complete' ? 'bg-green-500/20 border-2 border-green-500 text-green-400' : 'bg-white/5 border-2 border-white/10 text-gray-400'); ?>">3</div>
+                <div class="step-connector"></div>
+                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'site_config' ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/30' : ($step === 'billing' || $step === 'admin' || $step === 'finalize' || $step === 'complete' ? 'bg-green-500/20 border-2 border-green-500 text-green-400' : 'bg-white/5 border-2 border-white/10 text-gray-400'); ?>">4</div>
+                <div class="step-connector"></div>
+                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'billing' ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/30' : ($step === 'admin' || $step === 'finalize' || $step === 'complete' ? 'bg-green-500/20 border-2 border-green-500 text-green-400' : 'bg-white/5 border-2 border-white/10 text-gray-400'); ?>">5</div>
+                <div class="step-connector"></div>
+                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'admin' ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/30' : ($step === 'finalize' || $step === 'complete' ? 'bg-green-500/20 border-2 border-green-500 text-green-400' : 'bg-white/5 border-2 border-white/10 text-gray-400'); ?>">6</div>
+                <div class="step-connector"></div>
+                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'finalize' ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/30' : ($step === 'complete' ? 'bg-green-500/20 border-2 border-green-500 text-green-400' : 'bg-white/5 border-2 border-white/10 text-gray-400'); ?>">7</div>
+            </div>
+            
+            <!-- Messages -->
+            <?php if (!empty($errors)): ?>
+            <div class="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30">
+                <?php foreach ($errors as $error): ?>
+                <p class="text-red-400 text-sm"><?php echo htmlspecialchars($error); ?></p>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+            
+            <?php if (!empty($success)): ?>
+            <div class="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/30">
+                <?php foreach ($success as $msg): ?>
+                <p class="text-green-400 text-sm"><?php echo htmlspecialchars($msg); ?></p>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
             
             <!-- Step Content -->
-            <div class="glass-card rounded-2xl p-8">
+            <div class="glass-card rounded-2xl p-6 md:p-8">
                 <?php if ($step === 'welcome' || $step === 'requirements'): ?>
                     <h2 class="text-2xl font-bold mb-4">Welcome</h2>
                     <p class="text-gray-400 mb-6">This wizard will guide you through the complete setup of your Business Card Generator SaaS platform.</p>
@@ -804,7 +663,7 @@ if (!function_exists('getBasePath')) {
                     
                     <form method="post">
                         <input type="hidden" name="action" value="check_requirements">
-                        <button type="submit" class="btn-bhd w-full py-4 rounded-xl text-white font-bold">
+                        <button type="submit" class="btn-bhd w-full py-4 rounded-xl text-white font-bold hover:scale-[1.02] transition-transform">
                             Continue to Database Setup →
                         </button>
                     </form>
