@@ -355,7 +355,11 @@ function requireAdmin() {
 function getCompanyEmployeesJsonPath($companyId) {
     $dir = COMPANIES_DATA_DIR . '/' . $companyId;
     if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
+        @mkdir($dir, 0755, true);
+        // Try with 777 if 755 fails
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0777, true);
+        }
     }
     return $dir . '/employees.json';
 }
@@ -363,7 +367,11 @@ function getCompanyEmployeesJsonPath($companyId) {
 function getCompanyUploadsPath($companyId) {
     $dir = COMPANIES_UPLOADS_DIR . '/' . $companyId;
     if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
+        @mkdir($dir, 0755, true);
+        // Try with 777 if 755 fails
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0777, true);
+        }
     }
     return $dir;
 }
@@ -374,7 +382,10 @@ function getCompanyUploadsPath($companyId) {
 function getCompanyDataDir($companyId) {
     $dir = COMPANIES_DATA_DIR . '/' . $companyId;
     if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
+        @mkdir($dir, 0755, true);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0777, true);
+        }
     }
     return $dir;
 }
@@ -392,7 +403,10 @@ function getCompanyUploadsDir($companyId) {
 function getCompanyTemplatesDir($companyId) {
     $dir = COMPANIES_UPLOADS_DIR . '/' . $companyId . '/templates';
     if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
+        @mkdir($dir, 0755, true);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0777, true);
+        }
     }
     return $dir;
 }
@@ -403,7 +417,10 @@ function getCompanyTemplatesDir($companyId) {
 function getCompanyCardsDir($companyId) {
     $dir = COMPANIES_UPLOADS_DIR . '/' . $companyId . '/cards';
     if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
+        @mkdir($dir, 0755, true);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0777, true);
+        }
     }
     return $dir;
 }

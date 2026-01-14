@@ -4,6 +4,23 @@
  * User enters email to generate their business card
  */
 
+// Helper function to get base path (before config.php loads)
+function getBasePathForRedirect() {
+    $scriptPath = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '/index.php';
+    $scriptPath = str_replace('\\', '/', $scriptPath);
+    $scriptDir = dirname($scriptPath);
+    
+    if ($scriptDir === '/' || $scriptDir === '.' || $scriptDir === '') {
+        return '/';
+    }
+    
+    $basePath = rtrim($scriptDir, '/') . '/';
+    if ($basePath[0] !== '/') {
+        $basePath = '/' . $basePath;
+    }
+    return $basePath;
+}
+
 // Check if installation is needed
 $configFile = __DIR__ . '/config.php';
 $installDir = __DIR__ . '/install';
@@ -11,7 +28,7 @@ $installDir = __DIR__ . '/install';
 // If config.php doesn't exist, redirect to installer
 if (!file_exists($configFile)) {
     if (is_dir($installDir)) {
-        header('Location: ' . getBasePath() . 'install/');
+        header('Location: ' . getBasePathForRedirect() . 'install/');
         exit;
     } else {
         die('Configuration file not found. Please run the installation wizard.');
@@ -23,39 +40,71 @@ require_once $configFile;
 // Check if database is configured and installation is complete
 $needsInstallation = false;
 
-// Check if database is not configured
+// Check if database constants are defined
 if (!defined('DB_HOST') || empty(DB_HOST) || !defined('DB_NAME') || empty(DB_NAME)) {
+    // Database not configured - needs installation
     $needsInstallation = true;
 } else {
-    // Check if database connection works and installation is complete
+    // Database constants exist, check if connection works
     try {
         if (class_exists('Database')) {
             $db = Database::getInstance();
             if (!$db->isConnected()) {
-                $needsInstallation = true;
-            } else {
-                // Check if installation_complete setting exists
-                try {
-                    $setting = $db->fetchOne("SELECT setting_value FROM system_settings WHERE setting_key = 'installation_complete'");
-                    if (!$setting || $setting['setting_value'] !== '1') {
+                // Try to connect
+                if (defined('DB_HOST') && defined('DB_NAME') && defined('DB_USER')) {
+                    $connected = $db->connect(DB_HOST, DB_NAME, DB_USER, DB_PASS ?? '', DB_PORT ?? '3306', DB_TYPE ?? 'mysql');
+                    if (!$connected) {
                         $needsInstallation = true;
+                    }
+                } else {
+                    $needsInstallation = true;
+                }
+            }
+            
+            // If connected, check if installation is complete
+            if ($db->isConnected()) {
+                try {
+                    // Check if system_settings table exists
+                    $tables = $db->fetchAll("SHOW TABLES LIKE 'system_settings'");
+                    if (empty($tables)) {
+                        // Tables don't exist - needs installation
+                        $needsInstallation = true;
+                    } else {
+                        // Check installation_complete setting
+                        $setting = $db->fetchOne("SELECT setting_value FROM system_settings WHERE setting_key = 'installation_complete'");
+                        if (!$setting || $setting['setting_value'] !== '1') {
+                            $needsInstallation = true;
+                        }
                     }
                 } catch (Exception $e) {
                     // Tables might not exist yet
                     $needsInstallation = true;
                 }
             }
+        } else {
+            // Database class not available
+            $needsInstallation = true;
         }
     } catch (Exception $e) {
+        // Any error means installation needed
         $needsInstallation = true;
     }
 }
 
 // Redirect to installer if needed
 if ($needsInstallation && is_dir($installDir)) {
-    header('Location: ' . getBasePath() . 'install/');
-    exit;
+    // Suppress any output before redirect
+    if (!headers_sent()) {
+        $basePath = function_exists('getBasePath') ? getBasePath() : getBasePathForRedirect();
+        header('Location: ' . $basePath . 'install/');
+        exit;
+    }
 }
+
+// Suppress permission warnings during initialization
+error_reporting(E_ALL & ~E_WARNING);
+@initializeDataFiles();
+error_reporting(E_ALL);
 
 // Check if this is a company-specific route
 if (isset($_GET['company_slug'])) {
