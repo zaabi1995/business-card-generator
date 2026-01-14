@@ -116,11 +116,27 @@ function migration_002_enhanced_admin($pdo) {
         
         // Add theme_id and department_id to templates if not exists
         try {
-            $pdo->exec("ALTER TABLE templates ADD COLUMN theme_id VARCHAR(36) NULL AFTER company_id");
-            $pdo->exec("ALTER TABLE templates ADD COLUMN department_id VARCHAR(36) NULL AFTER theme_id");
-            $pdo->exec("ALTER TABLE templates ADD COLUMN is_shared BOOLEAN DEFAULT FALSE");
+            // Check if templates table exists
+            $tableExists = $pdo->query("SHOW TABLES LIKE 'templates'")->rowCount() > 0;
+            if ($tableExists) {
+                // Check if columns already exist
+                $themeColumnExists = $pdo->query("SHOW COLUMNS FROM templates LIKE 'theme_id'")->rowCount() > 0;
+                $deptColumnExists = $pdo->query("SHOW COLUMNS FROM templates LIKE 'department_id'")->rowCount() > 0;
+                $sharedColumnExists = $pdo->query("SHOW COLUMNS FROM templates LIKE 'is_shared'")->rowCount() > 0;
+                
+                if (!$themeColumnExists) {
+                    $pdo->exec("ALTER TABLE templates ADD COLUMN theme_id VARCHAR(36) NULL AFTER company_id");
+                }
+                if (!$deptColumnExists) {
+                    $pdo->exec("ALTER TABLE templates ADD COLUMN department_id VARCHAR(36) NULL AFTER theme_id");
+                }
+                if (!$sharedColumnExists) {
+                    $pdo->exec("ALTER TABLE templates ADD COLUMN is_shared BOOLEAN DEFAULT FALSE");
+                }
+            }
         } catch (PDOException $e) {
-            if (strpos($e->getMessage(), 'Duplicate column') === false) {
+            if (strpos($e->getMessage(), 'Duplicate column') === false && 
+                strpos($e->getMessage(), "doesn't exist") === false) {
                 $errors[] = "Error adding columns to templates: " . $e->getMessage();
             }
         }
