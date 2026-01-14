@@ -23,6 +23,160 @@ if (function_exists('xmlrpc_encode_request')) {
 
 ## Installation Methods
 
+### Method 0: aaPanel (Recommended for VPS)
+
+**aaPanel** is a popular web hosting control panel. Here's how to install XML-RPC:
+
+#### Option A: Via aaPanel Web Interface (Easiest)
+
+1. **Login to aaPanel:**
+   - Open your browser and go to: `http://your-server-ip:7800` (or your configured port)
+   - Login with your aaPanel credentials
+
+2. **Navigate to PHP Settings:**
+   - Click **"App Store"** in the left menu
+   - Find **"PHP"** (or your PHP version like "PHP 8.1")
+   - Click **"Settings"** (gear icon)
+
+3. **Install Extension:**
+   - Click on **"Install Extensions"** tab
+   - Search for **"xmlrpc"**
+   - Check the box next to **"xmlrpc"**
+   - Click **"Install"** or **"Submit"**
+   - Wait for installation to complete
+
+4. **Verify Installation:**
+   - Go to **"PHP Info"** tab
+   - Search for "xmlrpc"
+   - You should see XML-RPC extension listed
+
+5. **Restart Services:**
+   - Go back to **"App Store"**
+   - Find your web server (Nginx/Apache)
+   - Click **"Restart"**
+
+#### Option B: Via SSH/Terminal (If web interface doesn't work)
+
+```bash
+# Connect to your VPS via SSH
+ssh root@your-server-ip
+
+# Check which PHP version is active
+php -v
+
+# Install XML-RPC for your PHP version
+# For PHP 8.1:
+yum install php81-php-xmlrpc -y
+# OR
+apt-get install php8.1-xmlrpc -y
+
+# For PHP 8.2:
+yum install php82-php-xmlrpc -y
+# OR
+apt-get install php8.2-xmlrpc -y
+
+# Restart PHP-FPM
+systemctl restart php-fpm-81  # Adjust version number
+# OR
+systemctl restart php8.1-fpm
+
+# Restart web server
+systemctl restart nginx
+# OR
+systemctl restart httpd
+```
+
+#### Option C: Manual Installation for aaPanel
+
+If the above methods don't work:
+
+```bash
+# SSH into your VPS
+ssh root@your-server-ip
+
+# Find PHP installation directory
+which php
+# Usually: /www/server/php/81/bin/php (for PHP 8.1)
+
+# Check PHP version
+/www/server/php/81/bin/php -v
+
+# Install XML-RPC extension
+# For CentOS/RHEL (aaPanel usually uses this):
+yum install -y php81-php-xmlrpc
+
+# For Debian/Ubuntu:
+apt-get update
+apt-get install -y php8.1-xmlrpc
+
+# Enable extension in php.ini
+# Find php.ini location
+/www/server/php/81/bin/php --ini
+
+# Edit php.ini (usually at /www/server/php/81/etc/php.ini)
+nano /www/server/php/81/etc/php.ini
+
+# Add or uncomment this line:
+extension=xmlrpc.so
+
+# Save and exit (Ctrl+X, then Y, then Enter)
+
+# Restart PHP-FPM
+systemctl restart php-fpm-81
+
+# Restart web server
+systemctl restart nginx
+# OR
+systemctl restart httpd
+```
+
+#### Verify in aaPanel
+
+1. Go to **App Store** → **PHP** → **Settings**
+2. Click **"PHP Info"** tab
+3. Search for "xmlrpc"
+4. Should see: `xmlrpc support => enabled`
+
+#### aaPanel Troubleshooting
+
+**Problem:** Extension not showing in aaPanel interface
+
+**Solution:**
+```bash
+# Check if extension file exists
+find /www/server/php -name "xmlrpc.so"
+
+# Check PHP configuration
+/www/server/php/81/bin/php -i | grep xmlrpc
+
+# Manually add to php.ini
+echo "extension=xmlrpc.so" >> /www/server/php/81/etc/php.ini
+
+# Restart services
+systemctl restart php-fpm-81
+systemctl restart nginx
+```
+
+**Problem:** Multiple PHP versions installed
+
+**Solution:**
+```bash
+# List all PHP versions
+ls /www/server/php/
+
+# Install for each version you use
+yum install php81-php-xmlrpc php82-php-xmlrpc -y
+
+# Enable in each php.ini
+nano /www/server/php/81/etc/php.ini
+nano /www/server/php/82/etc/php.ini
+# Add: extension=xmlrpc.so to each
+
+# Restart all PHP-FPM services
+systemctl restart php-fpm-81
+systemctl restart php-fpm-82
+```
+
 ### Method 1: Ubuntu/Debian (apt)
 
 ```bash
@@ -227,6 +381,36 @@ If XML-RPC installation is problematic, the integration can be updated to use JS
 
 **Note:** The current implementation uses XML-RPC, but we can easily switch to JSON-RPC if needed.
 
+## Automated Installation Script (aaPanel)
+
+For **aaPanel users**, we've created an automated installation script:
+
+```bash
+# Download the script
+wget https://raw.githubusercontent.com/zaabi1995/business-card-generator/main/install_xmlrpc_aapanel.sh
+
+# Make it executable
+chmod +x install_xmlrpc_aapanel.sh
+
+# Run as root
+sudo ./install_xmlrpc_aapanel.sh
+```
+
+**What the script does:**
+- ✅ Detects all PHP versions installed in aaPanel
+- ✅ Installs XML-RPC extension for each version
+- ✅ Enables extension in php.ini
+- ✅ Restarts PHP-FPM services
+- ✅ Restarts web server
+- ✅ Verifies installation
+
+**Or use the script from the repository:**
+```bash
+cd /path/to/business-card-generator
+chmod +x install_xmlrpc_aapanel.sh
+sudo ./install_xmlrpc_aapanel.sh
+```
+
 ## Quick Test Script
 
 Create `test_xmlrpc.php`:
@@ -253,8 +437,28 @@ php test_xmlrpc.php
 - [ ] XML-RPC extension installed
 - [ ] Extension enabled in php.ini
 - [ ] Web server restarted
+- [ ] PHP-FPM restarted (if using)
 - [ ] Test script confirms availability
 - [ ] Odoo connection test passes
+
+## aaPanel Quick Checklist
+
+If using **aaPanel** on VPS:
+
+1. ✅ Login to aaPanel web interface (`http://your-ip:7800`)
+2. ✅ Go to **App Store** → **PHP** → **Settings**
+3. ✅ Click **Install Extensions** tab
+4. ✅ Search and install **xmlrpc** extension
+5. ✅ Restart PHP-FPM service
+6. ✅ Restart web server (Nginx/Apache)
+7. ✅ Verify in **PHP Info** tab
+8. ✅ Test with: `php -m | grep xmlrpc`
+
+**Common aaPanel PHP Paths:**
+- PHP binaries: `/www/server/php/81/bin/php` (adjust version)
+- PHP config: `/www/server/php/81/etc/php.ini`
+- PHP extensions: `/www/server/php/81/lib/php/extensions/`
+- PHP-FPM: `systemctl restart php-fpm-81`
 
 ---
 
