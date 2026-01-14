@@ -30,11 +30,30 @@ $templates = $db->fetchAll(
     ['id' => $companyId]
 );
 
-// Get print orders
+// Get print orders with quotation status
 $orders = $db->fetchAll(
     "SELECT * FROM print_orders WHERE company_id = :id ORDER BY created_at DESC LIMIT 20",
     ['id' => $companyId]
 );
+
+// Handle quotation request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'request_quotation') {
+    $orderId = $_POST['order_id'] ?? '';
+    if (!empty($orderId)) {
+        $db->update('print_orders',
+            ['quotation_requested' => 1],
+            'id = :id AND company_id = :company_id',
+            ['id' => $orderId, 'company_id' => $companyId]
+        );
+        $message = 'Quotation requested successfully!';
+        
+        // Reload orders
+        $orders = $db->fetchAll(
+            "SELECT * FROM print_orders WHERE company_id = :id ORDER BY created_at DESC LIMIT 20",
+            ['id' => $companyId]
+        );
+    }
+}
 
 // Handle print order creation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_order') {
@@ -243,15 +262,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                         <?php endif; ?>
                                     </div>
                                     <?php endif; ?>
+                                    <?php if (isset($order['quotation_requested']) && $order['quotation_requested']): ?>
+                                    <div class="text-blue-400">
+                                        📋 Quotation Requested
+                                        <?php if (!empty($order['quotation_file_path'])): ?>
+                                        <a href="<?php echo imageUrl($order['quotation_file_path']); ?>" target="_blank" class="text-green-400 hover:text-green-300 underline ml-2">
+                                            ✓ View Quotation
+                                        </a>
+                                        <?php else: ?>
+                                        <span class="text-yellow-400 ml-2">⏳ Pending</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($order['invoice_file_path'])): ?>
+                                    <div>
+                                        <a href="<?php echo imageUrl($order['invoice_file_path']); ?>" target="_blank" class="text-green-400 hover:text-green-300 underline">
+                                            🧾 View Invoice
+                                        </a>
+                                    </div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($order['delivery_note_file_path'])): ?>
+                                    <div>
+                                        <a href="<?php echo imageUrl($order['delivery_note_file_path']); ?>" target="_blank" class="text-green-400 hover:text-green-300 underline">
+                                            📦 View Delivery Note
+                                        </a>
+                                    </div>
+                                    <?php endif; ?>
                                     <div>Created: <?php echo date('M d, Y H:i', strtotime($order['created_at'])); ?></div>
                                 </div>
                             </div>
-                            <div>
+                            <div class="flex flex-col items-end space-y-2">
                                 <span class="px-3 py-1 rounded-full text-xs font-semibold 
                                     <?php echo $order['status'] === 'completed' ? 'bg-green-500/20 text-green-400' : 
                                                ($order['status'] === 'processing' ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'); ?>">
                                     <?php echo sanitize($order['status']); ?>
                                 </span>
+                                <?php if (!isset($order['quotation_requested']) || !$order['quotation_requested']): ?>
+                                <form method="post" class="inline">
+                                    <input type="hidden" name="action" value="request_quotation">
+                                    <input type="hidden" name="order_id" value="<?php echo sanitize($order['id']); ?>">
+                                    <button type="submit" class="px-3 py-1 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors text-xs">
+                                        📋 Request Quotation
+                                    </button>
+                                </form>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>

@@ -51,6 +51,39 @@ function migration_004_print_po_whatsapp($pdo) {
             }
         }
         
+        // Add quotation, invoice, and delivery note file columns
+        try {
+            $pdo->exec("ALTER TABLE print_orders ADD COLUMN quotation_file_path VARCHAR(500) NULL AFTER po_approved_at");
+        } catch (PDOException $e) {
+            if (strpos($e->getMessage(), 'Duplicate column') === false) {
+                $errors[] = "Error adding quotation_file_path column: " . $e->getMessage();
+            }
+        }
+        
+        try {
+            $pdo->exec("ALTER TABLE print_orders ADD COLUMN quotation_requested BOOLEAN DEFAULT FALSE AFTER quotation_file_path");
+        } catch (PDOException $e) {
+            if (strpos($e->getMessage(), 'Duplicate column') === false) {
+                $errors[] = "Error adding quotation_requested column: " . $e->getMessage();
+            }
+        }
+        
+        try {
+            $pdo->exec("ALTER TABLE print_orders ADD COLUMN invoice_file_path VARCHAR(500) NULL AFTER quotation_requested");
+        } catch (PDOException $e) {
+            if (strpos($e->getMessage(), 'Duplicate column') === false) {
+                $errors[] = "Error adding invoice_file_path column: " . $e->getMessage();
+            }
+        }
+        
+        try {
+            $pdo->exec("ALTER TABLE print_orders ADD COLUMN delivery_note_file_path VARCHAR(500) NULL AFTER invoice_file_path");
+        } catch (PDOException $e) {
+            if (strpos($e->getMessage(), 'Duplicate column') === false) {
+                $errors[] = "Error adding delivery_note_file_path column: " . $e->getMessage();
+            }
+        }
+        
         // Create system_settings table for storing WhatsApp API token and other settings
         $pdo->exec("CREATE TABLE IF NOT EXISTS system_settings (
             id VARCHAR(36) PRIMARY KEY,

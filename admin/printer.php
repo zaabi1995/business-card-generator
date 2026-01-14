@@ -57,11 +57,95 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ['id' => $orderId]
         );
         $message = 'Order status updated';
+    } elseif ($action === 'upload_quotation') {
+        $order = $db->fetchOne("SELECT * FROM print_orders WHERE id = :id", ['id' => $orderId]);
+        if ($order && isset($_FILES['quotation_file']) && $_FILES['quotation_file']['error'] === UPLOAD_ERR_OK) {
+            $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+            $fileType = $_FILES['quotation_file']['type'];
+            
+            if (in_array($fileType, $allowedTypes)) {
+                $uploadDir = getCompanyUploadsDir($order['company_id']) . '/quotations';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                
+                $fileName = 'quotation_' . $order['order_number'] . '_' . date('Ymd_His') . '_' . uniqid() . '.' . pathinfo($_FILES['quotation_file']['name'], PATHINFO_EXTENSION);
+                $filePath = $uploadDir . '/' . $fileName;
+                
+                if (move_uploaded_file($_FILES['quotation_file']['tmp_name'], $filePath)) {
+                    $db->update('print_orders',
+                        ['quotation_file_path' => getWebPath($filePath)],
+                        'id = :id',
+                        ['id' => $orderId]
+                    );
+                    $message = 'Quotation uploaded successfully';
+                } else {
+                    $message = 'Failed to upload quotation';
+                    $messageType = 'error';
+                }
+            }
+        }
+    } elseif ($action === 'upload_invoice') {
+        $order = $db->fetchOne("SELECT * FROM print_orders WHERE id = :id", ['id' => $orderId]);
+        if ($order && isset($_FILES['invoice_file']) && $_FILES['invoice_file']['error'] === UPLOAD_ERR_OK) {
+            $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+            $fileType = $_FILES['invoice_file']['type'];
+            
+            if (in_array($fileType, $allowedTypes)) {
+                $uploadDir = getCompanyUploadsDir($order['company_id']) . '/invoices';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                
+                $fileName = 'invoice_' . $order['order_number'] . '_' . date('Ymd_His') . '_' . uniqid() . '.' . pathinfo($_FILES['invoice_file']['name'], PATHINFO_EXTENSION);
+                $filePath = $uploadDir . '/' . $fileName;
+                
+                if (move_uploaded_file($_FILES['invoice_file']['tmp_name'], $filePath)) {
+                    $db->update('print_orders',
+                        ['invoice_file_path' => getWebPath($filePath)],
+                        'id = :id',
+                        ['id' => $orderId]
+                    );
+                    $message = 'Invoice uploaded successfully';
+                } else {
+                    $message = 'Failed to upload invoice';
+                    $messageType = 'error';
+                }
+            }
+        }
+    } elseif ($action === 'upload_delivery_note') {
+        $order = $db->fetchOne("SELECT * FROM print_orders WHERE id = :id", ['id' => $orderId]);
+        if ($order && isset($_FILES['delivery_note_file']) && $_FILES['delivery_note_file']['error'] === UPLOAD_ERR_OK) {
+            $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+            $fileType = $_FILES['delivery_note_file']['type'];
+            
+            if (in_array($fileType, $allowedTypes)) {
+                $uploadDir = getCompanyUploadsDir($order['company_id']) . '/delivery_notes';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                
+                $fileName = 'delivery_' . $order['order_number'] . '_' . date('Ymd_His') . '_' . uniqid() . '.' . pathinfo($_FILES['delivery_note_file']['name'], PATHINFO_EXTENSION);
+                $filePath = $uploadDir . '/' . $fileName;
+                
+                if (move_uploaded_file($_FILES['delivery_note_file']['tmp_name'], $filePath)) {
+                    $db->update('print_orders',
+                        ['delivery_note_file_path' => getWebPath($filePath)],
+                        'id = :id',
+                        ['id' => $orderId]
+                    );
+                    $message = 'Delivery note uploaded successfully';
+                } else {
+                    $message = 'Failed to upload delivery note';
+                    $messageType = 'error';
+                }
+            }
+        }
     }
 }
 
 // Get filter
-$filter = $_GET['filter'] ?? 'all'; // all, po_required, po_pending, po_approved
+$filter = $_GET['filter'] ?? 'all'; // all, po_required, po_pending, po_approved, quotation_requested
 
 // Build query
 $query = "SELECT po.*, c.name as company_name, c.slug as company_slug, 
@@ -78,6 +162,8 @@ if ($filter === 'po_required') {
     $query .= " WHERE po.po_required = 1 AND (po.po_file_path IS NULL OR po.po_file_path = '' OR po.po_approved = 0)";
 } elseif ($filter === 'po_approved') {
     $query .= " WHERE po.po_approved = 1";
+} elseif ($filter === 'quotation_requested') {
+    $query .= " WHERE po.quotation_requested = 1";
 }
 
 $query .= " ORDER BY po.created_at DESC LIMIT 50";
@@ -162,6 +248,9 @@ $poApprovedOrders = $db->fetchOne("SELECT COUNT(*) as count FROM print_orders WH
                     <a href="?filter=po_approved" class="px-4 py-2 rounded-lg <?php echo $filter === 'po_approved' ? 'bg-amber-500/20 text-amber-400' : 'bg-white/5 hover:bg-white/10'; ?> transition-colors">
                         PO Approved
                     </a>
+                    <a href="?filter=quotation_requested" class="px-4 py-2 rounded-lg <?php echo $filter === 'quotation_requested' ? 'bg-amber-500/20 text-amber-400' : 'bg-white/5 hover:bg-white/10'; ?> transition-colors">
+                        Quotation Requested
+                    </a>
                 </div>
             </div>
             
@@ -216,6 +305,39 @@ $poApprovedOrders = $db->fetchOne("SELECT COUNT(*) as count FROM print_orders WH
                                         </a>
                                     </div>
                                     <?php endif; ?>
+                                    <?php if (isset($order['quotation_requested']) && $order['quotation_requested']): ?>
+                                    <div class="text-blue-400">
+                                        📋 Quotation Requested
+                                        <?php if (!empty($order['quotation_file_path'])): ?>
+                                        <a href="<?php echo imageUrl($order['quotation_file_path']); ?>" target="_blank" class="text-green-400 hover:text-green-300 underline ml-2">
+                                            ✓ View Quotation
+                                        </a>
+                                        <?php else: ?>
+                                        <span class="text-yellow-400 ml-2">⏳ Pending</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($order['quotation_file_path'])): ?>
+                                    <div>
+                                        <a href="<?php echo imageUrl($order['quotation_file_path']); ?>" target="_blank" class="text-blue-400 hover:text-blue-300 underline">
+                                            📋 View Quotation
+                                        </a>
+                                    </div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($order['invoice_file_path'])): ?>
+                                    <div>
+                                        <a href="<?php echo imageUrl($order['invoice_file_path']); ?>" target="_blank" class="text-green-400 hover:text-green-300 underline">
+                                            🧾 View Invoice
+                                        </a>
+                                    </div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($order['delivery_note_file_path'])): ?>
+                                    <div>
+                                        <a href="<?php echo imageUrl($order['delivery_note_file_path']); ?>" target="_blank" class="text-green-400 hover:text-green-300 underline">
+                                            📦 View Delivery Note
+                                        </a>
+                                    </div>
+                                    <?php endif; ?>
                                     <?php if ($order['po_approved'] && $order['approved_by_name']): ?>
                                     <div class="text-green-400">Approved by: <?php echo sanitize($order['approved_by_name']); ?> on <?php echo date('M d, Y H:i', strtotime($order['po_approved_at'])); ?></div>
                                     <?php endif; ?>
@@ -266,6 +388,50 @@ $poApprovedOrders = $db->fetchOne("SELECT COUNT(*) as count FROM print_orders WH
                                         <option value="completed" <?php echo $order['status'] === 'completed' ? 'selected' : ''; ?>>Completed</option>
                                     </select>
                                 </form>
+                            </div>
+                        </div>
+                        
+                        <!-- Document Upload Section -->
+                        <div class="mt-4 pt-4 border-t border-white/10">
+                            <div class="grid md:grid-cols-3 gap-4">
+                                <!-- Upload Quotation -->
+                                <div>
+                                    <form method="post" enctype="multipart/form-data" class="space-y-2">
+                                        <input type="hidden" name="action" value="upload_quotation">
+                                        <input type="hidden" name="order_id" value="<?php echo sanitize($order['id']); ?>">
+                                        <label class="block text-xs text-gray-400 mb-1">Upload Quotation</label>
+                                        <input type="file" name="quotation_file" accept=".pdf,.jpg,.jpeg,.png" class="w-full px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-white text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-500/20 file:text-blue-400">
+                                        <button type="submit" class="w-full px-2 py-1 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors text-xs">
+                                            Upload
+                                        </button>
+                                    </form>
+                                </div>
+                                
+                                <!-- Upload Invoice -->
+                                <div>
+                                    <form method="post" enctype="multipart/form-data" class="space-y-2">
+                                        <input type="hidden" name="action" value="upload_invoice">
+                                        <input type="hidden" name="order_id" value="<?php echo sanitize($order['id']); ?>">
+                                        <label class="block text-xs text-gray-400 mb-1">Upload Invoice</label>
+                                        <input type="file" name="invoice_file" accept=".pdf,.jpg,.jpeg,.png" class="w-full px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-white text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-green-500/20 file:text-green-400">
+                                        <button type="submit" class="w-full px-2 py-1 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors text-xs">
+                                            Upload
+                                        </button>
+                                    </form>
+                                </div>
+                                
+                                <!-- Upload Delivery Note -->
+                                <div>
+                                    <form method="post" enctype="multipart/form-data" class="space-y-2">
+                                        <input type="hidden" name="action" value="upload_delivery_note">
+                                        <input type="hidden" name="order_id" value="<?php echo sanitize($order['id']); ?>">
+                                        <label class="block text-xs text-gray-400 mb-1">Upload Delivery Note</label>
+                                        <input type="file" name="delivery_note_file" accept=".pdf,.jpg,.jpeg,.png" class="w-full px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-white text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-purple-500/20 file:text-purple-400">
+                                        <button type="submit" class="w-full px-2 py-1 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-colors text-xs">
+                                            Upload
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
