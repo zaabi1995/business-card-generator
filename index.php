@@ -71,13 +71,20 @@ if (!defined('DB_HOST') || empty(DB_HOST) || !defined('DB_NAME') || empty(DB_NAM
                         $needsInstallation = true;
                     } else {
                         // Check installation_complete setting
-                        $setting = $db->fetchOne("SELECT setting_value FROM system_settings WHERE setting_key = 'installation_complete'");
-                        if (!$setting || $setting['setting_value'] !== '1') {
+                        try {
+                            $setting = $db->fetchOne("SELECT setting_value FROM system_settings WHERE setting_key = 'installation_complete'");
+                            if (!$setting || empty($setting) || ($setting['setting_value'] ?? '0') !== '1') {
+                                $needsInstallation = true;
+                            }
+                        } catch (Exception $e) {
+                            // Query failed - might be installation issue
+                            error_log("Installation check error: " . $e->getMessage());
                             $needsInstallation = true;
                         }
                     }
                 } catch (Exception $e) {
                     // Tables might not exist yet
+                    error_log("Installation check table error: " . $e->getMessage());
                     $needsInstallation = true;
                 }
             }
@@ -87,6 +94,7 @@ if (!defined('DB_HOST') || empty(DB_HOST) || !defined('DB_NAME') || empty(DB_NAM
         }
     } catch (Exception $e) {
         // Any error means installation needed
+        error_log("Installation check general error: " . $e->getMessage());
         $needsInstallation = true;
     }
 }
