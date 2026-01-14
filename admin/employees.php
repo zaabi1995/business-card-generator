@@ -580,7 +580,7 @@ function findColumn($header, $possibleNames) {
                 openAddModal() {
                     this.editingEmployee = false;
                     this.formData = {
-                        id: '', email: '', name_en: '', name_ar: '',
+                        id: '', email: '', department_id: '', name_en: '', name_ar: '',
                         position_en: '', position_ar: '', phone: '', mobile: '',
                         company_en: '', company_ar: '', website: '', address: ''
                     };

@@ -155,6 +155,7 @@ class DatabaseAdapter {
         $employee = [
             'id' => generateUUID(),
             'company_id' => $companyId,
+            'department_id' => !empty($data['department_id']) ? $data['department_id'] : null,
             'email' => trim(strtolower($data['email'] ?? '')),
             'name_en' => trim($data['name_en'] ?? ''),
             'name_ar' => trim($data['name_ar'] ?? ''),
@@ -193,6 +194,7 @@ class DatabaseAdapter {
         
         $updateData = [
             'email' => $newEmail,
+            'department_id' => !empty($data['department_id']) ? $data['department_id'] : null,
             'name_en' => trim($data['name_en'] ?? ''),
             'name_ar' => trim($data['name_ar'] ?? ''),
             'position_en' => trim($data['position_en'] ?? ''),
