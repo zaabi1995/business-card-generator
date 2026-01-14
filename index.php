@@ -3,7 +3,59 @@
  * BHD Business Cards - Main Entry Point
  * User enters email to generate their business card
  */
-require_once __DIR__ . '/config.php';
+
+// Check if installation is needed
+$configFile = __DIR__ . '/config.php';
+$installDir = __DIR__ . '/install';
+
+// If config.php doesn't exist, redirect to installer
+if (!file_exists($configFile)) {
+    if (is_dir($installDir)) {
+        header('Location: ' . getBasePath() . 'install/');
+        exit;
+    } else {
+        die('Configuration file not found. Please run the installation wizard.');
+    }
+}
+
+require_once $configFile;
+
+// Check if database is configured and installation is complete
+$needsInstallation = false;
+
+// Check if database is not configured
+if (!defined('DB_HOST') || empty(DB_HOST) || !defined('DB_NAME') || empty(DB_NAME)) {
+    $needsInstallation = true;
+} else {
+    // Check if database connection works and installation is complete
+    try {
+        if (class_exists('Database')) {
+            $db = Database::getInstance();
+            if (!$db->isConnected()) {
+                $needsInstallation = true;
+            } else {
+                // Check if installation_complete setting exists
+                try {
+                    $setting = $db->fetchOne("SELECT setting_value FROM system_settings WHERE setting_key = 'installation_complete'");
+                    if (!$setting || $setting['setting_value'] !== '1') {
+                        $needsInstallation = true;
+                    }
+                } catch (Exception $e) {
+                    // Tables might not exist yet
+                    $needsInstallation = true;
+                }
+            }
+        }
+    } catch (Exception $e) {
+        $needsInstallation = true;
+    }
+}
+
+// Redirect to installer if needed
+if ($needsInstallation && is_dir($installDir)) {
+    header('Location: ' . getBasePath() . 'install/');
+    exit;
+}
 
 // Check if this is a company-specific route
 if (isset($_GET['company_slug'])) {

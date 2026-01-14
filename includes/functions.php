@@ -692,7 +692,11 @@ function ensureDirectories() {
     $dirs = [DATA_DIR, COMPANIES_DATA_DIR, UPLOADS_DIR, COMPANIES_UPLOADS_DIR, TEMPLATES_DIR, CARDS_DIR, EXCEL_DIR, ASSETS_DIR];
     foreach ($dirs as $dir) {
         if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+            @mkdir($dir, 0755, true);
+            // If mkdir fails, try with 0777 (less secure but works)
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0777, true);
+            }
         }
     }
 }
@@ -703,22 +707,30 @@ function ensureDirectories() {
 function initializeDataFiles() {
     ensureDirectories();
 
+    // Check if we can write to data directory
+    if (!is_writable(DATA_DIR) && !is_writable(dirname(COMPANIES_JSON))) {
+        // Permission issue - don't try to create files
+        return false;
+    }
+
     if (!file_exists(COMPANIES_JSON)) {
         // empty companies list by default; multi-tenant activates once a company exists
-        file_put_contents(COMPANIES_JSON, json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        @file_put_contents(COMPANIES_JSON, json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     }
     
     if (!file_exists(EMPLOYEES_JSON)) {
-        saveEmployees([]);
+        @saveEmployees([]);
     }
     
     if (!file_exists(TEMPLATES_JSON)) {
-        saveTemplates(getDefaultTemplatesConfig());
+        @saveTemplates(getDefaultTemplatesConfig());
     }
     
     if (!file_exists(GENERATED_JSON)) {
-        saveGeneratedLog([]);
+        @saveGeneratedLog([]);
     }
+    
+    return true;
 }
 
 // ============================================
