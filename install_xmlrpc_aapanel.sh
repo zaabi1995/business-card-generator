@@ -134,12 +134,17 @@ done
 # Restart web server
 echo "----------------------------------------"
 echo "Restarting web server..."
-if systemctl list-units --type=service | grep -q nginx; then
-    systemctl restart nginx
-    echo "✓ Restarted Nginx"
+if systemctl list-units --type=service | grep -q apache2; then
+    systemctl restart apache2
+    echo "✓ Restarted Apache2"
 elif systemctl list-units --type=service | grep -q httpd; then
     systemctl restart httpd
-    echo "✓ Restarted Apache"
+    echo "✓ Restarted Apache (httpd)"
+elif systemctl list-units --type=service | grep -q nginx; then
+    systemctl restart nginx
+    echo "✓ Restarted Nginx"
+else
+    echo "⚠ Could not detect web server, please restart manually"
 fi
 
 # Final verification
