@@ -6,6 +6,7 @@
 require_once __DIR__ . '/../config.php';
 requireAdmin();
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/WhatsApp.php';
 
 $db = Database::getInstance();
 $companyId = getCurrentCompanyId();
@@ -41,12 +42,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $templateId = $_POST['template_id'] ?? '';
     $quantity = (int)($_POST['quantity'] ?? 1);
     $notes = $_POST['notes'] ?? '';
+    $poFilePath = null;
+    
+    // Handle P.O. file upload
+    if (isset($_FILES['po_file']) && $_FILES['po_file']['error'] === UPLOAD_ERR_OK) {
+        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+        $fileType = $_FILES['po_file']['type'];
+        
+        if (in_array($fileType, $allowedTypes)) {
+            $uploadDir = getCompanyUploadsDir($companyId) . '/po';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            
+            $fileName = 'po_' . date('Ymd_His') . '_' . uniqid() . '_' . basename($_FILES['po_file']['name']);
+            $filePath = $uploadDir . '/' . $fileName;
+            
+            if (move_uploaded_file($_FILES['po_file']['tmp_name'], $filePath)) {
+                $poFilePath = getWebPath($filePath);
+            }
+        }
+    }
     
     if (!empty($employeeIds) && !empty($templateId)) {
         $orderId = generateUUID();
         $orderNumber = 'PRINT-' . strtoupper(substr($orderId, 0, 8));
         
-        $db->insert('print_orders', [
+        $insertData = [
             'id' => $orderId,
             'company_id' => $companyId,
             'order_number' => $orderNumber,
@@ -56,9 +78,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             'status' => 'pending',
             'notes' => $notes,
             'created_by' => $_SESSION['user_id'] ?? null
-        ]);
+        ];
+        
+        if ($poFilePath) {
+            $insertData['po_file_path'] = $poFilePath;
+        }
+        
+        $db->insert('print_orders', $insertData);
+        
+        // Send WhatsApp confirmation if enabled
+        $whatsappSent = false;
+        if (WhatsApp::isEnabled()) {
+            $company = $db->fetchOne(
+                "SELECT * FROM companies WHERE id = :id",
+                ['id' => $companyId]
+            );
+            
+            if ($company) {
+                $whatsappResult = WhatsApp::sendPrintOrderConfirmation(
+                    array_merge($insertData, ['order_number' => $orderNumber]),
+                    $company
+                );
+                $whatsappSent = $whatsappResult['success'];
+            }
+        }
         
         $message = 'Print order created successfully! Order #' . $orderNumber;
+        if ($whatsappSent) {
+            $message .= ' WhatsApp confirmation sent.';
+        }
         
         // Reload orders
         $orders = $db->fetchAll(
@@ -106,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <!-- Create Print Order -->
             <div class="glass-card rounded-xl p-6 mb-8">
                 <h2 class="text-xl font-bold mb-4">Create Print Order</h2>
-                <form method="post" class="space-y-4">
+                <form method="post" enctype="multipart/form-data" class="space-y-4">
                     <input type="hidden" name="action" value="create_order">
                     
                     <div>
@@ -145,6 +193,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         <textarea name="notes" rows="3" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Special instructions for printer..."></textarea>
                     </div>
                     
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Purchase Order (P.O.) Document (Optional)</label>
+                        <input type="file" name="po_file" accept=".pdf,.jpg,.jpeg,.png" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-amber-500/20 file:text-amber-400 hover:file:bg-amber-500/30">
+                        <p class="text-xs text-gray-400 mt-1">Accepted formats: PDF, JPG, PNG (Max 10MB)</p>
+                    </div>
+                    
                     <button type="submit" class="px-6 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold hover:from-amber-600 hover:to-amber-700 transition-colors">
                         Create Print Order
                     </button>
@@ -169,6 +223,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                     <div>Status: <span class="text-amber-400"><?php echo sanitize($order['status']); ?></span></div>
                                     <?php if ($order['notes']): ?>
                                     <div>Notes: <?php echo sanitize($order['notes']); ?></div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($order['po_file_path'])): ?>
+                                    <div>
+                                        <a href="<?php echo imageUrl($order['po_file_path']); ?>" target="_blank" class="text-amber-400 hover:text-amber-300 underline">
+                                            📄 View P.O. Document
+                                        </a>
+                                    </div>
                                     <?php endif; ?>
                                     <div>Created: <?php echo date('M d, Y H:i', strtotime($order['created_at'])); ?></div>
                                 </div>

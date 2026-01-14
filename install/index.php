@@ -96,11 +96,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 require_once __DIR__ . '/../database/migrations/003_company_hierarchy.php';
                 $result3 = migration_003_company_hierarchy($db->getConnection());
                 
-                if ($result2['success'] && $result3['success']) {
+                // Run print P.O. and WhatsApp migration
+                require_once __DIR__ . '/../database/migrations/004_print_po_whatsapp.php';
+                $result4 = migration_004_print_po_whatsapp($db->getConnection());
+                
+                if ($result2['success'] && $result3['success'] && $result4['success']) {
                     $step = 'site_config';
                     $success[] = 'Database migration completed successfully!';
                     $success[] = 'Enhanced admin features installed!';
                     $success[] = 'Company hierarchy support enabled!';
+                    $success[] = 'Print P.O. and WhatsApp support enabled!';
                 } else {
                     $step = 'site_config';
                     $success[] = 'Database migration completed!';
@@ -109,6 +114,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     if (!$result3['success']) {
                         $errors[] = 'Company hierarchy migration warnings: ' . implode(', ', $result3['errors']);
+                    }
+                    if (!$result4['success']) {
+                        $errors[] = 'Print P.O. and WhatsApp migration warnings: ' . implode(', ', $result4['errors']);
                     }
                 }
             } else {
