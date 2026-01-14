@@ -28,7 +28,8 @@ function getBaseUrl() {
  * Get base path for assets (works in subdirectories)
  * @return string Base path with trailing slash (e.g., '/' or '/bhd/')
  */
-function getBasePath() {
+if (!function_exists('getBasePath')) {
+    function getBasePath() {
     static $basePath = null;
     
     if ($basePath === null) {

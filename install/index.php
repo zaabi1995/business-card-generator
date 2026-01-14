@@ -487,10 +487,12 @@ if (\$isProduction) {
 PHP;
 }
 
-function getBasePath() {
-    $scriptPath = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '/install/index.php';
-    $scriptDir = dirname(dirname($scriptPath));
-    return $scriptDir === '/' ? '/' : rtrim($scriptDir, '/') . '/';
+if (!function_exists('getBasePath')) {
+    function getBasePath() {
+        $scriptPath = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '/install/index.php';
+        $scriptDir = dirname(dirname($scriptPath));
+        return $scriptDir === '/' ? '/' : rtrim($scriptDir, '/') . '/';
+    }
 }
 ?>
 <!DOCTYPE html>
