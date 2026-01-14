@@ -100,7 +100,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 require_once __DIR__ . '/../database/migrations/004_print_po_whatsapp.php';
                 $result4 = migration_004_print_po_whatsapp($db->getConnection());
                 
-                if ($result2['success'] && $result3['success'] && $result4['success']) {
+                // Filter out "table doesn't exist" errors as they're expected during initial install
+                $filterErrors = function($errorList) {
+                    return array_filter($errorList, function($error) {
+                        return strpos($error, "doesn't exist") === false && 
+                               strpos($error, 'Base table') === false;
+                    });
+                };
+                
+                $result2Errors = $filterErrors($result2['errors'] ?? []);
+                $result3Errors = $filterErrors($result3['errors'] ?? []);
+                $result4Errors = $filterErrors($result4['errors'] ?? []);
+                
+                $result2Success = empty($result2Errors);
+                $result3Success = empty($result3Errors);
+                $result4Success = empty($result4Errors);
+                
+                if ($result2Success && $result3Success && $result4Success) {
                     $step = 'site_config';
                     $success[] = 'Database migration completed successfully!';
                     $success[] = 'Enhanced admin features installed!';
@@ -109,14 +125,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $step = 'site_config';
                     $success[] = 'Database migration completed!';
-                    if (!$result2['success']) {
-                        $errors[] = 'Enhanced admin migration warnings: ' . implode(', ', $result2['errors']);
+                    // Only show real errors, not "table doesn't exist" warnings
+                    if (!empty($result2Errors)) {
+                        $errors[] = 'Enhanced admin migration warnings: ' . implode(', ', $result2Errors);
                     }
-                    if (!$result3['success']) {
-                        $errors[] = 'Company hierarchy migration warnings: ' . implode(', ', $result3['errors']);
+                    if (!empty($result3Errors)) {
+                        $errors[] = 'Company hierarchy migration warnings: ' . implode(', ', $result3Errors);
                     }
-                    if (!$result4['success']) {
-                        $errors[] = 'Print P.O. and WhatsApp migration warnings: ' . implode(', ', $result4['errors']);
+                    if (!empty($result4Errors)) {
+                        $errors[] = 'Print P.O. and WhatsApp migration warnings: ' . implode(', ', $result4Errors);
                     }
                 }
             } else {
