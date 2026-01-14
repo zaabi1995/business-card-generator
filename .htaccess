@@ -15,11 +15,16 @@
     # RewriteCond %{HTTP_HOST} ^www\.bc\.bhd\.om$ [NC]
     # RewriteRule ^(.*)$ https://bc.bhd.om/$1 [L,R=301]
     
+    # Share link routing (e.g., bc.bhd.om/share/{token})
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^share/([a-zA-Z0-9]+)/?$ share/index.php?token=$1 [L,QSA]
+    
     # Company-specific routing (e.g., bc.bhd.om/mhd/)
     # Check if request is not for known paths and not a file
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|company|webhooks|amwalpay|assets|uploads|data|generate_card_html\.php|download_card\.php|index\.php|router\.php)
+    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|company|webhooks|amwalpay|api|assets|uploads|data|generate_card_html\.php|download_card\.php|index\.php|router\.php)
     RewriteRule ^([a-z0-9-]+)/?$ router.php?company_slug=$1 [L,QSA]
 </IfModule>
 
@@ -50,10 +55,12 @@ Options -Indexes
     Deny from all
 </FilesMatch>
 
-# Protect data directory
+# Protect sensitive directories
 <IfModule mod_rewrite.c>
     RewriteRule ^data/ - [F,L]
     RewriteRule ^logs/ - [F,L]
+    RewriteRule ^api/check-slug\.php$ - [L]  # Allow API endpoint
+    RewriteRule ^api/ - [F,L]  # Block other API files
 </IfModule>
 
 # PHP Settings

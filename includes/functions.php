@@ -368,6 +368,46 @@ function getCompanyUploadsPath($companyId) {
     return $dir;
 }
 
+/**
+ * Get company data directory
+ */
+function getCompanyDataDir($companyId) {
+    $dir = COMPANIES_DATA_DIR . '/' . $companyId;
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+    return $dir;
+}
+
+/**
+ * Get company uploads directory
+ */
+function getCompanyUploadsDir($companyId) {
+    return getCompanyUploadsPath($companyId);
+}
+
+/**
+ * Get company templates directory
+ */
+function getCompanyTemplatesDir($companyId) {
+    $dir = COMPANIES_UPLOADS_DIR . '/' . $companyId . '/templates';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+    return $dir;
+}
+
+/**
+ * Get company cards directory
+ */
+function getCompanyCardsDir($companyId) {
+    $dir = COMPANIES_UPLOADS_DIR . '/' . $companyId . '/cards';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+    return $dir;
+}
+
 function loadEmployees($companyId = null) {
     // Use database if available
     if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
