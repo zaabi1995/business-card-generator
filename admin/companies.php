@@ -39,34 +39,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message = $result['error'] ?? 'Failed to create company';
             }
         }
+    } elseif ($action === 'update') {
+        $companyId = $_POST['company_id'] ?? '';
+        $updateData = [];
+        
+        if (isset($_POST['name']) && !empty($_POST['name'])) {
+            $updateData['name'] = $_POST['name'];
+        }
+        if (isset($_POST['slug']) && !empty($_POST['slug'])) {
+            $updateData['slug'] = $_POST['slug'];
+        }
+        if (isset($_POST['admin_email']) && !empty($_POST['admin_email'])) {
+            $updateData['admin_email'] = sanitizeEmail($_POST['admin_email']);
+        }
+        if (isset($_POST['password']) && !empty($_POST['password'])) {
+            $updateData['password'] = $_POST['password'];
+        }
+        if (isset($_POST['plan'])) {
+            $updateData['plan'] = $_POST['plan'];
+        }
+        if (isset($_POST['status'])) {
+            $updateData['status'] = $_POST['status'];
+        }
+        if (isset($_POST['parent_company_id'])) {
+            $updateData['parent_company_id'] = $_POST['parent_company_id'] ?: null;
+        }
+        
+        if (!empty($companyId) && !empty($updateData)) {
+            $result = DatabaseAdapter::updateCompany($companyId, $updateData);
+            if ($result['success']) {
+                $message = 'Company updated successfully!';
+                $companies = $db->fetchAll("SELECT * FROM companies ORDER BY company_path, name");
+            } else {
+                $message = $result['error'] ?? 'Failed to update company';
+            }
+        }
     } elseif ($action === 'update_parent') {
         $companyId = $_POST['company_id'] ?? '';
         $parentId = $_POST['parent_company_id'] ?? null;
         
         if (!empty($companyId)) {
-            // Update parent and rebuild path
-            $company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $companyId]);
-            if ($company) {
-                $companyPath = $company['name'];
-                $companyType = 'standalone';
-                
-                if ($parentId) {
-                    $parent = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $parentId]);
-                    if ($parent) {
-                        $parentPath = $parent['company_path'] ?? $parent['name'];
-                        $companyPath = $parentPath . ' > ' . $company['name'];
-                        $companyType = 'child';
-                    }
-                }
-                
-                $db->update('companies', [
-                    'parent_company_id' => $parentId,
-                    'company_path' => $companyPath,
-                    'company_type' => $companyType
-                ], 'id = :id', ['id' => $companyId]);
-                
+            $result = DatabaseAdapter::updateCompany($companyId, ['parent_company_id' => $parentId]);
+            if ($result['success']) {
                 $message = 'Company hierarchy updated!';
                 $companies = $db->fetchAll("SELECT * FROM companies ORDER BY company_path, name");
+            } else {
+                $message = $result['error'] ?? 'Failed to update hierarchy';
             }
         }
     }
@@ -171,7 +189,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </a>
                             </div>
                         </div>
-                        <div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="openEditModal(<?php echo htmlspecialchars(json_encode($comp), ENT_QUOTES); ?>)" class="px-4 py-2 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors text-sm">
+                                Edit
+                            </button>
                             <form method="post" class="inline">
                                 <input type="hidden" name="action" value="update_parent">
                                 <input type="hidden" name="company_id" value="<?php echo sanitize($comp['id']); ?>">
@@ -193,5 +214,99 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </main>
     </div>
+    
+    <!-- Edit Modal -->
+    <div id="editModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="glass-card rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4">Edit Company</h3>
+            <form method="post" id="editForm" class="space-y-4">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="company_id" id="edit_company_id">
+                
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Company Name</label>
+                        <input type="text" name="name" id="edit_name" required class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Company Abbreviation (Slug)</label>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-gray-400 text-sm"><?php echo getBaseUrl(); ?></span>
+                            <input type="text" name="slug" id="edit_slug" pattern="[a-z0-9-]+" maxlength="50" required class="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white font-mono">
+                            <span class="text-gray-400 text-sm">/</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Admin Email</label>
+                        <input type="email" name="admin_email" id="edit_email" required class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">New Password (leave empty to keep current)</label>
+                        <input type="password" name="password" id="edit_password" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Leave empty to keep current">
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Plan</label>
+                        <select name="plan" id="edit_plan" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
+                            <option value="free">Free</option>
+                            <option value="pro">Pro</option>
+                            <option value="enterprise">Enterprise</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Status</label>
+                        <select name="status" id="edit_status" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
+                            <option value="active">Active</option>
+                            <option value="suspended">Suspended</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Parent Company</label>
+                    <select name="parent_company_id" id="edit_parent" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
+                        <option value="">None (Standalone)</option>
+                        <?php foreach ($parentCompanies as $parent): ?>
+                        <option value="<?php echo sanitize($parent['id']); ?>">
+                            <?php echo sanitize($parent['company_path'] ?? $parent['name']); ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button type="submit" class="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold">Save Changes</button>
+                    <button type="button" onclick="document.getElementById('editModal').classList.add('hidden')" class="flex-1 px-4 py-2 rounded-lg bg-white/5 text-white">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function openEditModal(company) {
+            document.getElementById('edit_company_id').value = company.id;
+            document.getElementById('edit_name').value = company.name || '';
+            document.getElementById('edit_slug').value = company.slug || '';
+            document.getElementById('edit_email').value = company.admin_email || '';
+            document.getElementById('edit_password').value = '';
+            document.getElementById('edit_plan').value = company.plan || 'free';
+            document.getElementById('edit_status').value = company.status || 'active';
+            document.getElementById('edit_parent').value = company.parent_company_id || '';
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+        
+        // Close modal on outside click
+        document.getElementById('editModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+            }
+        });
+    </script>
 </body>
 </html>

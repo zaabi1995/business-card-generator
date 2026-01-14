@@ -89,6 +89,10 @@ $recentTransactions = $db->fetchAll("SELECT pt.*, c.name as company_name FROM pa
                     <h3 class="text-lg font-semibold mb-2">Manage Companies</h3>
                     <p class="text-gray-400 text-sm">View and manage all companies and hierarchy</p>
                 </a>
+                <a href="../updates.php" class="glass-card rounded-xl p-6 hover:bg-white/5 transition-colors block">
+                    <h3 class="text-lg font-semibold mb-2">Database Updates</h3>
+                    <p class="text-gray-400 text-sm">Run migrations and database updates</p>
+                </a>
                 <a href="users.php" class="glass-card rounded-xl p-6 hover:bg-white/5 transition-colors block">
                     <h3 class="text-lg font-semibold mb-2">Manage Users</h3>
                     <p class="text-gray-400 text-sm">Manage user accounts and roles</p>

@@ -124,6 +124,105 @@ class DatabaseAdapter {
         }
     }
     
+    /**
+     * Update company details
+     */
+    public static function updateCompany($companyId, $data) {
+        if (!self::useDatabase()) {
+            return ['success' => false, 'error' => 'Database not available'];
+        }
+        
+        $company = self::findCompanyById($companyId);
+        if (!$company) {
+            return ['success' => false, 'error' => 'Company not found'];
+        }
+        
+        $updateData = [];
+        
+        // Update name
+        if (isset($data['name']) && !empty($data['name'])) {
+            $updateData['name'] = trim($data['name']);
+        }
+        
+        // Update slug (with validation)
+        if (isset($data['slug']) && !empty($data['slug'])) {
+            $newSlug = strtolower(trim($data['slug']));
+            $newSlug = preg_replace('/[^a-z0-9-]/', '', $newSlug);
+            $newSlug = trim($newSlug, '-');
+            
+            if (empty($newSlug)) {
+                return ['success' => false, 'error' => 'Invalid company abbreviation'];
+            }
+            
+            // Check if slug is taken by another company
+            $existing = self::findCompanyBySlug($newSlug);
+            if ($existing && $existing['id'] !== $companyId) {
+                return ['success' => false, 'error' => 'Company abbreviation already taken'];
+            }
+            
+            $updateData['slug'] = $newSlug;
+        }
+        
+        // Update email
+        if (isset($data['admin_email']) && !empty($data['admin_email'])) {
+            $updateData['admin_email'] = sanitizeEmail($data['admin_email']);
+        }
+        
+        // Update password
+        if (isset($data['password']) && !empty($data['password'])) {
+            $updateData['password_hash'] = password_hash($data['password'], PASSWORD_DEFAULT);
+        }
+        
+        // Update plan
+        if (isset($data['plan'])) {
+            $updateData['plan'] = $data['plan'];
+        }
+        
+        // Update status
+        if (isset($data['status'])) {
+            $updateData['status'] = $data['status'];
+        }
+        
+        // Update parent company
+        if (isset($data['parent_company_id'])) {
+            $parentId = $data['parent_company_id'] ?: null;
+            
+            // Prevent circular reference
+            if ($parentId === $companyId) {
+                return ['success' => false, 'error' => 'Company cannot be its own parent'];
+            }
+            
+            // Build company path
+            $companyPath = $updateData['name'] ?? $company['name'];
+            $companyType = $parentId ? 'child' : 'standalone';
+            
+            if ($parentId) {
+                $parent = self::$db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $parentId]);
+                if ($parent) {
+                    $parentPath = $parent['company_path'] ?? $parent['name'];
+                    $companyPath = $parentPath . ' > ' . ($updateData['name'] ?? $company['name']);
+                }
+            }
+            
+            $updateData['parent_company_id'] = $parentId;
+            $updateData['company_path'] = $companyPath;
+            $updateData['company_type'] = $companyType;
+        }
+        
+        if (empty($updateData)) {
+            return ['success' => false, 'error' => 'No data to update'];
+        }
+        
+        $updateData['updated_at'] = date('Y-m-d H:i:s');
+        
+        try {
+            self::$db->update('companies', $updateData, 'id = :id', ['id' => $companyId]);
+            return ['success' => true, 'company' => self::findCompanyById($companyId)];
+        } catch (Exception $e) {
+            return ['success' => false, 'error' => 'Failed to update company: ' . $e->getMessage()];
+        }
+    }
+    
     // Employee functions
     public static function loadEmployees($companyId = null) {
         if (!self::useDatabase()) {
