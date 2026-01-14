@@ -55,11 +55,21 @@ function migration_002_enhanced_admin($pdo) {
         
         // Add department_id to employees if not exists
         try {
-            $pdo->exec("ALTER TABLE employees ADD COLUMN department_id VARCHAR(36) NULL AFTER company_id");
-            $pdo->exec("ALTER TABLE employees ADD INDEX idx_department_id (department_id)");
+            // Check if employees table exists
+            $tableExists = $pdo->query("SHOW TABLES LIKE 'employees'")->rowCount() > 0;
+            if ($tableExists) {
+                // Check if column already exists
+                $columnExists = false;
+                $columns = $pdo->query("SHOW COLUMNS FROM employees LIKE 'department_id'")->rowCount() > 0;
+                if (!$columns) {
+                    $pdo->exec("ALTER TABLE employees ADD COLUMN department_id VARCHAR(36) NULL AFTER company_id");
+                    $pdo->exec("ALTER TABLE employees ADD INDEX idx_department_id (department_id)");
+                }
+            }
         } catch (PDOException $e) {
             // Column might already exist
-            if (strpos($e->getMessage(), 'Duplicate column') === false) {
+            if (strpos($e->getMessage(), 'Duplicate column') === false && 
+                strpos($e->getMessage(), "doesn't exist") === false) {
                 $errors[] = "Error adding department_id to employees: " . $e->getMessage();
             }
         }

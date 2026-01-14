@@ -256,14 +256,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // Initialize database and complete setup
-            require_once __DIR__ . '/../config.php';
-            require_once __DIR__ . '/../includes/functions.php';
-            require_once __DIR__ . '/../includes/DatabaseAdapter.php';
+            // Use session config directly instead of requiring config.php
+            // (config.php was just created but may not be fully loaded)
+            require_once __DIR__ . '/../includes/Database.php';
             
             $db = Database::getInstance();
             if (!$db->isConnected()) {
-                $db->connect(DB_HOST, DB_NAME, DB_USER, DB_PASS, DB_PORT, DB_TYPE);
+                $db->connect($dbConfig['host'], $dbConfig['database'], $dbConfig['username'], 
+                             $dbConfig['password'], $dbConfig['port'], $dbConfig['type']);
             }
+            
+            // Now require config.php after DB connection is established
+            require_once __DIR__ . '/../config.php';
+            require_once __DIR__ . '/../includes/functions.php';
+            require_once __DIR__ . '/../includes/DatabaseAdapter.php';
             
             // Update system settings
             $db->query("UPDATE system_settings SET setting_value = '1' WHERE setting_key = 'installation_complete'");
