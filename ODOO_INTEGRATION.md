@@ -17,14 +17,19 @@ The Business Card Generator SaaS platform can now integrate with Odoo ERP, allow
 
 ### PHP Extensions
 - **XML-RPC** extension must be enabled in PHP
-  ```bash
-  # Check if enabled
-  php -m | grep xmlrpc
   
-  # Enable if needed (varies by system)
-  # Ubuntu/Debian: sudo apt-get install php-xmlrpc
-  # Or enable in php.ini: extension=xmlrpc.so
+  **Quick Check:**
+  ```bash
+  php -m | grep xmlrpc
   ```
+  
+  **Installation:**
+  - **Ubuntu/Debian:** `sudo apt-get install php-xmlrpc`
+  - **CentOS/RHEL:** `sudo yum install php-xmlrpc` or `sudo dnf install php-xmlrpc`
+  - **macOS:** Usually included with Homebrew PHP
+  - **Windows:** Usually included with XAMPP/WAMP (enable in php.ini)
+  
+  **📖 Detailed Installation Guide:** See [INSTALL_XMLRPC.md](INSTALL_XMLRPC.md) for complete instructions for all operating systems.
 
 ### Odoo Requirements
 - Odoo instance with XML-RPC enabled (default in most installations)
