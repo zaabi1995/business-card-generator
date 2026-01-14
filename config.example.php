@@ -14,6 +14,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Environment detection
+$isProduction = (strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') === false && 
+                 strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') === false &&
+                 strpos($_SERVER['HTTP_HOST'] ?? '', '.local') === false &&
+                 strpos($_SERVER['HTTP_HOST'] ?? '', '.test') === false);
+
 // Database configuration (set by installer)
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'business_cards');
@@ -44,9 +50,24 @@ define('SITE_DESCRIPTION', 'Professional Business Card Generator');
 // Timezone
 date_default_timezone_set('Asia/Muscat');
 
-// Error reporting (set to 0 in production)
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// Error reporting (production-safe)
+if ($isProduction) {
+    // Production: Log errors but don't display them
+    error_reporting(E_ALL);
+    ini_set('display_errors', 0);
+    ini_set('log_errors', 1);
+    ini_set('error_log', BASE_DIR . '/logs/php-errors.log');
+    
+    // Create logs directory if it doesn't exist
+    if (!is_dir(BASE_DIR . '/logs')) {
+        mkdir(BASE_DIR . '/logs', 0755, true);
+    }
+} else {
+    // Development: Show errors
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    ini_set('log_errors', 1);
+}
 
 // Billing/Payment Gateway Configuration
 define('BILLING_GATEWAY', 'amwal'); // 'amwal', 'stripe', 'none'
@@ -76,4 +97,22 @@ if (defined('DB_HOST') && !empty(DB_HOST) && !empty(DB_NAME)) {
     DatabaseAdapter::init();
 }
 
-
+// Security headers (production)
+if ($isProduction) {
+    // Force HTTPS in production
+    if (!isset($_SERVER['HTTPS']) && $_SERVER['HTTP_HOST'] !== 'localhost') {
+        header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'], true, 301);
+        exit;
+    }
+    
+    // Security headers
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('X-XSS-Protection: 1; mode=block');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    
+    // HSTS (HTTP Strict Transport Security) - only if HTTPS
+    if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+    }
+}

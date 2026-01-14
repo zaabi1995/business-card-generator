@@ -4,6 +4,27 @@
  */
 
 /**
+ * Get base URL (protocol + domain + base path)
+ * @return string Full base URL (e.g., 'https://bc.bhd.om/')
+ */
+function getBaseUrl() {
+    static $baseUrl = null;
+    
+    if ($baseUrl === null) {
+        $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || 
+                   (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+                   (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? 'https' : 'http';
+        
+        $host = $_SERVER['HTTP_HOST'] ?? 'bc.bhd.om';
+        $basePath = getBasePath();
+        
+        $baseUrl = $protocol . '://' . $host . $basePath;
+    }
+    
+    return $baseUrl;
+}
+
+/**
  * Get base path for assets (works in subdirectories)
  * @return string Base path with trailing slash (e.g., '/' or '/bhd/')
  */
@@ -16,7 +37,7 @@ function getBasePath() {
         $scriptDir = dirname($scriptPath);
         
         // If script is in admin subdirectory, go up one level
-        if (basename($scriptDir) === 'admin' || basename($scriptDir) === 'includes') {
+        if (basename($scriptDir) === 'admin' || basename($scriptDir) === 'includes' || basename($scriptDir) === 'company' || basename($scriptDir) === 'amwalpay' || basename($scriptDir) === 'webhooks') {
             $scriptDir = dirname($scriptDir);
         }
         
@@ -34,6 +55,17 @@ function getBasePath() {
     }
     
     return $basePath;
+}
+
+/**
+ * Check if running in production environment
+ */
+function isProduction() {
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    return strpos($host, 'localhost') === false && 
+           strpos($host, '127.0.0.1') === false &&
+           strpos($host, '.local') === false &&
+           strpos($host, '.test') === false;
 }
 
 /**
@@ -170,14 +202,6 @@ function loadCompanies() {
     return is_array($data) ? $data : [];
 }
 
-function saveCompanies($companies) {
-    if (!is_dir(DATA_DIR)) {
-        mkdir(DATA_DIR, 0755, true);
-    }
-    $json = json_encode(array_values($companies), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    return file_put_contents(COMPANIES_JSON, $json) !== false;
-}
-
 function findCompanyBySlug($slug) {
     // Use database if available
     if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
@@ -185,67 +209,107 @@ function findCompanyBySlug($slug) {
     }
     
     // Fallback to JSON
-    $slug = slugify($slug);
-    foreach (loadCompanies() as $company) {
-        if (($company['slug'] ?? '') === $slug) {
+    $companies = loadCompanies();
+    foreach ($companies as $company) {
+        if (isset($company['slug']) && $company['slug'] === $slug) {
             return $company;
         }
     }
     return null;
 }
 
-function findCompanyById($companyId) {
+function findCompanyById($id) {
     // Use database if available
     if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::findCompanyById($companyId);
+        return DatabaseAdapter::findCompanyById($id);
     }
     
     // Fallback to JSON
-    foreach (loadCompanies() as $company) {
-        if (($company['id'] ?? '') === $companyId) {
+    $companies = loadCompanies();
+    foreach ($companies as $company) {
+        if (isset($company['id']) && $company['id'] === $id) {
             return $company;
         }
     }
     return null;
 }
 
-function setCompanyContext($company) {
-    if (!$company || empty($company['id']) || empty($company['slug'])) {
-        return false;
+function createCompany($name, $email, $password) {
+    // Use database if available
+    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+        return DatabaseAdapter::createCompany($name, $email, $password);
     }
-    $_SESSION['company_id'] = $company['id'];
-    $_SESSION['company_slug'] = $company['slug'];
-    $_SESSION['company_name'] = $company['name'] ?? $company['slug'];
-    return true;
+    
+    // Fallback to JSON
+    $companies = loadCompanies();
+    $slug = slugify($name);
+    
+    // Ensure unique slug
+    $originalSlug = $slug;
+    $counter = 1;
+    while (findCompanyBySlug($slug)) {
+        $slug = $originalSlug . '-' . $counter;
+        $counter++;
+    }
+    
+    $company = [
+        'id' => generateUUID(),
+        'name' => $name,
+        'slug' => $slug,
+        'email' => sanitizeEmail($email),
+        'password' => password_hash($password, PASSWORD_BCRYPT),
+        'created_at' => date('Y-m-d H:i:s')
+    ];
+    
+    $companies[] = $company;
+    
+    if (!is_dir(dirname(COMPANIES_JSON))) {
+        mkdir(dirname(COMPANIES_JSON), 0755, true);
+    }
+    
+    if (file_put_contents(COMPANIES_JSON, json_encode($companies, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))) {
+        return ['success' => true, 'company' => $company];
+    }
+    
+    return ['success' => false, 'error' => 'Failed to save company'];
 }
 
-function clearCompanyContext() {
-    unset($_SESSION['company_id'], $_SESSION['company_slug'], $_SESSION['company_name']);
+function setCompanyContext($company) {
+    $_SESSION['company_id'] = $company['id'];
+    $_SESSION['company_slug'] = $company['slug'];
+    $_SESSION['company_name'] = $company['name'];
 }
 
 function getCurrentCompanyId() {
     return $_SESSION['company_id'] ?? null;
 }
 
-function requireCompanyContext() {
-    if (!isMultiTenantEnabled()) {
-        return;
-    }
-    if (!getCurrentCompanyId()) {
+function getCurrentCompanySlug() {
+    return $_SESSION['company_slug'] ?? null;
+}
+
+function clearCompanyContext() {
+    unset($_SESSION['company_id']);
+    unset($_SESSION['company_slug']);
+    unset($_SESSION['company_name']);
+}
+
+function requireAdmin() {
+    if (!isset($_SESSION['company_id'])) {
         header('Location: ' . getBasePath() . 'company/login.php');
         exit;
     }
 }
 
-function getCompanyDataDir($companyId) {
+function getCompanyEmployeesJsonPath($companyId) {
     $dir = COMPANIES_DATA_DIR . '/' . $companyId;
     if (!is_dir($dir)) {
         mkdir($dir, 0755, true);
     }
-    return $dir;
+    return $dir . '/employees.json';
 }
 
-function getCompanyUploadsDir($companyId) {
+function getCompanyUploadsPath($companyId) {
     $dir = COMPANIES_UPLOADS_DIR . '/' . $companyId;
     if (!is_dir($dir)) {
         mkdir($dir, 0755, true);
@@ -253,131 +317,6 @@ function getCompanyUploadsDir($companyId) {
     return $dir;
 }
 
-function getCompanyEmployeesJsonPath($companyId) {
-    return getCompanyDataDir($companyId) . '/employees.json';
-}
-
-function getCompanyTemplatesJsonPath($companyId) {
-    return getCompanyDataDir($companyId) . '/templates.json';
-}
-
-function getCompanyGeneratedJsonPath($companyId) {
-    return getCompanyDataDir($companyId) . '/generated.json';
-}
-
-function getCompanyTemplatesDir($companyId) {
-    $dir = getCompanyUploadsDir($companyId) . '/templates';
-    if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
-    }
-    return $dir;
-}
-
-function getCompanyCardsDir($companyId) {
-    $dir = getCompanyUploadsDir($companyId) . '/cards';
-    if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
-    }
-    return $dir;
-}
-
-function createCompany($name, $adminEmail, $password) {
-    // Use database if available
-    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::createCompany($name, $adminEmail, $password);
-    }
-    
-    // Fallback to JSON
-    $name = trim($name);
-    $adminEmail = sanitizeEmail($adminEmail);
-    if (empty($name)) {
-        return ['success' => false, 'error' => 'Company name is required'];
-    }
-    if (!isValidEmail($adminEmail)) {
-        return ['success' => false, 'error' => 'Valid admin email is required'];
-    }
-    if (strlen($password) < 6) {
-        return ['success' => false, 'error' => 'Password must be at least 6 characters'];
-    }
-
-    $companies = loadCompanies();
-    $baseSlug = slugify($name);
-    $slug = $baseSlug;
-    $i = 1;
-    while (findCompanyBySlug($slug)) {
-        $i++;
-        $slug = $baseSlug . '-' . $i;
-    }
-
-    $company = [
-        'id' => generateUUID(),
-        'name' => $name,
-        'slug' => $slug,
-        'admin_email' => $adminEmail,
-        'password_hash' => password_hash($password, PASSWORD_DEFAULT),
-        'created_at' => date('Y-m-d H:i:s')
-    ];
-
-    $companies[] = $company;
-    if (!saveCompanies($companies)) {
-        return ['success' => false, 'error' => 'Failed to create company'];
-    }
-
-    // Initialize company data files
-    $cid = $company['id'];
-    if (!file_exists(getCompanyEmployeesJsonPath($cid))) {
-        file_put_contents(getCompanyEmployeesJsonPath($cid), json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-    }
-    if (!file_exists(getCompanyTemplatesJsonPath($cid))) {
-        file_put_contents(getCompanyTemplatesJsonPath($cid), json_encode(getDefaultTemplatesConfig(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-    }
-    if (!file_exists(getCompanyGeneratedJsonPath($cid))) {
-        file_put_contents(getCompanyGeneratedJsonPath($cid), json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-    }
-
-    // Ensure company upload dirs
-    getCompanyTemplatesDir($cid);
-    getCompanyCardsDir($cid);
-
-    return ['success' => true, 'company' => $company];
-}
-
-function companyAdminLogin($companySlug, $password) {
-    $company = findCompanyBySlug($companySlug);
-    if (!$company) {
-        return ['success' => false, 'error' => 'Company not found'];
-    }
-    if (!password_verify($password, $company['password_hash'] ?? '')) {
-        return ['success' => false, 'error' => 'Invalid password'];
-    }
-    setCompanyContext($company);
-    $_SESSION['company_admin_logged_in'] = true;
-    return ['success' => true, 'company' => $company];
-}
-
-function isCompanyAdminLoggedIn() {
-    return !empty($_SESSION['company_admin_logged_in']) && !empty($_SESSION['company_id']);
-}
-
-function requireCompanyAdmin() {
-    if (!isCompanyAdminLoggedIn()) {
-        header('Location: ' . getBasePath() . 'admin/login.php');
-        exit;
-    }
-}
-
-function logoutCompanyAdmin() {
-    unset($_SESSION['company_admin_logged_in']);
-    clearCompanyContext();
-}
-
-// ============================================
-// EMPLOYEE FUNCTIONS
-// ============================================
-
-/**
- * Load employees from JSON
- */
 function loadEmployees($companyId = null) {
     // Use database if available
     if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
@@ -392,29 +331,11 @@ function loadEmployees($companyId = null) {
     if (!file_exists($path)) {
         return [];
     }
-    
     $json = file_get_contents($path);
     $data = json_decode($json, true);
-    
     return is_array($data) ? $data : [];
 }
 
-/**
- * Save employees to JSON
- */
-function saveEmployees($employees, $companyId = null) {
-    if ($companyId === null) {
-        $companyId = getCurrentCompanyId();
-    }
-    
-    $json = json_encode(array_values($employees), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    $path = $companyId ? getCompanyEmployeesJsonPath($companyId) : EMPLOYEES_JSON;
-    return file_put_contents($path, $json) !== false;
-}
-
-/**
- * Find employee by email
- */
 function findEmployeeByEmail($email, $companyId = null) {
     // Use database if available
     if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
@@ -422,21 +343,18 @@ function findEmployeeByEmail($email, $companyId = null) {
     }
     
     // Fallback to JSON
-    $email = trim(strtolower($email));
+    if ($companyId === null) {
+        $companyId = getCurrentCompanyId();
+    }
     $employees = loadEmployees($companyId);
-    
     foreach ($employees as $employee) {
-        if (strtolower($employee['email'] ?? '') === $email) {
+        if (isset($employee['email']) && strtolower($employee['email']) === strtolower($email)) {
             return $employee;
         }
     }
-    
     return null;
 }
 
-/**
- * Find employee by ID
- */
 function findEmployeeById($id, $companyId = null) {
     // Use database if available
     if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
@@ -444,96 +362,69 @@ function findEmployeeById($id, $companyId = null) {
     }
     
     // Fallback to JSON
+    if ($companyId === null) {
+        $companyId = getCurrentCompanyId();
+    }
     $employees = loadEmployees($companyId);
-    
     foreach ($employees as $employee) {
-        if ($employee['id'] === $id) {
+        if (isset($employee['id']) && $employee['id'] === $id) {
             return $employee;
         }
     }
-    
     return null;
 }
 
-/**
- * Add new employee
- */
-function addEmployee($data, $companyId = null) {
+function addEmployee($employeeData, $companyId = null) {
     // Use database if available
     if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::addEmployee($data, $companyId);
+        return DatabaseAdapter::addEmployee($employeeData, $companyId);
     }
     
     // Fallback to JSON
-    $employees = loadEmployees($companyId);
-    
-    // Check if email exists
-    foreach ($employees as $emp) {
-        if (strtolower($emp['email'] ?? '') === strtolower($data['email'] ?? '')) {
-            return ['success' => false, 'error' => 'Email already exists'];
-        }
+    if ($companyId === null) {
+        $companyId = getCurrentCompanyId();
+    }
+    if (!$companyId) {
+        return ['success' => false, 'error' => 'Company ID required'];
     }
     
-    $employee = [
-        'id' => generateUUID(),
-        'email' => trim(strtolower($data['email'] ?? '')),
-        'name_en' => trim($data['name_en'] ?? ''),
-        'name_ar' => trim($data['name_ar'] ?? ''),
-        'position_en' => trim($data['position_en'] ?? ''),
-        'position_ar' => trim($data['position_ar'] ?? ''),
-        'phone' => trim($data['phone'] ?? ''),
-        'mobile' => trim($data['mobile'] ?? ''),
-        'company_en' => trim($data['company_en'] ?? ''),
-        'company_ar' => trim($data['company_ar'] ?? ''),
-        'website' => trim($data['website'] ?? ''),
-        'address' => trim($data['address'] ?? ''),
-        'created_at' => date('Y-m-d H:i:s')
-    ];
+    $employees = loadEmployees($companyId);
     
-    $employees[] = $employee;
+    if (empty($employeeData['id'])) {
+        $employeeData['id'] = generateUUID();
+    }
     
-    if (saveEmployees($employees, $companyId)) {
-        return ['success' => true, 'employee' => $employee];
+    $employees[] = $employeeData;
+    $path = getCompanyEmployeesJsonPath($companyId);
+    
+    if (file_put_contents($path, json_encode($employees, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))) {
+        return ['success' => true, 'employee' => $employeeData];
     }
     
     return ['success' => false, 'error' => 'Failed to save employee'];
 }
 
-/**
- * Update employee
- */
-function updateEmployee($id, $data, $companyId = null) {
+function updateEmployee($id, $employeeData, $companyId = null) {
     // Use database if available
     if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::updateEmployee($id, $data, $companyId);
+        return DatabaseAdapter::updateEmployee($id, $employeeData, $companyId);
     }
     
     // Fallback to JSON
+    if ($companyId === null) {
+        $companyId = getCurrentCompanyId();
+    }
+    if (!$companyId) {
+        return ['success' => false, 'error' => 'Company ID required'];
+    }
+    
     $employees = loadEmployees($companyId);
     $found = false;
     
-    foreach ($employees as &$employee) {
-        if ($employee['id'] === $id) {
-            // Check if new email conflicts with another employee
-            $newEmail = strtolower(trim($data['email'] ?? ''));
-            foreach ($employees as $emp) {
-                if ($emp['id'] !== $id && strtolower($emp['email'] ?? '') === $newEmail) {
-                    return ['success' => false, 'error' => 'Email already exists'];
-                }
-            }
-            
-            $employee['email'] = $newEmail;
-            $employee['name_en'] = trim($data['name_en'] ?? '');
-            $employee['name_ar'] = trim($data['name_ar'] ?? '');
-            $employee['position_en'] = trim($data['position_en'] ?? '');
-            $employee['position_ar'] = trim($data['position_ar'] ?? '');
-            $employee['phone'] = trim($data['phone'] ?? '');
-            $employee['mobile'] = trim($data['mobile'] ?? '');
-            $employee['company_en'] = trim($data['company_en'] ?? '');
-            $employee['company_ar'] = trim($data['company_ar'] ?? '');
-            $employee['website'] = trim($data['website'] ?? '');
-            $employee['address'] = trim($data['address'] ?? '');
-            $employee['updated_at'] = date('Y-m-d H:i:s');
+    foreach ($employees as $index => $employee) {
+        if (isset($employee['id']) && $employee['id'] === $id) {
+            $employees[$index] = array_merge($employee, $employeeData);
+            $employees[$index]['id'] = $id; // Preserve ID
             $found = true;
             break;
         }
@@ -543,16 +434,15 @@ function updateEmployee($id, $data, $companyId = null) {
         return ['success' => false, 'error' => 'Employee not found'];
     }
     
-    if (saveEmployees($employees, $companyId)) {
-        return ['success' => true];
+    $path = getCompanyEmployeesJsonPath($companyId);
+    
+    if (file_put_contents($path, json_encode($employees, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))) {
+        return ['success' => true, 'employee' => $employees[$index]];
     }
     
-    return ['success' => false, 'error' => 'Failed to save changes'];
+    return ['success' => false, 'error' => 'Failed to update employee'];
 }
 
-/**
- * Delete employee
- */
 function deleteEmployee($id, $companyId = null) {
     // Use database if available
     if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
@@ -560,29 +450,38 @@ function deleteEmployee($id, $companyId = null) {
     }
     
     // Fallback to JSON
-    $employees = loadEmployees($companyId);
-    $newEmployees = array_filter($employees, function($emp) use ($id) {
-        return $emp['id'] !== $id;
-    });
+    if ($companyId === null) {
+        $companyId = getCurrentCompanyId();
+    }
+    if (!$companyId) {
+        return ['success' => false, 'error' => 'Company ID required'];
+    }
     
-    if (count($newEmployees) === count($employees)) {
+    $employees = loadEmployees($companyId);
+    $found = false;
+    
+    foreach ($employees as $index => $employee) {
+        if (isset($employee['id']) && $employee['id'] === $id) {
+            unset($employees[$index]);
+            $found = true;
+            break;
+        }
+    }
+    
+    if (!$found) {
         return ['success' => false, 'error' => 'Employee not found'];
     }
     
-    if (saveEmployees($newEmployees, $companyId)) {
+    $employees = array_values($employees); // Re-index
+    $path = getCompanyEmployeesJsonPath($companyId);
+    
+    if (file_put_contents($path, json_encode($employees, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))) {
         return ['success' => true];
     }
     
     return ['success' => false, 'error' => 'Failed to delete employee'];
 }
 
-// ============================================
-// TEMPLATE FUNCTIONS
-// ============================================
-
-/**
- * Load templates from JSON
- */
 function loadTemplates($companyId = null) {
     // Use database if available
     if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
@@ -593,138 +492,51 @@ function loadTemplates($companyId = null) {
     if ($companyId === null) {
         $companyId = getCurrentCompanyId();
     }
-    $path = $companyId ? getCompanyTemplatesJsonPath($companyId) : TEMPLATES_JSON;
+    $path = $companyId ? (getCompanyUploadsPath($companyId) . '/templates.json') : TEMPLATES_JSON;
     if (!file_exists($path)) {
         return getDefaultTemplatesConfig();
     }
-    
     $json = file_get_contents($path);
     $data = json_decode($json, true);
-    
-    if ($data === null) {
-        return getDefaultTemplatesConfig();
-    }
-    
-    return $data;
+    return is_array($data) ? $data : getDefaultTemplatesConfig();
 }
 
-/**
- * Save templates to JSON
- */
-function saveTemplates($config, $companyId = null) {
+function saveTemplates($templates, $companyId = null) {
     // Use database if available
     if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::saveTemplates($config, $companyId);
+        return DatabaseAdapter::saveTemplates($templates, $companyId);
     }
     
     // Fallback to JSON
     if ($companyId === null) {
         $companyId = getCurrentCompanyId();
     }
+    $path = $companyId ? (getCompanyUploadsPath($companyId) . '/templates.json') : TEMPLATES_JSON;
     
-    $json = json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    $path = $companyId ? getCompanyTemplatesJsonPath($companyId) : TEMPLATES_JSON;
-    return file_put_contents($path, $json) !== false;
+    if (!is_dir(dirname($path))) {
+        mkdir(dirname($path), 0755, true);
+    }
+    
+    return file_put_contents($path, json_encode($templates, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) !== false;
 }
 
-/**
- * Get default templates config
- */
 function getDefaultTemplatesConfig() {
     return [
-        'activeFrontId' => null,
-        'activeBackId' => null,
-        'templates' => []
+        'front' => null,
+        'back' => null
     ];
 }
 
-/**
- * Get default field settings
- */
-function getDefaultFieldSettings() {
-    return [
-        'name_en' => ['x' => 50, 'y' => 30, 'fontSize' => 24, 'fontFamily' => "'Plus Jakarta Sans', sans-serif", 'fontWeight' => 'bold', 'color' => '#ffffff', 'enabled' => true],
-        'name_ar' => ['x' => 50, 'y' => 40, 'fontSize' => 22, 'fontFamily' => "'Cairo', sans-serif", 'fontWeight' => 'bold', 'color' => '#ffffff', 'enabled' => true],
-        'position_en' => ['x' => 50, 'y' => 50, 'fontSize' => 16, 'fontFamily' => "'Plus Jakarta Sans', sans-serif", 'fontWeight' => 'normal', 'color' => '#d4af37', 'enabled' => true],
-        'position_ar' => ['x' => 50, 'y' => 58, 'fontSize' => 14, 'fontFamily' => "'Cairo', sans-serif", 'fontWeight' => 'normal', 'color' => '#d4af37', 'enabled' => true],
-        'phone' => ['x' => 20, 'y' => 75, 'fontSize' => 12, 'fontFamily' => "'Plus Jakarta Sans', sans-serif", 'fontWeight' => 'normal', 'color' => '#ffffff', 'enabled' => true],
-        'mobile' => ['x' => 20, 'y' => 82, 'fontSize' => 12, 'fontFamily' => "'Plus Jakarta Sans', sans-serif", 'fontWeight' => 'normal', 'color' => '#ffffff', 'enabled' => true],
-        'email' => ['x' => 20, 'y' => 89, 'fontSize' => 12, 'fontFamily' => "'Plus Jakarta Sans', sans-serif", 'fontWeight' => 'normal', 'color' => '#ffffff', 'enabled' => true],
-        'company_en' => ['x' => 80, 'y' => 75, 'fontSize' => 14, 'fontFamily' => "'Plus Jakarta Sans', sans-serif", 'fontWeight' => 'bold', 'color' => '#ffffff', 'enabled' => true],
-        'company_ar' => ['x' => 80, 'y' => 82, 'fontSize' => 12, 'fontFamily' => "'Cairo', sans-serif", 'fontWeight' => 'normal', 'color' => '#ffffff', 'enabled' => false],
-        'website' => ['x' => 80, 'y' => 89, 'fontSize' => 11, 'fontFamily' => "'Plus Jakarta Sans', sans-serif", 'fontWeight' => 'normal', 'color' => '#d4af37', 'enabled' => true],
-        'address' => ['x' => 50, 'y' => 95, 'fontSize' => 10, 'fontFamily' => "'Plus Jakarta Sans', sans-serif", 'fontWeight' => 'normal', 'color' => '#cccccc', 'enabled' => false],
-        'qr_code' => ['x' => 85, 'y' => 50, 'size' => 80, 'enabled' => false]
-    ];
-}
-
-/**
- * Get template by ID
- */
-function getTemplateById($id, $companyId = null) {
-    $config = loadTemplates($companyId);
-    
-    foreach ($config['templates'] as $template) {
-        if ($template['id'] === $id) {
-            return $template;
-        }
-    }
-    
-    return null;
-}
-
-/**
- * Get active front template
- */
 function getActiveFrontTemplate($companyId = null) {
-    $config = loadTemplates($companyId);
-    $activeId = $config['activeFrontId'] ?? null;
-    
-    if (!$activeId) return null;
-    
-    foreach ($config['templates'] as $template) {
-        if ($template['id'] === $activeId && $template['side'] === 'front') {
-            return $template;
-        }
-    }
-    
-    return null;
+    $templates = loadTemplates($companyId);
+    return $templates['front'] ?? null;
 }
 
-/**
- * Get active back template
- */
 function getActiveBackTemplate($companyId = null) {
-    $config = loadTemplates($companyId);
-    $activeId = $config['activeBackId'] ?? null;
-    
-    if (!$activeId) return null;
-    
-    foreach ($config['templates'] as $template) {
-        if ($template['id'] === $activeId && $template['side'] === 'back') {
-            return $template;
-        }
-    }
-    
-    return null;
+    $templates = loadTemplates($companyId);
+    return $templates['back'] ?? null;
 }
 
-/**
- * Generate template ID
- */
-function generateTemplateId($name) {
-    $base = preg_replace('/[^a-z0-9]+/', '-', strtolower($name));
-    $base = trim($base, '-');
-    return $base . '-' . substr(uniqid(), -6);
-}
-
-// ============================================
-// GENERATED CARDS LOG
-// ============================================
-
-/**
- * Load generated cards log
- */
 function loadGeneratedLog($companyId = null) {
     // Use database if available
     if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
@@ -735,160 +547,39 @@ function loadGeneratedLog($companyId = null) {
     if ($companyId === null) {
         $companyId = getCurrentCompanyId();
     }
-    $path = $companyId ? getCompanyGeneratedJsonPath($companyId) : GENERATED_JSON;
+    $path = $companyId ? (getCompanyUploadsPath($companyId) . '/generated.json') : GENERATED_JSON;
     if (!file_exists($path)) {
         return [];
     }
-    
     $json = file_get_contents($path);
     $data = json_decode($json, true);
-    
     return is_array($data) ? $data : [];
 }
 
-/**
- * Save generated cards log
- */
-function saveGeneratedLog($log, $companyId = null) {
-    if ($companyId === null) {
-        $companyId = getCurrentCompanyId();
-    }
-    
-    $json = json_encode($log, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    $path = $companyId ? getCompanyGeneratedJsonPath($companyId) : GENERATED_JSON;
-    return file_put_contents($path, $json) !== false;
-}
-
-/**
- * Log generated card
- */
-function logGeneratedCard($employeeId, $frontTemplateId, $backTemplateId, $frontFile, $backFile, $pdfFile = null, $companyId = null) {
+function logGeneratedCard($employeeId, $frontUrl, $backUrl, $companyId = null) {
     // Use database if available
     if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::logGeneratedCard($employeeId, $frontTemplateId, $backTemplateId, $frontFile, $backFile, $pdfFile, $companyId);
+        return DatabaseAdapter::logGeneratedCard($employeeId, $frontUrl, $backUrl, $companyId);
     }
     
     // Fallback to JSON
+    if ($companyId === null) {
+        $companyId = getCurrentCompanyId();
+    }
     $log = loadGeneratedLog($companyId);
-    
-    $entry = [
-        'id' => generateUUID(),
+    $log[] = [
         'employee_id' => $employeeId,
-        'front_template_id' => $frontTemplateId,
-        'back_template_id' => $backTemplateId,
-        'front_file' => $frontFile,
-        'back_file' => $backFile,
-        'pdf_file' => $pdfFile,
+        'front_url' => $frontUrl,
+        'back_url' => $backUrl,
         'generated_at' => date('Y-m-d H:i:s')
     ];
+    $path = $companyId ? (getCompanyUploadsPath($companyId) . '/generated.json') : GENERATED_JSON;
     
-    // Add to beginning of array (newest first)
-    array_unshift($log, $entry);
-    
-    // Keep only last 500 entries
-    $log = array_slice($log, 0, 500);
-    
-    saveGeneratedLog($log, $companyId);
-    
-    return $entry;
-}
-
-// ============================================
-// AUTH FUNCTIONS
-// ============================================
-
-/**
- * Check if admin is logged in
- */
-function isAdminLoggedIn() {
-    return isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
-}
-
-/**
- * Require admin login
- */
-function requireAdmin() {
-    // Multi-tenant mode: company admin session
-    if (isMultiTenantEnabled()) {
-        requireCompanyAdmin();
-        return;
-    }
-    // Single-tenant legacy mode
-    if (!isAdminLoggedIn()) {
-        header('Location: login.php');
-        exit;
-    }
-}
-
-/**
- * Login admin
- */
-function loginAdmin($password) {
-    if ($password === ADMIN_PASSWORD) {
-        $_SESSION['admin_logged_in'] = true;
-        return true;
-    }
-    return false;
-}
-
-/**
- * Logout admin
- */
-function logoutAdmin() {
-    $_SESSION['admin_logged_in'] = false;
-    session_destroy();
-}
-
-// ============================================
-// FILE UPLOAD FUNCTIONS
-// ============================================
-
-/**
- * Handle file upload
- */
-function handleFileUpload($file, $destination, $allowedTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], $maxSizeMB = 10) {
-    if (!isset($file['error'])) {
-        return ['success' => false, 'error' => 'No file uploaded.'];
+    if (!is_dir(dirname($path))) {
+        mkdir(dirname($path), 0755, true);
     }
     
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        $errorMessages = [
-            UPLOAD_ERR_INI_SIZE => 'File exceeds server upload limit.',
-            UPLOAD_ERR_FORM_SIZE => 'File exceeds form upload limit.',
-            UPLOAD_ERR_PARTIAL => 'File was only partially uploaded.',
-            UPLOAD_ERR_NO_FILE => 'No file was uploaded.',
-            UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder.',
-            UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk.',
-            UPLOAD_ERR_EXTENSION => 'File upload stopped by extension.'
-        ];
-        return ['success' => false, 'error' => $errorMessages[$file['error']] ?? 'Unknown upload error.'];
-    }
-    
-    $maxSizeBytes = $maxSizeMB * 1024 * 1024;
-    if ($file['size'] > $maxSizeBytes) {
-        return ['success' => false, 'error' => "File size exceeds {$maxSizeMB}MB limit."];
-    }
-    
-    $finfo = new finfo(FILEINFO_MIME_TYPE);
-    $mimeType = $finfo->file($file['tmp_name']);
-    
-    if (!in_array($mimeType, $allowedTypes)) {
-        return ['success' => false, 'error' => 'Invalid file type. Only PNG, JPEG, GIF, and WebP are allowed.'];
-    }
-    
-    if (!is_dir($destination)) {
-        mkdir($destination, 0755, true);
-    }
-    
-    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = uniqid('template_') . '.' . strtolower($ext);
-    $filepath = $destination . '/' . $filename;
-    
-    if (move_uploaded_file($file['tmp_name'], $filepath)) {
-        return ['success' => true, 'path' => $filepath];
-    }
-    
-    return ['success' => false, 'error' => 'Failed to save uploaded file.'];
+    return file_put_contents($path, json_encode($log, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) !== false;
 }
 
 /**
@@ -941,4 +632,3 @@ function initializeDataFiles() {
 
 // Initialize on include
 initializeDataFiles();
-
