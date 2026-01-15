@@ -17,6 +17,32 @@ if (Auth::isLoggedIn()) {
 $error = null;
 $showCompanyField = false;
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
+$pageTitle = 'Sign In';
+$htmlClass = 'h-full bg-white';
+$bodyClass = 'h-full';
+$extraHead = <<<HTML
+    <style>
+        .form-input {
+            display: block;
+            width: 100%;
+            border-radius: 0.5rem;
+            background-color: #f9fafb;
+            border: 1px solid #d1d5db;
+            padding: 0.625rem 0.875rem;
+            font-size: 0.875rem;
+            color: #111827;
+            outline: none;
+            transition: all 0.15s ease;
+        }
+        .form-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .form-input::placeholder {
+            color: #9ca3af;
+        }
+    </style>
+HTML;
 
 // Handle login
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -52,49 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<!DOCTYPE html>
-<html lang="en" class="h-full bg-white">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In - <?php echo $brandName; ?></title>
-    <link rel="icon" href="<?php echo getBasePath(); ?>favicon.svg" type="image/svg+xml">
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="<?php echo getBasePath(); ?>assets/vendor/css/all.css">
-    
-    <!-- Flowbite CSS -->
-    <link rel="stylesheet" href="<?php echo assetUrl('flowbite/app.css'); ?>">
-    
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        .form-input {
-            display: block;
-            width: 100%;
-            border-radius: 0.5rem;
-            background-color: #f9fafb;
-            border: 1px solid #d1d5db;
-            padding: 0.625rem 0.875rem;
-            font-size: 0.875rem;
-            color: #111827;
-            outline: none;
-            transition: all 0.15s ease;
-        }
-        .form-input:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-        .form-input::placeholder {
-            color: #9ca3af;
-        }
-    </style>
-</head>
-<body class="h-full">
+<?php require_once INCLUDES_DIR . '/ui-header.php'; ?>
     <div class="flex min-h-full">
         <!-- Left Side - Form -->
         <div class="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
@@ -175,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600">
                             <label for="remember" class="text-sm text-gray-900">Remember me</label>
                         </div>
-                        <a href="#" class="text-sm font-semibold text-blue-600 hover:text-blue-500">
+                        <a href="<?php echo getBasePath(); ?>forgot-password.php" class="text-sm font-semibold text-blue-600 hover:text-blue-500">
                             Forgot password?
                         </a>
                     </div>
@@ -261,8 +245,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
-    
-    <!-- Flowbite JS -->
-    <script src="<?php echo assetUrl('flowbite/app.bundle.js'); ?>"></script>
-</body>
-</html>
+<?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>
