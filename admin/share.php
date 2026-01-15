@@ -1,11 +1,11 @@
 <?php
 /**
- * Shareable Design Links
- * Create and manage shareable links for templates
+ * Shareable Design Links - Cardify
  */
 require_once __DIR__ . '/../config.php';
 requireAdmin();
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/admin-layout.php';
 
 $db = Database::getInstance();
 $companyId = getCurrentCompanyId();
@@ -18,13 +18,8 @@ if (!$companyId) {
 $message = null;
 $messageType = 'success';
 
-// Get templates
-$templates = $db->fetchAll(
-    "SELECT * FROM templates WHERE company_id = :id ORDER BY name",
-    ['id' => $companyId]
-);
+$templates = $db->fetchAll("SELECT * FROM templates WHERE company_id = :id ORDER BY name", ['id' => $companyId]);
 
-// Get shareable links
 $links = $db->fetchAll(
     "SELECT dl.*, t.name as template_name FROM design_links dl
      LEFT JOIN templates t ON dl.template_id = t.id
@@ -32,7 +27,6 @@ $links = $db->fetchAll(
     ['id' => $companyId]
 );
 
-// Handle create/update/delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     
@@ -70,7 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
-    // Reload links
     $links = $db->fetchAll(
         "SELECT dl.*, t.name as template_name FROM design_links dl
          LEFT JOIN templates t ON dl.template_id = t.id
@@ -78,131 +71,181 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ['id' => $companyId]
     );
 }
+
+adminHeader('Share Links', 'share');
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shareable Links | <?php echo SITE_NAME; ?></title>
-    <link rel="stylesheet" href="<?php echo assetUrl('css/tailwind.css'); ?>">
-    <style>
-        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
-    </style>
-</head>
-<body class="bg-alzayani-dark text-white font-sans min-h-screen">
-    <div class="min-h-screen">
-        <header class="glass-card border-b border-white/10">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-2xl font-bold text-white">Shareable Design Links</h1>
-                        <p class="text-gray-400 text-sm">Create links to share your designs</p>
-                    </div>
-                    <a href="index.php" class="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-                        ← Back
-                    </a>
-                </div>
-            </div>
-        </header>
-        
-        <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <?php if ($message): ?>
-            <div class="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400">
-                <?php echo sanitize($message); ?>
-            </div>
-            <?php endif; ?>
-            
-            <!-- Create Link Form -->
-            <div class="glass-card rounded-xl p-6 mb-8">
-                <h2 class="text-xl font-bold mb-4">Create Shareable Link</h2>
-                <form method="post" class="space-y-4">
-                    <input type="hidden" name="action" value="create">
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Template</label>
-                            <select name="template_id" required class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
-                                <option value="">Select Template</option>
-                                <?php foreach ($templates as $template): ?>
-                                <option value="<?php echo sanitize($template['id']); ?>"><?php echo sanitize($template['name']); ?> (<?php echo sanitize($template['side']); ?>)</option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Password (Optional)</label>
-                            <input type="password" name="password" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Leave empty for public">
-                        </div>
-                    </div>
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Expires At (Optional)</label>
-                            <input type="datetime-local" name="expires_at" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Max Access (Optional)</label>
-                            <input type="number" name="max_access" min="1" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Unlimited">
-                        </div>
-                    </div>
-                    <button type="submit" class="px-6 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold hover:from-amber-600 hover:to-amber-700 transition-colors">
-                        Create Link
-                    </button>
-                </form>
-            </div>
-            
-            <!-- Links List -->
-            <div class="glass-card rounded-xl p-6">
-                <h2 class="text-xl font-bold mb-4">Active Links</h2>
-                <div class="space-y-4">
-                    <?php if (empty($links)): ?>
-                    <p class="text-gray-400 text-center py-8">No shareable links yet. Create one above.</p>
-                    <?php else: ?>
+
+<div x-data="{ showModal: false }">
+    <!-- Page Header Actions -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+            <p class="text-gray-600"><?php echo count($links); ?> shareable links</p>
+        </div>
+        <button @click="showModal = true" 
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2">
+            <i class="fa-solid fa-plus"></i>
+            <span>Create Link</span>
+        </button>
+    </div>
+
+    <!-- Alert Message -->
+    <?php if ($message): ?>
+    <div class="mb-6 p-4 rounded-xl flex items-center gap-3 bg-green-50 border border-green-200 text-green-700">
+        <i class="fa-solid fa-circle-check"></i>
+        <?php echo sanitize($message); ?>
+    </div>
+    <?php endif; ?>
+
+    <!-- Links Table -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm">Template</th>
+                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm">Link</th>
+                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm">Protection</th>
+                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm">Usage</th>
+                        <th class="text-right px-6 py-4 text-gray-600 font-semibold text-sm">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
                     <?php foreach ($links as $link): ?>
-                    <div class="p-4 rounded-lg bg-white/5">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
-                                <div class="font-semibold mb-2"><?php echo sanitize($link['template_name']); ?></div>
-                                <div class="text-sm text-gray-400 space-y-1">
-                                    <div>Link: <code class="bg-black/30 px-2 py-1 rounded"><?php echo getBaseUrl(); ?>share/<?php echo sanitize($link['share_token']); ?></code></div>
-                                    <div>Access Count: <?php echo $link['access_count']; ?>
-                                        <?php if ($link['max_access']): ?>
-                                        / <?php echo $link['max_access']; ?>
-                                        <?php endif; ?>
-                                    </div>
-                                    <?php if ($link['expires_at']): ?>
-                                    <div>Expires: <?php echo date('M d, Y H:i', strtotime($link['expires_at'])); ?></div>
-                                    <?php endif; ?>
-                                    <?php if ($link['password_hash']): ?>
-                                    <div class="text-amber-400">🔒 Password Protected</div>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-2 ml-4">
-                                <button onclick="copyLink('<?php echo getBaseUrl(); ?>share/<?php echo $link['share_token']; ?>')" class="px-4 py-2 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors">
-                                    Copy
+                    <?php 
+                    $shareUrl = rtrim(BASE_URL ?? '', '/') . '/share/' . $link['share_token'];
+                    $isExpired = $link['expires_at'] && strtotime($link['expires_at']) < time();
+                    ?>
+                    <tr class="hover:bg-gray-50 transition-colors <?php echo $isExpired ? 'opacity-50' : ''; ?>">
+                        <td class="px-6 py-4">
+                            <p class="font-medium text-gray-900"><?php echo sanitize($link['template_name'] ?? 'Unknown'); ?></p>
+                            <p class="text-gray-500 text-sm">Created <?php echo date('M j, Y', strtotime($link['created_at'])); ?></p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <input type="text" value="<?php echo $shareUrl; ?>" readonly 
+                                       class="w-64 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded text-sm text-gray-600 font-mono truncate"
+                                       onclick="this.select()">
+                                <button onclick="navigator.clipboard.writeText('<?php echo $shareUrl; ?>'); this.innerHTML='<i class=\'fa-solid fa-check\'></i>'; setTimeout(() => this.innerHTML='<i class=\'fa-solid fa-copy\'></i>', 2000)"
+                                        class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                    <i class="fa-solid fa-copy"></i>
                                 </button>
-                                <form method="post" class="inline" onsubmit="return confirm('Delete this link?');">
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <?php if ($link['password_hash']): ?>
+                                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                                    <i class="fa-solid fa-lock"></i> Password
+                                </span>
+                                <?php endif; ?>
+                                <?php if ($link['expires_at']): ?>
+                                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium <?php echo $isExpired ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'; ?>">
+                                    <i class="fa-solid fa-clock"></i> <?php echo $isExpired ? 'Expired' : date('M j', strtotime($link['expires_at'])); ?>
+                                </span>
+                                <?php endif; ?>
+                                <?php if (!$link['password_hash'] && !$link['expires_at']): ?>
+                                <span class="text-gray-400 text-sm">Public</span>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="text-gray-900 font-medium">
+                                <?php echo $link['access_count'] ?? 0; ?>
+                                <?php if ($link['max_access']): ?>
+                                <span class="text-gray-500 font-normal">/ <?php echo $link['max_access']; ?></span>
+                                <?php endif; ?>
+                            </p>
+                            <p class="text-gray-500 text-sm">views</p>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-1">
+                                <a href="<?php echo $shareUrl; ?>" target="_blank" 
+                                   class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                    <i class="fa-solid fa-external-link"></i>
+                                </a>
+                                <form method="post" class="inline" onsubmit="return confirm('Delete this link?')">
                                     <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="link_id" value="<?php echo sanitize($link['id']); ?>">
-                                    <button type="submit" class="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors">
-                                        Delete
+                                    <input type="hidden" name="link_id" value="<?php echo $link['id']; ?>">
+                                    <button type="submit" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                        <i class="fa-solid fa-trash-can"></i>
                                     </button>
                                 </form>
                             </div>
-                        </div>
-                    </div>
+                        </td>
+                    </tr>
                     <?php endforeach; ?>
+                    
+                    <?php if (empty($links)): ?>
+                    <tr>
+                        <td colspan="5" class="px-6 py-16 text-center">
+                            <div class="text-gray-400">
+                                <i class="fa-solid fa-share-nodes text-4xl mb-4 opacity-50"></i>
+                                <p class="text-gray-600 font-medium">No shareable links yet</p>
+                                <p class="text-sm mt-1">Create links to share your designs with others</p>
+                            </div>
+                        </td>
+                    </tr>
                     <?php endif; ?>
-                </div>
-            </div>
-        </main>
+                </tbody>
+            </table>
+        </div>
     </div>
-    
-    <script>
-        function copyLink(url) {
-            navigator.clipboard.writeText(url).then(() => {
-                alert('Link copied to clipboard!');
-            });
-        }
-    </script>
-</body>
-</html>
+
+    <!-- Create Modal -->
+    <div x-show="showModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" @keydown.escape.window="showModal = false">
+        <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" @click="showModal = false"></div>
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <div class="p-6 border-b border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900">Create Shareable Link</h3>
+            </div>
+            
+            <form method="post" class="p-6">
+                <input type="hidden" name="action" value="create">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Template <span class="text-red-500">*</span></label>
+                        <select name="template_id" required 
+                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                            <option value="">Select a template</option>
+                            <?php foreach ($templates as $template): ?>
+                            <option value="<?php echo $template['id']; ?>"><?php echo sanitize($template['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Password Protection</label>
+                        <input type="password" name="password" 
+                               class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                               placeholder="Leave empty for public access">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Expiration Date</label>
+                        <input type="datetime-local" name="expires_at" 
+                               class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Max Views</label>
+                        <input type="number" name="max_access" min="1" 
+                               class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                               placeholder="Unlimited">
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
+                    <button type="button" @click="showModal = false" class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+                        Create Link
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<?php adminFooter(); ?>

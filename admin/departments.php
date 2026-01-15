@@ -1,11 +1,12 @@
 <?php
 /**
- * Department Management
+ * Department Management - Cardify
  * Manage departments and assign templates
  */
 require_once __DIR__ . '/../config.php';
 requireAdmin();
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/admin-layout.php';
 
 $db = Database::getInstance();
 $companyId = getCurrentCompanyId();
@@ -88,149 +89,157 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ['id' => $companyId]
     );
 }
+
+// Get employee counts per department
+$deptCounts = [];
+foreach ($departments as $dept) {
+    $count = $db->fetchOne(
+        "SELECT COUNT(*) as count FROM employees WHERE department_id = :id",
+        ['id' => $dept['id']]
+    );
+    $deptCounts[$dept['id']] = $count['count'] ?? 0;
+}
+
+adminHeader('Departments', 'departments');
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Departments | <?php echo SITE_NAME; ?></title>
-    <link rel="stylesheet" href="<?php echo assetUrl('css/tailwind.css'); ?>">
-    <style>
-        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
-    </style>
-</head>
-<body class="bg-alzayani-dark text-white font-sans min-h-screen">
-    <div class="min-h-screen">
-        <header class="glass-card border-b border-white/10">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-2xl font-bold text-white">Departments</h1>
-                        <p class="text-gray-400 text-sm">Manage departments and assign templates</p>
+
+<div x-data="{ showModal: false, editMode: false, formData: { id: '', name: '', description: '', template_id: '' } }">
+    <!-- Page Header Actions -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+            <p class="text-gray-600"><?php echo count($departments); ?> departments</p>
+        </div>
+        <button @click="showModal = true; editMode = false; formData = { id: '', name: '', description: '', template_id: '' }" 
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2">
+            <i class="fa-solid fa-plus"></i>
+            <span>Add Department</span>
+        </button>
+    </div>
+
+    <!-- Alert Message -->
+    <?php if ($message): ?>
+    <div class="mb-6 p-4 rounded-xl flex items-center gap-3 bg-green-50 border border-green-200 text-green-700">
+        <i class="fa-solid fa-circle-check"></i>
+        <?php echo sanitize($message); ?>
+    </div>
+    <?php endif; ?>
+
+    <!-- Departments Grid -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <?php foreach ($departments as $dept): ?>
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+            <div class="p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                        <i class="fa-solid fa-sitemap text-blue-600 text-xl"></i>
                     </div>
-                    <a href="index.php" class="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-                        ← Back
-                    </a>
-                </div>
-            </div>
-        </header>
-        
-        <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <?php if ($message): ?>
-            <div class="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400">
-                <?php echo sanitize($message); ?>
-            </div>
-            <?php endif; ?>
-            
-            <!-- Create Department Form -->
-            <div class="glass-card rounded-xl p-6 mb-8">
-                <h2 class="text-xl font-bold mb-4">Create New Department</h2>
-                <form method="post" class="space-y-4">
-                    <input type="hidden" name="action" value="create">
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Department Name</label>
-                            <input type="text" name="name" required class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Default Template</label>
-                            <select name="template_id" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
-                                <option value="">None</option>
-                                <?php foreach ($templates as $template): ?>
-                                <option value="<?php echo sanitize($template['id']); ?>"><?php echo sanitize($template['name']); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
-                        <textarea name="description" rows="2" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white"></textarea>
-                    </div>
-                    <button type="submit" class="px-6 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold hover:from-amber-600 hover:to-amber-700 transition-colors">
-                        Create Department
-                    </button>
-                </form>
-            </div>
-            
-            <!-- Departments List -->
-            <div class="glass-card rounded-xl p-6">
-                <h2 class="text-xl font-bold mb-4">Departments</h2>
-                <div class="space-y-4">
-                    <?php if (empty($departments)): ?>
-                    <p class="text-gray-400 text-center py-8">No departments yet. Create one above.</p>
-                    <?php else: ?>
-                    <?php foreach ($departments as $dept): ?>
-                    <div class="p-4 rounded-lg bg-white/5 flex items-center justify-between">
-                        <div>
-                            <div class="font-semibold"><?php echo sanitize($dept['name']); ?></div>
-                            <div class="text-sm text-gray-400">
-                                <?php echo sanitize($dept['description'] ?? 'No description'); ?>
-                                <?php if ($dept['template_name']): ?>
-                                <span class="ml-2">• Template: <?php echo sanitize($dept['template_name']); ?></span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <button onclick="editDepartment('<?php echo $dept['id']; ?>', '<?php echo htmlspecialchars($dept['name'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($dept['description'] ?? '', ENT_QUOTES); ?>', '<?php echo $dept['template_id'] ?? ''; ?>')" class="px-4 py-2 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors">
-                                Edit
+                    <div class="flex items-center gap-1">
+                        <button 
+                            @click="showModal = true; editMode = true; formData = { id: '<?php echo $dept['id']; ?>', name: '<?php echo addslashes($dept['name']); ?>', description: '<?php echo addslashes($dept['description'] ?? ''); ?>', template_id: '<?php echo $dept['template_id'] ?? ''; ?>' }"
+                            class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <form method="post" class="inline" onsubmit="return confirm('Delete this department?')">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="department_id" value="<?php echo $dept['id']; ?>">
+                            <button type="submit" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                <i class="fa-solid fa-trash-can"></i>
                             </button>
-                            <form method="post" class="inline" onsubmit="return confirm('Delete this department?');">
-                                <input type="hidden" name="action" value="delete">
-                                <input type="hidden" name="department_id" value="<?php echo sanitize($dept['id']); ?>">
-                                <button type="submit" class="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors">
-                                    Delete
-                                </button>
-                            </form>
-                        </div>
+                        </form>
                     </div>
-                    <?php endforeach; ?>
+                </div>
+                
+                <h3 class="text-lg font-bold text-gray-900 mb-2"><?php echo sanitize($dept['name']); ?></h3>
+                
+                <?php if (!empty($dept['description'])): ?>
+                <p class="text-gray-600 text-sm mb-4"><?php echo sanitize($dept['description']); ?></p>
+                <?php endif; ?>
+                
+                <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                        <i class="fa-solid fa-users"></i>
+                        <span><?php echo $deptCounts[$dept['id']] ?? 0; ?> employees</span>
+                    </div>
+                    
+                    <?php if (!empty($dept['template_name'])): ?>
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700">
+                        <i class="fa-solid fa-palette mr-1"></i>
+                        <?php echo sanitize($dept['template_name']); ?>
+                    </span>
+                    <?php else: ?>
+                    <span class="text-xs text-gray-400">No template</span>
                     <?php endif; ?>
                 </div>
             </div>
-        </main>
+        </div>
+        <?php endforeach; ?>
+        
+        <?php if (empty($departments)): ?>
+        <div class="md:col-span-2 lg:col-span-3 bg-white rounded-xl border border-gray-200 p-12 text-center">
+            <div class="text-gray-400">
+                <i class="fa-solid fa-sitemap text-4xl mb-4 opacity-50"></i>
+                <p class="text-gray-600 font-medium">No departments yet</p>
+                <p class="text-sm mt-1">Create departments to organize your employees</p>
+                <button @click="showModal = true; editMode = false" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
+                    <i class="fa-solid fa-plus mr-2"></i>Create First Department
+                </button>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
-    
-    <!-- Edit Modal -->
-    <div id="editModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div class="glass-card rounded-xl p-6 max-w-md w-full mx-4">
-            <h3 class="text-xl font-bold mb-4">Edit Department</h3>
-            <form method="post" id="editForm" class="space-y-4">
-                <input type="hidden" name="action" value="update">
-                <input type="hidden" name="department_id" id="edit_dept_id">
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Department Name</label>
-                    <input type="text" name="name" id="edit_name" required class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
+
+    <!-- Add/Edit Modal -->
+    <div x-show="showModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" @keydown.escape.window="showModal = false">
+        <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" @click="showModal = false"></div>
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <div class="p-6 border-b border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900" x-text="editMode ? 'Edit Department' : 'Create Department'"></h3>
+            </div>
+            
+            <form method="post" class="p-6">
+                <input type="hidden" name="action" :value="editMode ? 'update' : 'create'">
+                <input type="hidden" name="department_id" x-model="formData.id">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Department Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="name" x-model="formData.name" required 
+                               class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                               placeholder="e.g., Marketing">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Default Template</label>
+                        <select name="template_id" x-model="formData.template_id" 
+                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                            <option value="">No default template</option>
+                            <?php foreach ($templates as $template): ?>
+                            <option value="<?php echo sanitize($template['id']); ?>"><?php echo sanitize($template['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Employees in this department will use this template by default</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                        <textarea name="description" x-model="formData.description" rows="3" 
+                                  class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                                  placeholder="Brief description of this department"></textarea>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Default Template</label>
-                    <select name="template_id" id="edit_template" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
-                        <option value="">None</option>
-                        <?php foreach ($templates as $template): ?>
-                        <option value="<?php echo sanitize($template['id']); ?>"><?php echo sanitize($template['name']); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
-                    <textarea name="description" id="edit_description" rows="2" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white"></textarea>
-                </div>
-                <div class="flex space-x-3">
-                    <button type="submit" class="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold">Save</button>
-                    <button type="button" onclick="document.getElementById('editModal').classList.add('hidden')" class="flex-1 px-4 py-2 rounded-lg bg-white/5 text-white">Cancel</button>
+                
+                <div class="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
+                    <button type="button" @click="showModal = false" class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+                        <span x-text="editMode ? 'Save Changes' : 'Create Department'"></span>
+                    </button>
                 </div>
             </form>
         </div>
     </div>
-    
-    <script>
-        function editDepartment(id, name, description, templateId) {
-            document.getElementById('edit_dept_id').value = id;
-            document.getElementById('edit_name').value = name;
-            document.getElementById('edit_description').value = description;
-            document.getElementById('edit_template').value = templateId || '';
-            document.getElementById('editModal').classList.remove('hidden');
-        }
-    </script>
-</body>
-</html>
+</div>
+
+<?php adminFooter(); ?>

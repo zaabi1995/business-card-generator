@@ -1,20 +1,19 @@
 <?php
 /**
- * Generated Cards Dashboard - BHD Business Cards
+ * Generated Cards - Cardify
  */
 require_once __DIR__ . '/../config.php';
 requireAdmin();
+require_once INCLUDES_DIR . '/admin-layout.php';
 
 $generatedLog = loadGeneratedLog();
 $employees = loadEmployees();
 
-// Create employee lookup
 $employeeLookup = [];
 foreach ($employees as $emp) {
     $employeeLookup[$emp['id']] = $emp;
 }
 
-// Get template lookup
 $templatesConfig = loadTemplates();
 $templateLookup = [];
 foreach ($templatesConfig['templates'] as $tpl) {
@@ -24,184 +23,124 @@ foreach ($templatesConfig['templates'] as $tpl) {
 // Handle deletion
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
     $entryId = $_POST['entry_id'] ?? '';
-    
-    $newLog = array_filter($generatedLog, function($entry) use ($entryId) {
-        return $entry['id'] !== $entryId;
-    });
-    
+    $newLog = array_filter($generatedLog, fn($entry) => $entry['id'] !== $entryId);
     saveGeneratedLog(array_values($newLog));
     header('Location: generated.php?deleted=1');
     exit;
 }
+
+adminHeader('Generated Cards', 'generated');
 ?>
-<!DOCTYPE html>
-<html lang="en" dir="ltr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generated Cards | <?php echo SITE_NAME; ?></title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="<?php echo assetUrl('css/tailwind.css'); ?>?v=<?php echo filemtime(ASSETS_DIR . '/css/tailwind.css'); ?>">
-    
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    <style>
-        [x-cloak] { display: none !important; }
-        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .input-bhd { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); transition: all 0.3s ease; }
-        .input-bhd:focus { background: rgba(255, 255, 255, 0.08); border-color: rgba(212, 175, 55, 0.6); }
-    </style>
-</head>
-<body class="bg-alzayani-dark text-white font-sans min-h-screen antialiased">
-    <div class="min-h-screen" x-data="{ searchQuery: '', showPreview: false, previewEntry: null }">
-        <!-- Header -->
-        <header class="glass-card border-b border-white/10">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <a href="index.php" class="text-gray-400 hover:text-white transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                            </svg>
-                        </a>
-                        <div>
-                            <h1 class="text-xl font-bold text-white">Generated Cards</h1>
-                            <p class="text-gray-500 text-xs"><?php echo count($generatedLog); ?> cards generated</p>
-                        </div>
-                    </div>
-                    
-                    <a href="batch_generate.php" class="px-4 py-2 bg-amber-500/20 text-amber-400 rounded-lg hover:bg-amber-500/30 transition-colors text-sm flex items-center space-x-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                        </svg>
-                        <span>Batch Generate</span>
+
+<div x-data="{ searchQuery: '', showPreview: false, previewEntry: null }">
+    <!-- Page Header Actions -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+            <p class="text-gray-600"><?php echo count($generatedLog); ?> cards generated</p>
+        </div>
+        <a href="batch_generate.php" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Generate New Cards</span>
+        </a>
+    </div>
+
+    <!-- Success Message -->
+    <?php if (isset($_GET['deleted'])): ?>
+    <div class="mb-6 p-4 rounded-xl flex items-center gap-3 bg-green-50 border border-green-200 text-green-700">
+        <i class="fa-solid fa-circle-check"></i>
+        Card entry deleted successfully.
+    </div>
+    <?php endif; ?>
+
+    <!-- Search -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
+        <div class="relative max-w-md">
+            <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input 
+                type="text" 
+                x-model="searchQuery"
+                placeholder="Search by employee name..."
+                class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+            >
+        </div>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <?php foreach (array_reverse($generatedLog) as $entry): ?>
+        <?php 
+        $employee = $employeeLookup[$entry['employeeId']] ?? null;
+        $template = $templateLookup[$entry['templateId']] ?? null;
+        ?>
+        <div 
+            class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+            x-show="!searchQuery || '<?php echo addslashes(strtolower($employee['name_en'] ?? '')); ?>'.includes(searchQuery.toLowerCase())"
+        >
+            <!-- Card Preview -->
+            <div class="aspect-video bg-gray-100 relative group">
+                <?php if (!empty($entry['frontPath'])): ?>
+                <img src="<?php echo getBasePath() . ltrim($entry['frontPath'], '/'); ?>" alt="Card Front" class="w-full h-full object-contain">
+                <?php else: ?>
+                <div class="w-full h-full flex items-center justify-center text-gray-400">
+                    <i class="fa-solid fa-image text-3xl"></i>
+                </div>
+                <?php endif; ?>
+                
+                <!-- Overlay Actions -->
+                <div class="absolute inset-0 bg-gray-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                    <a href="<?php echo getBasePath() . ltrim($entry['frontPath'] ?? '', '/'); ?>" target="_blank" 
+                       class="px-3 py-2 bg-white text-gray-900 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
+                        <i class="fa-solid fa-eye mr-1"></i> View
+                    </a>
+                    <a href="<?php echo getBasePath() . ltrim($entry['frontPath'] ?? '', '/'); ?>" download 
+                       class="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                        <i class="fa-solid fa-download mr-1"></i> Download
                     </a>
                 </div>
             </div>
-        </header>
-        
-        <!-- Main Content -->
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <?php if (isset($_GET['deleted'])): ?>
-            <div class="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400">
-                Entry deleted successfully.
-            </div>
-            <?php endif; ?>
             
-            <!-- Search -->
-            <div class="mb-6">
-                <input 
-                    type="text" 
-                    x-model="searchQuery"
-                    placeholder="Search by employee name or email..."
-                    class="input-bhd w-full max-w-md px-4 py-3 rounded-xl text-white"
-                >
-            </div>
-            
-            <!-- Generated Cards Grid -->
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <?php foreach ($generatedLog as $entry): 
-                    $employee = $employeeLookup[$entry['employee_id']] ?? null;
-                    $frontTemplate = $templateLookup[$entry['front_template_id']] ?? null;
-                    $backTemplate = $templateLookup[$entry['back_template_id']] ?? null;
-                    
-                    if (!$employee) continue;
-                ?>
-                <div 
-                    class="glass-card rounded-xl overflow-hidden"
-                    x-show="!searchQuery || 
-                        '<?php echo addslashes(strtolower($employee['name_en'] ?? '')); ?>'.includes(searchQuery.toLowerCase()) ||
-                        '<?php echo addslashes(strtolower($employee['email'] ?? '')); ?>'.includes(searchQuery.toLowerCase())"
-                >
-                    <!-- Card Preview -->
-                    <div class="aspect-video bg-gray-900 relative">
-                        <?php if ($entry['front_file']): ?>
-                        <img 
-                            src="<?php echo getBasePath(); ?>uploads/cards/<?php echo sanitize($entry['front_file']); ?>" 
-                            alt="Front" 
-                            class="w-full h-full object-contain"
-                        >
-                        <?php else: ?>
-                        <div class="w-full h-full flex items-center justify-center text-gray-600">
-                            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                        </div>
-                        <?php endif; ?>
+            <!-- Card Info -->
+            <div class="p-4">
+                <div class="flex items-start justify-between mb-3">
+                    <div>
+                        <h3 class="font-semibold text-gray-900"><?php echo sanitize($employee['name_en'] ?? 'Unknown'); ?></h3>
+                        <p class="text-sm text-gray-500"><?php echo sanitize($employee['position_en'] ?? ''); ?></p>
                     </div>
-                    
-                    <!-- Card Info -->
-                    <div class="p-4">
-                        <div class="flex items-start justify-between mb-2">
-                            <div>
-                                <p class="font-medium text-white"><?php echo sanitize($employee['name_en'] ?? ''); ?></p>
-                                <p class="text-gray-500 text-sm"><?php echo sanitize($employee['email'] ?? ''); ?></p>
-                            </div>
-                            <div class="flex items-center space-x-1">
-                                <?php if ($entry['front_file']): ?>
-                                <span class="px-2 py-0.5 text-xs bg-blue-500/20 text-blue-400 rounded">Front</span>
-                                <?php endif; ?>
-                                <?php if ($entry['back_file']): ?>
-                                <span class="px-2 py-0.5 text-xs bg-purple-500/20 text-purple-400 rounded">Back</span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        
-                        <p class="text-gray-600 text-xs mb-3">
-                            <?php echo date('M j, Y g:i A', strtotime($entry['generated_at'])); ?>
-                        </p>
-                        
-                        <div class="flex items-center space-x-2">
-                            <?php if ($entry['front_file']): ?>
-                            <a 
-                                href="<?php echo getBasePath(); ?>uploads/cards/<?php echo sanitize($entry['front_file']); ?>" 
-                                download
-                                class="flex-1 py-2 text-center text-sm bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors"
-                            >
-                                Front
-                            </a>
-                            <?php endif; ?>
-                            
-                            <?php if ($entry['back_file']): ?>
-                            <a 
-                                href="<?php echo getBasePath(); ?>uploads/cards/<?php echo sanitize($entry['back_file']); ?>" 
-                                download
-                                class="flex-1 py-2 text-center text-sm bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-colors"
-                            >
-                                Back
-                            </a>
-                            <?php endif; ?>
-                            
-                            <form method="post" class="inline" onsubmit="return confirm('Delete this entry?')">
-                                <input type="hidden" name="action" value="delete">
-                                <input type="hidden" name="entry_id" value="<?php echo sanitize($entry['id']); ?>">
-                                <button type="submit" class="p-2 text-gray-500 hover:text-red-400 transition-colors">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                    </svg>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
+                    <form method="post" class="inline" onsubmit="return confirm('Delete this entry?')">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
+                        <button type="submit" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
                 </div>
-                <?php endforeach; ?>
                 
-                <?php if (empty($generatedLog)): ?>
-                <div class="col-span-full text-center py-16 text-gray-500">
-                    <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <p>No cards generated yet</p>
-                    <p class="text-sm mt-1">Cards will appear here when employees generate them</p>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-500">
+                        <i class="fa-solid fa-calendar mr-1"></i>
+                        <?php echo date('M j, Y', strtotime($entry['generatedAt'])); ?>
+                    </span>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                        <?php echo sanitize($template['name'] ?? 'Template'); ?>
+                    </span>
                 </div>
-                <?php endif; ?>
             </div>
-        </main>
+        </div>
+        <?php endforeach; ?>
+        
+        <?php if (empty($generatedLog)): ?>
+        <div class="md:col-span-2 lg:col-span-3 bg-white rounded-xl border border-gray-200 p-12 text-center">
+            <div class="text-gray-400">
+                <i class="fa-solid fa-id-card text-4xl mb-4 opacity-50"></i>
+                <p class="text-gray-600 font-medium">No cards generated yet</p>
+                <p class="text-sm mt-1">Generate business cards for your employees</p>
+                <a href="batch_generate.php" class="mt-4 inline-flex px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Generate Cards
+                </a>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
-</body>
-</html>
+</div>
 
+<?php adminFooter(); ?>
