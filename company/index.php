@@ -100,68 +100,89 @@ $secondaryColor = $companyTheme['secondary_color'] ?? '#0f3460';
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?php echo assetUrl('css/tailwind.css'); ?>">
+    <link rel="stylesheet" href="<?php echo getBasePath(); ?>assets/vendor/css/all.css">
+    <link rel="stylesheet" href="<?php echo assetUrl('flowbite/app.css'); ?>">
     <style>
         :root {
             --primary-color: <?php echo $primaryColor; ?>;
             --secondary-color: <?php echo $secondaryColor; ?>;
         }
-        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
         .btn-primary { background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); }
+        .input-field {
+            background: #f9fafb;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 0.625rem 0.875rem;
+            font-size: 0.875rem;
+            width: 100%;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            background: #ffffff;
+        }
         <?php if ($companyTheme && $companyTheme['custom_css']): ?>
         <?php echo $companyTheme['custom_css']; ?>
         <?php endif; ?>
     </style>
 </head>
-<body class="bg-alzayani-dark text-white font-sans min-h-screen">
-    <!-- Header -->
-    <header class="glass-card border-b border-white/10">
+<body class="bg-gray-50 text-gray-900 min-h-screen">
+    <header class="bg-white border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div class="flex items-center gap-4">
                     <?php if ($companyTheme && $companyTheme['logo_path']): ?>
                     <img src="<?php echo imageUrl($companyTheme['logo_path']); ?>" alt="<?php echo sanitize($company['name']); ?>" class="h-12">
                     <?php endif; ?>
                     <div>
-                        <h1 class="text-2xl font-bold text-white"><?php echo sanitize($company['name']); ?></h1>
+                        <h1 class="text-2xl font-bold text-gray-900"><?php echo sanitize($company['name']); ?></h1>
                         <?php if (!empty($companyHierarchy)): ?>
-                        <p class="text-sm text-gray-400"><?php echo sanitize($companyHierarchy); ?></p>
+                        <p class="text-sm text-gray-500"><?php echo sanitize($companyHierarchy); ?></p>
                         <?php endif; ?>
                     </div>
                 </div>
-                <a href="<?php echo getBasePath(); ?>" class="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-sm">
-                    ← Back to Home
+                <a href="<?php echo getBasePath(); ?>" class="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Back to Home
                 </a>
             </div>
         </div>
     </header>
-    
-    <!-- Main Content -->
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <?php if ($message): ?>
-        <div class="mb-6 p-4 rounded-xl <?php echo $messageType === 'success' ? 'bg-green-500/10 border border-green-500/30 text-green-400' : 'bg-red-500/10 border border-red-500/30 text-red-400'; ?>">
+        <div class="mb-6 p-4 rounded-xl <?php echo $messageType === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'; ?>">
             <?php echo sanitize($message); ?>
         </div>
         <?php endif; ?>
-        
-        <!-- Employee Form -->
-        <div class="glass-card rounded-xl p-8 mb-8">
-            <h2 class="text-2xl font-bold mb-6">Employee Information Form</h2>
-            <p class="text-gray-400 mb-6">Please fill in your details to generate your business card.</p>
-            
+
+        <div class="bg-white border border-gray-200 rounded-2xl shadow-lg p-6 sm:p-8 mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">Employee Information</h2>
+                    <p class="text-sm text-gray-500 mt-1">Submit your details to generate your business card.</p>
+                </div>
+                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
+                    <i class="fa-solid fa-id-card"></i>
+                    Cardify Form
+                </span>
+            </div>
+
             <form method="post" class="space-y-6">
                 <input type="hidden" name="action" value="add_employee">
-                
+
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Email *</label>
-                        <input type="email" name="email" required class="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="your@email.com">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                        <input type="email" name="email" required class="input-field" placeholder="your@email.com">
                     </div>
-                    
+
                     <?php if (!empty($departments)): ?>
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Department</label>
-                        <select name="department_id" class="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                        <select name="department_id" class="input-field">
                             <option value="">Select Department</option>
                             <?php foreach ($departments as $dept): ?>
                             <option value="<?php echo sanitize($dept['id']); ?>"><?php echo sanitize($dept['name']); ?></option>
@@ -169,68 +190,67 @@ $secondaryColor = $companyTheme['secondary_color'] ?? '#0f3460';
                         </select>
                     </div>
                     <?php endif; ?>
-                    
+
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Name (English) *</label>
-                        <input type="text" name="name_en" required class="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="John Doe">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Name (English) *</label>
+                        <input type="text" name="name_en" required class="input-field" placeholder="John Doe">
                     </div>
-                    
+
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Name (Arabic)</label>
-                        <input type="text" name="name_ar" dir="rtl" class="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="جون دو">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Name (Arabic)</label>
+                        <input type="text" name="name_ar" dir="rtl" class="input-field" placeholder="جون دو">
                     </div>
-                    
+
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Position (English)</label>
-                        <input type="text" name="position_en" class="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Manager">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Position (English)</label>
+                        <input type="text" name="position_en" class="input-field" placeholder="Manager">
                     </div>
-                    
+
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Position (Arabic)</label>
-                        <input type="text" name="position_ar" dir="rtl" class="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="مدير">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Position (Arabic)</label>
+                        <input type="text" name="position_ar" dir="rtl" class="input-field" placeholder="مدير">
                     </div>
-                    
+
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Phone</label>
-                        <input type="text" name="phone" class="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="+968 XXXX XXXX">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                        <input type="text" name="phone" class="input-field" placeholder="+968 XXXX XXXX">
                     </div>
-                    
+
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Mobile</label>
-                        <input type="text" name="mobile" class="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="+968 XXXX XXXX">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Mobile</label>
+                        <input type="text" name="mobile" class="input-field" placeholder="+968 XXXX XXXX">
                     </div>
-                    
+
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Company (English)</label>
-                        <input type="text" name="company_en" value="<?php echo sanitize($company['name']); ?>" class="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Company (English)</label>
+                        <input type="text" name="company_en" value="<?php echo sanitize($company['name']); ?>" class="input-field">
                     </div>
-                    
+
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Company (Arabic)</label>
-                        <input type="text" name="company_ar" dir="rtl" class="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Company (Arabic)</label>
+                        <input type="text" name="company_ar" dir="rtl" class="input-field">
                     </div>
-                    
+
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Website</label>
-                        <input type="text" name="website" class="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="www.example.com">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Website</label>
+                        <input type="text" name="website" class="input-field" placeholder="www.example.com">
                     </div>
-                    
+
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Address</label>
-                        <input type="text" name="address" class="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Your address">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                        <input type="text" name="address" class="input-field" placeholder="Your address">
                     </div>
                 </div>
-                
+
                 <button type="submit" class="w-full py-4 rounded-xl btn-primary text-white font-bold text-lg hover:opacity-90 transition-opacity">
                     Submit Information
                 </button>
             </form>
         </div>
-        
-        <!-- Company Info -->
-        <div class="glass-card rounded-xl p-6">
-            <h3 class="text-lg font-semibold mb-4">About <?php echo sanitize($company['name']); ?></h3>
-            <p class="text-gray-400">
+
+        <div class="bg-white border border-gray-200 rounded-2xl shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">About <?php echo sanitize($company['name']); ?></h3>
+            <p class="text-gray-600">
                 <?php echo $companyTheme['footer_text'] ?? 'Welcome to ' . sanitize($company['name']); ?>
             </p>
         </div>
