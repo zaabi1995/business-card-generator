@@ -5,6 +5,9 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /
+
+    # Serve SVG favicon for default .ico requests
+    RewriteRule ^favicon\.ico$ /favicon.svg [L]
     
     # Force HTTPS in production (uncomment when SSL is configured)
     # RewriteCond %{HTTPS} off

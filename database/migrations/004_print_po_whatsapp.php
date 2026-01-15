@@ -4,7 +4,30 @@
  * Adds po_file_path column to print_orders table
  * Creates system_settings table for WhatsApp API token
  */
-require_once __DIR__ . '/../../includes/functions.php';
+
+// Define constants if not already defined (for migration context)
+if (!defined('BASE_DIR')) {
+    define('BASE_DIR', dirname(dirname(__DIR__)));
+}
+if (!defined('DATA_DIR')) {
+    define('DATA_DIR', BASE_DIR . '/data');
+}
+if (!defined('UPLOADS_DIR')) {
+    define('UPLOADS_DIR', BASE_DIR . '/uploads');
+}
+
+// Define generateUUID function if not already defined
+if (!function_exists('generateUUID')) {
+    function generateUUID() {
+        return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+            mt_rand(0, 0xffff),
+            mt_rand(0, 0x0fff) | 0x4000,
+            mt_rand(0, 0x3fff) | 0x8000,
+            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        );
+    }
+}
 
 function migration_004_print_po_whatsapp($pdo) {
     $errors = [];
