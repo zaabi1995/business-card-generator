@@ -1,8 +1,7 @@
 <?php
 /**
- * Unified Login Page
- * Handles login for super admin, company admin, and employees
- * Automatically detects user type and redirects accordingly
+ * Cardify - Login Page
+ * Design: Tailwind UI Split Screen + Flowbite + Salient
  */
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
@@ -17,6 +16,7 @@ if (Auth::isLoggedIn()) {
 
 $error = null;
 $showCompanyField = false;
+$brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
 // Handle login
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -27,6 +27,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($email) || empty($password)) {
         $error = 'Please enter email and password';
     } else {
+        if (empty($companySlug) && DatabaseAdapter::useDatabase()) {
+            try {
+                $db = Database::getInstance();
+                $company = $db->fetchOne(
+                    "SELECT slug FROM companies WHERE admin_email = :email AND status = 'active'",
+                    ['email' => $email]
+                );
+                if ($company && !empty($company['slug'])) {
+                    $companySlug = $company['slug'];
+                }
+            } catch (Exception $e) {}
+        }
+
         $result = Auth::login($email, $password, $companySlug);
         
         if ($result['success']) {
@@ -34,176 +47,222 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         } else {
             $error = $result['error'] ?? 'Invalid credentials';
-            // Show company field if login failed (might be company login)
             $showCompanyField = true;
         }
     }
 }
-
-// Get company theme if available
-$companyTheme = null;
-if (isset($_GET['company'])) {
-    $company = findCompanyBySlug($_GET['company']);
-    if ($company && DatabaseAdapter::useDatabase()) {
-        $db = Database::getInstance();
-        $companyTheme = $db->fetchOne(
-            "SELECT * FROM company_themes WHERE company_id = :id",
-            ['id' => $company['id']]
-        );
-    }
-}
-
-// Apply company theme colors
-$primaryColor = $companyTheme['primary_color'] ?? '#d4af37';
-$secondaryColor = $companyTheme['secondary_color'] ?? '#0f3460';
 ?>
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en" class="h-full bg-white">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | <?php echo SITE_NAME; ?></title>
+    <title>Sign In - <?php echo $brandName; ?></title>
+    <link rel="icon" href="<?php echo getBasePath(); ?>favicon.svg" type="image/svg+xml">
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?php echo assetUrl('css/tailwind.css'); ?>?v=<?php echo filemtime(ASSETS_DIR . '/css/tailwind.css'); ?>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="<?php echo getBasePath(); ?>assets/vendor/css/all.css">
+    
+    <!-- Flowbite CSS -->
+    <link rel="stylesheet" href="<?php echo assetUrl('flowbite/app.css'); ?>">
+    
     <style>
-        :root {
-            --primary-color: <?php echo $primaryColor; ?>;
-            --secondary-color: <?php echo $secondaryColor; ?>;
+        body { font-family: 'Inter', sans-serif; }
+        .form-input {
+            display: block;
+            width: 100%;
+            border-radius: 0.5rem;
+            background-color: #f9fafb;
+            border: 1px solid #d1d5db;
+            padding: 0.625rem 0.875rem;
+            font-size: 0.875rem;
+            color: #111827;
+            outline: none;
+            transition: all 0.15s ease;
         }
-        .glass-card { 
-            background: rgba(255, 255, 255, 0.03); 
-            backdrop-filter: blur(20px); 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); 
+        .form-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
-        .input-bhd { 
-            background: rgba(255, 255, 255, 0.05); 
-            border: 1px solid rgba(255, 255, 255, 0.15); 
-            transition: all 0.3s ease; 
-        }
-        .input-bhd:focus { 
-            background: rgba(255, 255, 255, 0.08); 
-            border-color: var(--primary-color); 
-            box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1); 
-        }
-        .btn-bhd { 
-            background: linear-gradient(135deg, var(--secondary-color) 0%, #16213e 50%, #0f3460 100%); 
-            transition: all 0.3s ease; 
-            border: 1px solid var(--primary-color); 
-        }
-        .btn-bhd:hover { 
-            box-shadow: 0 0 30px var(--primary-color); 
-            border-color: var(--primary-color); 
-            transform: translateY(-1px); 
-        }
-        .ambient-bg { 
-            position: fixed; 
-            inset: 0; 
-            pointer-events: none; 
-            background: 
-                radial-gradient(ellipse at 20% 30%, rgba(212, 175, 55, 0.04) 0%, transparent 50%), 
-                radial-gradient(ellipse at 80% 70%, rgba(15, 52, 96, 0.06) 0%, transparent 50%); 
-        }
-        .role-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: rgba(212, 175, 55, 0.2);
-            color: var(--primary-color);
-            border: 1px solid var(--primary-color);
+        .form-input::placeholder {
+            color: #9ca3af;
         }
     </style>
 </head>
-<body class="bg-alzayani-dark text-white font-sans min-h-screen antialiased">
-    <div class="ambient-bg"></div>
-
-    <div class="min-h-screen flex items-center justify-center px-4 py-12">
-        <div class="w-full max-w-lg">
-            <div class="text-center mb-8">
-                <?php if ($companyTheme && $companyTheme['logo_path']): ?>
-                <img src="<?php echo imageUrl($companyTheme['logo_path']); ?>" alt="Logo" class="h-16 mx-auto mb-4">
-                <?php else: ?>
-                <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center border border-amber-500/30">
-                    <svg class="w-10 h-10 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
-                    </svg>
+<body class="h-full">
+    <div class="flex min-h-full">
+        <!-- Left Side - Form -->
+        <div class="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
+            <div class="mx-auto w-full max-w-sm lg:w-96">
+                <!-- Logo & Header -->
+                <div>
+                    <a href="<?php echo getBasePath(); ?>" class="flex items-center gap-3">
+                        <img src="<?php echo assetUrl('images/logo.svg'); ?>" class="h-10 w-auto" alt="<?php echo $brandName; ?>">
+                        <span class="text-xl font-bold text-gray-900"><?php echo $brandName; ?></span>
+                    </a>
+                    <h2 class="mt-8 text-2xl font-bold tracking-tight text-gray-900">
+                        Sign in to your account
+                    </h2>
+                    <p class="mt-2 text-sm text-gray-600">
+                        Not a member?
+                        <a href="<?php echo getBasePath(); ?>company/register.php" class="font-semibold text-blue-600 hover:text-blue-500">
+                            Start a 14 day free trial
+                        </a>
+                    </p>
                 </div>
-                <?php endif; ?>
-                <h1 class="text-3xl font-bold text-white"><?php echo $companyTheme['header_text'] ?? SITE_NAME; ?></h1>
-                <p class="text-gray-400 mt-2">Sign in to your account</p>
-                <?php if (isset($_GET['company'])): ?>
-                <span class="role-badge mt-2">Company Login</span>
-                <?php endif; ?>
-            </div>
 
-            <div class="glass-card rounded-2xl p-8">
+                <!-- Error Message -->
                 <?php if ($error): ?>
-                <div class="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-                    <div class="flex items-center space-x-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span><?php echo sanitize($error); ?></span>
+                <div class="mt-6 flex items-center gap-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">
+                    <i class="fa-solid fa-circle-exclamation flex-shrink-0"></i>
+                    <div>
+                        <span><?php echo htmlspecialchars($error); ?></span>
+                        <?php if ($showCompanyField): ?>
+                        <p class="mt-1 text-xs">If you're an employee, please enter your company code below.</p>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <?php endif; ?>
 
-                <form method="post" class="space-y-5">
-                    <?php if ($showCompanyField || isset($_GET['company'])): ?>
+                <!-- Login Form -->
+                <form method="POST" class="mt-10 space-y-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Company Code (Optional)</label>
-                        <input 
-                            type="text" 
-                            name="company" 
-                            value="<?php echo sanitize($_GET['company'] ?? $_POST['company'] ?? ''); ?>"
-                            class="input-bhd w-full px-5 py-4 rounded-xl text-white" 
-                            placeholder="e.g., acme"
-                        >
-                        <p class="text-xs text-gray-500 mt-2">Leave empty for super admin or employee login</p>
+                        <label for="email" class="block text-sm font-medium text-gray-900">
+                            Email address
+                        </label>
+                        <div class="mt-2">
+                            <input type="email" name="email" id="email" autocomplete="email"
+                                   value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
+                                   class="form-input" 
+                                   placeholder="name@company.com" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-900">
+                            Password
+                        </label>
+                        <div class="mt-2">
+                            <input type="password" name="password" id="password" autocomplete="current-password"
+                                   class="form-input" 
+                                   placeholder="••••••••" required>
+                        </div>
+                    </div>
+
+                    <?php if ($showCompanyField || isset($_GET['employee'])): ?>
+                    <div>
+                        <label for="company" class="block text-sm font-medium text-gray-900">
+                            Company code
+                            <span class="font-normal text-gray-500">(for employees)</span>
+                        </label>
+                        <div class="mt-2">
+                            <input type="text" name="company" id="company" 
+                                   value="<?php echo htmlspecialchars($_POST['company'] ?? $_GET['company'] ?? ''); ?>"
+                                   class="form-input" 
+                                   placeholder="e.g., my-company">
+                        </div>
                     </div>
                     <?php endif; ?>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
-                        <input 
-                            type="email" 
-                            name="email" 
-                            required 
-                            autofocus
-                            value="<?php echo sanitize($_POST['email'] ?? ''); ?>"
-                            class="input-bhd w-full px-5 py-4 rounded-xl text-white" 
-                            placeholder="your@email.com"
-                        >
+
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <input id="remember" name="remember" type="checkbox"
+                                   class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600">
+                            <label for="remember" class="text-sm text-gray-900">Remember me</label>
+                        </div>
+                        <a href="#" class="text-sm font-semibold text-blue-600 hover:text-blue-500">
+                            Forgot password?
+                        </a>
                     </div>
-                    
+
                     <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
-                        <input 
-                            type="password" 
-                            name="password" 
-                            required 
-                            class="input-bhd w-full px-5 py-4 rounded-xl text-white" 
-                            placeholder="Your password"
-                        >
+                        <button type="submit" class="flex w-full justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">
+                            Sign in
+                            <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </button>
                     </div>
-                    
-                    <button type="submit" class="btn-bhd w-full py-4 rounded-xl text-white font-bold text-lg">
-                        Sign In
-                    </button>
                 </form>
-                
-                <div class="mt-6 pt-6 border-t border-white/10">
-                    <div class="text-center text-sm text-gray-500 space-y-2">
-                        <p>New company? <a class="text-amber-400 hover:text-amber-300" href="<?php echo getBasePath(); ?>company/register.php">Create account</a></p>
-                        <p><a class="text-gray-400 hover:text-white" href="<?php echo getBasePath(); ?>">← Back to Card Generator</a></p>
+
+                <!-- Divider -->
+                <div class="mt-10">
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                            <div class="w-full border-t border-gray-200"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm font-medium">
+                            <span class="bg-white px-6 text-gray-500">Or continue with</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <?php if (!$showCompanyField && !isset($_GET['employee'])): ?>
+                        <a href="?employee=1" class="flex w-full items-center justify-center gap-3 rounded-lg bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-100 transition-colors">
+                            <i class="fa-solid fa-id-badge text-blue-600"></i>
+                            Sign in as Employee
+                        </a>
+                        <?php else: ?>
+                        <a href="<?php echo getBasePath(); ?>login.php" class="flex w-full items-center justify-center gap-3 rounded-lg bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-100 transition-colors">
+                            <i class="fa-solid fa-building text-blue-600"></i>
+                            Sign in as Company Admin
+                        </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- Back to Home -->
+                <p class="mt-10 text-center text-sm text-gray-500">
+                    <a href="<?php echo getBasePath(); ?>" class="font-medium text-gray-700 hover:text-gray-900">
+                        <i class="fa-solid fa-arrow-left mr-1"></i>
+                        Back to homepage
+                    </a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Right Side - Background Image -->
+        <div class="relative hidden w-0 flex-1 lg:block">
+            <img class="absolute inset-0 h-full w-full object-cover" 
+                 src="<?php echo assetUrl('images/authentication/login.jpg'); ?>" 
+                 alt="">
+            <!-- Overlay -->
+            <div class="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-gray-800/50 to-transparent"></div>
+            
+            <!-- Content on image -->
+            <div class="absolute inset-0 flex flex-col justify-end p-12 text-white">
+                <div class="max-w-lg">
+                    <h3 class="text-3xl font-bold">
+                        Welcome back to <?php echo $brandName; ?>
+                    </h3>
+                    <p class="mt-4 text-lg text-gray-200 leading-relaxed">
+                        Manage your digital business cards, employees, and company branding all in one place.
+                    </p>
+                    
+                    <!-- Stats -->
+                    <div class="mt-8 flex gap-8">
+                        <div>
+                            <p class="text-3xl font-bold">10k+</p>
+                            <p class="text-sm text-gray-300">Active users</p>
+                        </div>
+                        <div>
+                            <p class="text-3xl font-bold">500+</p>
+                            <p class="text-sm text-gray-300">Companies</p>
+                        </div>
+                        <div>
+                            <p class="text-3xl font-bold">99.9%</p>
+                            <p class="text-sm text-gray-300">Uptime</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    
+    <!-- Flowbite JS -->
+    <script src="<?php echo assetUrl('flowbite/app.bundle.js'); ?>"></script>
 </body>
 </html>

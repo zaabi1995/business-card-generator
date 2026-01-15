@@ -2,24 +2,92 @@
 /**
  * Complete Installation Wizard
  * Handles full setup: database, site config, billing, admin account
+ * 
+ * SECURITY: This page can ONLY be accessed ONCE. After installation is complete,
+ * this page is permanently locked and will redirect to the homepage.
+ * To reinstall, you must manually delete the config.php file and drop the database tables.
  */
 session_start();
 
-// Prevent access if already installed
+// Reinstall flag (kept for legacy UI hints only)
+$reinstall = isset($_GET['reinstall']) && $_GET['reinstall'] === '1';
+
+// Calculate base path for redirects
+$scriptPath = $_SERVER['PHP_SELF'] ?? $_SERVER['SCRIPT_NAME'] ?? '/install/index.php';
+$basePath = str_replace('/install/index.php', '', $scriptPath);
+$basePath = str_replace('/install/', '', $basePath);
+$basePath = rtrim($basePath, '/');
+if (empty($basePath)) $basePath = '';
+
+// STRICT CHECK: If installation is complete, BLOCK access completely - no exceptions
 if (file_exists(__DIR__ . '/../config.php')) {
+    require_once __DIR__ . '/../includes/Database.php';
     require_once __DIR__ . '/../config.php';
+    
     if (defined('DB_HOST') && !empty(DB_HOST)) {
-        $db = Database::getInstance();
-        if ($db->isConnected() && $db->isSetup()) {
-            try {
+        try {
+            $db = Database::getInstance();
+            if ($db->isConnected() || $db->connect(DB_HOST, DB_NAME, DB_USER, DB_PASS ?? '', DB_PORT ?? '3306', DB_TYPE ?? 'mysql')) {
+                // Check if installation_complete flag is set
                 $setting = $db->fetchOne("SELECT setting_value FROM system_settings WHERE setting_key = 'installation_complete'");
                 if ($setting && $setting['setting_value'] === '1') {
-                    header('Location: ' . getBasePath());
+                    // Installation is COMPLETE - BLOCK ACCESS PERMANENTLY
+                    ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installation Complete | Cardify</title>
+    <link rel="icon" href="<?php echo $basePath; ?>/favicon.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="<?php echo $basePath; ?>/favicon.ico">
+    <!-- Font Awesome Pro (Local) -->
+    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/all.css">
+    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/sharp-solid.css">
+    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/sharp-regular.css">
+    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/sharp-light.css">
+    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/duotone.css">
+    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/css/tailwind.css?v=<?php echo filemtime(__DIR__ . '/../assets/css/tailwind.css'); ?>">
+    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/css/cardify-overrides.css?v=<?php echo filemtime(__DIR__ . '/../assets/css/cardify-overrides.css'); ?>">
+    <meta http-equiv="refresh" content="5;url=<?php echo $basePath; ?>/">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-gray-100 min-h-screen flex items-center justify-center font-sans">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-200 p-10 max-w-md text-center">
+        <div class="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
+            <svg class="w-8 h-8 text-green-600" aria-hidden="true">
+                <use href="<?php echo $basePath; ?>/assets/images/cardify-icons.svg#icon-check"></use>
+            </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-4">Already Installed</h1>
+        <p class="text-gray-600 mb-6">
+            This application has already been installed and configured. 
+            The installation wizard is no longer accessible.
+        </p>
+        <p class="text-gray-500 text-sm mb-6">
+            <svg class="w-4 h-4 mr-2 inline-block text-gray-500 animate-spin" aria-hidden="true">
+                <use href="<?php echo $basePath; ?>/assets/images/cardify-icons.svg#icon-spinner"></use>
+            </svg>
+            Redirecting to homepage in 5 seconds...
+        </p>
+        <a href="<?php echo $basePath; ?>/" 
+           class="inline-block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition">
+            <svg class="w-4 h-4 mr-2 inline-block text-white" aria-hidden="true">
+                <use href="<?php echo $basePath; ?>/assets/images/cardify-icons.svg#icon-link"></use>
+            </svg>
+            Go to Homepage Now
+        </a>
+        <p class="text-gray-500 text-xs mt-6">
+            To reinstall, manually delete config.php and drop database tables.
+        </p>
+    </div>
+</body>
+</html>
+                    <?php
                     exit;
                 }
-            } catch (Exception $e) {
-                // Continue installation
             }
+        } catch (Exception $e) {
+            // Database error - continue with installation (might be partial install)
         }
     }
 }
@@ -266,11 +334,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Generate config.php
             $configContent = generateConfigFile($dbConfig, $siteConfig, $billingConfig);
             
-            if (!file_put_contents(__DIR__ . '/../config.php', $configContent)) {
-                $errors[] = 'Failed to write config.php. Please check file permissions.';
+            $configPath = __DIR__ . '/../config.php';
+            
+            // If config.php exists, try to make it writable first
+            if (file_exists($configPath)) {
+                // Try to change permissions to writable
+                @chmod($configPath, 0666);
+            }
+            
+            // Try to write config.php
+            $writeResult = @file_put_contents($configPath, $configContent);
+            
+            if ($writeResult === false) {
+                // Failed to write - provide detailed help
+                $errors[] = 'Failed to write config.php due to permission issues.';
+                $errors[] = '<strong>To fix this, run on your server:</strong><br><code style="background:#f1f5f9;padding:4px 8px;border-radius:4px;">chmod 666 ' . realpath(dirname($configPath)) . '/config.php</code><br>or<br><code style="background:#f1f5f9;padding:4px 8px;border-radius:4px;">chown www:www ' . realpath(dirname($configPath)) . '/config.php</code>';
                 $step = 'finalize';
                 break;
             }
+            
+            // Set proper permissions after writing
+            @chmod($configPath, 0644);
             
             // Initialize database and complete setup
             // Use session config directly instead of requiring config.php
@@ -296,6 +380,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'site_description' => $siteConfig['site_description']
             ];
             
+            // Helper function to generate UUID if not available
+            if (!function_exists('installer_generateUUID')) {
+                function installer_generateUUID() {
+                    return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+                        mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+                        mt_rand(0, 0xffff),
+                        mt_rand(0, 0x0fff) | 0x4000,
+                        mt_rand(0, 0x3fff) | 0x8000,
+                        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+                    );
+                }
+            }
+            
             foreach ($settings as $key => $value) {
                 try {
                     $existing = $db->fetchOne(
@@ -303,28 +400,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ['key' => $key]
                     );
                     
-                    if ($existing) {
+                    if ($existing && !empty($existing)) {
                         // Update existing setting
-                        $db->update('system_settings',
+                        $updated = $db->update('system_settings',
                             ['setting_value' => $value],
                             'setting_key = :key',
                             ['key' => $key]
                         );
+                        if ($updated === false) {
+                            error_log("Failed to update setting {$key}");
+                        }
                     } else {
-                        // Insert new setting
-                        $db->insert('system_settings', [
-                            'setting_key' => $key,
-                            'setting_value' => $value,
-                            'setting_type' => 'string',
-                            'description' => ucfirst(str_replace('_', ' ', $key))
-                        ]);
+                        // Insert new setting - table requires id column (UUID)
+                        try {
+                            $uuid = function_exists('generateUUID') ? generateUUID() : installer_generateUUID();
+                            $db->insert('system_settings', [
+                                'id' => $uuid,
+                                'setting_key' => $key,
+                                'setting_value' => $value,
+                                'description' => ucfirst(str_replace('_', ' ', $key))
+                            ]);
+                        } catch (Exception $insertError) {
+                            // If insert fails (maybe duplicate key), try update
+                            error_log("Insert failed for {$key}, trying update: " . $insertError->getMessage());
+                            $db->update('system_settings',
+                                ['setting_value' => $value],
+                                'setting_key = :key',
+                                ['key' => $key]
+                            );
+                        }
+                    }
+                    
+                    // Verify it was set correctly
+                    $verify = $db->fetchOne(
+                        "SELECT setting_value FROM system_settings WHERE setting_key = :key",
+                        ['key' => $key]
+                    );
+                    if (!$verify || ($verify['setting_value'] ?? '') !== $value) {
+                        $errorMsg = "Warning: Setting {$key} verification failed. Expected: {$value}, Got: " . print_r($verify, true);
+                        error_log($errorMsg);
+                        // For installation_complete, this is critical - add to errors
+                        if ($key === 'installation_complete') {
+                            $errors[] = "Failed to set installation_complete flag. Please set it manually in database.";
+                        }
+                    } else {
+                        // Success - add to success messages for installation_complete
+                        if ($key === 'installation_complete') {
+                            $success[] = "Installation complete flag set successfully.";
+                        }
                     }
                 } catch (Exception $e) {
-                    error_log("Failed to set setting {$key}: " . $e->getMessage());
+                    $errorMsg = "Failed to set setting {$key}: " . $e->getMessage();
+                    error_log($errorMsg);
+                    // For installation_complete, this is critical
+                    if ($key === 'installation_complete') {
+                        $errors[] = "Critical: Failed to set installation_complete flag: " . $e->getMessage();
+                    }
                 }
             }
             
-            // Create admin company if admin config provided
+            // Final check: ensure installation_complete was set
+            $finalCheck = $db->fetchOne(
+                "SELECT setting_value FROM system_settings WHERE setting_key = 'installation_complete'"
+            );
+            if (!$finalCheck || ($finalCheck['setting_value'] ?? '') !== '1') {
+                // Try one more time with direct SQL - include id column (UUID required)
+                try {
+                    $uuid = function_exists('generateUUID') ? generateUUID() : installer_generateUUID();
+                    $db->query("INSERT INTO system_settings (id, setting_key, setting_value, description) VALUES ('{$uuid}', 'installation_complete', '1', 'Whether installation has been completed') ON DUPLICATE KEY UPDATE setting_value = '1'");
+                    $success[] = "Installation complete flag set via direct SQL.";
+                } catch (Exception $e) {
+                    $errors[] = "Could not set installation_complete flag. The homepage will auto-create it on first visit if companies exist.";
+                }
+            }
+            
+            // Create admin company and user if admin config provided
             if ($adminConfig) {
                 // Use DatabaseAdapter if database is available, otherwise use JSON function
                 if (DatabaseAdapter::useDatabase()) {
@@ -344,6 +494,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($companyResult['success']) {
                     $success[] = 'Admin company created successfully!';
                     $success[] = 'Company code: ' . $companyResult['company']['slug'];
+                    
+                    // Also create admin user in users table for unified login
+                    try {
+                        $userId = function_exists('generateUUID') ? generateUUID() : installer_generateUUID();
+                        $passwordHash = password_hash($adminConfig['password'], PASSWORD_BCRYPT);
+                        $db->insert('users', [
+                            'id' => $userId,
+                            'email' => $adminConfig['email'],
+                            'password_hash' => $passwordHash,
+                            'name' => $adminConfig['name'],
+                            'role' => 'super_admin',
+                            'company_id' => $companyResult['company']['id'],
+                            'status' => 'active'
+                        ]);
+                        $success[] = 'Admin user account created!';
+                    } catch (Exception $userError) {
+                        // If user exists, update role and password to ensure login works
+                        try {
+                            $db->update('users',
+                                [
+                                    'password_hash' => $passwordHash,
+                                    'role' => 'super_admin',
+                                    'company_id' => $companyResult['company']['id'],
+                                    'status' => 'active'
+                                ],
+                                'email = :email',
+                                ['email' => $adminConfig['email']]
+                            );
+                            $success[] = 'Admin user account updated!';
+                        } catch (Exception $updateError) {
+                            error_log("Could not create/update admin user: " . $userError->getMessage());
+                        }
+                    }
                 } else {
                     $errors[] = 'Failed to create admin company: ' . ($companyResult['error'] ?? 'Unknown error');
                 }
@@ -375,6 +558,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $step = 'complete';
             $success[] = 'Installation completed successfully!';
             $success[] = 'config.php has been created and verified.';
+            
             break;
     }
 }
@@ -552,161 +736,192 @@ if (!function_exists('getBasePath')) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Installation Wizard | Business Card Generator</title>
+    <title>Installation Wizard | Cardify</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="<?php echo $basePath; ?>/favicon.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="<?php echo $basePath; ?>/favicon.ico">
     
-    <!-- Tailwind CSS CDN (for installer before assets are available) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'alzayani-dark': '#0a1628',
-                        'alzayani-blue': '#1e3a5f',
-                        'alzayani-blue-light': '#2d5a8a',
-                        'alzayani-navy': '#0d1b2a',
-                    },
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
+    <!-- Font Awesome Pro (Local) -->
+    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/all.css">
+    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/sharp-solid.css">
+    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/sharp-regular.css">
+    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/sharp-light.css">
+    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/duotone.css">
+
+    <!-- Tailwind CSS -->
+    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/css/tailwind.css">
+    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/css/cardify-overrides.css">
     
     <style>
-        .glass-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        .card-box {
+            background: white;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
         }
-        .input-bhd {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            transition: all 0.3s ease;
+        .input-field {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
         }
-        .input-bhd:focus {
+        .input-field:focus {
             outline: none;
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(212, 175, 55, 0.6);
-            box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+            background: white;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
         }
-        .btn-bhd {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            transition: all 0.3s ease;
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transition: all 0.2s ease;
         }
-        .btn-bhd:hover {
-            box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
-            border-color: rgba(212, 175, 55, 0.6);
-            transform: translateY(-2px);
+        .btn-primary:hover {
+            box-shadow: 0 10px 30px -10px rgba(37, 99, 235, 0.5);
+            transform: translateY(-1px);
         }
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            transition: all 0.3s ease;
+            background: white;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
         }
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: #f9fafb;
+            border-color: #d1d5db;
         }
         .step-connector {
             width: 30px;
             height: 2px;
-            background: rgba(255, 255, 255, 0.1);
+            background: #e5e7eb;
             margin: 0 0.25rem;
             align-self: center;
         }
+        .info-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .info-box p {
+            color: #1e40af;
+            font-size: 0.875rem;
+        }
     </style>
 </head>
-<body class="bg-gradient-to-br from-alzayani-dark via-slate-900 to-alzayani-dark text-white font-sans min-h-screen antialiased">
+<body class="bg-gradient-to-br from-gray-50 to-blue-50 text-gray-900 font-sans min-h-screen antialiased">
     <div class="min-h-screen flex items-center justify-center px-4 py-12">
         <div class="w-full max-w-3xl">
             <!-- Header -->
             <div class="text-center mb-8">
-                <h1 class="text-4xl md:text-5xl font-bold text-white mb-2 bg-gradient-to-r from-white to-amber-400 bg-clip-text text-transparent">
+                <div class="flex items-center justify-center space-x-3 mb-4">
+                    <div style="width: 52px; height: 34px; border-radius: 8px;" class="flex items-center justify-center shadow-lg overflow-hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 44" fill="none" style="width: 52px; height: 34px;">
+                            <defs><linearGradient id="cg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#2563eb"/><stop offset="100%" stop-color="#1d4ed8"/></linearGradient></defs>
+                            <rect width="68" height="44" rx="10" fill="url(#cg1)"/>
+                            <rect x="8" y="8" width="52" height="28" rx="6" fill="#ffffff"/>
+                            <rect x="14" y="14" width="10" height="10" rx="5" fill="#f59e0b"/>
+                            <rect x="28" y="14" width="24" height="4" rx="2" fill="#2563eb"/>
+                            <rect x="28" y="22" width="18" height="4" rx="2" fill="#93c5fd"/>
+                        </svg>
+                    </div>
+                    <span class="text-2xl font-bold text-gray-900">Cardify</span>
+                </div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
                     Installation Wizard
                 </h1>
-                <p class="text-gray-400 text-lg">Complete setup for your Business Card Generator SaaS</p>
+                <p class="text-gray-500 text-lg">Complete setup for your Business Card Generator</p>
             </div>
             
             <!-- Step Indicator -->
             <div class="flex justify-center items-center mb-8 flex-wrap gap-2">
-                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'welcome' || $step === 'requirements' ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/30' : ($step !== 'welcome' && $step !== 'requirements' ? 'bg-green-500/20 border-2 border-green-500 text-green-400' : 'bg-white/5 border-2 border-white/10 text-gray-400'); ?>">1</div>
+                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'welcome' || $step === 'requirements' ? 'bg-blue-600 text-white shadow-lg' : ($step !== 'welcome' && $step !== 'requirements' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'); ?>">1</div>
                 <div class="step-connector"></div>
-                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'database' ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/30' : ($step === 'migrate' || $step === 'site_config' || $step === 'billing' || $step === 'admin' || $step === 'finalize' || $step === 'complete' ? 'bg-green-500/20 border-2 border-green-500 text-green-400' : 'bg-white/5 border-2 border-white/10 text-gray-400'); ?>">2</div>
+                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'database' ? 'bg-blue-600 text-white shadow-lg' : ($step === 'migrate' || $step === 'site_config' || $step === 'billing' || $step === 'admin' || $step === 'finalize' || $step === 'complete' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'); ?>">2</div>
                 <div class="step-connector"></div>
-                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'migrate' ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/30' : ($step === 'site_config' || $step === 'billing' || $step === 'admin' || $step === 'finalize' || $step === 'complete' ? 'bg-green-500/20 border-2 border-green-500 text-green-400' : 'bg-white/5 border-2 border-white/10 text-gray-400'); ?>">3</div>
+                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'migrate' ? 'bg-blue-600 text-white shadow-lg' : ($step === 'site_config' || $step === 'billing' || $step === 'admin' || $step === 'finalize' || $step === 'complete' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'); ?>">3</div>
                 <div class="step-connector"></div>
-                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'site_config' ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/30' : ($step === 'billing' || $step === 'admin' || $step === 'finalize' || $step === 'complete' ? 'bg-green-500/20 border-2 border-green-500 text-green-400' : 'bg-white/5 border-2 border-white/10 text-gray-400'); ?>">4</div>
+                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'site_config' ? 'bg-blue-600 text-white shadow-lg' : ($step === 'billing' || $step === 'admin' || $step === 'finalize' || $step === 'complete' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'); ?>">4</div>
                 <div class="step-connector"></div>
-                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'billing' ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/30' : ($step === 'admin' || $step === 'finalize' || $step === 'complete' ? 'bg-green-500/20 border-2 border-green-500 text-green-400' : 'bg-white/5 border-2 border-white/10 text-gray-400'); ?>">5</div>
+                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'billing' ? 'bg-blue-600 text-white shadow-lg' : ($step === 'admin' || $step === 'finalize' || $step === 'complete' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'); ?>">5</div>
                 <div class="step-connector"></div>
-                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'admin' ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/30' : ($step === 'finalize' || $step === 'complete' ? 'bg-green-500/20 border-2 border-green-500 text-green-400' : 'bg-white/5 border-2 border-white/10 text-gray-400'); ?>">6</div>
+                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'admin' ? 'bg-blue-600 text-white shadow-lg' : ($step === 'finalize' || $step === 'complete' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'); ?>">6</div>
                 <div class="step-connector"></div>
-                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'finalize' ? 'bg-amber-500/20 border-2 border-amber-500 text-amber-400 shadow-lg shadow-amber-500/30' : ($step === 'complete' ? 'bg-green-500/20 border-2 border-green-500 text-green-400' : 'bg-white/5 border-2 border-white/10 text-gray-400'); ?>">7</div>
+                <div class="step w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all <?php echo $step === 'finalize' ? 'bg-blue-600 text-white shadow-lg' : ($step === 'complete' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'); ?>">7</div>
             </div>
             
             <!-- Messages -->
             <?php if (!empty($errors)): ?>
-            <div class="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30">
+            <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200">
                 <?php foreach ($errors as $error): ?>
-                <p class="text-red-400 text-sm"><?php echo htmlspecialchars($error); ?></p>
+                <p class="text-red-700 text-sm flex items-start">
+                    <svg class="w-4 h-4 mr-2 mt-0.5 text-red-500" aria-hidden="true">
+                        <use href="<?php echo $basePath; ?>/assets/images/cardify-icons.svg#icon-x"></use>
+                    </svg>
+                    <?php echo $error; ?>
+                </p>
                 <?php endforeach; ?>
             </div>
             <?php endif; ?>
             
             <?php if (!empty($success)): ?>
-            <div class="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/30">
+            <div class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200">
                 <?php foreach ($success as $msg): ?>
-                <p class="text-green-400 text-sm"><?php echo htmlspecialchars($msg); ?></p>
+                <p class="text-green-700 text-sm flex items-start">
+                    <svg class="w-4 h-4 mr-2 mt-0.5 text-green-500" aria-hidden="true">
+                        <use href="<?php echo $basePath; ?>/assets/images/cardify-icons.svg#icon-check-circle"></use>
+                    </svg>
+                    <?php echo htmlspecialchars($msg); ?>
+                </p>
                 <?php endforeach; ?>
             </div>
             <?php endif; ?>
             
             <!-- Step Content -->
-            <div class="glass-card rounded-2xl p-6 md:p-8">
+            <div class="card-box rounded-2xl p-6 md:p-8">
                 <?php if ($step === 'welcome' || $step === 'requirements'): ?>
+                    <?php if ($reinstall): ?>
+                    <div class="mb-6 p-4 rounded-xl bg-yellow-50 border border-yellow-200">
+                        <p class="text-yellow-700 text-sm"><strong>⚠ Reinstall Mode:</strong> You can clean install (delete all existing data) during the migration step.</p>
+                    </div>
+                    <?php endif; ?>
+                    
                     <h2 class="text-2xl font-bold mb-4">Welcome</h2>
-                    <p class="text-gray-400 mb-6">This wizard will guide you through the complete setup of your Business Card Generator SaaS platform.</p>
+                    <p class="text-gray-600 mb-6">This wizard will guide you through the complete setup of your Business Card Generator SaaS platform.</p>
                     
                     <h3 class="text-lg font-semibold mb-4">Requirements Check</h3>
                     <ul class="space-y-2 mb-6">
                         <li class="flex items-center space-x-2">
-                            <span class="<?php echo version_compare(PHP_VERSION, '7.4.0', '>=') ? 'text-green-400' : 'text-red-400'; ?>">
+                            <span class="<?php echo version_compare(PHP_VERSION, '7.4.0', '>=') ? 'text-green-600' : 'text-red-400'; ?>">
                                 <?php echo version_compare(PHP_VERSION, '7.4.0', '>=') ? '✓' : '✗'; ?>
                             </span>
                             <span>PHP <?php echo version_compare(PHP_VERSION, '7.4.0', '>=') ? '≥7.4 (' . PHP_VERSION . ')' : PHP_VERSION . ' (Need ≥7.4)'; ?></span>
                         </li>
                         <li class="flex items-center space-x-2">
-                            <span class="<?php echo extension_loaded('pdo') ? 'text-green-400' : 'text-red-400'; ?>">
+                            <span class="<?php echo extension_loaded('pdo') ? 'text-green-600' : 'text-red-400'; ?>">
                                 <?php echo extension_loaded('pdo') ? '✓' : '✗'; ?>
                             </span>
                             <span>PDO Extension: <?php echo extension_loaded('pdo') ? 'Installed' : 'Missing'; ?></span>
                         </li>
                         <li class="flex items-center space-x-2">
-                            <span class="<?php echo extension_loaded('json') ? 'text-green-400' : 'text-red-400'; ?>">
+                            <span class="<?php echo extension_loaded('json') ? 'text-green-600' : 'text-red-400'; ?>">
                                 <?php echo extension_loaded('json') ? '✓' : '✗'; ?>
                             </span>
                             <span>JSON Extension: <?php echo extension_loaded('json') ? 'Installed' : 'Missing'; ?></span>
                         </li>
                         <li class="flex items-center space-x-2">
-                            <span class="<?php echo is_writable(__DIR__ . '/../data') ? 'text-green-400' : 'text-red-400'; ?>">
+                            <span class="<?php echo is_writable(__DIR__ . '/../data') ? 'text-green-600' : 'text-red-400'; ?>">
                                 <?php echo is_writable(__DIR__ . '/../data') ? '✓' : '✗'; ?>
                             </span>
                             <span>Data directory writable</span>
                         </li>
                         <li class="flex items-center space-x-2">
-                            <span class="<?php echo is_writable(__DIR__ . '/../uploads') ? 'text-green-400' : 'text-red-400'; ?>">
+                            <span class="<?php echo is_writable(__DIR__ . '/../uploads') ? 'text-green-600' : 'text-red-400'; ?>">
                                 <?php echo is_writable(__DIR__ . '/../uploads') ? '✓' : '✗'; ?>
                             </span>
                             <span>Uploads directory writable</span>
                         </li>
                         <li class="flex items-center space-x-2">
-                            <span class="<?php echo is_writable(__DIR__ . '/../') ? 'text-green-400' : 'text-red-400'; ?>">
+                            <span class="<?php echo is_writable(__DIR__ . '/../') ? 'text-green-600' : 'text-red-400'; ?>">
                                 <?php echo is_writable(__DIR__ . '/../') ? '✓' : '✗'; ?>
                             </span>
                             <span>Root directory writable (for config.php)</span>
@@ -715,22 +930,22 @@ if (!function_exists('getBasePath')) {
                     
                     <form method="post">
                         <input type="hidden" name="action" value="check_requirements">
-                        <button type="submit" class="btn-bhd w-full py-4 rounded-xl text-white font-bold hover:scale-[1.02] transition-transform">
+                        <button type="submit" class="btn-primary w-full py-4 rounded-xl text-white font-bold hover:scale-[1.02] transition-transform">
                             Continue to Database Setup →
                         </button>
                     </form>
                     
                 <?php elseif ($step === 'database'): ?>
-                    <h2 class="text-2xl font-bold mb-4">Database Configuration</h2>
-                    <p class="text-gray-400 mb-6">Enter your database connection details. Make sure the database exists.</p>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Database Configuration</h2>
+                    <p class="text-gray-600 mb-6">Enter your database connection details. Make sure the database exists.</p>
                     
                     <form method="post">
                         <input type="hidden" name="action" value="test_database">
                         
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Database Type</label>
-                                <select name="db_type" class="input-bhd w-full px-4 py-3 rounded-xl text-white">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Database Type</label>
+                                <select name="db_type" class="input-field w-full px-4 py-3 rounded-xl text-gray-900">
                                     <option value="mysql">MySQL/MariaDB</option>
                                     <option value="pgsql">PostgreSQL</option>
                                 </select>
@@ -738,79 +953,109 @@ if (!function_exists('getBasePath')) {
                             
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Database Host</label>
-                                    <input type="text" name="db_host" value="localhost" required class="input-bhd w-full px-4 py-3 rounded-xl text-white">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Database Host</label>
+                                    <input type="text" name="db_host" value="localhost" required class="input-field w-full px-4 py-3 rounded-xl text-gray-900">
                                 </div>
                                 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Database Port</label>
-                                    <input type="number" name="db_port" placeholder="Auto" class="input-bhd w-full px-4 py-3 rounded-xl text-white">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Database Port</label>
+                                    <input type="number" name="db_port" placeholder="Auto" class="input-field w-full px-4 py-3 rounded-xl text-gray-900">
                                     <p class="text-xs text-gray-500 mt-1">Leave empty for default (3306 MySQL, 5432 PostgreSQL)</p>
                                 </div>
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Database Name</label>
-                                <input type="text" name="db_name" required class="input-bhd w-full px-4 py-3 rounded-xl text-white" placeholder="business_cards">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Database Name</label>
+                                <input type="text" name="db_name" required class="input-field w-full px-4 py-3 rounded-xl text-gray-900" placeholder="business_cards">
                                 <p class="text-xs text-gray-500 mt-1">Create this database first if it doesn't exist</p>
                             </div>
                             
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Database Username</label>
-                                    <input type="text" name="db_user" required class="input-bhd w-full px-4 py-3 rounded-xl text-white">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Database Username</label>
+                                    <input type="text" name="db_user" required class="input-field w-full px-4 py-3 rounded-xl text-gray-900">
                                 </div>
                                 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Database Password</label>
-                                    <input type="password" name="db_pass" class="input-bhd w-full px-4 py-3 rounded-xl text-white">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Database Password</label>
+                                    <input type="password" name="db_pass" class="input-field w-full px-4 py-3 rounded-xl text-gray-900">
                                 </div>
                             </div>
                         </div>
                         
+                        <?php if ($reinstall): ?>
+                        <div class="mb-4 p-4 rounded-xl bg-yellow-100 border border-yellow-300">
+                            <p class="text-yellow-700 text-sm"><strong>⚠ Reinstall Mode:</strong> After testing connection, you can choose to clean install (delete all data) or continue with existing data.</p>
+                        </div>
+                        <?php endif; ?>
+                        
                         <div class="mt-6 flex space-x-3">
-                            <a href="?step=requirements" class="btn-secondary px-6 py-3 rounded-xl text-white flex-1 text-center">← Back</a>
-                            <button type="submit" class="btn-bhd px-6 py-3 rounded-xl text-white flex-1">Test Connection →</button>
+                            <a href="?step=requirements" class="btn-secondary px-6 py-3 rounded-xl text-gray-700 flex-1 text-center">← Back</a>
+                            <button type="submit" class="btn-primary px-6 py-3 rounded-xl text-white flex-1">Test Connection →</button>
                         </div>
                     </form>
                     
                 <?php elseif ($step === 'migrate'): ?>
                     <h2 class="text-2xl font-bold mb-4">Database Migration</h2>
-                    <p class="text-gray-400 mb-6">Ready to create database tables and set up the schema. This will create all necessary tables.</p>
+                    <p class="text-gray-600 mb-6">Ready to create database tables and set up the schema. This will create all necessary tables.</p>
                     
-                    <div class="info-box">
-                        <p><strong>Note:</strong> This will create tables for companies, employees, templates, subscriptions, and more. Existing data will be preserved if tables already exist.</p>
+                    <?php
+                    // Check if tables already exist
+                    $hasExistingTables = false;
+                    if (isset($_SESSION['db_config'])) {
+                        try {
+                            $dbConfig = $_SESSION['db_config'];
+                            $db = Database::getInstance();
+                            if ($db->connect($dbConfig['host'], $dbConfig['database'], $dbConfig['username'], 
+                                             $dbConfig['password'], $dbConfig['port'], $dbConfig['type'])) {
+                                $existingTables = $db->fetchAll("SHOW TABLES");
+                                $hasExistingTables = !empty($existingTables);
+                            }
+                        } catch (Exception $e) {
+                            // Ignore
+                        }
+                    }
+                    ?>
+                    
+                    <?php if ($hasExistingTables): ?>
+                    <div class="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-200">
+                        <p class="text-blue-700 text-sm"><strong>ℹ Note:</strong> Existing tables found in database. Migration will update schema while preserving your data.</p>
                     </div>
+                    <?php else: ?>
+                    <div class="info-box">
+                        <p><strong>Note:</strong> This will create tables for companies, employees, templates, subscriptions, and more.</p>
+                    </div>
+                    <?php endif; ?>
                     
                     <form method="post">
                         <input type="hidden" name="action" value="run_migration">
                         <div class="flex space-x-3">
-                            <a href="?step=database" class="btn-secondary px-6 py-3 rounded-xl text-white flex-1 text-center">← Back</a>
-                            <button type="submit" class="btn-bhd px-6 py-3 rounded-xl text-white flex-1">Run Migration →</button>
+                            <a href="?step=database" class="btn-secondary px-6 py-3 rounded-xl text-gray-700 flex-1 text-center">← Back</a>
+                            <button type="submit" class="btn-primary px-6 py-3 rounded-xl text-white flex-1">Run Migration →</button>
                         </div>
                     </form>
                     
                 <?php elseif ($step === 'site_config'): ?>
                     <h2 class="text-2xl font-bold mb-4">Site Configuration</h2>
-                    <p class="text-gray-400 mb-6">Configure your site name and basic settings.</p>
+                    <p class="text-gray-600 mb-6">Configure your site name and basic settings.</p>
                     
                     <form method="post">
                         <input type="hidden" name="action" value="save_site_config">
                         
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Site Name</label>
-                                <input type="text" name="site_name" value="<?php echo htmlspecialchars($_SESSION['site_config']['site_name'] ?? 'Business Cards'); ?>" required class="input-bhd w-full px-4 py-3 rounded-xl text-white">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Site Name</label>
+                                <input type="text" name="site_name" value="<?php echo htmlspecialchars($_SESSION['site_config']['site_name'] ?? 'Business Cards'); ?>" required class="input-field w-full px-4 py-3 rounded-xl text-gray-900">
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Site Description</label>
-                                <input type="text" name="site_description" value="<?php echo htmlspecialchars($_SESSION['site_config']['site_description'] ?? 'Professional Business Card Generator'); ?>" class="input-bhd w-full px-4 py-3 rounded-xl text-white">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Site Description</label>
+                                <input type="text" name="site_description" value="<?php echo htmlspecialchars($_SESSION['site_config']['site_description'] ?? 'Professional Business Card Generator'); ?>" class="input-field w-full px-4 py-3 rounded-xl text-gray-900">
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Timezone</label>
-                                <select name="timezone" class="input-bhd w-full px-4 py-3 rounded-xl text-white">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+                                <select name="timezone" class="input-field w-full px-4 py-3 rounded-xl text-gray-900">
                                     <option value="Asia/Muscat" <?php echo ($_SESSION['site_config']['timezone'] ?? 'Asia/Muscat') === 'Asia/Muscat' ? 'selected' : ''; ?>>Asia/Muscat</option>
                                     <option value="UTC">UTC</option>
                                     <option value="America/New_York">America/New_York</option>
@@ -822,22 +1067,22 @@ if (!function_exists('getBasePath')) {
                         </div>
                         
                         <div class="mt-6 flex space-x-3">
-                            <a href="?step=migrate" class="btn-secondary px-6 py-3 rounded-xl text-white flex-1 text-center">← Back</a>
-                            <button type="submit" class="btn-bhd px-6 py-3 rounded-xl text-white flex-1">Continue →</button>
+                            <a href="?step=migrate" class="btn-secondary px-6 py-3 rounded-xl text-gray-700 flex-1 text-center">← Back</a>
+                            <button type="submit" class="btn-primary px-6 py-3 rounded-xl text-white flex-1">Continue →</button>
                         </div>
                     </form>
                     
                 <?php elseif ($step === 'billing'): ?>
                     <h2 class="text-2xl font-bold mb-4">Billing Configuration</h2>
-                    <p class="text-gray-400 mb-6">Configure your payment gateway. You can skip this and configure later.</p>
+                    <p class="text-gray-600 mb-6">Configure your payment gateway. You can skip this and configure later.</p>
                     
                     <form method="post" id="billingForm">
                         <input type="hidden" name="action" value="save_billing_config">
                         
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Payment Gateway</label>
-                                <select name="billing_gateway" id="gatewaySelect" class="input-bhd w-full px-4 py-3 rounded-xl text-white" onchange="toggleGatewayFields()">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Payment Gateway</label>
+                                <select name="billing_gateway" id="gatewaySelect" class="input-field w-full px-4 py-3 rounded-xl text-gray-900" onchange="toggleGatewayFields()">
                                     <option value="none">Skip (Configure Later)</option>
                                     <option value="amwal">Amwal Pay</option>
                                     <option value="stripe">Stripe</option>
@@ -847,29 +1092,29 @@ if (!function_exists('getBasePath')) {
                             <!-- Amwal Pay Fields -->
                             <div id="amwalFields" style="display: none;">
                                 <h3 class="text-lg font-semibold mb-3 mt-4">Amwal Pay Settings</h3>
-                                <p class="text-sm text-gray-400 mb-4">Get these credentials from your Amwal Pay merchant dashboard after signing up.</p>
+                                <p class="text-sm text-gray-600 mb-4">Get these credentials from your Amwal Pay merchant dashboard after signing up.</p>
                                 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Merchant ID</label>
-                                    <input type="text" name="amwal_merchant_id" value="<?php echo htmlspecialchars($_SESSION['billing_config']['amwal_merchant_id'] ?? ''); ?>" class="input-bhd w-full px-4 py-3 rounded-xl text-white" placeholder="Your Merchant ID" required>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Merchant ID</label>
+                                    <input type="text" name="amwal_merchant_id" value="<?php echo htmlspecialchars($_SESSION['billing_config']['amwal_merchant_id'] ?? ''); ?>" class="input-field w-full px-4 py-3 rounded-xl text-gray-900" placeholder="Your Merchant ID" required>
                                     <p class="text-xs text-gray-500 mt-1">Provided by Amwal Pay after account setup</p>
                                 </div>
                                 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Terminal ID</label>
-                                    <input type="text" name="amwal_terminal_id" value="<?php echo htmlspecialchars($_SESSION['billing_config']['amwal_terminal_id'] ?? ''); ?>" class="input-bhd w-full px-4 py-3 rounded-xl text-white" placeholder="Your Terminal ID" required>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Terminal ID</label>
+                                    <input type="text" name="amwal_terminal_id" value="<?php echo htmlspecialchars($_SESSION['billing_config']['amwal_terminal_id'] ?? ''); ?>" class="input-field w-full px-4 py-3 rounded-xl text-gray-900" placeholder="Your Terminal ID" required>
                                     <p class="text-xs text-gray-500 mt-1">Provided by Amwal Pay after account setup</p>
                                 </div>
                                 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Secure Key</label>
-                                    <input type="password" name="amwal_secure_key" value="<?php echo htmlspecialchars($_SESSION['billing_config']['amwal_secure_key'] ?? ''); ?>" class="input-bhd w-full px-4 py-3 rounded-xl text-white" placeholder="Your Secure Key" required>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Secure Key</label>
+                                    <input type="password" name="amwal_secure_key" value="<?php echo htmlspecialchars($_SESSION['billing_config']['amwal_secure_key'] ?? ''); ?>" class="input-field w-full px-4 py-3 rounded-xl text-gray-900" placeholder="Your Secure Key" required>
                                     <p class="text-xs text-gray-500 mt-1">Keep this secret! Used for payment signature verification</p>
                                 </div>
                                 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">API URL</label>
-                                    <input type="text" name="amwal_api_url" value="<?php echo htmlspecialchars($_SESSION['billing_config']['amwal_api_url'] ?? 'https://backend.sa.amwal.tech'); ?>" class="input-bhd w-full px-4 py-3 rounded-xl text-white">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">API URL</label>
+                                    <input type="text" name="amwal_api_url" value="<?php echo htmlspecialchars($_SESSION['billing_config']['amwal_api_url'] ?? 'https://backend.sa.amwal.tech'); ?>" class="input-field w-full px-4 py-3 rounded-xl text-gray-900">
                                     <p class="text-xs text-gray-500 mt-1">Default: https://backend.sa.amwal.tech</p>
                                 </div>
                                 
@@ -884,21 +1129,21 @@ if (!function_exists('getBasePath')) {
                                 <h3 class="text-lg font-semibold mb-3 mt-4">Stripe Settings</h3>
                                 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Secret Key</label>
-                                    <input type="text" name="stripe_secret_key" value="<?php echo htmlspecialchars($_SESSION['billing_config']['stripe_secret_key'] ?? ''); ?>" class="input-bhd w-full px-4 py-3 rounded-xl text-white" placeholder="sk_live_...">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Secret Key</label>
+                                    <input type="text" name="stripe_secret_key" value="<?php echo htmlspecialchars($_SESSION['billing_config']['stripe_secret_key'] ?? ''); ?>" class="input-field w-full px-4 py-3 rounded-xl text-gray-900" placeholder="sk_live_...">
                                 </div>
                                 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Public Key</label>
-                                    <input type="text" name="stripe_public_key" value="<?php echo htmlspecialchars($_SESSION['billing_config']['stripe_public_key'] ?? ''); ?>" class="input-bhd w-full px-4 py-3 rounded-xl text-white" placeholder="pk_live_...">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Public Key</label>
+                                    <input type="text" name="stripe_public_key" value="<?php echo htmlspecialchars($_SESSION['billing_config']['stripe_public_key'] ?? ''); ?>" class="input-field w-full px-4 py-3 rounded-xl text-gray-900" placeholder="pk_live_...">
                                 </div>
                             </div>
                         </div>
                         
                         <div class="mt-6 flex space-x-3">
-                            <a href="?step=site_config" class="btn-secondary px-6 py-3 rounded-xl text-white flex-1 text-center">← Back</a>
-                            <button type="button" onclick="document.getElementById('skipForm').submit()" class="btn-secondary px-6 py-3 rounded-xl text-white">Skip</button>
-                            <button type="submit" class="btn-bhd px-6 py-3 rounded-xl text-white flex-1">Continue →</button>
+                            <a href="?step=site_config" class="btn-secondary px-6 py-3 rounded-xl text-gray-700 flex-1 text-center">← Back</a>
+                            <button type="button" onclick="document.getElementById('skipForm').submit()" class="btn-secondary px-6 py-3 rounded-xl text-gray-700">Skip</button>
+                            <button type="submit" class="btn-primary px-6 py-3 rounded-xl text-white flex-1">Continue →</button>
                         </div>
                     </form>
                     
@@ -917,7 +1162,7 @@ if (!function_exists('getBasePath')) {
                     
                 <?php elseif ($step === 'admin'): ?>
                     <h2 class="text-2xl font-bold mb-4">Admin Account</h2>
-                    <p class="text-gray-400 mb-6">Create your first admin company account. This will be used to manage the platform.</p>
+                    <p class="text-gray-600 mb-6">Create your first admin company account. This will be used to manage the platform.</p>
                     
                     <div class="info-box">
                         <p>This will create a company account that you can use to login and manage employees, templates, and billing.</p>
@@ -928,59 +1173,59 @@ if (!function_exists('getBasePath')) {
                         
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Company/Admin Name</label>
-                                <input type="text" name="admin_name" value="<?php echo htmlspecialchars($_SESSION['admin_config']['name'] ?? 'Admin'); ?>" required class="input-bhd w-full px-4 py-3 rounded-xl text-white" placeholder="My Company">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Company/Admin Name</label>
+                                <input type="text" name="admin_name" value="<?php echo htmlspecialchars($_SESSION['admin_config']['name'] ?? 'Admin'); ?>" required class="input-field w-full px-4 py-3 rounded-xl text-gray-900" placeholder="My Company">
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Admin Email</label>
-                                <input type="email" name="admin_email" value="<?php echo htmlspecialchars($_SESSION['admin_config']['email'] ?? ''); ?>" required class="input-bhd w-full px-4 py-3 rounded-xl text-white" placeholder="admin@company.com">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Admin Email</label>
+                                <input type="email" name="admin_email" value="<?php echo htmlspecialchars($_SESSION['admin_config']['email'] ?? ''); ?>" required class="input-field w-full px-4 py-3 rounded-xl text-gray-900" placeholder="admin@company.com">
                                 <p class="text-xs text-gray-500 mt-1">This will be your login email</p>
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
-                                <input type="password" name="admin_password" required class="input-bhd w-full px-4 py-3 rounded-xl text-white" placeholder="Minimum 8 characters">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                                <input type="password" name="admin_password" required class="input-field w-full px-4 py-3 rounded-xl text-gray-900" placeholder="Minimum 8 characters">
                             </div>
                             
                             <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
-                                <input type="password" name="admin_password_confirm" required class="input-bhd w-full px-4 py-3 rounded-xl text-white">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                                <input type="password" name="admin_password_confirm" required class="input-field w-full px-4 py-3 rounded-xl text-gray-900">
                             </div>
                         </div>
                         
                         <div class="mt-6 flex space-x-3">
-                            <a href="?step=billing" class="btn-secondary px-6 py-3 rounded-xl text-white flex-1 text-center">← Back</a>
-                            <button type="submit" class="btn-bhd px-6 py-3 rounded-xl text-white flex-1">Continue →</button>
+                            <a href="?step=billing" class="btn-secondary px-6 py-3 rounded-xl text-gray-700 flex-1 text-center">← Back</a>
+                            <button type="submit" class="btn-primary px-6 py-3 rounded-xl text-white flex-1">Continue →</button>
                         </div>
                     </form>
                     
                 <?php elseif ($step === 'finalize'): ?>
                     <h2 class="text-2xl font-bold mb-4">Finalize Installation</h2>
-                    <p class="text-gray-400 mb-6">Review your configuration and complete the installation.</p>
+                    <p class="text-gray-600 mb-6">Review your configuration and complete the installation.</p>
                     
                     <div class="space-y-4 mb-6">
-                        <div class="p-4 rounded-xl bg-white/5">
+                        <div class="p-4 rounded-xl bg-gray-50 border border-gray-200">
                             <h3 class="font-semibold mb-2">Database</h3>
-                            <p class="text-sm text-gray-400"><?php echo htmlspecialchars($_SESSION['db_config']['type']); ?> - <?php echo htmlspecialchars($_SESSION['db_config']['host']); ?>:<?php echo htmlspecialchars($_SESSION['db_config']['port']); ?></p>
-                            <p class="text-sm text-gray-400">Database: <?php echo htmlspecialchars($_SESSION['db_config']['database']); ?></p>
+                            <p class="text-sm text-gray-600"><?php echo htmlspecialchars($_SESSION['db_config']['type']); ?> - <?php echo htmlspecialchars($_SESSION['db_config']['host']); ?>:<?php echo htmlspecialchars($_SESSION['db_config']['port']); ?></p>
+                            <p class="text-sm text-gray-600">Database: <?php echo htmlspecialchars($_SESSION['db_config']['database']); ?></p>
                         </div>
                         
-                        <div class="p-4 rounded-xl bg-white/5">
+                        <div class="p-4 rounded-xl bg-gray-50 border border-gray-200">
                             <h3 class="font-semibold mb-2">Site Settings</h3>
-                            <p class="text-sm text-gray-400">Name: <?php echo htmlspecialchars($_SESSION['site_config']['site_name']); ?></p>
-                            <p class="text-sm text-gray-400">Timezone: <?php echo htmlspecialchars($_SESSION['site_config']['timezone']); ?></p>
+                            <p class="text-sm text-gray-600">Name: <?php echo htmlspecialchars($_SESSION['site_config']['site_name']); ?></p>
+                            <p class="text-sm text-gray-600">Timezone: <?php echo htmlspecialchars($_SESSION['site_config']['timezone']); ?></p>
                         </div>
                         
-                        <div class="p-4 rounded-xl bg-white/5">
+                        <div class="p-4 rounded-xl bg-gray-50 border border-gray-200">
                             <h3 class="font-semibold mb-2">Billing</h3>
-                            <p class="text-sm text-gray-400">Gateway: <?php echo htmlspecialchars($_SESSION['billing_config']['gateway'] ?? 'none'); ?></p>
+                            <p class="text-sm text-gray-600">Gateway: <?php echo htmlspecialchars($_SESSION['billing_config']['gateway'] ?? 'none'); ?></p>
                         </div>
                         
                         <?php if (isset($_SESSION['admin_config'])): ?>
-                        <div class="p-4 rounded-xl bg-white/5">
+                        <div class="p-4 rounded-xl bg-gray-50 border border-gray-200">
                             <h3 class="font-semibold mb-2">Admin Account</h3>
-                            <p class="text-sm text-gray-400">Email: <?php echo htmlspecialchars($_SESSION['admin_config']['email']); ?></p>
+                            <p class="text-sm text-gray-600">Email: <?php echo htmlspecialchars($_SESSION['admin_config']['email']); ?></p>
                         </div>
                         <?php endif; ?>
                     </div>
@@ -988,31 +1233,31 @@ if (!function_exists('getBasePath')) {
                     <form method="post">
                         <input type="hidden" name="action" value="finalize_installation">
                         <div class="flex space-x-3">
-                            <a href="?step=admin" class="btn-secondary px-6 py-3 rounded-xl text-white flex-1 text-center">← Back</a>
-                            <button type="submit" class="btn-bhd px-6 py-3 rounded-xl text-white flex-1">Complete Installation →</button>
+                            <a href="?step=admin" class="btn-secondary px-6 py-3 rounded-xl text-gray-700 flex-1 text-center">← Back</a>
+                            <button type="submit" class="btn-primary px-6 py-3 rounded-xl text-white flex-1">Complete Installation →</button>
                         </div>
                     </form>
                     
                 <?php elseif ($step === 'complete'): ?>
                     <div class="text-center">
-                        <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-green-500/20 flex items-center justify-center border border-green-500/30">
-                            <svg class="w-10 h-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 flex items-center justify-center border border-green-200">
+                            <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </div>
                         <h2 class="text-2xl font-bold mb-4">Installation Complete! 🎉</h2>
-                        <p class="text-gray-400 mb-6">Your Business Card Generator SaaS is ready to use.</p>
+                        <p class="text-gray-600 mb-6">Your Business Card Generator SaaS is ready to use.</p>
                         
                         <?php if (isset($_SESSION['admin_config'])): ?>
-                        <div class="mb-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/30">
-                            <p class="text-blue-400 text-sm mb-2"><strong>Admin Login Credentials:</strong></p>
-                            <p class="text-blue-300 text-sm">Email: <?php echo htmlspecialchars($_SESSION['admin_config']['email']); ?></p>
-                            <p class="text-blue-300 text-sm">Company Code: Check your email or login page</p>
+                        <div class="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-200">
+                            <p class="text-blue-700 text-sm mb-2"><strong>Admin Login Credentials:</strong></p>
+                            <p class="text-blue-600 text-sm">Email: <?php echo htmlspecialchars($_SESSION['admin_config']['email']); ?></p>
+                            <p class="text-blue-600 text-sm">Company Code: Check your email or login page</p>
                         </div>
                         <?php endif; ?>
                         
                         <div class="space-y-3 mb-6">
-                            <a href="<?php echo getBasePath(); ?>" class="btn-bhd block px-6 py-3 rounded-xl text-white">
+                            <a href="<?php echo getBasePath(); ?>" class="btn-primary block px-6 py-3 rounded-xl text-white">
                                 Go to Homepage
                             </a>
                             <?php if (isset($_SESSION['admin_config'])): ?>
@@ -1026,9 +1271,9 @@ if (!function_exists('getBasePath')) {
                             <?php endif; ?>
                         </div>
                         
-                        <div class="mt-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                            <p class="text-amber-400 text-sm"><strong>Next Steps:</strong></p>
-                            <ul class="text-left text-sm text-gray-400 mt-2 space-y-1">
+                        <div class="mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200">
+                            <p class="text-amber-700 text-sm"><strong>Next Steps:</strong></p>
+                            <ul class="text-left text-sm text-gray-600 mt-2 space-y-1">
                                 <li>• Configure billing webhook in your payment gateway dashboard</li>
                                 <li>• Set up your first company and add employees</li>
                                 <li>• Create business card templates</li>
