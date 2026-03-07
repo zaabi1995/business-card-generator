@@ -28,7 +28,7 @@ class DatabaseAdapter {
     // Company functions
     public static function loadCompanies() {
         if (!self::useDatabase()) {
-            return loadCompanies(); // Fallback to JSON
+            return [];
         }
         
         return self::$db->fetchAll("SELECT * FROM companies ORDER BY created_at DESC");
@@ -36,7 +36,7 @@ class DatabaseAdapter {
     
     public static function findCompanyBySlug($slug) {
         if (!self::useDatabase()) {
-            return findCompanyBySlug($slug);
+            return null;
         }
         
         return self::$db->fetchOne("SELECT * FROM companies WHERE slug = :slug", ['slug' => $slug]);
@@ -44,7 +44,7 @@ class DatabaseAdapter {
     
     public static function findCompanyById($id) {
         if (!self::useDatabase()) {
-            return findCompanyById($id);
+            return null;
         }
         
         return self::$db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $id]);
@@ -52,9 +52,13 @@ class DatabaseAdapter {
     
     public static function createCompany($name, $adminEmail, $password, $parentCompanyId = null, $customSlug = null) {
         if (!self::useDatabase()) {
-            return createCompany($name, $adminEmail, $password, $parentCompanyId, $customSlug);
+            return ['success' => false, 'error' => 'Database not available'];
         }
         
+        $hasParentCompany = self::$db->columnExists('companies', 'parent_company_id');
+        $hasCompanyPath = self::$db->columnExists('companies', 'company_path');
+        $hasCompanyType = self::$db->columnExists('companies', 'company_type');
+
         // Use custom slug if provided, otherwise generate from name
         if (!empty($customSlug)) {
             // Validate custom slug
@@ -97,9 +101,6 @@ class DatabaseAdapter {
         
         $company = [
             'id' => generateUUID(),
-            'parent_company_id' => $parentCompanyId,
-            'company_path' => $companyPath,
-            'company_type' => $companyType,
             'name' => $name,
             'slug' => $slug,
             'admin_email' => $adminEmail,
@@ -108,12 +109,21 @@ class DatabaseAdapter {
             'status' => 'active',
             'created_at' => date('Y-m-d H:i:s')
         ];
+
+        if ($hasParentCompany) {
+            $company['parent_company_id'] = $parentCompanyId;
+        }
+        if ($hasCompanyPath) {
+            $company['company_path'] = $companyPath;
+        }
+        if ($hasCompanyType) {
+            $company['company_type'] = $companyType;
+        }
         
         try {
             self::$db->insert('companies', $company);
             
             // Initialize company directories
-            getCompanyDataDir($company['id']);
             getCompanyUploadsDir($company['id']);
             getCompanyTemplatesDir($company['id']);
             getCompanyCardsDir($company['id']);
@@ -132,6 +142,10 @@ class DatabaseAdapter {
             return ['success' => false, 'error' => 'Database not available'];
         }
         
+        $hasParentCompany = self::$db->columnExists('companies', 'parent_company_id');
+        $hasCompanyPath = self::$db->columnExists('companies', 'company_path');
+        $hasCompanyType = self::$db->columnExists('companies', 'company_type');
+
         $company = self::findCompanyById($companyId);
         if (!$company) {
             return ['success' => false, 'error' => 'Company not found'];
@@ -183,6 +197,16 @@ class DatabaseAdapter {
             $updateData['status'] = $data['status'];
         }
         
+        // Update currency
+        if (isset($data['currency'])) {
+            $updateData['currency'] = $data['currency'];
+        }
+        
+        // Update billing email
+        if (isset($data['billing_email'])) {
+            $updateData['billing_email'] = sanitizeEmail($data['billing_email']);
+        }
+        
         // Update parent company
         if (isset($data['parent_company_id'])) {
             $parentId = $data['parent_company_id'] ?: null;
@@ -204,9 +228,15 @@ class DatabaseAdapter {
                 }
             }
             
-            $updateData['parent_company_id'] = $parentId;
-            $updateData['company_path'] = $companyPath;
-            $updateData['company_type'] = $companyType;
+            if ($hasParentCompany) {
+                $updateData['parent_company_id'] = $parentId;
+            }
+            if ($hasCompanyPath) {
+                $updateData['company_path'] = $companyPath;
+            }
+            if ($hasCompanyType) {
+                $updateData['company_type'] = $companyType;
+            }
         }
         
         if (empty($updateData)) {
@@ -226,7 +256,7 @@ class DatabaseAdapter {
     // Employee functions
     public static function loadEmployees($companyId = null) {
         if (!self::useDatabase()) {
-            return loadEmployees($companyId);
+            return [];
         }
         
         if ($companyId) {
@@ -241,7 +271,7 @@ class DatabaseAdapter {
     
     public static function findEmployeeByEmail($email, $companyId = null) {
         if (!self::useDatabase()) {
-            return findEmployeeByEmail($email, $companyId);
+            return null;
         }
         
         $email = trim(strtolower($email));
@@ -257,7 +287,7 @@ class DatabaseAdapter {
     
     public static function findEmployeeById($id, $companyId = null) {
         if (!self::useDatabase()) {
-            return findEmployeeById($id, $companyId);
+            return null;
         }
         
         if ($companyId) {
@@ -272,7 +302,7 @@ class DatabaseAdapter {
     
     public static function addEmployee($data, $companyId = null) {
         if (!self::useDatabase()) {
-            return addEmployee($data, $companyId);
+            return ['success' => false, 'error' => 'Database not available'];
         }
         
         $companyId = $companyId ?: getCurrentCompanyId();
@@ -296,17 +326,21 @@ class DatabaseAdapter {
             'position_en' => trim($data['position_en'] ?? ''),
             'position_ar' => trim($data['position_ar'] ?? ''),
             'phone' => trim($data['phone'] ?? ''),
+            'phone_ar' => trim($data['phone_ar'] ?? ''),
             'mobile' => trim($data['mobile'] ?? ''),
+            'mobile_ar' => trim($data['mobile_ar'] ?? ''),
             'company_en' => trim($data['company_en'] ?? ''),
             'company_ar' => trim($data['company_ar'] ?? ''),
             'website' => trim($data['website'] ?? ''),
-            'address' => trim($data['address'] ?? ''),
+            'website_ar' => trim($data['website_ar'] ?? ''),
+            'address_en' => trim($data['address_en'] ?? $data['address'] ?? ''),
+            'address_ar' => trim($data['address_ar'] ?? ''),
             'created_at' => date('Y-m-d H:i:s')
         ];
         
         try {
             self::$db->insert('employees', $employee);
-            return ['success' => true, 'employee' => $employee];
+            return ['success' => true, 'id' => $employee['id'], 'employee' => $employee];
         } catch (Exception $e) {
             return ['success' => false, 'error' => 'Failed to save employee: ' . $e->getMessage()];
         }
@@ -314,7 +348,7 @@ class DatabaseAdapter {
     
     public static function updateEmployee($id, $data, $companyId = null) {
         if (!self::useDatabase()) {
-            return updateEmployee($id, $data, $companyId);
+            return ['success' => false, 'error' => 'Database not available'];
         }
         
         $companyId = $companyId ?: getCurrentCompanyId();
@@ -334,11 +368,15 @@ class DatabaseAdapter {
             'position_en' => trim($data['position_en'] ?? ''),
             'position_ar' => trim($data['position_ar'] ?? ''),
             'phone' => trim($data['phone'] ?? ''),
+            'phone_ar' => trim($data['phone_ar'] ?? ''),
             'mobile' => trim($data['mobile'] ?? ''),
+            'mobile_ar' => trim($data['mobile_ar'] ?? ''),
             'company_en' => trim($data['company_en'] ?? ''),
             'company_ar' => trim($data['company_ar'] ?? ''),
             'website' => trim($data['website'] ?? ''),
-            'address' => trim($data['address'] ?? ''),
+            'website_ar' => trim($data['website_ar'] ?? ''),
+            'address_en' => trim($data['address_en'] ?? $data['address'] ?? ''),
+            'address_ar' => trim($data['address_ar'] ?? ''),
             'updated_at' => date('Y-m-d H:i:s')
         ];
         
@@ -359,7 +397,7 @@ class DatabaseAdapter {
     
     public static function deleteEmployee($id, $companyId = null) {
         if (!self::useDatabase()) {
-            return deleteEmployee($id, $companyId);
+            return ['success' => false, 'error' => 'Database not available'];
         }
         
         try {
@@ -382,7 +420,7 @@ class DatabaseAdapter {
     // Template functions
     public static function loadTemplates($companyId = null) {
         if (!self::useDatabase()) {
-            return loadTemplates($companyId);
+            return getDefaultTemplatesConfig();
         }
         
         $companyId = $companyId ?: getCurrentCompanyId();
@@ -402,10 +440,13 @@ class DatabaseAdapter {
         foreach ($templates as $tpl) {
             $template = [
                 'id' => $tpl['id'],
+                'pair_id' => $tpl['pair_id'] ?? null,
                 'name' => $tpl['name'],
                 'side' => $tpl['side'],
                 'backgroundImage' => $tpl['background_image_path'],
+                'originalPdf' => $tpl['original_pdf_path'] ?? null,
                 'fields' => json_decode($tpl['fields_json'], true) ?: getDefaultFieldSettings(),
+                'settings' => isset($tpl['settings_json']) ? json_decode($tpl['settings_json'], true) : null,
                 'created_at' => $tpl['created_at']
             ];
             
@@ -429,7 +470,7 @@ class DatabaseAdapter {
     
     public static function saveTemplates($config, $companyId = null) {
         if (!self::useDatabase()) {
-            return saveTemplates($config, $companyId);
+            return false;
         }
         
         $companyId = $companyId ?: getCurrentCompanyId();
@@ -440,12 +481,12 @@ class DatabaseAdapter {
         try {
             self::$db->beginTransaction();
             
-            // Update active status
-            self::$db->update('templates', ['is_active' => false], 'company_id = :id', ['id' => $companyId]);
+            // Update active status (use integers 0/1 for MySQL compatibility)
+            self::$db->update('templates', ['is_active' => 0], 'company_id = :id', ['id' => $companyId]);
             
             if (!empty($config['activeFrontId'])) {
                 self::$db->update('templates', 
-                    ['is_active' => true], 
+                    ['is_active' => 1], 
                     'id = :id AND company_id = :cid AND side = "front"',
                     ['id' => $config['activeFrontId'], 'cid' => $companyId]
                 );
@@ -453,7 +494,7 @@ class DatabaseAdapter {
             
             if (!empty($config['activeBackId'])) {
                 self::$db->update('templates', 
-                    ['is_active' => true], 
+                    ['is_active' => 1], 
                     'id = :id AND company_id = :cid AND side = "back"',
                     ['id' => $config['activeBackId'], 'cid' => $companyId]
                 );
@@ -466,13 +507,35 @@ class DatabaseAdapter {
                     ['id' => $template['id']]
                 );
                 
+                $fieldsToEncode = $template['fields'] ?? [];
+                if (empty($fieldsToEncode) || !is_array($fieldsToEncode)) {
+                    $fieldsToEncode = [];
+                }
+                
+                $settingsToEncode = $template['settings'] ?? null;
+                
                 $data = [
-                    'name' => $template['name'],
-                    'side' => $template['side'],
+                    'name' => $template['name'] ?? 'Untitled',
+                    'side' => $template['side'] ?? 'front',
                     'background_image_path' => $template['backgroundImage'] ?? '',
-                    'fields_json' => json_encode($template['fields'] ?? []),
+                    'fields_json' => json_encode($fieldsToEncode),
                     'updated_at' => date('Y-m-d H:i:s')
                 ];
+                
+                // Add pair_id if available
+                if (!empty($template['pair_id'])) {
+                    $data['pair_id'] = $template['pair_id'];
+                }
+                
+                // Add original PDF path if available (for high-quality exports)
+                if (!empty($template['originalPdf'])) {
+                    $data['original_pdf_path'] = $template['originalPdf'];
+                }
+                
+                // Add settings_json if available (check if column exists)
+                if ($settingsToEncode !== null) {
+                    $data['settings_json'] = json_encode($settingsToEncode);
+                }
                 
                 if ($existing) {
                     self::$db->update('templates', $data, 'id = :id', ['id' => $template['id']]);
@@ -488,14 +551,104 @@ class DatabaseAdapter {
             return true;
         } catch (Exception $e) {
             self::$db->rollback();
-            error_log("Template save error: " . $e->getMessage());
+            $errorMsg = "Template save error: " . $e->getMessage() . " | File: " . $e->getFile() . ":" . $e->getLine();
+            error_log($errorMsg);
+            // Store the last error for debugging
+            self::$lastError = $errorMsg;
+            return false;
+        }
+    }
+    
+    /**
+     * Get the last error message
+     */
+    public static function getLastError() {
+        return self::$lastError ?? null;
+    }
+    
+    private static $lastError = null;
+    
+    /**
+     * Delete a template from the database
+     */
+    public static function deleteTemplate($templateId, $companyId = null) {
+        if (!self::useDatabase()) {
+            return false;
+        }
+        
+        $companyId = $companyId ?: getCurrentCompanyId();
+        if (!$companyId) {
+            return false;
+        }
+        
+        try {
+            // Verify template belongs to company before deleting
+            $template = self::$db->fetchOne(
+                "SELECT * FROM templates WHERE id = :id AND company_id = :cid",
+                ['id' => $templateId, 'cid' => $companyId]
+            );
+            
+            if (!$template) {
+                return false;
+            }
+            
+            // Delete from database
+            self::$db->delete('templates', 'id = :id AND company_id = :cid', [
+                'id' => $templateId,
+                'cid' => $companyId
+            ]);
+            
+            return $template; // Return deleted template data
+        } catch (Exception $e) {
+            $errorMsg = "Template delete error: " . $e->getMessage() . " | File: " . $e->getFile() . ":" . $e->getLine();
+            error_log($errorMsg);
+            self::$lastError = $errorMsg;
+            return false;
+        }
+    }
+    
+    /**
+     * Delete a template pair (both front and back)
+     */
+    public static function deleteTemplatePair($pairId, $companyId = null) {
+        if (!self::useDatabase()) {
+            return false;
+        }
+        
+        $companyId = $companyId ?: getCurrentCompanyId();
+        if (!$companyId) {
+            return false;
+        }
+        
+        try {
+            // Get all templates in the pair
+            $templates = self::$db->fetchAll(
+                "SELECT * FROM templates WHERE pair_id = :pid AND company_id = :cid",
+                ['pid' => $pairId, 'cid' => $companyId]
+            );
+            
+            if (empty($templates)) {
+                return false;
+            }
+            
+            // Delete all templates in the pair
+            self::$db->delete('templates', 'pair_id = :pid AND company_id = :cid', [
+                'pid' => $pairId,
+                'cid' => $companyId
+            ]);
+            
+            return $templates; // Return deleted templates data
+        } catch (Exception $e) {
+            $errorMsg = "Template pair delete error: " . $e->getMessage() . " | File: " . $e->getFile() . ":" . $e->getLine();
+            error_log($errorMsg);
+            self::$lastError = $errorMsg;
             return false;
         }
     }
     
     public static function logGeneratedCard($employeeId, $frontTemplateId, $backTemplateId, $frontFile, $backFile, $pdfFile = null, $companyId = null) {
         if (!self::useDatabase()) {
-            return logGeneratedCard($employeeId, $frontTemplateId, $backTemplateId, $frontFile, $backFile, $pdfFile, $companyId);
+            return null;
         }
         
         $companyId = $companyId ?: getCurrentCompanyId();
@@ -526,7 +679,7 @@ class DatabaseAdapter {
     
     public static function loadGeneratedLog($companyId = null) {
         if (!self::useDatabase()) {
-            return loadGeneratedLog($companyId);
+            return [];
         }
         
         $companyId = $companyId ?: getCurrentCompanyId();
@@ -534,10 +687,49 @@ class DatabaseAdapter {
             return [];
         }
         
-        return self::$db->fetchAll(
+        $rows = self::$db->fetchAll(
             "SELECT * FROM generated_cards WHERE company_id = :id ORDER BY generated_at DESC LIMIT 500",
             ['id' => $companyId]
         );
+        
+        // Transform to match expected format (camelCase keys)
+        $result = [];
+        foreach ($rows as $row) {
+            $result[] = [
+                'id' => $row['id'],
+                'employeeId' => $row['employee_id'],
+                'templateId' => $row['front_template_id'],
+                'frontPath' => $row['front_file_path'],
+                'backPath' => $row['back_file_path'],
+                'pdfPath' => $row['pdf_file_path'] ?? null,
+                'generatedAt' => $row['generated_at'],
+                'companyId' => $row['company_id']
+            ];
+        }
+        
+        return $result;
+    }
+    
+    public static function deleteGeneratedCard($entryId, $companyId = null) {
+        if (!self::useDatabase()) {
+            return false;
+        }
+        
+        $companyId = $companyId ?: getCurrentCompanyId();
+        if (!$companyId) {
+            return false;
+        }
+        
+        try {
+            self::$db->delete('generated_cards', 'id = :id AND company_id = :company_id', [
+                'id' => $entryId,
+                'company_id' => $companyId
+            ]);
+            return true;
+        } catch (Exception $e) {
+            error_log("Delete generated card error: " . $e->getMessage());
+            return false;
+        }
     }
 }
 

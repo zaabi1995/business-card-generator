@@ -1,6 +1,6 @@
 <?php
 /**
- * Cardify - Professional Digital Business Cards
+ * Cardify - Business Cards Made Simple
  * SaaS Landing Page
  */
 
@@ -77,13 +77,7 @@ if (!defined('DB_HOST') || empty(DB_HOST) || !defined('DB_NAME') || empty(DB_NAM
                                 try {
                                     $companiesCount = $db->fetchOne("SELECT COUNT(*) as count FROM companies");
                                     if ($companiesCount && ($companiesCount['count'] ?? 0) > 0) {
-                                        $uuid = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-                                            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-                                            mt_rand(0, 0xffff),
-                                            mt_rand(0, 0x0fff) | 0x4000,
-                                            mt_rand(0, 0x3fff) | 0x8000,
-                                            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-                                        );
+                                        $uuid = generateUUID();
                                         try {
                                             $db->insert('system_settings', [
                                                 'id' => $uuid,
@@ -149,103 +143,59 @@ if (isset($_GET['company_slug'])) {
 
 // Brand name
 $brandName = 'Cardify';
-$tagline = 'Professional Digital Business Cards';
+$tagline = 'Business Cards Made Simple';
+$pageTitle = $brandName . ' - ' . $tagline;
+$pageDescription = 'Create stunning digital business cards for your entire organization. Easy to manage, beautiful to share.';
+$bodyClass = 'bg-white';
+
+// Fetch subscription plans from database for pricing section
+$subscriptionPlans = [];
+try {
+    if (isset($db) && $db->isConnected() && $db->tableExists('subscription_plans')) {
+        $subscriptionPlans = $db->fetchAll(
+            "SELECT p.*, 
+                    pp_omr.price_monthly as omr_monthly, 
+                    pp_omr.price_yearly as omr_yearly,
+                    pp_usd.price_monthly as usd_monthly,
+                    pp_usd.price_yearly as usd_yearly
+             FROM subscription_plans p 
+             LEFT JOIN plan_prices pp_omr ON p.id = pp_omr.plan_id AND pp_omr.currency = 'OMR'
+             LEFT JOIN plan_prices pp_usd ON p.id = pp_usd.plan_id AND pp_usd.currency = 'USD'
+             WHERE p.is_active = 1 
+             ORDER BY p.sort_order, p.id"
+        );
+    }
+} catch (Exception $e) {
+    // Plans table might not exist yet, will use default display
+    $subscriptionPlans = [];
+}
+$extraHead = '<style>
+    .hero-gradient { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #fffbeb 100%); }
+    .card-shadow { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); }
+    .float-animation { animation: float 6s ease-in-out infinite; }
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(-2deg); }
+        50% { transform: translateY(-20px) rotate(2deg); }
+    }
+    .float-delayed { animation: float 6s ease-in-out infinite; animation-delay: -3s; }
+    .float-delay-2 { animation-delay: -1.5s; }
+    .bg-blur { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+</style>';
+
+// Enable dynamic navigation with auth awareness
+$showNavigation = true;
+$navLinks = [
+    ['href' => '#features', 'label' => 'Features'],
+    ['href' => '#how-it-works', 'label' => 'How it Works'],
+    ['href' => '#pricing', 'label' => 'Pricing'],
+    ['href' => '#testimonials', 'label' => 'Testimonials'],
+    ['href' => '#contact', 'label' => 'Contact'],
+];
+
+// Include Auth for navigation state
+require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/ui-header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $brandName; ?> - <?php echo $tagline; ?></title>
-    <meta name="description" content="Create stunning digital business cards for your entire organization. Easy to manage, beautiful to share.">
-    <link rel="icon" href="<?php echo getBasePath(); ?>favicon.svg" type="image/svg+xml">
-    <link rel="alternate icon" href="<?php echo getBasePath(); ?>favicon.ico">
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome Pro (Local) -->
-    <link rel="stylesheet" href="<?php echo getBasePath(); ?>assets/vendor/css/all.css">
-    <link rel="stylesheet" href="<?php echo getBasePath(); ?>assets/vendor/css/sharp-solid.css">
-    <link rel="stylesheet" href="<?php echo getBasePath(); ?>assets/vendor/css/sharp-regular.css">
-    <link rel="stylesheet" href="<?php echo getBasePath(); ?>assets/vendor/css/sharp-light.css">
-    <link rel="stylesheet" href="<?php echo getBasePath(); ?>assets/vendor/css/duotone.css">
-    
-    <!-- Techwind CSS (pre-built Tailwind) -->
-    <link rel="stylesheet" href="<?php echo assetUrl('techwind/css/tailwind.css'); ?>">
-    
-    <!-- Custom Overrides -->
-    <link rel="stylesheet" href="<?php echo assetUrl('css/cardify-overrides.css'); ?>?v=<?php echo filemtime(ASSETS_DIR . '/css/cardify-overrides.css'); ?>">
-    
-    <style>
-        body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
-        .hero-gradient { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #fffbeb 100%); }
-        .card-shadow { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); }
-        .float-animation { animation: float 6s ease-in-out infinite; }
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(-2deg); }
-            50% { transform: translateY(-20px) rotate(2deg); }
-        }
-        .float-delayed { animation: float 6s ease-in-out infinite; animation-delay: -3s; }
-        .float-delay-2 { animation-delay: -1.5s; }
-        .bg-blur { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-    </style>
-</head>
-<body class="bg-white text-gray-900 antialiased">
-
-    <!-- ========== NAVIGATION ========== -->
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/80 bg-blur border-b border-gray-100 transition-all duration-300" id="navbar">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16 lg:h-20">
-                <!-- Logo -->
-                <a href="#" class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg shadow-blue-600/30 flex items-center justify-center">
-                        <img src="<?php echo assetUrl('images/logo.svg'); ?>" alt="<?php echo $brandName; ?>" class="w-8 h-8">
-                    </div>
-                    <span class="text-xl font-bold text-gray-900"><?php echo $brandName; ?></span>
-                </a>
-
-                <!-- Desktop Navigation -->
-                <div class="hidden lg:flex items-center gap-8">
-                    <a href="#features" class="text-gray-600 hover:text-blue-600 transition-colors font-medium">Features</a>
-                    <a href="#how-it-works" class="text-gray-600 hover:text-blue-600 transition-colors font-medium">How it Works</a>
-                    <a href="#pricing" class="text-gray-600 hover:text-blue-600 transition-colors font-medium">Pricing</a>
-                    <a href="#testimonials" class="text-gray-600 hover:text-blue-600 transition-colors font-medium">Testimonials</a>
-                    <a href="#contact" class="text-gray-600 hover:text-blue-600 transition-colors font-medium">Contact</a>
-                </div>
-
-                <!-- CTA Buttons -->
-                <div class="flex items-center gap-3">
-                    <a href="<?php echo getBasePath(); ?>login.php" class="hidden sm:inline-flex items-center px-4 py-2 text-gray-700 hover:text-blue-600 font-medium transition-colors">
-                        Sign In
-                    </a>
-                    <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl hover:shadow-blue-600/40">
-                        Get Started Free
-                    </a>
-                    
-                    <!-- Mobile Menu Button -->
-                    <button type="button" class="lg:hidden p-2 text-gray-600 hover:text-blue-600" id="mobile-menu-btn">
-                        <i class="fa-solid fa-bars text-xl"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Mobile Menu -->
-        <div class="lg:hidden hidden bg-white border-t border-gray-100 py-4" id="mobile-menu">
-            <div class="max-w-7xl mx-auto px-4 space-y-3">
-                <a href="#features" class="block py-2 text-gray-600 hover:text-blue-600 font-medium">Features</a>
-                <a href="#how-it-works" class="block py-2 text-gray-600 hover:text-blue-600 font-medium">How it Works</a>
-                <a href="#pricing" class="block py-2 text-gray-600 hover:text-blue-600 font-medium">Pricing</a>
-                <a href="#testimonials" class="block py-2 text-gray-600 hover:text-blue-600 font-medium">Testimonials</a>
-                <a href="#contact" class="block py-2 text-gray-600 hover:text-blue-600 font-medium">Contact</a>
-                <hr class="border-gray-200">
-                <a href="<?php echo getBasePath(); ?>login.php" class="block py-2 text-gray-600 hover:text-blue-600 font-medium">Sign In</a>
-            </div>
-        </div>
-    </nav>
 
     <!-- ========== HERO SECTION (Flowbite Style) ========== -->
     <section class="hero-gradient pt-28 lg:pt-36 pb-16 lg:pb-24 overflow-hidden">
@@ -254,48 +204,49 @@ $tagline = 'Professional Digital Business Cards';
                 <!-- Left Content -->
                 <div class="lg:col-span-6 text-center lg:text-left">
                     <!-- Badge -->
-                    <a href="#features" class="inline-flex items-center gap-2 py-1.5 px-4 pr-5 mb-6 text-sm text-amber-800 bg-amber-100 rounded-full hover:bg-amber-200 transition-colors">
-                        <span class="bg-amber-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">New</span>
-                        <span class="font-medium">Introducing Smart Card Analytics</span>
-                        <i class="fa-solid fa-chevron-right text-xs ml-1"></i>
-                    </a>
+                    <div class="inline-flex items-center gap-2 py-1.5 px-4 mb-6 text-sm bg-gradient-to-r from-red-50 to-green-50 border border-gray-200 rounded-full">
+                        <span class="text-lg">🇴🇲</span>
+                        <span class="font-medium text-gray-700">Supporting Omani SME Companies</span>
+                        <span class="bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">FREE</span>
+                    </div>
 
                     <!-- Headline -->
                     <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-gray-900 mb-6">
-                        Digital Business Cards
-                        <span class="text-blue-600 block">Made Simple</span>
+                        Design Once,
+                        <span class="text-blue-600 block">Cards for Everyone</span>
                     </h1>
 
                     <!-- Subheadline -->
                     <p class="text-lg lg:text-xl text-gray-600 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                        Create, manage, and share beautiful digital business cards for your entire organization. Professional, modern, and effortlessly easy.
+                        Create a single template and generate professional business cards for your entire team. 
+                        <strong class="text-gray-900">Free to use</strong> — only pay when you print.
                     </p>
 
                     <!-- CTA Buttons -->
                     <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-10">
-                        <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl text-lg">
-                            Start Free Trial
+                        <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl hover:-translate-y-0.5 text-lg">
+                            Start Free — No Card Required
                             <i class="fa-solid fa-arrow-right"></i>
                         </a>
-                        <a href="#how-it-works" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-white hover:bg-gray-50 text-gray-900 font-semibold rounded-xl border-2 border-gray-200 transition-all text-lg">
+                        <a href="<?php echo getBasePath(); ?>intro" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-white hover:bg-gray-50 text-gray-900 font-semibold rounded-xl border-2 border-gray-200 transition-all text-lg">
                             <i class="fa-solid fa-play-circle text-blue-600"></i>
-                            Watch Demo
+                            See How It Works
                         </a>
                     </div>
 
                     <!-- Trust Badges -->
-                    <div class="flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-3 text-sm text-gray-500">
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-circle-check text-green-500"></i>
-                            <span>No credit card required</span>
+                    <div class="flex flex-wrap items-center justify-center lg:justify-start gap-3 text-sm">
+                        <div class="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-full">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>100% Free Platform</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-circle-check text-green-500"></i>
-                            <span>14-day free trial</span>
+                        <div class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full">
+                            <i class="fa-solid fa-print"></i>
+                            <span>Order Prints Instantly</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-circle-check text-green-500"></i>
-                            <span>Cancel anytime</span>
+                        <div class="flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full">
+                            <i class="fa-solid fa-users"></i>
+                            <span>Unlimited Employees</span>
                         </div>
                     </div>
                 </div>
@@ -380,16 +331,31 @@ $tagline = 'Professional Digital Business Cards';
         </div>
     </section>
 
-    <!-- ========== LOGO CLOUD (Flowbite Style) ========== -->
-    <section class="py-10 bg-white border-y border-gray-100">
+    <!-- ========== VALUE PROPOSITION BANNER ========== -->
+    <section class="py-12 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p class="text-center text-sm font-semibold text-gray-400 uppercase tracking-wider mb-8">Trusted by teams at leading companies</p>
-            <div class="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-60 grayscale">
-                <div class="text-2xl font-bold text-gray-900">TechCorp</div>
-                <div class="text-2xl font-bold text-gray-900">Innovate</div>
-                <div class="text-2xl font-bold text-gray-900">StartupXYZ</div>
-                <div class="text-2xl font-bold text-gray-900">DesignCo</div>
-                <div class="text-2xl font-bold text-gray-900">MediaHub</div>
+            <div class="grid md:grid-cols-3 gap-8 text-center">
+                <div class="flex flex-col items-center">
+                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-palette text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Design Once</h3>
+                    <p class="text-blue-100 text-sm">Create one template, generate cards for all your employees automatically</p>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-print text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Print Instantly</h3>
+                    <p class="text-blue-100 text-sm">Order from verified local print shops directly from your dashboard</p>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-gift text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Completely Free</h3>
+                    <p class="text-blue-100 text-sm">Platform is 100% free — only pay when you order physical prints</p>
+                </div>
             </div>
         </div>
     </section>
@@ -404,78 +370,79 @@ $tagline = 'Professional Digital Business Cards';
                     Powerful Features
                 </span>
                 <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
-                    Everything you need to manage digital business cards
+                    Everything you need to manage business cards at scale
                 </h2>
                 <p class="text-lg text-gray-600">
-                    From creation to analytics, Cardify provides all the tools your team needs to make networking effortless.
+                    From design to print, Cardify provides all the tools your team needs to create professional business cards effortlessly.
                 </p>
             </div>
 
             <!-- Features Grid -->
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Feature 1 -->
+                <!-- Feature 1 - Design Once -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
                     <div class="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
-                        <i class="fa-solid fa-building text-2xl text-blue-600 group-hover:text-white transition-colors"></i>
+                        <i class="fa-solid fa-wand-magic-sparkles text-2xl text-blue-600 group-hover:text-white transition-colors"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Multi-Company Support</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Design Once, Use Forever</h3>
                     <p class="text-gray-600 leading-relaxed">
-                        Manage multiple organizations from a single dashboard. Perfect for agencies and enterprise teams with multiple brands.
+                        Create a single template with your brand design. Automatically generate cards for all employees with their unique details.
                     </p>
                 </div>
 
-                <!-- Feature 2 -->
+                <!-- Feature 2 - Print Integration -->
+                <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
+                    <div class="absolute -top-3 -right-3 px-2 py-1 bg-green-500 text-white text-xs font-bold rounded-full">New</div>
+                    <div class="w-14 h-14 rounded-xl bg-green-100 flex items-center justify-center mb-6 group-hover:bg-green-600 transition-colors">
+                        <i class="fa-solid fa-print text-2xl text-green-600 group-hover:text-white transition-colors"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Verified Print Shops</h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        Order professional prints directly from verified local print shops. One click ordering with delivery across Oman.
+                    </p>
+                </div>
+
+                <!-- Feature 3 - Bilingual -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
                     <div class="w-14 h-14 rounded-xl bg-amber-100 flex items-center justify-center mb-6 group-hover:bg-amber-500 transition-colors">
-                        <i class="fa-solid fa-palette text-2xl text-amber-600 group-hover:text-white transition-colors"></i>
+                        <i class="fa-solid fa-language text-2xl text-amber-600 group-hover:text-white transition-colors"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Custom Templates</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Arabic & English</h3>
                     <p class="text-gray-600 leading-relaxed">
-                        Design beautiful card templates that match your brand. Full control over colors, fonts, layouts and more.
+                        Full bilingual support with proper RTL formatting. AI-powered Arabic translation makes it easy.
                     </p>
                 </div>
 
-                <!-- Feature 3 -->
-                <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
-                    <div class="w-14 h-14 rounded-xl bg-green-100 flex items-center justify-center mb-6 group-hover:bg-green-600 transition-colors">
-                        <i class="fa-solid fa-users text-2xl text-green-600 group-hover:text-white transition-colors"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Team Management</h3>
-                    <p class="text-gray-600 leading-relaxed">
-                        Add and organize employees by department. Bulk import from CSV or integrate with your HR systems.
-                    </p>
-                </div>
-
-                <!-- Feature 4 -->
+                <!-- Feature 4 - Team Management -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
                     <div class="w-14 h-14 rounded-xl bg-purple-100 flex items-center justify-center mb-6 group-hover:bg-purple-600 transition-colors">
-                        <i class="fa-solid fa-share-nodes text-2xl text-purple-600 group-hover:text-white transition-colors"></i>
+                        <i class="fa-solid fa-users text-2xl text-purple-600 group-hover:text-white transition-colors"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Easy Sharing</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Team & Departments</h3>
                     <p class="text-gray-600 leading-relaxed">
-                        Share cards via QR code, direct link, NFC, WhatsApp, or email. Recipients don't need an account.
+                        Organize employees by department with unique templates for each. Bulk import or let employees self-register.
                     </p>
                 </div>
 
-                <!-- Feature 5 -->
+                <!-- Feature 5 - QR Tracking -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
                     <div class="w-14 h-14 rounded-xl bg-pink-100 flex items-center justify-center mb-6 group-hover:bg-pink-600 transition-colors">
-                        <i class="fa-solid fa-chart-line text-2xl text-pink-600 group-hover:text-white transition-colors"></i>
+                        <i class="fa-solid fa-qrcode text-2xl text-pink-600 group-hover:text-white transition-colors"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Analytics Dashboard</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Smart QR Codes</h3>
                     <p class="text-gray-600 leading-relaxed">
-                        Track views, saves, and engagement. Understand how your cards perform with detailed analytics.
+                        Every card includes a trackable QR code. Know when and where your cards are being scanned with detailed analytics.
                     </p>
                 </div>
 
-                <!-- Feature 6 -->
+                <!-- Feature 6 - Self Service Portal -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
                     <div class="w-14 h-14 rounded-xl bg-red-100 flex items-center justify-center mb-6 group-hover:bg-red-600 transition-colors">
-                        <i class="fa-solid fa-shield-halved text-2xl text-red-600 group-hover:text-white transition-colors"></i>
+                        <i class="fa-solid fa-door-open text-2xl text-red-600 group-hover:text-white transition-colors"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Secure & Private</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Employee Portal</h3>
                     <p class="text-gray-600 leading-relaxed">
-                        Enterprise-grade security with role-based access control. Your data is encrypted and protected.
+                        Employees can request their own cards through a branded self-service portal. Admins review and approve.
                     </p>
                 </div>
             </div>
@@ -609,150 +576,211 @@ $tagline = 'Professional Digital Business Cards';
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="max-w-2xl mx-auto text-center mb-16">
-                <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-amber-700 bg-amber-100 rounded-full uppercase tracking-wide">
-                    <i class="fa-solid fa-tag"></i>
-                    Simple Pricing
+                <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-green-700 bg-green-100 rounded-full uppercase tracking-wide">
+                    <i class="fa-solid fa-gift"></i>
+                    Free to Use
                 </span>
                 <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
-                    Plans that scale with your team
+                    Free Platform, Pay Only for Printing
                 </h2>
                 <p class="text-lg text-gray-600">
-                    Start free, upgrade when you need more. No hidden fees, cancel anytime.
+                    Everything you need to create and manage digital business cards is completely free. Only pay when you order physical prints.
                 </p>
             </div>
 
             <!-- Pricing Cards -->
             <div class="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                <!-- Starter -->
-                <div class="relative bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-blue-200 transition-colors">
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Starter</h3>
-                    <p class="text-gray-500 mb-6">Best for small teams getting started</p>
-                    
-                    <div class="flex items-baseline gap-1 mb-8">
-                        <span class="text-5xl font-extrabold text-gray-900">$19</span>
-                        <span class="text-gray-500">/month</span>
-                    </div>
-
-                    <ul class="space-y-4 mb-8">
-                        <li class="flex items-center gap-3 text-gray-600">
-                            <i class="fa-solid fa-check w-5 text-green-500"></i>
-                            Up to 25 team members
-                        </li>
-                        <li class="flex items-center gap-3 text-gray-600">
-                            <i class="fa-solid fa-check w-5 text-green-500"></i>
-                            Custom card templates
-                        </li>
-                        <li class="flex items-center gap-3 text-gray-600">
-                            <i class="fa-solid fa-check w-5 text-green-500"></i>
-                            QR code sharing
-                        </li>
-                        <li class="flex items-center gap-3 text-gray-600">
-                            <i class="fa-solid fa-check w-5 text-green-500"></i>
-                            Basic analytics
-                        </li>
-                        <li class="flex items-center gap-3 text-gray-600">
-                            <i class="fa-solid fa-check w-5 text-green-500"></i>
-                            Email support
-                        </li>
-                    </ul>
-
-                    <a href="<?php echo getBasePath(); ?>company/register.php" class="block w-full py-3 px-6 text-center bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold rounded-lg transition-colors">
-                        Start Free Trial
-                    </a>
-                </div>
-
-                <!-- Professional (Popular) -->
-                <div class="relative bg-blue-600 rounded-2xl p-8 shadow-xl shadow-blue-600/30 scale-105">
-                    <!-- Popular badge -->
-                    <div class="absolute -top-4 left-1/2 -translate-x-1/2">
-                        <span class="inline-flex items-center gap-1 px-3 py-1 bg-amber-400 text-amber-900 text-xs font-bold rounded-full">
-                            <i class="fa-solid fa-star"></i>
-                            Most Popular
+                <?php 
+                // Find the free plan from database
+                $freePlan = null;
+                $paidPlans = [];
+                foreach ($subscriptionPlans as $plan) {
+                    if ($plan['id'] === 'free' || (float)($plan['omr_monthly'] ?? 0) == 0) {
+                        $freePlan = $plan;
+                    } else {
+                        $paidPlans[] = $plan;
+                    }
+                }
+                
+                // Get plan features - try to parse from database or use defaults
+                $freePlanFeatures = [
+                    'Unlimited employees',
+                    'Unlimited card templates',
+                    'Unlimited digital cards',
+                    'QR code generation & tracking',
+                    'Analytics dashboard',
+                    'Department management',
+                    'Employee self-service portal',
+                    'Arabic & English support'
+                ];
+                
+                // Try to get features from database if available
+                if ($freePlan && !empty($freePlan['features_json'])) {
+                    $dbFeatures = json_decode($freePlan['features_json'], true);
+                    if (!empty($dbFeatures) && is_array($dbFeatures)) {
+                        $freePlanFeatures = $dbFeatures;
+                    }
+                }
+                
+                // Get pricing values
+                $freePlanPrice = '0';
+                $freePlanName = $freePlan['name'] ?? 'Free Platform';
+                $freePlanDescription = $freePlan['description'] ?? 'Everything included, no limits';
+                
+                // Check limits for display text
+                $employeeLimit = ($freePlan['max_employees'] ?? -1) == -1 ? 'Unlimited' : ($freePlan['max_employees'] ?? 'Unlimited');
+                $templateLimit = ($freePlan['max_templates'] ?? -1) == -1 ? 'Unlimited' : ($freePlan['max_templates'] ?? 'Unlimited');
+                ?>
+                
+                <!-- Free Platform -->
+                <div class="relative bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border-2 border-blue-200 lg:col-span-2">
+                    <div class="absolute -top-4 left-8">
+                        <span class="inline-flex items-center gap-1 px-4 py-1.5 bg-green-500 text-white text-sm font-bold rounded-full shadow-lg shadow-green-500/30">
+                            <i class="fa-solid fa-infinity"></i>
+                            Forever Free
                         </span>
                     </div>
 
-                    <h3 class="text-xl font-bold text-white mb-2">Professional</h3>
-                    <p class="text-blue-200 mb-6">Best for growing businesses</p>
-                    
-                    <div class="flex items-baseline gap-1 mb-8">
-                        <span class="text-5xl font-extrabold text-white">$49</span>
-                        <span class="text-blue-200">/month</span>
+                    <div class="grid md:grid-cols-2 gap-8 mt-4">
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900 mb-2"><?php echo htmlspecialchars($freePlanName); ?></h3>
+                            <p class="text-gray-600 mb-6"><?php echo htmlspecialchars($freePlanDescription); ?></p>
+                            
+                            <div class="flex items-baseline gap-2 mb-6">
+                                <span class="text-5xl font-extrabold text-gray-900">OMR <?php echo $freePlanPrice; ?></span>
+                                <span class="text-gray-500">forever</span>
+                            </div>
+
+                            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center justify-center gap-2 w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all">
+                                Get Started Free
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </a>
+                        </div>
+
+                        <div>
+                            <ul class="space-y-3">
+                                <?php foreach ($freePlanFeatures as $feature): ?>
+                                <li class="flex items-center gap-3 text-gray-700">
+                                    <i class="fa-solid fa-check w-5 text-green-500"></i>
+                                    <span><?php echo htmlspecialchars($feature); ?></span>
+                                </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
                     </div>
-
-                    <ul class="space-y-4 mb-8">
-                        <li class="flex items-center gap-3 text-blue-100">
-                            <i class="fa-solid fa-check w-5 text-green-400"></i>
-                            Up to 100 team members
-                        </li>
-                        <li class="flex items-center gap-3 text-blue-100">
-                            <i class="fa-solid fa-check w-5 text-green-400"></i>
-                            Advanced templates & branding
-                        </li>
-                        <li class="flex items-center gap-3 text-blue-100">
-                            <i class="fa-solid fa-check w-5 text-green-400"></i>
-                            NFC card integration
-                        </li>
-                        <li class="flex items-center gap-3 text-blue-100">
-                            <i class="fa-solid fa-check w-5 text-green-400"></i>
-                            Advanced analytics
-                        </li>
-                        <li class="flex items-center gap-3 text-blue-100">
-                            <i class="fa-solid fa-check w-5 text-green-400"></i>
-                            Priority support
-                        </li>
-                        <li class="flex items-center gap-3 text-blue-100">
-                            <i class="fa-solid fa-check w-5 text-green-400"></i>
-                            CSV/API import
-                        </li>
-                    </ul>
-
-                    <a href="<?php echo getBasePath(); ?>company/register.php" class="block w-full py-3 px-6 text-center bg-white hover:bg-blue-50 text-blue-600 font-semibold rounded-lg transition-colors">
-                        Start Free Trial
-                    </a>
                 </div>
 
-                <!-- Enterprise -->
-                <div class="relative bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-blue-200 transition-colors">
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Enterprise</h3>
-                    <p class="text-gray-500 mb-6">For large organizations</p>
+                <!-- Print Services -->
+                <div class="relative bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-green-300 transition-colors">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Print Services</h3>
+                    <p class="text-gray-500 mb-6">Order physical cards when you need them</p>
                     
-                    <div class="flex items-baseline gap-1 mb-8">
-                        <span class="text-5xl font-extrabold text-gray-900">$149</span>
-                        <span class="text-gray-500">/month</span>
+                    <div class="flex items-baseline gap-1 mb-6">
+                        <span class="text-3xl font-extrabold text-gray-900">Pay per order</span>
                     </div>
 
-                    <ul class="space-y-4 mb-8">
-                        <li class="flex items-center gap-3 text-gray-600">
-                            <i class="fa-solid fa-check w-5 text-green-500"></i>
-                            Unlimited team members
+                    <div class="space-y-4 mb-6">
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span class="text-gray-700">Standard Cards</span>
+                            <span class="font-bold text-gray-900">From OMR 5</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span class="text-gray-700">Premium Cards</span>
+                            <span class="font-bold text-gray-900">From OMR 8</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span class="text-gray-700">Bulk Orders</span>
+                            <span class="font-bold text-gray-900">Custom pricing</span>
+                        </div>
+                    </div>
+
+                    <ul class="space-y-3 mb-6 text-sm">
+                        <li class="flex items-center gap-2 text-gray-600">
+                            <i class="fa-solid fa-check text-green-500"></i>
+                            Verified local print shops
                         </li>
-                        <li class="flex items-center gap-3 text-gray-600">
-                            <i class="fa-solid fa-check w-5 text-green-500"></i>
-                            White-label options
+                        <li class="flex items-center gap-2 text-gray-600">
+                            <i class="fa-solid fa-check text-green-500"></i>
+                            Multiple paper options
                         </li>
-                        <li class="flex items-center gap-3 text-gray-600">
-                            <i class="fa-solid fa-check w-5 text-green-500"></i>
-                            SSO / SAML integration
-                        </li>
-                        <li class="flex items-center gap-3 text-gray-600">
-                            <i class="fa-solid fa-check w-5 text-green-500"></i>
-                            Dedicated account manager
-                        </li>
-                        <li class="flex items-center gap-3 text-gray-600">
-                            <i class="fa-solid fa-check w-5 text-green-500"></i>
-                            Custom integrations
-                        </li>
-                        <li class="flex items-center gap-3 text-gray-600">
-                            <i class="fa-solid fa-check w-5 text-green-500"></i>
-                            SLA & uptime guarantee
+                        <li class="flex items-center gap-2 text-gray-600">
+                            <i class="fa-solid fa-check text-green-500"></i>
+                            Delivery across Oman
                         </li>
                     </ul>
 
-                    <a href="<?php echo getBasePath(); ?>company/register.php" class="block w-full py-3 px-6 text-center bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold rounded-lg transition-colors">
-                        Contact Sales
+                    <a href="<?php echo getBasePath(); ?>print-shops.php" class="block w-full py-3 px-6 text-center bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold rounded-lg transition-colors">
+                        View Print Shops
                     </a>
                 </div>
             </div>
+            
+            <?php if (!empty($paidPlans)): ?>
+            <!-- Paid Plans Section -->
+            <div class="mt-12 pt-12 border-t border-gray-200">
+                <h3 class="text-xl font-bold text-gray-900 text-center mb-8">Premium Plans</h3>
+                <div class="grid md:grid-cols-<?php echo min(count($paidPlans), 3); ?> gap-8 max-w-4xl mx-auto">
+                    <?php foreach ($paidPlans as $plan): 
+                        $monthlyPrice = (float)($plan['omr_monthly'] ?? 0);
+                        $yearlyPrice = (float)($plan['omr_yearly'] ?? 0);
+                        $planFeatures = [];
+                        if (!empty($plan['features_json'])) {
+                            $planFeatures = json_decode($plan['features_json'], true) ?: [];
+                        }
+                        $isPopular = $plan['id'] === 'pro' || $plan['id'] === 'starter';
+                    ?>
+                    <div class="relative bg-white rounded-2xl p-6 border-2 <?php echo $isPopular ? 'border-blue-300' : 'border-gray-200'; ?> hover:shadow-lg transition-shadow">
+                        <?php if ($isPopular): ?>
+                        <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                            <span class="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">Most Popular</span>
+                        </div>
+                        <?php endif; ?>
+                        
+                        <h4 class="text-lg font-bold text-gray-900 mb-1 <?php echo $isPopular ? 'mt-2' : ''; ?>"><?php echo htmlspecialchars($plan['name']); ?></h4>
+                        <p class="text-sm text-gray-500 mb-4"><?php echo htmlspecialchars($plan['description'] ?? ''); ?></p>
+                        
+                        <div class="flex items-baseline gap-1 mb-4">
+                            <span class="text-3xl font-extrabold text-gray-900">OMR <?php echo number_format($monthlyPrice, 2); ?></span>
+                            <span class="text-gray-500">/month</span>
+                        </div>
+                        
+                        <?php if ($yearlyPrice > 0): ?>
+                        <p class="text-sm text-green-600 mb-4">
+                            <i class="fa-solid fa-tag"></i> 
+                            OMR <?php echo number_format($yearlyPrice, 2); ?>/year (Save <?php echo round((1 - ($yearlyPrice / ($monthlyPrice * 12))) * 100); ?>%)
+                        </p>
+                        <?php endif; ?>
+                        
+                        <ul class="space-y-2 mb-6 text-sm">
+                            <?php 
+                            // Show limits
+                            $maxEmployees = ($plan['max_employees'] ?? -1) == -1 ? 'Unlimited' : $plan['max_employees'];
+                            $maxTemplates = ($plan['max_templates'] ?? -1) == -1 ? 'Unlimited' : $plan['max_templates'];
+                            ?>
+                            <li class="flex items-center gap-2 text-gray-600">
+                                <i class="fa-solid fa-check text-green-500"></i>
+                                <?php echo $maxEmployees; ?> employees
+                            </li>
+                            <li class="flex items-center gap-2 text-gray-600">
+                                <i class="fa-solid fa-check text-green-500"></i>
+                                <?php echo $maxTemplates; ?> templates
+                            </li>
+                            <?php foreach ($planFeatures as $feature): ?>
+                            <li class="flex items-center gap-2 text-gray-600">
+                                <i class="fa-solid fa-check text-green-500"></i>
+                                <?php echo htmlspecialchars($feature); ?>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        
+                        <a href="<?php echo getBasePath(); ?>company/register.php" class="block w-full py-2.5 px-4 text-center <?php echo $isPopular ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'; ?> font-semibold rounded-lg transition-colors">
+                            Get Started
+                        </a>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
     </section>
 
@@ -762,14 +790,14 @@ $tagline = 'Professional Digital Business Cards';
             <!-- Section Header -->
             <div class="max-w-2xl mx-auto text-center mb-16">
                 <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-pink-700 bg-pink-100 rounded-full uppercase tracking-wide">
-                    <i class="fa-solid fa-heart"></i>
-                    Testimonials
+                    <span>🇴🇲</span>
+                    Trusted in Oman
                 </span>
                 <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
-                    Loved by teams worldwide
+                    Loved by Omani Businesses
                 </h2>
                 <p class="text-lg text-gray-600">
-                    See what our customers have to say about Cardify.
+                    See what local companies have to say about Cardify.
                 </p>
             </div>
 
@@ -778,18 +806,18 @@ $tagline = 'Professional Digital Business Cards';
                 <!-- Testimonial 1 -->
                 <figure class="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
                     <blockquote class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">"Finally, a solution that just works"</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">"Perfect for our growing team"</h3>
                         <p class="text-gray-600 leading-relaxed">
-                            "We tried several digital card solutions before Cardify. The difference is night and day. Setup took 10 minutes, our entire team was onboarded within an hour, and the cards look absolutely professional."
+                            "We designed one template and now all 50 of our employees have professional cards. The Arabic support is excellent and the print ordering feature saved us so much time."
                         </p>
                     </blockquote>
                     <figcaption class="flex items-center gap-4">
                         <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold">
-                            JM
+                            AA
                         </div>
                         <div>
-                            <div class="font-semibold text-gray-900">Jennifer Martinez</div>
-                            <div class="text-sm text-gray-500">Head of Operations, TechStart</div>
+                            <div class="font-semibold text-gray-900">Ahmed Al-Balushi</div>
+                            <div class="text-sm text-gray-500">Managing Director, Muscat Trading</div>
                         </div>
                     </figcaption>
                 </figure>
@@ -797,18 +825,18 @@ $tagline = 'Professional Digital Business Cards';
                 <!-- Testimonial 2 -->
                 <figure class="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
                     <blockquote class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">"Our sales team can't stop raving about it"</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">"Finally, cards that represent our brand"</h3>
                         <p class="text-gray-600 leading-relaxed">
-                            "The QR sharing feature is a game-changer at conferences. We've seen a 40% increase in follow-up connections since switching to Cardify. The analytics help us track which team members are most active."
+                            "The visual editor is amazing. We created bilingual cards that perfectly match our brand guidelines. Our sales team loves the QR code tracking feature."
                         </p>
                     </blockquote>
                     <figcaption class="flex items-center gap-4">
                         <div class="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-white font-bold">
-                            RK
+                            FA
                         </div>
                         <div>
-                            <div class="font-semibold text-gray-900">Robert Kim</div>
-                            <div class="text-sm text-gray-500">VP Sales, GlobalCorp</div>
+                            <div class="font-semibold text-gray-900">Fatima Al-Rashdi</div>
+                            <div class="text-sm text-gray-500">Marketing Manager, Gulf Solutions</div>
                         </div>
                     </figcaption>
                 </figure>
@@ -816,18 +844,18 @@ $tagline = 'Professional Digital Business Cards';
                 <!-- Testimonial 3 -->
                 <figure class="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
                     <blockquote class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">"Beautiful design, zero learning curve"</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">"Free and feature-rich — unbelievable"</h3>
                         <p class="text-gray-600 leading-relaxed">
-                            "As a design-focused agency, we needed cards that reflected our brand quality. Cardify delivered beyond expectations. The customization options are fantastic and our clients love receiving them."
+                            "I couldn't believe it was free! We've been using it for 6 months and only paid when we needed to print cards. The department feature helps us organize different teams perfectly."
                         </p>
                     </blockquote>
                     <figcaption class="flex items-center gap-4">
                         <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                            SW
+                            KH
                         </div>
                         <div>
-                            <div class="font-semibold text-gray-900">Sarah Williams</div>
-                            <div class="text-sm text-gray-500">Creative Director, DesignHub</div>
+                            <div class="font-semibold text-gray-900">Khalid Al-Habsi</div>
+                            <div class="text-sm text-gray-500">HR Director, Oman Tech Services</div>
                         </div>
                     </figcaption>
                 </figure>
@@ -835,18 +863,18 @@ $tagline = 'Professional Digital Business Cards';
                 <!-- Testimonial 4 -->
                 <figure class="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
                     <blockquote class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">"Enterprise features at a startup price"</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">"The employee portal is a game-changer"</h3>
                         <p class="text-gray-600 leading-relaxed">
-                            "We manage 500+ employees across 3 offices. The bulk import and department organization features make administration a breeze. The ROI compared to printed cards is incredible."
+                            "Our employees can now request their own cards through the portal. We just approve and print. It's reduced our admin work by 80%. Highly recommend for any Omani company."
                         </p>
                     </blockquote>
                     <figcaption class="flex items-center gap-4">
                         <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white font-bold">
-                            ML
+                            SA
                         </div>
                         <div>
-                            <div class="font-semibold text-gray-900">Michael Lee</div>
-                            <div class="text-sm text-gray-500">IT Director, EnterpriseNow</div>
+                            <div class="font-semibold text-gray-900">Sara Al-Kindi</div>
+                            <div class="text-sm text-gray-500">Operations Lead, Salalah Enterprises</div>
                         </div>
                     </figcaption>
                 </figure>
@@ -857,27 +885,43 @@ $tagline = 'Professional Digital Business Cards';
     <!-- ========== CTA SECTION (Flowbite Style) ========== -->
     <section class="py-16 lg:py-24 bg-gradient-to-br from-blue-600 to-indigo-700">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white text-sm font-medium mb-6">
+                <span>🇴🇲</span>
+                <span>Proudly supporting Omani businesses</span>
+            </div>
+            
             <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-6">
-                Ready to transform your business cards?
+                Create Your First Card in Minutes
             </h2>
             <p class="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
-                Join thousands of professionals already using Cardify to make lasting impressions. Start your free trial today.
+                Join hundreds of Omani SME companies using Cardify. It's completely free to start — no credit card required.
             </p>
             
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white hover:bg-gray-100 text-blue-600 font-bold rounded-xl shadow-xl transition-all text-lg">
+                <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white hover:bg-gray-100 text-blue-600 font-bold rounded-xl shadow-xl transition-all hover:-translate-y-0.5 text-lg">
                     <i class="fa-solid fa-rocket"></i>
-                    Start Free Trial
+                    Start Free — No Credit Card
                 </a>
-                <a href="<?php echo getBasePath(); ?>login.php" class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-500/20 hover:bg-blue-500/30 text-white font-semibold rounded-xl border-2 border-white/30 transition-all text-lg">
-                    <i class="fa-solid fa-right-to-bracket"></i>
-                    Sign In
+                <a href="<?php echo getBasePath(); ?>intro" class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-500/20 hover:bg-blue-500/30 text-white font-semibold rounded-xl border-2 border-white/30 transition-all text-lg">
+                    <i class="fa-solid fa-play-circle"></i>
+                    See How It Works
                 </a>
             </div>
 
-            <p class="mt-8 text-blue-200 text-sm">
-                <i class="fa-solid fa-shield-halved mr-2"></i>
-                No credit card required. 14-day free trial. Cancel anytime.
+            <div class="mt-10 flex flex-wrap justify-center gap-6 text-white/70 text-sm">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-check-circle"></i>
+                    <span>100% Free Platform</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-check-circle"></i>
+                    <span>Unlimited Employees</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-check-circle"></i>
+                    <span>Pay Only for Printing</span>
+                </div>
+            </div>
             </p>
         </div>
     </section>
@@ -889,26 +933,15 @@ $tagline = 'Professional Digital Business Cards';
                 <!-- Brand -->
                 <div class="lg:col-span-1">
                     <div class="flex items-center gap-3 mb-6">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg flex items-center justify-center">
-                            <img src="<?php echo assetUrl('images/logo.svg'); ?>" alt="<?php echo $brandName; ?>" class="w-8 h-8">
-                        </div>
+                        <img src="<?php echo assetUrl('images/logo.svg'); ?>" alt="<?php echo $brandName; ?>" class="h-10 w-auto">
                         <span class="text-xl font-bold"><?php echo $brandName; ?></span>
                     </div>
-                    <p class="text-gray-400 mb-6 leading-relaxed">
+                    <p class="text-gray-400 mb-4 leading-relaxed">
                         The modern way to create and share professional business cards. Built for teams of all sizes.
                     </p>
-                    <div class="flex gap-3">
-                        <a href="#" class="w-10 h-10 rounded-lg bg-gray-800 hover:bg-blue-600 flex items-center justify-center transition-colors" aria-label="Twitter">
-                            <i class="fa-brands fa-x-twitter"></i>
-                        </a>
-                        <a href="#" class="w-10 h-10 rounded-lg bg-gray-800 hover:bg-blue-600 flex items-center justify-center transition-colors" aria-label="LinkedIn">
-                            <i class="fa-brands fa-linkedin-in"></i>
-                        </a>
-                        <a href="#" class="w-10 h-10 rounded-lg bg-gray-800 hover:bg-pink-600 flex items-center justify-center transition-colors" aria-label="Instagram">
+                    <div class="flex gap-3 mb-6">
+                        <a href="https://instagram.com/cardifyom" target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-lg bg-gray-800 hover:bg-pink-600 flex items-center justify-center transition-colors" aria-label="Instagram">
                             <i class="fa-brands fa-instagram"></i>
-                        </a>
-                        <a href="#" class="w-10 h-10 rounded-lg bg-gray-800 hover:bg-blue-500 flex items-center justify-center transition-colors" aria-label="Facebook">
-                            <i class="fa-brands fa-facebook-f"></i>
                         </a>
                     </div>
                 </div>
@@ -928,10 +961,10 @@ $tagline = 'Professional Digital Business Cards';
                 <div>
                     <h4 class="font-bold text-lg mb-6">Company</h4>
                     <ul class="space-y-4">
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">About Us</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Blog</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Careers</a></li>
-                        <li><a href="#contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>about.php" class="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>blog.php" class="text-gray-400 hover:text-white transition-colors">Blog</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>careers.php" class="text-gray-400 hover:text-white transition-colors">Careers</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>contact.php" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
                     </ul>
                 </div>
 
@@ -939,10 +972,10 @@ $tagline = 'Professional Digital Business Cards';
                 <div>
                     <h4 class="font-bold text-lg mb-6">Legal</h4>
                     <ul class="space-y-4">
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Terms of Service</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Cookie Policy</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Security</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>privacy.php" class="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>terms.php" class="text-gray-400 hover:text-white transition-colors">Terms of Service</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>cookies.php" class="text-gray-400 hover:text-white transition-colors">Cookie Policy</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>security.php" class="text-gray-400 hover:text-white transition-colors">Security</a></li>
                     </ul>
                 </div>
             </div>
@@ -963,6 +996,8 @@ $tagline = 'Professional Digital Business Cards';
     </footer>
 
     <!-- ========== SCRIPTS ========== -->
+    <?php
+    $extraScripts = <<<HTML
     <script>
         // Mobile menu toggle
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
@@ -972,34 +1007,17 @@ $tagline = 'Professional Digital Business Cards';
             mobileMenu.classList.toggle('hidden');
         });
 
-        // Smooth scroll for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    // Close mobile menu if open
-                    mobileMenu?.classList.add('hidden');
-                }
-            });
-        });
-
         // Navbar scroll effect
         const navbar = document.getElementById('navbar');
-        let lastScroll = 0;
-
         window.addEventListener('scroll', () => {
             const currentScroll = window.pageYOffset;
-            
             if (currentScroll > 50) {
                 navbar.classList.add('shadow-md');
             } else {
                 navbar.classList.remove('shadow-md');
             }
-            
-            lastScroll = currentScroll;
         });
     </script>
-</body>
-</html>
+HTML;
+    require INCLUDES_DIR . '/ui-footer.php';
+    ?>

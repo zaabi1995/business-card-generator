@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 44" fill="none">
+  <!-- Card Background - white with slight transparency -->
+  <rect width="68" height="44" rx="10" fill="rgba(255,255,255,0.15)"/>
+  <rect x="2" y="2" width="64" height="40" rx="8" fill="white"/>
+  <!-- Avatar Circle (orange - brand color) -->
+  <rect x="12" y="12" width="12" height="12" rx="6" fill="#f59e0b"/>
+  <!-- Info Lines - blue shades -->
+  <rect x="28" y="12" width="28" height="5" rx="2.5" fill="#2563eb"/>
+  <rect x="28" y="21" width="20" height="5" rx="2.5" fill="#60a5fa"/>
+  <!-- Cardify Text in White -->
+  <text x="80" y="30" font-family="Gill Sans, Gill Sans MT, Calibri, sans-serif" font-size="26" font-weight="600" fill="white">Cardify</text>
+</svg>

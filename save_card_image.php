@@ -1,16 +1,32 @@
 <?php
 /**
- * Save card image uploaded from html2canvas
+ * Save card image/PDF uploaded from batch generation
  */
 
 require_once __DIR__ . '/config.php';
+require_once INCLUDES_DIR . '/Auth.php';
 
 header('Content-Type: application/json');
 
+// Require authentication
+if (!Auth::isLoggedIn()) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'error' => 'Authentication required']);
+    exit;
+}
+
+// Require a valid company context
+$companyId = getCurrentCompanyId();
+if (!$companyId) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'No company context']);
+    exit;
+}
+
 try {
-    // Check if image was uploaded
+    // Check if file was uploaded
     if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
-        throw new Exception('No image uploaded');
+        throw new Exception('No file uploaded');
     }
     
     // Get side (front or back)
@@ -19,30 +35,33 @@ try {
         $side = 'front';
     }
     
-    // Validate it's a PNG
+    // Get file type
+    $fileType = isset($_POST['file_type']) ? $_POST['file_type'] : 'png';
+    
+    // Validate MIME type
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $_FILES['image']['tmp_name']);
     finfo_close($finfo);
     
-    if ($mimeType !== 'image/png') {
-        throw new Exception('Invalid image type');
+    $allowedTypes = ['image/png', 'application/pdf'];
+    if (!in_array($mimeType, $allowedTypes)) {
+        throw new Exception('Invalid file type: ' . $mimeType);
     }
-    
-    $companyId = getCurrentCompanyId();
 
-    // Create output directory (scoped per company in multi-tenant mode)
-    $outputDir = $companyId ? getCompanyCardsDir($companyId) : CARDS_DIR;
+    // Create output directory (scoped per company — companyId validated above)
+    $outputDir = getCompanyCardsDir($companyId);
     if (!file_exists($outputDir)) {
         mkdir($outputDir, 0755, true);
     }
     
-    // Generate unique filename
-    $filename = 'card_' . $side . '_' . date('Ymd_His') . '_' . uniqid() . '.png';
+    // Generate unique filename based on type
+    $ext = ($mimeType === 'application/pdf') ? 'pdf' : 'png';
+    $filename = 'card_' . $side . '_' . date('Ymd_His') . '_' . uniqid() . '.' . $ext;
     $filePath = $outputDir . '/' . $filename;
     
     // Move uploaded file
     if (!move_uploaded_file($_FILES['image']['tmp_name'], $filePath)) {
-        throw new Exception('Failed to save image');
+        throw new Exception('Failed to save file');
     }
     
     // Build correct URL
@@ -53,7 +72,8 @@ try {
         'success' => true,
         'url' => $url,
         'filename' => $filename,
-        'side' => $side
+        'side' => $side,
+        'type' => $ext
     ]);
     
 } catch (Exception $e) {

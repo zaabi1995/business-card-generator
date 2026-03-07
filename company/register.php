@@ -1,50 +1,46 @@
 <?php
 /**
  * Cardify - Company Registration
- * Design: Tailwind UI Split Screen + Flowbite + Salient
+ * Features domain-based company creation:
+ * - Business domains auto-set slug from domain
+ * - Common domains (gmail, etc.) require manual company name
+ * - If company with domain exists, user is added as employee
  */
 require_once __DIR__ . '/../config.php';
+require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/Mailer.php';
+
+// Redirect if already logged in
+if (Auth::isLoggedIn()) {
+    header('Location: ' . getBasePath() . 'admin/');
+    exit;
+}
 
 $error = null;
-$brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
+$info = null;
+$prefillEmail = $_GET['email'] ?? '';
+$prefillName = $_GET['name'] ?? '';
+$isBusinessDomain = false;
+$suggestedSlug = '';
+$existingCompany = null;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = $_POST['company_name'] ?? '';
-    $email = $_POST['admin_email'] ?? '';
-    $password = $_POST['password'] ?? '';
-    $customSlug = $_POST['company_slug'] ?? null;
-
-    $result = createCompany($name, $email, $password, null, $customSlug);
-    if (!empty($result['success'])) {
-        $company = $result['company'];
-        companyAdminLogin($company['slug'], $password);
-        header('Location: ' . getBasePath() . 'admin/');
-        exit;
+// Check if prefilled email has business domain
+if (!empty($prefillEmail) && isValidEmail($prefillEmail)) {
+    $isBusinessDomain = isBusinessEmailDomain($prefillEmail);
+    if ($isBusinessDomain) {
+        $suggestedSlug = generateSlugFromEmail($prefillEmail);
+        // Check if company with this domain already exists
+        $domain = extractEmailDomain($prefillEmail);
+        $existingCompany = findCompanyByDomain($domain);
     }
-    $error = $result['error'] ?? 'Failed to create company';
 }
-?>
-<!DOCTYPE html>
-<html lang="en" class="h-full bg-white">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Account - <?php echo $brandName; ?></title>
-    <link rel="icon" href="<?php echo getBasePath(); ?>favicon.svg" type="image/svg+xml">
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="<?php echo getBasePath(); ?>assets/vendor/css/all.css">
-    
-    <!-- Flowbite CSS -->
-    <link rel="stylesheet" href="<?php echo assetUrl('flowbite/app.css'); ?>">
-    
+
+$brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
+$pageTitle = 'Create Account';
+$htmlClass = 'h-full bg-white';
+$bodyClass = 'h-full';
+$extraHead = <<<HTML
     <style>
-        body { font-family: 'Inter', sans-serif; }
         .form-input {
             display: block;
             width: 100%;
@@ -64,9 +60,166 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-input::placeholder {
             color: #9ca3af;
         }
+        .form-input:disabled {
+            background-color: #f3f4f6;
+            color: #6b7280;
+            cursor: not-allowed;
+        }
     </style>
-</head>
-<body class="h-full">
+    <script>
+        function checkEmailDomain() {
+            const email = document.getElementById('admin_email').value;
+            const slugField = document.getElementById('company_slug');
+            const slugWrapper = document.getElementById('slug-wrapper');
+            const domainInfo = document.getElementById('domain-info');
+            
+            // Common email domains
+            const commonDomains = ['gmail.com', 'googlemail.com', 'hotmail.com', 'outlook.com', 
+                'live.com', 'msn.com', 'yahoo.com', 'ymail.com', 'icloud.com', 'me.com', 
+                'aol.com', 'protonmail.com', 'proton.me', 'mail.com', 'zoho.com'];
+            
+            if (email && email.includes('@')) {
+                const domain = email.split('@')[1]?.toLowerCase();
+                const isCommon = commonDomains.includes(domain);
+                
+                if (isCommon) {
+                    slugField.disabled = false;
+                    slugField.placeholder = 'your-company-name';
+                    slugField.required = true;
+                    domainInfo.innerHTML = '<i class="fa-solid fa-info-circle text-blue-500 mr-2"></i>Personal email detected. Please choose a unique company URL.';
+                    domainInfo.className = 'mt-1.5 text-xs text-gray-600';
+                } else {
+                    // Business domain - auto-suggest slug
+                    let slug = domain.replace(/\.(com|org|net|co|io|tech|app|dev|ai)$/i, '');
+                    slug = slug.replace(/\.(co\.|com\.)?[a-z]{2}$/i, '');
+                    slug = slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                    
+                    slugField.value = slug;
+                    slugField.placeholder = slug;
+                    domainInfo.innerHTML = '<i class="fa-solid fa-building text-green-500 mr-2"></i>Business domain detected. URL auto-set from your domain.';
+                    domainInfo.className = 'mt-1.5 text-xs text-green-600';
+                }
+            }
+        }
+    </script>
+HTML;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request. Please try again.';
+    } else {
+    $name = trim($_POST['company_name'] ?? '');
+    $email = sanitizeEmail($_POST['admin_email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $customSlug = trim($_POST['company_slug'] ?? '');
+    $userName = trim($_POST['user_name'] ?? '');
+
+    // Validation
+    if (empty($name)) {
+        $error = 'Company name is required';
+    } elseif (empty($email) || !isValidEmail($email)) {
+        $error = 'Valid email address is required';
+    } elseif (empty($password) || strlen($password) < 8) {
+        $error = 'Password must be at least 8 characters';
+    } else {
+        // Check if email already exists
+        $existsCheck = Auth::emailExists($email);
+        if ($existsCheck['exists']) {
+            $error = 'This email is already registered. Please sign in instead.';
+        } else {
+            // Determine slug based on email domain
+            $isBusinessDomain = isBusinessEmailDomain($email);
+            
+            if ($isBusinessDomain && empty($customSlug)) {
+                // Auto-generate slug from business domain
+                $customSlug = generateSlugFromEmail($email);
+            }
+            
+            // Check if company with this domain already exists (for business domains)
+            if ($isBusinessDomain) {
+                $domain = extractEmailDomain($email);
+                $existingCompany = findCompanyByDomain($domain);
+                
+                if ($existingCompany) {
+                    // Company exists - add user as employee instead
+                    $employeeData = [
+                        'id' => generateUUID(),
+                        'name_en' => $userName ?: $name,
+                        'email' => $email,
+                        'password_hash' => password_hash($password, PASSWORD_BCRYPT),
+                        'company_id' => $existingCompany['id'],
+                        'status' => 'pending', // Requires admin approval
+                        'created_at' => date('Y-m-d H:i:s')
+                    ];
+                    
+                    $empResult = addEmployee($employeeData, $existingCompany['id']);
+                    if ($empResult['success'] ?? false) {
+                        $info = 'Your request to join ' . htmlspecialchars($existingCompany['name']) . ' has been submitted. You will be notified once approved.';
+                        // Don't redirect - show message
+                    } else {
+                        $error = 'Failed to submit join request. Please contact the company administrator.';
+                    }
+                }
+            }
+            
+            // Create new company if no existing company found
+            if (!$existingCompany && !$error) {
+                // Store domain for the company
+                $domain = extractEmailDomain($email);
+                
+                $result = createCompany($name, $email, $password, null, $customSlug);
+                if (!empty($result['success'])) {
+                    $company = $result['company'];
+                    
+                    // Update company with domain
+                    if ($isBusinessDomain && class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+                        try {
+                            $db = Database::getInstance();
+                            $db->update('companies', 
+                                ['domain' => $domain],
+                                'id = :id',
+                                ['id' => $company['id']]
+                            );
+                        } catch (Exception $e) {
+                            // Column might not exist, ignore
+                        }
+                    }
+                    
+                    // Create user record for the admin
+                    $userResult = Auth::createUser($email, $password, $userName ?: $name, 'company', $company['id']);
+                    
+                    // Send welcome email
+                    $siteName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
+                    $companySlug = $company['slug'] ?? '';
+                    Mailer::sendTemplate($email, 'welcome_company', [
+                        'site_name' => $siteName,
+                        'admin_name' => $userName ?: $name,
+                        'company_name' => $name,
+                        'admin_url' => getBaseUrl() . $companySlug . '/admin/',
+                        'portal_url' => getBaseUrl() . $companySlug . '/portal'
+                    ]);
+                    
+                    // Login and redirect
+                    Auth::unifiedLogin($email, $password);
+                    header('Location: ' . getBasePath() . 'admin/');
+                    exit;
+                }
+                $error = $result['error'] ?? 'Failed to create company';
+            }
+        }
+    }
+    
+    // Re-check domain status after form submission
+    if (!empty($email)) {
+        $isBusinessDomain = isBusinessEmailDomain($email);
+        if ($isBusinessDomain) {
+            $suggestedSlug = generateSlugFromEmail($email);
+        }
+    }
+    } // end CSRF else
+}
+?>
+<?php require_once INCLUDES_DIR . '/ui-header.php'; ?>
     <div class="flex min-h-full">
         <!-- Left Side - Form -->
         <div class="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
@@ -97,8 +250,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <?php endif; ?>
 
+                <!-- Info/Success Message -->
+                <?php if ($info): ?>
+                <div class="mt-6 flex items-start gap-3 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800">
+                    <i class="fa-solid fa-circle-check flex-shrink-0 mt-0.5"></i>
+                    <div>
+                        <span><?php echo $info; ?></span>
+                        <p class="mt-2">
+                            <a href="<?php echo getBasePath(); ?>login.php" class="font-semibold underline">Go to Sign In</a>
+                        </p>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- Existing Company Notice -->
+                <?php if ($existingCompany && !$info): ?>
+                <div class="mt-6 flex items-start gap-3 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                    <i class="fa-solid fa-building flex-shrink-0 mt-0.5"></i>
+                    <div>
+                        <strong><?php echo htmlspecialchars($existingCompany['name']); ?></strong> already exists with this domain.
+                        <p class="mt-1">You can request to join as an employee.</p>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <!-- Registration Form -->
-                <form method="POST" class="mt-10 space-y-6">
+                <form method="POST" class="mt-10 space-y-6" <?php echo $info ? 'style="display:none;"' : ''; ?>>
+                    <?php echo csrfField(); ?>
+                    <div>
+                        <label for="admin_email" class="block text-sm font-medium text-gray-900">
+                            Your email address
+                        </label>
+                        <div class="mt-2">
+                            <input type="email" name="admin_email" id="admin_email" 
+                                   value="<?php echo htmlspecialchars($_POST['admin_email'] ?? $prefillEmail); ?>"
+                                   class="form-input" 
+                                   placeholder="you@company.com" required
+                                   onchange="checkEmailDomain()" onkeyup="checkEmailDomain()">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="user_name" class="block text-sm font-medium text-gray-900">
+                            Your name
+                        </label>
+                        <div class="mt-2">
+                            <input type="text" name="user_name" id="user_name" 
+                                   value="<?php echo htmlspecialchars($_POST['user_name'] ?? $prefillName); ?>"
+                                   class="form-input" 
+                                   placeholder="John Smith" required>
+                        </div>
+                    </div>
+
                     <div>
                         <label for="company_name" class="block text-sm font-medium text-gray-900">
                             Company name
@@ -111,30 +314,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
 
-                    <div>
+                    <div id="slug-wrapper">
                         <label for="company_slug" class="block text-sm font-medium text-gray-900">
                             Company URL
-                            <span class="font-normal text-gray-500">(optional)</span>
                         </label>
-                        <div class="mt-2">
+                        <div class="mt-2 flex items-center">
+                            <span class="text-sm text-gray-500 mr-1"><?php echo $_SERVER['HTTP_HOST'] ?? 'cardify.om'; ?>/</span>
                             <input type="text" name="company_slug" id="company_slug" 
-                                   value="<?php echo htmlspecialchars($_POST['company_slug'] ?? ''); ?>"
-                                   class="form-input" 
-                                   placeholder="acme-corp">
+                                   value="<?php echo htmlspecialchars($_POST['company_slug'] ?? $suggestedSlug); ?>"
+                                   class="form-input flex-1" 
+                                   placeholder="<?php echo $suggestedSlug ?: 'your-company'; ?>"
+                                   <?php echo ($isBusinessDomain && $suggestedSlug) ? '' : ''; ?>>
                         </div>
-                        <p class="mt-1.5 text-xs text-gray-500">Leave empty to auto-generate from company name</p>
-                    </div>
-
-                    <div>
-                        <label for="admin_email" class="block text-sm font-medium text-gray-900">
-                            Admin email address
-                        </label>
-                        <div class="mt-2">
-                            <input type="email" name="admin_email" id="admin_email" 
-                                   value="<?php echo htmlspecialchars($_POST['admin_email'] ?? ''); ?>"
-                                   class="form-input" 
-                                   placeholder="admin@company.com" required>
-                        </div>
+                        <p id="domain-info" class="mt-1.5 text-xs text-gray-500">
+                            <?php if ($isBusinessDomain): ?>
+                            <i class="fa-solid fa-building text-green-500 mr-1"></i>Business domain detected. URL auto-set from your domain.
+                            <?php else: ?>
+                            Choose a unique URL for your company
+                            <?php endif; ?>
+                        </p>
                     </div>
 
                     <div>
@@ -239,8 +437,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
-    
-    <!-- Flowbite JS -->
-    <script src="<?php echo assetUrl('flowbite/app.bundle.js'); ?>"></script>
-</body>
-</html>
+<?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>

@@ -1,0 +1,155 @@
+<?php
+/**
+ * Company Admin Router
+ * Routes /{company_slug}/admin/{page} to the appropriate admin page
+ */
+
+// Error handling
+ini_set('log_errors', 1);
+
+// Set up error handler to catch all errors
+set_error_handler(function($severity, $message, $file, $line) {
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+
+try {
+    require_once __DIR__ . '/config.php';
+    require_once INCLUDES_DIR . '/Auth.php';
+    
+    // Only show errors in development
+    if (function_exists('isProduction') && !isProduction()) {
+        ini_set('display_errors', 1);
+        error_reporting(E_ALL);
+    } else {
+        ini_set('display_errors', 0);
+        error_reporting(E_ALL & ~E_NOTICE);
+    }
+    
+    // Get company slug and page from URL
+    $companySlug = $_GET['company_slug'] ?? '';
+    $page = $_GET['page'] ?? 'index';
+    
+    // Validate company slug
+    if (empty($companySlug)) {
+        header('Location: ' . getBasePath() . 'login.php');
+        exit;
+    }
+    
+    // Find company
+    $company = findCompanyBySlug($companySlug);
+    if (!$company) {
+        http_response_code(404);
+        die('Company not found: ' . htmlspecialchars($companySlug));
+    }
+    
+    // Start session if not started
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    // Store company slug for routing purposes (NOT for auth - don't set company_id yet)
+    $_SESSION['current_company_slug'] = $companySlug;
+    $_SESSION['current_company_name'] = $company['name'] ?? $company['name_en'] ?? $companySlug;
+    
+    // Map pages to admin files
+    $pageMap = [
+        'index' => 'admin/index.php',
+        'login' => 'login.php',
+        'employees' => 'admin/employees.php',
+        'departments' => 'admin/departments.php',
+        'requests' => 'admin/requests.php',
+        'generated' => 'admin/generated.php',
+        'batch_generate' => 'admin/batch_generate.php',
+        'auto_generate' => 'admin/auto_generate.php',
+        'get_templates' => 'admin/get_templates.php',
+        'save_template' => 'admin/save_template.php',
+        'send_card_email' => 'admin/send_card_email.php',
+        'analytics' => 'admin/analytics.php',
+        'audit-logs' => 'admin/audit-logs.php',
+        'theme' => 'admin/theme.php',
+        'billing' => 'admin/billing.php',
+        'settings' => 'admin/settings.php',
+        'migrations' => 'admin/migrations.php',
+        'print' => 'admin/print.php',
+        'print_orders' => 'admin/print_orders.php',
+        'print_settings' => 'admin/print_settings.php',
+        'print_shops' => 'admin/print_shops.php',
+        'order_print' => 'admin/order_print.php',
+        'odoo_settings' => 'admin/odoo_settings.php',
+        'whatsapp_settings' => 'admin/whatsapp_settings.php',
+        'plans' => 'admin/plans.php',
+        'companies' => 'admin/companies.php',
+        'updates' => 'admin/updates.php',
+        'db-check' => 'admin/db-check.php',
+    ];
+    
+    // Handle login page specially (no auth required)
+    if ($page === 'login') {
+        $_GET['redirect'] = getBasePath() . $companySlug . '/admin/';
+        include __DIR__ . '/login.php';
+        exit;
+    }
+    
+    // Check if user is logged in
+    if (!Auth::isLoggedIn()) {
+        header('Location: ' . getBasePath() . $companySlug . '/admin/login');
+        exit;
+    }
+    
+    // User is authenticated - now set the company context in session
+    $_SESSION['company_slug'] = $companySlug;
+    $_SESSION['company_id'] = $company['id'];
+    $_SESSION['company_name'] = $company['name'] ?? $company['name_en'] ?? $companySlug;
+    
+    // Verify user has access to this company
+    $userCompanyId = $_SESSION['user_company_id'] ?? $_SESSION['company_id'] ?? null;
+    $userRole = $_SESSION['user_role'] ?? null;
+    
+    // Super admins can access any company, others must match
+    if ($userRole !== 'super_admin' && $userCompanyId && $userCompanyId !== $company['id']) {
+        // User is trying to access a different company
+        header('Location: ' . getBasePath() . 'login.php?error=unauthorized');
+        exit;
+    }
+    
+    // Only admin-level roles can access the company admin panel
+    $adminRoles = ['super_admin', 'admin', 'company', 'company_admin'];
+    if (!in_array($userRole, $adminRoles)) {
+        header('Location: ' . getBasePath() . 'login.php?error=unauthorized');
+        exit;
+    }
+    
+    // Check if page exists in map
+    if (!isset($pageMap[$page])) {
+        http_response_code(404);
+        die('Page not found: ' . htmlspecialchars($page));
+    }
+    
+    // Set base path for admin pages to use company-specific URLs
+    define('COMPANY_ADMIN_BASE', getBasePath() . $companySlug . '/admin/');
+    
+    // Include the admin page
+    $adminFile = __DIR__ . '/' . $pageMap[$page];
+    if (file_exists($adminFile)) {
+        include $adminFile;
+    } else {
+        http_response_code(404);
+        die('Admin file not found: ' . $pageMap[$page]);
+    }
+    
+} catch (Throwable $e) {
+    // Only set response code if headers haven't been sent yet
+    if (!headers_sent()) {
+        http_response_code(500);
+    }
+    error_log('Company Admin Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    echo '<div class="bg-red-50 border border-red-200 rounded-lg p-4 m-4">';
+    echo '<h1 class="text-red-700 font-bold">Error</h1>';
+    if (function_exists('isProduction') && !isProduction()) {
+        echo '<p class="text-red-600">' . htmlspecialchars($e->getMessage()) . '</p>';
+        echo '<pre class="text-xs mt-2 overflow-auto bg-red-100 p-2 rounded">' . htmlspecialchars($e->getTraceAsString()) . '</pre>';
+    } else {
+        echo '<p class="text-red-600">An unexpected error occurred. Please try again later.</p>';
+    }
+    echo '</div>';
+}

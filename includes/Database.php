@@ -110,18 +110,30 @@ class Database {
     }
     
     public function beginTransaction() {
+        if (!$this->connection) {
+            throw new Exception('Database connection not established');
+        }
         return $this->connection->beginTransaction();
     }
     
     public function commit() {
+        if (!$this->connection) {
+            throw new Exception('Database connection not established');
+        }
         return $this->connection->commit();
     }
     
     public function rollback() {
+        if (!$this->connection) {
+            throw new Exception('Database connection not established');
+        }
         return $this->connection->rollBack();
     }
     
     public function exec($sql) {
+        if (!$this->connection) {
+            throw new Exception('Database connection not established');
+        }
         return $this->connection->exec($sql);
     }
     
@@ -135,7 +147,7 @@ class Database {
             if ($this->dbType === 'pgsql') {
                 $sql = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = :table)";
             } else {
-                $sql = "SHOW TABLES LIKE :table";
+                $sql = "SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = :table";
             }
             $result = $this->fetchOne($sql, ['table' => $tableName]);
             
@@ -144,6 +156,27 @@ class Database {
             } else {
                 return !empty($result);
             }
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+
+    // Check if column exists
+    public function columnExists($tableName, $columnName) {
+        try {
+            if ($this->dbType === 'pgsql') {
+                $sql = "SELECT EXISTS (SELECT FROM information_schema.columns WHERE table_name = :table AND column_name = :column)";
+                $result = $this->fetchOne($sql, ['table' => $tableName, 'column' => $columnName]);
+                if (empty($result)) {
+                    return false;
+                }
+                $value = array_values($result)[0];
+                return $value === true || $value === 't' || $value === 'true' || $value == 1;
+            }
+
+            $sql = "SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = :table AND column_name = :column";
+            $result = $this->fetchOne($sql, ['table' => $tableName, 'column' => $columnName]);
+            return !empty($result);
         } catch (PDOException $e) {
             return false;
         }

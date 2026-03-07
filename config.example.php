@@ -38,13 +38,8 @@ define('CARDS_DIR', UPLOADS_DIR . '/cards');
 define('EXCEL_DIR', UPLOADS_DIR . '/excel');
 define('ASSETS_DIR', BASE_DIR . '/assets');
 
-// Data files (JSON fallback if database not available)
-define('EMPLOYEES_JSON', DATA_DIR . '/employees.json');
-define('TEMPLATES_JSON', DATA_DIR . '/templates.json');
-define('GENERATED_JSON', DATA_DIR . '/generated.json');
-
 // Site settings
-define('SITE_NAME', 'Business Cards');
+define('SITE_NAME', 'Cardify');
 define('SITE_DESCRIPTION', 'Professional Business Card Generator');
 
 // Timezone
@@ -77,15 +72,37 @@ if (!defined('AMWAL_MERCHANT_ID')) define('AMWAL_MERCHANT_ID', ''); // Your Merc
 if (!defined('AMWAL_TERMINAL_ID')) define('AMWAL_TERMINAL_ID', ''); // Your Terminal ID from Amwal Pay
 if (!defined('AMWAL_SECURE_KEY')) define('AMWAL_SECURE_KEY', ''); // Your Secure Key from Amwal Pay
 if (!defined('AMWAL_API_URL')) define('AMWAL_API_URL', 'https://backend.sa.amwal.tech'); // Amwal Pay API URL
+if (!defined('AMWAL_API_KEY')) define('AMWAL_API_KEY', ''); // Amwal Pay API key (for webhook verification)
+if (!defined('AMWAL_WEBHOOK_SECRET')) define('AMWAL_WEBHOOK_SECRET', ''); // Amwal Pay webhook secret
 
 // Stripe Configuration (alternative payment gateway)
 if (!defined('STRIPE_SECRET_KEY')) define('STRIPE_SECRET_KEY', ''); // Stripe secret key
 if (!defined('STRIPE_PUBLIC_KEY')) define('STRIPE_PUBLIC_KEY', ''); // Stripe public key
 
+// Print Webhook Configuration
+// Global secret for verifying print status webhooks (per-shop secrets take priority)
+// Callers must send X-Webhook-Signature: sha256=<hmac_hex_of_body>
+if (!defined('PRINT_WEBHOOK_SECRET')) define('PRINT_WEBHOOK_SECRET', ''); // Set a random secret string
+
+// Email/SMTP Configuration (required for password reset, notifications)
+// Common providers:
+// - Gmail: smtp.gmail.com, port 587, tls (requires App Password)
+// - Outlook: smtp.office365.com, port 587, tls
+// - Mailgun: smtp.mailgun.org, port 587, tls
+// - SendGrid: smtp.sendgrid.net, port 587, tls
+if (!defined('MAIL_HOST')) define('MAIL_HOST', ''); // SMTP server hostname
+if (!defined('MAIL_PORT')) define('MAIL_PORT', 587); // SMTP port (587 for TLS, 465 for SSL)
+if (!defined('MAIL_USERNAME')) define('MAIL_USERNAME', ''); // SMTP username (usually email)
+if (!defined('MAIL_PASSWORD')) define('MAIL_PASSWORD', ''); // SMTP password or app password
+if (!defined('MAIL_ENCRYPTION')) define('MAIL_ENCRYPTION', 'tls'); // 'tls', 'ssl', or '' for none
+if (!defined('MAIL_FROM_EMAIL')) define('MAIL_FROM_EMAIL', ''); // From email (defaults to username)
+if (!defined('MAIL_FROM_NAME')) define('MAIL_FROM_NAME', 'Cardify'); // From name
+
 // Include required files
 require_once INCLUDES_DIR . '/Database.php';
 require_once INCLUDES_DIR . '/functions.php';
 require_once INCLUDES_DIR . '/DatabaseAdapter.php';
+require_once INCLUDES_DIR . '/AuditLog.php';
 
 // Initialize database connection (if configured)
 if (defined('DB_HOST') && !empty(DB_HOST) && !empty(DB_NAME)) {

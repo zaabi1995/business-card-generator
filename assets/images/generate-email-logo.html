@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Email Logo PNG</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 60px; 
+            background: #1e40af; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        .logo-area {
+            background: #1e40af;
+            padding: 20px 40px;
+            display: inline-block;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .card-icon {
+            width: 64px;
+            height: 40px;
+            background: white;
+            border-radius: 8px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 10px 12px;
+            box-sizing: border-box;
+        }
+        .avatar {
+            width: 12px;
+            height: 12px;
+            background: #f59e0b;
+            border-radius: 50%;
+            position: absolute;
+            left: 12px;
+            top: 12px;
+        }
+        .lines {
+            position: absolute;
+            left: 28px;
+            top: 12px;
+        }
+        .line1 {
+            width: 28px;
+            height: 5px;
+            background: #2563eb;
+            border-radius: 3px;
+            margin-bottom: 4px;
+        }
+        .line2 {
+            width: 20px;
+            height: 5px;
+            background: #60a5fa;
+            border-radius: 3px;
+        }
+        .logo-text {
+            font-family: "Gill Sans", "Gill Sans MT", Calibri, sans-serif;
+            font-size: 28px;
+            font-weight: 600;
+            color: white;
+            letter-spacing: -0.5px;
+        }
+        .instructions {
+            color: white;
+            margin-top: 60px;
+            text-align: center;
+            max-width: 500px;
+            background: rgba(0,0,0,0.2);
+            padding: 30px;
+            border-radius: 12px;
+        }
+        .instructions h2 {
+            margin-top: 0;
+        }
+        .instructions ol {
+            text-align: left;
+            line-height: 1.8;
+        }
+        code {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .highlight {
+            background: #22c55e;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- THIS IS THE LOGO TO SCREENSHOT -->
+    <div class="logo-area" id="logo">
+        <div class="logo">
+            <div class="card-icon">
+                <div class="avatar"></div>
+                <div class="lines">
+                    <div class="line1"></div>
+                    <div class="line2"></div>
+                </div>
+            </div>
+            <span class="logo-text">Cardify</span>
+        </div>
+    </div>
+    
+    <div class="instructions">
+        <h2>📸 How to Create the PNG</h2>
+        <ol>
+            <li>Right-click on the logo above</li>
+            <li>If using Chrome: Use "Inspect" → right-click the element → "Capture node screenshot"</li>
+            <li><strong>Or</strong> take a screenshot and crop tightly around the logo</li>
+            <li>Save as: <code>email-logo.png</code></li>
+            <li>Upload to: <code>assets/images/email-logo.png</code></li>
+        </ol>
+        <p><span class="highlight">Tip:</span> The background should be transparent or match the blue (#1e40af)</p>
+        <p>Recommended final size: ~200px wide</p>
+    </div>
+</body>
+</html>

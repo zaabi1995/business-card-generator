@@ -181,9 +181,13 @@ class OdooIntegration {
             return ['success' => false, 'error' => 'Order not found'];
         }
         
-        // Get employee count for quantity
-        $employeeIds = json_decode($order['employee_ids'], true);
-        $totalQuantity = count($employeeIds) * ($order['quantity'] ?? 1);
+        // Get employee count for quantity - handle both old (employee_ids JSON) and new (employee_id single) schemas
+        $employeeCount = 1;
+        if (!empty($order['employee_ids'])) {
+            $employeeIds = json_decode($order['employee_ids'], true);
+            $employeeCount = is_array($employeeIds) ? count($employeeIds) : 1;
+        }
+        $totalQuantity = $employeeCount * ($order['quantity'] ?? 1);
         
         // Prepare sale order data
         $saleOrderData = [
@@ -192,7 +196,7 @@ class OdooIntegration {
             'date_order' => date('Y-m-d H:i:s'),
             'client_order_ref' => $order['order_number'],
             'note' => 'Print Order: ' . $order['order_number'] . "\n" . 
-                     'Employees: ' . count($employeeIds) . "\n" . 
+                     'Employees: ' . $employeeCount . "\n" . 
                      'Quantity per employee: ' . ($order['quantity'] ?? 1) . "\n" .
                      ($order['notes'] ? 'Notes: ' . $order['notes'] : ''),
             'order_line' => [[

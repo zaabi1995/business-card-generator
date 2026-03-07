@@ -2,7 +2,7 @@
 /**
  * Company Slug Router
  * Handles routing for company-specific pages
- * Example: bc.bhd.om/mhd/ -> company/index.php
+ * Example: cardify.om/acme/ -> company/index.php
  */
 require_once __DIR__ . '/config.php';
 

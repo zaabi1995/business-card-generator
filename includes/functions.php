@@ -1,11 +1,11 @@
 <?php
 /**
- * Helper Functions for BHD Business Cards
+ * Cardify Helper Functions
  */
 
 /**
  * Get base URL (protocol + domain + base path)
- * @return string Full base URL (e.g., 'https://bc.bhd.om/')
+ * @return string Full base URL (e.g., 'https://cardify.om/')
  */
 function getBaseUrl() {
     static $baseUrl = null;
@@ -15,7 +15,7 @@ function getBaseUrl() {
                    (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
                    (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? 'https' : 'http';
         
-        $host = $_SERVER['HTTP_HOST'] ?? 'bc.bhd.om';
+        $host = $_SERVER['HTTP_HOST'] ?? 'cardify.om';
         $basePath = getBasePath();
         
         $baseUrl = $protocol . '://' . $host . $basePath;
@@ -37,8 +37,11 @@ if (!function_exists('getBasePath')) {
             $scriptPath = str_replace('\\', '/', $scriptPath);
             $scriptDir = dirname($scriptPath);
             
-            // If script is in admin subdirectory, go up one level
-            if (basename($scriptDir) === 'admin' || basename($scriptDir) === 'includes' || basename($scriptDir) === 'company' || basename($scriptDir) === 'amwalpay' || basename($scriptDir) === 'webhooks') {
+            // Known subdirectories that are part of the app
+            $appDirs = ['admin', 'includes', 'company', 'amwalpay', 'webhooks', 'super', 'install', 'share', 'printshop', 'api', 'database'];
+            
+            // Navigate up through app directories to find the root
+            while (in_array(basename($scriptDir), $appDirs) && $scriptDir !== '/' && $scriptDir !== '.') {
                 $scriptDir = dirname($scriptDir);
             }
             
@@ -132,6 +135,36 @@ function sanitize($input) {
 }
 
 /**
+ * Generate or retrieve CSRF token for the current session
+ * @return string The CSRF token
+ */
+function generateCSRFToken() {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * Validate a CSRF token against the session token
+ * @param string $token The token from the form submission
+ * @return bool True if valid
+ */
+function validateCSRFToken($token) {
+    return isset($_SESSION['csrf_token']) && is_string($token) && hash_equals($_SESSION['csrf_token'], $token);
+}
+
+/**
+ * Output a hidden CSRF token input field for forms
+ */
+function csrfField() {
+    return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars(generateCSRFToken()) . '">';
+}
+
+/**
  * Sanitize email
  */
 function sanitizeEmail($email) {
@@ -147,28 +180,164 @@ function isValidEmail($email) {
 }
 
 /**
+ * Convert Western numerals to Arabic numerals
+ * @param string $str Input string with Western numbers
+ * @return string String with Arabic numerals (٠١٢٣٤٥٦٧٨٩)
+ */
+function toArabicNumerals($str) {
+    if (empty($str)) return $str;
+    $western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    $arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    return str_replace($western, $arabic, $str);
+}
+
+/**
+ * Convert Arabic numerals to Western numerals
+ * @param string $str Input string with Arabic numbers
+ * @return string String with Western numerals (0123456789)
+ */
+function toWesternNumerals($str) {
+    if (empty($str)) return $str;
+    $arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    $western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    return str_replace($arabic, $western, $str);
+}
+
+/**
+ * Check if string contains Arabic numerals
+ * @param string $str Input string
+ * @return bool True if contains Arabic numerals
+ */
+function hasArabicNumerals($str) {
+    return preg_match('/[٠-٩]/', $str) === 1;
+}
+
+/**
+ * Extract domain from email address
+ * @param string $email Email address
+ * @return string|null Domain portion or null if invalid
+ */
+function extractEmailDomain($email) {
+    $email = trim(strtolower($email));
+    if (!isValidEmail($email)) {
+        return null;
+    }
+    $parts = explode('@', $email);
+    return $parts[1] ?? null;
+}
+
+/**
+ * Check if email domain is a common/public domain
+ * Common domains should not auto-create companies
+ * @param string $email Email address
+ * @return bool True if common domain (gmail, hotmail, etc.)
+ */
+function isCommonEmailDomain($email) {
+    $commonDomains = [
+        // Google
+        'gmail.com', 'googlemail.com',
+        // Microsoft
+        'hotmail.com', 'outlook.com', 'live.com', 'msn.com', 'hotmail.co.uk',
+        // Yahoo
+        'yahoo.com', 'yahoo.co.uk', 'yahoo.fr', 'yahoo.de', 'ymail.com', 'rocketmail.com',
+        // Apple
+        'icloud.com', 'me.com', 'mac.com',
+        // Others
+        'aol.com', 'protonmail.com', 'proton.me', 'zoho.com', 'mail.com',
+        'gmx.com', 'gmx.de', 'gmx.net', 'web.de', 'freenet.de',
+        // Regional
+        'qq.com', '163.com', '126.com', 'sina.com', 'sohu.com',
+        'naver.com', 'daum.net', 'hanmail.net',
+        'yandex.ru', 'yandex.com', 'mail.ru',
+        // Disposable/Temporary (block these)
+        'tempmail.com', 'throwaway.com', 'guerrillamail.com', 'mailinator.com',
+        '10minutemail.com', 'fakeinbox.com', 'sharklasers.com',
+    ];
+    
+    $domain = extractEmailDomain($email);
+    if (!$domain) {
+        return true; // Treat invalid as common (don't create company)
+    }
+    
+    return in_array(strtolower($domain), $commonDomains);
+}
+
+/**
+ * Check if email domain is a business/custom domain
+ * @param string $email Email address
+ * @return bool True if custom business domain
+ */
+function isBusinessEmailDomain($email) {
+    return !isCommonEmailDomain($email);
+}
+
+/**
+ * Generate a company slug from email domain
+ * @param string $email Email address
+ * @return string|null Slug based on domain
+ */
+function generateSlugFromEmail($email) {
+    $domain = extractEmailDomain($email);
+    if (!$domain || isCommonEmailDomain($email)) {
+        return null;
+    }
+    
+    // Remove common TLDs for cleaner slug
+    $slug = preg_replace('/\.(com|org|net|co|io|tech|app|dev|ai)$/i', '', $domain);
+    // Remove country TLDs (e.g., .co.uk, .com.au)
+    $slug = preg_replace('/\.(co\.|com\.)?[a-z]{2}$/i', '', $slug);
+    // Clean up
+    $slug = slugify($slug);
+    
+    return $slug ?: null;
+}
+
+/**
+ * Find company by domain
+ * @param string $domain Domain to search
+ * @return array|null Company data or null
+ */
+function findCompanyByDomain($domain) {
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
+        return null;
+    }
+    
+    $db = Database::getInstance();
+    if (!$db->isConnected()) {
+        return null;
+    }
+    
+    // Check if any company has this domain in their email or domain field
+    $company = $db->fetchOne(
+        "SELECT * FROM companies WHERE 
+         (domain = :domain OR admin_email LIKE :emailPattern) 
+         AND status = 'active'
+         LIMIT 1",
+        [
+            'domain' => $domain,
+            'emailPattern' => '%@' . $domain
+        ]
+    );
+    
+    return $company ?: null;
+}
+
+/**
  * Generate UUID
  */
 function generateUUID() {
-    return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-        mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-        mt_rand(0, 0xffff),
-        mt_rand(0, 0x0fff) | 0x4000,
-        mt_rand(0, 0x3fff) | 0x8000,
-        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-    );
+    $data = random_bytes(16);
+    // Set version to 4 (random)
+    $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
+    // Set variant to RFC 4122
+    $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
 
 // ============================================
 // MULTI-TENANT (COMPANY) HELPERS
 // ============================================
 
-if (!defined('COMPANIES_JSON')) {
-    define('COMPANIES_JSON', DATA_DIR . '/companies.json');
-}
-if (!defined('COMPANIES_DATA_DIR')) {
-    define('COMPANIES_DATA_DIR', DATA_DIR . '/companies');
-}
 if (!defined('COMPANIES_UPLOADS_DIR')) {
     define('COMPANIES_UPLOADS_DIR', UPLOADS_DIR . '/companies');
 }
@@ -221,110 +390,49 @@ function generateAbbreviation($name) {
 }
 
 function isMultiTenantEnabled() {
-    if (!file_exists(COMPANIES_JSON)) {
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
         return false;
     }
-    $json = file_get_contents(COMPANIES_JSON);
-    $data = json_decode($json, true);
-    return is_array($data) && count($data) > 0;
+
+    $db = Database::getInstance();
+    try {
+        $result = $db->fetchOne("SELECT COUNT(*) as count FROM companies");
+        return !empty($result) && (int)($result['count'] ?? 0) > 0;
+    } catch (Throwable $e) {
+        return false;
+    }
 }
 
 function loadCompanies() {
-    // Use database if available
-    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::loadCompanies();
-    }
-    
-    // Fallback to JSON
-    if (!file_exists(COMPANIES_JSON)) {
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
         return [];
     }
-    $json = file_get_contents(COMPANIES_JSON);
-    $data = json_decode($json, true);
-    return is_array($data) ? $data : [];
+
+    return DatabaseAdapter::loadCompanies();
 }
 
 function findCompanyBySlug($slug) {
-    // Use database if available
-    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::findCompanyBySlug($slug);
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
+        return null;
     }
-    
-    // Fallback to JSON
-    $companies = loadCompanies();
-    foreach ($companies as $company) {
-        if (isset($company['slug']) && $company['slug'] === $slug) {
-            return $company;
-        }
-    }
-    return null;
+
+    return DatabaseAdapter::findCompanyBySlug($slug);
 }
 
 function findCompanyById($id) {
-    // Use database if available
-    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::findCompanyById($id);
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
+        return null;
     }
-    
-    // Fallback to JSON
-    $companies = loadCompanies();
-    foreach ($companies as $company) {
-        if (isset($company['id']) && $company['id'] === $id) {
-            return $company;
-        }
-    }
-    return null;
+
+    return DatabaseAdapter::findCompanyById($id);
 }
 
 function createCompany($name, $email, $password, $parentCompanyId = null, $customSlug = null) {
-    // Use database if available
-    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::createCompany($name, $email, $password, $parentCompanyId, $customSlug);
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
+        return ['success' => false, 'error' => 'Database not available'];
     }
-    
-    // Fallback to JSON
-    $companies = loadCompanies();
-    $slug = slugify($name);
-    
-    // Ensure unique slug
-    $originalSlug = $slug;
-    $counter = 1;
-    while (findCompanyBySlug($slug)) {
-        $slug = $originalSlug . '-' . $counter;
-        $counter++;
-    }
-    
-    // Use custom slug if provided
-    if (!empty($customSlug)) {
-        $customSlug = strtolower(trim($customSlug));
-        $customSlug = preg_replace('/[^a-z0-9-]/', '', $customSlug);
-        $customSlug = trim($customSlug, '-');
-        
-        if (!empty($customSlug) && !findCompanyBySlug($customSlug)) {
-            $slug = $customSlug;
-        }
-    }
-    
-    $company = [
-        'id' => generateUUID(),
-        'name' => $name,
-        'slug' => $slug,
-        'email' => sanitizeEmail($email),
-        'password' => password_hash($password, PASSWORD_BCRYPT),
-        'created_at' => date('Y-m-d H:i:s')
-    ];
-    
-    $companies[] = $company;
-    
-    if (!is_dir(dirname(COMPANIES_JSON))) {
-        mkdir(dirname(COMPANIES_JSON), 0755, true);
-    }
-    
-    if (file_put_contents(COMPANIES_JSON, json_encode($companies, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))) {
-        return ['success' => true, 'company' => $company];
-    }
-    
-    return ['success' => false, 'error' => 'Failed to save company'];
+
+    return DatabaseAdapter::createCompany($name, $email, $password, $parentCompanyId, $customSlug);
 }
 
 function setCompanyContext($company) {
@@ -348,22 +456,73 @@ function clearCompanyContext() {
 }
 
 function requireAdmin() {
-    if (!isset($_SESSION['company_id'])) {
-        header('Location: ' . getBasePath() . 'company/login.php');
+    // Check if logged in
+    if (!class_exists('Auth') || !Auth::isLoggedIn()) {
+        header('Location: ' . getBasePath() . 'login.php');
         exit;
+    }
+    
+    // Check company context
+    if (!isset($_SESSION['company_id'])) {
+        header('Location: ' . getBasePath() . 'login.php');
+        exit;
+    }
+    
+    // Redirect to company-specific admin URL if not already there
+    if (!defined('COMPANY_ADMIN_BASE')) {
+        redirectToCompanyAdmin();
     }
 }
 
-function getCompanyEmployeesJsonPath($companyId) {
-    $dir = COMPANIES_DATA_DIR . '/' . $companyId;
-    if (!is_dir($dir)) {
-        @mkdir($dir, 0755, true);
-        // Try with 777 if 755 fails
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0777, true);
+/**
+ * Redirect to company-specific admin URL if user has a company context
+ */
+function redirectToCompanyAdmin() {
+    // Skip if already in company admin context
+    if (defined('COMPANY_ADMIN_BASE')) {
+        return;
+    }
+    
+    // Skip for super admins
+    if (class_exists('Auth') && method_exists('Auth', 'isSuperAdmin') && Auth::isSuperAdmin()) {
+        return;
+    }
+    
+    // Skip if no session
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        return;
+    }
+    
+    // Redirect print shop users to their dashboard
+    $userRole = $_SESSION['user_role'] ?? null;
+    if ($userRole === 'print_shop') {
+        header('Location: ' . getBasePath() . 'printshop/dashboard.php');
+        exit;
+    }
+    
+    // Get company slug
+    $companySlug = $_SESSION['company_slug'] ?? null;
+    
+    if (!$companySlug && isset($_SESSION['company_id'])) {
+        $company = findCompanyById($_SESSION['company_id']);
+        if ($company && !empty($company['slug'])) {
+            $companySlug = $company['slug'];
+            $_SESSION['company_slug'] = $companySlug;
         }
     }
-    return $dir . '/employees.json';
+    
+    if ($companySlug) {
+        // Get current page name
+        $currentPage = basename($_SERVER['SCRIPT_NAME'], '.php');
+        $redirectUrl = getBasePath() . $companySlug . '/admin/';
+        
+        if ($currentPage !== 'index') {
+            $redirectUrl .= $currentPage;
+        }
+        
+        header('Location: ' . $redirectUrl);
+        exit;
+    }
 }
 
 function getCompanyUploadsPath($companyId) {
@@ -371,20 +530,6 @@ function getCompanyUploadsPath($companyId) {
     if (!is_dir($dir)) {
         @mkdir($dir, 0755, true);
         // Try with 777 if 755 fails
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0777, true);
-        }
-    }
-    return $dir;
-}
-
-/**
- * Get company data directory
- */
-function getCompanyDataDir($companyId) {
-    $dir = COMPANIES_DATA_DIR . '/' . $companyId;
-    if (!is_dir($dir)) {
-        @mkdir($dir, 0755, true);
         if (!is_dir($dir)) {
             @mkdir($dir, 0777, true);
         }
@@ -428,268 +573,233 @@ function getCompanyCardsDir($companyId) {
 }
 
 function loadEmployees($companyId = null) {
-    // Use database if available
-    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::loadEmployees($companyId);
-    }
-    
-    // Fallback to JSON
-    if ($companyId === null) {
-        $companyId = getCurrentCompanyId();
-    }
-    $path = $companyId ? getCompanyEmployeesJsonPath($companyId) : EMPLOYEES_JSON;
-    if (!file_exists($path)) {
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
         return [];
     }
-    $json = file_get_contents($path);
-    $data = json_decode($json, true);
-    return is_array($data) ? $data : [];
+
+    return DatabaseAdapter::loadEmployees($companyId);
 }
 
 function findEmployeeByEmail($email, $companyId = null) {
-    // Use database if available
-    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::findEmployeeByEmail($email, $companyId);
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
+        return null;
     }
-    
-    // Fallback to JSON
-    if ($companyId === null) {
-        $companyId = getCurrentCompanyId();
-    }
-    $employees = loadEmployees($companyId);
-    foreach ($employees as $employee) {
-        if (isset($employee['email']) && strtolower($employee['email']) === strtolower($email)) {
-            return $employee;
-        }
-    }
-    return null;
+
+    return DatabaseAdapter::findEmployeeByEmail($email, $companyId);
 }
 
 function findEmployeeById($id, $companyId = null) {
-    // Use database if available
-    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::findEmployeeById($id, $companyId);
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
+        return null;
     }
-    
-    // Fallback to JSON
-    if ($companyId === null) {
-        $companyId = getCurrentCompanyId();
-    }
-    $employees = loadEmployees($companyId);
-    foreach ($employees as $employee) {
-        if (isset($employee['id']) && $employee['id'] === $id) {
-            return $employee;
-        }
-    }
-    return null;
+
+    return DatabaseAdapter::findEmployeeById($id, $companyId);
 }
 
 function addEmployee($employeeData, $companyId = null) {
-    // Use database if available
-    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::addEmployee($employeeData, $companyId);
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
+        return ['success' => false, 'error' => 'Database not available'];
     }
-    
-    // Fallback to JSON
-    if ($companyId === null) {
-        $companyId = getCurrentCompanyId();
-    }
-    if (!$companyId) {
-        return ['success' => false, 'error' => 'Company ID required'];
-    }
-    
-    $employees = loadEmployees($companyId);
-    
-    if (empty($employeeData['id'])) {
-        $employeeData['id'] = generateUUID();
-    }
-    
-    $employees[] = $employeeData;
-    $path = getCompanyEmployeesJsonPath($companyId);
-    
-    if (file_put_contents($path, json_encode($employees, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))) {
-        return ['success' => true, 'employee' => $employeeData];
-    }
-    
-    return ['success' => false, 'error' => 'Failed to save employee'];
+
+    return DatabaseAdapter::addEmployee($employeeData, $companyId);
 }
 
 function updateEmployee($id, $employeeData, $companyId = null) {
-    // Use database if available
-    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::updateEmployee($id, $employeeData, $companyId);
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
+        return ['success' => false, 'error' => 'Database not available'];
     }
-    
-    // Fallback to JSON
-    if ($companyId === null) {
-        $companyId = getCurrentCompanyId();
-    }
-    if (!$companyId) {
-        return ['success' => false, 'error' => 'Company ID required'];
-    }
-    
-    $employees = loadEmployees($companyId);
-    $found = false;
-    
-    foreach ($employees as $index => $employee) {
-        if (isset($employee['id']) && $employee['id'] === $id) {
-            $employees[$index] = array_merge($employee, $employeeData);
-            $employees[$index]['id'] = $id; // Preserve ID
-            $found = true;
-            break;
-        }
-    }
-    
-    if (!$found) {
-        return ['success' => false, 'error' => 'Employee not found'];
-    }
-    
-    $path = getCompanyEmployeesJsonPath($companyId);
-    
-    if (file_put_contents($path, json_encode($employees, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))) {
-        return ['success' => true, 'employee' => $employees[$index]];
-    }
-    
-    return ['success' => false, 'error' => 'Failed to update employee'];
+
+    return DatabaseAdapter::updateEmployee($id, $employeeData, $companyId);
 }
 
 function deleteEmployee($id, $companyId = null) {
-    // Use database if available
-    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::deleteEmployee($id, $companyId);
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
+        return ['success' => false, 'error' => 'Database not available'];
     }
-    
-    // Fallback to JSON
-    if ($companyId === null) {
-        $companyId = getCurrentCompanyId();
-    }
-    if (!$companyId) {
-        return ['success' => false, 'error' => 'Company ID required'];
-    }
-    
-    $employees = loadEmployees($companyId);
-    $found = false;
-    
-    foreach ($employees as $index => $employee) {
-        if (isset($employee['id']) && $employee['id'] === $id) {
-            unset($employees[$index]);
-            $found = true;
-            break;
-        }
-    }
-    
-    if (!$found) {
-        return ['success' => false, 'error' => 'Employee not found'];
-    }
-    
-    $employees = array_values($employees); // Re-index
-    $path = getCompanyEmployeesJsonPath($companyId);
-    
-    if (file_put_contents($path, json_encode($employees, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))) {
-        return ['success' => true];
-    }
-    
-    return ['success' => false, 'error' => 'Failed to delete employee'];
+
+    return DatabaseAdapter::deleteEmployee($id, $companyId);
 }
 
 function loadTemplates($companyId = null) {
-    // Use database if available
-    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::loadTemplates($companyId);
-    }
-    
-    // Fallback to JSON
-    if ($companyId === null) {
-        $companyId = getCurrentCompanyId();
-    }
-    $path = $companyId ? (getCompanyUploadsPath($companyId) . '/templates.json') : TEMPLATES_JSON;
-    if (!file_exists($path)) {
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
         return getDefaultTemplatesConfig();
     }
-    $json = file_get_contents($path);
-    $data = json_decode($json, true);
-    return is_array($data) ? $data : getDefaultTemplatesConfig();
+
+    return DatabaseAdapter::loadTemplates($companyId);
 }
 
 function saveTemplates($templates, $companyId = null) {
-    // Use database if available
-    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::saveTemplates($templates, $companyId);
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
+        return false;
     }
-    
-    // Fallback to JSON
-    if ($companyId === null) {
-        $companyId = getCurrentCompanyId();
-    }
-    $path = $companyId ? (getCompanyUploadsPath($companyId) . '/templates.json') : TEMPLATES_JSON;
-    
-    if (!is_dir(dirname($path))) {
-        mkdir(dirname($path), 0755, true);
-    }
-    
-    return file_put_contents($path, json_encode($templates, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) !== false;
+
+    return DatabaseAdapter::saveTemplates($templates, $companyId);
 }
 
 function getDefaultTemplatesConfig() {
     return [
-        'front' => null,
-        'back' => null
+        'templates' => [],
+        'activeFrontId' => null,
+        'activeBackId' => null
     ];
 }
 
 function getActiveFrontTemplate($companyId = null) {
-    $templates = loadTemplates($companyId);
-    return $templates['front'] ?? null;
+    $config = loadTemplates($companyId);
+    $activeFrontId = $config['activeFrontId'] ?? null;
+    
+    if (!$activeFrontId || empty($config['templates'])) {
+        return null;
+    }
+    
+    foreach ($config['templates'] as $template) {
+        if ($template['id'] === $activeFrontId) {
+            return $template;
+        }
+    }
+    
+    return null;
 }
 
 function getActiveBackTemplate($companyId = null) {
-    $templates = loadTemplates($companyId);
-    return $templates['back'] ?? null;
+    $config = loadTemplates($companyId);
+    $activeBackId = $config['activeBackId'] ?? null;
+    
+    if (!$activeBackId || empty($config['templates'])) {
+        return null;
+    }
+    
+    foreach ($config['templates'] as $template) {
+        if ($template['id'] === $activeBackId) {
+            return $template;
+        }
+    }
+    
+    return null;
+}
+
+/**
+ * Get templates for an employee based on their department or company default
+ * @param array $employee Employee data with department_id
+ * @param string|null $companyId Company ID
+ * @return array ['front' => template, 'back' => template]
+ */
+function getEmployeeTemplates($employee, $companyId = null) {
+    $companyId = $companyId ?? getCurrentCompanyId();
+    $db = Database::getInstance();
+    
+    // Check if employee has a department with a custom template
+    if (!empty($employee['department_id'])) {
+        $dept = $db->fetchOne(
+            "SELECT template_pair_id FROM departments WHERE id = :id AND company_id = :cid",
+            ['id' => $employee['department_id'], 'cid' => $companyId]
+        );
+        
+        if ($dept && !empty($dept['template_pair_id'])) {
+            // Get templates from this pair
+            $frontTemplate = $db->fetchOne(
+                "SELECT * FROM templates WHERE pair_id = :pid AND side = 'front'",
+                ['pid' => $dept['template_pair_id']]
+            );
+            $backTemplate = $db->fetchOne(
+                "SELECT * FROM templates WHERE pair_id = :pid AND side = 'back'",
+                ['pid' => $dept['template_pair_id']]
+            );
+            
+            if ($frontTemplate || $backTemplate) {
+                // Parse fields_json for both
+                if ($frontTemplate && isset($frontTemplate['fields_json'])) {
+                    $frontTemplate['fields'] = json_decode($frontTemplate['fields_json'], true) ?? [];
+                }
+                if ($backTemplate && isset($backTemplate['fields_json'])) {
+                    $backTemplate['fields'] = json_decode($backTemplate['fields_json'], true) ?? [];
+                }
+                
+                return [
+                    'front' => $frontTemplate,
+                    'back' => $backTemplate,
+                    'source' => 'department'
+                ];
+            }
+        }
+    }
+    
+    // Fall back to company default
+    return [
+        'front' => getActiveFrontTemplate($companyId),
+        'back' => getActiveBackTemplate($companyId),
+        'source' => 'company'
+    ];
+}
+
+/**
+ * Get employees grouped by department for batch card generation
+ * @param string|null $companyId Company ID
+ * @return array Departments with their employees
+ */
+function getEmployeesByDepartment($companyId = null) {
+    $companyId = $companyId ?? getCurrentCompanyId();
+    $db = Database::getInstance();
+    
+    // Get all departments
+    $departments = $db->fetchAll(
+        "SELECT d.*, 
+                (SELECT COUNT(*) FROM employees WHERE department_id = d.id) as employee_count
+         FROM departments d 
+         WHERE d.company_id = :cid 
+         ORDER BY d.name",
+        ['cid' => $companyId]
+    );
+    
+    // Get employees for each department
+    foreach ($departments as &$dept) {
+        $dept['employees'] = $db->fetchAll(
+            "SELECT * FROM employees WHERE department_id = :did AND company_id = :cid ORDER BY name_en",
+            ['did' => $dept['id'], 'cid' => $companyId]
+        );
+    }
+    
+    // Get employees without department
+    $noDeptEmployees = $db->fetchAll(
+        "SELECT * FROM employees WHERE (department_id IS NULL OR department_id = '') AND company_id = :cid ORDER BY name_en",
+        ['cid' => $companyId]
+    );
+    
+    if (!empty($noDeptEmployees)) {
+        array_unshift($departments, [
+            'id' => null,
+            'name' => 'No Department',
+            'template_pair_id' => null,
+            'employee_count' => count($noDeptEmployees),
+            'employees' => $noDeptEmployees
+        ]);
+    }
+    
+    return $departments;
 }
 
 function loadGeneratedLog($companyId = null) {
-    // Use database if available
-    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::loadGeneratedLog($companyId);
-    }
-    
-    // Fallback to JSON
-    if ($companyId === null) {
-        $companyId = getCurrentCompanyId();
-    }
-    $path = $companyId ? (getCompanyUploadsPath($companyId) . '/generated.json') : GENERATED_JSON;
-    if (!file_exists($path)) {
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
         return [];
     }
-    $json = file_get_contents($path);
-    $data = json_decode($json, true);
-    return is_array($data) ? $data : [];
+
+    return DatabaseAdapter::loadGeneratedLog($companyId);
 }
 
-function logGeneratedCard($employeeId, $frontUrl, $backUrl, $companyId = null) {
-    // Use database if available
-    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
-        return DatabaseAdapter::logGeneratedCard($employeeId, $frontUrl, $backUrl, $companyId);
+function logGeneratedCard($employeeId, $frontTemplateId, $backTemplateId, $frontFile, $backFile, $pdfFile = null, $companyId = null) {
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
+        return null;
     }
-    
-    // Fallback to JSON
-    if ($companyId === null) {
-        $companyId = getCurrentCompanyId();
+
+    return DatabaseAdapter::logGeneratedCard($employeeId, $frontTemplateId, $backTemplateId, $frontFile, $backFile, $pdfFile, $companyId);
+}
+
+function deleteGeneratedCard($entryId, $companyId = null) {
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
+        return false;
     }
-    $log = loadGeneratedLog($companyId);
-    $log[] = [
-        'employee_id' => $employeeId,
-        'front_url' => $frontUrl,
-        'back_url' => $backUrl,
-        'generated_at' => date('Y-m-d H:i:s')
-    ];
-    $path = $companyId ? (getCompanyUploadsPath($companyId) . '/generated.json') : GENERATED_JSON;
-    
-    if (!is_dir(dirname($path))) {
-        mkdir(dirname($path), 0755, true);
-    }
-    
-    return file_put_contents($path, json_encode($log, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) !== false;
+
+    return DatabaseAdapter::deleteGeneratedCard($entryId, $companyId);
 }
 
 /**
@@ -708,7 +818,7 @@ function getWebPath($absolutePath) {
  * Ensure directories exist
  */
 function ensureDirectories() {
-    $dirs = [DATA_DIR, COMPANIES_DATA_DIR, UPLOADS_DIR, COMPANIES_UPLOADS_DIR, TEMPLATES_DIR, CARDS_DIR, EXCEL_DIR, ASSETS_DIR];
+    $dirs = [DATA_DIR, UPLOADS_DIR, COMPANIES_UPLOADS_DIR, TEMPLATES_DIR, CARDS_DIR, EXCEL_DIR, ASSETS_DIR];
     foreach ($dirs as $dir) {
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
@@ -725,30 +835,6 @@ function ensureDirectories() {
  */
 function initializeDataFiles() {
     ensureDirectories();
-
-    // Check if we can write to data directory
-    if (!is_writable(DATA_DIR) && !is_writable(dirname(COMPANIES_JSON))) {
-        // Permission issue - don't try to create files
-        return false;
-    }
-
-    if (!file_exists(COMPANIES_JSON)) {
-        // empty companies list by default; multi-tenant activates once a company exists
-        @file_put_contents(COMPANIES_JSON, json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-    }
-    
-    if (!file_exists(EMPLOYEES_JSON)) {
-        @saveEmployees([]);
-    }
-    
-    if (!file_exists(TEMPLATES_JSON)) {
-        @saveTemplates(getDefaultTemplatesConfig());
-    }
-    
-    if (!file_exists(GENERATED_JSON)) {
-        @saveGeneratedLog([]);
-    }
-    
     return true;
 }
 
@@ -795,15 +881,8 @@ function isAdminLoggedIn() {
     return isset($_SESSION['admin_logged_in']) || isCompanyAdminLoggedIn();
 }
 
-function loginAdmin($password) {
-    // Legacy single-tenant admin login
-    $adminPassword = 'admin'; // Default - should be in config
-    if ($password === $adminPassword) {
-        $_SESSION['admin_logged_in'] = true;
-        return true;
-    }
-    return false;
-}
+// loginAdmin() removed — was a legacy function with hardcoded password.
+// Use Auth::unifiedLogin() instead.
 
 // Initialize on include
 // Only initialize data files if database is configured or we're not redirecting to installer
@@ -815,4 +894,490 @@ if (defined('DB_HOST') && !empty(DB_HOST) && defined('DB_NAME') && !empty(DB_NAM
 } else {
     // Database not configured - might be installing, skip initialization to avoid errors
     // initializeDataFiles() will be called after installation
+}
+
+/**
+ * Get default field settings for business card templates
+ * Using Fabric.js compatible properties (pixel positions on 1050x600 canvas)
+ */
+function getDefaultFieldSettings() {
+    return [
+        'name_en' => [
+            'enabled' => true,
+            'x' => 50,              // Pixel position from left
+            'y' => 60,              // Pixel position from top
+            'fontSize' => 28,
+            'fontFamily' => 'Inter',
+            'fontWeight' => 'bold',
+            'fill' => '#1f2937',    // Fabric.js uses 'fill' for text color
+            'color' => '#1f2937',   // Keep for backward compatibility
+            'textAlign' => 'left',
+            'originX' => 'left',
+            'originY' => 'top'
+        ],
+        'name_ar' => [
+            'enabled' => false,
+            'x' => 1000,
+            'y' => 60,
+            'fontSize' => 28,
+            'fontFamily' => 'Cairo',
+            'fontWeight' => 'bold',
+            'fill' => '#1f2937',
+            'color' => '#1f2937',
+            'textAlign' => 'right',
+            'originX' => 'right',
+            'originY' => 'top'
+        ],
+        'position_en' => [
+            'enabled' => true,
+            'x' => 50,
+            'y' => 100,
+            'fontSize' => 16,
+            'fontFamily' => 'Inter',
+            'fontWeight' => 'normal',
+            'fill' => '#6b7280',
+            'color' => '#6b7280',
+            'textAlign' => 'left',
+            'originX' => 'left',
+            'originY' => 'top'
+        ],
+        'position_ar' => [
+            'enabled' => false,
+            'x' => 1000,
+            'y' => 100,
+            'fontSize' => 16,
+            'fontFamily' => 'Cairo',
+            'fontWeight' => 'normal',
+            'fill' => '#6b7280',
+            'color' => '#6b7280',
+            'textAlign' => 'right',
+            'originX' => 'right',
+            'originY' => 'top'
+        ],
+        'company_en' => [
+            'enabled' => true,
+            'x' => 50,
+            'y' => 130,
+            'fontSize' => 14,
+            'fontFamily' => 'Inter',
+            'fontWeight' => '500',
+            'fill' => '#374151',
+            'color' => '#374151',
+            'textAlign' => 'left',
+            'originX' => 'left',
+            'originY' => 'top'
+        ],
+        'company_ar' => [
+            'enabled' => false,
+            'x' => 1000,
+            'y' => 130,
+            'fontSize' => 14,
+            'fontFamily' => 'Cairo',
+            'fontWeight' => '500',
+            'fill' => '#374151',
+            'color' => '#374151',
+            'textAlign' => 'right',
+            'originX' => 'right',
+            'originY' => 'top'
+        ],
+        'phone' => [
+            'enabled' => true,
+            'x' => 50,
+            'y' => 450,
+            'fontSize' => 14,
+            'fontFamily' => 'Inter',
+            'fontWeight' => 'normal',
+            'fill' => '#374151',
+            'color' => '#374151',
+            'textAlign' => 'left',
+            'originX' => 'left',
+            'originY' => 'top'
+        ],
+        'mobile' => [
+            'enabled' => true,
+            'x' => 50,
+            'y' => 480,
+            'fontSize' => 14,
+            'fontFamily' => 'Inter',
+            'fontWeight' => 'normal',
+            'fill' => '#374151',
+            'color' => '#374151',
+            'textAlign' => 'left',
+            'originX' => 'left',
+            'originY' => 'top'
+        ],
+        'email' => [
+            'enabled' => true,
+            'x' => 50,
+            'y' => 510,
+            'fontSize' => 14,
+            'fontFamily' => 'Inter',
+            'fontWeight' => 'normal',
+            'fill' => '#374151',
+            'color' => '#374151',
+            'textAlign' => 'left',
+            'originX' => 'left',
+            'originY' => 'top'
+        ],
+        'phone_ar' => [
+            'enabled' => false,
+            'x' => 1000,
+            'y' => 450,
+            'fontSize' => 14,
+            'fontFamily' => 'Cairo',
+            'fontWeight' => 'normal',
+            'fill' => '#374151',
+            'color' => '#374151',
+            'textAlign' => 'right',
+            'originX' => 'right',
+            'originY' => 'top'
+        ],
+        'mobile_ar' => [
+            'enabled' => false,
+            'x' => 1000,
+            'y' => 480,
+            'fontSize' => 14,
+            'fontFamily' => 'Cairo',
+            'fontWeight' => 'normal',
+            'fill' => '#374151',
+            'color' => '#374151',
+            'textAlign' => 'right',
+            'originX' => 'right',
+            'originY' => 'top'
+        ],
+        'website' => [
+            'enabled' => false,
+            'x' => 50,
+            'y' => 540,
+            'fontSize' => 12,
+            'fontFamily' => 'Inter',
+            'fontWeight' => 'normal',
+            'fill' => '#6b7280',
+            'color' => '#6b7280',
+            'textAlign' => 'left',
+            'originX' => 'left',
+            'originY' => 'top'
+        ],
+        'website_ar' => [
+            'enabled' => false,
+            'x' => 1000,
+            'y' => 540,
+            'fontSize' => 12,
+            'fontFamily' => 'Cairo',
+            'fontWeight' => 'normal',
+            'fill' => '#6b7280',
+            'color' => '#6b7280',
+            'textAlign' => 'right',
+            'originX' => 'right',
+            'originY' => 'top'
+        ],
+        'address' => [
+            'enabled' => false,
+            'x' => 50,
+            'y' => 560,
+            'fontSize' => 11,
+            'fontFamily' => 'Inter',
+            'fontWeight' => 'normal',
+            'fill' => '#6b7280',
+            'color' => '#6b7280',
+            'textAlign' => 'left',
+            'originX' => 'left',
+            'originY' => 'top'
+        ],
+        'address_en' => [
+            'enabled' => false,
+            'x' => 50,
+            'y' => 560,
+            'fontSize' => 11,
+            'fontFamily' => 'Inter',
+            'fontWeight' => 'normal',
+            'fill' => '#6b7280',
+            'color' => '#6b7280',
+            'textAlign' => 'left',
+            'originX' => 'left',
+            'originY' => 'top'
+        ],
+        'address_ar' => [
+            'enabled' => false,
+            'x' => 1000,
+            'y' => 560,
+            'fontSize' => 11,
+            'fontFamily' => 'Cairo',
+            'fontWeight' => 'normal',
+            'fill' => '#6b7280',
+            'color' => '#6b7280',
+            'textAlign' => 'right',
+            'originX' => 'right',
+            'originY' => 'top'
+        ],
+        'qr_code' => [
+            'enabled' => true,
+            'x' => 880,
+            'y' => 420,
+            'size' => 140
+        ]
+    ];
+}
+
+/**
+ * Convert legacy percentage-based field positions to pixel positions
+ * For backward compatibility with existing templates
+ * 
+ * @param array $fields Field settings
+ * @param int $canvasWidth Canvas width (default 1050)
+ * @param int $canvasHeight Canvas height (default 600)
+ * @return array Converted field settings
+ */
+function convertLegacyFieldPositions($fields, $canvasWidth = 1050, $canvasHeight = 600) {
+    if (empty($fields)) return $fields;
+    
+    $converted = [];
+    foreach ($fields as $key => $field) {
+        $converted[$key] = $field;
+        
+        // Check if positions look like percentages (0-100 range with typical values)
+        // Legacy format used percentages, new format uses pixels
+        $x = $field['x'] ?? 0;
+        $y = $field['y'] ?? 0;
+        
+        // If values are small (likely percentages), convert to pixels
+        if ($x <= 100 && $y <= 100 && ($x < 50 || $y < 50 || $x > 80 || $y > 80)) {
+            // Likely percentage values, convert to pixels
+            if ($x <= 100) {
+                $converted[$key]['x'] = round(($x / 100) * $canvasWidth);
+            }
+            if ($y <= 100) {
+                $converted[$key]['y'] = round(($y / 100) * $canvasHeight);
+            }
+        }
+        
+        // Ensure fill property exists (Fabric.js compatibility)
+        if (isset($field['color']) && !isset($field['fill'])) {
+            $converted[$key]['fill'] = $field['color'];
+        }
+        
+        // Add default fontFamily if missing
+        if (!isset($converted[$key]['fontFamily']) && $key !== 'qr_code') {
+            $isArabic = strpos($key, '_ar') !== false;
+            $converted[$key]['fontFamily'] = $isArabic ? 'Cairo' : 'Inter';
+        }
+        
+        // Add origin properties if missing
+        if (!isset($converted[$key]['originX']) && $key !== 'qr_code') {
+            $isArabic = strpos($key, '_ar') !== false;
+            $converted[$key]['originX'] = $isArabic ? 'right' : 'left';
+            $converted[$key]['originY'] = 'top';
+        }
+    }
+    
+    return $converted;
+}
+
+/**
+ * Handle file upload with validation
+ * 
+ * @param array $file The $_FILES array element
+ * @param string $destination Directory to save the file
+ * @param array $allowedTypes Allowed MIME types
+ * @param int $maxSize Maximum file size in bytes
+ * @return array Result with 'success', 'path' or 'error'
+ */
+function handleFileUpload($file, $destination, $allowedTypes = null, $maxSize = 10485760) {
+    // Default allowed types for images
+    if ($allowedTypes === null) {
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    }
+    
+    // Check for upload errors
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        $errors = [
+            UPLOAD_ERR_INI_SIZE => 'File exceeds upload_max_filesize',
+            UPLOAD_ERR_FORM_SIZE => 'File exceeds MAX_FILE_SIZE',
+            UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+            UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+            UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+            UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+            UPLOAD_ERR_EXTENSION => 'Upload stopped by extension',
+        ];
+        return ['success' => false, 'error' => $errors[$file['error']] ?? 'Unknown upload error'];
+    }
+    
+    // Validate file size
+    if ($file['size'] > $maxSize) {
+        return ['success' => false, 'error' => 'File size exceeds ' . ($maxSize / 1048576) . 'MB limit'];
+    }
+    
+    // Validate MIME type
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mimeType = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+    
+    if (!in_array($mimeType, $allowedTypes)) {
+        return ['success' => false, 'error' => 'File type not allowed: ' . $mimeType];
+    }
+    
+    // Create destination directory if it doesn't exist
+    if (!is_dir($destination)) {
+        if (!mkdir($destination, 0755, true)) {
+            return ['success' => false, 'error' => 'Failed to create upload directory'];
+        }
+    }
+    
+    // Generate unique filename
+    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    if (empty($extension)) {
+        // Determine extension from MIME type
+        $mimeExtensions = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp',
+            'image/svg+xml' => 'svg',
+            'application/pdf' => 'pdf',
+        ];
+        $extension = $mimeExtensions[$mimeType] ?? 'bin';
+    }
+    
+    $filename = uniqid('template_', true) . '.' . strtolower($extension);
+    $filepath = rtrim($destination, '/') . '/' . $filename;
+    
+    // Move uploaded file
+    if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+        return ['success' => false, 'error' => 'Failed to move uploaded file'];
+    }
+    
+    // Set permissions
+    chmod($filepath, 0644);
+    
+    // Handle PDF files - keep original for vector export
+    $originalPdfPath = null;
+    $isPdf = ($mimeType === 'application/pdf');
+    
+    if ($isPdf) {
+        // Keep the original PDF for vector exports
+        $originalPdfPath = $filepath;
+        
+        // Also create a PNG preview for the editor canvas
+        $pngFilename = uniqid('template_', true) . '.png';
+        $pngPath = rtrim($destination, '/') . '/' . $pngFilename;
+        
+        // Convert at high DPI (600) for preview
+        $converted = convertPdfToImage($filepath, $pngPath, 0, 600);
+        
+        if ($converted && file_exists($pngPath)) {
+            // PNG created successfully - return PNG for display, keep original PDF
+            return [
+                'success' => true, 
+                'path' => $pngPath,
+                'filename' => $pngFilename,
+                'originalPdf' => $originalPdfPath,
+                'isPdf' => true
+            ];
+        } else {
+            // PNG conversion failed - return the PDF path (client will need to handle)
+            // This is a fallback, ideally ImageMagick should be installed
+            error_log("PDF to PNG conversion failed for: $filepath. Install ImageMagick for better quality.");
+            return [
+                'success' => true, 
+                'path' => $filepath,
+                'filename' => $filename,
+                'originalPdf' => $originalPdfPath,
+                'isPdf' => true,
+                'conversionFailed' => true
+            ];
+        }
+    }
+    
+    return [
+        'success' => true, 
+        'path' => $filepath, 
+        'filename' => $filename,
+        'originalPdf' => null,
+        'isPdf' => false
+    ];
+}
+
+/**
+ * Convert PDF to image using Ghostscript or ImageMagick
+ * Ghostscript is preferred as ImageMagick often has PDF security policy restrictions
+ */
+function convertPdfToImage($pdfPath, $outputPath, $page = 0, $dpi = 300) {
+    // Try Ghostscript FIRST (more reliable for PDFs, no security policy issues)
+    $gsCmd = null;
+    exec("which gs 2>/dev/null", $gsOutput, $gsCode);
+    if ($gsCode === 0 && !empty($gsOutput[0])) {
+        $gsCmd = trim($gsOutput[0]);
+    }
+    
+    if ($gsCmd) {
+        $output = [];
+        $cmd = sprintf(
+            '%s -dSAFER -dBATCH -dNOPAUSE -dNumRenderingThreads=4 -sDEVICE=png16m -r%d -dFirstPage=%d -dLastPage=%d -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -sOutputFile="%s" "%s" 2>&1',
+            $gsCmd, $dpi, $page + 1, $page + 1, $outputPath, $pdfPath
+        );
+        exec($cmd, $output, $returnCode);
+        
+        if ($returnCode === 0 && file_exists($outputPath)) {
+            return true;
+        }
+        error_log("Ghostscript conversion failed (code $returnCode): " . implode("\n", $output));
+    }
+    
+    // Try PHP Imagick extension (may fail due to security policy)
+    if (extension_loaded('imagick')) {
+        try {
+            $imagick = new Imagick();
+            $imagick->setResolution($dpi, $dpi);
+            $imagick->readImage($pdfPath . '[' . $page . ']');
+            $imagick->setImageFormat('png');
+            $imagick->setImageCompressionQuality(95);
+            $imagick->writeImage($outputPath);
+            $imagick->clear();
+            $imagick->destroy();
+            return true;
+        } catch (Exception $e) {
+            error_log("Imagick PDF conversion failed: " . $e->getMessage());
+        }
+    }
+    
+    // Try command-line ImageMagick convert (may fail due to security policy)
+    $convertCmd = null;
+    exec("which convert 2>/dev/null", $whichOutput, $whichCode);
+    if ($whichCode === 0 && !empty($whichOutput[0])) {
+        $convertCmd = trim($whichOutput[0]);
+    }
+    
+    if ($convertCmd) {
+        $output = [];
+        $cmd = sprintf(
+            '%s -density %d "%s[%d]" -quality 95 "%s" 2>&1',
+            $convertCmd, $dpi, $pdfPath, $page, $outputPath
+        );
+        exec($cmd, $output, $returnCode);
+        
+        if ($returnCode === 0 && file_exists($outputPath)) {
+            return true;
+        }
+        error_log("ImageMagick convert failed (code $returnCode): " . implode("\n", $output));
+    }
+    
+    return false;
+}
+
+/**
+ * Generate a unique template ID from name
+ * 
+ * @param string $name Template name
+ * @return string Unique template ID
+ */
+function generateTemplateId($name) {
+    // Create slug from name
+    $slug = strtolower(trim($name));
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+    $slug = trim($slug, '-');
+    
+    // Add unique suffix
+    $uniqueSuffix = substr(uniqid(), -6);
+    
+    return $slug . '-' . $uniqueSuffix;
 }

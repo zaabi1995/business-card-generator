@@ -33,6 +33,10 @@ try {
         null,
         $companyId
     );
+
+    if (!$entry) {
+        throw new Exception('Failed to log generation to database');
+    }
     
     echo json_encode(['success' => true, 'entry' => $entry]);
     

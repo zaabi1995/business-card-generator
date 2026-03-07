@@ -18,6 +18,10 @@ if (!$companyId) {
 $message = null;
 $messageType = 'success';
 
+// Get company data for portal settings
+$company = findCompanyById($companyId);
+$companySlug = $company['slug'] ?? '';
+
 // Get or create company theme
 $theme = $db->fetchOne(
     "SELECT * FROM company_themes WHERE company_id = :id",
@@ -37,6 +41,7 @@ if (!$theme) {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
     $primaryColor = $_POST['primary_color'] ?? '#2563eb';
     $secondaryColor = $_POST['secondary_color'] ?? '#0f3460';
     $headerText = $_POST['header_text'] ?? '';
@@ -84,7 +89,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($faviconPath !== ($theme['favicon_path'] ?? null)) $updateData['favicon_path'] = $faviconPath;
     
     $db->update('company_themes', $updateData, 'company_id = :id', ['id' => $companyId]);
-    $message = 'Theme settings saved successfully!';
+    
+    // Update portal settings in companies table
+    $portalEnabled = isset($_POST['portal_enabled']) ? 1 : 0;
+    $portalShowPreview = isset($_POST['portal_show_preview']) ? 1 : 0;
+    $portalPasscode = trim($_POST['portal_passcode'] ?? '');
+    
+    $db->query(
+        "UPDATE companies SET portal_enabled = :enabled, portal_show_preview = :preview, portal_passcode = :passcode WHERE id = :id",
+        ['enabled' => $portalEnabled, 'preview' => $portalShowPreview, 'passcode' => $portalPasscode ?: null, 'id' => $companyId]
+    );
+    
+    // Refresh company data
+    $company = findCompanyById($companyId);
+    
+    $message = 'Settings saved successfully!';
     $theme = $db->fetchOne("SELECT * FROM company_themes WHERE company_id = :id", ['id' => $companyId]);
 }
 
@@ -100,6 +119,7 @@ adminHeader('Theme & Branding', 'theme');
 <?php endif; ?>
 
 <form method="post" enctype="multipart/form-data" class="space-y-6">
+    <?php echo csrfField(); ?>
     <!-- Brand Colors -->
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div class="p-4 border-b border-gray-100">
@@ -162,7 +182,7 @@ adminHeader('Theme & Branding', 'theme');
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Company Logo</label>
                     <?php if (!empty($theme['logo_path'])): ?>
                     <div class="mb-3 p-4 bg-gray-50 rounded-xl border border-gray-200 inline-block">
-                        <img src="<?php echo assetUrl('uploads/' . $theme['logo_path']); ?>" alt="Logo" class="max-h-16">
+                        <img src="<?php echo getBasePath() . 'uploads/' . ltrim($theme['logo_path'], '/'); ?>" alt="Logo" class="max-h-16">
                     </div>
                     <?php endif; ?>
                     <input type="file" name="logo" accept="image/*" 
@@ -174,7 +194,7 @@ adminHeader('Theme & Branding', 'theme');
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Favicon</label>
                     <?php if (!empty($theme['favicon_path'])): ?>
                     <div class="mb-3 p-4 bg-gray-50 rounded-xl border border-gray-200 inline-block">
-                        <img src="<?php echo assetUrl('uploads/' . $theme['favicon_path']); ?>" alt="Favicon" class="w-8 h-8">
+                        <img src="<?php echo getBasePath() . 'uploads/' . ltrim($theme['favicon_path'], '/'); ?>" alt="Favicon" class="w-8 h-8">
                     </div>
                     <?php endif; ?>
                     <input type="file" name="favicon" accept=".ico,.png,.jpg,.jpeg" 
@@ -206,6 +226,69 @@ adminHeader('Theme & Branding', 'theme');
                 <input type="text" name="footer_text" value="<?php echo sanitize($theme['footer_text'] ?? ''); ?>" 
                        class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                        placeholder="Custom footer text">
+            </div>
+        </div>
+    </div>
+
+    <!-- Portal Settings -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                <i class="fa-solid fa-door-open text-blue-600"></i>
+                Employee Portal Settings
+            </h3>
+        </div>
+        <div class="p-6 space-y-6">
+            <!-- Portal Link -->
+            <?php if ($companySlug): ?>
+            <div class="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                <label class="block text-sm font-semibold text-blue-800 mb-2">Portal Link</label>
+                <div class="flex items-center gap-2">
+                    <input type="text" value="<?php echo getBaseUrl() . $companySlug . '/portal'; ?>" readonly
+                           class="flex-1 px-4 py-2.5 bg-white border border-blue-200 rounded-lg text-gray-900 font-mono text-sm">
+                    <button type="button" onclick="copyPortalLink()" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fa-solid fa-copy"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-blue-600 mt-2">Share this link with employees to let them submit card requests</p>
+            </div>
+            <?php endif; ?>
+            
+            <!-- Enable/Disable -->
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div>
+                    <label class="text-sm font-semibold text-gray-700">Enable Portal</label>
+                    <p class="text-xs text-gray-500">Allow employees to submit card requests via the portal</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="portal_enabled" class="sr-only peer" <?php echo ($company['portal_enabled'] ?? 1) ? 'checked' : ''; ?>>
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+            
+            <!-- Show Preview -->
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div>
+                    <label class="text-sm font-semibold text-gray-700">Show Live Preview</label>
+                    <p class="text-xs text-gray-500">Display real-time card preview while filling the form</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="portal_show_preview" class="sr-only peer" <?php echo ($company['portal_show_preview'] ?? 1) ? 'checked' : ''; ?>>
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+            
+            <!-- Passcode Protection -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fa-solid fa-lock text-gray-400 mr-1"></i>
+                    Portal Access Code (Optional)
+                </label>
+                <input type="text" name="portal_passcode" value="<?php echo sanitize($company['portal_passcode'] ?? ''); ?>" 
+                       maxlength="4" pattern="[0-9]*" inputmode="numeric"
+                       class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-mono text-lg tracking-widest"
+                       placeholder="e.g., 1234">
+                <p class="text-xs text-gray-500 mt-2">4-digit code to protect the company portal. Leave empty for no restriction. Department codes take priority for department portals.</p>
             </div>
         </div>
     </div>
@@ -242,6 +325,22 @@ document.querySelectorAll('input[type="color"]').forEach(picker => {
         this.nextElementSibling.value = this.value;
     });
 });
+
+// Copy portal link to clipboard
+function copyPortalLink() {
+    const input = document.querySelector('input[value*="/portal"]');
+    if (input) {
+        navigator.clipboard.writeText(input.value).then(() => {
+            // Show brief feedback
+            const btn = event.target.closest('button');
+            const icon = btn.querySelector('i');
+            icon.className = 'fa-solid fa-check';
+            setTimeout(() => {
+                icon.className = 'fa-solid fa-copy';
+            }, 2000);
+        });
+    }
+}
 </script>
 
 <?php adminFooter(); ?>

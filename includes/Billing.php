@@ -335,25 +335,56 @@ class Billing {
      */
     public function getPlanLimits($companyId) {
         $db = Database::getInstance();
-        $company = $db->fetchOne(
-            "SELECT plan FROM companies WHERE id = :id",
-            ['id' => $companyId]
-        );
         
-        if (!$company) {
-            return null;
+        // Default limits for free plan
+        $defaultLimits = [
+            'employees' => 5,
+            'templates' => 2,
+            'storage' => 1
+        ];
+        
+        try {
+            $company = $db->fetchOne(
+                "SELECT plan FROM companies WHERE id = :id",
+                ['id' => $companyId]
+            );
+            
+            if (!$company) {
+                return $defaultLimits;
+            }
+            
+            $plan = $db->fetchOne(
+                "SELECT * FROM subscription_plans WHERE id = :id",
+                ['id' => $company['plan'] ?? 'free']
+            );
+            
+            if (!$plan) {
+                return $defaultLimits;
+            }
+            
+            // Try to get limits from JSON column first, then from individual columns
+            if (!empty($plan['limits'])) {
+                $limits = json_decode($plan['limits'], true);
+                if ($limits) {
+                    return [
+                        'employees' => $limits['employees'] ?? $limits['max_employees'] ?? $defaultLimits['employees'],
+                        'templates' => $limits['templates'] ?? $limits['max_templates'] ?? $defaultLimits['templates'],
+                        'storage' => $limits['storage'] ?? $limits['max_storage_mb'] ?? $defaultLimits['storage']
+                    ];
+                }
+            }
+            
+            // Fallback to individual columns
+            return [
+                'employees' => $plan['max_employees'] ?? $defaultLimits['employees'],
+                'templates' => $plan['max_templates'] ?? $defaultLimits['templates'],
+                'storage' => $plan['max_storage_mb'] ?? $defaultLimits['storage']
+            ];
+            
+        } catch (Throwable $e) {
+            error_log("Billing::getPlanLimits error: " . $e->getMessage());
+            return $defaultLimits;
         }
-        
-        $plan = $db->fetchOne(
-            "SELECT * FROM subscription_plans WHERE id = :id",
-            ['id' => $company['plan'] ?? 'free']
-        );
-        
-        return $plan ? [
-            'max_employees' => $plan['max_employees'],
-            'max_templates' => $plan['max_templates'],
-            'max_storage_mb' => $plan['max_storage_mb']
-        ] : null;
     }
     
     /**
@@ -362,43 +393,260 @@ class Billing {
     public function checkLimit($companyId, $limitType) {
         $limits = $this->getPlanLimits($companyId);
         if (!$limits) {
-            return false;
+            return true; // Allow if we can't get limits
         }
         
-        $limit = $limits[$limitType] ?? -1;
+        // Map limit type to key
+        $limitKey = $limitType;
+        if ($limitType === 'max_employees') $limitKey = 'employees';
+        if ($limitType === 'max_templates') $limitKey = 'templates';
+        
+        $limit = $limits[$limitKey] ?? -1;
         if ($limit === -1) {
             return true; // Unlimited
         }
         
         $db = Database::getInstance();
         
-        switch ($limitType) {
-            case 'max_employees':
-                $count = $db->fetchOne(
-                    "SELECT COUNT(*) as count FROM employees WHERE company_id = :id",
-                    ['id' => $companyId]
-                );
-                return ($count['count'] ?? 0) < $limit;
-                
-            case 'max_templates':
-                $count = $db->fetchOne(
-                    "SELECT COUNT(*) as count FROM templates WHERE company_id = :id",
-                    ['id' => $companyId]
-                );
-                return ($count['count'] ?? 0) < $limit;
-                
-            default:
-                return true;
+        try {
+            switch ($limitType) {
+                case 'max_employees':
+                case 'employees':
+                    $count = $db->fetchOne(
+                        "SELECT COUNT(*) as count FROM employees WHERE company_id = :id",
+                        ['id' => $companyId]
+                    );
+                    return ($count['count'] ?? 0) < $limit;
+                    
+                case 'max_templates':
+                case 'templates':
+                    $count = $db->fetchOne(
+                        "SELECT COUNT(*) as count FROM templates WHERE company_id = :id",
+                        ['id' => $companyId]
+                    );
+                    return ($count['count'] ?? 0) < $limit;
+                    
+                default:
+                    return true;
+            }
+        } catch (Throwable $e) {
+            error_log("Billing::checkLimit error: " . $e->getMessage());
+            return true; // Allow if we can't check
         }
     }
     
     private function generateUUID() {
-        return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-        );
+        // Delegate to the global helper which uses cryptographically secure random_bytes()
+        return \generateUUID();
+    }
+    
+    /**
+     * Get quality multiplier based on plan
+     * Free users get 1x (~70-100 DPI), paid users get 4x (~400 DPI)
+     * 
+     * @param string $companyId Company ID
+     * @param bool $isPrintShop Whether this is for a print shop (always full quality)
+     * @return int Multiplier for image quality
+     */
+    public static function getQualityMultiplier($companyId, $isPrintShop = false) {
+        // Print shops always get full quality
+        if ($isPrintShop) {
+            return 4;
+        }
+        
+        $billing = new self();
+        
+        // Check if company has active paid subscription
+        if ($billing->hasActiveSubscription($companyId)) {
+            return 4; // ~400 DPI for paid users
+        }
+        
+        // Check plan type
+        $db = Database::getInstance();
+        try {
+            $company = $db->fetchOne(
+                "SELECT plan FROM companies WHERE id = :id",
+                ['id' => $companyId]
+            );
+            
+            $plan = $company['plan'] ?? 'free';
+            
+            // Any non-free plan gets full quality
+            if ($plan !== 'free') {
+                return 4;
+            }
+        } catch (Throwable $e) {
+            error_log("Billing::getQualityMultiplier error: " . $e->getMessage());
+        }
+        
+        // Free users get lower quality (1x = ~100 DPI base, appears as ~70 DPI in print)
+        return 1;
+    }
+    
+    /**
+     * Check if QR tracking/analytics is enabled for company
+     * Free users don't have access to QR scan analytics
+     * 
+     * @param string $companyId Company ID
+     * @return bool Whether QR tracking analytics is enabled
+     */
+    public static function isQRTrackingEnabled($companyId) {
+        $billing = new self();
+        
+        // Paid users get QR tracking analytics
+        if ($billing->hasActiveSubscription($companyId)) {
+            return true;
+        }
+        
+        // Check plan type
+        $db = Database::getInstance();
+        try {
+            $company = $db->fetchOne(
+                "SELECT plan FROM companies WHERE id = :id",
+                ['id' => $companyId]
+            );
+            
+            $plan = $company['plan'] ?? 'free';
+            
+            // Free users don't get QR tracking analytics
+            return $plan !== 'free';
+        } catch (Throwable $e) {
+            error_log("Billing::isQRTrackingEnabled error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Check if a specific feature is available for company
+     * 
+     * @param string $companyId Company ID
+     * @param string $feature Feature name: 'high_quality', 'qr_tracking', 'bulk_generation', 'api_access', 'custom_branding'
+     * @return bool Whether the feature is available
+     */
+    public static function hasFeature($companyId, $feature) {
+        $billing = new self();
+        $isPaid = $billing->hasActiveSubscription($companyId);
+        
+        // Check plan type
+        $db = Database::getInstance();
+        $plan = 'free';
+        try {
+            $company = $db->fetchOne(
+                "SELECT plan FROM companies WHERE id = :id",
+                ['id' => $companyId]
+            );
+            $plan = $company['plan'] ?? 'free';
+        } catch (Throwable $e) {
+            error_log("Billing::hasFeature error: " . $e->getMessage());
+        }
+        
+        // Feature availability matrix
+        $features = [
+            'free' => [
+                'high_quality' => false,
+                'qr_tracking' => false,
+                'bulk_generation' => false,
+                'api_access' => false,
+                'custom_branding' => false,
+                'proof_sheets' => true, // Allow proof sheets for all
+                'basic_generation' => true,
+                'portal_access' => true
+            ],
+            'starter' => [
+                'high_quality' => true,
+                'qr_tracking' => true,
+                'bulk_generation' => true,
+                'api_access' => false,
+                'custom_branding' => false,
+                'proof_sheets' => true,
+                'basic_generation' => true,
+                'portal_access' => true
+            ],
+            'professional' => [
+                'high_quality' => true,
+                'qr_tracking' => true,
+                'bulk_generation' => true,
+                'api_access' => true,
+                'custom_branding' => true,
+                'proof_sheets' => true,
+                'basic_generation' => true,
+                'portal_access' => true
+            ],
+            'enterprise' => [
+                'high_quality' => true,
+                'qr_tracking' => true,
+                'bulk_generation' => true,
+                'api_access' => true,
+                'custom_branding' => true,
+                'proof_sheets' => true,
+                'basic_generation' => true,
+                'portal_access' => true
+            ]
+        ];
+        
+        // Default to free plan features if plan not found
+        $planFeatures = $features[$plan] ?? $features['free'];
+        
+        // If paid subscription active, grant all features
+        if ($isPaid) {
+            return true;
+        }
+        
+        return $planFeatures[$feature] ?? false;
+    }
+    
+    /**
+     * Get company plan info with features
+     * 
+     * @param string $companyId Company ID
+     * @return array Plan info with features
+     */
+    public static function getCompanyPlanInfo($companyId) {
+        $billing = new self();
+        $db = Database::getInstance();
+        
+        $info = [
+            'plan' => 'free',
+            'plan_name' => 'Free',
+            'is_paid' => false,
+            'subscription_status' => null,
+            'expires_at' => null,
+            'quality_multiplier' => 1,
+            'features' => []
+        ];
+        
+        try {
+            $company = $db->fetchOne(
+                "SELECT plan, subscription_status, subscription_expires_at FROM companies WHERE id = :id",
+                ['id' => $companyId]
+            );
+            
+            if ($company) {
+                $info['plan'] = $company['plan'] ?? 'free';
+                $info['subscription_status'] = $company['subscription_status'];
+                $info['expires_at'] = $company['subscription_expires_at'];
+                
+                // Get plan name
+                $planDetails = $db->fetchOne(
+                    "SELECT name FROM subscription_plans WHERE id = :id",
+                    ['id' => $info['plan']]
+                );
+                $info['plan_name'] = $planDetails['name'] ?? ucfirst($info['plan']);
+            }
+            
+            $info['is_paid'] = $billing->hasActiveSubscription($companyId);
+            $info['quality_multiplier'] = self::getQualityMultiplier($companyId);
+            
+            // Add feature flags
+            $featureList = ['high_quality', 'qr_tracking', 'bulk_generation', 'api_access', 'custom_branding', 'proof_sheets'];
+            foreach ($featureList as $feature) {
+                $info['features'][$feature] = self::hasFeature($companyId, $feature);
+            }
+            
+        } catch (Throwable $e) {
+            error_log("Billing::getCompanyPlanInfo error: " . $e->getMessage());
+        }
+        
+        return $info;
     }
 }

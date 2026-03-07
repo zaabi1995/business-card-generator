@@ -1,21 +1,44 @@
 <?php
 /**
- * Cardify - Login Page
- * Design: Tailwind UI Split Screen + Flowbite + Salient
+ * Cardify - Unified Login Page
+ * Auto-detects user type (super_admin, company admin, employee)
+ * Redirects to signup if email not found
  */
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
+// Get redirect URL from query string (for company portal redirects)
+// Validate redirect is a safe relative path (no protocol-relative URLs like //evil.com)
+$redirectUrl = $_GET['redirect'] ?? null;
+if ($redirectUrl && !preg_match('#^/[a-zA-Z0-9/_.\-?&=%]*$#', $redirectUrl)) {
+    $redirectUrl = null; // Reject suspicious redirects
+}
+
 // Redirect if already logged in
 if (Auth::isLoggedIn()) {
-    $role = Auth::getCurrentRole();
-    $redirect = $role === 'super_admin' ? getBasePath() . 'admin/super/' : getBasePath() . 'admin/';
-    header('Location: ' . $redirect);
+    if ($redirectUrl) {
+        // Use provided redirect — already validated above
+        header('Location: ' . getBasePath() . ltrim($redirectUrl, '/'));
+    } else {
+        $role = Auth::getCurrentRole();
+        $companySlug = $_SESSION['company_slug'] ?? null;
+        
+        if ($role === 'super_admin') {
+            header('Location: ' . getBasePath() . 'admin/');
+        } elseif ($role === 'print_shop') {
+            header('Location: ' . getBasePath() . 'printshop/dashboard.php');
+        } elseif ($companySlug) {
+            header('Location: ' . getBasePath() . $companySlug . '/admin/');
+        } else {
+            header('Location: ' . getBasePath() . 'admin/');
+        }
+    }
     exit;
 }
 
 $error = null;
-$showCompanyField = false;
+$info = null;
+$prefillEmail = $_GET['email'] ?? '';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 $pageTitle = 'Sign In';
 $htmlClass = 'h-full bg-white';
@@ -46,36 +69,35 @@ HTML;
 
 // Handle login
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request. Please try again.';
+    } else {
     $email = sanitizeEmail($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
-    $companySlug = $_POST['company'] ?? null;
     
     if (empty($email) || empty($password)) {
         $error = 'Please enter email and password';
     } else {
-        if (empty($companySlug) && DatabaseAdapter::useDatabase()) {
-            try {
-                $db = Database::getInstance();
-                $company = $db->fetchOne(
-                    "SELECT slug FROM companies WHERE admin_email = :email AND status = 'active'",
-                    ['email' => $email]
-                );
-                if ($company && !empty($company['slug'])) {
-                    $companySlug = $company['slug'];
-                }
-            } catch (Exception $e) {}
-        }
-
-        $result = Auth::login($email, $password, $companySlug);
+        // Use unified login with auto-detection
+        $result = Auth::unifiedLogin($email, $password);
         
         if ($result['success']) {
-            header('Location: ' . $result['redirect']);
+            // Use provided redirect URL if available (already validated above), otherwise use default
+            if ($redirectUrl) {
+                header('Location: ' . getBasePath() . ltrim($redirectUrl, '/'));
+            } else {
+                header('Location: ' . $result['redirect']);
+            }
+            exit;
+        } elseif ($result['not_found'] ?? false) {
+            // Email not found - redirect to signup with pre-filled email
+            header('Location: ' . getBasePath() . 'company/register.php?email=' . urlencode($email));
             exit;
         } else {
             $error = $result['error'] ?? 'Invalid credentials';
-            $showCompanyField = true;
         }
     }
+    } // end CSRF else
 }
 ?>
 <?php require_once INCLUDES_DIR . '/ui-header.php'; ?>
@@ -93,10 +115,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         Sign in to your account
                     </h2>
                     <p class="mt-2 text-sm text-gray-600">
-                        Not a member?
-                        <a href="<?php echo getBasePath(); ?>company/register.php" class="font-semibold text-blue-600 hover:text-blue-500">
-                            Start a 14 day free trial
-                        </a>
+                        Not a member? Register as a
+                        <a href="<?php echo getBasePath(); ?>company/register.php" class="font-semibold text-blue-600 hover:text-blue-500">Company</a>
+                        or
+                        <a href="<?php echo getBasePath(); ?>printshop/register.php" class="font-semibold text-purple-600 hover:text-purple-500">Print Shop</a>
                     </p>
                 </div>
 
@@ -104,24 +126,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php if ($error): ?>
                 <div class="mt-6 flex items-center gap-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">
                     <i class="fa-solid fa-circle-exclamation flex-shrink-0"></i>
-                    <div>
-                        <span><?php echo htmlspecialchars($error); ?></span>
-                        <?php if ($showCompanyField): ?>
-                        <p class="mt-1 text-xs">If you're an employee, please enter your company code below.</p>
-                        <?php endif; ?>
-                    </div>
+                    <span><?php echo htmlspecialchars($error); ?></span>
                 </div>
                 <?php endif; ?>
 
-                <!-- Login Form -->
+                <!-- Info Message -->
+                <?php if ($info): ?>
+                <div class="mt-6 flex items-center gap-3 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                    <i class="fa-solid fa-circle-info flex-shrink-0"></i>
+                    <span><?php echo htmlspecialchars($info); ?></span>
+                </div>
+                <?php endif; ?>
+
+                <!-- Unified Login Form -->
                 <form method="POST" class="mt-10 space-y-6">
+                    <?php echo csrfField(); ?>
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-900">
                             Email address
                         </label>
                         <div class="mt-2">
                             <input type="email" name="email" id="email" autocomplete="email"
-                                   value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
+                                   value="<?php echo htmlspecialchars($_POST['email'] ?? $prefillEmail); ?>"
                                    class="form-input" 
                                    placeholder="name@company.com" required>
                         </div>
@@ -137,21 +163,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                    placeholder="••••••••" required>
                         </div>
                     </div>
-
-                    <?php if ($showCompanyField || isset($_GET['employee'])): ?>
-                    <div>
-                        <label for="company" class="block text-sm font-medium text-gray-900">
-                            Company code
-                            <span class="font-normal text-gray-500">(for employees)</span>
-                        </label>
-                        <div class="mt-2">
-                            <input type="text" name="company" id="company" 
-                                   value="<?php echo htmlspecialchars($_POST['company'] ?? $_GET['company'] ?? ''); ?>"
-                                   class="form-input" 
-                                   placeholder="e.g., my-company">
-                        </div>
-                    </div>
-                    <?php endif; ?>
 
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
@@ -172,29 +183,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </form>
 
-                <!-- Divider -->
-                <div class="mt-10">
-                    <div class="relative">
-                        <div class="absolute inset-0 flex items-center" aria-hidden="true">
-                            <div class="w-full border-t border-gray-200"></div>
-                        </div>
-                        <div class="relative flex justify-center text-sm font-medium">
-                            <span class="bg-white px-6 text-gray-500">Or continue with</span>
-                        </div>
-                    </div>
-
-                    <div class="mt-6">
-                        <?php if (!$showCompanyField && !isset($_GET['employee'])): ?>
-                        <a href="?employee=1" class="flex w-full items-center justify-center gap-3 rounded-lg bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-100 transition-colors">
-                            <i class="fa-solid fa-id-badge text-blue-600"></i>
-                            Sign in as Employee
-                        </a>
-                        <?php else: ?>
-                        <a href="<?php echo getBasePath(); ?>login.php" class="flex w-full items-center justify-center gap-3 rounded-lg bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-100 transition-colors">
-                            <i class="fa-solid fa-building text-blue-600"></i>
-                            Sign in as Company Admin
-                        </a>
-                        <?php endif; ?>
+                <!-- Info Text -->
+                <div class="mt-8 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
+                    <p class="text-sm text-gray-700 text-center font-medium mb-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-blue-500 mr-2"></i>
+                        One login for everyone
+                    </p>
+                    <div class="flex justify-center gap-4 text-xs text-gray-500">
+                        <span><i class="fa-solid fa-building text-blue-500 mr-1"></i> Companies</span>
+                        <span><i class="fa-solid fa-store text-purple-500 mr-1"></i> Print Shops</span>
+                        <span><i class="fa-solid fa-shield text-green-500 mr-1"></i> Admins</span>
                     </div>
                 </div>
 

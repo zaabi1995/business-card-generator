@@ -4,7 +4,7 @@
  * Migrates existing JSON data to database
  * Run this after installation if you have existing JSON data
  */
-require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Database.php';
 
 $db = Database::getInstance();

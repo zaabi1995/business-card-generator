@@ -21,6 +21,7 @@ access_log
 # Composer / Dependencies
 vendor/
 composer.lock
+composer.phar
 
 # Configuration (contains secrets)
 config.php
@@ -28,6 +29,7 @@ config.php
 # Runtime/user data (multi-tenant SaaS will store these per company)
 data/*.json
 data/companies/
+data/print-sheets/
 uploads/
 !uploads/.gitkeep
 
@@ -60,3 +62,10 @@ tmp/
 
 # Cursor local state (DO NOT COMMIT)
 .cursor/
+downloads/
+node_modules/
+php_errorlog
+*.sql.gz
+malware.*
+.user.ini
+.ftpquota

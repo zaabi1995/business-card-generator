@@ -1,7 +1,7 @@
 <?php
 /**
  * Department Management - Cardify
- * Manage departments and assign templates
+ * Manage departments and assign template pairs
  */
 require_once __DIR__ . '/../config.php';
 requireAdmin();
@@ -16,55 +16,126 @@ if (!$companyId) {
     exit;
 }
 
+$company = findCompanyById($companyId);
+$companySlug = $company['slug'] ?? '';
+
 $message = null;
 $messageType = 'success';
 
-// Get departments
+// Get departments with template pair info
 $departments = $db->fetchAll(
-    "SELECT d.*, t.name as template_name FROM departments d 
+    "SELECT d.*, 
+            t.name as template_name,
+            tp.name as pair_name
+     FROM departments d 
      LEFT JOIN templates t ON d.template_id = t.id 
-     WHERE d.company_id = :id ORDER BY d.name",
+     LEFT JOIN templates tp ON d.template_pair_id = tp.pair_id AND tp.side = 'front'
+     WHERE d.company_id = :id 
+     ORDER BY d.name",
     ['id' => $companyId]
 );
 
-// Get available templates
-$templates = $db->fetchAll(
-    "SELECT * FROM templates WHERE company_id = :id AND is_active = 1 ORDER BY name",
+// Get available template pairs (grouped by pair_id)
+$templatePairs = $db->fetchAll(
+    "SELECT DISTINCT t.pair_id, t.name, 
+            (SELECT background_image_path FROM templates WHERE pair_id = t.pair_id AND side = 'front' LIMIT 1) as front_image
+     FROM templates t 
+     WHERE t.company_id = :id AND t.pair_id IS NOT NULL
+     GROUP BY t.pair_id, t.name
+     ORDER BY t.name",
+    ['id' => $companyId]
+);
+
+// Get legacy templates (no pair_id) for backward compatibility
+$legacyTemplates = $db->fetchAll(
+    "SELECT * FROM templates WHERE company_id = :id AND pair_id IS NULL AND is_active = 1 ORDER BY name",
     ['id' => $companyId]
 );
 
 // Handle create/update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
     $action = $_POST['action'] ?? '';
     
     if ($action === 'create') {
         $name = $_POST['name'] ?? '';
         $description = $_POST['description'] ?? '';
-        $templateId = $_POST['template_id'] ?? null;
+        $templatePairId = $_POST['template_pair_id'] ?? null;
+        $slug = trim($_POST['slug'] ?? '');
+        $portalPasscode = trim($_POST['portal_passcode'] ?? '');
+        
+        // Validate passcode (only digits, max 4)
+        if (!empty($portalPasscode) && !preg_match('/^\d{1,4}$/', $portalPasscode)) {
+            $portalPasscode = '';
+        }
+        
+        // Auto-generate slug if not provided
+        if (empty($slug)) {
+            $slug = generateSlug($name);
+        }
+        
+        // Ensure slug is unique for this company
+        $baseSlug = $slug;
+        $counter = 1;
+        while ($db->fetchOne("SELECT id FROM departments WHERE company_id = :cid AND portal_slug = :slug", ['cid' => $companyId, 'slug' => $slug])) {
+            $slug = $baseSlug . '-' . $counter++;
+        }
         
         if (!empty($name)) {
             $deptId = generateUUID();
-            $db->insert('departments', [
+            $insertData = [
                 'id' => $deptId,
                 'company_id' => $companyId,
                 'name' => $name,
                 'description' => $description,
-                'template_id' => $templateId ?: null
-            ]);
+                'portal_slug' => $slug,
+                'access_code' => $portalPasscode ?: null,
+                'created_at' => date('Y-m-d H:i:s')
+            ];
+            
+            // Handle template pair assignment
+            if (!empty($templatePairId)) {
+                $insertData['template_pair_id'] = $templatePairId;
+            }
+            
+            $db->insert('departments', $insertData);
             $message = 'Department created successfully!';
         }
     } elseif ($action === 'update') {
         $deptId = $_POST['department_id'] ?? '';
         $name = $_POST['name'] ?? '';
         $description = $_POST['description'] ?? '';
-        $templateId = $_POST['template_id'] ?? null;
+        $templatePairId = $_POST['template_pair_id'] ?? null;
+        $slug = trim($_POST['slug'] ?? '');
+        $portalPasscode = trim($_POST['portal_passcode'] ?? '');
+        
+        // Validate passcode (only digits, max 4)
+        if (!empty($portalPasscode) && !preg_match('/^\d{1,4}$/', $portalPasscode)) {
+            $portalPasscode = '';
+        }
+        
+        // Auto-generate slug if not provided
+        if (empty($slug)) {
+            $slug = generateSlug($name);
+        }
+        
+        // Ensure slug is unique for this company (excluding current department)
+        $baseSlug = $slug;
+        $counter = 1;
+        while ($db->fetchOne("SELECT id FROM departments WHERE company_id = :cid AND portal_slug = :slug AND id != :id", ['cid' => $companyId, 'slug' => $slug, 'id' => $deptId])) {
+            $slug = $baseSlug . '-' . $counter++;
+        }
         
         if (!empty($deptId) && !empty($name)) {
-            $db->update('departments', [
+            $updateData = [
                 'name' => $name,
                 'description' => $description,
-                'template_id' => $templateId ?: null
-            ], 'id = :id AND company_id = :company_id', [
+                'portal_slug' => $slug,
+                'template_pair_id' => $templatePairId ?: null,
+                'access_code' => $portalPasscode ?: null
+            ];
+            
+            $db->update('departments', $updateData, 'id = :id AND company_id = :company_id', [
                 'id' => $deptId,
                 'company_id' => $companyId
             ]);
@@ -73,6 +144,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'delete') {
         $deptId = $_POST['department_id'] ?? '';
         if (!empty($deptId)) {
+            // Unlink employees from this department first
+            $db->update('employees', ['department_id' => null], 'department_id = :id', ['id' => $deptId]);
+            
             $db->delete('departments', 'id = :id AND company_id = :company_id', [
                 'id' => $deptId,
                 'company_id' => $companyId
@@ -83,9 +157,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Reload departments
     $departments = $db->fetchAll(
-        "SELECT d.*, t.name as template_name FROM departments d 
+        "SELECT d.*, 
+                t.name as template_name,
+                tp.name as pair_name
+         FROM departments d 
          LEFT JOIN templates t ON d.template_id = t.id 
-         WHERE d.company_id = :id ORDER BY d.name",
+         LEFT JOIN templates tp ON d.template_pair_id = tp.pair_id AND tp.side = 'front'
+         WHERE d.company_id = :id 
+         ORDER BY d.name",
         ['id' => $companyId]
     );
 }
@@ -103,13 +182,13 @@ foreach ($departments as $dept) {
 adminHeader('Departments', 'departments');
 ?>
 
-<div x-data="{ showModal: false, editMode: false, formData: { id: '', name: '', description: '', template_id: '' } }">
+<div x-data="{ showModal: false, editMode: false, formData: { id: '', name: '', description: '', portal_slug: '', template_pair_id: '' } }">
     <!-- Page Header Actions -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
             <p class="text-gray-600"><?php echo count($departments); ?> departments</p>
         </div>
-        <button @click="showModal = true; editMode = false; formData = { id: '', name: '', description: '', template_id: '' }" 
+        <button @click="showModal = true; editMode = false; formData = { id: '', name: '', description: '', portal_slug: '', template_pair_id: '', access_code: '' }" 
                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2">
             <i class="fa-solid fa-plus"></i>
             <span>Add Department</span>
@@ -135,12 +214,13 @@ adminHeader('Departments', 'departments');
                     </div>
                     <div class="flex items-center gap-1">
                         <button 
-                            @click="showModal = true; editMode = true; formData = { id: '<?php echo $dept['id']; ?>', name: '<?php echo addslashes($dept['name']); ?>', description: '<?php echo addslashes($dept['description'] ?? ''); ?>', template_id: '<?php echo $dept['template_id'] ?? ''; ?>' }"
+                            @click="showModal = true; editMode = true; formData = { id: '<?php echo $dept['id']; ?>', name: '<?php echo addslashes($dept['name']); ?>', description: '<?php echo addslashes($dept['description'] ?? ''); ?>', portal_slug: '<?php echo addslashes($dept['portal_slug'] ?? ''); ?>', template_pair_id: '<?php echo $dept['template_pair_id'] ?? ''; ?>', access_code: '<?php echo addslashes($dept['access_code'] ?? ''); ?>' }"
                             class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         >
                             <i class="fa-solid fa-pen-to-square"></i>
                         </button>
                         <form method="post" class="inline" onsubmit="return confirm('Delete this department?')">
+                            <?php echo csrfField(); ?>
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="department_id" value="<?php echo $dept['id']; ?>">
                             <button type="submit" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
@@ -150,7 +230,23 @@ adminHeader('Departments', 'departments');
                     </div>
                 </div>
                 
-                <h3 class="text-lg font-bold text-gray-900 mb-2"><?php echo sanitize($dept['name']); ?></h3>
+                <h3 class="text-lg font-bold text-gray-900 mb-1"><?php echo sanitize($dept['name']); ?></h3>
+                
+                <?php if (!empty($dept['portal_slug']) && !empty($companySlug)): ?>
+                <div class="flex items-center gap-1.5 text-xs text-blue-600 mb-2">
+                    <i class="fa-solid fa-link"></i>
+                    <code class="bg-blue-50 px-1.5 py-0.5 rounded">/<?php echo $companySlug; ?>/portal/<?php echo $dept['portal_slug']; ?></code>
+                    <button type="button" onclick="copyToClipboard('<?php echo getBaseUrl() . $companySlug . '/portal/' . $dept['portal_slug']; ?>')" 
+                            class="text-gray-400 hover:text-blue-600 transition-colors" title="Copy link">
+                        <i class="fa-solid fa-copy"></i>
+                    </button>
+                    <?php if (!empty($dept['access_code'])): ?>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-medium ml-1" title="Access code: <?php echo $dept['access_code']; ?>">
+                        <i class="fa-solid fa-lock mr-0.5"></i>Protected
+                    </span>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
                 
                 <?php if (!empty($dept['description'])): ?>
                 <p class="text-gray-600 text-sm mb-4"><?php echo sanitize($dept['description']); ?></p>
@@ -162,13 +258,16 @@ adminHeader('Departments', 'departments');
                         <span><?php echo $deptCounts[$dept['id']] ?? 0; ?> employees</span>
                     </div>
                     
-                    <?php if (!empty($dept['template_name'])): ?>
+                    <?php 
+                    $templateName = $dept['pair_name'] ?? $dept['template_name'] ?? null;
+                    if (!empty($templateName)): 
+                    ?>
                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700">
                         <i class="fa-solid fa-palette mr-1"></i>
-                        <?php echo sanitize($dept['template_name']); ?>
+                        <?php echo sanitize($templateName); ?>
                     </span>
                     <?php else: ?>
-                    <span class="text-xs text-gray-400">No template</span>
+                    <span class="text-xs text-gray-400">Company default</span>
                     <?php endif; ?>
                 </div>
             </div>
@@ -198,6 +297,7 @@ adminHeader('Departments', 'departments');
             </div>
             
             <form method="post" class="p-6">
+                <?php echo csrfField(); ?>
                 <input type="hidden" name="action" :value="editMode ? 'update' : 'create'">
                 <input type="hidden" name="department_id" x-model="formData.id">
                 
@@ -205,20 +305,42 @@ adminHeader('Departments', 'departments');
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Department Name <span class="text-red-500">*</span></label>
                         <input type="text" name="name" x-model="formData.name" required 
+                               @input="if(!editMode) formData.portal_slug = $event.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')"
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                                placeholder="e.g., Marketing">
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Default Template</label>
-                        <select name="template_id" x-model="formData.template_id" 
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Portal Slug
+                            <span class="text-xs font-normal text-gray-500">(URL identifier)</span>
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-500 text-sm whitespace-nowrap">/<?php echo $companySlug; ?>/portal/</span>
+                            <input type="text" name="slug" x-model="formData.portal_slug" 
+                                   class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-mono text-sm"
+                                   placeholder="marketing" pattern="[a-z0-9-]+">
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Lowercase letters, numbers and dashes only. Auto-generated from name.</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Card Design Template</label>
+                        <select name="template_pair_id" x-model="formData.template_pair_id" 
                                 class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                            <option value="">No default template</option>
-                            <?php foreach ($templates as $template): ?>
-                            <option value="<?php echo sanitize($template['id']); ?>"><?php echo sanitize($template['name']); ?></option>
+                            <option value="">Use company default</option>
+                            <?php foreach ($templatePairs as $pair): ?>
+                            <option value="<?php echo sanitize($pair['pair_id']); ?>"><?php echo sanitize($pair['name']); ?></option>
                             <?php endforeach; ?>
+                            <?php if (!empty($legacyTemplates)): ?>
+                            <optgroup label="Legacy Templates">
+                            <?php foreach ($legacyTemplates as $template): ?>
+                            <option value="legacy_<?php echo sanitize($template['id']); ?>"><?php echo sanitize($template['name']); ?> (<?php echo $template['side']; ?>)</option>
+                            <?php endforeach; ?>
+                            </optgroup>
+                            <?php endif; ?>
                         </select>
-                        <p class="text-xs text-gray-500 mt-1">Employees in this department will use this template by default</p>
+                        <p class="text-xs text-gray-500 mt-1">Employees in this department will use this card design instead of company default</p>
                     </div>
                     
                     <div>
@@ -226,6 +348,18 @@ adminHeader('Departments', 'departments');
                         <textarea name="description" x-model="formData.description" rows="3" 
                                   class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                                   placeholder="Brief description of this department"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Portal Access Code
+                            <span class="text-xs font-normal text-gray-500">(optional)</span>
+                        </label>
+                        <input type="text" name="portal_passcode" x-model="formData.access_code" 
+                               maxlength="4" pattern="[0-9]*" inputmode="numeric"
+                               class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-mono text-lg tracking-widest"
+                               placeholder="e.g., 1234">
+                        <p class="text-xs text-gray-500 mt-1">4-digit code to protect department portal. Leave empty for no restriction.</p>
                     </div>
                 </div>
                 
@@ -241,5 +375,23 @@ adminHeader('Departments', 'departments');
         </div>
     </div>
 </div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Show brief feedback
+        const btn = event.target.closest('button');
+        if (btn) {
+            const icon = btn.querySelector('i');
+            if (icon) {
+                icon.className = 'fa-solid fa-check';
+                setTimeout(() => {
+                    icon.className = 'fa-solid fa-copy';
+                }, 2000);
+            }
+        }
+    });
+}
+</script>
 
 <?php adminFooter(); ?>

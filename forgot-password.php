@@ -1,0 +1,384 @@
+<?php
+/**
+ * Cardify - Forgot Password
+ * Handles password reset requests for all user types
+ */
+require_once __DIR__ . '/config.php';
+require_once INCLUDES_DIR . '/Mailer.php';
+
+$brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
+$pageTitle = 'Forgot Password';
+$htmlClass = 'h-full bg-white';
+$bodyClass = 'h-full';
+
+$message = null;
+$messageType = 'success';
+$emailSent = false;
+
+$extraHead = <<<HTML
+    <style>
+        .form-input {
+            display: block;
+            width: 100%;
+            border-radius: 0.5rem;
+            background-color: #f9fafb;
+            border: 1px solid #d1d5db;
+            padding: 0.625rem 0.875rem;
+            font-size: 0.875rem;
+            color: #111827;
+            outline: none;
+            transition: all 0.15s ease;
+        }
+        .form-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .form-input::placeholder {
+            color: #9ca3af;
+        }
+    </style>
+HTML;
+
+/**
+ * Find user by email across all user tables
+ * Returns user info and type if found
+ */
+function findUserByEmail($db, $email) {
+    // Check users table (super_admin, print_shop, etc.)
+    $user = $db->fetchOne(
+        "SELECT id, email, name, role FROM users WHERE email = :email AND status = 'active'",
+        ['email' => $email]
+    );
+    if ($user) {
+        return ['user' => $user, 'type' => 'user', 'id' => $user['id']];
+    }
+    
+    // Check companies table (company admin)
+    $company = $db->fetchOne(
+        "SELECT id, admin_email as email, name FROM companies WHERE admin_email = :email AND status = 'active'",
+        ['email' => $email]
+    );
+    if ($company) {
+        return ['user' => $company, 'type' => 'company', 'id' => $company['id']];
+    }
+    
+    // Check print_shops table directly by email (print shop's own email field)
+    try {
+        $printShop = $db->fetchOne(
+            "SELECT ps.id, ps.email, ps.name, ps.user_id
+             FROM print_shops ps 
+             WHERE ps.email = :email AND (ps.status = 'active' OR ps.status IS NULL)",
+            ['email' => $email]
+        );
+        if ($printShop) {
+            // Print shop found - we need to update the linked user's password
+            // If there's a user_id, use that. Otherwise, try to find user by original email.
+            $userId = $printShop['user_id'];
+            
+            if ($userId) {
+                // Get the user record to ensure it exists
+                $linkedUser = $db->fetchOne("SELECT id, email FROM users WHERE id = :id", ['id' => $userId]);
+                if ($linkedUser) {
+                    // Also update the user's email to match print shop email if different
+                    if ($linkedUser['email'] !== $email) {
+                        try {
+                            $db->update('users', ['email' => $email], 'id = :id', ['id' => $userId]);
+                        } catch (Exception $e) {
+                            // Email might conflict, ignore
+                        }
+                    }
+                    return ['user' => $printShop, 'type' => 'print_shop', 'id' => $userId, 'print_shop_id' => $printShop['id']];
+                }
+            }
+            
+            // No valid user link - return with print_shop prefix for handling
+            return ['user' => $printShop, 'type' => 'print_shop', 'id' => 'ps_' . $printShop['id'], 'print_shop_id' => $printShop['id']];
+        }
+    } catch (Exception $e) {
+        // print_shops table might not exist
+        error_log("Print shop lookup error: " . $e->getMessage());
+    }
+    
+    // Check employees table
+    $employee = $db->fetchOne(
+        "SELECT id, email, name_en as name FROM employees WHERE email = :email AND status = 'active'",
+        ['email' => $email]
+    );
+    if ($employee) {
+        return ['user' => $employee, 'type' => 'employee', 'id' => $employee['id']];
+    }
+    
+    return null;
+}
+
+/**
+ * Generate and store password reset token
+ */
+function createPasswordResetToken($db, $email, $userType, $userId) {
+    // Delete any existing tokens for this email
+    try {
+        $db->query(
+            "DELETE FROM password_reset_tokens WHERE email = :email",
+            ['email' => $email]
+        );
+    } catch (Exception $e) {
+        // Table might not exist, will be created on first use
+    }
+    
+    // Generate secure token
+    $token = bin2hex(random_bytes(32));
+    $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+    
+    try {
+        $db->insert('password_reset_tokens', [
+            'email' => $email,
+            'token' => $token,
+            'user_type' => $userType,
+            'user_id' => $userId,
+            'expires_at' => $expiresAt
+        ]);
+        return $token;
+    } catch (Exception $e) {
+        error_log("Failed to create password reset token: " . $e->getMessage());
+        return null;
+    }
+}
+
+/**
+ * Send password reset email
+ */
+function sendPasswordResetEmail($email, $name, $token) {
+    $resetUrl = getBaseUrl() . 'reset-password.php?token=' . urlencode($token);
+    $siteName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
+    
+    $subject = "Reset Your Password - {$siteName}";
+    $body = <<<HTML
+<h2>Password Reset Request</h2>
+<p>Hi {$name},</p>
+<p>We received a request to reset the password for your account associated with <strong>{$email}</strong>.</p>
+
+<p style="text-align: center; margin: 30px 0;">
+    <a href="{$resetUrl}" class="btn" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+        Reset Password
+    </a>
+</p>
+
+<div class="info-box" style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 15px 0; border-radius: 0 4px 4px 0;">
+    <strong>Security Information:</strong>
+    <ul style="margin: 10px 0; padding-left: 20px;">
+        <li>This link will expire in <strong>1 hour</strong></li>
+        <li>If you didn't request this, you can safely ignore this email</li>
+        <li>Your password won't change until you create a new one</li>
+    </ul>
+</div>
+
+<p style="color: #6b7280; font-size: 14px;">
+    If the button doesn't work, copy and paste this URL into your browser:<br>
+    <a href="{$resetUrl}" style="color: #2563eb; word-break: break-all;">{$resetUrl}</a>
+</p>
+
+<p>Best regards,<br>The {$siteName} Team</p>
+HTML;
+    
+    return Mailer::send($email, $subject, $body);
+}
+
+/**
+ * Send email when no account is found
+ */
+function sendNoAccountEmail($email) {
+    $siteName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
+    $registerUrl = getBaseUrl() . 'company/register.php';
+    $contactUrl = getBaseUrl() . 'contact.php';
+    
+    $subject = "Password Reset Attempted - {$siteName}";
+    $body = <<<HTML
+<h2>Password Reset Attempted</h2>
+<p>Hi there,</p>
+<p>Someone (hopefully you) requested a password reset for <strong>{$email}</strong> on {$siteName}.</p>
+
+<div class="warning-box" style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; margin: 15px 0; border-radius: 0 4px 4px 0;">
+    <strong>No account found</strong><br>
+    We couldn't find an account associated with this email address.
+</div>
+
+<p>This could mean:</p>
+<ul style="margin: 15px 0; padding-left: 20px;">
+    <li>You haven't registered yet</li>
+    <li>You registered with a different email address</li>
+    <li>Your account may have been created by your company administrator with a different email</li>
+</ul>
+
+<h3>What you can do:</h3>
+
+<p><strong>If you're a company administrator:</strong></p>
+<p style="text-align: center; margin: 20px 0;">
+    <a href="{$registerUrl}" class="btn" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+        Register Your Company
+    </a>
+</p>
+
+<p><strong>If you're an employee:</strong></p>
+<p>Contact your company administrator to set up your account or check which email was used for your profile.</p>
+
+<p><strong>Need help?</strong></p>
+<p>If you believe this is an error, please <a href="{$contactUrl}" style="color: #2563eb;">contact us</a> and we'll help you sort it out.</p>
+
+<div class="info-box" style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 15px 0; border-radius: 0 4px 4px 0;">
+    <strong>Security Note:</strong><br>
+    If you didn't request this, you can safely ignore this email. No action is required.
+</div>
+
+<p>Best regards,<br>The {$siteName} Team</p>
+HTML;
+    
+    return Mailer::send($email, $subject, $body);
+}
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $message = 'Invalid request. Please try again.';
+        $messageType = 'error';
+    } else {
+    $email = sanitizeEmail($_POST['email'] ?? '');
+    
+    if (empty($email)) {
+        $message = 'Please enter your email address';
+        $messageType = 'error';
+    } else {
+        if (DatabaseAdapter::useDatabase()) {
+            try {
+                $db = Database::getInstance();
+                $userInfo = findUserByEmail($db, $email);
+                
+                if ($userInfo) {
+                    // User found - generate token and send password reset email
+                    error_log("=== FORGOT PASSWORD ===");
+                    error_log("User found: " . json_encode($userInfo));
+                    error_log("Creating token with type={$userInfo['type']}, id={$userInfo['id']}");
+                    
+                    $token = createPasswordResetToken(
+                        $db, 
+                        $email, 
+                        $userInfo['type'], 
+                        $userInfo['id']
+                    );
+                    
+                    if ($token) {
+                        $name = $userInfo['user']['name'] ?? 'User';
+                        $emailResult = sendPasswordResetEmail($email, $name, $token);
+                        
+                        if (!$emailResult) {
+                            error_log("Failed to send password reset email to: $email");
+                        }
+                    }
+                } else {
+                    // No account found - send informational email
+                    $emailResult = sendNoAccountEmail($email);
+                    
+                    if (!$emailResult) {
+                        error_log("Failed to send no-account email to: $email");
+                    }
+                }
+                
+                // Always show same message for security (don't reveal if email exists)
+                $emailSent = true;
+                $message = 'We\'ve sent an email to that address with further instructions.';
+                
+            } catch (Exception $e) {
+                error_log("Password reset error: " . $e->getMessage());
+                $message = 'An error occurred. Please try again later.';
+                $messageType = 'error';
+            }
+        } else {
+            $message = 'Password reset is not available in file-based mode.';
+            $messageType = 'error';
+        }
+    }
+    } // end CSRF else
+}
+?>
+<?php require_once INCLUDES_DIR . '/ui-header.php'; ?>
+    <div class="flex flex-col justify-center items-center px-6 pt-8 mx-auto min-h-screen">
+        <a href="<?php echo getBasePath(); ?>" class="flex items-center gap-3 mb-8 lg:mb-10">
+            <img src="<?php echo assetUrl('images/logo.svg'); ?>" class="h-10 w-auto" alt="<?php echo $brandName; ?>">
+            <span class="text-xl font-bold text-gray-900"><?php echo $brandName; ?></span>
+        </a>
+        
+        <!-- Card -->
+        <div class="w-full bg-white rounded-2xl shadow-lg border border-gray-100 sm:max-w-md xl:p-0">
+            <div class="p-6 sm:p-8">
+                <?php if ($emailSent): ?>
+                <!-- Success State -->
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fa-solid fa-envelope-circle-check text-3xl text-green-600"></i>
+                    </div>
+                    <h2 class="mb-3 text-2xl font-bold text-gray-900">
+                        Check your email
+                    </h2>
+                    <p class="text-gray-500 mb-6">
+                        <?php echo htmlspecialchars($message); ?>
+                    </p>
+                    <p class="text-sm text-gray-400 mb-6">
+                        Didn't receive the email? Check your spam folder or try again.
+                    </p>
+                    <a href="<?php echo getBasePath(); ?>login.php" class="inline-flex items-center justify-center w-full px-5 py-3 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors">
+                        <i class="fa-solid fa-arrow-left mr-2"></i>
+                        Back to sign in
+                    </a>
+                </div>
+                <?php else: ?>
+                <!-- Form State -->
+                <h2 class="mb-3 text-2xl font-bold text-gray-900">
+                    Forgot your password?
+                </h2>
+                <p class="text-gray-500 mb-6">
+                    No worries! Enter your email address and we'll send you instructions to reset your password.
+                </p>
+                
+                <?php if ($message && $messageType === 'error'): ?>
+                <div class="mb-6 flex items-center gap-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">
+                    <i class="fa-solid fa-circle-exclamation flex-shrink-0"></i>
+                    <span><?php echo htmlspecialchars($message); ?></span>
+                </div>
+                <?php endif; ?>
+                
+                <form method="POST" class="space-y-6">
+                    <?php echo csrfField(); ?>
+                    <div>
+                        <label for="email" class="block mb-2 text-sm font-medium text-gray-900">
+                            Email address
+                        </label>
+                        <input type="email" name="email" id="email" 
+                               value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
+                               class="form-input" 
+                               placeholder="name@company.com" required>
+                    </div>
+                    
+                    <button type="submit" class="w-full px-5 py-3 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors">
+                        Send reset link
+                        <i class="fa-solid fa-paper-plane ml-2"></i>
+                    </button>
+                </form>
+                
+                <p class="mt-6 text-center text-sm text-gray-500">
+                    Remember your password?
+                    <a href="<?php echo getBasePath(); ?>login.php" class="font-semibold text-blue-600 hover:text-blue-500">
+                        Sign in
+                    </a>
+                </p>
+                <?php endif; ?>
+            </div>
+        </div>
+        
+        <!-- Back to Home -->
+        <p class="mt-8 text-center text-sm text-gray-500">
+            <a href="<?php echo getBasePath(); ?>" class="font-medium text-gray-700 hover:text-gray-900">
+                <i class="fa-solid fa-arrow-left mr-1"></i>
+                Back to homepage
+            </a>
+        </p>
+    </div>
+<?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>

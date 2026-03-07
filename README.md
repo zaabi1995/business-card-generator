@@ -2,7 +2,7 @@
 
 [![PHP Version](https://img.shields.io/badge/PHP-7.4%2B-blue.svg)](https://php.net)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Database](https://img.shields.io/badge/Database-MySQL%20%7C%20PostgreSQL-orange.svg)](DOCUMENTATION.md)
+[![Database](https://img.shields.io/badge/Database-MySQL%20%7C%20PostgreSQL-orange.svg)](docs/DOCUMENTATION.md)
 
 > Professional PHP-based business card generator with visual template editor. Full multi-tenant SaaS platform where companies can manage employees, create branded templates, and generate downloadable business cards instantly.
 
@@ -57,11 +57,11 @@
 
 ### Manual Installation
 
-See [DOCUMENTATION.md](DOCUMENTATION.md#installation-guide) for detailed manual installation instructions.
+See [DOCUMENTATION.md](docs/DOCUMENTATION.md#installation-guide) for detailed manual installation instructions.
 
 ## ⚙️ Configuration
 
-See [DOCUMENTATION.md](DOCUMENTATION.md#configuration) for complete configuration guide including:
+See [DOCUMENTATION.md](docs/DOCUMENTATION.md#configuration) for complete configuration guide including:
 - Database settings
 - Billing integration (Amwal Pay/Stripe)
 - Webhook setup
@@ -83,7 +83,7 @@ See [DOCUMENTATION.md](DOCUMENTATION.md#configuration) for complete configuratio
 2. Enter company code and email
 3. Generate and download business card
 
-📚 **Full usage guide:** See [DOCUMENTATION.md](DOCUMENTATION.md#usage-guide)
+📚 **Full usage guide:** See [DOCUMENTATION.md](docs/DOCUMENTATION.md#usage-guide)
 
 ## 💻 Development
 
@@ -94,7 +94,7 @@ See [DOCUMENTATION.md](DOCUMENTATION.md#configuration) for complete configuratio
 php -S 127.0.0.1:8000
 
 # Or use your preferred web server
-# Apache/Nginx configuration examples in DOCUMENTATION.md
+# Apache/Nginx configuration examples in docs/DOCUMENTATION.md
 ```
 
 Then open `http://127.0.0.1:8000`
@@ -119,7 +119,7 @@ Then open `http://127.0.0.1:8000`
 └── config.example.php # Configuration template
 ```
 
-📚 **Full project structure:** See [DOCUMENTATION.md](DOCUMENTATION.md#file-structure-reference)
+📚 **Full project structure:** See [DOCUMENTATION.md](docs/DOCUMENTATION.md#file-structure-reference)
 
 ## 💳 Subscription Plans
 
@@ -135,14 +135,14 @@ Then open `http://127.0.0.1:8000`
 - ✅ Password hashing (bcrypt)
 - ✅ SQL injection prevention (PDO prepared statements)
 - ✅ Input sanitization
-- ⚠️ CSRF protection (recommended - see [DOCUMENTATION.md](DOCUMENTATION.md#security))
-- ⚠️ Rate limiting (recommended - see [DOCUMENTATION.md](DOCUMENTATION.md#security))
+- ⚠️ CSRF protection (recommended - see [DOCUMENTATION.md](docs/DOCUMENTATION.md#security))
+- ⚠️ Rate limiting (recommended - see [DOCUMENTATION.md](docs/DOCUMENTATION.md#security))
 
 **Security Policy:** See [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
 
 ## 📚 Documentation
 
-📖 **[Complete Documentation](DOCUMENTATION.md)** - Comprehensive guide covering:
+📖 **[Complete Documentation](docs/DOCUMENTATION.md)** - Comprehensive guide covering:
 - 📋 Installation & Setup
 - 🏗️ Architecture & Design  
 - ⚙️ Configuration
@@ -155,10 +155,16 @@ Then open `http://127.0.0.1:8000`
 - 🐛 Troubleshooting
 
 **Quick Links:**
-- [Installation Guide](DOCUMENTATION.md#installation-guide)
-- [Configuration](DOCUMENTATION.md#configuration)
-- [Usage Guide](DOCUMENTATION.md#usage-guide)
-- [Troubleshooting](DOCUMENTATION.md#troubleshooting)
+- [Installation Guide](docs/DOCUMENTATION.md#installation-guide)
+- [Configuration](docs/DOCUMENTATION.md#configuration)
+- [Usage Guide](docs/DOCUMENTATION.md#usage-guide)
+- [Troubleshooting](docs/DOCUMENTATION.md#troubleshooting)
+
+**Integration Guides:**
+- [Amwal Pay Integration](docs/AMWAL_PAY_INTEGRATION.md)
+- [Odoo Integration](docs/ODOO_INTEGRATION.md)
+- [WhatsApp Integration](docs/WHATSAPP_INTEGRATION.md)
+- [Deployment Checklist](docs/DEPLOYMENT_CHECKLIST.md)
 
 ## 🤝 Contributing
 
@@ -176,7 +182,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Bug Reports:** [Open an issue](https://github.com/zaabi1995/business-card-generator/issues/new?template=bug_report.md)
 - **Feature Requests:** [Suggest a feature](https://github.com/zaabi1995/business-card-generator/issues/new?template=feature_request.md)
-- **Questions:** Check [Documentation](DOCUMENTATION.md) or open a discussion
+- **Questions:** Check [Documentation](docs/DOCUMENTATION.md) or open a discussion
 
 ## 🌟 Star History
 

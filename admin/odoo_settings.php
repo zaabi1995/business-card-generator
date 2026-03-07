@@ -3,15 +3,18 @@
  * Odoo ERP Integration Settings - Cardify
  */
 require_once __DIR__ . '/../config.php';
-Auth::requireRole('super_admin');
+require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/OdooIntegration.php';
 require_once INCLUDES_DIR . '/admin-layout.php';
+
+Auth::requireRole('super_admin');
 
 $db = Database::getInstance();
 $message = null;
 $messageType = 'success';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
     $action = $_POST['action'] ?? '';
     
     if ($action === 'update_settings') {
@@ -50,6 +53,7 @@ adminHeader('Odoo Integration', 'odoo');
 <?php endif; ?>
 
 <form method="post" class="space-y-6">
+    <?php echo csrfField(); ?>
     <input type="hidden" name="action" value="update_settings">
     
     <!-- Connection Settings -->

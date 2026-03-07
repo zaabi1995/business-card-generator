@@ -18,12 +18,11 @@
         }
     ],
     "require": {
-        "php": ">=7.4"
+        "php": ">=7.4",
+        "tecnickcom/tcpdf": "^6.10"
     },
-    "require-dev": {},
     "suggest": {
-        "phpoffice/phpspreadsheet": "For Excel file import support",
-        "tecnickcom/tcpdf": "For PDF export support"
+        "phpoffice/phpspreadsheet": "For Excel file import support"
     },
     "autoload": {
         "psr-4": {}
@@ -34,4 +33,3 @@
     },
     "homepage": "https://github.com/zaabi1995/business-card-generator"
 }
-

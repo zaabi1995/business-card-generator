@@ -12,9 +12,11 @@ Auth::requireRole('super_admin');
 
 $message = null;
 $messageType = 'success';
+$detailedErrors = [];
 
 // Handle migration execution
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
     $action = $_POST['action'] ?? '';
     
     if ($action === 'run_migration') {
@@ -27,8 +29,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message = 'Migration ' . $migrationNumber . ' executed successfully!';
                 $messageType = 'success';
             } else {
-                $message = $result['error'] ?? 'Migration failed';
+                $message = 'Migration ' . $migrationNumber . ' failed';
                 $messageType = 'error';
+                $detailedErrors[] = [
+                    'migration' => $migrationNumber,
+                    'error' => $result['error'] ?? 'Unknown error'
+                ];
+            }
+        }
+    } elseif ($action === 'recheck_migration') {
+        // Re-run migration to verify it works (ignores "already executed" check)
+        $migrationNumber = (int)($_POST['migration_number'] ?? 0);
+        
+        if ($migrationNumber > 0) {
+            $result = MigrationRunner::recheckMigration($migrationNumber);
+            
+            if ($result['success']) {
+                $message = 'Migration ' . $migrationNumber . ' re-checked successfully! All changes verified.';
+                $messageType = 'success';
+            } else {
+                $message = 'Migration ' . $migrationNumber . ' re-check found issues';
+                $messageType = 'error';
+                $detailedErrors[] = [
+                    'migration' => $migrationNumber,
+                    'error' => $result['error'] ?? 'Unknown error'
+                ];
+            }
+        }
+    } elseif ($action === 'force_rerun') {
+        // Force re-run migration (reset and run again, optionally drop tables)
+        $migrationNumber = (int)($_POST['migration_number'] ?? 0);
+        $dropTables = isset($_POST['drop_tables']) && $_POST['drop_tables'] === '1';
+        
+        if ($migrationNumber > 0) {
+            $result = MigrationRunner::forceRerun($migrationNumber, $dropTables);
+            
+            if ($result['success']) {
+                $message = 'Migration ' . $migrationNumber . ' force re-run successfully!' . ($dropTables ? ' (tables recreated)' : '');
+                $messageType = 'success';
+            } else {
+                $message = 'Migration ' . $migrationNumber . ' force re-run failed';
+                $messageType = 'error';
+                $detailedErrors[] = [
+                    'migration' => $migrationNumber,
+                    'error' => $result['error'] ?? 'Unknown error'
+                ];
             }
         }
     } elseif ($action === 'run_all') {
@@ -41,6 +86,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $successCount++;
             } else {
                 $failCount++;
+                $detailedErrors[] = [
+                    'migration' => $item['migration']['number'] ?? '?',
+                    'name' => $item['migration']['name'] ?? 'Unknown',
+                    'error' => $item['result']['error'] ?? 'Unknown error'
+                ];
             }
         }
         
@@ -63,9 +113,22 @@ adminHeader('Database Updates', 'updates');
 ?>
 
 <?php if ($message): ?>
-<div class="mb-6 p-4 rounded-lg flex items-center <?php echo $messageType === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'; ?>">
-    <i class="fa-solid <?php echo $messageType === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'; ?> mr-3"></i>
-    <?php echo sanitize($message); ?>
+<div class="mb-6 p-4 rounded-lg <?php echo $messageType === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'; ?>">
+    <div class="flex items-center">
+        <i class="fa-solid <?php echo $messageType === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'; ?> mr-3"></i>
+        <?php echo sanitize($message); ?>
+    </div>
+    <?php if (!empty($detailedErrors)): ?>
+    <div class="mt-4 pt-4 border-t <?php echo $messageType === 'success' ? 'border-green-200' : 'border-red-200'; ?>">
+        <p class="font-semibold mb-2">Error Details:</p>
+        <?php foreach ($detailedErrors as $err): ?>
+        <div class="bg-white/50 rounded p-3 mb-2 text-sm">
+            <p class="font-medium">Migration #<?php echo $err['migration']; ?><?php echo isset($err['name']) ? ' - ' . sanitize($err['name']) : ''; ?></p>
+            <p class="mt-1 font-mono text-xs break-all"><?php echo sanitize($err['error']); ?></p>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
 </div>
 <?php endif; ?>
 
@@ -117,6 +180,7 @@ adminHeader('Database Updates', 'updates');
             <p class="text-sm text-gray-500 mt-1">Execute all <?php echo count($pendingMigrations); ?> pending database updates in order</p>
         </div>
         <form method="post" onsubmit="return confirm('Run all pending migrations? This will update your database.');">
+            <?php echo csrfField(); ?>
             <input type="hidden" name="action" value="run_all">
             <button type="submit" class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2">
                 <i class="fa-solid fa-play"></i>
@@ -148,14 +212,34 @@ adminHeader('Database Updates', 'updates');
                 </div>
             </div>
             
-            <div>
+            <div class="flex items-center gap-2">
                 <?php if ($isExecuted): ?>
                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
                     <i class="fa-solid fa-check"></i>
                     Executed
                 </span>
+                <form method="post" class="inline" onsubmit="return confirm('Re-check migration #<?php echo $migration['number']; ?>? This will re-run the migration to verify all changes are in place.');">
+                    <?php echo csrfField(); ?>
+                    <input type="hidden" name="action" value="recheck_migration">
+                    <input type="hidden" name="migration_number" value="<?php echo $migration['number']; ?>">
+                    <button type="submit" class="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium rounded-lg transition-colors text-sm flex items-center gap-1.5" title="Re-run migration to verify changes">
+                        <i class="fa-solid fa-rotate"></i>
+                        Re-check
+                    </button>
+                </form>
+                <form method="post" class="inline" onsubmit="return confirm('FORCE RE-RUN migration #<?php echo $migration['number']; ?>?\n\nThis will:\n1. Remove this migration from the executed list\n2. Drop any tables created by this migration\n3. Run the migration fresh\n\nUse this if the migration was partially completed or corrupted.');">
+                    <?php echo csrfField(); ?>
+                    <input type="hidden" name="action" value="force_rerun">
+                    <input type="hidden" name="migration_number" value="<?php echo $migration['number']; ?>">
+                    <input type="hidden" name="drop_tables" value="1">
+                    <button type="submit" class="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-lg transition-colors text-sm flex items-center gap-1.5" title="Reset and re-run migration (drops tables)">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        Force Rerun
+                    </button>
+                </form>
                 <?php else: ?>
                 <form method="post" class="inline" onsubmit="return confirm('Run migration #<?php echo $migration['number']; ?>?');">
+                    <?php echo csrfField(); ?>
                     <input type="hidden" name="action" value="run_migration">
                     <input type="hidden" name="migration_number" value="<?php echo $migration['number']; ?>">
                     <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors text-sm flex items-center gap-2">

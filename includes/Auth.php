@@ -13,53 +13,168 @@ class Auth {
     }
     
     /**
-     * Unified login - detects user type and logs them in
+     * Unified login - auto-detects user type and logs them in
+     * Flow: users table -> employees table -> company admins -> not found
      */
-    public static function login($email, $password, $companySlug = null) {
+    public static function unifiedLogin($email, $password) {
         self::init();
         
-        if (!self::$db->isConnected()) {
+        if (!self::$db || !self::$db->isConnected()) {
             return ['success' => false, 'error' => 'Database not connected'];
         }
         
-        // Try to find user in users table first (unified auth)
+        $email = sanitizeEmail($email);
+        
+        // Step 1: Check users table (super_admin, admin, company roles)
         $user = self::$db->fetchOne(
             "SELECT * FROM users WHERE email = :email AND status = 'active'",
-            ['email' => sanitizeEmail($email)]
+            ['email' => $email]
         );
         
-        if ($user && password_verify($password, $user['password_hash'])) {
-            // User found in unified users table
-            return self::loginUser($user);
-        }
-        
-        // Fallback: Try company login (legacy)
-        if ($companySlug) {
-            $company = self::$db->fetchOne(
-                "SELECT * FROM companies WHERE slug = :slug AND status = 'active'",
-                ['slug' => $companySlug]
-            );
-            
-            if ($company && password_verify($password, $company['password_hash'])) {
-                // Check if email matches company admin email
-                if (strtolower($company['admin_email']) === strtolower($email)) {
-                    return self::loginCompany($company);
-                }
+        if ($user) {
+            if (password_verify($password, $user['password_hash'])) {
+                return self::loginUser($user);
             }
+            return ['success' => false, 'error' => 'Invalid password'];
         }
         
-        return ['success' => false, 'error' => 'Invalid credentials'];
+        // Step 2: Check employees table
+        $employee = self::$db->fetchOne(
+            "SELECT e.*, c.slug as company_slug, c.name as company_name 
+             FROM employees e 
+             JOIN companies c ON e.company_id = c.id 
+             WHERE e.email = :email AND e.status = 'active' AND c.status = 'active'",
+            ['email' => $email]
+        );
+        
+        if ($employee) {
+            // Check employee password (if they have one set)
+            if (!empty($employee['password_hash'])) {
+                if (password_verify($password, $employee['password_hash'])) {
+                    return self::loginEmployee($employee);
+                }
+                return ['success' => false, 'error' => 'Invalid password'];
+            }
+            // Employee exists but has no password - need to set one up
+            return ['success' => false, 'error' => 'Please contact your administrator to set up your password'];
+        }
+        
+        // Step 3: Check company admin_email (legacy companies table login)
+        $company = self::$db->fetchOne(
+            "SELECT * FROM companies WHERE admin_email = :email AND status = 'active'",
+            ['email' => $email]
+        );
+        
+        if ($company) {
+            if (!empty($company['password_hash']) && password_verify($password, $company['password_hash'])) {
+                return self::loginCompany($company);
+            }
+            return ['success' => false, 'error' => 'Invalid password'];
+        }
+        
+        // Step 4: Email not found anywhere - redirect to signup
+        return ['success' => false, 'not_found' => true, 'error' => 'Email not registered'];
+    }
+    
+    /**
+     * Legacy login method - kept for backward compatibility
+     */
+    public static function login($email, $password, $companySlug = null) {
+        // Use unified login for better detection
+        return self::unifiedLogin($email, $password);
+    }
+    
+    /**
+     * Login employee
+     */
+    private static function loginEmployee($employee) {
+        $_SESSION['user_id'] = $employee['id'];
+        $_SESSION['user_email'] = $employee['email'];
+        $_SESSION['user_name'] = $employee['name_en'] ?? $employee['name'] ?? $employee['email'];
+        $_SESSION['user_role'] = 'employee';
+        $_SESSION['user_company_id'] = $employee['company_id'];
+        $_SESSION['company_id'] = $employee['company_id'];
+        $_SESSION['company_slug'] = $employee['company_slug'];
+        $_SESSION['company_name'] = $employee['company_name'];
+        $_SESSION['employee_id'] = $employee['id'];
+        
+        // Update last login if column exists
+        try {
+            self::$db->update('employees',
+                ['updated_at' => date('Y-m-d H:i:s')],
+                'id = :id',
+                ['id' => $employee['id']]
+            );
+        } catch (Exception $e) {
+            // Column might not exist, ignore
+        }
+        
+        // Audit log
+        if (class_exists('AuditLog')) {
+            AuditLog::log('login', 'employee', $employee['id'], null, ['email' => $employee['email']], $employee['company_id']);
+        }
+        
+        return [
+            'success' => true,
+            'user' => $employee,
+            'redirect' => getBasePath() . $employee['company_slug'] . '/'
+        ];
+    }
+    
+    /**
+     * Check if email exists in any table
+     * Returns: array with 'exists' => bool, 'type' => string (user|employee|company|null)
+     */
+    public static function emailExists($email) {
+        self::init();
+        
+        if (!self::$db || !self::$db->isConnected()) {
+            return ['exists' => false, 'type' => null];
+        }
+        
+        $email = sanitizeEmail($email);
+        
+        // Check users table
+        $user = self::$db->fetchOne(
+            "SELECT id, role FROM users WHERE email = :email",
+            ['email' => $email]
+        );
+        if ($user) {
+            return ['exists' => true, 'type' => 'user', 'role' => $user['role']];
+        }
+        
+        // Check employees table
+        $employee = self::$db->fetchOne(
+            "SELECT id, company_id FROM employees WHERE email = :email",
+            ['email' => $email]
+        );
+        if ($employee) {
+            return ['exists' => true, 'type' => 'employee', 'company_id' => $employee['company_id']];
+        }
+        
+        // Check companies table (admin_email)
+        $company = self::$db->fetchOne(
+            "SELECT id, slug FROM companies WHERE admin_email = :email",
+            ['email' => $email]
+        );
+        if ($company) {
+            return ['exists' => true, 'type' => 'company', 'company_id' => $company['id']];
+        }
+        
+        return ['exists' => false, 'type' => null];
     }
     
     /**
      * Login user from users table
      */
-    private static function loginUser($user) {
+    public static function loginUser($user) {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_name'] = $user['name'];
         $_SESSION['user_role'] = $user['role'];
+        $_SESSION['user_company_id'] = $user['company_id'] ?? null;
         
+        $companySlug = null;
         if ($user['company_id']) {
             $_SESSION['company_id'] = $user['company_id'];
             $company = self::$db->fetchOne(
@@ -69,6 +184,7 @@ class Auth {
             if ($company) {
                 $_SESSION['company_slug'] = $company['slug'];
                 $_SESSION['company_name'] = $company['name'];
+                $companySlug = $company['slug'];
             }
         }
         
@@ -79,10 +195,15 @@ class Auth {
             ['id' => $user['id']]
         );
         
+        // Audit log
+        if (class_exists('AuditLog')) {
+            AuditLog::log('login', 'user', $user['id'], null, ['email' => $user['email'], 'role' => $user['role']], $user['company_id']);
+        }
+        
         return [
             'success' => true,
             'user' => $user,
-            'redirect' => self::getRedirectUrl($user['role'])
+            'redirect' => self::getRedirectUrl($user['role'], $companySlug)
         ];
     }
     
@@ -90,31 +211,53 @@ class Auth {
      * Login company (legacy support)
      */
     private static function loginCompany($company) {
+        // Set user_id using company id prefixed to distinguish from user table ids
+        $_SESSION['user_id'] = 'company_' . $company['id'];
+        $_SESSION['user_company_id'] = $company['id'];
         $_SESSION['company_id'] = $company['id'];
         $_SESSION['company_slug'] = $company['slug'];
         $_SESSION['company_name'] = $company['name'];
-        $_SESSION['user_role'] = 'company';
+        $_SESSION['user_role'] = 'company_admin';
         $_SESSION['user_email'] = $company['admin_email'];
+        $_SESSION['user_name'] = $company['name'] ?? 'Admin';
+        
+        // Audit log
+        if (class_exists('AuditLog')) {
+            AuditLog::log('login', 'company', $company['id'], null, ['email' => $company['admin_email']], $company['id']);
+        }
         
         return [
             'success' => true,
             'company' => $company,
-            'redirect' => getBasePath() . 'admin/'
+            'redirect' => getBasePath() . $company['slug'] . '/admin/'
         ];
     }
     
     /**
      * Get redirect URL based on role
+     * @param string $role User role
+     * @param string|null $companySlug Company slug for portal redirect
      */
-    private static function getRedirectUrl($role) {
+    private static function getRedirectUrl($role, $companySlug = null) {
         switch ($role) {
             case 'super_admin':
-                return getBasePath() . 'admin/super/';
-            case 'admin':
                 return getBasePath() . 'admin/';
+            case 'print_shop':
+                // Redirect print shops to their dashboard
+                return getBasePath() . 'printshop/dashboard.php';
+            case 'company_admin':
+            case 'admin':
             case 'company':
+                // Redirect company admins to their admin panel
+                if ($companySlug) {
+                    return getBasePath() . $companySlug . '/admin/';
+                }
                 return getBasePath() . 'admin/';
             case 'employee':
+                // Redirect employees to their company portal
+                if ($companySlug) {
+                    return getBasePath() . $companySlug . '/';
+                }
                 return getBasePath();
             default:
                 return getBasePath() . 'admin/';
@@ -123,9 +266,10 @@ class Auth {
     
     /**
      * Check if user is logged in
+     * Only checks for user_id which is only set on successful authentication
      */
     public static function isLoggedIn() {
-        return isset($_SESSION['user_id']) || isset($_SESSION['company_id']);
+        return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
     }
     
     /**
@@ -136,17 +280,39 @@ class Auth {
     }
     
     /**
-     * Check if user has specific role
+     * Check if user has specific role (supports string or array of roles)
+     * @param string|array $role Single role string or array of roles (any match = true)
      */
     public static function hasRole($role) {
         $currentRole = self::getCurrentRole();
+        
+        // Support array of roles: return true if user has any of them
+        if (is_array($role)) {
+            foreach ($role as $r) {
+                if (self::hasRole($r)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         if ($role === 'super_admin') {
             return $currentRole === 'super_admin';
         }
         if ($role === 'admin') {
-            return in_array($currentRole, ['super_admin', 'admin', 'company']);
+            return in_array($currentRole, ['super_admin', 'admin', 'company', 'company_admin']);
+        }
+        if ($role === 'company_admin') {
+            return in_array($currentRole, ['super_admin', 'admin', 'company', 'company_admin']);
         }
         return $currentRole === $role;
+    }
+    
+    /**
+     * Check if current user is a super admin
+     */
+    public static function isSuperAdmin() {
+        return self::hasRole('super_admin');
     }
     
     /**
@@ -160,7 +326,19 @@ class Auth {
     }
     
     /**
+     * Require user to be logged in (any role)
+     */
+    public static function requireLogin() {
+        if (!self::isLoggedIn()) {
+            header('Location: ' . getBasePath() . 'login.php');
+            exit;
+        }
+    }
+    
+    /**
      * Get current user
+     * Handles employees (user_id = employee ID), legacy company admins (user_id = company_X),
+     * and regular users (user_id = users table ID).
      */
     public static function getCurrentUser() {
         if (!self::isLoggedIn()) {
@@ -169,14 +347,64 @@ class Auth {
         
         self::init();
         
-        if (isset($_SESSION['user_id'])) {
-            return self::$db->fetchOne(
-                "SELECT * FROM users WHERE id = :id",
-                ['id' => $_SESSION['user_id']]
+        $userId = $_SESSION['user_id'] ?? null;
+        $userRole = $_SESSION['user_role'] ?? null;
+        
+        // Case 1: Employee — user_id holds the employee's ID
+        if ($userRole === 'employee' && $userId) {
+            $employee = self::$db->fetchOne(
+                "SELECT e.*, c.slug as company_slug, c.name as company_name 
+                 FROM employees e 
+                 LEFT JOIN companies c ON e.company_id = c.id 
+                 WHERE e.id = :id",
+                ['id' => $userId]
             );
+            if ($employee) {
+                return [
+                    'id' => $employee['id'],
+                    'email' => $employee['email'],
+                    'name' => $employee['name_en'] ?? $employee['name'] ?? $employee['email'],
+                    'role' => 'employee',
+                    'company_id' => $employee['company_id'],
+                    'company_slug' => $employee['company_slug'] ?? null,
+                    'company_name' => $employee['company_name'] ?? null,
+                    'employee' => $employee
+                ];
+            }
         }
         
-        // Legacy company session
+        // Case 2: Legacy company admin — user_id is "company_X"
+        if ($userId && is_string($userId) && strpos($userId, 'company_') === 0) {
+            $companyId = substr($userId, 8); // strip "company_" prefix
+            $company = self::$db->fetchOne(
+                "SELECT * FROM companies WHERE id = :id",
+                ['id' => $companyId]
+            );
+            if ($company) {
+                return [
+                    'id' => $company['id'],
+                    'email' => $company['admin_email'],
+                    'name' => $company['name'],
+                    'role' => 'company_admin',
+                    'company_id' => $company['id'],
+                    'company_slug' => $company['slug'] ?? null,
+                    'company_name' => $company['name'] ?? null
+                ];
+            }
+        }
+        
+        // Case 3: Regular user from users table
+        if ($userId) {
+            $user = self::$db->fetchOne(
+                "SELECT * FROM users WHERE id = :id",
+                ['id' => $userId]
+            );
+            if ($user) {
+                return $user;
+            }
+        }
+        
+        // Fallback: Legacy company session without user_id prefix
         if (isset($_SESSION['company_id'])) {
             $company = self::$db->fetchOne(
                 "SELECT * FROM companies WHERE id = :id",

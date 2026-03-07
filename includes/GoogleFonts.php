@@ -82,6 +82,11 @@ class GoogleFonts {
         // Arabic - Calligraphic
         'Aref Ruqaa' => ['weights' => ['Regular', 'Bold'], 'family' => 'Aref+Ruqaa'],
         'Markazi Text' => ['weights' => ['Regular', 'Medium', 'Bold'], 'family' => 'Markazi+Text'],
+        'Mirza' => ['weights' => ['Regular', 'Medium', 'Bold'], 'family' => 'Mirza'],
+        'Rakkas' => ['weights' => ['Regular'], 'family' => 'Rakkas'],
+        'Gulzar' => ['weights' => ['Regular'], 'family' => 'Gulzar'],
+        'Lemonada' => ['weights' => ['Regular', 'Medium', 'Bold'], 'family' => 'Lemonada'],
+        'Noto Nastaliq Urdu' => ['weights' => ['Regular', 'Bold'], 'family' => 'Noto+Nastaliq+Urdu'],
     ];
     
     /**

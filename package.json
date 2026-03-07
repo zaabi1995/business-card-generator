@@ -1,0 +1,18 @@
+{
+  "name": "bc.bhd.om",
+  "version": "1.0.0",
+  "description": "[![PHP Version](https://img.shields.io/badge/PHP-7.4%2B-blue.svg)](https://php.net) [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE) [![Database](https://img.shields.io/badge/Database-MySQL%20%7C%20PostgreSQL-orange.svg)](docs/DOCUMENTATION.md)",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

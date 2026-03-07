@@ -1,0 +1,1145 @@
+/**
+ * CardEditor - Fabric.js 7.x based business card editor
+ * Handles canvas rendering, text positioning, QR codes, and export
+ * Compatible with Fabric.js 7.0.0+
+ * 
+ * IMPORTANT Fabric.js 7.x changes:
+ * - originX/originY now default to 'center' (we explicitly set to 'left'/'top')
+ * - Use setDimensions() instead of setWidth/setHeight
+ * - Use getScenePoint/getViewportPoint instead of getPointer
+ * - preserveObjectStacking defaults to true
+ * - Image.fromURL returns a Promise
+ */
+
+// Arabic/Western numeral conversion utilities
+const ArabicNumerals = {
+    western: '0123456789',
+    arabic: '٠١٢٣٤٥٦٧٨٩',
+    
+    /**
+     * Convert Western numerals to Arabic numerals
+     * @param {string} str - Input string
+     * @returns {string} String with Arabic numerals
+     */
+    toArabic: function(str) {
+        if (!str) return str;
+        return str.split('').map(c => {
+            const i = this.western.indexOf(c);
+            return i >= 0 ? this.arabic[i] : c;
+        }).join('');
+    },
+    
+    /**
+     * Convert Arabic numerals to Western numerals
+     * @param {string} str - Input string
+     * @returns {string} String with Western numerals
+     */
+    toWestern: function(str) {
+        if (!str) return str;
+        return str.split('').map(c => {
+            const i = this.arabic.indexOf(c);
+            return i >= 0 ? this.western[i] : c;
+        }).join('');
+    },
+    
+    /**
+     * Check if string contains Arabic numerals
+     * @param {string} str - Input string
+     * @returns {boolean}
+     */
+    hasArabic: function(str) {
+        if (!str) return false;
+        return /[٠-٩]/.test(str);
+    }
+};
+
+// Export for global use
+if (typeof window !== 'undefined') {
+    window.ArabicNumerals = ArabicNumerals;
+}
+
+// Get Fabric.js reference
+function getFabric() {
+    if (typeof fabric !== 'undefined' && fabric.Canvas) {
+        return fabric;
+    }
+    if (typeof window !== 'undefined' && window.fabric && window.fabric.Canvas) {
+        return window.fabric;
+    }
+    return null;
+}
+
+class CardEditor {
+    constructor(canvasId, options = {}) {
+        this.canvasId = canvasId;
+        this.options = {
+            width: options.width || 1050,
+            height: options.height || 600,
+            backgroundColor: options.backgroundColor || '#ffffff',
+            onReady: options.onReady || null,
+            onFieldMove: options.onFieldMove || null,
+            onFieldSelect: options.onFieldSelect || null,
+            ...options
+        };
+        
+        this.canvas = null;
+        this.backgroundImage = null;
+        this.fields = {};
+        this.qrCodeObject = null;
+        this.selectedField = null;
+        this.isReady = false;
+        this.fabricRef = null;
+        
+        // Snapping settings
+        this.snapEnabled = true;
+        this.snapDistance = 15; // Pixels - distance to snap within
+        this.alignmentLines = [];
+        
+        this._init();
+    }
+    
+    async _init() {
+        await this._waitForFabric();
+        
+        this.fabricRef = getFabric();
+        if (!this.fabricRef) {
+            console.error('Fabric.js not loaded!');
+            return;
+        }
+        
+        const canvasEl = document.getElementById(this.canvasId);
+        if (!canvasEl) {
+            console.error('Canvas element not found:', this.canvasId);
+            return;
+        }
+        
+        // Dispose existing canvas if any
+        if (canvasEl.__canvas) {
+            try {
+                canvasEl.__canvas.dispose();
+            } catch (e) {
+                console.warn('Error disposing canvas:', e);
+            }
+        }
+        
+        // Create Fabric.js 7.x canvas
+        try {
+            this.canvas = new this.fabricRef.Canvas(this.canvasId, {
+                width: this.options.width,
+                height: this.options.height,
+                backgroundColor: this.options.backgroundColor,
+                selection: true,
+                preserveObjectStacking: true, // Default in 7.x but explicit for clarity
+                stopContextMenu: true,
+                fireRightClick: true,
+                fireMiddleClick: true
+            });
+            
+            canvasEl.__canvas = this.canvas;
+        } catch (e) {
+            console.error('Error creating Fabric canvas:', e);
+            return;
+        }
+        
+        this._setupEventListeners();
+        
+        this.isReady = true;
+        
+        if (this.options.onReady) {
+            this.options.onReady(this);
+        }
+    }
+    
+    async _waitForFabric(timeout = 5000) {
+        const startTime = Date.now();
+        while (!getFabric()) {
+            if (Date.now() - startTime > timeout) {
+                throw new Error('Fabric.js failed to load within timeout');
+            }
+            await new Promise(resolve => setTimeout(resolve, 50));
+        }
+    }
+    
+    _setupEventListeners() {
+        // Object moving - apply snapping
+        this.canvas.on('object:moving', (e) => {
+            const obj = e.target;
+            if (!obj) return;
+            
+            // Apply snapping if enabled
+            if (this.snapEnabled) {
+                this._snapToGuides(obj);
+            }
+            
+            // Keep within bounds
+            this._constrainToBounds(obj);
+            
+            // Callback
+            if (obj.fieldKey && this.options.onFieldMove) {
+                this.options.onFieldMove(obj.fieldKey, {
+                    x: obj.left,
+                    y: obj.top
+                });
+            }
+        });
+        
+        // Object modified (after move/scale)
+        this.canvas.on('object:modified', (e) => {
+            this._clearAlignmentLines();
+            const obj = e.target;
+            if (obj) {
+                this._constrainToBounds(obj);
+                if (obj.fieldKey && this.options.onFieldMove) {
+                    this.options.onFieldMove(obj.fieldKey, {
+                        x: obj.left,
+                        y: obj.top
+                    });
+                }
+            }
+        });
+        
+        // Clear guides on mouse up
+        this.canvas.on('mouse:up', () => {
+            this._clearAlignmentLines();
+        });
+        
+        // Selection events
+        this.canvas.on('selection:created', (e) => {
+            const obj = e.selected?.[0];
+            if (obj && obj.fieldKey) {
+                this.selectedField = obj.fieldKey;
+                if (this.options.onFieldSelect) {
+                    this.options.onFieldSelect(obj.fieldKey);
+                }
+            }
+        });
+        
+        this.canvas.on('selection:updated', (e) => {
+            const obj = e.selected?.[0];
+            if (obj && obj.fieldKey) {
+                this.selectedField = obj.fieldKey;
+                if (this.options.onFieldSelect) {
+                    this.options.onFieldSelect(obj.fieldKey);
+                }
+            }
+        });
+        
+        this.canvas.on('selection:cleared', () => {
+            this.selectedField = null;
+            if (this.options.onFieldSelect) {
+                this.options.onFieldSelect(null);
+            }
+        });
+    }
+    
+    /**
+     * Snap object to alignment guides (canvas center, edges, other objects)
+     */
+    _snapToGuides(movingObj) {
+        this._clearAlignmentLines();
+        
+        if (!movingObj) return;
+        
+        // Get object dimensions using Fabric.js 7.x methods
+        const objWidth = movingObj.getScaledWidth ? movingObj.getScaledWidth() : (movingObj.width * (movingObj.scaleX || 1));
+        const objHeight = movingObj.getScaledHeight ? movingObj.getScaledHeight() : (movingObj.height * (movingObj.scaleY || 1));
+        
+        // Current position (left/top origin)
+        const objLeft = movingObj.left;
+        const objTop = movingObj.top;
+        const objRight = objLeft + objWidth;
+        const objBottom = objTop + objHeight;
+        const objCenterX = objLeft + objWidth / 2;
+        const objCenterY = objTop + objHeight / 2;
+        
+        const canvasWidth = this.canvas.width;
+        const canvasHeight = this.canvas.height;
+        const centerX = canvasWidth / 2;
+        const centerY = canvasHeight / 2;
+        
+        let snappedX = false;
+        let snappedY = false;
+        
+        // 1. Snap to canvas center (highest priority)
+        if (!snappedX && Math.abs(objCenterX - centerX) < this.snapDistance) {
+            movingObj.set('left', centerX - objWidth / 2);
+            this._drawGuide(centerX, 0, centerX, canvasHeight, '#10b981'); // Green
+            snappedX = true;
+        }
+        if (!snappedY && Math.abs(objCenterY - centerY) < this.snapDistance) {
+            movingObj.set('top', centerY - objHeight / 2);
+            this._drawGuide(0, centerY, canvasWidth, centerY, '#10b981');
+            snappedY = true;
+        }
+        
+        // 2. Snap to canvas edges
+        if (!snappedX) {
+            if (Math.abs(objLeft) < this.snapDistance) {
+                movingObj.set('left', 0);
+                this._drawGuide(1, 0, 1, canvasHeight, '#f59e0b'); // Orange
+                snappedX = true;
+            } else if (Math.abs(objRight - canvasWidth) < this.snapDistance) {
+                movingObj.set('left', canvasWidth - objWidth);
+                this._drawGuide(canvasWidth - 1, 0, canvasWidth - 1, canvasHeight, '#f59e0b');
+                snappedX = true;
+            }
+        }
+        if (!snappedY) {
+            if (Math.abs(objTop) < this.snapDistance) {
+                movingObj.set('top', 0);
+                this._drawGuide(0, 1, canvasWidth, 1, '#f59e0b');
+                snappedY = true;
+            } else if (Math.abs(objBottom - canvasHeight) < this.snapDistance) {
+                movingObj.set('top', canvasHeight - objHeight);
+                this._drawGuide(0, canvasHeight - 1, canvasWidth, canvasHeight - 1, '#f59e0b');
+                snappedY = true;
+            }
+        }
+        
+        // 3. Snap to other objects
+        const otherObjects = this.canvas.getObjects().filter(o => 
+            o !== movingObj && 
+            o.fieldKey && 
+            !o._isAlignmentLine
+        );
+        
+        for (const other of otherObjects) {
+            if (snappedX && snappedY) break;
+            
+            const otherWidth = other.getScaledWidth ? other.getScaledWidth() : (other.width * (other.scaleX || 1));
+            const otherHeight = other.getScaledHeight ? other.getScaledHeight() : (other.height * (other.scaleY || 1));
+            const otherLeft = other.left;
+            const otherTop = other.top;
+            const otherRight = otherLeft + otherWidth;
+            const otherBottom = otherTop + otherHeight;
+            const otherCenterX = otherLeft + otherWidth / 2;
+            const otherCenterY = otherTop + otherHeight / 2;
+            
+            // Recalculate moving object position for accurate comparison
+            const currentLeft = movingObj.left;
+            const currentTop = movingObj.top;
+            const currentCenterX = currentLeft + objWidth / 2;
+            const currentCenterY = currentTop + objHeight / 2;
+            const currentRight = currentLeft + objWidth;
+            const currentBottom = currentTop + objHeight;
+            
+            if (!snappedX) {
+                // Centers aligned horizontally
+                if (Math.abs(currentCenterX - otherCenterX) < this.snapDistance) {
+                    movingObj.set('left', otherCenterX - objWidth / 2);
+                    this._drawGuide(otherCenterX, 0, otherCenterX, canvasHeight, '#3b82f6'); // Blue
+                    snappedX = true;
+                }
+                // Left edges aligned
+                else if (Math.abs(currentLeft - otherLeft) < this.snapDistance) {
+                    movingObj.set('left', otherLeft);
+                    this._drawGuide(otherLeft, 0, otherLeft, canvasHeight, '#3b82f6');
+                    snappedX = true;
+                }
+                // Right edges aligned
+                else if (Math.abs(currentRight - otherRight) < this.snapDistance) {
+                    movingObj.set('left', otherRight - objWidth);
+                    this._drawGuide(otherRight, 0, otherRight, canvasHeight, '#3b82f6');
+                    snappedX = true;
+                }
+            }
+            
+            if (!snappedY) {
+                // Centers aligned vertically
+                if (Math.abs(currentCenterY - otherCenterY) < this.snapDistance) {
+                    movingObj.set('top', otherCenterY - objHeight / 2);
+                    this._drawGuide(0, otherCenterY, canvasWidth, otherCenterY, '#ef4444'); // Red
+                    snappedY = true;
+                }
+                // Top edges aligned
+                else if (Math.abs(currentTop - otherTop) < this.snapDistance) {
+                    movingObj.set('top', otherTop);
+                    this._drawGuide(0, otherTop, canvasWidth, otherTop, '#ef4444');
+                    snappedY = true;
+                }
+                // Bottom edges aligned
+                else if (Math.abs(currentBottom - otherBottom) < this.snapDistance) {
+                    movingObj.set('top', otherBottom - objHeight);
+                    this._drawGuide(0, otherBottom, canvasWidth, otherBottom, '#ef4444');
+                    snappedY = true;
+                }
+            }
+        }
+        
+        // Render the canvas to show guide lines
+        this.canvas.requestRenderAll();
+    }
+    
+    /**
+     * Draw an alignment guide line - Fabric.js 7.x
+     */
+    _drawGuide(x1, y1, x2, y2, color) {
+        try {
+            // Fabric.js 7.x - Line class
+            const LineClass = this.fabricRef.Line || 
+                              (typeof fabric !== 'undefined' ? fabric.Line : null);
+            
+            if (!LineClass) {
+                console.warn('Fabric Line class not found');
+                return;
+            }
+            
+            const line = new LineClass([x1, y1, x2, y2], {
+                stroke: color,
+                strokeWidth: 2,
+                strokeDashArray: [6, 3],
+                selectable: false,
+                evented: false,
+                excludeFromExport: true,
+                // Don't set originX/Y for Line - it uses the coords directly
+                _isAlignmentLine: true,
+                opacity: 1
+            });
+            
+            this.alignmentLines.push(line);
+            this.canvas.add(line);
+            
+            // Move to front - Fabric.js 7.x
+            if (this.canvas.moveObjectTo) {
+                // Fabric 7.x method
+                const objects = this.canvas.getObjects();
+                this.canvas.moveObjectTo(line, objects.length - 1);
+            } else if (line.bringToFront) {
+                line.bringToFront();
+            }
+            
+            // Force immediate render
+            this.canvas.requestRenderAll();
+        } catch (e) {
+            console.error('Error drawing guide:', e);
+        }
+    }
+    
+    /**
+     * Clear all alignment guide lines
+     */
+    _clearAlignmentLines() {
+        if (this.alignmentLines.length === 0) return;
+        
+        for (const line of this.alignmentLines) {
+            this.canvas.remove(line);
+        }
+        this.alignmentLines = [];
+    }
+    
+    /**
+     * Constrain object to canvas bounds
+     */
+    _constrainToBounds(obj) {
+        if (!obj) return;
+        
+        const objWidth = obj.getScaledWidth();
+        const objHeight = obj.getScaledHeight();
+        
+        // Keep object within canvas
+        if (obj.left < 0) obj.set('left', 0);
+        if (obj.top < 0) obj.set('top', 0);
+        if (obj.left + objWidth > this.canvas.width) {
+            obj.set('left', this.canvas.width - objWidth);
+        }
+        if (obj.top + objHeight > this.canvas.height) {
+            obj.set('top', this.canvas.height - objHeight);
+        }
+    }
+    
+    /**
+     * Load background image - Fabric.js 7.x (fromURL returns Promise)
+     */
+    async loadBackground(imageUrl) {
+        if (!this.canvas || !imageUrl) return;
+        
+        try {
+            // Fabric.js 7.x: Image class can be FabricImage or Image
+            const ImageClass = this.fabricRef.FabricImage || 
+                               this.fabricRef.Image || 
+                               (typeof fabric !== 'undefined' ? (fabric.FabricImage || fabric.Image) : null);
+            
+            if (!ImageClass) {
+                throw new Error('Fabric Image class not found');
+            }
+            
+            // Fabric.js 7.x: Image.fromURL returns a Promise
+            const img = await ImageClass.fromURL(imageUrl, {
+                crossOrigin: 'anonymous'
+            });
+            
+            // Scale to fit canvas
+            const scaleX = this.canvas.width / img.width;
+            const scaleY = this.canvas.height / img.height;
+            const scale = Math.max(scaleX, scaleY);
+            
+            img.set({
+                scaleX: scale,
+                scaleY: scale,
+                // Fabric.js 7.x: explicitly set origin
+                originX: 'left',
+                originY: 'top',
+                left: 0,
+                top: 0,
+                selectable: false,
+                evented: false,
+                excludeFromExport: false
+            });
+            
+            // Remove old background
+            if (this.backgroundImage) {
+                this.canvas.remove(this.backgroundImage);
+            }
+            
+            this.backgroundImage = img;
+            this.canvas.add(img);
+            this.canvas.sendObjectToBack(img);
+            this.canvas.requestRenderAll();
+            
+            return img;
+        } catch (e) {
+            console.error('Background load error:', e);
+            throw e;
+        }
+    }
+    
+    /**
+     * Add a text field - Fabric.js 7.x IText
+     */
+    addTextField(key, options = {}) {
+        if (!this.canvas) return null;
+        
+        // Remove existing field with same key
+        this.removeField(key);
+        
+        // Determine text alignment and corresponding origin
+        const textAlign = options.textAlign || 'left';
+        let originX = 'left';
+        if (textAlign === 'center') {
+            originX = 'center';
+        } else if (textAlign === 'right') {
+            originX = 'right';
+        }
+        
+        // Use explicit originX from options if provided (for backward compatibility)
+        if (options.originX) {
+            originX = options.originX;
+        }
+        
+        const fontFamily = options.fontFamily || 'Inter';
+        
+        const fieldOptions = {
+            left: options.x || 50,
+            top: options.y || 50,
+            fontSize: options.fontSize || 16,
+            fontFamily: fontFamily,
+            fontWeight: options.fontWeight || 'normal',
+            fill: options.fill || options.color || '#333333',
+            // Text alignment
+            textAlign: textAlign,
+            // Fabric.js 7.x: set origin based on text alignment
+            originX: originX,
+            originY: options.originY || 'top',
+            // Interactive properties
+            selectable: true,
+            editable: false,
+            hasControls: true,
+            hasBorders: true,
+            lockScalingX: true,
+            lockScalingY: true,
+            lockRotation: true
+        };
+        
+        const textObj = new this.fabricRef.IText(options.text || key, fieldOptions);
+        textObj.fieldKey = key;
+        textObj.fieldType = 'text';
+        textObj.textAlignValue = textAlign; // Store for later retrieval
+        
+        this.fields[key] = textObj;
+        this.canvas.add(textObj);
+        this.canvas.requestRenderAll();
+        
+        // Schedule a re-render to ensure font is applied after it loads
+        const canvas = this.canvas;
+        setTimeout(() => {
+            textObj.set('dirty', true);
+            textObj.setCoords();
+            canvas.requestRenderAll();
+        }, 50);
+        
+        return textObj;
+    }
+    
+    /**
+     * Set text alignment for a field
+     */
+    setFieldAlignment(key, alignment) {
+        const field = this.fields[key];
+        if (!field || field.fieldType !== 'text') return;
+        
+        // Determine new originX based on alignment
+        let originX = 'left';
+        if (alignment === 'center') {
+            originX = 'center';
+        } else if (alignment === 'right') {
+            originX = 'right';
+        }
+        
+        // Get current position and dimensions
+        const currentLeft = field.left;
+        const currentWidth = field.getScaledWidth ? field.getScaledWidth() : field.width;
+        
+        // Calculate new position based on alignment change
+        let newLeft = currentLeft;
+        const oldOriginX = field.originX;
+        
+        // Adjust position when changing alignment
+        if (oldOriginX !== originX) {
+            if (oldOriginX === 'left' && originX === 'center') {
+                newLeft = currentLeft + currentWidth / 2;
+            } else if (oldOriginX === 'left' && originX === 'right') {
+                newLeft = currentLeft + currentWidth;
+            } else if (oldOriginX === 'center' && originX === 'left') {
+                newLeft = currentLeft - currentWidth / 2;
+            } else if (oldOriginX === 'center' && originX === 'right') {
+                newLeft = currentLeft + currentWidth / 2;
+            } else if (oldOriginX === 'right' && originX === 'left') {
+                newLeft = currentLeft - currentWidth;
+            } else if (oldOriginX === 'right' && originX === 'center') {
+                newLeft = currentLeft - currentWidth / 2;
+            }
+        }
+        
+        field.set({
+            textAlign: alignment,
+            originX: originX,
+            left: newLeft
+        });
+        field.textAlignValue = alignment;
+        
+        this.canvas.requestRenderAll();
+        return field;
+    }
+    
+    /**
+     * Add QR code
+     */
+    async addQRCode(data, options = {}) {
+        if (!this.canvas) return null;
+        
+        // Remove existing QR
+        this.removeField('qr_code');
+        
+        const size = options.size || 100;
+        
+        try {
+            // Generate QR code using QRCode library
+            const qrDataUrl = await this._generateQRCode(data, size);
+            
+            // Fabric.js 7.x: Image class
+            const ImageClass = this.fabricRef.FabricImage || 
+                               this.fabricRef.Image || 
+                               (typeof fabric !== 'undefined' ? (fabric.FabricImage || fabric.Image) : null);
+            
+            const img = await ImageClass.fromURL(qrDataUrl);
+            
+            img.set({
+                left: options.x || 100,
+                top: options.y || 100,
+                // Fabric.js 7.x: explicit origin
+                originX: 'left',
+                originY: 'top',
+                scaleX: size / img.width,
+                scaleY: size / img.height,
+                selectable: true,
+                hasControls: true,
+                hasBorders: true,
+                lockRotation: true
+            });
+            
+            img.fieldKey = 'qr_code';
+            img.fieldType = 'qr';
+            
+            this.qrCodeObject = img;
+            this.fields['qr_code'] = img;
+            this.canvas.add(img);
+            this.canvas.requestRenderAll();
+            
+            return img;
+        } catch (e) {
+            console.error('QR code error:', e);
+            return null;
+        }
+    }
+    
+    async _generateQRCode(data, size) {
+        return new Promise((resolve, reject) => {
+            // Check for qrcode-generator library (global function named 'qrcode')
+            if (typeof qrcode === 'undefined') {
+                reject(new Error('QRCode library not loaded'));
+                return;
+            }
+            
+            try {
+                // Use qrcode-generator library
+                // Type 0 = auto-detect, 'M' = medium error correction
+                const qr = qrcode(0, 'M');
+                qr.addData(data);
+                qr.make();
+                
+                // Create canvas and draw QR code
+                const canvas = document.createElement('canvas');
+                const moduleCount = qr.getModuleCount();
+                const cellSize = Math.floor(size / moduleCount);
+                const actualSize = cellSize * moduleCount;
+                
+                canvas.width = actualSize;
+                canvas.height = actualSize;
+                const ctx = canvas.getContext('2d');
+                
+                // White background
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, actualSize, actualSize);
+                
+                // Draw QR modules
+                ctx.fillStyle = '#000000';
+                for (let row = 0; row < moduleCount; row++) {
+                    for (let col = 0; col < moduleCount; col++) {
+                        if (qr.isDark(row, col)) {
+                            ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                        }
+                    }
+                }
+                
+                resolve(canvas.toDataURL('image/png'));
+            } catch (e) {
+                reject(e);
+            }
+        });
+    }
+    
+    /**
+     * Update a text field's properties
+     */
+    updateField(key, properties) {
+        const field = this.fields[key];
+        if (!field) return;
+        
+        field.set(properties);
+        
+        // When font changes, we need to update coords and trigger proper re-render
+        if (properties.fontFamily) {
+            // Fabric.js needs setCoords() when text dimensions change
+            field.setCoords();
+            // Force a dirty state to ensure re-render
+            field.set('dirty', true);
+        }
+        
+        this.canvas.requestRenderAll();
+    }
+    
+    /**
+     * Update QR code
+     */
+    updateQRCode(options) {
+        if (!this.qrCodeObject) return;
+        
+        if (options.size) {
+            const scale = options.size / (this.qrCodeObject.width || 100);
+            this.qrCodeObject.set({
+                scaleX: scale,
+                scaleY: scale
+            });
+        }
+        
+        if (options.x !== undefined) this.qrCodeObject.set('left', options.x);
+        if (options.y !== undefined) this.qrCodeObject.set('top', options.y);
+        
+        this.canvas.requestRenderAll();
+    }
+    
+    /**
+     * Remove a field from canvas
+     */
+    removeField(key) {
+        const field = this.fields[key];
+        if (field) {
+            this.canvas.remove(field);
+            delete this.fields[key];
+            if (key === 'qr_code') {
+                this.qrCodeObject = null;
+            }
+            this.canvas.requestRenderAll();
+        }
+    }
+    
+    /**
+     * Get field position
+     */
+    getFieldPosition(key) {
+        const field = this.fields[key];
+        if (!field) return null;
+        
+        const result = {
+            x: field.left,
+            y: field.top
+        };
+        
+        if (field.fieldType === 'qr') {
+            result.size = field.getScaledWidth();
+        } else {
+            result.fontSize = field.fontSize;
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Clear all objects from canvas
+     */
+    clear() {
+        if (!this.canvas) return;
+        
+        this.canvas.clear();
+        this.canvas.backgroundColor = this.options.backgroundColor;
+        this.backgroundImage = null;
+        this.fields = {};
+        this.qrCodeObject = null;
+        this.alignmentLines = [];
+        this.canvas.requestRenderAll();
+    }
+    
+    /**
+     * Export as PNG
+     * @param {number} multiplier - Resolution multiplier (3 = 3150x1800px, ~300 DPI for business cards)
+     */
+    exportPNG(multiplier = 3) {
+        if (!this.canvas) return null;
+        
+        // Deselect all before export
+        this.canvas.discardActiveObject();
+        this._clearAlignmentLines();
+        this.canvas.requestRenderAll();
+        
+        return this.canvas.toDataURL({
+            format: 'png',
+            multiplier: multiplier,
+            quality: 1
+        });
+    }
+    
+    /**
+     * Export as PNG Blob (for batch generation)
+     * @param {number} multiplier - Resolution multiplier (3 = 3150x1800px, ~300 DPI)
+     */
+    async exportPNGBlob(multiplier = 3) {
+        const dataUrl = this.exportPNG(multiplier);
+        if (!dataUrl) return null;
+        
+        // Convert data URL to blob
+        const response = await fetch(dataUrl);
+        return await response.blob();
+    }
+    
+    /**
+     * Export as PDF using jsPDF (rasterized version)
+     * Uses 6x multiplier for high-quality print output (~600 DPI)
+     */
+    exportPDF(filename = 'card.pdf') {
+        if (!this.canvas || typeof jspdf === 'undefined') {
+            console.error('jsPDF not loaded');
+            return;
+        }
+        
+        this.canvas.discardActiveObject();
+        this._clearAlignmentLines();
+        this.canvas.requestRenderAll();
+        
+        // 6x multiplier for ~600 DPI print quality
+        const dataUrl = this.canvas.toDataURL({
+            format: 'png',
+            multiplier: 6,
+            quality: 1
+        });
+        
+        // Calculate dimensions in mm (business card size)
+        const widthMm = (this.canvas.width / 300) * 25.4;
+        const heightMm = (this.canvas.height / 300) * 25.4;
+        
+        const { jsPDF } = jspdf;
+        const pdf = new jsPDF({
+            orientation: widthMm > heightMm ? 'landscape' : 'portrait',
+            unit: 'mm',
+            format: [widthMm, heightMm]
+        });
+        
+        pdf.addImage(dataUrl, 'PNG', 0, 0, widthMm, heightMm);
+        pdf.save(filename);
+    }
+    
+    /**
+     * Export as Vector PDF using PDF-lib (preserves original PDF background quality)
+     * @param {string} originalPdfUrl - URL to the original PDF background
+     * @param {string} filename - Output filename
+     */
+    async exportVectorPDF(originalPdfUrl, filename = 'card.pdf') {
+        if (!this.canvas) {
+            console.error('Canvas not initialized');
+            return null;
+        }
+        
+        // Check if PDF-lib is loaded
+        if (typeof PDFLib === 'undefined') {
+            console.warn('PDF-lib not loaded, falling back to rasterized PDF');
+            return this.exportPDF(filename);
+        }
+        
+        try {
+            const { PDFDocument, rgb, StandardFonts } = PDFLib;
+            
+            let pdfDoc;
+            
+            // Load original PDF as background if provided
+            if (originalPdfUrl) {
+                const existingPdfBytes = await fetch(originalPdfUrl).then(res => res.arrayBuffer());
+                pdfDoc = await PDFDocument.load(existingPdfBytes);
+            } else {
+                // Create new PDF if no background
+                pdfDoc = await PDFDocument.create();
+                const page = pdfDoc.addPage([this.canvas.width * 0.24, this.canvas.height * 0.24]); // Convert px to points (72 dpi)
+            }
+            
+            const pages = pdfDoc.getPages();
+            const page = pages[0];
+            const { width, height } = page.getSize();
+            
+            // Embed standard fonts
+            const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+            const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+            
+            // Get scale factors (canvas to PDF points)
+            const scaleX = width / this.canvas.width;
+            const scaleY = height / this.canvas.height;
+            
+            // Add text fields from canvas
+            const objects = this.canvas.getObjects();
+            for (const obj of objects) {
+                if (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text') {
+                    const text = obj.text || '';
+                    if (!text.trim()) continue;
+                    
+                    // Convert position (Fabric.js origin is top-left, PDF is bottom-left)
+                    const x = obj.left * scaleX;
+                    const y = height - (obj.top * scaleY) - (obj.fontSize * scaleY);
+                    
+                    // Parse color
+                    let color = rgb(0, 0, 0);
+                    if (obj.fill) {
+                        const hex = obj.fill.replace('#', '');
+                        if (hex.length === 6) {
+                            color = rgb(
+                                parseInt(hex.substr(0, 2), 16) / 255,
+                                parseInt(hex.substr(2, 2), 16) / 255,
+                                parseInt(hex.substr(4, 2), 16) / 255
+                            );
+                        }
+                    }
+                    
+                    // Choose font
+                    const font = (obj.fontWeight === 'bold' || obj.fontWeight >= 600) ? helveticaBold : helvetica;
+                    
+                    page.drawText(text, {
+                        x: x,
+                        y: y,
+                        size: obj.fontSize * scaleY * 0.75, // Adjust for point size
+                        font: font,
+                        color: color
+                    });
+                }
+            }
+            
+            // Add QR code as image if present
+            for (const obj of objects) {
+                if (obj.customType === 'qrcode' && obj._element) {
+                    try {
+                        const qrDataUrl = obj._element.src || obj.toDataURL();
+                        const qrImageBytes = await fetch(qrDataUrl).then(res => res.arrayBuffer());
+                        const qrImage = await pdfDoc.embedPng(qrImageBytes);
+                        
+                        const qrX = obj.left * scaleX;
+                        const qrY = height - (obj.top * scaleY) - (obj.height * obj.scaleY * scaleY);
+                        const qrWidth = obj.width * obj.scaleX * scaleX;
+                        const qrHeight = obj.height * obj.scaleY * scaleY;
+                        
+                        page.drawImage(qrImage, {
+                            x: qrX,
+                            y: qrY,
+                            width: qrWidth,
+                            height: qrHeight
+                        });
+                    } catch (e) {
+                        console.warn('Could not embed QR code:', e);
+                    }
+                }
+            }
+            
+            // Save PDF
+            const pdfBytes = await pdfDoc.save();
+            
+            // Download
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(link.href);
+            
+            return pdfBytes;
+        } catch (error) {
+            console.error('Vector PDF export error:', error);
+            // Fallback to rasterized
+            return this.exportPDF(filename);
+        }
+    }
+    
+    /**
+     * Export text/fields as transparent PNG (without background)
+     * Used for overlaying on PDF background
+     */
+    async exportTextOverlayPNG(multiplier = 3) {
+        if (!this.canvas) return null;
+        
+        // Temporarily hide background
+        const bgImage = this.canvas.backgroundImage;
+        const bgColor = this.canvas.backgroundColor;
+        this.canvas.backgroundImage = null;
+        this.canvas.backgroundColor = 'transparent';
+        this.canvas.requestRenderAll();
+        
+        // Export with transparency
+        const dataUrl = this.canvas.toDataURL({
+            format: 'png',
+            multiplier: multiplier,
+            quality: 1
+        });
+        
+        // Restore background
+        this.canvas.backgroundImage = bgImage;
+        this.canvas.backgroundColor = bgColor;
+        this.canvas.requestRenderAll();
+        
+        return dataUrl;
+    }
+    
+    /**
+     * Export as hybrid PDF: vector PDF background + high-quality raster text overlay
+     * Best of both worlds: vector quality background, full language support for text
+     * Uses 6x multiplier for print-quality output (~600 DPI equivalent)
+     */
+    async exportHybridPDFBlob(originalPdfUrl) {
+        if (!this.canvas || typeof PDFLib === 'undefined') {
+            return null;
+        }
+        
+        try {
+            const { PDFDocument } = PDFLib;
+            
+            let pdfDoc;
+            
+            // Load original PDF as background
+            if (originalPdfUrl) {
+                const existingPdfBytes = await fetch(originalPdfUrl).then(res => res.arrayBuffer());
+                pdfDoc = await PDFDocument.load(existingPdfBytes);
+            } else {
+                // No PDF background - fall back to full PNG export
+                return null;
+            }
+            
+            const pages = pdfDoc.getPages();
+            const page = pages[0];
+            const { width, height } = page.getSize();
+            
+            // Export text overlay as transparent PNG at HIGH quality
+            // 6x multiplier = ~600 DPI for crisp print quality
+            const overlayDataUrl = await this.exportTextOverlayPNG(6);
+            if (overlayDataUrl) {
+                // Convert data URL to bytes
+                const overlayBytes = await fetch(overlayDataUrl).then(res => res.arrayBuffer());
+                
+                // Embed the overlay image
+                const overlayImage = await pdfDoc.embedPng(overlayBytes);
+                
+                // Draw overlay on top of the PDF page (full page coverage)
+                page.drawImage(overlayImage, {
+                    x: 0,
+                    y: 0,
+                    width: width,
+                    height: height
+                });
+            }
+            
+            const pdfBytes = await pdfDoc.save();
+            return new Blob([pdfBytes], { type: 'application/pdf' });
+        } catch (error) {
+            console.error('Hybrid PDF export error:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Resize canvas - Fabric.js 7.x uses setDimensions
+     */
+    setDimensions(width, height) {
+        if (!this.canvas) return;
+        
+        this.options.width = width;
+        this.options.height = height;
+        
+        // Fabric.js 7.x: use setDimensions instead of setWidth/setHeight
+        this.canvas.setDimensions({ width, height });
+        this.canvas.requestRenderAll();
+    }
+    
+    /**
+     * Get all field objects
+     */
+    getFields() {
+        return this.fields;
+    }
+    
+    /**
+     * Enable/disable snapping
+     */
+    setSnapping(enabled) {
+        this.snapEnabled = enabled;
+    }
+    
+    /**
+     * Set snap distance
+     */
+    setSnapDistance(distance) {
+        this.snapDistance = distance;
+    }
+    
+    /**
+     * Dispose canvas and cleanup
+     */
+    dispose() {
+        if (this.canvas) {
+            this.canvas.dispose();
+            this.canvas = null;
+        }
+        this.fields = {};
+        this.qrCodeObject = null;
+        this.backgroundImage = null;
+        this.alignmentLines = [];
+        this.isReady = false;
+    }
+}
+
+// Export for use
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = CardEditor;
+} else if (typeof window !== 'undefined') {
+    window.CardEditor = CardEditor;
+}

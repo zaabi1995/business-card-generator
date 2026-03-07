@@ -128,8 +128,12 @@ class WhatsApp {
             return ['success' => false, 'error' => 'Company phone number not found'];
         }
         
-        // Build confirmation message
-        $employeeCount = count(json_decode($order['employee_ids'], true));
+        // Build confirmation message - handle both old (employee_ids JSON) and new (employee_id single) schemas
+        $employeeCount = 1;
+        if (!empty($order['employee_ids'])) {
+            $decoded = json_decode($order['employee_ids'], true);
+            $employeeCount = is_array($decoded) ? count($decoded) : 1;
+        }
         $totalQuantity = $employeeCount * ($order['quantity'] ?? 1);
         
         $message = "✅ Print Order Confirmation\n\n";
@@ -228,5 +232,69 @@ class WhatsApp {
             'token' => self::$apiToken,
             'enabled' => self::$enabled
         ];
+    }
+    
+    /**
+     * Send print order status update message
+     * @param array $order Print order data
+     * @param string $status New status
+     * @param string|null $trackingNumber Tracking number (for shipped orders)
+     * @return array ['success' => bool, 'error' => string|null]
+     */
+    public static function sendPrintOrderStatusUpdate($order, $status, $trackingNumber = null) {
+        if (!self::isEnabled()) {
+            return ['success' => false, 'error' => 'WhatsApp API is not enabled'];
+        }
+        
+        // Get phone number from shipping phone or order data
+        $phoneNumber = $order['shipping_phone'] ?? null;
+        
+        if (empty($phoneNumber)) {
+            return ['success' => false, 'error' => 'No phone number available for notification'];
+        }
+        
+        // Build status message based on status
+        $statusEmoji = '📦';
+        $statusMessage = '';
+        
+        switch ($status) {
+            case 'processing':
+                $statusEmoji = '⚙️';
+                $statusMessage = "Your print order is now being processed.";
+                break;
+            case 'printing':
+                $statusEmoji = '🖨️';
+                $statusMessage = "Your business cards are being printed!";
+                break;
+            case 'shipped':
+                $statusEmoji = '🚚';
+                $statusMessage = "Your order has been shipped!";
+                if ($trackingNumber) {
+                    $statusMessage .= "\nTracking: " . $trackingNumber;
+                }
+                break;
+            case 'delivered':
+                $statusEmoji = '✅';
+                $statusMessage = "Your business cards have been delivered!";
+                break;
+            case 'cancelled':
+                $statusEmoji = '❌';
+                $statusMessage = "Your order has been cancelled. Please contact us if you have questions.";
+                break;
+            default:
+                $statusMessage = "Your order status has been updated to: " . ucfirst($status);
+        }
+        
+        $message = "{$statusEmoji} Order Update\n\n";
+        $message .= "Order: #" . ($order['order_number'] ?? $order['id']) . "\n";
+        $message .= "Status: " . ucfirst($status) . "\n";
+        $message .= "Quantity: " . ($order['quantity'] ?? 100) . " cards\n\n";
+        $message .= $statusMessage;
+        
+        if ($status === 'delivered') {
+            $message .= "\n\nThank you for your order! 🙏";
+        }
+        
+        return self::sendMessage($phoneNumber, $message);
     }
 }

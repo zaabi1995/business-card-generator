@@ -46,18 +46,10 @@ if ($passwordRequired) {
     
     if (!$passwordCorrect) {
         // Show password form
+        $pageTitle = 'Password Required';
+        $bodyClass = 'min-h-screen flex items-center justify-center';
+        require_once INCLUDES_DIR . '/ui-header.php';
         ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Required | <?php echo SITE_NAME; ?></title>
-    <link rel="icon" href="<?php echo getBasePath(); ?>favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="<?php echo getBasePath(); ?>assets/vendor/css/all.css">
-    <link rel="stylesheet" href="<?php echo assetUrl('flowbite/app.css'); ?>">
-</head>
-<body class="bg-gray-50 text-gray-900 min-h-screen flex items-center justify-center">
     <div class="w-full max-w-md mx-auto px-4">
         <div class="bg-white border border-gray-200 shadow-lg rounded-2xl p-8">
             <div class="flex items-center gap-3 mb-6">
@@ -88,8 +80,7 @@ if ($passwordRequired) {
             </form>
         </div>
     </div>
-</body>
-</html>
+<?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>
         <?php
         exit;
     }
@@ -119,30 +110,19 @@ $companyTheme = $db->fetchOne(
 );
 
 // Render template preview
+$pageTitle = 'Shared Design';
+$extraHead = '<style>
+    :root {
+        --primary-color: ' . ($companyTheme['primary_color'] ?? '#2563eb') . ';
+        --secondary-color: ' . ($companyTheme['secondary_color'] ?? '#0f3460') . ';
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    }
+    ' . (!empty($companyTheme['custom_css']) ? $companyTheme['custom_css'] : '') . '
+</style>';
+require_once INCLUDES_DIR . '/ui-header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shared Design | <?php echo SITE_NAME; ?></title>
-    <link rel="icon" href="<?php echo getBasePath(); ?>favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="<?php echo getBasePath(); ?>assets/vendor/css/all.css">
-    <link rel="stylesheet" href="<?php echo assetUrl('flowbite/app.css'); ?>">
-    <style>
-        :root {
-            --primary-color: <?php echo $companyTheme['primary_color'] ?? '#2563eb'; ?>;
-            --secondary-color: <?php echo $companyTheme['secondary_color'] ?? '#0f3460'; ?>;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        }
-        <?php if ($companyTheme['custom_css']): ?>
-        <?php echo $companyTheme['custom_css']; ?>
-        <?php endif; ?>
-    </style>
-</head>
-<body class="bg-gray-50 text-gray-900">
     <div class="min-h-screen py-10">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-white border border-gray-200 rounded-2xl shadow-lg p-6 sm:p-8">
@@ -185,5 +165,4 @@ $companyTheme = $db->fetchOne(
             </div>
         </div>
     </div>
-</body>
-</html>
+<?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>

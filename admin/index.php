@@ -1,9 +1,19 @@
 <?php
 /**
  * Admin Dashboard - Cardify
- * Template Management with Visual Editor
+ * Template Management with Fabric.js Visual Editor
  */
+
 require_once __DIR__ . '/../config.php';
+
+// Only show errors in development
+if (function_exists('isProduction') && !isProduction()) {
+    ini_set('display_errors', 1);
+    error_reporting(E_ALL);
+} else {
+    ini_set('display_errors', 0);
+    error_reporting(E_ALL & ~E_NOTICE);
+}
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/admin-layout.php';
 
@@ -13,14 +23,21 @@ if (!Auth::isLoggedIn()) {
     exit;
 }
 
-$currentUser = Auth::getCurrentUser();
-$userRole = Auth::getCurrentRole();
-
-// Auto-redirect super admin to super admin panel
-if ($userRole === 'super_admin') {
-    header('Location: ' . getBasePath() . 'admin/super/');
+// Redirect print shop users to their dashboard
+$currentRole = Auth::getCurrentRole();
+if ($currentRole === 'print_shop') {
+    header('Location: ' . getBasePath() . 'printshop/dashboard.php');
     exit;
 }
+
+// Redirect company admins to company-specific admin URL
+// Super admins stay on the global admin
+if (!Auth::isSuperAdmin()) {
+    redirectToCompanyAdmin();
+}
+
+$currentUser = Auth::getCurrentUser();
+$userRole = Auth::getCurrentRole();
 
 $companyId = getCurrentCompanyId();
 
@@ -51,6 +68,14 @@ $templates = $templatesConfig['templates'] ?? [];
 $activeFrontId = $templatesConfig['activeFrontId'] ?? null;
 $activeBackId = $templatesConfig['activeBackId'] ?? null;
 
+// Convert legacy field positions for existing templates
+foreach ($templates as &$template) {
+    if (isset($template['fields'])) {
+        $template['fields'] = convertLegacyFieldPositions($template['fields']);
+    }
+}
+unset($template);
+
 // Get employees count
 $employees = loadEmployees();
 $employeeCount = count($employees);
@@ -73,37 +98,119 @@ $departmentCount = count($departments);
 $frontTemplates = array_filter($templates, fn($t) => ($t['side'] ?? 'front') === 'front');
 $backTemplates = array_filter($templates, fn($t) => ($t['side'] ?? 'back') === 'back');
 
+// Sample profiles for preview - diverse names/positions to test different text lengths
+$sampleProfiles = [
+    [
+        'name_en' => 'Ahmed Al-Rashid',
+        'name_ar' => 'أحمد الراشد',
+        'position_en' => 'Chief Executive Officer',
+        'position_ar' => 'الرئيس التنفيذي',
+        'department_en' => 'Executive Office',
+        'department_ar' => 'المكتب التنفيذي',
+        'company_en' => 'Oman Investment Group',
+        'company_ar' => 'مجموعة عُمان للاستثمار',
+        'phone' => '+968 2412 3456',
+        'fax' => '+968 2412 3457',
+        'mobile' => '+968 9123 4567',
+        'email' => 'ahmed.rashid@oig.om',
+        'website' => 'www.oig.om',
+        'address_en' => 'Building 245, Way 3501, Al Khuwair, P.O. Box 123, PC 118, Muscat, Sultanate of Oman',
+        'address_ar' => 'مبنى ٢٤٥، طريق ٣٥٠١، الخوير، ص.ب ١٢٣، الرمز البريدي ١١٨، مسقط، سلطنة عُمان'
+    ],
+    [
+        'name_en' => 'Sarah Johnson',
+        'name_ar' => 'سارة جونسون',
+        'position_en' => 'Marketing Director',
+        'position_ar' => 'مدير التسويق',
+        'department_en' => 'Marketing & Communications',
+        'department_ar' => 'التسويق والاتصالات',
+        'company_en' => 'Global Solutions LLC',
+        'company_ar' => 'الحلول العالمية ش.م.م',
+        'phone' => '+968 2498 7654',
+        'fax' => '+968 2498 7655',
+        'mobile' => '+968 9876 5432',
+        'email' => 'sarah.johnson@globalsolutions.com',
+        'website' => 'www.globalsolutions.com',
+        'address_en' => 'Office 502, Qurum Business Center, Way 2987, Qurum, P.O. Box 456, PC 112, Muscat, Oman',
+        'address_ar' => 'مكتب ٥٠٢، مركز القرم للأعمال، طريق ٢٩٨٧، القرم، ص.ب ٤٥٦، الرمز البريدي ١١٢، مسقط، عُمان'
+    ],
+    [
+        'name_en' => 'Mohammed bin Khalid Al-Busaidi',
+        'name_ar' => 'محمد بن خالد البوسعيدي',
+        'position_en' => 'Senior Vice President of Operations',
+        'position_ar' => 'نائب الرئيس الأول للعمليات',
+        'department_en' => 'Operations & Logistics',
+        'department_ar' => 'العمليات والخدمات اللوجستية',
+        'company_en' => 'National Development Corporation',
+        'company_ar' => 'المؤسسة الوطنية للتنمية',
+        'phone' => '+968 2411 1111',
+        'fax' => '+968 2411 1112',
+        'mobile' => '+968 9111 2222',
+        'email' => 'mohammed.busaidi@ndc.om',
+        'website' => 'www.ndc.om',
+        'address_en' => 'Tower A, Floor 15, Central Business District, Way 4520, P.O. Box 789, PC 100, Muscat, Sultanate of Oman',
+        'address_ar' => 'البرج أ، الطابق ١٥، المنطقة التجارية المركزية، طريق ٤٥٢٠، ص.ب ٧٨٩، الرمز البريدي ١٠٠، مسقط، سلطنة عُمان'
+    ],
+    [
+        'name_en' => 'Li Wei',
+        'name_ar' => 'لي وي',
+        'position_en' => 'Project Manager',
+        'position_ar' => 'مدير المشاريع',
+        'department_en' => 'Technology',
+        'department_ar' => 'التكنولوجيا',
+        'company_en' => 'TechStart Innovation Hub',
+        'company_ar' => 'مركز تك ستارت للابتكار',
+        'phone' => '+968 2455 6789',
+        'fax' => '+968 2455 6780',
+        'mobile' => '+968 9555 1234',
+        'email' => 'li.wei@techstart.io',
+        'website' => 'www.techstart.io',
+        'address_en' => 'Building 18, Knowledge Oasis Muscat, Rusayl, P.O. Box 321, PC 124, Muscat, Oman',
+        'address_ar' => 'مبنى ١٨، واحة المعرفة مسقط، الرسيل، ص.ب ٣٢١، الرمز البريدي ١٢٤، مسقط، عُمان'
+    ],
+    [
+        'name_en' => 'Fatima Al-Harthi',
+        'name_ar' => 'فاطمة الحارثية',
+        'position_en' => 'Human Resources Manager',
+        'position_ar' => 'مدير الموارد البشرية',
+        'department_en' => 'Human Resources',
+        'department_ar' => 'الموارد البشرية',
+        'company_en' => 'Petroleum Development Oman',
+        'company_ar' => 'تنمية نفط عُمان',
+        'phone' => '+968 2467 8900',
+        'fax' => '+968 2467 8901',
+        'mobile' => '+968 9234 5678',
+        'email' => 'fatima.harthi@pdo.co.om',
+        'website' => 'www.pdo.co.om',
+        'address_en' => 'PDO Head Office, Mina Al Fahal, P.O. Box 81, PC 116, Muscat, Sultanate of Oman',
+        'address_ar' => 'المقر الرئيسي لتنمية نفط عُمان، ميناء الفحل، ص.ب ٨١، الرمز البريدي ١١٦، مسقط، سلطنة عُمان'
+    ]
+];
+
+// Get sample employee for preview - use first employee if exists, otherwise first sample profile
+$sampleEmployee = !empty($employees) ? $employees[0] : $sampleProfiles[0];
+
+// Add Arabic phone numbers
+if (!isset($sampleEmployee['phone_ar'])) {
+    $sampleEmployee['phone_ar'] = strtr($sampleEmployee['phone'] ?? '', ['0'=>'٠','1'=>'١','2'=>'٢','3'=>'٣','4'=>'٤','5'=>'٥','6'=>'٦','7'=>'٧','8'=>'٨','9'=>'٩','+'=>'+']);
+}
+if (!isset($sampleEmployee['mobile_ar'])) {
+    $sampleEmployee['mobile_ar'] = strtr($sampleEmployee['mobile'] ?? '', ['0'=>'٠','1'=>'١','2'=>'٢','3'=>'٣','4'=>'٤','5'=>'٥','6'=>'٦','7'=>'٧','8'=>'٨','9'=>'٩','+'=>'+']);
+}
+if (!isset($sampleEmployee['website_ar'])) {
+    $sampleEmployee['website_ar'] = $sampleEmployee['website'] ?? '';
+}
+if (!isset($sampleEmployee['address'])) {
+    $sampleEmployee['address'] = $sampleEmployee['address_en'] ?? '';
+}
+
+// Company slug for VCF URL
+$companySlug = getCurrentCompanySlug() ?? 'demo';
+$baseUrl = getBaseUrl();
+
 // Start admin layout
 adminHeader('Dashboard', 'dashboard');
 ?>
-
-<!-- Custom Styles for Template Editor -->
-<style>
-    .field-handle {
-        cursor: move;
-        position: absolute;
-        transform: translate(-50%, -50%);
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 10px;
-        white-space: nowrap;
-        z-index: 10;
-        transition: all 0.15s ease;
-        background: rgba(255,255,255,0.9);
-        border: 1px solid rgba(0,0,0,0.1);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .field-handle:hover {
-        transform: translate(-50%, -50%) scale(1.1);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-    .template-preview {
-        position: relative;
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: center;
-    }
-</style>
 
 <!-- Stats Cards -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -200,69 +307,112 @@ adminHeader('Dashboard', 'dashboard');
     <!-- Section Header with Tabs -->
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm mb-6">
         <div class="flex items-center justify-between p-4 border-b border-gray-100">
-            <div class="flex items-center gap-2">
-                <button 
-                    @click="activeTab = 'front'"
-                    :class="activeTab === 'front' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'"
-                    class="px-4 py-2 rounded-lg border text-sm font-medium transition-all flex items-center gap-2"
-                >
-                    <i class="fa-solid fa-id-card"></i>
-                    <span>Front Templates</span>
-                </button>
-                <button 
-                    @click="activeTab = 'back'"
-                    :class="activeTab === 'back' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'"
-                    class="px-4 py-2 rounded-lg border text-sm font-medium transition-all flex items-center gap-2"
-                >
-                    <i class="fa-solid fa-clone"></i>
-                    <span>Back Templates</span>
-                </button>
-            </div>
+            <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                <i class="fa-solid fa-palette text-blue-600"></i>
+                Card Designs
+            </h3>
             
             <button 
                 @click="showAddModal = !showAddModal"
                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
             >
                 <i class="fa-solid fa-plus"></i>
-                <span x-text="showAddModal ? 'Cancel' : 'Add Template'"></span>
+                <span x-text="showAddModal ? 'Cancel' : 'New Card Design'"></span>
             </button>
         </div>
         
-        <!-- Add Template Form -->
+        <!-- Add Card Design Form -->
         <div x-show="showAddModal" x-cloak class="p-6 border-b border-gray-100 bg-gray-50">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Add New Template</h3>
-            <form @submit.prevent="addTemplate()">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Create New Card Design</h3>
+            <p class="text-sm text-gray-600 mb-4">This will create both front and back templates for your card. You can upload background designs for each side.</p>
+            <form @submit.prevent="addTemplatePair()">
                 <div class="grid md:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Template Name</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Design Name</label>
                         <input type="text" x-model="newTemplate.name" required 
                                class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" 
                                placeholder="e.g., Modern Blue">
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Card Side</label>
-                        <select x-model="newTemplate.side" 
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Card Size</label>
+                        <select x-model="cardSize" @change="changeCardSize()"
                                 class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                            <option value="front">Front</option>
-                            <option value="back">Back</option>
+                            <option value="standard">US Standard (3.5" × 2")</option>
+                            <option value="eu">European (85 × 55 mm)</option>
+                            <option value="japanese">Japanese (91 × 55 mm)</option>
+                            <option value="square">Square (2.5" × 2.5")</option>
+                            <option value="mini">Mini/Slim (70 × 28 mm)</option>
+                            <option value="custom">Custom Size...</option>
                         </select>
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Background Image</label>
-                        <input type="file" accept="image/*" @change="handleNewTemplateImage($event)" 
-                               class="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Orientation</label>
+                        <select x-model="cardOrientation" @change="changeCardSize()"
+                                class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                            <option value="landscape">Landscape (Horizontal)</option>
+                            <option value="portrait">Portrait (Vertical)</option>
+                        </select>
                     </div>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">Recommended size: 1050 x 600 px (business card ratio)</p>
+                
+                <!-- Custom Size (shown when custom selected) -->
+                <div x-show="cardSize === 'custom'" x-cloak class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Custom Dimensions</label>
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm text-gray-600">Width:</span>
+                            <input type="number" x-model.number="customWidth" @change="changeCardSize()"
+                                   step="0.1" min="0.5" max="12"
+                                   class="w-20 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm text-gray-600">Height:</span>
+                            <input type="number" x-model.number="customHeight" @change="changeCardSize()"
+                                   step="0.1" min="0.5" max="12"
+                                   class="w-20 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+                        </div>
+                        <select x-model="customUnit" @change="changeCardSize()"
+                                class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+                            <option value="in">inches</option>
+                            <option value="mm">mm</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Front and Back Image Uploads -->
+                <div class="mt-4 grid md:grid-cols-2 gap-4">
+                    <div class="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                        <label class="block text-sm font-medium text-blue-800 mb-2">
+                            <i class="fa-solid fa-id-card mr-1"></i> Front Background (Optional)
+                        </label>
+                        <input type="file" accept="image/*,.svg,.pdf" @change="handleNewFrontImage($event)" 
+                               class="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg text-gray-900 text-sm file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-100 file:text-blue-700">
+                        <p class="text-xs text-blue-600 mt-2">Can be added/changed later</p>
+                    </div>
+                    
+                    <div class="p-4 bg-purple-50 rounded-lg border border-purple-100">
+                        <label class="block text-sm font-medium text-purple-800 mb-2">
+                            <i class="fa-solid fa-clone mr-1"></i> Back Background (Optional)
+                        </label>
+                        <input type="file" accept="image/*,.svg,.pdf" @change="handleNewBackImage($event)" 
+                               class="w-full px-3 py-2 bg-white border border-purple-200 rounded-lg text-gray-900 text-sm file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-purple-100 file:text-purple-700">
+                        <p class="text-xs text-purple-600 mt-2">Can be added/changed later</p>
+                    </div>
+                </div>
+                
+                <div class="mt-3 flex flex-wrap items-center gap-4 text-xs text-gray-500">
+                    <span><i class="fa-solid fa-ruler mr-1"></i><span x-text="getSizeDetails().inches"></span> / <span x-text="getSizeDetails().mm"></span></span>
+                    <span><i class="fa-solid fa-image mr-1"></i><span x-text="getSizeDetails().pixels"></span> @ <span x-text="dpi"></span>dpi</span>
+                </div>
                 
                 <div class="flex items-center justify-end gap-3 mt-4">
                     <button type="button" @click="showAddModal = false" class="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors">
                         Cancel
                     </button>
                     <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-                        Create Template
+                        Create Card Design
                     </button>
                 </div>
             </form>
@@ -270,177 +420,505 @@ adminHeader('Dashboard', 'dashboard');
     </div>
     
     <!-- Templates Grid -->
-    <div class="grid lg:grid-cols-2 gap-6">
-        <!-- Template List -->
+    <div class="grid lg:grid-cols-3 gap-6">
+        <!-- Card Designs List -->
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
             <div class="p-4 border-b border-gray-100">
-                <h3 class="font-semibold text-gray-900" x-text="activeTab === 'front' ? 'Front Templates' : 'Back Templates'"></h3>
+                <h3 class="font-semibold text-gray-900">Card Designs</h3>
             </div>
             
-            <div class="p-4 space-y-3" x-show="getTemplatesForTab().length > 0">
-                <template x-for="template in getTemplatesForTab()" :key="template.id">
+            <div class="p-4 space-y-3" x-show="getCardDesigns().length > 0">
+                <template x-for="design in getCardDesigns()" :key="design.pair_id || design.front?.id || design.back?.id">
                     <div 
-                        @click="selectTemplate(template)"
-                        :class="selectedTemplate && selectedTemplate.id === template.id ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'"
+                        @click="selectCardDesign(design)"
+                        :class="selectedPairId === design.pair_id ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'"
                         class="p-4 rounded-xl border cursor-pointer transition-all"
                     >
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="w-14 h-9 rounded-lg bg-gray-100 overflow-hidden border border-gray-200">
-                                    <img :src="template.backgroundImage ? '<?php echo getBasePath(); ?>' + template.backgroundImage.replace(/^\\//, '') : ''" 
-                                         class="w-full h-full object-cover" x-show="template.backgroundImage">
-                                </div>
-                                <div>
-                                    <p class="font-medium text-gray-900" x-text="template.name"></p>
-                                    <p class="text-xs text-gray-500" x-text="template.side === 'front' ? 'Front Side' : 'Back Side'"></p>
-                                </div>
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <p class="font-medium text-gray-900" x-text="design.name"></p>
+                                <p class="text-xs text-gray-500">
+                                    <span x-show="design.front" class="text-blue-600"><i class="fa-solid fa-check-circle mr-1"></i>Front</span>
+                                    <span x-show="design.front && design.back" class="mx-1">|</span>
+                                    <span x-show="design.back" class="text-purple-600"><i class="fa-solid fa-check-circle mr-1"></i>Back</span>
+                                </p>
                             </div>
                             <div class="flex items-center gap-2">
-                                <template x-if="(template.side === 'front' && template.id === activeFrontId) || (template.side === 'back' && template.id === activeBackId)">
+                                <template x-if="isDesignActive(design)">
                                     <span class="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full font-medium">Active</span>
                                 </template>
-                                <button @click.stop="deleteTemplate(template.id)" class="p-2 text-gray-400 hover:text-red-600 transition-colors rounded-lg hover:bg-red-50">
+                                <button @click.stop="deleteCardDesign(design)" class="p-2 text-gray-400 hover:text-red-600 transition-colors rounded-lg hover:bg-red-50">
                                     <i class="fa-solid fa-trash-can text-sm"></i>
                                 </button>
+                            </div>
+                        </div>
+                        <!-- Preview thumbnails -->
+                        <div class="flex gap-2">
+                            <div class="flex-1">
+                                <div class="text-xs text-gray-500 mb-1">Front</div>
+                                <div class="w-full h-12 rounded bg-gray-100 overflow-hidden border border-gray-200">
+                                    <template x-if="design.front && design.front.backgroundImage">
+                                        <img :src="getBackgroundUrl(design.front)" 
+                                             class="w-full h-full object-cover"
+                                             @error="$event.target.style.display='none'">
+                                    </template>
+                                    <div x-show="!design.front || !design.front.backgroundImage" class="w-full h-full flex items-center justify-center text-gray-400">
+                                        <i class="fa-solid fa-image text-xs"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-xs text-gray-500 mb-1">Back</div>
+                                <div class="w-full h-12 rounded bg-gray-100 overflow-hidden border border-gray-200">
+                                    <template x-if="design.back && design.back.backgroundImage">
+                                        <img :src="getBackgroundUrl(design.back)" 
+                                             class="w-full h-full object-cover"
+                                             @error="$event.target.style.display='none'">
+                                    </template>
+                                    <div x-show="!design.back || !design.back.backgroundImage" class="w-full h-full flex items-center justify-center text-gray-400">
+                                        <i class="fa-solid fa-image text-xs"></i>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </template>
             </div>
             
-            <div x-show="getTemplatesForTab().length === 0" class="p-12 text-center text-gray-500">
-                <i class="fa-solid fa-image text-4xl mb-4 opacity-30"></i>
-                <p>No templates yet</p>
-                <p class="text-sm mt-1">Click "Add Template" to create one</p>
+            <div x-show="getCardDesigns().length === 0" class="p-12 text-center text-gray-500">
+                <i class="fa-solid fa-palette text-4xl mb-4 opacity-30"></i>
+                <p>No card designs yet</p>
+                <p class="text-sm mt-1">Click "New Card Design" to create one</p>
             </div>
         </div>
         
-        <!-- Template Editor -->
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm" x-show="selectedTemplate" x-cloak>
-            <div class="p-4 border-b border-gray-100 flex items-center justify-between">
-                <h3 class="font-semibold text-gray-900">Edit Template</h3>
-                <div class="flex items-center gap-2">
-                    <button 
-                        @click="setActiveTemplate()"
-                        class="px-3 py-1.5 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium"
-                    >
-                        <i class="fa-solid fa-check mr-1"></i>
-                        Set Active
-                    </button>
-                    <button 
-                        @click="saveTemplate()"
-                        class="px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium"
-                    >
-                        <i class="fa-solid fa-floppy-disk mr-1"></i>
-                        Save
-                    </button>
+        <!-- Canvas Editor -->
+        <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm" x-show="selectedTemplate" x-cloak>
+            <!-- Editor Header -->
+            <div class="p-4 border-b border-gray-100">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <h3 class="font-semibold text-gray-900" x-text="selectedTemplate ? selectedTemplate.name : 'Edit Template'"></h3>
+                        <!-- Front/Back Toggle -->
+                        <div class="flex items-center bg-gray-100 rounded-lg p-1">
+                            <button 
+                                @click="switchToSide('front')"
+                                :class="activeTab === 'front' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                                class="px-3 py-1 rounded-md text-sm font-medium transition-all"
+                            >
+                                <i class="fa-solid fa-id-card mr-1"></i>Front
+                            </button>
+                            <button 
+                                @click="switchToSide('back')"
+                                :class="activeTab === 'back' ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                                class="px-3 py-1 rounded-md text-sm font-medium transition-all"
+                            >
+                                <i class="fa-solid fa-clone mr-1"></i>Back
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <!-- Sample Profile Switcher -->
+                        <button @click="nextSampleProfile()" 
+                                class="px-3 py-1.5 text-sm bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition-colors font-medium"
+                                title="Cycle through sample profiles to test different text lengths">
+                            <i class="fa-solid fa-shuffle mr-1"></i>
+                            <span class="hidden sm:inline">Sample</span>
+                            <span class="text-xs opacity-75" x-text="'(' + (currentProfileIndex + 1) + '/' + sampleProfiles.length + ')'"></span>
+                        </button>
+                        <button @click="exportPNG()" class="px-3 py-1.5 text-sm bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors font-medium">
+                            <i class="fa-solid fa-image mr-1"></i>PNG
+                        </button>
+                        <button @click="exportBestPDF()" class="px-3 py-1.5 text-sm bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium" title="Download as PDF">
+                            <i class="fa-solid fa-file-pdf mr-1"></i>PDF
+                        </button>
+                        <button @click="setActiveTemplate()" class="px-3 py-1.5 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium">
+                            <i class="fa-solid fa-check mr-1"></i>Set Active
+                        </button>
+                        <button @click="saveTemplate()" class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                            <i class="fa-solid fa-floppy-disk mr-1"></i>Save
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Background Image Upload -->
+                <div class="mb-3 p-3 rounded-lg" :class="activeTab === 'front' ? 'bg-blue-50 border border-blue-100' : 'bg-purple-50 border border-purple-100'">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-medium" :class="activeTab === 'front' ? 'text-blue-800' : 'text-purple-800'">
+                                <i class="fa-solid fa-image mr-1"></i>
+                                <span x-text="activeTab === 'front' ? 'Front Background' : 'Back Background'"></span>
+                            </span>
+                            <span x-show="selectedTemplate && selectedTemplate.backgroundImage" class="text-xs text-gray-500">
+                                <i class="fa-solid fa-check-circle text-green-500 mr-1"></i>Image set
+                            </span>
+                            <span x-show="!selectedTemplate || !selectedTemplate.backgroundImage" class="text-xs text-gray-500">
+                                <i class="fa-solid fa-exclamation-circle text-amber-500 mr-1"></i>No image
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="px-3 py-1.5 text-sm rounded-lg font-medium cursor-pointer transition-colors"
+                                   :class="activeTab === 'front' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'">
+                                <i class="fa-solid fa-upload mr-1"></i>
+                                <span x-text="selectedTemplate && selectedTemplate.backgroundImage ? 'Change' : 'Upload'"></span>
+                                <input type="file" accept="image/*,.svg,.pdf" @change="uploadBackground($event)" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card Size & Orientation Controls -->
+                <div class="bg-gray-50 rounded-lg p-3 space-y-3">
+                    <!-- Row 1: Size, Orientation, and Bleed -->
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Size Preset -->
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm font-medium text-gray-600">Size:</label>
+                            <select x-model="cardSize" @change="changeCardSize()" 
+                                    class="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                <option value="standard">US Standard (3.5" × 2")</option>
+                                <option value="eu">European (85 × 55 mm)</option>
+                                <option value="japanese">Japanese (91 × 55 mm)</option>
+                                <option value="square">Square (2.5" × 2.5")</option>
+                                <option value="mini">Mini/Slim (2.75" × 1.1")</option>
+                                <option value="custom">Custom Size...</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Orientation Toggle -->
+                        <div class="flex items-center gap-2">
+                            <div class="flex bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                <button @click="setOrientation('landscape')" 
+                                        :class="cardOrientation === 'landscape' ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:bg-gray-50'"
+                                        class="px-3 py-1.5 text-sm font-medium transition-colors flex items-center gap-1">
+                                    <i class="fa-solid fa-arrows-left-right text-xs"></i>
+                                    <span class="hidden sm:inline">Landscape</span>
+                                </button>
+                                <button @click="setOrientation('portrait')" 
+                                        :class="cardOrientation === 'portrait' ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:bg-gray-50'"
+                                        class="px-3 py-1.5 text-sm font-medium transition-colors flex items-center gap-1 border-l border-gray-200">
+                                    <i class="fa-solid fa-arrows-up-down text-xs"></i>
+                                    <span class="hidden sm:inline">Portrait</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Bleed Toggle -->
+                        <div class="flex items-center gap-2">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" x-model="bleedEnabled" @change="changeCardSize()"
+                                       class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm font-medium text-gray-600">Bleed</span>
+                            </label>
+                            <template x-if="bleedEnabled">
+                                <div class="flex items-center gap-1">
+                                    <input type="number" x-model.number="bleedSize" @change="changeCardSize()"
+                                           step="0.01" min="0" max="0.5"
+                                           class="w-16 px-2 py-1 bg-white border border-gray-200 rounded text-sm text-gray-700">
+                                    <select x-model="bleedUnit" @change="changeCardSize()"
+                                            class="px-2 py-1 bg-white border border-gray-200 rounded text-sm text-gray-700">
+                                        <option value="in">in</option>
+                                        <option value="mm">mm</option>
+                                    </select>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <!-- Row 2: Custom Size Inputs (shown when custom selected) -->
+                    <div x-show="cardSize === 'custom'" x-cloak class="flex flex-wrap items-center gap-3 pt-2 border-t border-gray-200">
+                        <span class="text-sm font-medium text-gray-600">Custom:</span>
+                        <div class="flex items-center gap-1">
+                            <input type="number" x-model.number="customWidth" @change="changeCardSize()"
+                                   step="0.1" min="0.5" max="12"
+                                   class="w-20 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700">
+                            <span class="text-gray-400">×</span>
+                            <input type="number" x-model.number="customHeight" @change="changeCardSize()"
+                                   step="0.1" min="0.5" max="12"
+                                   class="w-20 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700">
+                            <select x-model="customUnit" @change="changeCardSize()"
+                                    class="px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700">
+                                <option value="in">inches</option>
+                                <option value="mm">mm</option>
+                            </select>
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            <template x-if="customUnit === 'in'">
+                                <span>= <span x-text="Math.round(customWidth * 25.4)"></span> × <span x-text="Math.round(customHeight * 25.4)"></span> mm</span>
+                            </template>
+                            <template x-if="customUnit === 'mm'">
+                                <span>= <span x-text="(customWidth / 25.4).toFixed(2)"></span>" × <span x-text="(customHeight / 25.4).toFixed(2)"></span>"</span>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <!-- Row 3: Dimensions Display -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-200">
+                        <div class="flex items-center gap-4 text-xs">
+                            <span class="flex items-center gap-1 text-gray-600">
+                                <i class="fa-solid fa-ruler text-gray-400"></i>
+                                <span x-text="getSizeDetails().inches"></span>
+                            </span>
+                            <span class="flex items-center gap-1 text-gray-600">
+                                <span x-text="getSizeDetails().mm"></span>
+                            </span>
+                            <span class="flex items-center gap-1 text-gray-500">
+                                <i class="fa-solid fa-image text-gray-400"></i>
+                                <span x-text="getSizeDetails().pixels"></span>
+                                <span class="text-gray-400">@</span>
+                                <span x-text="dpi"></span>dpi
+                            </span>
+                        </div>
+                        <div x-show="bleedEnabled" class="text-xs text-amber-600">
+                            <i class="fa-solid fa-scissors mr-1"></i>
+                            Bleed: <span x-text="getSizeDetails().bleed"></span> (will be trimmed)
+                        </div>
+                    </div>
                 </div>
             </div>
             
             <div class="p-4">
-                <!-- Visual Preview -->
-                <div 
-                    x-show="selectedTemplate && selectedTemplate.fields"
-                    class="template-preview rounded-xl overflow-hidden mb-4 relative border border-gray-200"
-                    :style="getPreviewStyle()"
-                    x-ref="templatePreview"
-                    @mousedown="startDrag($event)"
-                    @mousemove="drag($event)"
-                    @mouseup="endDrag()"
-                    @mouseleave="endDrag()"
-                >
-                    <!-- Field Handles -->
-                    <template x-for="(field, key) in (selectedTemplate && selectedTemplate.fields ? selectedTemplate.fields : [])" :key="key">
-                        <div 
-                            x-show="field.enabled && key !== 'qr_code'"
-                            :data-field="key"
-                            class="field-handle"
-                            :style="{
-                                left: field.x + '%',
-                                top: field.y + '%',
-                                fontSize: (field.fontSize * previewScale) + 'px',
-                                fontFamily: field.fontFamily,
-                                fontWeight: field.fontWeight || 'normal',
-                                color: field.color,
-                                direction: key.includes('_ar') ? 'rtl' : 'ltr'
-                            }"
-                            :class="draggedField === key ? 'ring-2 ring-blue-500' : 'hover:ring-2 hover:ring-blue-300'"
-                            x-text="getFieldLabel(key)"
-                        ></div>
-                    </template>
-                    
-                    <!-- QR Code Handle -->
-                    <div 
-                        x-show="selectedTemplate && selectedTemplate.fields && selectedTemplate.fields.qr_code && selectedTemplate.fields.qr_code.enabled"
-                        data-field="qr_code"
-                        class="field-handle bg-gray-100 border border-gray-300"
-                        :style="getQRCodeStyle()"
-                        :class="draggedField === 'qr_code' ? 'ring-2 ring-blue-500' : 'hover:ring-2 hover:ring-blue-300'"
-                    >
-                        <i class="fa-solid fa-qrcode text-gray-600"></i>
+                <!-- Alignment Toolbar (Illustrator-style) -->
+                <div class="mb-3 flex items-center justify-between bg-gray-100 rounded-lg px-3 py-2">
+                    <div class="flex items-center gap-0.5">
+                        <!-- Horizontal Align -->
+                        <button @click="alignSelected('left')" class="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-white rounded transition-colors" title="Align Left Edges">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <rect x="1" y="2" width="2" height="12"/>
+                                <rect x="5" y="4" width="8" height="3"/>
+                                <rect x="5" y="9" width="5" height="3"/>
+                            </svg>
+                        </button>
+                        <button @click="alignSelected('center-h')" class="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-white rounded transition-colors" title="Align Horizontal Centers">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <rect x="7" y="1" width="2" height="14"/>
+                                <rect x="3" y="4" width="10" height="3"/>
+                                <rect x="5" y="9" width="6" height="3"/>
+                            </svg>
+                        </button>
+                        <button @click="alignSelected('right')" class="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-white rounded transition-colors" title="Align Right Edges">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <rect x="13" y="2" width="2" height="12"/>
+                                <rect x="3" y="4" width="8" height="3"/>
+                                <rect x="6" y="9" width="5" height="3"/>
+                            </svg>
+                        </button>
+                        
+                        <div class="w-px h-5 bg-gray-300 mx-2"></div>
+                        
+                        <!-- Vertical Align -->
+                        <button @click="alignSelected('top')" class="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-white rounded transition-colors" title="Align Top Edges">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <rect x="2" y="1" width="12" height="2"/>
+                                <rect x="4" y="5" width="3" height="8"/>
+                                <rect x="9" y="5" width="3" height="5"/>
+                            </svg>
+                        </button>
+                        <button @click="alignSelected('center-v')" class="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-white rounded transition-colors" title="Align Vertical Centers">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <rect x="1" y="7" width="14" height="2"/>
+                                <rect x="4" y="3" width="3" height="10"/>
+                                <rect x="9" y="5" width="3" height="6"/>
+                            </svg>
+                        </button>
+                        <button @click="alignSelected('bottom')" class="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-white rounded transition-colors" title="Align Bottom Edges">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <rect x="2" y="13" width="12" height="2"/>
+                                <rect x="4" y="3" width="3" height="8"/>
+                                <rect x="9" y="6" width="3" height="5"/>
+                            </svg>
+                        </button>
+                        
+                        <div class="w-px h-5 bg-gray-300 mx-2"></div>
+                        
+                        <!-- Distribute -->
+                        <button @click="distributeSelected('horizontal')" class="p-1.5 text-gray-600 hover:text-green-600 hover:bg-white rounded transition-colors" title="Distribute Horizontally">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <rect x="1" y="4" width="3" height="8"/>
+                                <rect x="6.5" y="5" width="3" height="6"/>
+                                <rect x="12" y="4" width="3" height="8"/>
+                            </svg>
+                        </button>
+                        <button @click="distributeSelected('vertical')" class="p-1.5 text-gray-600 hover:text-green-600 hover:bg-white rounded transition-colors" title="Distribute Vertically">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                <rect x="4" y="1" width="8" height="3"/>
+                                <rect x="5" y="6.5" width="6" height="3"/>
+                                <rect x="4" y="12" width="8" height="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="text-xs text-gray-500 flex items-center gap-1">
+                        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" class="text-blue-500">
+                            <path d="M8 1L6 3h4L8 1zM8 15l2-2H6l2 2zM1 8l2 2V6L1 8zM15 8l-2-2v4l2-2z"/>
+                            <circle cx="8" cy="8" r="2"/>
+                        </svg>
+                        Snap to align
                     </div>
                 </div>
                 
-                <!-- Field Settings -->
-                <div class="space-y-3 max-h-80 overflow-y-auto" x-show="selectedTemplate && selectedTemplate.fields">
-                    <template x-for="(field, key) in (selectedTemplate && selectedTemplate.fields ? selectedTemplate.fields : [])" :key="key">
-                        <div class="p-3 rounded-lg bg-gray-50 border border-gray-100">
-                            <div class="flex items-center justify-between mb-2">
-                                <label class="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                    <input type="checkbox" x-model="field.enabled" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                    <span x-text="getFieldLabel(key)"></span>
-                                </label>
-                                <span class="text-xs text-gray-400" x-text="'(' + Math.round(field.x) + '%, ' + Math.round(field.y) + '%)'"></span>
-                            </div>
-                            
-                            <div x-show="field.enabled" class="grid grid-cols-2 gap-2 mt-2">
-                                <template x-if="key !== 'qr_code'">
-                                    <div>
-                                        <label class="text-xs text-gray-500 block mb-1">Font Size</label>
-                                        <input type="number" x-model.number="field.fontSize" min="8" max="72" 
-                                               class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-sm text-gray-900">
+                <!-- Fabric.js Canvas Container - Centered with proper scaling -->
+                <div class="mb-4 flex items-center justify-center checkered-bg rounded-xl p-6 min-h-[300px]">
+                    <div class="relative shadow-xl rounded-lg overflow-hidden" 
+                         :style="getCanvasContainerStyle()"
+                         id="canvasWrapper">
+                        <canvas id="cardCanvas"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Field Controls -->
+                <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <h4 class="font-medium text-gray-900 mb-3">Field Settings</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
+                        <template x-for="(field, key) in (selectedTemplate && selectedTemplate.fields ? selectedTemplate.fields : {})" :key="key">
+                            <div class="bg-white rounded-lg p-3 border border-gray-200">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                        <input type="checkbox" 
+                                               :checked="field.enabled" 
+                                               @change="toggleField(key, $event.target.checked)" 
+                                               class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        <span x-text="getFieldLabel(key)"></span>
+                                    </label>
+                                </div>
+                                
+                                <div x-show="field.enabled && key !== 'qr_code'" class="space-y-2 mt-2">
+                                    <div class="flex gap-2">
+                                        <div class="flex-1">
+                                            <label class="text-xs text-gray-500 block mb-1">Size</label>
+                                            <input type="number" 
+                                                   :value="field.fontSize" 
+                                                   @change="updateFieldProperty(key, 'fontSize', parseInt($event.target.value))" 
+                                                   min="8" max="72" 
+                                                   class="w-full px-2 py-1 bg-white border border-gray-200 rounded text-xs text-gray-900">
+                                        </div>
+                                        <div class="w-12">
+                                            <label class="text-xs text-gray-500 block mb-1">Color</label>
+                                            <input type="color" 
+                                                   :value="field.fill || field.color || '#1f2937'" 
+                                                   @change="updateFieldProperty(key, 'fill', $event.target.value)" 
+                                                   class="w-full h-7 rounded cursor-pointer border border-gray-200">
+                                        </div>
                                     </div>
-                                </template>
-                                <template x-if="key === 'qr_code'">
-                                    <div>
-                                        <label class="text-xs text-gray-500 block mb-1">QR Size</label>
-                                        <input type="number" x-model.number="field.size" min="40" max="200" 
-                                               class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-sm text-gray-900">
-                                    </div>
-                                </template>
-                                <template x-if="key !== 'qr_code'">
-                                    <div>
-                                        <label class="text-xs text-gray-500 block mb-1">Color</label>
-                                        <input type="color" x-model="field.color" class="w-full h-8 rounded cursor-pointer border border-gray-200">
-                                    </div>
-                                </template>
-                                <template x-if="key !== 'qr_code'">
-                                    <div class="col-span-2">
+                                    <div x-data="{ fontOpen: false, fontQuery: '' }" @click.outside="fontOpen = false" class="relative">
                                         <label class="text-xs text-gray-500 block mb-1">Font</label>
-                                        <select x-model="field.fontFamily" class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-sm text-gray-900">
-                                            <optgroup label="English Fonts">
-                                                <option value="'Inter', sans-serif">Inter</option>
-                                                <option value="'Plus Jakarta Sans', sans-serif">Plus Jakarta Sans</option>
-                                                <option value="'Montserrat', sans-serif">Montserrat</option>
-                                                <option value="'Roboto', sans-serif">Roboto</option>
-                                            </optgroup>
-                                            <optgroup label="Arabic Fonts">
-                                                <option value="'Cairo', sans-serif">Cairo</option>
-                                                <option value="'Tajawal', sans-serif">Tajawal</option>
-                                                <option value="'Almarai', sans-serif">Almarai</option>
-                                            </optgroup>
-                                        </select>
+                                        <!-- Font Selector Button -->
+                                        <button type="button" 
+                                                @click="fontOpen = !fontOpen"
+                                                class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs text-left flex items-center justify-between hover:border-blue-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                                            <span :style="'font-family: \'' + field.fontFamily + '\', sans-serif'" x-text="field.fontFamily || 'Select font'" class="truncate"></span>
+                                            <svg class="w-3 h-3 text-gray-400 flex-shrink-0 ml-1" :class="fontOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                            </svg>
+                                        </button>
+                                        
+                                        <!-- Font Dropdown -->
+                                        <div x-show="fontOpen" 
+                                             x-transition:enter="transition ease-out duration-100"
+                                             x-transition:enter-start="opacity-0 scale-95"
+                                             x-transition:enter-end="opacity-100 scale-100"
+                                             x-transition:leave="transition ease-in duration-75"
+                                             x-transition:leave-start="opacity-100 scale-100"
+                                             x-transition:leave-end="opacity-0 scale-95"
+                                             class="absolute z-50 mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
+                                             style="max-height: 320px;">
+                                            <!-- Search Input -->
+                                            <div class="p-2 border-b border-gray-100 sticky top-0 bg-white">
+                                                <div class="relative">
+                                                    <svg class="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                                    </svg>
+                                                    <input type="text" 
+                                                           x-model="fontQuery" 
+                                                           @click.stop
+                                                           placeholder="Search fonts..." 
+                                                           class="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Font List -->
+                                            <div class="overflow-y-auto" style="max-height: 260px;">
+                                                <template x-for="(fonts, category) in filteredFonts(fontQuery)" :key="category">
+                                                    <div>
+                                                        <!-- Category Header -->
+                                                        <div class="px-2 py-1.5 bg-gray-50 text-xs font-semibold text-gray-600 sticky top-0" x-text="category"></div>
+                                                        <!-- Font Options -->
+                                                        <template x-for="fontName in fonts" :key="fontName">
+                                                            <button type="button"
+                                                                    @click="selectFont(key, fontName); fontOpen = false; fontQuery = '';"
+                                                                    :class="field.fontFamily === fontName ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'"
+                                                                    class="w-full px-3 py-1.5 text-left text-xs flex items-center justify-between transition-colors">
+                                                                <span :style="'font-family: \'' + fontName + '\', sans-serif'" x-text="fontName"></span>
+                                                                <svg x-show="field.fontFamily === fontName" class="w-3.5 h-3.5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                                                </svg>
+                                                            </button>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                                <!-- No Results -->
+                                                <div x-show="Object.keys(filteredFonts(fontQuery)).length === 0" class="px-3 py-4 text-center text-xs text-gray-500">
+                                                    No fonts found
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </template>
+                                    <div>
+                                        <label class="text-xs text-gray-500 block mb-1">Text Align</label>
+                                        <div class="flex gap-1 bg-gray-100 rounded p-0.5">
+                                            <button type="button" 
+                                                    @click="updateFieldProperty(key, 'textAlign', 'left')" 
+                                                    :class="(field.textAlign || 'left') === 'left' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'"
+                                                    class="flex-1 px-2 py-1 rounded transition-all" title="Align Left">
+                                                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" class="mx-auto">
+                                                    <rect x="1" y="2" width="14" height="2"/>
+                                                    <rect x="1" y="6" width="10" height="2"/>
+                                                    <rect x="1" y="10" width="12" height="2"/>
+                                                    <rect x="1" y="14" width="8" height="2"/>
+                                                </svg>
+                                            </button>
+                                            <button type="button" 
+                                                    @click="updateFieldProperty(key, 'textAlign', 'center')" 
+                                                    :class="field.textAlign === 'center' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'"
+                                                    class="flex-1 px-2 py-1 rounded transition-all" title="Align Center">
+                                                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" class="mx-auto">
+                                                    <rect x="1" y="2" width="14" height="2"/>
+                                                    <rect x="3" y="6" width="10" height="2"/>
+                                                    <rect x="2" y="10" width="12" height="2"/>
+                                                    <rect x="4" y="14" width="8" height="2"/>
+                                                </svg>
+                                            </button>
+                                            <button type="button" 
+                                                    @click="updateFieldProperty(key, 'textAlign', 'right')" 
+                                                    :class="field.textAlign === 'right' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'"
+                                                    class="flex-1 px-2 py-1 rounded transition-all" title="Align Right">
+                                                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" class="mx-auto">
+                                                    <rect x="1" y="2" width="14" height="2"/>
+                                                    <rect x="5" y="6" width="10" height="2"/>
+                                                    <rect x="3" y="10" width="12" height="2"/>
+                                                    <rect x="7" y="14" width="8" height="2"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div x-show="field.enabled && key === 'qr_code'" class="mt-2">
+                                    <label class="text-xs text-gray-500 block mb-1">QR Size</label>
+                                    <input type="number" 
+                                           :value="field.size" 
+                                           @change="updateQRSize(parseInt($event.target.value))" 
+                                           min="60" max="200" 
+                                           class="w-full px-2 py-1 bg-white border border-gray-200 rounded text-xs text-gray-900">
+                                </div>
                             </div>
-                        </div>
-                    </template>
+                        </template>
+                    </div>
                 </div>
             </div>
         </div>
         
         <!-- Empty State -->
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm flex items-center justify-center p-12" x-show="!selectedTemplate">
+        <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm flex items-center justify-center p-12" x-show="!selectedTemplate">
             <div class="text-center text-gray-400">
                 <i class="fa-solid fa-mouse-pointer text-4xl mb-4 opacity-50"></i>
                 <p class="text-gray-600">Select a template to edit</p>
@@ -462,206 +940,1427 @@ adminHeader('Dashboard', 'dashboard');
     function templateEditor() {
         return {
             activeTab: 'front',
-            templates: <?php echo json_encode($templates); ?>,
-            activeFrontId: <?php echo json_encode($activeFrontId); ?>,
-            activeBackId: <?php echo json_encode($activeBackId); ?>,
+            templates: <?php echo json_encode(array_values($templates), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
+            activeFrontId: <?php echo json_encode($activeFrontId, JSON_HEX_TAG); ?>,
+            activeBackId: <?php echo json_encode($activeBackId, JSON_HEX_TAG); ?>,
             selectedTemplate: null,
+            selectedPairId: null,
+            currentDesign: null,
             showAddModal: false,
-            newTemplate: { name: '', side: 'front', imageFile: null },
-            draggedField: null,
-            dragStartX: 0,
-            dragStartY: 0,
-            previewScale: 0.5,
-            previewAspectRatio: '1.75',
+            newTemplate: { name: '', side: 'front', frontImageFile: null, backImageFile: null },
             statusMessage: '',
             statusType: 'success',
+            cardEditor: null,
+            basePath: '<?php echo getBasePath(); ?>',
+            sampleEmployee: <?php echo json_encode($sampleEmployee, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
+            sampleProfiles: <?php echo json_encode($sampleProfiles, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
+            currentProfileIndex: 0,
+            companySlug: '<?php echo $companySlug; ?>',
+            baseUrl: '<?php echo $baseUrl; ?>',
+            fontsLoaded: false,
+            initialized: false,
             
-            init() {
-                const tabTemplates = this.getTemplatesForTab();
+            // Card size and orientation
+            cardSize: 'standard',
+            cardOrientation: 'landscape',
+            dpi: 300, // Dots per inch for print quality
+            
+            // Bleed settings (extra area for trimming)
+            bleedEnabled: false,
+            bleedSize: 0.125, // inches (3mm = ~0.118")
+            bleedUnit: 'in', // 'in' or 'mm'
+            
+            // Unit conversion constants
+            MM_PER_INCH: 25.4,
+            
+            // Predefined card sizes with both inch and mm measurements
+            cardSizes: {
+                standard: { 
+                    widthIn: 3.5, heightIn: 2, 
+                    widthMm: 89, heightMm: 51,
+                    label: 'Standard US', region: 'US/Canada'
+                },
+                eu: { 
+                    widthIn: 3.346, heightIn: 2.165, 
+                    widthMm: 85, heightMm: 55,
+                    label: 'European', region: 'EU/UK'
+                },
+                japanese: { 
+                    widthIn: 3.582, heightIn: 2.165, 
+                    widthMm: 91, heightMm: 55,
+                    label: 'Japanese', region: 'Japan'
+                },
+                square: { 
+                    widthIn: 2.5, heightIn: 2.5, 
+                    widthMm: 64, heightMm: 64,
+                    label: 'Square', region: 'Modern'
+                },
+                mini: { 
+                    widthIn: 2.75, heightIn: 1.1, 
+                    widthMm: 70, heightMm: 28,
+                    label: 'Mini/Slim', region: 'Compact'
+                },
+                custom: { 
+                    widthIn: 3.5, heightIn: 2, 
+                    widthMm: 89, heightMm: 51,
+                    label: 'Custom', region: 'Your size'
+                }
+            },
+            
+            // Custom dimensions (for custom size)
+            customWidth: 3.5,
+            customHeight: 2,
+            customUnit: 'in', // 'in' or 'mm'
+            
+            // Font categories for the font selector
+            fontCategories: {
+                'Sans-Serif': ['Inter', 'Plus Jakarta Sans', 'Montserrat', 'Roboto', 'Poppins', 'Open Sans', 'Lato', 'Nunito', 'Raleway', 'Work Sans', 'DM Sans', 'Outfit', 'Manrope', 'Urbanist', 'Lexend', 'Sora', 'Rubik', 'Quicksand', 'Ubuntu', 'Barlow', 'Jost'],
+                'Serif': ['Playfair Display', 'Merriweather', 'Lora', 'PT Serif', 'Libre Baskerville', 'EB Garamond', 'Cormorant Garamond', 'Spectral', 'Noto Serif', 'Vollkorn', 'Bodoni Moda'],
+                'Display': ['Bebas Neue', 'Oswald', 'Anton', 'Archivo Black', 'Righteous', 'Teko', 'Big Shoulders Display', 'Fredoka'],
+                'Script': ['Dancing Script', 'Pacifico', 'Great Vibes', 'Sacramento', 'Allura', 'Lobster', 'Caveat', 'Kaushan Script'],
+                'Arabic العربية': ['Cairo', 'Tajawal', 'Almarai', 'Noto Kufi Arabic', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Readex Pro', 'El Messiri', 'Changa', 'Reem Kufi', 'Amiri', 'Scheherazade New', 'Mada', 'Lalezar', 'Lemonada', 'Aref Ruqaa', 'Mirza', 'Rakkas', 'Baloo Bhaijaan 2', 'Noto Naskh Arabic', 'Noto Nastaliq Urdu', 'Lateef', 'Harmattan', 'Markazi Text', 'Gulzar'],
+                'Monospace': ['Roboto Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'Space Mono']
+            },
+            
+            maxDisplayWidth: 480, // Maximum width to display in editor
+            showSizeModal: false, // For custom size modal
+            
+            init: function() {
+                // Prevent double initialization
+                if (this.initialized) {
+                    console.log('templateEditor already initialized');
+                    return;
+                }
+                this.initialized = true;
+
+                var self = this;
+                var fontsReady = Promise.resolve();
+
+                // Load fonts first
+                try {
+                    fontsReady = FontLoader.load();
+                } catch (e) {
+                    console.warn('Font loading error:', e);
+                }
+
+                fontsReady = fontsReady.catch(function(e) {
+                    console.warn('Font loading error:', e);
+                }).then(function() {
+                    self.fontsLoaded = true;
+                    if (document.fonts && document.fonts.ready) {
+                        return document.fonts.ready;
+                    }
+                    return Promise.resolve();
+                });
+
+                fontsReady.then(function() {
+                    return self.initCanvas();
+                }).then(function() {
+                    // Select first card design
+                    var designs = self.getCardDesigns();
+                    if (designs.length > 0) {
+                        return self.selectCardDesign(designs[0]);
+                    }
+                    return null;
+                });
+            },
+            
+            initCanvas: function() {
+                var canvasEl = document.getElementById('cardCanvas');
+                if (!canvasEl) return Promise.resolve();
+
+                // Prevent double initialization
+                if (this.cardEditor) {
+                    console.log('CardEditor already initialized');
+                    return Promise.resolve();
+                }
+
+                // Get canvas dimensions based on size and orientation
+                var dims = this.getCanvasDimensions();
+
+                // Create CardEditor instance
+                var self = this;
+                this.cardEditor = new CardEditor('cardCanvas', {
+                    width: dims.width,
+                    height: dims.height,
+                    backgroundColor: '#ffffff',
+                    onFieldMove: function(key, position) {
+                        if (self.selectedTemplate && self.selectedTemplate.fields[key]) {
+                            self.selectedTemplate.fields[key].x = Math.round(position.x);
+                            self.selectedTemplate.fields[key].y = Math.round(position.y);
+                        }
+                    },
+                    onFieldSelect: function(key) {
+                        // Could highlight field in controls
+                    }
+                });
+
+                // Wait for CardEditor to be fully initialized
+                return new Promise(function(resolve) {
+                    var attempts = 0;
+                    var timer = setInterval(function() {
+                        attempts += 1;
+                        if (self.cardEditor.isReady || attempts >= 100) {
+                            clearInterval(timer);
+                            if (!self.cardEditor.isReady) {
+                                console.error('CardEditor failed to initialize');
+                            }
+                            resolve();
+                        }
+                    }, 50);
+                });
+            },
+            
+            // Convert inches to pixels at current DPI
+            inchesToPixels: function(inches) {
+                return Math.round(inches * this.dpi);
+            },
+            
+            // Convert mm to pixels at current DPI
+            mmToPixels: function(mm) {
+                return Math.round((mm / this.MM_PER_INCH) * this.dpi);
+            },
+            
+            // Convert pixels to inches
+            pixelsToInches: function(px) {
+                return (px / this.dpi).toFixed(3);
+            },
+            
+            // Convert pixels to mm
+            pixelsToMm: function(px) {
+                return ((px / this.dpi) * this.MM_PER_INCH).toFixed(1);
+            },
+            
+            // Get bleed in pixels
+            getBleedPixels: function() {
+                if (!this.bleedEnabled) return 0;
+                if (this.bleedUnit === 'mm') {
+                    return this.mmToPixels(this.bleedSize);
+                }
+                return this.inchesToPixels(this.bleedSize);
+            },
+            
+            // Get canvas dimensions based on current size, orientation, and bleed
+            getCanvasDimensions: function() {
+                var widthIn, heightIn;
+                var size = this.cardSizes[this.cardSize] || this.cardSizes.standard;
+                
+                if (this.cardSize === 'custom') {
+                    if (this.customUnit === 'mm') {
+                        widthIn = this.customWidth / this.MM_PER_INCH;
+                        heightIn = this.customHeight / this.MM_PER_INCH;
+                    } else {
+                        widthIn = this.customWidth;
+                        heightIn = this.customHeight;
+                    }
+                } else {
+                    widthIn = size.widthIn;
+                    heightIn = size.heightIn;
+                }
+                
+                // Apply orientation (swap for portrait)
+                if (this.cardOrientation === 'portrait' && this.cardSize !== 'square') {
+                    var tempWidth = widthIn;
+                    widthIn = heightIn;
+                    heightIn = tempWidth;
+                }
+                
+                // Add bleed if enabled
+                var bleedIn = this.bleedEnabled ? (this.bleedUnit === 'mm' ? this.bleedSize / this.MM_PER_INCH : this.bleedSize) : 0;
+                widthIn += bleedIn * 2;
+                heightIn += bleedIn * 2;
+                
+                return { 
+                    width: this.inchesToPixels(widthIn), 
+                    height: this.inchesToPixels(heightIn),
+                    widthIn: widthIn,
+                    heightIn: heightIn
+                };
+            },
+            
+            // Get base card dimensions (without bleed)
+            getCardDimensions: function() {
+                var size = this.cardSizes[this.cardSize] || this.cardSizes.standard;
+                var widthIn, heightIn, widthMm, heightMm;
+                
+                if (this.cardSize === 'custom') {
+                    if (this.customUnit === 'mm') {
+                        widthMm = this.customWidth;
+                        heightMm = this.customHeight;
+                        widthIn = this.customWidth / this.MM_PER_INCH;
+                        heightIn = this.customHeight / this.MM_PER_INCH;
+                    } else {
+                        widthIn = this.customWidth;
+                        heightIn = this.customHeight;
+                        widthMm = this.customWidth * this.MM_PER_INCH;
+                        heightMm = this.customHeight * this.MM_PER_INCH;
+                    }
+                } else {
+                    widthIn = size.widthIn;
+                    heightIn = size.heightIn;
+                    widthMm = size.widthMm;
+                    heightMm = size.heightMm;
+                }
+                
+                // Apply orientation (swap for portrait)
+                if (this.cardOrientation === 'portrait' && this.cardSize !== 'square') {
+                    var tempIn = widthIn;
+                    widthIn = heightIn;
+                    heightIn = tempIn;
+                    var tempMm = widthMm;
+                    widthMm = heightMm;
+                    heightMm = tempMm;
+                }
+                
+                return { widthIn: widthIn, heightIn: heightIn, widthMm: widthMm, heightMm: heightMm };
+            },
+            
+            // Get display style for canvas container (scaled to fit editor)
+            getCanvasContainerStyle: function() {
+                var dims = this.getCanvasDimensions();
+                var scale = Math.min(this.maxDisplayWidth / dims.width, 320 / dims.height);
+                var displayWidth = Math.round(dims.width * scale);
+                var displayHeight = Math.round(dims.height * scale);
+                return 'width: ' + displayWidth + 'px; height: ' + displayHeight + 'px;';
+            },
+            
+            // Get text showing current dimensions in both units
+            getCanvasDimensionsText: function() {
+                var dims = this.getCanvasDimensions();
+                var card = this.getCardDimensions();
+                var bleedText = this.bleedEnabled ? ' +' + this.bleedSize + this.bleedUnit + ' bleed' : '';
+                return card.widthIn.toFixed(2) + '" x ' + card.heightIn.toFixed(2) + '" (' + Math.round(card.widthMm) + ' x ' + Math.round(card.heightMm) + ' mm)' + bleedText;
+            },
+            
+            // Get detailed size info
+            getSizeDetails: function() {
+                var dims = this.getCanvasDimensions();
+                var card = this.getCardDimensions();
+                return {
+                    pixels: dims.width + ' x ' + dims.height + ' px',
+                    inches: card.widthIn.toFixed(2) + '" x ' + card.heightIn.toFixed(2) + '"',
+                    mm: Math.round(card.widthMm) + ' x ' + Math.round(card.heightMm) + ' mm',
+                    dpi: this.dpi,
+                    bleed: this.bleedEnabled ? this.bleedSize + ' ' + this.bleedUnit : 'None'
+                };
+            },
+
+            // Collect size/orientation settings for persistence
+            getTemplateSettings: function() {
+                return {
+                    cardSize: this.cardSize,
+                    cardOrientation: this.cardOrientation,
+                    dpi: this.dpi,
+                    bleedEnabled: this.bleedEnabled,
+                    bleedSize: this.bleedSize,
+                    bleedUnit: this.bleedUnit,
+                    customWidth: this.customWidth,
+                    customHeight: this.customHeight,
+                    customUnit: this.customUnit
+                };
+            },
+
+            // Apply saved settings from template (if any)
+            applyTemplateSettings: function(template) {
+                if (!template || !template.settings) return;
+
+                var settings = template.settings || {};
+                if (settings.cardSize) this.cardSize = settings.cardSize;
+                if (settings.cardOrientation) this.cardOrientation = settings.cardOrientation;
+                if (typeof settings.dpi === 'number') this.dpi = settings.dpi;
+                if (typeof settings.bleedEnabled === 'boolean') this.bleedEnabled = settings.bleedEnabled;
+                if (typeof settings.bleedSize !== 'undefined') this.bleedSize = settings.bleedSize;
+                if (settings.bleedUnit) this.bleedUnit = settings.bleedUnit;
+                if (typeof settings.customWidth !== 'undefined') this.customWidth = settings.customWidth;
+                if (typeof settings.customHeight !== 'undefined') this.customHeight = settings.customHeight;
+                if (settings.customUnit) this.customUnit = settings.customUnit;
+            },
+
+            // Resize the canvas to current settings
+            resizeCanvas: function() {
+                if (!this.cardEditor || !this.cardEditor.canvas) return Promise.resolve();
+                var dims = this.getCanvasDimensions();
+                this.cardEditor.canvas.setDimensions({ width: dims.width, height: dims.height });
+                this.cardEditor.options.width = dims.width;
+                this.cardEditor.options.height = dims.height;
+                this.cardEditor.canvas.renderAll();
+                return Promise.resolve();
+            },
+            
+            // Change card size
+            changeCardSize: function() {
+                var self = this;
+                var chain = this.resizeCanvas();
+                if (this.selectedTemplate) {
+                    // Update in-memory settings to avoid reverting
+                    this.selectedTemplate.settings = this.getTemplateSettings();
+                    chain = chain.then(function() { 
+                        return self.selectTemplate(self.selectedTemplate, { skipResize: true, skipApplySettings: true }); 
+                    });
+                }
+                
+                return chain.then(function() {
+                    self.showStatus('Card size changed to ' + self.cardSizes[self.cardSize].label, 'success');
+                });
+            },
+            
+            // Set card orientation
+            setOrientation: function(orientation) {
+                if (this.cardOrientation === orientation) return Promise.resolve();
+                this.cardOrientation = orientation;
+                return this.changeCardSize();
+            },
+            getTemplatesForTab: function() {
+                var self = this;
+                return this.templates.filter(function(t) {
+                    return (t.side || 'front') === self.activeTab;
+                });
+            },
+            
+            // Get templates grouped by pair_id as card designs
+            getCardDesigns: function() {
+                var designs = {};
+                var self = this;
+                
+                this.templates.forEach(function(t) {
+                    var pairId = t.pair_id || t.id; // Use id as fallback for unpaired templates
+                    if (!designs[pairId]) {
+                        designs[pairId] = {
+                            pair_id: pairId,
+                            name: t.name,
+                            front: null,
+                            back: null
+                        };
+                    }
+                    if (t.side === 'front') {
+                        designs[pairId].front = t;
+                    } else if (t.side === 'back') {
+                        designs[pairId].back = t;
+                    }
+                });
+                
+                return Object.values(designs);
+            },
+            
+            // Select a card design (pair)
+            selectCardDesign: function(design) {
+                if (!design) return Promise.resolve();
+                
+                this.selectedPairId = design.pair_id;
+                this.currentDesign = design;
+                
+                // Select the template for the current side (front by default)
+                var template = this.activeTab === 'back' ? design.back : design.front;
+                if (!template) {
+                    template = design.front || design.back;
+                    this.activeTab = template ? template.side : 'front';
+                }
+                
+                if (template) {
+                    return this.selectTemplate(template);
+                }
+                return Promise.resolve();
+            },
+            
+            // Switch between front and back within a design
+            switchToSide: function(side) {
+                if (!this.currentDesign) return;
+                
+                this.activeTab = side;
+                var template = side === 'back' ? this.currentDesign.back : this.currentDesign.front;
+                
+                if (template) {
+                    this.selectTemplate(template);
+                } else {
+                    // No template for this side yet
+                    this.selectedTemplate = null;
+                    if (this.cardEditor && this.cardEditor.isReady) {
+                        this.cardEditor.clear();
+                    }
+                }
+            },
+            
+            // Check if a design has active templates
+            isDesignActive: function(design) {
+                if (!design) return false;
+                var frontActive = design.front && design.front.id === this.activeFrontId;
+                var backActive = design.back && design.back.id === this.activeBackId;
+                return frontActive || backActive;
+            },
+            
+            // Delete entire card design (both front and back)
+            deleteCardDesign: function(design) {
+                if (!design) return;
+                if (!confirm('Delete this card design? This will remove both front and back templates.')) return;
+                
+                var self = this;
+                
+                // If has pair_id, delete by pair
+                if (design.pair_id) {
+                    var formData = new FormData();
+                    formData.append('action', 'delete_pair');
+                    formData.append('pair_id', design.pair_id);
+                    
+                    fetch('save_template', { method: 'POST', body: formData })
+                        .then(function(response) { return response.json(); })
+                        .then(function(result) {
+                            if (result.success) {
+                                // Remove templates from array
+                                self.templates = self.templates.filter(function(t) {
+                                    return t.pair_id !== design.pair_id;
+                                });
+                                self.selectedTemplate = null;
+                                self.selectedPairId = null;
+                                self.currentDesign = null;
+                                self.showStatus('Card design deleted', 'success');
+                            } else {
+                                self.showStatus(result.error || 'Failed to delete', 'error');
+                            }
+                        })
+                        .catch(function(error) {
+                            console.error('Delete design error:', error);
+                            self.showStatus('Error deleting design', 'error');
+                        });
+                } else {
+                    // Fallback: delete individual templates
+                    var promises = [];
+                    if (design.front) promises.push(this.deleteTemplateById(design.front.id));
+                    if (design.back) promises.push(this.deleteTemplateById(design.back.id));
+                    
+                    Promise.all(promises).then(function() {
+                        self.showStatus('Card design deleted', 'success');
+                    });
+                }
+            },
+            
+            deleteTemplateById: function(id) {
+                var formData = new FormData();
+                formData.append('action', 'delete');
+                formData.append('id', id);
+                
+                var self = this;
+                return fetch('save_template', { method: 'POST', body: formData })
+                    .then(function(response) { return response.json(); })
+                    .then(function(result) {
+                        if (result.success) {
+                            self.templates = self.templates.filter(function(t) { return t.id !== id; });
+                        }
+                    });
+            },
+            
+            // Handle front image for new template
+            handleNewFrontImage: function(event) {
+                var file = event.target.files[0];
+                if (file) this.newTemplate.frontImageFile = file;
+            },
+            
+            // Handle back image for new template
+            handleNewBackImage: function(event) {
+                var file = event.target.files[0];
+                if (file) this.newTemplate.backImageFile = file;
+            },
+            
+            // Upload background for current template
+            uploadBackground: function(event) {
+                var file = event.target.files[0];
+                if (!file || !this.selectedTemplate) return;
+                
+                var formData = new FormData();
+                formData.append('action', 'update_background');
+                formData.append('id', this.selectedTemplate.id);
+                formData.append('image', file);
+                
+                var self = this;
+                this.showStatus('Uploading...', 'success');
+                
+                fetch('save_template', { method: 'POST', body: formData })
+                    .then(function(response) { return response.json(); })
+                    .then(function(result) {
+                        if (result.success) {
+                            self.selectedTemplate.backgroundImage = result.backgroundImage;
+                            // Update originalPdf if returned (for vector PDF export)
+                            self.selectedTemplate.originalPdf = result.originalPdf || null;
+                            
+                            // Update in templates array
+                            for (var i = 0; i < self.templates.length; i++) {
+                                if (self.templates[i].id === self.selectedTemplate.id) {
+                                    self.templates[i].backgroundImage = result.backgroundImage;
+                                    self.templates[i].originalPdf = result.originalPdf || null;
+                                    break;
+                                }
+                            }
+                            
+                            if (result.originalPdf) {
+                                console.log('Original PDF saved:', result.originalPdf);
+                                self.showStatus('PDF background uploaded - high quality export available!', 'success');
+                            }
+                            
+                            // Reload canvas
+                            self.selectTemplate(self.selectedTemplate, { skipApplySettings: true });
+                            self.showStatus('Background updated', 'success');
+                        } else {
+                            self.showStatus(result.error || 'Failed to upload', 'error');
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Upload error:', error);
+                        self.showStatus('Error uploading background', 'error');
+                    });
+            },
+            
+            // Add new template pair (front + back)
+            addTemplatePair: function() {
+                if (!this.newTemplate.name) {
+                    this.showStatus('Please enter a design name', 'error');
+                    return;
+                }
+                
+                var formData = new FormData();
+                formData.append('action', 'add_pair');
+                formData.append('name', this.newTemplate.name);
+                formData.append('fields', JSON.stringify(<?php echo json_encode(getDefaultFieldSettings(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>));
+                formData.append('settings', JSON.stringify(this.getTemplateSettings()));
+                
+                if (this.newTemplate.frontImageFile) {
+                    formData.append('front_image', this.newTemplate.frontImageFile);
+                }
+                if (this.newTemplate.backImageFile) {
+                    formData.append('back_image', this.newTemplate.backImageFile);
+                }
+                
+                var self = this;
+                fetch('save_template', { method: 'POST', body: formData })
+                    .then(function(response) { return response.json(); })
+                    .then(function(result) {
+                        if (result.success) {
+                            // Add both templates to the array
+                            if (result.front) self.templates.push(result.front);
+                            if (result.back) self.templates.push(result.back);
+                            
+                            self.showAddModal = false;
+                            self.newTemplate = { name: '', frontImageFile: null, backImageFile: null };
+                            self.showStatus('Card design created', 'success');
+                            
+                            // Select the new design
+                            var designs = self.getCardDesigns();
+                            var newDesign = designs.find(function(d) { return d.pair_id === result.pair_id; });
+                            if (newDesign) {
+                                self.selectCardDesign(newDesign);
+                            }
+                        } else {
+                            self.showStatus(result.error || 'Failed to create design', 'error');
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Add design error:', error);
+                        self.showStatus('Error creating design', 'error');
+                    });
+            },
+            
+            switchTab: function(tab) {
+                this.activeTab = tab;
+                this.selectedTemplate = null;
+                if (this.cardEditor && this.cardEditor.isReady) {
+                    this.cardEditor.clear();
+                }
+                
+                var tabTemplates = this.getTemplatesForTab();
                 if (tabTemplates.length > 0) {
                     this.selectTemplate(tabTemplates[0]);
                 }
             },
             
-            getTemplatesForTab() {
-                return this.templates.filter(t => (t.side || 'front') === this.activeTab);
-            },
-            
-            selectTemplate(template) {
-                const defaultFields = <?php echo json_encode(getDefaultFieldSettings()); ?>;
+            selectTemplate: function(template, options) {
+                if (!template) return Promise.resolve();
+                
+                // Ensure fields exist with defaults
+                var defaultFields = <?php echo json_encode(getDefaultFieldSettings(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
                 if (!template.fields) {
                     template.fields = JSON.parse(JSON.stringify(defaultFields));
                 } else {
-                    for (const key in defaultFields) {
+                    for (var key in defaultFields) {
                         if (!template.fields[key]) {
                             template.fields[key] = JSON.parse(JSON.stringify(defaultFields[key]));
                         }
                     }
                 }
+                
                 this.selectedTemplate = template;
-                this.$nextTick(() => this.updatePreviewScale());
-            },
-            
-            updatePreviewScale() {
-                const preview = this.$refs.templatePreview;
-                if (preview) {
-                    this.previewScale = preview.offsetWidth / 1050;
+
+                // Apply saved size/orientation settings (if any)
+                if (!(options && options.skipApplySettings)) {
+                    this.applyTemplateSettings(template);
                 }
+                
+                // Load into canvas - check if cardEditor is ready
+                if (!(this.cardEditor && this.cardEditor.isReady)) {
+                    return Promise.resolve();
+                }
+                
+                var self = this;
+                this.cardEditor.clear();
+                
+                var chain = Promise.resolve();
+
+                if (!(options && options.skipResize)) {
+                    chain = chain.then(function() { return self.resizeCanvas(); });
+                }
+                
+                // Load background
+                var bgUrl = this.getBackgroundUrl(template);
+                if (bgUrl) {
+                    chain = chain.then(function() {
+                        return self.cardEditor.loadBackground(bgUrl);
+                    }).catch(function(e) {
+                        console.warn('Background load error:', e);
+                    });
+                }
+                
+                // Wait for fonts to be ready before adding text fields
+                chain = chain.then(function() {
+                    if (document.fonts && document.fonts.ready) {
+                        return document.fonts.ready;
+                    }
+                    return Promise.resolve();
+                });
+                
+                chain = chain.then(function() {
+                    // Add text fields
+                    for (var key in template.fields) {
+                        if (!Object.prototype.hasOwnProperty.call(template.fields, key)) continue;
+                        if (key === 'qr_code') continue;
+                        var field = template.fields[key];
+                        if (!field.enabled) continue;
+                        
+                        // Determine text alignment - use stored value or default based on field type
+                        var textAlign = field.textAlign || (key.endsWith('_ar') ? 'right' : 'left');
+                        var originX = field.originX || (textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'right' : 'left'));
+                        
+                        var sampleText = self.getSampleText(key);
+                        self.cardEditor.addTextField(key, {
+                            text: sampleText,
+                            x: field.x,
+                            y: field.y,
+                            fontSize: field.fontSize,
+                            fontFamily: field.fontFamily,
+                            fontWeight: field.fontWeight || 'normal',
+                            fill: field.fill || field.color || '#333333',
+                            textAlign: textAlign,
+                            originX: originX
+                        });
+                    }
+                    
+                    // Force re-render after a short delay to ensure fonts are applied
+                    setTimeout(function() {
+                        if (self.cardEditor && self.cardEditor.canvas) {
+                            // Update all text field coords and mark dirty
+                            var fields = self.cardEditor.getFields();
+                            for (var fieldKey in fields) {
+                                var fieldObj = fields[fieldKey];
+                                if (fieldObj && fieldObj.fieldType === 'text') {
+                                    fieldObj.set('dirty', true);
+                                    fieldObj.setCoords();
+                                }
+                            }
+                            self.cardEditor.canvas.requestRenderAll();
+                        }
+                    }, 150);
+                });
+                
+                // Add QR code if enabled
+                if (template.fields.qr_code && template.fields.qr_code.enabled) {
+                    chain = chain.then(function() {
+                        var vcfUrl = self.baseUrl + self.companySlug + '/' + encodeURIComponent(self.sampleEmployee.email || 'demo@example.com') + '.vcf';
+                        return self.cardEditor.addQRCode(vcfUrl, {
+                            x: template.fields.qr_code.x,
+                            y: template.fields.qr_code.y,
+                            size: template.fields.qr_code.size
+                        });
+                    });
+                }
+                
+                return chain;
             },
             
-            getPreviewStyle() {
-                if (!this.selectedTemplate || !this.selectedTemplate.fields) return {};
-                const bgImage = this.selectedTemplate.backgroundImage 
-                    ? 'url(<?php echo getBasePath(); ?>' + this.selectedTemplate.backgroundImage.replace(/^\//, '') + ')'
-                    : 'none';
-                return {
-                    backgroundImage: bgImage,
-                    backgroundColor: '#f3f4f6',
-                    aspectRatio: this.previewAspectRatio
+            getSampleText: function(key) {
+                var map = {
+                    'name_en': this.sampleEmployee.name_en || 'John Doe',
+                    'name_ar': this.sampleEmployee.name_ar || 'جون دو',
+                    'position_en': this.sampleEmployee.position_en || 'Position',
+                    'position_ar': this.sampleEmployee.position_ar || 'المنصب',
+                    'department_en': this.sampleEmployee.department_en || 'Department',
+                    'department_ar': this.sampleEmployee.department_ar || 'القسم',
+                    'company_en': this.sampleEmployee.company_en || 'Company',
+                    'company_ar': this.sampleEmployee.company_ar || 'الشركة',
+                    'phone': this.sampleEmployee.phone || '+968 1234 5678',
+                    'phone_ar': this.sampleEmployee.phone_ar || '٩٦٨+ ١٢٣٤ ٥٦٧٨',
+                    'fax': this.sampleEmployee.fax || '+968 1234 5679',
+                    'fax_ar': this.sampleEmployee.fax_ar || '٩٦٨+ ١٢٣٤ ٥٦٧٩',
+                    'mobile': this.sampleEmployee.mobile || '+968 9876 5432',
+                    'mobile_ar': this.sampleEmployee.mobile_ar || '٩٦٨+ ٩٨٧٦ ٥٤٣٢',
+                    'email': this.sampleEmployee.email || 'email@company.com',
+                    'website': this.sampleEmployee.website || 'www.company.com',
+                    'website_ar': this.sampleEmployee.website_ar || 'www.company.com',
+                    'address': this.sampleEmployee.address_en || this.sampleEmployee.address || 'Address',
+                    'address_en': this.sampleEmployee.address_en || this.sampleEmployee.address || 'Address',
+                    'address_ar': this.sampleEmployee.address_ar || 'العنوان'
                 };
+                return map[key] || key;
             },
             
-            getQRCodeStyle() {
-                if (!this.selectedTemplate?.fields?.qr_code) return {};
-                const qr = this.selectedTemplate.fields.qr_code;
-                return {
-                    left: (qr.x || 0) + '%',
-                    top: (qr.y || 0) + '%',
-                    width: ((qr.size || 100) * this.previewScale) + 'px',
-                    height: ((qr.size || 100) * this.previewScale) + 'px'
+            // Cycle to next sample profile and refresh preview
+            nextSampleProfile: function() {
+                if (!this.sampleProfiles || this.sampleProfiles.length === 0) return;
+                
+                // Move to next profile (loop back to start)
+                this.currentProfileIndex = (this.currentProfileIndex + 1) % this.sampleProfiles.length;
+                var profile = this.sampleProfiles[this.currentProfileIndex];
+                
+                // Convert numbers to Arabic numerals for Arabic fields
+                var toArabicNumerals = function(str) {
+                    if (!str) return str;
+                    return str.replace(/[0-9]/g, function(d) {
+                        return String.fromCharCode(d.charCodeAt(0) + 1584);
+                    });
                 };
+                
+                // Update sampleEmployee with new profile (all fields)
+                this.sampleEmployee = {
+                    name_en: profile.name_en,
+                    name_ar: profile.name_ar,
+                    position_en: profile.position_en,
+                    position_ar: profile.position_ar,
+                    department_en: profile.department_en || '',
+                    department_ar: profile.department_ar || '',
+                    company_en: profile.company_en,
+                    company_ar: profile.company_ar,
+                    phone: profile.phone,
+                    phone_ar: toArabicNumerals(profile.phone),
+                    fax: profile.fax || '',
+                    fax_ar: toArabicNumerals(profile.fax || ''),
+                    mobile: profile.mobile,
+                    mobile_ar: toArabicNumerals(profile.mobile),
+                    email: profile.email,
+                    website: profile.website,
+                    website_ar: profile.website,
+                    address: profile.address_en,
+                    address_en: profile.address_en,
+                    address_ar: profile.address_ar
+                };
+                
+                // Refresh canvas with new sample data
+                this.refreshPreviewText();
             },
             
-            getFieldLabel(key) {
-                const labels = {
-                    'name_en': 'Name (EN)', 'name_ar': 'Name (AR)',
-                    'position_en': 'Position (EN)', 'position_ar': 'Position (AR)',
-                    'phone': 'Phone', 'mobile': 'Mobile', 'email': 'Email',
-                    'company_en': 'Company (EN)', 'company_ar': 'Company (AR)',
-                    'website': 'Website', 'address': 'Address', 'qr_code': 'QR Code'
+            // Refresh preview text on canvas with current sample data
+            refreshPreviewText: function() {
+                if (!this.cardEditor || !this.selectedTemplate) return;
+                
+                var self = this;
+                var fields = this.cardEditor.getFields();
+                
+                for (var key in fields) {
+                    var fieldObj = fields[key];
+                    if (fieldObj && fieldObj.fieldType === 'text') {
+                        var newText = this.getSampleText(key);
+                        fieldObj.set('text', newText);
+                        fieldObj.set('dirty', true);
+                        fieldObj.setCoords();
+                    }
+                }
+                
+                this.cardEditor.canvas.requestRenderAll();
+            },
+            
+            getBackgroundUrl: function(template) {
+                if (!template || !template.backgroundImage) return '';
+                var path = template.backgroundImage.replace(/^\//, '');
+                return this.basePath + path;
+            },
+            
+            isTemplateActive: function(template) {
+                if (!template) return false;
+                if (template.side === 'front') {
+                    return template.id === this.activeFrontId;
+                }
+                return template.id === this.activeBackId;
+            },
+            
+            getFieldLabel: function(key) {
+                var labels = {
+                    'name_en': 'Name (EN)', 'name_ar': 'الاسم (AR)',
+                    'position_en': 'Position (EN)', 'position_ar': 'المنصب (AR)',
+                    'company_en': 'Company (EN)', 'company_ar': 'الشركة (AR)',
+                    'phone': 'Phone (EN)', 'phone_ar': 'الهاتف (AR)',
+                    'mobile': 'Mobile (EN)', 'mobile_ar': 'الجوال (AR)',
+                    'email': 'Email',
+                    'website': 'Website (EN)', 'website_ar': 'الموقع (AR)',
+                    'address': 'Address', 'address_en': 'Address (EN)', 'address_ar': 'العنوان (AR)',
+                    'qr_code': 'QR Code'
                 };
                 return labels[key] || key;
             },
             
-            startDrag(event) {
-                const target = event.target.closest('[data-field]');
-                if (target) {
-                    this.draggedField = target.dataset.field;
-                    this.dragStartX = event.clientX;
-                    this.dragStartY = event.clientY;
+            toggleField: function(key, enabled) {
+                if (!this.selectedTemplate || !this.selectedTemplate.fields[key]) return;
+                
+                this.selectedTemplate.fields[key].enabled = enabled;
+                
+                if (this.cardEditor) {
+                    if (key === 'qr_code') {
+                        if (enabled) {
+                            var field = this.selectedTemplate.fields.qr_code;
+                            var vcfUrl = this.baseUrl + this.companySlug + '/' + encodeURIComponent(this.sampleEmployee.email || 'demo@example.com') + '.vcf';
+                            // Use sensible defaults if position is missing or invalid
+                            var dims = this.getCanvasDimensions();
+                            var x = (field.x > 0 && field.x < dims.width) ? field.x : dims.width - 180;
+                            var y = (field.y > 0 && field.y < dims.height) ? field.y : dims.height / 2 - 50;
+                            this.cardEditor.addQRCode(vcfUrl, {
+                                x: x,
+                                y: y,
+                                size: field.size || 100
+                            });
+                            // Update the field with new position
+                            this.selectedTemplate.fields.qr_code.x = x;
+                            this.selectedTemplate.fields.qr_code.y = y;
+                        } else {
+                            this.cardEditor.removeField('qr_code');
+                        }
+                    } else {
+                        if (enabled) {
+                            var field = this.selectedTemplate.fields[key];
+                            var dims = this.getCanvasDimensions();
+                            // Use sensible defaults if position is missing or would be off-screen
+                            var x = (field.x > 0 && field.x < dims.width - 50) ? field.x : dims.width / 2;
+                            var y = (field.y > 0 && field.y < dims.height - 20) ? field.y : dims.height / 2;
+                            var fontSize = field.fontSize || 16;
+                            var fontFamily = field.fontFamily || 'Inter';
+                            var fill = field.fill || field.color || '#333333';
+                            // Determine text alignment - default based on field type (Arabic = right, English = left)
+                            var textAlign = field.textAlign || (key.endsWith('_ar') ? 'right' : 'left');
+                            var originX = field.originX || (textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'right' : 'left'));
+                            
+                            this.cardEditor.addTextField(key, {
+                                text: this.getSampleText(key),
+                                x: x,
+                                y: y,
+                                fontSize: fontSize,
+                                fontFamily: fontFamily,
+                                fontWeight: field.fontWeight || 'normal',
+                                fill: fill,
+                                textAlign: textAlign,
+                                originX: originX
+                            });
+                            
+                            // Update the field with new position if it was missing
+                            this.selectedTemplate.fields[key].x = x;
+                            this.selectedTemplate.fields[key].y = y;
+                            this.selectedTemplate.fields[key].fontSize = fontSize;
+                            this.selectedTemplate.fields[key].fontFamily = fontFamily;
+                            this.selectedTemplate.fields[key].textAlign = textAlign;
+                            this.selectedTemplate.fields[key].originX = originX;
+                            this.selectedTemplate.fields[key].fill = fill;
+                            
+                            // Force re-render to ensure font is applied
+                            var self = this;
+                            setTimeout(function() {
+                                var fieldObj = self.cardEditor.fields[key];
+                                if (fieldObj) {
+                                    fieldObj.set('dirty', true);
+                                    fieldObj.setCoords();
+                                    self.cardEditor.canvas.requestRenderAll();
+                                }
+                            }, 100);
+                        } else {
+                            this.cardEditor.removeField(key);
+                        }
+                    }
                 }
             },
             
-            drag(event) {
-                if (!this.draggedField || !this.selectedTemplate) return;
-                const preview = this.$refs.templatePreview;
-                const rect = preview.getBoundingClientRect();
-                const x = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
-                const y = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
-                this.selectedTemplate.fields[this.draggedField].x = x;
-                this.selectedTemplate.fields[this.draggedField].y = y;
+            updateFieldProperty: function(key, property, value) {
+                if (!this.selectedTemplate || !this.selectedTemplate.fields[key]) return;
+                
+                this.selectedTemplate.fields[key][property] = value;
+                
+                // Also update color for backward compat
+                if (property === 'fill') {
+                    this.selectedTemplate.fields[key].color = value;
+                }
+                
+                // Update originX when textAlign changes for proper positioning
+                if (property === 'textAlign') {
+                    var originX = 'left';
+                    if (value === 'center') originX = 'center';
+                    if (value === 'right') originX = 'right';
+                    this.selectedTemplate.fields[key].originX = originX;
+                    
+                    // Use specialized alignment method if available
+                    if (this.cardEditor && this.cardEditor.setFieldAlignment) {
+                        this.cardEditor.setFieldAlignment(key, value);
+                        return;
+                    }
+                }
+                
+                if (this.cardEditor) {
+                    var updatePayload = {};
+                    updatePayload[property] = value;
+                    this.cardEditor.updateField(key, updatePayload);
+                }
             },
             
-            endDrag() { this.draggedField = null; },
+            updateQRSize: function(size) {
+                if (!this.selectedTemplate || !this.selectedTemplate.fields.qr_code) return;
+                
+                this.selectedTemplate.fields.qr_code.size = size;
+                
+                if (this.cardEditor) {
+                    this.cardEditor.updateQRCode({ size: size });
+                }
+            },
             
-            handleNewTemplateImage(event) {
-                const file = event.target.files[0];
+            // Font selector methods
+            filteredFonts: function(searchTerm) {
+                var search = (searchTerm || '').toLowerCase();
+                if (!search) return this.fontCategories;
+                var result = {};
+                var self = this;
+                Object.keys(this.fontCategories).forEach(function(cat) {
+                    var fonts = self.fontCategories[cat];
+                    var filtered = fonts.filter(function(f) { return f.toLowerCase().indexOf(search) !== -1; });
+                    if (filtered.length > 0) result[cat] = filtered;
+                });
+                return result;
+            },
+            
+            selectFont: function(key, fontName) {
+                var self = this;
+                // Update immediately for responsive UI
+                this.updateFieldProperty(key, 'fontFamily', fontName);
+                
+                // Also trigger canvas re-render after a short delay to ensure font is loaded
+                setTimeout(function() {
+                    if (self.cardEditor && self.cardEditor.canvas) {
+                        self.cardEditor.canvas.requestRenderAll();
+                    }
+                }, 100);
+            },
+            
+            handleNewTemplateImage: function(event) {
+                var file = event.target.files[0];
                 if (file) this.newTemplate.imageFile = file;
             },
             
-            async addTemplate() {
+            addTemplate: function() {
                 if (!this.newTemplate.name || !this.newTemplate.imageFile) {
                     this.showStatus('Please fill all required fields', 'error');
                     return;
                 }
-                const formData = new FormData();
+                
+                var formData = new FormData();
                 formData.append('action', 'add');
                 formData.append('name', this.newTemplate.name);
                 formData.append('side', this.newTemplate.side);
                 formData.append('image', this.newTemplate.imageFile);
-                formData.append('fields', JSON.stringify(<?php echo json_encode(getDefaultFieldSettings()); ?>));
+                formData.append('fields', JSON.stringify(<?php echo json_encode(getDefaultFieldSettings(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>));
+                formData.append('settings', JSON.stringify(this.getTemplateSettings()));
                 
-                try {
-                    const response = await fetch('save_template.php', { method: 'POST', body: formData });
-                    const result = await response.json();
-                    if (result.success) {
-                        this.templates.push(result.template);
-                        this.showAddModal = false;
-                        this.newTemplate = { name: '', side: 'front', imageFile: null };
-                        this.showStatus('Template created successfully', 'success');
-                        this.selectTemplate(result.template);
-                    } else {
-                        this.showStatus(result.error || 'Failed to create template', 'error');
-                    }
-                } catch (error) {
-                    this.showStatus('Error creating template', 'error');
-                }
+                var self = this;
+                fetch('save_template', { method: 'POST', body: formData })
+                    .then(function(response) { return response.json(); })
+                    .then(function(result) {
+                        if (result.success) {
+                            self.templates.push(result.template);
+                            self.showAddModal = false;
+                            self.newTemplate = { name: '', side: 'front', imageFile: null };
+                            self.showStatus('Template created successfully', 'success');
+                            self.selectTemplate(result.template);
+                        } else {
+                            self.showStatus(result.error || 'Failed to create template', 'error');
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Add template error:', error);
+                        self.showStatus('Error creating template', 'error');
+                    });
             },
             
-            async saveTemplate() {
+            saveTemplate: function() {
                 if (!this.selectedTemplate) return;
-                const formData = new FormData();
+                
+                // Get updated positions from canvas
+                if (this.cardEditor) {
+                    var fieldKeys = Object.keys(this.selectedTemplate.fields);
+                    for (var i = 0; i < fieldKeys.length; i++) {
+                        var key = fieldKeys[i];
+                        var pos = this.cardEditor.getFieldPosition(key);
+                        if (pos) {
+                            this.selectedTemplate.fields[key].x = pos.x;
+                            this.selectedTemplate.fields[key].y = pos.y;
+                            if (key === 'qr_code' && pos.size) {
+                                this.selectedTemplate.fields[key].size = pos.size;
+                            } else if (pos.fontSize) {
+                                this.selectedTemplate.fields[key].fontSize = pos.fontSize;
+                            }
+                        }
+                    }
+                }
+                
+                var formData = new FormData();
                 formData.append('action', 'update');
                 formData.append('id', this.selectedTemplate.id);
                 formData.append('name', this.selectedTemplate.name);
                 formData.append('fields', JSON.stringify(this.selectedTemplate.fields));
+                formData.append('settings', JSON.stringify(this.getTemplateSettings()));
                 
-                try {
-                    const response = await fetch('save_template.php', { method: 'POST', body: formData });
-                    const result = await response.json();
-                    this.showStatus(result.success ? 'Template saved successfully' : (result.error || 'Failed to save'), result.success ? 'success' : 'error');
-                } catch (error) {
-                    this.showStatus('Error saving template', 'error');
-                }
+                var self = this;
+                fetch('save_template', { method: 'POST', body: formData })
+                    .then(function(response) { return response.json(); })
+                    .then(function(result) {
+                        self.showStatus(result.success ? 'Template saved successfully' : (result.error || 'Failed to save'), result.success ? 'success' : 'error');
+                    })
+                    .catch(function(error) {
+                        console.error('Save template error:', error);
+                        self.showStatus('Error saving template', 'error');
+                    });
             },
             
-            async setActiveTemplate() {
+            setActiveTemplate: function() {
                 if (!this.selectedTemplate) return;
-                const formData = new FormData();
+                
+                var formData = new FormData();
                 formData.append('action', 'activate');
                 formData.append('id', this.selectedTemplate.id);
                 formData.append('side', this.selectedTemplate.side);
                 
-                try {
-                    const response = await fetch('save_template.php', { method: 'POST', body: formData });
-                    const result = await response.json();
-                    if (result.success) {
-                        if (this.selectedTemplate.side === 'front') this.activeFrontId = this.selectedTemplate.id;
-                        else this.activeBackId = this.selectedTemplate.id;
-                        this.showStatus('Template set as active', 'success');
-                    } else {
-                        this.showStatus(result.error || 'Failed to activate', 'error');
-                    }
-                } catch (error) {
-                    this.showStatus('Error activating template', 'error');
-                }
+                var self = this;
+                fetch('save_template', { method: 'POST', body: formData })
+                    .then(function(response) { return response.json(); })
+                    .then(function(result) {
+                        if (result.success) {
+                            if (self.selectedTemplate.side === 'front') {
+                                self.activeFrontId = self.selectedTemplate.id;
+                            } else {
+                                self.activeBackId = self.selectedTemplate.id;
+                            }
+                            self.showStatus('Template set as active', 'success');
+                        } else {
+                            self.showStatus(result.error || 'Failed to activate', 'error');
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Activate template error:', error);
+                        self.showStatus('Error activating template', 'error');
+                    });
             },
             
-            async deleteTemplate(id) {
+            deleteTemplate: function(id) {
                 if (!confirm('Are you sure you want to delete this template?')) return;
-                const formData = new FormData();
+                
+                var formData = new FormData();
                 formData.append('action', 'delete');
                 formData.append('id', id);
                 
+                var self = this;
+                fetch('save_template', { method: 'POST', body: formData })
+                    .then(function(response) { return response.json(); })
+                    .then(function(result) {
+                        if (result.success) {
+                            self.templates = self.templates.filter(function(t) { return t.id !== id; });
+                            if (self.selectedTemplate && self.selectedTemplate.id === id) {
+                                self.selectedTemplate = null;
+                                if (self.cardEditor) {
+                                    self.cardEditor.clear();
+                                }
+                            }
+                            self.showStatus('Template deleted', 'success');
+                        } else {
+                            self.showStatus(result.error || 'Failed to delete', 'error');
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Delete template error:', error);
+                        self.showStatus('Error deleting template', 'error');
+                    });
+            },
+            
+            exportPNG: function() {
+                if (!this.cardEditor || !this.selectedTemplate) return;
+                
+                // Export at 3x for print quality (~300 DPI)
+                var dataUrl = this.cardEditor.exportPNG(3);
+                var link = document.createElement('a');
+                link.download = (this.selectedTemplate.name || 'card') + '.png';
+                link.href = dataUrl;
+                link.click();
+                
+                this.showStatus('PNG exported successfully', 'success');
+            },
+            
+            exportPDF: function() {
+                if (!this.cardEditor || !this.selectedTemplate) return;
+                
                 try {
-                    const response = await fetch('save_template.php', { method: 'POST', body: formData });
-                    const result = await response.json();
-                    if (result.success) {
-                        this.templates = this.templates.filter(t => t.id !== id);
-                        if (this.selectedTemplate?.id === id) this.selectedTemplate = null;
-                        this.showStatus('Template deleted', 'success');
-                    } else {
-                        this.showStatus(result.error || 'Failed to delete', 'error');
-                    }
-                } catch (error) {
-                    this.showStatus('Error deleting template', 'error');
+                    this.cardEditor.exportPDF((this.selectedTemplate.name || 'card') + '.pdf');
+                    this.showStatus('PDF downloaded', 'success');
+                } catch (e) {
+                    console.error('PDF export error:', e);
+                    this.showStatus('Error downloading PDF', 'error');
                 }
             },
             
-            showStatus(message, type) {
-                this.statusMessage = message;
-                this.statusType = type;
-                setTimeout(() => this.statusMessage = '', 3000);
+            // Automatically uses best quality available (hybrid: vector bg + raster text)
+            exportBestPDF: async function() {
+                if (!this.cardEditor || !this.selectedTemplate) {
+                    return;
+                }
+                
+                var self = this;
+                var originalPdfUrl = this.selectedTemplate.originalPdf;
+                var filename = (this.selectedTemplate.name || 'card') + '.pdf';
+                
+                // If original PDF exists and PDF-lib is loaded, use hybrid export
+                if (originalPdfUrl && typeof PDFLib !== 'undefined') {
+                    try {
+                        self.showStatus('Generating high-quality PDF...', 'info');
+                        
+                        // Use hybrid export: vector PDF background + 600 DPI text overlay
+                        const pdfBlob = await this.cardEditor.exportHybridPDFBlob(originalPdfUrl);
+                        
+                        if (pdfBlob) {
+                            // Download the PDF
+                            const link = document.createElement('a');
+                            link.href = URL.createObjectURL(pdfBlob);
+                            link.download = filename;
+                            link.click();
+                            URL.revokeObjectURL(link.href);
+                            self.showStatus('High-quality PDF downloaded', 'success');
+                        } else {
+                            // Fallback to standard PDF
+                            this.exportPDF();
+                        }
+                    } catch (e) {
+                        console.error('Hybrid PDF export error:', e);
+                        // Fallback to standard PDF
+                        this.exportPDF();
+                    }
+                } else {
+                    // Standard PDF export (rasterized)
+                    this.exportPDF();
+                }
+            },
+            
+            // Align selected objects
+            alignSelected: function(direction) {
+                console.log('=== alignSelected called with direction:', direction, '===');
+                
+                if (!this.cardEditor || !this.cardEditor.canvas) {
+                    console.log('No canvas!');
+                    return;
+                }
+                
+                var canvas = this.cardEditor.canvas;
+                var activeObjects = canvas.getActiveObjects();
+                
+                console.log('Active objects:', activeObjects.length);
+                
+                if (activeObjects.length === 0) {
+                    this.showStatus('Select elements to align', 'error');
+                    return;
+                }
+                
+                var canvasWidth = canvas.width;
+                var canvasHeight = canvas.height;
+                console.log('Canvas size:', canvasWidth, 'x', canvasHeight);
+                
+                if (activeObjects.length === 1) {
+                    // Align to canvas
+                    var obj = activeObjects[0];
+                    var bounds = obj.getBoundingRect();
+                    var originX = obj.originX || 'left';
+                    var originY = obj.originY || 'top';
+                    var textAlign = obj.textAlign || 'left';
+                    
+                    console.log('Object details:', {
+                        fieldKey: obj.fieldKey,
+                        originX: originX,
+                        textAlign: textAlign,
+                        currentLeft: obj.left,
+                        boundsWidth: bounds.width
+                    });
+                    
+                    switch(direction) {
+                        case 'left':
+                            if (originX === 'center') {
+                                obj.set('left', 20 + bounds.width / 2);
+                            } else if (originX === 'right') {
+                                obj.set('left', 20 + bounds.width);
+                            } else {
+                                obj.set('left', 20);
+                            }
+                            break;
+                        case 'center-h':
+                            // For center alignment, position depends on originX
+                            var newLeft;
+                            if (originX === 'center') {
+                                newLeft = canvasWidth / 2;
+                                console.log('originX is center -> setting left to canvasWidth/2 =', newLeft);
+                            } else if (originX === 'right') {
+                                newLeft = canvasWidth / 2 + bounds.width / 2;
+                                console.log('originX is right -> setting left to', newLeft);
+                            } else {
+                                newLeft = (canvasWidth - bounds.width) / 2;
+                                console.log('originX is left -> setting left to (canvasWidth - boundsWidth) / 2 =', newLeft);
+                            }
+                            obj.set('left', newLeft);
+                            break;
+                        case 'right':
+                            if (originX === 'center') {
+                                obj.set('left', canvasWidth - 20 - bounds.width / 2);
+                            } else if (originX === 'right') {
+                                obj.set('left', canvasWidth - 20);
+                            } else {
+                                obj.set('left', canvasWidth - bounds.width - 20);
+                            }
+                            break;
+                        case 'top':
+                            if (originY === 'center') {
+                                obj.set('top', 20 + bounds.height / 2);
+                            } else if (originY === 'bottom') {
+                                obj.set('top', 20 + bounds.height);
+                            } else {
+                                obj.set('top', 20);
+                            }
+                            break;
+                        case 'center-v':
+                            if (originY === 'center') {
+                                obj.set('top', canvasHeight / 2);
+                            } else if (originY === 'bottom') {
+                                obj.set('top', canvasHeight / 2 + bounds.height / 2);
+                            } else {
+                                obj.set('top', (canvasHeight - bounds.height) / 2);
+                            }
+                            break;
+                        case 'bottom':
+                            if (originY === 'center') {
+                                obj.set('top', canvasHeight - 20 - bounds.height / 2);
+                            } else if (originY === 'bottom') {
+                                obj.set('top', canvasHeight - 20);
+                            } else {
+                                obj.set('top', canvasHeight - bounds.height - 20);
+                            }
+                            break;
+                    }
+                } else {
+                    // Align to each other (use first selected as reference)
+                    var refObj = activeObjects[0];
+                    var refBounds = refObj.getBoundingRect();
+                    
+                    for (var i = 1; i < activeObjects.length; i++) {
+                        var obj = activeObjects[i];
+                        var bounds = obj.getBoundingRect();
+                        
+                        switch(direction) {
+                            case 'left':
+                                obj.set('left', refObj.left);
+                                break;
+                            case 'center-h':
+                                obj.set('left', refObj.left + (refBounds.width - bounds.width) / 2);
+                                break;
+                            case 'right':
+                                obj.set('left', refObj.left + refBounds.width - bounds.width);
+                                break;
+                            case 'top':
+                                obj.set('top', refObj.top);
+                                break;
+                            case 'center-v':
+                                obj.set('top', refObj.top + (refBounds.height - bounds.height) / 2);
+                                break;
+                            case 'bottom':
+                                obj.set('top', refObj.top + refBounds.height - bounds.height);
+                                break;
+                        }
+                    }
+                }
+                
+                // Update template field positions for all aligned objects
+                var self = this;
+                activeObjects.forEach(function(obj) {
+                    if (obj.fieldKey && self.selectedTemplate && self.selectedTemplate.fields[obj.fieldKey]) {
+                        var oldX = self.selectedTemplate.fields[obj.fieldKey].x;
+                        var oldY = self.selectedTemplate.fields[obj.fieldKey].y;
+                        self.selectedTemplate.fields[obj.fieldKey].x = Math.round(obj.left);
+                        self.selectedTemplate.fields[obj.fieldKey].y = Math.round(obj.top);
+                        console.log('Updated field "' + obj.fieldKey + '": x=' + oldX + ' -> ' + Math.round(obj.left) + ', y=' + oldY + ' -> ' + Math.round(obj.top));
+                    }
+                });
+                
+                canvas.renderAll();
+                this.showStatus('Elements aligned', 'success');
+            },
+            
+            // Distribute selected objects evenly
+            distributeSelected: function(direction) {
+                if (!this.cardEditor || !this.cardEditor.canvas) return;
+                
+                var canvas = this.cardEditor.canvas;
+                var activeObjects = canvas.getActiveObjects();
+                
+                if (activeObjects.length < 3) {
+                    this.showStatus('Select 3 or more elements to distribute', 'error');
+                    return;
+                }
+                
+                // Sort objects by position
+                if (direction === 'horizontal') {
+                    activeObjects.sort(function(a, b) { return a.left - b.left; });
+                    
+                    var first = activeObjects[0];
+                    var last = activeObjects[activeObjects.length - 1];
+                    var totalWidth = 0;
+                    
+                    activeObjects.forEach(function(obj) {
+                        totalWidth += obj.getBoundingRect().width;
+                    });
+                    
+                    var availableSpace = (last.left + last.getBoundingRect().width) - first.left - totalWidth;
+                    var spacing = availableSpace / (activeObjects.length - 1);
+                    
+                    var currentX = first.left + first.getBoundingRect().width + spacing;
+                    for (var i = 1; i < activeObjects.length - 1; i++) {
+                        activeObjects[i].set('left', currentX);
+                        currentX += activeObjects[i].getBoundingRect().width + spacing;
+                    }
+                } else {
+                    activeObjects.sort(function(a, b) { return a.top - b.top; });
+                    
+                    var first = activeObjects[0];
+                    var last = activeObjects[activeObjects.length - 1];
+                    var totalHeight = 0;
+                    
+                    activeObjects.forEach(function(obj) {
+                        totalHeight += obj.getBoundingRect().height;
+                    });
+                    
+                    var availableSpace = (last.top + last.getBoundingRect().height) - first.top - totalHeight;
+                    var spacing = availableSpace / (activeObjects.length - 1);
+                    
+                    var currentY = first.top + first.getBoundingRect().height + spacing;
+                    for (var i = 1; i < activeObjects.length - 1; i++) {
+                        activeObjects[i].set('top', currentY);
+                        currentY += activeObjects[i].getBoundingRect().height + spacing;
+                    }
+                }
+                
+                canvas.renderAll();
+                this.showStatus('Elements distributed', 'success');
+            },
+            
+            showStatus: function(message, type) {
+                var self = this;
+                self.statusMessage = message;
+                self.statusType = type;
+                setTimeout(function() { self.statusMessage = ''; }, 3000);
             }
         };
     }

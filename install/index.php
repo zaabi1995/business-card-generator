@@ -18,6 +18,7 @@ $basePath = str_replace('/install/index.php', '', $scriptPath);
 $basePath = str_replace('/install/', '', $basePath);
 $basePath = rtrim($basePath, '/');
 if (empty($basePath)) $basePath = '';
+require_once __DIR__ . '/../includes/installer-layout.php';
 
 // STRICT CHECK: If installation is complete, BLOCK access completely - no exceptions
 if (file_exists(__DIR__ . '/../config.php')) {
@@ -33,25 +34,14 @@ if (file_exists(__DIR__ . '/../config.php')) {
                 if ($setting && $setting['setting_value'] === '1') {
                     // Installation is COMPLETE - BLOCK ACCESS PERMANENTLY
                     ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Installation Complete | Cardify</title>
-    <link rel="icon" href="<?php echo $basePath; ?>/favicon.svg" type="image/svg+xml">
-    <link rel="alternate icon" href="<?php echo $basePath; ?>/favicon.ico">
-    <!-- Font Awesome Pro (Local) -->
-    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/all.css">
-    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/sharp-solid.css">
-    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/sharp-regular.css">
-    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/sharp-light.css">
-    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/duotone.css">
-    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/css/tailwind.css?v=<?php echo filemtime(__DIR__ . '/../assets/css/tailwind.css'); ?>">
-    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/css/cardify-overrides.css?v=<?php echo filemtime(__DIR__ . '/../assets/css/cardify-overrides.css'); ?>">
-    <meta http-equiv="refresh" content="5;url=<?php echo $basePath; ?>/">
-</head>
-<body class="bg-gradient-to-br from-blue-50 to-gray-100 min-h-screen flex items-center justify-center font-sans">
+                    <?php
+                    installerHeader(
+                        'Installation Complete | Cardify',
+                        $basePath,
+                        '<meta http-equiv="refresh" content="5;url=' . $basePath . '/">',
+                        'min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-gray-100'
+                    );
+                    ?>
     <div class="bg-white rounded-2xl shadow-xl border border-gray-200 p-10 max-w-md text-center">
         <div class="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
             <svg class="w-8 h-8 text-green-600" aria-hidden="true">
@@ -80,8 +70,7 @@ if (file_exists(__DIR__ . '/../config.php')) {
             To reinstall, manually delete config.php and drop database tables.
         </p>
     </div>
-</body>
-</html>
+<?php installerFooter(); ?>
                     <?php
                     exit;
                 }
@@ -383,13 +372,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Helper function to generate UUID if not available
             if (!function_exists('installer_generateUUID')) {
                 function installer_generateUUID() {
-                    return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-                        mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-                        mt_rand(0, 0xffff),
-                        mt_rand(0, 0x0fff) | 0x4000,
-                        mt_rand(0, 0x3fff) | 0x8000,
-                        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-                    );
+                    $data = random_bytes(16);
+                    $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
+                    $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
+                    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
                 }
             }
             
@@ -653,11 +639,6 @@ define('CARDS_DIR', UPLOADS_DIR . '/cards');
 define('EXCEL_DIR', UPLOADS_DIR . '/excel');
 define('ASSETS_DIR', BASE_DIR . '/assets');
 
-// Data files (JSON fallback if database not available)
-define('EMPLOYEES_JSON', DATA_DIR . '/employees.json');
-define('TEMPLATES_JSON', DATA_DIR . '/templates.json');
-define('GENERATED_JSON', DATA_DIR . '/generated.json');
-
 // Site settings
 define('SITE_NAME', '{$siteName}');
 define('SITE_DESCRIPTION', '{$siteDescription}');
@@ -689,6 +670,7 @@ if (\$isProduction) {
 require_once INCLUDES_DIR . '/Database.php';
 require_once INCLUDES_DIR . '/functions.php';
 require_once INCLUDES_DIR . '/DatabaseAdapter.php';
+require_once INCLUDES_DIR . '/AuditLog.php';
 
 // Initialize database connection (if configured)
 if (defined('DB_HOST') && !empty(DB_HOST) && !empty(DB_NAME)) {
@@ -730,31 +712,11 @@ if (!function_exists('getBasePath')) {
         return $scriptDir === '/' ? '/' : rtrim($scriptDir, '/') . '/';
     }
 }
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Installation Wizard | Cardify</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="icon" href="<?php echo $basePath; ?>/favicon.svg" type="image/svg+xml">
-    <link rel="alternate icon" href="<?php echo $basePath; ?>/favicon.ico">
-    
-    <!-- Font Awesome Pro (Local) -->
-    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/all.css">
-    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/sharp-solid.css">
-    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/sharp-regular.css">
-    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/sharp-light.css">
-    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/vendor/css/duotone.css">
 
-    <!-- Tailwind CSS -->
-    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/css/tailwind.css">
-    <link rel="stylesheet" href="<?php echo $basePath; ?>/assets/css/cardify-overrides.css">
-    
-    <style>
+installerHeader(
+    'Installation Wizard | Cardify',
+    $basePath,
+    '<style>
         .card-box {
             background: white;
             border: 1px solid #e5e7eb;
@@ -806,9 +768,10 @@ if (!function_exists('getBasePath')) {
             color: #1e40af;
             font-size: 0.875rem;
         }
-    </style>
-</head>
-<body class="bg-gradient-to-br from-gray-50 to-blue-50 text-gray-900 font-sans min-h-screen antialiased">
+    </style>',
+    'bg-gradient-to-br from-gray-50 to-blue-50 min-h-screen'
+);
+?>
     <div class="min-h-screen flex items-center justify-center px-4 py-12">
         <div class="w-full max-w-3xl">
             <!-- Header -->
@@ -824,7 +787,7 @@ if (!function_exists('getBasePath')) {
                             <rect x="28" y="22" width="18" height="4" rx="2" fill="#93c5fd"/>
                         </svg>
                     </div>
-                    <span class="text-2xl font-bold text-gray-900">Cardify</span>
+                    <span class="text-2xl font-bold text-gray-900" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;">Cardify</span>
                 </div>
                 <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
                     Installation Wizard
@@ -1285,5 +1248,4 @@ if (!function_exists('getBasePath')) {
             </div>
         </div>
     </div>
-</body>
-</html>
+<?php installerFooter(); ?>

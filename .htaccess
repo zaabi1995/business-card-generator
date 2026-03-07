@@ -1,5 +1,5 @@
-# Business Card Generator SaaS - Apache Configuration
-# For bc.bhd.om
+# Cardify - Business Card Generator SaaS - Apache Configuration
+# For cardify.om
 
 # Enable Rewrite Engine
 <IfModule mod_rewrite.c>
@@ -9,25 +9,84 @@
     # Serve SVG favicon for default .ico requests
     RewriteRule ^favicon\.ico$ /favicon.svg [L]
     
+    # Redirect old login URLs to unified login
+    RewriteRule ^admin/login/?$ /login.php [R=301,L]
+    RewriteRule ^company/login/?$ /login.php [R=301,L]
+    RewriteRule ^printshop/login/?$ /login.php [R=301,L]
+    
     # Force HTTPS in production (uncomment when SSL is configured)
     # RewriteCond %{HTTPS} off
-    # RewriteCond %{HTTP_HOST} ^bc\.bhd\.om$ [NC]
+    # RewriteCond %{HTTP_HOST} ^cardify\.om$ [NC]
     # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
     
     # Redirect www to non-www (if needed)
-    # RewriteCond %{HTTP_HOST} ^www\.bc\.bhd\.om$ [NC]
-    # RewriteRule ^(.*)$ https://bc.bhd.om/$1 [L,R=301]
+    # RewriteCond %{HTTP_HOST} ^www\.cardify\.om$ [NC]
+    # RewriteRule ^(.*)$ https://cardify.om/$1 [L,R=301]
     
-    # Share link routing (e.g., bc.bhd.om/share/{token})
+    # VCF file routing: /{company_slug}/{email}.vcf -> vcf.php
+    # Shorter URL for smaller QR codes
+    # Example: cardify.om/acme/john@acme.com.vcf
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([a-z0-9-]+)/([^/]+)\.vcf$ vcf.php?company=$1&email=$2 [L,QSA]
+    
+    # Company admin routing: /{company_slug}/admin/{page} -> company_admin.php
+    # Example: cardify.om/acme/admin/ or cardify.om/acme/admin/employees
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([a-z0-9-]+)/admin/?$ company_admin.php?company_slug=$1&page=index [L,QSA]
+    
+    # Handle .php extension in admin URLs (redirect to clean URL)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^([a-z0-9-]+)/admin/([a-z0-9_-]+)\.php$ /$1/admin/$2 [R=301,L]
+    
+    # Clean admin URLs
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([a-z0-9-]+)/admin/([a-z0-9_-]+)/?$ company_admin.php?company_slug=$1&page=$2 [L,QSA]
+    
+    # Department-specific portal routing: /{company_slug}/portal/{department_slug} -> portal.php
+    # Example: cardify.om/acme/portal/sales
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([a-z0-9-]+)/portal/([a-z0-9-]+)/?$ portal.php?company_slug=$1&department_slug=$2 [L,QSA]
+
+    # Employee portal routing: /{company_slug}/portal -> portal.php
+    # Example: cardify.om/acme/portal
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([a-z0-9-]+)/portal/?$ portal.php?company_slug=$1 [L,QSA]
+    
+    # Share link routing (e.g., cardify.om/share/{token})
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^share/([a-zA-Z0-9]+)/?$ share/index.php?token=$1 [L,QSA]
     
-    # Company-specific routing (e.g., bc.bhd.om/mhd/)
+    # Intro/onboarding page (clean URL)
+    RewriteRule ^intro/?$ intro.php [L,QSA]
+    
+    # Print shop portal clean URLs
+    # Example: cardify.om/printshop/dashboard
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^printshop/?$ printshop/dashboard.php [L,QSA]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^printshop/register/?$ printshop/register.php [L,QSA]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^printshop/dashboard/?$ printshop/dashboard.php [L,QSA]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^printshop/orders/?$ printshop/orders.php [L,QSA]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^printshop/order/([0-9]+)/?$ printshop/order.php?id=$1 [L,QSA]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^printshop/settings/?$ printshop/settings.php [L,QSA]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^printshop/profile/?$ printshop/profile.php [L,QSA]
+    
+    # Company-specific routing (e.g., cardify.om/acme/)
     # Check if request is not for known paths and not a file
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|company|webhooks|amwalpay|api|assets|uploads|data|generate_card_html\.php|download_card\.php|index\.php|router\.php)
+    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|company|webhooks|amwalpay|api|assets|uploads|data|printshop|intro|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php)
     RewriteRule ^([a-z0-9-]+)/?$ router.php?company_slug=$1 [L,QSA]
 </IfModule>
 
@@ -60,9 +119,14 @@ Options -Indexes
 
 # Protect sensitive directories
 <IfModule mod_rewrite.c>
+    RewriteRule ^data/print-sheets/ - [L]  # Allow print sheet downloads
     RewriteRule ^data/ - [F,L]
     RewriteRule ^logs/ - [F,L]
     RewriteRule ^api/check-slug\.php$ - [L]  # Allow API endpoint
+    RewriteRule ^api/translate\.php$ - [L]  # Allow translation API
+    RewriteRule ^api/get_templates_public\.php$ - [L]  # Allow public templates API
+    RewriteRule ^api/check-employee\.php$ - [L]  # Allow employee check API
+    RewriteRule ^api/print-ready\.php$ - [L]  # Allow print-ready PDF generator API
     RewriteRule ^api/ - [F,L]  # Block other API files
 </IfModule>
 
@@ -93,9 +157,10 @@ Options -Indexes
     ExpiresByType text/html "access plus 0 seconds"
 </IfModule>
 
-# Custom Error Pages (optional)
-# ErrorDocument 404 /404.php
-# ErrorDocument 500 /500.php
+# Custom Error Pages
+ErrorDocument 404 /404.php
+ErrorDocument 500 /500.php
+ErrorDocument 503 /maintenance.php
 
 # Prevent access to hidden files
 <FilesMatch "^\.">

@@ -145,6 +145,7 @@ class MigrationRunner {
         }
         
         try {
+            // Pass raw PDO connection to migration function
             $pdo = self::$db->getConnection();
             $result = call_user_func($functionName, $pdo);
             
@@ -178,6 +179,75 @@ class MigrationRunner {
     }
     
     /**
+     * Re-check/re-run a migration (bypasses "already executed" check)
+     * Useful for verifying migrations are still valid
+     */
+    public static function recheckMigration($migrationNumber) {
+        self::init();
+        
+        if (!self::$db->isConnected()) {
+            return ['success' => false, 'error' => 'Database not connected'];
+        }
+        
+        $migrations = self::getAvailableMigrations();
+        $migration = null;
+        
+        foreach ($migrations as $mig) {
+            if ($mig['number'] == $migrationNumber) {
+                $migration = $mig;
+                break;
+            }
+        }
+        
+        if (!$migration) {
+            return ['success' => false, 'error' => 'Migration not found'];
+        }
+        
+        // Load migration file
+        require_once $migration['path'];
+        
+        // Find the function
+        $functionName = null;
+        $functions = get_defined_functions()['user'];
+        foreach ($functions as $func) {
+            if (strpos($func, 'migration_' . str_pad($migrationNumber, 3, '0', STR_PAD_LEFT)) === 0) {
+                $functionName = $func;
+                break;
+            }
+        }
+        
+        if (!$functionName || !function_exists($functionName)) {
+            return ['success' => false, 'error' => 'Migration function not found'];
+        }
+        
+        try {
+            // Pass raw PDO connection to migration function
+            $pdo = self::$db->getConnection();
+            $result = call_user_func($functionName, $pdo);
+            
+            if ($result['success']) {
+                return [
+                    'success' => true,
+                    'message' => 'Migration re-checked successfully - all changes verified',
+                    'migration' => $migration
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'error' => 'Re-check found issues: ' . implode(', ', $result['errors'] ?? []),
+                    'migration' => $migration
+                ];
+            }
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error' => 'Re-check error: ' . $e->getMessage(),
+                'migration' => $migration
+            ];
+        }
+    }
+    
+    /**
      * Run all pending migrations
      */
     public static function runAllPending() {
@@ -198,5 +268,74 @@ class MigrationRunner {
         }
         
         return $results;
+    }
+    
+    /**
+     * Reset a migration (remove from executed list so it can be re-run)
+     * @param int $migrationNumber Migration number to reset
+     * @return array Result with success status
+     */
+    public static function resetMigration($migrationNumber) {
+        self::init();
+        
+        if (!self::$db->isConnected()) {
+            return ['success' => false, 'error' => 'Database not connected'];
+        }
+        
+        try {
+            self::$db->delete('migrations', 'migration_number = :num', ['num' => $migrationNumber]);
+            return [
+                'success' => true,
+                'message' => "Migration {$migrationNumber} reset. You can now re-run it."
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error' => 'Failed to reset migration: ' . $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Force re-run a migration (reset and run again)
+     * WARNING: This may cause issues if the migration creates tables that already exist
+     * @param int $migrationNumber Migration number to force re-run
+     * @param bool $dropTables If true, attempt to drop tables created by this migration
+     * @return array Result with success status
+     */
+    public static function forceRerun($migrationNumber, $dropTables = false) {
+        self::init();
+        
+        if (!self::$db->isConnected()) {
+            return ['success' => false, 'error' => 'Database not connected'];
+        }
+        
+        $pdo = self::$db->getConnection();
+        
+        // Known tables created by specific migrations
+        $migrationTables = [
+            20 => ['password_reset_tokens'],
+            23 => ['email_logs'],
+        ];
+        
+        // Drop tables if requested and known
+        if ($dropTables && isset($migrationTables[$migrationNumber])) {
+            foreach ($migrationTables[$migrationNumber] as $table) {
+                try {
+                    $pdo->exec("DROP TABLE IF EXISTS `{$table}`");
+                } catch (Exception $e) {
+                    // Continue anyway
+                }
+            }
+        }
+        
+        // Reset the migration record
+        $resetResult = self::resetMigration($migrationNumber);
+        if (!$resetResult['success']) {
+            return $resetResult;
+        }
+        
+        // Run the migration fresh
+        return self::runMigration($migrationNumber);
     }
 }

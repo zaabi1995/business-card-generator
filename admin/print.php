@@ -1,12 +1,22 @@
 <?php
 /**
  * Print Orders Management
- * Send business cards to print
+ * Send business cards to print - Company Admin Interface
  */
 require_once __DIR__ . '/../config.php';
 requireAdmin();
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/WhatsApp.php';
+require_once INCLUDES_DIR . '/Currency.php';
+require_once INCLUDES_DIR . '/admin-layout.php';
+
+// Include print shop classes if available
+if (file_exists(INCLUDES_DIR . '/PrintShop.php')) {
+    require_once INCLUDES_DIR . '/PrintShop.php';
+}
+if (file_exists(INCLUDES_DIR . '/PrintShopIntegration.php')) {
+    require_once INCLUDES_DIR . '/PrintShopIntegration.php';
+}
 
 $db = Database::getInstance();
 $companyId = getCurrentCompanyId();
@@ -17,6 +27,14 @@ if (!$companyId) {
 }
 
 $message = null;
+$messageType = 'success';
+
+// Get company info for currency
+$company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $companyId]);
+$companyCurrency = $company['currency'] ?? 'OMR';
+
+// Get current tab
+$tab = $_GET['tab'] ?? 'orders';
 
 // Get employees
 $employees = $db->fetchAll(
@@ -30,14 +48,52 @@ $templates = $db->fetchAll(
     ['id' => $companyId]
 );
 
-// Get print orders with quotation status
-$orders = $db->fetchAll(
-    "SELECT * FROM print_orders WHERE company_id = :id ORDER BY created_at DESC LIMIT 20",
-    ['id' => $companyId]
-);
+// Get print orders - fetch more for better history
+$statusFilter = $_GET['status'] ?? '';
+$ordersSql = "SELECT * FROM print_orders WHERE company_id = :id";
+$ordersParams = ['id' => $companyId];
+
+if ($statusFilter) {
+    $ordersSql .= " AND status = :status";
+    $ordersParams['status'] = $statusFilter;
+}
+$ordersSql .= " ORDER BY created_at DESC LIMIT 50";
+$orders = $db->fetchAll($ordersSql, $ordersParams);
+
+// Get order stats
+$orderStats = [
+    'total' => 0,
+    'pending' => 0,
+    'processing' => 0,
+    'shipped' => 0,
+    'delivered' => 0
+];
+try {
+    $statsResult = $db->fetchAll(
+        "SELECT status, COUNT(*) as count FROM print_orders WHERE company_id = :id GROUP BY status",
+        ['id' => $companyId]
+    );
+    foreach ($statsResult as $stat) {
+        $orderStats[$stat['status']] = (int)$stat['count'];
+        $orderStats['total'] += (int)$stat['count'];
+    }
+} catch (Exception $e) {
+    // Ignore
+}
+
+// Get print shops
+$printShops = [];
+try {
+    if (class_exists('PrintShop')) {
+        $printShops = PrintShop::getAll('active', 20);
+    }
+} catch (Exception $e) {
+    // Table may not exist
+}
 
 // Handle quotation request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'request_quotation') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
     $orderId = $_POST['order_id'] ?? '';
     if (!empty($orderId)) {
         $db->update('print_orders',
@@ -48,15 +104,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $message = 'Quotation requested successfully!';
         
         // Reload orders
-        $orders = $db->fetchAll(
-            "SELECT * FROM print_orders WHERE company_id = :id ORDER BY created_at DESC LIMIT 20",
-            ['id' => $companyId]
-        );
+        $orders = $db->fetchAll($ordersSql, $ordersParams);
     }
 }
 
 // Handle print order creation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_order') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
     $employeeIds = $_POST['employee_ids'] ?? [];
     $templateId = $_POST['template_id'] ?? '';
     $quantity = (int)($_POST['quantity'] ?? 1);
@@ -85,18 +139,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     
     if (!empty($employeeIds) && !empty($templateId)) {
         $orderId = generateUUID();
-        $orderNumber = 'PRINT-' . strtoupper(substr($orderId, 0, 8));
+        $orderNumber = 'PRINT-' . date('Ymd') . '-' . strtoupper(substr(md5(uniqid()), 0, 5));
         
+        // Use correct column names for definitive schema
         $insertData = [
-            'id' => $orderId,
-            'company_id' => $companyId,
             'order_number' => $orderNumber,
-            'employee_ids' => json_encode($employeeIds),
-            'template_id' => $templateId,
+            'company_id' => $companyId,
+            'employee_id' => !empty($employeeIds) ? $employeeIds[0] : null, // Single employee
+            'user_id' => $_SESSION['user_id'] ?? null,
+            'card_template_id' => $templateId,
             'quantity' => $quantity,
             'status' => 'pending',
             'notes' => $notes,
-            'created_by' => $_SESSION['user_id'] ?? null
+            'created_at' => date('Y-m-d H:i:s')
         ];
         
         if ($poFilePath) {
@@ -105,215 +160,534 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         
         $db->insert('print_orders', $insertData);
         
-        // Send WhatsApp confirmation if enabled
-        $whatsappSent = false;
-        if (WhatsApp::isEnabled()) {
-            $company = $db->fetchOne(
-                "SELECT * FROM companies WHERE id = :id",
-                ['id' => $companyId]
-            );
-            
-            if ($company) {
-                $whatsappResult = WhatsApp::sendPrintOrderConfirmation(
-                    array_merge($insertData, ['order_number' => $orderNumber]),
-                    $company
-                );
-                $whatsappSent = $whatsappResult['success'];
+        // Get company and employee data for notifications
+        $company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $companyId]);
+        $employee = null;
+        if (!empty($employeeIds[0])) {
+            $employee = $db->fetchOne("SELECT * FROM employees WHERE id = :id", ['id' => $employeeIds[0]]);
+        }
+        
+        // Send email confirmation to company admin
+        $emailSent = false;
+        if ($company && !empty($company['admin_email'])) {
+            try {
+                require_once INCLUDES_DIR . '/Mailer.php';
+                require_once INCLUDES_DIR . '/Currency.php';
+                $siteName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
+                
+                Mailer::sendTemplate($company['admin_email'], 'print_order_submitted', [
+                    'site_name' => $siteName,
+                    'contact_name' => $company['name_en'] ?? $company['name'] ?? 'Admin',
+                    'company_name' => $company['name_en'] ?? $company['name'] ?? 'Your Company',
+                    'order_id' => $orderNumber,
+                    'quantity' => $quantity,
+                    'paper_type' => 'Standard',
+                    'finish' => 'Standard',
+                    'total' => 'To be calculated',
+                    'print_shop_name' => 'Internal',
+                    'print_shop_location' => ''
+                ]);
+                $emailSent = true;
+            } catch (Exception $e) {
+                error_log("Failed to send print order confirmation email: " . $e->getMessage());
             }
         }
         
+        // Send WhatsApp confirmation if enabled
+        $whatsappSent = false;
+        if (WhatsApp::isEnabled() && $company) {
+            $whatsappResult = WhatsApp::sendPrintOrderConfirmation(
+                array_merge($insertData, ['order_number' => $orderNumber]),
+                $company
+            );
+            $whatsappSent = $whatsappResult['success'];
+        }
+        
         $message = 'Print order created successfully! Order #' . $orderNumber;
+        if ($emailSent) {
+            $message .= ' Email confirmation sent.';
+        }
         if ($whatsappSent) {
             $message .= ' WhatsApp confirmation sent.';
         }
         
         // Reload orders
-        $orders = $db->fetchAll(
-            "SELECT * FROM print_orders WHERE company_id = :id ORDER BY created_at DESC LIMIT 20",
-            ['id' => $companyId]
-        );
+        $orders = $db->fetchAll($ordersSql, $ordersParams);
+        $tab = 'orders'; // Switch to orders tab
+    } else {
+        $message = 'Please select at least one employee and a template.';
+        $messageType = 'error';
     }
 }
+
+// Status colors
+$statusColors = [
+    'pending' => 'bg-amber-100 text-amber-700',
+    'submitted' => 'bg-blue-100 text-blue-700',
+    'processing' => 'bg-indigo-100 text-indigo-700',
+    'printing' => 'bg-purple-100 text-purple-700',
+    'shipped' => 'bg-cyan-100 text-cyan-700',
+    'delivered' => 'bg-green-100 text-green-700',
+    'completed' => 'bg-green-100 text-green-700',
+    'cancelled' => 'bg-red-100 text-red-700'
+];
+
+// Get base path for links
+$basePath = getAdminBasePath();
+$isCompanyAdmin = defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug']);
+$ext = $isCompanyAdmin ? '' : '.php';
+
+adminHeader('Print Orders', 'print');
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Print Orders | <?php echo SITE_NAME; ?></title>
-    <link rel="stylesheet" href="<?php echo assetUrl('css/tailwind.css'); ?>">
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
-    </style>
-</head>
-<body class="bg-alzayani-dark text-white font-sans min-h-screen" x-data="{ selectedEmployees: [] }">
-    <div class="min-h-screen">
-        <header class="glass-card border-b border-white/10">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-2xl font-bold text-white">Print Orders</h1>
-                        <p class="text-gray-400 text-sm">Send business cards to print</p>
+
+<!-- Alert Message -->
+<?php if ($message): ?>
+<div class="mb-6 p-4 rounded-xl flex items-center gap-3 <?php echo $messageType === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'; ?>">
+    <i class="<?php echo $messageType === 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-exclamation'; ?>"></i>
+    <?php echo sanitize($message); ?>
+</div>
+<?php endif; ?>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+    <a href="?tab=orders" class="p-4 rounded-xl border <?php echo empty($statusFilter) && $tab === 'orders' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'; ?> transition-all">
+        <p class="text-2xl font-bold text-blue-600"><?php echo $orderStats['total']; ?></p>
+        <p class="text-sm text-gray-500">Total Orders</p>
+    </a>
+    <a href="?tab=orders&status=pending" class="p-4 rounded-xl border <?php echo $statusFilter === 'pending' ? 'border-amber-500 bg-amber-50' : 'border-gray-200 bg-white hover:border-gray-300'; ?> transition-all">
+        <p class="text-2xl font-bold text-amber-600"><?php echo $orderStats['pending']; ?></p>
+        <p class="text-sm text-gray-500">Pending</p>
+    </a>
+    <a href="?tab=orders&status=processing" class="p-4 rounded-xl border <?php echo $statusFilter === 'processing' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 bg-white hover:border-gray-300'; ?> transition-all">
+        <p class="text-2xl font-bold text-indigo-600"><?php echo $orderStats['processing']; ?></p>
+        <p class="text-sm text-gray-500">Processing</p>
+    </a>
+    <a href="?tab=orders&status=shipped" class="p-4 rounded-xl border <?php echo $statusFilter === 'shipped' ? 'border-cyan-500 bg-cyan-50' : 'border-gray-200 bg-white hover:border-gray-300'; ?> transition-all">
+        <p class="text-2xl font-bold text-cyan-600"><?php echo $orderStats['shipped']; ?></p>
+        <p class="text-sm text-gray-500">Shipped</p>
+    </a>
+    <a href="?tab=orders&status=delivered" class="p-4 rounded-xl border <?php echo $statusFilter === 'delivered' ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-white hover:border-gray-300'; ?> transition-all">
+        <p class="text-2xl font-bold text-green-600"><?php echo $orderStats['delivered']; ?></p>
+        <p class="text-sm text-gray-500">Delivered</p>
+    </a>
+</div>
+
+<!-- Tabs -->
+<div class="border-b border-gray-200 mb-6">
+    <nav class="-mb-px flex space-x-8">
+        <a href="?tab=orders" class="<?php echo $tab === 'orders' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'; ?> whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+            <i class="fa-solid fa-box"></i>
+            My Orders
+            <?php if ($orderStats['total'] > 0): ?>
+            <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs"><?php echo $orderStats['total']; ?></span>
+            <?php endif; ?>
+        </a>
+        <a href="?tab=create" class="<?php echo $tab === 'create' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'; ?> whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+            <i class="fa-solid fa-plus"></i>
+            Create Order
+        </a>
+        <a href="?tab=shops" class="<?php echo $tab === 'shops' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'; ?> whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+            <i class="fa-solid fa-store"></i>
+            Print Shops
+            <?php if (count($printShops) > 0): ?>
+            <span class="bg-green-100 text-green-600 px-2 py-0.5 rounded-full text-xs"><?php echo count($printShops); ?></span>
+            <?php endif; ?>
+        </a>
+    </nav>
+</div>
+
+<?php if ($tab === 'orders'): ?>
+<!-- Orders List -->
+<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-gray-900">
+            <?php echo $statusFilter ? ucfirst($statusFilter) . ' Orders' : 'All Orders'; ?>
+        </h2>
+        <a href="?tab=create" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+            <i class="fa-solid fa-plus"></i>
+            New Order
+        </a>
+    </div>
+    
+    <?php if (empty($orders)): ?>
+    <div class="p-12 text-center">
+        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fa-solid fa-print text-2xl text-gray-400"></i>
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No print orders yet</h3>
+        <p class="text-gray-500 mb-4">Create your first print order to get started.</p>
+        <a href="?tab=create" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+            <i class="fa-solid fa-plus"></i>
+            Create Order
+        </a>
+    </div>
+    <?php else: ?>
+    <div class="divide-y divide-gray-100">
+        <?php foreach ($orders as $order): 
+            // Handle both old (employee_ids JSON) and new (employee_id single) schemas
+            $employeeCount = 0;
+            $isGenericOrder = true;
+            if (!empty($order['employee_ids'])) {
+                $employeeIds = json_decode($order['employee_ids'], true);
+                $employeeCount = is_array($employeeIds) ? count($employeeIds) : 0;
+                $isGenericOrder = ($employeeCount == 0);
+            } elseif (!empty($order['employee_id'])) {
+                $employeeCount = 1;
+                $isGenericOrder = false;
+            }
+            $statusClass = $statusColors[$order['status']] ?? 'bg-gray-100 text-gray-700';
+        ?>
+        <div class="p-4 hover:bg-gray-50 transition-colors">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <!-- Order Info -->
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2 flex-wrap">
+                        <span class="font-semibold text-gray-900">#<?php echo sanitize($order['order_number'] ?? $order['id']); ?></span>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo $statusClass; ?>">
+                            <?php echo ucfirst(sanitize($order['status'])); ?>
+                        </span>
+                        
+                        <!-- Document Status Indicators -->
+                        <?php if (!empty($order['quotation_file_path'])): ?>
+                        <span class="px-2 py-0.5 rounded text-xs <?php echo !empty($order['quotation_accepted']) ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'; ?>" title="Quotation">
+                            <i class="fa-solid fa-file-invoice mr-1"></i>Quote <?php echo !empty($order['quotation_accepted']) ? '✓' : ''; ?>
+                        </span>
+                        <?php endif; ?>
+                        
+                        <?php if (!empty($order['po_required']) && empty($order['po_file_path'])): ?>
+                        <span class="px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-700" title="PO Required">
+                            <i class="fa-solid fa-exclamation-triangle mr-1"></i>PO Required
+                        </span>
+                        <?php elseif (!empty($order['po_file_path'])): ?>
+                        <span class="px-2 py-0.5 rounded text-xs bg-green-100 text-green-700" title="PO Received">
+                            <i class="fa-solid fa-file-contract mr-1"></i>PO ✓
+                        </span>
+                        <?php endif; ?>
+                        
+                        <?php if (!empty($order['invoice_file_path'])): ?>
+                        <span class="px-2 py-0.5 rounded text-xs <?php echo !empty($order['invoice_paid']) ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'; ?>" title="Invoice">
+                            <i class="fa-solid fa-file-invoice-dollar mr-1"></i>Invoice <?php echo !empty($order['invoice_paid']) ? '✓' : ''; ?>
+                        </span>
+                        <?php endif; ?>
+                        
+                        <?php if (!empty($order['tracking_number'])): ?>
+                        <span class="text-xs text-gray-500">
+                            <i class="fa-solid fa-truck mr-1"></i>
+                            <?php echo sanitize($order['tracking_number']); ?>
+                        </span>
+                        <?php endif; ?>
                     </div>
-                    <a href="index.php" class="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-                        ← Back
-                    </a>
+                    <div class="text-sm text-gray-600 space-y-1">
+                        <div class="flex items-center gap-4">
+                            <?php if ($isGenericOrder): ?>
+                            <span><i class="fa-solid fa-building text-gray-400 mr-1"></i> Company cards</span>
+                            <?php else: ?>
+                            <span><i class="fa-solid fa-users text-gray-400 mr-1"></i> <?php echo $employeeCount; ?> employee<?php echo $employeeCount !== 1 ? 's' : ''; ?></span>
+                            <?php endif; ?>
+                            <span><i class="fa-solid fa-copy text-gray-400 mr-1"></i> <?php echo (int)($order['quantity'] ?? 1); ?> cards</span>
+                            <?php if (!empty($order['total'])): ?>
+                            <span class="font-medium text-gray-900"><i class="fa-solid fa-tag text-gray-400 mr-1"></i> <?php echo Currency::formatHtml($order['total'], $companyCurrency, 'sm'); ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <?php if (!empty($order['notes'])): ?>
+                        <p class="text-gray-500 text-xs"><i class="fa-solid fa-comment text-gray-400 mr-1"></i> <?php echo sanitize($order['notes']); ?></p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                
+                <!-- Order Meta & Actions -->
+                <div class="flex items-center gap-4">
+                    <div class="text-right text-sm">
+                        <div class="text-gray-900"><?php echo date('M d, Y', strtotime($order['created_at'])); ?></div>
+                        <div class="text-gray-500 text-xs"><?php echo date('h:i A', strtotime($order['created_at'])); ?></div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex items-center gap-2">
+                        <?php if (!empty($order['po_file_path'])): ?>
+                        <a href="<?php echo imageUrl($order['po_file_path']); ?>" target="_blank" 
+                           class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View P.O.">
+                            <i class="fa-solid fa-file-invoice"></i>
+                        </a>
+                        <?php endif; ?>
+                        
+                        <?php if (!empty($order['quotation_file_path'])): ?>
+                        <a href="<?php echo imageUrl($order['quotation_file_path']); ?>" target="_blank" 
+                           class="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="View Quotation">
+                            <i class="fa-solid fa-file-lines"></i>
+                        </a>
+                        <?php endif; ?>
+                        
+                        <?php if (!empty($order['invoice_file_path'])): ?>
+                        <a href="<?php echo imageUrl($order['invoice_file_path']); ?>" target="_blank" 
+                           class="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="View Invoice">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                        </a>
+                        <?php endif; ?>
+                        
+                        <?php if (empty($order['quotation_requested']) && $order['status'] === 'pending'): ?>
+                        <form method="post" class="inline">
+                            <?php echo csrfField(); ?>
+                            <input type="hidden" name="action" value="request_quotation">
+                            <input type="hidden" name="order_id" value="<?php echo sanitize($order['id']); ?>">
+                            <button type="submit" class="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors text-xs font-medium">
+                                Request Quote
+                            </button>
+                        </form>
+                        <?php endif; ?>
+                        
+                        <a href="order_detail.php?id=<?php echo (int)$order['id']; ?>" 
+                           class="px-3 py-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors text-xs font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-eye"></i>
+                            View Details
+                        </a>
+                    </div>
                 </div>
             </div>
-        </header>
-        
-        <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <?php if ($message): ?>
-            <div class="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400">
-                <?php echo sanitize($message); ?>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+</div>
+
+<?php elseif ($tab === 'create'): ?>
+<!-- Create Order Form -->
+<div x-data="{ selectedEmployees: [] }" class="grid lg:grid-cols-3 gap-6">
+    <!-- Main Form -->
+    <div class="lg:col-span-2">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-gray-100">
+                <h2 class="text-lg font-semibold text-gray-900">Create Print Order</h2>
+                <p class="text-sm text-gray-500 mt-1">Order business card prints for your employees</p>
             </div>
-            <?php endif; ?>
-            
-            <!-- Create Print Order -->
-            <div class="glass-card rounded-xl p-6 mb-8">
-                <h2 class="text-xl font-bold mb-4">Create Print Order</h2>
-                <form method="post" enctype="multipart/form-data" class="space-y-4">
-                    <input type="hidden" name="action" value="create_order">
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Select Employees</label>
-                        <div class="max-h-60 overflow-y-auto border border-white/10 rounded-lg p-4 bg-white/5">
-                            <?php foreach ($employees as $employee): ?>
-                            <label class="flex items-center space-x-3 p-2 hover:bg-white/5 rounded cursor-pointer">
-                                <input type="checkbox" name="employee_ids[]" value="<?php echo sanitize($employee['id']); ?>" 
-                                       x-model="selectedEmployees"
-                                       class="rounded border-white/20">
-                                <span><?php echo sanitize($employee['name_en'] ?? $employee['name_ar'] ?? $employee['email']); ?></span>
-                            </label>
-                            <?php endforeach; ?>
+            <form method="post" enctype="multipart/form-data" class="p-6 space-y-6">
+                <?php echo csrfField(); ?>
+                <input type="hidden" name="action" value="create_order">
+                
+                <!-- Employee Selection -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Select Employees *</label>
+                    <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-xl bg-gray-50">
+                        <?php if (empty($employees)): ?>
+                        <div class="p-4 text-center text-gray-500">
+                            <i class="fa-solid fa-users mb-2 text-2xl"></i>
+                            <p>No employees found. Add employees first.</p>
                         </div>
-                        <p class="text-xs text-gray-400 mt-2">Selected: <span x-text="selectedEmployees.length"></span> employees</p>
-                    </div>
-                    
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Template</label>
-                            <select name="template_id" required class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
-                                <option value="">Select Template</option>
-                                <?php foreach ($templates as $template): ?>
-                                <option value="<?php echo sanitize($template['id']); ?>"><?php echo sanitize($template['name']); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Quantity per Employee</label>
-                            <input type="number" name="quantity" value="1" min="1" required class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Notes (Optional)</label>
-                        <textarea name="notes" rows="3" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Special instructions for printer..."></textarea>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Purchase Order (P.O.) Document (Optional)</label>
-                        <input type="file" name="po_file" accept=".pdf,.jpg,.jpeg,.png" class="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-amber-500/20 file:text-amber-400 hover:file:bg-amber-500/30">
-                        <p class="text-xs text-gray-400 mt-1">Accepted formats: PDF, JPG, PNG (Max 10MB)</p>
-                    </div>
-                    
-                    <button type="submit" class="px-6 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold hover:from-amber-600 hover:to-amber-700 transition-colors">
-                        Create Print Order
-                    </button>
-                </form>
-            </div>
-            
-            <!-- Print Orders List -->
-            <div class="glass-card rounded-xl p-6">
-                <h2 class="text-xl font-bold mb-4">Print Orders</h2>
-                <div class="space-y-4">
-                    <?php if (empty($orders)): ?>
-                    <p class="text-gray-400 text-center py-8">No print orders yet.</p>
-                    <?php else: ?>
-                    <?php foreach ($orders as $order): ?>
-                    <div class="p-4 rounded-lg bg-white/5">
-                        <div class="flex items-start justify-between">
-                            <div>
-                                <div class="font-semibold mb-2">Order #<?php echo sanitize($order['order_number']); ?></div>
-                                <div class="text-sm text-gray-400 space-y-1">
-                                    <div>Employees: <?php echo count(json_decode($order['employee_ids'], true)); ?></div>
-                                    <div>Quantity: <?php echo $order['quantity']; ?> per employee</div>
-                                    <div>Status: <span class="text-amber-400"><?php echo sanitize($order['status']); ?></span></div>
-                                    <?php if ($order['notes']): ?>
-                                    <div>Notes: <?php echo sanitize($order['notes']); ?></div>
-                                    <?php endif; ?>
-                                    <?php if (!empty($order['po_file_path'])): ?>
-                                    <div>
-                                        <a href="<?php echo imageUrl($order['po_file_path']); ?>" target="_blank" class="text-amber-400 hover:text-amber-300 underline">
-                                            📄 View P.O. Document
-                                        </a>
-                                    </div>
-                                    <?php endif; ?>
-                                    <?php if (isset($order['po_required']) && $order['po_required']): ?>
-                                    <div class="text-amber-400">
-                                        ⚠ PO Required for Processing
-                                        <?php if (isset($order['po_approved']) && $order['po_approved']): ?>
-                                        <span class="text-green-400">✓ Approved</span>
-                                        <?php elseif (!empty($order['po_file_path'])): ?>
-                                        <span class="text-yellow-400">⏳ Pending Approval</span>
-                                        <?php else: ?>
-                                        <span class="text-red-400">✗ Missing</span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <?php endif; ?>
-                                    <?php if (isset($order['quotation_requested']) && $order['quotation_requested']): ?>
-                                    <div class="text-blue-400">
-                                        📋 Quotation Requested
-                                        <?php if (!empty($order['quotation_file_path'])): ?>
-                                        <a href="<?php echo imageUrl($order['quotation_file_path']); ?>" target="_blank" class="text-green-400 hover:text-green-300 underline ml-2">
-                                            ✓ View Quotation
-                                        </a>
-                                        <?php else: ?>
-                                        <span class="text-yellow-400 ml-2">⏳ Pending</span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <?php endif; ?>
-                                    <?php if (!empty($order['invoice_file_path'])): ?>
-                                    <div>
-                                        <a href="<?php echo imageUrl($order['invoice_file_path']); ?>" target="_blank" class="text-green-400 hover:text-green-300 underline">
-                                            🧾 View Invoice
-                                        </a>
-                                    </div>
-                                    <?php endif; ?>
-                                    <?php if (!empty($order['delivery_note_file_path'])): ?>
-                                    <div>
-                                        <a href="<?php echo imageUrl($order['delivery_note_file_path']); ?>" target="_blank" class="text-green-400 hover:text-green-300 underline">
-                                            📦 View Delivery Note
-                                        </a>
-                                    </div>
-                                    <?php endif; ?>
-                                    <div>Created: <?php echo date('M d, Y H:i', strtotime($order['created_at'])); ?></div>
-                                </div>
-                            </div>
-                            <div class="flex flex-col items-end space-y-2">
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold 
-                                    <?php echo $order['status'] === 'completed' ? 'bg-green-500/20 text-green-400' : 
-                                               ($order['status'] === 'processing' ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'); ?>">
-                                    <?php echo sanitize($order['status']); ?>
-                                </span>
-                                <?php if (!isset($order['quotation_requested']) || !$order['quotation_requested']): ?>
-                                <form method="post" class="inline">
-                                    <input type="hidden" name="action" value="request_quotation">
-                                    <input type="hidden" name="order_id" value="<?php echo sanitize($order['id']); ?>">
-                                    <button type="submit" class="px-3 py-1 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors text-xs">
-                                        📋 Request Quotation
-                                    </button>
-                                </form>
+                        <?php else: ?>
+                        <?php foreach ($employees as $employee): ?>
+                        <label class="flex items-center gap-3 p-3 hover:bg-white border-b border-gray-100 last:border-0 cursor-pointer">
+                            <input type="checkbox" name="employee_ids[]" value="<?php echo sanitize($employee['id']); ?>" 
+                                   x-model="selectedEmployees"
+                                   class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <div class="flex-1">
+                                <span class="font-medium text-gray-900"><?php echo sanitize($employee['name_en'] ?? ''); ?></span>
+                                <?php if (!empty($employee['name_ar'])): ?>
+                                <span class="text-gray-500 mr-2"><?php echo sanitize($employee['name_ar']); ?></span>
                                 <?php endif; ?>
+                                <span class="text-xs text-gray-500"><?php echo sanitize($employee['position_en'] ?? $employee['email'] ?? ''); ?></span>
                             </div>
-                        </div>
+                        </label>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
-                    <?php endforeach; ?>
+                    <p class="text-xs text-gray-500 mt-2 flex items-center gap-2">
+                        <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full" x-text="selectedEmployees.length"></span>
+                        <span>employees selected</span>
+                    </p>
+                </div>
+                
+                <!-- Template & Quantity -->
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Template *</label>
+                        <select name="template_id" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Template</option>
+                            <?php foreach ($templates as $template): ?>
+                            <option value="<?php echo sanitize($template['id']); ?>"><?php echo sanitize($template['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Quantity per Employee</label>
+                        <input type="number" name="quantity" value="100" min="50" step="50" required 
+                               class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <p class="text-xs text-gray-500 mt-1">Minimum 50 cards per employee</p>
+                    </div>
+                </div>
+                
+                <!-- Notes -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Notes (Optional)</label>
+                    <textarea name="notes" rows="3" 
+                              class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                              placeholder="Special instructions for the print shop..."></textarea>
+                </div>
+                
+                <!-- P.O. File -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Purchase Order (P.O.) Document</label>
+                    <input type="file" name="po_file" accept=".pdf,.jpg,.jpeg,.png" 
+                           class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <p class="text-xs text-gray-500 mt-1">Optional. Accepted: PDF, JPG, PNG (Max 10MB)</p>
+                </div>
+                
+                <!-- Submit -->
+                <div class="flex items-center gap-4 pt-4 border-t border-gray-100">
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        Create Order
+                    </button>
+                    <a href="?tab=orders" class="px-6 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-colors">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Sidebar - Order from Print Shop -->
+    <div class="lg:col-span-1">
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
+                <i class="fa-solid fa-store text-blue-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Order from Print Shop</h3>
+            <p class="text-sm text-gray-600 mb-4">
+                Order directly from verified print shops with instant pricing and tracking.
+            </p>
+            <ul class="text-sm text-gray-600 space-y-2 mb-6">
+                <li class="flex items-center gap-2">
+                    <i class="fa-solid fa-check text-green-500"></i>
+                    Real-time pricing
+                </li>
+                <li class="flex items-center gap-2">
+                    <i class="fa-solid fa-check text-green-500"></i>
+                    Order tracking
+                </li>
+                <li class="flex items-center gap-2">
+                    <i class="fa-solid fa-check text-green-500"></i>
+                    Multiple paper options
+                </li>
+                <li class="flex items-center gap-2">
+                    <i class="fa-solid fa-check text-green-500"></i>
+                    Fast delivery
+                </li>
+            </ul>
+            <a href="<?php echo $basePath; ?>order_print<?php echo $ext; ?>" class="block w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-center rounded-xl font-medium transition-colors">
+                Order from Print Shop
+            </a>
+        </div>
+        
+        <?php if (!empty($printShops)): ?>
+        <div class="mt-4 bg-white border border-gray-200 rounded-xl p-4">
+            <h4 class="font-medium text-gray-900 mb-3">Available Print Shops</h4>
+            <div class="space-y-3">
+                <?php foreach (array_slice($printShops, 0, 3) as $shop): ?>
+                <a href="<?php echo $basePath; ?>order_print<?php echo $ext; ?>?shop=<?php echo $shop['id']; ?>" 
+                   class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <i class="fa-solid fa-store text-gray-400"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-medium text-gray-900 text-sm"><?php echo sanitize($shop['name']); ?></div>
+                        <div class="text-xs text-gray-500"><?php echo sanitize($shop['city'] ?? 'Location N/A'); ?></div>
+                    </div>
+                    <?php if (!empty($shop['verified'])): ?>
+                    <span class="text-green-500 text-xs"><i class="fa-solid fa-badge-check"></i></span>
+                    <?php endif; ?>
+                </a>
+                <?php endforeach; ?>
+            </div>
+            <?php if (count($printShops) > 3): ?>
+            <a href="?tab=shops" class="block text-center text-sm text-blue-600 hover:text-blue-700 mt-3">
+                View all <?php echo count($printShops); ?> shops
+            </a>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<?php elseif ($tab === 'shops'): ?>
+<!-- Print Shops List -->
+<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+        <div>
+            <h2 class="text-lg font-semibold text-gray-900">Print Shops</h2>
+            <p class="text-sm text-gray-500">Browse verified print shops and place orders</p>
+        </div>
+        <a href="<?php echo getBasePath(); ?>print-shops.php" target="_blank" class="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
+            View Marketplace
+            <i class="fa-solid fa-external-link"></i>
+        </a>
+    </div>
+    
+    <?php if (empty($printShops)): ?>
+    <div class="p-12 text-center">
+        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fa-solid fa-store text-2xl text-gray-400"></i>
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No print shops available</h3>
+        <p class="text-gray-500 mb-4">Print shops will appear here once they're registered and approved.</p>
+        <a href="<?php echo getBasePath(); ?>printshop/register.php" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+            <i class="fa-solid fa-store"></i>
+            Register Print Shop
+        </a>
+    </div>
+    <?php else: ?>
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+        <?php foreach ($printShops as $shop): ?>
+        <div class="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <?php if (!empty($shop['logo_url'])): ?>
+                    <img src="<?php echo getBasePath() . ltrim(sanitize($shop['logo_url']), '/'); ?>" alt="<?php echo sanitize($shop['name']); ?>" class="w-full h-full object-cover rounded-xl">
+                    <?php else: ?>
+                    <i class="fa-solid fa-store text-blue-600"></i>
+                    <?php endif; ?>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                        <h3 class="font-semibold text-gray-900 truncate"><?php echo sanitize($shop['name']); ?></h3>
+                        <?php if (!empty($shop['verified'])): ?>
+                        <span class="text-green-500" title="Verified"><i class="fa-solid fa-badge-check"></i></span>
+                        <?php endif; ?>
+                        <?php if (!empty($shop['featured'])): ?>
+                        <span class="text-amber-500" title="Featured"><i class="fa-solid fa-star"></i></span>
+                        <?php endif; ?>
+                    </div>
+                    <p class="text-sm text-gray-500"><?php echo sanitize($shop['city'] ?? ''); ?><?php echo !empty($shop['country']) ? ', ' . sanitize($shop['country']) : ''; ?></p>
+                    <?php if (!empty($shop['rating'])): ?>
+                    <div class="flex items-center gap-1 mt-1">
+                        <i class="fa-solid fa-star text-amber-400 text-xs"></i>
+                        <span class="text-sm text-gray-600"><?php echo number_format($shop['rating'], 1); ?></span>
+                        <span class="text-xs text-gray-400">(<?php echo $shop['total_orders'] ?? 0; ?> orders)</span>
+                    </div>
                     <?php endif; ?>
                 </div>
             </div>
-        </main>
+            
+            <?php if (!empty($shop['description'])): ?>
+            <p class="text-sm text-gray-600 mt-3 line-clamp-2"><?php echo sanitize($shop['description']); ?></p>
+            <?php endif; ?>
+            
+            <div class="flex items-center gap-2 mt-4">
+                <a href="<?php echo $basePath; ?>order_print<?php echo $ext; ?>?shop=<?php echo $shop['id']; ?>" 
+                   class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-center rounded-lg text-sm font-medium transition-colors">
+                    Order Now
+                </a>
+                <?php if (!empty($shop['website'])): ?>
+                <a href="<?php echo sanitize($shop['website']); ?>" target="_blank" 
+                   class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" title="Visit Website">
+                    <i class="fa-solid fa-globe"></i>
+                </a>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endforeach; ?>
     </div>
-</body>
-</html>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
+
+<?php adminFooter(); ?>
