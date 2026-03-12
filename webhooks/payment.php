@@ -20,11 +20,18 @@ $payload = file_get_contents('php://input');
 $signature = $_SERVER['HTTP_X_SIGNATURE'] ?? $_SERVER['HTTP_X_AMWAL_SIGNATURE'] ?? '';
 
 // Determine gateway from headers or config
-$gateway = $_SERVER['HTTP_X_GATEWAY'] ?? (defined('BILLING_GATEWAY') ? BILLING_GATEWAY : 'amwal');
+$gateway = $_SERVER['HTTP_X_GATEWAY'] ?? (defined('BILLING_GATEWAY') ? BILLING_GATEWAY : 'paymob');
 
 // Get gateway config
 $config = [];
-if ($gateway === 'amwal') {
+if ($gateway === 'paymob') {
+    $config = [
+        'public_key' => defined('PAYMOB_PUBLIC_KEY') ? PAYMOB_PUBLIC_KEY : '',
+        'secret_key' => defined('PAYMOB_SECRET_KEY') ? PAYMOB_SECRET_KEY : '',
+        'hmac_secret' => defined('PAYMOB_HMAC_SECRET') ? PAYMOB_HMAC_SECRET : '',
+        'integration_ids' => defined('PAYMOB_INTEGRATION_IDS') ? PAYMOB_INTEGRATION_IDS : ''
+    ];
+} elseif ($gateway === 'amwal') {
     $config = [
         'merchant_id' => defined('AMWAL_MERCHANT_ID') ? AMWAL_MERCHANT_ID : '',
         'terminal_id' => defined('AMWAL_TERMINAL_ID') ? AMWAL_TERMINAL_ID : '',
@@ -33,8 +40,8 @@ if ($gateway === 'amwal') {
     ];
 }
 
-// Require valid webhook signature when secure key is configured
-if (!empty($config['secure_key']) && empty($signature)) {
+// Require valid webhook signature when secure key is configured (Amwal legacy)
+if ($gateway === 'amwal' && !empty($config['secure_key']) && empty($signature)) {
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'Missing webhook signature']);
     error_log('Payment webhook: Missing signature from ' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));

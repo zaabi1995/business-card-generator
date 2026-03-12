@@ -48,17 +48,28 @@ $db = Database::getInstance();
 
 // Initialize billing with error handling
 try {
-    $billing = new Billing(
-        defined('BILLING_GATEWAY') ? BILLING_GATEWAY : 'amwal', 
-        [
+    $gateway = defined('BILLING_GATEWAY') ? BILLING_GATEWAY : 'paymob';
+    $billingConfig = [];
+
+    if ($gateway === 'paymob') {
+        $billingConfig = [
+            'public_key' => defined('PAYMOB_PUBLIC_KEY') ? PAYMOB_PUBLIC_KEY : '',
+            'secret_key' => defined('PAYMOB_SECRET_KEY') ? PAYMOB_SECRET_KEY : '',
+            'hmac_secret' => defined('PAYMOB_HMAC_SECRET') ? PAYMOB_HMAC_SECRET : '',
+            'integration_ids' => defined('PAYMOB_INTEGRATION_IDS') ? PAYMOB_INTEGRATION_IDS : ''
+        ];
+    } elseif ($gateway === 'amwal') {
+        $billingConfig = [
             'merchant_id' => defined('AMWAL_MERCHANT_ID') ? AMWAL_MERCHANT_ID : '',
             'terminal_id' => defined('AMWAL_TERMINAL_ID') ? AMWAL_TERMINAL_ID : '',
             'secure_key' => defined('AMWAL_SECURE_KEY') ? AMWAL_SECURE_KEY : '',
             'api_url' => defined('AMWAL_API_URL') ? AMWAL_API_URL : 'https://backend.sa.amwal.tech',
             'callback_url' => (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . getBasePath() . 'amwalpay/callback.php',
             'return_url' => (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . getBasePath() . 'admin/billing.php'
-        ]
-    );
+        ];
+    }
+
+    $billing = new Billing($gateway, $billingConfig);
 } catch (Throwable $e) {
     error_log("Billing init error: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine());
     adminHeader('Billing', 'billing');
@@ -188,8 +199,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $billingCycle = $_POST['billing_cycle'] ?? 'monthly';
     
     $result = $billing->createSubscription($companyId, $planId, $billingCycle);
-    
-    if ($result['success'] && !empty($result['payment_data'])) {
+
+    if ($result['success'] && !empty($result['payment_url'])) {
+        // Paymob: redirect directly to unified checkout
+        header('Location: ' . $result['payment_url']);
+        exit;
+    } elseif ($result['success'] && !empty($result['payment_data'])) {
+        // Legacy Amwal: redirect to process page
         header('Location: ' . getBasePath() . 'amwalpay/process.php?order_id=' . urlencode($result['transaction_id']));
         exit;
     } else {
@@ -512,15 +528,23 @@ $isFreePlan = ($planInfo['plan'] ?? 'free') === 'free';
     </div>
     <div class="p-6">
         <p class="text-gray-600 text-sm mb-4">We accept the following payment methods:</p>
-        <div class="flex items-center gap-4">
-            <div class="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+        <div class="flex flex-wrap items-center gap-4">
+            <div class="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-2">
                 <i class="fa-brands fa-cc-visa text-2xl text-blue-600"></i>
             </div>
-            <div class="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+            <div class="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-2">
                 <i class="fa-brands fa-cc-mastercard text-2xl text-red-500"></i>
             </div>
-            <div class="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+            <div class="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-2">
                 <i class="fa-brands fa-cc-amex text-2xl text-blue-500"></i>
+            </div>
+            <div class="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-2">
+                <i class="fa-brands fa-apple text-2xl text-gray-900"></i>
+                <span class="text-sm font-medium text-gray-700">Apple Pay</span>
+            </div>
+            <div class="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-2">
+                <i class="fa-solid fa-building-columns text-2xl text-green-600"></i>
+                <span class="text-sm font-medium text-gray-700">Omannet</span>
             </div>
         </div>
     </div>
