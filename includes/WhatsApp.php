@@ -278,6 +278,22 @@ class WhatsApp {
     }
 
     /**
+     * Update WhatsApp API URL
+     */
+    public static function updateApiUrl($url) {
+        self::init();
+        return self::upsertSetting('whatsapp_api_url', $url, 'Dardasha REST API endpoint URL');
+    }
+
+    /**
+     * Update WhatsApp session ID
+     */
+    public static function updateSessionId($sessionId) {
+        self::init();
+        return self::upsertSetting('whatsapp_session_id', $sessionId, 'Dardasha session/line ID (e.g. anna)');
+    }
+
+    /**
      * Update WhatsApp enabled status
      */
     public static function updateEnabled($enabled) {
