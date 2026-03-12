@@ -111,14 +111,5 @@ ADD COLUMN department_id VARCHAR(36) NULL AFTER theme_id,
 ADD COLUMN is_shared BOOLEAN DEFAULT FALSE,
 ADD FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL;
 
--- Create default super admin user (password: admin123 - CHANGE THIS!)
--- Password hash for 'admin123'
-INSERT INTO users (id, email, password_hash, role, name, status) 
-VALUES (
-    UUID(),
-    'admin@bhd.om',
-    '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
-    'super_admin',
-    'Super Admin',
-    'active'
-) ON DUPLICATE KEY UPDATE email=email;
+-- Default super admin user is created during installation via install/index.php
+-- DO NOT hardcode credentials in schema files

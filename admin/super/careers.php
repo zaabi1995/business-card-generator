@@ -71,12 +71,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($message)) {
                     $message = 'Career listing created successfully.';
                     $messageType = 'success';
                 } else {
-                    $db->update('career_listings', $data, ['id' => $id]);
+                    $db->update('career_listings', $data, 'id = :where_id', ['where_id' => $id]);
                     $message = 'Career listing updated successfully.';
                     $messageType = 'success';
                 }
             } catch (Exception $e) {
-                $message = 'Error: ' . $e->getMessage();
+                error_log("Careers error: " . $e->getMessage());
+                $message = 'An error occurred. Please try again.';
                 $messageType = 'error';
             }
         }
@@ -84,11 +85,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($message)) {
         $id = $_POST['id'] ?? null;
         if ($id) {
             try {
-                $db->delete('career_listings', ['id' => $id]);
+                $db->delete('career_listings', 'id = :id', ['id' => $id]);
                 $message = 'Career listing deleted successfully.';
                 $messageType = 'success';
             } catch (Exception $e) {
-                $message = 'Error: ' . $e->getMessage();
+                error_log("Careers error: " . $e->getMessage());
+                $message = 'An error occurred. Please try again.';
                 $messageType = 'error';
             }
         }

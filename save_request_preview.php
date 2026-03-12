@@ -64,7 +64,7 @@ try {
                 $updateData['preview_back'] = $result['back_url'];
             }
             
-            $db->update('card_requests', $updateData, ['id' => $requestId]);
+            $db->update('card_requests', $updateData, 'id = :where_id', ['where_id' => $requestId]);
         }
     }
     

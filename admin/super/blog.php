@@ -76,12 +76,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($message)) {
                         $updateData['published_at'] = date('Y-m-d H:i:s');
                     }
                     
-                    $db->update('blog_posts', $updateData, ['id' => $id]);
+                    $db->update('blog_posts', $updateData, 'id = :where_id', ['where_id' => $id]);
                     $message = 'Blog post updated successfully.';
                     $messageType = 'success';
                 }
             } catch (Exception $e) {
-                $message = 'Error: ' . $e->getMessage();
+                error_log("Blog error: " . $e->getMessage());
+                $message = 'An error occurred. Please try again.';
                 $messageType = 'error';
             }
         }
@@ -89,11 +90,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($message)) {
         $id = $_POST['id'] ?? null;
         if ($id) {
             try {
-                $db->delete('blog_posts', ['id' => $id]);
+                $db->delete('blog_posts', 'id = :id', ['id' => $id]);
                 $message = 'Blog post deleted successfully.';
                 $messageType = 'success';
             } catch (Exception $e) {
-                $message = 'Error: ' . $e->getMessage();
+                error_log("Blog error: " . $e->getMessage());
+                $message = 'An error occurred. Please try again.';
                 $messageType = 'error';
             }
         }
