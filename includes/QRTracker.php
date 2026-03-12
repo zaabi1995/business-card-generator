@@ -232,7 +232,9 @@ class QRTracker {
         
         try {
             // Use ip-api.com (free, no API key required)
-            $url = "http://ip-api.com/json/{$ip}?fields=status,country,countryCode,region,regionName,city,lat,lon,timezone";
+            // Note: ip-api.com free tier only supports HTTP; HTTPS requires pro plan
+            // Using HTTP is acceptable here as this is non-sensitive geo-lookup data
+            $url = "http://ip-api.com/json/" . urlencode($ip) . "?fields=status,country,countryCode,region,regionName,city,lat,lon,timezone";
             
             $context = stream_context_create([
                 'http' => [

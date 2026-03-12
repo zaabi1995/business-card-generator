@@ -30,6 +30,8 @@ config.php
 data/*.json
 data/companies/
 data/print-sheets/
+data/proofs/
+data/cards/
 uploads/
 !uploads/.gitkeep
 

@@ -149,10 +149,11 @@ class PrintShop {
             ];
             
         } catch (PDOException $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
+            error_log("PrintShop::create error: " . $e->getMessage());
+            return ['success' => false, 'error' => 'Failed to create print shop'];
         }
     }
-    
+
     /**
      * Update print shop
      */
@@ -201,10 +202,11 @@ class PrintShop {
             return ['success' => true];
             
         } catch (PDOException $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
+            error_log("PrintShop::update error: " . $e->getMessage());
+            return ['success' => false, 'error' => 'Failed to update print shop'];
         }
     }
-    
+
     /**
      * Approve a print shop
      */
@@ -217,10 +219,11 @@ class PrintShop {
             $stmt->execute([$id]);
             return ['success' => true];
         } catch (PDOException $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
+            error_log("PrintShop::approve error: " . $e->getMessage());
+            return ['success' => false, 'error' => 'Failed to approve print shop'];
         }
     }
-    
+
     /**
      * Suspend a print shop
      */
@@ -559,7 +562,8 @@ class PrintShop {
             
             if (!empty($query)) {
                 $sql .= " AND (name LIKE ? OR description LIKE ? OR city LIKE ? OR country LIKE ?)";
-                $searchTerm = "%$query%";
+                $escapedQuery = str_replace(['%', '_'], ['\\%', '\\_'], $query);
+                $searchTerm = "%$escapedQuery%";
                 $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm]);
             }
             

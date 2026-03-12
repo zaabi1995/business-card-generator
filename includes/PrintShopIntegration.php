@@ -107,10 +107,10 @@ class PrintShopIntegration {
             return ['success' => true];
         } catch (PDOException $e) {
             error_log("PrintShop: Error updating settings: " . $e->getMessage());
-            return ['success' => false, 'error' => $e->getMessage()];
+            return ['success' => false, 'error' => 'Failed to update settings'];
         }
     }
-    
+
     /**
      * Test connection to print shop API
      */
@@ -149,10 +149,11 @@ class PrintShopIntegration {
             
             return ['success' => false, 'error' => "API returned status $httpCode"];
         } catch (Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
+            error_log("PrintShop: Connection test failed: " . $e->getMessage());
+            return ['success' => false, 'error' => 'Connection test failed'];
         }
     }
-    
+
     /**
      * Create a print order
      */
@@ -293,7 +294,7 @@ class PrintShopIntegration {
             
         } catch (PDOException $e) {
             error_log("PrintShop: Error creating order: " . $e->getMessage());
-            return ['success' => false, 'error' => 'Failed to create order: ' . $e->getMessage()];
+            return ['success' => false, 'error' => 'Failed to create order'];
         }
     }
     
@@ -354,13 +355,15 @@ class PrintShopIntegration {
                 return ['success' => true, 'response' => $responseData];
             }
             
-            return ['success' => false, 'error' => "API returned status $httpCode: $response"];
-            
+            error_log("PrintShop API returned status $httpCode: $response");
+            return ['success' => false, 'error' => "API returned status $httpCode"];
+
         } catch (Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
+            error_log("PrintShop: API send failed: " . $e->getMessage());
+            return ['success' => false, 'error' => 'API request failed'];
         }
     }
-    
+
     /**
      * Send order notification email to print shop
      */
@@ -415,15 +418,8 @@ class PrintShopIntegration {
             ]);
             
         } catch (Exception $e) {
-            error_log("Failed to send print shop notification: " . $e->getMessage());
-            // Fallback to basic mail
-            $to = $settings['shop_email'] ?? '';
-            if (!empty($to)) {
-                $subject = "New Print Order #$orderId - " . ($settings['shop_name'] ?? 'Cardify');
-                $message = "A new print order has been submitted.\n\nOrder ID: $orderId\n\nPlease log in to view order details.";
-                $headers = "From: no-reply@" . ($_SERVER['HTTP_HOST'] ?? 'cardify.om');
-                @mail($to, $subject, $message, $headers);
-            }
+            error_log("Failed to send print shop notification for order #$orderId: " . $e->getMessage());
+            // Do not fallback to raw mail() — it's insecure (header injection via HTTP_HOST)
         }
     }
     
@@ -541,10 +537,11 @@ class PrintShopIntegration {
             
             return ['success' => true];
         } catch (PDOException $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
+            error_log("PrintShop: Status update failed: " . $e->getMessage());
+            return ['success' => false, 'error' => 'Failed to update order status'];
         }
     }
-    
+
     /**
      * Send email notification for order status update
      */
@@ -852,13 +849,14 @@ class PrintShopIntegration {
                 'message' => 'Order marked for high-quality generation'
             ];
         } catch (Exception $e) {
+            error_log("PrintShop: ensureHighQualityForOrder failed: " . $e->getMessage());
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => 'Failed to mark order for high-quality generation'
             ];
         }
     }
-    
+
     /**
      * Download endpoint for print shop - always returns full quality
      * This can be used to create a dedicated download link that bypasses plan restrictions

@@ -221,9 +221,9 @@ class Mailer {
         $contextOptions = [];
         if ($config['encryption'] === 'ssl') {
             $contextOptions['ssl'] = [
-                'verify_peer' => false,
-                'verify_peer_name' => false,
-                'allow_self_signed' => true
+                'verify_peer' => true,
+                'verify_peer_name' => true,
+                'allow_self_signed' => false
             ];
             $host = 'ssl://' . $config['host'];
         } elseif ($config['encryption'] === 'tls') {
@@ -1715,9 +1715,9 @@ HTML
             $contextOptions = [];
             if ($encryption === 'ssl') {
                 $contextOptions['ssl'] = [
-                    'verify_peer' => false,
-                    'verify_peer_name' => false,
-                    'allow_self_signed' => true
+                    'verify_peer' => true,
+                    'verify_peer_name' => true,
+                    'allow_self_signed' => false
                 ];
                 $connectHost = 'ssl://' . $host;
             } else {
