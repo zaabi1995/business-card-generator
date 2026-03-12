@@ -55,8 +55,10 @@ try {
     }
     
     // Generate unique filename based on type
+    $isWeb = !empty($_POST['web']);
     $ext = ($mimeType === 'application/pdf') ? 'pdf' : 'png';
-    $filename = 'card_' . $side . '_' . date('Ymd_His') . '_' . uniqid() . '.' . $ext;
+    $webSuffix = $isWeb ? '_web' : '';
+    $filename = 'card_' . $side . $webSuffix . '_' . date('Ymd_His') . '_' . uniqid() . '.' . $ext;
     $filePath = $outputDir . '/' . $filename;
     
     // Move uploaded file

@@ -20,17 +20,20 @@ try {
     $employeeId = $input['employee_id'] ?? '';
     $frontUrl = $input['front_url'] ?? null;
     $backUrl = $input['back_url'] ?? null;
-    
+    $frontWebUrl = $input['front_web_url'] ?? null;
+    $backWebUrl = $input['back_web_url'] ?? null;
+    $themeMode = $input['theme_mode'] ?? null;
+
     if (empty($employeeId)) {
         throw new Exception('Employee ID required');
     }
-    
+
     // Get template IDs
     $companyId = getCurrentCompanyId();
     $config = loadTemplates($companyId);
     $frontTemplateId = $config['activeFrontId'] ?? null;
     $backTemplateId = $config['activeBackId'] ?? null;
-    
+
     // Log the generation
     $entry = logGeneratedCard(
         $employeeId,
@@ -45,7 +48,29 @@ try {
     if (!$entry) {
         throw new Exception('Failed to log generation to database');
     }
-    
+
+    // Update web paths and theme_mode if provided
+    if ($entry && ($frontWebUrl || $backWebUrl || $themeMode)) {
+        try {
+            $db = Database::getInstance();
+            $updateData = [];
+            if ($frontWebUrl) {
+                $updateData['front_web_path'] = basename($frontWebUrl);
+            }
+            if ($backWebUrl) {
+                $updateData['back_web_path'] = basename($backWebUrl);
+            }
+            if ($themeMode && in_array($themeMode, ['dark', 'light'])) {
+                $updateData['theme_mode'] = $themeMode;
+            }
+            if (!empty($updateData)) {
+                $db->update('generated_cards', $updateData, 'id = :id', ['id' => $entry['id']]);
+            }
+        } catch (Exception $e) {
+            error_log("log_generation web/theme update error: " . $e->getMessage());
+        }
+    }
+
     echo json_encode(['success' => true, 'entry' => $entry]);
     
 } catch (Exception $e) {

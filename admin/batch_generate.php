@@ -480,15 +480,17 @@ function batchGenerator() {
             let backUrl = null;
             let frontPdf = null;
             let backPdf = null;
-            
-            const vcfUrl = this.companySlug && employee.email 
-                ? this.baseUrl + encodeURIComponent(this.companySlug) + '/' + encodeURIComponent(employee.email) + '.vcf'
+            let frontWebUrl = null;
+            let backWebUrl = null;
+
+            const cardUrl = this.companySlug && employee.id
+                ? this.baseUrl + encodeURIComponent(this.companySlug) + '/card/' + encodeURIComponent(employee.id)
                 : null;
-            
+
             // Check for department-specific templates
             let employeeFrontTemplate = this.frontTemplate;
             let employeeBackTemplate = this.backTemplate;
-            
+
             if (employee.department_id && this.departmentTemplates[employee.department_id]) {
                 const deptTemplates = this.departmentTemplates[employee.department_id];
                 if (deptTemplates.front) {
@@ -500,40 +502,65 @@ function batchGenerator() {
                     console.log(`Using department template for ${employee.name_en} - back`);
                 }
             }
-            
+
+            // Compute theme_mode from front template background color
+            const frontSettings = employeeFrontTemplate?.settings || {};
+            const themeMode = this.getThemeMode(frontSettings.backgroundColor);
+
             // Generate front card
             if (employeeFrontTemplate) {
-                const result = await this.generateCard(employeeFrontTemplate, employee, 'front', vcfUrl);
+                const result = await this.generateCard(employeeFrontTemplate, employee, 'front', cardUrl);
                 if (result) {
                     frontUrl = result.png;
                     frontPdf = result.pdf;
+                    // Generate web-optimized version
+                    if (result.pngBlob) {
+                        try {
+                            const webBlob = await this.generateWebImage(result.pngBlob);
+                            frontWebUrl = await this.saveWebImage(webBlob, 'front', employee.id);
+                        } catch (e) {
+                            console.warn('Web image generation failed (front):', e);
+                        }
+                    }
                 }
             }
-            
+
             // Generate back card
             if (employeeBackTemplate) {
-                const result = await this.generateCard(employeeBackTemplate, employee, 'back', vcfUrl);
+                const result = await this.generateCard(employeeBackTemplate, employee, 'back', cardUrl);
                 if (result) {
                     backUrl = result.png;
                     backPdf = result.pdf;
+                    // Generate web-optimized version
+                    if (result.pngBlob) {
+                        try {
+                            const webBlob = await this.generateWebImage(result.pngBlob);
+                            backWebUrl = await this.saveWebImage(webBlob, 'back', employee.id);
+                        } catch (e) {
+                            console.warn('Web image generation failed (back):', e);
+                        }
+                    }
                 }
             }
-            
-            // Log generation
+
+            // Log generation with web paths and theme_mode
             await fetch(this.basePath + 'log_generation.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     employee_id: employee.id,
                     front_url: frontUrl,
-                    back_url: backUrl
+                    back_url: backUrl,
+                    front_web_url: frontWebUrl,
+                    back_web_url: backWebUrl,
+                    theme_mode: themeMode
                 })
             });
-            
+
             return { frontUrl, backUrl, frontPdf, backPdf };
         },
         
-        async generateCard(template, employee, side, vcfUrl) {
+        async generateCard(template, employee, side, cardUrl) {
             if (!this.cardEditor) return null;
             
             // Clear canvas
@@ -595,8 +622,8 @@ function batchGenerator() {
             }
             
             // Add QR code if enabled
-            if (fields.qr_code && fields.qr_code.enabled && vcfUrl) {
-                await this.cardEditor.addQRCode(vcfUrl, {
+            if (fields.qr_code && fields.qr_code.enabled && cardUrl) {
+                await this.cardEditor.addQRCode(cardUrl, {
                     x: fields.qr_code.x,
                     y: fields.qr_code.y,
                     size: fields.qr_code.size
@@ -622,8 +649,11 @@ function batchGenerator() {
                 pdfBlob = await this.cardEditor.exportHybridPDFBlob(originalPdf);
             }
             
-            // Save both files and return both URLs
+            // Save both files and return both URLs + raw blob for web resize
             const saveResult = await this.saveCardBoth(pngBlob, pdfBlob, side, employee.id);
+            if (saveResult) {
+                saveResult.pngBlob = pngBlob;
+            }
             return saveResult;
         },
         
@@ -683,6 +713,27 @@ function batchGenerator() {
             }
         },
         
+        // Save web-optimized image (0.75x scale)
+        async saveWebImage(blob, side, employeeId) {
+            const formData = new FormData();
+            formData.append('image', blob, side + '.png');
+            formData.append('side', side);
+            formData.append('employee_id', employeeId);
+            formData.append('web', '1');
+
+            try {
+                const response = await fetch(this.basePath + 'save_card_image.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                return result.success ? result.url : null;
+            } catch (e) {
+                console.error('Web image save error:', e);
+                return null;
+            }
+        },
+
         // Send card emails to employees with proof sheet
         // Sends to employee and optionally copies admin/department admin
         async sendCardEmails() {
@@ -721,6 +772,42 @@ function batchGenerator() {
             }
         },
         
+        // Compute theme mode from background color luminance
+        getThemeMode(bgColor) {
+            if (!bgColor) return 'dark'; // default for image backgrounds
+            const hex = bgColor.replace('#', '');
+            if (hex.length < 6) return 'dark';
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+            return luminance < 128 ? 'dark' : 'light';
+        },
+
+        // Generate web-optimized image at 0.75x scale
+        async generateWebImage(fullResBlob) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const scale = 0.75;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.round(img.width * scale);
+                    canvas.height = Math.round(img.height * scale);
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    canvas.toBlob(blob => {
+                        URL.revokeObjectURL(img.src);
+                        resolve(blob);
+                    }, 'image/png');
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(img.src);
+                    reject(new Error('Failed to load image for web resize'));
+                };
+                img.src = URL.createObjectURL(fullResBlob);
+            });
+        },
+
         reset() {
             this.isComplete = false;
             this.currentIndex = 0;
