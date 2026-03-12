@@ -1,115 +1,170 @@
 <?php
 /**
  * WhatsApp REST API Integration
- * Sends confirmation messages via WhatsApp API
+ * Sends confirmation messages via Dardasha REST API
  */
 class WhatsApp {
     private static $db = null;
-    private static $apiToken = null;
-    private static $enabled = false;
-    
+    private static $settings = [];
+
     public static function init() {
         if (self::$db === null) {
             self::$db = Database::getInstance();
             self::loadSettings();
         }
     }
-    
+
     /**
      * Load WhatsApp settings from database
      */
     private static function loadSettings() {
         try {
-            $tokenSetting = self::$db->fetchOne(
-                "SELECT setting_value FROM system_settings WHERE setting_key = :key",
-                ['key' => 'whatsapp_api_token']
-            );
-            
-            $enabledSetting = self::$db->fetchOne(
-                "SELECT setting_value FROM system_settings WHERE setting_key = :key",
-                ['key' => 'whatsapp_enabled']
-            );
-            
-            self::$apiToken = $tokenSetting['setting_value'] ?? '';
-            self::$enabled = ($enabledSetting['setting_value'] ?? '0') === '1';
+            $keys = ['whatsapp_api_token', 'whatsapp_enabled', 'whatsapp_api_url', 'whatsapp_session_id'];
+            self::$settings = [];
+            foreach ($keys as $key) {
+                $row = self::$db->fetchOne(
+                    "SELECT setting_value FROM system_settings WHERE setting_key = :key",
+                    ['key' => $key]
+                );
+                if ($row !== false && $row !== null) {
+                    self::$settings[$key] = $row['setting_value'];
+                }
+            }
         } catch (Exception $e) {
             // Settings table might not exist yet
-            self::$apiToken = '';
-            self::$enabled = false;
+            self::$settings = [];
         }
     }
-    
+
     /**
      * Check if WhatsApp is enabled and configured
      */
     public static function isEnabled() {
         self::init();
-        return self::$enabled && !empty(self::$apiToken);
+        return (self::$settings['whatsapp_enabled'] ?? '0') === '1'
+            && !empty(self::$settings['whatsapp_api_token']);
     }
-    
+
     /**
-     * Send WhatsApp message
-     * @param string $phoneNumber Phone number in international format (e.g., +96812345678)
+     * Send WhatsApp message via Dardasha REST API
+     * @param string $phoneNumber Phone number in any format (e.g., +96812345678 or 96812345678)
      * @param string $message Message to send
      * @return array ['success' => bool, 'error' => string|null]
      */
     public static function sendMessage($phoneNumber, $message) {
         self::init();
-        
+
         if (!self::isEnabled()) {
             return ['success' => false, 'error' => 'WhatsApp API is not enabled or token is not configured'];
         }
-        
-        // Clean phone number (remove spaces, dashes, etc.)
-        $phoneNumber = preg_replace('/[^0-9+]/', '', $phoneNumber);
-        
-        // Ensure phone number starts with +
-        if (substr($phoneNumber, 0, 1) !== '+') {
-            $phoneNumber = '+' . $phoneNumber;
-        }
-        
-        // WhatsApp REST API endpoint
-        // Adjust this URL based on your actual WhatsApp API provider
-        // Common providers: Twilio, MessageBird, WhatsApp Business API, etc.
-        $apiUrl = 'https://api.whatsapp.com/v1/messages'; // Replace with your actual API endpoint
-        
+
+        // Strip + and any non-digit characters
+        $phone = preg_replace('/[^0-9]/', '', ltrim($phoneNumber, '+'));
+
+        $apiUrl   = self::$settings['whatsapp_api_url']    ?? 'https://dardasha.om/api/send-message';
+        $token    = self::$settings['whatsapp_api_token']  ?? '';
+        $sessionId = self::$settings['whatsapp_session_id'] ?? 'anna';
+
         $payload = [
-            'to' => $phoneNumber,
-            'message' => $message,
-            'type' => 'text'
+            'phone'     => $phone,
+            'message'   => $message,
+            'sessionId' => $sessionId
         ];
-        
+
         $ch = curl_init($apiUrl);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode($payload),
-            CURLOPT_HTTPHEADER => [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload),
+            CURLOPT_HTTPHEADER     => [
                 'Content-Type: application/json',
-                'Authorization: Bearer ' . self::$apiToken
+                'Authorization: Bearer ' . $token
             ],
-            CURLOPT_TIMEOUT => 30,
+            CURLOPT_TIMEOUT        => 30,
             CURLOPT_SSL_VERIFYPEER => true
         ]);
-        
+
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
+        $error    = curl_error($ch);
         curl_close($ch);
-        
+
         if ($error) {
             return ['success' => false, 'error' => 'CURL Error: ' . $error];
         }
-        
-        if ($httpCode !== 200 && $httpCode !== 201) {
-            $responseData = json_decode($response, true);
-            $errorMsg = $responseData['error']['message'] ?? 'Unknown error';
-            return ['success' => false, 'error' => 'API Error (' . $httpCode . '): ' . $errorMsg];
+
+        $responseData = json_decode($response, true);
+
+        if (isset($responseData['success']) && $responseData['success'] === true) {
+            return ['success' => true, 'messageId' => $responseData['messageId'] ?? null];
         }
-        
-        return ['success' => true, 'response' => json_decode($response, true)];
+
+        $errorMsg = $responseData['error'] ?? $responseData['message'] ?? ('HTTP ' . $httpCode);
+        return ['success' => false, 'error' => 'API Error: ' . $errorMsg];
     }
-    
+
+    /**
+     * Notify employee that their digital business card is ready
+     * @param array $employee Employee data (must include phone/mobile)
+     * @param array $company Company data
+     * @param string $digitalCardUrl URL to the digital card
+     * @return array ['success' => bool, 'error' => string|null]
+     */
+    public static function sendCardReadyNotification($employee, $company, $digitalCardUrl) {
+        if (!self::isEnabled()) {
+            return ['success' => false, 'error' => 'WhatsApp API is not enabled'];
+        }
+
+        $phoneNumber = $employee['phone'] ?? $employee['mobile'] ?? null;
+
+        if (empty($phoneNumber)) {
+            return ['success' => false, 'error' => 'Employee phone number not found'];
+        }
+
+        $name    = trim(($employee['first_name'] ?? '') . ' ' . ($employee['last_name'] ?? ''));
+        $company_name = $company['name'] ?? '';
+
+        $message  = "Hi {$name}! 👋\n\n";
+        $message .= "Your business card is ready!\n\n";
+        if ($company_name) {
+            $message .= "Company: {$company_name}\n";
+        }
+        $message .= "View your digital card here:\n{$digitalCardUrl}";
+
+        return self::sendMessage($phoneNumber, $message);
+    }
+
+    /**
+     * Notify employee that their card request has been approved
+     * @param array $employee Employee data (must include phone/mobile)
+     * @param array $company Company data
+     * @param string $digitalCardUrl URL to the digital card
+     * @return array ['success' => bool, 'error' => string|null]
+     */
+    public static function sendCardRequestApproved($employee, $company, $digitalCardUrl) {
+        if (!self::isEnabled()) {
+            return ['success' => false, 'error' => 'WhatsApp API is not enabled'];
+        }
+
+        $phoneNumber = $employee['phone'] ?? $employee['mobile'] ?? null;
+
+        if (empty($phoneNumber)) {
+            return ['success' => false, 'error' => 'Employee phone number not found'];
+        }
+
+        $name         = trim(($employee['first_name'] ?? '') . ' ' . ($employee['last_name'] ?? ''));
+        $company_name = $company['name'] ?? '';
+
+        $message  = "Hi {$name}! 🎉\n\n";
+        $message .= "Your card request has been approved!\n\n";
+        if ($company_name) {
+            $message .= "Company: {$company_name}\n";
+        }
+        $message .= "View your digital card here:\n{$digitalCardUrl}";
+
+        return self::sendMessage($phoneNumber, $message);
+    }
+
     /**
      * Send print order confirmation message
      * @param array $order Print order data
@@ -120,120 +175,38 @@ class WhatsApp {
         if (!self::isEnabled()) {
             return ['success' => false, 'error' => 'WhatsApp API is not enabled'];
         }
-        
-        // Get company contact number (use admin email's phone or company phone)
+
         $phoneNumber = $company['phone'] ?? $company['mobile'] ?? null;
-        
+
         if (empty($phoneNumber)) {
             return ['success' => false, 'error' => 'Company phone number not found'];
         }
-        
-        // Build confirmation message - handle both old (employee_ids JSON) and new (employee_id single) schemas
+
+        // Handle both old (employee_ids JSON array) and new (employee_id single) schemas
         $employeeCount = 1;
         if (!empty($order['employee_ids'])) {
             $decoded = json_decode($order['employee_ids'], true);
             $employeeCount = is_array($decoded) ? count($decoded) : 1;
         }
         $totalQuantity = $employeeCount * ($order['quantity'] ?? 1);
-        
-        $message = "✅ Print Order Confirmation\n\n";
+
+        $message  = "✅ Print Order Confirmation\n\n";
         $message .= "Order Number: " . $order['order_number'] . "\n";
         $message .= "Company: " . $company['name'] . "\n";
         $message .= "Employees: " . $employeeCount . "\n";
         $message .= "Quantity per Employee: " . ($order['quantity'] ?? 1) . "\n";
         $message .= "Total Cards: " . $totalQuantity . "\n";
         $message .= "Status: " . ucfirst($order['status']) . "\n";
-        
+
         if (!empty($order['notes'])) {
             $message .= "\nNotes: " . $order['notes'];
         }
-        
+
         $message .= "\n\nThank you for your order!";
-        
+
         return self::sendMessage($phoneNumber, $message);
     }
-    
-    /**
-     * Update WhatsApp API token
-     */
-    public static function updateToken($token) {
-        self::init();
-        
-        try {
-            $existing = self::$db->fetchOne(
-                "SELECT id FROM system_settings WHERE setting_key = :key",
-                ['key' => 'whatsapp_api_token']
-            );
-            
-            if ($existing) {
-                self::$db->update('system_settings', 
-                    ['setting_value' => $token, 'updated_at' => date('Y-m-d H:i:s')],
-                    'setting_key = :key',
-                    ['key' => 'whatsapp_api_token']
-                );
-            } else {
-                self::$db->insert('system_settings', [
-                    'id' => generateUUID(),
-                    'setting_key' => 'whatsapp_api_token',
-                    'setting_value' => $token,
-                    'description' => 'WhatsApp REST API token for sending confirmation messages'
-                ]);
-            }
-            
-            self::$apiToken = $token;
-            return ['success' => true];
-        } catch (Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
-    }
-    
-    /**
-     * Update WhatsApp enabled status
-     */
-    public static function updateEnabled($enabled) {
-        self::init();
-        
-        try {
-            $value = $enabled ? '1' : '0';
-            $existing = self::$db->fetchOne(
-                "SELECT id FROM system_settings WHERE setting_key = :key",
-                ['key' => 'whatsapp_enabled']
-            );
-            
-            if ($existing) {
-                self::$db->update('system_settings',
-                    ['setting_value' => $value, 'updated_at' => date('Y-m-d H:i:s')],
-                    'setting_key = :key',
-                    ['key' => 'whatsapp_enabled']
-                );
-            } else {
-                self::$db->insert('system_settings', [
-                    'id' => generateUUID(),
-                    'setting_key' => 'whatsapp_enabled',
-                    'setting_value' => $value,
-                    'description' => 'Enable/disable WhatsApp confirmation messages'
-                ]);
-            }
-            
-            self::$enabled = $enabled;
-            return ['success' => true];
-        } catch (Exception $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
-    }
-    
-    /**
-     * Get WhatsApp settings
-     */
-    public static function getSettings() {
-        self::init();
-        
-        return [
-            'token' => self::$apiToken,
-            'enabled' => self::$enabled
-        ];
-    }
-    
+
     /**
      * Send print order status update message
      * @param array $order Print order data
@@ -245,56 +218,121 @@ class WhatsApp {
         if (!self::isEnabled()) {
             return ['success' => false, 'error' => 'WhatsApp API is not enabled'];
         }
-        
-        // Get phone number from shipping phone or order data
+
         $phoneNumber = $order['shipping_phone'] ?? null;
-        
+
         if (empty($phoneNumber)) {
             return ['success' => false, 'error' => 'No phone number available for notification'];
         }
-        
-        // Build status message based on status
-        $statusEmoji = '📦';
+
+        $statusEmoji   = '📦';
         $statusMessage = '';
-        
+
         switch ($status) {
             case 'processing':
-                $statusEmoji = '⚙️';
+                $statusEmoji   = '⚙️';
                 $statusMessage = "Your print order is now being processed.";
                 break;
             case 'printing':
-                $statusEmoji = '🖨️';
+                $statusEmoji   = '🖨️';
                 $statusMessage = "Your business cards are being printed!";
                 break;
             case 'shipped':
-                $statusEmoji = '🚚';
+                $statusEmoji   = '🚚';
                 $statusMessage = "Your order has been shipped!";
                 if ($trackingNumber) {
                     $statusMessage .= "\nTracking: " . $trackingNumber;
                 }
                 break;
             case 'delivered':
-                $statusEmoji = '✅';
+                $statusEmoji   = '✅';
                 $statusMessage = "Your business cards have been delivered!";
                 break;
             case 'cancelled':
-                $statusEmoji = '❌';
+                $statusEmoji   = '❌';
                 $statusMessage = "Your order has been cancelled. Please contact us if you have questions.";
                 break;
             default:
                 $statusMessage = "Your order status has been updated to: " . ucfirst($status);
         }
-        
-        $message = "{$statusEmoji} Order Update\n\n";
+
+        $message  = "{$statusEmoji} Order Update\n\n";
         $message .= "Order: #" . ($order['order_number'] ?? $order['id']) . "\n";
         $message .= "Status: " . ucfirst($status) . "\n";
         $message .= "Quantity: " . ($order['quantity'] ?? 100) . " cards\n\n";
         $message .= $statusMessage;
-        
+
         if ($status === 'delivered') {
             $message .= "\n\nThank you for your order! 🙏";
         }
-        
+
         return self::sendMessage($phoneNumber, $message);
+    }
+
+    /**
+     * Update WhatsApp API token
+     */
+    public static function updateToken($token) {
+        self::init();
+        return self::upsertSetting('whatsapp_api_token', $token, 'WhatsApp REST API token for sending messages');
+    }
+
+    /**
+     * Update WhatsApp enabled status
+     */
+    public static function updateEnabled($enabled) {
+        self::init();
+        $result = self::upsertSetting('whatsapp_enabled', $enabled ? '1' : '0', 'Enable/disable WhatsApp confirmation messages');
+        if ($result['success']) {
+            self::$settings['whatsapp_enabled'] = $enabled ? '1' : '0';
+        }
+        return $result;
+    }
+
+    /**
+     * Get WhatsApp settings
+     */
+    public static function getSettings() {
+        self::init();
+
+        return [
+            'token'      => self::$settings['whatsapp_api_token']    ?? '',
+            'enabled'    => (self::$settings['whatsapp_enabled']      ?? '0') === '1',
+            'api_url'    => self::$settings['whatsapp_api_url']       ?? 'https://dardasha.om/api/send-message',
+            'session_id' => self::$settings['whatsapp_session_id']    ?? 'anna'
+        ];
+    }
+
+    /**
+     * Insert or update a setting in system_settings
+     */
+    private static function upsertSetting($key, $value, $description = '') {
+        try {
+            $existing = self::$db->fetchOne(
+                "SELECT id FROM system_settings WHERE setting_key = :key",
+                ['key' => $key]
+            );
+
+            if ($existing) {
+                self::$db->update(
+                    'system_settings',
+                    ['setting_value' => $value, 'updated_at' => date('Y-m-d H:i:s')],
+                    'setting_key = :key',
+                    ['key' => $key]
+                );
+            } else {
+                self::$db->insert('system_settings', [
+                    'id'            => generateUUID(),
+                    'setting_key'   => $key,
+                    'setting_value' => $value,
+                    'description'   => $description
+                ]);
+            }
+
+            self::$settings[$key] = $value;
+            return ['success' => true];
+        } catch (Exception $e) {
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
     }
 }
