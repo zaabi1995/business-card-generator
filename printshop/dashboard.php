@@ -91,7 +91,6 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="flex items-center gap-4">
                     <a href="<?php echo getBasePath(); ?>" class="flex items-center gap-2">
                         <img src="<?php echo getBasePath(); ?>assets/images/logo.svg" alt="Cardify" class="h-8 w-auto">
-                        <span class="font-bold text-gray-900" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;">Cardify</span>
                     </a>
                     <span class="text-gray-300">|</span>
                     <span class="font-semibold text-gray-900"><?php echo sanitize($printShop['name']); ?></span>
