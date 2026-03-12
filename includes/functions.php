@@ -107,6 +107,11 @@ function imageUrl($imagePath) {
         return getWebPath($imagePath);
     }
     
+    // If path starts with 'companies/' or 'templates/', it's relative to uploads/
+    if (preg_match('#^(companies|templates)/#', $imagePath)) {
+        return $basePath . 'uploads/' . ltrim($imagePath, '/');
+    }
+
     return $basePath . ltrim($imagePath, '/');
 }
 
