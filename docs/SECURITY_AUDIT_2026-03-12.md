@@ -58,6 +58,35 @@ Cardify.om is a PHP/MySQL multi-tenant SaaS for digital business card generation
 
 ---
 
+## Round 2 Findings (Deep Audit Agent)
+
+A second deep audit pass uncovered additional issues. All fixed in commit a876b48.
+
+### CRITICAL
+
+| # | Issue | File(s) | Fix |
+|---|-------|---------|-----|
+| C7 | **Payment amount not re-verified on callback** — attacker could forge amount | `includes/Billing.php` | Compare callback Amount against stored transaction amount; reject mismatches |
+| C8 | **amwalpay/callback.php passes null signature** — bypasses verification | `amwalpay/callback.php` | Read signature from header/POST instead of hardcoded null |
+
+### HIGH
+
+| # | Issue | File(s) | Fix |
+|---|-------|---------|-----|
+| H9 | **IDOR in print-ready PDF** — any user can generate/download any order's PDF | `api/print-ready.php` | Added company ownership verification to detect, generate, and download handlers |
+| H10 | **Employee profile update missing CSRF** | `company/views/employee.php` | Added `validateCSRFToken()` check |
+| H11 | **Company context set for unauthenticated visitors** — session pollution | `company/index.php` | Only call `setCompanyContext()` for authenticated company members |
+| H12 | **Portal passcode timing-vulnerable comparison** | `portal.php` | Changed `===` to `hash_equals()` |
+
+### LOW
+
+| # | Issue | File(s) | Fix |
+|---|-------|---------|-----|
+| L1 | **requireAdmin() doesn't enforce role** — any logged-in user passes | `includes/functions.php` | Added admin role verification |
+| L2 | **Billing plan limits fail-open** — allows unlimited access if DB fails | `includes/Billing.php` | Changed to fail-closed (deny if limits can't be verified) |
+
+---
+
 ## Positive Security Findings
 
 The codebase already has strong fundamentals:
@@ -103,8 +132,12 @@ The codebase already has strong fundamentals:
 - `webhooks/payment.php` — POST-only, signature required
 - `api/check-employee.php` — auth required, generic errors
 - `api/get_templates_public.php` — CORS restriction, no slug leak
-- `api/print-ready.php` — generic errors, no role leak
+- `api/print-ready.php` — generic errors, no role leak, IDOR ownership checks
 - `download_card.php` — auth required
+- `amwalpay/callback.php` — signature from header/POST instead of null
+- `company/views/employee.php` — CSRF on profile update
+- `company/index.php` — company context only for authenticated users
+- `portal.php` — timing-safe passcode comparison
 - `company_admin.php` — removed dead route
 
 ### New Protection Files
