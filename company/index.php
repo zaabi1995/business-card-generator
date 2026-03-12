@@ -67,8 +67,10 @@ $belongsToCompany = $currentCompanyId === $company['id'];
 // Employee view is accessed via /{company}/my-card or similar
 $viewType = 'public';
 
-// Set company context
-setCompanyContext($company);
+// Only set company context in session for authenticated users who belong to this company
+if ($isLoggedIn && $belongsToCompany) {
+    setCompanyContext($company);
+}
 
 // Apply theme colors
 $primaryColor = $companyTheme['primary_color'] ?? '#3b82f6';

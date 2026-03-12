@@ -247,6 +247,16 @@ class Billing {
             return ['success' => false, 'error' => 'Transaction not found'];
         }
         
+        // Verify payment amount matches stored transaction amount
+        if ($amount !== null && $transaction['amount'] !== null) {
+            $callbackAmount = number_format((float)$amount, 2, '.', '');
+            $storedAmount = number_format((float)$transaction['amount'], 2, '.', '');
+            if ($callbackAmount !== $storedAmount) {
+                error_log("Payment callback: Amount mismatch for order {$orderId}. Expected: {$storedAmount}, Got: {$callbackAmount}");
+                return ['success' => false, 'error' => 'Payment amount mismatch'];
+            }
+        }
+
         // Update transaction status
         $transactionStatus = 'pending';
         if ($status === 'Success' || $status === 'success' || $status === 'Completed' || $status === 'completed') {
@@ -254,8 +264,8 @@ class Billing {
         } elseif ($status === 'Failed' || $status === 'failed' || $status === 'Cancelled' || $status === 'cancelled') {
             $transactionStatus = 'failed';
         }
-        
-        $db->update('payment_transactions', 
+
+        $db->update('payment_transactions',
             [
                 'status' => $transactionStatus,
                 'gateway_response' => json_encode($data)
@@ -263,7 +273,7 @@ class Billing {
             'id = :id',
             ['id' => $transaction['id']]
         );
-        
+
         // If payment successful, update company subscription
         if ($transactionStatus === 'completed') {
             $expiresAt = date('Y-m-d H:i:s', strtotime('+1 ' . ($transaction['payment_method'] === 'yearly' ? 'year' : 'month')));
@@ -400,7 +410,7 @@ class Billing {
     public function checkLimit($companyId, $limitType) {
         $limits = $this->getPlanLimits($companyId);
         if (!$limits) {
-            return true; // Allow if we can't get limits
+            return false; // Fail closed — deny if limits can't be verified
         }
         
         // Map limit type to key

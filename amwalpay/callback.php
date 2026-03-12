@@ -23,8 +23,11 @@ $billing = new Billing('amwal', [
     'return_url' => (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . getBasePath() . 'admin/billing.php'
 ]);
 
+// Get signature from header or POST data
+$signature = $_SERVER['HTTP_X_AMWAL_SIGNATURE'] ?? $_POST['Signature'] ?? $_POST['signature'] ?? null;
+
 // Handle callback
-$result = $billing->handleWebhook($callbackData, null);
+$result = $billing->handleWebhook($callbackData, $signature);
 
 if ($result['success']) {
     // Redirect to success page

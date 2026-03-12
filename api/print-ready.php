@@ -134,10 +134,18 @@ function handleDetectRequest() {
     
     if ($orderId > 0) {
         $db = Database::getInstance();
-        
+
         // Get the order to find the company
         $order = $db->fetchOne("SELECT company_id FROM print_orders WHERE id = ?", [$orderId]);
-        
+
+        // Verify ownership: user must belong to the order's company (or be super_admin)
+        $userRole = Auth::getCurrentRole();
+        $userCompanyId = $_SESSION['company_id'] ?? null;
+        if ($order && $userRole !== 'super_admin' && $userCompanyId !== ($order['company_id'] ?? null)) {
+            echo json_encode(['success' => false, 'error' => 'Access denied']);
+            return;
+        }
+
         if ($order && !empty($order['company_id'])) {
             // Get active front template for this company
             $template = $db->fetchOne(
@@ -219,9 +227,17 @@ function handleGenerateRequest() {
     // Get order details
     $db = Database::getInstance();
     $order = $db->fetchOne("SELECT * FROM print_orders WHERE id = ?", [$orderId]);
-    
+
     if (!$order) {
         echo json_encode(['success' => false, 'error' => 'Order not found']);
+        return;
+    }
+
+    // Verify ownership: user must belong to the order's company (or be super_admin)
+    $userRole = Auth::getCurrentRole();
+    $userCompanyId = $_SESSION['company_id'] ?? null;
+    if ($userRole !== 'super_admin' && $userCompanyId !== ($order['company_id'] ?? null)) {
+        echo json_encode(['success' => false, 'error' => 'Access denied']);
         return;
     }
     
@@ -366,21 +382,36 @@ function handleGenerateRequest() {
  */
 function handleDownloadRequest() {
     $file = $_GET['file'] ?? '';
-    
+
     if (empty($file) || strpos($file, '..') !== false) {
         http_response_code(400);
         echo json_encode(['success' => false, 'error' => 'Invalid file']);
         return;
     }
-    
-    $filePath = BASE_DIR . '/data/print-sheets/' . basename($file);
-    
+
+    $safeFile = basename($file);
+    $filePath = BASE_DIR . '/data/print-sheets/' . $safeFile;
+
     if (!file_exists($filePath)) {
         http_response_code(404);
         echo json_encode(['success' => false, 'error' => 'File not found']);
         return;
     }
-    
+
+    // Verify ownership: extract order ID from filename and check company
+    if (preg_match('/print-sheet-order-(\d+)-/', $safeFile, $matches)) {
+        $orderId = (int)$matches[1];
+        $db = Database::getInstance();
+        $order = $db->fetchOne("SELECT company_id FROM print_orders WHERE id = ?", [$orderId]);
+        $userRole = Auth::getCurrentRole();
+        $userCompanyId = $_SESSION['company_id'] ?? null;
+        if ($order && $userRole !== 'super_admin' && $userCompanyId !== ($order['company_id'] ?? null)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Access denied']);
+            return;
+        }
+    }
+
     // Serve file for download
     header('Content-Type: application/pdf');
     header('Content-Disposition: attachment; filename="' . basename($file) . '"');

@@ -112,7 +112,7 @@ if ($passcodeRequired) {
             $passcodeError = 'Invalid request. Please try again.';
         } else {
         $submittedPasscode = trim($_POST['portal_passcode']);
-        if ($submittedPasscode === $portalPasscode) {
+        if (hash_equals($portalPasscode, $submittedPasscode)) {
             $_SESSION[$sessionKey] = true;
             $passcodeVerified = true;
             // Redirect to remove POST data

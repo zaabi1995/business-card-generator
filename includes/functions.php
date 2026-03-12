@@ -461,13 +461,21 @@ function requireAdmin() {
         header('Location: ' . getBasePath() . 'login.php');
         exit;
     }
-    
+
     // Check company context
     if (!isset($_SESSION['company_id'])) {
         header('Location: ' . getBasePath() . 'login.php');
         exit;
     }
-    
+
+    // Verify user has admin-level role
+    $adminRoles = ['super_admin', 'admin', 'company', 'company_admin'];
+    $userRole = $_SESSION['user_role'] ?? '';
+    if (!in_array($userRole, $adminRoles)) {
+        header('Location: ' . getBasePath() . 'login.php?error=unauthorized');
+        exit;
+    }
+
     // Redirect to company-specific admin URL if not already there
     if (!defined('COMPANY_ADMIN_BASE')) {
         redirectToCompanyAdmin();

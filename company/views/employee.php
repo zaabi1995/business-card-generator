@@ -25,6 +25,10 @@ if (!$employee) {
 
 // Handle profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_profile') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $message = 'Invalid request token. Please refresh and try again.';
+        $messageType = 'error';
+    } else {
     $updateData = [
         'name_en' => trim($_POST['name_en'] ?? ''),
         'name_ar' => trim($_POST['name_ar'] ?? ''),
@@ -52,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $message = 'Failed to update profile: ' . $e->getMessage();
         $messageType = 'error';
     }
+    } // end CSRF else
 }
 
 // Get employee's generated cards
