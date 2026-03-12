@@ -61,45 +61,45 @@ class Auth {
             if (password_verify($password, $user['password_hash'])) {
                 return self::loginUser($user);
             }
-            return ['success' => false, 'error' => 'Invalid password'];
+            return ['success' => false, 'error' => 'Invalid email or password'];
         }
-        
+
         // Step 2: Check employees table
         $employee = self::$db->fetchOne(
-            "SELECT e.*, c.slug as company_slug, c.name as company_name 
-             FROM employees e 
-             JOIN companies c ON e.company_id = c.id 
+            "SELECT e.*, c.slug as company_slug, c.name as company_name
+             FROM employees e
+             JOIN companies c ON e.company_id = c.id
              WHERE e.email = :email AND e.status = 'active' AND c.status = 'active'",
             ['email' => $email]
         );
-        
+
         if ($employee) {
             // Check employee password (if they have one set)
             if (!empty($employee['password_hash'])) {
                 if (password_verify($password, $employee['password_hash'])) {
                     return self::loginEmployee($employee);
                 }
-                return ['success' => false, 'error' => 'Invalid password'];
+                return ['success' => false, 'error' => 'Invalid email or password'];
             }
             // Employee exists but has no password - need to set one up
             return ['success' => false, 'error' => 'Please contact your administrator to set up your password'];
         }
-        
+
         // Step 3: Check company admin_email (legacy companies table login)
         $company = self::$db->fetchOne(
             "SELECT * FROM companies WHERE admin_email = :email AND status = 'active'",
             ['email' => $email]
         );
-        
+
         if ($company) {
             if (!empty($company['password_hash']) && password_verify($password, $company['password_hash'])) {
                 return self::loginCompany($company);
             }
-            return ['success' => false, 'error' => 'Invalid password'];
+            return ['success' => false, 'error' => 'Invalid email or password'];
         }
-        
-        // Step 4: Email not found anywhere - redirect to signup
-        return ['success' => false, 'not_found' => true, 'error' => 'Email not registered'];
+
+        // Email not found — return same generic error to prevent user enumeration
+        return ['success' => false, 'error' => 'Invalid email or password'];
     }
     
     /**
@@ -475,7 +475,6 @@ class Auth {
     public static function logout() {
         session_unset();
         session_destroy();
-        session_start();
     }
     
     /**

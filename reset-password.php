@@ -53,12 +53,14 @@ function validateResetToken($db, $token) {
     }
     
     try {
+        // Token is stored hashed — hash the incoming token to compare
+        $hashedToken = hash('sha256', $token);
         $tokenData = $db->fetchOne(
-            "SELECT * FROM password_reset_tokens 
-             WHERE token = :token 
-             AND expires_at > NOW() 
+            "SELECT * FROM password_reset_tokens
+             WHERE token = :token
+             AND expires_at > NOW()
              AND used_at IS NULL",
-            ['token' => $token]
+            ['token' => $hashedToken]
         );
         return $tokenData;
     } catch (Exception $e) {
@@ -340,9 +342,9 @@ if (!DatabaseAdapter::useDatabase()) {
             } else {
                 $message = 'Failed to reset password. Please try again.';
                 $messageType = 'error';
-                // Add debug info to message for troubleshooting
+                // Log debug info server-side only
                 if (!empty($debugInfo)) {
-                    $message .= '<br><br><strong>Debug Info:</strong><pre style="text-align:left;font-size:11px;max-height:300px;overflow:auto;background:#f5f5f5;padding:10px;border-radius:4px;">' . htmlspecialchars(json_encode($debugInfo, JSON_PRETTY_PRINT)) . '</pre>';
+                    error_log('Password reset failure debug: ' . json_encode($debugInfo));
                 }
             }
         }

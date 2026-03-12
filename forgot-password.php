@@ -130,9 +130,11 @@ function createPasswordResetToken($db, $email, $userType, $userId) {
     $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
     
     try {
+        // Store hashed token in DB — send plain token to user via email
+        $hashedToken = hash('sha256', $token);
         $db->insert('password_reset_tokens', [
             'email' => $email,
-            'token' => $token,
+            'token' => $hashedToken,
             'user_type' => $userType,
             'user_id' => $userId,
             'expires_at' => $expiresAt
