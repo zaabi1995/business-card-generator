@@ -1,14 +1,13 @@
 <?php
 /**
  * Billing Integration
- * Supports Amwal Pay and other payment gateways
- * Based on Amwal Pay official API: https://backend.sa.amwal.tech
+ * Supports Paymob (Unified Checkout), Amwal Pay (legacy), and Stripe
  */
 class Billing {
-    private $gateway = 'amwal';
+    private $gateway = 'paymob';
     private $config = [];
-    
-    public function __construct($gateway = 'amwal', $config = []) {
+
+    public function __construct($gateway = 'paymob', $config = []) {
         $this->gateway = $gateway;
         $this->config = $config;
     }
@@ -38,6 +37,10 @@ class Billing {
             return $paymentResult;
         }
         
+        // Get company currency
+        $company = $db->fetchOne("SELECT currency FROM companies WHERE id = :id", ['id' => $companyId]);
+        $currency = $company['currency'] ?? 'USD';
+
         // Store transaction
         $transactionId = $this->generateUUID();
         $db->insert('payment_transactions', [
@@ -45,7 +48,7 @@ class Billing {
             'company_id' => $companyId,
             'plan_id' => $planId,
             'amount' => $amount,
-            'currency' => 'USD',
+            'currency' => $currency,
             'payment_method' => $billingCycle,
             'transaction_id' => $paymentResult['transaction_id'] ?? null,
             'status' => 'pending',
@@ -67,6 +70,8 @@ class Billing {
      */
     private function createPaymentIntent($amount, $companyId, $planId, $billingCycle) {
         switch ($this->gateway) {
+            case 'paymob':
+                return $this->createPaymobPaymentIntent($amount, $companyId, $planId, $billingCycle);
             case 'amwal':
                 return $this->createAmwalPaymentIntent($amount, $companyId, $planId, $billingCycle);
             case 'stripe':
@@ -77,7 +82,134 @@ class Billing {
     }
     
     /**
-     * Amwal Pay integration
+     * Convert amount to smallest currency unit for Paymob
+     * OMR has 3 decimal places (1 OMR = 1000 baisa)
+     * USD/EUR/GBP have 2 decimal places (1 USD = 100 cents)
+     */
+    private function toSmallestUnit($amount, $currency) {
+        $currency = strtoupper($currency);
+        // OMR, BHD, KWD use 3 decimal places
+        $threeDecimal = ['OMR', 'BHD', 'KWD'];
+        $multiplier = in_array($currency, $threeDecimal) ? 1000 : 100;
+        return (int) round($amount * $multiplier);
+    }
+
+    /**
+     * Paymob Unified Checkout (Intention API)
+     * Supports Apple Pay, Omannet, International Cards
+     */
+    private function createPaymobPaymentIntent($amount, $companyId, $planId, $billingCycle) {
+        $secretKey = $this->config['secret_key'] ?? '';
+        $publicKey = $this->config['public_key'] ?? '';
+        $integrationIds = $this->config['integration_ids'] ?? '';
+
+        if (empty($secretKey) || empty($publicKey)) {
+            return ['success' => false, 'error' => 'Paymob credentials not configured. Please set Public Key and Secret Key.'];
+        }
+
+        // Parse integration IDs
+        $paymentMethods = array_map('intval', array_filter(explode(',', $integrationIds)));
+        if (empty($paymentMethods)) {
+            return ['success' => false, 'error' => 'Paymob integration IDs not configured.'];
+        }
+
+        // Get company info for billing data and currency
+        $db = Database::getInstance();
+        $company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $companyId]);
+        $currency = $company['currency'] ?? 'OMR';
+
+        // Convert amount to smallest currency unit
+        $amountInSmallest = $this->toSmallestUnit($amount, $currency);
+
+        // Generate special reference
+        $specialReference = 'SUB_' . $companyId . '_' . time();
+
+        // Build billing data
+        $billingData = [
+            'first_name' => $company['name'] ?? 'Customer',
+            'last_name' => $company['name'] ?? 'Customer',
+            'phone_number' => $company['phone'] ?? '+96800000000',
+            'email' => $company['email'] ?? 'customer@example.com'
+        ];
+
+        // Base URL
+        $baseUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+        $callbackUrl = $baseUrl . getBasePath() . 'paymob/callback.php';
+
+        // Build intention payload
+        $payload = [
+            'amount' => $amountInSmallest,
+            'currency' => $currency,
+            'payment_methods' => $paymentMethods,
+            'billing_data' => $billingData,
+            'special_reference' => $specialReference,
+            'expiration' => 3600,
+            'notification_url' => $callbackUrl,
+            'redirection_url' => $callbackUrl
+        ];
+
+        // Call Paymob Intention API
+        $ch = curl_init('https://accept.paymob.com/v1/intention/');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Token ' . $secretKey,
+                'Content-Type: application/json'
+            ],
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_TIMEOUT => 30
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlError) {
+            error_log("Paymob API curl error: " . $curlError);
+            return ['success' => false, 'error' => 'Payment gateway connection failed. Please try again.'];
+        }
+
+        $responseData = json_decode($response, true);
+
+        if ($httpCode !== 200 && $httpCode !== 201) {
+            error_log("Paymob API error [{$httpCode}]: " . $response);
+            $errorMsg = $responseData['message'] ?? $responseData['detail'] ?? 'Payment gateway error';
+            return ['success' => false, 'error' => $errorMsg];
+        }
+
+        $clientSecret = $responseData['client_secret'] ?? null;
+        if (empty($clientSecret)) {
+            error_log("Paymob API: No client_secret in response: " . $response);
+            return ['success' => false, 'error' => 'Invalid gateway response'];
+        }
+
+        // Build checkout URL
+        $checkoutUrl = 'https://accept.paymob.com/unifiedcheckout/?publicKey=' . urlencode($publicKey) . '&clientSecret=' . urlencode($clientSecret);
+
+        // Store payment data in session for callback lookup
+        $_SESSION['paymob_payment_' . $specialReference] = [
+            'company_id' => $companyId,
+            'plan_id' => $planId,
+            'billing_cycle' => $billingCycle,
+            'amount' => $amount,
+            'currency' => $currency,
+            'special_reference' => $specialReference,
+            'client_secret' => $clientSecret
+        ];
+
+        return [
+            'success' => true,
+            'transaction_id' => $specialReference,
+            'payment_url' => $checkoutUrl,
+            'redirect_url' => $checkoutUrl,
+            'payment_data' => null // No form data needed — direct redirect
+        ];
+    }
+
+    /**
+     * Amwal Pay integration (legacy)
      * Based on official Amwal Pay API documentation
      */
     private function createAmwalPaymentIntent($amount, $companyId, $planId, $billingCycle) {
@@ -151,6 +283,8 @@ class Billing {
      */
     public function handleWebhook($payload, $signature) {
         switch ($this->gateway) {
+            case 'paymob':
+                return $this->handlePaymobCallback($payload, $signature);
             case 'amwal':
                 return $this->handleAmwalCallback($payload, $signature);
             case 'stripe':
@@ -161,7 +295,188 @@ class Billing {
     }
     
     /**
-     * Handle Amwal Pay callback
+     * Handle Paymob callback (GET redirect + POST webhook)
+     * Verifies HMAC-SHA512, updates transaction, activates subscription
+     */
+    public function handlePaymobCallback($data, $hmac = null) {
+        $db = Database::getInstance();
+
+        // Accept array (GET/POST params) or JSON string
+        if (is_string($data)) {
+            $data = json_decode($data, true) ?: [];
+        }
+
+        // Merge GET params if available (redirect callback)
+        if (!empty($_GET)) {
+            $data = array_merge($data, $_GET);
+        }
+
+        // For POST webhook, check nested obj structure
+        if (isset($data['obj'])) {
+            $obj = $data['obj'];
+            // Flatten obj fields into data for uniform access
+            $data = array_merge($data, $obj);
+            if (isset($obj['order'])) {
+                $data['order'] = is_array($obj['order']) ? ($obj['order']['id'] ?? '') : $obj['order'];
+            }
+            if (isset($obj['source_data'])) {
+                $data['source_data_pan'] = $obj['source_data']['pan'] ?? '';
+                $data['source_data_sub_type'] = $obj['source_data']['sub_type'] ?? '';
+                $data['source_data_type'] = $obj['source_data']['type'] ?? '';
+            }
+        }
+
+        $success = $data['success'] ?? null;
+        $transactionId = $data['id'] ?? null;
+        $orderId = $data['order'] ?? null;
+        $merchantOrderId = $data['merchant_order_id'] ?? $data['special_reference'] ?? null;
+        $amountCents = $data['amount_cents'] ?? null;
+        $currency = $data['currency'] ?? 'OMR';
+
+        // Verify HMAC
+        $hmacSecret = $this->config['hmac_secret'] ?? '';
+        $receivedHmac = $hmac ?? $data['hmac'] ?? null;
+
+        if (!empty($hmacSecret) && !empty($receivedHmac)) {
+            $computedHmac = $this->computePaymobHmac($data, $hmacSecret);
+            if (!hash_equals($computedHmac, $receivedHmac)) {
+                error_log("Paymob callback: HMAC mismatch for transaction {$transactionId}");
+                return ['success' => false, 'error' => 'Invalid HMAC signature'];
+            }
+        } elseif (!empty($hmacSecret) && empty($receivedHmac)) {
+            error_log("Paymob callback: Missing HMAC for transaction {$transactionId}");
+            return ['success' => false, 'error' => 'Missing HMAC signature'];
+        }
+
+        if (empty($merchantOrderId)) {
+            error_log("Paymob callback: No merchant_order_id/special_reference");
+            return ['success' => false, 'error' => 'Missing order reference'];
+        }
+
+        // Find transaction by special_reference (stored as transaction_id)
+        $transaction = $db->fetchOne(
+            "SELECT * FROM payment_transactions WHERE transaction_id = :tid",
+            ['tid' => $merchantOrderId]
+        );
+
+        // If not found in DB, try session
+        if (!$transaction) {
+            $sessionKey = 'paymob_payment_' . $merchantOrderId;
+            if (isset($_SESSION[$sessionKey])) {
+                $sessionData = $_SESSION[$sessionKey];
+
+                $newTxId = $this->generateUUID();
+                $db->insert('payment_transactions', [
+                    'id' => $newTxId,
+                    'company_id' => $sessionData['company_id'],
+                    'plan_id' => $sessionData['plan_id'],
+                    'amount' => $sessionData['amount'],
+                    'currency' => $sessionData['currency'] ?? $currency,
+                    'payment_method' => $sessionData['billing_cycle'],
+                    'transaction_id' => $merchantOrderId,
+                    'status' => 'pending',
+                    'payment_gateway' => 'paymob',
+                    'gateway_response' => json_encode($data)
+                ]);
+
+                $transaction = $db->fetchOne(
+                    "SELECT * FROM payment_transactions WHERE id = :id",
+                    ['id' => $newTxId]
+                );
+            }
+        }
+
+        if (!$transaction) {
+            error_log("Paymob callback: Transaction not found for reference {$merchantOrderId}");
+            return ['success' => false, 'error' => 'Transaction not found'];
+        }
+
+        // Verify amount matches (convert stored amount to smallest unit for comparison)
+        if ($amountCents !== null && $transaction['amount'] !== null) {
+            $expectedSmallest = $this->toSmallestUnit((float)$transaction['amount'], $transaction['currency'] ?? $currency);
+            if ((int)$amountCents !== $expectedSmallest) {
+                error_log("Paymob callback: Amount mismatch for {$merchantOrderId}. Expected: {$expectedSmallest}, Got: {$amountCents}");
+                return ['success' => false, 'error' => 'Payment amount mismatch'];
+            }
+        }
+
+        // Determine status
+        $transactionStatus = 'pending';
+        if ($success === 'true' || $success === true) {
+            $transactionStatus = 'completed';
+        } elseif ($success === 'false' || $success === false) {
+            $transactionStatus = 'failed';
+        }
+
+        // Update transaction
+        $db->update('payment_transactions',
+            [
+                'status' => $transactionStatus,
+                'gateway_response' => json_encode($data)
+            ],
+            'id = :id',
+            ['id' => $transaction['id']]
+        );
+
+        // Activate subscription on success
+        if ($transactionStatus === 'completed') {
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+1 ' . ($transaction['payment_method'] === 'yearly' ? 'year' : 'month')));
+
+            $db->update('companies',
+                [
+                    'plan' => $transaction['plan_id'],
+                    'subscription_status' => 'active',
+                    'subscription_expires_at' => $expiresAt,
+                    'subscription_id' => $merchantOrderId
+                ],
+                'id = :id',
+                ['id' => $transaction['company_id']]
+            );
+
+            // Clear session
+            unset($_SESSION['paymob_payment_' . $merchantOrderId]);
+        }
+
+        return [
+            'success' => true,
+            'status' => $transactionStatus,
+            'transaction_id' => $transaction['id']
+        ];
+    }
+
+    /**
+     * Compute Paymob HMAC-SHA512
+     * Concatenate specific fields in alphabetical order, then HMAC with secret
+     */
+    private function computePaymobHmac($data, $secret) {
+        // Fields to concatenate in this exact order (Paymob docs)
+        $fields = [
+            'amount_cents', 'created_at', 'currency', 'error_occured',
+            'has_parent_transaction', 'id', 'integration_id', 'is_3d_secure',
+            'is_auth', 'is_capture', 'is_refunded', 'is_standalone_payment',
+            'is_voided', 'order', 'owner', 'pending',
+            'source_data_pan', 'source_data_sub_type', 'source_data_type', 'success'
+        ];
+
+        $concatenated = '';
+        foreach ($fields as $field) {
+            $value = '';
+            // Handle dotted keys (source_data_pan -> source_data.pan)
+            if (isset($data[$field])) {
+                $value = $data[$field];
+            }
+            // Convert booleans to string
+            if (is_bool($value)) {
+                $value = $value ? 'true' : 'false';
+            }
+            $concatenated .= (string)$value;
+        }
+
+        return hash_hmac('sha512', $concatenated, $secret);
+    }
+
+    /**
+     * Handle Amwal Pay callback (legacy)
      * Amwal Pay sends payment status via callback URL
      */
     private function handleAmwalCallback($data, $signature = null) {
