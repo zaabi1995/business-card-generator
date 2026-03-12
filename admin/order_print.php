@@ -118,38 +118,44 @@ $printEnabled = PrintShopIntegration::isEnabled();
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($printShops)) {
-    $printShopId = (int)($_POST['print_shop_id'] ?? 0);
-    
-    $orderData = [
-        'company_id' => $companyId,
-        'employee_id' => $_POST['employee_id'] ?: null,
-        'user_id' => Auth::getCurrentUser()['id'] ?? null,
-        'print_shop_id' => $printShopId ?: null,
-        'quantity' => (int)($_POST['quantity'] ?? 100),
-        'paper_type' => $_POST['paper_type'] ?? 'matte',
-        'finish' => $_POST['finish'] ?? 'standard',
-        'card_front_url' => $_POST['card_front_url'] ?? null,
-        'card_back_url' => $_POST['card_back_url'] ?? null,
-        'shipping_name' => trim($_POST['shipping_name'] ?? ''),
-        'shipping_address' => trim($_POST['shipping_address'] ?? ''),
-        'shipping_city' => trim($_POST['shipping_city'] ?? ''),
-        'shipping_country' => trim($_POST['shipping_country'] ?? ''),
-        'shipping_phone' => trim($_POST['shipping_phone'] ?? ''),
-        'notes' => trim($_POST['notes'] ?? ''),
-        'payment_status' => 'pending' // Pay later
-    ];
-    
-    $result = PrintShopIntegration::createOrder($orderData);
-    
-    if ($result['success']) {
-        $shop = PrintShop::getById($printShopId);
-        $currency = $shop['currency'] ?? 'OMR';
-        $message = "Order #{$result['order_id']} placed successfully! Total: " . Currency::format($result['total'], $currency);
-        $messageType = 'success';
-        $orderSuccess = true;
-    } else {
-        $message = "Error: " . ($result['error'] ?? 'Unknown error');
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $message = 'Invalid request. Please try again.';
         $messageType = 'error';
+    }
+    if ($messageType !== 'error') {
+        $printShopId = (int)($_POST['print_shop_id'] ?? 0);
+
+        $orderData = [
+            'company_id' => $companyId,
+            'employee_id' => $_POST['employee_id'] ?: null,
+            'user_id' => Auth::getCurrentUser()['id'] ?? null,
+            'print_shop_id' => $printShopId ?: null,
+            'quantity' => (int)($_POST['quantity'] ?? 100),
+            'paper_type' => $_POST['paper_type'] ?? 'matte',
+            'finish' => $_POST['finish'] ?? 'standard',
+            'card_front_url' => $_POST['card_front_url'] ?? null,
+            'card_back_url' => $_POST['card_back_url'] ?? null,
+            'shipping_name' => trim($_POST['shipping_name'] ?? ''),
+            'shipping_address' => trim($_POST['shipping_address'] ?? ''),
+            'shipping_city' => trim($_POST['shipping_city'] ?? ''),
+            'shipping_country' => trim($_POST['shipping_country'] ?? ''),
+            'shipping_phone' => trim($_POST['shipping_phone'] ?? ''),
+            'notes' => trim($_POST['notes'] ?? ''),
+            'payment_status' => 'pending' // Pay later
+        ];
+
+        $result = PrintShopIntegration::createOrder($orderData);
+
+        if ($result['success']) {
+            $shop = PrintShop::getById($printShopId);
+            $currency = $shop['currency'] ?? 'OMR';
+            $message = "Order #{$result['order_id']} placed successfully! Total: " . Currency::format($result['total'], $currency);
+            $messageType = 'success';
+            $orderSuccess = true;
+        } else {
+            $message = "Error: " . ($result['error'] ?? 'Unknown error');
+            $messageType = 'error';
+        }
     }
 }
 
@@ -272,7 +278,8 @@ $basePath = getAdminBasePath();
     <?php endif; ?>
     
     <form method="post" class="space-y-6">
-        
+        <?php echo csrfField(); ?>
+
         <!-- Step 1: Select Print Shop -->
         <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-white">

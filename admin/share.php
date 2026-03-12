@@ -28,9 +28,15 @@ $links = $db->fetchAll(
 );
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $message = 'Invalid request. Please try again.';
+        $messageType = 'error';
+    }
     $action = $_POST['action'] ?? '';
-    
-    if ($action === 'create') {
+
+    if ($messageType === 'error') {
+        // CSRF failed, skip processing
+    } elseif ($action === 'create') {
         $templateId = $_POST['template_id'] ?? '';
         $password = $_POST['password'] ?? '';
         $expiresAt = $_POST['expires_at'] ?? null;
@@ -164,6 +170,7 @@ adminHeader('Share Links', 'share');
                                     <i class="fa-solid fa-external-link"></i>
                                 </a>
                                 <form method="post" class="inline" onsubmit="return confirm('Delete this link?')">
+                                    <?php echo csrfField(); ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="link_id" value="<?php echo $link['id']; ?>">
                                     <button type="submit" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
@@ -200,6 +207,7 @@ adminHeader('Share Links', 'share');
             </div>
             
             <form method="post" class="p-6">
+                <?php echo csrfField(); ?>
                 <input type="hidden" name="action" value="create">
                 
                 <div class="space-y-4">

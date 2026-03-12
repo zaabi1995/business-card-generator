@@ -18,12 +18,38 @@ class Auth {
      */
     public static function unifiedLogin($email, $password) {
         self::init();
-        
+
         if (!self::$db || !self::$db->isConnected()) {
             return ['success' => false, 'error' => 'Database not connected'];
         }
-        
+
         $email = sanitizeEmail($email);
+
+        // Brute force protection: rate limit login attempts per IP
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $rateLimitKey = 'login_attempts_' . md5($ip);
+        $maxAttempts = 10;
+        $lockoutMinutes = 15;
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            if (!isset($_SESSION[$rateLimitKey])) {
+                $_SESSION[$rateLimitKey] = ['count' => 0, 'first_attempt' => time()];
+            }
+
+            $attempts = &$_SESSION[$rateLimitKey];
+
+            // Reset counter if lockout period has passed
+            if ((time() - $attempts['first_attempt']) > ($lockoutMinutes * 60)) {
+                $attempts = ['count' => 0, 'first_attempt' => time()];
+            }
+
+            if ($attempts['count'] >= $maxAttempts) {
+                $remainingMinutes = ceil(($lockoutMinutes * 60 - (time() - $attempts['first_attempt'])) / 60);
+                return ['success' => false, 'error' => "Too many login attempts. Please try again in {$remainingMinutes} minutes."];
+            }
+
+            $attempts['count']++;
+        }
         
         // Step 1: Check users table (super_admin, admin, company roles)
         $user = self::$db->fetchOne(
@@ -88,6 +114,12 @@ class Auth {
      * Login employee
      */
     private static function loginEmployee($employee) {
+        // Regenerate session ID to prevent session fixation attacks
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+            $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+            unset($_SESSION['login_attempts_' . md5($ip)]);
+        }
         $_SESSION['user_id'] = $employee['id'];
         $_SESSION['user_email'] = $employee['email'];
         $_SESSION['user_name'] = $employee['name_en'] ?? $employee['name'] ?? $employee['email'];
@@ -168,6 +200,13 @@ class Auth {
      * Login user from users table
      */
     public static function loginUser($user) {
+        // Regenerate session ID to prevent session fixation attacks
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+            // Reset brute force counter on successful login
+            $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+            unset($_SESSION['login_attempts_' . md5($ip)]);
+        }
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_name'] = $user['name'];
@@ -211,6 +250,12 @@ class Auth {
      * Login company (legacy support)
      */
     private static function loginCompany($company) {
+        // Regenerate session ID to prevent session fixation attacks
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+            $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+            unset($_SESSION['login_attempts_' . md5($ip)]);
+        }
         // Set user_id using company id prefixed to distinguish from user table ids
         $_SESSION['user_id'] = 'company_' . $company['id'];
         $_SESSION['user_company_id'] = $company['id'];

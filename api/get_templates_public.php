@@ -7,7 +7,14 @@
 require_once __DIR__ . '/../config.php';
 
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+// Restrict CORS to same origin in production
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$allowedOrigins = ['https://cardify.om', 'https://www.cardify.om'];
+if (in_array($origin, $allowedOrigins)) {
+    header('Access-Control-Allow-Origin: ' . $origin);
+} elseif (!function_exists('isProduction') || !isProduction()) {
+    header('Access-Control-Allow-Origin: *');
+}
 
 $companySlug = $_GET['company_slug'] ?? '';
 
@@ -21,7 +28,7 @@ if (empty($companySlug)) {
 $company = findCompanyBySlug($companySlug);
 if (!$company) {
     http_response_code(404);
-    echo json_encode(['error' => 'Company not found', 'slug' => $companySlug]);
+    echo json_encode(['error' => 'Company not found']);
     exit;
 }
 

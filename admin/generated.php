@@ -62,8 +62,15 @@ $company = findCompanyById($companyId);
 $currentSampleFront = $company['sample_card_front'] ?? null;
 $currentSampleBack = $company['sample_card_back'] ?? null;
 
+// CSRF validation for all POST requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request. Please try again.';
+    }
+}
+
 // Handle set as sample
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'set_sample') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error) && isset($_POST['action']) && $_POST['action'] === 'set_sample') {
     $frontPath = $_POST['sample_front'] ?? '';
     $backPath = $_POST['sample_back'] ?? '';
     
@@ -83,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Handle clear sample
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'clear_sample') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error) && isset($_POST['action']) && $_POST['action'] === 'clear_sample') {
     try {
         $db = Database::getInstance();
         $db->query(
@@ -98,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Handle deletion - also delete files from disk
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error) && isset($_POST['action']) && $_POST['action'] === 'delete') {
     $entryId = $_POST['entry_id'] ?? '';
     $frontPath = $_POST['front_path'] ?? '';
     $backPath = $_POST['back_path'] ?? '';
@@ -135,6 +142,13 @@ adminHeader('Generated Cards', 'generated');
 ?>
 
 <div x-data="{ searchQuery: '', showPreview: false, previewEntry: null }">
+    <?php if (!empty($error)): ?>
+    <div class="mb-6 p-4 rounded-xl flex items-center gap-3 bg-red-50 border border-red-200 text-red-700">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <?php echo sanitize($error); ?>
+    </div>
+    <?php endif; ?>
+
     <!-- Page Header Actions -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
@@ -174,6 +188,7 @@ adminHeader('Generated Cards', 'generated');
             <span class="font-medium">A sample card is set for the landing page</span>
         </div>
         <form method="post" class="inline">
+            <?php echo csrfField(); ?>
             <input type="hidden" name="action" value="clear_sample">
             <button type="submit" class="text-sm text-purple-600 hover:text-purple-800 font-medium">
                 <i class="fa-solid fa-times mr-1"></i>Clear
@@ -424,6 +439,7 @@ adminHeader('Generated Cards', 'generated');
                                 <!-- Set as Sample -->
                                 <?php if ($frontPath && $backPath && !$isSample): ?>
                                 <form method="post" class="inline">
+                                    <?php echo csrfField(); ?>
                                     <input type="hidden" name="action" value="set_sample">
                                     <input type="hidden" name="sample_front" value="companies/<?php echo $companyId; ?>/cards/<?php echo htmlspecialchars($frontPath); ?>">
                                     <input type="hidden" name="sample_back" value="companies/<?php echo $companyId; ?>/cards/<?php echo htmlspecialchars($backPath); ?>">
@@ -441,6 +457,7 @@ adminHeader('Generated Cards', 'generated');
                                 
                                 <!-- Delete -->
                                 <form method="post" class="inline" onsubmit="return confirm('Delete this card? Files will be removed from server.')">
+                                    <?php echo csrfField(); ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
                                     <input type="hidden" name="front_path" value="<?php echo htmlspecialchars($frontPath); ?>">

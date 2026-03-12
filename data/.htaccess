@@ -1,0 +1,11 @@
+# Prevent direct access to data files
+<FilesMatch "\.(json|php|sql)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+<IfModule mod_authz_core.c>
+    <FilesMatch "\.(json|php|sql)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>

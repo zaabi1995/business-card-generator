@@ -80,7 +80,6 @@ try {
         'plans' => 'admin/plans.php',
         'companies' => 'admin/companies.php',
         'updates' => 'admin/updates.php',
-        'db-check' => 'admin/db-check.php',
     ];
     
     // Handle login page specially (no auth required)

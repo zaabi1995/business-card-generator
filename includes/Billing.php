@@ -191,20 +191,27 @@ class Billing {
             return ['success' => false, 'error' => 'Order ID missing in callback'];
         }
         
-        // Verify signature if provided
-        if (!empty($signature) && !empty($this->config['secure_key'])) {
+        // Verify signature if secure key is configured (required for production)
+        if (!empty($this->config['secure_key'])) {
+            if (empty($signature)) {
+                error_log('Payment callback: Missing signature for order ' . $orderId);
+                return ['success' => false, 'error' => 'Signature required'];
+            }
             $expectedSignature = $this->generateAmwalSignature($data, $this->config['secure_key']);
-            if ($signature !== $expectedSignature) {
+            if (!hash_equals($expectedSignature, $signature)) {
+                error_log('Payment callback: Invalid signature for order ' . $orderId);
                 return ['success' => false, 'error' => 'Invalid signature'];
             }
         }
         
         // Find transaction by order_id (stored in transaction_id field)
+        // Escape LIKE wildcards in orderId to prevent injection
+        $escapedOrderId = str_replace(['%', '_'], ['\\%', '\\_'], $orderId);
         $transaction = $db->fetchOne(
             "SELECT * FROM payment_transactions WHERE transaction_id = :tid OR gateway_response LIKE :orderId",
             [
                 'tid' => $transactionId,
-                'orderId' => '%' . $orderId . '%'
+                'orderId' => '%' . $escapedOrderId . '%'
             ]
         );
         

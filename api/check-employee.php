@@ -5,8 +5,23 @@
  * Also returns last request data for easy reordering
  */
 require_once __DIR__ . '/../config.php';
+require_once INCLUDES_DIR . '/Auth.php';
 
 header('Content-Type: application/json');
+
+// Only allow POST requests
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['error' => 'Method not allowed']);
+    exit;
+}
+
+// Require authentication to prevent email enumeration
+if (!Auth::isLoggedIn()) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Authentication required']);
+    exit;
+}
 
 try {
     $input = json_decode(file_get_contents('php://input'), true);
@@ -102,5 +117,6 @@ try {
     }
     
 } catch (Exception $e) {
-    echo json_encode(['exists' => false, 'error' => $e->getMessage()]);
+    error_log('check-employee error: ' . $e->getMessage());
+    echo json_encode(['exists' => false, 'error' => 'An error occurred']);
 }

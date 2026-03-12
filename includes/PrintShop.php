@@ -477,13 +477,13 @@ class PrintShop {
         }
         
         // Validate file type
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mimeType = finfo_file($finfo, $file['tmp_name']);
         finfo_close($finfo);
-        
+
         if (!in_array($mimeType, $allowedTypes)) {
-            return ['success' => false, 'error' => 'Invalid file type. Allowed: JPG, PNG, GIF, WebP, SVG'];
+            return ['success' => false, 'error' => 'Invalid file type. Allowed: JPG, PNG, GIF, WebP'];
         }
         
         // Validate file size (max 2MB)
@@ -503,7 +503,6 @@ class PrintShop {
             'image/png' => 'png',
             'image/gif' => 'gif',
             'image/webp' => 'webp',
-            'image/svg+xml' => 'svg'
         ];
         $ext = $extensions[$mimeType] ?? 'png';
         

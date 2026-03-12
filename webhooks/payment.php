@@ -8,22 +8,37 @@ require_once INCLUDES_DIR . '/Billing.php';
 
 header('Content-Type: application/json');
 
+// Only allow POST requests
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
+    exit;
+}
+
 // Get webhook payload
 $payload = file_get_contents('php://input');
 $signature = $_SERVER['HTTP_X_SIGNATURE'] ?? $_SERVER['HTTP_X_AMWAL_SIGNATURE'] ?? '';
 
 // Determine gateway from headers or config
-$gateway = $_SERVER['HTTP_X_GATEWAY'] ?? BILLING_GATEWAY ?? 'amwal';
+$gateway = $_SERVER['HTTP_X_GATEWAY'] ?? (defined('BILLING_GATEWAY') ? BILLING_GATEWAY : 'amwal');
 
 // Get gateway config
 $config = [];
 if ($gateway === 'amwal') {
     $config = [
-        'api_key' => AMWAL_API_KEY ?? '',
-        'merchant_id' => AMWAL_MERCHANT_ID ?? '',
-        'api_url' => AMWAL_API_URL ?? 'https://api.amwal.com/v1',
-        'webhook_secret' => AMWAL_WEBHOOK_SECRET ?? ''
+        'merchant_id' => defined('AMWAL_MERCHANT_ID') ? AMWAL_MERCHANT_ID : '',
+        'terminal_id' => defined('AMWAL_TERMINAL_ID') ? AMWAL_TERMINAL_ID : '',
+        'secure_key' => defined('AMWAL_SECURE_KEY') ? AMWAL_SECURE_KEY : '',
+        'api_url' => defined('AMWAL_API_URL') ? AMWAL_API_URL : 'https://backend.sa.amwal.tech'
     ];
+}
+
+// Require valid webhook signature when secure key is configured
+if (!empty($config['secure_key']) && empty($signature)) {
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'Missing webhook signature']);
+    error_log('Payment webhook: Missing signature from ' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+    exit;
 }
 
 $billing = new Billing($gateway, $config);

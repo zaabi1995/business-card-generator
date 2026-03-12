@@ -21,31 +21,38 @@ $settings = $db->fetchOne(
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $printerEnabled = isset($_POST['printer_enabled']) ? 1 : 0;
-    $printerName = $_POST['printer_name'] ?? '';
-    $printerApi = $_POST['printer_api'] ?? '';
-    $printerApiKey = $_POST['printer_api_key'] ?? '';
-    
-    if ($settings) {
-        $db->update('company_settings', [
-            'printer_enabled' => $printerEnabled,
-            'printer_name' => $printerName,
-            'printer_api' => $printerApi,
-            'printer_api_key' => $printerApiKey
-        ], 'company_id = :id', ['id' => $companyId]);
-    } else {
-        $db->insert('company_settings', [
-            'id' => generateUUID(),
-            'company_id' => $companyId,
-            'printer_enabled' => $printerEnabled,
-            'printer_name' => $printerName,
-            'printer_api' => $printerApi,
-            'printer_api_key' => $printerApiKey
-        ]);
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $message = 'Invalid request. Please try again.';
+        $messageType = 'error';
     }
-    
-    $message = 'Printer settings saved successfully!';
-    $settings = $db->fetchOne("SELECT * FROM company_settings WHERE company_id = :id", ['id' => $companyId]);
+
+    if ($messageType !== 'error') {
+        $printerEnabled = isset($_POST['printer_enabled']) ? 1 : 0;
+        $printerName = $_POST['printer_name'] ?? '';
+        $printerApi = $_POST['printer_api'] ?? '';
+        $printerApiKey = $_POST['printer_api_key'] ?? '';
+
+        if ($settings) {
+            $db->update('company_settings', [
+                'printer_enabled' => $printerEnabled,
+                'printer_name' => $printerName,
+                'printer_api' => $printerApi,
+                'printer_api_key' => $printerApiKey
+            ], 'company_id = :id', ['id' => $companyId]);
+        } else {
+            $db->insert('company_settings', [
+                'id' => generateUUID(),
+                'company_id' => $companyId,
+                'printer_enabled' => $printerEnabled,
+                'printer_name' => $printerName,
+                'printer_api' => $printerApi,
+                'printer_api_key' => $printerApiKey
+            ]);
+        }
+
+        $message = 'Printer settings saved successfully!';
+        $settings = $db->fetchOne("SELECT * FROM company_settings WHERE company_id = :id", ['id' => $companyId]);
+    }
 }
 
 adminHeader('Printer Settings', 'printer');
@@ -60,6 +67,7 @@ adminHeader('Printer Settings', 'printer');
 <?php endif; ?>
 
 <form method="post" class="space-y-6">
+    <?php echo csrfField(); ?>
     <!-- Enable Printer -->
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div class="p-4 border-b border-gray-100">

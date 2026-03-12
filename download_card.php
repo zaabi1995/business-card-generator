@@ -3,6 +3,13 @@
  * Download card handler - serves PNG or generates PDF
  */
 require_once __DIR__ . '/config.php';
+require_once INCLUDES_DIR . '/Auth.php';
+
+// Require authentication for card downloads
+if (!Auth::isLoggedIn()) {
+    http_response_code(401);
+    die('Authentication required');
+}
 
 $companySlug = $_GET['company'] ?? null;
 if ($companySlug && isMultiTenantEnabled()) {

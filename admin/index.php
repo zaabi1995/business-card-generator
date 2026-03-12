@@ -55,12 +55,7 @@ if ($companyId && DatabaseAdapter::useDatabase()) {
 $primaryColor = $companyTheme['primary_color'] ?? '#2563eb';
 $secondaryColor = $companyTheme['secondary_color'] ?? '#0f3460';
 
-// Handle logout (legacy support)
-if (isset($_GET['logout'])) {
-    Auth::logout();
-    header('Location: ' . getBasePath() . 'login.php');
-    exit;
-}
+// Logout is handled by logout.php — GET logout removed for CSRF safety
 
 // Load templates
 $templatesConfig = loadTemplates();

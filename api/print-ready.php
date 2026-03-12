@@ -31,7 +31,8 @@ try {
 } catch (Exception $e) {
     ob_end_clean();
     header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'error' => 'Server configuration error: ' . $e->getMessage()]);
+    error_log('print-ready config error: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'error' => 'Server configuration error']);
     exit;
 }
 
@@ -50,7 +51,7 @@ if (!Auth::isLoggedIn()) {
 $role = Auth::getCurrentRole();
 if (!in_array($role, ['print_shop', 'super_admin', 'company'])) {
     http_response_code(403);
-    echo json_encode(['success' => false, 'error' => 'Access denied - Role: ' . $role]);
+    echo json_encode(['success' => false, 'error' => 'Access denied']);
     exit;
 }
 
@@ -82,7 +83,8 @@ try {
             echo json_encode(['success' => false, 'error' => 'Invalid action']);
     }
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'error' => 'Error: ' . $e->getMessage()]);
+    error_log('print-ready error: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'error' => 'An error occurred']);
 }
 
 /**

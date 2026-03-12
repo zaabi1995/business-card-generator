@@ -9,8 +9,12 @@
  * You can also manually configure it using this template.
  */
 
-// Start session
+// Secure session configuration
 if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.cookie_secure', 1);
+    ini_set('session.use_strict_mode', 1);
+    ini_set('session.cookie_samesite', 'Lax');
     session_start();
 }
 
@@ -127,7 +131,8 @@ if ($isProduction) {
     header('X-Frame-Options: SAMEORIGIN');
     header('X-XSS-Protection: 1; mode=block');
     header('Referrer-Policy: strict-origin-when-cross-origin');
-    
+    header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+
     // HSTS (HTTP Strict Transport Security) - only if HTTPS
     if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
         header('Strict-Transport-Security: max-age=31536000; includeSubDomains');

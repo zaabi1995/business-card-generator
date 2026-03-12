@@ -54,9 +54,15 @@ $messageType = 'success';
 
 // Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $message = 'Invalid request. Please try again.';
+        $messageType = 'error';
+    }
     $action = $_POST['action'] ?? '';
     
-    if ($action === 'upload_po') {
+    if ($messageType === 'error') {
+        // CSRF failed, skip processing
+    } elseif ($action === 'upload_po') {
         if (isset($_FILES['po_file']) && $_FILES['po_file']['error'] === UPLOAD_ERR_OK) {
             $uploadDir = 'uploads/orders/' . $orderId . '/';
             $fullUploadDir = BASE_DIR . '/' . $uploadDir;
@@ -260,6 +266,7 @@ adminHeader('Order #' . $orderId, 'print');
                                 </a>
                                 <?php if (empty($order['quotation_accepted'])): ?>
                                 <form method="post" class="inline">
+                                    <?php echo csrfField(); ?>
                                     <input type="hidden" name="action" value="accept_quotation">
                                     <button type="submit" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
                                         Accept
@@ -272,6 +279,7 @@ adminHeader('Order #' . $orderId, 'print');
                                 <?php endif; ?>
                             <?php elseif (empty($order['quotation_requested'])): ?>
                                 <form method="post">
+                                    <?php echo csrfField(); ?>
                                     <input type="hidden" name="action" value="request_quotation">
                                     <button type="submit" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
                                         Request Quotation
@@ -515,6 +523,7 @@ adminHeader('Order #' . $orderId, 'print');
             </div>
             
             <form method="post" enctype="multipart/form-data" class="p-6 space-y-4">
+                <?php echo csrfField(); ?>
                 <input type="hidden" name="action" value="upload_po">
                 
                 <div>

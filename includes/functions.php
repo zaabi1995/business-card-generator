@@ -1185,7 +1185,7 @@ function convertLegacyFieldPositions($fields, $canvasWidth = 1050, $canvasHeight
 function handleFileUpload($file, $destination, $allowedTypes = null, $maxSize = 10485760) {
     // Default allowed types for images
     if ($allowedTypes === null) {
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     }
     
     // Check for upload errors
@@ -1232,7 +1232,6 @@ function handleFileUpload($file, $destination, $allowedTypes = null, $maxSize = 
             'image/png' => 'png',
             'image/gif' => 'gif',
             'image/webp' => 'webp',
-            'image/svg+xml' => 'svg',
             'application/pdf' => 'pdf',
         ];
         $extension = $mimeExtensions[$mimeType] ?? 'bin';

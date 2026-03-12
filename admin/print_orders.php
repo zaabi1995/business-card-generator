@@ -17,10 +17,16 @@ $messageType = 'success';
 
 // Handle actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $message = 'Invalid request. Please try again.';
+        $messageType = 'error';
+    }
     $action = $_POST['action'] ?? '';
     $orderId = (int)($_POST['order_id'] ?? 0);
     
-    if ($action === 'update_status' && $orderId > 0) {
+    if ($messageType === 'error') {
+        // CSRF failed, skip processing
+    } elseif ($action === 'update_status' && $orderId > 0) {
         $newStatus = $_POST['status'] ?? '';
         $trackingNumber = trim($_POST['tracking_number'] ?? '');
         
@@ -230,6 +236,7 @@ adminHeader('Print Orders', 'print_orders');
             
             <!-- Update Status Form -->
             <form method="post" class="bg-blue-50 rounded-lg p-4">
+                <?php echo csrfField(); ?>
                 <input type="hidden" name="action" value="update_status">
                 <input type="hidden" name="order_id" id="modal_form_order_id">
                 
