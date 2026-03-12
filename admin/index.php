@@ -934,6 +934,13 @@ adminHeader('Dashboard', 'dashboard');
 <script>
     function templateEditor() {
         return {
+            csrfToken: '<?php echo generateCSRFToken(); ?>',
+            newFormData: function(action) {
+                var fd = new FormData();
+                fd.append('action', action);
+                fd.append('csrf_token', this.csrfToken);
+                return fd;
+            },
             activeTab: 'front',
             templates: <?php echo json_encode(array_values($templates), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
             activeFrontId: <?php echo json_encode($activeFrontId, JSON_HEX_TAG); ?>,
@@ -1392,8 +1399,7 @@ adminHeader('Dashboard', 'dashboard');
                 
                 // If has pair_id, delete by pair
                 if (design.pair_id) {
-                    var formData = new FormData();
-                    formData.append('action', 'delete_pair');
+                    var formData = this.newFormData('delete_pair');
                     formData.append('pair_id', design.pair_id);
                     
                     fetch('save_template', { method: 'POST', body: formData })
@@ -1429,10 +1435,9 @@ adminHeader('Dashboard', 'dashboard');
             },
             
             deleteTemplateById: function(id) {
-                var formData = new FormData();
-                formData.append('action', 'delete');
+                var formData = this.newFormData('delete');
                 formData.append('id', id);
-                
+
                 var self = this;
                 return fetch('save_template', { method: 'POST', body: formData })
                     .then(function(response) { return response.json(); })
@@ -1460,8 +1465,7 @@ adminHeader('Dashboard', 'dashboard');
                 var file = event.target.files[0];
                 if (!file || !this.selectedTemplate) return;
                 
-                var formData = new FormData();
-                formData.append('action', 'update_background');
+                var formData = this.newFormData('update_background');
                 formData.append('id', this.selectedTemplate.id);
                 formData.append('image', file);
                 
@@ -1510,8 +1514,7 @@ adminHeader('Dashboard', 'dashboard');
                     return;
                 }
                 
-                var formData = new FormData();
-                formData.append('action', 'add_pair');
+                var formData = this.newFormData('add_pair');
                 formData.append('name', this.newTemplate.name);
                 formData.append('fields', JSON.stringify(<?php echo json_encode(getDefaultFieldSettings(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>));
                 formData.append('settings', JSON.stringify(this.getTemplateSettings()));
@@ -1952,8 +1955,7 @@ adminHeader('Dashboard', 'dashboard');
                     return;
                 }
                 
-                var formData = new FormData();
-                formData.append('action', 'add');
+                var formData = this.newFormData('add');
                 formData.append('name', this.newTemplate.name);
                 formData.append('side', this.newTemplate.side);
                 formData.append('image', this.newTemplate.imageFile);
@@ -2001,8 +2003,7 @@ adminHeader('Dashboard', 'dashboard');
                     }
                 }
                 
-                var formData = new FormData();
-                formData.append('action', 'update');
+                var formData = this.newFormData('update');
                 formData.append('id', this.selectedTemplate.id);
                 formData.append('name', this.selectedTemplate.name);
                 formData.append('fields', JSON.stringify(this.selectedTemplate.fields));
@@ -2023,8 +2024,7 @@ adminHeader('Dashboard', 'dashboard');
             setActiveTemplate: function() {
                 if (!this.selectedTemplate) return;
                 
-                var formData = new FormData();
-                formData.append('action', 'activate');
+                var formData = this.newFormData('activate');
                 formData.append('id', this.selectedTemplate.id);
                 formData.append('side', this.selectedTemplate.side);
                 
@@ -2052,10 +2052,9 @@ adminHeader('Dashboard', 'dashboard');
             deleteTemplate: function(id) {
                 if (!confirm('Are you sure you want to delete this template?')) return;
                 
-                var formData = new FormData();
-                formData.append('action', 'delete');
+                var formData = this.newFormData('delete');
                 formData.append('id', id);
-                
+
                 var self = this;
                 fetch('save_template', { method: 'POST', body: formData })
                     .then(function(response) { return response.json(); })
