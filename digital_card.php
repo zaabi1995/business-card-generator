@@ -75,12 +75,16 @@ try {
     $isDarkPage = ($themeMode === 'light'); // light card -> dark page
     $accentColor = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#d4af37';
 
-    // Card image paths
+    // Card image paths — DB stores filenames, construct full web path
     $frontImage = '';
     $backImage = '';
     if ($card) {
-        $frontImage = $card['front_web_path'] ?: ($card['front_file_path'] ?? '');
-        $backImage = $card['back_web_path'] ?: ($card['back_file_path'] ?? '');
+        $cardBasePath = '/uploads/companies/' . $company['id'] . '/cards/';
+        $frontRaw = $card['front_web_path'] ?: ($card['front_file_path'] ?? '');
+        $backRaw = $card['back_web_path'] ?: ($card['back_file_path'] ?? '');
+        // If path is just a filename (no slashes), prepend the directory
+        $frontImage = $frontRaw ? (strpos($frontRaw, '/') === false ? $cardBasePath . $frontRaw : $frontRaw) : '';
+        $backImage = $backRaw ? (strpos($backRaw, '/') === false ? $cardBasePath . $backRaw : $backRaw) : '';
     }
 
     // Build VCF download URL
