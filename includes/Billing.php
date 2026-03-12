@@ -149,7 +149,7 @@ class Billing {
         ];
 
         // Call Paymob Intention API
-        $ch = curl_init('https://accept.paymob.com/v1/intention/');
+        $ch = curl_init('https://oman.paymob.com/v1/intention/');
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
@@ -186,7 +186,7 @@ class Billing {
         }
 
         // Build checkout URL
-        $checkoutUrl = 'https://accept.paymob.com/unifiedcheckout/?publicKey=' . urlencode($publicKey) . '&clientSecret=' . urlencode($clientSecret);
+        $checkoutUrl = 'https://oman.paymob.com/unifiedcheckout/?publicKey=' . urlencode($publicKey) . '&clientSecret=' . urlencode($clientSecret);
 
         // Store payment data in session for callback lookup
         $_SESSION['paymob_payment_' . $specialReference] = [
