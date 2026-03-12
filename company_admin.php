@@ -84,6 +84,8 @@ try {
         'order_detail' => 'admin/order_detail.php',
         'printer' => 'admin/printer.php',
         'check-billing' => 'admin/check-billing.php',
+        'order-checkout' => 'admin/order-checkout.php',
+        'credit-accounts' => 'admin/credit-accounts.php',
     ];
     
     // Handle login page specially (no auth required)
