@@ -520,7 +520,7 @@ class PrintShopIntegration {
     public static function updateOrderStatus($orderId, $status, $trackingNumber = null) {
         $db = Database::getInstance();
         
-        $validStatuses = ['pending', 'submitted', 'processing', 'printing', 'shipped', 'delivered', 'cancelled'];
+        $validStatuses = ['pending', 'confirmed', 'submitted', 'processing', 'printing', 'shipped', 'delivered', 'cancelled'];
         if (!in_array($status, $validStatuses)) {
             return ['success' => false, 'error' => 'Invalid status'];
         }

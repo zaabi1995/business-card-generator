@@ -293,6 +293,10 @@ adminHeader('Print Orders', 'print');
             <span class="bg-green-100 text-green-600 px-2 py-0.5 rounded-full text-xs"><?php echo count($printShops); ?></span>
             <?php endif; ?>
         </a>
+        <a href="credit-accounts.php" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+            <i class="fa-solid fa-building-columns"></i>
+            Credit
+        </a>
     </nav>
 </div>
 
@@ -376,6 +380,18 @@ adminHeader('Print Orders', 'print');
                             <?php echo sanitize($order['tracking_number']); ?>
                         </span>
                         <?php endif; ?>
+
+                        <?php
+                        $payStatus = $order['payment_status'] ?? 'pending';
+                        if ($payStatus === 'paid'): ?>
+                        <span class="px-2 py-0.5 rounded text-xs bg-green-100 text-green-700" title="Payment">
+                            <i class="fa-solid fa-credit-card mr-1"></i>Paid <?= !empty($order['payment_method']) ? '(' . ucfirst($order['payment_method']) . ')' : '' ?>
+                        </span>
+                        <?php elseif (!empty($order['total']) && (float)$order['total'] > 0): ?>
+                        <span class="px-2 py-0.5 rounded text-xs bg-orange-100 text-orange-700" title="Payment Pending">
+                            <i class="fa-solid fa-credit-card mr-1"></i>Unpaid
+                        </span>
+                        <?php endif; ?>
                     </div>
                     <div class="text-sm text-gray-600 space-y-1">
                         <div class="flex items-center gap-4">
@@ -436,7 +452,15 @@ adminHeader('Print Orders', 'print');
                         </form>
                         <?php endif; ?>
                         
-                        <a href="order_detail.php?id=<?php echo (int)$order['id']; ?>" 
+                        <?php if (($order['payment_status'] ?? 'pending') !== 'paid' && !empty($order['total']) && (float)$order['total'] > 0): ?>
+                        <a href="order-checkout.php?order=<?php echo (int)$order['id']; ?>"
+                           class="px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors text-xs font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-credit-card"></i>
+                            Pay
+                        </a>
+                        <?php endif; ?>
+
+                        <a href="order_detail.php?id=<?php echo (int)$order['id']; ?>"
                            class="px-3 py-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors text-xs font-medium flex items-center gap-1">
                             <i class="fa-solid fa-eye"></i>
                             View Details
