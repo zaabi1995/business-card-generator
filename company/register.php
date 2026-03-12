@@ -255,7 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="mt-6 flex items-start gap-3 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800">
                     <i class="fa-solid fa-circle-check flex-shrink-0 mt-0.5"></i>
                     <div>
-                        <span><?php echo $info; ?></span>
+                        <span><?php echo htmlspecialchars($info); ?></span>
                         <p class="mt-2">
                             <a href="<?php echo getBasePath(); ?>login.php" class="font-semibold underline">Go to Sign In</a>
                         </p>

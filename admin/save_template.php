@@ -44,8 +44,9 @@ try {
     echo json_encode($result);
     
 } catch (Exception $e) {
+    error_log("save_template: " . $e->getMessage());
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'error' => 'An error occurred. Please try again.']);
 }
 
 /**

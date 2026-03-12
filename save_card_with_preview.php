@@ -5,16 +5,36 @@
  */
 
 require_once __DIR__ . '/config.php';
+require_once INCLUDES_DIR . '/Auth.php';
 
 header('Content-Type: application/json');
 
 try {
+    // Require authentication
+    if (!Auth::isLoggedIn()) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'Authentication required']);
+        exit;
+    }
+
     // Check if files were uploaded
     if (!isset($_FILES['pdf']) || $_FILES['pdf']['error'] !== UPLOAD_ERR_OK) {
         throw new Exception('No PDF uploaded');
     }
     if (!isset($_FILES['preview']) || $_FILES['preview']['error'] !== UPLOAD_ERR_OK) {
         throw new Exception('No preview uploaded');
+    }
+
+    // MIME type validation
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $pdfMime = finfo_file($finfo, $_FILES['pdf']['tmp_name']);
+    $previewMime = finfo_file($finfo, $_FILES['preview']['tmp_name']);
+    finfo_close($finfo);
+    if ($pdfMime !== 'application/pdf') {
+        throw new Exception('Invalid file type for PDF');
+    }
+    if ($previewMime !== 'image/png') {
+        throw new Exception('Invalid file type for preview');
     }
     
     // Get side (front or back)
@@ -64,9 +84,10 @@ try {
     ]);
     
 } catch (Exception $e) {
+    error_log("save_card_with_preview: " . $e->getMessage());
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'error' => $e->getMessage()
+        'error' => 'Failed to save card files'
     ]);
 }

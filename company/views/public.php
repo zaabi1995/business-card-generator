@@ -116,7 +116,7 @@ $extraHead = '<style>
     .text-shadow-lg {
         text-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3);
     }
-    ' . (!empty($companyTheme['custom_css']) ? $companyTheme['custom_css'] : '') . '
+    ' . (!empty($companyTheme['custom_css']) ? preg_replace('/<\s*\/?\s*(style|script)[^>]*>/i', '', $companyTheme['custom_css']) : '') . '
 </style>';
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>

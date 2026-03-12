@@ -119,7 +119,7 @@ $extraHead = '<style>
     .btn-primary {
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
     }
-    ' . (!empty($companyTheme['custom_css']) ? $companyTheme['custom_css'] : '') . '
+    ' . (!empty($companyTheme['custom_css']) ? preg_replace('/<\s*\/?\s*(style|script)[^>]*>/i', '', $companyTheme['custom_css']) : '') . '
 </style>';
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>

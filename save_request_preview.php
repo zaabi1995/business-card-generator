@@ -6,10 +6,18 @@
  */
 
 require_once __DIR__ . '/config.php';
+require_once INCLUDES_DIR . '/Auth.php';
 
 header('Content-Type: application/json');
 
 try {
+    // Require authentication
+    if (!Auth::isLoggedIn()) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'Authentication required']);
+        exit;
+    }
+
     // Must have company ID from request
     $companyId = $_POST['company_id'] ?? null;
     if (!$companyId) {

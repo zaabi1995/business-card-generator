@@ -3,10 +3,18 @@
  * Log card generation
  */
 require_once __DIR__ . '/config.php';
+require_once INCLUDES_DIR . '/Auth.php';
 
 header('Content-Type: application/json');
 
 try {
+    // Require authentication
+    if (!Auth::isLoggedIn()) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'Authentication required']);
+        exit;
+    }
+
     $input = json_decode(file_get_contents('php://input'), true);
     
     $employeeId = $input['employee_id'] ?? '';
@@ -41,7 +49,8 @@ try {
     echo json_encode(['success' => true, 'entry' => $entry]);
     
 } catch (Exception $e) {
+    error_log("log_generation: " . $e->getMessage());
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'error' => 'Failed to log generation']);
 }
 
