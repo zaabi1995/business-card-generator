@@ -80,6 +80,10 @@ try {
         'plans' => 'admin/plans.php',
         'companies' => 'admin/companies.php',
         'updates' => 'admin/updates.php',
+        'share' => 'admin/share.php',
+        'order_detail' => 'admin/order_detail.php',
+        'printer' => 'admin/printer.php',
+        'check-billing' => 'admin/check-billing.php',
     ];
     
     // Handle login page specially (no auth required)
