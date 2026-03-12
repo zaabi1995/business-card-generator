@@ -299,7 +299,22 @@ class DatabaseAdapter {
         
         return self::$db->fetchOne("SELECT * FROM employees WHERE id = :id", ['id' => $id]);
     }
-    
+
+    public static function findDepartmentById($id, $companyId = null) {
+        if (!self::useDatabase()) {
+            return null;
+        }
+
+        if ($companyId) {
+            return self::$db->fetchOne(
+                "SELECT * FROM departments WHERE id = :id AND company_id = :cid",
+                ['id' => $id, 'cid' => $companyId]
+            );
+        }
+
+        return self::$db->fetchOne("SELECT * FROM departments WHERE id = :id", ['id' => $id]);
+    }
+
     public static function addEmployee($data, $companyId = null) {
         if (!self::useDatabase()) {
             return ['success' => false, 'error' => 'Database not available'];

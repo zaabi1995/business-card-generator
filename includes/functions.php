@@ -609,6 +609,14 @@ function findEmployeeById($id, $companyId = null) {
     return DatabaseAdapter::findEmployeeById($id, $companyId);
 }
 
+function findDepartmentById($id, $companyId = null) {
+    if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
+        return null;
+    }
+
+    return DatabaseAdapter::findDepartmentById($id, $companyId);
+}
+
 function addEmployee($employeeData, $companyId = null) {
     if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
         return ['success' => false, 'error' => 'Database not available'];
