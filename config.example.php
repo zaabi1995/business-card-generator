@@ -69,15 +69,20 @@ if ($isProduction) {
 }
 
 // Billing/Payment Gateway Configuration
-define('BILLING_GATEWAY', 'amwal'); // 'amwal', 'stripe', 'none'
+define('BILLING_GATEWAY', 'paymob'); // 'paymob', 'stripe', 'none'
 
-// Amwal Pay Configuration (get these from your Amwal Pay merchant dashboard)
-if (!defined('AMWAL_MERCHANT_ID')) define('AMWAL_MERCHANT_ID', ''); // Your Merchant ID from Amwal Pay
-if (!defined('AMWAL_TERMINAL_ID')) define('AMWAL_TERMINAL_ID', ''); // Your Terminal ID from Amwal Pay
-if (!defined('AMWAL_SECURE_KEY')) define('AMWAL_SECURE_KEY', ''); // Your Secure Key from Amwal Pay
-if (!defined('AMWAL_API_URL')) define('AMWAL_API_URL', 'https://backend.sa.amwal.tech'); // Amwal Pay API URL
-if (!defined('AMWAL_API_KEY')) define('AMWAL_API_KEY', ''); // Amwal Pay API key (for webhook verification)
-if (!defined('AMWAL_WEBHOOK_SECRET')) define('AMWAL_WEBHOOK_SECRET', ''); // Amwal Pay webhook secret
+// Paymob Configuration (Unified Checkout / Intention API)
+// Get these from your Paymob dashboard: https://accept.paymob.com
+if (!defined('PAYMOB_PUBLIC_KEY')) define('PAYMOB_PUBLIC_KEY', '');       // Public key for checkout iframe
+if (!defined('PAYMOB_SECRET_KEY')) define('PAYMOB_SECRET_KEY', '');       // Secret key for API calls
+if (!defined('PAYMOB_HMAC_SECRET')) define('PAYMOB_HMAC_SECRET', '');     // HMAC secret for callback verification
+if (!defined('PAYMOB_INTEGRATION_IDS')) define('PAYMOB_INTEGRATION_IDS', '48380,48381,48389'); // INT cards, Omannet, Apple Pay
+
+// Legacy Amwal Pay Configuration (deprecated — kept for reference)
+// if (!defined('AMWAL_MERCHANT_ID')) define('AMWAL_MERCHANT_ID', '');
+// if (!defined('AMWAL_TERMINAL_ID')) define('AMWAL_TERMINAL_ID', '');
+// if (!defined('AMWAL_SECURE_KEY')) define('AMWAL_SECURE_KEY', '');
+// if (!defined('AMWAL_API_URL')) define('AMWAL_API_URL', 'https://backend.sa.amwal.tech');
 
 // Stripe Configuration (alternative payment gateway)
 if (!defined('STRIPE_SECRET_KEY')) define('STRIPE_SECRET_KEY', ''); // Stripe secret key
