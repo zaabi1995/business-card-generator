@@ -298,6 +298,7 @@ function batchGenerator() {
         companyName: '<?php echo addslashes($companyName); ?>',
         baseUrl: '<?php echo $baseUrl; ?>',
         basePath: '<?php echo getBasePath(); ?>',
+        adminBasePath: '<?php echo defined("COMPANY_ADMIN_BASE") ? COMPANY_ADMIN_BASE : getBasePath() . "admin/"; ?>',
         // Plan-based quality settings
         qualityMultiplier: <?php echo (int)$qualityMultiplier; ?>,
         isFreePlan: <?php echo $isFreePlan ? 'true' : 'false'; ?>,
@@ -689,7 +690,7 @@ function batchGenerator() {
                 if (!card.employee.email) continue;
                 
                 try {
-                    const response = await fetch(this.basePath + 'admin/send_card_email.php', {
+                    const response = await fetch(this.adminBasePath + 'send_card_email', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
