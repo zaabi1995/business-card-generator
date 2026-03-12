@@ -67,7 +67,7 @@ try {
 $cardRequestsByEmail = [];
 try {
     $cardRequests = $db->fetchAll(
-        "SELECT * FROM card_requests WHERE company_id = :id ORDER BY created_at DESC",
+        "SELECT * FROM card_requests WHERE company_id = :id ORDER BY submitted_at DESC",
         ['id' => $companyId]
     );
     foreach ($cardRequests as $req) {
