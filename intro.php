@@ -959,7 +959,7 @@ $basePath = getBasePath();
             <div class="grid md:grid-cols-4 gap-8">
                 <div>
                     <div class="flex items-center gap-2 mb-4">
-                        <img src="<?php echo $basePath; ?>assets/images/logo.svg" alt="<?php echo $brandName; ?>" class="h-9 w-auto filter brightness-0 invert">
+                        <img src="<?php echo $basePath; ?>assets/images/logo-light.svg" alt="<?php echo $brandName; ?>" class="h-9 w-auto">
                     </div>
                     <p class="text-sm mb-4">
                         Professional digital business cards for Omani SME companies. Free to use.
