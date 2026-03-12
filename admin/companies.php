@@ -378,7 +378,7 @@ adminHeader('Companies', 'companies');
                                :placeholder="editMode ? 'Leave blank to keep current' : ''">
                     </div>
                     
-                    <div class="grid grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Plan</label>
                             <select name="plan" x-model="formData.plan" 

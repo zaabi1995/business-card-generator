@@ -457,7 +457,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         </h4>
                         <p class="text-sm text-green-700 mb-4">Set different prices per card based on order quantity. Customers ordering more get better rates.</p>
                         
-                        <div class="grid grid-cols-7 gap-2" x-data="{ tiers: <?php echo htmlspecialchars(json_encode(array_map(function($k, $v) { return ['qty' => $k, 'price' => $v]; }, array_keys($quantityTiers), array_values($quantityTiers)))); ?> }">
+                        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2" x-data="{ tiers: <?php echo htmlspecialchars(json_encode(array_map(function($k, $v) { return ['qty' => $k, 'price' => $v]; }, array_keys($quantityTiers), array_values($quantityTiers)))); ?> }">
                             <?php foreach ($quantityTiers as $qty => $price): ?>
                             <div class="text-center">
                                 <label class="block text-xs font-medium text-green-800 mb-1"><?php echo $qty; ?>+ cards</label>

@@ -674,9 +674,9 @@ $basePath = getBasePath();
                             </div>
                             
                             <!-- SME Stats -->
-                            <div class="grid grid-cols-3 gap-4">
-                                <div class="bg-white rounded-xl p-4 text-center shadow-sm">
-                                    <div class="text-3xl font-black text-blue-600">500+</div>
+                            <div class="grid grid-cols-3 gap-2 sm:gap-4">
+                                <div class="bg-white rounded-xl p-3 sm:p-4 text-center shadow-sm">
+                                    <div class="text-2xl sm:text-3xl font-black text-blue-600">500+</div>
                                     <div class="text-xs text-gray-500">SME Companies</div>
                                 </div>
                                 <div class="bg-white rounded-xl p-4 text-center shadow-sm">

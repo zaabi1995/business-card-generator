@@ -801,7 +801,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                     <span class="font-semibold text-green-900">Quotation Issued</span>
                                     <span class="text-sm text-green-700"><?php echo sanitize($order['quotation_number']); ?></span>
                                 </div>
-                                <div class="grid grid-cols-3 gap-4 text-sm">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm">
                                     <div>
                                         <span class="text-green-700">Amount:</span>
                                         <span class="font-semibold"><?php echo Currency::format($order['quotation_amount'] ?? 0, $currency); ?></span>
@@ -934,7 +934,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                     </span>
                                     <span class="text-sm"><?php echo sanitize($order['invoice_number']); ?></span>
                                 </div>
-                                <div class="grid grid-cols-3 gap-4 text-sm">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm">
                                     <div>
                                         <span class="text-gray-600">Amount:</span>
                                         <span class="font-semibold"><?php echo Currency::format($order['invoice_amount'] ?? 0, $currency); ?></span>
@@ -1287,7 +1287,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                     
                     <!-- Visual Preview -->
-                    <div class="flex justify-center gap-6">
+                    <div class="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6">
                         <!-- Front Sheet Preview -->
                         <div>
                             <p class="text-xs font-medium text-gray-500 text-center mb-2">FRONT SIDE</p>

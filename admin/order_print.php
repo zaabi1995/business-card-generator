@@ -370,7 +370,7 @@ $basePath = getAdminBasePath();
                         <!-- Quantity -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
-                            <div class="grid grid-cols-4 gap-2">
+                            <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
                                 <?php foreach ([50, 100, 200, 250, 500, 1000, 2000] as $qty): ?>
                                 <button type="button" 
                                         @click="quantity = <?php echo $qty; ?>; updatePrice()"

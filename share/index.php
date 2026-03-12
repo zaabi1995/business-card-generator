@@ -149,18 +149,17 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 $bgImage = $template['background_image_path'] ? imageUrl($template['background_image_path']) : '';
                 ?>
 
-                <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                    <div class="overflow-x-auto">
-                        <div class="bg-white rounded-lg shadow-sm border border-gray-100" style="width: 1050px; margin: 0 auto;">
-                            <div style="width: 1050px; height: 600px; background-image: url('<?php echo $bgImage; ?>'); background-size: cover; background-position: center; position: relative;">
-                                <div class="p-8 text-white">
-                                    <h2 class="text-2xl font-bold mb-2">Template Preview</h2>
-                                    <p class="text-white/80">This is a preview of the shared design template.</p>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 p-2 sm:p-4">
+                    <div class="w-full">
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-100 w-full max-w-[1050px] mx-auto">
+                            <div class="w-full" style="aspect-ratio: 1050/600; background-image: url('<?php echo $bgImage; ?>'); background-size: cover; background-position: center; position: relative;">
+                                <div class="p-4 sm:p-8 text-white">
+                                    <h2 class="text-lg sm:text-2xl font-bold mb-2">Template Preview</h2>
+                                    <p class="text-white/80 text-sm sm:text-base">This is a preview of the shared design template.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <p class="mt-3 text-xs text-gray-500 text-center">Scroll horizontally to view the full design.</p>
                 </div>
             </div>
         </div>

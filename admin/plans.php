@@ -242,7 +242,7 @@ adminHeader('Plans', 'plans');
                                   class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 text-sm"><?php echo sanitize($plan['description'] ?? ''); ?></textarea>
                     </div>
                     
-                    <div class="grid grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm text-gray-600 mb-1">Max Employees</label>
                             <input type="number" name="max_employees" value="<?php echo (int)$plan['max_employees']; ?>" 
