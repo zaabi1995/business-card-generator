@@ -284,7 +284,23 @@ class PrintShopIntegration {
             
             // Send confirmation email to customer
             self::sendOrderConfirmationEmail($orderId, $orderData, $total, $currency ?? 'OMR');
-            
+
+            // Send WhatsApp notification to customer
+            if (class_exists('WhatsApp') && WhatsApp::isEnabled()) {
+                try {
+                    $order = self::getOrder($orderId);
+                    $company = null;
+                    if (!empty($orderData['company_id'])) {
+                        $stmt = $pdo->prepare("SELECT * FROM companies WHERE id = ?");
+                        $stmt->execute([$orderData['company_id']]);
+                        $company = $stmt->fetch(PDO::FETCH_ASSOC);
+                    }
+                    WhatsApp::sendPrintOrderConfirmation($order, $company);
+                } catch (Throwable $e) {
+                    error_log("WhatsApp notification failed: " . $e->getMessage());
+                }
+            }
+
             return [
                 'success' => true,
                 'order_id' => $orderId,
