@@ -234,7 +234,6 @@ $basePath = getBasePath();
             <div class="flex items-center justify-between h-16">
                 <a href="<?php echo $basePath; ?>" class="flex items-center gap-2">
                     <img src="<?php echo $basePath; ?>assets/images/logo.svg" alt="<?php echo $brandName; ?>" class="h-9 w-auto">
-                    <span class="text-xl font-bold text-gray-900"><?php echo $brandName; ?></span>
                 </a>
                 <div class="hidden md:flex items-center gap-8">
                     <a href="#journey" class="text-gray-600 hover:text-blue-600 font-medium transition-colors">The Journey</a>
@@ -960,8 +959,7 @@ $basePath = getBasePath();
             <div class="grid md:grid-cols-4 gap-8">
                 <div>
                     <div class="flex items-center gap-2 mb-4">
-                        <img src="<?php echo $basePath; ?>assets/images/logo.svg" alt="<?php echo $brandName; ?>" class="h-9 w-auto">
-                        <span class="text-xl font-bold text-white"><?php echo $brandName; ?></span>
+                        <img src="<?php echo $basePath; ?>assets/images/logo.svg" alt="<?php echo $brandName; ?>" class="h-9 w-auto filter brightness-0 invert">
                     </div>
                     <p class="text-sm mb-4">
                         Professional digital business cards for Omani SME companies. Free to use.

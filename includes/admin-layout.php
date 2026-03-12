@@ -298,7 +298,6 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
                     ?>
                     <a href="<?php echo $logoUrl; ?>" class="flex mr-14">
                         <img src="<?php echo assetUrl('images/logo.svg'); ?>" class="mr-3 h-8" alt="<?php echo $brandName; ?>">
-                        <span class="self-center text-xl font-semibold whitespace-nowrap" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;"><?php echo $brandName; ?></span>
                     </a>
                     
                     <!-- Search (desktop) -->

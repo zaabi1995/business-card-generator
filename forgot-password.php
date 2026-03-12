@@ -305,7 +305,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="flex flex-col justify-center items-center px-6 pt-8 mx-auto min-h-screen">
         <a href="<?php echo getBasePath(); ?>" class="flex items-center gap-3 mb-8 lg:mb-10">
             <img src="<?php echo assetUrl('images/logo.svg'); ?>" class="h-10 w-auto" alt="<?php echo $brandName; ?>">
-            <span class="text-xl font-bold text-gray-900"><?php echo $brandName; ?></span>
         </a>
         
         <!-- Card -->

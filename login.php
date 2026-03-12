@@ -109,7 +109,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div>
                     <a href="<?php echo getBasePath(); ?>" class="flex items-center gap-3">
                         <img src="<?php echo assetUrl('images/logo.svg'); ?>" class="h-10 w-auto" alt="<?php echo $brandName; ?>">
-                        <span class="text-xl font-bold text-gray-900"><?php echo $brandName; ?></span>
                     </a>
                     <h2 class="mt-8 text-2xl font-bold tracking-tight text-gray-900">
                         Sign in to your account

@@ -220,7 +220,6 @@ if (!function_exists('renderNavigation')) {
                     <!-- Logo -->
                     <a href="<?php echo getBasePath(); ?>" class="flex items-center gap-3">
                         <img src="<?php echo assetUrl('images/logo.svg'); ?>" alt="<?php echo $brandName; ?>" class="h-10 w-auto">
-                        <span class="text-xl font-semibold text-gray-900" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri, sans-serif;"><?php echo $brandName; ?></span>
                     </a>
 
                     <!-- Desktop Navigation -->

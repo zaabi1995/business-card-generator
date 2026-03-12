@@ -56,8 +56,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
             <a href="<?php echo getBasePath(); ?>" class="flex items-center gap-3">
-                <img src="<?php echo assetUrl('images/logo.svg'); ?>" alt="<?php echo $brandName; ?>" class="h-8 w-8">
-                <span class="text-xl font-bold text-gray-900"><?php echo $brandName; ?></span>
+                <img src="<?php echo assetUrl('images/logo.svg'); ?>" alt="<?php echo $brandName; ?>" class="h-8 w-auto">
             </a>
             <div class="flex items-center gap-4">
                 <span class="text-gray-600">

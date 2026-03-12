@@ -933,8 +933,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <!-- Brand -->
                 <div class="lg:col-span-1">
                     <div class="flex items-center gap-3 mb-6">
-                        <img src="<?php echo assetUrl('images/logo.svg'); ?>" alt="<?php echo $brandName; ?>" class="h-10 w-auto">
-                        <span class="text-xl font-bold"><?php echo $brandName; ?></span>
+                        <img src="<?php echo assetUrl('images/logo.svg'); ?>" alt="<?php echo $brandName; ?>" class="h-10 w-auto filter brightness-0 invert">
                     </div>
                     <p class="text-gray-400 mb-4 leading-relaxed">
                         The modern way to create and share professional business cards. Built for teams of all sizes.
