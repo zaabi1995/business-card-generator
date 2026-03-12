@@ -68,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageType = 'error';
         } else {
             $newCompany = [
+                'id' => generateUUID(),
                 'name' => sanitize($_POST['name']),
                 'slug' => $slug,
                 'admin_email' => sanitizeEmail($_POST['admin_email']),
