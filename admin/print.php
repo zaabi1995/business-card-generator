@@ -293,7 +293,7 @@ adminHeader('Print Orders', 'print');
             <span class="bg-green-100 text-green-600 px-2 py-0.5 rounded-full text-xs"><?php echo count($printShops); ?></span>
             <?php endif; ?>
         </a>
-        <a href="credit-accounts.php" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+        <a href="<?= $basePath ?>credit-accounts<?= $ext ?>" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
             <i class="fa-solid fa-building-columns"></i>
             Credit
         </a>
@@ -453,7 +453,7 @@ adminHeader('Print Orders', 'print');
                         <?php endif; ?>
                         
                         <?php if (($order['payment_status'] ?? 'pending') !== 'paid' && !empty($order['total']) && (float)$order['total'] > 0): ?>
-                        <a href="order-checkout.php?order=<?php echo (int)$order['id']; ?>"
+                        <a href="<?= $basePath ?>order-checkout<?= $ext ?>?order=<?php echo (int)$order['id']; ?>"
                            class="px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors text-xs font-medium flex items-center gap-1">
                             <i class="fa-solid fa-credit-card"></i>
                             Pay

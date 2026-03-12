@@ -99,7 +99,7 @@ adminHeader('Order Payment', 'print');
 
 <div class="max-w-3xl mx-auto">
     <div class="mb-6">
-        <a href="<?= getBasePath() ?>admin/print.php" class="text-sm text-gray-500 hover:text-gray-700">
+        <a href="<?= getAdminBasePath() ?>print<?= (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php' ?>" class="text-sm text-gray-500 hover:text-gray-700">
             <i class="fa-solid fa-arrow-left mr-1"></i> Back to Print Orders
         </a>
         <h1 class="text-2xl font-bold mt-2">Order Payment</h1>
