@@ -1,0 +1,587 @@
+<?php
+/**
+ * Digital Card Page
+ * Displays a branded digital business card with flip animation, contact actions, and vCard download.
+ * URL: /{company_slug}/card/{employee_id} (via nginx rewrite)
+ */
+
+ob_start();
+
+set_error_handler(function($severity, $message, $file, $line) {
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+
+try {
+    require_once __DIR__ . '/config.php';
+    require_once INCLUDES_DIR . '/QRTracker.php';
+
+    $companySlug = trim($_GET['company_slug'] ?? '');
+    $employeeId = trim($_GET['employee_id'] ?? '');
+
+    if (empty($companySlug) || empty($employeeId)) {
+        throw new Exception('Missing parameters');
+    }
+
+    // Look up company
+    $company = findCompanyBySlug($companySlug);
+    if (!$company) {
+        http_response_code(404);
+        renderBranded404(null, null);
+        exit;
+    }
+
+    // Look up employee scoped to company
+    $employee = findEmployeeById($employeeId, $company['id']);
+    if (!$employee) {
+        // Try to load theme for branded 404
+        $theme = loadCompanyTheme($company['id']);
+        http_response_code(404);
+        renderBranded404($company, $theme);
+        exit;
+    }
+
+    // Load company theme
+    $theme = loadCompanyTheme($company['id']);
+
+    // Load latest generated card
+    $db = Database::getInstance();
+    $card = $db->fetchOne(
+        "SELECT * FROM generated_cards WHERE employee_id = :eid AND company_id = :cid ORDER BY generated_at DESC LIMIT 1",
+        ['eid' => $employee['id'], 'cid' => $company['id']]
+    );
+
+    // Log QR scan (non-fatal)
+    try {
+        QRTracker::logScan($employee['id'], $company['id']);
+    } catch (Throwable $e) {
+        error_log("QR tracking failed: " . $e->getMessage());
+    }
+
+    // Determine theme mode (dark card = light page, light card = dark page)
+    $themeMode = 'dark'; // default: dark page
+    if ($card && !empty($card['theme_mode'])) {
+        $themeMode = $card['theme_mode']; // 'light' or 'dark'
+    } elseif ($theme && !empty($theme['secondary_color'])) {
+        // Fallback: use company secondary color luminance
+        $hex = ltrim($theme['secondary_color'], '#');
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+        $luminance = 0.299 * $r + 0.587 * $g + 0.114 * $b;
+        $themeMode = $luminance < 128 ? 'dark' : 'light';
+    }
+
+    // Theme mode from card means: 'dark' = dark card, so show LIGHT page. 'light' = light card, so show DARK page.
+    $isDarkPage = ($themeMode === 'light'); // light card -> dark page
+    $accentColor = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#d4af37';
+
+    // Card image paths
+    $frontImage = '';
+    $backImage = '';
+    if ($card) {
+        $frontImage = $card['front_web_path'] ?: ($card['front_file_path'] ?? '');
+        $backImage = $card['back_web_path'] ?: ($card['back_file_path'] ?? '');
+    }
+
+    // Build VCF download URL
+    $vcfUrl = '/' . urlencode($companySlug) . '/' . urlencode($employee['email'] ?? '') . '.vcf';
+
+    // Employee contact data
+    $name = $employee['name_en'] ?? $employee['name'] ?? 'Employee';
+    $position = $employee['position'] ?? $employee['job_title'] ?? '';
+    $companyName = $company['name'] ?? '';
+    $phone = $employee['phone'] ?? '';
+    $mobile = $employee['mobile'] ?? '';
+    $email = $employee['email'] ?? '';
+    $website = $company['website'] ?? '';
+    $address = $company['address'] ?? '';
+
+    // Phone for WhatsApp (strip + and non-digits)
+    $waPhone = preg_replace('/[^0-9]/', '', $mobile ?: $phone);
+
+    // Logo path
+    $logoPath = ($theme && !empty($theme['logo_path'])) ? $theme['logo_path'] : '';
+
+} catch (Throwable $e) {
+    while (ob_get_level()) { ob_end_clean(); }
+    http_response_code(500);
+    echo 'Error loading card.';
+    error_log("digital_card.php error: " . $e->getMessage());
+    exit;
+}
+
+/**
+ * Load company theme from database
+ */
+function loadCompanyTheme($companyId) {
+    try {
+        $db = Database::getInstance();
+        return $db->fetchOne("SELECT * FROM company_themes WHERE company_id = :cid", ['cid' => $companyId]);
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
+/**
+ * Render branded 404 page
+ */
+function renderBranded404($company, $theme) {
+    $accentColor = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#d4af37';
+    $logoPath = ($theme && !empty($theme['logo_path'])) ? $theme['logo_path'] : '';
+    $companyName = $company ? ($company['name'] ?? '') : '';
+    ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Card Not Available<?php echo $companyName ? ' - ' . htmlspecialchars($companyName) : ''; ?></title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(to bottom, #141421, #1a1a2e); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #eee; padding: 24px; }
+        .container { text-align: center; max-width: 360px; }
+        .logo { margin-bottom: 24px; }
+        .logo img { max-width: 120px; height: auto; border-radius: 8px; }
+        h1 { font-size: 20px; margin-bottom: 8px; }
+        p { color: #888; font-size: 14px; line-height: 1.6; }
+        .footer { margin-top: 32px; font-size: 11px; color: #444; }
+        .footer a { color: <?php echo htmlspecialchars($accentColor); ?>; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <?php if ($logoPath): ?>
+            <div class="logo"><img src="<?php echo htmlspecialchars($logoPath); ?>" alt="<?php echo htmlspecialchars($companyName); ?>"></div>
+        <?php endif; ?>
+        <h1>This card is no longer available</h1>
+        <p>The business card you're looking for may have been removed or the link is invalid.</p>
+        <div class="footer">Powered by <a href="/">Cardify</a></div>
+    </div>
+</body>
+</html>
+    <?php
+    return;
+}
+
+// Render the digital card page
+ob_end_clean();
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title><?php echo htmlspecialchars($name); ?> - <?php echo htmlspecialchars($companyName); ?></title>
+    <meta name="description" content="<?php echo htmlspecialchars($name . ' - ' . $position . ' at ' . $companyName); ?>">
+    <meta property="og:title" content="<?php echo htmlspecialchars($name . ' - ' . $companyName); ?>">
+    <meta property="og:description" content="<?php echo htmlspecialchars($position . ' at ' . $companyName); ?>">
+    <?php if ($frontImage): ?>
+    <meta property="og:image" content="<?php echo htmlspecialchars($frontImage); ?>">
+    <?php endif; ?>
+    <link rel="icon" href="<?php echo $logoPath ? htmlspecialchars($logoPath) : '/favicon.svg'; ?>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            <?php if ($isDarkPage): ?>
+            background: linear-gradient(to bottom, #141421, #1a1a2e);
+            color: #eee;
+            <?php else: ?>
+            background: linear-gradient(to bottom, #f5f6f8, #ebedf0);
+            color: #1a1a2e;
+            <?php endif; ?>
+        }
+        .page-container {
+            max-width: 440px;
+            margin: 0 auto;
+            padding: 24px 16px 40px;
+        }
+
+        /* Company Logo */
+        .company-logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .company-logo img {
+            max-width: 120px;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        /* Card Flip */
+        .card-flip-container {
+            perspective: 1000px;
+            max-width: 400px;
+            margin: 0 auto 8px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .card-flip-inner {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1050/600;
+            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .card-flip-inner.flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: <?php echo $isDarkPage ? '0 6px 24px rgba(0,0,0,0.35)' : '0 4px 20px rgba(0,0,0,0.12)'; ?>;
+        }
+        .card-face img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .card-back-face {
+            transform: rotateY(180deg);
+        }
+        .tap-hint {
+            text-align: center;
+            font-size: 11px;
+            color: <?php echo $isDarkPage ? '#666' : '#999'; ?>;
+            margin-top: 8px;
+            transition: opacity 0.5s;
+        }
+
+        /* Employee Info */
+        .employee-info {
+            text-align: center;
+            margin: 20px auto 16px;
+            max-width: 400px;
+        }
+        .employee-name {
+            font-size: 22px;
+            font-weight: 700;
+            <?php if ($isDarkPage): ?>
+            color: #f0f0f0;
+            <?php else: ?>
+            color: #1a1a2e;
+            <?php endif; ?>
+        }
+        .employee-title {
+            font-size: 13px;
+            margin-top: 3px;
+            <?php if ($isDarkPage): ?>
+            color: #777;
+            <?php else: ?>
+            color: #666;
+            <?php endif; ?>
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            max-width: 400px;
+            margin: 0 auto 18px;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 12px 8px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            color: white;
+            display: block;
+            transition: opacity 0.2s;
+        }
+        .action-btn:active { opacity: 0.8; }
+        .btn-call { background: <?php echo htmlspecialchars($accentColor); ?>; }
+        .btn-whatsapp { background: #25d366; }
+        .btn-email {
+            <?php if ($isDarkPage): ?>
+            background: rgba(255,255,255,0.1);
+            color: #ddd;
+            <?php else: ?>
+            background: #1a1a2e;
+            <?php endif; ?>
+        }
+
+        /* Contact Details */
+        .contact-card {
+            max-width: 400px;
+            margin: 0 auto;
+            border-radius: 12px;
+            overflow: hidden;
+            <?php if ($isDarkPage): ?>
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            <?php else: ?>
+            background: white;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            <?php endif; ?>
+        }
+        .contact-row {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            font-size: 13px;
+            text-decoration: none;
+            transition: background 0.15s;
+            <?php if ($isDarkPage): ?>
+            color: #ddd;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            <?php else: ?>
+            color: #333;
+            border-bottom: 1px solid #f0f0f0;
+            <?php endif; ?>
+        }
+        .contact-row:last-child { border-bottom: none; }
+        .contact-row:active {
+            <?php echo $isDarkPage ? 'background: rgba(255,255,255,0.04);' : 'background: #f8f8f8;'; ?>
+        }
+        .contact-icon {
+            width: 24px;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .contact-value {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Bottom Buttons */
+        .bottom-buttons {
+            display: flex;
+            gap: 10px;
+            max-width: 400px;
+            margin: 18px auto 0;
+        }
+        .bottom-btn {
+            flex: 1;
+            padding: 13px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            display: block;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.2s;
+        }
+        .bottom-btn:active { opacity: 0.8; }
+        .btn-save {
+            background: <?php echo htmlspecialchars($accentColor); ?>;
+            color: white;
+        }
+        .btn-share {
+            <?php if ($isDarkPage): ?>
+            background: rgba(255,255,255,0.08);
+            color: #ddd;
+            border: 1px solid rgba(255,255,255,0.12);
+            <?php else: ?>
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+            <?php endif; ?>
+        }
+
+        /* Footer */
+        .page-footer {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 11px;
+            color: <?php echo $isDarkPage ? '#444' : '#bbb'; ?>;
+        }
+        .page-footer a {
+            color: <?php echo htmlspecialchars($accentColor); ?>;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* Copy toast */
+        .copy-toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(0,0,0,0.85);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            opacity: 0;
+            transition: all 0.3s;
+            pointer-events: none;
+            z-index: 100;
+        }
+        .copy-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- Company Logo -->
+        <?php if ($logoPath): ?>
+        <div class="company-logo">
+            <img src="<?php echo htmlspecialchars($logoPath); ?>" alt="<?php echo htmlspecialchars($companyName); ?>">
+        </div>
+        <?php endif; ?>
+
+        <!-- Flippable Card -->
+        <?php if ($frontImage): ?>
+        <div class="card-flip-container" id="cardFlip">
+            <div class="card-flip-inner" id="cardInner">
+                <div class="card-face">
+                    <img src="<?php echo htmlspecialchars($frontImage); ?>" alt="Card Front" loading="lazy">
+                </div>
+                <?php if ($backImage): ?>
+                <div class="card-face card-back-face">
+                    <img src="<?php echo htmlspecialchars($backImage); ?>" alt="Card Back" loading="lazy">
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php if ($backImage): ?>
+            <div class="tap-hint" id="tapHint">Tap card to flip</div>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
+        <!-- Employee Info -->
+        <div class="employee-info">
+            <div class="employee-name"><?php echo htmlspecialchars($name); ?></div>
+            <?php if ($position || $companyName): ?>
+            <div class="employee-title">
+                <?php
+                $parts = [];
+                if ($position) $parts[] = htmlspecialchars($position);
+                if ($companyName) $parts[] = htmlspecialchars($companyName);
+                echo implode(' &middot; ', $parts);
+                ?>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <?php if ($mobile || $phone): ?>
+            <a href="tel:<?php echo htmlspecialchars($mobile ?: $phone); ?>" class="action-btn btn-call">Call</a>
+            <?php endif; ?>
+
+            <?php if ($waPhone): ?>
+            <a href="https://api.whatsapp.com/send?phone=<?php echo htmlspecialchars($waPhone); ?>" class="action-btn btn-whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+            <?php endif; ?>
+
+            <?php if ($email): ?>
+            <a href="mailto:<?php echo htmlspecialchars($email); ?>" class="action-btn btn-email">Email</a>
+            <?php endif; ?>
+        </div>
+
+        <!-- Contact Details -->
+        <div class="contact-card">
+            <?php if ($phone): ?>
+            <a href="tel:<?php echo htmlspecialchars($phone); ?>" class="contact-row">
+                <span class="contact-icon">&#128222;</span>
+                <span class="contact-value"><?php echo htmlspecialchars($phone); ?></span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mobile && $mobile !== $phone): ?>
+            <a href="tel:<?php echo htmlspecialchars($mobile); ?>" class="contact-row">
+                <span class="contact-icon">&#128241;</span>
+                <span class="contact-value"><?php echo htmlspecialchars($mobile); ?></span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($email): ?>
+            <a href="mailto:<?php echo htmlspecialchars($email); ?>" class="contact-row">
+                <span class="contact-icon">&#9993;</span>
+                <span class="contact-value"><?php echo htmlspecialchars($email); ?></span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($website): ?>
+            <a href="<?php echo htmlspecialchars(strpos($website, 'http') === 0 ? $website : 'https://' . $website); ?>" class="contact-row" target="_blank" rel="noopener">
+                <span class="contact-icon">&#127760;</span>
+                <span class="contact-value"><?php echo htmlspecialchars($website); ?></span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($address): ?>
+            <a href="https://maps.google.com/?q=<?php echo urlencode($address); ?>" class="contact-row" target="_blank" rel="noopener">
+                <span class="contact-icon">&#128205;</span>
+                <span class="contact-value"><?php echo htmlspecialchars($address); ?></span>
+            </a>
+            <?php endif; ?>
+        </div>
+
+        <!-- Save & Share -->
+        <div class="bottom-buttons">
+            <?php if ($email): ?>
+            <a href="<?php echo htmlspecialchars($vcfUrl); ?>" class="bottom-btn btn-save" download>Save Contact</a>
+            <?php endif; ?>
+            <button class="bottom-btn btn-share" onclick="shareCard()">Share</button>
+        </div>
+
+        <div class="page-footer">
+            Powered by <a href="/">Cardify</a>
+        </div>
+    </div>
+
+    <div class="copy-toast" id="copyToast">Link copied!</div>
+
+    <script>
+        // Card flip
+        const cardFlip = document.getElementById('cardFlip');
+        const cardInner = document.getElementById('cardInner');
+        const tapHint = document.getElementById('tapHint');
+
+        if (cardFlip && cardInner) {
+            cardFlip.addEventListener('click', function() {
+                cardInner.classList.toggle('flipped');
+                if (tapHint) tapHint.style.opacity = '0';
+            });
+        }
+
+        // Share
+        function shareCard() {
+            const shareData = {
+                title: <?php echo json_encode($name . ' - ' . $companyName); ?>,
+                text: <?php echo json_encode($name . ' - ' . $position . ' at ' . $companyName); ?>,
+                url: window.location.href
+            };
+
+            if (navigator.share) {
+                navigator.share(shareData).catch(() => {});
+            } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    const toast = document.getElementById('copyToast');
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 2000);
+                }).catch(() => {
+                    // Final fallback
+                    const input = document.createElement('input');
+                    input.value = window.location.href;
+                    document.body.appendChild(input);
+                    input.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(input);
+                    const toast = document.getElementById('copyToast');
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 2000);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
