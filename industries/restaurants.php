@@ -13,12 +13,6 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
 // Enable dynamic navigation
 $showNavigation = true;
-$navLinks = [
-    ['href' => getBasePath() . '#features', 'label' => 'Features'],
-    ['href' => getBasePath() . '#pricing', 'label' => 'Pricing'],
-    ['href' => getBasePath() . 'about', 'label' => 'About'],
-    ['href' => getBasePath() . 'contact', 'label' => 'Contact'],
-];
 
 // JSON-LD Schema
 $extraHead = '<script type="application/ld+json">' . json_encode([

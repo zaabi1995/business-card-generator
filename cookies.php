@@ -13,12 +13,6 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
 // Enable dynamic navigation
 $showNavigation = true;
-$navLinks = [
-    ['href' => getBasePath() . '#features', 'label' => 'Features'],
-    ['href' => getBasePath() . '#pricing', 'label' => 'Pricing'],
-    ['href' => getBasePath() . 'about.php', 'label' => 'About'],
-    ['href' => getBasePath() . 'contact.php', 'label' => 'Contact'],
-];
 
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>

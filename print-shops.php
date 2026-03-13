@@ -41,11 +41,6 @@ try {
 $pageTitle = 'Print Shops - Find Business Card Printing Services';
 $bodyClass = 'bg-gray-50';
 $showNavigation = true;
-$navLinks = [
-    ['href' => getBasePath() . '#features', 'label' => 'Features'],
-    ['href' => getBasePath() . '#pricing', 'label' => 'Pricing'],
-    ['href' => getBasePath() . 'print-shops.php', 'label' => 'Print Shops'],
-];
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
 

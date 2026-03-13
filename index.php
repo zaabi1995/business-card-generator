@@ -187,10 +187,10 @@ $extraHead = '<style>
 $showNavigation = true;
 $navLinks = [
     ['href' => '#features', 'label' => 'Features'],
-    ['href' => '#how-it-works', 'label' => 'How it Works'],
     ['href' => '#pricing', 'label' => 'Pricing'],
-    ['href' => '#testimonials', 'label' => 'Testimonials'],
-    ['href' => '#contact', 'label' => 'Contact'],
+    ['href' => getBasePath() . 'blog', 'label' => 'Blog'],
+    ['href' => getBasePath() . 'about', 'label' => 'About'],
+    ['href' => getBasePath() . 'contact', 'label' => 'Contact'],
 ];
 
 // Include Auth for navigation state

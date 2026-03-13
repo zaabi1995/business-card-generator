@@ -232,13 +232,14 @@ if (!function_exists('renderNavigation')) {
             }
         }
         
-        // Default navigation links
+        // Default navigation links (used on all non-homepage pages)
+        $basePath = function_exists('getBasePath') ? getBasePath() : '/';
         $defaultLinks = [
-            ['href' => '#features', 'label' => 'Features'],
-            ['href' => '#how-it-works', 'label' => 'How it Works'],
-            ['href' => '#pricing', 'label' => 'Pricing'],
-            ['href' => '#testimonials', 'label' => 'Testimonials'],
-            ['href' => '#contact', 'label' => 'Contact'],
+            ['href' => $basePath . '#features', 'label' => 'Features'],
+            ['href' => $basePath . '#pricing', 'label' => 'Pricing'],
+            ['href' => $basePath . 'blog', 'label' => 'Blog'],
+            ['href' => $basePath . 'about', 'label' => 'About'],
+            ['href' => $basePath . 'contact', 'label' => 'Contact'],
         ];
         
         $navLinks = $customLinks ?? $defaultLinks;
