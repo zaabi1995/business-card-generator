@@ -243,6 +243,7 @@ if (!function_exists('renderNavigation')) {
         
         $navLinks = $customLinks ?? $defaultLinks;
         $bgClass = $transparent ? 'bg-transparent' : 'bg-white/80 bg-blur border-b border-gray-100';
+        $linkClass = $transparent ? 'text-white/90 hover:text-white' : 'text-gray-600 hover:text-blue-600';
         
         // Get user display name
         $userName = 'User';
@@ -264,7 +265,7 @@ if (!function_exists('renderNavigation')) {
                     <!-- Desktop Navigation -->
                     <div class="hidden lg:flex items-center gap-8">
                         <?php foreach ($navLinks as $link): ?>
-                        <a href="<?php echo htmlspecialchars($link['href']); ?>" class="text-gray-600 hover:text-blue-600 transition-colors font-medium"><?php echo htmlspecialchars($link['label']); ?></a>
+                        <a href="<?php echo htmlspecialchars($link['href']); ?>" class="<?php echo $linkClass; ?> transition-colors font-medium"><?php echo htmlspecialchars($link['label']); ?></a>
                         <?php endforeach; ?>
                     </div>
 
