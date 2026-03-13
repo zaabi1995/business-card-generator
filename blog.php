@@ -120,6 +120,32 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </a>
         </div>
 
+        <!-- Related Posts -->
+        <?php
+        $relatedPosts = $db->fetchAll(
+            "SELECT id, title, slug, excerpt, published_at, created_at, featured_image FROM blog_posts
+             WHERE status = 'published' AND id != ?
+             ORDER BY RAND() LIMIT 3",
+            [$singlePost['id']]
+        );
+        if (!empty($relatedPosts)):
+        ?>
+        <div class="mt-10">
+            <h3 class="text-xl font-bold text-gray-900 mb-6">Related Articles</h3>
+            <div class="grid md:grid-cols-3 gap-6">
+                <?php foreach ($relatedPosts as $rp): ?>
+                <a href="<?= getBasePath() ?>blog/<?= urlencode($rp['slug']) ?>" class="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow block">
+                    <span class="text-xs text-gray-400"><?= date('M j, Y', strtotime($rp['published_at'] ?? $rp['created_at'])) ?></span>
+                    <h4 class="font-semibold text-gray-900 mt-1 line-clamp-2"><?= htmlspecialchars($rp['title']) ?></h4>
+                    <?php if ($rp['excerpt']): ?>
+                    <p class="text-gray-500 text-sm mt-2 line-clamp-2"><?= htmlspecialchars($rp['excerpt']) ?></p>
+                    <?php endif; ?>
+                </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <div class="mt-8 text-center">
             <a href="<?php echo getBasePath(); ?>blog" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
                 <i class="fa-solid fa-arrow-left"></i>
