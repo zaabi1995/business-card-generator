@@ -213,14 +213,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                     <!-- Headline -->
                     <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-gray-900 mb-6">
-                        Design Once,
-                        <span class="text-blue-600 block">Cards for Everyone</span>
+                        Business Cards
+                        <span class="text-blue-600 block">for Your Whole Team</span>
                     </h1>
 
                     <!-- Subheadline -->
                     <p class="text-lg lg:text-xl text-gray-600 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                        Create a single template and generate professional business cards for your entire team. 
-                        <strong class="text-gray-900">Free to use</strong> — only pay when you print.
+                        Design one template, generate cards for every employee, and order prints from local Omani shops — all from one dashboard.
+                        <strong class="text-gray-900">Free to use.</strong>
                     </p>
 
                     <!-- CTA Buttons -->
@@ -239,15 +239,15 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="flex flex-wrap items-center justify-center lg:justify-start gap-3 text-sm">
                         <div class="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-full">
                             <i class="fa-solid fa-circle-check"></i>
-                            <span>100% Free Platform</span>
+                            <span>Free Platform</span>
                         </div>
                         <div class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full">
                             <i class="fa-solid fa-print"></i>
-                            <span>Order Prints Instantly</span>
+                            <span>Print from Local Shops</span>
                         </div>
                         <div class="flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full">
                             <i class="fa-solid fa-users"></i>
-                            <span>Unlimited Employees</span>
+                            <span>10 to 1000+ Employees</span>
                         </div>
                     </div>
                 </div>
@@ -502,8 +502,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="w-20 h-20 rounded-full bg-green-500 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-500/30 group-hover:scale-110 transition-transform">
                         3
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Share & Grow</h3>
-                    <p class="text-gray-600">Share digital cards instantly via QR, link, or NFC. Track engagement in real-time.</p>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Print & Share</h3>
+                    <p class="text-gray-600">Order prints from local Omani shops or share digital cards via QR code and WhatsApp.</p>
                 </div>
             </div>
 
@@ -710,7 +710,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         </li>
                     </ul>
 
-                    <a href="<?php echo getBasePath(); ?>print-shops.php" class="block w-full py-3 px-6 text-center bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold rounded-lg transition-colors">
+                    <a href="<?php echo getBasePath(); ?>print-shops" class="block w-full py-3 px-6 text-center bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold rounded-lg transition-colors">
                         View Print Shops
                     </a>
                 </div>
@@ -961,10 +961,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div>
                     <h4 class="font-bold text-lg mb-6">Company</h4>
                     <ul class="space-y-4">
-                        <li><a href="<?php echo getBasePath(); ?>about.php" class="text-gray-400 hover:text-white transition-colors">About Us</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>blog.php" class="text-gray-400 hover:text-white transition-colors">Blog</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>careers.php" class="text-gray-400 hover:text-white transition-colors">Careers</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>contact.php" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>about" class="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>blog" class="text-gray-400 hover:text-white transition-colors">Blog</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>careers" class="text-gray-400 hover:text-white transition-colors">Careers</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
                     </ul>
                 </div>
 
@@ -972,10 +972,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div>
                     <h4 class="font-bold text-lg mb-6">Legal</h4>
                     <ul class="space-y-4">
-                        <li><a href="<?php echo getBasePath(); ?>privacy.php" class="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>terms.php" class="text-gray-400 hover:text-white transition-colors">Terms of Service</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>cookies.php" class="text-gray-400 hover:text-white transition-colors">Cookie Policy</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>security.php" class="text-gray-400 hover:text-white transition-colors">Security</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>privacy" class="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>terms" class="text-gray-400 hover:text-white transition-colors">Terms of Service</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>cookies" class="text-gray-400 hover:text-white transition-colors">Cookie Policy</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>security" class="text-gray-400 hover:text-white transition-colors">Security</a></li>
                     </ul>
                 </div>
             </div>
