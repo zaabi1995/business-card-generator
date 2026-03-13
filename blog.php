@@ -75,7 +75,43 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <article class="bg-white rounded-2xl shadow-sm p-8 lg:p-12 prose prose-lg max-w-none">
             <?php echo $singlePost['content']; ?>
         </article>
-        
+
+        <!-- Social Sharing -->
+        <?php
+        $shareUrl = urlencode('https://cardify.om/blog/' . $singlePost['slug']);
+        $shareTitle = urlencode($singlePost['title']);
+        ?>
+        <div class="mt-8 bg-white rounded-xl shadow-sm p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <span class="text-gray-600 font-medium">Share this article:</span>
+            <div class="flex items-center gap-3">
+                <a href="https://api.whatsapp.com/send?text=<?= $shareTitle ?>%20<?= $shareUrl ?>" target="_blank" rel="noopener"
+                   class="w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition-colors">
+                    <i class="fa-brands fa-whatsapp text-lg"></i>
+                </a>
+                <a href="https://twitter.com/intent/tweet?text=<?= $shareTitle ?>&url=<?= $shareUrl ?>" target="_blank" rel="noopener"
+                   class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-colors">
+                    <i class="fa-brands fa-x-twitter text-lg"></i>
+                </a>
+                <a href="https://www.linkedin.com/sharing/share-offsite/?url=<?= $shareUrl ?>" target="_blank" rel="noopener"
+                   class="w-10 h-10 rounded-full bg-blue-700 text-white flex items-center justify-center hover:bg-blue-800 transition-colors">
+                    <i class="fa-brands fa-linkedin-in text-lg"></i>
+                </a>
+                <button onclick="navigator.clipboard.writeText('https://cardify.om/blog/<?= $singlePost['slug'] ?>').then(()=>{this.innerHTML='<i class=\'fa-solid fa-check\'></i>';setTimeout(()=>{this.innerHTML='<i class=\'fa-solid fa-link\'></i>'},2000)})"
+                   class="w-10 h-10 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center hover:bg-gray-300 transition-colors">
+                    <i class="fa-solid fa-link"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- CTA Banner -->
+        <div class="mt-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-8 text-center text-white">
+            <h3 class="text-2xl font-bold mb-2">Ready to create your business cards?</h3>
+            <p class="text-blue-100 mb-6">Join 500+ Omani companies using Cardify. Free to start.</p>
+            <a href="<?= getBasePath() ?>intro" class="inline-block bg-white text-blue-700 font-semibold px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors">
+                Get Started Free
+            </a>
+        </div>
+
         <div class="mt-8 text-center">
             <a href="<?php echo getBasePath(); ?>blog" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
                 <i class="fa-solid fa-arrow-left"></i>

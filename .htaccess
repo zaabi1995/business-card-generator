@@ -81,6 +81,7 @@
     RewriteRule ^privacy/?$ privacy.php [L,QSA]
     RewriteRule ^security/?$ security.php [L,QSA]
     RewriteRule ^cookies/?$ cookies.php [L,QSA]
+    RewriteRule ^get-started/?$ get-started.php [L,QSA]
 
     # Sitemap
     RewriteRule ^sitemap\.xml$ sitemap.php [L]

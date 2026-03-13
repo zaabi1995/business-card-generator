@@ -46,6 +46,12 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         <priority>0.7</priority>
     </url>
     <url>
+        <loc><?= $baseUrl ?>/get-started</loc>
+        <lastmod><?= $today ?></lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    <url>
         <loc><?= $baseUrl ?>/contact</loc>
         <lastmod><?= $today ?></lastmod>
         <changefreq>monthly</changefreq>

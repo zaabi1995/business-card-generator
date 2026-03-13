@@ -29,6 +29,19 @@ $metaRobots = $metaRobots ?? '';
 $canonicalUrl = $canonicalUrl ?? '';
 $enableThemeScript = $enableThemeScript ?? false;
 $extraHead = $extraHead ?? '';
+
+// Referral tracking — capture ?ref= parameter
+if (!empty($_GET['ref']) && empty($_SESSION['referral_source'])) {
+    $_SESSION['referral_source'] = substr(preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['ref']), 0, 50);
+    $_SESSION['referral_landing'] = $_SERVER['REQUEST_URI'] ?? '/';
+    $_SESSION['referral_time'] = date('Y-m-d H:i:s');
+}
+// Also capture UTM parameters
+if (!empty($_GET['utm_source']) && empty($_SESSION['utm_source'])) {
+    $_SESSION['utm_source'] = substr(preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['utm_source']), 0, 50);
+    $_SESSION['utm_medium'] = substr(preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['utm_medium'] ?? ''), 0, 50);
+    $_SESSION['utm_campaign'] = substr(preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['utm_campaign'] ?? ''), 0, 50);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" class="<?php echo htmlspecialchars($htmlClass); ?>">
