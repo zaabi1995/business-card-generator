@@ -1019,5 +1019,47 @@ require_once INCLUDES_DIR . '/ui-header.php';
         });
     </script>
 HTML;
+?>
+
+<!-- JSON-LD Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Cardify",
+  "url": "https://cardify.om",
+  "logo": "https://cardify.om/assets/images/logo.svg",
+  "description": "SaaS platform for creating and managing professional digital and printed business cards in Oman",
+  "address": {
+    "@type": "PostalAddress",
+    "addressCountry": "OM",
+    "addressLocality": "Muscat"
+  },
+  "sameAs": ["https://instagram.com/cardifyom"],
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "contactType": "customer service",
+    "url": "https://cardify.om/contact"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Cardify",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "url": "https://cardify.om",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "OMR",
+    "description": "Free plan with 10 employees and 2 templates"
+  }
+}
+</script>
+
+<?php
     require INCLUDES_DIR . '/ui-footer.php';
     ?>
