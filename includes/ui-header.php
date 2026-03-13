@@ -48,8 +48,9 @@ if (!empty($_GET['utm_source']) && empty($_SESSION['utm_source'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageTitle); ?> | <?php echo $brandName; ?></title>
+    <title><?php echo htmlspecialchars($pageTitle); ?><?php echo (stripos($pageTitle, $brandName) === false) ? ' | ' . $brandName : ''; ?></title>
     <meta name="description" content="<?php echo htmlspecialchars($pageDescription); ?>">
+    <link rel="alternate" type="application/rss+xml" title="Cardify Blog" href="<?= function_exists('getBasePath') ? getBasePath() : '/' ?>feed">
     <?php if (!empty($metaAuthor)): ?>
     <meta name="author" content="<?php echo htmlspecialchars($metaAuthor); ?>">
     <?php endif; ?>
