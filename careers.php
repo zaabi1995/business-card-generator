@@ -127,7 +127,33 @@ $benefits = [
             </a>
         </div>
     </div>
-    
+
+    <?php if (isset($singleJob) && $singleJob): ?>
+    <script type="application/ld+json">
+    <?= json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'JobPosting',
+        'title' => $singleJob['title'],
+        'description' => strip_tags($singleJob['description']),
+        'datePosted' => $singleJob['created_at'],
+        'employmentType' => strtoupper(str_replace('-', '_', $singleJob['employment_type'] ?? 'FULL_TIME')),
+        'jobLocation' => [
+            '@type' => 'Place',
+            'address' => [
+                '@type' => 'PostalAddress',
+                'addressLocality' => $singleJob['location'] ?? 'Muscat',
+                'addressCountry' => 'OM'
+            ]
+        ],
+        'hiringOrganization' => [
+            '@type' => 'Organization',
+            'name' => 'Cardify',
+            'sameAs' => 'https://cardify.om'
+        ]
+    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?>
+    </script>
+    <?php endif; ?>
+
     <?php else: ?>
     <!-- Careers Listing -->
     <div class="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 text-white py-20 pt-28">

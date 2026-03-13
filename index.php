@@ -144,8 +144,9 @@ if (isset($_GET['company_slug'])) {
 // Brand name
 $brandName = 'Cardify';
 $tagline = 'Business Cards Made Simple';
-$pageTitle = $brandName . ' - ' . $tagline;
-$pageDescription = 'Create stunning digital business cards for your entire organization. Easy to manage, beautiful to share.';
+$pageTitle = 'Cardify — Digital & Printed Business Cards in Oman';
+$pageDescription = 'Create, manage, and print professional business cards for your team in Oman. Digital cards with QR codes, NFC sharing, and online ordering. Free to start.';
+$canonicalUrl = 'https://cardify.om/';
 $bodyClass = 'bg-white';
 
 // Fetch subscription plans from database for pricing section

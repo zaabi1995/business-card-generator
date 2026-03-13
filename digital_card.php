@@ -587,5 +587,21 @@ ob_end_clean();
             }
         }
     </script>
+
+<script type="application/ld+json">
+<?= json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'Person',
+    'name' => $employee['name_en'] ?? $employee['name'] ?? '',
+    'jobTitle' => $employee['position_en'] ?? $employee['position'] ?? '',
+    'worksFor' => [
+        '@type' => 'Organization',
+        'name' => $company['name_en'] ?? $company['name'] ?? ''
+    ],
+    'email' => $employee['email'] ?? '',
+    'telephone' => $employee['phone'] ?? $employee['mobile'] ?? '',
+    'url' => 'https://cardify.om/' . ($company['slug'] ?? '') . '/card/' . ($employee['id'] ?? '')
+], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?>
+</script>
 </body>
 </html>

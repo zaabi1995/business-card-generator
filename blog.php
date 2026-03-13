@@ -78,7 +78,30 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </a>
         </div>
     </div>
-    
+
+    <?php if (isset($singlePost) && $singlePost): ?>
+    <script type="application/ld+json">
+    <?= json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'Article',
+        'headline' => $singlePost['title'],
+        'datePublished' => $singlePost['published_at'] ?? $singlePost['created_at'],
+        'dateModified' => $singlePost['updated_at'] ?? $singlePost['created_at'],
+        'author' => [
+            '@type' => 'Person',
+            'name' => $singlePost['author_name'] ?? 'Cardify Team'
+        ],
+        'publisher' => [
+            '@type' => 'Organization',
+            'name' => 'Cardify',
+            'logo' => ['@type' => 'ImageObject', 'url' => 'https://cardify.om/assets/images/logo.svg']
+        ],
+        'description' => $singlePost['excerpt'] ?? substr(strip_tags($singlePost['content']), 0, 160),
+        'mainEntityOfPage' => 'https://cardify.om/blog/' . $singlePost['slug']
+    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?>
+    </script>
+    <?php endif; ?>
+
     <?php else: ?>
     <!-- Blog Listing -->
     <div class="bg-gradient-to-br from-blue-600 to-blue-800 text-white py-16 pt-28">
