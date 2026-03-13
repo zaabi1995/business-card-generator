@@ -115,7 +115,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fa-solid fa-envelope text-blue-600"></i>
-                            <span>info@cardify.om</span>
+                            <a href="/contact.php" class="text-blue-600 hover:underline">Contact us</a>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fa-solid fa-globe text-blue-600"></i>

@@ -112,9 +112,9 @@ $benefits = [
             
             <div class="mt-8 pt-8 border-t border-gray-200">
                 <h3 class="font-bold text-gray-900 mb-4">Ready to Apply?</h3>
-                <a href="mailto:<?php echo htmlspecialchars($singleJob['application_email'] ?? 'careers@cardify.om'); ?>?subject=Application: <?php echo urlencode($singleJob['title']); ?>" 
+                <a href="<?php echo getBasePath(); ?>contact.php?subject=Application: <?php echo urlencode($singleJob['title']); ?>" 
                    class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors">
-                    <i class="fa-solid fa-envelope"></i>
+                    <i class="fa-solid fa-paper-plane"></i>
                     Apply Now
                 </a>
             </div>
@@ -190,8 +190,8 @@ $benefits = [
                     <p class="text-gray-600 mb-6">
                         We don't have any open positions at the moment, but we're always looking for talented people.
                     </p>
-                    <a href="mailto:careers@cardify.om" class="text-blue-600 hover:text-blue-700 font-medium">
-                        Send us your resume →
+                    <a href="<?php echo getBasePath(); ?>contact.php" class="text-blue-600 hover:text-blue-700 font-medium">
+                        Send us your resume via contact form →
                     </a>
                 </div>
             <?php else: ?>
@@ -228,7 +228,7 @@ $benefits = [
                                        class="inline-flex items-center gap-2 px-4 py-2 text-blue-600 bg-blue-50 font-medium rounded-lg hover:bg-blue-100 transition-colors">
                                         View Details
                                     </a>
-                                    <a href="mailto:<?php echo htmlspecialchars($job['application_email'] ?? 'careers@cardify.om'); ?>?subject=Application: <?php echo urlencode($job['title']); ?>" 
+                                    <a href="<?php echo getBasePath(); ?>contact.php?subject=Application: <?php echo urlencode($job['title']); ?>" 
                                        class="inline-flex items-center gap-2 px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
                                         Apply
                                         <i class="fa-solid fa-arrow-right"></i>
@@ -247,10 +247,10 @@ $benefits = [
             <p class="text-blue-100 mb-8 max-w-2xl mx-auto">
                 We're always looking for talented people. Send us your resume and tell us how you can contribute to our team.
             </p>
-            <a href="mailto:careers@cardify.om" 
+            <a href="<?php echo getBasePath(); ?>contact.php" 
                class="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors">
-                <i class="fa-solid fa-envelope"></i>
-                careers@cardify.om
+                <i class="fa-solid fa-paper-plane"></i>
+                Get in Touch
             </a>
         </div>
 

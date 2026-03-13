@@ -90,11 +90,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center mb-4">
                         <i class="fa-solid fa-envelope text-xl text-purple-600"></i>
                     </div>
-                    <h3 class="font-bold text-gray-900 mb-2">Email</h3>
+                    <h3 class="font-bold text-gray-900 mb-2">Get in Touch</h3>
                     <p class="text-gray-600">
-                        General: info@cardify.om<br>
-                        Support: support@cardify.om<br>
-                        Sales: sales@cardify.om
+                        Use the contact form to reach our team for general inquiries, support, or sales questions.
                     </p>
                 </div>
 
