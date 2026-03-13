@@ -56,7 +56,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <!-- Single Post View -->
     <div class="bg-gradient-to-br from-blue-600 to-blue-800 text-white py-16 pt-28">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <a href="<?php echo getBasePath(); ?>blog.php" class="inline-flex items-center gap-2 text-blue-200 hover:text-white mb-4">
+            <a href="<?php echo getBasePath(); ?>blog" class="inline-flex items-center gap-2 text-blue-200 hover:text-white mb-4">
                 <i class="fa-solid fa-arrow-left"></i>
                 Back to Blog
             </a>
@@ -77,7 +77,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </article>
         
         <div class="mt-8 text-center">
-            <a href="<?php echo getBasePath(); ?>blog.php" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
+            <a href="<?php echo getBasePath(); ?>blog" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
                 <i class="fa-solid fa-arrow-left"></i>
                 Back to Blog
             </a>
@@ -169,7 +169,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <?php echo htmlspecialchars($post['excerpt']); ?>
                         </p>
                         <?php endif; ?>
-                        <a href="<?php echo getBasePath(); ?>blog.php?post=<?php echo urlencode($post['slug']); ?>" 
+                        <a href="<?php echo getBasePath(); ?>blog/<?php echo urlencode($post['slug']); ?>"
                            class="text-blue-600 hover:text-blue-700 text-sm font-medium inline-flex items-center gap-1">
                             Read More
                             <i class="fa-solid fa-arrow-right text-xs"></i>
