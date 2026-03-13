@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /install/
+Disallow: /api/
+Disallow: /data/
+Disallow: /logs/
+Disallow: /uploads/
+Disallow: /printshop/
+Disallow: /paymob/
+Disallow: /webhooks/
+Disallow: /amwalpay/
+Disallow: /includes/
+Disallow: /database/
+Disallow: /company/
+Disallow: */admin/*
+
+Sitemap: https://cardify.om/sitemap.xml
