@@ -88,6 +88,38 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         <priority>0.8</priority>
     </url>
 
+    <!-- Industry Landing Pages -->
+    <url>
+        <loc><?= $baseUrl ?>/industries/restaurants</loc>
+        <lastmod><?= $today ?></lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc><?= $baseUrl ?>/industries/construction</loc>
+        <lastmod><?= $today ?></lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc><?= $baseUrl ?>/industries/healthcare</loc>
+        <lastmod><?= $today ?></lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc><?= $baseUrl ?>/industries/real-estate</loc>
+        <lastmod><?= $today ?></lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <url>
+        <loc><?= $baseUrl ?>/industries/tourism</loc>
+        <lastmod><?= $today ?></lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+
 <?php
 // Blog posts
 try {

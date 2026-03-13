@@ -73,6 +73,13 @@
     RewriteRule ^careers/?$ careers.php [L,QSA]
     RewriteRule ^careers/([a-z0-9-]+)/?$ careers.php?job=$1 [L,QSA]
 
+    # Industry landing pages
+    RewriteRule ^industries/restaurants/?$ industries/restaurants.php [L,QSA]
+    RewriteRule ^industries/construction/?$ industries/construction.php [L,QSA]
+    RewriteRule ^industries/healthcare/?$ industries/healthcare.php [L,QSA]
+    RewriteRule ^industries/real-estate/?$ industries/real-estate.php [L,QSA]
+    RewriteRule ^industries/tourism/?$ industries/tourism.php [L,QSA]
+
     # Static page clean URLs
     RewriteRule ^faq/?$ faq.php [L,QSA]
     RewriteRule ^about/?$ about.php [L,QSA]
@@ -107,7 +114,7 @@
     # Check if request is not for known paths and not a file
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|company|webhooks|amwalpay|api|assets|uploads|data|printshop|intro|blog|careers|about|contact|faq|terms|privacy|security|cookies|sitemap\.xml|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php)
+    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|company|webhooks|amwalpay|api|assets|uploads|data|printshop|industries|intro|blog|careers|about|contact|faq|terms|privacy|security|cookies|sitemap\.xml|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php)
     RewriteRule ^([a-z0-9-]+)/?$ router.php?company_slug=$1 [L,QSA]
 </IfModule>
 
