@@ -145,10 +145,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
     <?php else: ?>
     <!-- Blog Listing -->
-    <div class="bg-gradient-to-br from-blue-600 to-blue-800 text-white py-16 pt-28">
+    <div class="bg-gradient-to-br from-blue-700 to-blue-900 text-white py-20 pt-32">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl font-bold mb-4">Blog</h1>
-            <p class="text-blue-100 text-lg max-w-2xl mx-auto">
+            <h1 class="text-5xl font-bold mb-4">Blog</h1>
+            <p class="text-blue-200 text-lg max-w-2xl mx-auto">
                 Insights, tips, and updates from the <?php echo $brandName; ?> team.
             </p>
         </div>
