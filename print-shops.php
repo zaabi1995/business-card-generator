@@ -38,7 +38,9 @@ try {
     $countries = $stmt->fetchAll(PDO::FETCH_COLUMN);
 } catch (PDOException $e) {}
 
-$pageTitle = 'Print Shops - Find Business Card Printing Services';
+$pageTitle = 'Print Shops — Order Business Cards from Local Omani Print Shops';
+$pageDescription = 'Browse verified print shops across Oman to order professional business cards. Compare prices, delivery times, and paper options. Order directly from Cardify.';
+$canonicalUrl = 'https://cardify.om/print-shops';
 $bodyClass = 'bg-gray-50';
 $showNavigation = true;
 require_once INCLUDES_DIR . '/ui-header.php';
