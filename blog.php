@@ -5,7 +5,9 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle = 'Blog';
+$pageTitle = 'Cardify Blog — Business Card Tips & Trends in Oman';
+$pageDescription = 'Expert tips on business card design, networking, and professional branding for Omani businesses and entrepreneurs.';
+$canonicalUrl = 'https://cardify.om/blog';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
 // Enable dynamic navigation
@@ -33,7 +35,10 @@ if ($db->tableExists('blog_posts')) {
             [$postSlug]
         );
         if ($singlePost) {
-            $pageTitle = $singlePost['title'] . ' - Blog';
+            $pageTitle = htmlspecialchars($singlePost['title']) . ' — Cardify Blog';
+            $pageDescription = htmlspecialchars($singlePost['excerpt'] ?? substr(strip_tags($singlePost['content']), 0, 155));
+            $canonicalUrl = 'https://cardify.om/blog/' . $singlePost['slug'];
+            $ogType = 'article';
         }
     }
     

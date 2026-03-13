@@ -6,7 +6,9 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle = 'Privacy Policy';
+$pageTitle = 'Privacy Policy — Cardify';
+$pageDescription = 'How Cardify protects your data. Privacy policy for our business card creation and management platform in Oman.';
+$canonicalUrl = 'https://cardify.om/privacy';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
 // Enable dynamic navigation

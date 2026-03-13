@@ -6,7 +6,9 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle = 'Terms of Service';
+$pageTitle = 'Terms of Service — Cardify';
+$pageDescription = 'Terms and conditions for using Cardify\'s business card platform. Read our terms of service for creating and managing business cards in Oman.';
+$canonicalUrl = 'https://cardify.om/terms';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
 // Enable dynamic navigation

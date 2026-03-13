@@ -562,7 +562,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <!-- Screenshot -->
                 <div class="relative">
                     <div class="relative rounded-xl overflow-hidden shadow-2xl border-8 border-white/10">
-                        <img src="<?php echo assetUrl('images/landing/light-dash.png'); ?>" alt="Cardify Dashboard" class="w-full">
+                        <img src="<?php echo assetUrl('images/landing/light-dash.png'); ?>" alt="Cardify Dashboard" class="w-full" loading="lazy">
                     </div>
                     <!-- Decorative elements -->
                     <div class="absolute -top-4 -right-4 w-24 h-24 bg-amber-400 rounded-full opacity-20 blur-xl"></div>

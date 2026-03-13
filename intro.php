@@ -7,7 +7,9 @@
 require_once __DIR__ . '/config.php';
 
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
-$pageTitle = 'How It Works - ' . $brandName;
+$pageTitle = 'How Cardify Works — Business Cards in Minutes';
+$pageDescription = 'See how easy it is to design, generate, and share professional business cards with Cardify. Free for all Omani businesses to get started.';
+$canonicalUrl = 'https://cardify.om/intro';
 $basePath = getBasePath();
 ?>
 <!DOCTYPE html>
@@ -16,8 +18,13 @@ $basePath = getBasePath();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
-    <meta name="description" content="Learn how <?php echo $brandName; ?> helps Omani SME companies create and manage professional digital business cards - Free to use!">
-    
+    <meta name="description" content="<?php echo htmlspecialchars($pageDescription); ?>">
+    <link rel="canonical" href="<?php echo htmlspecialchars($canonicalUrl); ?>">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="<?php echo htmlspecialchars($pageTitle); ?>">
+    <meta property="og:description" content="<?php echo htmlspecialchars($pageDescription); ?>">
+    <meta property="og:url" content="<?php echo htmlspecialchars($canonicalUrl); ?>">
+
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="<?php echo $basePath; ?>favicon.svg">
     

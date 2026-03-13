@@ -5,7 +5,9 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle = 'Careers';
+$pageTitle = 'Careers at Cardify — Join Our Team in Oman';
+$pageDescription = 'Join Oman\'s leading business card platform. View open positions in development, design, sales, and more at Cardify.';
+$canonicalUrl = 'https://cardify.om/careers';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
 // Enable dynamic navigation
@@ -33,7 +35,9 @@ if ($db->tableExists('career_listings')) {
             [$jobSlug]
         );
         if ($singleJob) {
-            $pageTitle = $singleJob['title'] . ' - Careers';
+            $pageTitle = htmlspecialchars($singleJob['title']) . ' — Careers at Cardify';
+            $pageDescription = 'Apply for ' . htmlspecialchars($singleJob['title']) . ' at Cardify in ' . htmlspecialchars($singleJob['location'] ?? 'Muscat') . ', Oman. ' . htmlspecialchars(substr(strip_tags($singleJob['description']), 0, 100));
+            $canonicalUrl = 'https://cardify.om/careers/' . $singleJob['slug'];
         }
     }
     

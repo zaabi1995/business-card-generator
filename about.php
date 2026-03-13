@@ -5,7 +5,9 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle = 'About Us';
+$pageTitle = 'About Cardify — Oman\'s Business Card Platform';
+$pageDescription = 'Cardify helps Omani businesses create stunning digital and printed business cards. Serving 500+ companies across the Sultanate of Oman.';
+$canonicalUrl = 'https://cardify.om/about';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
 // Enable dynamic navigation

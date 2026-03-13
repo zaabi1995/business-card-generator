@@ -6,7 +6,9 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle = 'Cookie Policy';
+$pageTitle = 'Cookie Policy — Cardify';
+$pageDescription = 'Cardify cookie policy. Learn how we use cookies to improve your experience on our business card platform.';
+$canonicalUrl = 'https://cardify.om/cookies';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
 // Enable dynamic navigation

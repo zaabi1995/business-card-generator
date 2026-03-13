@@ -5,7 +5,9 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle = 'Contact Us';
+$pageTitle = 'Contact Cardify — Get in Touch';
+$pageDescription = 'Questions about business cards? Contact Cardify for support, partnerships, or print shop inquiries in Oman. We\'re here to help.';
+$canonicalUrl = 'https://cardify.om/contact';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
 // Enable dynamic navigation
