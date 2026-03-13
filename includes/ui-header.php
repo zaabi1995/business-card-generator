@@ -101,6 +101,8 @@ if (!empty($_GET['utm_source']) && empty($_SESSION['utm_source'])) {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <!-- Font Awesome (Local) -->
+    <link rel="preload" href="<?php echo getBasePath(); ?>assets/vendor/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="<?php echo getBasePath(); ?>assets/vendor/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="<?php echo getBasePath(); ?>assets/vendor/css/all.css">
     
     <!-- Tailwind CSS (Local) -->
