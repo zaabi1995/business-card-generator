@@ -93,6 +93,10 @@ if (!defined('STRIPE_PUBLIC_KEY')) define('STRIPE_PUBLIC_KEY', ''); // Stripe pu
 // Callers must send X-Webhook-Signature: sha256=<hmac_hex_of_body>
 if (!defined('PRINT_WEBHOOK_SECRET')) define('PRINT_WEBHOOK_SECRET', ''); // Set a random secret string
 
+// SEO & Analytics
+define('GA_MEASUREMENT_ID', '');         // Google Analytics e.g. G-XXXXXXXXXX
+define('GOOGLE_SITE_VERIFICATION', '');  // Google Search Console verification meta tag content
+
 // Email/SMTP Configuration (required for password reset, notifications)
 // Common providers:
 // - Gmail: smtp.gmail.com, port 587, tls (requires App Password)

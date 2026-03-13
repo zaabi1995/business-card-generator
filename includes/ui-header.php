@@ -12,6 +12,8 @@
  * - $metaAuthor: Meta author tag
  * - $metaRobots: Meta robots tag
  * - $canonicalUrl: Canonical URL
+ * - $ogType: Open Graph type (default: 'website')
+ * - $ogImage: Open Graph/Twitter image URL
  * - $enableThemeScript: Enable dark mode script
  * - $extraHead: Extra head markup (styles/scripts/meta)
  */
@@ -44,6 +46,38 @@ $extraHead = $extraHead ?? '';
     <?php if (!empty($canonicalUrl)): ?>
     <link rel="canonical" href="<?php echo htmlspecialchars($canonicalUrl); ?>">
     <?php endif; ?>
+    <?php if (defined('GOOGLE_SITE_VERIFICATION') && GOOGLE_SITE_VERIFICATION): ?>
+    <meta name="google-site-verification" content="<?= GOOGLE_SITE_VERIFICATION ?>">
+    <?php endif; ?>
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="Cardify">
+    <meta property="og:type" content="<?= htmlspecialchars($ogType ?? 'website') ?>">
+    <meta property="og:title" content="<?= htmlspecialchars($pageTitle ?? 'Cardify') ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($pageDescription ?? 'Create, manage, and print professional business cards for your team in Oman.') ?>">
+    <?php if (!empty($canonicalUrl)): ?>
+    <meta property="og:url" content="<?= htmlspecialchars($canonicalUrl) ?>">
+    <?php endif; ?>
+    <meta property="og:image" content="<?= htmlspecialchars($ogImage ?? getBaseUrl() . 'assets/images/cardify-og.png') ?>">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?= htmlspecialchars($pageTitle ?? 'Cardify') ?>">
+    <meta name="twitter:description" content="<?= htmlspecialchars($pageDescription ?? 'Create, manage, and print professional business cards for your team in Oman.') ?>">
+    <meta name="twitter:image" content="<?= htmlspecialchars($ogImage ?? getBaseUrl() . 'assets/images/cardify-og.png') ?>">
+
+    <?php if (defined('GA_MEASUREMENT_ID') && GA_MEASUREMENT_ID): ?>
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=<?= GA_MEASUREMENT_ID ?>"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '<?= GA_MEASUREMENT_ID ?>');
+    </script>
+    <?php endif; ?>
+
     <link rel="icon" href="<?php echo getBasePath(); ?>favicon.svg" type="image/svg+xml">
     <link rel="alternate icon" href="<?php echo getBasePath(); ?>favicon.ico">
     
