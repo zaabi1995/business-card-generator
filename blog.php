@@ -12,7 +12,6 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
 // Enable dynamic navigation
 $showNavigation = true;
-$navTransparent = true;
 
 // Fetch blog posts from database
 $db = Database::getInstance();
@@ -140,10 +139,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
     <?php else: ?>
     <!-- Blog Listing -->
-    <div class="bg-gradient-to-br from-blue-600 to-blue-800 text-white py-20 pt-40">
+    <div class="bg-white pt-28 pb-12">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-5xl font-bold mb-4">Blog</h1>
-            <p class="text-blue-200 text-lg max-w-2xl mx-auto">
+            <h1 class="text-4xl font-bold text-gray-900 mb-3">Blog</h1>
+            <p class="text-gray-500 text-lg max-w-2xl mx-auto">
                 Insights, tips, and updates from the <?php echo $brandName; ?> team.
             </p>
         </div>
