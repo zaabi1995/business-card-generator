@@ -6,7 +6,7 @@
     <script>
         (function() {
             var loader = document.getElementById('pageLoader');
-            var minLoadTime = 800; // Minimum 0.8 seconds for smooth UX
+            var minLoadTime = 200; // Minimum 0.2 seconds for smooth UX
             var startTime = Date.now();
             
             function hideLoader() {

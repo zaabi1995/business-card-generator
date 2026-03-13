@@ -124,8 +124,8 @@ $extraHead = $extraHead ?? '';
             align-items: center;
             justify-content: center;
             z-index: 99999;
-            /* CSS-only auto-hide after 2.5s (fallback if JS fails) */
-            animation: loaderAutoHide 0.4s ease-out 2.5s forwards;
+            /* CSS-only auto-hide after 1s (fallback if JS fails) */
+            animation: loaderAutoHide 0.4s ease-out 1s forwards;
         }
         @keyframes loaderAutoHide {
             to {
@@ -156,10 +156,10 @@ $extraHead = $extraHead ?? '';
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        /* Content visibility - CSS auto-show after 2.5s */
+        /* Content visibility - CSS auto-show after 1s */
         body > *:not(.page-loader) {
             opacity: 0;
-            animation: contentAutoShow 0.3s ease-out 2.5s forwards;
+            animation: contentAutoShow 0.3s ease-out 1s forwards;
         }
         @keyframes contentAutoShow {
             to { opacity: 1; }

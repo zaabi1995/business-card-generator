@@ -1879,7 +1879,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
     <script>
         (function() {
             const loader = document.getElementById('pageLoader');
-            const minLoadTime = 800; // Slightly shorter for portal (0.8 seconds)
+            const minLoadTime = 200; // Fast load (0.2 seconds)
             const startTime = performance.timing ? performance.timing.navigationStart : Date.now();
             
             function hideLoader() {

@@ -858,9 +858,16 @@ HTML
 </div>
 
 <p>Best regards,<br>The {{company_name}} Team</p>
+
+<div style="text-align: center; padding: 20px 0; border-top: 1px solid #eee; margin-top: 20px;">
+    <p style="font-size: 12px; color: #999; margin: 0;">
+        Create your team's digital business cards at
+        <a href="https://cardify.om?ref=email" style="color: #3b82f6; text-decoration: none;">cardify.om</a>
+    </p>
+</div>
 HTML
             ],
-            
+
             'card_proof_admin' => [
                 'subject' => 'New Card Generated: {{employee_name}} | {{company_name}}',
                 'body' => <<<HTML
@@ -902,9 +909,16 @@ HTML
 </div>
 
 <p>Best regards,<br>The {{site_name}} Team</p>
+
+<div style="text-align: center; padding: 20px 0; border-top: 1px solid #eee; margin-top: 20px;">
+    <p style="font-size: 12px; color: #999; margin: 0;">
+        Create your team's digital business cards at
+        <a href="https://cardify.om?ref=email" style="color: #3b82f6; text-decoration: none;">cardify.om</a>
+    </p>
+</div>
 HTML
             ],
-            
+
             'request_rejected' => [
                 'subject' => 'Card Request Update - {{company_name}}',
                 'body' => <<<HTML

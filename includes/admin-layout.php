@@ -228,8 +228,8 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
             align-items: center;
             justify-content: center;
             z-index: 99999;
-            /* CSS-only auto-hide after 2.5s (fallback if JS fails) */
-            animation: loaderAutoHide 0.4s ease-out 2.5s forwards;
+            /* CSS-only auto-hide after 1s (fallback if JS fails) */
+            animation: loaderAutoHide 0.4s ease-out 1s forwards;
         }
         @keyframes loaderAutoHide {
             to {
@@ -260,10 +260,10 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        /* Content visibility - CSS auto-show after 2.5s */
+        /* Content visibility - CSS auto-show after 1s */
         body > *:not(.page-loader) {
             opacity: 0;
-            animation: contentAutoShow 0.3s ease-out 2.5s forwards;
+            animation: contentAutoShow 0.3s ease-out 1s forwards;
         }
         @keyframes contentAutoShow {
             to { opacity: 1; }
@@ -275,7 +275,7 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     </style>
 </head>
 <body class="bg-gray-50">
-    <!-- Page Loader (auto-hides via CSS after 2.5s even without JS) -->
+    <!-- Page Loader (auto-hides via CSS after 1s even without JS) -->
     <div class="page-loader" id="pageLoader">
         <img src="<?php echo $basePath; ?>assets/images/cardify-loader.svg" alt="Loading" width="100" height="100" onerror="this.style.display='none'">
         <div class="page-loader-text">Loading...</div>
@@ -461,7 +461,7 @@ function adminFooter() {
     <script>
         (function() {
             var loader = document.getElementById('pageLoader');
-            var minLoadTime = 800; // Minimum 0.8 seconds for smooth UX
+            var minLoadTime = 200; // Minimum 0.2 seconds for smooth UX
             var startTime = Date.now();
             
             function hideLoader() {

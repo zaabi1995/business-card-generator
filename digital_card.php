@@ -536,8 +536,13 @@ ob_end_clean();
             <button class="bottom-btn btn-share" onclick="shareCard()">Share</button>
         </div>
 
-        <div class="page-footer">
-            Powered by <a href="/">Cardify</a>
+        <!-- Powered by Cardify -->
+        <div style="text-align: center; padding: 24px 0 16px; opacity: 0.5;">
+            <a href="https://cardify.om?ref=card"
+               style="color: inherit; text-decoration: none; font-size: 11px; font-family: -apple-system, system-ui, sans-serif; letter-spacing: 0.5px;"
+               target="_blank" rel="noopener">
+                Powered by <strong>Cardify</strong>
+            </a>
         </div>
     </div>
 
