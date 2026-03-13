@@ -12,6 +12,7 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
 // Enable dynamic navigation
 $showNavigation = true;
+$navTransparent = true;
 $navLinks = [
     ['href' => getBasePath() . '#features', 'label' => 'Features'],
     ['href' => getBasePath() . '#pricing', 'label' => 'Pricing'],
