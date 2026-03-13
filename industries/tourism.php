@@ -42,22 +42,20 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
 <div class="min-h-screen bg-gray-50">
     <!-- Hero Section -->
-    <div class="bg-gradient-to-br from-emerald-500 via-emerald-600 to-green-700 text-white py-20 pt-32">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto">
-                <div class="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-6">
-                    <i class="fa-solid fa-plane-departure text-4xl"></i>
-                </div>
-                <h1 class="text-4xl md:text-5xl font-bold mb-6">Business Cards for Hotels & Tourism in Oman</h1>
-                <p class="text-xl text-emerald-100 leading-relaxed mb-8">
-                    Elevate your hospitality brand with multilingual digital business cards. Perfect for hotel staff, tour operators, travel agents, and concierge teams across Oman.
-                </p>
-                <a href="<?php echo getBasePath(); ?>company/register.php"
-                   class="inline-flex items-center gap-2 px-8 py-4 bg-white text-emerald-600 font-semibold rounded-xl hover:bg-emerald-50 transition-colors text-lg">
-                    Create Tourism Business Cards Free
-                    <i class="fa-solid fa-arrow-right"></i>
-                </a>
+    <div class="bg-white pt-28 pb-12">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-plane-departure text-2xl text-emerald-600"></i>
             </div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-3">Business Cards for Hotels & Tourism in Oman</h1>
+            <p class="text-gray-500 text-lg max-w-2xl mx-auto mb-6">
+                Elevate your hospitality brand with multilingual digital business cards. Perfect for hotel staff, tour operators, travel agents, and concierge teams across Oman.
+            </p>
+            <a href="<?php echo getBasePath(); ?>company/register.php"
+               class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-lg">
+                Create Tourism Business Cards Free
+                <i class="fa-solid fa-arrow-right"></i>
+            </a>
         </div>
     </div>
 

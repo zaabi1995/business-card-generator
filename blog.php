@@ -48,14 +48,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
 <div class="min-h-screen bg-gray-50">
     <?php if ($singlePost): ?>
     <!-- Single Post View -->
-    <div class="bg-gradient-to-br from-blue-600 to-blue-800 text-white py-16 pt-28">
+    <div class="bg-white pt-28 pb-12">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <a href="<?php echo getBasePath(); ?>blog" class="inline-flex items-center gap-2 text-blue-200 hover:text-white mb-4">
+            <a href="<?php echo getBasePath(); ?>blog" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4">
                 <i class="fa-solid fa-arrow-left"></i>
                 Back to Blog
             </a>
-            <h1 class="text-4xl font-bold mb-4"><?php echo htmlspecialchars($singlePost['title']); ?></h1>
-            <div class="flex items-center gap-4 text-blue-100">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4"><?php echo htmlspecialchars($singlePost['title']); ?></h1>
+            <div class="flex items-center gap-4 text-gray-500">
                 <?php if ($singlePost['author_name']): ?>
                 <span>By <?php echo htmlspecialchars($singlePost['author_name']); ?></span>
                 <span>•</span>

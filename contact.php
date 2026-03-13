@@ -43,10 +43,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
 <div class="min-h-screen bg-gray-50">
     <!-- Header -->
-    <div class="bg-gradient-to-br from-blue-600 to-blue-800 text-white py-16">
+    <div class="bg-white pt-28 pb-12">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl font-bold mb-4">Contact Us</h1>
-            <p class="text-blue-100 text-lg max-w-2xl mx-auto">
+            <h1 class="text-4xl font-bold text-gray-900 mb-3">Contact Us</h1>
+            <p class="text-gray-500 text-lg max-w-2xl mx-auto">
                 Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
             </p>
         </div>

@@ -56,14 +56,14 @@ $benefits = [
 <div class="min-h-screen bg-gray-50">
     <?php if ($singleJob): ?>
     <!-- Single Job View -->
-    <div class="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 text-white py-16 pt-28">
+    <div class="bg-white pt-28 pb-12">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <a href="<?php echo getBasePath(); ?>careers.php" class="inline-flex items-center gap-2 text-blue-200 hover:text-white mb-4">
+            <a href="<?php echo getBasePath(); ?>careers.php" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4">
                 <i class="fa-solid fa-arrow-left"></i>
                 Back to Careers
             </a>
-            <h1 class="text-4xl font-bold mb-4"><?php echo htmlspecialchars($singleJob['title']); ?></h1>
-            <div class="flex flex-wrap gap-4 text-blue-100">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4"><?php echo htmlspecialchars($singleJob['title']); ?></h1>
+            <div class="flex flex-wrap gap-4 text-gray-500">
                 <?php if ($singleJob['department']): ?>
                 <span class="flex items-center gap-2">
                     <i class="fa-solid fa-building"></i>
@@ -154,10 +154,10 @@ $benefits = [
 
     <?php else: ?>
     <!-- Careers Listing -->
-    <div class="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 text-white py-20 pt-28">
+    <div class="bg-white pt-28 pb-12">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl md:text-5xl font-bold mb-6">Join Our Team</h1>
-            <p class="text-xl text-blue-100 max-w-2xl mx-auto">
+            <h1 class="text-4xl font-bold text-gray-900 mb-3">Join Our Team</h1>
+            <p class="text-gray-500 text-lg max-w-2xl mx-auto">
                 Help us build the future of professional networking. We're looking for passionate people to join our growing team.
             </p>
         </div>

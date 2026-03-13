@@ -138,14 +138,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
 <div class="min-h-screen bg-gray-50">
     <!-- Hero Section -->
-    <div class="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white py-20 pt-32">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto">
-                <h1 class="text-4xl md:text-5xl font-bold mb-6">Frequently Asked Questions</h1>
-                <p class="text-xl text-blue-100 leading-relaxed">
-                    Everything you need to know about creating, sharing, and printing business cards with <?php echo $brandName; ?> in Oman.
-                </p>
-            </div>
+    <div class="bg-white pt-28 pb-12">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl font-bold text-gray-900 mb-3">Frequently Asked Questions</h1>
+            <p class="text-gray-500 text-lg max-w-2xl mx-auto">
+                Everything you need to know about creating, sharing, and printing business cards with <?php echo $brandName; ?> in Oman.
+            </p>
         </div>
     </div>
 

@@ -42,22 +42,20 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
 <div class="min-h-screen bg-gray-50">
     <!-- Hero Section -->
-    <div class="bg-gradient-to-br from-yellow-600 via-amber-700 to-orange-700 text-white py-20 pt-32">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto">
-                <div class="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-6">
-                    <i class="fa-solid fa-helmet-safety text-4xl"></i>
-                </div>
-                <h1 class="text-4xl md:text-5xl font-bold mb-6">Business Cards for Construction & Engineering in Oman</h1>
-                <p class="text-xl text-yellow-100 leading-relaxed mb-8">
-                    Equip your entire team — from site managers to project engineers — with professional digital business cards they can share on-site, at tenders, and at industry events.
-                </p>
-                <a href="<?php echo getBasePath(); ?>company/register.php"
-                   class="inline-flex items-center gap-2 px-8 py-4 bg-white text-amber-700 font-semibold rounded-xl hover:bg-yellow-50 transition-colors text-lg">
-                    Get Your Team's Cards in Minutes
-                    <i class="fa-solid fa-arrow-right"></i>
-                </a>
+    <div class="bg-white pt-28 pb-12">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-helmet-safety text-2xl text-amber-600"></i>
             </div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-3">Business Cards for Construction & Engineering in Oman</h1>
+            <p class="text-gray-500 text-lg max-w-2xl mx-auto mb-6">
+                Equip your entire team — from site managers to project engineers — with professional digital business cards they can share on-site, at tenders, and at industry events.
+            </p>
+            <a href="<?php echo getBasePath(); ?>company/register.php"
+               class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-lg">
+                Get Your Team's Cards in Minutes
+                <i class="fa-solid fa-arrow-right"></i>
+            </a>
         </div>
     </div>
 
