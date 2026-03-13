@@ -137,8 +137,8 @@ if (!empty($_GET['utm_source']) && empty($_SESSION['utm_source'])) {
             align-items: center;
             justify-content: center;
             z-index: 99999;
-            /* CSS-only auto-hide after 1s (fallback if JS fails) */
-            animation: loaderAutoHide 0.4s ease-out 1s forwards;
+            /* CSS-only auto-hide after 0.3s (fallback if JS fails) */
+            animation: loaderAutoHide 0.3s ease-out 0.3s forwards;
         }
         @keyframes loaderAutoHide {
             to {
@@ -169,17 +169,9 @@ if (!empty($_GET['utm_source']) && empty($_SESSION['utm_source'])) {
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        /* Content visibility - CSS auto-show after 1s */
-        body > *:not(.page-loader) {
-            opacity: 0;
-            animation: contentAutoShow 0.3s ease-out 1s forwards;
-        }
-        @keyframes contentAutoShow {
-            to { opacity: 1; }
-        }
-        body.loaded > *:not(.page-loader) {
-            opacity: 1;
-            animation: none;
+        /* Content is visible by default - loader overlay covers it */
+        .page-loader ~ * {
+            transition: opacity 0.3s ease-out;
         }
     </style>
     <?php if ($enableThemeScript): ?>
