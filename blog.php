@@ -65,8 +65,22 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
     </div>
     
+    <style>
+        .blog-content { color: #374151; line-height: 1.8; font-size: 1.125rem; }
+        .blog-content h2 { font-size: 1.5rem; font-weight: 700; color: #111827; margin: 2rem 0 1rem; }
+        .blog-content h3 { font-size: 1.25rem; font-weight: 600; color: #1f2937; margin: 1.5rem 0 0.75rem; }
+        .blog-content p { margin-bottom: 1.25rem; }
+        .blog-content ul, .blog-content ol { margin: 1rem 0 1.5rem 1.5rem; }
+        .blog-content ul { list-style-type: disc; }
+        .blog-content ol { list-style-type: decimal; }
+        .blog-content li { margin-bottom: 0.5rem; }
+        .blog-content a { color: #2563eb; text-decoration: underline; }
+        .blog-content blockquote { border-left: 4px solid #3b82f6; padding: 1rem 1.5rem; margin: 1.5rem 0; background: #f9fafb; border-radius: 0.5rem; }
+        .blog-content strong { color: #111827; }
+        .blog-content hr { border-color: #e5e7eb; margin: 2rem 0; }
+    </style>
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <article class="bg-white rounded-2xl shadow-sm p-8 lg:p-12 prose prose-lg max-w-none">
+        <article class="bg-white rounded-2xl shadow-sm p-8 lg:p-12 blog-content">
             <?php echo $singlePost['content']; ?>
         </article>
 
