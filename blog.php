@@ -174,8 +174,15 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             <?php foreach ($posts as $index => $post): ?>
                 <article class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                    <!-- Gradient Header -->
-                    <div class="h-32 <?php 
+                    <!-- Post Image / Gradient Header -->
+                    <?php if (!empty($post['featured_image'])): ?>
+                    <div class="h-40 overflow-hidden">
+                        <img src="<?= getBasePath() . htmlspecialchars($post['featured_image']) ?>"
+                             alt="<?= htmlspecialchars($post['title']) ?>"
+                             class="w-full h-full object-cover" loading="lazy">
+                    </div>
+                    <?php else: ?>
+                    <div class="h-32 <?php
                         $gradients = [
                             'bg-gradient-to-br from-blue-500 to-purple-600',
                             'bg-gradient-to-br from-green-500 to-teal-600',
@@ -187,6 +194,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     ?> flex items-center justify-center">
                         <i class="fa-solid fa-newspaper text-4xl text-white/50"></i>
                     </div>
+                    <?php endif; ?>
                     <div class="p-6">
                         <div class="flex items-center gap-3 mb-3">
                             <span class="text-xs text-gray-500">
