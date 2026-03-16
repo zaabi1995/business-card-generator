@@ -24,6 +24,13 @@ $isBusinessDomain = false;
 $suggestedSlug = '';
 $existingCompany = null;
 
+// Capture referral source (e.g. ref=bhd from BHD landing page)
+$refSource = $_GET['ref'] ?? null;
+if ($refSource) {
+    $_SESSION['pending_referral'] = preg_replace('/[^a-z0-9_\-]/i', '', $refSource);
+}
+$pendingReferral = $_SESSION['pending_referral'] ?? null;
+
 // Check if prefilled email has business domain
 if (!empty($prefillEmail) && isValidEmail($prefillEmail)) {
     $isBusinessDomain = isBusinessEmailDomain($prefillEmail);
@@ -171,23 +178,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!empty($result['success'])) {
                     $company = $result['company'];
                     
-                    // Update company with domain
-                    if ($isBusinessDomain && class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+                    // Update company with domain + referral source
+                    if (class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
                         try {
                             $db = Database::getInstance();
-                            $db->update('companies', 
-                                ['domain' => $domain],
-                                'id = :id',
-                                ['id' => $company['id']]
-                            );
+                            $updates = [];
+                            if ($isBusinessDomain) {
+                                $updates['domain'] = $domain;
+                            }
+                            if ($pendingReferral) {
+                                $updates['referral_source'] = $pendingReferral;
+                            }
+                            if (!empty($updates)) {
+                                $db->update('companies', $updates, 'id = :id', ['id' => $company['id']]);
+                            }
                         } catch (Exception $e) {
-                            // Column might not exist, ignore
+                            // Column might not exist yet, ignore
                         }
                     }
-                    
+
                     // Create user record for the admin
                     $userResult = Auth::createUser($email, $password, $userName ?: $name, 'company', $company['id']);
-                    
+
                     // Send welcome email
                     $siteName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                     $companySlug = $company['slug'] ?? '';
@@ -198,11 +210,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'admin_url' => getBaseUrl() . $companySlug . '/admin/',
                         'portal_url' => getBaseUrl() . $companySlug . '/portal'
                     ]);
-                    
-                    // Login and redirect directly to company admin (avoid blank /admin/ bounce)
-                    $loginResult = Auth::unifiedLogin($email, $password);
-                    $redirectUrl = $loginResult['redirect'] ?? getBasePath() . ($company['slug'] ?? '') . '/admin/';
-                    header('Location: ' . $redirectUrl);
+
+                    // Login the new user
+                    Auth::unifiedLogin($email, $password);
+
+                    // For BHD referrals: redirect to onboarding wizard
+                    if ($pendingReferral === 'bhd') {
+                        unset($_SESSION['pending_referral']);
+                        header('Location: ' . getBasePath() . 'onboarding.php?source=bhd');
+                    } else {
+                        header('Location: ' . getBasePath() . ($company['slug'] ?? '') . '/admin/');
+                    }
                     exit;
                 }
                 $error = $result['error'] ?? 'Failed to create company';
@@ -230,8 +248,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <a href="<?php echo getBasePath(); ?>" class="flex items-center gap-3">
                         <img src="<?php echo assetUrl('images/logo.svg'); ?>" class="h-10 w-auto" alt="<?php echo $brandName; ?>">
                     </a>
+                    <?php if ($pendingReferral === 'bhd'): ?>
+                    <div class="mt-6 flex items-center gap-3 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                            <i class="fa-solid fa-print text-white text-xs"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-blue-900">Exclusive for BHD Printing customers</p>
+                            <p class="text-xs text-blue-600">Get BHD-branded templates pre-loaded for you</p>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                     <h2 class="mt-8 text-2xl font-bold tracking-tight text-gray-900">
-                        Get started for free
+                        <?php echo $pendingReferral === 'bhd' ? 'Create your free account' : 'Get started for free'; ?>
                     </h2>
                     <p class="mt-2 text-sm text-gray-600">
                         Already registered?

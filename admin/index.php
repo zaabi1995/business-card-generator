@@ -205,7 +205,43 @@ $baseUrl = getBaseUrl();
 
 // Start admin layout
 adminHeader('Dashboard', 'dashboard');
+
+// Get company referral source for welcome banner
+$companyReferralSource = null;
+if ($companyId && DatabaseAdapter::useDatabase()) {
+    try {
+        $companyRow = $db->fetchOne(
+            "SELECT referral_source, onboarding_completed FROM companies WHERE id = :id",
+            ['id' => $companyId]
+        );
+        $companyReferralSource = $companyRow['referral_source'] ?? null;
+    } catch (Exception $e) {}
+}
+$showWelcome = ($_GET['welcome'] ?? '') === '1';
 ?>
+
+<?php if ($showWelcome && $companyReferralSource === 'bhd'): ?>
+<!-- BHD Welcome Banner -->
+<div class="mb-6 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 p-6 text-white shadow-lg flex items-center justify-between gap-4" id="bhd-welcome-banner">
+    <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-rocket text-white text-xl"></i>
+        </div>
+        <div>
+            <h3 class="font-bold text-lg">Welcome to Cardify — BHD Customer!</h3>
+            <p class="text-blue-100 text-sm mt-0.5">Your account is set up with BHD-branded templates. Add your first employee to get started.</p>
+        </div>
+    </div>
+    <div class="flex items-center gap-3 flex-shrink-0">
+        <a href="<?= COMPANY_ADMIN_BASE ?>employees.php" class="bg-white text-blue-600 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-blue-50 transition-all whitespace-nowrap">
+            Add Employee
+        </a>
+        <button onclick="document.getElementById('bhd-welcome-banner').remove()" class="text-white/60 hover:text-white">
+            <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- Stats Cards -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
