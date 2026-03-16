@@ -199,9 +199,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'portal_url' => getBaseUrl() . $companySlug . '/portal'
                     ]);
                     
-                    // Login and redirect
-                    Auth::unifiedLogin($email, $password);
-                    header('Location: ' . getBasePath() . 'admin/');
+                    // Login and redirect directly to company admin (avoid blank /admin/ bounce)
+                    $loginResult = Auth::unifiedLogin($email, $password);
+                    $redirectUrl = $loginResult['redirect'] ?? getBasePath() . ($company['slug'] ?? '') . '/admin/';
+                    header('Location: ' . $redirectUrl);
                     exit;
                 }
                 $error = $result['error'] ?? 'Failed to create company';
@@ -352,10 +353,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600">
                         </div>
                         <label for="terms" class="text-sm text-gray-600">
-                            I accept the 
-                            <a href="#" class="font-semibold text-blue-600 hover:text-blue-500">Terms and Conditions</a>
+                            I accept the
+                            <a href="<?php echo getBasePath(); ?>terms.php" target="_blank" class="font-semibold text-blue-600 hover:text-blue-500">Terms and Conditions</a>
                             and
-                            <a href="#" class="font-semibold text-blue-600 hover:text-blue-500">Privacy Policy</a>
+                            <a href="<?php echo getBasePath(); ?>privacy.php" target="_blank" class="font-semibold text-blue-600 hover:text-blue-500">Privacy Policy</a>
                         </label>
                     </div>
 
@@ -394,7 +395,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fa-solid fa-circle-check text-green-500"></i>
-                            <span>14-day free trial, no credit card</span>
+                            <span>Free forever, no credit card required</span>
                         </li>
                     </ul>
                 </div>

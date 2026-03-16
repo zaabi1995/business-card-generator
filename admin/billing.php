@@ -102,10 +102,10 @@ if (isset($_GET['payment'])) {
 }
 
 $company = null;
-$planLimits = ['employees' => 5, 'templates' => 2, 'storage' => 1];
+$planLimits = ['employees' => 5, 'templates' => 5, 'storage' => 1];
 $plans = [];
 $currentPlan = null;
-$companyCurrency = 'USD';
+$companyCurrency = 'OMR';
 $planPrices = [];
 
 // Currency handling now done via Currency class
@@ -114,7 +114,7 @@ $planPrices = [];
 if ($db && $db->isConnected() && $companyId) {
     try {
         $company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $companyId]);
-        $companyCurrency = $company['currency'] ?? 'USD';
+        $companyCurrency = $company['currency'] ?? 'OMR';
     } catch (Throwable $e) {
         error_log("Billing - company fetch error: " . $e->getMessage());
     }

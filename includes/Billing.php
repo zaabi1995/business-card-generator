@@ -482,7 +482,7 @@ class Billing {
         // Default limits for free plan
         $defaultLimits = [
             'employees' => 5,
-            'templates' => 2,
+            'templates' => 5,
             'storage' => 1
         ];
         

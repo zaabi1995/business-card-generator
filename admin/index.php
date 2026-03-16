@@ -72,7 +72,7 @@ foreach ($templates as &$template) {
 unset($template);
 
 // Get employees count
-$employees = loadEmployees();
+$employees = loadEmployees($companyId);
 $employeeCount = count($employees);
 
 // Get generated cards count
