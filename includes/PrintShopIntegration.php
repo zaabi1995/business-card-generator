@@ -285,7 +285,7 @@ class PrintShopIntegration {
             // Send confirmation email to customer
             self::sendOrderConfirmationEmail($orderId, $orderData, $total, $currency ?? 'OMR');
 
-            // Send WhatsApp notification to customer
+            // Send WhatsApp notifications (customer + print shop)
             if (class_exists('WhatsApp') && WhatsApp::isEnabled()) {
                 try {
                     $order = self::getOrder($orderId);
@@ -295,7 +295,17 @@ class PrintShopIntegration {
                         $stmt->execute([$orderData['company_id']]);
                         $company = $stmt->fetch(PDO::FETCH_ASSOC);
                     }
-                    WhatsApp::sendPrintOrderConfirmation($order, $company);
+                    // Notify customer
+                    WhatsApp::sendPrintOrderConfirmation($order, $company ?? []);
+                    // Notify print shop
+                    if ($printShopId) {
+                        require_once INCLUDES_DIR . '/PrintShop.php';
+                        $ps = PrintShop::getById($printShopId);
+                        if ($ps) {
+                            $orderWithCompany = array_merge($order ?? [], ['company_name' => $company['name'] ?? '']);
+                            WhatsApp::sendPrintShopOrderAlert($orderWithCompany, $ps);
+                        }
+                    }
                 } catch (Throwable $e) {
                     error_log("WhatsApp notification failed: " . $e->getMessage());
                 }
@@ -550,7 +560,19 @@ class PrintShopIntegration {
             
             // Send email notification for status update
             self::sendStatusUpdateEmail($orderId, $status, $trackingNumber);
-            
+
+            // Send WhatsApp status notification to customer
+            if (class_exists('WhatsApp') && WhatsApp::isEnabled() && !in_array($status, ['pending', 'confirmed', 'submitted'])) {
+                try {
+                    $order = self::getOrder($orderId);
+                    if ($order) {
+                        WhatsApp::sendPrintOrderStatusUpdate($order, $status, $trackingNumber);
+                    }
+                } catch (Throwable $e) {
+                    error_log("WhatsApp status update failed: " . $e->getMessage());
+                }
+            }
+
             return ['success' => true];
         } catch (PDOException $e) {
             error_log("PrintShop: Status update failed: " . $e->getMessage());

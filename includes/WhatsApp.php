@@ -46,8 +46,22 @@ class WhatsApp {
     }
 
     /**
+     * Normalize phone number to E.164 format without +
+     * Handles Omani numbers: 8-digit → prepend 968
+     */
+    private static function normalizePhone($phone) {
+        $clean = preg_replace('/[^0-9]/', '', ltrim($phone, '+'));
+        if (str_starts_with($clean, '00')) $clean = substr($clean, 2);
+        if (str_starts_with($clean, '0') && strlen($clean) === 8) $clean = '968' . substr($clean, 1);
+        if (!str_starts_with($clean, '968') && strlen($clean) === 8) $clean = '968' . $clean;
+        return $clean;
+    }
+
+    /**
      * Send WhatsApp message via Dardasha REST API
-     * @param string $phoneNumber Phone number in any format (e.g., +96812345678 or 96812345678)
+     * API: POST /api/messages/api/send with X-API-Key header
+     * Body: { to, from, text }
+     * @param string $phoneNumber Phone number in any format
      * @param string $message Message to send
      * @return array ['success' => bool, 'error' => string|null]
      */
@@ -55,21 +69,16 @@ class WhatsApp {
         self::init();
 
         if (!self::isEnabled()) {
-            return ['success' => false, 'error' => 'WhatsApp API is not enabled or token is not configured'];
+            return ['success' => false, 'error' => 'WhatsApp not enabled or token not configured'];
         }
 
-        // Strip + and any non-digit characters
-        $phone = preg_replace('/[^0-9]/', '', ltrim($phoneNumber, '+'));
+        $to   = self::normalizePhone($phoneNumber);
+        $from = self::$settings['whatsapp_session_id'] ?? '96898899100'; // Anna's line
 
-        $apiUrl   = self::$settings['whatsapp_api_url']    ?? 'https://dardasha.om/api/send-message';
-        $token    = self::$settings['whatsapp_api_token']  ?? '';
-        $sessionId = self::$settings['whatsapp_session_id'] ?? 'anna';
+        $apiUrl = self::$settings['whatsapp_api_url'] ?? 'http://127.0.0.1:3000/api/messages/api/send';
+        $token  = self::$settings['whatsapp_api_token'] ?? '';
 
-        $payload = [
-            'phone'     => $phone,
-            'message'   => $message,
-            'sessionId' => $sessionId
-        ];
+        $payload = ['to' => $to, 'from' => $from, 'text' => $message];
 
         $ch = curl_init($apiUrl);
         curl_setopt_array($ch, [
@@ -78,29 +87,30 @@ class WhatsApp {
             CURLOPT_POSTFIELDS     => json_encode($payload),
             CURLOPT_HTTPHEADER     => [
                 'Content-Type: application/json',
-                'Authorization: Bearer ' . $token
+                'X-API-Key: ' . $token,
             ],
-            CURLOPT_TIMEOUT        => 30,
-            CURLOPT_SSL_VERIFYPEER => true
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_SSL_VERIFYPEER => false,
         ]);
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error    = curl_error($ch);
+        $curlErr  = curl_error($ch);
         curl_close($ch);
 
-        if ($error) {
-            return ['success' => false, 'error' => 'CURL Error: ' . $error];
+        if ($curlErr) {
+            error_log("[WhatsApp] CURL error to $to: $curlErr");
+            return ['success' => false, 'error' => 'CURL Error: ' . $curlErr];
         }
 
-        $responseData = json_decode($response, true);
-
-        if (isset($responseData['success']) && $responseData['success'] === true) {
-            return ['success' => true, 'messageId' => $responseData['messageId'] ?? null];
+        $data = json_decode($response, true);
+        if ($data['success'] ?? false) {
+            return ['success' => true, 'messageId' => $data['messageId'] ?? null];
         }
 
-        $errorMsg = $responseData['error'] ?? $responseData['message'] ?? ('HTTP ' . $httpCode);
-        return ['success' => false, 'error' => 'API Error: ' . $errorMsg];
+        $errMsg = $data['error'] ?? $data['message'] ?? ('HTTP ' . $httpCode);
+        error_log("[WhatsApp] Send failed to $to: $errMsg");
+        return ['success' => false, 'error' => 'API Error: ' . $errMsg];
     }
 
     /**
@@ -176,10 +186,11 @@ class WhatsApp {
             return ['success' => false, 'error' => 'WhatsApp API is not enabled'];
         }
 
-        $phoneNumber = $company['phone'] ?? $company['mobile'] ?? null;
+        // Use company phone, or fall back to shipping_phone on the order itself
+        $phoneNumber = $company['phone'] ?? $company['mobile'] ?? $order['shipping_phone'] ?? null;
 
         if (empty($phoneNumber)) {
-            return ['success' => false, 'error' => 'Company phone number not found'];
+            return ['success' => false, 'error' => 'No phone number for order confirmation'];
         }
 
         // Handle both old (employee_ids JSON array) and new (employee_id single) schemas
@@ -267,6 +278,36 @@ class WhatsApp {
         }
 
         return self::sendMessage($phoneNumber, $message);
+    }
+
+    /**
+     * Notify print shop via WhatsApp when a new order is placed
+     * @param array $order Print order data
+     * @param array $printShop Print shop data (must have 'whatsapp' or 'phone' field)
+     * @return array ['success' => bool, 'error' => string|null]
+     */
+    public static function sendPrintShopOrderAlert($order, $printShop) {
+        if (!self::isEnabled()) {
+            return ['success' => false, 'error' => 'WhatsApp not enabled'];
+        }
+
+        $phone = $printShop['whatsapp'] ?? $printShop['phone'] ?? null;
+        if (empty($phone)) {
+            return ['success' => false, 'error' => 'No print shop WhatsApp/phone number'];
+        }
+
+        $message  = "🖨️ New Print Order!\n\n";
+        $message .= "Order: " . ($order['order_number'] ?? $order['id']) . "\n";
+        $message .= "Company: " . ($order['company_name'] ?? 'N/A') . "\n";
+        $message .= "Qty: " . ($order['quantity'] ?? 100) . " cards\n";
+        $message .= "Paper: " . ucfirst($order['paper_type'] ?? 'standard') . "\n";
+        $message .= "Finish: " . ucfirst($order['finish'] ?? 'matte') . "\n";
+        if (!empty($order['express_delivery'])) {
+            $message .= "Express Delivery: Yes\n";
+        }
+        $message .= "\nPlease confirm via your dashboard.";
+
+        return self::sendMessage($phone, $message);
     }
 
     /**
