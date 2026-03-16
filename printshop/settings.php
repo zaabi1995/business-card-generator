@@ -176,11 +176,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Test ERP connection
         $odoo = new PrintShopOdoo($shopId);
         $result = $odoo->testConnection();
-        
-        $message = $result['success'] 
-            ? 'Connection successful! ' . ($result['message'] ?? '') 
+
+        $message = $result['success']
+            ? 'Connection successful! ' . ($result['message'] ?? '')
             : 'Connection failed: ' . ($result['error'] ?? 'Unknown error');
         $messageType = $result['success'] ? 'success' : 'error';
+
+    } elseif ($action === 'update_capacity') {
+        // Capacity & availability settings
+        $days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+        $workingHours = [];
+        foreach ($days as $day) {
+            $enabled = isset($_POST['wh_' . $day]);
+            $open  = trim($_POST['wh_' . $day . '_open']  ?? '08:00');
+            $close = trim($_POST['wh_' . $day . '_close'] ?? '17:00');
+            $workingHours[$day] = ['enabled' => $enabled, 'open' => $open, 'close' => $close];
+        }
+        $db = Database::getInstance();
+        $db->update('print_shops', [
+            'working_hours'    => json_encode($workingHours),
+            'max_daily_orders' => (int)($_POST['max_daily_orders'] ?? 0),
+            'capacity_notes'   => trim($_POST['capacity_notes'] ?? ''),
+            'accepting_orders' => isset($_POST['accepting_orders']) ? 1 : 0,
+        ], 'id = :id', ['id' => $shopId]);
+        $message = 'Capacity settings updated!';
+        $messageType = 'success';
+        $printShop = PrintShop::getById($shopId);
     }
 }
 
@@ -804,6 +825,80 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </form>
             
         </div>
+
+        <!-- Capacity & Availability -->
+        <?php
+        $workingHours = json_decode($printShop['working_hours'] ?? 'null', true) ?: [];
+        $days = ['monday'=>'Mon','tuesday'=>'Tue','wednesday'=>'Wed','thursday'=>'Thu','friday'=>'Fri','saturday'=>'Sat','sunday'=>'Sun'];
+        $defaultHours = ['enabled'=>false,'open'=>'08:00','close'=>'17:00'];
+        $maxDaily = (int)($printShop['max_daily_orders'] ?? 0);
+        $acceptingOrders = (int)($printShop['accepting_orders'] ?? 1);
+        ?>
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mt-8">
+            <div class="px-6 py-5 border-b border-gray-100">
+                <h2 class="text-lg font-semibold text-gray-900"><i class="fa-solid fa-clock mr-2 text-teal-500"></i>Capacity &amp; Availability</h2>
+                <p class="text-sm text-gray-500 mt-1">Set working hours, order limits, and toggle order acceptance</p>
+            </div>
+            <form method="post" class="p-6 space-y-6">
+                <?= csrfField() ?>
+                <input type="hidden" name="action" value="update_capacity">
+
+                <!-- Accept orders toggle -->
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                    <div>
+                        <p class="font-medium text-gray-900">Accepting Orders</p>
+                        <p class="text-sm text-gray-500">Disable to pause new orders temporarily</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="accepting_orders" value="1" class="sr-only peer" <?= $acceptingOrders ? 'checked' : '' ?>>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+                    </label>
+                </div>
+
+                <!-- Max daily orders -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Max Daily Orders <span class="text-gray-400 font-normal">(0 = unlimited)</span></label>
+                    <input type="number" name="max_daily_orders" value="<?= (int)$maxDaily ?>" min="0" max="9999"
+                           class="w-40 border border-gray-200 rounded-xl px-4 py-2 focus:border-teal-500 focus:ring-1 focus:ring-teal-500">
+                </div>
+
+                <!-- Working Hours -->
+                <div>
+                    <p class="text-sm font-medium text-gray-700 mb-3">Working Hours</p>
+                    <div class="space-y-2">
+                        <?php foreach ($days as $key => $label):
+                            $h = $workingHours[$key] ?? $defaultHours;
+                        ?>
+                        <div class="flex items-center gap-4">
+                            <label class="flex items-center gap-2 w-28">
+                                <input type="checkbox" name="wh_<?= $key ?>" value="1" class="rounded border-gray-300 text-teal-500 focus:ring-teal-500" <?= !empty($h['enabled']) ? 'checked' : '' ?>>
+                                <span class="text-sm font-medium text-gray-700"><?= $label ?></span>
+                            </label>
+                            <input type="time" name="wh_<?= $key ?>_open" value="<?= htmlspecialchars($h['open'] ?? '08:00') ?>"
+                                   class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:border-teal-500">
+                            <span class="text-gray-400 text-sm">to</span>
+                            <input type="time" name="wh_<?= $key ?>_close" value="<?= htmlspecialchars($h['close'] ?? '17:00') ?>"
+                                   class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:border-teal-500">
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <!-- Capacity notes -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Capacity Notes <span class="text-gray-400 font-normal">(shown to customers)</span></label>
+                    <textarea name="capacity_notes" rows="2" placeholder="e.g. Peak season — expect 7 day turnaround"
+                              class="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"><?= htmlspecialchars($printShop['capacity_notes'] ?? '') ?></textarea>
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="submit" class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors">
+                        Save Capacity Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+
     </div>
 </div>
 

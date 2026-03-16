@@ -103,6 +103,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="flex items-center gap-4 text-sm">
                     <a href="dashboard.php" class="text-blue-600 font-medium"><i class="fa-solid fa-chart-pie mr-1"></i>Dashboard</a>
                     <a href="orders.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-box mr-1"></i>Orders</a>
+                    <a href="analytics.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-chart-line mr-1"></i>Analytics</a>
                     <a href="credit-accounts.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-building-columns mr-1"></i>Credit</a>
                     <a href="settings.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-cog"></i></a>
                 </div>

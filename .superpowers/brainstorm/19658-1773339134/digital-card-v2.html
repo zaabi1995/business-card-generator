@@ -1,0 +1,199 @@
+<h2>Digital Card Page — Updated Design</h2>
+<p class="subtitle">Logo at top, actual card front/back images, WhatsApp via api.whatsapp.com</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Dark Card → Light Page</div>
+    <div class="mockup-body" style="padding: 0;">
+      <div style="background: linear-gradient(to bottom, #f5f6f8, #ebedf0); padding: 20px 16px; min-height: 540px; font-family: -apple-system, sans-serif;">
+        <!-- Company Logo -->
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="display: inline-block; background: #1a1a2e; color: white; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 800;">
+            <span style="color: #e94560;">ACME</span> Corp <span style="color: #e94560;">⬆</span>
+          </div>
+        </div>
+
+        <!-- Actual Card Front Image -->
+        <div style="max-width: 280px; margin: 0 auto 8px;">
+          <div style="font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; padding-left: 2px;">Front</div>
+          <div style="background: linear-gradient(135deg, #1a1a2e, #0f3460); border-radius: 8px; padding: 18px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); aspect-ratio: 1050/600;">
+            <div style="color: white; font-size: 16px; font-weight: 700;">John Smith</div>
+            <div style="color: #e94560; font-size: 10px; margin: 2px 0 12px;">Chief Executive Officer</div>
+            <div style="color: rgba(255,255,255,0.4); font-size: 10px;">Acme Corp</div>
+            <div style="margin-top: 16px; color: rgba(255,255,255,0.5); font-size: 9px; line-height: 1.7;">
+              +968 9911 2233<br>john@acmecorp.com
+            </div>
+            <div style="position: absolute; right: 36px; bottom: auto; width: 36px; height: 36px; background: rgba(255,255,255,0.1); border-radius: 4px;"></div>
+          </div>
+        </div>
+
+        <!-- Actual Card Back Image -->
+        <div style="max-width: 280px; margin: 0 auto 16px;">
+          <div style="font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; padding-left: 2px;">Back</div>
+          <div style="background: linear-gradient(135deg, #f8f8f8, #e8e8e8); border-radius: 8px; padding: 18px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); aspect-ratio: 1050/600; display: flex; align-items: center; justify-content: center;">
+            <div style="text-align: right; width: 100%;">
+              <div style="color: #999; font-size: 9px; line-height: 1.7;">
+                www.acmecorp.com<br>
+                Tower 5, Al Khuwair, Muscat
+              </div>
+              <div style="width: 32px; height: 32px; background: rgba(0,0,0,0.08); border-radius: 4px; margin-left: auto; margin-top: 8px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Info -->
+        <div style="max-width: 280px; margin: 0 auto 12px;">
+          <div style="font-size: 18px; font-weight: 700; color: #1a1a2e; margin-bottom: 2px;">John Smith</div>
+          <div style="font-size: 12px; color: #666;">Chief Executive Officer · Acme Corp</div>
+        </div>
+
+        <!-- Action Buttons Row -->
+        <div style="display: flex; gap: 10px; max-width: 280px; margin: 0 auto 14px;">
+          <div style="flex: 1; background: #e94560; color: white; padding: 10px 8px; border-radius: 10px; text-align: center; font-size: 11px; font-weight: 600;">
+            📞 Call
+          </div>
+          <div style="flex: 1; background: #25d366; color: white; padding: 10px 8px; border-radius: 10px; text-align: center; font-size: 11px; font-weight: 600;">
+            💬 WhatsApp
+          </div>
+          <div style="flex: 1; background: #1a1a2e; color: white; padding: 10px 8px; border-radius: 10px; text-align: center; font-size: 11px; font-weight: 600;">
+            ✉️ Email
+          </div>
+        </div>
+
+        <!-- Contact Details -->
+        <div style="max-width: 280px; margin: 0 auto;">
+          <div style="background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06);">
+            <div style="display: flex; align-items: center; padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 12px;">
+              <span style="width: 20px;">📱</span>
+              <span style="color: #333; flex: 1;">+968 9911 2233</span>
+            </div>
+            <div style="display: flex; align-items: center; padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 12px;">
+              <span style="width: 20px;">✉️</span>
+              <span style="color: #333; flex: 1;">john@acmecorp.com</span>
+            </div>
+            <div style="display: flex; align-items: center; padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 12px;">
+              <span style="width: 20px;">🌐</span>
+              <span style="color: #333; flex: 1;">www.acmecorp.com</span>
+            </div>
+            <div style="display: flex; align-items: center; padding: 10px 14px; font-size: 12px;">
+              <span style="width: 20px;">📍</span>
+              <span style="color: #333; flex: 1;">Tower 5, Al Khuwair, Muscat</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save & Share -->
+        <div style="display: flex; gap: 8px; max-width: 280px; margin: 14px auto 0;">
+          <div style="flex: 1; background: #e94560; color: white; padding: 11px; border-radius: 10px; text-align: center; font-size: 12px; font-weight: 600;">💾 Save Contact</div>
+          <div style="flex: 1; background: white; color: #333; padding: 11px; border-radius: 10px; text-align: center; font-size: 12px; border: 1px solid #ddd;">📤 Share</div>
+        </div>
+
+        <div style="text-align: center; margin-top: 16px; font-size: 9px; color: #aaa;">
+          Powered by <span style="color: #e94560;">Cardify</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Light Card → Dark Page</div>
+    <div class="mockup-body" style="padding: 0;">
+      <div style="background: linear-gradient(to bottom, #141421, #1a1a2e); padding: 20px 16px; min-height: 540px; font-family: -apple-system, sans-serif;">
+        <!-- Company Logo -->
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="display: inline-block; background: white; padding: 6px 14px; border-radius: 8px;">
+            <span style="color: #009bc1; font-weight: 800; font-size: 13px;">BHD</span>
+            <span style="color: #333; font-weight: 600; font-size: 13px;">Oman</span>
+          </div>
+        </div>
+
+        <!-- Actual Card Front Image -->
+        <div style="max-width: 280px; margin: 0 auto 8px;">
+          <div style="font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; padding-left: 2px;">Front</div>
+          <div style="background: linear-gradient(135deg, #ffffff, #f0f4f8); border-radius: 8px; padding: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); aspect-ratio: 1050/600;">
+            <div style="color: #1a1a2e; font-size: 16px; font-weight: 700;">Ali Al Zaabi</div>
+            <div style="color: #009bc1; font-size: 10px; margin: 2px 0 12px;">Chief Executive Officer</div>
+            <div style="color: rgba(0,0,0,0.4); font-size: 10px;">BHD Printing & Designing</div>
+            <div style="margin-top: 16px; color: rgba(0,0,0,0.35); font-size: 9px; line-height: 1.7;">
+              +968 7161 6161<br>ali@bhd.om
+            </div>
+          </div>
+        </div>
+
+        <!-- Actual Card Back Image -->
+        <div style="max-width: 280px; margin: 0 auto 16px;">
+          <div style="font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; padding-left: 2px;">Back</div>
+          <div style="background: linear-gradient(135deg, #009bc1, #007a9a); border-radius: 8px; padding: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); aspect-ratio: 1050/600; display: flex; align-items: center; justify-content: center;">
+            <div style="text-align: right; width: 100%;">
+              <div style="color: rgba(255,255,255,0.8); font-size: 9px; line-height: 1.7;">
+                www.bhd.om<br>
+                P.O. Box 2237, PC 133, Oman
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Info -->
+        <div style="max-width: 280px; margin: 0 auto 12px;">
+          <div style="font-size: 18px; font-weight: 700; color: #f0f0f0; margin-bottom: 2px;">Ali Al Zaabi</div>
+          <div style="font-size: 12px; color: #777;">CEO · BHD Printing & Designing</div>
+        </div>
+
+        <!-- Action Buttons Row -->
+        <div style="display: flex; gap: 10px; max-width: 280px; margin: 0 auto 14px;">
+          <div style="flex: 1; background: #009bc1; color: white; padding: 10px 8px; border-radius: 10px; text-align: center; font-size: 11px; font-weight: 600;">
+            📞 Call
+          </div>
+          <div style="flex: 1; background: #25d366; color: white; padding: 10px 8px; border-radius: 10px; text-align: center; font-size: 11px; font-weight: 600;">
+            💬 WhatsApp
+          </div>
+          <div style="flex: 1; background: rgba(255,255,255,0.1); color: #ddd; padding: 10px 8px; border-radius: 10px; text-align: center; font-size: 11px; font-weight: 600;">
+            ✉️ Email
+          </div>
+        </div>
+
+        <!-- Contact Details -->
+        <div style="max-width: 280px; margin: 0 auto;">
+          <div style="background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08);">
+            <div style="display: flex; align-items: center; padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 12px;">
+              <span style="width: 20px;">📱</span>
+              <span style="color: #ddd; flex: 1;">+968 7161 6161</span>
+            </div>
+            <div style="display: flex; align-items: center; padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 12px;">
+              <span style="width: 20px;">✉️</span>
+              <span style="color: #ddd; flex: 1;">ali@bhd.om</span>
+            </div>
+            <div style="display: flex; align-items: center; padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 12px;">
+              <span style="width: 20px;">🌐</span>
+              <span style="color: #ddd; flex: 1;">www.bhd.om</span>
+            </div>
+            <div style="display: flex; align-items: center; padding: 10px 14px; font-size: 12px;">
+              <span style="width: 20px;">📍</span>
+              <span style="color: #ddd; flex: 1;">P.O. Box 2237, PC 133, Oman</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save & Share -->
+        <div style="display: flex; gap: 8px; max-width: 280px; margin: 14px auto 0;">
+          <div style="flex: 1; background: #009bc1; color: white; padding: 11px; border-radius: 10px; text-align: center; font-size: 12px; font-weight: 600;">💾 Save Contact</div>
+          <div style="flex: 1; background: rgba(255,255,255,0.08); color: #ddd; padding: 11px; border-radius: 10px; text-align: center; font-size: 12px; border: 1px solid rgba(255,255,255,0.12);">📤 Share</div>
+        </div>
+
+        <div style="text-align: center; margin-top: 16px; font-size: 9px; color: #444;">
+          Powered by <span style="color: #009bc1;">Cardify</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 20px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+  <h3 style="margin-bottom: 8px;">Key details</h3>
+  <p style="color: #888; font-size: 13px; line-height: 1.8;">
+    <strong>Layout top → bottom:</strong> Company logo → Card front image → Card back image → Name/title → Action buttons (Call, WhatsApp, Email) → Contact details list → Save Contact + Share<br><br>
+    <strong>WhatsApp link:</strong> <code style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 3px; font-size: 12px;">https://api.whatsapp.com/send?phone=968XXXXXXXX</code> (not wa.me — blocked in Oman)<br><br>
+    <strong>Card images:</strong> Actual generated PNG files from <code style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 3px; font-size: 12px;">/uploads/companies/{id}/cards/</code> — not re-rendered, just the saved images<br><br>
+    <strong>Theme detection:</strong> PHP samples the card front background. Dark card → light page, light card → dark page. Company primary color for accents.
+  </p>
+</div>

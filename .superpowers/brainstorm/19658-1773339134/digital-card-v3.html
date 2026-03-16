@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #111; font-family: -apple-system, BlinkMacSystemFont, sans-serif; color: #eee; }
+  .container { display: flex; gap: 24px; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  .phone { width: 375px; min-width: 375px; border-radius: 32px; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.5); border: 2px solid #333; }
+  h2 { text-align: center; padding: 20px 0 4px; color: #eee; font-size: 20px; }
+  .subtitle { text-align: center; color: #888; font-size: 13px; margin-bottom: 20px; }
+  .label-tag { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; text-align: center; }
+
+  /* Card flip */
+  .card-flip-container {
+    perspective: 1000px;
+    max-width: 300px;
+    margin: 0 auto 8px;
+    cursor: pointer;
+  }
+  .card-flip-inner {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1050/600;
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+  .card-flip-inner.flipped {
+    transform: rotateY(180deg);
+  }
+  .card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .card-back-face {
+    transform: rotateY(180deg);
+  }
+  .tap-hint {
+    text-align: center;
+    font-size: 10px;
+    color: #666;
+    margin-top: 6px;
+    transition: opacity 0.3s;
+  }
+</style>
+</head>
+<body>
+
+<h2>Digital Card — Tap to Flip</h2>
+<p class="subtitle">Company logo → flippable card → action buttons → contact details</p>
+
+<div class="container">
+
+  <!-- LIGHT PAGE (dark card) -->
+  <div class="phone">
+    <div style="background: linear-gradient(to bottom, #f5f6f8, #ebedf0); padding: 24px 16px; min-height: 700px;">
+      <!-- Company Logo -->
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="display: inline-block; background: #1a1a2e; color: white; padding: 8px 18px; border-radius: 8px; font-size: 15px; font-weight: 800;">
+          <span style="color: #e94560;">ACME</span> Corp <span style="color: #e94560; font-size: 12px;">⬆</span>
+        </div>
+      </div>
+
+      <!-- Flippable Card -->
+      <div class="card-flip-container" onclick="this.querySelector('.card-flip-inner').classList.toggle('flipped'); this.querySelector('.tap-hint').style.opacity='0';">
+        <div class="card-flip-inner">
+          <!-- Front -->
+          <div class="card-face" style="background: linear-gradient(135deg, #1a1a2e, #0f3460); padding: 20px; box-shadow: 0 6px 24px rgba(0,0,0,0.15);">
+            <div style="color: white; font-size: 18px; font-weight: 700;">John Smith</div>
+            <div style="color: #e94560; font-size: 11px; margin: 3px 0 6px;">Chief Executive Officer</div>
+            <div style="color: rgba(255,255,255,0.4); font-size: 11px;">Acme Corp</div>
+            <div style="position: absolute; bottom: 20px; left: 20px; color: rgba(255,255,255,0.45); font-size: 9px; line-height: 1.8;">
+              +968 9911 2233<br>+968 9911 4455<br>john@acmecorp.com
+            </div>
+            <div style="position: absolute; bottom: 16px; right: 16px; width: 40px; height: 40px; background: rgba(255,255,255,0.1); border-radius: 5px;"></div>
+          </div>
+          <!-- Back -->
+          <div class="card-face card-back-face" style="background: linear-gradient(135deg, #f8f8f8, #eaeaea); padding: 20px; box-shadow: 0 6px 24px rgba(0,0,0,0.1);">
+            <div style="height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; text-align: right;">
+              <div style="color: #e94560; font-size: 12px; font-weight: 700; margin-bottom: 4px;">ACME Corp</div>
+              <div style="color: #888; font-size: 9px; line-height: 1.7;">
+                www.acmecorp.com<br>
+                Tower 5, Al Khuwair, Muscat, Oman
+              </div>
+              <div style="width: 36px; height: 36px; background: rgba(0,0,0,0.06); border-radius: 5px; margin-top: 8px;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="tap-hint">Tap card to flip</div>
+      </div>
+
+      <!-- Name & Title -->
+      <div style="max-width: 300px; margin: 16px auto 14px; text-align: center;">
+        <div style="font-size: 20px; font-weight: 700; color: #1a1a2e;">John Smith</div>
+        <div style="font-size: 12px; color: #666; margin-top: 2px;">Chief Executive Officer · Acme Corp</div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 10px; max-width: 300px; margin: 0 auto 16px;">
+        <div style="flex: 1; background: #e94560; color: white; padding: 11px 8px; border-radius: 10px; text-align: center; font-size: 12px; font-weight: 600; cursor: pointer;">
+          📞 Call
+        </div>
+        <div style="flex: 1; background: #25d366; color: white; padding: 11px 8px; border-radius: 10px; text-align: center; font-size: 12px; font-weight: 600; cursor: pointer;">
+          💬 WhatsApp
+        </div>
+        <div style="flex: 1; background: #1a1a2e; color: white; padding: 11px 8px; border-radius: 10px; text-align: center; font-size: 12px; font-weight: 600; cursor: pointer;">
+          ✉️ Email
+        </div>
+      </div>
+
+      <!-- Contact Details -->
+      <div style="max-width: 300px; margin: 0 auto;">
+        <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06);">
+          <div style="display: flex; align-items: center; padding: 11px 14px; border-bottom: 1px solid #f0f0f0; font-size: 12px;">
+            <span style="width: 22px; font-size: 14px;">📱</span>
+            <span style="color: #333; flex: 1;">+968 9911 2233</span>
+          </div>
+          <div style="display: flex; align-items: center; padding: 11px 14px; border-bottom: 1px solid #f0f0f0; font-size: 12px;">
+            <span style="width: 22px; font-size: 14px;">✉️</span>
+            <span style="color: #333; flex: 1;">john@acmecorp.com</span>
+          </div>
+          <div style="display: flex; align-items: center; padding: 11px 14px; border-bottom: 1px solid #f0f0f0; font-size: 12px;">
+            <span style="width: 22px; font-size: 14px;">🌐</span>
+            <span style="color: #333; flex: 1;">www.acmecorp.com</span>
+          </div>
+          <div style="display: flex; align-items: center; padding: 11px 14px; font-size: 12px;">
+            <span style="width: 22px; font-size: 14px;">📍</span>
+            <span style="color: #333; flex: 1;">Tower 5, Al Khuwair, Muscat</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save & Share -->
+      <div style="display: flex; gap: 8px; max-width: 300px; margin: 16px auto 0;">
+        <div style="flex: 1; background: #e94560; color: white; padding: 12px; border-radius: 10px; text-align: center; font-size: 13px; font-weight: 600; cursor: pointer;">💾 Save Contact</div>
+        <div style="flex: 1; background: white; color: #333; padding: 12px; border-radius: 10px; text-align: center; font-size: 13px; border: 1px solid #ddd; cursor: pointer;">📤 Share</div>
+      </div>
+
+      <div style="text-align: center; margin-top: 20px; font-size: 10px; color: #bbb;">
+        Powered by <span style="color: #e94560; font-weight: 600;">Cardify</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DARK PAGE (light card) -->
+  <div class="phone">
+    <div style="background: linear-gradient(to bottom, #141421, #1a1a2e); padding: 24px 16px; min-height: 700px;">
+      <!-- Company Logo -->
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="display: inline-block; background: white; padding: 7px 16px; border-radius: 8px;">
+          <span style="color: #009bc1; font-weight: 800; font-size: 14px;">BHD</span>
+          <span style="color: #333; font-weight: 600; font-size: 14px;"> Oman</span>
+        </div>
+      </div>
+
+      <!-- Flippable Card -->
+      <div class="card-flip-container" onclick="this.querySelector('.card-flip-inner').classList.toggle('flipped'); this.querySelector('.tap-hint').style.opacity='0';">
+        <div class="card-flip-inner">
+          <!-- Front -->
+          <div class="card-face" style="background: linear-gradient(135deg, #ffffff, #f0f4f8); padding: 20px; box-shadow: 0 6px 24px rgba(0,0,0,0.35);">
+            <div style="color: #1a1a2e; font-size: 18px; font-weight: 700;">Ali Al Zaabi</div>
+            <div style="color: #009bc1; font-size: 11px; margin: 3px 0 6px;">Chief Executive Officer</div>
+            <div style="color: rgba(0,0,0,0.4); font-size: 11px;">BHD Printing & Designing</div>
+            <div style="position: absolute; bottom: 20px; left: 20px; color: rgba(0,0,0,0.35); font-size: 9px; line-height: 1.8;">
+              +968 7161 6161<br>ali@bhd.om
+            </div>
+            <div style="position: absolute; bottom: 16px; right: 16px; width: 40px; height: 40px; background: rgba(0,0,0,0.05); border-radius: 5px;"></div>
+          </div>
+          <!-- Back -->
+          <div class="card-face card-back-face" style="background: linear-gradient(135deg, #009bc1, #007a9a); padding: 20px; box-shadow: 0 6px 24px rgba(0,0,0,0.35);">
+            <div style="height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; text-align: right;">
+              <div style="color: white; font-size: 12px; font-weight: 700; margin-bottom: 4px;">BHD Oman</div>
+              <div style="color: rgba(255,255,255,0.7); font-size: 9px; line-height: 1.7;">
+                www.bhd.om<br>
+                P.O. Box 2237, PC 133, Oman
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tap-hint">Tap card to flip</div>
+      </div>
+
+      <!-- Name & Title -->
+      <div style="max-width: 300px; margin: 16px auto 14px; text-align: center;">
+        <div style="font-size: 20px; font-weight: 700; color: #f0f0f0;">Ali Al Zaabi</div>
+        <div style="font-size: 12px; color: #777; margin-top: 2px;">CEO · BHD Printing & Designing</div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 10px; max-width: 300px; margin: 0 auto 16px;">
+        <div style="flex: 1; background: #009bc1; color: white; padding: 11px 8px; border-radius: 10px; text-align: center; font-size: 12px; font-weight: 600; cursor: pointer;">
+          📞 Call
+        </div>
+        <div style="flex: 1; background: #25d366; color: white; padding: 11px 8px; border-radius: 10px; text-align: center; font-size: 12px; font-weight: 600; cursor: pointer;">
+          💬 WhatsApp
+        </div>
+        <div style="flex: 1; background: rgba(255,255,255,0.1); color: #ddd; padding: 11px 8px; border-radius: 10px; text-align: center; font-size: 12px; font-weight: 600; cursor: pointer;">
+          ✉️ Email
+        </div>
+      </div>
+
+      <!-- Contact Details -->
+      <div style="max-width: 300px; margin: 0 auto;">
+        <div style="background: rgba(255,255,255,0.06); border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08);">
+          <div style="display: flex; align-items: center; padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 12px;">
+            <span style="width: 22px; font-size: 14px;">📱</span>
+            <span style="color: #ddd; flex: 1;">+968 7161 6161</span>
+          </div>
+          <div style="display: flex; align-items: center; padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 12px;">
+            <span style="width: 22px; font-size: 14px;">✉️</span>
+            <span style="color: #ddd; flex: 1;">ali@bhd.om</span>
+          </div>
+          <div style="display: flex; align-items: center; padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 12px;">
+            <span style="width: 22px; font-size: 14px;">🌐</span>
+            <span style="color: #ddd; flex: 1;">www.bhd.om</span>
+          </div>
+          <div style="display: flex; align-items: center; padding: 11px 14px; font-size: 12px;">
+            <span style="width: 22px; font-size: 14px;">📍</span>
+            <span style="color: #ddd; flex: 1;">P.O. Box 2237, PC 133, Oman</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save & Share -->
+      <div style="display: flex; gap: 8px; max-width: 300px; margin: 16px auto 0;">
+        <div style="flex: 1; background: #009bc1; color: white; padding: 12px; border-radius: 10px; text-align: center; font-size: 13px; font-weight: 600; cursor: pointer;">💾 Save Contact</div>
+        <div style="flex: 1; background: rgba(255,255,255,0.08); color: #ddd; padding: 12px; border-radius: 10px; text-align: center; font-size: 13px; border: 1px solid rgba(255,255,255,0.12); cursor: pointer;">📤 Share</div>
+      </div>
+
+      <div style="text-align: center; margin-top: 20px; font-size: 10px; color: #444;">
+        Powered by <span style="color: #009bc1; font-weight: 600;">Cardify</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

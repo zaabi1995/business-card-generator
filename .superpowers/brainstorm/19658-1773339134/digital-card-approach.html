@@ -1,0 +1,129 @@
+<h2>Digital Card Page — Design Approach</h2>
+<p class="subtitle">The public URL employees share (QR scan, link share, email). This is the "face" of each employee's card.</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 30px; min-height: 320px;">
+      <!-- Card flip mockup -->
+      <div style="perspective: 600px; margin: 0 auto; max-width: 300px;">
+        <div style="background: linear-gradient(135deg, #0f3460, #1a1a2e); border-radius: 12px; padding: 24px; color: white; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+          <div style="font-size: 11px; color: #e94560; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px;">ACME Corp</div>
+          <div style="font-size: 20px; font-weight: bold; margin-bottom: 4px;">John Smith</div>
+          <div style="font-size: 13px; color: #aaa; margin-bottom: 16px;">Chief Executive Officer</div>
+          <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; font-size: 11px; color: #888; line-height: 1.8;">
+            📱 +968 9911 2233<br>
+            ✉️ john@acmecorp.com<br>
+            🌐 www.acmecorp.com
+          </div>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 16px;">
+        <div style="display: inline-flex; gap: 8px;">
+          <div style="background: #e94560; color: white; padding: 8px 16px; border-radius: 20px; font-size: 11px; font-weight: 600;">💾 Save Contact</div>
+          <div style="background: rgba(255,255,255,0.1); color: white; padding: 8px 16px; border-radius: 20px; font-size: 11px;">📤 Share</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A: Card-Centric</h3>
+      <p>Shows the actual card design (front/back with flip animation) as the hero. Contact details below the card. Company branding in header. Clean, focused on the card itself.</p>
+      <div style="margin-top: 8px; font-size: 13px; color: #888;">
+        ✅ Shows actual template design<br>
+        ✅ Flip animation (tap to see back)<br>
+        ✅ Save Contact + Share buttons<br>
+        ✅ Company branded header/colors
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 30px; min-height: 320px;">
+      <!-- Profile page mockup -->
+      <div style="max-width: 300px; margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #e94560, #c23152); margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold;">JS</div>
+          <div style="font-size: 20px; font-weight: bold; color: #1a1a2e;">John Smith</div>
+          <div style="font-size: 13px; color: #666;">Chief Executive Officer</div>
+          <div style="font-size: 12px; color: #e94560; font-weight: 600;">ACME Corp</div>
+        </div>
+        <div style="background: white; border-radius: 10px; padding: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); font-size: 12px;">
+          <div style="display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #f0f0f0;">
+            <span style="color: #666; width: 24px;">📱</span>
+            <span style="color: #333;">+968 9911 2233</span>
+          </div>
+          <div style="display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #f0f0f0;">
+            <span style="color: #666; width: 24px;">✉️</span>
+            <span style="color: #333;">john@acmecorp.com</span>
+          </div>
+          <div style="display: flex; align-items: center; padding: 6px 0;">
+            <span style="color: #666; width: 24px;">🌐</span>
+            <span style="color: #333;">www.acmecorp.com</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <div style="flex: 1; background: #e94560; color: white; padding: 10px; border-radius: 8px; text-align: center; font-size: 12px; font-weight: 600;">Save Contact</div>
+          <div style="flex: 1; background: white; color: #333; padding: 10px; border-radius: 8px; text-align: center; font-size: 12px; border: 1px solid #ddd;">Share</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B: Profile-Centric</h3>
+      <p>Modern digital profile page. Photo/avatar at top, contact details as tappable rows (click to call, click to email). No card image shown — focuses on the contact info itself.</p>
+      <div style="margin-top: 8px; font-size: 13px; color: #888;">
+        ✅ Tappable contact rows (call, email, map)<br>
+        ✅ Photo or initials avatar<br>
+        ✅ Clean mobile-first layout<br>
+        ❌ Doesn't show actual card design
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%); padding: 30px; min-height: 320px;">
+      <!-- Hybrid mockup -->
+      <div style="max-width: 300px; margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 12px;">
+          <div style="font-size: 11px; color: #e94560; text-transform: uppercase; letter-spacing: 2px;">ACME Corp</div>
+          <div style="font-size: 20px; font-weight: bold; color: white; margin: 6px 0 2px;">John Smith</div>
+          <div style="font-size: 13px; color: #aaa;">Chief Executive Officer</div>
+        </div>
+        <!-- Mini card preview -->
+        <div style="background: linear-gradient(135deg, #0f3460, #16213e); border-radius: 8px; padding: 12px; margin: 12px 0; border: 1px solid rgba(255,255,255,0.1); text-align: center;">
+          <div style="font-size: 10px; color: #666; margin-bottom: 6px;">TAP TO FLIP</div>
+          <div style="background: rgba(255,255,255,0.05); border-radius: 6px; height: 80px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 11px;">Card Front Preview</div>
+        </div>
+        <!-- Contact details -->
+        <div style="font-size: 12px; color: #ccc; line-height: 2;">
+          <div style="display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 6px; background: rgba(255,255,255,0.05); margin-bottom: 4px;">📱 +968 9911 2233</div>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 6px; background: rgba(255,255,255,0.05); margin-bottom: 4px;">✉️ john@acmecorp.com</div>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <div style="flex: 1; background: #e94560; color: white; padding: 8px; border-radius: 20px; text-align: center; font-size: 11px; font-weight: 600;">Save Contact</div>
+          <div style="flex: 1; background: rgba(255,255,255,0.1); color: white; padding: 8px; border-radius: 20px; text-align: center; font-size: 11px;">Share</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C: Hybrid (Recommended)</h3>
+      <p>Best of both — company-branded page with profile info at top, mini card preview in the middle (tap to flip), contact details as tappable rows below. Uses company theme colors.</p>
+      <div style="margin-top: 8px; font-size: 13px; color: #888;">
+        ✅ Shows actual card design (mini preview)<br>
+        ✅ Tappable contact rows<br>
+        ✅ Company theme colors throughout<br>
+        ✅ QR scan tracking built-in
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 24px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+  <h3 style="margin-bottom: 8px;">All options include:</h3>
+  <p style="color: #888; font-size: 14px; line-height: 1.6;">
+    • QR scan tracking (logs visitor IP, device, location to analytics)<br>
+    • vCard download button (saves to phone contacts)<br>
+    • Share button (copy link, WhatsApp, email)<br>
+    • Company branding (logo, colors from theme)<br>
+    • Mobile-first responsive design<br>
+    • Works as the destination for QR codes on printed cards
+  </p>
+</div>
