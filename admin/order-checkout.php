@@ -26,7 +26,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'pay_online') {
-        $result = PrintShopBilling::payOnline($orderId);
+        // Support deposit payments
+        $depositPct = (float)($_POST['deposit_percent'] ?? 0);
+        if ($depositPct > 0 && $depositPct < 100) {
+            $depositPct = max(10, min(90, $depositPct));
+            $depositAmt = round(($checkout['order']['total'] ?? 0) * ($depositPct / 100), 3);
+            $balanceDue = round(($checkout['order']['total'] ?? 0) - $depositAmt, 3);
+            // Store deposit info first
+            $db2 = Database::getInstance();
+            $db2->exec("UPDATE print_orders SET deposit_percent = :dp, deposit_amount = :da, balance_due = :bd WHERE id = :id", [
+                'dp' => $depositPct, 'da' => $depositAmt, 'bd' => $balanceDue, 'id' => $orderId
+            ]);
+            $result = PrintShopBilling::payOnlineAmount($orderId, $depositAmt, "Deposit ({$depositPct}%) for order #{$orderId}");
+        } else {
+            $result = PrintShopBilling::payOnline($orderId);
+        }
         if (isset($result['checkout_url'])) {
             header('Location: ' . $result['checkout_url']);
             exit;
@@ -160,16 +174,60 @@ adminHeader('Order Payment', 'print');
     <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
         <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-credit-card mr-2 text-gray-400"></i>Payment Options</h2>
 
-        <!-- Pay Now -->
-        <form method="POST" class="mb-4">
+        <!-- Pay Now / Deposit -->
+        <form method="POST" class="mb-4" id="payForm">
             <?= csrfField() ?>
             <input type="hidden" name="action" value="pay_online">
-            <button type="submit" class="w-full bg-blue-600 text-white py-3 px-6 rounded-xl font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2">
+            <input type="hidden" name="deposit_percent" id="depositPctInput" value="0">
+
+            <!-- Deposit toggle for large orders -->
+            <?php if (($order['total'] ?? 0) >= 50): ?>
+            <div class="mb-4 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                <label class="flex items-center gap-2 cursor-pointer mb-3">
+                    <input type="checkbox" id="depositToggle" class="rounded border-gray-300 text-blue-600" onchange="toggleDeposit(this)">
+                    <span class="text-sm font-medium text-gray-700">Pay a deposit instead of full amount</span>
+                </label>
+                <div id="depositOptions" class="hidden">
+                    <p class="text-xs text-gray-500 mb-2">Choose deposit percentage (balance due before printing starts):</p>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <?php foreach ([25, 30, 50] as $pct): ?>
+                        <button type="button" onclick="setDeposit(<?= $pct ?>)"
+                                class="deposit-btn px-3 py-1.5 text-sm border border-blue-300 rounded-lg text-blue-700 hover:bg-blue-100 transition-colors font-medium">
+                            <?= $pct ?>%
+                            <span class="text-xs text-blue-500">(<?= number_format(($order['total'] ?? 0) * ($pct/100), 3) ?> <?= $cur ?>)</span>
+                        </button>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <button type="submit" id="payBtn" class="w-full bg-blue-600 text-white py-3 px-6 rounded-xl font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2">
                 <i class="fa-solid fa-lock"></i>
-                Pay Now — <?= number_format($order['total'] ?? 0, 3) ?> <?= $cur ?>
+                <span id="payBtnText">Pay Now — <?= number_format($order['total'] ?? 0, 3) ?> <?= $cur ?></span>
             </button>
             <p class="text-xs text-gray-500 mt-2 text-center">Card, OmanNet, or Apple Pay via Paymob Secure Checkout</p>
         </form>
+        <script>
+        function toggleDeposit(cb) {
+            document.getElementById('depositOptions').classList.toggle('hidden', !cb.checked);
+            if (!cb.checked) { setDeposit(0); }
+        }
+        function setDeposit(pct) {
+            document.getElementById('depositPctInput').value = pct;
+            const total = <?= floatval($order['total'] ?? 0) ?>;
+            const cur = '<?= $cur ?>';
+            const payBtnText = document.getElementById('payBtnText');
+            document.querySelectorAll('.deposit-btn').forEach(b => b.classList.remove('bg-blue-600','text-white'));
+            if (pct > 0) {
+                const amt = (total * pct / 100).toFixed(3);
+                payBtnText.textContent = `Pay ${pct}% Deposit — ${amt} ${cur}`;
+                event.target.closest('.deposit-btn').classList.add('bg-blue-600','text-white');
+            } else {
+                payBtnText.textContent = `Pay Now — ${total.toFixed(3)} ${cur}`;
+            }
+        }
+        </script>
 
         <?php if ($checkout['can_use_credit']): ?>
         <!-- Charge to Credit -->
@@ -216,9 +274,13 @@ adminHeader('Order Payment', 'print');
     </div>
     <?php else: ?>
     <div class="bg-green-50 border border-green-200 text-green-700 px-6 py-5 rounded-xl mb-6 text-center">
-        <i class="fa-solid fa-circle-check text-2xl mb-1"></i>
+        <i class="fa-solid fa-circle-check text-2xl mb-2"></i>
         <p class="font-semibold">Payment Complete</p>
-        <p class="text-sm">Paid via <?= htmlspecialchars(ucfirst($order['payment_method'] ?? 'online')) ?></p>
+        <p class="text-sm mb-3">Paid via <?= htmlspecialchars(ucfirst($order['payment_method'] ?? 'online')) ?></p>
+        <a href="<?= getAdminBasePath() ?>order-receipt<?= (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php' ?>?order=<?= $orderId ?>"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">
+            <i class="fa-solid fa-receipt"></i> View Receipt
+        </a>
     </div>
     <?php endif; ?>
 

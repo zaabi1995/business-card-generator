@@ -92,6 +92,44 @@ class PrintShopBilling {
     }
 
     /**
+     * Process online payment for a specific amount (deposit support)
+     */
+    public static function payOnlineAmount(int $orderId, float $amount, string $description = ''): array {
+        $db = Database::getInstance();
+        $order = $db->fetchOne(
+            "SELECT po.*, c.name as company_name, c.admin_email, c.billing_email, c.phone as company_phone
+             FROM print_orders po
+             JOIN companies c ON c.id = po.company_id
+             WHERE po.id = :id",
+            ['id' => $orderId]
+        );
+
+        if (!$order) return ['error' => 'Order not found'];
+        if ($order['payment_status'] === 'paid') return ['error' => 'Order already paid'];
+
+        $billingData = [
+            'first_name' => $order['company_name'] ?? 'Customer',
+            'last_name' => '',
+            'email' => $order['billing_email'] ?? $order['admin_email'] ?? '',
+            'phone_number' => $order['shipping_phone'] ?? $order['company_phone'] ?? '',
+            'street' => $order['shipping_address'] ?? '',
+            'city' => $order['shipping_city'] ?? '',
+            'state' => $order['shipping_state'] ?? '',
+            'country' => $order['shipping_country'] ?? 'OM',
+            'postal_code' => $order['shipping_postal'] ?? ''
+        ];
+
+        return Payment::createIntent(
+            'print_order',
+            (string)$orderId,
+            $amount,
+            $order['company_id'],
+            $billingData,
+            $order['currency'] ?? 'OMR'
+        );
+    }
+
+    /**
      * Charge order to credit account
      */
     public static function chargeToCredit(int $orderId): array {

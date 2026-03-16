@@ -85,6 +85,7 @@ try {
         'printer' => 'admin/printer.php',
         'check-billing' => 'admin/check-billing.php',
         'order-checkout' => 'admin/order-checkout.php',
+        'order-receipt'  => 'admin/order-receipt.php',
         'credit-accounts'    => 'admin/credit-accounts.php',
         'customer-dashboard' => 'admin/customer-dashboard.php',
     ];
