@@ -69,7 +69,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                 </div>
                 
-                <select name="country" class="px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 bg-white">
+                <select name="country" class="w-full sm:w-auto px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 bg-white">
                     <option value="">All Countries</option>
                     <?php foreach ($countries as $c): ?>
                     <option value="<?php echo sanitize($c); ?>" <?php echo $country === $c ? 'selected' : ''; ?>>
@@ -88,7 +88,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <span class="text-sm text-gray-700">Verified Only</span>
                 </label>
                 
-                <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
+                <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
                     Search
                 </button>
             </form>

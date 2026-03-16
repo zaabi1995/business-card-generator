@@ -290,7 +290,7 @@ if (!function_exists('renderNavigation')) {
                             <a href="<?php echo getBasePath(); ?>login.php" class="hidden sm:inline-flex items-center px-4 py-2 text-gray-700 hover:text-blue-600 font-medium transition-colors">
                                 Sign In
                             </a>
-                            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl hover:shadow-blue-600/40">
+                            <a href="<?php echo getBasePath(); ?>company/register.php" class="hidden sm:inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl hover:shadow-blue-600/40">
                                 Get Started Free
                             </a>
                         <?php endif; ?>
