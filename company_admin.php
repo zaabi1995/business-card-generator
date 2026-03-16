@@ -86,6 +86,7 @@ try {
         'check-billing' => 'admin/check-billing.php',
         'order-checkout' => 'admin/order-checkout.php',
         'order-receipt'  => 'admin/order-receipt.php',
+        'bhd-campaign'   => 'admin/bhd-campaign.php',
         'credit-accounts'    => 'admin/credit-accounts.php',
         'customer-dashboard' => 'admin/customer-dashboard.php',
     ];
