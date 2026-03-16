@@ -40,6 +40,7 @@ function getAdminNavItems() {
     
     $items = [
         ['name' => 'Dashboard', 'icon' => 'fa-solid fa-chart-pie', 'url' => $dashboardUrl, 'key' => 'dashboard'],
+        ['name' => 'My Dashboard', 'icon' => 'fa-solid fa-gauge', 'url' => $basePath . 'customer-dashboard' . $ext, 'key' => 'customer-dashboard'],
         ['name' => 'Employees', 'icon' => 'fa-solid fa-users', 'url' => $basePath . 'employees' . $ext, 'key' => 'employees'],
         ['name' => 'Departments', 'icon' => 'fa-solid fa-sitemap', 'url' => $basePath . 'departments' . $ext, 'key' => 'departments'],
         ['name' => 'Card Requests', 'icon' => 'fa-solid fa-inbox', 'url' => $basePath . 'requests' . $ext, 'key' => 'requests'],
