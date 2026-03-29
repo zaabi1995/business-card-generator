@@ -154,43 +154,7 @@ try {
     // Career listings table may not exist yet
 }
 
-// Active companies
-try {
-    $companies = $db->fetchAll("SELECT slug, updated_at FROM companies WHERE status = 'active' ORDER BY updated_at DESC");
-    foreach ($companies as $company) {
-        $lastmod = date('Y-m-d', strtotime($company['updated_at']));
-        echo "    <url>\n";
-        echo "        <loc>{$baseUrl}/" . htmlspecialchars($company['slug']) . "/</loc>\n";
-        echo "        <lastmod>{$lastmod}</lastmod>\n";
-        echo "        <changefreq>weekly</changefreq>\n";
-        echo "        <priority>0.7</priority>\n";
-        echo "    </url>\n";
-    }
-} catch (Exception $e) {
-    // Companies table may not exist yet
-}
-
-// Digital cards
-try {
-    $cards = $db->fetchAll("
-        SELECT gc.updated_at, e.id AS employee_id, c.slug AS company_slug
-        FROM generated_cards gc
-        JOIN employees e ON gc.employee_id = e.id
-        JOIN companies c ON e.company_id = c.id
-        WHERE c.status = 'active'
-        ORDER BY gc.updated_at DESC
-    ");
-    foreach ($cards as $card) {
-        $lastmod = date('Y-m-d', strtotime($card['updated_at']));
-        echo "    <url>\n";
-        echo "        <loc>{$baseUrl}/" . htmlspecialchars($card['company_slug']) . "/card/" . htmlspecialchars($card['employee_id']) . "</loc>\n";
-        echo "        <lastmod>{$lastmod}</lastmod>\n";
-        echo "        <changefreq>monthly</changefreq>\n";
-        echo "        <priority>0.4</priority>\n";
-        echo "    </url>\n";
-    }
-} catch (Exception $e) {
-    // Generated cards table may not exist yet
-}
+// Company pages and digital cards are excluded from sitemap
+// They are noindexed (customer-specific content, not for search engines)
 ?>
 </urlset>

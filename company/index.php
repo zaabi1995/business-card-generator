@@ -76,6 +76,7 @@ if ($isLoggedIn && $belongsToCompany) {
 $primaryColor = $companyTheme['primary_color'] ?? '#3b82f6';
 $secondaryColor = $companyTheme['secondary_color'] ?? '#1e40af';
 $pageTitle = sanitize($company['name']);
+$metaRobots = 'noindex, nofollow';
 
 // Get page action
 $page = $_GET['page'] ?? 'dashboard';
