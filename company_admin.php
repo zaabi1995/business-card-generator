@@ -89,6 +89,7 @@ try {
         'bhd-campaign'   => 'admin/bhd-campaign.php',
         'credit-accounts'    => 'admin/credit-accounts.php',
         'customer-dashboard' => 'admin/customer-dashboard.php',
+        'payment-history'    => 'admin/payment-history.php',
     ];
     
     // Handle login page specially (no auth required)

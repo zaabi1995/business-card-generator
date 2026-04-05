@@ -421,8 +421,33 @@ $isFreePlan = ($planInfo['plan'] ?? 'free') === 'free';
     </div>
 </div>
 
-<!-- Available Plans -->
-<h2 id="plans" class="text-xl font-bold text-gray-900 mb-6">Upgrade Your Plan</h2>
+<!-- Billing Cycle Toggle -->
+<div class="flex items-center justify-between mb-6">
+    <h2 id="plans" class="text-xl font-bold text-gray-900">Upgrade Your Plan</h2>
+    <div class="flex items-center gap-2 bg-gray-100 p-1 rounded-xl" id="billingToggle">
+        <button type="button" onclick="setBillingCycle('monthly')" id="btn-monthly"
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-white shadow text-gray-900 transition-all">Monthly</button>
+        <button type="button" onclick="setBillingCycle('yearly')" id="btn-yearly"
+                class="px-4 py-2 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-700 transition-all">
+            Yearly <span class="ml-1 text-xs text-green-600 font-semibold">Save 20%</span>
+        </button>
+    </div>
+</div>
+<script>
+function setBillingCycle(cycle) {
+    document.querySelectorAll('input[name="billing_cycle"]').forEach(i => i.value = cycle);
+    const isYearly = cycle === 'yearly';
+    document.getElementById('btn-monthly').className = isYearly
+        ? 'px-4 py-2 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-700 transition-all'
+        : 'px-4 py-2 text-sm font-medium rounded-lg bg-white shadow text-gray-900 transition-all';
+    document.getElementById('btn-yearly').className = isYearly
+        ? 'px-4 py-2 text-sm font-medium rounded-lg bg-white shadow text-gray-900 transition-all'
+        : 'px-4 py-2 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-700 transition-all';
+    // Show/hide pricing
+    document.querySelectorAll('.price-monthly').forEach(el => el.classList.toggle('hidden', isYearly));
+    document.querySelectorAll('.price-yearly').forEach(el => el.classList.toggle('hidden', !isYearly));
+}
+</script>
 <?php if (empty($plans)): ?>
 <div class="bg-white rounded-xl border border-gray-200 p-8 text-center mb-8">
     <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -447,14 +472,25 @@ $isFreePlan = ($planInfo['plan'] ?? 'free') === 'free';
             <p class="text-gray-600 text-sm mt-1"><?php echo sanitize($plan['description']); ?></p>
             
             <div class="mt-4">
-                <span class="text-4xl font-bold text-gray-900"><?php echo Currency::formatHtml($plan['price_monthly'], $companyCurrency, 'xl'); ?></span>
-                <span class="text-gray-500">/month</span>
+                <div class="price-monthly">
+                    <span class="text-4xl font-bold text-gray-900"><?php echo Currency::formatHtml($plan['price_monthly'], $companyCurrency, 'xl'); ?></span>
+                    <span class="text-gray-500">/month</span>
+                </div>
+                <?php if ($plan['price_yearly'] > 0): ?>
+                <div class="price-yearly hidden">
+                    <span class="text-4xl font-bold text-gray-900"><?php echo Currency::formatHtml($plan['price_yearly'], $companyCurrency, 'xl'); ?></span>
+                    <span class="text-gray-500">/year</span>
+                    <span class="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
+                        Save <?php echo round((1 - ($plan['price_yearly'] / ($plan['price_monthly'] * 12))) * 100); ?>%
+                    </span>
+                </div>
+                <?php else: ?>
+                <div class="price-yearly hidden">
+                    <span class="text-4xl font-bold text-gray-900"><?php echo Currency::formatHtml($plan['price_monthly'] * 12, $companyCurrency, 'xl'); ?></span>
+                    <span class="text-gray-500">/year</span>
+                </div>
+                <?php endif; ?>
             </div>
-            <?php if ($plan['price_yearly'] > 0): ?>
-            <p class="text-sm text-green-600 mt-1">
-                or <?php echo Currency::formatHtml($plan['price_yearly'], $companyCurrency, 'sm'); ?>/year (save <?php echo round((1 - ($plan['price_yearly'] / ($plan['price_monthly'] * 12))) * 100); ?>%)
-            </p>
-            <?php endif; ?>
             
             <ul class="mt-6 space-y-3">
                 <?php 

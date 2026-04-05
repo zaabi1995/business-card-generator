@@ -76,6 +76,7 @@ function getAdminNavItems() {
     } else {
         // Billing is only for company admins, not super admin
         $items[] = ['name' => 'Billing', 'icon' => 'fa-solid fa-credit-card', 'url' => $basePath . 'billing' . $ext, 'key' => 'billing'];
+        $items[] = ['name' => 'Payment History', 'icon' => 'fa-solid fa-clock-rotate-left', 'url' => $basePath . 'payment-history' . $ext, 'key' => 'payment-history'];
     }
     
     return ['main' => $items, 'settings' => $settingsItems];

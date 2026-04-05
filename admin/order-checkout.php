@@ -20,9 +20,24 @@ if (!$orderId) {
 $error = '';
 $success = '';
 
+// Fetch checkout data early so POST handler can reference order totals
+$checkout = PrintShopBilling::getCheckoutOptions($orderId);
+if (isset($checkout['error'])) {
+    header('Location: ' . getBasePath() . 'admin/print.php');
+    exit;
+}
+
+$order = $checkout['order'];
+
+// Verify company owns this order (unless super admin)
+if ($order['company_id'] !== $companyId && !Auth::hasRole('super_admin')) {
+    header('Location: ' . getBasePath() . 'admin/print.php');
+    exit;
+}
+
 // Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    validateCSRFToken($_POST['csrf_token'] ?? '');
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
     $action = $_POST['action'] ?? '';
 
     if ($action === 'pay_online') {
@@ -30,8 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $depositPct = (float)($_POST['deposit_percent'] ?? 0);
         if ($depositPct > 0 && $depositPct < 100) {
             $depositPct = max(10, min(90, $depositPct));
-            $depositAmt = round(($checkout['order']['total'] ?? 0) * ($depositPct / 100), 3);
-            $balanceDue = round(($checkout['order']['total'] ?? 0) - $depositAmt, 3);
+            $depositAmt = round(($order['total'] ?? 0) * ($depositPct / 100), 3);
+            $balanceDue = round(($order['total'] ?? 0) - $depositAmt, 3);
             // Store deposit info first
             $db2 = Database::getInstance();
             $db2->exec("UPDATE print_orders SET deposit_percent = :dp, deposit_amount = :da, balance_due = :bd WHERE id = :id", [
@@ -92,19 +107,6 @@ if (isset($_GET['payment'])) {
     if ($_GET['payment'] === 'error') $error = $_GET['message'] ?? 'Payment failed';
 }
 
-$checkout = PrintShopBilling::getCheckoutOptions($orderId);
-if (isset($checkout['error'])) {
-    header('Location: ' . getBasePath() . 'admin/print.php');
-    exit;
-}
-
-$order = $checkout['order'];
-
-// Verify company owns this order (unless super admin)
-if ($order['company_id'] !== $companyId && !Auth::hasRole('super_admin')) {
-    header('Location: ' . getBasePath() . 'admin/print.php');
-    exit;
-}
 
 $cur = $order['currency'] ?? 'OMR';
 

@@ -234,7 +234,7 @@ class Billing {
     /**
      * Legacy Paymob callback handler for old payment_transactions records
      */
-    private function handleLegacyPaymobCallback($data, $hmac = null) {
+    public function handleLegacyPaymobCallback($data, $hmac = null) {
         $db = Database::getInstance();
 
         if (isset($data['obj'])) {
