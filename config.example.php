@@ -76,7 +76,9 @@ define('BILLING_GATEWAY', 'paymob'); // 'paymob', 'stripe', 'none'
 if (!defined('PAYMOB_PUBLIC_KEY')) define('PAYMOB_PUBLIC_KEY', '');       // Public key for checkout iframe
 if (!defined('PAYMOB_SECRET_KEY')) define('PAYMOB_SECRET_KEY', '');       // Secret key for API calls
 if (!defined('PAYMOB_HMAC_SECRET')) define('PAYMOB_HMAC_SECRET', '');     // HMAC secret for callback verification
-if (!defined('PAYMOB_INTEGRATION_IDS')) define('PAYMOB_INTEGRATION_IDS', '48380,48381,48389'); // INT cards, Omannet, Apple Pay
+if (!defined('PAYMOB_INTEGRATION_IDS')) define('PAYMOB_INTEGRATION_IDS', '63364,65553,48519'); // Int'l 3DS, OmanNet 3DS, Apple Pay
+if (!defined('PAYMOB_MOTO_INTEGRATION_ID')) define('PAYMOB_MOTO_INTEGRATION_ID', '63365');     // MOTO Int'l (card-on-file/subscriptions)
+if (!defined('PAYMOB_MOTO_OMANNET_INTEGRATION_ID')) define('PAYMOB_MOTO_OMANNET_INTEGRATION_ID', '65554'); // MOTO OmanNet
 
 // Legacy Amwal Pay Configuration (deprecated — kept for reference)
 // if (!defined('AMWAL_MERCHANT_ID')) define('AMWAL_MERCHANT_ID', '');
