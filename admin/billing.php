@@ -64,8 +64,8 @@ try {
             'terminal_id' => defined('AMWAL_TERMINAL_ID') ? AMWAL_TERMINAL_ID : '',
             'secure_key' => defined('AMWAL_SECURE_KEY') ? AMWAL_SECURE_KEY : '',
             'api_url' => defined('AMWAL_API_URL') ? AMWAL_API_URL : 'https://backend.sa.amwal.tech',
-            'callback_url' => (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . getBasePath() . 'amwalpay/callback.php',
-            'return_url' => (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . getBasePath() . 'admin/billing.php'
+            'callback_url' => (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . (defined('APP_HOST') ? APP_HOST : 'cardify.om') . getBasePath() . 'amwalpay/callback.php',
+            'return_url' => (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . (defined('APP_HOST') ? APP_HOST : 'cardify.om') . getBasePath() . 'admin/billing.php'
         ];
     }
 
@@ -540,7 +540,7 @@ function setBillingCycle(cycle) {
                     <span class="text-4xl font-bold text-gray-900"><?php echo Currency::formatHtml($plan['price_yearly'], $companyCurrency, 'xl'); ?></span>
                     <span class="text-gray-500">/year</span>
                     <span class="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
-                        Save <?php echo round((1 - ($plan['price_yearly'] / ($plan['price_monthly'] * 12))) * 100); ?>%
+                        Save <?php $monthlyBase = (float)$plan['price_monthly'] * 12; echo $monthlyBase > 0 ? round((1 - ((float)$plan['price_yearly'] / $monthlyBase)) * 100) : 0; ?>%
                     </span>
                 </div>
                 <?php else: ?>

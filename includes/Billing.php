@@ -51,10 +51,11 @@ class Billing {
 
         // Don't send $0 plans to Paymob — activate directly
         if ($amount <= 0) {
+            $interval = $billingCycle === 'yearly' ? '+1 year' : '+1 month';
             $db->update('companies', [
                 'plan' => $planId,
                 'subscription_status' => 'active',
-                'subscription_expires_at' => date('Y-m-d H:i:s', strtotime('+1 month')),
+                'subscription_expires_at' => date('Y-m-d H:i:s', strtotime($interval)),
                 'subscription_id' => 'free_' . time()
             ], 'id = :id', ['id' => $companyId]);
             return ['success' => true, 'free' => true, 'payment_url' => null, 'amount' => 0];
@@ -257,6 +258,18 @@ class Billing {
      * Legacy Paymob callback handler for old payment_transactions records
      */
     public function handleLegacyPaymobCallback($data, $hmac = null) {
+        // Verify HMAC — required even for legacy records
+        $receivedHmac = $hmac ?? ($data['hmac'] ?? null);
+        if (empty($receivedHmac)) {
+            error_log("Legacy payment callback: Missing HMAC");
+            return ['success' => false, 'error' => 'Missing HMAC signature'];
+        }
+        require_once __DIR__ . '/Payment.php';
+        if (!Payment::verifyHmac($data, $receivedHmac)) {
+            error_log("Legacy payment callback: HMAC mismatch");
+            return ['success' => false, 'error' => 'Invalid HMAC signature'];
+        }
+
         $db = Database::getInstance();
 
         if (isset($data['obj'])) {
@@ -282,6 +295,11 @@ class Billing {
 
         if (!$transaction) {
             return ['success' => false, 'error' => 'Transaction not found'];
+        }
+
+        // Idempotency: already completed
+        if ($transaction['status'] === 'completed') {
+            return ['success' => true, 'status' => 'completed', 'transaction_id' => $transaction['id'], 'idempotent' => true];
         }
 
         $transactionStatus = ($success === 'true' || $success === true) ? 'completed' : 'failed';

@@ -160,18 +160,22 @@ class CreditManager {
             return ['error' => 'Account not found'];
         }
 
-        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-        if (!in_array($file['type'], $allowedTypes)) {
-            return ['error' => 'Invalid file type. Allowed: PDF, JPG, PNG'];
-        }
         if ($file['size'] > 5 * 1024 * 1024) {
             return ['error' => 'File too large. Maximum 5MB'];
         }
+        // Use real MIME detection from file content, not client-supplied type
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $realMime = $finfo->file($file['tmp_name']);
+        $allowedMimes = ['application/pdf', 'image/jpeg', 'image/png'];
+        if (!in_array($realMime, $allowedMimes)) {
+            return ['error' => 'Invalid file type. Allowed: PDF, JPG, PNG'];
+        }
+        $mimeToExt = ['application/pdf' => 'pdf', 'image/jpeg' => 'jpg', 'image/png' => 'png'];
 
         $uploadDir = dirname(__DIR__) . '/uploads/credit_pos/' . $account['company_id'];
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
 
-        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $ext = $mimeToExt[$realMime];
         $safeName = 'ca_' . $creditAccountId . '_' . time() . '.' . $ext;
         $relativePath = 'uploads/credit_pos/' . $account['company_id'] . '/' . $safeName;
 
@@ -201,44 +205,60 @@ class CreditManager {
     ): array {
         $proofPath = null;
         if ($proofFile && $proofFile['error'] === UPLOAD_ERR_OK) {
-            $account = self::getAccountById($creditAccountId);
-            $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-            if (!in_array($proofFile['type'], $allowedTypes)) {
-                return ['error' => 'Invalid proof file type. Allowed: PDF, JPG, PNG'];
-            }
             if ($proofFile['size'] > 5 * 1024 * 1024) {
                 return ['error' => 'Proof file too large. Maximum 5MB'];
             }
-            $uploadDir = dirname(__DIR__) . '/uploads/payment_proofs/' . ($account['company_id'] ?? 'unknown');
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+            $realMime = $finfo->file($proofFile['tmp_name']);
+            $allowedMimes = ['application/pdf', 'image/jpeg', 'image/png'];
+            if (!in_array($realMime, $allowedMimes)) {
+                return ['error' => 'Invalid proof file type. Allowed: PDF, JPG, PNG'];
+            }
+            $mimeToExt = ['application/pdf' => 'pdf', 'image/jpeg' => 'jpg', 'image/png' => 'png'];
+            $ext = $mimeToExt[$realMime];
+
+            $accountForUpload = self::getAccountById($creditAccountId);
+            $uploadDir = dirname(__DIR__) . '/uploads/payment_proofs/' . ($accountForUpload['company_id'] ?? 'unknown');
             if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-            $ext = strtolower(pathinfo($proofFile['name'], PATHINFO_EXTENSION));
             $safeName = 'proof_' . $creditAccountId . '_' . time() . '.' . $ext;
-            $proofPath = 'uploads/payment_proofs/' . ($account['company_id'] ?? 'unknown') . '/' . $safeName;
+            $proofPath = 'uploads/payment_proofs/' . ($accountForUpload['company_id'] ?? 'unknown') . '/' . $safeName;
             if (!move_uploaded_file($proofFile['tmp_name'], dirname(__DIR__) . '/' . $proofPath)) {
                 return ['error' => 'Failed to save proof file'];
             }
         }
 
         $db = Database::getInstance();
-        $account = self::getAccountById($creditAccountId);
-        if (!$account) return ['error' => 'Credit account not found'];
+        $conn = $db->getConnection();
 
-        $newBalance = max(0, (float)$account['balance_used'] - $amount);
-        $txId = generateUUID();
+        // Atomic balance update using a locked transaction
+        $conn->beginTransaction();
+        try {
+            $stmt = $conn->prepare("SELECT * FROM credit_accounts WHERE id = ? FOR UPDATE");
+            $stmt->execute([$creditAccountId]);
+            $account = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if (!$account) {
+                $conn->rollBack();
+                return ['error' => 'Credit account not found'];
+            }
 
-        $db->update('credit_accounts', ['balance_used' => $newBalance], 'id = :id', ['id' => $creditAccountId]);
+            $newBalance = max(0, (float)$account['balance_used'] - $amount);
+            $txId = generateUUID();
 
-        $txData = [
-            'id' => $txId,
-            'credit_account_id' => $creditAccountId,
-            'type' => 'payment',
-            'amount' => $amount,
-            'balance_after' => $newBalance,
-            'notes' => $notes,
-            'recorded_by' => $recordedBy
-        ];
-        if ($proofPath) $txData['po_file_path'] = $proofPath;
-        $db->insert('credit_transactions', $txData);
+            $stmt = $conn->prepare("UPDATE credit_accounts SET balance_used = ?, updated_at = NOW() WHERE id = ?");
+            $stmt->execute([$newBalance, $creditAccountId]);
+
+            $stmt = $conn->prepare(
+                "INSERT INTO credit_transactions (id, credit_account_id, type, amount, balance_after, notes, recorded_by, po_file_path, created_at)
+                 VALUES (?, ?, 'payment', ?, ?, ?, ?, ?, NOW())"
+            );
+            $stmt->execute([$txId, $creditAccountId, $amount, $newBalance, $notes, $recordedBy, $proofPath]);
+
+            $conn->commit();
+        } catch (\Exception $e) {
+            $conn->rollBack();
+            error_log("CreditManager::recordPaymentWithProof failed: " . $e->getMessage());
+            return ['error' => 'Transaction failed'];
+        }
 
         return ['transaction_id' => $txId, 'balance_after' => $newBalance, 'proof_path' => $proofPath];
     }
@@ -313,29 +333,36 @@ class CreditManager {
         ?string $recordedBy = null
     ): array {
         $db = Database::getInstance();
-        $account = self::getAccountById($creditAccountId);
+        $conn = $db->getConnection();
 
-        if (!$account) {
-            return ['error' => 'Credit account not found'];
+        $conn->beginTransaction();
+        try {
+            $stmt = $conn->prepare("SELECT * FROM credit_accounts WHERE id = ? FOR UPDATE");
+            $stmt->execute([$creditAccountId]);
+            $account = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if (!$account) {
+                $conn->rollBack();
+                return ['error' => 'Credit account not found'];
+            }
+
+            $newBalance = max(0, (float)$account['balance_used'] - $amount);
+            $txId = generateUUID();
+
+            $stmt = $conn->prepare("UPDATE credit_accounts SET balance_used = ?, updated_at = NOW() WHERE id = ?");
+            $stmt->execute([$newBalance, $creditAccountId]);
+
+            $stmt = $conn->prepare(
+                "INSERT INTO credit_transactions (id, credit_account_id, type, amount, balance_after, notes, recorded_by, created_at)
+                 VALUES (?, ?, 'payment', ?, ?, ?, ?, NOW())"
+            );
+            $stmt->execute([$txId, $creditAccountId, $amount, $newBalance, $notes, $recordedBy]);
+
+            $conn->commit();
+        } catch (\Exception $e) {
+            $conn->rollBack();
+            error_log("CreditManager::recordPayment failed: " . $e->getMessage());
+            return ['error' => 'Transaction failed'];
         }
-
-        $newBalance = max(0, (float)$account['balance_used'] - $amount);
-        $txId = generateUUID();
-
-        $db->update('credit_accounts',
-            ['balance_used' => $newBalance],
-            'id = :id', ['id' => $creditAccountId]
-        );
-
-        $db->insert('credit_transactions', [
-            'id' => $txId,
-            'credit_account_id' => $creditAccountId,
-            'type' => 'payment',
-            'amount' => $amount,
-            'balance_after' => $newBalance,
-            'notes' => $notes,
-            'recorded_by' => $recordedBy
-        ]);
 
         return ['transaction_id' => $txId, 'balance_after' => $newBalance];
     }
@@ -349,28 +376,36 @@ class CreditManager {
         float $amount
     ): array {
         $db = Database::getInstance();
-        $account = self::getAccountById($creditAccountId);
+        $conn = $db->getConnection();
 
-        if (!$account) {
-            return ['error' => 'Credit account not found'];
+        $conn->beginTransaction();
+        try {
+            $stmt = $conn->prepare("SELECT * FROM credit_accounts WHERE id = ? FOR UPDATE");
+            $stmt->execute([$creditAccountId]);
+            $account = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if (!$account) {
+                $conn->rollBack();
+                return ['error' => 'Credit account not found'];
+            }
+
+            $newBalance = max(0, (float)$account['balance_used'] - $amount);
+            $txId = generateUUID();
+
+            $stmt = $conn->prepare("UPDATE credit_accounts SET balance_used = ?, updated_at = NOW() WHERE id = ?");
+            $stmt->execute([$newBalance, $creditAccountId]);
+
+            $stmt = $conn->prepare(
+                "INSERT INTO credit_transactions (id, credit_account_id, order_id, type, amount, balance_after, created_at)
+                 VALUES (?, ?, ?, 'refund', ?, ?, NOW())"
+            );
+            $stmt->execute([$txId, $creditAccountId, $orderId, $amount, $newBalance]);
+
+            $conn->commit();
+        } catch (\Exception $e) {
+            $conn->rollBack();
+            error_log("CreditManager::refund failed: " . $e->getMessage());
+            return ['error' => 'Transaction failed'];
         }
-
-        $newBalance = max(0, (float)$account['balance_used'] - $amount);
-        $txId = generateUUID();
-
-        $db->update('credit_accounts',
-            ['balance_used' => $newBalance],
-            'id = :id', ['id' => $creditAccountId]
-        );
-
-        $db->insert('credit_transactions', [
-            'id' => $txId,
-            'credit_account_id' => $creditAccountId,
-            'order_id' => $orderId,
-            'type' => 'refund',
-            'amount' => $amount,
-            'balance_after' => $newBalance
-        ]);
 
         return ['transaction_id' => $txId, 'balance_after' => $newBalance];
     }
@@ -435,7 +470,11 @@ class CreditManager {
         if (!$account || $account['status'] !== 'approved') {
             return 0.0;
         }
-        return max(0, (float)$account['credit_limit'] - (float)$account['balance_used']);
+        // Respect exposure_limit if set (same logic as charge())
+        $effectiveLimit = ($account['exposure_limit'] !== null && (float)$account['exposure_limit'] > 0)
+            ? min((float)$account['credit_limit'], (float)$account['exposure_limit'])
+            : (float)$account['credit_limit'];
+        return max(0, $effectiveLimit - (float)$account['balance_used']);
     }
 
     public static function getOutstandingSummary(int $printShopId): array {

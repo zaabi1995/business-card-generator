@@ -139,7 +139,8 @@ class Payment {
         ]);
 
         // Build Paymob intention payload
-        $baseUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'cardify.om');
+        $configuredHost = defined('APP_HOST') ? APP_HOST : 'cardify.om';
+        $baseUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $configuredHost;
         $callbackUrl = $baseUrl . getBasePath() . 'paymob/callback.php';
 
         $payload = [
@@ -281,13 +282,15 @@ class Payment {
         $amountCents = $data['amount_cents'] ?? null;
         $currency = $data['currency'] ?? 'OMR';
 
-        // Verify HMAC
+        // Verify HMAC — required; reject any callback without a valid signature
         $receivedHmac = $hmac ?? ($data['hmac'] ?? null);
-        if (!empty($receivedHmac)) {
-            if (!self::verifyHmac($data, $receivedHmac)) {
-                error_log("Payment callback: HMAC mismatch for transaction {$transactionId}");
-                return ['success' => false, 'error' => 'Invalid HMAC signature'];
-            }
+        if (empty($receivedHmac)) {
+            error_log("Payment callback: Missing HMAC for transaction {$transactionId}");
+            return ['success' => false, 'error' => 'Missing HMAC signature'];
+        }
+        if (!self::verifyHmac($data, $receivedHmac)) {
+            error_log("Payment callback: HMAC mismatch for transaction {$transactionId}");
+            return ['success' => false, 'error' => 'Invalid HMAC signature'];
         }
 
         if (empty($merchantOrderId)) {
@@ -311,6 +314,18 @@ class Payment {
         if (!$payment) {
             error_log("Payment callback: Not found in payments table for {$merchantOrderId}, checking legacy");
             return ['success' => false, 'error' => 'Payment not found', 'legacy' => true, 'merchant_order_id' => $merchantOrderId];
+        }
+
+        // Idempotency: if already processed, return the stored result without re-running side effects
+        if ($payment['status'] === 'paid') {
+            return [
+                'success' => true,
+                'payment_id' => $payment['id'],
+                'type' => $payment['type'],
+                'reference_id' => $payment['reference_id'],
+                'status' => 'paid',
+                'idempotent' => true
+            ];
         }
 
         // Verify amount matches
@@ -380,7 +395,16 @@ class Payment {
                 ? 'yearly' : 'monthly';
         }
 
-        $expiresAt = date('Y-m-d H:i:s', strtotime($billingCycle === 'yearly' ? '+1 year' : '+1 month'));
+        // Extend from current expiry if still active, otherwise extend from now
+        $currentCompany = $db->fetchOne("SELECT subscription_expires_at, subscription_status FROM companies WHERE id = :id", ['id' => $companyId]);
+        $baseTime = time();
+        if ($currentCompany && $currentCompany['subscription_status'] === 'active' && !empty($currentCompany['subscription_expires_at'])) {
+            $currentExpiry = strtotime($currentCompany['subscription_expires_at']);
+            if ($currentExpiry > $baseTime) {
+                $baseTime = $currentExpiry;
+            }
+        }
+        $expiresAt = date('Y-m-d H:i:s', strtotime($billingCycle === 'yearly' ? '+1 year' : '+1 month', $baseTime));
 
         $db->update('companies',
             [
@@ -468,15 +492,29 @@ class Payment {
         $cardCount = (int)$creditRow['card_count'];
         $companyId = $payment['company_id'];
 
-        // Add credits to company
-        $existing = $db->fetchOne("SELECT card_credits FROM companies WHERE id = :id", ['id' => $companyId]);
-        $current = (int)($existing['card_credits'] ?? 0);
-        $db->update('companies', ['card_credits' => $current + $cardCount], 'id = :id', ['id' => $companyId]);
+        // Only process if credit row is still pending (idempotency)
+        if ($creditRow['status'] !== 'pending') {
+            error_log("confirmCardOrder: credit row {$refId} already processed (status={$creditRow['status']})");
+            return;
+        }
 
-        // Mark credit row as paid
-        $db->update('card_order_credits', ['status' => 'paid', 'payment_id' => $payment['id']], 'id = :id', ['id' => $refId]);
+        // Mark credit row as paid first (prevents duplicate processing on race)
+        $affected = $db->update('card_order_credits',
+            ['status' => 'paid', 'payment_id' => $payment['id']],
+            'id = :id AND status = :status',
+            ['id' => $refId, 'status' => 'pending']
+        );
+        if (!$affected) {
+            error_log("confirmCardOrder: credit row {$refId} was already claimed by another process");
+            return;
+        }
 
-        error_log("Card credits added: company={$companyId} cards={$cardCount} total=" . ($current + $cardCount));
+        // Atomic increment — no race condition
+        $conn = $db->getConnection();
+        $stmt = $conn->prepare("UPDATE companies SET card_credits = card_credits + ? WHERE id = ?");
+        $stmt->execute([$cardCount, $companyId]);
+
+        error_log("Card credits added: company={$companyId} cards={$cardCount}");
     }
 
     // --- Query methods ---
