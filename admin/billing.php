@@ -213,6 +213,26 @@ if ($db && $db->isConnected() && $companyId) {
     }
 }
 
+// Fetch unpaid print orders
+$unpaidOrders = [];
+if ($db && $db->isConnected() && $companyId) {
+    try {
+        $unpaidOrders = $db->fetchAll(
+            "SELECT po.*, ps.name as shop_name
+             FROM print_orders po
+             LEFT JOIN print_shops ps ON ps.id = po.print_shop_id
+             WHERE po.company_id = :cid
+               AND po.payment_status != 'paid'
+               AND po.total > 0
+             ORDER BY po.created_at DESC
+             LIMIT 20",
+            ['cid' => $companyId]
+        );
+    } catch (Throwable $e) {
+        error_log("Billing unpaid orders fetch: " . $e->getMessage());
+    }
+}
+
 // Handle subscription upgrade
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'subscribe') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
@@ -590,6 +610,71 @@ function setBillingCycle(cycle) {
         </div>
     </div>
     <?php endforeach; ?>
+</div>
+<?php endif; ?>
+
+<!-- Unpaid Print Orders -->
+<?php if (!empty($unpaidOrders)): ?>
+<div class="bg-white rounded-xl border border-orange-200 shadow-sm overflow-hidden mb-8">
+    <div class="p-4 border-b border-orange-100 flex items-center justify-between bg-orange-50">
+        <h3 class="font-semibold text-orange-800 flex items-center gap-2">
+            <i class="fa-solid fa-print text-orange-500"></i>
+            Pending Print Payments
+        </h3>
+        <span class="text-xs font-semibold bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full">
+            <?= count($unpaidOrders) ?> unpaid
+        </span>
+    </div>
+    <div class="divide-y divide-gray-100">
+        <?php foreach ($unpaidOrders as $uOrder):
+            $isCompanyAdmin = defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug']);
+            $ext = $isCompanyAdmin ? '' : '.php';
+            $basePath = getAdminBasePath();
+        ?>
+        <div class="p-4 flex items-center justify-between gap-4 flex-wrap">
+            <div class="flex-1 min-w-0">
+                <p class="font-medium text-gray-900 text-sm">
+                    Order #<?= htmlspecialchars($uOrder['order_number'] ?? $uOrder['id']) ?>
+                    <?php if (!empty($uOrder['shop_name'])): ?>
+                    <span class="text-gray-400 font-normal">· <?= htmlspecialchars($uOrder['shop_name']) ?></span>
+                    <?php endif; ?>
+                </p>
+                <p class="text-xs text-gray-500 mt-0.5">
+                    <?= (int)($uOrder['quantity'] ?? 0) ?> cards ·
+                    <?= ucfirst($uOrder['paper_type'] ?? 'standard') ?> ·
+                    <?= ucfirst($uOrder['finish'] ?? 'matte') ?> ·
+                    <?= date('d M Y', strtotime($uOrder['created_at'])) ?>
+                </p>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+                <span class="text-lg font-bold text-gray-900">
+                    <?= number_format((float)$uOrder['total'], 3) ?>
+                    <span class="text-sm font-normal text-gray-500"><?= htmlspecialchars($uOrder['currency'] ?? $companyCurrency) ?></span>
+                </span>
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium
+                    <?= ($uOrder['payment_status'] ?? '') === 'partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-orange-100 text-orange-700' ?>">
+                    <?= ucfirst($uOrder['payment_status'] ?? 'unpaid') ?>
+                </span>
+                <a href="<?= $basePath ?>order-checkout<?= $ext ?>?order=<?= (int)$uOrder['id'] ?>"
+                   class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-lock text-xs"></i> Pay Now
+                </a>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <div class="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+        <p class="text-xs text-gray-500">
+            Total outstanding:
+            <strong class="text-gray-900">
+                <?= number_format(array_sum(array_column($unpaidOrders, 'total')), 3) ?> <?= $companyCurrency ?>
+            </strong>
+        </p>
+        <?php $basePath2 = getAdminBasePath(); $ext2 = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php'; ?>
+        <a href="<?= $basePath2 ?>print<?= $ext2 ?>" class="text-xs text-blue-600 hover:underline">
+            View all orders <i class="fa-solid fa-arrow-right ml-1"></i>
+        </a>
+    </div>
 </div>
 <?php endif; ?>
 
