@@ -52,14 +52,15 @@ class Payment {
     }
 
     /**
-     * Create Paymob payment intent for subscription or print order
+     * Create Paymob payment intent for subscription, print order, or card order
      *
-     * @param string $type 'subscription' or 'print_order'
-     * @param string $referenceId plan_id or print order id
+     * @param string $type 'subscription', 'print_order', or 'card_order'
+     * @param string $referenceId plan_id, print order id, or generated_card id
      * @param float $amount in full currency units (e.g. 5.000 OMR)
      * @param string $companyId
      * @param array $billingData Override billing data ['first_name','last_name','email','phone_number']
      * @param string $currency
+     * @param string $billingCycle 'monthly', 'yearly', or 'one_time'
      * @return array ['payment_id'=>...,'checkout_url'=>...] or ['error'=>...]
      */
     public static function createIntent(
@@ -68,7 +69,8 @@ class Payment {
         float $amount,
         string $companyId,
         array $billingData = [],
-        string $currency = 'OMR'
+        string $currency = 'OMR',
+        string $billingCycle = 'monthly'
     ): array {
         $secretKey = defined('PAYMOB_SECRET_KEY') ? PAYMOB_SECRET_KEY : '';
         $publicKey = defined('PAYMOB_PUBLIC_KEY') ? PAYMOB_PUBLIC_KEY : '';
@@ -120,11 +122,15 @@ class Payment {
         ];
 
         // Create payment record in DB
+        $validCycles = ['monthly', 'yearly', 'one_time'];
+        $billingCycle = in_array($billingCycle, $validCycles) ? $billingCycle : 'monthly';
+
         $paymentId = generateUUID();
         $db->insert('payments', [
             'id' => $paymentId,
             'company_id' => $companyId,
             'type' => $type,
+            'billing_cycle' => $billingCycle,
             'reference_id' => $referenceId,
             'amount' => $amount,
             'currency' => $currency,
@@ -150,10 +156,18 @@ class Payment {
 
         // Add item description based on type
         if ($type === 'subscription') {
+            $cycleLabel = $billingCycle === 'yearly' ? 'Annual' : 'Monthly';
             $payload['items'][] = [
-                'name' => 'Cardify Subscription',
+                'name' => "Cardify Subscription ({$cycleLabel})",
                 'amount' => $amountCents,
-                'description' => "Subscription plan for {$companyName}",
+                'description' => "{$cycleLabel} subscription plan for {$companyName}",
+                'quantity' => 1
+            ];
+        } elseif ($type === 'card_order') {
+            $payload['items'][] = [
+                'name' => 'Business Card Generation',
+                'amount' => $amountCents,
+                'description' => "Card generation for {$companyName}",
                 'quantity' => 1
             ];
         } elseif ($type === 'print_order') {
@@ -218,6 +232,7 @@ class Payment {
         $_SESSION["paymob_payment_{$specialReference}"] = [
             'payment_id' => $paymentId,
             'type' => $type,
+            'billing_cycle' => $billingCycle,
             'reference_id' => $referenceId,
             'company_id' => $companyId,
             'amount' => $amountCents,
@@ -334,6 +349,8 @@ class Payment {
                 self::activateSubscription($payment);
             } elseif ($payment['type'] === 'print_order') {
                 self::confirmPrintOrder($payment);
+            } elseif ($payment['type'] === 'card_order') {
+                self::confirmCardOrder($payment);
             }
         }
 
@@ -354,14 +371,16 @@ class Payment {
         $planId = $payment['reference_id'];
         $companyId = $payment['company_id'];
 
-        // Default to monthly; check if yearly by looking at plan price
-        $plan = $db->fetchOne("SELECT * FROM subscription_plans WHERE id = :id", ['id' => $planId]);
-        $isYearly = false;
-        if ($plan && (float)$plan['price_yearly'] > 0 && abs((float)$payment['amount'] - (float)$plan['price_yearly']) < 0.01) {
-            $isYearly = true;
+        // Use stored billing_cycle (reliable); fall back to price comparison for legacy rows
+        $billingCycle = $payment['billing_cycle'] ?? null;
+        if (!$billingCycle) {
+            $plan = $db->fetchOne("SELECT * FROM subscription_plans WHERE id = :id", ['id' => $planId]);
+            $billingCycle = ($plan && (float)$plan['price_yearly'] > 0 &&
+                abs((float)$payment['amount'] - (float)$plan['price_yearly']) < 0.50)
+                ? 'yearly' : 'monthly';
         }
 
-        $expiresAt = date('Y-m-d H:i:s', strtotime($isYearly ? '+1 year' : '+1 month'));
+        $expiresAt = date('Y-m-d H:i:s', strtotime($billingCycle === 'yearly' ? '+1 year' : '+1 month'));
 
         $db->update('companies',
             [
@@ -373,6 +392,8 @@ class Payment {
             'id = :id',
             ['id' => $companyId]
         );
+
+        error_log("Subscription activated: company={$companyId} plan={$planId} cycle={$billingCycle} expires={$expiresAt}");
     }
 
     /**
@@ -396,6 +417,66 @@ class Payment {
         } catch (Exception $e) {
             error_log("Payment notification failed for order {$orderId}: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Unlock card generation via per-card payment
+     * Called when a Free user tries to generate a card beyond their monthly limit
+     *
+     * @param string $companyId
+     * @param int $cardCount Number of cards to purchase (default 1)
+     * @param float $pricePerCard Price per card in OMR
+     * @param string $currency
+     * @return array ['checkout_url'=>...] or ['error'=>...]
+     */
+    public static function createCardOrderIntent(
+        string $companyId,
+        int $cardCount = 1,
+        float $pricePerCard = 0.500,
+        string $currency = 'OMR'
+    ): array {
+        $amount = round($pricePerCard * $cardCount, 3);
+
+        // Store card count in a temp DB record we can reference on callback
+        $db = Database::getInstance();
+        $refId = generateUUID();
+        $db->insert('card_order_credits', [
+            'id' => $refId,
+            'company_id' => $companyId,
+            'card_count' => $cardCount,
+            'price_per_card' => $pricePerCard,
+            'status' => 'pending',
+            'currency' => $currency,
+        ]);
+
+        return self::createIntent('card_order', $refId, $amount, $companyId, [], $currency, 'one_time');
+    }
+
+    /**
+     * Confirm card order — add credits to company after payment
+     */
+    private static function confirmCardOrder(array $payment): void {
+        $db = Database::getInstance();
+        $refId = $payment['reference_id'];
+
+        $creditRow = $db->fetchOne("SELECT * FROM card_order_credits WHERE id = :id", ['id' => $refId]);
+        if (!$creditRow) {
+            error_log("confirmCardOrder: no credit row for ref {$refId}");
+            return;
+        }
+
+        $cardCount = (int)$creditRow['card_count'];
+        $companyId = $payment['company_id'];
+
+        // Add credits to company
+        $existing = $db->fetchOne("SELECT card_credits FROM companies WHERE id = :id", ['id' => $companyId]);
+        $current = (int)($existing['card_credits'] ?? 0);
+        $db->update('companies', ['card_credits' => $current + $cardCount], 'id = :id', ['id' => $companyId]);
+
+        // Mark credit row as paid
+        $db->update('card_order_credits', ['status' => 'paid', 'payment_id' => $payment['id']], 'id = :id', ['id' => $refId]);
+
+        error_log("Card credits added: company={$companyId} cards={$cardCount} total=" . ($current + $cardCount));
     }
 
     // --- Query methods ---

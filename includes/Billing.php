@@ -17,18 +17,48 @@ class Billing {
      */
     public function createSubscription($companyId, $planId, $billingCycle = 'monthly') {
         $db = Database::getInstance();
-        
+
         // Get plan details
         $plan = $db->fetchOne(
             "SELECT * FROM subscription_plans WHERE id = :id AND is_active = 1",
             ['id' => $planId]
         );
-        
+
         if (!$plan) {
             return ['success' => false, 'error' => 'Plan not found'];
         }
-        
-        $amount = $billingCycle === 'yearly' ? $plan['price_yearly'] : $plan['price_monthly'];
+
+        // Get company currency and check plan_prices table for correct price
+        $company = $db->fetchOne("SELECT currency FROM companies WHERE id = :id", ['id' => $companyId]);
+        $currency = $company['currency'] ?? 'OMR';
+
+        $amount = $billingCycle === 'yearly' ? (float)$plan['price_yearly'] : (float)$plan['price_monthly'];
+
+        // Override with per-currency price if available
+        try {
+            $priceRow = $db->fetchOne(
+                "SELECT * FROM plan_prices WHERE plan_id = :pid AND currency = :cur",
+                ['pid' => $planId, 'cur' => $currency]
+            );
+            if ($priceRow) {
+                $amount = $billingCycle === 'yearly'
+                    ? (float)$priceRow['price_yearly']
+                    : (float)$priceRow['price_monthly'];
+            }
+        } catch (\Throwable $e) {
+            // plan_prices may not exist — use subscription_plans fallback
+        }
+
+        // Don't send $0 plans to Paymob — activate directly
+        if ($amount <= 0) {
+            $db->update('companies', [
+                'plan' => $planId,
+                'subscription_status' => 'active',
+                'subscription_expires_at' => date('Y-m-d H:i:s', strtotime('+1 month')),
+                'subscription_id' => 'free_' . time()
+            ], 'id = :id', ['id' => $companyId]);
+            return ['success' => true, 'free' => true, 'payment_url' => null, 'amount' => 0];
+        }
         
         // Create payment intent with gateway
         $paymentResult = $this->createPaymentIntent($amount, $companyId, $planId, $billingCycle);
@@ -36,10 +66,6 @@ class Billing {
         if (!$paymentResult['success']) {
             return $paymentResult;
         }
-        
-        // Get company currency
-        $company = $db->fetchOne("SELECT currency FROM companies WHERE id = :id", ['id' => $companyId]);
-        $currency = $company['currency'] ?? 'USD';
 
         // Store transaction
         $transactionId = $this->generateUUID();
@@ -104,16 +130,12 @@ class Billing {
         $company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $companyId]);
         $currency = $company['currency'] ?? 'OMR';
 
-        $result = Payment::createIntent('subscription', $planId, $amount, $companyId, [], $currency);
+        // Pass billing_cycle explicitly so activateSubscription() doesn't need to guess
+        $cycle = in_array($billingCycle, ['monthly', 'yearly']) ? $billingCycle : 'monthly';
+        $result = Payment::createIntent('subscription', $planId, $amount, $companyId, [], $currency, $cycle);
 
         if (isset($result['error'])) {
             return ['success' => false, 'error' => $result['error']];
-        }
-
-        // Also store billing_cycle in session for callback (yearly vs monthly expiry)
-        $sessionKey = 'paymob_payment_' . $result['special_reference'];
-        if (isset($_SESSION[$sessionKey])) {
-            $_SESSION[$sessionKey]['billing_cycle'] = $billingCycle;
         }
 
         return $result;

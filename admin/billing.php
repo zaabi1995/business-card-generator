@@ -192,6 +192,27 @@ if (!$currentPlan) {
 
 // Currency formatting is done via Currency::formatHtml()
 
+// Fetch card credits and per-card pricing
+$cardCredits = 0;
+$cardsUsedThisMonth = 0;
+$maxCardsPerMonth = -1;
+$pricePerCard = 0.500; // default
+if ($db && $db->isConnected() && $companyId) {
+    try {
+        $cardCredits = (int)($company['card_credits'] ?? 0);
+        $cardsUsedThisMonth = (int)($db->fetchOne(
+            "SELECT COUNT(*) as cnt FROM generated_cards WHERE company_id = :cid AND created_at >= DATE_FORMAT(NOW(),'%Y-%m-01')",
+            ['cid' => $companyId]
+        )['cnt'] ?? 0);
+        if ($currentPlan) {
+            $maxCardsPerMonth = (int)($currentPlan['max_cards_per_month'] ?? -1);
+            $pricePerCard = (float)($currentPlan['price_per_card'] ?? 0.500);
+        }
+    } catch (Throwable $e) {
+        error_log("Billing card credits fetch: " . $e->getMessage());
+    }
+}
+
 // Handle subscription upgrade
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'subscribe') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
@@ -204,6 +225,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         // Paymob: redirect directly to unified checkout
         header('Location: ' . $result['payment_url']);
         exit;
+    } elseif ($result['success'] && !empty($result['free'])) {
+        // Free plan activated directly — no payment needed
+        header('Location: ' . getAdminBasePath() . 'billing' . ((defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php') . '?payment=success');
+        exit;
     } elseif ($result['success'] && !empty($result['payment_data'])) {
         // Legacy Amwal: redirect to process page
         header('Location: ' . getBasePath() . 'amwalpay/process.php?order_id=' . urlencode($result['transaction_id']));
@@ -212,6 +237,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $message = $result['error'] ?? 'Failed to create subscription';
         $messageType = 'error';
     }
+}
+
+// Handle buy card credits
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'buy_cards') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
+    require_once INCLUDES_DIR . '/Payment.php';
+    $cardCount = max(1, min(100, (int)($_POST['card_count'] ?? 10)));
+    $result = Payment::createCardOrderIntent($companyId, $cardCount, $pricePerCard, $companyCurrency);
+    if (!empty($result['checkout_url'])) {
+        header('Location: ' . $result['checkout_url']);
+        exit;
+    }
+    $message = $result['error'] ?? 'Could not initiate card purchase';
+    $messageType = 'error';
 }
 
 // Get counts with error handling
@@ -553,6 +592,66 @@ function setBillingCycle(cycle) {
     <?php endforeach; ?>
 </div>
 <?php endif; ?>
+
+<!-- Card Credits (Pay Per Card) -->
+<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-8">
+    <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-id-card text-purple-500"></i>
+            Card Credits
+        </h3>
+        <span class="text-xs text-gray-400">Pay per card generated, no subscription needed</span>
+    </div>
+    <div class="p-6">
+        <div class="grid md:grid-cols-3 gap-6 mb-6">
+            <div class="text-center p-4 bg-purple-50 rounded-xl">
+                <p class="text-3xl font-bold text-purple-700"><?php echo $cardCredits; ?></p>
+                <p class="text-sm text-gray-500 mt-1">Credits Available</p>
+            </div>
+            <div class="text-center p-4 bg-gray-50 rounded-xl">
+                <p class="text-3xl font-bold text-gray-700"><?php echo $cardsUsedThisMonth; ?></p>
+                <p class="text-sm text-gray-500 mt-1">Generated This Month</p>
+            </div>
+            <div class="text-center p-4 bg-blue-50 rounded-xl">
+                <p class="text-3xl font-bold text-blue-700">
+                    <?php echo $maxCardsPerMonth === -1 ? '∞' : number_format($maxCardsPerMonth); ?>
+                </p>
+                <p class="text-sm text-gray-500 mt-1">Monthly Limit (Plan)</p>
+            </div>
+        </div>
+
+        <?php if ($pricePerCard > 0): ?>
+        <div class="border border-purple-100 rounded-xl p-5 bg-purple-50">
+            <p class="text-sm text-gray-700 mb-3">
+                <strong>Buy card credits</strong> — each credit lets you generate one business card.
+                Price: <strong><?php echo number_format($pricePerCard, 3); ?> <?php echo $companyCurrency; ?></strong> per card.
+            </p>
+            <form method="POST" class="flex items-end gap-3 flex-wrap">
+                <?= csrfField() ?>
+                <input type="hidden" name="action" value="buy_cards">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Number of Cards</label>
+                    <select name="card_count" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500">
+                        <?php foreach ([5, 10, 25, 50, 100] as $qty): ?>
+                        <option value="<?= $qty ?>" <?= $qty === 10 ? 'selected' : '' ?>>
+                            <?= $qty ?> cards — <?php echo number_format($pricePerCard * $qty, 3); ?> <?= $companyCurrency ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition">
+                    <i class="fa-solid fa-lock mr-1"></i> Buy Credits via Paymob
+                </button>
+            </form>
+        </div>
+        <?php else: ?>
+        <div class="text-sm text-gray-500 bg-gray-50 rounded-xl p-4">
+            <i class="fa-solid fa-info-circle mr-1 text-blue-400"></i>
+            Card generation is included in your subscription plan with no per-card charge.
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
 
 <!-- Payment Methods -->
 <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
