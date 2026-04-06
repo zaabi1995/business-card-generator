@@ -305,14 +305,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
     } elseif ($action === 'mark_paid') {
-        $pdo->prepare("UPDATE print_orders SET invoice_paid = 1, invoice_paid_at = NOW(), payment_status = 'paid' WHERE id = ?")
-            ->execute([$orderId]);
-        
-        // Sync to Odoo if enabled
+        $directMethod = $_POST['direct_method'] ?? 'bank_transfer';
+        $directRef    = trim($_POST['direct_ref'] ?? '');
+        $directNotes  = trim($_POST['direct_notes'] ?? '');
+
+        $validMethods = ['cash', 'bank_transfer', 'cheque', 'po', 'online', 'credit'];
+        if (!in_array($directMethod, $validMethods)) $directMethod = 'bank_transfer';
+
+        $pdo->prepare("UPDATE print_orders SET
+            invoice_paid               = 1,
+            invoice_paid_at            = NOW(),
+            payment_status             = 'paid',
+            payment_method             = ?,
+            direct_payment_ref         = ?,
+            direct_payment_notes       = ?,
+            direct_payment_recorded_by = ?,
+            direct_payment_recorded_at = NOW()
+            WHERE id = ?")->execute([$directMethod, $directRef, $directNotes, $user['id'], $orderId]);
+
+        // Sync to BHD-ERP if enabled
+        require_once INCLUDES_DIR . '/ERPSync.php';
+        if (ERPSync::isEnabled()) {
+            $syncResult = ERPSync::recordPayment($orderId, $directMethod, $directRef, $directNotes, $user['id']);
+            if (!$syncResult['success']) {
+                error_log("ERPSync failed for order $orderId: " . $syncResult['message']);
+                // Non-fatal: order is still marked paid locally
+            }
+        }
+
+        // Sync to Odoo if enabled (legacy)
         if ($odoo->isSyncEnabled()) {
             $odoo->markInvoicePaid($orderId);
         }
-        
+
         // Send payment confirmation email
         $order = refreshOrderData($pdo, $orderId);
         sendDocumentEmail('payment_received', $order, $printShop, [
@@ -320,8 +345,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'amount' => Currency::format($order['invoice_amount'] ?? $order['total'], $order['currency'] ?? 'OMR'),
             'payment_date' => date('F j, Y')
         ]);
-        
-        $message = "Invoice marked as paid! Confirmation sent to company.";
+
+        $erpNote = isset($syncResult) && $syncResult['success']
+            ? ' ERP invoice: ' . ($syncResult['data']['invoiceNumber'] ?? 'synced')
+            : '';
+        $message = "Payment recorded (" . ucfirst(str_replace('_', ' ', $directMethod)) . ")!$erpNote";
         
     } elseif ($action === 'upload_delivery_note') {
         if (isset($_FILES['delivery_note_file']) && $_FILES['delivery_note_file']['error'] === UPLOAD_ERR_OK) {
@@ -956,16 +984,74 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                     </a>
                                     <?php endif; ?>
                                     <?php if (!($order['invoice_paid'] ?? false)): ?>
-                                    <form method="post" class="inline">
-                                        <?php echo csrfField(); ?>
-                                        <input type="hidden" name="action" value="mark_paid">
-                                        <button type="submit" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-sm">
-                                            <i class="fa-solid fa-check mr-1"></i> Mark as Paid
-                                        </button>
-                                    </form>
+                                    <!-- Mark as Paid expanded form -->
+                                    <div class="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                        <p class="text-sm font-semibold text-gray-700 mb-3"><i class="fa-solid fa-money-bill-wave mr-1 text-green-600"></i>Record Direct Payment</p>
+                                        <form method="post" class="space-y-3">
+                                            <?php echo csrfField(); ?>
+                                            <input type="hidden" name="action" value="mark_paid">
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-600 mb-1">Payment Method</label>
+                                                    <select name="direct_method" required
+                                                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                                        <option value="bank_transfer">Bank Transfer</option>
+                                                        <option value="cash">Cash</option>
+                                                        <option value="cheque">Cheque</option>
+                                                        <option value="po">Purchase Order (PO)</option>
+                                                        <option value="online">Online (Paymob)</option>
+                                                        <option value="credit">Credit Account</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-600 mb-1">Reference / PO Number</label>
+                                                    <input type="text" name="direct_ref"
+                                                        value="<?php echo htmlspecialchars($order['po_number'] ?? ''); ?>"
+                                                        placeholder="Bank ref, PO no., cheque no."
+                                                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-gray-600 mb-1">Notes (optional)</label>
+                                                <input type="text" name="direct_notes" placeholder="e.g. Paid by Mohsin Haider Darwish, ref TXN-12345"
+                                                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                            </div>
+                                            <div class="flex items-center gap-3">
+                                                <button type="submit"
+                                                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">
+                                                    <i class="fa-solid fa-check mr-1"></i> Mark as Paid
+                                                </button>
+                                                <?php if (!empty($order['order_number'])): ?>
+                                                <span class="text-xs text-gray-400">Will sync to BHD-ERP automatically</span>
+                                                <?php endif; ?>
+                                            </div>
+                                        </form>
+                                    </div>
                                     <?php else: ?>
-                                    <span class="inline-flex items-center gap-1 text-green-700 text-sm">
-                                        <i class="fa-solid fa-check-circle"></i> 
+                                    <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
+                                        <div class="flex items-center gap-2 font-medium">
+                                            <i class="fa-solid fa-circle-check"></i> Payment Recorded
+                                        </div>
+                                        <?php if (!empty($order['payment_method'])): ?>
+                                        <div class="mt-1 text-xs text-green-700">
+                                            Method: <?php echo ucfirst(str_replace('_', ' ', $order['payment_method'])); ?>
+                                            <?php if (!empty($order['direct_payment_ref'])): ?>
+                                            &bull; Ref: <?php echo htmlspecialchars($order['direct_payment_ref']); ?>
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($order['erp_invoice_number'])): ?>
+                                        <div class="mt-1 text-xs text-green-600">
+                                            <i class="fa-solid fa-link mr-1"></i>ERP: <?php echo htmlspecialchars($order['erp_invoice_number']); ?>
+                                        </div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($order['erp_sync_status']) && $order['erp_sync_status'] === 'error'): ?>
+                                        <div class="mt-1 text-xs text-red-600">
+                                            <i class="fa-solid fa-triangle-exclamation mr-1"></i>ERP sync failed: <?php echo htmlspecialchars($order['erp_sync_error'] ?? ''); ?>
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <span class="text-xs text-green-600 mt-1 block">
                                         Paid on <?php echo $order['invoice_paid_at'] ? date('M j, Y', strtotime($order['invoice_paid_at'])) : '-'; ?>
                                     </span>
                                     <?php endif; ?>
