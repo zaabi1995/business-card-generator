@@ -1,7 +1,7 @@
 <?php
 /**
  * Company — Credit Accounts Overview
- * View all credit accounts across print shops
+ * View all credit accounts across print shops, upload PO documents
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
@@ -15,6 +15,30 @@ $companyId = getCurrentCompanyId();
 if (!$companyId) {
     header('Location: ' . getBasePath() . 'login.php');
     exit;
+}
+
+$error   = '';
+$success = '';
+
+// Handle PO upload
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
+    $accountId = trim($_POST['account_id'] ?? '');
+
+    // Verify this account belongs to this company
+    $acc = $accountId ? CreditManager::getAccountById($accountId) : null;
+    if ($acc && $acc['company_id'] === $companyId) {
+        $poNumber = trim($_POST['po_number'] ?? '');
+        if (isset($_FILES['po_file']) && $_FILES['po_file']['error'] === UPLOAD_ERR_OK) {
+            $result = CreditManager::uploadPO($accountId, $_FILES['po_file'], $poNumber ?: null);
+            $success = isset($result['error']) ? '' : 'PO document uploaded';
+            if (isset($result['error'])) $error = $result['error'];
+        } else {
+            $error = 'Please select a file to upload';
+        }
+    } else {
+        $error = 'Account not found';
+    }
 }
 
 $accounts = CreditManager::getCompanyAccounts($companyId);
@@ -48,6 +72,13 @@ adminHeader('Credit Accounts', 'print');
         <h1 class="text-2xl font-bold mt-2"><i class="fa-solid fa-building-columns mr-2 text-gray-400"></i>My Credit Accounts</h1>
     </div>
 
+    <?php if ($error): ?>
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4"><i class="fa-solid fa-circle-xmark mr-1"></i> <?= htmlspecialchars($error) ?></div>
+    <?php endif; ?>
+    <?php if ($success): ?>
+        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-4"><i class="fa-solid fa-circle-check mr-1"></i> <?= htmlspecialchars($success) ?></div>
+    <?php endif; ?>
+
     <!-- Stats -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div class="bg-white rounded-xl shadow-sm border p-4">
@@ -78,6 +109,7 @@ adminHeader('Credit Accounts', 'print');
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Used</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Available</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Terms</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">PO Document</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -103,6 +135,46 @@ adminHeader('Credit Accounts', 'print');
                         </td>
                         <td class="px-6 py-4 text-sm text-center">
                             <?= $acc['payment_terms'] ? strtoupper($acc['payment_terms']) : '—' ?>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-center">
+                            <?php if (!empty($acc['po_file_path'])): ?>
+                                <a href="<?= getBasePath() . htmlspecialchars($acc['po_file_path']) ?>" target="_blank"
+                                   class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-medium">
+                                    <i class="fa-solid fa-file-invoice"></i>
+                                    <?= htmlspecialchars($acc['po_number'] ?? 'View PO') ?>
+                                </a>
+                                <button onclick="document.getElementById('po-form-<?= $acc['id'] ?>').classList.toggle('hidden')"
+                                        class="ml-2 text-xs text-gray-400 hover:text-gray-600">
+                                    <i class="fa-solid fa-upload"></i>
+                                </button>
+                            <?php else: ?>
+                                <button onclick="document.getElementById('po-form-<?= $acc['id'] ?>').classList.toggle('hidden')"
+                                        class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                    <i class="fa-solid fa-upload mr-1"></i>Upload PO
+                                </button>
+                            <?php endif; ?>
+                            <!-- PO Upload Form -->
+                            <div id="po-form-<?= $acc['id'] ?>" class="hidden mt-2">
+                                <form method="POST" enctype="multipart/form-data" class="text-left space-y-2 bg-gray-50 rounded-lg p-3 border">
+                                    <?= csrfField() ?>
+                                    <input type="hidden" name="account_id" value="<?= htmlspecialchars($acc['id']) ?>">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">PO Number (optional)</label>
+                                        <input type="text" name="po_number" value="<?= htmlspecialchars($acc['po_number'] ?? '') ?>"
+                                               class="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500"
+                                               placeholder="e.g. PO-2024-001">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Document</label>
+                                        <input type="file" name="po_file" accept=".pdf,.jpg,.jpeg,.png" required
+                                               class="w-full text-xs border border-gray-300 rounded px-2 py-1">
+                                        <p class="text-xs text-gray-400 mt-0.5">PDF/JPG/PNG, max 5MB</p>
+                                    </div>
+                                    <button type="submit" class="w-full bg-blue-600 text-white text-xs py-1.5 rounded hover:bg-blue-700">
+                                        <i class="fa-solid fa-upload mr-1"></i>Upload
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     <?php if ($acc['status'] === 'pending'): ?>

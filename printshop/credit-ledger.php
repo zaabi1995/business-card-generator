@@ -53,19 +53,23 @@ $company = $db->fetchOne("SELECT name, admin_email FROM companies WHERE id = :id
 
 // Handle POST — record payment
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    validateCSRFToken($_POST['csrf_token'] ?? '');
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
     $action = $_POST['action'] ?? '';
 
     if ($action === 'record_payment') {
         $amount = (float)($_POST['amount'] ?? 0);
-        $notes = trim($_POST['notes'] ?? '');
+        $notes  = trim($_POST['notes'] ?? '');
         if ($amount > 0) {
-            $result = CreditManager::recordPayment($accountId, $amount, $notes ?: null, $user['id']);
+            $proofFile = (isset($_FILES['proof_file']) && $_FILES['proof_file']['error'] === UPLOAD_ERR_OK)
+                ? $_FILES['proof_file'] : null;
+            $result = CreditManager::recordPaymentWithProof(
+                $accountId, $amount, $notes ?: null, $user['id'], $proofFile
+            );
             if (isset($result['error'])) {
                 $error = $result['error'];
             } else {
-                $success = 'Payment of ' . number_format($amount, 3) . ' OMR recorded';
-                // Refresh account data
+                $success = 'Payment of ' . number_format($amount, 3) . ' OMR recorded'
+                    . ($result['proof_path'] ? ' (with proof)' : '');
                 $account = CreditManager::getAccountById($accountId);
             }
         } else {
@@ -166,13 +170,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Balance</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes / Proof</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
                             <?php foreach ($ledger as $tx): ?>
                             <tr>
-                                <td class="px-6 py-3 text-sm text-gray-500"><?= date('M d, Y', strtotime($tx['created_at'])) ?><br><span class="text-xs"><?= date('h:i A', strtotime($tx['created_at'])) ?></span></td>
+                                <td class="px-6 py-3 text-sm text-gray-500 whitespace-nowrap"><?= date('M d, Y', strtotime($tx['created_at'])) ?><br><span class="text-xs"><?= date('h:i A', strtotime($tx['created_at'])) ?></span></td>
                                 <td class="px-6 py-3 text-sm">
                                     <span class="<?= $txColors[$tx['type']] ?? 'text-gray-600' ?> font-medium">
                                         <i class="fa-solid <?= $txIcons[$tx['type']] ?? 'fa-circle' ?> mr-1"></i>
@@ -180,11 +184,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                     </span>
                                 </td>
                                 <td class="px-6 py-3 text-sm text-gray-500"><?= $tx['order_number'] ? htmlspecialchars($tx['order_number']) : '—' ?></td>
-                                <td class="px-6 py-3 text-sm text-right font-medium <?= $txColors[$tx['type']] ?? '' ?>">
+                                <td class="px-6 py-3 text-sm text-right font-medium <?= $txColors[$tx['type']] ?? '' ?> whitespace-nowrap">
                                     <?= $tx['type'] === 'charge' ? '+' : '-' ?><?= number_format($tx['amount'], 3) ?>
                                 </td>
-                                <td class="px-6 py-3 text-sm text-right"><?= number_format($tx['balance_after'], 3) ?></td>
-                                <td class="px-6 py-3 text-sm text-gray-500"><?= $tx['notes'] ? htmlspecialchars($tx['notes']) : '' ?></td>
+                                <td class="px-6 py-3 text-sm text-right whitespace-nowrap"><?= number_format($tx['balance_after'], 3) ?></td>
+                                <td class="px-6 py-3 text-sm text-gray-500">
+                                    <?= $tx['notes'] ? htmlspecialchars($tx['notes']) : '' ?>
+                                    <?php if (!empty($tx['po_file_path'])): ?>
+                                    <a href="<?= getBasePath() . htmlspecialchars($tx['po_file_path']) ?>" target="_blank"
+                                       class="inline-flex items-center gap-1 ml-2 text-blue-600 hover:text-blue-800 text-xs">
+                                        <i class="fa-solid fa-file-invoice"></i> Proof
+                                    </a>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -198,7 +210,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <!-- Record Payment -->
             <div class="bg-white rounded-xl border h-fit">
                 <div class="px-6 py-4 border-b"><h2 class="font-semibold"><i class="fa-solid fa-money-bill-wave mr-2 text-green-500"></i>Record Payment</h2></div>
-                <form method="POST" class="p-6 space-y-4">
+                <form method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
                     <?= csrfField() ?>
                     <input type="hidden" name="action" value="record_payment">
                     <div>
@@ -206,16 +218,22 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <input type="number" name="amount" step="0.001" min="0.001" max="<?= $account['balance_used'] ?>" required
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                placeholder="0.000">
+                        <p class="text-xs text-gray-400 mt-1">Outstanding: <?= number_format($account['balance_used'], 3) ?> OMR</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
                         <textarea name="notes" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
                                   placeholder="e.g. Bank transfer ref #123"></textarea>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Payment Proof (optional)</label>
+                        <input type="file" name="proof_file" accept=".pdf,.jpg,.jpeg,.png"
+                               class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
+                        <p class="text-xs text-gray-400 mt-1">Bank receipt, cheque scan, etc. PDF/JPG/PNG, max 5MB</p>
+                    </div>
                     <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition text-sm font-medium">
                         <i class="fa-solid fa-check mr-1"></i> Record Payment
                     </button>
-                    <p class="text-xs text-gray-400 text-center">Outstanding: <?= number_format($account['balance_used'], 3) ?> OMR</p>
                 </form>
             </div>
         </div>

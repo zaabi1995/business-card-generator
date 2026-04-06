@@ -124,8 +124,129 @@ class CreditManager {
     }
 
     /**
+     * Print shop adjusts credit limit and/or payment terms on an active account
+     */
+    public static function adjustLimit(
+        string $creditAccountId,
+        float $newLimit,
+        ?string $paymentTerms = null,
+        ?float $exposureLimit = null
+    ): array {
+        $db = Database::getInstance();
+        $account = self::getAccountById($creditAccountId);
+        if (!$account || $account['status'] !== 'approved') {
+            return ['error' => 'Account not active'];
+        }
+        if ($newLimit < (float)$account['balance_used']) {
+            return ['error' => 'New limit cannot be less than current outstanding balance (' . number_format($account['balance_used'], 3) . ')'];
+        }
+        $fields = ['credit_limit' => $newLimit];
+        if ($paymentTerms !== null) {
+            $fields['payment_terms'] = $paymentTerms;
+        }
+        if ($exposureLimit !== null) {
+            $fields['exposure_limit'] = $exposureLimit > 0 ? $exposureLimit : null;
+        }
+        $db->update('credit_accounts', $fields, 'id = :id', ['id' => $creditAccountId]);
+        return ['success' => true];
+    }
+
+    /**
+     * Upload a PO document against a credit account (at request time)
+     */
+    public static function uploadPO(string $creditAccountId, array $file, ?string $poNumber = null): array {
+        $account = self::getAccountById($creditAccountId);
+        if (!$account) {
+            return ['error' => 'Account not found'];
+        }
+
+        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+        if (!in_array($file['type'], $allowedTypes)) {
+            return ['error' => 'Invalid file type. Allowed: PDF, JPG, PNG'];
+        }
+        if ($file['size'] > 5 * 1024 * 1024) {
+            return ['error' => 'File too large. Maximum 5MB'];
+        }
+
+        $uploadDir = dirname(__DIR__) . '/uploads/credit_pos/' . $account['company_id'];
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $safeName = 'ca_' . $creditAccountId . '_' . time() . '.' . $ext;
+        $relativePath = 'uploads/credit_pos/' . $account['company_id'] . '/' . $safeName;
+
+        if (!move_uploaded_file($file['tmp_name'], dirname(__DIR__) . '/' . $relativePath)) {
+            return ['error' => 'Failed to save file'];
+        }
+
+        $db = Database::getInstance();
+        $db->update('credit_accounts', [
+            'po_file_path' => $relativePath,
+            'po_number' => $poNumber,
+            'po_received_at' => date('Y-m-d H:i:s')
+        ], 'id = :id', ['id' => $creditAccountId]);
+
+        return ['po_file_path' => $relativePath];
+    }
+
+    /**
+     * Record payment with optional proof document upload
+     */
+    public static function recordPaymentWithProof(
+        string $creditAccountId,
+        float $amount,
+        ?string $notes = null,
+        ?string $recordedBy = null,
+        ?array $proofFile = null
+    ): array {
+        $proofPath = null;
+        if ($proofFile && $proofFile['error'] === UPLOAD_ERR_OK) {
+            $account = self::getAccountById($creditAccountId);
+            $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+            if (!in_array($proofFile['type'], $allowedTypes)) {
+                return ['error' => 'Invalid proof file type. Allowed: PDF, JPG, PNG'];
+            }
+            if ($proofFile['size'] > 5 * 1024 * 1024) {
+                return ['error' => 'Proof file too large. Maximum 5MB'];
+            }
+            $uploadDir = dirname(__DIR__) . '/uploads/payment_proofs/' . ($account['company_id'] ?? 'unknown');
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+            $ext = strtolower(pathinfo($proofFile['name'], PATHINFO_EXTENSION));
+            $safeName = 'proof_' . $creditAccountId . '_' . time() . '.' . $ext;
+            $proofPath = 'uploads/payment_proofs/' . ($account['company_id'] ?? 'unknown') . '/' . $safeName;
+            if (!move_uploaded_file($proofFile['tmp_name'], dirname(__DIR__) . '/' . $proofPath)) {
+                return ['error' => 'Failed to save proof file'];
+            }
+        }
+
+        $db = Database::getInstance();
+        $account = self::getAccountById($creditAccountId);
+        if (!$account) return ['error' => 'Credit account not found'];
+
+        $newBalance = max(0, (float)$account['balance_used'] - $amount);
+        $txId = generateUUID();
+
+        $db->update('credit_accounts', ['balance_used' => $newBalance], 'id = :id', ['id' => $creditAccountId]);
+
+        $txData = [
+            'id' => $txId,
+            'credit_account_id' => $creditAccountId,
+            'type' => 'payment',
+            'amount' => $amount,
+            'balance_after' => $newBalance,
+            'notes' => $notes,
+            'recorded_by' => $recordedBy
+        ];
+        if ($proofPath) $txData['po_file_path'] = $proofPath;
+        $db->insert('credit_transactions', $txData);
+
+        return ['transaction_id' => $txId, 'balance_after' => $newBalance, 'proof_path' => $proofPath];
+    }
+
+    /**
      * Charge an order to credit account
      * Uses DB transaction with SELECT ... FOR UPDATE
+     * Respects exposure_limit if set (max outstanding at any time)
      */
     public static function charge(
         string $creditAccountId,
@@ -147,10 +268,16 @@ class CreditManager {
                 return ['error' => 'Credit account not active'];
             }
 
-            $available = (float)$account['credit_limit'] - (float)$account['balance_used'];
+            // Respect exposure_limit if set; otherwise fall back to credit_limit
+            $effectiveLimit = ($account['exposure_limit'] !== null && (float)$account['exposure_limit'] > 0)
+                ? min((float)$account['credit_limit'], (float)$account['exposure_limit'])
+                : (float)$account['credit_limit'];
+
+            $available = $effectiveLimit - (float)$account['balance_used'];
             if ($amount > $available) {
                 $db->rollback();
-                return ['error' => 'Insufficient credit. Available: ' . number_format($available, 3)];
+                $label = $account['exposure_limit'] !== null ? 'exposure limit' : 'credit limit';
+                return ['error' => 'Insufficient credit (' . $label . '). Available: ' . number_format($available, 3)];
             }
 
             $newBalance = (float)$account['balance_used'] + $amount;
