@@ -267,6 +267,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                 <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium <?= $statusColors[$order['status']] ?? 'bg-gray-100 text-gray-600' ?>">
                                     <?= ucfirst($order['status']) ?>
                                 </span>
+                                <?php if (!empty($order['po_number'])): ?>
+                                <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded text-xs font-medium <?= $order['po_approved'] ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' ?>">
+                                    <i class="fa-solid fa-file-contract"></i>
+                                    PO <?= $order['po_approved'] ? 'Approved' : 'Pending' ?>
+                                </span>
+                                <?php endif; ?>
                                 <?php if ($order['tracking_number']): ?>
                                 <p class="text-xs text-blue-600 mt-1"><?= sanitize($order['tracking_number']) ?></p>
                                 <?php endif; ?>
