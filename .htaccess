@@ -199,9 +199,13 @@ ErrorDocument 503 /maintenance.php
 </FilesMatch>
 
 # Block hidden directories (.git, .vscode, .idea, etc.)
+# Block developer/asset directories not for public access
 <IfModule mod_rewrite.c>
     RewriteRule ^\.git/ - [F,L]
     RewriteRule ^\.vscode/ - [F,L]
     RewriteRule ^\.idea/ - [F,L]
     RewriteRule ^\.cursor/ - [F,L]
+    RewriteRule ^downloads/ - [F,L]
+    RewriteRule ^database/ - [F,L]
+    RewriteRule ^includes/ - [F,L]
 </IfModule>
