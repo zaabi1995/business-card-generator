@@ -175,7 +175,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         Copy Link
                     </button>
                     
-                    <a href="https://wa.me/?text=<?php echo urlencode('Download my contact: ' . $vcfUrl); ?>" 
+                    <a href="https://api.whatsapp.com/send?text=<?php echo urlencode('Download my contact: ' . $vcfUrl); ?>"
                        target="_blank"
                        class="flex items-center justify-center gap-3 w-full py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-colors">
                         <i class="fa-brands fa-whatsapp"></i>

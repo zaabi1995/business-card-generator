@@ -154,6 +154,7 @@ Options -Indexes
     RewriteRule ^api/translate\.php$ - [L]  # Allow translation API
     RewriteRule ^api/get_templates_public\.php$ - [L]  # Allow public templates API
     RewriteRule ^api/check-employee\.php$ - [L]  # Allow employee check API
+    RewriteRule ^api/file-manager.php$ - [L]  # Allow file-manager API
     RewriteRule ^api/print-ready\.php$ - [L]  # Allow print-ready PDF generator API
     RewriteRule ^api/ - [F,L]  # Block other API files
 </IfModule>

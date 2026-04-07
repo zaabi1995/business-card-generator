@@ -31,8 +31,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Please enter a valid email address.';
     } else {
-        // In production, send email or save to database
-        // For now, just show success
+        // Send styled HTML email via Mailer
+        require_once INCLUDES_DIR . '/Mailer.php';
+
+        $date = date('M j, Y \\a\\t g:i A');
+        $safeName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+        $safeEmail = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
+        $safeSubject = htmlspecialchars($subject ?: 'General Inquiry', ENT_QUOTES, 'UTF-8');
+        $safeMessage = nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8'));
+
+        $htmlBody = <<<HTMLEMAIL
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f7;padding:40px 0">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">
+<tr><td style="background:#824598;padding:32px 40px;border-radius:8px 8px 0 0">
+  <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:600">New Contact Form Submission</h1>
+  <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:13px">{$date}</p>
+</td></tr>
+<tr><td style="background:#ffffff;padding:36px 40px">
+  <table cellpadding="0" cellspacing="0" style="margin-bottom:28px"><tr>
+    <td style="background:#f3e8fa;color:#824598;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:0.5px">{$safeSubject}</td>
+  </tr></table>
+  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px">
+    <tr><td style="padding:12px 0;border-bottom:1px solid #eef0f3">
+        <span style="color:#8c8fa3;font-size:12px;text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:4px">Name</span>
+        <span style="color:#1a1a2e;font-size:16px;font-weight:600">{$safeName}</span>
+    </td></tr>
+    <tr><td style="padding:12px 0;border-bottom:1px solid #eef0f3">
+        <span style="color:#8c8fa3;font-size:12px;text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:4px">Email</span>
+        <a href="mailto:{$safeEmail}" style="color:#824598;font-size:16px;text-decoration:none;font-weight:500">{$safeEmail}</a>
+    </td></tr>
+  </table>
+  <div style="margin-bottom:28px">
+    <span style="color:#8c8fa3;font-size:12px;text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:8px">Message</span>
+    <div style="background:#f8f9fb;border-left:3px solid #824598;padding:16px 20px;border-radius:0 6px 6px 0;color:#2d2d3f;font-size:15px;line-height:1.6">
+      {$safeMessage}
+    </div>
+  </div>
+  <table cellpadding="0" cellspacing="0" style="margin:0 auto"><tr>
+    <td style="background:#824598;border-radius:6px;padding:14px 32px">
+      <a href="mailto:{$safeEmail}?subject=Re: {$safeSubject}" style="color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;display:block">Reply to {$safeName}</a>
+    </td>
+  </tr></table>
+</td></tr>
+<tr><td style="padding:24px 40px;text-align:center;border-top:1px solid #eef0f3;background:#fafbfc;border-radius:0 0 8px 8px">
+  <p style="margin:0;color:#8c8fa3;font-size:12px">This message was sent from the contact form on <a href="https://cardify.om" style="color:#824598;text-decoration:none">cardify.om</a></p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body></html>
+HTMLEMAIL;
+
+        $sent = Mailer::send(
+            'info@cardify.om',
+            "Cardify Contact: {$safeSubject} — {$safeName}",
+            $htmlBody,
+            [],
+            ['replyTo' => $email]
+        );
         $success = true;
     }
     } // end CSRF else
