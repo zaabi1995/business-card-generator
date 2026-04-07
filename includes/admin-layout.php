@@ -126,18 +126,21 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     $userInitials = strtoupper(substr($userName, 0, 2));
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-product="cardify">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($pageTitle); ?> - <?php echo $brandName; ?></title>
     <link rel="icon" href="<?php echo $basePath; ?>favicon.svg" type="image/svg+xml">
-    
+
+    <!-- BHD Design Language Tokens -->
+    <link rel="stylesheet" href="<?php echo $basePath; ?>assets/css/bhd-tokens.css">
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="<?php echo $basePath; ?>assets/vendor/css/all.css">
     
