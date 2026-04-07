@@ -98,28 +98,31 @@ function saveCompanyDefaults($db, $companyId, $phone, $website, $tagline) {
 }
 
 function uploadCompanyLogo($file, $companyId) {
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
     $maxSize = 5 * 1024 * 1024; // 5MB
-
     if ($file['size'] > $maxSize) return null;
-    if (!in_array($file['type'], $allowedTypes)) {
-        // Double check by extension
-        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'])) return null;
-    }
+
+    // Detect real MIME from file content, never trust client-supplied type
+    $finfo = new \finfo(FILEINFO_MIME_TYPE);
+    $realMime = $finfo->file($file['tmp_name']);
+    $mimeToExt = [
+        'image/jpeg'     => 'jpg',
+        'image/png'      => 'png',
+        'image/gif'      => 'gif',
+        'image/webp'     => 'webp',
+        'image/svg+xml'  => 'svg',
+    ];
+    if (!isset($mimeToExt[$realMime])) return null;
+    $ext = $mimeToExt[$realMime];
 
     $uploadDir = COMPANIES_UPLOADS_DIR . '/' . $companyId;
     if (!is_dir($uploadDir)) @mkdir($uploadDir, 0755, true);
 
-    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     // Delete old logos
     foreach (glob($uploadDir . '/logo.*') as $old) {
         @unlink($old);
     }
 
-    $filename = 'logo.' . ($ext ?: 'png');
-    $dest = $uploadDir . '/' . $filename;
-
+    $dest = $uploadDir . '/logo.' . $ext;
     if (!move_uploaded_file($file['tmp_name'], $dest)) return null;
 
     return getWebPath($dest);

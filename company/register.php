@@ -214,13 +214,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Login the new user
                     Auth::unifiedLogin($email, $password);
 
-                    // For BHD referrals: redirect to onboarding wizard
+                    // Redirect all new signups to onboarding wizard
+                    $source = 'general';
                     if ($pendingReferral === 'bhd') {
                         unset($_SESSION['pending_referral']);
-                        header('Location: ' . getBasePath() . 'onboarding.php?source=bhd');
-                    } else {
-                        header('Location: ' . getBasePath() . ($company['slug'] ?? '') . '/admin/');
+                        $source = 'bhd';
                     }
+                    header('Location: ' . getBasePath() . 'onboarding.php?source=' . $source);
                     exit;
                 }
                 $error = $result['error'] ?? 'Failed to create company';

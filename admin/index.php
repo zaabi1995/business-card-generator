@@ -218,28 +218,46 @@ if ($companyId && DatabaseAdapter::useDatabase()) {
     } catch (Exception $e) {}
 }
 $showWelcome = ($_GET['welcome'] ?? '') === '1';
+$onboardingCompleted = (int)($companyRow['onboarding_completed'] ?? 0);
 ?>
 
-<?php if ($showWelcome && $companyReferralSource === 'bhd'): ?>
-<!-- BHD Welcome Banner -->
+<?php if ($showWelcome): ?>
+<!-- Post-onboarding Welcome Banner -->
 <div class="mb-6 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 p-6 text-white shadow-lg flex items-center justify-between gap-4" id="bhd-welcome-banner">
     <div class="flex items-center gap-4">
         <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
             <i class="fa-solid fa-rocket text-white text-xl"></i>
         </div>
         <div>
-            <h3 class="font-bold text-lg">Welcome to Cardify — BHD Customer!</h3>
-            <p class="text-blue-100 text-sm mt-0.5">Your account is set up with BHD-branded templates. Add your first employee to get started.</p>
+            <h3 class="font-bold text-lg">You're all set! Welcome to Cardify.</h3>
+            <p class="text-blue-100 text-sm mt-0.5">Your account is ready. Add your first employee to generate digital business cards.</p>
         </div>
     </div>
     <div class="flex items-center gap-3 flex-shrink-0">
-        <a href="<?= COMPANY_ADMIN_BASE ?>employees.php" class="bg-white text-blue-600 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-blue-50 transition-all whitespace-nowrap">
+        <?php $empExt = defined('COMPANY_ADMIN_BASE') ? '' : '.php'; ?>
+        <a href="<?= getAdminBasePath() ?>employees<?= $empExt ?>" class="bg-white text-blue-600 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-blue-50 transition-all whitespace-nowrap">
             Add Employee
         </a>
         <button onclick="document.getElementById('bhd-welcome-banner').remove()" class="text-white/60 hover:text-white">
             <i class="fa-solid fa-xmark text-lg"></i>
         </button>
     </div>
+</div>
+<?php elseif (!$onboardingCompleted): ?>
+<!-- Onboarding incomplete nudge -->
+<div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-circle-exclamation text-amber-500"></i>
+        </div>
+        <div>
+            <p class="font-semibold text-amber-900 text-sm">Complete your account setup</p>
+            <p class="text-amber-700 text-xs mt-0.5">Upload your logo and pick a card template to get started in 2 minutes.</p>
+        </div>
+    </div>
+    <a href="<?= getBasePath() ?>onboarding.php" class="flex-shrink-0 bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-all whitespace-nowrap">
+        Finish Setup
+    </a>
 </div>
 <?php endif; ?>
 
