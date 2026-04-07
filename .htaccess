@@ -196,3 +196,11 @@ ErrorDocument 503 /maintenance.php
     Order allow,deny
     Deny from all
 </FilesMatch>
+
+# Block hidden directories (.git, .vscode, .idea, etc.)
+<IfModule mod_rewrite.c>
+    RewriteRule ^\.git/ - [F,L]
+    RewriteRule ^\.vscode/ - [F,L]
+    RewriteRule ^\.idea/ - [F,L]
+    RewriteRule ^\.cursor/ - [F,L]
+</IfModule>
