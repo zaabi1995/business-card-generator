@@ -90,6 +90,10 @@ if (!defined('PAYMOB_MOTO_OMANNET_INTEGRATION_ID')) define('PAYMOB_MOTO_OMANNET_
 if (!defined('STRIPE_SECRET_KEY')) define('STRIPE_SECRET_KEY', ''); // Stripe secret key
 if (!defined('STRIPE_PUBLIC_KEY')) define('STRIPE_PUBLIC_KEY', ''); // Stripe public key
 
+// LinkedIn OAuth Configuration (for social sharing and post automation)
+if (!defined('LINKEDIN_CLIENT_ID')) define('LINKEDIN_CLIENT_ID', '');        // LinkedIn app client ID
+if (!defined('LINKEDIN_CLIENT_SECRET')) define('LINKEDIN_CLIENT_SECRET', ''); // LinkedIn app client secret
+
 // Print Webhook Configuration
 // Global secret for verifying print status webhooks (per-shop secrets take priority)
 // Callers must send X-Webhook-Signature: sha256=<hmac_hex_of_body>

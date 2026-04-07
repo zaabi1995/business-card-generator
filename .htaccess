@@ -155,6 +155,7 @@ Options -Indexes
     RewriteRule ^api/get_templates_public\.php$ - [L]  # Allow public templates API
     RewriteRule ^api/check-employee\.php$ - [L]  # Allow employee check API
     RewriteRule ^api/file-manager.php$ - [L]  # Allow file-manager API
+    RewriteRule ^api/linkedin/callback\.php$ - [L]  # Allow LinkedIn OAuth callback
     RewriteRule ^api/print-ready\.php$ - [L]  # Allow print-ready PDF generator API
     RewriteRule ^api/ - [F,L]  # Block other API files
 </IfModule>
