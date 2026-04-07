@@ -208,17 +208,42 @@ adminHeader('Dashboard', 'dashboard');
 
 // Get company referral source for welcome banner
 $companyReferralSource = null;
+$companyRow = [];
 if ($companyId && DatabaseAdapter::useDatabase()) {
     try {
         $companyRow = $db->fetchOne(
             "SELECT referral_source, onboarding_completed FROM companies WHERE id = :id",
             ['id' => $companyId]
-        );
+        ) ?: [];
         $companyReferralSource = $companyRow['referral_source'] ?? null;
     } catch (Exception $e) {}
 }
 $showWelcome = ($_GET['welcome'] ?? '') === '1';
 $onboardingCompleted = (int)($companyRow['onboarding_completed'] ?? 0);
+
+// Getting started checklist — only for company admins, hidden once all steps done
+$hasLogo = !empty($companyTheme['logo_path']);
+$hasTemplate = count($frontTemplates) > 0;
+$hasEmployee = $employeeCount > 0;
+$hasGeneratedCard = $generatedCount > 0;
+$hasPrintOrder = false;
+if ($companyId && DatabaseAdapter::useDatabase()) {
+    try {
+        $orderRow = $db->fetchOne("SELECT id FROM print_orders WHERE company_id = :id LIMIT 1", ['id' => $companyId]);
+        $hasPrintOrder = !empty($orderRow);
+    } catch (Exception $e) {}
+}
+$_inCompanyCtx = defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug']);
+$_ext = $_inCompanyCtx ? '' : '.php';
+$checklistSteps = [
+    ['done' => true,             'label' => 'Create your account',          'url' => null],
+    ['done' => $onboardingCompleted || ($hasLogo && $hasTemplate), 'label' => 'Upload logo & pick a template', 'url' => getBasePath() . 'onboarding.php'],
+    ['done' => $hasEmployee,     'label' => 'Add your first employee',       'url' => getAdminBasePath() . 'employees' . $_ext],
+    ['done' => $hasGeneratedCard,'label' => 'Generate your first card',      'url' => getAdminBasePath() . 'batch_generate' . $_ext],
+    ['done' => $hasPrintOrder,   'label' => 'Order physical business cards', 'url' => getAdminBasePath() . 'print' . $_ext],
+];
+$checklistAllDone = array_reduce($checklistSteps, fn($carry, $s) => $carry && $s['done'], true);
+$checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
 ?>
 
 <?php if ($showWelcome): ?>
@@ -258,6 +283,51 @@ $onboardingCompleted = (int)($companyRow['onboarding_completed'] ?? 0);
     <a href="<?= getBasePath() ?>onboarding.php" class="flex-shrink-0 bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-all whitespace-nowrap">
         Finish Setup
     </a>
+</div>
+<?php endif; ?>
+
+<?php if (!$checklistAllDone && !$showWelcome && $currentRole !== 'super_admin'): ?>
+<!-- Getting Started Checklist -->
+<div class="mb-8 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden" id="getting-started-card">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                <i class="fa-solid fa-list-check text-blue-600 text-sm"></i>
+            </div>
+            <div>
+                <h3 class="font-semibold text-gray-900 text-sm">Getting Started</h3>
+                <p class="text-xs text-gray-500"><?= $checklistDoneCount ?>/<?= count($checklistSteps) ?> steps complete</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <!-- Progress bar -->
+            <div class="w-32 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full bg-blue-500 rounded-full transition-all" style="width: <?= round($checklistDoneCount / count($checklistSteps) * 100) ?>%"></div>
+            </div>
+            <button onclick="document.getElementById('getting-started-card').remove()" class="text-gray-300 hover:text-gray-500 transition-colors" title="Dismiss">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </div>
+    <div class="divide-y divide-gray-50">
+        <?php foreach ($checklistSteps as $step): ?>
+        <?php if ($step['done']): ?>
+        <div class="flex items-center gap-4 px-6 py-3 bg-gray-50/50">
+            <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-check text-green-600 text-xs"></i>
+            </div>
+            <span class="text-sm text-gray-400 line-through"><?= htmlspecialchars($step['label']) ?></span>
+        </div>
+        <?php else: ?>
+        <a href="<?= htmlspecialchars($step['url'] ?? '#') ?>" class="flex items-center gap-4 px-6 py-3 hover:bg-blue-50/50 transition-colors group">
+            <div class="w-6 h-6 rounded-full border-2 border-gray-200 group-hover:border-blue-400 flex items-center justify-center flex-shrink-0 transition-colors">
+            </div>
+            <span class="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors"><?= htmlspecialchars($step['label']) ?></span>
+            <i class="fa-solid fa-arrow-right text-xs text-gray-300 group-hover:text-blue-400 ml-auto transition-colors"></i>
+        </a>
+        <?php endif; ?>
+        <?php endforeach; ?>
+    </div>
 </div>
 <?php endif; ?>
 
