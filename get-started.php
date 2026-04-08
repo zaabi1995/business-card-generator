@@ -7,7 +7,7 @@ require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
 $pageTitle = 'Get Started — Free Business Cards for Your Omani Company';
-$pageDescription = 'Create professional digital and printed business cards for your team in minutes. Free for up to 10 employees. Used by 500+ companies in Oman.';
+$pageDescription = 'Create professional digital and printed business cards for your team in minutes. Free for up to 5 employees. Start free, upgrade anytime.';
 $canonicalUrl = 'https://cardify.om/get-started';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
@@ -31,7 +31,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="max-w-5xl mx-auto text-center">
             <div class="inline-flex items-center gap-2 bg-blue-500/30 rounded-full px-4 py-1.5 mb-6 text-sm">
                 <i class="fa-solid fa-star text-yellow-300"></i>
-                <span>Trusted by 500+ companies in Oman</span>
+                <span>Start free — no credit card needed</span>
             </div>
             <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
                 Professional Business Cards<br>
@@ -39,7 +39,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </h1>
             <p class="text-xl text-blue-100 max-w-2xl mx-auto mb-10">
                 Create stunning digital and printed business cards for your entire team.
-                Free for up to 10 employees. No design skills needed.
+                Free for up to 5 employees. No design skills needed.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="<?= getBasePath() ?>login.php?action=register"
@@ -90,7 +90,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <span class="text-2xl font-bold text-blue-600">1</span>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">Sign Up Free</h3>
-                    <p class="text-gray-600">Create your company account in seconds. No credit card needed. Free for up to 10 employees.</p>
+                    <p class="text-gray-600">Create your company account in seconds. No credit card needed. Free for up to 5 employees.</p>
                 </div>
                 <div class="text-center">
                     <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -181,7 +181,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 Start Creating Professional Business Cards Today
             </h2>
             <p class="text-lg text-gray-600 mb-8">
-                Free for up to 10 employees. No credit card required. Takes 2 minutes to set up.
+                Free for up to 5 employees. No credit card required. Takes 2 minutes to set up.
             </p>
             <a href="<?= getBasePath() ?>login.php?action=register"
                class="inline-block bg-blue-600 text-white font-bold px-12 py-4 rounded-xl text-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl">
