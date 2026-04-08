@@ -707,8 +707,13 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
             
             <div x-show="getCardDesigns().length === 0" class="p-12 text-center text-gray-500">
                 <i class="fa-solid fa-palette text-4xl mb-4 opacity-30"></i>
-                <p>No card designs yet</p>
-                <p class="text-sm mt-1">Click "New Card Design" to create one</p>
+                <p class="font-medium text-gray-700">No card designs yet</p>
+                <p class="text-sm mt-1 mb-5">Create your first card template to get started</p>
+                <button @click="showAddModal = true; $nextTick(() => document.getElementById('template-editor').scrollIntoView({behavior:'smooth'}))"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm transition-colors">
+                    <i class="fa-solid fa-plus"></i>
+                    Create Card Design
+                </button>
             </div>
         </div>
         
