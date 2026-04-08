@@ -206,16 +206,29 @@ $baseUrl = getBaseUrl();
 // Start admin layout
 adminHeader('Dashboard', 'dashboard');
 
-// Get company referral source for welcome banner
+// Get company referral source, plan info for welcome banner + usage indicator
 $companyReferralSource = null;
 $companyRow = [];
 if ($companyId && DatabaseAdapter::useDatabase()) {
     try {
         $companyRow = $db->fetchOne(
-            "SELECT referral_source, onboarding_completed FROM companies WHERE id = :id",
+            "SELECT referral_source, onboarding_completed, plan, subscription_status FROM companies WHERE id = :id",
             ['id' => $companyId]
         ) ?: [];
         $companyReferralSource = $companyRow['referral_source'] ?? null;
+    } catch (Exception $e) {}
+}
+$companyPlan = $companyRow['plan'] ?? 'free';
+$isFreePlan = ($companyPlan === 'free' && ($companyRow['subscription_status'] ?? '') !== 'active');
+// Cards generated this month (for free plan limit indicator)
+$cardsThisMonth = 0;
+if ($isFreePlan && $companyId && DatabaseAdapter::useDatabase()) {
+    try {
+        $r = $db->fetchOne(
+            "SELECT COUNT(*) as cnt FROM generated_cards WHERE company_id = :id AND created_at >= DATE_FORMAT(NOW(),'%Y-%m-01')",
+            ['id' => $companyId]
+        );
+        $cardsThisMonth = (int)($r['cnt'] ?? 0);
     } catch (Exception $e) {}
 }
 $showWelcome = ($_GET['welcome'] ?? '') === '1';
@@ -381,6 +394,49 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
         </div>
     </div>
 </div>
+
+<?php if ($isFreePlan && $currentRole !== 'super_admin'):
+    $empPct  = $employeeCount > 0 ? min(100, round($employeeCount / 5 * 100)) : 0;
+    $cardPct = $cardsThisMonth > 0 ? min(100, round($cardsThisMonth / 10 * 100)) : 0;
+    $nearLimit = ($employeeCount >= 4 || $cardsThisMonth >= 8);
+    $_billingUrl = getAdminBasePath() . 'billing' . (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug']) ? '' : '.php');
+?>
+<!-- Free Plan Usage Indicator -->
+<div class="bg-white rounded-xl border <?= $nearLimit ? 'border-amber-300' : 'border-gray-100' ?> shadow-sm p-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
+    <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+            <i class="fa-solid fa-gauge-simple text-gray-400"></i>
+            Free Plan Usage
+            <?php if ($nearLimit): ?>
+            <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Near limit</span>
+            <?php endif; ?>
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4">
+            <div class="flex-1">
+                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>Employees</span>
+                    <span class="font-medium <?= $employeeCount >= 5 ? 'text-red-600' : ($employeeCount >= 4 ? 'text-amber-600' : 'text-gray-600') ?>"><?= $employeeCount ?>/5</span>
+                </div>
+                <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full <?= $employeeCount >= 5 ? 'bg-red-500' : ($employeeCount >= 4 ? 'bg-amber-400' : 'bg-blue-500') ?> rounded-full transition-all" style="width:<?= $empPct ?>%"></div>
+                </div>
+            </div>
+            <div class="flex-1">
+                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>Cards this month</span>
+                    <span class="font-medium <?= $cardsThisMonth >= 10 ? 'text-red-600' : ($cardsThisMonth >= 8 ? 'text-amber-600' : 'text-gray-600') ?>"><?= $cardsThisMonth ?>/10</span>
+                </div>
+                <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div class="h-full <?= $cardsThisMonth >= 10 ? 'bg-red-500' : ($cardsThisMonth >= 8 ? 'bg-amber-400' : 'bg-blue-500') ?> rounded-full transition-all" style="width:<?= $cardPct ?>%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <a href="<?= htmlspecialchars($_billingUrl) ?>" class="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors whitespace-nowrap">
+        <i class="fa-solid fa-rocket"></i> Upgrade to Pro
+    </a>
+</div>
+<?php endif; ?>
 
 <!-- Quick Actions -->
 <div class="grid md:grid-cols-3 gap-6 mb-8">
