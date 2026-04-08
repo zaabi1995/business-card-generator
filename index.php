@@ -582,10 +582,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     Free to Use
                 </span>
                 <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
-                    Free Platform, Pay Only for Printing
+                    Simple, Transparent Pricing
                 </h2>
                 <p class="text-lg text-gray-600">
-                    Everything you need to create and manage digital business cards is completely free. Only pay when you order physical prints.
+                    Start free — no credit card required. Upgrade to Pro for bulk generation, QR analytics, and custom branding.
                 </p>
             </div>
 
@@ -603,42 +603,31 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     }
                 }
                 
-                // Get plan features - try to parse from database or use defaults
-                $freePlanFeatures = [
-                    'Unlimited employees',
-                    'Unlimited card templates',
-                    'Unlimited digital cards',
-                    'QR code generation & tracking',
-                    'Analytics dashboard',
-                    'Department management',
-                    'Employee self-service portal',
-                    'Arabic & English support'
-                ];
-                
-                // Try to get features from database if available
-                if ($freePlan && !empty($freePlan['features_json'])) {
-                    $dbFeatures = json_decode($freePlan['features_json'], true);
-                    if (!empty($dbFeatures) && is_array($dbFeatures)) {
-                        $freePlanFeatures = $dbFeatures;
-                    }
-                }
-                
                 // Get pricing values
                 $freePlanPrice = '0';
-                $freePlanName = $freePlan['name'] ?? 'Free Platform';
-                $freePlanDescription = $freePlan['description'] ?? 'Everything included, no limits';
-                
-                // Check limits for display text
-                $employeeLimit = ($freePlan['max_employees'] ?? -1) == -1 ? 'Unlimited' : ($freePlan['max_employees'] ?? 'Unlimited');
-                $templateLimit = ($freePlan['max_templates'] ?? -1) == -1 ? 'Unlimited' : ($freePlan['max_templates'] ?? 'Unlimited');
+                $freePlanName = $freePlan['name'] ?? 'Free';
+                $freePlanDescription = $freePlan['description'] ?? 'Perfect for individuals and small teams';
+
+                // Accurate free-plan feature list pulled from DB limits
+                $freeMaxEmp  = (int)($freePlan['max_employees'] ?? 5);
+                $freeMaxCards = (int)($freePlan['max_cards_per_month'] ?? 10);
+                $freePlanFeatures = [
+                    'Up to ' . ($freeMaxEmp < 0 ? 'unlimited' : $freeMaxEmp) . ' employees',
+                    ($freeMaxCards < 0 ? 'Unlimited' : $freeMaxCards) . ' card generations / month',
+                    'Card template editor',
+                    'QR code on every card',
+                    'Employee self-service portal',
+                    'Department management',
+                    'Arabic & English support',
+                ];
                 ?>
                 
                 <!-- Free Platform -->
                 <div class="relative bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border-2 border-blue-200 lg:col-span-2">
                     <div class="absolute -top-4 left-8">
                         <span class="inline-flex items-center gap-1 px-4 py-1.5 bg-green-500 text-white text-sm font-bold rounded-full shadow-lg shadow-green-500/30">
-                            <i class="fa-solid fa-infinity"></i>
-                            Forever Free
+                            <i class="fa-solid fa-star"></i>
+                            Start Free
                         </span>
                     </div>
 
