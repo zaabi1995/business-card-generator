@@ -384,7 +384,15 @@ function addNewTemplate() {
     if (!$companyId) {
         throw new Exception('No company context - please log in again');
     }
-    
+
+    // Enforce plan template limit
+    require_once INCLUDES_DIR . '/Billing.php';
+    $billing = new Billing();
+    if (!$billing->checkLimit($companyId, 'templates')) {
+        $limits = $billing->getPlanLimits($companyId);
+        throw new Exception('Template limit reached (' . ($limits['templates'] ?? 2) . ' max on your plan). Upgrade to add more templates.');
+    }
+
     $destination = getCompanyTemplatesDir($companyId);
     // Allow images and PDFs for templates
     $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
