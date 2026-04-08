@@ -94,6 +94,31 @@ function addTemplatePair() {
     
     $templates = [];
     
+    // Helper: generate a solid-color PNG background using GD
+    $bgColor = trim($_POST['bg_color'] ?? '');
+    $bgColor = preg_match('/^#[0-9a-fA-F]{6}$/', $bgColor) ? $bgColor : '';
+
+    $generateColorBg = function($bgHex, $destDir, $label) use ($settings) {
+        if (!$bgHex || !function_exists('imagecreatetruecolor')) return '';
+        // Determine dimensions from settings (default: 1050×600 for standard landscape card at 300dpi)
+        $w = 1050; $h = 600;
+        if (!empty($settings['width']) && !empty($settings['height'])) {
+            $w = max(100, (int)$settings['width']);
+            $h = max(100, (int)$settings['height']);
+        }
+        $r = hexdec(substr($bgHex, 1, 2));
+        $g = hexdec(substr($bgHex, 3, 2));
+        $b = hexdec(substr($bgHex, 5, 2));
+        $img = imagecreatetruecolor($w, $h);
+        $fill = imagecolorallocate($img, $r, $g, $b);
+        imagefill($img, 0, 0, $fill);
+        $filename = $label . '-' . substr(md5($bgHex . $w . $h), 0, 8) . '.png';
+        $path = rtrim($destDir, '/') . '/' . $filename;
+        imagepng($img, $path, 9);
+        imagedestroy($img);
+        return getWebPath($path);
+    };
+
     // Handle front image upload
     $frontImage = '';
     $frontOriginalPdf = null;
@@ -105,8 +130,10 @@ function addTemplatePair() {
                 $frontOriginalPdf = getWebPath($uploadResult['originalPdf']);
             }
         }
+    } elseif ($bgColor) {
+        $frontImage = $generateColorBg($bgColor, $destination, 'bg-front');
     }
-    
+
     // Handle back image upload
     $backImage = '';
     $backOriginalPdf = null;
@@ -118,6 +145,8 @@ function addTemplatePair() {
                 $backOriginalPdf = getWebPath($uploadResult['originalPdf']);
             }
         }
+    } elseif ($bgColor) {
+        $backImage = $generateColorBg($bgColor, $destination, 'bg-back');
     }
     
     // Create front template

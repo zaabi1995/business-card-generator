@@ -601,24 +601,43 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                     </div>
                 </div>
                 
+                <!-- Quick Start: Background Color -->
+                <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fa-solid fa-palette mr-1"></i> Quick Start — Pick a Background Color
+                        <span class="text-xs font-normal text-gray-500 ml-1">(generates a solid-color card instantly)</span>
+                    </label>
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <input type="color" x-model="newTemplate.bgColor" value="#1e3a5f"
+                               class="w-10 h-10 rounded cursor-pointer border border-gray-300">
+                        <div class="flex gap-2 flex-wrap">
+                            <template x-for="c in ['#1e3a5f','#0f172a','#1d4ed8','#065f46','#7c3aed','#9f1239','#78350f','#374151']">
+                                <button type="button" class="w-7 h-7 rounded-full border-2 border-white shadow hover:scale-110 transition-transform"
+                                        :style="'background:'+c" @click="newTemplate.bgColor = c"></button>
+                            </template>
+                        </div>
+                        <span class="text-xs text-gray-400">or upload your own design below</span>
+                    </div>
+                </div>
+
                 <!-- Front and Back Image Uploads -->
-                <div class="mt-4 grid md:grid-cols-2 gap-4">
+                <div class="mt-3 grid md:grid-cols-2 gap-4">
                     <div class="p-4 bg-blue-50 rounded-lg border border-blue-100">
                         <label class="block text-sm font-medium text-blue-800 mb-2">
                             <i class="fa-solid fa-id-card mr-1"></i> Front Background (Optional)
                         </label>
-                        <input type="file" accept="image/*,.svg,.pdf" @change="handleNewFrontImage($event)" 
+                        <input type="file" accept="image/*,.svg,.pdf" @change="handleNewFrontImage($event)"
                                class="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg text-gray-900 text-sm file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-100 file:text-blue-700">
-                        <p class="text-xs text-blue-600 mt-2">Can be added/changed later</p>
+                        <p class="text-xs text-blue-600 mt-2">Overrides color above • Can be added later</p>
                     </div>
-                    
+
                     <div class="p-4 bg-purple-50 rounded-lg border border-purple-100">
                         <label class="block text-sm font-medium text-purple-800 mb-2">
                             <i class="fa-solid fa-clone mr-1"></i> Back Background (Optional)
                         </label>
-                        <input type="file" accept="image/*,.svg,.pdf" @change="handleNewBackImage($event)" 
+                        <input type="file" accept="image/*,.svg,.pdf" @change="handleNewBackImage($event)"
                                class="w-full px-3 py-2 bg-white border border-purple-200 rounded-lg text-gray-900 text-sm file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-purple-100 file:text-purple-700">
-                        <p class="text-xs text-purple-600 mt-2">Can be added/changed later</p>
+                        <p class="text-xs text-purple-600 mt-2">Overrides color above • Can be added later</p>
                     </div>
                 </div>
                 
@@ -1179,7 +1198,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
             selectedPairId: null,
             currentDesign: null,
             showAddModal: false,
-            newTemplate: { name: '', side: 'front', frontImageFile: null, backImageFile: null },
+            newTemplate: { name: '', side: 'front', frontImageFile: null, backImageFile: null, bgColor: '#1e3a5f' },
             statusMessage: '',
             statusType: 'success',
             cardEditor: null,
@@ -1755,6 +1774,10 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                 if (this.newTemplate.backImageFile) {
                     formData.append('back_image', this.newTemplate.backImageFile);
                 }
+                // Pass background color for solid-color generation when no image is uploaded
+                if (this.newTemplate.bgColor) {
+                    formData.append('bg_color', this.newTemplate.bgColor);
+                }
                 
                 var self = this;
                 fetch('save_template', { method: 'POST', body: formData })
@@ -1766,7 +1789,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                             if (result.back) self.templates.push(result.back);
                             
                             self.showAddModal = false;
-                            self.newTemplate = { name: '', frontImageFile: null, backImageFile: null };
+                            self.newTemplate = { name: '', frontImageFile: null, backImageFile: null, bgColor: '#1e3a5f' };
                             self.showStatus('Card design created', 'success');
                             
                             // Select the new design
