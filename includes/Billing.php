@@ -723,7 +723,17 @@ class Billing {
             error_log("Billing::hasFeature error: " . $e->getMessage());
         }
         
-        // Feature availability matrix
+        // Feature availability matrix — plan IDs must match subscription_plans.id in DB
+        $paidFeatures = [
+            'high_quality' => true,
+            'qr_tracking' => true,
+            'bulk_generation' => true,
+            'api_access' => true,
+            'custom_branding' => true,
+            'proof_sheets' => true,
+            'basic_generation' => true,
+            'portal_access' => true
+        ];
         $features = [
             'free' => [
                 'high_quality' => false,
@@ -735,36 +745,12 @@ class Billing {
                 'basic_generation' => true,
                 'portal_access' => true
             ],
-            'starter' => [
-                'high_quality' => true,
-                'qr_tracking' => true,
-                'bulk_generation' => true,
-                'api_access' => false,
-                'custom_branding' => false,
-                'proof_sheets' => true,
-                'basic_generation' => true,
-                'portal_access' => true
-            ],
-            'professional' => [
-                'high_quality' => true,
-                'qr_tracking' => true,
-                'bulk_generation' => true,
-                'api_access' => true,
-                'custom_branding' => true,
-                'proof_sheets' => true,
-                'basic_generation' => true,
-                'portal_access' => true
-            ],
-            'enterprise' => [
-                'high_quality' => true,
-                'qr_tracking' => true,
-                'bulk_generation' => true,
-                'api_access' => true,
-                'custom_branding' => true,
-                'proof_sheets' => true,
-                'basic_generation' => true,
-                'portal_access' => true
-            ]
+            // 'pro' is the actual DB plan ID for the mid-tier paid plan
+            'pro'          => $paidFeatures,
+            // Legacy aliases kept for backward compatibility
+            'starter'      => $paidFeatures,
+            'professional' => $paidFeatures,
+            'enterprise'   => $paidFeatures,
         ];
         
         // Default to free plan features if plan not found

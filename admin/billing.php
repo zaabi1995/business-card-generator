@@ -413,58 +413,62 @@ $isFreePlan = ($planInfo['plan'] ?? 'free') === 'free';
                 <tr>
                     <th class="px-4 py-3 text-left font-medium text-gray-600">Feature</th>
                     <th class="px-4 py-3 text-center font-medium text-gray-600">Free</th>
-                    <th class="px-4 py-3 text-center font-medium text-gray-600">Starter</th>
-                    <th class="px-4 py-3 text-center font-medium text-gray-600">Professional</th>
+                    <th class="px-4 py-3 text-center font-medium text-blue-700">Pro</th>
                     <th class="px-4 py-3 text-center font-medium text-gray-600">Enterprise</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
                 <tr>
+                    <td class="px-4 py-3 text-gray-900">Employees</td>
+                    <td class="px-4 py-3 text-center text-sm text-gray-600">Up to 5</td>
+                    <td class="px-4 py-3 text-center text-sm text-blue-700 font-medium">Up to 50</td>
+                    <td class="px-4 py-3 text-center text-sm text-gray-600">Unlimited</td>
+                </tr>
+                <tr>
+                    <td class="px-4 py-3 text-gray-900">Cards / Month</td>
+                    <td class="px-4 py-3 text-center text-sm text-gray-600">10</td>
+                    <td class="px-4 py-3 text-center text-sm text-blue-700 font-medium">500</td>
+                    <td class="px-4 py-3 text-center text-sm text-gray-600">Unlimited</td>
+                </tr>
+                <tr>
                     <td class="px-4 py-3 text-gray-900">Card Preview Quality</td>
-                    <td class="px-4 py-3 text-center"><span class="text-amber-600">Low (~100 DPI)</span></td>
-                    <td class="px-4 py-3 text-center"><span class="text-green-600">High (~300 DPI)</span></td>
-                    <td class="px-4 py-3 text-center"><span class="text-green-600">High (~300 DPI)</span></td>
-                    <td class="px-4 py-3 text-center"><span class="text-green-600">High (~300 DPI)</span></td>
+                    <td class="px-4 py-3 text-center"><span class="text-amber-600 text-sm">Low (~100 DPI)</span></td>
+                    <td class="px-4 py-3 text-center"><span class="text-green-600 text-sm font-medium">High (~300 DPI)</span></td>
+                    <td class="px-4 py-3 text-center"><span class="text-green-600 text-sm">High (~300 DPI)</span></td>
                 </tr>
                 <tr>
                     <td class="px-4 py-3 text-gray-900">Print Quality</td>
-                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i> Full Quality</td>
-                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i> Full Quality</td>
-                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i> Full Quality</td>
-                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i> Full Quality</td>
+                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
+                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
+                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                 </tr>
                 <tr>
                     <td class="px-4 py-3 text-gray-900">QR Scan Analytics</td>
-                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-400"></i></td>
-                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
+                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-300"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                 </tr>
                 <tr>
                     <td class="px-4 py-3 text-gray-900">Bulk Card Generation</td>
-                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-400"></i></td>
-                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
+                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-300"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                 </tr>
                 <tr>
                     <td class="px-4 py-3 text-gray-900">API Access</td>
-                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-400"></i></td>
-                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-400"></i></td>
+                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-300"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                 </tr>
                 <tr>
                     <td class="px-4 py-3 text-gray-900">Custom Branding</td>
-                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-400"></i></td>
-                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-400"></i></td>
+                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-300"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                 </tr>
                 <tr>
                     <td class="px-4 py-3 text-gray-900">Priority Support</td>
-                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-400"></i></td>
-                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-400"></i></td>
+                    <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-300"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                 </tr>
