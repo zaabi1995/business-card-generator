@@ -386,7 +386,16 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                     front_url: frontImageUrl,
                     back_url: backImageUrl
                 })
-            }).catch(() => {});
+            }).then(function(r) {
+                return r.json();
+            }).then(function(data) {
+                if (!data.success && data.limit_reached) {
+                    var banner = document.createElement('div');
+                    banner.className = 'fixed top-0 left-0 right-0 z-50 bg-amber-500 text-white text-center py-3 px-4 text-sm font-medium';
+                    banner.innerHTML = (data.error || 'Monthly card limit reached.') + ' <a href="' + config.basePath + 'billing" class="underline font-bold">Upgrade your plan</a>';
+                    document.body.prepend(banner);
+                }
+            }).catch(function() {});
         }
         
         function showContent() {
