@@ -201,7 +201,7 @@ if ($db && $db->isConnected() && $companyId) {
     try {
         $cardCredits = (int)($company['card_credits'] ?? 0);
         $cardsUsedThisMonth = (int)($db->fetchOne(
-            "SELECT COUNT(*) as cnt FROM generated_cards WHERE company_id = :cid AND created_at >= DATE_FORMAT(NOW(),'%Y-%m-01')",
+            "SELECT COUNT(*) as cnt FROM generated_cards WHERE company_id = :cid AND generated_at >= DATE_FORMAT(NOW(),'%Y-%m-01')",
             ['cid' => $companyId]
         )['cnt'] ?? 0);
         if ($currentPlan) {

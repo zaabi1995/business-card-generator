@@ -225,7 +225,7 @@ $cardsThisMonth = 0;
 if ($isFreePlan && $companyId && DatabaseAdapter::useDatabase()) {
     try {
         $r = $db->fetchOne(
-            "SELECT COUNT(*) as cnt FROM generated_cards WHERE company_id = :id AND created_at >= DATE_FORMAT(NOW(),'%Y-%m-01')",
+            "SELECT COUNT(*) as cnt FROM generated_cards WHERE company_id = :id AND generated_at >= DATE_FORMAT(NOW(),'%Y-%m-01')",
             ['id' => $companyId]
         );
         $cardsThisMonth = (int)($r['cnt'] ?? 0);
