@@ -33,6 +33,9 @@ if ($db->tableExists('blog_posts')) {
             $pageDescription = htmlspecialchars($singlePost['excerpt'] ?? substr(strip_tags($singlePost['content']), 0, 155));
             $canonicalUrl = 'https://cardify.om/blog/' . $singlePost['slug'];
             $ogType = 'article';
+            if (!empty($singlePost['featured_image'])) {
+                $ogImage = 'https://cardify.om/' . ltrim($singlePost['featured_image'], '/');
+            }
         }
     }
     
