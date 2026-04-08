@@ -298,7 +298,30 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
     </a>
 </div>
 <?php elseif ($hasEmployee && !$hasGeneratedCard && $onboardingCompleted && $currentRole !== 'super_admin'): ?>
-<!-- Has employees but no cards generated — key activation nudge -->
+<?php $batchExt = defined('COMPANY_ADMIN_BASE') ? '' : '.php'; ?>
+<?php if (!$hasTemplate): ?>
+<!-- Has employees, no template — point to template editor first -->
+<div class="mb-6 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-500 p-5 text-white shadow-lg flex items-center justify-between gap-4" id="generate-cards-nudge">
+    <div class="flex items-center gap-4">
+        <div class="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-paintbrush text-white text-lg"></i>
+        </div>
+        <div>
+            <h3 class="font-bold">One step left — design your card template</h3>
+            <p class="text-purple-100 text-sm mt-0.5">You have <?= $employeeCount ?> employee<?= $employeeCount !== 1 ? 's' : '' ?> ready. Set up a card template and generate all cards in seconds.</p>
+        </div>
+    </div>
+    <div class="flex items-center gap-3 flex-shrink-0">
+        <a href="<?= getAdminBasePath() ?>index<?= $batchExt ?>#template-editor" class="bg-white text-purple-700 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-purple-50 transition-all whitespace-nowrap">
+            Design Template
+        </a>
+        <button onclick="document.getElementById('generate-cards-nudge').remove()" class="text-white/60 hover:text-white">
+            <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+    </div>
+</div>
+<?php else: ?>
+<!-- Has employees + template but no cards generated — generate nudge -->
 <div class="mb-6 rounded-2xl bg-gradient-to-r from-green-600 to-emerald-500 p-5 text-white shadow-lg flex items-center justify-between gap-4" id="generate-cards-nudge">
     <div class="flex items-center gap-4">
         <div class="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
@@ -310,7 +333,6 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
         </div>
     </div>
     <div class="flex items-center gap-3 flex-shrink-0">
-        <?php $batchExt = defined('COMPANY_ADMIN_BASE') ? '' : '.php'; ?>
         <a href="<?= getAdminBasePath() ?>batch_generate<?= $batchExt ?>" class="bg-white text-green-700 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-green-50 transition-all whitespace-nowrap">
             Generate All Cards
         </a>
@@ -319,6 +341,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
         </button>
     </div>
 </div>
+<?php endif; ?>
 <?php endif; ?>
 
 <?php if (!$checklistAllDone && !$showWelcome && $currentRole !== 'super_admin'): ?>
