@@ -124,12 +124,13 @@ $totalPages = ceil($total / $perPage);
 
 // Get companies
 $companies = $db->fetchAll(
-    "SELECT c.*, 
+    "SELECT c.*,
             (SELECT COUNT(*) FROM employees WHERE company_id = c.id) as employee_count,
-            (SELECT COUNT(*) FROM generated_cards gc JOIN employees e ON gc.employee_id = e.id WHERE e.company_id = c.id) as card_count
-     FROM companies c 
-     {$whereClause} 
-     ORDER BY c.created_at DESC 
+            (SELECT COUNT(*) FROM generated_cards gc JOIN employees e ON gc.employee_id = e.id WHERE e.company_id = c.id) as card_count,
+            (SELECT COUNT(*) FROM templates WHERE company_id = c.id) as template_count
+     FROM companies c
+     {$whereClause}
+     ORDER BY c.created_at DESC
      LIMIT {$perPage} OFFSET {$offset}",
     $params
 );
@@ -214,6 +215,7 @@ adminHeader('Companies Management', 'companies');
                     <th class="px-6 py-3">Status</th>
                     <th class="px-6 py-3">Plan</th>
                     <th class="px-6 py-3">Employees</th>
+                    <th class="px-6 py-3">Templates</th>
                     <th class="px-6 py-3">Cards</th>
                     <th class="px-6 py-3">Created</th>
                     <th class="px-6 py-3">Actions</th>
@@ -243,6 +245,15 @@ adminHeader('Companies Management', 'companies');
                         </span>
                     </td>
                     <td class="px-6 py-4"><?php echo $company['employee_count']; ?></td>
+                    <td class="px-6 py-4">
+                        <?php if ((int)$company['template_count'] === 0 && (int)$company['employee_count'] > 0): ?>
+                            <span class="text-amber-600 font-semibold" title="No templates — cards can't be generated">
+                                0 <i class="fa-solid fa-triangle-exclamation text-xs ml-0.5"></i>
+                            </span>
+                        <?php else: ?>
+                            <?php echo $company['template_count']; ?>
+                        <?php endif; ?>
+                    </td>
                     <td class="px-6 py-4"><?php echo $company['card_count']; ?></td>
                     <td class="px-6 py-4"><?php echo date('M d, Y', strtotime($company['created_at'])); ?></td>
                     <td class="px-6 py-4">
