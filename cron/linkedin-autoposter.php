@@ -1,7 +1,7 @@
 <?php
 /**
  * LinkedIn Auto-Poster
- * Publishes blog posts to LinkedIn when they become due (based on publish_date)
+ * Publishes blog posts to LinkedIn when they become due (based on published_at)
  * Run via cron: 0 9 * * * php /www/wwwroot/cardify.om/cron/linkedin-autoposter.php
  */
 
@@ -33,14 +33,16 @@ if (!$token && !$orgToken) {
     exit(1);
 }
 
-// Find draft posts that should be published today
+// Find posts that should be LinkedIn-posted:
+// 1. Drafts scheduled for today or earlier (will also be published)
+// 2. Already-published posts that were never posted to LinkedIn
 $today = date('Y-m-d');
-$stmt = $pdo->prepare("SELECT id, title, slug, excerpt, featured_image
+$stmt = $pdo->prepare("SELECT id, title, slug, excerpt, featured_image, status
                         FROM blog_posts
-                        WHERE status = 'draft'
-                        AND DATE(publish_date) <= ?
+                        WHERE status IN ('draft', 'published')
+                        AND DATE(published_at) <= ?
                         AND linkedin_posted IS NULL
-                        ORDER BY publish_date ASC
+                        ORDER BY published_at ASC
                         LIMIT 1");
 $stmt->execute([$today]);
 $post = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -50,9 +52,13 @@ if (!$post) {
     exit(0);
 }
 
-// Publish the post (change status from draft to published)
-$pdo->prepare("UPDATE blog_posts SET status = 'published' WHERE id = ?")->execute([$post['id']]);
-logMsg("Published blog post: " . $post['title']);
+// Publish the post if it was still a draft
+if ($post['status'] === 'draft') {
+    $pdo->prepare("UPDATE blog_posts SET status = 'published' WHERE id = ?")->execute([$post['id']]);
+    logMsg("Published blog post: " . $post['title']);
+} else {
+    logMsg("Posting already-published post to LinkedIn: " . $post['title']);
+}
 
 // Build LinkedIn post
 $blogUrl = "https://cardify.om/blog/" . $post['slug'];
