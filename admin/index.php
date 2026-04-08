@@ -297,6 +297,28 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
         Finish Setup
     </a>
 </div>
+<?php elseif ($hasEmployee && !$hasGeneratedCard && $onboardingCompleted && $currentRole !== 'super_admin'): ?>
+<!-- Has employees but no cards generated — key activation nudge -->
+<div class="mb-6 rounded-2xl bg-gradient-to-r from-green-600 to-emerald-500 p-5 text-white shadow-lg flex items-center justify-between gap-4" id="generate-cards-nudge">
+    <div class="flex items-center gap-4">
+        <div class="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-id-card text-white text-lg"></i>
+        </div>
+        <div>
+            <h3 class="font-bold">Your team is ready — generate their cards now</h3>
+            <p class="text-green-100 text-sm mt-0.5">You have <?= $employeeCount ?> employee<?= $employeeCount !== 1 ? 's' : '' ?> set up. Generate all cards in one click.</p>
+        </div>
+    </div>
+    <div class="flex items-center gap-3 flex-shrink-0">
+        <?php $batchExt = defined('COMPANY_ADMIN_BASE') ? '' : '.php'; ?>
+        <a href="<?= getAdminBasePath() ?>batch_generate<?= $batchExt ?>" class="bg-white text-green-700 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-green-50 transition-all whitespace-nowrap">
+            Generate All Cards
+        </a>
+        <button onclick="document.getElementById('generate-cards-nudge').remove()" class="text-white/60 hover:text-white">
+            <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+    </div>
+</div>
 <?php endif; ?>
 
 <?php if (!$checklistAllDone && !$showWelcome && $currentRole !== 'super_admin'): ?>

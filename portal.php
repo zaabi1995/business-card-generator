@@ -947,11 +947,6 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                         <p class="mt-1 text-xs text-gray-500">Each set typically contains 100 cards</p>
                     </div>
                     
-                    <!-- Fields shown based on PHP template configuration -->
-                    <!-- DEBUG: Enabled fields: <?php echo implode(', ', array_keys($enabledFields)); ?> -->
-                    <!-- DEBUG: Front template: <?php echo $activeFrontTemplate ? 'YES' : 'NO'; ?> -->
-                    <!-- DEBUG: Back template: <?php echo $activeBackTemplate ? 'YES' : 'NO'; ?> -->
-                    
                     <!-- Name English -->
                     <?php if (!empty($enabledFields['name_en'])): ?>
                     <div>
