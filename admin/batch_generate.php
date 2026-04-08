@@ -544,7 +544,7 @@ function batchGenerator() {
             }
 
             // Log generation with web paths and theme_mode
-            await fetch(this.basePath + 'log_generation.php', {
+            const logResp = await fetch(this.basePath + 'log_generation.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -556,6 +556,10 @@ function batchGenerator() {
                     theme_mode: themeMode
                 })
             });
+            const logData = await logResp.json().catch(() => ({}));
+            if (!logData.success && logData.limit_reached) {
+                throw new Error(logData.error || 'Monthly card limit reached. Upgrade your plan to generate more cards.');
+            }
 
             return { frontUrl, backUrl, frontPdf, backPdf };
         },

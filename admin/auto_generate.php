@@ -512,11 +512,17 @@ function autoGenerator() {
                 
                 const logResult = await logResponse.json();
                 console.log('Log result:', logResult);
-                
+
+                if (!logResult.success && logResult.limit_reached) {
+                    this.status = 'error';
+                    this.errorMessage = logResult.error || 'Monthly card limit reached. Please upgrade your plan.';
+                    return;
+                }
+
                 if (!logResult.success) {
                     console.warn('Failed to log generation:', logResult.error);
                 }
-                
+
                 this.status = 'success';
                 
                 // Redirect
