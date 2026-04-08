@@ -321,7 +321,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 Design Your Card — It's Free
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
             </a>
-            <p class="text-gray-400 text-sm mt-3">Free for up to 10 employees · No credit card required</p>
+            <p class="text-gray-400 text-sm mt-3">Free for up to 5 employees · No credit card required</p>
         </div>
     </div>
 </section>
@@ -342,7 +342,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     'price' => '0 OMR',
                     'period' => 'forever',
                     'highlight' => false,
-                    'features' => ['Up to 10 employees', 'Digital cards & QR codes', 'Print ordering via BHD', 'Basic templates'],
+                    'features' => ['Up to 5 employees', 'Digital cards & QR codes', 'Print ordering via BHD', 'Basic templates'],
                     'cta' => 'Get Started Free',
                     'ctaUrl' => $registerUrl,
                 ],
