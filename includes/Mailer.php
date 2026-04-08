@@ -1399,6 +1399,36 @@ HTML
 HTML
             ],
             
+            'activation_reminder' => [
+                'subject' => 'Your {{company_name}} business cards are ready to create',
+                'body' => <<<HTML
+<h2>Your team is ready — just one step left!</h2>
+<p>Hi {{admin_name}},</p>
+<p>Your <strong>{{company_name}}</strong> account on Cardify has been set up and your employees have been added. The only thing missing is your card design template.</p>
+
+<div class="info-box">
+    <strong>Here's where you stand:</strong>
+    <table>
+        <tr><td>Employees added</td><td><strong>{{employee_count}}</strong></td></tr>
+        <tr><td>Card templates</td><td><strong>0 — create yours now</strong></td></tr>
+    </table>
+</div>
+
+<div class="warning-box">
+    <strong>One action needed:</strong><br>
+    Design your business card template so we can generate cards for all {{employee_count}} employees instantly.
+</div>
+
+<p style="text-align: center; margin: 30px 0;">
+    <a href="{{admin_url}}" class="btn">Design Your Template Now</a>
+</p>
+
+<p>It takes just a few minutes to set up a professional template with your company logo, colors, and layout. Once done, we'll generate cards for everyone automatically.</p>
+
+<p>Best regards,<br>The {{site_name}} Team</p>
+HTML
+            ],
+
             'po_request' => [
                 'subject' => 'Purchase Order Required - Order #{{order_id}} | {{print_shop_name}}',
                 'body' => <<<HTML
