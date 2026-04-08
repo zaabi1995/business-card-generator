@@ -226,6 +226,17 @@ adminHeader('Blog Management', 'content');
                                 <span class="mx-2">•</span>
                                 By <?php echo htmlspecialchars($post['author_name']); ?>
                                 <?php endif; ?>
+                                <?php if (!empty($post['linkedin_posted'])): ?>
+                                <span class="mx-2">•</span>
+                                <span class="text-blue-600 text-xs" title="Posted to LinkedIn on <?php echo date('M j', strtotime($post['linkedin_posted'])); ?>">
+                                    <i class="fa-brands fa-linkedin mr-0.5"></i>Posted
+                                </span>
+                                <?php elseif ($post['status'] === 'published' || ($post['status'] === 'draft' && !empty($post['published_at']) && strtotime($post['published_at']) <= time())): ?>
+                                <span class="mx-2">•</span>
+                                <span class="text-amber-600 text-xs" title="Queued for LinkedIn — will post next 9am">
+                                    <i class="fa-brands fa-linkedin mr-0.5"></i>Queued
+                                </span>
+                                <?php endif; ?>
                             </p>
                             <?php if ($post['excerpt']): ?>
                             <p class="text-sm text-gray-600 mt-2 line-clamp-2"><?php echo htmlspecialchars($post['excerpt']); ?></p>
