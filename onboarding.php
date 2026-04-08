@@ -472,13 +472,14 @@ function completeOnboarding() {
     });
 }
 
-// Skip onboarding entirely
+// Skip onboarding entirely — wait for API to mark complete before redirecting
 function skipOnboarding() {
     var formData = new FormData();
     formData.append('action', 'skip_onboarding');
     formData.append('csrf_token', '<?= generateCSRFToken() ?>');
-    fetch('<?= getBasePath() ?>api/onboarding.php', { method: 'POST', body: formData });
-    window.location.href = '<?= getBasePath() ?><?= htmlspecialchars($companySlug) ?>/admin/';
+    var adminUrl = '<?= getBasePath() ?><?= htmlspecialchars($companySlug) ?>/admin/';
+    fetch('<?= getBasePath() ?>api/onboarding.php', { method: 'POST', body: formData })
+        .finally(function() { window.location.href = adminUrl; });
 }
 </script>
 
