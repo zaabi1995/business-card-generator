@@ -174,6 +174,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
             'name' => 'Cardify',
             'logo' => ['@type' => 'ImageObject', 'url' => 'https://cardify.om/assets/images/logo.svg']
         ],
+        'image' => !empty($singlePost['featured_image'])
+            ? 'https://cardify.om/' . ltrim($singlePost['featured_image'], '/')
+            : 'https://cardify.om/assets/images/cardify-og.png',
         'description' => $singlePost['excerpt'] ?? substr(strip_tags($singlePost['content']), 0, 160),
         'mainEntityOfPage' => 'https://cardify.om/blog/' . $singlePost['slug']
     ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?>
