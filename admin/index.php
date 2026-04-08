@@ -250,7 +250,7 @@ $_inCompanyCtx = defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug
 $_ext = $_inCompanyCtx ? '' : '.php';
 $checklistSteps = [
     ['done' => true,             'label' => 'Create your account',          'url' => null],
-    ['done' => $onboardingCompleted || ($hasLogo && $hasTemplate), 'label' => 'Upload logo & pick a template', 'url' => getBasePath() . 'onboarding.php'],
+    ['done' => $hasTemplate, 'label' => 'Upload logo & pick a template', 'url' => $onboardingCompleted ? '#template-editor' : getBasePath() . 'onboarding.php'],
     ['done' => $hasEmployee,     'label' => 'Add your first employee',       'url' => getAdminBasePath() . 'employees' . $_ext],
     ['done' => $hasGeneratedCard,'label' => 'Generate your first card',      'url' => getAdminBasePath() . 'batch_generate' . $_ext],
     ['done' => $hasPrintOrder,   'label' => 'Order physical business cards', 'url' => getAdminBasePath() . 'print' . $_ext],
