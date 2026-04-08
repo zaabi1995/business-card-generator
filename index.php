@@ -1044,7 +1044,7 @@ HTML;
     "@type": "Offer",
     "price": "0",
     "priceCurrency": "OMR",
-    "description": "Free plan with 10 employees and 2 templates"
+    "description": "Free plan — up to 5 employees, 10 cards/month. Upgrade to Pro for bulk generation and QR analytics."
   }
 }
 </script>
