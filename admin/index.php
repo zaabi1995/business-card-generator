@@ -312,7 +312,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
         </div>
     </div>
     <div class="flex items-center gap-3 flex-shrink-0">
-        <a href="<?= getAdminBasePath() ?>index<?= $batchExt ?>#template-editor" class="bg-white text-purple-700 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-purple-50 transition-all whitespace-nowrap">
+        <a href="#template-editor" onclick="document.getElementById('generate-cards-nudge').remove()" class="bg-white text-purple-700 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-purple-50 transition-all whitespace-nowrap">
             Design Template
         </a>
         <button onclick="document.getElementById('generate-cards-nudge').remove()" class="text-white/60 hover:text-white">
@@ -523,7 +523,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
 </div>
 
 <!-- Template Editor Section -->
-<div x-data="templateEditor()" x-init="init()">
+<div id="template-editor" x-data="templateEditor()" x-init="init()">
     <!-- Section Header with Tabs -->
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm mb-6">
         <div class="flex items-center justify-between p-4 border-b border-gray-100">
