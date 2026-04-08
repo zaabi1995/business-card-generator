@@ -1,9 +1,10 @@
 <?php
 /**
- * Billing Diagnostic Tool
+ * Billing Diagnostic Tool (super admin only)
  */
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
 
 echo "<h2>Billing Page Diagnostic</h2>";
 
