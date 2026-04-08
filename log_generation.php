@@ -34,6 +34,20 @@ try {
     $frontTemplateId = $config['activeFrontId'] ?? null;
     $backTemplateId = $config['activeBackId'] ?? null;
 
+    // Enforce monthly card generation limit (free/pro plans)
+    require_once INCLUDES_DIR . '/Billing.php';
+    $billing = new Billing();
+    if (!$billing->checkLimit($companyId, 'max_cards')) {
+        $limits = $billing->getPlanLimits($companyId);
+        http_response_code(403);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'Monthly card limit reached (' . ($limits['max_cards'] ?? 10) . ' cards/month on your plan). Upgrade to generate more.',
+            'limit_reached' => true,
+        ]);
+        exit;
+    }
+
     // Log the generation
     $entry = logGeneratedCard(
         $employeeId,

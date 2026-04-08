@@ -552,16 +552,18 @@ class Billing {
                     return [
                         'employees' => $limits['employees'] ?? $limits['max_employees'] ?? $defaultLimits['employees'],
                         'templates' => $limits['templates'] ?? $limits['max_templates'] ?? $defaultLimits['templates'],
-                        'storage' => $limits['storage'] ?? $limits['max_storage_mb'] ?? $defaultLimits['storage']
+                        'storage'   => $limits['storage'] ?? $limits['max_storage_mb'] ?? $defaultLimits['storage'],
+                        'max_cards' => $limits['max_cards'] ?? $limits['max_cards_per_month'] ?? -1,
                     ];
                 }
             }
             
             // Fallback to individual columns
             return [
-                'employees' => $plan['max_employees'] ?? $defaultLimits['employees'],
-                'templates' => $plan['max_templates'] ?? $defaultLimits['templates'],
-                'storage' => $plan['max_storage_mb'] ?? $defaultLimits['storage']
+                'employees'  => $plan['max_employees'] ?? $defaultLimits['employees'],
+                'templates'  => $plan['max_templates'] ?? $defaultLimits['templates'],
+                'storage'    => $plan['max_storage_mb'] ?? $defaultLimits['storage'],
+                'max_cards'  => $plan['max_cards_per_month'] ?? -1,
             ];
             
         } catch (Throwable $e) {
@@ -578,19 +580,19 @@ class Billing {
         if (!$limits) {
             return false; // Fail closed — deny if limits can't be verified
         }
-        
+
         // Map limit type to key
         $limitKey = $limitType;
         if ($limitType === 'max_employees') $limitKey = 'employees';
         if ($limitType === 'max_templates') $limitKey = 'templates';
-        
-        $limit = $limits[$limitKey] ?? -1;
+
+        $limit = (int)($limits[$limitKey] ?? -1);
         if ($limit === -1) {
             return true; // Unlimited
         }
-        
+
         $db = Database::getInstance();
-        
+
         try {
             switch ($limitType) {
                 case 'max_employees':
@@ -600,7 +602,7 @@ class Billing {
                         ['id' => $companyId]
                     );
                     return ($count['count'] ?? 0) < $limit;
-                    
+
                 case 'max_templates':
                 case 'templates':
                     $count = $db->fetchOne(
@@ -608,7 +610,17 @@ class Billing {
                         ['id' => $companyId]
                     );
                     return ($count['count'] ?? 0) < $limit;
-                    
+
+                case 'max_cards':
+                    $limit = (int)($limits['max_cards'] ?? -1);
+                    if ($limit === -1) return true;
+                    $count = $db->fetchOne(
+                        "SELECT COUNT(*) as count FROM generated_cards
+                         WHERE company_id = :id AND generated_at >= DATE_FORMAT(NOW(),'%Y-%m-01')",
+                        ['id' => $companyId]
+                    );
+                    return ($count['count'] ?? 0) < $limit;
+
                 default:
                     return true;
             }

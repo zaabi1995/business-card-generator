@@ -104,6 +104,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     switch ($action) {
         case 'add':
+            $billing = new Billing();
+            if (!$billing->checkLimit($companyId, 'employees')) {
+                $limits = $billing->getPlanLimits($companyId);
+                $message = 'Employee limit reached (' . ($limits['employees'] ?? 5) . ' max on your plan). Upgrade to add more employees.';
+                $messageType = 'error';
+                break;
+            }
             $result = addEmployee($_POST);
             if ($result['success']) {
                 // Auto-generate card for new employee
