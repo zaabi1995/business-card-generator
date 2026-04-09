@@ -207,31 +207,32 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <!-- Badge -->
                     <div class="inline-flex items-center gap-2 py-1.5 px-4 mb-6 text-sm bg-gradient-to-r from-red-50 to-green-50 border border-gray-200 rounded-full">
                         <span class="text-lg">🇴🇲</span>
-                        <span class="font-medium text-gray-700">Supporting Omani SME Companies</span>
-                        <span class="bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">FREE</span>
+                        <span class="font-medium text-gray-700">Built for Omani Companies</span>
+                        <span class="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">100-2000 Employees</span>
                     </div>
 
                     <!-- Headline -->
                     <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-gray-900 mb-6">
-                        Business Cards
-                        <span class="text-blue-600 block">for Your Whole Team</span>
+                        One Template.
+                        <span class="text-blue-600 block">Every Employee.</span>
+                        <span class="text-gray-500 text-3xl sm:text-4xl lg:text-5xl">Done.</span>
                     </h1>
 
                     <!-- Subheadline -->
                     <p class="text-lg lg:text-xl text-gray-600 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                        Design one template, generate cards for every employee, and order prints from local Omani shops — all from one dashboard.
-                        <strong class="text-gray-900">Free to use.</strong>
+                        Stop coordinating card orders manually. Upload your team, generate a unique card for every employee, and order professional prints — delivered across Oman.
+                        <strong class="text-gray-900">From 6 OMR per design.</strong>
                     </p>
 
                     <!-- CTA Buttons -->
                     <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-10">
                         <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl hover:-translate-y-0.5 text-lg">
-                            Start Free — No Card Required
+                            Start Free
                             <i class="fa-solid fa-arrow-right"></i>
                         </a>
-                        <a href="<?php echo getBasePath(); ?>intro" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-white hover:bg-gray-50 text-gray-900 font-semibold rounded-xl border-2 border-gray-200 transition-all text-lg">
-                            <i class="fa-solid fa-play-circle text-blue-600"></i>
-                            See How It Works
+                        <a href="https://wa.me/96899899100?text=Hi%2C%20I'd%20like%20a%20demo%20of%20Cardify%20for%20my%20company" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all text-lg">
+                            <i class="fa-brands fa-whatsapp"></i>
+                            Request a Demo
                         </a>
                     </div>
 
@@ -239,15 +240,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="flex flex-wrap items-center justify-center lg:justify-start gap-3 text-sm">
                         <div class="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-full">
                             <i class="fa-solid fa-circle-check"></i>
-                            <span>Free Platform</span>
+                            <span>Free to Design</span>
                         </div>
                         <div class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full">
                             <i class="fa-solid fa-print"></i>
-                            <span>Print from Local Shops</span>
+                            <span>Printed by BHD Muscat</span>
                         </div>
                         <div class="flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full">
                             <i class="fa-solid fa-users"></i>
-                            <span>10 to 1000+ Employees</span>
+                            <span>Bulk CSV Import</span>
+                        </div>
+                        <div class="flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full">
+                            <i class="fa-solid fa-language"></i>
+                            <span>Arabic + English</span>
                         </div>
                     </div>
                 </div>
@@ -577,16 +582,84 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="max-w-2xl mx-auto text-center mb-16">
-                <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-green-700 bg-green-100 rounded-full uppercase tracking-wide">
-                    <i class="fa-solid fa-gift"></i>
-                    Free to Use
+                <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full uppercase tracking-wide">
+                    <i class="fa-solid fa-print"></i>
+                    Print Pricing
                 </span>
                 <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
-                    Simple, Transparent Pricing
+                    Pay Per Design. No Subscriptions.
                 </h2>
                 <p class="text-lg text-gray-600">
-                    Start free — no credit card required. Upgrade to Pro for bulk generation, QR analytics, and custom branding.
+                    Design and manage cards free. Only pay when you order prints — priced per unique employee design, delivered across Oman.
                 </p>
+            </div>
+
+            <!-- Print Pricing Table -->
+            <div class="max-w-3xl mx-auto mb-16">
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border-2 border-blue-200 overflow-hidden">
+                    <div class="px-8 py-6 border-b border-blue-200 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Print Pricing — per employee design</h3>
+                            <p class="text-gray-500 text-sm mt-1">Each employee gets their own unique card. Price below is per design ordered.</p>
+                        </div>
+                        <div class="hidden sm:flex items-center gap-2 text-sm text-blue-700 font-semibold bg-white px-4 py-2 rounded-xl border border-blue-200">
+                            <i class="fa-solid fa-truck"></i>
+                            Delivered to your door
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <div class="grid grid-cols-3 gap-2 text-sm font-semibold text-gray-500 mb-3 px-2">
+                            <span>Cards per employee</span>
+                            <span class="text-center">Price per design</span>
+                            <span class="text-right">Example: 10 employees</span>
+                        </div>
+                        <?php
+                        $tiers = [
+                            ['qty' => 50,   'price' => 5.000],
+                            ['qty' => 100,  'price' => 6.000],
+                            ['qty' => 200,  'price' => 11.000],
+                            ['qty' => 250,  'price' => 13.500],
+                            ['qty' => 500,  'price' => 25.000],
+                            ['qty' => 1000, 'price' => 40.000],
+                            ['qty' => 2000, 'price' => 50.000],
+                        ];
+                        foreach ($tiers as $i => $tier):
+                            $popular = $tier['qty'] === 100;
+                        ?>
+                        <div class="grid grid-cols-3 gap-2 items-center px-4 py-3 rounded-xl mb-2 <?php echo $popular ? 'bg-blue-600 text-white' : 'bg-white border border-gray-100'; ?>">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-lg <?php echo $popular ? 'text-white' : 'text-gray-900'; ?>"><?php echo number_format($tier['qty']); ?></span>
+                                <?php if ($popular): ?>
+                                <span class="text-xs bg-white text-blue-600 font-bold px-2 py-0.5 rounded-full">Popular</span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="text-center font-extrabold text-xl <?php echo $popular ? 'text-white' : 'text-gray-900'; ?>">
+                                <?php echo number_format($tier['price'], 3); ?> OMR
+                            </div>
+                            <div class="text-right <?php echo $popular ? 'text-blue-100' : 'text-gray-500'; ?> text-sm">
+                                <?php echo number_format($tier['price'] * 10, 3); ?> OMR
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                        <p class="text-xs text-gray-400 mt-4 px-2">+ 2.000 OMR shipping. Express delivery (+0.200 OMR) available. Printed by BHD Printing & Designing, Muscat.</p>
+                    </div>
+                    <div class="px-8 py-6 bg-white border-t border-blue-200 flex flex-col sm:flex-row gap-4 items-center justify-between">
+                        <div>
+                            <p class="font-semibold text-gray-900">Ready to order for your team?</p>
+                            <p class="text-sm text-gray-500">Register free, upload your employees, and order in minutes.</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-600/30">
+                                Get Started Free
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </a>
+                            <a href="https://wa.me/96899899100?text=Hi%2C%20I'd%20like%20a%20demo%20of%20Cardify%20for%20my%20company" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all">
+                                <i class="fa-brands fa-whatsapp"></i>
+                                Demo
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Pricing Cards -->

@@ -1,9 +1,11 @@
 <?php
 /**
  * QR Code Tracking Endpoint
- * 
- * This endpoint tracks QR code scans and serves the VCF file.
- * URL format: /qr.php?c={company_slug}&e={employee_email}
+ *
+ * Serves VCF contact file with scan tracking.
+ * Supports two URL formats:
+ *   Short (preferred): /qr.php?i={employee_id}  — smallest QR code
+ *   Legacy:            /qr.php?c={slug}&e={email}
  */
 
 // Buffer output to prevent header issues
@@ -13,32 +15,52 @@ require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/QRTracker.php';
 require_once INCLUDES_DIR . '/VCF.php';
 
-// Get parameters
-$companySlug = $_GET['c'] ?? $_GET['company'] ?? '';
-$employeeEmail = $_GET['e'] ?? $_GET['email'] ?? '';
-
-// URL decode
-$companySlug = urldecode($companySlug);
-$employeeEmail = urldecode($employeeEmail);
-
 // Validate parameters
-if (empty($companySlug) || empty($employeeEmail)) {
+$employeeId   = trim($_GET['i'] ?? '');
+$companySlug  = urldecode($_GET['c'] ?? $_GET['company'] ?? '');
+$employeeEmail = urldecode($_GET['e'] ?? $_GET['email'] ?? '');
+
+if (empty($employeeId) && (empty($companySlug) || empty($employeeEmail))) {
     ob_end_clean();
     http_response_code(400);
     die('Invalid request');
 }
 
 try {
-    // Find company
-    $company = findCompanyBySlug($companySlug);
+    $db = Database::getInstance();
+
+    if (!empty($employeeId)) {
+        // Short format: look up by employee ID directly
+        $employee = $db->fetchOne(
+            "SELECT e.*, c.id as company_id, c.slug, c.name as company_name,
+                    c.name_en, c.name_ar, c.website, c.address, c.city, c.country
+             FROM employees e
+             JOIN companies c ON c.id = e.company_id
+             WHERE e.id = :id AND e.status = 'active' LIMIT 1",
+            ['id' => $employeeId]
+        );
+        $company = $employee ? ['id' => $employee['company_id'], 'slug' => $employee['slug'],
+                                'name' => $employee['company_name'], 'name_en' => $employee['name_en'],
+                                'name_ar' => $employee['name_ar'], 'website' => $employee['website'],
+                                'address' => $employee['address'], 'city' => $employee['city'],
+                                'country' => $employee['country']] : null;
+    } else {
+        // Legacy format: slug + email
+        $company = findCompanyBySlug($companySlug);
+        if (!$company) {
+            ob_end_clean();
+            http_response_code(404);
+            die('Company not found');
+        }
+        $employee = findEmployeeByEmail($employeeEmail, $company['id']);
+    }
+
     if (!$company) {
         ob_end_clean();
         http_response_code(404);
         die('Company not found');
     }
 
-    // Find employee
-    $employee = findEmployeeByEmail($employeeEmail, $company['id']);
     if (!$employee) {
         ob_end_clean();
         http_response_code(404);

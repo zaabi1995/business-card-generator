@@ -58,12 +58,14 @@ if ($companyId) {
     $currentCompany = findCompanyById($companyId);
 }
 
-// Generate VCF URL for QR code
+// Generate VCF URL for QR code — short format produces smaller, faster-scanning QR codes
 require_once INCLUDES_DIR . '/VCF.php';
 require_once INCLUDES_DIR . '/Billing.php';
 $vcfUrl = '';
 if ($currentCompany && $employee) {
-    $vcfUrl = VCF::getUrl($employee, $currentCompany);
+    // Use short employee ID format: /qr.php?i={id} — minimal URL = smallest QR code
+    $vcfUrl = (defined('APP_HOST') ? 'https://' . APP_HOST : 'https://cardify.om')
+              . '/qr.php?i=' . urlencode($employee['id'] ?? '');
 }
 
 // Get quality multiplier based on plan (free users get low DPI)

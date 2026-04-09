@@ -211,19 +211,24 @@ class PrintShopIntegration {
             // Generate order number (ORD-YYYYMMDD-XXXXX)
             $orderNumber = 'ORD-' . date('Ymd') . '-' . strtoupper(substr(md5(uniqid()), 0, 5));
             
+            // Calculate Cardify commission (30%) and shop payout (70%)
+            $commissionPct = 30.00;
+            $cardifyCommission = round($total * 0.30, 3);
+            $shopPayout = round($total * 0.70, 3);
+
             // Insert order using definitive schema (INT AUTO_INCREMENT id)
             $stmt = $pdo->prepare("
-                INSERT INTO print_orders 
+                INSERT INTO print_orders
                 (order_number, company_id, employee_id, user_id, print_shop_id,
                  quantity, paper_type, finish, card_size,
                  card_front_url, card_back_url, card_template_id,
-                 subtotal, setup_fee, shipping_fee, total, currency,
+                 subtotal, setup_fee, shipping_fee, total, cardify_commission, shop_payout, commission_pct, currency,
                  shipping_name, shipping_address, shipping_city, shipping_state,
                  shipping_country, shipping_postal, shipping_phone,
                  status, payment_status, express_delivery, notes, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
             ");
-            
+
             $stmt->execute([
                 $orderNumber,
                 $orderData['company_id'] ?? null,
@@ -241,6 +246,9 @@ class PrintShopIntegration {
                 $setupFee,
                 $shippingFee,
                 $total,
+                $cardifyCommission,
+                $shopPayout,
+                $commissionPct,
                 $currency ?? 'OMR',
                 $orderData['shipping_name'] ?? '',
                 $orderData['shipping_address'] ?? '',

@@ -87,8 +87,8 @@ try {
         $backImage = $backRaw ? (strpos($backRaw, '/') === false ? $cardBasePath . $backRaw : $backRaw) : '';
     }
 
-    // Build VCF download URL
-    $vcfUrl = '/' . urlencode($companySlug) . '/' . urlencode($employee['email'] ?? '') . '.vcf';
+    // Build VCF download URL — short format (?i=id) produces smaller QR codes
+    $vcfUrl = '/qr.php?i=' . urlencode($employee['id']);
 
     // Employee contact data
     $name = $employee['name_en'] ?? $employee['name'] ?? 'Employee';
@@ -538,11 +538,12 @@ ob_end_clean();
         </div>
 
         <!-- Powered by Cardify -->
-        <div style="text-align: center; padding: 24px 0 16px; opacity: 0.5;">
-            <a href="https://cardify.om?ref=card"
-               style="color: inherit; text-decoration: none; font-size: 11px; font-family: -apple-system, system-ui, sans-serif; letter-spacing: 0.5px;"
+        <div style="text-align: center; padding: 24px 0 16px;">
+            <a href="https://cardify.om?ref=digital_card&utm_source=card&utm_medium=qr&utm_campaign=powered_by"
+               style="display: inline-flex; align-items: center; gap: 6px; color: #fff; text-decoration: none; font-size: 12px; font-family: -apple-system, system-ui, sans-serif; letter-spacing: 0.3px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 6px 14px;"
                target="_blank" rel="noopener">
-                Powered by <strong>Cardify</strong>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.7"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+                <span style="opacity:0.7;">Digital card by</span> <strong style="opacity:1;">Cardify.om</strong>
             </a>
         </div>
     </div>

@@ -166,23 +166,35 @@ $companyCountry = $currentCompany['country'] ?? 'OM';
 // Get shop currency and pricing - use shop's currency (which should match region)
 $shopCurrency = $selectedShop['currency'] ?? $companyCurrency;
 $shopPricing = $selectedShop ? json_decode($selectedShop['pricing'] ?? '{}', true) : [];
-$basePrice = $shopPricing['per_card'] ?? 0.10;
 $setupFee = $shopPricing['setup_fee'] ?? 0;
 $shippingFee = $shopPricing['shipping_base'] ?? 2;
-$quantityTiers = $shopPricing['quantity_tiers'] ?? [];
+$rawTiers = $shopPricing['quantity_tiers'] ?? [];
+
+// Normalize tiers — support both old format (qty => per_card_price) and new format (qty => {price, per_card})
+// New format: price = total per design, per_card = price/card
+// Old format: scalar = per_card price
+$quantityTiers = [];
+$pricingByQty = []; // qty => total design price
+foreach ($rawTiers as $qty => $val) {
+    if (is_array($val) && isset($val['price'])) {
+        // New format: price is total per design
+        $pricingByQty[(int)$qty] = (float)$val['price'];
+        $quantityTiers[(string)$qty] = isset($val['per_card']) ? (float)$val['per_card'] : round($val['price'] / $qty, 4);
+    } else {
+        // Old format: value is per_card price
+        $quantityTiers[(string)$qty] = (float)$val;
+        $pricingByQty[(int)$qty] = round((float)$val * (int)$qty, 3);
+    }
+}
 
 // Default tiers if none set
 if (empty($quantityTiers)) {
-    $quantityTiers = [
-        '50' => $basePrice,
-        '100' => round($basePrice * 0.95, 3),
-        '200' => round($basePrice * 0.90, 3),
-        '250' => round($basePrice * 0.88, 3),
-        '500' => round($basePrice * 0.85, 3),
-        '1000' => round($basePrice * 0.80, 3),
-        '2000' => round($basePrice * 0.75, 3)
-    ];
+    $pricingByQty = [50 => 5.000, 100 => 6.000, 200 => 11.000, 250 => 13.500, 500 => 25.000, 1000 => 40.000, 2000 => 50.000];
+    foreach ($pricingByQty as $qty => $price) {
+        $quantityTiers[(string)$qty] = round($price / $qty, 4);
+    }
 }
+$basePrice = reset($quantityTiers) ?: 0.10;
 
 // Build employees JSON for Alpine.js
 $employeesJson = [];
@@ -556,6 +568,7 @@ function orderForm() {
     const defaultCardFront = '<?php echo addslashes($cardFrontUrl); ?>';
     const defaultCardBack = '<?php echo addslashes($cardBackUrl); ?>';
     const defaultTiers = <?php echo json_encode($quantityTiers); ?>;
+    const pricingByQty = <?php echo json_encode($pricingByQty); ?>; // qty => flat design price
     
     return {
         // Shop
@@ -614,34 +627,40 @@ function orderForm() {
             }
         },
         
-        getTierPrice(quantity) {
-            // Find the best applicable tier for the given quantity
-            let price = this.basePrice;
-            let bestTierQty = 0;
-            
-            for (const [tierQty, tierPrice] of Object.entries(this.quantityTiers)) {
-                const qty = parseInt(tierQty);
-                if (quantity >= qty && qty > bestTierQty) {
-                    bestTierQty = qty;
-                    price = parseFloat(tierPrice);
-                }
+        getDesignPrice(quantity) {
+            // Return flat price per design for given quantity
+            // Exact match first, then nearest lower tier
+            if (pricingByQty[quantity] !== undefined) return parseFloat(pricingByQty[quantity]);
+            let price = null;
+            let bestQty = 0;
+            for (const [tierQty, tierPrice] of Object.entries(pricingByQty)) {
+                const q = parseInt(tierQty);
+                if (quantity >= q && q > bestQty) { bestQty = q; price = parseFloat(tierPrice); }
             }
-            
+            // Fallback: per_card × quantity
+            if (price === null) {
+                let perCard = this.basePrice;
+                let bestTierQty = 0;
+                for (const [tierQty, tierPrice] of Object.entries(this.quantityTiers)) {
+                    const q = parseInt(tierQty);
+                    if (quantity >= q && q > bestTierQty) { bestTierQty = q; perCard = parseFloat(tierPrice); }
+                }
+                price = perCard * quantity;
+            }
             return price;
         },
-        
+
         updatePrice() {
-            // Get tier-based price
-            let price = this.getTierPrice(this.quantity);
-            
-            // Paper multiplier
-            if (this.paperType === 'silk') price *= 1.15;
-            
-            // Finish multiplier
-            if (this.finish === 'rounded_corners') price *= 1.10;
-            
-            this.perCardPrice = price;
-            this.subtotal = this.quantity * price;
+            // Flat price per design (not per card × quantity)
+            let designPrice = this.getDesignPrice(this.quantity);
+
+            // Paper/finish multipliers on the design price
+            if (this.paperType === 'silk') designPrice *= 1.15;
+            if (this.finish === 'rounded_corners') designPrice *= 1.10;
+            designPrice = Math.round(designPrice * 1000) / 1000;
+
+            this.perCardPrice = Math.round((designPrice / this.quantity) * 1000) / 1000;
+            this.subtotal = designPrice;
             this.total = this.subtotal + this.setupFee + this.shippingFee;
         },
         
