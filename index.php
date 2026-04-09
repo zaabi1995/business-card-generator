@@ -778,11 +778,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </div>
             </div>
             
-            <?php if (!empty($paidPlans)): ?>
+            <?php if (!empty($paidPlans)):
+                $planCount = min(count($paidPlans), 3);
+                $gridClass = $planCount === 1 ? 'md:grid-cols-1' : ($planCount === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3');
+            ?>
             <!-- Paid Plans Section -->
             <div class="mt-12 pt-12 border-t border-gray-200">
                 <h3 class="text-xl font-bold text-gray-900 text-center mb-8">Premium Plans</h3>
-                <div class="grid md:grid-cols-<?php echo min(count($paidPlans), 3); ?> gap-8 max-w-4xl mx-auto">
+                <div class="grid <?php echo $gridClass; ?> gap-8 max-w-4xl mx-auto">
                     <?php foreach ($paidPlans as $plan): 
                         $monthlyPrice = (float)($plan['omr_monthly'] ?? 0);
                         $yearlyPrice = (float)($plan['omr_yearly'] ?? 0);

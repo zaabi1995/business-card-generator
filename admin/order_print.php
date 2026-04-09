@@ -564,9 +564,9 @@ $basePath = getAdminBasePath();
 function orderForm() {
     const employees = <?php echo json_encode($employeesJson); ?>;
     const defaultShop = <?php echo $selectedShop ? json_encode($selectedShop) : 'null'; ?>;
-    const defaultEmployeeId = '<?php echo $employeeId; ?>';
-    const defaultCardFront = '<?php echo addslashes($cardFrontUrl); ?>';
-    const defaultCardBack = '<?php echo addslashes($cardBackUrl); ?>';
+    const defaultEmployeeId = <?php echo json_encode($employeeId); ?>;
+    const defaultCardFront = <?php echo json_encode($cardFrontUrl); ?>;
+    const defaultCardBack = <?php echo json_encode($cardBackUrl); ?>;
     const defaultTiers = <?php echo json_encode($quantityTiers); ?>;
     const pricingByQty = <?php echo json_encode($pricingByQty); ?>; // qty => flat design price
     
@@ -606,11 +606,20 @@ function orderForm() {
             this.selectedShopId = shop?.id || 0;
             if (shop && shop.pricing) {
                 const pricing = typeof shop.pricing === 'string' ? JSON.parse(shop.pricing) : shop.pricing;
-                this.basePrice = parseFloat(pricing.per_card) || 0.10;
+                const tiers = pricing.quantity_tiers || {};
                 this.setupFee = parseFloat(pricing.setup_fee) || 0;
                 this.shippingFee = parseFloat(pricing.shipping_base) || 2;
                 this.currency = shop.currency || 'OMR';
-                this.quantityTiers = pricing.quantity_tiers || {};
+                this.quantityTiers = tiers;
+                // Rebuild pricingByQty for the new shop — support both old (scalar) and new ({price,per_card}) formats
+                const rebuilt = {};
+                for (const [qty, val] of Object.entries(tiers)) {
+                    rebuilt[parseInt(qty)] = typeof val === 'object' ? parseFloat(val.price) : parseFloat(val) * parseInt(qty);
+                }
+                Object.assign(pricingByQty, rebuilt);
+                // basePrice = first tier per_card
+                const firstVal = Object.values(tiers)[0];
+                this.basePrice = typeof firstVal === 'object' ? parseFloat(firstVal.per_card || 0.06) : parseFloat(firstVal) || 0.06;
             }
             this.updatePrice();
         },

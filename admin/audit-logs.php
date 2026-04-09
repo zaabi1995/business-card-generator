@@ -234,13 +234,13 @@ adminHeader('Audit Logs', 'audit-logs');
             
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">From Date</label>
-                <input type="date" name="date_from" value="<?php echo $_GET['date_from'] ?? ''; ?>"
+                <input type="date" name="date_from" value="<?php echo htmlspecialchars($_GET['date_from'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                        class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
             </div>
-            
+
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">To Date</label>
-                <input type="date" name="date_to" value="<?php echo $_GET['date_to'] ?? ''; ?>"
+                <input type="date" name="date_to" value="<?php echo htmlspecialchars($_GET['date_to'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                        class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
             </div>
             

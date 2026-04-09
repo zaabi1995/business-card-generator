@@ -196,7 +196,7 @@ class PrintShopIntegration {
                     $setupFee = $pricing['setup_fee'];
                     $shippingFee = $pricing['shipping'];
                     $total = $subtotal + $setupFee + $shippingFee;
-                    $currency = 'USD';
+                    $currency = 'OMR';
                 }
             } else {
                 // Use global settings pricing
@@ -205,16 +205,17 @@ class PrintShopIntegration {
                 $setupFee = $pricing['setup_fee'];
                 $shippingFee = $pricing['shipping'];
                 $total = $subtotal + $setupFee + $shippingFee;
-                $currency = 'USD';
+                $currency = 'OMR';
             }
-            
+
             // Generate order number (ORD-YYYYMMDD-XXXXX)
             $orderNumber = 'ORD-' . date('Ymd') . '-' . strtoupper(substr(md5(uniqid()), 0, 5));
-            
+
             // Calculate Cardify commission (30%) and shop payout (70%)
-            $commissionPct = 30.00;
-            $cardifyCommission = round($total * 0.30, 3);
-            $shopPayout = round($total * 0.70, 3);
+            // Derive payout from total minus commission to avoid dual-rounding mismatch
+            $commissionPct = defined('PRINT_ORDER_COMMISSION_PCT') ? (float)PRINT_ORDER_COMMISSION_PCT : 30.00;
+            $cardifyCommission = round($total * ($commissionPct / 100), 3);
+            $shopPayout = round($total - $cardifyCommission, 3);
 
             // Insert order using definitive schema (INT AUTO_INCREMENT id)
             $stmt = $pdo->prepare("
