@@ -10,11 +10,27 @@
  * Idempotent: safe to run multiple times.
  */
 
+// CLI-safe: stop config.php from issuing an HTTPS redirect (no HTTP_HOST under CLI)
+if (PHP_SAPI === 'cli') {
+    $_SERVER['HTTP_HOST'] = 'localhost';
+    $_SERVER['HTTPS'] = 'on';
+    $_SERVER['REQUEST_URI'] = '/';
+}
+
 require_once __DIR__ . '/../../config.php';
 
 try {
     $db = Database::getInstance();
     $pdo = $db->getConnection();
+    // CLI fallback: 'localhost' triggers UNIX-socket lookup which fails under CLI PHP.
+    // Reconnect via TCP (127.0.0.1) if the shared singleton has no live connection.
+    if (!$pdo) {
+        $db->connect('127.0.0.1', DB_NAME, DB_USER, DB_PASS, DB_PORT, DB_TYPE);
+        $pdo = $db->getConnection();
+    }
+    if (!$pdo) {
+        throw new RuntimeException('Database connection unavailable (CLI)');
+    }
 
     // 1. fx_rates table
     $pdo->exec("CREATE TABLE IF NOT EXISTS fx_rates (
@@ -73,7 +89,7 @@ try {
     echo "  notification_log table created\n";
     echo "  plan_prices zeroed out\n";
     echo "  companies moved to enterprise tier\n";
-} catch (PDOException $e) {
+} catch (Throwable $e) {
     echo "Migration 041 FAILED: " . $e->getMessage() . "\n";
     exit(1);
 }
