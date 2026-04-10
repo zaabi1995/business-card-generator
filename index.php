@@ -187,7 +187,6 @@ $extraHead = '<style>
 $showNavigation = true;
 $navLinks = [
     ['href' => '#features', 'label' => 'Features'],
-    ['href' => '#pricing', 'label' => 'Pricing'],
     ['href' => getBasePath() . 'blog', 'label' => 'Blog'],
     ['href' => getBasePath() . 'about', 'label' => 'About'],
     ['href' => getBasePath() . 'contact', 'label' => 'Contact'],
@@ -577,276 +576,16 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
     </section>
 
-    <!-- ========== PRICING SECTION (Flowbite Style) ========== -->
-    <section id="pricing" class="py-16 lg:py-24 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Section Header -->
-            <div class="max-w-2xl mx-auto text-center mb-16">
-                <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full uppercase tracking-wide">
-                    <i class="fa-solid fa-print"></i>
-                    Print Pricing
-                </span>
-                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
-                    Pay Per Design. No Subscriptions.
-                </h2>
-                <p class="text-lg text-gray-600">
-                    Design and manage cards free. Only pay when you order prints — priced per unique employee design, delivered across Oman.
-                </p>
-            </div>
-
-            <!-- Print Pricing Table -->
-            <div class="max-w-3xl mx-auto mb-16">
-                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border-2 border-blue-200 overflow-hidden">
-                    <div class="px-8 py-6 border-b border-blue-200 flex items-center justify-between">
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-900">Print Pricing — per employee design</h3>
-                            <p class="text-gray-500 text-sm mt-1">Each employee gets their own unique card. Price below is per design ordered.</p>
-                        </div>
-                        <div class="hidden sm:flex items-center gap-2 text-sm text-blue-700 font-semibold bg-white px-4 py-2 rounded-xl border border-blue-200">
-                            <i class="fa-solid fa-truck"></i>
-                            Delivered to your door
-                        </div>
-                    </div>
-                    <div class="p-8">
-                        <div class="grid grid-cols-3 gap-2 text-sm font-semibold text-gray-500 mb-3 px-2">
-                            <span>Cards per employee</span>
-                            <span class="text-center">Price per design</span>
-                            <span class="text-right">Example: 10 employees</span>
-                        </div>
-                        <?php
-                        $tiers = [
-                            ['qty' => 50,   'price' => 5.000],
-                            ['qty' => 100,  'price' => 6.000],
-                            ['qty' => 200,  'price' => 11.000],
-                            ['qty' => 250,  'price' => 13.500],
-                            ['qty' => 500,  'price' => 25.000],
-                            ['qty' => 1000, 'price' => 40.000],
-                            ['qty' => 2000, 'price' => 50.000],
-                        ];
-                        foreach ($tiers as $i => $tier):
-                            $popular = $tier['qty'] === 100;
-                        ?>
-                        <div class="grid grid-cols-3 gap-2 items-center px-4 py-3 rounded-xl mb-2 <?php echo $popular ? 'bg-blue-600 text-white' : 'bg-white border border-gray-100'; ?>">
-                            <div class="flex items-center gap-2">
-                                <span class="font-bold text-lg <?php echo $popular ? 'text-white' : 'text-gray-900'; ?>"><?php echo number_format($tier['qty']); ?></span>
-                                <?php if ($popular): ?>
-                                <span class="text-xs bg-white text-blue-600 font-bold px-2 py-0.5 rounded-full">Popular</span>
-                                <?php endif; ?>
-                            </div>
-                            <div class="text-center font-extrabold text-xl <?php echo $popular ? 'text-white' : 'text-gray-900'; ?>">
-                                <?php echo number_format($tier['price'], 3); ?> OMR
-                            </div>
-                            <div class="text-right <?php echo $popular ? 'text-blue-100' : 'text-gray-500'; ?> text-sm">
-                                <?php echo number_format($tier['price'] * 10, 3); ?> OMR
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                        <p class="text-xs text-gray-400 mt-4 px-2">+ 2.000 OMR shipping. Express delivery (+0.200 OMR) available. Printed by BHD Printing & Designing, Muscat.</p>
-                    </div>
-                    <div class="px-8 py-6 bg-white border-t border-blue-200 flex flex-col sm:flex-row gap-4 items-center justify-between">
-                        <div>
-                            <p class="font-semibold text-gray-900">Ready to order for your team?</p>
-                            <p class="text-sm text-gray-500">Register free, upload your employees, and order in minutes.</p>
-                        </div>
-                        <div class="flex gap-3">
-                            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-600/30">
-                                Get Started Free
-                                <i class="fa-solid fa-arrow-right"></i>
-                            </a>
-                            <a href="https://wa.me/96899899100?text=Hi%2C%20I'd%20like%20a%20demo%20of%20Cardify%20for%20my%20company" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all">
-                                <i class="fa-brands fa-whatsapp"></i>
-                                Demo
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pricing Cards -->
-            <div class="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                <?php 
-                // Find the free plan from database
-                $freePlan = null;
-                $paidPlans = [];
-                foreach ($subscriptionPlans as $plan) {
-                    if ($plan['id'] === 'free' || (float)($plan['omr_monthly'] ?? 0) == 0) {
-                        $freePlan = $plan;
-                    } else {
-                        $paidPlans[] = $plan;
-                    }
-                }
-                
-                // Get pricing values
-                $freePlanPrice = '0';
-                $freePlanName = $freePlan['name'] ?? 'Free';
-                $freePlanDescription = $freePlan['description'] ?? 'Perfect for individuals and small teams';
-
-                // Accurate free-plan feature list pulled from DB limits
-                $freeMaxEmp  = (int)($freePlan['max_employees'] ?? 5);
-                $freeMaxCards = (int)($freePlan['max_cards_per_month'] ?? 10);
-                $freePlanFeatures = [
-                    'Up to ' . ($freeMaxEmp < 0 ? 'unlimited' : $freeMaxEmp) . ' employees',
-                    ($freeMaxCards < 0 ? 'Unlimited' : $freeMaxCards) . ' card generations / month',
-                    'Card template editor',
-                    'QR code on every card',
-                    'Employee self-service portal',
-                    'Department management',
-                    'Arabic & English support',
-                ];
-                ?>
-                
-                <!-- Free Platform -->
-                <div class="relative bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border-2 border-blue-200 lg:col-span-2">
-                    <div class="absolute -top-4 left-8">
-                        <span class="inline-flex items-center gap-1 px-4 py-1.5 bg-green-500 text-white text-sm font-bold rounded-full shadow-lg shadow-green-500/30">
-                            <i class="fa-solid fa-star"></i>
-                            Start Free
-                        </span>
-                    </div>
-
-                    <div class="grid md:grid-cols-2 gap-8 mt-4">
-                        <div>
-                            <h3 class="text-2xl font-bold text-gray-900 mb-2"><?php echo htmlspecialchars($freePlanName); ?></h3>
-                            <p class="text-gray-600 mb-6"><?php echo htmlspecialchars($freePlanDescription); ?></p>
-                            
-                            <div class="flex items-baseline gap-2 mb-6">
-                                <span class="text-5xl font-extrabold text-gray-900">OMR <?php echo $freePlanPrice; ?></span>
-                                <span class="text-gray-500">forever</span>
-                            </div>
-
-                            <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center justify-center gap-2 w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all">
-                                Get Started Free
-                                <i class="fa-solid fa-arrow-right"></i>
-                            </a>
-                        </div>
-
-                        <div>
-                            <ul class="space-y-3">
-                                <?php foreach ($freePlanFeatures as $feature): ?>
-                                <li class="flex items-center gap-3 text-gray-700">
-                                    <i class="fa-solid fa-check w-5 text-green-500"></i>
-                                    <span><?php echo htmlspecialchars($feature); ?></span>
-                                </li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Print Services -->
-                <div class="relative bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-green-300 transition-colors">
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Print Services</h3>
-                    <p class="text-gray-500 mb-6">Order physical cards when you need them</p>
-                    
-                    <div class="flex items-baseline gap-1 mb-6">
-                        <span class="text-3xl font-extrabold text-gray-900">Pay per order</span>
-                    </div>
-
-                    <div class="space-y-4 mb-6">
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <span class="text-gray-700">Standard Cards</span>
-                            <span class="font-bold text-gray-900">From OMR 5</span>
-                        </div>
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <span class="text-gray-700">Premium Cards</span>
-                            <span class="font-bold text-gray-900">From OMR 8</span>
-                        </div>
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <span class="text-gray-700">Bulk Orders</span>
-                            <span class="font-bold text-gray-900">Custom pricing</span>
-                        </div>
-                    </div>
-
-                    <ul class="space-y-3 mb-6 text-sm">
-                        <li class="flex items-center gap-2 text-gray-600">
-                            <i class="fa-solid fa-check text-green-500"></i>
-                            Verified local print shops
-                        </li>
-                        <li class="flex items-center gap-2 text-gray-600">
-                            <i class="fa-solid fa-check text-green-500"></i>
-                            Multiple paper options
-                        </li>
-                        <li class="flex items-center gap-2 text-gray-600">
-                            <i class="fa-solid fa-check text-green-500"></i>
-                            Delivery across Oman
-                        </li>
-                    </ul>
-
-                    <a href="<?php echo getBasePath(); ?>print-shops" class="block w-full py-3 px-6 text-center bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold rounded-lg transition-colors">
-                        View Print Shops
-                    </a>
-                </div>
-            </div>
-            
-            <?php if (!empty($paidPlans)):
-                $planCount = min(count($paidPlans), 3);
-                $gridClass = $planCount === 1 ? 'md:grid-cols-1' : ($planCount === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3');
-            ?>
-            <!-- Paid Plans Section -->
-            <div class="mt-12 pt-12 border-t border-gray-200">
-                <h3 class="text-xl font-bold text-gray-900 text-center mb-8">Premium Plans</h3>
-                <div class="grid <?php echo $gridClass; ?> gap-8 max-w-4xl mx-auto">
-                    <?php foreach ($paidPlans as $plan): 
-                        $monthlyPrice = (float)($plan['omr_monthly'] ?? 0);
-                        $yearlyPrice = (float)($plan['omr_yearly'] ?? 0);
-                        $planFeatures = [];
-                        if (!empty($plan['features_json'])) {
-                            $planFeatures = json_decode($plan['features_json'], true) ?: [];
-                        }
-                        $isPopular = $plan['id'] === 'pro' || $plan['id'] === 'starter';
-                    ?>
-                    <div class="relative bg-white rounded-2xl p-6 border-2 <?php echo $isPopular ? 'border-blue-300' : 'border-gray-200'; ?> hover:shadow-lg transition-shadow">
-                        <?php if ($isPopular): ?>
-                        <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                            <span class="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full">Most Popular</span>
-                        </div>
-                        <?php endif; ?>
-                        
-                        <h4 class="text-lg font-bold text-gray-900 mb-1 <?php echo $isPopular ? 'mt-2' : ''; ?>"><?php echo htmlspecialchars($plan['name']); ?></h4>
-                        <p class="text-sm text-gray-500 mb-4"><?php echo htmlspecialchars($plan['description'] ?? ''); ?></p>
-                        
-                        <div class="flex items-baseline gap-1 mb-4">
-                            <span class="text-3xl font-extrabold text-gray-900">OMR <?php echo number_format($monthlyPrice, 2); ?></span>
-                            <span class="text-gray-500">/month</span>
-                        </div>
-                        
-                        <?php if ($yearlyPrice > 0): ?>
-                        <p class="text-sm text-green-600 mb-4">
-                            <i class="fa-solid fa-tag"></i> 
-                            OMR <?php echo number_format($yearlyPrice, 2); ?>/year (Save <?php echo round((1 - ($yearlyPrice / ($monthlyPrice * 12))) * 100); ?>%)
-                        </p>
-                        <?php endif; ?>
-                        
-                        <ul class="space-y-2 mb-6 text-sm">
-                            <?php 
-                            // Show limits
-                            $maxEmployees = ($plan['max_employees'] ?? -1) == -1 ? 'Unlimited' : $plan['max_employees'];
-                            $maxTemplates = ($plan['max_templates'] ?? -1) == -1 ? 'Unlimited' : $plan['max_templates'];
-                            ?>
-                            <li class="flex items-center gap-2 text-gray-600">
-                                <i class="fa-solid fa-check text-green-500"></i>
-                                <?php echo $maxEmployees; ?> employees
-                            </li>
-                            <li class="flex items-center gap-2 text-gray-600">
-                                <i class="fa-solid fa-check text-green-500"></i>
-                                <?php echo $maxTemplates; ?> templates
-                            </li>
-                            <?php foreach ($planFeatures as $feature): ?>
-                            <li class="flex items-center gap-2 text-gray-600">
-                                <i class="fa-solid fa-check text-green-500"></i>
-                                <?php echo htmlspecialchars($feature); ?>
-                            </li>
-                            <?php endforeach; ?>
-                        </ul>
-                        
-                        <a href="<?php echo getBasePath(); ?>company/register.php" class="block w-full py-2.5 px-4 text-center <?php echo $isPopular ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'; ?> font-semibold rounded-lg transition-colors">
-                            Get Started
-                        </a>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <?php endif; ?>
+    <!-- ========== FREE FOREVER BANNER ========== -->
+    <section class="bg-gradient-to-r from-blue-50 to-indigo-50 py-16 px-4">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">Free forever</h2>
+            <p class="text-xl text-gray-600 mb-8">Every feature is free. You only pay when you print physical cards.</p>
+            <a href="<?= getBasePath() ?>get-started" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 text-lg">
+                Get Started Free
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </a>
+            <p class="text-sm text-gray-500 mt-4">No credit card required. Create your first card in under a minute.</p>
         </div>
     </section>
 
@@ -1016,7 +755,6 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <h4 class="font-bold text-lg mb-6">Product</h4>
                     <ul class="space-y-4">
                         <li><a href="#features" class="text-gray-400 hover:text-white transition-colors">Features</a></li>
-                        <li><a href="#pricing" class="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
                         <li><a href="#how-it-works" class="text-gray-400 hover:text-white transition-colors">How it Works</a></li>
                         <li><a href="<?php echo getBasePath(); ?>company/register.php" class="text-gray-400 hover:text-white transition-colors">Get Started</a></li>
                     </ul>
