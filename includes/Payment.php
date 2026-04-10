@@ -374,6 +374,56 @@ class Payment {
             }
         }
 
+        // Fire payment_success / payment_failed notifications via Notifier
+        try {
+            $company = null;
+            if (!empty($payment['company_id'])) {
+                $company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $payment['company_id']]);
+            }
+            $order = null;
+            if ($payment['type'] === 'print_order' && !empty($payment['reference_id'])) {
+                $order = $db->fetchOne("SELECT * FROM print_orders WHERE id = :id", ['id' => $payment['reference_id']]);
+            }
+
+            require_once INCLUDES_DIR . '/Notifier.php';
+            require_once INCLUDES_DIR . '/Currency.php';
+
+            $omrAmount = Currency::format((float)$payment['amount'], 'OMR');
+            $displayAmount = $omrAmount; // callback has no user session; charge currency is authoritative
+            $orderNumber = $order['order_number'] ?? ($payment['reference_id'] ?? '');
+
+            if ($isSuccess) {
+                Notifier::send('payment_success', [
+                    'name'       => $company['name_en'] ?? $company['name'] ?? 'Customer',
+                    'email'      => $company['admin_email'] ?? $company['email'] ?? null,
+                    'phone'      => $company['phone'] ?? null,
+                    'company_id' => $company['id'] ?? ($payment['company_id'] ?? null),
+                ], [
+                    'name'          => $company['name_en'] ?? $company['name'] ?? 'Customer',
+                    'orderNumber'   => $orderNumber,
+                    'displayAmount' => $displayAmount,
+                    'omrAmount'     => $omrAmount,
+                ]);
+            } else {
+                $retryUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://'
+                          . ($_SERVER['HTTP_HOST'] ?? 'cardify.om')
+                          . getBasePath() . 'company/orders.php?retry=' . urlencode($order['id'] ?? ($payment['reference_id'] ?? ''));
+
+                Notifier::send('payment_failed', [
+                    'name'       => $company['name_en'] ?? $company['name'] ?? 'Customer',
+                    'email'      => $company['admin_email'] ?? $company['email'] ?? null,
+                    'phone'      => $company['phone'] ?? null,
+                    'company_id' => $company['id'] ?? ($payment['company_id'] ?? null),
+                ], [
+                    'name'        => $company['name_en'] ?? $company['name'] ?? 'Customer',
+                    'orderNumber' => $orderNumber,
+                    'retryUrl'    => $retryUrl,
+                ]);
+            }
+        } catch (Throwable $e) {
+            error_log('[paymob callback] Notifier ' . ($isSuccess ? 'success' : 'failure') . ' failed: ' . $e->getMessage());
+        }
+
         return [
             'success' => $isSuccess,
             'payment_id' => $payment['id'],

@@ -202,7 +202,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             );
             $whatsappSent = $whatsappResult['success'];
         }
-        
+
+        // Fire print_order_placed notification (email + WhatsApp via Notifier)
+        try {
+            require_once INCLUDES_DIR . '/Notifier.php';
+            require_once INCLUDES_DIR . '/Currency.php';
+            require_once INCLUDES_DIR . '/functions.php';
+
+            $order = array_merge($insertData, ['id' => $orderId, 'order_number' => $orderNumber]);
+            $userCur = Currency::getUserCurrency();
+            $orderTotal = (float)($order['total_amount'] ?? 0);
+            $displayAmount = Currency::format(Currency::convert($orderTotal, $userCur), $userCur);
+            $omrAmount = Currency::format($orderTotal, 'OMR');
+
+            Notifier::send('print_order_placed', [
+                'name'       => $company['name_en'] ?? $company['name'] ?? 'Customer',
+                'email'      => $company['admin_email'] ?? $company['email'] ?? null,
+                'phone'      => $company['phone'] ?? null,
+                'company_id' => $company['id'] ?? $companyId,
+            ], [
+                'name'          => $company['name_en'] ?? $company['name'] ?? 'Customer',
+                'orderNumber'   => $orderNumber,
+                'displayAmount' => $displayAmount,
+                'omrAmount'     => $omrAmount,
+                'quantity'      => (int)$quantity,
+            ]);
+        } catch (Throwable $e) {
+            error_log('[print_order] Notifier failed: ' . $e->getMessage());
+        }
+
         $message = 'Print order created successfully! Order #' . $orderNumber;
         if ($emailSent) {
             $message .= ' Email confirmation sent.';
