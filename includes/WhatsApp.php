@@ -1,21 +1,32 @@
 <?php
 /**
  * WhatsApp REST API Integration
- * Sends confirmation messages via Dardasha REST API
+ * Sends messages via Dardasha REST API using config.php constants.
+ *
+ * Config in config.php:
+ *   DARDASHA_API_URL — Dardasha send endpoint
+ *   DARDASHA_TOKEN   — superadmin JWT for cardify.om's business_id
+ *   DARDASHA_FROM    — BHD line number (96897707134 as of 2026-04-10)
+ *
+ * Fallback: if constants aren't set, falls back to system_settings table
+ * (legacy behavior — kept so existing setups don't break during migration).
  */
 class WhatsApp {
     private static $db = null;
     private static $settings = [];
+    private static $useConstants = null;
 
     public static function init() {
-        if (self::$db === null) {
+        if (self::$useConstants !== null) return;
+        self::$useConstants = defined('DARDASHA_API_URL') && defined('DARDASHA_TOKEN') && defined('DARDASHA_FROM');
+        if (!self::$useConstants) {
             self::$db = Database::getInstance();
             self::loadSettings();
         }
     }
 
     /**
-     * Load WhatsApp settings from database
+     * Legacy: load settings from DB when constants aren't defined.
      */
     private static function loadSettings() {
         try {
@@ -31,39 +42,42 @@ class WhatsApp {
                 }
             }
         } catch (Exception $e) {
-            // Settings table might not exist yet
             self::$settings = [];
         }
     }
 
     /**
-     * Check if WhatsApp is enabled and configured
+     * Check if WhatsApp is enabled and configured.
      */
     public static function isEnabled() {
         self::init();
+        if (self::$useConstants) {
+            return !empty(DARDASHA_TOKEN) && !empty(DARDASHA_FROM) && !empty(DARDASHA_API_URL);
+        }
         return (self::$settings['whatsapp_enabled'] ?? '0') === '1'
             && !empty(self::$settings['whatsapp_api_token']);
     }
 
     /**
-     * Normalize phone number to E.164 format without +
-     * Handles Omani numbers: 8-digit → prepend 968
+     * Normalize phone number to E.164 format without +.
+     * Handles Omani numbers: 8-digit → prepend 968.
      */
-    private static function normalizePhone($phone) {
-        $clean = preg_replace('/[^0-9]/', '', ltrim($phone, '+'));
+    public static function normalizePhone($phone) {
+        $clean = preg_replace('/[^0-9]/', '', ltrim((string)$phone, '+'));
         if (str_starts_with($clean, '00')) $clean = substr($clean, 2);
         if (str_starts_with($clean, '0') && strlen($clean) === 8) $clean = '968' . substr($clean, 1);
-        if (!str_starts_with($clean, '968') && strlen($clean) === 8) $clean = '968' . $clean;
+        if (!str_starts_with($clean, '968') && !str_starts_with($clean, '971') && !str_starts_with($clean, '966') && strlen($clean) === 8) {
+            $clean = '968' . $clean;
+        }
         return $clean;
     }
 
     /**
-     * Send WhatsApp message via Dardasha REST API
-     * API: POST /api/messages/api/send with X-API-Key header
-     * Body: { to, from, text }
+     * Send WhatsApp message via Dardasha REST API.
+     *
      * @param string $phoneNumber Phone number in any format
      * @param string $message Message to send
-     * @return array ['success' => bool, 'error' => string|null]
+     * @return array ['success' => bool, 'error' => string|null, 'messageId' => string|null]
      */
     public static function sendMessage($phoneNumber, $message) {
         self::init();
@@ -72,24 +86,37 @@ class WhatsApp {
             return ['success' => false, 'error' => 'WhatsApp not enabled or token not configured'];
         }
 
-        $to   = self::normalizePhone($phoneNumber);
-        $from = self::$settings['whatsapp_session_id'] ?? '96898899100'; // Anna's line
+        $to = self::normalizePhone($phoneNumber);
 
-        $apiUrl = self::$settings['whatsapp_api_url'] ?? 'http://127.0.0.1:3000/api/messages/api/send';
-        $token  = self::$settings['whatsapp_api_token'] ?? '';
-
-        $payload = ['to' => $to, 'from' => $from, 'text' => $message];
+        if (self::$useConstants) {
+            $apiUrl = DARDASHA_API_URL;
+            $token  = DARDASHA_TOKEN;
+            $from   = DARDASHA_FROM;
+            // Dardasha's /send_message endpoint expects token IN the JSON body, not a header
+            $payload = [
+                'messageType' => 'text',
+                'requestType' => 'POST',
+                'token' => $token,
+                'from' => $from,
+                'to' => $to,
+                'text' => $message,
+            ];
+            $headers = ['Content-Type: application/json'];
+        } else {
+            $apiUrl = self::$settings['whatsapp_api_url'] ?? 'http://127.0.0.1:3000/api/messages/api/send';
+            $token  = self::$settings['whatsapp_api_token'] ?? '';
+            $from   = self::$settings['whatsapp_session_id'] ?? '96897707134';
+            $payload = ['to' => $to, 'from' => $from, 'text' => $message];
+            $headers = ['Content-Type: application/json', 'X-API-Key: ' . $token];
+        }
 
         $ch = curl_init($apiUrl);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => json_encode($payload),
-            CURLOPT_HTTPHEADER     => [
-                'Content-Type: application/json',
-                'X-API-Key: ' . $token,
-            ],
-            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_HTTPHEADER     => $headers,
+            CURLOPT_TIMEOUT        => 20,
             CURLOPT_SSL_VERIFYPEER => false,
         ]);
 
@@ -100,17 +127,18 @@ class WhatsApp {
 
         if ($curlErr) {
             error_log("[WhatsApp] CURL error to $to: $curlErr");
-            return ['success' => false, 'error' => 'CURL Error: ' . $curlErr];
+            return ['success' => false, 'error' => 'CURL Error: ' . $curlErr, 'messageId' => null];
         }
 
         $data = json_decode($response, true);
-        if ($data['success'] ?? false) {
-            return ['success' => true, 'messageId' => $data['messageId'] ?? null];
+        if (($data['success'] ?? false) === true) {
+            $messageId = $data['data']['messageId'] ?? $data['messageId'] ?? null;
+            return ['success' => true, 'error' => null, 'messageId' => $messageId];
         }
 
         $errMsg = $data['error'] ?? $data['message'] ?? ('HTTP ' . $httpCode);
         error_log("[WhatsApp] Send failed to $to: $errMsg");
-        return ['success' => false, 'error' => 'API Error: ' . $errMsg];
+        return ['success' => false, 'error' => 'API Error: ' . $errMsg, 'messageId' => null];
     }
 
     /**
