@@ -1395,9 +1395,30 @@ function generateTemplateId($name) {
     $slug = strtolower(trim($name));
     $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
     $slug = trim($slug, '-');
-    
+
     // Add unique suffix
     $uniqueSuffix = substr(uniqid(), -6);
-    
+
     return $slug . '-' . $uniqueSuffix;
+}
+
+/**
+ * Format an OMR amount in the user's currently-selected display currency.
+ * This is the one-liner used at every price render site.
+ *
+ *   echo formatPrice(5.400);  // "5.000 OMR" or "47.72 AED" depending on user
+ *
+ * Returns HTML-safe plain text. No HTML wrapping.
+ */
+if (!function_exists('formatPrice')) {
+    function formatPrice(float $omrAmount): string {
+        static $loaded = false;
+        if (!$loaded) {
+            require_once __DIR__ . '/Currency.php';
+            $loaded = true;
+        }
+        $cur = Currency::getUserCurrency();
+        $amt = Currency::convert($omrAmount, $cur);
+        return Currency::format($amt, $cur);
+    }
 }
