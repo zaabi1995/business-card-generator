@@ -197,24 +197,24 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="mb-20">
             <div class="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-2xl p-8 lg:p-12">
                 <div class="text-center mb-10">
-                    <h2 class="text-3xl font-bold text-gray-900">Trusted by Healthcare Providers in Oman</h2>
+                    <h2 class="text-3xl font-bold text-gray-900">Built for Healthcare Providers in Oman</h2>
                 </div>
                 <div class="grid md:grid-cols-4 gap-6 text-center">
                     <div class="bg-white rounded-xl p-6 shadow-sm">
-                        <div class="text-3xl font-bold text-teal-600 mb-2">500+</div>
-                        <div class="text-gray-500 text-sm">Companies Trust <?php echo $brandName; ?></div>
+                        <div class="text-3xl mb-2">🇴🇲</div>
+                        <div class="text-gray-700 text-sm font-semibold">Made in Oman</div>
                     </div>
                     <div class="bg-white rounded-xl p-6 shadow-sm">
-                        <div class="text-3xl font-bold text-teal-600 mb-2">50K+</div>
-                        <div class="text-gray-500 text-sm">Cards Created</div>
+                        <div class="text-3xl mb-2">📅</div>
+                        <div class="text-gray-700 text-sm font-semibold">QR appointment booking</div>
                     </div>
                     <div class="bg-white rounded-xl p-6 shadow-sm">
-                        <div class="text-3xl font-bold text-teal-600 mb-2">QR</div>
-                        <div class="text-gray-500 text-sm">Appointment Booking</div>
+                        <div class="text-3xl mb-2">🔒</div>
+                        <div class="text-gray-700 text-sm font-semibold">Privacy conscious</div>
                     </div>
                     <div class="bg-white rounded-xl p-6 shadow-sm">
-                        <div class="text-3xl font-bold text-teal-600 mb-2">HIPAA</div>
-                        <div class="text-gray-500 text-sm">Privacy Conscious</div>
+                        <div class="text-3xl mb-2">💬</div>
+                        <div class="text-gray-700 text-sm font-semibold">Local support</div>
                     </div>
                 </div>
             </div>

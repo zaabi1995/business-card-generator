@@ -20,8 +20,8 @@ $plans = $db->fetchAll("
     ORDER BY sp.sort_order, sp.name
 ");
 
-// Get all currencies from plan_prices
-$currencies = ['USD', 'OMR', 'EUR'];
+// Get all currencies from plan_prices (OMR first — Oman-first product)
+$currencies = ['OMR', 'USD', 'AED', 'SAR', 'EUR'];
 try {
     $currencyRows = $db->fetchAll("SELECT DISTINCT currency FROM plan_prices ORDER BY currency");
     if (!empty($currencyRows)) {

@@ -42,8 +42,8 @@ if (empty($plans)) {
     ];
 }
 
-// Get currencies from plan_prices or use defaults
-$currencies = ['USD', 'OMR', 'EUR'];
+// Get currencies from plan_prices or use defaults (OMR first — Oman-first product)
+$currencies = ['OMR', 'USD', 'AED', 'SAR', 'EUR'];
 if ($useDatabase) {
     try {
         $currencyRows = $db->fetchAll("SELECT DISTINCT currency FROM plan_prices ORDER BY currency");
@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $parentId = $_POST['parent_company_id'] ?? null;
         $customSlug = $_POST['company_slug'] ?? null;
         $plan = $_POST['plan'] ?? 'free';
-        $currency = $_POST['currency'] ?? 'USD';
+        $currency = $_POST['currency'] ?? 'OMR';
         
         if (!empty($name) && !empty($email) && !empty($password)) {
             $result = DatabaseAdapter::createCompany($name, $email, $password, $parentId, $customSlug);
@@ -269,7 +269,7 @@ adminHeader('Companies', 'companies');
                             </span>
                         </td>
                         <td class="px-6 py-4">
-                            <span class="text-gray-700 text-sm font-medium"><?php echo $company['currency'] ?? 'USD'; ?></span>
+                            <span class="text-gray-700 text-sm font-medium"><?php echo $company['currency'] ?? 'OMR'; ?></span>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-4 text-sm">
@@ -447,7 +447,7 @@ function companyManager() {
             admin_email: '', 
             billing_email: '',
             plan: 'free', 
-            currency: 'USD',
+            currency: 'OMR',
             status: 'active', 
             parent_company_id: '' 
         },
@@ -460,7 +460,7 @@ function companyManager() {
                 admin_email: '', 
                 billing_email: '',
                 plan: 'free', 
-                currency: 'USD',
+                currency: 'OMR',
                 status: 'active', 
                 parent_company_id: '' 
             };

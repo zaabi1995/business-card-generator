@@ -197,24 +197,24 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="mb-20">
             <div class="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-8 lg:p-12">
                 <div class="text-center mb-10">
-                    <h2 class="text-3xl font-bold text-gray-900">Trusted by F&B Businesses Across Oman</h2>
+                    <h2 class="text-3xl font-bold text-gray-900">Built for F&B Businesses Across Oman</h2>
                 </div>
                 <div class="grid md:grid-cols-4 gap-6 text-center">
                     <div class="bg-white rounded-xl p-6 shadow-sm">
-                        <div class="text-3xl font-bold text-orange-600 mb-2">500+</div>
-                        <div class="text-gray-500 text-sm">Companies Trust <?php echo $brandName; ?></div>
+                        <div class="text-3xl mb-2">🇴🇲</div>
+                        <div class="text-gray-700 text-sm font-semibold">Made in Oman</div>
                     </div>
                     <div class="bg-white rounded-xl p-6 shadow-sm">
-                        <div class="text-3xl font-bold text-orange-600 mb-2">50K+</div>
-                        <div class="text-gray-500 text-sm">Cards Created</div>
+                        <div class="text-3xl mb-2">⚡</div>
+                        <div class="text-gray-700 text-sm font-semibold">Free to start</div>
                     </div>
                     <div class="bg-white rounded-xl p-6 shadow-sm">
-                        <div class="text-3xl font-bold text-orange-600 mb-2">Free</div>
-                        <div class="text-gray-500 text-sm">To Get Started</div>
+                        <div class="text-3xl mb-2">🖨️</div>
+                        <div class="text-gray-700 text-sm font-semibold">Print + digital</div>
                     </div>
                     <div class="bg-white rounded-xl p-6 shadow-sm">
-                        <div class="text-3xl font-bold text-orange-600 mb-2">2 min</div>
-                        <div class="text-gray-500 text-sm">Setup Time</div>
+                        <div class="text-3xl mb-2">💬</div>
+                        <div class="text-gray-700 text-sm font-semibold">Local support</div>
                     </div>
                 </div>
             </div>

@@ -679,19 +679,19 @@ $basePath = getBasePath();
                                 </div>
                             </div>
                             
-                            <!-- SME Stats -->
+                            <!-- SME value props -->
                             <div class="grid grid-cols-3 gap-2 sm:gap-4">
                                 <div class="bg-white rounded-xl p-3 sm:p-4 text-center shadow-sm">
-                                    <div class="text-2xl sm:text-3xl font-black text-blue-600">500+</div>
-                                    <div class="text-xs text-gray-500">SME Companies</div>
+                                    <div class="text-2xl sm:text-3xl mb-1">🇴🇲</div>
+                                    <div class="text-xs text-gray-600 font-semibold">Built for Oman</div>
                                 </div>
                                 <div class="bg-white rounded-xl p-4 text-center shadow-sm">
-                                    <div class="text-3xl font-black text-purple-600">10k+</div>
-                                    <div class="text-xs text-gray-500">Cards Created</div>
+                                    <div class="text-2xl sm:text-3xl mb-1">⚡</div>
+                                    <div class="text-xs text-gray-600 font-semibold">30-sec signup</div>
                                 </div>
                                 <div class="bg-white rounded-xl p-4 text-center shadow-sm">
-                                    <div class="text-3xl font-black text-green-600">100%</div>
-                                    <div class="text-xs text-gray-500">Local Support</div>
+                                    <div class="text-2xl sm:text-3xl mb-1">💬</div>
+                                    <div class="text-xs text-gray-600 font-semibold">Local support</div>
                                 </div>
                             </div>
                             
