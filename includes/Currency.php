@@ -1414,4 +1414,145 @@ function CardifyPhoneData() {
 }
 JS;
     }
+
+    // ========================================================================
+    // Multi-currency display layer (added 2026-04-10 for free-forever pivot)
+    //
+    // OMR is the canonical charging currency. These helpers convert OMR
+    // amounts to any supported display currency via the fx_rates table and
+    // resolve the user's preferred display currency.
+    //
+    // All rates come from fx_rates — no hardcoded conversion constants.
+    // ========================================================================
+
+    /** Supported currency whitelist for the display layer. Order matters for the header dropdown. */
+    const SUPPORTED = [
+        'OMR' => 'Omani Rial',
+        'USD' => 'US Dollar',
+        'AED' => 'UAE Dirham',
+        'SAR' => 'Saudi Riyal',
+        'EUR' => 'Euro',
+    ];
+
+    /** Cookie name for persistent user preference. */
+    const COOKIE_NAME = 'cardify_currency';
+
+    /** In-process cache so we don't hit fx_rates on every convert() call in a request. */
+    private static $rateCache = null;
+
+    /**
+     * Convert an OMR amount to another currency.
+     * Returns the original amount unchanged if target is OMR, unknown, or rate missing.
+     *
+     * @param float $omrAmount Amount in OMR
+     * @param string $toCurrency Target currency code (3 letters)
+     * @return float Converted amount
+     */
+    public static function convert(float $omrAmount, string $toCurrency): float {
+        $toCurrency = strtoupper($toCurrency);
+        if ($toCurrency === 'OMR') return $omrAmount;
+        if (!isset(self::SUPPORTED[$toCurrency])) return $omrAmount;
+
+        $rate = self::getRate($toCurrency);
+        if ($rate === null || $rate <= 0) return $omrAmount;
+
+        return $omrAmount * $rate;
+    }
+
+    /**
+     * Resolve the user's display currency in priority order:
+     *   1. Logged-in company's currency column (if set)
+     *   2. Session/cookie 'cardify_currency'
+     *   3. Auto-detect from CF-IPCountry header
+     *   4. Fallback to OMR
+     */
+    public static function getUserCurrency(): string {
+        // 1. Logged-in company
+        if (isset($_SESSION['company']['currency'])) {
+            $cur = strtoupper($_SESSION['company']['currency']);
+            if (isset(self::SUPPORTED[$cur])) return $cur;
+        }
+
+        // 2. Cookie
+        if (!empty($_COOKIE[self::COOKIE_NAME])) {
+            $cur = strtoupper($_COOKIE[self::COOKIE_NAME]);
+            if (isset(self::SUPPORTED[$cur])) return $cur;
+        }
+
+        // 3. Auto-detect from CF-IPCountry (Cloudflare sets this on every request)
+        $country = $_SERVER['HTTP_CF_IPCOUNTRY'] ?? '';
+        $countryMap = [
+            'OM' => 'OMR',
+            'AE' => 'AED',
+            'SA' => 'SAR',
+            'US' => 'USD', 'GB' => 'USD', 'CA' => 'USD', 'AU' => 'USD',
+            'DE' => 'EUR', 'FR' => 'EUR', 'IT' => 'EUR', 'ES' => 'EUR', 'NL' => 'EUR',
+        ];
+        if (isset($countryMap[$country])) return $countryMap[$country];
+
+        // 4. Fallback
+        return 'OMR';
+    }
+
+    /**
+     * Persist user's currency preference (cookie + logged-in company row).
+     */
+    public static function setUserCurrency(string $currency): bool {
+        $currency = strtoupper($currency);
+        if (!isset(self::SUPPORTED[$currency])) return false;
+
+        // Cookie: 365 days, secure, httponly=false so JS can read if needed
+        setcookie(self::COOKIE_NAME, $currency, [
+            'expires' => time() + 86400 * 365,
+            'path' => '/',
+            'secure' => !empty($_SERVER['HTTPS']),
+            'httponly' => false,
+            'samesite' => 'Lax',
+        ]);
+        $_COOKIE[self::COOKIE_NAME] = $currency;
+
+        // If logged in, persist to companies.currency
+        if (isset($_SESSION['company']['id'])) {
+            try {
+                $db = Database::getInstance();
+                $db->update('companies', ['currency' => $currency], 'id = :id', ['id' => $_SESSION['company']['id']]);
+                $_SESSION['company']['currency'] = $currency;
+            } catch (Exception $e) {
+                error_log('[Currency] failed to persist currency to company row: ' . $e->getMessage());
+            }
+        }
+        return true;
+    }
+
+    /**
+     * List of supported display currencies as [code => display_name].
+     * Used by the header dropdown and the /api/set-currency endpoint.
+     */
+    public static function supportedCurrencies(): array {
+        return self::SUPPORTED;
+    }
+
+    /**
+     * Load all rates from fx_rates into the in-process cache.
+     */
+    private static function loadRates(): void {
+        if (self::$rateCache !== null) return;
+        self::$rateCache = ['OMR' => 1.0];
+        try {
+            $db = Database::getInstance();
+            $rows = $db->fetchAll(
+                "SELECT target_currency, rate FROM fx_rates WHERE base_currency = 'OMR'"
+            );
+            foreach ($rows as $row) {
+                self::$rateCache[strtoupper($row['target_currency'])] = (float)$row['rate'];
+            }
+        } catch (Exception $e) {
+            error_log('[Currency] failed to load fx_rates: ' . $e->getMessage());
+        }
+    }
+
+    private static function getRate(string $target): ?float {
+        self::loadRates();
+        return self::$rateCache[$target] ?? null;
+    }
 }
