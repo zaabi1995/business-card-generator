@@ -14,8 +14,8 @@ if (empty($_SESSION['referral_source'])) {
     $_SESSION['referral_time'] = date('Y-m-d H:i:s');
 }
 
-$pageTitle = 'Digital Business Cards — Exclusive for BHD Printing Customers';
-$pageDescription = 'Your trusted printer, BHD Printing, now offers digital business cards through Cardify. Design, share, and print professional cards for your whole team — starting free.';
+$pageTitle = 'Free Digital Card + 10% Off Printing — BHD Printing Customers';
+$pageDescription = 'Exclusive BHD offer: get your digital business card FREE when you print with BHD, plus 10% off every print order. 100 cards from just 5.400 OMR.';
 $canonicalUrl = 'https://cardify.om/bhd';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
@@ -81,12 +81,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
 
             <h1 class="text-4xl sm:text-5xl font-extrabold leading-tight mb-5">
-                Your Printer Now Offers<br>
-                <span class="text-blue-300">Digital Business Cards</span>
+                Free Digital Card<br>
+                <span class="text-blue-300">+ 10% Off Printing</span>
             </h1>
 
             <p class="text-lg text-blue-100 max-w-lg mx-auto lg:mx-0 mb-8 leading-relaxed">
-                BHD Printing has partnered with Cardify so you can design, share, and reorder your business cards — all in one place. Free to get started.
+                Exclusive for BHD Printing customers: get your digital business card <strong class="text-white">completely free</strong>, and <strong class="text-white">10% off</strong> every business card print order at BHD. 100 cards now just <strong class="text-white">5.400 OMR</strong>.
             </p>
 
             <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -103,11 +103,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="flex flex-wrap gap-4 mt-8 justify-center lg:justify-start text-blue-200 text-sm">
                 <span class="flex items-center gap-1.5">
                     <svg class="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                    Free forever for small teams
+                    FREE digital card
                 </span>
                 <span class="flex items-center gap-1.5">
                     <svg class="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                    Print from BHD Printing directly
+                    10% off printing
                 </span>
                 <span class="flex items-center gap-1.5">
                     <svg class="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
@@ -326,65 +326,63 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </div>
 </section>
 
-<!-- ===== PRICING SNAPSHOT ===== -->
+<!-- ===== BHD EXCLUSIVE OFFER ===== -->
 <section class="bg-gray-50 py-16 px-4">
     <div class="max-w-5xl mx-auto">
         <div class="text-center mb-10">
-            <h2 class="text-3xl font-bold text-gray-900 mb-3">Simple Pricing</h2>
-            <p class="text-gray-500">Start free. Upgrade only when you need more.</p>
+            <div class="inline-flex items-center gap-2 bg-amber-100 border border-amber-300 rounded-full px-4 py-1.5 mb-4">
+                <span class="text-amber-700 text-sm font-bold">🎁 BHD Exclusive Offer</span>
+            </div>
+            <h2 class="text-3xl font-bold text-gray-900 mb-3">Two Gifts, One Signup</h2>
+            <p class="text-gray-500">Available only to BHD Printing customers who print their business cards with us.</p>
         </div>
 
-        <div class="grid md:grid-cols-3 gap-6">
-            <?php
-            $plans = [
-                [
-                    'name' => 'Free',
-                    'price' => '0 OMR',
-                    'period' => 'forever',
-                    'highlight' => false,
-                    'features' => ['Up to 5 employees', 'Digital cards & QR codes', 'Print ordering via BHD', 'Basic templates'],
-                    'cta' => 'Get Started Free',
-                    'ctaUrl' => $registerUrl,
-                ],
-                [
-                    'name' => 'Business',
-                    'price' => '15 OMR',
-                    'period' => '/ month',
-                    'highlight' => true,
-                    'features' => ['Unlimited employees', 'Custom branding & templates', 'Analytics dashboard', 'Priority print support', 'Team management'],
-                    'cta' => 'Start Free Trial',
-                    'ctaUrl' => $registerUrl,
-                ],
-                [
-                    'name' => 'Enterprise',
-                    'price' => 'Custom',
-                    'period' => '',
-                    'highlight' => false,
-                    'features' => ['Everything in Business', 'API access', 'Dedicated support', 'Custom integrations', 'SLA guarantee'],
-                    'cta' => 'Contact Us',
-                    'ctaUrl' => getBasePath() . 'contact',
-                ],
-            ];
-            foreach ($plans as $plan):
-            ?>
-            <div class="rounded-2xl p-6 <?= $plan['highlight'] ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/25 scale-105' : 'bg-white border border-gray-200' ?>">
-                <div class="mb-4">
-                    <div class="font-bold text-lg <?= $plan['highlight'] ? 'text-blue-100' : 'text-gray-500' ?>"><?= $plan['name'] ?></div>
-                    <div class="text-3xl font-extrabold mt-1 <?= $plan['highlight'] ? 'text-white' : 'text-gray-900' ?>"><?= $plan['price'] ?> <span class="text-base font-normal <?= $plan['highlight'] ? 'text-blue-200' : 'text-gray-400' ?>"><?= $plan['period'] ?></span></div>
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <!-- Gift 1: Free digital card -->
+            <div class="bg-white rounded-2xl p-8 border-2 border-blue-200 shadow-sm relative overflow-hidden">
+                <div class="absolute top-4 right-4 bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">FREE</div>
+                <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
+                    <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                 </div>
-                <ul class="space-y-2 mb-6">
-                    <?php foreach ($plan['features'] as $f): ?>
-                    <li class="flex items-center gap-2 text-sm <?= $plan['highlight'] ? 'text-blue-100' : 'text-gray-600' ?>">
-                        <svg class="w-4 h-4 flex-shrink-0 <?= $plan['highlight'] ? 'text-blue-200' : 'text-green-500' ?>" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                        <?= $f ?>
-                    </li>
-                    <?php endforeach; ?>
+                <h3 class="font-bold text-gray-900 text-xl mb-2">Digital Business Card</h3>
+                <div class="flex items-baseline gap-2 mb-3">
+                    <span class="text-3xl font-extrabold text-gray-900">0 OMR</span>
+                    <span class="text-gray-400 line-through text-lg">3 OMR</span>
+                </div>
+                <p class="text-gray-500 text-sm leading-relaxed mb-4">A shareable digital business card for every employee — with QR code, tap-to-save, and analytics. Free forever when you print with BHD.</p>
+                <ul class="space-y-1.5 text-sm text-gray-600">
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Unlimited employees</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Custom branding &amp; templates</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>QR code &amp; analytics</li>
                 </ul>
-                <a href="<?= $plan['ctaUrl'] ?>" class="block text-center font-semibold px-5 py-3 rounded-xl transition-all <?= $plan['highlight'] ? 'bg-white text-blue-600 hover:bg-blue-50' : 'bg-gray-100 text-gray-800 hover:bg-gray-200' ?>">
-                    <?= $plan['cta'] ?>
-                </a>
             </div>
-            <?php endforeach; ?>
+
+            <!-- Gift 2: 10% off printing -->
+            <div class="bg-blue-600 text-white rounded-2xl p-8 shadow-xl shadow-blue-600/25 relative overflow-hidden">
+                <div class="absolute top-4 right-4 bg-amber-400 text-gray-900 text-xs font-bold px-3 py-1 rounded-full">10% OFF</div>
+                <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                </div>
+                <h3 class="font-bold text-white text-xl mb-2">Printing at BHD</h3>
+                <div class="flex items-baseline gap-2 mb-3">
+                    <span class="text-3xl font-extrabold text-white">5.400 OMR</span>
+                    <span class="text-blue-200 line-through text-lg">6.000 OMR</span>
+                </div>
+                <p class="text-blue-100 text-sm leading-relaxed mb-4">100 premium printed business cards, delivered from BHD's print shop. 10% discount applied automatically to every print order you place through Cardify.</p>
+                <ul class="space-y-1.5 text-sm text-blue-100">
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-amber-300" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Matte or gloss finish</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-amber-300" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Free delivery in Muscat</li>
+                    <li class="flex items-center gap-2"><svg class="w-4 h-4 text-amber-300" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Reorder with one click</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <a href="<?= $registerUrl ?>" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-xl shadow-lg shadow-blue-600/25 transition-all hover:-translate-y-0.5 text-lg">
+                Claim Your Offer — It's Free to Start
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </a>
+            <p class="text-gray-400 text-sm mt-3">No credit card required · Discount applied automatically at checkout</p>
         </div>
     </div>
 </section>
@@ -392,10 +390,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
 <!-- ===== CTA BANNER ===== -->
 <section class="bhd-gradient py-16 px-4">
     <div class="max-w-3xl mx-auto text-center text-white">
-        <h2 class="text-3xl font-bold mb-4">Ready to upgrade your business cards?</h2>
-        <p class="text-blue-200 text-lg mb-8">Join hundreds of Omani businesses using Cardify. Your team deserves professional cards — digital and printed.</p>
+        <h2 class="text-3xl font-bold mb-4">Ready to claim your free digital card + 10% off printing?</h2>
+        <p class="text-blue-200 text-lg mb-8">Exclusive for BHD Printing customers. Sign up in 30 seconds and your discount is applied automatically on every print order.</p>
         <a href="<?= $registerUrl ?>" class="inline-flex items-center gap-2 bg-white hover:bg-blue-50 text-blue-700 font-bold px-8 py-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 text-lg">
-            Create Your Free Account
+            Claim Your Free Offer
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
         </a>
         <p class="text-blue-300 text-sm mt-4">Partnered with BHD Printing — Oman's trusted print shop</p>
