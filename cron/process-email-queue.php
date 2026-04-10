@@ -3,7 +3,7 @@
  * Cron: Process email queue
  *
  * Sends pending scheduled emails (onboarding drip sequence, etc.)
- * Run every 15 minutes: */15 * * * * php /www/wwwroot/cardify.om/cron/process-email-queue.php
+ * Run every 15 minutes via cron.
  */
 
 require_once __DIR__ . '/../config.php';
