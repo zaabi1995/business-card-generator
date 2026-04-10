@@ -671,7 +671,7 @@ $basePath = getBasePath();
                             <!-- Oman themed content -->
                             <div class="text-center mb-6">
                                 <div class="inline-flex items-center gap-3 px-6 py-3 bg-white rounded-2xl shadow-lg">
-                                    <span class="text-3xl">🇴🇲</span>
+                                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/></svg>
                                     <div class="text-left">
                                         <div class="font-bold text-gray-900">Made for Oman</div>
                                         <div class="text-sm text-gray-500">Supporting local businesses</div>
@@ -682,30 +682,16 @@ $basePath = getBasePath();
                             <!-- SME value props -->
                             <div class="grid grid-cols-3 gap-2 sm:gap-4">
                                 <div class="bg-white rounded-xl p-3 sm:p-4 text-center shadow-sm">
-                                    <div class="text-2xl sm:text-3xl mb-1">🇴🇲</div>
+                                    <svg class="w-7 h-7 mx-auto mb-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/></svg>
                                     <div class="text-xs text-gray-600 font-semibold">Built for Oman</div>
                                 </div>
                                 <div class="bg-white rounded-xl p-4 text-center shadow-sm">
-                                    <div class="text-2xl sm:text-3xl mb-1">⚡</div>
+                                    <svg class="w-7 h-7 mx-auto mb-1 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                                     <div class="text-xs text-gray-600 font-semibold">30-sec signup</div>
                                 </div>
                                 <div class="bg-white rounded-xl p-4 text-center shadow-sm">
-                                    <div class="text-2xl sm:text-3xl mb-1">💬</div>
+                                    <svg class="w-7 h-7 mx-auto mb-1 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                                     <div class="text-xs text-gray-600 font-semibold">Local support</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Testimonial -->
-                            <div class="mt-6 p-4 bg-white rounded-xl shadow-sm">
-                                <div class="flex items-start gap-3">
-                                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                                        AA
-                                    </div>
-                                    <div>
-                                        <p class="text-gray-600 text-sm italic">"Finally a solution designed for Omani businesses. Easy to use and great support!"</p>
-                                        <p class="text-gray-900 font-semibold text-sm mt-1">Ahmed Al-Kindi</p>
-                                        <p class="text-gray-500 text-xs">CEO, Muscat Tech Solutions</p>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -713,7 +699,7 @@ $basePath = getBasePath();
                 </div>
                 <div class="reveal-right order-1 lg:order-2">
                     <div class="inline-flex items-center gap-2 px-4 py-2 bg-red-50 rounded-full text-red-600 font-medium text-sm mb-6">
-                        <span class="text-lg">🇴🇲</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/></svg>
                         <span>Built for Oman</span>
                     </div>
                     <h2 class="text-4xl sm:text-5xl font-black text-gray-900 mb-6 leading-tight">
@@ -1002,8 +988,8 @@ $basePath = getBasePath();
             <div class="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
                 <p class="text-sm">&copy; <?php echo date('Y'); ?> <?php echo $brandName; ?>. All rights reserved.</p>
                 <div class="flex items-center gap-2 text-sm">
-                    <span>🇴🇲</span>
-                    <span>Made with ❤️ in Oman</span>
+                    <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/></svg>
+                    <span>Made in Oman</span>
                 </div>
             </div>
         </div>
