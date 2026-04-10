@@ -105,7 +105,7 @@ class DatabaseAdapter {
             'slug' => $slug,
             'admin_email' => $adminEmail,
             'password_hash' => password_hash($password, PASSWORD_DEFAULT),
-            'plan' => 'free',
+            'plan' => 'enterprise', // free-forever: every new company gets top tier, all features unlocked
             'status' => 'active',
             'created_at' => date('Y-m-d H:i:s')
         ];
