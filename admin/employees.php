@@ -30,6 +30,11 @@ $employees = loadEmployees($companyId);
 $message = null;
 $messageType = 'success';
 
+// Get current admin's info for "Add Myself" prefill
+$currentAdminUser = Auth::getCurrentUser();
+$adminName = $currentAdminUser['name'] ?? '';
+$adminEmail = $currentAdminUser['email'] ?? '';
+
 // Load generated cards and create lookup by employee ID
 $generatedLog = loadGeneratedLog($companyId) ?: [];
 $cardsByEmployee = [];
@@ -878,14 +883,23 @@ adminHeader('Employees', 'employees');
                     
                     <?php if (empty($employees)): ?>
                     <tr>
-                        <td colspan="5" class="px-6 py-16 text-center">
-                            <div class="text-gray-400">
-                                <i class="fa-solid fa-users text-4xl mb-4 opacity-50"></i>
-                                <p class="text-gray-600 font-medium">No employees yet</p>
-                                <p class="text-sm mt-1">Add employees manually or import from a CSV file</p>
-                                <button @click="openAddModal()" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
-                                    <i class="fa-solid fa-plus mr-2"></i>Add First Employee
-                                </button>
+                        <td colspan="5" class="px-6 py-12 text-center">
+                            <div class="max-w-sm mx-auto">
+                                <i class="fa-solid fa-id-card text-4xl text-gray-300 mb-4"></i>
+                                <p class="text-gray-700 font-semibold mb-1">No employees yet</p>
+                                <p class="text-sm text-gray-500 mb-6">Add yourself first to get your digital business card, then add your team.</p>
+                                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                                    <?php if (!empty($adminEmail)): ?>
+                                    <button @click="openAddMyself(<?php echo htmlspecialchars(json_encode(['name_en' => $adminName, 'email' => $adminEmail]), ENT_QUOTES); ?>)"
+                                            class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm shadow-blue-200">
+                                        <i class="fa-solid fa-user-plus"></i>Add Myself First
+                                    </button>
+                                    <?php endif; ?>
+                                    <button @click="openAddModal()"
+                                            class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium transition-colors">
+                                        <i class="fa-solid fa-plus"></i>Add an Employee
+                                    </button>
+                                </div>
                             </div>
                         </td>
                     </tr>
@@ -1386,6 +1400,16 @@ function employeeManager() {
             this.formData = {
                 id: '', email: '', department_id: '', name_en: '', name_ar: '',
                 position_en: '', position_ar: '', phone: '', phone_ar: '', mobile: '', mobile_ar: '',
+                company_en: '', company_ar: '', website: '', website_ar: '', address_en: '', address_ar: ''
+            };
+            this.showModal = true;
+        },
+
+        openAddMyself(prefill) {
+            this.editingEmployee = false;
+            this.formData = {
+                id: '', email: prefill.email || '', department_id: '', name_en: prefill.name_en || '',
+                name_ar: '', position_en: '', position_ar: '', phone: '', phone_ar: '', mobile: '', mobile_ar: '',
                 company_en: '', company_ar: '', website: '', website_ar: '', address_en: '', address_ar: ''
             };
             this.showModal = true;

@@ -213,7 +213,46 @@ adminHeader('Generating Card', 'employees');
             <i class="fa-solid fa-check text-2xl text-green-600"></i>
         </div>
         <h2 class="text-xl font-bold text-gray-900 mb-2">Card Generated!</h2>
-        <p class="text-gray-600 mb-4">Redirecting to employees...</p>
+        <p class="text-gray-500 text-sm mb-6">Your digital business card is live and ready to share.</p>
+
+        <!-- Shareable Link -->
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 text-left">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Your Digital Card Link</p>
+            <div class="flex items-center gap-2">
+                <input type="text" id="card-share-url" readonly
+                       :value="cardShareUrl"
+                       class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 font-mono truncate">
+                <button @click="copyCardUrl()"
+                        class="flex-shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                        :class="copied ? 'bg-green-600 hover:bg-green-600' : ''">
+                    <i :class="copied ? 'fa-solid fa-check' : 'fa-solid fa-copy'"></i>
+                    <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-3 justify-center mb-6">
+            <a :href="cardShareUrl" target="_blank"
+               class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
+                <i class="fa-solid fa-eye"></i>
+                View Card
+            </a>
+            <a :href="waShareUrl" target="_blank"
+               class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition-colors">
+                <i class="fa-brands fa-whatsapp"></i>
+                Share on WhatsApp
+            </a>
+            <a :href="continueUrl"
+               class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors">
+                <i class="fa-solid fa-arrow-right"></i>
+                Continue
+            </a>
+        </div>
+
+        <p class="text-xs text-gray-400">Redirecting automatically in <span x-text="redirectCountdown"></span>s&hellip;
+            <button @click="cancelRedirect()" class="text-blue-500 hover:underline ml-1">Stay here</button>
+        </p>
     </div>
     
     <!-- Error State -->
@@ -246,6 +285,7 @@ function autoGenerator() {
         frontTemplate: <?php echo json_encode($frontTemplate, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
         backTemplate: <?php echo json_encode($backTemplate, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
         companyId: <?php echo json_encode($companyId); ?>,
+        companySlug: <?php echo json_encode($companySlug); ?>,
         basePath: <?php echo json_encode(rtrim($basePath, '/')); ?>,
         baseUrl: <?php echo json_encode(rtrim($baseUrl, '/')); ?>,
         vcfUrl: <?php echo json_encode($vcfUrl); ?>,
@@ -256,6 +296,32 @@ function autoGenerator() {
         isFreePlan: <?php echo $isFreePlan ? 'true' : 'false'; ?>,
         hasHighQuality: <?php echo $hasHighQuality ? 'true' : 'false'; ?>,
         editor: null,
+        copied: false,
+        redirectCountdown: 8,
+        redirectTimer: null,
+        countdownTimer: null,
+        get cardShareUrl() {
+            return this.baseUrl + '/' + this.companySlug + '/card/' + this.employee.id;
+        },
+        get waShareUrl() {
+            const msg = encodeURIComponent('Here is my digital business card: ' + this.cardShareUrl);
+            return 'https://wa.me/?text=' + msg;
+        },
+        get continueUrl() {
+            const param = this.isRegenerate ? 'regenerated' : 'generated';
+            return this.returnTo + '.php?' + param + '=1';
+        },
+        copyCardUrl() {
+            navigator.clipboard.writeText(this.cardShareUrl).then(() => {
+                this.copied = true;
+                setTimeout(() => { this.copied = false; }, 2000);
+            });
+        },
+        cancelRedirect() {
+            clearTimeout(this.redirectTimer);
+            clearInterval(this.countdownTimer);
+            this.redirectCountdown = '∞';
+        },
         
         async init() {
             // Wait for CardEditor to be available
@@ -524,12 +590,17 @@ function autoGenerator() {
                 }
 
                 this.status = 'success';
-                
-                // Redirect
-                setTimeout(() => {
-                    const param = this.isRegenerate ? 'regenerated' : 'generated';
-                    window.location.href = this.returnTo + '.php?' + param + '=1';
+
+                // Countdown + redirect
+                this.redirectCountdown = 8;
+                this.countdownTimer = setInterval(() => {
+                    if (typeof this.redirectCountdown === 'number') {
+                        this.redirectCountdown--;
+                    }
                 }, 1000);
+                this.redirectTimer = setTimeout(() => {
+                    window.location.href = this.continueUrl;
+                }, 8000);
                 
             } catch (error) {
                 console.error('Generation error:', error);

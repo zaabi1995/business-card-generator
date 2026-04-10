@@ -268,13 +268,14 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
         </div>
         <div>
             <h3 class="font-bold text-lg">You're all set! Welcome to Cardify.</h3>
-            <p class="text-blue-100 text-sm mt-0.5">Your account is ready. Add your first employee to generate digital business cards.</p>
+            <p class="text-blue-100 text-sm mt-0.5">Create your first digital business card — add yourself and generate your card in 60 seconds.</p>
         </div>
     </div>
     <div class="flex items-center gap-3 flex-shrink-0">
         <?php $empExt = defined('COMPANY_ADMIN_BASE') ? '' : '.php'; ?>
-        <a href="<?= getAdminBasePath() ?>employees<?= $empExt ?>" class="bg-white text-blue-600 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-blue-50 transition-all whitespace-nowrap">
-            Add Employee
+        <a href="<?= getAdminBasePath() ?>employees<?= $empExt ?>" class="bg-white text-blue-600 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-blue-50 transition-all whitespace-nowrap flex items-center gap-1.5">
+            <i class="fa-solid fa-id-card text-xs"></i>
+            Create My Card
         </a>
         <button onclick="document.getElementById('bhd-welcome-banner').remove()" class="text-white/60 hover:text-white">
             <i class="fa-solid fa-xmark text-lg"></i>
