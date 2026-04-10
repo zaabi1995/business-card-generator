@@ -163,7 +163,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
         <div class="bg-white rounded-xl border p-4">
             <p class="text-sm text-gray-500">Total Outstanding</p>
-            <p class="text-2xl font-bold text-blue-600"><?= number_format($totalOutstanding, 3) ?> <span class="text-xs font-normal text-gray-400">OMR</span></p>
+            <p class="text-2xl font-bold text-blue-600"><?= htmlspecialchars(formatPrice((float)$totalOutstanding)) ?></p>
         </div>
         <div class="bg-white rounded-xl border p-4">
             <p class="text-sm text-gray-500">Suspended</p>
@@ -185,7 +185,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="flex-1">
                     <p class="font-semibold text-gray-900"><?= htmlspecialchars($acc['company_name']) ?></p>
                     <p class="text-sm text-gray-500"><?= htmlspecialchars($acc['company_email']) ?></p>
-                    <p class="text-sm mt-1">Requested: <strong><?= number_format($acc['requested_limit'], 3) ?> OMR</strong></p>
+                    <p class="text-sm mt-1">Requested: <strong><?= htmlspecialchars(formatPrice((float)$acc['requested_limit'])) ?></strong></p>
                     <?php if ($acc['request_notes']): ?>
                         <p class="text-sm text-gray-500 mt-1 italic">"<?= htmlspecialchars($acc['request_notes']) ?>"</p>
                     <?php endif; ?>
@@ -279,7 +279,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <span class="text-xs text-gray-400"><?= strtoupper($acc['payment_terms'] ?? 'NET30') ?></span>
                         <?php if ($exposureSet): ?>
                         <span class="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
-                            Exposure: <?= number_format($acc['exposure_limit'], 3) ?> OMR
+                            Exposure: <?= htmlspecialchars(formatPrice((float)$acc['exposure_limit'])) ?>
                         </span>
                         <?php endif; ?>
                     </div>

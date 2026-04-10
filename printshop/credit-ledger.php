@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (isset($result['error'])) {
                 $error = $result['error'];
             } else {
-                $success = 'Payment of ' . number_format($amount, 3) . ' OMR recorded'
+                $success = 'Payment of ' . formatPrice((float)$amount) . ' recorded'
                     . ($result['proof_path'] ? ' (with proof)' : '');
                 $account = CreditManager::getAccountById($accountId);
             }
@@ -140,15 +140,15 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-white rounded-xl border p-4">
                 <p class="text-sm text-gray-500">Credit Limit</p>
-                <p class="text-2xl font-bold"><?= number_format($account['credit_limit'], 3) ?> <span class="text-sm text-gray-400">OMR</span></p>
+                <p class="text-2xl font-bold"><?= htmlspecialchars(formatPrice((float)$account['credit_limit'])) ?></p>
             </div>
             <div class="bg-white rounded-xl border p-4">
                 <p class="text-sm text-gray-500">Balance Used</p>
-                <p class="text-2xl font-bold text-red-600"><?= number_format($account['balance_used'], 3) ?> <span class="text-sm text-gray-400">OMR</span></p>
+                <p class="text-2xl font-bold text-red-600"><?= htmlspecialchars(formatPrice((float)$account['balance_used'])) ?></p>
             </div>
             <div class="bg-white rounded-xl border p-4">
                 <p class="text-sm text-gray-500">Available</p>
-                <p class="text-2xl font-bold text-green-600"><?= number_format($available, 3) ?> <span class="text-sm text-gray-400">OMR</span></p>
+                <p class="text-2xl font-bold text-green-600"><?= htmlspecialchars(formatPrice((float)$available)) ?></p>
             </div>
             <div class="bg-white rounded-xl border p-4">
                 <p class="text-sm text-gray-500">Terms</p>
@@ -218,7 +218,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <input type="number" name="amount" step="0.001" min="0.001" max="<?= $account['balance_used'] ?>" required
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                placeholder="0.000">
-                        <p class="text-xs text-gray-400 mt-1">Outstanding: <?= number_format($account['balance_used'], 3) ?> OMR</p>
+                        <p class="text-xs text-gray-400 mt-1">Outstanding: <?= htmlspecialchars(formatPrice((float)$account['balance_used'])) ?></p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
