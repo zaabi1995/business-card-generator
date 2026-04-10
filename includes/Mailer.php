@@ -1455,17 +1455,173 @@ HTML
 
 <p>Best regards,<br>{{print_shop_name}}</p>
 HTML
+            ],
+
+            // === Onboarding Drip Sequence ===
+
+            'onboarding_day2' => [
+                'subject' => 'Your team is waiting for their business cards',
+                'body' => <<<HTML
+<h2>Your employees are waiting!</h2>
+<p>Hi {{admin_name}},</p>
+<p>You created your <strong>{{company_name}}</strong> account yesterday -- great start! But your team doesn't have their business cards yet.</p>
+
+<div class="info-box">
+    <strong>Adding employees takes under 2 minutes:</strong>
+    <ol style="margin: 10px 0 0; padding-left: 20px;">
+        <li>Go to <strong>Employees</strong> in your dashboard</li>
+        <li>Click <strong>Add Employee</strong> (or import from Excel)</li>
+        <li>Fill in name, position, email &amp; phone</li>
+        <li>Click <strong>Generate Card</strong></li>
+    </ol>
+</div>
+
+<p style="text-align: center; margin: 30px 0;">
+    <a href="{{admin_url}}" class="btn">Add Your First Employee</a>
+</p>
+
+<div class="info-box">
+    <strong>Or let employees request their own cards:</strong><br>
+    Share your portal link: <a href="{{portal_url}}" style="color: #2563eb;">{{portal_url}}</a>
+</div>
+
+<p>Questions? Just reply to this email.</p>
+
+<p>Best regards,<br>The {{site_name}} Team</p>
+HTML
+            ],
+
+            'onboarding_day5' => [
+                'subject' => '{{company_name}}: ready to print your cards?',
+                'body' => <<<HTML
+<h2>From digital to printed -- in one click</h2>
+<p>Hi {{admin_name}},</p>
+<p>Companies using {{site_name}} save hours on business card management. Here's what you can do next:</p>
+
+<div class="success-box">
+    <strong>Order printed cards directly from your dashboard.</strong><br>
+    Professional quality, delivered to your office. No design files needed -- we use the card you already built.
+</div>
+
+<h3>What other companies are doing:</h3>
+<ul style="margin: 15px 0; padding-left: 20px; color: #475569;">
+    <li>Generating cards for new hires on day one</li>
+    <li>Letting employees update their own info via the portal</li>
+    <li>Ordering printed batches for events and conferences</li>
+</ul>
+
+<p style="text-align: center; margin: 30px 0;">
+    <a href="{{admin_url}}" class="btn">Go to Dashboard</a>
+</p>
+
+<div class="info-box">
+    <strong>Need help?</strong><br>
+    Reply to this email or reach us on WhatsApp at <a href="https://wa.me/96898899100" style="color: #2563eb;">+968 9889 9100</a>.
+</div>
+
+<p>Best regards,<br>The {{site_name}} Team</p>
+HTML
             ]
         ];
     }
-    
+
     /**
      * Get last error message
      */
     public static function getLastError() {
         return self::$lastError;
     }
-    
+
+    /**
+     * Queue onboarding drip emails for a new company signup.
+     * Email 1 (welcome_company) is sent immediately by the registration flow.
+     * This queues Email 2 (day 2) and Email 3 (day 5).
+     */
+    public static function queueOnboardingEmails($companyId, $email, $data) {
+        try {
+            $db = Database::getInstance();
+            if (!$db || !$db->isConnected() || !$db->tableExists('email_queue')) {
+                return false;
+            }
+
+            $now = new DateTime('now', new DateTimeZone('UTC'));
+
+            $emails = [
+                ['template' => 'onboarding_day2', 'delay_days' => 2],
+                ['template' => 'onboarding_day5', 'delay_days' => 5],
+            ];
+
+            foreach ($emails as $item) {
+                $sendAt = clone $now;
+                $sendAt->modify("+{$item['delay_days']} days");
+                // Send at 9:00 AM GST (05:00 UTC)
+                $sendAt->setTime(5, 0, 0);
+
+                $db->insert('email_queue', [
+                    'id'            => generateUUID(),
+                    'company_id'    => $companyId,
+                    'user_email'    => $email,
+                    'template'      => $item['template'],
+                    'template_data' => json_encode($data),
+                    'send_at'       => $sendAt->format('Y-m-d H:i:s'),
+                    'status'        => 'pending',
+                ]);
+            }
+
+            return true;
+        } catch (Exception $e) {
+            error_log("Mailer::queueOnboardingEmails error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Process the email queue -- called by cron.
+     * Sends all pending emails whose send_at has passed.
+     * @param int $batchSize Max emails to process per run
+     * @return array ['sent' => int, 'failed' => int]
+     */
+    public static function processQueue($batchSize = 20) {
+        $stats = ['sent' => 0, 'failed' => 0];
+        try {
+            $db = Database::getInstance();
+            if (!$db || !$db->isConnected() || !$db->tableExists('email_queue')) {
+                return $stats;
+            }
+
+            $rows = $db->fetchAll(
+                "SELECT * FROM email_queue WHERE status = 'pending' AND send_at <= NOW() AND attempts < 3 ORDER BY send_at ASC LIMIT :limit",
+                ['limit' => $batchSize]
+            );
+
+            foreach ($rows as $row) {
+                $data = json_decode($row['template_data'], true) ?: [];
+                $success = self::sendTemplate($row['user_email'], $row['template'], $data, [], [
+                    'company_id' => $row['company_id'],
+                ]);
+
+                if ($success) {
+                    $db->update('email_queue', [
+                        'status'  => 'sent',
+                        'sent_at' => date('Y-m-d H:i:s'),
+                        'attempts' => $row['attempts'] + 1,
+                    ], 'id = :id', ['id' => $row['id']]);
+                    $stats['sent']++;
+                } else {
+                    $db->update('email_queue', [
+                        'attempts'   => $row['attempts'] + 1,
+                        'last_error' => self::getLastError(),
+                        'status'     => ($row['attempts'] + 1 >= 3) ? 'failed' : 'pending',
+                    ], 'id = :id', ['id' => $row['id']]);
+                    $stats['failed']++;
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Mailer::processQueue error: " . $e->getMessage());
+        }
+        return $stats;
+    }
+
     /**
      * Get email logs with filtering
      * @param array $filters ['company_id', 'recipient_email', 'status', 'template', 'date_from', 'date_to']

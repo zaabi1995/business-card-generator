@@ -203,13 +203,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Send welcome email
                     $siteName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                     $companySlug = $company['slug'] ?? '';
-                    Mailer::sendTemplate($email, 'welcome_company', [
+                    $onboardingData = [
                         'site_name' => $siteName,
                         'admin_name' => $userName ?: $name,
                         'company_name' => $name,
                         'admin_url' => getBaseUrl() . $companySlug . '/admin/',
                         'portal_url' => getBaseUrl() . $companySlug . '/portal'
-                    ]);
+                    ];
+                    Mailer::sendTemplate($email, 'welcome_company', $onboardingData);
+
+                    // Queue day-2 and day-5 onboarding drip emails
+                    Mailer::queueOnboardingEmails($company['id'], $email, $onboardingData);
 
                     // Login the new user
                     Auth::unifiedLogin($email, $password);
