@@ -8,14 +8,6 @@
 class Payment {
 
     /**
-     * Currencies Paymob Oman merchant account is verified to accept for live
-     * charges. Display currencies outside this list are allowed in the UI
-     * (via plan_prices), but checkout will auto-fallback to OMR equivalent.
-     * Whitelist expands as we verify each with Paymob support.
-     */
-    const PAYMOB_SUPPORTED_CURRENCIES = ['OMR'];
-
-    /**
      * Convert amount to smallest currency unit for Paymob
      * OMR/BHD/KWD = 3 decimals (×1000), others = 2 decimals (×100)
      */
@@ -23,23 +15,6 @@ class Payment {
         $threeDecimal = ['OMR', 'BHD', 'KWD'];
         $multiplier = in_array(strtoupper($currency), $threeDecimal) ? 1000 : 100;
         return (int) round($amount * $multiplier);
-    }
-
-    /**
-     * Look up the OMR-equivalent price for a given plan from plan_prices.
-     * Used when a company has a display currency other than OMR — we charge
-     * them the OMR price regardless (because Paymob Oman is OMR-only for now).
-     *
-     * @return float|null OMR price, or null if not found
-     */
-    public static function lookupOmrPrice(string $planId, string $billingCycle = 'monthly'): ?float {
-        $db = Database::getInstance();
-        $col = $billingCycle === 'yearly' ? 'price_yearly' : 'price_monthly';
-        $row = $db->fetchOne(
-            "SELECT {$col} AS price FROM plan_prices WHERE plan_id = :pid AND currency = 'OMR' LIMIT 1",
-            ['pid' => $planId]
-        );
-        return $row && isset($row['price']) ? (float)$row['price'] : null;
     }
 
     /**
@@ -118,51 +93,19 @@ class Payment {
             return ['error' => 'Company not found'];
         }
 
-        // Use company currency if not specified
-        if ($currency === 'OMR' && !empty($company['currency'])) {
-            $currency = $company['currency'];
-        }
-        $currency = strtoupper($currency);
-
-        // Paymob Oman merchant is currently OMR-only. If the requested/company
-        // currency isn't in the supported whitelist, auto-fallback to OMR by
-        // looking up the equivalent OMR price for this plan. Record the display
-        // currency in the payment so we can show "You were charged X OMR
-        // (equivalent to Y USD)" on receipts.
-        $displayCurrency = $currency;
-        $displayAmount = $amount;
-        $fallbackApplied = false;
-
-        if (!in_array($currency, self::PAYMOB_SUPPORTED_CURRENCIES, true)) {
-            $omrPrice = null;
-            if ($type === 'subscription') {
-                $omrPrice = self::lookupOmrPrice($referenceId, $billingCycle);
-            }
-            if ($omrPrice === null || $omrPrice <= 0) {
-                // Non-subscription types (card_order, print_order) already
-                // compute their amount in OMR upstream — if this request still
-                // came in with a non-OMR currency, block it rather than
-                // silently mis-charge.
-                return [
-                    'error' => "Currency {$currency} is not yet supported for direct checkout. "
-                             . "Please contact sales or switch to OMR.",
-                ];
-            }
+        // Paymob Oman merchant only accepts OMR. All amounts entering this
+        // method are OMR-canonical (print_order.total_amount, card_order.total,
+        // free-forever means no subscription path reaches this code). Coerce
+        // any non-OMR input to OMR with a warning — this is a bug in the caller.
+        if (strtoupper($currency) !== 'OMR') {
+            error_log("[Payment] createIntent called with non-OMR currency '{$currency}' for {$type}/{$referenceId} — coercing to OMR. Caller should pass OMR.");
             $currency = 'OMR';
-            $amount = $omrPrice;
-            $fallbackApplied = true;
         }
+        $currency = 'OMR';
 
         $amountCents = self::toSmallestUnit($amount, $currency);
         $prefix = ($type === 'subscription') ? 'SUB' : 'PO';
         $specialReference = "{$prefix}_{$companyId}_{$referenceId}_" . time();
-
-        if ($fallbackApplied) {
-            error_log(sprintf(
-                '[Payment] currency fallback: company=%s requested=%s displayAmount=%.4f → charged=%s %.3f (plan=%s cycle=%s)',
-                $companyId, $displayCurrency, $displayAmount, $currency, $amount, $referenceId, $billingCycle
-            ));
-        }
 
         // Build real billing data from company info, with overrides
         $companyName = $company['name'] ?? 'Customer';
