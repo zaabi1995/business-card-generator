@@ -275,6 +275,7 @@ if (!function_exists('renderNavigation')) {
 
                     <!-- CTA Buttons -->
                     <div class="flex items-center gap-3">
+                        <?php include __DIR__ . '/currency-selector.php'; ?>
                         <?php if ($isLoggedIn): ?>
                             <!-- Logged In State -->
                             <span class="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-gray-700 font-medium">
