@@ -147,42 +147,27 @@ function createPasswordResetToken($db, $email, $userType, $userId) {
 }
 
 /**
- * Send password reset email
+ * Send password reset email (via Notifier — email-only, no WhatsApp)
  */
 function sendPasswordResetEmail($email, $name, $token) {
     $resetUrl = getBaseUrl() . 'reset-password.php?token=' . urlencode($token);
-    $siteName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
-    
-    $subject = "Reset Your Password - {$siteName}";
-    $body = <<<HTML
-<h2>Password Reset Request</h2>
-<p>Hi {$name},</p>
-<p>We received a request to reset the password for your account associated with <strong>{$email}</strong>.</p>
 
-<p style="text-align: center; margin: 30px 0;">
-    <a href="{$resetUrl}" class="btn" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
-        Reset Password
-    </a>
-</p>
-
-<div class="info-box" style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 15px 0; border-radius: 0 4px 4px 0;">
-    <strong>Security Information:</strong>
-    <ul style="margin: 10px 0; padding-left: 20px;">
-        <li>This link will expire in <strong>1 hour</strong></li>
-        <li>If you didn't request this, you can safely ignore this email</li>
-        <li>Your password won't change until you create a new one</li>
-    </ul>
-</div>
-
-<p style="color: #6b7280; font-size: 14px;">
-    If the button doesn't work, copy and paste this URL into your browser:<br>
-    <a href="{$resetUrl}" style="color: #2563eb; word-break: break-all;">{$resetUrl}</a>
-</p>
-
-<p>Best regards,<br>The {$siteName} Team</p>
-HTML;
-    
-    return Mailer::send($email, $subject, $body);
+    try {
+        require_once INCLUDES_DIR . '/Notifier.php';
+        $result = Notifier::send('password_reset', [
+            'name'  => $name ?: 'there',
+            'email' => $email,
+        ], [
+            'name'             => $name ?: 'there',
+            'resetUrl'         => $resetUrl,
+            'expiresInMinutes' => 60,
+        ], ['email']); // email-only, no WhatsApp for password reset
+        // Notifier::send returns ['email' => bool, 'whatsapp' => bool]
+        return !empty($result['email']);
+    } catch (Throwable $e) {
+        error_log('[password_reset] Notifier failed: ' . $e->getMessage());
+        return false;
+    }
 }
 
 /**
