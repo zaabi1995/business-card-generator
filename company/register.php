@@ -215,6 +215,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Queue day-2 and day-5 onboarding drip emails
                     Mailer::queueOnboardingEmails($company['id'], $email, $onboardingData);
 
+                    // Fire signup confirmation (email + WhatsApp)
+                    try {
+                        require_once INCLUDES_DIR . '/Notifier.php';
+                        Notifier::send('signup', [
+                            'name'       => $userName ?: $name,
+                            'email'      => $email,
+                            'phone'      => $_POST['phone'] ?? null,
+                            'company_id' => $company['id'] ?? null,
+                        ], [
+                            'name'     => $userName ?: $name,
+                            'loginUrl' => (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'cardify.om') . getBasePath() . 'login.php',
+                        ]);
+                    } catch (Throwable $e) {
+                        error_log('[register] Notifier failed: ' . $e->getMessage());
+                        // Don't block signup on notification failure
+                    }
+
                     // Login the new user
                     Auth::unifiedLogin($email, $password);
 
