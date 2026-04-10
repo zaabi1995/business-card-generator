@@ -164,9 +164,22 @@ adminHeader('Order Payment', 'print');
             <?php if (($order['express_fee'] ?? 0) > 0): ?>
                 <div class="flex justify-between text-sm"><span class="text-gray-500">Express Fee</span><span><?= number_format($order['express_fee'], 3) ?> <?= $cur ?></span></div>
             <?php endif; ?>
-            <div class="flex justify-between font-bold text-lg mt-2 border-t pt-2">
-                <span>Total</span>
-                <span class="text-blue-600"><?= number_format($order['total'] ?? 0, 3) ?> <?= $cur ?></span>
+            <?php
+            $userCur = Currency::getUserCurrency();
+            $omrTotal = (float)($order['total'] ?? 0);
+            $displayTotal = Currency::convert($omrTotal, $userCur);
+            $showSecondary = $userCur !== 'OMR';
+            ?>
+            <div class="mt-3 rounded-2xl bg-gray-50 p-5 border border-gray-200">
+                <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Order total</div>
+                <div class="text-3xl font-extrabold text-gray-900">
+                    <?= htmlspecialchars(Currency::format($displayTotal, $userCur)) ?>
+                </div>
+                <?php if ($showSecondary): ?>
+                <div class="text-sm text-gray-500 mt-1">
+                    <?= htmlspecialchars(Currency::format($omrTotal, 'OMR')) ?>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
