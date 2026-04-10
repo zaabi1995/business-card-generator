@@ -582,6 +582,49 @@ class PrintShopIntegration {
                 }
             }
 
+            // Fire print_order_in_production / shipped / delivered via Notifier
+            try {
+                $newStatus = $status;
+                $eventMap = [
+                    'in_production' => 'print_order_in_production',
+                    'processing'    => 'print_order_in_production',
+                    'printing'      => 'print_order_in_production',
+                    'shipped'       => 'print_order_shipped',
+                    'delivered'     => 'print_order_delivered',
+                ];
+                if (isset($eventMap[$newStatus])) {
+                    require_once INCLUDES_DIR . '/Notifier.php';
+
+                    $order = isset($order) && $order ? $order : self::getOrder($orderId);
+                    $company = null;
+                    if ($order && !empty($order['company_id'])) {
+                        $company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $order['company_id']]);
+                    }
+
+                    $context = [
+                        'name'        => $company['name_en'] ?? $company['name'] ?? 'Customer',
+                        'orderNumber' => $order['order_number'] ?? ($order['id'] ?? $orderId),
+                    ];
+                    if ($newStatus === 'shipped') {
+                        $context['trackingUrl'] = $_POST['tracking_url'] ?? ($order['tracking_url'] ?? '');
+                        $context['carrier']     = $_POST['carrier'] ?? ($order['carrier'] ?? 'the carrier');
+                    }
+                    if ($newStatus === 'delivered') {
+                        $context['reorderUrl'] = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://'
+                            . ($_SERVER['HTTP_HOST'] ?? 'cardify.om') . getBasePath() . 'company/new-order.php';
+                    }
+
+                    Notifier::send($eventMap[$newStatus], [
+                        'name'       => $company['name_en'] ?? $company['name'] ?? 'Customer',
+                        'email'      => $company['admin_email'] ?? $company['email'] ?? null,
+                        'phone'      => $company['phone'] ?? null,
+                        'company_id' => $company['id'] ?? ($order['company_id'] ?? null),
+                    ], $context);
+                }
+            } catch (Throwable $e) {
+                error_log('[print_order status] Notifier failed: ' . $e->getMessage());
+            }
+
             return ['success' => true];
         } catch (PDOException $e) {
             error_log("PrintShop: Status update failed: " . $e->getMessage());
