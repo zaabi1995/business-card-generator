@@ -157,6 +157,34 @@ if (class_exists('VCF') && $employee && $company) {
     $vcfUrl = VCF::getUrl($employee, $company);
 }
 
+// Pre-designed layout fallback when no Fabric.js templates exist
+$usePreDesigned = !$hasTemplates;
+$selectedLayout = $_GET['layout'] ?? null;
+$preDesignedLayouts = [];
+$layoutFrontHtml = '';
+$layoutBackHtml = '';
+
+if ($usePreDesigned) {
+    require_once INCLUDES_DIR . '/CardLayouts.php';
+    $preDesignedLayouts = CardLayouts::getAll();
+
+    // Load company theme for branding
+    $db = Database::getInstance();
+    $companyTheme = null;
+    try {
+        $companyTheme = $db->fetchOne("SELECT * FROM company_themes WHERE company_id = :cid", ['cid' => $companyId]);
+    } catch (Exception $e) {}
+
+    // Default to 'classic' if not selected
+    if (!$selectedLayout) {
+        $selectedLayout = 'classic';
+    }
+
+    // Render the card HTML for the selected layout
+    $layoutFrontHtml = CardLayouts::renderFront($selectedLayout, $employee, $company, $companyTheme);
+    $layoutBackHtml = CardLayouts::renderBack($selectedLayout, $employee, $company, $companyTheme);
+}
+
 adminHeader('Generating Card', 'employees');
 ?>
 
@@ -186,6 +214,358 @@ adminHeader('Generating Card', 'employees');
     </div>
 </div>
 <?php endif; ?>
+
+<?php if ($usePreDesigned): ?>
+<!-- ═══ PRE-DESIGNED LAYOUT PATH (no Fabric.js needed) ═══ -->
+<div class="max-w-4xl mx-auto" x-data="layoutGenerator()" x-init="init()">
+    <!-- Layout Picker (shown first, auto-generates with default) -->
+    <div x-show="status === 'picking'" x-cloak class="space-y-6">
+        <div class="text-center mb-2">
+            <h2 class="text-xl font-bold text-gray-900">Choose a Card Layout</h2>
+            <p class="text-gray-500 text-sm mt-1">for <strong><?php echo sanitize($employee['name_en'] ?? $employee['email']); ?></strong></p>
+        </div>
+        <!-- Layout Options -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <?php foreach ($preDesignedLayouts as $lid => $layout): ?>
+            <button @click="selectLayout('<?php echo $lid; ?>')"
+                    :class="selectedLayout === '<?php echo $lid; ?>' ? 'ring-2 ring-blue-500 border-blue-300' : 'border-gray-200 hover:border-gray-300'"
+                    class="bg-white rounded-xl border p-4 text-left transition-all cursor-pointer">
+                <div class="font-semibold text-gray-900 text-sm"><?php echo htmlspecialchars($layout['name']); ?></div>
+                <div class="text-xs text-gray-500 mt-1"><?php echo htmlspecialchars($layout['description']); ?></div>
+                <!-- Mini preview -->
+                <div class="mt-3 rounded-lg overflow-hidden border border-gray-100" style="height:80px;">
+                    <div id="preview-<?php echo $lid; ?>" style="transform:scale(0.076);transform-origin:top left;width:1050px;height:600px;pointer-events:none;">
+                    </div>
+                </div>
+            </button>
+            <?php endforeach; ?>
+        </div>
+        <div class="text-center">
+            <button @click="generate()" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
+                <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Generate Card
+            </button>
+        </div>
+    </div>
+
+    <!-- Generating State -->
+    <div x-show="status === 'generating'" class="max-w-lg mx-auto bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
+        <div class="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-4">
+            <i class="fa-solid fa-wand-magic-sparkles text-2xl text-blue-600 animate-pulse"></i>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Generating Business Card</h2>
+        <p class="text-gray-600 mb-4">Creating card for <strong><?php echo sanitize($employee['name_en'] ?? $employee['email']); ?></strong></p>
+        <div class="flex items-center justify-center gap-2">
+            <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+            <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+            <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+        </div>
+        <p class="text-sm text-gray-500 mt-4" x-text="statusMessage"></p>
+    </div>
+
+    <!-- Success State -->
+    <div x-show="status === 'success'" x-cloak class="max-w-lg mx-auto bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
+        <div class="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
+            <i class="fa-solid fa-check text-2xl text-green-600"></i>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Card Generated!</h2>
+        <p class="text-gray-500 text-sm mb-6">Your digital business card is live and ready to share.</p>
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 text-left">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Your Digital Card Link</p>
+            <div class="flex items-center gap-2">
+                <input type="text" readonly :value="cardShareUrl"
+                       class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 font-mono truncate">
+                <button @click="copyUrl()"
+                        class="flex-shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                        :class="copied ? 'bg-green-600 hover:bg-green-600' : ''">
+                    <i :class="copied ? 'fa-solid fa-check' : 'fa-solid fa-copy'"></i>
+                    <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                </button>
+            </div>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center mb-6">
+            <a :href="cardShareUrl" target="_blank" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
+                <i class="fa-solid fa-eye"></i> View Card
+            </a>
+            <a :href="waShareUrl" target="_blank" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition-colors">
+                <i class="fa-brands fa-whatsapp"></i> Share on WhatsApp
+            </a>
+            <a :href="continueUrl" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors">
+                <i class="fa-solid fa-arrow-right"></i> Continue
+            </a>
+        </div>
+        <p class="text-xs text-gray-400">Redirecting in <span x-text="countdown"></span>s
+            <button @click="cancelRedirect()" class="text-blue-500 hover:underline ml-1">Stay here</button>
+        </p>
+    </div>
+
+    <!-- Error State -->
+    <div x-show="status === 'error'" x-cloak class="max-w-lg mx-auto bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
+        <div class="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <i class="fa-solid fa-exclamation-triangle text-2xl text-red-600"></i>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Generation Failed</h2>
+        <p class="text-gray-600 mb-4" x-text="errorMessage"></p>
+        <button @click="status = 'picking'" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+            <i class="fa-solid fa-arrow-left mr-2"></i>Try Again
+        </button>
+    </div>
+</div>
+
+<!-- Hidden render containers for html2canvas -->
+<div id="layout-render-front" style="position:absolute;left:-9999px;top:0;"><?php echo $layoutFrontHtml; ?></div>
+<div id="layout-render-back" style="position:absolute;left:-9999px;top:0;"><?php echo $layoutBackHtml; ?></div>
+
+<!-- Layout previews data -->
+<?php
+// Pre-render all layout previews (front + back) server-side
+$allFrontHtml = [];
+$allBackHtml = [];
+foreach (array_keys($preDesignedLayouts) as $lid) {
+    $allFrontHtml[$lid] = CardLayouts::renderFront($lid, $employee, $company, $companyTheme);
+    $allBackHtml[$lid] = CardLayouts::renderBack($lid, $employee, $company, $companyTheme);
+}
+?>
+<script>
+const layoutFronts = <?php echo json_encode($allFrontHtml, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+const layoutBacks = <?php echo json_encode($allBackHtml, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+const layoutIds = <?php echo json_encode(array_keys($preDesignedLayouts)); ?>;
+</script>
+
+<!-- Fonts for pre-designed layouts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&family=Sora:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- html2canvas -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<!-- QR Code Generator -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/dist/qrcode.min.js"></script>
+
+<script>
+// Inject layout previews
+document.addEventListener('DOMContentLoaded', function() {
+    layoutIds.forEach(function(id) {
+        var el = document.getElementById('preview-' + id);
+        if (el) el.innerHTML = layoutFronts[id];
+    });
+});
+
+function layoutGenerator() {
+    return {
+        status: <?php echo ($isNew || $isRegenerate) ? "'generating'" : "'picking'"; ?>,
+        selectedLayout: '<?php echo $selectedLayout; ?>',
+        statusMessage: 'Initializing...',
+        errorMessage: '',
+        copied: false,
+        countdown: 8,
+        redirectTimer: null,
+        countdownTimer: null,
+        companySlug: <?php echo json_encode($companySlug); ?>,
+        employeeId: <?php echo json_encode($employeeId); ?>,
+        baseUrl: <?php echo json_encode(rtrim($baseUrl, '/')); ?>,
+        basePath: <?php echo json_encode(rtrim($basePath, '/')); ?>,
+        returnTo: <?php echo json_encode($returnTo); ?>,
+        vcfUrl: <?php echo json_encode($vcfUrl); ?>,
+        isNew: <?php echo $isNew ? 'true' : 'false'; ?>,
+
+        get cardShareUrl() {
+            return this.baseUrl + '/' + this.companySlug + '/card/' + this.employeeId;
+        },
+        get waShareUrl() {
+            return 'https://wa.me/?text=' + encodeURIComponent('Here is my digital business card: ' + this.cardShareUrl);
+        },
+        get continueUrl() {
+            var p = this.isNew ? 'generated' : 'regenerated';
+            return this.returnTo + '.php?' + p + '=1';
+        },
+
+        selectLayout(id) {
+            this.selectedLayout = id;
+            // Update render containers with the selected layout HTML
+            var frontEl = document.getElementById('layout-render-front');
+            var backEl = document.getElementById('layout-render-back');
+            if (frontEl && layoutFronts[id]) frontEl.innerHTML = layoutFronts[id];
+            if (backEl && layoutBacks[id]) backEl.innerHTML = layoutBacks[id];
+        },
+
+        async init() {
+            // If auto-generating (new employee or regenerate), start immediately
+            if (this.status === 'generating') {
+                await this.generate();
+            }
+        },
+
+        async generate() {
+            this.status = 'generating';
+            this.statusMessage = 'Preparing card layout...';
+
+            try {
+                // Wait for html2canvas to be available
+                await this.waitFor('html2canvas');
+
+                // Generate QR code and inject into back card
+                if (this.vcfUrl && typeof qrcode !== 'undefined') {
+                    this.statusMessage = 'Generating QR code...';
+                    var qr = qrcode(0, 'M');
+                    qr.addData(this.vcfUrl);
+                    qr.make();
+                    var qrDataUrl = qr.createDataURL(4, 0);
+                    // Re-render back with QR by replacing the empty qrHtml slot
+                    // The back HTML from server has no QR - we re-render via PHP endpoint
+                    // Simpler: just inject a QR img into the back container's centered area
+                    var backEl = document.getElementById('layout-render-back');
+                    if (backEl) {
+                        // Find divs that are empty (QR placeholder area) and inject
+                        var allDivs = backEl.querySelectorAll('div');
+                        var injected = false;
+                        allDivs.forEach(function(div) {
+                            // The qrHtml was empty, so there's an empty div where QR should be
+                            if (!injected && div.children.length === 0 && div.textContent.trim() === '' && div.style.marginTop) {
+                                var qrImg = document.createElement('img');
+                                qrImg.src = qrDataUrl;
+                                qrImg.style.cssText = 'width:120px;height:120px;';
+                                div.appendChild(qrImg);
+                                injected = true;
+                            }
+                        });
+                    }
+                }
+
+                // Render front card
+                this.statusMessage = 'Rendering front card...';
+                var frontEl = document.getElementById('layout-render-front');
+                var frontTarget = frontEl.firstElementChild;
+                if (!frontTarget) throw new Error('No front card to render');
+
+                var frontCanvas = await html2canvas(frontTarget, {
+                    width: 1050,
+                    height: 600,
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: false,
+                    backgroundColor: null,
+                    logging: false
+                });
+
+                // Render back card
+                this.statusMessage = 'Rendering back card...';
+                var backEl = document.getElementById('layout-render-back');
+                var backTarget = backEl.firstElementChild;
+                var backCanvas = null;
+                if (backTarget) {
+                    backCanvas = await html2canvas(backTarget, {
+                        width: 1050,
+                        height: 600,
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: false,
+                        backgroundColor: null,
+                        logging: false
+                    });
+                }
+
+                // Save front
+                this.statusMessage = 'Saving front card...';
+                var frontBlob = await this.canvasToBlob(frontCanvas);
+                var frontResult = await this.saveCard(frontBlob, 'front');
+                if (!frontResult.success) throw new Error(frontResult.error || 'Failed to save front card');
+
+                // Save back
+                var backFile = null;
+                if (backCanvas) {
+                    this.statusMessage = 'Saving back card...';
+                    var backBlob = await this.canvasToBlob(backCanvas);
+                    var backResult = await this.saveCard(backBlob, 'back');
+                    if (!backResult.success) throw new Error(backResult.error || 'Failed to save back card');
+                    backFile = backResult.png_filename;
+                }
+
+                // Log generation
+                this.statusMessage = 'Logging generation...';
+                var logResp = await fetch(this.baseUrl + '/log_generation.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        employee_id: this.employeeId,
+                        front_url: frontResult.png_filename,
+                        back_url: backFile
+                    })
+                });
+                var logData = await logResp.json();
+                if (!logData.success && logData.limit_reached) {
+                    this.status = 'error';
+                    this.errorMessage = logData.error || 'Monthly card limit reached.';
+                    return;
+                }
+
+                this.status = 'success';
+                this.startRedirect();
+
+            } catch (err) {
+                console.error('Generation error:', err);
+                this.status = 'error';
+                this.errorMessage = err.message;
+            }
+        },
+
+        canvasToBlob(canvas) {
+            return new Promise(function(resolve) {
+                canvas.toBlob(function(blob) { resolve(blob); }, 'image/png');
+            });
+        },
+
+        async saveCard(blob, side) {
+            var fd = new FormData();
+            fd.append('png', blob, side + '.png');
+            fd.append('side', side);
+            fd.append('employee_id', this.employeeId);
+            var resp = await fetch(this.baseUrl + '/save_card_both.php', { method: 'POST', body: fd });
+            return await resp.json();
+        },
+
+        waitFor(name) {
+            return new Promise(function(resolve, reject) {
+                var attempts = 0;
+                var check = function() {
+                    if (typeof window[name] !== 'undefined') return resolve();
+                    if (++attempts > 50) return reject(new Error(name + ' failed to load'));
+                    setTimeout(check, 100);
+                };
+                check();
+            });
+        },
+
+        copyUrl() {
+            var self = this;
+            navigator.clipboard.writeText(this.cardShareUrl).then(function() {
+                self.copied = true;
+                setTimeout(function() { self.copied = false; }, 2000);
+            });
+        },
+
+        startRedirect() {
+            var self = this;
+            this.countdown = 8;
+            this.countdownTimer = setInterval(function() {
+                if (typeof self.countdown === 'number') self.countdown--;
+            }, 1000);
+            this.redirectTimer = setTimeout(function() {
+                window.location.href = self.continueUrl;
+            }, 8000);
+        },
+
+        cancelRedirect() {
+            clearTimeout(this.redirectTimer);
+            clearInterval(this.countdownTimer);
+            this.countdown = '...';
+        }
+    };
+}
+</script>
+
+<?php else: ?>
+<!-- ═══ FABRIC.JS TEMPLATE PATH (existing) ═══ -->
 
 <div class="max-w-lg mx-auto" x-data="autoGenerator()" x-init="init()">
     <!-- Generating State -->
@@ -665,5 +1045,7 @@ function autoGenerator() {
     };
 }
 </script>
+
+<?php endif; /* end usePreDesigned else */ ?>
 
 <?php adminFooter(); ?>

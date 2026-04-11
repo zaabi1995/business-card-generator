@@ -586,6 +586,21 @@ adminHeader('Employees', 'employees');
         </div>
         <div class="flex items-center gap-3">
             <?php if (!empty($employees)): ?>
+            <?php
+            // Count employees without generated cards
+            $employeesWithoutCards = 0;
+            foreach ($employees as $emp) {
+                if (empty($cardsByEmployee[$emp['id']])) {
+                    $employeesWithoutCards++;
+                }
+            }
+            ?>
+            <?php if ($employeesWithoutCards > 0): ?>
+            <a href="batch-auto-generate.php" class="px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium flex items-center gap-2" title="Generate cards for all employees who don't have one yet">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span class="hidden sm:inline">Generate All (<?php echo $employeesWithoutCards; ?>)</span>
+            </a>
+            <?php endif; ?>
             <a href="batch_generate.php" class="px-4 py-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium flex items-center gap-2" title="Regenerate cards for multiple employees">
                 <i class="fa-solid fa-rotate"></i>
                 <span class="hidden sm:inline">Bulk Regenerate</span>

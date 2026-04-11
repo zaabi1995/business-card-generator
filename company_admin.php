@@ -87,6 +87,7 @@ try {
         'credit-accounts'    => 'admin/credit-accounts.php',
         'customer-dashboard' => 'admin/customer-dashboard.php',
         'payment-history'    => 'admin/payment-history.php',
+        'batch-auto-generate' => 'admin/batch-auto-generate.php',
     ];
     
     // Handle login page specially (no auth required)
