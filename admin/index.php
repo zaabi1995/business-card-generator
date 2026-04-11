@@ -234,6 +234,37 @@ if ($isFreePlan && $companyId && DatabaseAdapter::useDatabase()) {
 $showWelcome = ($_GET['welcome'] ?? '') === '1';
 $onboardingCompleted = (int)($companyRow['onboarding_completed'] ?? 0);
 
+// Card view analytics for dashboard widget (always available — proves value)
+$viewsAllTime = 0;
+$views30d = 0;
+$views7d = 0;
+$dailyViews7d = [];
+if ($companyId && DatabaseAdapter::useDatabase()) {
+    try {
+        $r = $db->fetchOne("SELECT COUNT(*) as cnt FROM qr_scans WHERE company_id = :id", ['id' => $companyId]);
+        $viewsAllTime = (int)($r['cnt'] ?? 0);
+        $r = $db->fetchOne("SELECT COUNT(*) as cnt FROM qr_scans WHERE company_id = :id AND scanned_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)", ['id' => $companyId]);
+        $views30d = (int)($r['cnt'] ?? 0);
+        $r = $db->fetchOne("SELECT COUNT(*) as cnt FROM qr_scans WHERE company_id = :id AND scanned_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)", ['id' => $companyId]);
+        $views7d = (int)($r['cnt'] ?? 0);
+        // Daily breakdown for last 7 days (for bar chart)
+        $dailyRows = $db->fetchAll(
+            "SELECT DATE(scanned_at) as d, COUNT(*) as cnt FROM qr_scans WHERE company_id = :id AND scanned_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) GROUP BY DATE(scanned_at) ORDER BY d ASC",
+            ['id' => $companyId]
+        ) ?: [];
+        // Fill all 7 days (including zero days)
+        for ($i = 6; $i >= 0; $i--) {
+            $date = date('Y-m-d', strtotime("-{$i} days"));
+            $dailyViews7d[$date] = 0;
+        }
+        foreach ($dailyRows as $row) {
+            if (isset($dailyViews7d[$row['d']])) {
+                $dailyViews7d[$row['d']] = (int)$row['cnt'];
+            }
+        }
+    } catch (Exception $e) {}
+}
+
 // Getting started checklist — only for company admins, hidden once all steps done
 $hasLogo = !empty($companyTheme['logo_path']);
 $hasTemplate = count($frontTemplates) > 0;
@@ -440,6 +471,59 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
         </div>
     </div>
 </div>
+
+<!-- Card Views Analytics Widget -->
+<?php if ($viewsAllTime > 0 || $generatedCount > 0): ?>
+<?php
+    $_analyticsUrl = getAdminBasePath() . 'analytics' . ((defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php');
+    $maxDaily = max(1, max($dailyViews7d ?: [0]));
+?>
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-8">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-cyan-100 flex items-center justify-center">
+                <i class="fa-solid fa-chart-line text-cyan-600 text-lg"></i>
+            </div>
+            <div>
+                <h3 class="font-semibold text-gray-900 text-sm">Card Views</h3>
+                <p class="text-xs text-gray-500">How often your digital cards are viewed</p>
+            </div>
+        </div>
+        <a href="<?= htmlspecialchars($_analyticsUrl) ?>" class="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+            Full Analytics <i class="fa-solid fa-arrow-right text-xs"></i>
+        </a>
+    </div>
+    <!-- Period stats -->
+    <div class="grid grid-cols-3 gap-4 mb-5">
+        <div class="text-center p-3 rounded-lg bg-gray-50">
+            <p class="text-2xl font-bold text-gray-900"><?= number_format($views7d) ?></p>
+            <p class="text-xs text-gray-500 mt-0.5">Last 7 days</p>
+        </div>
+        <div class="text-center p-3 rounded-lg bg-gray-50">
+            <p class="text-2xl font-bold text-gray-900"><?= number_format($views30d) ?></p>
+            <p class="text-xs text-gray-500 mt-0.5">Last 30 days</p>
+        </div>
+        <div class="text-center p-3 rounded-lg bg-gray-50">
+            <p class="text-2xl font-bold text-gray-900"><?= number_format($viewsAllTime) ?></p>
+            <p class="text-xs text-gray-500 mt-0.5">All time</p>
+        </div>
+    </div>
+    <!-- 7-day bar chart -->
+    <div class="flex items-end gap-1.5 h-20">
+        <?php foreach ($dailyViews7d as $date => $count): ?>
+        <?php $pct = $maxDaily > 0 ? max(4, round($count / $maxDaily * 100)) : 4; ?>
+        <div class="flex-1 flex flex-col items-center gap-1 group relative">
+            <div class="w-full rounded-t bg-cyan-500 hover:bg-cyan-600 transition-colors cursor-default" style="height: <?= $pct ?>%"
+                 title="<?= date('D, M j', strtotime($date)) ?>: <?= number_format($count) ?> view<?= $count !== 1 ? 's' : '' ?>"></div>
+            <span class="text-[10px] text-gray-400 leading-none"><?= date('D', strtotime($date)) ?></span>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php if ($viewsAllTime === 0): ?>
+    <p class="text-center text-sm text-gray-400 mt-3">No views yet. Share your digital cards to start tracking.</p>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
 
 <?php if ($isFreePlan && $currentRole !== 'super_admin'):
     $empPct  = $employeeCount > 0 ? min(100, round($employeeCount / 5 * 100)) : 0;
