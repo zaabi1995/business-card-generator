@@ -218,14 +218,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Fire signup confirmation (email + WhatsApp)
                     try {
                         require_once INCLUDES_DIR . '/Notifier.php';
+                        $baseHost = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'cardify.om');
                         Notifier::send('signup', [
                             'name'       => $userName ?: $name,
                             'email'      => $email,
-                            'phone'      => $_POST['phone'] ?? null,
+                            'phone'      => trim($_POST['phone'] ?? ''),
                             'company_id' => $company['id'] ?? null,
                         ], [
-                            'name'     => $userName ?: $name,
-                            'loginUrl' => (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'cardify.om') . getBasePath() . 'login.php',
+                            'name'        => $userName ?: $name,
+                            'companyName' => $name,
+                            'loginUrl'    => $baseHost . getBasePath() . 'login.php',
+                            'dashboardUrl'=> $baseHost . getBasePath() . ($company['slug'] ?? '') . '/admin/',
+                            'companySlug' => $company['slug'] ?? '',
                         ]);
                     } catch (Throwable $e) {
                         error_log('[register] Notifier failed: ' . $e->getMessage());
@@ -383,6 +387,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             Choose a unique URL for your company
                             <?php endif; ?>
                         </p>
+                    </div>
+
+                    <div>
+                        <label for="phone" class="block text-sm font-medium text-gray-900">
+                            WhatsApp number <span class="text-gray-400 font-normal">(optional)</span>
+                        </label>
+                        <div class="mt-2">
+                            <input type="tel" name="phone" id="phone"
+                                   value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
+                                   class="form-input"
+                                   placeholder="+968 9XXX XXXX">
+                        </div>
+                        <p class="mt-1.5 text-xs text-gray-500">We'll send you a welcome message on WhatsApp</p>
                     </div>
 
                     <div>
