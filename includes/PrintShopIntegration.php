@@ -610,8 +610,9 @@ class PrintShopIntegration {
                         $context['carrier']     = $_POST['carrier'] ?? ($order['carrier'] ?? 'the carrier');
                     }
                     if ($newStatus === 'delivered') {
+                        // Order creation lives at admin/print.php — company/new-order.php does not exist.
                         $context['reorderUrl'] = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://'
-                            . ($_SERVER['HTTP_HOST'] ?? 'cardify.om') . getBasePath() . 'company/new-order.php';
+                            . ($_SERVER['HTTP_HOST'] ?? 'cardify.om') . getBasePath() . 'admin/print.php';
                     }
 
                     Notifier::send($eventMap[$newStatus], [
