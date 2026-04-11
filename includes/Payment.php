@@ -405,9 +405,11 @@ class Payment {
                     'omrAmount'     => $omrAmount,
                 ]);
             } else {
+                // Retry URL points to the admin print page (company-facing print orders live there).
+                // company/orders.php does not exist — the old value was broken.
                 $retryUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://'
                           . ($_SERVER['HTTP_HOST'] ?? 'cardify.om')
-                          . getBasePath() . 'company/orders.php?retry=' . urlencode($order['id'] ?? ($payment['reference_id'] ?? ''));
+                          . getBasePath() . 'admin/print.php?retry=' . urlencode($order['id'] ?? ($payment['reference_id'] ?? ''));
 
                 Notifier::send('payment_failed', [
                     'name'       => $company['name_en'] ?? $company['name'] ?? 'Customer',
