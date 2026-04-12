@@ -139,23 +139,8 @@ $basePath = getBasePath();
             transform: rotateY(10deg) rotateX(5deg);
         }
         
-        /* Reveal animations */
-        .reveal-up {
-            opacity: 0;
-            transform: translateY(60px);
-        }
-        .reveal-left {
-            opacity: 0;
-            transform: translateX(-60px);
-        }
-        .reveal-right {
-            opacity: 0;
-            transform: translateX(60px);
-        }
-        .reveal-scale {
-            opacity: 0;
-            transform: scale(0.8);
-        }
+        /* Reveal animations — visible by default, GSAP animates entrance */
+        /* No opacity:0 here so content is visible even if JS/GSAP fails */
         
         /* Interactive cursor */
         .interactive-cursor {
@@ -903,6 +888,28 @@ $basePath = getBasePath();
         </div>
     </section>
 
+    <!-- Testimonial -->
+    <section class="py-20 bg-white">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="reveal-up">
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-full text-blue-600 font-medium text-sm mb-8">
+                    <i class="fa-solid fa-quote-left"></i>
+                    <span>From Our Users</span>
+                </div>
+                <blockquote class="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 leading-relaxed">
+                    "We use Cardify for all BHD employees — it's simple, fast, and keeps our branding consistent across the team."
+                </blockquote>
+                <div class="flex items-center justify-center gap-4">
+                    <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">A</div>
+                    <div class="text-left">
+                        <div class="font-bold text-gray-900">Ali Al-Zaabi</div>
+                        <div class="text-gray-500 text-sm">CEO, BHD Group</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Final CTA Section -->
     <section class="py-32 animated-bg relative overflow-hidden">
         <div class="absolute inset-0 bg-black/10"></div>
@@ -917,7 +924,7 @@ $basePath = getBasePath();
                     <span class="text-white/80">In Under 5 Minutes</span>
                 </h2>
                 <p class="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-                    Join hundreds of Omani companies already using Cardify. 
+                    Omani companies trust Cardify for their business cards.
                     It's completely free to start — no credit card required.
                 </p>
                 
@@ -1012,11 +1019,11 @@ $basePath = getBasePath();
             }
         });
         
-        // Reveal animations
+        // Reveal animations — use gsap.from() so content is visible if GSAP fails
         document.querySelectorAll('.reveal-up').forEach((el, i) => {
-            gsap.to(el, {
-                opacity: 1,
-                y: 0,
+            gsap.from(el, {
+                opacity: 0,
+                y: 60,
                 duration: 0.8,
                 ease: "power3.out",
                 scrollTrigger: {
@@ -1027,11 +1034,11 @@ $basePath = getBasePath();
                 delay: i * 0.05
             });
         });
-        
+
         document.querySelectorAll('.reveal-left').forEach(el => {
-            gsap.to(el, {
-                opacity: 1,
-                x: 0,
+            gsap.from(el, {
+                opacity: 0,
+                x: -60,
                 duration: 0.8,
                 ease: "power3.out",
                 scrollTrigger: {
@@ -1041,11 +1048,11 @@ $basePath = getBasePath();
                 }
             });
         });
-        
+
         document.querySelectorAll('.reveal-right').forEach(el => {
-            gsap.to(el, {
-                opacity: 1,
-                x: 0,
+            gsap.from(el, {
+                opacity: 0,
+                x: 60,
                 duration: 0.8,
                 ease: "power3.out",
                 scrollTrigger: {
@@ -1055,11 +1062,11 @@ $basePath = getBasePath();
                 }
             });
         });
-        
+
         document.querySelectorAll('.reveal-scale').forEach(el => {
-            gsap.to(el, {
-                opacity: 1,
-                scale: 1,
+            gsap.from(el, {
+                opacity: 0,
+                scale: 0.8,
                 duration: 0.8,
                 ease: "back.out(1.7)",
                 scrollTrigger: {
