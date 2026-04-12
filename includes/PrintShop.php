@@ -13,7 +13,7 @@ class PrintShop {
         
         try {
             $pdo = $db->getConnection();
-            $sql = "SELECT * FROM print_shops WHERE status = ? ORDER BY is_featured DESC, name ASC LIMIT ?";
+            $sql = "SELECT * FROM print_shops WHERE status = ? ORDER BY featured DESC, name ASC LIMIT ?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([$status, $limit]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -30,7 +30,7 @@ class PrintShop {
         
         try {
             $pdo = $db->getConnection();
-            $stmt = $pdo->prepare("SELECT * FROM print_shops WHERE status = 'active' AND is_featured = 1 ORDER BY name ASC LIMIT ?");
+            $stmt = $pdo->prepare("SELECT * FROM print_shops WHERE status = 'active' AND featured = 1 ORDER BY name ASC LIMIT ?");
             $stmt->execute([$limit]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
@@ -172,10 +172,10 @@ class PrintShop {
                 'paper_types', 'finishes', 'pricing_tiers', 'base_price_per_card',
                 'setup_fee', 'shipping_fee',
                 'currency', 'min_quantity', 'turnaround_days',
-                'offers_express', 'express_days', 'express_fee',
+                'express_available', 'express_days', 'express_fee',
                 'tagline', 'facebook', 'instagram', 'twitter', 'whatsapp',
                 'erp_enabled', 'erp_system', 'erp_url', 'erp_api_key',
-                'status', 'is_featured', 'is_verified'
+                'status', 'featured', 'verified'
             ];
             
             foreach ($allowedFields as $field) {
@@ -215,7 +215,7 @@ class PrintShop {
         
         try {
             $pdo = $db->getConnection();
-            $stmt = $pdo->prepare("UPDATE print_shops SET status = 'active', is_verified = 1 WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE print_shops SET status = 'active', verified = 1 WHERE id = ?");
             $stmt->execute([$id]);
             return ['success' => true];
         } catch (PDOException $e) {
@@ -363,7 +363,7 @@ class PrintShop {
         
         // Express shipping
         $expressShipping = 0;
-        if (!empty($options['express']) && !empty($shop['offers_express'])) {
+        if (!empty($options['express']) && !empty($shop['express_available'])) {
             $expressShipping = (float)($shop['express_fee'] ?? 0);
         }
         
@@ -573,14 +573,14 @@ class PrintShop {
             }
             
             if (!empty($filters['express'])) {
-                $sql .= " AND offers_express = 1";
+                $sql .= " AND express_available = 1";
             }
             
             if (!empty($filters['verified'])) {
-                $sql .= " AND is_verified = 1";
+                $sql .= " AND verified = 1";
             }
             
-            $sql .= " ORDER BY is_featured DESC, name ASC LIMIT 50";
+            $sql .= " ORDER BY featured DESC, name ASC LIMIT 50";
             
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
