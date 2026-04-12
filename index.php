@@ -187,6 +187,7 @@ $extraHead = '<style>
 $showNavigation = true;
 $navLinks = [
     ['href' => '#features', 'label' => 'Features'],
+    ['href' => '#pricing', 'label' => 'Pricing'],
     ['href' => getBasePath() . 'blog', 'label' => 'Blog'],
     ['href' => getBasePath() . 'about', 'label' => 'About'],
     ['href' => getBasePath() . 'contact', 'label' => 'Contact'],
@@ -358,8 +359,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
                         <i class="fa-solid fa-gift text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-bold mb-2">Completely Free</h3>
-                    <p class="text-blue-100 text-sm">Platform is 100% free — only pay when you order physical prints</p>
+                    <h3 class="text-lg font-bold mb-2">Start Free</h3>
+                    <p class="text-blue-100 text-sm">Free starter plan with no credit card required. Upgrade when you grow</p>
                 </div>
             </div>
         </div>
@@ -576,16 +577,201 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
     </section>
 
-    <!-- ========== FREE FOREVER BANNER ========== -->
-    <section class="bg-gradient-to-r from-blue-50 to-indigo-50 py-16 px-4">
-        <div class="max-w-4xl mx-auto text-center">
-            <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">Free forever</h2>
-            <p class="text-xl text-gray-600 mb-8">Every feature is free. You only pay when you print physical cards.</p>
-            <a href="<?= getBasePath() ?>get-started" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 text-lg">
-                Get Started Free
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-            </a>
-            <p class="text-sm text-gray-500 mt-4">No credit card required. Create your first card in under a minute.</p>
+    <!-- ========== PRICING SECTION ========== -->
+    <section id="pricing" class="py-16 lg:py-24 bg-gradient-to-b from-gray-50 to-white px-4">
+        <div class="max-w-7xl mx-auto" x-data="{ annual: false }">
+            <!-- Section Header -->
+            <div class="text-center mb-12">
+                <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full uppercase tracking-wide">
+                    Simple Pricing
+                </span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">Plans for every team size</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">Start free, upgrade when you need more. All prices in Omani Rial.</p>
+
+                <!-- Billing Toggle -->
+                <div class="mt-8 inline-flex items-center gap-3 bg-gray-100 rounded-full p-1">
+                    <button @click="annual = false" :class="!annual ? 'bg-white shadow text-gray-900' : 'text-gray-500'" class="px-5 py-2 rounded-full text-sm font-semibold transition-all">Monthly</button>
+                    <button @click="annual = true" :class="annual ? 'bg-white shadow text-gray-900' : 'text-gray-500'" class="px-5 py-2 rounded-full text-sm font-semibold transition-all">
+                        Annual <span class="text-green-600 text-xs font-bold ml-1">Save 17%</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pricing Grid -->
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                <!-- Starter -->
+                <div class="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col">
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold text-gray-900">Starter</h3>
+                        <p class="text-sm text-gray-500 mt-1">For freelancers and solo professionals</p>
+                    </div>
+                    <div class="mb-6">
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-4xl font-extrabold text-gray-900">Free</span>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1">No credit card required</p>
+                    </div>
+                    <ul class="space-y-3 mb-8 flex-1">
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                            Up to 3 team members
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                            Digital cards with QR code
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                            3 card templates
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                            Email support
+                        </li>
+                    </ul>
+                    <a href="<?= getBasePath() ?>company/register.php" class="block text-center py-3 px-4 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold hover:border-blue-300 hover:text-blue-600 transition-colors">
+                        Get Started Free
+                    </a>
+                </div>
+
+                <!-- Professional (Popular) -->
+                <div class="bg-white rounded-2xl border-2 border-blue-600 p-6 flex flex-col relative shadow-lg shadow-blue-100">
+                    <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+                        <span class="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">Most Popular</span>
+                    </div>
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold text-gray-900">Professional</h3>
+                        <p class="text-sm text-gray-500 mt-1">For growing teams</p>
+                    </div>
+                    <div class="mb-6">
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-4xl font-extrabold text-gray-900" x-text="annual ? '4.167' : '5.000'">5.000</span>
+                            <span class="text-gray-500 text-sm font-medium">OMR/mo</span>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1" x-show="annual">Billed 50.000 OMR/year</p>
+                        <p class="text-sm text-gray-500 mt-1" x-show="!annual">Billed monthly</p>
+                    </div>
+                    <ul class="space-y-3 mb-8 flex-1">
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fa-solid fa-check text-blue-500 mt-0.5 flex-shrink-0"></i>
+                            Up to 10 team members
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fa-solid fa-check text-blue-500 mt-0.5 flex-shrink-0"></i>
+                            Unlimited templates
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fa-solid fa-check text-blue-500 mt-0.5 flex-shrink-0"></i>
+                            Custom branding
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fa-solid fa-check text-blue-500 mt-0.5 flex-shrink-0"></i>
+                            CSV bulk import
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fa-solid fa-check text-blue-500 mt-0.5 flex-shrink-0"></i>
+                            Analytics dashboard
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fa-solid fa-check text-blue-500 mt-0.5 flex-shrink-0"></i>
+                            Priority support
+                        </li>
+                    </ul>
+                    <a href="<?= getBasePath() ?>company/register.php?plan=professional" class="block text-center py-3 px-4 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors shadow-md">
+                        Start Free Trial
+                    </a>
+                </div>
+
+                <!-- Business -->
+                <div class="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col">
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold text-gray-900">Business</h3>
+                        <p class="text-sm text-gray-500 mt-1">For scaling companies</p>
+                    </div>
+                    <div class="mb-6">
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-4xl font-extrabold text-gray-900" x-text="annual ? '12.500' : '15.000'">15.000</span>
+                            <span class="text-gray-500 text-sm font-medium">OMR/mo</span>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1" x-show="annual">Billed 150.000 OMR/year</p>
+                        <p class="text-sm text-gray-500 mt-1" x-show="!annual">Billed monthly</p>
+                    </div>
+                    <ul class="space-y-3 mb-8 flex-1">
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                            Up to 50 team members
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                            Everything in Professional
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                            Print ordering integration
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                            NFC card support
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                            Dedicated account manager
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-600">
+                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
+                            API access
+                        </li>
+                    </ul>
+                    <a href="<?= getBasePath() ?>company/register.php?plan=business" class="block text-center py-3 px-4 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold hover:border-blue-300 hover:text-blue-600 transition-colors">
+                        Start Free Trial
+                    </a>
+                </div>
+
+                <!-- Enterprise -->
+                <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 flex flex-col text-white">
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold">Enterprise</h3>
+                        <p class="text-sm text-gray-400 mt-1">For large organisations</p>
+                    </div>
+                    <div class="mb-6">
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-4xl font-extrabold">Custom</span>
+                        </div>
+                        <p class="text-sm text-gray-400 mt-1">Tailored to your needs</p>
+                    </div>
+                    <ul class="space-y-3 mb-8 flex-1">
+                        <li class="flex items-start gap-2 text-sm text-gray-300">
+                            <i class="fa-solid fa-check text-amber-400 mt-0.5 flex-shrink-0"></i>
+                            Unlimited employees
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-300">
+                            <i class="fa-solid fa-check text-amber-400 mt-0.5 flex-shrink-0"></i>
+                            Everything in Business
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-300">
+                            <i class="fa-solid fa-check text-amber-400 mt-0.5 flex-shrink-0"></i>
+                            Custom integrations
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-300">
+                            <i class="fa-solid fa-check text-amber-400 mt-0.5 flex-shrink-0"></i>
+                            SLA guarantee
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-300">
+                            <i class="fa-solid fa-check text-amber-400 mt-0.5 flex-shrink-0"></i>
+                            White-label options
+                        </li>
+                        <li class="flex items-start gap-2 text-sm text-gray-300">
+                            <i class="fa-solid fa-check text-amber-400 mt-0.5 flex-shrink-0"></i>
+                            On-premise deployment
+                        </li>
+                    </ul>
+                    <a href="https://wa.me/96899899100?text=Hi%2C%20I%27m%20interested%20in%20Cardify%20Enterprise" target="_blank" rel="noopener" class="block text-center py-3 px-4 rounded-xl bg-white text-gray-900 font-semibold hover:bg-gray-100 transition-colors">
+                        Contact Sales
+                    </a>
+                </div>
+            </div>
+
+            <p class="text-center text-sm text-gray-500 mt-8">All plans include a 14-day free trial. No credit card required to start.</p>
         </div>
     </section>
 
@@ -699,13 +885,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 Create Your First Card in Minutes
             </h2>
             <p class="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
-                Join hundreds of Omani SME companies using Cardify. It's completely free to start — no credit card required.
+                Join hundreds of Omani companies using Cardify. Start free, upgrade as you grow.
             </p>
-            
+
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white hover:bg-gray-100 text-blue-600 font-bold rounded-xl shadow-xl transition-all hover:-translate-y-0.5 text-lg">
                     <i class="fa-solid fa-rocket"></i>
-                    Start Free — No Credit Card
+                    Start Your Free Trial
                 </a>
                 <a href="<?php echo getBasePath(); ?>intro" class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-500/20 hover:bg-blue-500/30 text-white font-semibold rounded-xl border-2 border-white/30 transition-all text-lg">
                     <i class="fa-solid fa-play-circle"></i>
@@ -716,15 +902,15 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="mt-10 flex flex-wrap justify-center gap-6 text-white/70 text-sm">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-check-circle"></i>
-                    <span>100% Free Platform</span>
+                    <span>Free Starter Plan</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-check-circle"></i>
-                    <span>Unlimited Employees</span>
+                    <span>14-Day Free Trial</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-check-circle"></i>
-                    <span>Pay Only for Printing</span>
+                    <span>Plans from 5 OMR/mo</span>
                 </div>
             </div>
             </p>
@@ -858,7 +1044,7 @@ HTML;
     "@type": "Offer",
     "price": "0",
     "priceCurrency": "OMR",
-    "description": "Free plan — up to 5 employees, 10 cards/month. Upgrade to Pro for bulk generation and QR analytics."
+    "description": "Starter plan free — up to 3 employees. Professional from 5 OMR/mo for 10 employees. Business 15 OMR/mo for 50 employees."
   }
 }
 </script>
