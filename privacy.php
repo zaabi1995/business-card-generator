@@ -116,7 +116,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <p class="text-gray-700"><strong>BHD Group</strong></p>
                     <p class="text-gray-600">Bin Haider Darwish S.P.C.</p>
                     <p class="text-gray-600">C.R. No. 1334733</p>
-                    <p class="text-gray-600 mt-2">Email: privacy@cardify.om</p>
+                    <p class="text-gray-600 mt-2">Email: <a href="mailto:privacy@cardify.om" class="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-2"><i class="fa-regular fa-envelope"></i> privacy@cardify.om</a></p>
                 </div>
             </section>
 

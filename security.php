@@ -179,7 +179,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </p>
             <div class="bg-white/10 rounded-lg p-4">
                 <p class="font-semibold mb-2">Contact our Security Team:</p>
-                <p class="text-blue-100">Email: security@cardify.om</p>
+                <p class="text-blue-100">Email: <a href="mailto:security@cardify.om" class="underline decoration-white/40 hover:decoration-white text-white font-medium inline-flex items-center gap-2"><i class="fa-regular fa-envelope"></i> security@cardify.om</a></p>
                 <p class="text-blue-200 text-sm mt-2">We aim to respond to all security reports within 24 hours.</p>
             </div>
         </div>
