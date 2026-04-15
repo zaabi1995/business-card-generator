@@ -170,7 +170,53 @@ try {
     // Plans table might not exist yet, will use default display
     $subscriptionPlans = [];
 }
-$extraHead = '<style>
+
+// Latest blog posts for homepage SEO (internal links + freshness signal)
+$latestPosts = [];
+try {
+    if (isset($db) && $db->isConnected() && $db->tableExists('blog_posts')) {
+        $latestPosts = $db->fetchAll(
+            "SELECT slug, title, excerpt, featured_image, published_at
+             FROM blog_posts
+             WHERE status='published'
+             ORDER BY published_at DESC
+             LIMIT 3"
+        );
+    }
+} catch (Exception $e) {
+    $latestPosts = [];
+}
+
+// Organization + WebSite JSON-LD for homepage
+$orgLd = [
+    '@context' => 'https://schema.org',
+    '@type' => 'Organization',
+    'name' => 'Cardify',
+    'url' => 'https://cardify.om/',
+    'logo' => 'https://cardify.om/assets/images/logo.svg',
+    'description' => 'Digital and printed business cards for teams in Oman.',
+    'sameAs' => ['https://www.instagram.com/cardify.om/'],
+    'address' => [
+        '@type' => 'PostalAddress',
+        'addressCountry' => 'OM',
+        'addressLocality' => 'Muscat',
+    ],
+];
+$siteLd = [
+    '@context' => 'https://schema.org',
+    '@type' => 'WebSite',
+    'name' => 'Cardify',
+    'url' => 'https://cardify.om/',
+    'potentialAction' => [
+        '@type' => 'SearchAction',
+        'target' => 'https://cardify.om/blog?q={search_term_string}',
+        'query-input' => 'required name=search_term_string',
+    ],
+];
+$homeJsonLd = '<script type="application/ld+json">' . json_encode($orgLd, JSON_UNESCAPED_SLASHES) . '</script>'
+    . '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES) . '</script>';
+
+$extraHead = $homeJsonLd . '<style>
     .hero-gradient { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #fffbeb 100%); }
     .card-shadow { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); }
     .float-animation { animation: float 6s ease-in-out infinite; }
@@ -867,6 +913,53 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
         </div>
     </section>
+
+    <!-- ========== FROM THE BLOG (SEO internal linking) ========== -->
+    <?php if (!empty($latestPosts)): ?>
+    <section class="py-16 lg:py-24 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-end justify-between mb-10 flex-wrap gap-4">
+                <div>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">From the Blog</h2>
+                    <p class="text-lg text-gray-600">Practical guides for Omani professionals and teams.</p>
+                </div>
+                <a href="<?= getBasePath() ?>blog" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold">
+                    View all posts
+                    <i class="fa-solid fa-arrow-right text-sm"></i>
+                </a>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <?php foreach ($latestPosts as $post): ?>
+                <?php
+                    $postUrl = getBasePath() . 'blog/' . $post['slug'];
+                    $postDate = date('M j, Y', strtotime($post['published_at']));
+                    $excerpt = $post['excerpt'] ?? '';
+                    if (strlen($excerpt) > 140) $excerpt = substr($excerpt, 0, 140) . '…';
+                    $img = !empty($post['featured_image']) ? htmlspecialchars($post['featured_image']) : 'assets/images/cardify-og.png';
+                ?>
+                <article class="group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl transition-shadow">
+                    <a href="<?= htmlspecialchars($postUrl) ?>" class="block aspect-video bg-gray-100 overflow-hidden">
+                        <img src="<?= getBasePath() . $img ?>" alt="<?= htmlspecialchars($post['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy">
+                    </a>
+                    <div class="p-6">
+                        <time class="text-sm text-gray-500"><?= $postDate ?></time>
+                        <h3 class="mt-2 text-xl font-bold text-gray-900 leading-snug">
+                            <a href="<?= htmlspecialchars($postUrl) ?>" class="hover:text-blue-700 transition-colors"><?= htmlspecialchars($post['title']) ?></a>
+                        </h3>
+                        <?php if ($excerpt): ?>
+                        <p class="mt-3 text-gray-600 text-sm leading-relaxed"><?= htmlspecialchars($excerpt) ?></p>
+                        <?php endif; ?>
+                        <a href="<?= htmlspecialchars($postUrl) ?>" class="mt-4 inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-semibold">
+                            Read more
+                            <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </a>
+                    </div>
+                </article>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
 
     <!-- ========== CTA SECTION (Flowbite Style) ========== -->
     <section class="py-16 lg:py-24 bg-gradient-to-br from-blue-600 to-indigo-700">

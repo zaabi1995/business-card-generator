@@ -51,6 +51,68 @@ if ($db->tableExists('blog_posts')) {
     );
 }
 
+// Build JSON-LD structured data (Article for single post, Blog listing otherwise)
+$extraHead = '';
+if ($singlePost) {
+    $published = date('c', strtotime($singlePost['published_at'] ?? $singlePost['created_at']));
+    $modified = date('c', strtotime($singlePost['updated_at'] ?? $singlePost['published_at'] ?? $singlePost['created_at']));
+    $imageUrl = !empty($singlePost['featured_image'])
+        ? 'https://cardify.om/' . ltrim($singlePost['featured_image'], '/')
+        : 'https://cardify.om/assets/images/cardify-og.png';
+    $articleLd = [
+        '@context' => 'https://schema.org',
+        '@type' => 'BlogPosting',
+        'headline' => $singlePost['title'],
+        'description' => $singlePost['excerpt'] ?? substr(strip_tags($singlePost['content']), 0, 160),
+        'image' => $imageUrl,
+        'url' => $canonicalUrl,
+        'datePublished' => $published,
+        'dateModified' => $modified,
+        'author' => [
+            '@type' => 'Organization',
+            'name' => $singlePost['author_name'] ?? 'Cardify Team',
+            'url' => 'https://cardify.om/about',
+        ],
+        'publisher' => [
+            '@type' => 'Organization',
+            'name' => 'Cardify',
+            'logo' => [
+                '@type' => 'ImageObject',
+                'url' => 'https://cardify.om/assets/images/logo.svg',
+            ],
+        ],
+        'mainEntityOfPage' => [
+            '@type' => 'WebPage',
+            '@id' => $canonicalUrl,
+        ],
+    ];
+    $breadcrumbLd = [
+        '@context' => 'https://schema.org',
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => [
+            ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => 'https://cardify.om/'],
+            ['@type' => 'ListItem', 'position' => 2, 'name' => 'Blog', 'item' => 'https://cardify.om/blog'],
+            ['@type' => 'ListItem', 'position' => 3, 'name' => $singlePost['title'], 'item' => $canonicalUrl],
+        ],
+    ];
+    $extraHead .= '<script type="application/ld+json">' . json_encode($articleLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
+    $extraHead .= '<script type="application/ld+json">' . json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
+} else {
+    $blogLd = [
+        '@context' => 'https://schema.org',
+        '@type' => 'Blog',
+        'name' => 'Cardify Blog',
+        'description' => 'Business card tips, networking advice, and industry guides for Omani professionals.',
+        'url' => 'https://cardify.om/blog',
+        'publisher' => [
+            '@type' => 'Organization',
+            'name' => 'Cardify',
+            'url' => 'https://cardify.om/',
+        ],
+    ];
+    $extraHead .= '<script type="application/ld+json">' . json_encode($blogLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
+}
+
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
 
