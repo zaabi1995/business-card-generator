@@ -1,0 +1,139 @@
+<?php
+/**
+ * Google Wallet Save Endpoint
+ *
+ * GET /wallet_google.php?i=<employee_id>[&c=<company_slug>]
+ *
+ * 302-redirects to https://pay.google.com/gp/v/save/<signed_jwt>.
+ *
+ * When GOOGLE_WALLET_ENABLED is false OR credentials aren't present,
+ * returns 503 with an admin-facing message.
+ */
+
+ob_start();
+
+set_error_handler(function ($severity, $message, $file, $line) {
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+
+try {
+    require_once __DIR__ . '/config.php';
+    require_once INCLUDES_DIR . '/GoogleWalletPass.php';
+
+    $employeeId  = trim($_GET['i'] ?? $_GET['employee_id'] ?? '');
+    $companySlug = trim($_GET['c'] ?? $_GET['company_slug'] ?? '');
+
+    if ($employeeId === '') {
+        http_response_code(400);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo "Missing employee id.\n";
+        exit;
+    }
+
+    if (!GoogleWalletPass::isEnabled()) {
+        http_response_code(503);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo "Google Wallet passes are not yet configured for this installation.\n\n";
+        echo "Admin: set GOOGLE_WALLET_ENABLED=true and provide GOOGLE_WALLET_SERVICE_ACCOUNT_JSON, ";
+        echo "GOOGLE_WALLET_ISSUER_ID, and GOOGLE_WALLET_CLASS_ID in config.php.\n";
+        echo "See docs/superpowers/plans/2026-04-16-wallet-passes.md\n";
+        exit;
+    }
+
+    $company = null;
+    if ($companySlug !== '') {
+        $company = findCompanyBySlug($companySlug);
+    }
+    $employee = findEmployeeById($employeeId, $company ? $company['id'] : null);
+    if (!$employee) {
+        http_response_code(404);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo "Card not found.\n";
+        exit;
+    }
+    if (!$company) {
+        $company = findCompanyById($employee['company_id']);
+    }
+    $theme = $company ? loadCompanyTheme($company['id']) : null;
+
+    $name      = $employee['name_en'] ?? $employee['name'] ?? 'Employee';
+    $position  = $employee['position'] ?? $employee['job_title'] ?? '';
+    $companyNm = $company['name'] ?? '';
+    $phone     = $employee['mobile'] ?? $employee['phone'] ?? '';
+    $emailAddr = $employee['email'] ?? '';
+    $website   = $company['website'] ?? '';
+
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host   = $_SERVER['HTTP_HOST'] ?? 'cardify.om';
+    $slug   = $company['slug'] ?? $companySlug;
+    $cardUrl = $scheme . '://' . $host . '/' . rawurlencode($slug) . '/card/' . rawurlencode($employee['id']);
+
+    $hexBg = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#1a1a1a';
+    if (strlen($hexBg) === 4) { // #rgb → #rrggbb
+        $hexBg = '#' . $hexBg[1] . $hexBg[1] . $hexBg[2] . $hexBg[2] . $hexBg[3] . $hexBg[3];
+    }
+
+    $logoUri = null;
+    if ($theme && !empty($theme['logo_path'])) {
+        $logoUri = $scheme . '://' . $host . '/' . ltrim($theme['logo_path'], '/');
+    }
+
+    $textModules = [];
+    if ($phone !== '') {
+        $textModules[] = ['id' => 'phone', 'header' => 'PHONE', 'body' => $phone];
+    }
+    if ($emailAddr !== '') {
+        $textModules[] = ['id' => 'email', 'header' => 'EMAIL', 'body' => $emailAddr];
+    }
+
+    $linksUris = [];
+    if ($website !== '') {
+        $linksUris[] = ['uri' => (stripos($website, 'http') === 0 ? $website : 'https://' . $website),
+                        'description' => 'Website'];
+    }
+    if ($emailAddr !== '') {
+        $linksUris[] = ['uri' => 'mailto:' . $emailAddr, 'description' => 'Email ' . $name];
+    }
+    if ($phone !== '') {
+        $linksUris[] = ['uri' => 'tel:' . preg_replace('/[^+0-9]/', '', $phone), 'description' => 'Call ' . $name];
+    }
+
+    $object = [
+        'id'                => GoogleWalletPass::objectResourceId((string)$employee['id']),
+        'classId'           => GoogleWalletPass::classResourceId(),
+        'state'             => 'ACTIVE',
+        'cardTitle'         => ['defaultValue' => ['language' => 'en', 'value' => $companyNm ?: 'Business Card']],
+        'subheader'         => ['defaultValue' => ['language' => 'en', 'value' => $position ?: 'Contact']],
+        'header'            => ['defaultValue' => ['language' => 'en', 'value' => $name]],
+        'hexBackgroundColor' => $hexBg,
+        'barcode'           => [
+            'type'         => 'QR_CODE',
+            'value'        => $cardUrl,
+            'alternateText' => $cardUrl,
+        ],
+        'textModulesData' => $textModules,
+    ];
+    if (!empty($linksUris)) {
+        $object['linksModuleData'] = ['uris' => $linksUris];
+    }
+    if ($logoUri) {
+        $object['logo'] = [
+            'sourceUri'         => ['uri' => $logoUri],
+            'contentDescription' => ['defaultValue' => ['language' => 'en', 'value' => $companyNm . ' logo']],
+        ];
+    }
+
+    $saveUrl = GoogleWalletPass::buildSaveUrl($object);
+
+    while (ob_get_level()) { ob_end_clean(); }
+    header('Location: ' . $saveUrl, true, 302);
+    exit;
+
+} catch (Throwable $e) {
+    while (ob_get_level()) { ob_end_clean(); }
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=utf-8');
+    error_log('wallet_google.php: ' . $e->getMessage());
+    echo "Could not generate Google Wallet pass.\n";
+    exit;
+}
