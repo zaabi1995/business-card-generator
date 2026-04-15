@@ -31,19 +31,21 @@ try {
 
     if (!empty($employeeId)) {
         // Short format: look up by employee ID directly
+        // NOTE: `companies` table only has `name` + `country` (no name_en/name_ar/website/address/city).
+        // VCF::generate() null-coalesces missing keys, so we only select columns that exist.
         $employee = $db->fetchOne(
-            "SELECT e.*, c.id as company_id, c.slug, c.name as company_name,
-                    c.name_en, c.name_ar, c.website, c.address, c.city, c.country
+            "SELECT e.*, c.id as company_id, c.slug, c.name as company_name, c.country
              FROM employees e
              JOIN companies c ON c.id = e.company_id
              WHERE e.id = :id AND e.status = 'active' LIMIT 1",
             ['id' => $employeeId]
         );
-        $company = $employee ? ['id' => $employee['company_id'], 'slug' => $employee['slug'],
-                                'name' => $employee['company_name'], 'name_en' => $employee['name_en'],
-                                'name_ar' => $employee['name_ar'], 'website' => $employee['website'],
-                                'address' => $employee['address'], 'city' => $employee['city'],
-                                'country' => $employee['country']] : null;
+        $company = $employee ? [
+            'id'      => $employee['company_id'],
+            'slug'    => $employee['slug'],
+            'name'    => $employee['company_name'],
+            'country' => $employee['country'] ?? '',
+        ] : null;
     } else {
         // Legacy format: slug + email
         $company = findCompanyBySlug($companySlug);

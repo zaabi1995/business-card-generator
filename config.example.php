@@ -154,9 +154,9 @@ if (defined('DB_HOST') && !empty(DB_HOST) && !empty(DB_NAME)) {
     DatabaseAdapter::init();
 }
 
-// Security headers (production)
-if ($isProduction) {
-    // Force HTTPS in production
+// Security headers (production) — skip entirely on CLI (migrations/scripts)
+if ($isProduction && php_sapi_name() !== 'cli') {
+    // Force HTTPS in production (browser requests only)
     if (!isset($_SERVER['HTTPS']) && $_SERVER['HTTP_HOST'] !== 'localhost') {
         header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'], true, 301);
         exit;
