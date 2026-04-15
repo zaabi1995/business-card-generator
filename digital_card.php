@@ -15,6 +15,7 @@ try {
     require_once __DIR__ . '/config.php';
     require_once INCLUDES_DIR . '/QRTracker.php';
     require_once INCLUDES_DIR . '/CardSections.php';
+    require_once INCLUDES_DIR . '/CardAnalytics.php';
 
     $companySlug = trim($_GET['company_slug'] ?? '');
     $employeeId = trim($_GET['employee_id'] ?? '');
@@ -57,6 +58,21 @@ try {
     } catch (Throwable $e) {
         error_log("QR tracking failed: " . $e->getMessage());
     }
+
+    // Log view / QR-scan event (non-fatal) — per-card analytics
+    try {
+        CardAnalytics::logView($employee['id'], $company['id']);
+    } catch (Throwable $e) {
+        error_log("CardAnalytics logView failed: " . $e->getMessage());
+    }
+
+    // Helper to build a tracked CTA URL
+    $__eid = $employee['id'];
+    $cardClickUrl = function ($cta, $dest) use ($__eid) {
+        return '/card_click.php?eid=' . urlencode($__eid)
+            . '&cta=' . urlencode($cta)
+            . '&dest=' . urlencode($dest);
+    };
 
     // Determine theme mode (dark card = light page, light card = dark page)
     $themeMode = 'dark'; // default: dark page
@@ -561,50 +577,51 @@ ob_end_clean();
         <!-- Action Buttons -->
         <div class="action-buttons">
             <?php if ($mobile || $phone): ?>
-            <a href="tel:<?php echo htmlspecialchars($mobile ?: $phone); ?>" class="action-btn btn-call">Call</a>
+            <a href="<?php echo htmlspecialchars($cardClickUrl($mobile ? 'click_mobile' : 'click_phone', 'tel:' . ($mobile ?: $phone))); ?>" class="action-btn btn-call">Call</a>
             <?php endif; ?>
 
             <?php if ($waPhone): ?>
-            <a href="https://api.whatsapp.com/send?phone=<?php echo htmlspecialchars($waPhone); ?>" class="action-btn btn-whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_whatsapp', 'https://api.whatsapp.com/send?phone=' . $waPhone)); ?>" class="action-btn btn-whatsapp" target="_blank" rel="noopener">WhatsApp</a>
             <?php endif; ?>
 
             <?php if ($email): ?>
-            <a href="mailto:<?php echo htmlspecialchars($email); ?>" class="action-btn btn-email">Email</a>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_email', 'mailto:' . $email)); ?>" class="action-btn btn-email">Email</a>
             <?php endif; ?>
         </div>
 
         <!-- Contact Details -->
         <div class="contact-card">
             <?php if ($phone): ?>
-            <a href="tel:<?php echo htmlspecialchars($phone); ?>" class="contact-row">
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_phone', 'tel:' . $phone)); ?>" class="contact-row">
                 <span class="contact-icon">&#128222;</span>
                 <span class="contact-value"><?php echo htmlspecialchars($phone); ?></span>
             </a>
             <?php endif; ?>
 
             <?php if ($mobile && $mobile !== $phone): ?>
-            <a href="tel:<?php echo htmlspecialchars($mobile); ?>" class="contact-row">
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_mobile', 'tel:' . $mobile)); ?>" class="contact-row">
                 <span class="contact-icon">&#128241;</span>
                 <span class="contact-value"><?php echo htmlspecialchars($mobile); ?></span>
             </a>
             <?php endif; ?>
 
             <?php if ($email): ?>
-            <a href="mailto:<?php echo htmlspecialchars($email); ?>" class="contact-row">
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_email', 'mailto:' . $email)); ?>" class="contact-row">
                 <span class="contact-icon">&#9993;</span>
                 <span class="contact-value"><?php echo htmlspecialchars($email); ?></span>
             </a>
             <?php endif; ?>
 
             <?php if ($website): ?>
-            <a href="<?php echo htmlspecialchars(strpos($website, 'http') === 0 ? $website : 'https://' . $website); ?>" class="contact-row" target="_blank" rel="noopener">
+            <?php $__webDest = strpos($website, 'http') === 0 ? $website : 'https://' . $website; ?>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_website', $__webDest)); ?>" class="contact-row" target="_blank" rel="noopener">
                 <span class="contact-icon">&#127760;</span>
                 <span class="contact-value"><?php echo htmlspecialchars($website); ?></span>
             </a>
             <?php endif; ?>
 
             <?php if ($address): ?>
-            <a href="https://maps.google.com/?q=<?php echo urlencode($address); ?>" class="contact-row" target="_blank" rel="noopener">
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_map', 'https://maps.google.com/?q=' . urlencode($address))); ?>" class="contact-row" target="_blank" rel="noopener">
                 <span class="contact-icon">&#128205;</span>
                 <span class="contact-value"><?php echo htmlspecialchars($address); ?></span>
             </a>
@@ -614,7 +631,7 @@ ob_end_clean();
         <!-- Save & Share -->
         <div class="bottom-buttons">
             <?php if ($email): ?>
-            <a href="<?php echo htmlspecialchars($vcfUrl); ?>" class="bottom-btn btn-save" download>Save Contact</a>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('save_contact', $vcfUrl)); ?>" class="bottom-btn btn-save" download>Save Contact</a>
             <?php endif; ?>
             <button class="bottom-btn btn-share" onclick="shareCard()">Share</button>
         </div>
