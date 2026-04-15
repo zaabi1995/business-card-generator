@@ -85,27 +85,27 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
 <div class="min-h-screen">
     <!-- Top Nav -->
-    <nav class="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
+    <nav class="bg-white/90 backdrop-blur-md border-b border-gray-200/80 shadow-sm fixed top-0 left-0 right-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
-                <div class="flex items-center gap-4">
-                    <a href="<?php echo getBasePath(); ?>" class="flex items-center gap-2">
+                <div class="flex items-center gap-3">
+                    <a href="<?php echo getBasePath(); ?>" class="flex items-center">
                         <img src="<?php echo getBasePath(); ?>assets/images/logo.svg" alt="Cardify" class="h-8 w-auto">
                     </a>
-                    <span class="text-gray-300">|</span>
-                    <span class="font-semibold text-gray-900"><?php echo sanitize($printShop['name']); ?></span>
+                    <span class="h-5 w-px bg-gray-200"></span>
+                    <span class="font-semibold text-gray-900 text-sm"><?php echo sanitize($printShop['name']); ?></span>
                     <?php if (!empty($printShop['is_verified'])): ?>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 ring-1 ring-blue-100">
                         <i class="fa-solid fa-circle-check"></i> Verified
                     </span>
                     <?php endif; ?>
                 </div>
-                <div class="flex items-center gap-4 text-sm">
-                    <a href="dashboard.php" class="text-blue-600 font-medium"><i class="fa-solid fa-chart-pie mr-1"></i>Dashboard</a>
-                    <a href="orders.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-box mr-1"></i>Orders</a>
-                    <a href="analytics.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-chart-line mr-1"></i>Analytics</a>
-                    <a href="credit-accounts.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-building-columns mr-1"></i>Credit</a>
-                    <a href="settings.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-cog"></i></a>
+                <div class="flex items-center gap-1 text-sm">
+                    <a href="dashboard.php" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-blue-700 bg-blue-50 font-semibold"><i class="fa-solid fa-chart-pie"></i>Dashboard</a>
+                    <a href="orders.php" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium transition-colors"><i class="fa-solid fa-box"></i>Orders</a>
+                    <a href="analytics.php" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium transition-colors"><i class="fa-solid fa-chart-line"></i>Analytics</a>
+                    <a href="credit-accounts.php" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium transition-colors"><i class="fa-solid fa-building-columns"></i>Credit</a>
+                    <a href="settings.php" class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors" aria-label="Settings"><i class="fa-solid fa-cog"></i></a>
                 </div>
             </div>
         </div>
@@ -141,52 +141,36 @@ require_once INCLUDES_DIR . '/ui-header.php';
         
         <!-- Stats -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div class="bg-white rounded-xl border border-gray-200 p-6">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <i class="fa-solid fa-box text-blue-600 text-xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-2xl font-bold text-gray-900"><?php echo $stats['total_orders']; ?></p>
-                        <p class="text-sm text-gray-500">Total Orders</p>
-                    </div>
+            <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm p-5 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">Total Orders</span>
+                    <span class="w-9 h-9 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center"><i class="fa-solid fa-box"></i></span>
                 </div>
+                <p class="text-3xl font-bold tracking-tight text-gray-900"><?php echo $stats['total_orders']; ?></p>
             </div>
-            
-            <div class="bg-white rounded-xl border border-gray-200 p-6">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-                        <i class="fa-solid fa-clock text-amber-600 text-xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-2xl font-bold text-gray-900"><?php echo $stats['pending_orders']; ?></p>
-                        <p class="text-sm text-gray-500">Pending</p>
-                    </div>
+
+            <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm p-5 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">Pending</span>
+                    <span class="w-9 h-9 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center"><i class="fa-solid fa-clock"></i></span>
                 </div>
+                <p class="text-3xl font-bold tracking-tight text-gray-900"><?php echo $stats['pending_orders']; ?></p>
             </div>
-            
-            <div class="bg-white rounded-xl border border-gray-200 p-6">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                        <i class="fa-solid fa-check-circle text-green-600 text-xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-2xl font-bold text-gray-900"><?php echo $stats['completed_orders']; ?></p>
-                        <p class="text-sm text-gray-500">Completed</p>
-                    </div>
+
+            <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm p-5 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">Completed</span>
+                    <span class="w-9 h-9 bg-green-50 text-green-600 rounded-lg flex items-center justify-center"><i class="fa-solid fa-check"></i></span>
                 </div>
+                <p class="text-3xl font-bold tracking-tight text-gray-900"><?php echo $stats['completed_orders']; ?></p>
             </div>
-            
-            <div class="bg-white rounded-xl border border-gray-200 p-6">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <i class="fa-solid fa-dollar-sign text-purple-600 text-xl"></i>
-                    </div>
-                    <div>
-                        <p class="text-2xl font-bold text-gray-900"><?php echo Currency::formatHtml($stats['total_revenue'], $printShop['currency'] ?? 'USD', 'lg'); ?></p>
-                        <p class="text-sm text-gray-500">Total Revenue</p>
-                    </div>
+
+            <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm p-5 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">Revenue</span>
+                    <span class="w-9 h-9 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center"><i class="fa-solid fa-dollar-sign"></i></span>
                 </div>
+                <p class="text-2xl font-bold tracking-tight text-gray-900"><?php echo Currency::formatHtml($stats['total_revenue'], $printShop['currency'] ?? 'USD', 'lg'); ?></p>
             </div>
         </div>
         

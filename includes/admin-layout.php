@@ -287,79 +287,88 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
         <div class="page-loader-brand"><?php echo $brandName; ?></div>
     </div>
     <!-- Navbar -->
-    <nav class="fixed z-30 w-full bg-white border-b border-gray-200">
-        <div class="py-3 px-3 lg:px-5 lg:pl-3">
+    <nav class="fixed z-30 w-full bg-white/80 backdrop-blur-md border-b border-gray-200/80 shadow-sm">
+        <div class="py-3 px-4 lg:px-6">
             <div class="flex justify-between items-center">
                 <div class="flex justify-start items-center">
                     <!-- Mobile menu button -->
-                    <button id="toggleSidebarMobile" type="button" class="p-2 mr-2 text-gray-600 rounded cursor-pointer lg:hidden hover:text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:ring-2 focus:ring-gray-100">
+                    <button id="toggleSidebarMobile" type="button" class="p-2 mr-2 text-gray-600 rounded-lg cursor-pointer lg:hidden hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors">
                         <svg id="toggleSidebarMobileHamburger" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
                         <svg id="toggleSidebarMobileClose" class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
                     </button>
-                    
+
                     <!-- Logo -->
-                    <?php 
+                    <?php
                     $logoUrl = (Auth::getCurrentRole() === 'super_admin') ? getBasePath() . 'admin/super/' : getAdminBasePath();
                     ?>
-                    <a href="<?php echo $logoUrl; ?>" class="flex mr-14">
-                        <img src="<?php echo assetUrl('images/logo.svg'); ?>" class="mr-3 h-8" alt="<?php echo $brandName; ?>">
+                    <a href="<?php echo $logoUrl; ?>" class="flex items-center mr-10 lg:mr-14">
+                        <img src="<?php echo assetUrl('images/logo.svg'); ?>" class="h-8 w-auto" alt="<?php echo $brandName; ?>">
                     </a>
-                    
+
                     <!-- Search (desktop) -->
                     <form action="#" method="GET" class="hidden lg:block lg:pl-2">
                         <label for="topbar-search" class="sr-only">Search</label>
-                        <div class="relative mt-1 lg:w-64">
+                        <div class="relative">
                             <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
-                                <i class="fa-solid fa-search w-5 h-5 text-gray-500"></i>
+                                <i class="fa-solid fa-search text-gray-400 text-sm"></i>
                             </div>
-                            <input type="text" id="topbar-search" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5" placeholder="Search">
+                            <input type="text" id="topbar-search" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-72 pl-10 pr-3 py-2 placeholder-gray-400 transition-shadow" placeholder="Search employees, orders, cards…">
                         </div>
                     </form>
                 </div>
-                
-                <div class="flex items-center">
+
+                <div class="flex items-center gap-1">
                     <!-- Notifications -->
-                    <button type="button" class="p-2 text-gray-500 rounded-lg hover:text-gray-900 hover:bg-gray-100">
+                    <button type="button" class="relative p-2 text-gray-500 rounded-lg hover:text-gray-900 hover:bg-gray-100 transition-colors">
                         <span class="sr-only">View notifications</span>
-                        <i class="fa-solid fa-bell w-6 h-6"></i>
+                        <i class="fa-solid fa-bell w-5 h-5"></i>
                     </button>
-                    
+
                     <!-- User dropdown -->
-                    <div class="flex items-center ml-3" x-data="{ open: false }">
-                        <button @click="open = !open" type="button" class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300">
+                    <div class="flex items-center ml-1" x-data="{ open: false }">
+                        <button @click="open = !open" type="button" class="flex items-center gap-2 text-sm rounded-full p-0.5 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition">
                             <span class="sr-only">Open user menu</span>
-                            <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium">
+                            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold shadow-sm">
                                 <?php echo $userInitials; ?>
                             </div>
                         </button>
-                        
+
                         <!-- Dropdown menu -->
                         <div x-show="open" @click.away="open = false" x-cloak
-                             class="absolute right-4 top-12 z-50 my-4 text-base list-none bg-white rounded divide-y divide-gray-100 shadow">
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             class="absolute right-4 top-14 z-50 w-56 text-base list-none bg-white rounded-xl divide-y divide-gray-100 shadow-lg ring-1 ring-black/5 overflow-hidden">
                             <div class="py-3 px-4">
-                                <p class="text-sm text-gray-900"><?php echo htmlspecialchars($userName); ?></p>
-                                <p class="text-sm font-medium text-gray-500 truncate"><?php echo htmlspecialchars($userEmail); ?></p>
+                                <p class="text-sm font-semibold text-gray-900 truncate"><?php echo htmlspecialchars($userName); ?></p>
+                                <p class="text-xs font-medium text-gray-500 truncate mt-0.5"><?php echo htmlspecialchars($userEmail); ?></p>
                             </div>
                             <ul class="py-1">
                                 <li>
-                                    <?php 
+                                    <?php
                                     $currentRole = Auth::getCurrentRole();
                                     $dropdownDashboardUrl = ($currentRole === 'super_admin') ? getBasePath() . 'admin/super/' : getAdminBasePath();
                                     ?>
-                                    <a href="<?php echo $dropdownDashboardUrl; ?>" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100">Dashboard</a>
+                                    <a href="<?php echo $dropdownDashboardUrl; ?>" class="flex items-center gap-3 py-2 px-4 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors">
+                                        <i class="fa-solid fa-gauge-high w-4 text-gray-400"></i>Dashboard
+                                    </a>
                                 </li>
                                 <li>
-                                    <?php 
+                                    <?php
                                     $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php';
                                     // Super admins get account settings, others get theme settings
-                                    $settingsUrl = ($currentRole === 'super_admin') 
-                                        ? getBasePath() . 'admin/super/settings.php' 
+                                    $settingsUrl = ($currentRole === 'super_admin')
+                                        ? getBasePath() . 'admin/super/settings.php'
                                         : getAdminBasePath() . 'theme' . $ext;
                                     ?>
-                                    <a href="<?php echo $settingsUrl; ?>" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+                                    <a href="<?php echo $settingsUrl; ?>" class="flex items-center gap-3 py-2 px-4 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors">
+                                        <i class="fa-solid fa-gear w-4 text-gray-400"></i>Settings
+                                    </a>
                                 </li>
                                 <li>
-                                    <a href="<?php echo $basePath; ?>logout.php" class="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100">Sign out</a>
+                                    <a href="<?php echo $basePath; ?>logout.php" class="flex items-center gap-3 py-2 px-4 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors">
+                                        <i class="fa-solid fa-right-from-bracket w-4 text-gray-400"></i>Sign out
+                                    </a>
                                 </li>
                             </ul>
                         </div>
@@ -373,35 +382,35 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     <aside id="sidebar" class="flex fixed top-0 left-0 z-20 flex-col flex-shrink-0 pt-16 w-64 h-full duration-75 lg:flex transition-width hidden" aria-label="Sidebar">
         <div class="flex relative flex-col flex-1 pt-0 min-h-0 bg-white border-r border-gray-200">
             <div class="flex overflow-y-auto flex-col flex-1 pt-5 pb-4">
-                <div class="flex-1 px-3 space-y-1 bg-white divide-y divide-gray-200">
-                    <ul class="pb-2 space-y-2">
+                <div class="flex-1 px-3 space-y-1 bg-white divide-y divide-gray-100">
+                    <ul class="pb-2 space-y-1">
                         <?php foreach ($nav['main'] as $item): ?>
                         <li>
-                            <a href="<?php echo $item['url']; ?>" 
-                               class="flex items-center p-2 text-base font-normal rounded-lg group <?php echo $currentPage === $item['key'] ? 'text-gray-900 bg-gray-100' : 'text-gray-900 hover:bg-gray-100'; ?>">
-                                <i class="<?php echo $item['icon']; ?> w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900 flex-shrink-0"></i>
+                            <a href="<?php echo $item['url']; ?>"
+                               class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg group transition-colors <?php echo $currentPage === $item['key'] ? 'text-blue-700 bg-blue-50 ring-1 ring-blue-100' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'; ?>">
+                                <i class="<?php echo $item['icon']; ?> w-5 h-5 transition-colors flex-shrink-0 <?php echo $currentPage === $item['key'] ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'; ?>"></i>
                                 <span class="ml-3 flex-1"><?php echo $item['name']; ?></span>
                                 <?php if ($item['key'] === 'requests' && $pendingRequestsCount > 0): ?>
-                                <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full"><?php echo $pendingRequestsCount > 99 ? '99+' : $pendingRequestsCount; ?></span>
+                                <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-[11px] font-semibold text-white bg-red-500 rounded-full"><?php echo $pendingRequestsCount > 99 ? '99+' : $pendingRequestsCount; ?></span>
                                 <?php endif; ?>
                             </a>
                         </li>
                         <?php endforeach; ?>
-                        
+
                         <!-- Settings dropdown -->
                         <?php if (!empty($nav['settings'])): ?>
-                        <li x-data="{ settingsOpen: <?php echo in_array($currentPage, array_column($nav['settings'], 'key')) ? 'true' : 'false'; ?> }">
-                            <button @click="settingsOpen = !settingsOpen" type="button" 
-                                    class="flex items-center p-2 w-full text-base font-normal text-gray-900 rounded-lg transition duration-75 group hover:bg-gray-100">
-                                <i class="fa-solid fa-cog w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900 flex-shrink-0"></i>
+                        <li x-data="{ settingsOpen: <?php echo in_array($currentPage, array_column($nav['settings'], 'key')) ? 'true' : 'false'; ?> }" class="pt-1">
+                            <button @click="settingsOpen = !settingsOpen" type="button"
+                                    class="flex items-center px-3 py-2.5 w-full text-sm font-medium text-gray-700 rounded-lg transition-colors group hover:bg-gray-50 hover:text-gray-900">
+                                <i class="fa-solid fa-cog w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0"></i>
                                 <span class="flex-1 ml-3 text-left whitespace-nowrap">Settings</span>
-                                <i class="fa-solid fa-chevron-down w-6 h-6 transition-transform" :class="settingsOpen ? 'rotate-180' : ''"></i>
+                                <i class="fa-solid fa-chevron-down text-xs transition-transform text-gray-400" :class="settingsOpen ? 'rotate-180' : ''"></i>
                             </button>
-                            <ul x-show="settingsOpen" x-cloak class="py-2 space-y-2">
+                            <ul x-show="settingsOpen" x-cloak class="py-1 space-y-1">
                                 <?php foreach ($nav['settings'] as $item): ?>
                                 <li>
-                                    <a href="<?php echo $item['url']; ?>" 
-                                       class="flex items-center p-2 pl-11 text-base font-normal rounded-lg group <?php echo $currentPage === $item['key'] ? 'text-gray-900 bg-gray-100' : 'text-gray-900 hover:bg-gray-100'; ?>">
+                                    <a href="<?php echo $item['url']; ?>"
+                                       class="flex items-center px-3 py-2 pl-11 text-sm font-medium rounded-lg transition-colors <?php echo $currentPage === $item['key'] ? 'text-blue-700 bg-blue-50' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'; ?>">
                                         <?php echo $item['name']; ?>
                                     </a>
                                 </li>
@@ -410,15 +419,15 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
                         </li>
                         <?php endif; ?>
                     </ul>
-                    
+
                     <!-- Bottom links -->
-                    <div class="pt-2 space-y-2">
-                        <a href="<?php echo $basePath; ?>" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 hover:bg-gray-100 group">
-                            <i class="fa-solid fa-house w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900 flex-shrink-0"></i>
+                    <div class="pt-3 space-y-1">
+                        <a href="<?php echo $basePath; ?>" class="flex items-center px-3 py-2.5 text-sm font-medium text-gray-700 rounded-lg transition-colors hover:bg-gray-50 hover:text-gray-900 group">
+                            <i class="fa-solid fa-house w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0"></i>
                             <span class="ml-3">Back to Website</span>
                         </a>
-                        <a href="<?php echo $basePath; ?>logout.php" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 hover:bg-gray-100 group">
-                            <i class="fa-solid fa-right-from-bracket w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900 flex-shrink-0"></i>
+                        <a href="<?php echo $basePath; ?>logout.php" class="flex items-center px-3 py-2.5 text-sm font-medium text-gray-700 rounded-lg transition-colors hover:bg-red-50 hover:text-red-600 group">
+                            <i class="fa-solid fa-right-from-bracket w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors flex-shrink-0"></i>
                             <span class="ml-3">Sign Out</span>
                         </a>
                     </div>
@@ -426,17 +435,17 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
             </div>
         </div>
     </aside>
-    
+
     <!-- Sidebar backdrop -->
-    <div class="hidden fixed inset-0 z-10 bg-gray-900/50" id="sidebarBackdrop"></div>
-    
+    <div class="hidden fixed inset-0 z-10 bg-gray-900/50 backdrop-blur-sm" id="sidebarBackdrop"></div>
+
     <!-- Main content -->
     <div class="overflow-y-auto lg:ml-64 pt-16">
         <main>
-            <div class="px-4 pt-6">
+            <div class="px-4 sm:px-6 lg:px-8 pt-6">
                 <!-- Page title -->
-                <div class="mb-4">
-                    <h1 class="text-xl font-semibold text-gray-900 sm:text-2xl"><?php echo htmlspecialchars($pageTitle); ?></h1>
+                <div class="mb-6 pb-4 border-b border-gray-200/80">
+                    <h1 class="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl"><?php echo htmlspecialchars($pageTitle); ?></h1>
                 </div>
 <?php
 }
@@ -447,10 +456,9 @@ function adminFooter() {
         </main>
         
         <!-- Footer -->
-        <footer class="p-4 my-6 mx-4 bg-white rounded-lg shadow md:flex md:items-center md:justify-between md:p-6">
-            <span class="text-sm text-gray-500 sm:text-center">
-                &copy; <?php echo date('Y'); ?> <a href="#" class="hover:underline"><?php echo defined('SITE_NAME') ? SITE_NAME : 'Cardify'; ?></a>. All rights reserved.
-            </span>
+        <footer class="mt-10 px-4 sm:px-6 lg:px-8 py-6 border-t border-gray-200/80 flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-xs text-gray-500">
+            <span>&copy; <?php echo date('Y'); ?> <a href="#" class="font-medium text-gray-700 hover:text-blue-600 transition-colors"><?php echo defined('SITE_NAME') ? SITE_NAME : 'Cardify'; ?></a>. All rights reserved.</span>
+            <span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-green-500"></i> Secure workspace</span>
         </footer>
     </div>
     

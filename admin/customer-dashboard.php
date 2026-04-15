@@ -183,55 +183,39 @@ adminHeader('My Dashboard', 'customer-dashboard');
 
 <!-- Stats -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-    <div class="bg-white rounded-xl border border-gray-200 p-4">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                <i class="fa-solid fa-box text-blue-600"></i>
-            </div>
-            <div>
-                <p class="text-2xl font-bold text-gray-900"><?= number_format($orderCount); ?></p>
-                <p class="text-xs text-gray-500">Total Orders</p>
-            </div>
+    <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm p-5 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-2.5">
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">Total Orders</span>
+            <span class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><i class="fa-solid fa-box"></i></span>
         </div>
+        <p class="text-3xl font-bold tracking-tight text-gray-900"><?= number_format($orderCount); ?></p>
     </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-4">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                <i class="fa-solid fa-coins text-green-600"></i>
-            </div>
-            <div>
-                <p class="text-xl font-bold text-gray-900"><?= Currency::formatHtml($totalSpend, $currency, 'sm'); ?></p>
-                <p class="text-xs text-gray-500">Total Spend</p>
-            </div>
+    <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm p-5 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-2.5">
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">Total Spend</span>
+            <span class="w-9 h-9 rounded-lg bg-green-50 text-green-600 flex items-center justify-center"><i class="fa-solid fa-coins"></i></span>
         </div>
+        <p class="text-2xl font-bold tracking-tight text-gray-900"><?= Currency::formatHtml($totalSpend, $currency, 'lg'); ?></p>
     </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-4">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                <i class="fa-solid fa-id-card text-purple-600"></i>
-            </div>
-            <div>
-                <p class="text-2xl font-bold text-gray-900"><?= number_format($designCount); ?></p>
-                <p class="text-xs text-gray-500">Generated Cards</p>
-            </div>
+    <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm p-5 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-2.5">
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">Generated Cards</span>
+            <span class="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center"><i class="fa-solid fa-id-card"></i></span>
         </div>
+        <p class="text-3xl font-bold tracking-tight text-gray-900"><?= number_format($designCount); ?></p>
     </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-4">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                <i class="fa-solid fa-users text-amber-600"></i>
-            </div>
-            <div>
-                <p class="text-2xl font-bold text-gray-900"><?= number_format($employeeCount); ?></p>
-                <p class="text-xs text-gray-500">Employees</p>
-            </div>
+    <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm p-5 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-2.5">
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">Employees</span>
+            <span class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><i class="fa-solid fa-users"></i></span>
         </div>
+        <p class="text-3xl font-bold tracking-tight text-gray-900"><?= number_format($employeeCount); ?></p>
     </div>
 </div>
 
 <div class="grid lg:grid-cols-2 gap-6">
     <!-- Recent Orders -->
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
         <div class="p-4 border-b border-gray-100 flex items-center justify-between">
             <h3 class="font-semibold text-gray-900">Recent Orders</h3>
             <a href="?tab=orders" class="text-sm text-blue-600 hover:text-blue-800">View all</a>
@@ -274,7 +258,7 @@ adminHeader('My Dashboard', 'customer-dashboard');
     </div>
 
     <!-- Recent Designs -->
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
         <div class="p-4 border-b border-gray-100 flex items-center justify-between">
             <h3 class="font-semibold text-gray-900">Recent Card Designs</h3>
             <a href="?tab=designs" class="text-sm text-blue-600 hover:text-blue-800">View all</a>
@@ -312,7 +296,7 @@ adminHeader('My Dashboard', 'customer-dashboard');
 <!-- ═══════════════════════════════════════════════════════ ORDER HISTORY TAB -->
 <?php elseif ($tab === 'orders'): ?>
 
-<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+<div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
     <div class="p-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
             <h3 class="font-semibold text-gray-900">Order History</h3>
@@ -493,7 +477,7 @@ adminHeader('My Dashboard', 'customer-dashboard');
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         <?php foreach ($templates as $tpl): ?>
-        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-blue-300 hover:shadow-sm transition-all group">
+        <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden hover:border-blue-300 hover:shadow-sm transition-all group">
             <?php if (!empty($tpl['background_image_path'])): ?>
             <div class="aspect-video bg-gray-100 overflow-hidden">
                 <img src="<?= imageUrl($tpl['background_image_path']); ?>" alt="<?= sanitize($tpl['name']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
@@ -519,7 +503,7 @@ adminHeader('My Dashboard', 'customer-dashboard');
 <?php endif; ?>
 
 <!-- Generated cards -->
-<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+<div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
     <div class="p-4 border-b border-gray-100 flex items-center justify-between">
         <div>
             <h3 class="font-semibold text-gray-900">Generated Cards</h3>
@@ -588,7 +572,7 @@ adminHeader('My Dashboard', 'customer-dashboard');
 <div class="max-w-2xl space-y-6">
 
     <!-- Company Info -->
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
         <div class="p-4 border-b border-gray-100">
             <h3 class="font-semibold text-gray-900">Company Information</h3>
             <p class="text-sm text-gray-500">Basic details about your organisation</p>
@@ -650,7 +634,7 @@ adminHeader('My Dashboard', 'customer-dashboard');
     </div>
 
     <!-- Logo & Branding -->
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
         <div class="p-4 border-b border-gray-100 flex items-center justify-between">
             <div>
                 <h3 class="font-semibold text-gray-900">Logo & Branding</h3>
@@ -690,7 +674,7 @@ adminHeader('My Dashboard', 'customer-dashboard');
     </div>
 
     <!-- Account Info (read-only) -->
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
         <div class="p-4 border-b border-gray-100">
             <h3 class="font-semibold text-gray-900">Account Details</h3>
         </div>
