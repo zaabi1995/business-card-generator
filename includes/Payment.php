@@ -114,7 +114,15 @@ class Payment {
             'first_name' => $billingData['first_name'] ?? $nameParts[0],
             'last_name' => $billingData['last_name'] ?? ($nameParts[1] ?? $nameParts[0]),
             'phone_number' => $billingData['phone_number'] ?? $billingData['phone'] ?? ($company['phone'] ?? '+96800000000'),
-            'email' => $billingData['email'] ?? ($company['billing_email'] ?? $company['admin_email'] ?? 'customer@cardify.om'),
+            'email' => $billingData['email'] ?? ($company['billing_email'] ?? $company['admin_email'] ?? (
+                // Paymob risk rules flag repeated emails. Fall back to a unique
+                // per-company pseudo-email derived from company name + id.
+                (function() use ($company, $companyId) {
+                    $slug = strtolower(preg_replace('/[^a-z0-9]/i', '', $company['name'] ?? ''));
+                    if ($slug === '') $slug = 'company' . $companyId;
+                    return substr($slug, 0, 40) . '@cardify.om';
+                })()
+            )),
             'apartment' => 'N/A',
             'floor' => 'N/A',
             'street' => $billingData['street'] ?? ($company['address'] ?? 'N/A'),
