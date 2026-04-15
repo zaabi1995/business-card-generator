@@ -187,34 +187,15 @@ try {
     $latestPosts = [];
 }
 
-// Organization + WebSite JSON-LD for homepage
-$orgLd = [
-    '@context' => 'https://schema.org',
-    '@type' => 'Organization',
-    'name' => 'Cardify',
-    'url' => 'https://cardify.om/',
-    'logo' => 'https://cardify.om/assets/images/logo.svg',
-    'description' => 'Digital and printed business cards for teams in Oman.',
-    'sameAs' => ['https://www.instagram.com/cardify.om/'],
-    'address' => [
-        '@type' => 'PostalAddress',
-        'addressCountry' => 'OM',
-        'addressLocality' => 'Muscat',
-    ],
-];
+// WebSite JSON-LD for homepage (Organization + SoftwareApp already in body of index.php)
 $siteLd = [
     '@context' => 'https://schema.org',
     '@type' => 'WebSite',
     'name' => 'Cardify',
     'url' => 'https://cardify.om/',
-    'potentialAction' => [
-        '@type' => 'SearchAction',
-        'target' => 'https://cardify.om/blog?q={search_term_string}',
-        'query-input' => 'required name=search_term_string',
-    ],
+    'publisher' => ['@type' => 'Organization', 'name' => 'Cardify'],
 ];
-$homeJsonLd = '<script type="application/ld+json">' . json_encode($orgLd, JSON_UNESCAPED_SLASHES) . '</script>'
-    . '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES) . '</script>';
+$homeJsonLd = '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES) . '</script>';
 
 $extraHead = $homeJsonLd . '<style>
     .hero-gradient { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #fffbeb 100%); }

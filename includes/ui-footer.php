@@ -51,8 +51,10 @@ if ($currentPage !== 'index'):
 <?php endif; ?>
 
 <?php
-// Breadcrumb JSON-LD (all pages except homepage)
-if ($currentPage !== 'index') {
+// Breadcrumb JSON-LD (all pages except homepage).
+// Blog single-post pages emit their own breadcrumb in blog.php (with post title),
+// so skip them here to avoid duplicate / truncated breadcrumbs.
+if ($currentPage !== 'index' && !($currentPage === 'blog' && isset($singlePost))) {
     $breadcrumbs = [['name' => 'Home', 'url' => 'https://cardify.om/']];
 
     $pageTitles = [
@@ -63,9 +65,6 @@ if ($currentPage !== 'index') {
 
     if (isset($pageTitles[$currentPage])) {
         $breadcrumbs[] = ['name' => $pageTitles[$currentPage], 'url' => 'https://cardify.om/' . $currentPage];
-    } elseif ($currentPage === 'blog' && isset($singlePost)) {
-        $breadcrumbs[] = ['name' => 'Blog', 'url' => 'https://cardify.om/blog'];
-        $breadcrumbs[] = ['name' => $singlePost['title'], 'url' => 'https://cardify.om/blog/' . $singlePost['slug']];
     }
 
     if (count($breadcrumbs) > 1) {
