@@ -205,10 +205,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <!-- Left Content -->
                 <div class="lg:col-span-6 text-center lg:text-left">
                     <!-- Badge -->
-                    <div class="inline-flex items-center gap-2 py-1.5 px-4 mb-6 text-sm bg-gradient-to-r from-red-50 to-green-50 border border-gray-200 rounded-full">
-                        <span class="text-lg">🇴🇲</span>
-                        <span class="font-medium text-gray-700">Built for Omani Companies</span>
-                        <span class="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">100-2000 Employees</span>
+                    <div class="inline-flex items-center gap-2 py-1 pl-1 pr-4 mb-6 text-sm bg-white border border-gray-200 rounded-full shadow-sm">
+                        <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 font-semibold text-xs px-3 py-1 rounded-full"><span>🇴🇲</span> Oman</span>
+                        <span class="font-medium text-gray-700">Built for teams of 100–2000</span>
                     </div>
 
                     <!-- Headline -->
@@ -370,15 +369,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <section id="features" class="py-16 lg:py-24 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
-            <div class="max-w-3xl mb-16 text-center lg:text-left">
-                <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full uppercase tracking-wide">
-                    <i class="fa-solid fa-sparkles"></i>
-                    Powerful Features
-                </span>
-                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
-                    Everything you need to manage business cards at scale
+            <div class="mx-auto max-w-2xl text-center mb-16">
+                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-3">Powerful features</p>
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4">
+                    Everything you need to manage cards at scale
                 </h2>
-                <p class="text-lg text-gray-600">
+                <p class="text-lg leading-relaxed text-gray-600">
                     From design to print, Cardify provides all the tools your team needs to create professional business cards effortlessly.
                 </p>
             </div>
@@ -460,11 +456,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="max-w-2xl mx-auto text-center mb-16">
-                <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-green-700 bg-green-100 rounded-full uppercase tracking-wide">
-                    <i class="fa-solid fa-rocket"></i>
-                    Quick Setup
-                </span>
-                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
+                <p class="text-sm font-semibold uppercase tracking-wider text-green-600 mb-3">Quick setup</p>
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4">
                     Get started in three simple steps
                 </h2>
                 <p class="text-lg text-gray-600">
@@ -585,7 +578,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full uppercase tracking-wide">
                     Simple Pricing
                 </span>
-                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">Plans for every team size</h2>
+                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-3">Simple pricing</p>
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4">Plans for every team size</h2>
                 <p class="text-lg text-gray-600 max-w-2xl mx-auto">Start free, upgrade when you need more. All prices in Omani Rial.</p>
 
                 <!-- Billing Toggle -->
@@ -780,12 +774,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="max-w-2xl mx-auto text-center mb-16">
-                <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-pink-700 bg-pink-100 rounded-full uppercase tracking-wide">
-                    <span>🇴🇲</span>
-                    Trusted in Oman
-                </span>
-                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
-                    Loved by Omani Businesses
+                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-3">Trusted in Oman</p>
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4">
+                    Loved by Omani businesses
                 </h2>
                 <p class="text-lg text-gray-600">
                     See what local companies have to say about Cardify.
@@ -795,7 +786,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <!-- Testimonials Grid -->
             <div class="grid lg:grid-cols-2 gap-8">
                 <!-- Testimonial 1 -->
-                <figure class="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
+                <figure class="bg-white rounded-2xl p-8 shadow-sm ring-1 ring-gray-200/70 hover:ring-blue-200 hover:shadow-lg transition-all">
+                    <div class="mb-5 text-blue-500 text-2xl leading-none"><i class="fa-solid fa-quote-left"></i></div>
                     <blockquote class="mb-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">"Perfect for our growing team"</h3>
                         <p class="text-gray-600 leading-relaxed">
@@ -814,7 +806,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </figure>
 
                 <!-- Testimonial 2 -->
-                <figure class="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
+                <figure class="bg-white rounded-2xl p-8 shadow-sm ring-1 ring-gray-200/70 hover:ring-blue-200 hover:shadow-lg transition-all">
+                    <div class="mb-5 text-blue-500 text-2xl leading-none"><i class="fa-solid fa-quote-left"></i></div>
                     <blockquote class="mb-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">"Finally, cards that represent our brand"</h3>
                         <p class="text-gray-600 leading-relaxed">
@@ -833,7 +826,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </figure>
 
                 <!-- Testimonial 3 -->
-                <figure class="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
+                <figure class="bg-white rounded-2xl p-8 shadow-sm ring-1 ring-gray-200/70 hover:ring-blue-200 hover:shadow-lg transition-all">
+                    <div class="mb-5 text-blue-500 text-2xl leading-none"><i class="fa-solid fa-quote-left"></i></div>
                     <blockquote class="mb-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">"Free and feature-rich — unbelievable"</h3>
                         <p class="text-gray-600 leading-relaxed">
@@ -852,7 +846,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </figure>
 
                 <!-- Testimonial 4 -->
-                <figure class="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
+                <figure class="bg-white rounded-2xl p-8 shadow-sm ring-1 ring-gray-200/70 hover:ring-blue-200 hover:shadow-lg transition-all">
+                    <div class="mb-5 text-blue-500 text-2xl leading-none"><i class="fa-solid fa-quote-left"></i></div>
                     <blockquote class="mb-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">"The employee portal is a game-changer"</h3>
                         <p class="text-gray-600 leading-relaxed">
