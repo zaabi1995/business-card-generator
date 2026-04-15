@@ -117,6 +117,27 @@ if (!defined('MAIL_ENCRYPTION')) define('MAIL_ENCRYPTION', 'tls'); // 'tls', 'ss
 if (!defined('MAIL_FROM_EMAIL')) define('MAIL_FROM_EMAIL', ''); // From email (defaults to username)
 if (!defined('MAIL_FROM_NAME')) define('MAIL_FROM_NAME', 'Cardify'); // From name
 
+// Apple Wallet Pass Configuration
+// Requires: Apple Developer Program membership ($99/yr), Pass Type ID + cert,
+// WWDR G4 intermediate cert. Full setup guide:
+//   docs/superpowers/plans/2026-04-16-wallet-passes.md
+if (!defined('APPLE_WALLET_ENABLED'))       define('APPLE_WALLET_ENABLED', false);
+if (!defined('APPLE_WALLET_CERT_PATH'))     define('APPLE_WALLET_CERT_PATH', '');     // PEM w/ cert + private key (from .p12)
+if (!defined('APPLE_WALLET_CERT_PASSWORD')) define('APPLE_WALLET_CERT_PASSWORD', ''); // password used when exporting the .p12
+if (!defined('APPLE_WALLET_WWDR_PATH'))     define('APPLE_WALLET_WWDR_PATH', '');     // Apple WWDR G4 intermediate (PEM)
+if (!defined('APPLE_WALLET_PASS_TYPE_ID'))  define('APPLE_WALLET_PASS_TYPE_ID', '');  // e.g. pass.om.cardify.businesscard
+if (!defined('APPLE_WALLET_TEAM_ID'))       define('APPLE_WALLET_TEAM_ID', '');       // 10-char Apple Team ID
+if (!defined('APPLE_WALLET_ORG_NAME'))      define('APPLE_WALLET_ORG_NAME', 'Cardify');
+
+// Google Wallet Pass Configuration
+// Requires: GCP project w/ Wallet API enabled, service account JSON, Issuer ID
+// from pay.google.com/business/console. Full setup guide:
+//   docs/superpowers/plans/2026-04-16-wallet-passes.md
+if (!defined('GOOGLE_WALLET_ENABLED'))              define('GOOGLE_WALLET_ENABLED', false);
+if (!defined('GOOGLE_WALLET_SERVICE_ACCOUNT_JSON')) define('GOOGLE_WALLET_SERVICE_ACCOUNT_JSON', ''); // path to service account key JSON
+if (!defined('GOOGLE_WALLET_ISSUER_ID'))            define('GOOGLE_WALLET_ISSUER_ID', '');            // 10-16 digit issuer ID
+if (!defined('GOOGLE_WALLET_CLASS_ID'))             define('GOOGLE_WALLET_CLASS_ID', 'cardify_business_card_v1'); // arbitrary class suffix
+
 // Include required files
 require_once INCLUDES_DIR . '/Database.php';
 require_once INCLUDES_DIR . '/functions.php';
