@@ -7,6 +7,10 @@
 if (!class_exists('Auth')) {
     require_once __DIR__ . '/Auth.php';
 }
+// Impersonation helper (renders "Login as" banner when active)
+if (!class_exists('Impersonation')) {
+    require_once __DIR__ . '/Impersonation.php';
+}
 
 /**
  * Get the admin base path - company-specific or global
@@ -279,7 +283,8 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
         }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50"<?php echo Impersonation::isActive() ? ' data-impersonating="true"' : ''; ?>>
+    <?php Impersonation::renderBanner(); ?>
     <!-- Page Loader (auto-hides via CSS after 1s even without JS) -->
     <div class="page-loader" id="pageLoader">
         <img src="<?php echo $basePath; ?>assets/images/cardify-loader.svg" alt="Loading" width="100" height="100" onerror="this.style.display='none'">

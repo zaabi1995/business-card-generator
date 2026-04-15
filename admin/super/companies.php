@@ -270,7 +270,21 @@ adminHeader('Companies Management', 'companies');
                                class="text-purple-600 hover:text-purple-800" title="Visit Portal">
                                 <i class="fa-solid fa-external-link"></i>
                             </a>
-                            <button onclick="confirmDelete(<?php echo $company['id']; ?>, '<?php echo sanitize($company['name']); ?>')" 
+                            <?php if ($company['status'] === 'active'): ?>
+                            <form method="POST"
+                                  action="<?php echo getBasePath(); ?>admin/impersonate.php?action=start"
+                                  class="inline m-0"
+                                  onsubmit="return confirm('Log in as <?php echo sanitize($company['name']); ?>? You will see Cardify as this company admin. The action is logged to the audit trail.');">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generateCSRFToken()); ?>">
+                                <input type="hidden" name="company_id" value="<?php echo htmlspecialchars($company['id']); ?>">
+                                <button type="submit"
+                                        class="text-amber-600 hover:text-amber-800"
+                                        title="Login as this company admin">
+                                    <i class="fa-solid fa-user-secret"></i>
+                                </button>
+                            </form>
+                            <?php endif; ?>
+                            <button onclick="confirmDelete(<?php echo $company['id']; ?>, '<?php echo sanitize($company['name']); ?>')"
                                     class="text-red-600 hover:text-red-800" title="Delete">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
