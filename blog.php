@@ -36,6 +36,18 @@ if ($db->tableExists('blog_posts')) {
             if (!empty($singlePost['featured_image'])) {
                 $ogImage = 'https://cardify.om/' . ltrim($singlePost['featured_image'], '/');
             }
+
+            // Conditional crawl support: respect If-Modified-Since from Googlebot
+            $lastMod = strtotime($singlePost['updated_at'] ?? $singlePost['published_at'] ?? $singlePost['created_at']);
+            if ($lastMod) {
+                $lastModHttp = gmdate('D, d M Y H:i:s \G\M\T', $lastMod);
+                header('Last-Modified: ' . $lastModHttp);
+                $ifModSince = $_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? '';
+                if ($ifModSince && strtotime($ifModSince) >= $lastMod) {
+                    header('HTTP/1.1 304 Not Modified');
+                    exit;
+                }
+            }
         } else {
             // Unknown slug — return proper 404 so Google doesn't index a fallback listing
             http_response_code(404);
