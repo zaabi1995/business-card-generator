@@ -14,6 +14,7 @@ set_error_handler(function($severity, $message, $file, $line) {
 try {
     require_once __DIR__ . '/config.php';
     require_once INCLUDES_DIR . '/QRTracker.php';
+    require_once INCLUDES_DIR . '/CardSections.php';
 
     $companySlug = trim($_GET['company_slug'] ?? '');
     $employeeId = trim($_GET['employee_id'] ?? '');
@@ -105,6 +106,13 @@ try {
 
     // Logo path
     $logoPath = ($theme && !empty($theme['logo_path'])) ? $theme['logo_path'] : '';
+
+    // Public card sections
+    $sectionMaster = CardSections::loadMaster($employee['id'], $company['id']);
+    $sectionServices = !empty($sectionMaster['services_enabled']) ? CardSections::loadServices($employee['id']) : [];
+    $sectionGallery = !empty($sectionMaster['gallery_enabled']) ? CardSections::loadGallery($employee['id']) : [];
+    $sectionTestimonials = !empty($sectionMaster['testimonials_enabled']) ? CardSections::loadTestimonials($employee['id']) : [];
+    $sectionOrder = array_values(array_filter(array_map('trim', explode(',', $sectionMaster['section_order'] ?? implode(',', CardSections::SECTION_KEYS)))));
 
 } catch (Throwable $e) {
     while (ob_get_level()) { ob_end_clean(); }
@@ -431,6 +439,37 @@ ob_end_clean();
             opacity: 1;
             transform: translateX(-50%) translateY(0);
         }
+
+        /* Public Card Sections */
+        .card-section { max-width: 400px; margin: 24px auto 0; padding: 20px; border-radius: 14px;
+            <?php if ($isDarkPage): ?>background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);<?php else: ?>background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.06);<?php endif; ?>
+        }
+        .card-section h3 { font-size: 13px; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 700; margin-bottom: 12px; color: <?php echo htmlspecialchars($accentColor); ?>; }
+        .section-bio { font-size: 14px; line-height: 1.6; <?php echo $isDarkPage ? 'color:#ccc;' : 'color:#333;'; ?> }
+        .service-row { display: flex; gap: 12px; padding: 10px 0; <?php echo $isDarkPage ? 'border-bottom: 1px solid rgba(255,255,255,0.06);' : 'border-bottom: 1px solid #f0f0f0;'; ?> }
+        .service-row:last-child { border-bottom: none; }
+        .service-icon { width: 36px; height: 36px; flex-shrink: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: <?php echo htmlspecialchars($accentColor); ?>22; color: <?php echo htmlspecialchars($accentColor); ?>; font-size: 16px; }
+        .service-body .service-title { font-size: 14px; font-weight: 600; <?php echo $isDarkPage ? 'color:#eee;' : 'color:#1a1a2e;'; ?> }
+        .service-body .service-desc  { font-size: 12px; <?php echo $isDarkPage ? 'color:#888;' : 'color:#666;'; ?> margin-top: 2px; line-height: 1.45; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .gallery-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; cursor: zoom-in; }
+        .testimonial-item { padding: 12px 0; <?php echo $isDarkPage ? 'border-bottom: 1px solid rgba(255,255,255,0.06);' : 'border-bottom: 1px solid #f0f0f0;'; ?> }
+        .testimonial-item:last-child { border-bottom: none; }
+        .testimonial-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+        .testimonial-head img, .testimonial-head .ph-placeholder { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: rgba(127,127,127,0.15); display: flex; align-items: center; justify-content: center; color: #888; font-size: 14px; }
+        .testimonial-name { font-size: 13px; font-weight: 600; <?php echo $isDarkPage ? 'color:#eee;' : 'color:#1a1a2e;'; ?> }
+        .testimonial-quote { font-size: 13px; font-style: italic; line-height: 1.55; <?php echo $isDarkPage ? 'color:#bbb;' : 'color:#555;'; ?> }
+        .lead-form label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; <?php echo $isDarkPage ? 'color:#bbb;' : 'color:#555;'; ?> }
+        .lead-form input, .lead-form textarea { width: 100%; padding: 10px 12px; border-radius: 8px; font-size: 14px; margin-bottom: 10px; font-family: inherit; box-sizing: border-box;
+            <?php if ($isDarkPage): ?>background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #eee;<?php else: ?>background: #f7f7f9; border: 1px solid #e5e7eb; color: #1a1a2e;<?php endif; ?>
+        }
+        .lead-form input:focus, .lead-form textarea:focus { outline: none; border-color: <?php echo htmlspecialchars($accentColor); ?>; }
+        .lead-form textarea { resize: vertical; min-height: 80px; }
+        .lead-form button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: <?php echo htmlspecialchars($accentColor); ?>; color: white; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .lead-form button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .lead-form .hp { position: absolute; left: -9999px; }
+        .lead-success { text-align: center; padding: 20px; font-size: 14px; color: <?php echo htmlspecialchars($accentColor); ?>; }
+        .lead-error { color: #ef4444; font-size: 13px; margin-bottom: 8px; }
     </style>
 </head>
 <body>
@@ -537,6 +576,72 @@ ob_end_clean();
             <button class="bottom-btn btn-share" onclick="shareCard()">Share</button>
         </div>
 
+        <!-- Public Card Sections -->
+        <?php foreach ($sectionOrder as $__sec): ?>
+            <?php if ($__sec === 'bio' && !empty($sectionMaster['bio_enabled']) && !empty($sectionMaster['bio_text'])): ?>
+                <div class="card-section">
+                    <h3>About</h3>
+                    <div class="section-bio"><?php echo CardSections::renderBioHtml($sectionMaster['bio_text']); ?></div>
+                </div>
+            <?php elseif ($__sec === 'services' && !empty($sectionMaster['services_enabled']) && !empty($sectionServices)): ?>
+                <div class="card-section">
+                    <h3>Services</h3>
+                    <?php foreach ($sectionServices as $svc): ?>
+                        <div class="service-row">
+                            <div class="service-icon"><i class="<?php echo htmlspecialchars($svc['icon']); ?>"></i></div>
+                            <div class="service-body">
+                                <div class="service-title"><?php echo htmlspecialchars($svc['title']); ?></div>
+                                <?php if (!empty($svc['description'])): ?>
+                                <div class="service-desc"><?php echo nl2br(htmlspecialchars($svc['description'])); ?></div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php elseif ($__sec === 'gallery' && !empty($sectionMaster['gallery_enabled']) && !empty($sectionGallery)): ?>
+                <div class="card-section">
+                    <h3>Gallery</h3>
+                    <div class="gallery-grid">
+                        <?php foreach ($sectionGallery as $img): ?>
+                            <img src="<?php echo htmlspecialchars($img['file_path']); ?>" alt="<?php echo htmlspecialchars($img['caption'] ?? ''); ?>" loading="lazy" onclick="window.open(this.src,'_blank')">
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php elseif ($__sec === 'testimonials' && !empty($sectionMaster['testimonials_enabled']) && !empty($sectionTestimonials)): ?>
+                <div class="card-section">
+                    <h3>Testimonials</h3>
+                    <?php foreach ($sectionTestimonials as $t): ?>
+                        <div class="testimonial-item">
+                            <div class="testimonial-head">
+                                <?php if (!empty($t['photo_path'])): ?>
+                                <img src="<?php echo htmlspecialchars($t['photo_path']); ?>" alt="<?php echo htmlspecialchars($t['name']); ?>">
+                                <?php else: ?>
+                                <span class="ph-placeholder">&#128100;</span>
+                                <?php endif; ?>
+                                <div class="testimonial-name"><?php echo htmlspecialchars($t['name']); ?></div>
+                            </div>
+                            <div class="testimonial-quote">&ldquo;<?php echo nl2br(htmlspecialchars($t['quote'])); ?>&rdquo;</div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php elseif ($__sec === 'lead_form' && !empty($sectionMaster['lead_form_enabled'])): ?>
+                <div class="card-section">
+                    <h3>Get in Touch</h3>
+                    <form class="lead-form" id="leadForm" autocomplete="off">
+                        <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee['id']); ?>">
+                        <div class="hp"><label>Website<input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
+                        <div class="lead-error" id="leadError" style="display:none;"></div>
+                        <label>Your name<input type="text" name="name" required maxlength="255"></label>
+                        <label>Email<input type="email" name="email" maxlength="255"></label>
+                        <label>Phone<input type="tel" name="phone" maxlength="50"></label>
+                        <label>Message<textarea name="message" maxlength="4000"></textarea></label>
+                        <button type="submit" id="leadSubmit">Send</button>
+                    </form>
+                    <div class="lead-success" id="leadSuccess" style="display:none;">Thanks! Your message has been sent.</div>
+                </div>
+            <?php endif; ?>
+        <?php endforeach; ?>
+
         <!-- Powered by Cardify -->
         <div style="text-align: center; padding: 24px 0 16px;">
             <a href="https://cardify.om?ref=digital_card&utm_source=card&utm_medium=qr&utm_campaign=powered_by"
@@ -593,6 +698,40 @@ ob_end_clean();
                 });
             }
         }
+
+        // Lead form submit
+        (function(){
+            var form = document.getElementById('leadForm');
+            if (!form) return;
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var btn = document.getElementById('leadSubmit');
+                var err = document.getElementById('leadError');
+                err.style.display = 'none';
+                btn.disabled = true;
+                btn.textContent = 'Sending...';
+                var data = new FormData(form);
+                fetch('/api/lead.php', { method: 'POST', body: data })
+                    .then(function(r){ return r.json().catch(function(){ return { success:false, error:'Network error' }; }); })
+                    .then(function(res){
+                        if (res && res.success) {
+                            form.style.display = 'none';
+                            document.getElementById('leadSuccess').style.display = 'block';
+                        } else {
+                            err.textContent = (res && res.error) || 'Failed to send. Please try again.';
+                            err.style.display = 'block';
+                            btn.disabled = false;
+                            btn.textContent = 'Send';
+                        }
+                    })
+                    .catch(function(){
+                        err.textContent = 'Network error. Try again.';
+                        err.style.display = 'block';
+                        btn.disabled = false;
+                        btn.textContent = 'Send';
+                    });
+            });
+        })();
     </script>
 
 <script type="application/ld+json">

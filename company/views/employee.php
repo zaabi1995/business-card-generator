@@ -3,6 +3,7 @@
  * Employee View - Profile editor, card preview, order history
  */
 require_once INCLUDES_DIR . '/Currency.php';
+require_once INCLUDES_DIR . '/CardSections.php';
 
 $employeeId = $_SESSION['employee_id'] ?? $_SESSION['user_id'] ?? null;
 $message = null;
@@ -58,6 +59,94 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
     } // end CSRF else
 }
+
+// --- Public Card Sections handlers ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array($_POST['action'], [
+    'update_sections', 'add_service', 'delete_service',
+    'upload_gallery', 'delete_gallery',
+    'add_testimonial', 'delete_testimonial',
+], true)) {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $message = 'Invalid request token. Please refresh and try again.';
+        $messageType = 'error';
+    } else {
+        try {
+            $action = $_POST['action'];
+            if ($action === 'update_sections') {
+                CardSections::saveMaster($employeeId, $company['id'], [
+                    'bio_enabled' => !empty($_POST['bio_enabled']),
+                    'bio_text' => $_POST['bio_text'] ?? '',
+                    'services_enabled' => !empty($_POST['services_enabled']),
+                    'gallery_enabled' => !empty($_POST['gallery_enabled']),
+                    'testimonials_enabled' => !empty($_POST['testimonials_enabled']),
+                    'lead_form_enabled' => !empty($_POST['lead_form_enabled']),
+                    'lead_form_email' => $_POST['lead_form_email'] ?? '',
+                    'section_order' => $_POST['section_order'] ?? '',
+                ]);
+                $message = 'Public card sections saved.';
+            } elseif ($action === 'add_service') {
+                CardSections::addService(
+                    $employeeId,
+                    $_POST['service_icon'] ?? 'fa-solid fa-star',
+                    $_POST['service_title'] ?? '',
+                    $_POST['service_description'] ?? ''
+                );
+                $message = 'Service added.';
+            } elseif ($action === 'delete_service') {
+                CardSections::deleteService($employeeId, $_POST['service_id'] ?? '');
+                $message = 'Service removed.';
+            } elseif ($action === 'upload_gallery') {
+                if (!empty($_FILES['gallery_images'])) {
+                    $errs = [];
+                    $stored = CardSections::handleGalleryUpload($_FILES['gallery_images'], $employeeId, $errs);
+                    if ($errs) {
+                        $message = 'Uploaded ' . count($stored) . ' image(s). Problems: ' . implode('; ', $errs);
+                        $messageType = $stored ? 'success' : 'error';
+                    } else {
+                        $message = 'Uploaded ' . count($stored) . ' image(s).';
+                    }
+                }
+            } elseif ($action === 'delete_gallery') {
+                CardSections::deleteGalleryImage($employeeId, $_POST['gallery_id'] ?? '');
+                $message = 'Photo removed.';
+            } elseif ($action === 'add_testimonial') {
+                $photoPath = null;
+                if (!empty($_FILES['testimonial_photo']) && !empty($_FILES['testimonial_photo']['name'])) {
+                    $err = null;
+                    $photoPath = CardSections::handleImageUpload($_FILES['testimonial_photo'], $employeeId, 'testimonials', $err);
+                    if ($err) {
+                        $message = 'Photo upload: ' . $err;
+                        $messageType = 'error';
+                    }
+                }
+                $tid = CardSections::addTestimonial(
+                    $employeeId,
+                    $_POST['testimonial_name'] ?? '',
+                    $_POST['testimonial_quote'] ?? '',
+                    $photoPath
+                );
+                if ($tid && empty($message)) $message = 'Testimonial added.';
+                if (!$tid) {
+                    $message = 'Name and quote are required.';
+                    $messageType = 'error';
+                }
+            } elseif ($action === 'delete_testimonial') {
+                CardSections::deleteTestimonial($employeeId, $_POST['testimonial_id'] ?? '');
+                $message = 'Testimonial removed.';
+            }
+        } catch (Throwable $e) {
+            $message = 'Action failed: ' . $e->getMessage();
+            $messageType = 'error';
+            error_log('employee sections: ' . $e->getMessage());
+        }
+    }
+}
+
+// Load sections data for rendering
+$sectionMaster = CardSections::loadMaster($employeeId, $company['id']);
+$sectionServices = CardSections::loadServices($employeeId);
+$sectionGallery = CardSections::loadGallery($employeeId);
+$sectionTestimonials = CardSections::loadTestimonials($employeeId);
 
 // Get employee's generated cards
 $generatedCards = [];
@@ -260,6 +349,160 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <?php endif; ?>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Public Card Sections -->
+        <div class="mt-8 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                    <h2 class="font-semibold text-gray-900">Public Card Sections</h2>
+                    <p class="text-sm text-gray-500">Appears below your contact buttons when someone scans your QR.</p>
+                </div>
+                <?php if (!empty($company['slug']) && !empty($employee['id'])): ?>
+                <a href="<?php echo getBasePath() . sanitize($company['slug']) . '/card/' . sanitize($employee['id']); ?>" target="_blank" class="text-sm text-blue-600 hover:underline">Preview &rarr;</a>
+                <?php endif; ?>
+            </div>
+
+            <form method="post" class="p-6 space-y-6">
+                <input type="hidden" name="action" value="update_sections">
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+
+                <div class="grid md:grid-cols-2 gap-3">
+                    <label class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                        <input type="checkbox" name="bio_enabled" <?php echo !empty($sectionMaster['bio_enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
+                        <span class="text-sm font-medium text-gray-800"><i class="fa-solid fa-user mr-1"></i> Bio</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                        <input type="checkbox" name="services_enabled" <?php echo !empty($sectionMaster['services_enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
+                        <span class="text-sm font-medium text-gray-800"><i class="fa-solid fa-list-check mr-1"></i> Services</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                        <input type="checkbox" name="gallery_enabled" <?php echo !empty($sectionMaster['gallery_enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
+                        <span class="text-sm font-medium text-gray-800"><i class="fa-solid fa-images mr-1"></i> Gallery</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                        <input type="checkbox" name="testimonials_enabled" <?php echo !empty($sectionMaster['testimonials_enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
+                        <span class="text-sm font-medium text-gray-800"><i class="fa-solid fa-quote-right mr-1"></i> Testimonials</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200 md:col-span-2">
+                        <input type="checkbox" name="lead_form_enabled" <?php echo !empty($sectionMaster['lead_form_enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
+                        <span class="text-sm font-medium text-gray-800"><i class="fa-solid fa-envelope-open-text mr-1"></i> Lead Form</span>
+                    </label>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                    <textarea name="bio_text" rows="4" placeholder="A short paragraph about you. Use **text** for bold."
+                              class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"><?php echo sanitize($sectionMaster['bio_text'] ?? ''); ?></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Lead form &mdash; send to email</label>
+                    <input type="email" name="lead_form_email" placeholder="<?php echo sanitize($employee['email'] ?? ''); ?>"
+                           value="<?php echo sanitize($sectionMaster['lead_form_email'] ?? ''); ?>"
+                           class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                    <p class="text-xs text-gray-500 mt-1">Defaults to your account email if blank.</p>
+                </div>
+
+                <input type="hidden" name="section_order" value="<?php echo sanitize($sectionMaster['section_order'] ?? 'bio,services,gallery,testimonials,lead_form'); ?>">
+
+                <button type="submit" class="px-6 py-2 btn-primary rounded-lg font-medium">Save Sections</button>
+            </form>
+
+            <div class="px-6 pb-6 border-t border-gray-100 pt-6">
+                <h3 class="font-semibold text-gray-900 mb-3"><i class="fa-solid fa-list-check mr-1 text-gray-500"></i> Services</h3>
+                <?php if (!empty($sectionServices)): ?>
+                <div class="space-y-2 mb-4">
+                    <?php foreach ($sectionServices as $svc): ?>
+                    <div class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
+                        <i class="<?php echo sanitize($svc['icon']); ?> text-lg text-gray-500 w-6 text-center"></i>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium text-gray-800"><?php echo sanitize($svc['title']); ?></div>
+                            <?php if (!empty($svc['description'])): ?>
+                            <div class="text-xs text-gray-500 truncate"><?php echo sanitize($svc['description']); ?></div>
+                            <?php endif; ?>
+                        </div>
+                        <form method="post" onsubmit="return confirm('Remove this service?');">
+                            <input type="hidden" name="action" value="delete_service">
+                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                            <input type="hidden" name="service_id" value="<?php echo sanitize($svc['id']); ?>">
+                            <button class="text-red-500 text-sm"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+                <form method="post" class="grid md:grid-cols-4 gap-2">
+                    <input type="hidden" name="action" value="add_service">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                    <input type="text" name="service_icon" placeholder="fa-solid fa-star" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                    <input type="text" name="service_title" placeholder="Title" required class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                    <input type="text" name="service_description" placeholder="Short description" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                    <button class="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm">Add Service</button>
+                </form>
+                <p class="text-xs text-gray-500 mt-2">Icon uses <a href="https://fontawesome.com/icons" target="_blank" class="underline">Font Awesome</a> class names.</p>
+            </div>
+
+            <div class="px-6 pb-6 border-t border-gray-100 pt-6">
+                <h3 class="font-semibold text-gray-900 mb-3"><i class="fa-solid fa-images mr-1 text-gray-500"></i> Gallery <span class="text-xs text-gray-500">(<?php echo count($sectionGallery); ?>/<?php echo CardSections::MAX_GALLERY_IMAGES; ?>)</span></h3>
+                <?php if (!empty($sectionGallery)): ?>
+                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-4">
+                    <?php foreach ($sectionGallery as $img): ?>
+                    <div class="relative group">
+                        <img src="<?php echo sanitize($img['file_path']); ?>" alt="" class="w-full aspect-square object-cover rounded-lg border border-gray-200">
+                        <form method="post" class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition" onsubmit="return confirm('Delete this photo?');">
+                            <input type="hidden" name="action" value="delete_gallery">
+                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                            <input type="hidden" name="gallery_id" value="<?php echo sanitize($img['id']); ?>">
+                            <button class="bg-red-500 text-white text-xs w-6 h-6 rounded-full"><i class="fa-solid fa-xmark"></i></button>
+                        </form>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+                <form method="post" enctype="multipart/form-data" class="flex flex-wrap items-center gap-2">
+                    <input type="hidden" name="action" value="upload_gallery">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                    <input type="file" name="gallery_images[]" accept="image/jpeg,image/png,image/webp" multiple class="text-sm">
+                    <button class="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm">Upload</button>
+                    <span class="text-xs text-gray-500">JPG / PNG / WebP, max 5 MB each.</span>
+                </form>
+            </div>
+
+            <div class="px-6 pb-6 border-t border-gray-100 pt-6">
+                <h3 class="font-semibold text-gray-900 mb-3"><i class="fa-solid fa-quote-right mr-1 text-gray-500"></i> Testimonials</h3>
+                <?php if (!empty($sectionTestimonials)): ?>
+                <div class="space-y-2 mb-4">
+                    <?php foreach ($sectionTestimonials as $t): ?>
+                    <div class="flex items-start gap-3 p-3 border border-gray-200 rounded-lg">
+                        <?php if (!empty($t['photo_path'])): ?>
+                        <img src="<?php echo sanitize($t['photo_path']); ?>" alt="" class="w-10 h-10 rounded-full object-cover">
+                        <?php else: ?>
+                        <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500"><i class="fa-solid fa-user"></i></div>
+                        <?php endif; ?>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium text-gray-800"><?php echo sanitize($t['name']); ?></div>
+                            <div class="text-xs text-gray-600 italic">&ldquo;<?php echo sanitize($t['quote']); ?>&rdquo;</div>
+                        </div>
+                        <form method="post" onsubmit="return confirm('Remove this testimonial?');">
+                            <input type="hidden" name="action" value="delete_testimonial">
+                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                            <input type="hidden" name="testimonial_id" value="<?php echo sanitize($t['id']); ?>">
+                            <button class="text-red-500 text-sm"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+                <form method="post" enctype="multipart/form-data" class="grid md:grid-cols-4 gap-2">
+                    <input type="hidden" name="action" value="add_testimonial">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                    <input type="text" name="testimonial_name" placeholder="Client name" required class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                    <input type="text" name="testimonial_quote" placeholder="What they said" required class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm md:col-span-2">
+                    <input type="file" name="testimonial_photo" accept="image/jpeg,image/png,image/webp" class="text-sm">
+                    <button class="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm md:col-span-4 md:justify-self-start">Add Testimonial</button>
+                </form>
             </div>
         </div>
     </main>
