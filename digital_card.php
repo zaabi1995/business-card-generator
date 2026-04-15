@@ -795,6 +795,40 @@ ob_end_clean();
                 });
             }
         }
+
+        // Lead form submit
+        (function(){
+            var form = document.getElementById('leadForm');
+            if (!form) return;
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var btn = document.getElementById('leadSubmit');
+                var err = document.getElementById('leadError');
+                err.style.display = 'none';
+                btn.disabled = true;
+                btn.textContent = 'Sending...';
+                var data = new FormData(form);
+                fetch('/api/lead.php', { method: 'POST', body: data })
+                    .then(function(r){ return r.json().catch(function(){ return { success:false, error:'Network error' }; }); })
+                    .then(function(res){
+                        if (res && res.success) {
+                            form.style.display = 'none';
+                            document.getElementById('leadSuccess').style.display = 'block';
+                        } else {
+                            err.textContent = (res && res.error) || 'Failed to send. Please try again.';
+                            err.style.display = 'block';
+                            btn.disabled = false;
+                            btn.textContent = 'Send';
+                        }
+                    })
+                    .catch(function(){
+                        err.textContent = 'Network error. Try again.';
+                        err.style.display = 'block';
+                        btn.disabled = false;
+                        btn.textContent = 'Send';
+                    });
+            });
+        })();
     </script>
 
 <script type="application/ld+json">
