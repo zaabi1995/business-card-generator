@@ -100,10 +100,10 @@ if (!empty($_GET['utm_source']) && empty($_SESSION['utm_source'])) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- Font Awesome (Local) -->
-    <link rel="preload" href="<?php echo getBasePath(); ?>assets/vendor/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="<?php echo getBasePath(); ?>assets/vendor/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="<?php echo getBasePath(); ?>assets/vendor/css/all.css">
+    <!-- Font Awesome (CDN) -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     
     <!-- Tailwind CSS (Local) -->
     <?php $tailwindVersion = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/techwind/css/tailwind.min.css') ?: time(); ?>
