@@ -138,12 +138,24 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 Back to Blog
             </a>
             <h1 class="text-4xl font-bold text-gray-900 mb-4"><?php echo htmlspecialchars($singlePost['title']); ?></h1>
-            <div class="flex items-center gap-4 text-gray-500">
+            <?php
+                // Estimated read time: ~200 words/min average
+                $wordCount = str_word_count(strip_tags($singlePost['content'] ?? ''));
+                $readMinutes = max(1, (int) ceil($wordCount / 200));
+            ?>
+            <div class="flex items-center gap-3 text-gray-500 flex-wrap">
                 <?php if ($singlePost['author_name']): ?>
-                <span>By <?php echo htmlspecialchars($singlePost['author_name']); ?></span>
-                <span>•</span>
+                <span class="inline-flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-sm">
+                        <?= strtoupper(substr($singlePost['author_name'], 0, 1)) ?>
+                    </span>
+                    <span>By <?php echo htmlspecialchars($singlePost['author_name']); ?></span>
+                </span>
+                <span class="text-gray-300">•</span>
                 <?php endif; ?>
-                <span><?php echo date('F j, Y', strtotime($singlePost['published_at'] ?? $singlePost['created_at'])); ?></span>
+                <time datetime="<?= date('c', strtotime($singlePost['published_at'] ?? $singlePost['created_at'])) ?>"><?php echo date('F j, Y', strtotime($singlePost['published_at'] ?? $singlePost['created_at'])); ?></time>
+                <span class="text-gray-300">•</span>
+                <span class="inline-flex items-center gap-1"><i class="fa-regular fa-clock text-xs"></i> <?= $readMinutes ?> min read</span>
             </div>
         </div>
     </div>

@@ -114,6 +114,14 @@ try {
     $sectionTestimonials = !empty($sectionMaster['testimonials_enabled']) ? CardSections::loadTestimonials($employee['id']) : [];
     $sectionOrder = array_values(array_filter(array_map('trim', explode(',', $sectionMaster['section_order'] ?? implode(',', CardSections::SECTION_KEYS)))));
 
+    // Wallet pass endpoints (feature-flagged — buttons render only when enabled)
+    require_once INCLUDES_DIR . '/AppleWalletPass.php';
+    require_once INCLUDES_DIR . '/GoogleWalletPass.php';
+    $appleWalletEnabled  = AppleWalletPass::isEnabled();
+    $googleWalletEnabled = GoogleWalletPass::isEnabled();
+    $appleWalletUrl  = '/wallet_apple.php?i='  . urlencode($employee['id']) . '&c=' . urlencode($companySlug);
+    $googleWalletUrl = '/wallet_google.php?i=' . urlencode($employee['id']) . '&c=' . urlencode($companySlug);
+
 } catch (Throwable $e) {
     while (ob_get_level()) { ob_end_clean(); }
     http_response_code(500);
@@ -405,6 +413,41 @@ ob_end_clean();
             border: 1px solid #ddd;
             <?php endif; ?>
         }
+        /* Wallet buttons */
+        .wallet-buttons {
+            display: flex;
+            gap: 10px;
+            max-width: 400px;
+            margin: 10px auto 0;
+            flex-direction: row;
+        }
+        .wallet-buttons .wallet-btn {
+            flex: 1;
+            padding: 11px 14px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.08);
+            background: #000;
+            color: #fff;
+            transition: opacity 0.2s;
+        }
+        .wallet-buttons .wallet-btn:active { opacity: 0.8; }
+        .wallet-buttons .wallet-btn.google {
+            background: #fff;
+            color: #1f1f1f;
+            border: 1px solid #dadce0;
+        }
+        .wallet-buttons .wallet-btn svg { flex-shrink: 0; }
+        .wallet-buttons.order-google-first .wallet-btn.apple  { order: 2; }
+        .wallet-buttons.order-google-first .wallet-btn.google { order: 1; }
 
         /* Footer */
         .page-footer {
@@ -641,6 +684,37 @@ ob_end_clean();
                 </div>
             <?php endif; ?>
         <?php endforeach; ?>
+
+        <?php if ($appleWalletEnabled || $googleWalletEnabled): ?>
+        <!-- Add to Wallet -->
+        <div class="wallet-buttons" id="walletButtons">
+            <?php if ($appleWalletEnabled): ?>
+            <a href="<?php echo htmlspecialchars($appleWalletUrl); ?>" class="wallet-btn apple" aria-label="Add to Apple Wallet">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.05 12.54c-.03-2.9 2.37-4.3 2.48-4.37-1.36-1.98-3.47-2.26-4.22-2.29-1.8-.18-3.51 1.06-4.43 1.06-.93 0-2.33-1.03-3.83-1-1.97.03-3.79 1.15-4.8 2.91-2.05 3.56-.52 8.82 1.48 11.71.98 1.41 2.15 2.99 3.68 2.94 1.48-.06 2.04-.96 3.83-.96s2.3.96 3.86.93c1.59-.03 2.6-1.44 3.57-2.86 1.13-1.64 1.59-3.24 1.62-3.32-.04-.02-3.11-1.2-3.14-4.75zM14.12 3.79c.8-.97 1.34-2.31 1.19-3.65-1.15.05-2.55.77-3.37 1.73-.74.85-1.39 2.21-1.22 3.53 1.29.1 2.59-.65 3.4-1.61z"/></svg>
+                Apple Wallet
+            </a>
+            <?php endif; ?>
+            <?php if ($googleWalletEnabled): ?>
+            <a href="<?php echo htmlspecialchars($googleWalletUrl); ?>" class="wallet-btn google" aria-label="Add to Google Wallet">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
+                Google Wallet
+            </a>
+            <?php endif; ?>
+        </div>
+        <script>
+            // UA detection: Android → Google first, iOS/macOS → Apple first, desktop → as-is
+            (function () {
+                var w = document.getElementById('walletButtons');
+                if (!w) return;
+                var ua = navigator.userAgent || '';
+                var isAndroid = /Android/i.test(ua);
+                var isAppleOS = /iPad|iPhone|iPod|Macintosh/i.test(ua);
+                if (isAndroid && !isAppleOS) {
+                    w.classList.add('order-google-first');
+                }
+            })();
+        </script>
+        <?php endif; ?>
 
         <!-- Powered by Cardify -->
         <div style="text-align: center; padding: 24px 0 16px;">
