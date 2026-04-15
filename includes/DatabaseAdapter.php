@@ -315,6 +315,21 @@ class DatabaseAdapter {
         return self::$db->fetchOne("SELECT * FROM departments WHERE id = :id", ['id' => $id]);
     }
 
+    /**
+     * Validate & normalize a Dynamic QR redirect URL.
+     * Returns null for empty/invalid input. Only http(s) URLs accepted.
+     * Max 1024 chars (column width).
+     */
+    private static function sanitizeQrRedirectUrl($raw) {
+        if ($raw === null) return null;
+        $url = trim((string)$raw);
+        if ($url === '') return null;
+        if (strlen($url) > 1024) return null;
+        if (!filter_var($url, FILTER_VALIDATE_URL)) return null;
+        if (!preg_match('~^https?://~i', $url)) return null;
+        return $url;
+    }
+
     public static function addEmployee($data, $companyId = null) {
         if (!self::useDatabase()) {
             return ['success' => false, 'error' => 'Database not available'];
@@ -350,6 +365,7 @@ class DatabaseAdapter {
             'website_ar' => trim($data['website_ar'] ?? ''),
             'address_en' => trim($data['address_en'] ?? $data['address'] ?? ''),
             'address_ar' => trim($data['address_ar'] ?? ''),
+            'qr_redirect_url' => self::sanitizeQrRedirectUrl($data['qr_redirect_url'] ?? null),
             'created_at' => date('Y-m-d H:i:s')
         ];
         
@@ -392,6 +408,7 @@ class DatabaseAdapter {
             'website_ar' => trim($data['website_ar'] ?? ''),
             'address_en' => trim($data['address_en'] ?? $data['address'] ?? ''),
             'address_ar' => trim($data['address_ar'] ?? ''),
+            'qr_redirect_url' => self::sanitizeQrRedirectUrl($data['qr_redirect_url'] ?? null),
             'updated_at' => date('Y-m-d H:i:s')
         ];
         
