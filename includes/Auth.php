@@ -473,6 +473,10 @@ class Auth {
      * Logout
      */
     public static function logout() {
+        // Clear impersonation stash explicitly so it never survives logout.
+        if (isset($_SESSION['impersonator'])) {
+            unset($_SESSION['impersonator']);
+        }
         session_unset();
         session_destroy();
     }
