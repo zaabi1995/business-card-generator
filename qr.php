@@ -74,6 +74,21 @@ try {
         error_log("QR tracking error: " . $e->getMessage());
     }
 
+    // Dynamic QR: if this employee has a custom redirect URL set,
+    // 302-redirect to it instead of serving the VCF. Lets owners
+    // change a printed card's destination without reprinting.
+    $redirectUrl = trim((string)($employee['qr_redirect_url'] ?? ''));
+    if ($redirectUrl !== ''
+        && filter_var($redirectUrl, FILTER_VALIDATE_URL)
+        && preg_match('~^https?://~i', $redirectUrl)) {
+        ob_end_clean();
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        header('Location: ' . $redirectUrl, true, 302);
+        exit;
+    }
+
     // Generate VCF content
     $vcfContent = VCF::generate($employee, $company);
     $filename = VCF::sanitizeFilename($employee['name_en'] ?? $employee['email']) . '.vcf';

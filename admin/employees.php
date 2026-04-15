@@ -1053,7 +1053,48 @@ adminHeader('Employees', 'employees');
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     </div>
                 </div>
-                
+
+                <!-- Dynamic QR -->
+                <div class="mt-6 p-4 rounded-xl bg-indigo-50 border border-indigo-100">
+                    <div class="flex items-start justify-between gap-4 mb-3">
+                        <div>
+                            <h4 class="text-sm font-bold text-indigo-900 flex items-center gap-2">
+                                <i class="fa-solid fa-qrcode"></i>
+                                Dynamic QR
+                            </h4>
+                            <p class="text-xs text-indigo-700 mt-1">
+                                Point this employee's printed QR to a custom URL (landing page, LinkedIn, etc.) without reprinting. Leave off to serve the VCF contact card.
+                            </p>
+                        </div>
+                        <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" x-model="qrRedirectEnabled"
+                                   @change="if (!qrRedirectEnabled) formData.qr_redirect_url = ''"
+                                   class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <span class="text-xs font-semibold text-indigo-800">Enable</span>
+                        </label>
+                    </div>
+                    <div x-show="qrRedirectEnabled" x-cloak>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Redirect Destination URL</label>
+                        <div class="flex gap-2">
+                            <input type="url" name="qr_redirect_url" x-model="formData.qr_redirect_url"
+                                   placeholder="https://example.com/landing"
+                                   maxlength="1024"
+                                   class="flex-1 px-4 py-2.5 bg-white border border-indigo-200 rounded-lg text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
+                        </div>
+                        <p class="text-[11px] text-indigo-700 mt-2" x-show="formData.id">
+                            Printed QR tracker URL:
+                            <button type="button"
+                                    @click="navigator.clipboard.writeText(qrTrackerUrl()); $event.target.textContent='Copied!'; setTimeout(()=>{ $event.target.textContent=qrTrackerUrl() }, 1500);"
+                                    class="font-mono underline text-indigo-800 hover:text-indigo-900"
+                                    x-text="qrTrackerUrl()"></button>
+                        </p>
+                    </div>
+                    <!-- Always POST a value so unchecking clears the DB field -->
+                    <template x-if="!qrRedirectEnabled">
+                        <input type="hidden" name="qr_redirect_url" value="">
+                    </template>
+                </div>
+
                 <div class="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
                     <button type="button" @click="showModal = false" class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors">
                         Cancel
@@ -1387,9 +1428,17 @@ function employeeManager() {
         formData: {
             id: '', email: '', department_id: '', name_en: '', name_ar: '',
             position_en: '', position_ar: '', phone: '', phone_ar: '', mobile: '', mobile_ar: '',
-            company_en: '', company_ar: '', website: '', website_ar: '', address_en: '', address_ar: ''
+            company_en: '', company_ar: '', website: '', website_ar: '', address_en: '', address_ar: '',
+            qr_redirect_url: ''
         },
-        
+        qrRedirectEnabled: false,
+
+        // Tracker URL printed on the card — never changes post-print.
+        qrTrackerUrl() {
+            if (!this.formData.id) return '';
+            return window.location.origin + '/qr.php?i=' + encodeURIComponent(this.formData.id);
+        },
+
         // Arabic numeral conversion utility
         toArabicNumerals(str) {
             if (!str) return '';
@@ -1415,8 +1464,10 @@ function employeeManager() {
             this.formData = {
                 id: '', email: '', department_id: '', name_en: '', name_ar: '',
                 position_en: '', position_ar: '', phone: '', phone_ar: '', mobile: '', mobile_ar: '',
-                company_en: '', company_ar: '', website: '', website_ar: '', address_en: '', address_ar: ''
+                company_en: '', company_ar: '', website: '', website_ar: '', address_en: '', address_ar: '',
+                qr_redirect_url: ''
             };
+            this.qrRedirectEnabled = false;
             this.showModal = true;
         },
 
@@ -1425,26 +1476,31 @@ function employeeManager() {
             this.formData = {
                 id: '', email: prefill.email || '', department_id: '', name_en: prefill.name_en || '',
                 name_ar: '', position_en: '', position_ar: '', phone: '', phone_ar: '', mobile: '', mobile_ar: '',
-                company_en: '', company_ar: '', website: '', website_ar: '', address_en: '', address_ar: ''
+                company_en: '', company_ar: '', website: '', website_ar: '', address_en: '', address_ar: '',
+                qr_redirect_url: ''
             };
+            this.qrRedirectEnabled = false;
             this.showModal = true;
         },
-        
+
         openEditModal(employee) {
             this.editingEmployee = true;
-            this.formData = { ...employee };
+            this.formData = { ...employee, qr_redirect_url: employee.qr_redirect_url || '' };
+            this.qrRedirectEnabled = !!(employee.qr_redirect_url && employee.qr_redirect_url.trim());
             this.showModal = true;
         },
-        
+
         openDetailModal(data) {
             this.detailData = data;
             this.showDetailModal = true;
         },
-        
+
         openEditModalFromDetail() {
             this.showDetailModal = false;
             this.editingEmployee = true;
-            this.formData = { ...this.detailData.employee };
+            const emp = this.detailData.employee || {};
+            this.formData = { ...emp, qr_redirect_url: emp.qr_redirect_url || '' };
+            this.qrRedirectEnabled = !!(emp.qr_redirect_url && String(emp.qr_redirect_url).trim());
             this.showModal = true;
         },
         
