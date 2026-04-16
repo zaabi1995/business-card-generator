@@ -50,6 +50,7 @@ function getAdminNavItems() {
         ['name' => 'Card Requests', 'icon' => 'fa-solid fa-inbox', 'url' => $basePath . 'requests' . $ext, 'key' => 'requests'],
         ['name' => 'Print Orders', 'icon' => 'fa-solid fa-print', 'url' => $basePath . 'print' . $ext, 'key' => 'print'],
         ['name' => 'QR Analytics', 'icon' => 'fa-solid fa-chart-line', 'url' => $basePath . 'analytics' . $ext, 'key' => 'analytics'],
+        ['name' => 'Growth Dashboard', 'icon' => 'fa-solid fa-chart-simple', 'url' => $basePath . 'growth' . $ext, 'key' => 'growth'],
         ['name' => 'Appointments', 'icon' => 'fa-solid fa-calendar-check', 'url' => $basePath . 'appointments' . $ext, 'key' => 'appointments'],
         ['name' => 'Theme', 'icon' => 'fa-solid fa-palette', 'url' => $basePath . 'theme' . $ext, 'key' => 'theme'],
         ['name' => 'Custom Domains', 'icon' => 'fa-solid fa-globe', 'url' => $basePath . 'custom-domains' . $ext, 'key' => 'custom-domains'],
