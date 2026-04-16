@@ -13,7 +13,9 @@ $today = date('Y-m-d');
 
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 ?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
     <!-- Static Pages -->
     <url>
         <loc><?= $baseUrl ?>/</loc>
@@ -121,17 +123,30 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
     </url>
 
 <?php
-// Blog posts
+// Blog posts (with image sitemap data)
 try {
     $db = Database::getInstance();
-    $posts = $db->fetchAll("SELECT slug, updated_at FROM blog_posts WHERE status = 'published' ORDER BY updated_at DESC");
+    $posts = $db->fetchAll(
+        "SELECT slug, title, featured_image, updated_at
+         FROM blog_posts
+         WHERE status = 'published'
+         ORDER BY updated_at DESC"
+    );
     foreach ($posts as $post) {
         $lastmod = date('Y-m-d', strtotime($post['updated_at']));
+        $url = $baseUrl . '/blog/' . htmlspecialchars($post['slug']);
         echo "    <url>\n";
-        echo "        <loc>{$baseUrl}/blog/" . htmlspecialchars($post['slug']) . "</loc>\n";
+        echo "        <loc>{$url}</loc>\n";
         echo "        <lastmod>{$lastmod}</lastmod>\n";
         echo "        <changefreq>weekly</changefreq>\n";
-        echo "        <priority>0.6</priority>\n";
+        echo "        <priority>0.7</priority>\n";
+        if (!empty($post['featured_image'])) {
+            $imgUrl = $baseUrl . '/' . ltrim(htmlspecialchars($post['featured_image']), '/');
+            echo "        <image:image>\n";
+            echo "            <image:loc>{$imgUrl}</image:loc>\n";
+            echo "            <image:title>" . htmlspecialchars($post['title']) . "</image:title>\n";
+            echo "        </image:image>\n";
+        }
         echo "    </url>\n";
     }
 } catch (Exception $e) {
