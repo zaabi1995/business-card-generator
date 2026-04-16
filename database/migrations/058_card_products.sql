@@ -25,4 +25,4 @@ ALTER TABLE employee_card_sections
 ALTER TABLE card_events MODIFY COLUMN event_type
     ENUM('view','click_phone','click_mobile','click_whatsapp','click_email',
          'click_website','click_map','click_social','save_contact','wallet_add',
-         'qr_scan','offer_redeem','product_order_click') NOT NULL;
+         'qr_scan','offer_redeem','short_link_click','product_order_click') NOT NULL;

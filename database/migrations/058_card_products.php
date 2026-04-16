@@ -61,10 +61,15 @@ try {
            AND COLUMN_NAME  = 'event_type'"
     )->fetchColumn();
     if ($col && strpos($col, "'product_order_click'") === false) {
+        // Preserve other ENUM values added by later migrations (e.g. short_link_click from 055)
+        $extras = "";
+        if (strpos($col, "'short_link_click'") !== false) {
+            $extras = ",'short_link_click'";
+        }
         $pdo->exec("ALTER TABLE card_events MODIFY COLUMN event_type
             ENUM('view','click_phone','click_mobile','click_whatsapp','click_email',
                  'click_website','click_map','click_social','save_contact','wallet_add',
-                 'qr_scan','offer_redeem','product_order_click') NOT NULL");
+                 'qr_scan','offer_redeem'$extras,'product_order_click') NOT NULL");
         echo "[058] card_events.event_type extended with product_order_click\n";
     } else {
         echo "[058] card_events.event_type already contains product_order_click - skipped\n";
