@@ -91,6 +91,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                     'lead_form_enabled' => !empty($_POST['lead_form_enabled']),
                     'lead_form_email' => $_POST['lead_form_email'] ?? '',
                     'offers_enabled' => !empty($_POST['offers_enabled']),
+                    'video_enabled' => !empty($_POST['video_enabled']),
+                    'video_url' => $_POST['video_url'] ?? '',
+                    'video_title' => $_POST['video_title'] ?? '',
                     'section_order' => $_POST['section_order'] ?? '',
                 ]);
                 $message = 'Public card sections saved.';
@@ -543,6 +546,28 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <input type="checkbox" name="offers_enabled" <?php echo !empty($sectionMaster['offers_enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
                         <span class="text-sm font-medium text-gray-800"><i class="fa-solid fa-tags mr-1"></i> Offers</span>
                     </label>
+                    <label class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                        <input type="checkbox" name="video_enabled" <?php echo !empty($sectionMaster['video_enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
+                        <span class="text-sm font-medium text-gray-800"><i class="fa-solid fa-video mr-1"></i> Video</span>
+                    </label>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-3">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Video URL</label>
+                        <input type="url" name="video_url"
+                               value="<?php echo sanitize($sectionMaster['video_url'] ?? ''); ?>"
+                               placeholder="https://youtube.com/watch?v=... or vimeo.com/... or .mp4 link"
+                               class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                        <p class="text-xs text-gray-500 mt-1">Supports YouTube, Vimeo, or direct mp4/webm/mov.</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Video title <span class="text-xs text-gray-400">— optional</span></label>
+                        <input type="text" name="video_title" maxlength="200"
+                               value="<?php echo sanitize($sectionMaster['video_title'] ?? ''); ?>"
+                               placeholder="Watch our intro"
+                               class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                    </div>
                 </div>
 
                 <div class="grid md:grid-cols-2 gap-3">
@@ -566,7 +591,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <p class="text-xs text-gray-500 mt-1">Defaults to your account email if blank.</p>
                 </div>
 
-                <input type="hidden" name="section_order" value="<?php echo sanitize($sectionMaster['section_order'] ?? 'bio,services,gallery,testimonials,lead_form,offers'); ?>">
+                <input type="hidden" name="section_order" value="<?php echo sanitize($sectionMaster['section_order'] ?? 'bio,offers,services,gallery,video,testimonials,lead_form'); ?>">
 
                 <button type="submit" class="px-6 py-2 btn-primary rounded-lg font-medium">Save Sections</button>
             </form>
