@@ -29,6 +29,7 @@ class CardAnalytics
         'wallet_add',
         'qr_scan',
         'offer_redeem',
+        'product_order_click',
         'short_link_click',
     ];
 

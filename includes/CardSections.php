@@ -10,7 +10,7 @@ class CardSections
 {
     // Display order on the public card page. Offers placed early (high-value CTA),
     // followed by bio → services/gallery → testimonials (social proof) → lead_form (bottom CTA).
-    const SECTION_KEYS = ['bio', 'offers', 'services', 'gallery', 'video', 'testimonials', 'faq', 'lead_form', 'location', 'hours'];
+    const SECTION_KEYS = ['bio', 'offers', 'services', 'products', 'gallery', 'video', 'testimonials', 'faq', 'lead_form', 'location', 'hours'];
     const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
     // PHP date('N') returns 1=Mon..7=Sun; map to our keys.
     const DAY_BY_ISO = [1 => 'mon', 2 => 'tue', 3 => 'wed', 4 => 'thu', 5 => 'fri', 6 => 'sat', 7 => 'sun'];
@@ -67,6 +67,7 @@ class CardSections
                 'video_enabled' => 0,
                 'video_url' => '',
                 'video_title' => '',
+                'products_enabled' => 0,
                 'hours_enabled' => 0,
                 'hours_timezone' => self::DEFAULT_TZ,
                 'faq_enabled' => 0,
@@ -80,6 +81,9 @@ class CardSections
             $row['video_enabled'] = 0;
             $row['video_url'] = '';
             $row['video_title'] = '';
+        }
+        if (!array_key_exists('products_enabled', $row)) {
+            $row['products_enabled'] = 0;
         }
         foreach (['location_enabled' => 0, 'location_address' => '', 'location_lat' => null, 'location_lng' => null, 'location_label' => ''] as $k => $v) {
             if (!array_key_exists($k, $row)) {
@@ -257,6 +261,128 @@ class CardSections
         );
     }
 
+    // ---- Product catalog -------------------------------------------------
+
+    /**
+     * Load products for an employee.
+     *
+     * @param string $employeeId
+     * @param bool   $publicOnly  When true, only enabled products are returned.
+     */
+    public static function loadProducts($employeeId, $publicOnly = false)
+    {
+        if ($publicOnly) {
+            return Database::getInstance()->fetchAll(
+                "SELECT * FROM employee_card_products
+                 WHERE employee_id = :eid AND enabled = 1
+                 ORDER BY position, created_at",
+                ['eid' => $employeeId]
+            );
+        }
+        return Database::getInstance()->fetchAll(
+            "SELECT * FROM employee_card_products
+             WHERE employee_id = :eid
+             ORDER BY position, created_at",
+            ['eid' => $employeeId]
+        );
+    }
+
+    public static function addProduct($employeeId, $companyId, $title, $description, $price, $imagePath = null, $whatsappMessage = '')
+    {
+        $title = trim((string)$title);
+        if ($title === '') return false;
+
+        $priceVal = is_numeric($price) ? round((float)$price, 3) : 0.0;
+        if ($priceVal < 0) $priceVal = 0.0;
+
+        $id = self::uuid();
+        Database::getInstance()->insert('employee_card_products', [
+            'id' => $id,
+            'employee_id' => $employeeId,
+            'company_id' => $companyId,
+            'title' => mb_substr($title, 0, 255),
+            'description' => mb_substr(trim((string)$description), 0, 4000),
+            'price' => $priceVal,
+            'currency' => 'OMR',
+            'image_path' => $imagePath ?: null,
+            'whatsapp_message' => mb_substr(trim((string)$whatsappMessage), 0, 500) ?: null,
+            'position' => 0,
+            'enabled' => 1,
+        ]);
+        return $id;
+    }
+
+    public static function deleteProduct($employeeId, $productId)
+    {
+        $db = Database::getInstance();
+        $existing = $db->fetchOne(
+            "SELECT image_path FROM employee_card_products WHERE id = :id AND employee_id = :eid",
+            ['id' => $productId, 'eid' => $employeeId]
+        );
+        if ($existing && !empty($existing['image_path'])) {
+            self::unlinkUpload($existing['image_path']);
+        }
+        $db->getConnection()
+            ->prepare("DELETE FROM employee_card_products WHERE id = :id AND employee_id = :eid")
+            ->execute(['id' => $productId, 'eid' => $employeeId]);
+    }
+
+    /**
+     * Persist the product list order. Accepts an ordered array of product IDs.
+     */
+    public static function reorderProducts($employeeId, array $orderedIds)
+    {
+        $pdo = Database::getInstance()->getConnection();
+        $stmt = $pdo->prepare(
+            "UPDATE employee_card_products SET position = :pos
+             WHERE id = :id AND employee_id = :eid"
+        );
+        $i = 0;
+        foreach ($orderedIds as $pid) {
+            $pid = (string)$pid;
+            if ($pid === '') continue;
+            $stmt->execute(['pos' => $i++, 'id' => $pid, 'eid' => $employeeId]);
+        }
+    }
+
+    /**
+     * Format a price as "OMR 5.000" (3-decimal OMR convention; space for RTL-safety).
+     */
+    public static function formatPrice($price, $currency = 'OMR')
+    {
+        $val = number_format((float)$price, 3, '.', ',');
+        $cur = $currency ?: 'OMR';
+        return $cur . ' ' . $val;
+    }
+
+    /**
+     * Build a wa.me URL for a product order. Uses {title} and {price} placeholders
+     * in the per-product message template, falling back to a sensible default.
+     */
+    public static function buildProductWhatsappUrl($phone, array $product, $locale = 'en')
+    {
+        $digits = preg_replace('/[^0-9]/', '', (string)$phone);
+        if ($digits === '') return '';
+
+        $title = (string)($product['title'] ?? '');
+        $price = self::formatPrice($product['price'] ?? 0, $product['currency'] ?? 'OMR');
+        $template = trim((string)($product['whatsapp_message'] ?? ''));
+
+        if ($template === '') {
+            $template = ($locale === 'ar')
+                ? 'أود طلب {title} بسعر {price}'
+                : "I'd like to order {title} for {price}";
+        }
+
+        $msg = str_replace(
+            ['{title}', '{price}'],
+            [$title, $price],
+            $template
+        );
+
+        return 'https://wa.me/' . $digits . '?text=' . rawurlencode($msg);
+    }
+
     /**
      * Upsert master row with toggle + bio state.
      */
@@ -292,6 +418,7 @@ class CardSections
                  testimonials_enabled, lead_form_enabled, lead_form_email, offers_enabled,
                  video_enabled, video_url, video_title,
                  location_enabled, location_address, location_lat, location_lng, location_label,
+                 products_enabled,
                  hours_enabled, hours_timezone,
                  faq_enabled,
                  section_order)
@@ -299,6 +426,7 @@ class CardSections
                 (:eid, :cid, :be, :bt, :bta, :se, :ge, :te, :le, :lem, :oe,
                  :ve, :vu, :vt,
                  :loce, :loca, :loclat, :loclng, :loclbl,
+                 :pe,
                  :he, :htz,
                  :fe,
                  :ord)
@@ -320,6 +448,7 @@ class CardSections
                 location_lat = VALUES(location_lat),
                 location_lng = VALUES(location_lng),
                 location_label = VALUES(location_label),
+                products_enabled = VALUES(products_enabled),
                 hours_enabled = VALUES(hours_enabled),
                 hours_timezone = VALUES(hours_timezone),
                 faq_enabled = VALUES(faq_enabled),
@@ -349,6 +478,7 @@ class CardSections
             'loclat' => $locLat,
             'loclng' => $locLng,
             'loclbl' => $locLabel,
+            'pe' => !empty($data['products_enabled']) ? 1 : 0,
             'he' => !empty($data['hours_enabled']) ? 1 : 0,
             'htz' => $tz,
             'fe' => !empty($data['faq_enabled']) ? 1 : 0,
@@ -901,7 +1031,7 @@ class CardSections
             return null;
         }
 
-        if (!in_array($subdir, ['gallery', 'testimonials'], true)) {
+        if (!in_array($subdir, ['gallery', 'testimonials', 'products'], true)) {
             $error = 'Invalid upload target';
             return null;
         }

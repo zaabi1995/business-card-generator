@@ -195,6 +195,7 @@ try {
         $sectionTestimonials = [];
     }
     $sectionOffers = !empty($sectionMaster['offers_enabled']) ? CardSections::loadOffers($employee['id'], true) : [];
+    $sectionProducts = !empty($sectionMaster['products_enabled']) ? CardSections::loadProducts($employee['id'], true) : [];
     $businessHours = !empty($sectionMaster['hours_enabled']) ? CardSections::loadBusinessHours($employee['id']) : [];
     $businessTz = $sectionMaster['hours_timezone'] ?? 'Asia/Muscat';
     $hoursStatus = !empty($businessHours) ? CardSections::computeOpenStatus($businessHours, $businessTz) : null;
@@ -205,6 +206,9 @@ try {
     }
     if (!in_array('location', $sectionOrder, true)) {
         $sectionOrder[] = 'location';
+    }
+    if (!in_array('products', $sectionOrder, true)) {
+        $sectionOrder[] = 'products';
     }
     if (!in_array('hours', $sectionOrder, true)) {
         $sectionOrder[] = 'hours';
@@ -675,6 +679,20 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .offer-valid { font-size: 11px; color: #888; }
         .offer-redeem-btn { display: inline-block; padding: 8px 16px; border-radius: 8px; color: #fff; font-size: 12px; font-weight: 600; text-decoration: none; margin-left: auto; }
         .offer-redeem-btn:hover { opacity: 0.9; }
+        .products-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        @media (min-width: 640px) { .products-grid { grid-template-columns: repeat(3, 1fr); } }
+        .product-card { <?php echo $isDarkPage ? 'background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);' : 'background: #fafafa; border: 1px solid #ececec;'; ?> border-radius: 12px; overflow: hidden; }
+        .product-card[open] { <?php echo $isDarkPage ? 'background: rgba(255,255,255,0.06);' : 'background: #fff;'; ?> }
+        .product-summary { list-style: none; cursor: pointer; padding: 0; display: block; }
+        .product-summary::-webkit-details-marker { display: none; }
+        .product-img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
+        .product-img-ph { display: flex; align-items: center; justify-content: center; background: rgba(127,127,127,0.12); color: #888; font-size: 26px; }
+        .product-meta { padding: 8px 10px; }
+        .product-title { font-size: 13px; font-weight: 600; line-height: 1.3; <?php echo $isDarkPage ? 'color:#eee;' : 'color:#1a1a2e;'; ?> }
+        .product-price { font-size: 12px; font-weight: 700; margin-top: 3px; color: <?php echo htmlspecialchars($accentColor); ?>; }
+        .product-desc { padding: 0 10px 10px; font-size: 12px; line-height: 1.5; <?php echo $isDarkPage ? 'color:#bbb;' : 'color:#555;'; ?> }
+        .product-order-btn { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0 10px 10px; padding: 8px 10px; border-radius: 8px; background: #25d366; color: #fff; font-size: 12px; font-weight: 600; text-decoration: none; }
+        .product-order-btn:hover { opacity: 0.92; }
         .testimonial-item { padding: 12px 0; <?php echo $isDarkPage ? 'border-bottom: 1px solid rgba(255,255,255,0.06);' : 'border-bottom: 1px solid #f0f0f0;'; ?> }
         .testimonial-item:last-child { border-bottom: none; }
         .testimonial-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
@@ -1091,6 +1109,52 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                         <i class="fa-solid fa-diamond-turn-right"></i>
                         <?php echo htmlspecialchars($directionsLabel); ?>
                     </a>
+                </div>
+            <?php elseif ($__sec === 'products' && !empty($sectionMaster['products_enabled']) && !empty($sectionProducts)): ?>
+                <?php
+                    $prodTitle = ($locale === 'ar') ? 'المنتجات' : 'Products';
+                    $orderLabel = ($locale === 'ar') ? 'اطلب عبر واتساب' : 'Order via WhatsApp';
+                    $prodWaPhone = preg_replace('/[^0-9]/', '', $mobile ?: $phone);
+                ?>
+                <div class="card-section">
+                    <h3><?php echo htmlspecialchars($prodTitle); ?></h3>
+                    <div class="products-grid">
+                        <?php foreach ($sectionProducts as $prod): ?>
+                            <?php
+                                $waUrl = $prodWaPhone
+                                    ? CardSections::buildProductWhatsappUrl($prodWaPhone, $prod, $locale)
+                                    : '';
+                                $priceLabel = CardSections::formatPrice($prod['price'], $prod['currency'] ?? 'OMR');
+                                $prodSlug = 'prod-' . substr(preg_replace('/[^a-zA-Z0-9]/', '', $prod['id']), 0, 16);
+                            ?>
+                            <details class="product-card" id="<?php echo htmlspecialchars($prodSlug); ?>">
+                                <summary class="product-summary">
+                                    <?php if (!empty($prod['image_path'])): ?>
+                                    <img class="product-img" src="<?php echo htmlspecialchars($prod['image_path']); ?>"
+                                         alt="<?php echo htmlspecialchars($prod['title']); ?>" loading="lazy">
+                                    <?php else: ?>
+                                    <div class="product-img product-img-ph"><i class="fa-solid fa-image"></i></div>
+                                    <?php endif; ?>
+                                    <div class="product-meta">
+                                        <div class="product-title"><?php echo htmlspecialchars($prod['title']); ?></div>
+                                        <div class="product-price" dir="ltr"><?php echo htmlspecialchars($priceLabel); ?></div>
+                                    </div>
+                                </summary>
+                                <?php if (!empty($prod['description'])): ?>
+                                <div class="product-desc"><?php echo nl2br(htmlspecialchars($prod['description'])); ?></div>
+                                <?php endif; ?>
+                                <?php if ($waUrl !== ''): ?>
+                                <a class="product-order-btn"
+                                   href="<?php echo htmlspecialchars($cardClickUrl('product_order_click', $waUrl)); ?>"
+                                   target="_blank" rel="noopener"
+                                   data-product-id="<?php echo htmlspecialchars($prod['id']); ?>">
+                                    <i class="fa-brands fa-whatsapp"></i>
+                                    <?php echo htmlspecialchars($orderLabel); ?>
+                                </a>
+                                <?php endif; ?>
+                            </details>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             <?php elseif ($__sec === 'hours' && !empty($sectionMaster['hours_enabled']) && !empty($businessHours)): ?>
                 <?php
