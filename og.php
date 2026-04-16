@@ -123,34 +123,51 @@ if ($fontBold) {
     // Sector eyebrow (small, accent color)
     imagettftext($canvas, 22, 0, 70, 150, $accent, $fontBold, strtoupper($sectorLabel . ' · ' . $wilayatLabel));
 
-    // Main company name — auto-wrap to fit left 60%
-    $nameFontSize = 62;
+    // Main company name — auto-shrink font + wrap to fit left 60% in max 2 lines
     $maxWidth = (int) ($W * 0.58);
     $words = explode(' ', $name);
+
+    // Try sizes from 62 down to 32, find the largest that fits in ≤2 lines
     $lines = [];
-    $current = '';
-    foreach ($words as $w) {
-        $probe = trim($current . ' ' . $w);
-        $bbox = imagettfbbox($nameFontSize, 0, $fontBold, $probe);
-        $width = $bbox[2] - $bbox[0];
-        if ($width > $maxWidth && $current !== '') {
-            $lines[] = $current;
-            $current = $w;
-        } else {
-            $current = $probe;
+    $nameFontSize = 62;
+    for ($trySize = 62; $trySize >= 32; $trySize -= 4) {
+        $candidate = [];
+        $current = '';
+        foreach ($words as $w) {
+            $probe = trim($current . ' ' . $w);
+            $bbox = imagettfbbox($trySize, 0, $fontBold, $probe);
+            if (($bbox[2] - $bbox[0]) > $maxWidth && $current !== '') {
+                $candidate[] = $current;
+                $current = $w;
+            } else {
+                $current = $probe;
+            }
+        }
+        if ($current !== '') $candidate[] = $current;
+
+        if (count($candidate) <= 2) {
+            $lines = $candidate;
+            $nameFontSize = $trySize;
+            break;
         }
     }
-    if ($current !== '') $lines[] = $current;
-    // Max 3 lines; truncate with ellipsis if longer
-    if (count($lines) > 3) {
-        $lines = array_slice($lines, 0, 3);
-        $lines[2] .= '…';
-    }
-    // If very long single line, shrink font
-    while ($nameFontSize > 36 && count($lines) === 1) {
-        $bbox = imagettfbbox($nameFontSize, 0, $fontBold, $lines[0]);
-        if (($bbox[2] - $bbox[0]) <= $maxWidth) break;
-        $nameFontSize -= 4;
+    // Fallback: if still >2 lines at size 32, take first 2 lines + ellipsis
+    if (empty($lines)) {
+        $nameFontSize = 32;
+        $current = '';
+        foreach ($words as $w) {
+            $probe = trim($current . ' ' . $w);
+            $bbox = imagettfbbox($nameFontSize, 0, $fontBold, $probe);
+            if (($bbox[2] - $bbox[0]) > $maxWidth && $current !== '') {
+                $lines[] = $current;
+                $current = $w;
+                if (count($lines) >= 2) break;
+            } else {
+                $current = $probe;
+            }
+        }
+        if (count($lines) < 2 && $current !== '') $lines[] = $current;
+        if (count($lines) >= 2) $lines[1] = rtrim($lines[1], ' ') . '…';
     }
 
     $lineHeight = (int) ($nameFontSize * 1.15);
