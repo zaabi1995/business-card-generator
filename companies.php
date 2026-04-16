@@ -291,12 +291,20 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
             <span class="text-gray-700"><?= escq($isAr ? ($company['name_ar'] ?: $company['name_en']) : $company['name_en']) ?></span>
         </nav>
 
-        <article class="bg-white rounded-2xl shadow-sm p-8 lg:p-10">
+        <article class="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <!-- Hero banner (sector-themed background + company name burned in) -->
+            <div class="relative aspect-[1200/630] bg-gray-900">
+                <img src="/og/company/<?= escq($company['slug']) ?>.jpg"
+                     alt="<?= escq($company['name_en']) ?> — <?= escq(labelOf($company['sector'], $SECTORS, false)) ?> in <?= escq(labelOf($company['wilayat'], $WILAYATS, false)) ?>, Oman"
+                     class="absolute inset-0 w-full h-full object-cover"
+                     loading="eager" fetchpriority="high" width="1200" height="630">
+            </div>
+            <div class="p-8 lg:p-10">
             <div class="flex items-start gap-5 flex-wrap">
                 <?php if (!empty($company['logo_url'])): ?>
-                    <img src="<?= escq($company['logo_url']) ?>" alt="<?= escq($company['name_en']) ?>" class="w-20 h-20 rounded-xl object-contain bg-gray-50 border border-gray-200 flex-shrink-0">
+                    <img src="<?= escq($company['logo_url']) ?>" alt="<?= escq($company['name_en']) ?> logo" class="w-20 h-20 rounded-xl object-contain bg-gray-50 border border-gray-200 flex-shrink-0 -mt-16 shadow-lg ring-4 ring-white">
                 <?php else: ?>
-                    <div class="w-20 h-20 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-3xl font-bold flex-shrink-0">
+                    <div class="w-20 h-20 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-3xl font-bold flex-shrink-0 -mt-16 shadow-lg ring-4 ring-white">
                         <?= escq(mb_substr($company['name_en'], 0, 1)) ?>
                     </div>
                 <?php endif; ?>
@@ -441,6 +449,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                     </div>
                 </dl>
             </section>
+            </div><!-- /p-8 wrapper -->
         </article>
 
         <!-- Related: other companies in same sector + wilayat -->
