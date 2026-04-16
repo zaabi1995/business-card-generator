@@ -24,6 +24,28 @@ $publicSeoPages = [
     'whatsapp-qr-generator.php', 'nfc-business-card-guide.php',
     // Press / backlink-magnet pages
     'oman-business-index.php',
+    // Oman-specific solution pages (commercial-intent SEO)
+    'solutions.php',
+    'digital-business-cards-oman-sales-teams.php',
+    'bilingual-arabic-english-business-cards.php',
+    'qr-code-menu-muscat-restaurants.php',
+    'business-cards-for-ramadan-networking.php',
+    'nfc-business-cards-oman-executives.php',
+    'digital-business-cards-oil-gas-oman.php',
+    'business-cards-omani-law-firms.php',
+    'digital-cards-oman-real-estate-agents.php',
+    'business-cards-muscat-doctors-clinics.php',
+    'business-cards-oman-construction-companies.php',
+    'digital-business-cards-sohar-industrial-port.php',
+    'salalah-tourism-business-cards.php',
+    'business-cards-oman-bank-employees.php',
+    'business-cards-for-oman-trade-fairs.php',
+    'digital-business-cards-oman-hotels.php',
+    'business-cards-oman-government-employees.php',
+    'business-cards-oman-freelancers-consultants.php',
+    'business-cards-oman-startups.php',
+    'business-cards-oman-omanisation.php',
+    'business-cards-duqm-free-zone.php',
 ];
 $alwaysSkipSession = ['vcf.php', 'qr.php', 'feed.php'];
 
