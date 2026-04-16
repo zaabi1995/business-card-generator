@@ -53,6 +53,7 @@ function getAdminNavItems() {
         ['name' => 'Appointments', 'icon' => 'fa-solid fa-calendar-check', 'url' => $basePath . 'appointments' . $ext, 'key' => 'appointments'],
         ['name' => 'Theme', 'icon' => 'fa-solid fa-palette', 'url' => $basePath . 'theme' . $ext, 'key' => 'theme'],
         ['name' => 'Custom Domains', 'icon' => 'fa-solid fa-globe', 'url' => $basePath . 'custom-domains' . $ext, 'key' => 'custom-domains'],
+        ['name' => 'NFC Tags', 'icon' => 'fa-solid fa-wifi', 'url' => $basePath . 'nfc/batch.php', 'key' => 'nfc-tags'],
     ];
     
     // Add settings dropdown items
