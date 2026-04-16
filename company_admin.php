@@ -88,6 +88,7 @@ try {
         'customer-dashboard' => 'admin/customer-dashboard.php',
         'payment-history'    => 'admin/payment-history.php',
         'batch-auto-generate' => 'admin/batch-auto-generate.php',
+        'short-links'         => 'admin/short-links.php',
     ];
     
     // Handle login page specially (no auth required)

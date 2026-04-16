@@ -111,6 +111,18 @@ try {
     $isDarkPage = ($themeMode === 'light'); // light card -> dark page
     $accentColor = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#d4af37';
 
+    // Visitor-facing dark mode toggle (migration 057). Default ON; owner can disable per card.
+    $themeToggleEnabled = !isset($employee['card_dark_mode_toggle'])
+        || $employee['card_dark_mode_toggle'] === null
+        || (int)$employee['card_dark_mode_toggle'] === 1;
+
+    // Cookie override (only when toggle is enabled) — keeps SSR theme in sync with visitor choice.
+    $cookieTheme = $_COOKIE['cardify_card_theme'] ?? '';
+    if ($themeToggleEnabled && in_array($cookieTheme, ['light', 'dark'], true)) {
+        $isDarkPage = ($cookieTheme === 'dark');
+    }
+    $defaultThemeMode = $isDarkPage ? 'dark' : 'light';
+
     // Card image paths — DB stores filenames, construct full web path
     $frontImage = '';
     $backImage = '';
@@ -184,6 +196,7 @@ try {
     }
     $sectionOffers = !empty($sectionMaster['offers_enabled']) ? CardSections::loadOffers($employee['id'], true) : [];
     $sectionProducts = !empty($sectionMaster['products_enabled']) ? CardSections::loadProducts($employee['id'], true) : [];
+    $sectionFaqs = !empty($sectionMaster['faq_enabled']) ? CardSections::loadFaqsLocalized($employee['id'], $locale) : [];
     $sectionOrder = array_values(array_filter(array_map('trim', explode(',', $sectionMaster['section_order'] ?? implode(',', CardSections::SECTION_KEYS)))));
     if (!in_array('offers', $sectionOrder, true)) {
         $sectionOrder[] = 'offers';
@@ -193,6 +206,9 @@ try {
     }
     if (!in_array('products', $sectionOrder, true)) {
         $sectionOrder[] = 'products';
+    }
+    if (!in_array('faq', $sectionOrder, true)) {
+        $sectionOrder[] = 'faq';
     }
 
     // Appointment booking settings (rendered as its own section after card sections)
@@ -541,6 +557,17 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             border: 1px solid #ddd;
             <?php endif; ?>
         }
+        .btn-pdf {
+            <?php if ($isDarkPage): ?>
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+            <?php else: ?>
+            background: #f3f4f6;
+            color: #111;
+            border: 1px solid #d1d5db;
+            <?php endif; ?>
+        }
         /* Wallet buttons */
         .wallet-buttons {
             display: flex;
@@ -627,6 +654,15 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .video-frame { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; background: #000; }
         .video-frame iframe, .video-frame video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
         .video-link-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px; background: <?php echo htmlspecialchars($accentColor); ?>; color: #fff; font-size: 14px; font-weight: 600; text-decoration: none; }
+        .faq-list { display: flex; flex-direction: column; gap: 8px; }
+        .faq-item { border-radius: 10px; <?php echo $isDarkPage ? 'background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);' : 'background: #fafafa; border: 1px solid #ececec;'; ?> overflow: hidden; }
+        .faq-item[open] { <?php echo $isDarkPage ? 'background: rgba(255,255,255,0.06);' : 'background: #fff; border-color: #e0e0e0;'; ?> }
+        .faq-q { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; font-size: 14px; font-weight: 600; <?php echo $isDarkPage ? 'color:#eee;' : 'color:#1a1a2e;'; ?> user-select: none; }
+        .faq-q::-webkit-details-marker { display: none; }
+        .faq-q-text { flex: 1; line-height: 1.4; <?php echo $isRtl ? 'text-align:right;' : ''; ?> }
+        .faq-icon { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: <?php echo htmlspecialchars($accentColor); ?>22; color: <?php echo htmlspecialchars($accentColor); ?>; font-size: 11px; transition: transform 0.2s ease; }
+        .faq-item[open] .faq-icon i::before { content: "\f068"; /* fa-minus */ }
+        .faq-a { padding: 0 14px 14px; font-size: 13px; line-height: 1.55; <?php echo $isDarkPage ? 'color:#bbb;' : 'color:#555;'; ?> <?php echo $isRtl ? 'text-align:right;' : ''; ?> }
         .offers-list { display: flex; flex-direction: column; gap: 10px; }
         .offer-card { padding: 12px; border-radius: 12px; <?php echo $isDarkPage ? 'background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);' : 'background: #fafafa; border: 1px solid #ececec;'; ?> }
         .offer-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
@@ -720,14 +756,54 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             background: <?php echo $isDarkPage ? '#fff' : '#1a1a2e'; ?>;
             color: <?php echo $isDarkPage ? '#1a1a2e' : '#fff'; ?>;
         }
+
+        /* Visitor-facing theme toggle (sun/moon) — sits alongside the language switcher. */
+        .theme-toggle {
+            position: absolute;
+            top: 12px;
+            <?php echo $isRtl ? 'left' : 'right'; ?>: 78px; /* nudge inside of lang switcher */
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            background: rgba(0,0,0,0.06);
+            color: <?php echo $isDarkPage ? '#e8e8e8' : '#1a1a2e'; ?>;
+            border-radius: 999px;
+            backdrop-filter: blur(8px);
+            z-index: 50;
+            padding: 0;
+            transition: background 0.15s, color 0.15s, transform 0.15s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .theme-toggle:hover { background: rgba(0,0,0,0.12); }
+        .theme-toggle:active { transform: scale(0.92); }
+        .theme-toggle .theme-icon { display: none; }
+        /* Show SUN when we're currently dark (click to go light); MOON when currently light. */
+        body.force-dark .theme-toggle .theme-icon-sun { display: block; }
+        body.force-light .theme-toggle .theme-icon-moon { display: block; }
     </style>
 </head>
-<body>
+<body class="<?php echo $isDarkPage ? 'force-dark' : 'force-light'; ?>">
     <!-- Language switcher -->
     <nav class="lang-switcher" aria-label="Language">
         <a href="<?php echo $switchEnUrl; ?>" class="<?php echo $locale === 'en' ? 'active' : ''; ?>" hreflang="en">EN</a>
         <a href="<?php echo $switchArUrl; ?>" class="<?php echo $locale === 'ar' ? 'active' : ''; ?>" hreflang="ar">عربي</a>
     </nav>
+    <?php if ($themeToggleEnabled): ?>
+    <!-- Theme toggle (visitor override — persisted via cookie, 7d) -->
+    <button type="button"
+            class="theme-toggle"
+            id="themeToggle"
+            aria-label="<?php echo $isDarkPage ? 'Switch to light mode' : 'Switch to dark mode'; ?>"
+            title="<?php echo $isDarkPage ? 'Switch to light mode' : 'Switch to dark mode'; ?>"
+            data-mode="<?php echo $defaultThemeMode; ?>">
+        <svg class="theme-icon theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        <svg class="theme-icon theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+    </button>
+    <?php endif; ?>
     <div class="page-container">
         <!-- Company Logo -->
         <?php if ($logoPath): ?>
@@ -842,10 +918,12 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         <?php endif; ?>
 
         <!-- Save & Share -->
+        <?php $pdfUrl = '/card-pdf.php?i=' . urlencode($employee['id']); ?>
         <div class="bottom-buttons">
             <?php if ($email): ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('save_contact', $vcfUrl)); ?>" class="bottom-btn btn-save" download>Save Contact</a>
             <?php endif; ?>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('download_pdf', $pdfUrl)); ?>" class="bottom-btn btn-pdf" download>Download PDF</a>
             <button class="bottom-btn btn-share" onclick="shareCard()">Share</button>
         </div>
 
@@ -1072,6 +1150,22 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                         <?php endforeach; ?>
                     </div>
                 </div>
+            <?php elseif ($__sec === 'faq' && !empty($sectionMaster['faq_enabled']) && !empty($sectionFaqs)): ?>
+                <?php $faqTitle = ($locale === 'ar') ? 'الأسئلة الشائعة' : 'FAQ'; ?>
+                <div class="card-section">
+                    <h3><?php echo htmlspecialchars($faqTitle); ?></h3>
+                    <div class="faq-list">
+                        <?php foreach ($sectionFaqs as $__faq): ?>
+                        <details class="faq-item">
+                            <summary class="faq-q">
+                                <span class="faq-q-text"><?php echo htmlspecialchars($__faq['question']); ?></span>
+                                <span class="faq-icon" aria-hidden="true"><i class="fa-solid fa-plus"></i></span>
+                            </summary>
+                            <div class="faq-a"><?php echo nl2br(htmlspecialchars($__faq['answer'])); ?></div>
+                        </details>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
             <?php elseif ($__sec === 'lead_form' && !empty($sectionMaster['lead_form_enabled'])): ?>
                 <div class="card-section">
                     <h3>Get in Touch</h3>
@@ -1259,6 +1353,51 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     <div class="copy-toast" id="copyToast">Link copied!</div>
 
     <script>
+        // ---- Theme toggle (visitor override) ----
+        (function(){
+            var COOKIE = 'cardify_card_theme';
+            var COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days
+
+            function readCookie(name) {
+                var parts = ('; ' + document.cookie).split('; ' + name + '=');
+                if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+                return '';
+            }
+            function writeCookie(value) {
+                // SameSite=Lax keeps the cookie on cross-site reloads (e.g. from QR scanners).
+                document.cookie = COOKIE + '=' + encodeURIComponent(value) +
+                    '; Max-Age=' + COOKIE_MAX_AGE + '; Path=/; SameSite=Lax';
+            }
+
+            var btn = document.getElementById('themeToggle');
+            if (!btn) return;
+
+            // On first load with NO cookie, honour prefers-color-scheme if it disagrees with the SSR default.
+            var existing = readCookie(COOKIE);
+            var current = btn.getAttribute('data-mode'); // 'light' | 'dark' as rendered
+            if (!existing && window.matchMedia) {
+                try {
+                    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    var preferred = prefersDark ? 'dark' : 'light';
+                    if (preferred !== current) {
+                        writeCookie(preferred);
+                        window.location.reload();
+                        return;
+                    }
+                } catch (e) { /* ignore */ }
+            }
+
+            btn.addEventListener('click', function(){
+                var next = current === 'dark' ? 'light' : 'dark';
+                writeCookie(next);
+                // Optimistic class swap for an instant tactile response before reload completes.
+                document.body.classList.remove('force-light', 'force-dark');
+                document.body.classList.add('force-' + next);
+                // Full reload so SSR re-renders every section with the correct $isDarkPage.
+                window.location.reload();
+            });
+        })();
+
         // Card flip
         const cardFlip = document.getElementById('cardFlip');
         const cardInner = document.getElementById('cardInner');
@@ -1408,5 +1547,23 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     'url' => 'https://cardify.om/' . ($company['slug'] ?? '') . '/card/' . ($employee['id'] ?? '')
 ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?>
 </script>
+<?php if (!empty($sectionMaster['faq_enabled']) && !empty($sectionFaqs)): ?>
+<script type="application/ld+json">
+<?= json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'FAQPage',
+    'mainEntity' => array_map(function ($f) {
+        return [
+            '@type' => 'Question',
+            'name' => (string)($f['question'] ?? ''),
+            'acceptedAnswer' => [
+                '@type' => 'Answer',
+                'text' => (string)($f['answer'] ?? ''),
+            ],
+        ];
+    }, $sectionFaqs),
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?>
+</script>
+<?php endif; ?>
 </body>
 </html>
