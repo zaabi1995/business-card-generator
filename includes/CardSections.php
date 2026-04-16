@@ -8,7 +8,9 @@
 
 class CardSections
 {
-    const SECTION_KEYS = ['bio', 'services', 'gallery', 'testimonials', 'lead_form', 'offers'];
+    // Display order on the public card page. Offers placed early (high-value CTA),
+    // followed by bio → services/gallery → testimonials (social proof) → lead_form (bottom CTA).
+    const SECTION_KEYS = ['bio', 'offers', 'services', 'gallery', 'testimonials', 'lead_form'];
     const OFFER_PALETTE = ['#009bc1', '#ffbb00', '#824598', '#45c0ba', '#e74c3c', '#27ae60', '#111827'];
     const SUPPORTED_LOCALES = ['en', 'ar'];
     const DEFAULT_LOCALE = 'en';
