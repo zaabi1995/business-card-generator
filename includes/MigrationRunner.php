@@ -81,25 +81,138 @@ class MigrationRunner {
     }
     
     /**
+     * Heuristic detector: does a migration file contain BOTH a function
+     * definition AND obvious top-level side-effecting code?
+     *
+     * We strip: php open/close tags, line + block comments, and everything
+     * inside balanced `function … { … }` blocks. What remains should contain
+     * only require/declare statements and nothing else. Any `$pdo->`, `echo`,
+     * `return`, `try`, `throw`, bare SQL in a $pdo->exec, etc. outside of the
+     * function body is flagged.
+     *
+     * Hybrid files are dangerous: the top-level runs during require_once()
+     * AND the function runs during call_user_func() → everything executes
+     * twice. Callers should refuse to run such files and surface a loud
+     * warning. (Codex round-2 Finding 5.)
+     *
+     * Returns true = hybrid pattern detected (unsafe), false = clean.
+     */
+    private static function isHybridMigration(string $path, string $prefix): bool {
+        $src = @file_get_contents($path);
+        if ($src === false || $src === '') {
+            return false;
+        }
+
+        // No migration_NNN_* function at all → definitely not hybrid (pure
+        // top-level script, which is fine).
+        if (!preg_match('/function\s+' . preg_quote($prefix, '/') . '\w*\s*\(/', $src)) {
+            return false;
+        }
+
+        // Strip comments.
+        $clean = preg_replace('!/\*.*?\*/!s', '', $src);
+        $clean = preg_replace('/(^|\s)\/\/[^\n]*/', '', $clean);
+        $clean = preg_replace('/(^|\s)#[^\n]*/', '', $clean);
+
+        // Strip php tags.
+        $clean = preg_replace('/<\?php|<\?=|\?>/', '', $clean);
+
+        // Strip balanced function bodies. Regex balance is tricky — walk the
+        // source manually tracking brace depth.
+        $stripped = '';
+        $len = strlen($clean);
+        $i = 0;
+        while ($i < $len) {
+            // Find next "function " keyword.
+            if (preg_match('/\bfunction\b/', $clean, $m, PREG_OFFSET_CAPTURE, $i)) {
+                $fnStart = $m[0][1];
+                // Keep text up to function keyword.
+                $stripped .= substr($clean, $i, $fnStart - $i);
+                // Find the opening brace of the function body.
+                $brace = strpos($clean, '{', $fnStart);
+                if ($brace === false) {
+                    $i = $len;
+                    break;
+                }
+                // Walk to matching close brace.
+                $depth = 1;
+                $j = $brace + 1;
+                while ($j < $len && $depth > 0) {
+                    $ch = $clean[$j];
+                    if ($ch === '{') $depth++;
+                    elseif ($ch === '}') $depth--;
+                    $j++;
+                }
+                // Skip the entire function definition (keyword through closing brace).
+                $i = $j;
+            } else {
+                $stripped .= substr($clean, $i);
+                break;
+            }
+        }
+
+        // What's left outside functions. Allow: require/require_once/include,
+        // declare, namespace, use, whitespace, and the bare return at EOF that
+        // migrations rely on.
+        $outside = trim($stripped);
+        if ($outside === '') {
+            return false;
+        }
+
+        // Tokenize what's left and look for anything that isn't a safe
+        // statement. Anything matching these substrings indicates executable
+        // top-level code alongside the function definition.
+        $danger = [
+            '$pdo',
+            '$db',
+            'Database::',
+            '->exec(',
+            '->query(',
+            '->prepare(',
+            '->insert(',
+            'echo ',
+            'print(',
+            'print ',
+            'throw ',
+            'try ',
+            'try{',
+            'if(',
+            'if (',
+            'foreach(',
+            'foreach (',
+            'while(',
+            'while (',
+            'for(',
+            'for (',
+        ];
+        foreach ($danger as $needle) {
+            if (stripos($outside, $needle) !== false) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Run a specific migration
      */
     public static function runMigration($migrationNumber) {
         self::init();
-        
+
         if (!self::$db->isConnected()) {
             return ['success' => false, 'error' => 'Database not connected'];
         }
-        
+
         $migrations = self::getAvailableMigrations();
         $migration = null;
-        
+
         foreach ($migrations as $mig) {
             if ($mig['number'] == $migrationNumber) {
                 $migration = $mig;
                 break;
             }
         }
-        
+
         if (!$migration) {
             return ['success' => false, 'error' => 'Migration not found'];
         }
@@ -108,6 +221,27 @@ class MigrationRunner {
         $executed = self::getExecutedMigrations();
         if (in_array($migrationNumber, $executed)) {
             return ['success' => false, 'error' => 'Migration already executed'];
+        }
+
+        $prefix = 'migration_' . str_pad($migrationNumber, 3, '0', STR_PAD_LEFT);
+
+        // Safety gate (Codex round-2 Finding 5): refuse migration files that
+        // BOTH define a migration_NNN_* function AND run side-effecting code at
+        // top level. Such files would execute twice (once on require_once,
+        // once on call_user_func) and corrupt state.
+        if (self::isHybridMigration($migration['path'], $prefix)) {
+            $msg = sprintf(
+                'Refusing to run migration %s — file %s contains both a %s*() function and top-level executable code. Pick one pattern: either put ALL work in the function, or remove the function and keep only a top-level script.',
+                $migrationNumber,
+                basename($migration['path']),
+                $prefix
+            );
+            error_log('[MigrationRunner] ' . $msg);
+            return [
+                'success' => false,
+                'error'   => $msg,
+                'migration' => $migration,
+            ];
         }
 
         // Snapshot user functions BEFORE include so we can detect whether this
@@ -128,7 +262,6 @@ class MigrationRunner {
         }
 
         $after = get_defined_functions()['user'];
-        $prefix = 'migration_' . str_pad($migrationNumber, 3, '0', STR_PAD_LEFT);
 
         $functionName = null;
         foreach (array_diff($after, $before) as $func) {
@@ -152,7 +285,9 @@ class MigrationRunner {
             $pdo = self::$db->getConnection();
 
             if ($functionName && function_exists($functionName)) {
-                // OLD PATTERN: migration file defines a function, we call it.
+                // FUNCTION-BASED PATTERN: migration file defines a function, we call it.
+                // The hybrid-detector above ensures the top-level here was a pure
+                // function-definition, so this is the ONLY execution.
                 $result = call_user_func($functionName, $pdo);
                 if (!is_array($result) || empty($result['success'])) {
                     return [
@@ -162,8 +297,8 @@ class MigrationRunner {
                     ];
                 }
             }
-            // NEW PATTERN: top-level script already ran during require_once
-            // above and did not throw → treat as success and record it.
+            // TOP-LEVEL PATTERN: no function defined, script already ran during
+            // require_once above and did not throw → treat as success.
 
             // Record migration as executed
             self::$db->insert('migrations', [

@@ -4,16 +4,22 @@
  *
  * Usage: /card_click.php?eid=<employee_id>&cta=<click_phone|...>&dest=<urlencoded-target>
  *
- * Hardened against open-redirect abuse (Codex finding, Apr 2026):
+ * Hardened against open-redirect abuse (Codex findings, Apr 2026):
  *  - `eid`, `cta`, `dest` are ALL required. Missing/invalid → 400 (no redirect).
  *  - `eid` MUST resolve to an existing employee in DB.
  *  - `cta` MUST be in the click-event allow-list (subset of CardAnalytics::EVENT_TYPES).
  *  - `dest` MUST be tel:, mailto:, sms:, whatsapp:, a same-origin path, OR an
  *    https:// URL whose host is on the cardify whitelist (no arbitrary externals).
+ *  - URL shorteners (goo.gl, bit.ly, t.co, …) are REJECTED even if listed — they
+ *    are checked via the shared UNSAFE_SHORTENERS constant in includes/UrlSafety.php
+ *    so additions stay in sync with admin/short-links.php. (Round-2 Finding 1.)
+ *  - Trailing-dot hosts (`cardify.om.`) are canonicalised before matching,
+ *    so they can't bypass blocklists. (Round-2 Finding 6.)
  */
 
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/CardAnalytics.php';
+require_once INCLUDES_DIR . '/UrlSafety.php';
 
 $employeeId = trim($_GET['eid'] ?? '');
 $cta        = trim($_GET['cta'] ?? '');
@@ -28,6 +34,9 @@ $allowedCta = [
 
 // Whitelist of https hosts we will redirect to. Same-origin paths are handled
 // separately (leading `/`). Add trusted externals here ONLY.
+//
+// NOTE: URL shorteners (goo.gl, bit.ly, …) are explicitly NOT on this list
+// and are blocked regardless by isAllowedRedirectHost() via UNSAFE_SHORTENERS.
 $allowedHttpsHosts = [
     'cardify.om',
     'www.cardify.om',
@@ -39,67 +48,7 @@ $allowedHttpsHosts = [
     'api.whatsapp.com',
     'maps.google.com',
     'www.google.com',
-    'goo.gl',
 ];
-
-/**
- * Validate destination URL against strict allow-list.
- * Returns sanitized URL string, or null if rejected.
- *
- * @param string   $dest
- * @param string[] $allowedHttpsHosts
- * @return string|null
- */
-function card_click_validate_dest($dest, array $allowedHttpsHosts)
-{
-    if ($dest === '') {
-        return null;
-    }
-    // Relative same-origin path
-    if ($dest[0] === '/') {
-        // Disallow "//" (protocol-relative) — open redirect vector
-        if (isset($dest[1]) && $dest[1] === '/') {
-            return null;
-        }
-        // Disallow CRLF injection
-        if (preg_match('/[\r\n]/', $dest)) {
-            return null;
-        }
-        return $dest;
-    }
-
-    $lower = strtolower($dest);
-
-    // Non-http(s) schemes: tel:, mailto:, sms:, whatsapp: — accept as-is (no host).
-    $passthroughSchemes = ['tel:', 'mailto:', 'sms:', 'whatsapp:'];
-    foreach ($passthroughSchemes as $prefix) {
-        if (strpos($lower, $prefix) === 0) {
-            if (preg_match('/[\r\n]/', $dest)) {
-                return null;
-            }
-            return $dest;
-        }
-    }
-
-    // https:// — validate URL, then check host whitelist.
-    if (strpos($lower, 'https://') === 0) {
-        if (!filter_var($dest, FILTER_VALIDATE_URL)) {
-            return null;
-        }
-        $host = parse_url($dest, PHP_URL_HOST);
-        if (!$host) {
-            return null;
-        }
-        $host = strtolower($host);
-        if (!in_array($host, $allowedHttpsHosts, true)) {
-            return null;
-        }
-        return $dest;
-    }
-
-    // Everything else (http://, javascript:, data:, file:, ftp:, …) rejected.
-    return null;
-}
 
 // ---------------------------------------------------------------------------
 // 1. Required params.
@@ -117,8 +66,9 @@ if (!in_array($cta, $allowedCta, true)) {
     exit;
 }
 
-// 3. Destination must pass URL allow-list.
-$safeDest = card_click_validate_dest($dest, $allowedHttpsHosts);
+// 3. Destination must pass the shared URL allow-list (canonicalised host,
+//    shortener blocklist enforced centrally).
+$safeDest = isAllowedRedirectHost($dest, $allowedHttpsHosts);
 if ($safeDest === null) {
     http_response_code(400);
     echo 'Invalid destination.';

@@ -101,13 +101,17 @@ class QRTracker {
         // Generate new visitor ID
         $visitorId = bin2hex(random_bytes(16));
         
-        // Try to set cookie (may fail if headers already sent, that's ok)
+        // Try to set cookie (may fail if headers already sent, that's ok).
+        // Secure flag uses proxy-aware HTTPS detection (Codex round-2 Finding 7).
         if (!headers_sent()) {
+            if (!function_exists('isHttpsRequest')) {
+                require_once __DIR__ . '/UrlSafety.php';
+            }
             $expiry = time() + (2 * 365 * 24 * 60 * 60);
             @setcookie($cookieName, $visitorId, [
                 'expires' => $expiry,
                 'path' => '/',
-                'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+                'secure' => isHttpsRequest(),
                 'httponly' => true,
                 'samesite' => 'Lax'
             ]);

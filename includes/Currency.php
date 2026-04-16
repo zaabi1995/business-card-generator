@@ -1501,11 +1501,16 @@ JS;
         $currency = strtoupper($currency);
         if (!isset(self::SUPPORTED[$currency])) return false;
 
-        // Cookie: 365 days, secure, httponly=false so JS can read if needed
+        // Cookie: 365 days, secure, httponly=false so JS can read if needed.
+        // Secure flag uses proxy-aware HTTPS detection (Cloudflare Flexible SSL
+        // hits us over HTTP but the visitor is HTTPS). Codex round-2 Finding 7.
+        if (!function_exists('isHttpsRequest')) {
+            require_once __DIR__ . '/UrlSafety.php';
+        }
         setcookie(self::COOKIE_NAME, $currency, [
             'expires' => time() + 86400 * 365,
             'path' => '/',
-            'secure' => !empty($_SERVER['HTTPS']),
+            'secure' => isHttpsRequest(),
             'httponly' => false,
             'samesite' => 'Lax',
         ]);

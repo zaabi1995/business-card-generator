@@ -7,6 +7,8 @@
  */
 require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/Appointments.php';
+require_once INCLUDES_DIR . '/UrlSafety.php';
+require_once INCLUDES_DIR . '/RateLimiter.php';
 
 header('Content-Type: application/json');
 
@@ -85,31 +87,26 @@ try {
         exit;
     }
 
-    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    // Client IP via shared helper — honours Cloudflare / proxy headers so we
+    // match what other endpoints log. (Codex round-2 Finding 3.)
+    $ip = getClientIp();
 
     // Rate limit: max 5 pending/confirmed bookings per IP per hour (site-wide)
-    // AND max 3 bookings per (IP, employee) per hour. Cancelled bookings don't
-    // count toward the limit.
-    $ipCount = $db->fetchOne(
-        "SELECT COUNT(*) AS c FROM appointments
-         WHERE ip = :ip
-           AND status <> 'cancelled'
-           AND created_at > (NOW() - INTERVAL 1 HOUR)",
-        ['ip' => $ip]
-    );
-    if ((int)($ipCount['c'] ?? 0) >= 5) {
+    // AND max 3 bookings per (IP, employee) per hour.
+    //
+    // Previously this was SELECT-COUNT → INSERT, which was racy: concurrent
+    // bookings all saw count < 5 and all inserted. Now both gates use the
+    // atomic RateLimiter (INSERT ... ON DUPLICATE KEY UPDATE count=count+1)
+    // which serialises the increment at the DB. (Codex round-2 Finding 4.)
+    if (!RateLimiter::check('appt:ip', $ip, 5, 3600)) {
         http_response_code(429);
         echo json_encode(['success' => false, 'error' => 'Too many booking attempts. Please try again later.']);
         exit;
     }
-    $pairCount = $db->fetchOne(
-        "SELECT COUNT(*) AS c FROM appointments
-         WHERE ip = :ip AND employee_id = :eid
-           AND status <> 'cancelled'
-           AND created_at > (NOW() - INTERVAL 1 HOUR)",
-        ['ip' => $ip, 'eid' => $employee['id']]
-    );
-    if ((int)($pairCount['c'] ?? 0) >= 3) {
+    if (!RateLimiter::check('appt:ip_emp:' . $employee['id'], $ip, 3, 3600)) {
+        // Refund the site-wide counter since this attempt is being blocked at
+        // the per-employee gate (don't double-count against the 5/hour cap).
+        RateLimiter::refund('appt:ip', $ip, 3600);
         http_response_code(429);
         echo json_encode(['success' => false, 'error' => 'Too many booking attempts for this profile.']);
         exit;

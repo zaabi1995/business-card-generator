@@ -759,11 +759,17 @@ class CardSections
         if (!empty($_GET['lang']) && in_array($_GET['lang'], self::SUPPORTED_LOCALES, true)) {
             $locale = $_GET['lang'];
             if (!headers_sent()) {
+                // Secure flag now uses proxy-aware HTTPS detection so Cloudflare
+                // "Flexible SSL" (HTTPS=off, X-Forwarded-Proto=https) still sets
+                // Secure. (Codex round-2 Finding 7.)
+                if (!function_exists('isHttpsRequest')) {
+                    require_once __DIR__ . '/UrlSafety.php';
+                }
                 @setcookie(self::LOCALE_COOKIE, $locale, [
                     'expires' => time() + 7 * 86400,
                     'path' => '/',
                     'samesite' => 'Lax',
-                    'secure' => !empty($_SERVER['HTTPS']),
+                    'secure' => isHttpsRequest(),
                     'httponly' => false,
                 ]);
             }

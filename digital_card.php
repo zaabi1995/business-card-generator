@@ -1466,8 +1466,10 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             }
             function writeCookie(value) {
                 // SameSite=Lax keeps the cookie on cross-site reloads (e.g. from QR scanners).
+                // Secure flag auto-applied over HTTPS (Codex round-2 Finding 7).
+                var secure = (location.protocol === 'https:') ? '; Secure' : '';
                 document.cookie = COOKIE + '=' + encodeURIComponent(value) +
-                    '; Max-Age=' + COOKIE_MAX_AGE + '; Path=/; SameSite=Lax';
+                    '; Max-Age=' + COOKIE_MAX_AGE + '; Path=/; SameSite=Lax' + secure;
             }
 
             var btn = document.getElementById('themeToggle');
