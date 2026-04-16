@@ -16,6 +16,7 @@ try {
     require_once INCLUDES_DIR . '/QRTracker.php';
     require_once INCLUDES_DIR . '/CardSections.php';
     require_once INCLUDES_DIR . '/Appointments.php';
+    require_once INCLUDES_DIR . '/EmployeeSocials.php';
     require_once INCLUDES_DIR . '/CardAnalytics.php';
 
     /**
@@ -150,6 +151,7 @@ try {
 
     // Public card sections (localized with EN fallback)
     $sectionMaster = CardSections::loadMaster($employee['id'], $company['id']);
+    $socialLinks = EmployeeSocials::loadForEmployee($employee['id']);
     $bioText = ($locale === 'ar' && trim((string)($sectionMaster['bio_text_ar'] ?? '')) !== '')
         ? $sectionMaster['bio_text_ar']
         : ($sectionMaster['bio_text'] ?? '');
@@ -468,6 +470,34 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             white-space: nowrap;
         }
 
+        /* Social Links */
+        .social-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            max-width: 400px;
+            margin: 16px auto 0;
+        }
+        .social-link {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f4f6;
+            color: #111827;
+            text-decoration: none;
+            transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+        }
+        .social-link:hover {
+            transform: translateY(-2px);
+            background: #111827;
+            color: #fff;
+        }
+        .social-link i { font-size: 18px; }
+
         /* Bottom Buttons */
         .bottom-buttons {
             display: flex;
@@ -769,6 +799,23 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             </a>
             <?php endif; ?>
         </div>
+
+        <!-- Social Links -->
+        <?php if (!empty($socialLinks)): ?>
+        <div class="social-links" aria-label="Social profiles">
+            <?php foreach ($socialLinks as $sl): ?>
+            <?php $__href = EmployeeSocials::hrefFor($sl['platform'], $sl['url']); ?>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_social', $__href)); ?>"
+               class="social-link"
+               target="_blank"
+               rel="noopener"
+               title="<?php echo htmlspecialchars($sl['label']); ?>"
+               aria-label="<?php echo htmlspecialchars($sl['label']); ?>">
+                <i class="<?php echo htmlspecialchars($sl['icon']); ?>"></i>
+            </a>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
 
         <!-- Save & Share -->
         <div class="bottom-buttons">
