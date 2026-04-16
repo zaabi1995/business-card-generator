@@ -29,6 +29,7 @@ class CardAnalytics
         'wallet_add',
         'qr_scan',
         'offer_redeem',
+        'short_link_click',
     ];
 
     private static function init()
