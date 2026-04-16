@@ -10,7 +10,19 @@ class CardSections
 {
     // Display order on the public card page. Offers placed early (high-value CTA),
     // followed by bio → services/gallery → testimonials (social proof) → lead_form (bottom CTA).
-    const SECTION_KEYS = ['bio', 'offers', 'services', 'products', 'gallery', 'video', 'testimonials', 'faq', 'lead_form', 'location'];
+    const SECTION_KEYS = ['bio', 'offers', 'services', 'products', 'gallery', 'video', 'testimonials', 'faq', 'lead_form', 'location', 'hours'];
+    const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    // PHP date('N') returns 1=Mon..7=Sun; map to our keys.
+    const DAY_BY_ISO = [1 => 'mon', 2 => 'tue', 3 => 'wed', 4 => 'thu', 5 => 'fri', 6 => 'sat', 7 => 'sun'];
+    const DAY_NAMES_EN = [
+        'mon' => 'Monday', 'tue' => 'Tuesday', 'wed' => 'Wednesday',
+        'thu' => 'Thursday', 'fri' => 'Friday', 'sat' => 'Saturday', 'sun' => 'Sunday',
+    ];
+    const DAY_NAMES_AR = [
+        'mon' => 'الاثنين', 'tue' => 'الثلاثاء', 'wed' => 'الأربعاء',
+        'thu' => 'الخميس', 'fri' => 'الجمعة', 'sat' => 'السبت', 'sun' => 'الأحد',
+    ];
+    const DEFAULT_TZ = 'Asia/Muscat';
     const OFFER_PALETTE = ['#009bc1', '#ffbb00', '#824598', '#45c0ba', '#e74c3c', '#27ae60', '#111827'];
     const SUPPORTED_LOCALES = ['en', 'ar'];
     const DEFAULT_LOCALE = 'en';
@@ -56,6 +68,8 @@ class CardSections
                 'video_url' => '',
                 'video_title' => '',
                 'products_enabled' => 0,
+                'hours_enabled' => 0,
+                'hours_timezone' => self::DEFAULT_TZ,
                 'faq_enabled' => 0,
                 'section_order' => implode(',', self::SECTION_KEYS),
             ];
@@ -73,6 +87,11 @@ class CardSections
         }
         foreach (['location_enabled' => 0, 'location_address' => '', 'location_lat' => null, 'location_lng' => null, 'location_label' => ''] as $k => $v) {
             if (!array_key_exists($k, $row)) {
+                $row[$k] = $v;
+            }
+        }
+        foreach (['hours_enabled' => 0, 'hours_timezone' => self::DEFAULT_TZ] as $k => $v) {
+            if (!array_key_exists($k, $row) || $row[$k] === null) {
                 $row[$k] = $v;
             }
         }
@@ -388,18 +407,29 @@ class CardSections
         $locLat = isset($data['location_lat']) && $data['location_lat'] !== '' && is_numeric($data['location_lat']) ? (float)$data['location_lat'] : null;
         $locLng = isset($data['location_lng']) && $data['location_lng'] !== '' && is_numeric($data['location_lng']) ? (float)$data['location_lng'] : null;
 
+        $tz = trim((string)($data['hours_timezone'] ?? self::DEFAULT_TZ));
+        if ($tz === '' || !in_array($tz, timezone_identifiers_list(), true)) {
+            $tz = self::DEFAULT_TZ;
+        }
+
         $stmt = $pdo->prepare(
             "INSERT INTO employee_card_sections
                 (employee_id, company_id, bio_enabled, bio_text, bio_text_ar, services_enabled, gallery_enabled,
                  testimonials_enabled, lead_form_enabled, lead_form_email, offers_enabled,
                  video_enabled, video_url, video_title,
                  location_enabled, location_address, location_lat, location_lng, location_label,
-                 products_enabled, faq_enabled, section_order)
+                 products_enabled,
+                 hours_enabled, hours_timezone,
+                 faq_enabled,
+                 section_order)
              VALUES
                 (:eid, :cid, :be, :bt, :bta, :se, :ge, :te, :le, :lem, :oe,
                  :ve, :vu, :vt,
                  :loce, :loca, :loclat, :loclng, :loclbl,
-                 :pe, :fe, :ord)
+                 :pe,
+                 :he, :htz,
+                 :fe,
+                 :ord)
              ON DUPLICATE KEY UPDATE
                 bio_enabled = VALUES(bio_enabled),
                 bio_text = VALUES(bio_text),
@@ -419,6 +449,8 @@ class CardSections
                 location_lng = VALUES(location_lng),
                 location_label = VALUES(location_label),
                 products_enabled = VALUES(products_enabled),
+                hours_enabled = VALUES(hours_enabled),
+                hours_timezone = VALUES(hours_timezone),
                 faq_enabled = VALUES(faq_enabled),
                 section_order = VALUES(section_order)"
         );
@@ -447,9 +479,222 @@ class CardSections
             'loclng' => $locLng,
             'loclbl' => $locLabel,
             'pe' => !empty($data['products_enabled']) ? 1 : 0,
+            'he' => !empty($data['hours_enabled']) ? 1 : 0,
+            'htz' => $tz,
             'fe' => !empty($data['faq_enabled']) ? 1 : 0,
             'ord' => $order,
         ]);
+    }
+
+    // ---- Business Hours --------------------------------------------------
+
+    /**
+     * Load the weekly schedule for an employee as an associative array keyed
+     * by day ('mon'..'sun'). Missing days fall back to a closed default so
+     * callers can always render all 7 rows.
+     */
+    public static function loadBusinessHours($employeeId)
+    {
+        $rows = Database::getInstance()->fetchAll(
+            "SELECT day_of_week, is_closed, open_time, close_time, break_start, break_end
+               FROM employee_business_hours
+              WHERE employee_id = :eid",
+            ['eid' => $employeeId]
+        );
+        $byDay = [];
+        foreach ($rows as $r) {
+            $byDay[$r['day_of_week']] = [
+                'is_closed'   => (int)$r['is_closed'] === 1,
+                'open_time'   => $r['open_time'],
+                'close_time'  => $r['close_time'],
+                'break_start' => $r['break_start'],
+                'break_end'   => $r['break_end'],
+            ];
+        }
+        $out = [];
+        foreach (self::DAY_KEYS as $d) {
+            $out[$d] = $byDay[$d] ?? [
+                'is_closed'   => true,
+                'open_time'   => null,
+                'close_time'  => null,
+                'break_start' => null,
+                'break_end'   => null,
+            ];
+        }
+        return $out;
+    }
+
+    /**
+     * Bulk-replace the 7-day schedule. Input is an array keyed by day with
+     * keys { is_closed, open_time, close_time, break_start?, break_end? }.
+     * Blank/invalid times default to closed for that day.
+     */
+    public static function saveBusinessHours($employeeId, array $schedule)
+    {
+        $pdo = Database::getInstance()->getConnection();
+        $stmt = $pdo->prepare(
+            "INSERT INTO employee_business_hours
+                (employee_id, day_of_week, is_closed, open_time, close_time, break_start, break_end)
+             VALUES (:eid, :d, :c, :ot, :ct, :bs, :be)
+             ON DUPLICATE KEY UPDATE
+                is_closed   = VALUES(is_closed),
+                open_time   = VALUES(open_time),
+                close_time  = VALUES(close_time),
+                break_start = VALUES(break_start),
+                break_end   = VALUES(break_end)"
+        );
+        foreach (self::DAY_KEYS as $d) {
+            $row = isset($schedule[$d]) && is_array($schedule[$d]) ? $schedule[$d] : [];
+            $isClosed = !empty($row['is_closed']);
+            $open  = self::normalizeTime($row['open_time']  ?? null);
+            $close = self::normalizeTime($row['close_time'] ?? null);
+            $bs    = self::normalizeTime($row['break_start'] ?? null);
+            $be    = self::normalizeTime($row['break_end']   ?? null);
+            // If either open or close is missing, treat as closed to avoid half-configured rows.
+            if (!$isClosed && ($open === null || $close === null)) {
+                $isClosed = true;
+                $open = $close = null;
+            }
+            if ($isClosed) {
+                $open = $close = $bs = $be = null;
+            } else {
+                // Invalid break range → drop silently.
+                if ($bs === null || $be === null) { $bs = $be = null; }
+            }
+            $stmt->execute([
+                'eid' => $employeeId,
+                'd'   => $d,
+                'c'   => $isClosed ? 1 : 0,
+                'ot'  => $open,
+                'ct'  => $close,
+                'bs'  => $bs,
+                'be'  => $be,
+            ]);
+        }
+    }
+
+    private static function normalizeTime($v)
+    {
+        $v = trim((string)$v);
+        if ($v === '') return null;
+        // Accept HH:MM or HH:MM:SS
+        if (preg_match('/^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/', $v, $m)) {
+            return sprintf('%s:%s:%s', $m[1], $m[2], $m[3] ?? '00');
+        }
+        return null;
+    }
+
+    /**
+     * Compute current open/closed status in the card's configured timezone.
+     *
+     * Returns: [
+     *   'is_open'      => bool,
+     *   'on_break'     => bool,
+     *   'today_key'    => 'mon'..'sun',
+     *   'closes_at'    => 'HH:MM' | null,   (when open)
+     *   'opens_at'     => 'HH:MM' | null,   (when closed — same-day reopen or next open day)
+     *   'opens_day'    => 'mon'..'sun' | null,
+     *   'same_day'     => bool,
+     * ]
+     */
+    public static function computeOpenStatus(array $schedule, $tzName)
+    {
+        try {
+            $tz = new DateTimeZone($tzName ?: self::DEFAULT_TZ);
+        } catch (Throwable $e) {
+            $tz = new DateTimeZone(self::DEFAULT_TZ);
+        }
+        $now = new DateTime('now', $tz);
+        $isoToday = (int)$now->format('N'); // 1..7
+        $todayKey = self::DAY_BY_ISO[$isoToday] ?? 'mon';
+        $nowSec = ((int)$now->format('H')) * 3600 + ((int)$now->format('i')) * 60 + (int)$now->format('s');
+
+        $t2s = function ($hms) {
+            if (!$hms) return null;
+            $p = explode(':', $hms);
+            if (count($p) < 2) return null;
+            return ((int)$p[0]) * 3600 + ((int)$p[1]) * 60 + (int)($p[2] ?? 0);
+        };
+        $s2hm = function ($sec) {
+            $h = (int)floor($sec / 3600);
+            $m = (int)floor(($sec % 3600) / 60);
+            return sprintf('%02d:%02d', $h, $m);
+        };
+
+        $today = $schedule[$todayKey] ?? null;
+        if ($today && empty($today['is_closed'])) {
+            $open = $t2s($today['open_time']);
+            $close = $t2s($today['close_time']);
+            $bs = $t2s($today['break_start'] ?? null);
+            $be = $t2s($today['break_end'] ?? null);
+            if ($open !== null && $close !== null && $nowSec >= $open && $nowSec < $close) {
+                if ($bs !== null && $be !== null && $nowSec >= $bs && $nowSec < $be) {
+                    return [
+                        'is_open' => false, 'on_break' => true, 'today_key' => $todayKey,
+                        'closes_at' => null, 'opens_at' => $s2hm($be), 'opens_day' => $todayKey, 'same_day' => true,
+                    ];
+                }
+                return [
+                    'is_open' => true, 'on_break' => false, 'today_key' => $todayKey,
+                    'closes_at' => $s2hm($close), 'opens_at' => null, 'opens_day' => null, 'same_day' => true,
+                ];
+            }
+            // Before opening today
+            if ($open !== null && $nowSec < $open) {
+                return [
+                    'is_open' => false, 'on_break' => false, 'today_key' => $todayKey,
+                    'closes_at' => null, 'opens_at' => $s2hm($open), 'opens_day' => $todayKey, 'same_day' => true,
+                ];
+            }
+        }
+        // Find next open day (up to 7 days ahead)
+        for ($i = 1; $i <= 7; $i++) {
+            $iso = ((($isoToday - 1) + $i) % 7) + 1;
+            $key = self::DAY_BY_ISO[$iso];
+            $d = $schedule[$key] ?? null;
+            if ($d && empty($d['is_closed']) && !empty($d['open_time'])) {
+                return [
+                    'is_open' => false, 'on_break' => false, 'today_key' => $todayKey,
+                    'closes_at' => null, 'opens_at' => substr($d['open_time'], 0, 5),
+                    'opens_day' => $key, 'same_day' => false,
+                ];
+            }
+        }
+        // Fully closed every day
+        return [
+            'is_open' => false, 'on_break' => false, 'today_key' => $todayKey,
+            'closes_at' => null, 'opens_at' => null, 'opens_day' => null, 'same_day' => false,
+        ];
+    }
+
+    /**
+     * Build schema.org LocalBusiness `openingHours` strings from a schedule.
+     *   e.g. ['Mo-Fr 09:00-17:00', 'Sa 10:00-14:00']
+     * Day codes per schema.org: Mo, Tu, We, Th, Fr, Sa, Su.
+     */
+    public static function buildSchemaOpeningHours(array $schedule)
+    {
+        $codes = ['mon' => 'Mo', 'tue' => 'Tu', 'wed' => 'We', 'thu' => 'Th', 'fri' => 'Fr', 'sat' => 'Sa', 'sun' => 'Su'];
+        $out = [];
+        foreach (self::DAY_KEYS as $d) {
+            $row = $schedule[$d] ?? null;
+            if (!$row || !empty($row['is_closed']) || empty($row['open_time']) || empty($row['close_time'])) {
+                continue;
+            }
+            $open = substr($row['open_time'], 0, 5);
+            $close = substr($row['close_time'], 0, 5);
+            // Emit one span per day; break times not expressible in schema.org openingHours.
+            $out[] = $codes[$d] . ' ' . $open . '-' . $close;
+        }
+        return $out;
+    }
+
+    public static function dayName($dayKey, $locale)
+    {
+        if ($locale === 'ar') {
+            return self::DAY_NAMES_AR[$dayKey] ?? $dayKey;
+        }
+        return self::DAY_NAMES_EN[$dayKey] ?? $dayKey;
     }
 
     /**
