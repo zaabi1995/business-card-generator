@@ -55,7 +55,17 @@ try {
     ];
 
     // Theme (for accent colour). Missing theme is fine — we fall back.
-    $theme = loadCompanyTheme($company['id']);
+    // We deliberately query directly instead of relying on loadCompanyTheme(),
+    // which is defined inside digital_card.php rather than includes/functions.php.
+    $theme = null;
+    try {
+        $theme = $db->fetchOne(
+            "SELECT * FROM company_themes WHERE company_id = :cid",
+            ['cid' => $company['id']]
+        );
+    } catch (Throwable $e) {
+        error_log('card-pdf theme lookup: ' . $e->getMessage());
+    }
     $accent = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#d4af37';
     // Sanity-clamp to CSS-safe hex; anything else falls back.
     if (!preg_match('/^#[0-9a-fA-F]{3,8}$/', $accent)) {
