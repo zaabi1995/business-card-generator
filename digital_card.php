@@ -290,6 +290,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     <?php endif; ?>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { overflow-x: hidden; }
         body {
             min-height: 100vh;
             font-family: <?php echo $isRtl ? "'Noto Sans Arabic', " : ''; ?>-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
