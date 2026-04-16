@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                     ['status' => 'approved'] // owner-added → auto-approved
                 );
                 if ($tid) {
-                    $arName = trim((string)($_POST['testimonial_name_ar'] ?? ''));
+                    $arName  = trim((string)($_POST['testimonial_name_ar'] ?? ''));
                     $arQuote = trim((string)($_POST['testimonial_quote_ar'] ?? ''));
                     if ($arName !== '' || $arQuote !== '') {
                         CardSections::upsertTestimonialTranslation($tid, 'ar', $arName, $arQuote);
@@ -644,7 +644,6 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <?php endforeach; ?>
                 </div>
                 <?php endif; ?>
-
                 <form method="post" enctype="multipart/form-data" class="space-y-2">
                     <input type="hidden" name="action" value="add_testimonial">
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
@@ -653,8 +652,6 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <input type="text" name="testimonial_quote" placeholder="What they said (EN)" required class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm md:col-span-2">
                         <input type="file" name="testimonial_photo" accept="image/jpeg,image/png,image/webp" class="text-sm">
                     </div>
-                    <!-- AR fields preserved below if present -->
-
                     <div class="grid md:grid-cols-4 gap-2">
                         <div class="md:col-span-1 text-xs text-gray-500 self-center">Arabic (optional)</div>
                         <input type="text" name="testimonial_name_ar" dir="rtl" placeholder="اسم العميل" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">

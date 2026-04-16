@@ -10,6 +10,9 @@ class CardSections
 {
     const SECTION_KEYS = ['bio', 'services', 'gallery', 'testimonials', 'lead_form', 'offers'];
     const OFFER_PALETTE = ['#009bc1', '#ffbb00', '#824598', '#45c0ba', '#e74c3c', '#27ae60', '#111827'];
+    const SUPPORTED_LOCALES = ['en', 'ar'];
+    const DEFAULT_LOCALE = 'en';
+    const LOCALE_COOKIE = 'cardify_locale';
     const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
     const MAX_GALLERY_IMAGES = 12;
     const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp'];
@@ -35,6 +38,7 @@ class CardSections
                 'company_id' => $companyId,
                 'bio_enabled' => 0,
                 'bio_text' => '',
+                'bio_text_ar' => '',
                 'services_enabled' => 0,
                 'gallery_enabled' => 0,
                 'testimonials_enabled' => 0,
@@ -231,13 +235,14 @@ class CardSections
 
         $stmt = $pdo->prepare(
             "INSERT INTO employee_card_sections
-                (employee_id, company_id, bio_enabled, bio_text, services_enabled, gallery_enabled,
+                (employee_id, company_id, bio_enabled, bio_text, bio_text_ar, services_enabled, gallery_enabled,
                  testimonials_enabled, lead_form_enabled, lead_form_email, offers_enabled, section_order)
              VALUES
-                (:eid, :cid, :be, :bt, :se, :ge, :te, :le, :lem, :oe, :ord)
+                (:eid, :cid, :be, :bt, :bta, :se, :ge, :te, :le, :lem, :oe, :ord)
              ON DUPLICATE KEY UPDATE
                 bio_enabled = VALUES(bio_enabled),
                 bio_text = VALUES(bio_text),
+                bio_text_ar = VALUES(bio_text_ar),
                 services_enabled = VALUES(services_enabled),
                 gallery_enabled = VALUES(gallery_enabled),
                 testimonials_enabled = VALUES(testimonials_enabled),
@@ -251,6 +256,7 @@ class CardSections
             'cid' => $companyId,
             'be' => !empty($data['bio_enabled']) ? 1 : 0,
             'bt' => (string)($data['bio_text'] ?? ''),
+            'bta' => (string)($data['bio_text_ar'] ?? ''),
             'se' => !empty($data['services_enabled']) ? 1 : 0,
             'ge' => !empty($data['gallery_enabled']) ? 1 : 0,
             'te' => !empty($data['testimonials_enabled']) ? 1 : 0,
@@ -259,6 +265,161 @@ class CardSections
             'oe' => !empty($data['offers_enabled']) ? 1 : 0,
             'ord' => $order,
         ]);
+    }
+
+    // ---- i18n helpers ----------------------------------------------------
+
+    /**
+     * Resolve the active locale for the current request.
+     * Order: ?lang=  ->  cookie cardify_locale  ->  default (en).
+     * Persists ?lang= choice to cookie (7-day expiry) when present.
+     */
+    public static function resolveLocale()
+    {
+        $locale = self::DEFAULT_LOCALE;
+        if (!empty($_GET['lang']) && in_array($_GET['lang'], self::SUPPORTED_LOCALES, true)) {
+            $locale = $_GET['lang'];
+            if (!headers_sent()) {
+                @setcookie(self::LOCALE_COOKIE, $locale, [
+                    'expires' => time() + 7 * 86400,
+                    'path' => '/',
+                    'samesite' => 'Lax',
+                    'secure' => !empty($_SERVER['HTTPS']),
+                    'httponly' => false,
+                ]);
+            }
+        } elseif (!empty($_COOKIE[self::LOCALE_COOKIE])
+            && in_array($_COOKIE[self::LOCALE_COOKIE], self::SUPPORTED_LOCALES, true)) {
+            $locale = $_COOKIE[self::LOCALE_COOKIE];
+        }
+        return $locale;
+    }
+
+    public static function isRtl($locale)
+    {
+        return $locale === 'ar';
+    }
+
+    /**
+     * Return localized value for $base column, falling back to EN/base.
+     */
+    public static function tColumn(array $row, $base, $locale)
+    {
+        $primary = $row[$base . '_' . $locale] ?? null;
+        if (is_string($primary) && trim($primary) !== '') return $primary;
+        $fallback = $row[$base . '_en'] ?? ($row[$base] ?? '');
+        return is_string($fallback) ? $fallback : '';
+    }
+
+    public static function loadServicesLocalized($employeeId, $locale)
+    {
+        $locale = in_array($locale, self::SUPPORTED_LOCALES, true) ? $locale : self::DEFAULT_LOCALE;
+        $rows = self::loadServices($employeeId);
+        if ($locale === 'en' || empty($rows)) return $rows;
+
+        $ids = array_column($rows, 'id');
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = "SELECT service_id, title, description
+                FROM employee_card_services_i18n
+                WHERE locale = ? AND service_id IN ($placeholders)";
+        $stmt = Database::getInstance()->getConnection()->prepare($sql);
+        $stmt->execute(array_merge([$locale], $ids));
+        $byId = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $byId[$r['service_id']] = $r;
+        }
+        foreach ($rows as &$r) {
+            if (isset($byId[$r['id']])) {
+                $tr = $byId[$r['id']];
+                if (trim((string)($tr['title'] ?? '')) !== '')       $r['title'] = $tr['title'];
+                if (trim((string)($tr['description'] ?? '')) !== '') $r['description'] = $tr['description'];
+            }
+        }
+        return $rows;
+    }
+
+    public static function loadTestimonialsLocalized($employeeId, $locale)
+    {
+        $locale = in_array($locale, self::SUPPORTED_LOCALES, true) ? $locale : self::DEFAULT_LOCALE;
+        $rows = self::loadTestimonials($employeeId);
+        if ($locale === 'en' || empty($rows)) return $rows;
+
+        $ids = array_column($rows, 'id');
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = "SELECT testimonial_id, name, quote
+                FROM employee_card_testimonials_i18n
+                WHERE locale = ? AND testimonial_id IN ($placeholders)";
+        $stmt = Database::getInstance()->getConnection()->prepare($sql);
+        $stmt->execute(array_merge([$locale], $ids));
+        $byId = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $byId[$r['testimonial_id']] = $r;
+        }
+        foreach ($rows as &$r) {
+            if (isset($byId[$r['id']])) {
+                $tr = $byId[$r['id']];
+                if (trim((string)($tr['name'] ?? '')) !== '')  $r['name']  = $tr['name'];
+                if (trim((string)($tr['quote'] ?? '')) !== '') $r['quote'] = $tr['quote'];
+            }
+        }
+        return $rows;
+    }
+
+    public static function upsertServiceTranslation($serviceId, $locale, $title, $description)
+    {
+        if (!in_array($locale, self::SUPPORTED_LOCALES, true)) return false;
+        $serviceId = (string)$serviceId;
+        if ($serviceId === '') return false;
+        $title = trim((string)$title);
+        $description = trim((string)$description);
+        $pdo = Database::getInstance()->getConnection();
+        if ($title === '' && $description === '') {
+            $pdo->prepare("DELETE FROM employee_card_services_i18n WHERE service_id = ? AND locale = ?")
+                ->execute([$serviceId, $locale]);
+            return true;
+        }
+        if ($title === '') $title = '—';
+        $stmt = $pdo->prepare(
+            "INSERT INTO employee_card_services_i18n (service_id, locale, title, description)
+             VALUES (:sid, :loc, :t, :d)
+             ON DUPLICATE KEY UPDATE title = VALUES(title), description = VALUES(description)"
+        );
+        $stmt->execute([
+            'sid' => $serviceId,
+            'loc' => $locale,
+            't'   => mb_substr($title, 0, 255),
+            'd'   => mb_substr($description, 0, 2000),
+        ]);
+        return true;
+    }
+
+    public static function upsertTestimonialTranslation($testimonialId, $locale, $name, $quote)
+    {
+        if (!in_array($locale, self::SUPPORTED_LOCALES, true)) return false;
+        $testimonialId = (string)$testimonialId;
+        if ($testimonialId === '') return false;
+        $name = trim((string)$name);
+        $quote = trim((string)$quote);
+        $pdo = Database::getInstance()->getConnection();
+        if ($name === '' && $quote === '') {
+            $pdo->prepare("DELETE FROM employee_card_testimonials_i18n WHERE testimonial_id = ? AND locale = ?")
+                ->execute([$testimonialId, $locale]);
+            return true;
+        }
+        if ($name === '')  $name  = '—';
+        if ($quote === '') $quote = '—';
+        $stmt = $pdo->prepare(
+            "INSERT INTO employee_card_testimonials_i18n (testimonial_id, locale, name, quote)
+             VALUES (:tid, :loc, :n, :q)
+             ON DUPLICATE KEY UPDATE name = VALUES(name), quote = VALUES(quote)"
+        );
+        $stmt->execute([
+            'tid' => $testimonialId,
+            'loc' => $locale,
+            'n'   => mb_substr($name, 0, 255),
+            'q'   => mb_substr($quote, 0, 2000),
+        ]);
+        return true;
     }
 
     public static function addService($employeeId, $icon, $title, $description)
