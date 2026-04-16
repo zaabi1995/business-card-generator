@@ -202,6 +202,8 @@ if ($company) {
     }
     $canonicalUrl = $baseUrl . $basePrefix . '/' . $company['slug'];
     $ogType = 'profile';
+    // Per-company composed OG image (sector background + name overlay)
+    $ogImage = $baseUrl . '/og/company/' . $company['slug'] . '.jpg';
 
     $orgLd = [
         '@context' => 'https://schema.org',
