@@ -82,7 +82,7 @@ $isProduction = (strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') === false &&
                  strpos($_SERVER['HTTP_HOST'] ?? '', '.test') === false);
 
 // Database configuration (set by installer)
-define('DB_HOST', 'localhost');
+define('DB_HOST', '127.0.0.1');
 define('DB_NAME', 'business_cards');
 define('DB_USER', 'root');
 define('DB_PASS', '');
