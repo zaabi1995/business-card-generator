@@ -116,6 +116,7 @@
     RewriteRule ^security/?$ security.php [L,QSA]
     RewriteRule ^cookies/?$ cookies.php [L,QSA]
     RewriteRule ^get-started/?$ get-started.php [L,QSA]
+    RewriteRule ^claim/?$ claim.php [L,QSA]
 
     # Sitemap
     RewriteRule ^sitemap\.xml$ sitemap.php [L]
