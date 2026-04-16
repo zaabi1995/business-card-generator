@@ -18,6 +18,23 @@ try {
     require_once INCLUDES_DIR . '/Appointments.php';
     require_once INCLUDES_DIR . '/CardAnalytics.php';
 
+    /**
+     * Normalize asset path — ensure uploaded/theme assets resolve from site root, not
+     * relative to the current /{slug}/card/{eid} URL. DB rows historically stored
+     * paths in three shapes: "/uploads/..", "uploads/..", and bare "companies/..".
+     */
+    if (!function_exists('cardifyAssetUrl')) {
+        function cardifyAssetUrl($path) {
+            $p = trim((string)$path);
+            if ($p === '') return '';
+            if (preg_match('#^(https?:)?//#i', $p)) return $p; // absolute URL
+            if ($p[0] === '/') return $p;                     // already site-root
+            // Bare relative — prepend /uploads/ for company theme uploads
+            if (strpos($p, 'uploads/') === 0) return '/' . $p;
+            return '/uploads/' . $p;
+        }
+    }
+
     $companySlug = trim($_GET['company_slug'] ?? '');
     $employeeId = trim($_GET['employee_id'] ?? '');
 
@@ -129,7 +146,7 @@ try {
     $waPhone = preg_replace('/[^0-9]/', '', $mobile ?: $phone);
 
     // Logo path
-    $logoPath = ($theme && !empty($theme['logo_path'])) ? $theme['logo_path'] : '';
+    $logoPath = ($theme && !empty($theme['logo_path'])) ? cardifyAssetUrl($theme['logo_path']) : '';
 
     // Public card sections (localized with EN fallback)
     $sectionMaster = CardSections::loadMaster($employee['id'], $company['id']);
@@ -206,7 +223,7 @@ function loadCompanyTheme($companyId) {
  */
 function renderBranded404($company, $theme) {
     $accentColor = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#d4af37';
-    $logoPath = ($theme && !empty($theme['logo_path'])) ? $theme['logo_path'] : '';
+    $logoPath = ($theme && !empty($theme['logo_path'])) ? cardifyAssetUrl($theme['logo_path']) : '';
     $companyName = $company ? ($company['name'] ?? '') : '';
     ?>
 <!DOCTYPE html>
@@ -600,6 +617,25 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .lead-form .hp { position: absolute; left: -9999px; }
         .lead-success { text-align: center; padding: 20px; font-size: 14px; color: <?php echo htmlspecialchars($accentColor); ?>; }
         .lead-error { color: #ef4444; font-size: 13px; margin-bottom: 8px; }
+        /* Appointment widget — inherits light/dark theme */
+        .appt-label { display:block; font-size:12px; font-weight:600; margin-bottom:6px; <?php echo $isDarkPage ? 'color:#bbb;' : 'color:#555;'; ?> }
+        .appt-input, .appt-textarea { width:100%; padding:10px 12px; border-radius:8px; font-size:14px; font-family:inherit; box-sizing:border-box; margin-bottom:8px;
+            <?php if ($isDarkPage): ?>background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #eee;<?php else: ?>background: #f7f7f9; border: 1px solid #e5e7eb; color: #1a1a2e;<?php endif; ?>
+        }
+        .appt-input:focus, .appt-textarea:focus { outline:none; border-color: <?php echo htmlspecialchars($accentColor); ?>; }
+        .appt-textarea { resize:vertical; min-height:72px; }
+        .appt-slots { margin-top:14px; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+        .appt-slot { padding:8px 6px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; text-align:center; transition:all 0.15s; border:1px solid <?php echo $isDarkPage ? 'rgba(255,255,255,0.12)' : '#e5e7eb'; ?>; background: <?php echo $isDarkPage ? 'rgba(255,255,255,0.04)' : '#fafafa'; ?>; color:inherit; }
+        .appt-slot:hover { border-color: <?php echo htmlspecialchars($accentColor); ?>; background: <?php echo $isDarkPage ? 'rgba(255,255,255,0.08)' : '#fff'; ?>; }
+        .appt-empty { display:none; text-align:center; font-size:13px; padding:14px 0; <?php echo $isDarkPage ? 'color:#aaa;' : 'color:#888;'; ?> }
+        .appt-chosen { padding:10px; border-radius:8px; font-size:13px; margin-bottom:10px;
+            <?php if ($isDarkPage): ?>background:rgba(255,255,255,0.08);<?php else: ?>background:#f0f9ff; color:#0c4a6e;<?php endif; ?>
+        }
+        .appt-back-btn { flex:0 0 auto; padding:10px 14px; border-radius:8px; background:transparent; color:inherit; cursor:pointer;
+            border:1px solid <?php echo $isDarkPage ? 'rgba(255,255,255,0.15)' : '#e5e7eb'; ?>;
+        }
+        .appt-submit-btn { flex:1; padding:12px 14px; border-radius:8px; border:none; background: <?php echo htmlspecialchars($accentColor); ?>; color:#fff; font-weight:600; cursor:pointer; }
+        .appt-success-msg { font-size:13px; margin-top:4px; <?php echo $isDarkPage ? 'color:#aaa;' : 'color:#666;'; ?> }
     </style>
     <style>
         .lang-switcher {
@@ -766,7 +802,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                     <h3>Gallery</h3>
                     <div class="gallery-grid">
                         <?php foreach ($sectionGallery as $img): ?>
-                            <img src="<?php echo htmlspecialchars($img['file_path']); ?>" alt="<?php echo htmlspecialchars($img['caption'] ?? ''); ?>" loading="lazy" onclick="window.open(this.src,'_blank')">
+                            <img src="<?php echo htmlspecialchars(cardifyAssetUrl($img['file_path'])); ?>" alt="<?php echo htmlspecialchars($img['caption'] ?? ''); ?>" loading="lazy" onclick="window.open(this.src,'_blank')">
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -778,7 +814,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                         <div class="testimonial-item">
                             <div class="testimonial-head">
                                 <?php if (!empty($t['photo_path'])): ?>
-                                <img src="<?php echo htmlspecialchars($t['photo_path']); ?>" alt="<?php echo htmlspecialchars($t['name']); ?>">
+                                <img src="<?php echo htmlspecialchars(cardifyAssetUrl($t['photo_path'])); ?>" alt="<?php echo htmlspecialchars($t['name']); ?>">
                                 <?php else: ?>
                                 <span class="ph-placeholder">&#128100;</span>
                                 <?php endif; ?>
@@ -874,30 +910,30 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         <div class="card-section" id="apptSection">
             <h3>Book a meeting</h3>
             <div id="apptStep1">
-                <label style="display:block;font-size:12px;color:#aaa;margin-bottom:6px;">Choose a date</label>
-                <input type="date" id="apptDate" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:inherit;font:inherit;">
-                <div id="apptSlots" style="margin-top:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
-                <div id="apptSlotsEmpty" style="display:none;text-align:center;color:#aaa;font-size:13px;padding:14px 0;">No slots available on this day.</div>
+                <label class="appt-label">Choose a date</label>
+                <input type="date" id="apptDate" class="appt-input">
+                <div id="apptSlots" class="appt-slots"></div>
+                <div id="apptSlotsEmpty" class="appt-empty">No slots available on this day.</div>
             </div>
             <form id="apptForm" style="display:none;margin-top:12px;" autocomplete="off">
-                <div id="apptChosen" style="background:rgba(255,255,255,0.08);padding:10px;border-radius:8px;font-size:13px;margin-bottom:10px;"></div>
+                <div id="apptChosen" class="appt-chosen"></div>
                 <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee['id']); ?>">
                 <input type="hidden" name="slot_start" id="apptSlotStart">
                 <div class="hp" style="position:absolute;left:-9999px;"><label>Website<input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
-                <div id="apptError" style="display:none;color:#ff6b6b;font-size:13px;margin-bottom:8px;"></div>
-                <input type="text" name="name" placeholder="Your name" required maxlength="255" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:inherit;font:inherit;margin-bottom:8px;">
-                <input type="email" name="email" placeholder="Email" maxlength="255" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:inherit;font:inherit;margin-bottom:8px;">
-                <input type="tel" name="phone" placeholder="Phone" maxlength="50" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:inherit;font:inherit;margin-bottom:8px;">
-                <textarea name="notes" placeholder="Notes (optional)" maxlength="4000" rows="3" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:inherit;font:inherit;margin-bottom:8px;"></textarea>
+                <div id="apptError" style="display:none;color:#ef4444;font-size:13px;margin-bottom:8px;"></div>
+                <input type="text" name="name" placeholder="Your name" required maxlength="255" class="appt-input">
+                <input type="email" name="email" placeholder="Email" maxlength="255" class="appt-input">
+                <input type="tel" name="phone" placeholder="Phone" maxlength="50" class="appt-input">
+                <textarea name="notes" placeholder="Notes (optional)" maxlength="4000" rows="3" class="appt-textarea"></textarea>
                 <div style="display:flex;gap:8px;">
-                    <button type="button" id="apptBack" style="flex:0 0 auto;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:inherit;cursor:pointer;">Back</button>
-                    <button type="submit" id="apptSubmit" style="flex:1;padding:10px 14px;border-radius:8px;border:none;background:<?php echo htmlspecialchars($accentColor ?? '#2563eb'); ?>;color:#fff;font-weight:600;cursor:pointer;">Confirm booking</button>
+                    <button type="button" id="apptBack" class="appt-back-btn">Back</button>
+                    <button type="submit" id="apptSubmit" class="appt-submit-btn">Confirm booking</button>
                 </div>
             </form>
             <div id="apptSuccess" style="display:none;text-align:center;padding:18px;">
-                <div style="font-size:32px;margin-bottom:6px;">&#10003;</div>
+                <div style="font-size:32px;margin-bottom:6px;color:<?php echo htmlspecialchars($accentColor); ?>;">&#10003;</div>
                 <div style="font-weight:600;">Request sent!</div>
-                <div style="font-size:13px;color:#aaa;margin-top:4px;">You'll get a confirmation email shortly.</div>
+                <div class="appt-success-msg">You'll get a confirmation email shortly.</div>
             </div>
         </div>
         <script>
@@ -924,7 +960,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             dateInput.value = dateInput.min;
 
             function loadSlots() {
-                slotsEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#aaa;font-size:13px;padding:8px 0;">Loading...</div>';
+                slotsEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;opacity:0.7;font-size:13px;padding:8px 0;">Loading...</div>';
                 emptyEl.style.display = 'none';
                 fetch('/api/appointment/slots.php?eid='+encodeURIComponent(EID)+'&date='+encodeURIComponent(dateInput.value))
                     .then(function(r){return r.json();})
@@ -938,7 +974,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                             var b = document.createElement('button');
                             b.type = 'button';
                             b.textContent = s.label;
-                            b.style.cssText = 'padding:8px 4px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:inherit;font:inherit;cursor:pointer;font-size:13px;';
+                            b.className = 'appt-slot';
                             b.addEventListener('click', function(){
                                 slotInput.value = s.start;
                                 chosenEl.textContent = dateInput.value + ' at ' + s.label;
