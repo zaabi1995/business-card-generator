@@ -16,5 +16,14 @@ export const KNOWN_CARD = {
   name: process.env.KNOWN_CARD_NAME || 'Ali Al-Zaabi',
 };
 
+/**
+ * A syntactically-valid UUIDv4 that is deliberately unassigned in production.
+ * Used by the qr.php / claim-lead.php / card_click.php negative-path tests
+ * (must 404 / 400 rather than 500). If this ever accidentally gets assigned
+ * to a real employee, any of a zillion other all-zero-ish UUIDs will do.
+ */
+export const BAD_UUID =
+  process.env.BAD_UUID || '00000000-0000-0000-0000-000000000000';
+
 export const cardPath = (slug = KNOWN_CARD.slug, eid = KNOWN_CARD.eid) =>
   `/${slug}/card/${eid}`;
