@@ -22,6 +22,8 @@ $publicSeoPages = [
     // Free client-side tools (SEO content pages)
     'vcard-qr-generator.php', 'email-signature-generator.php',
     'whatsapp-qr-generator.php', 'nfc-business-card-guide.php',
+    // Press / backlink-magnet pages
+    'oman-business-index.php',
 ];
 $alwaysSkipSession = ['vcf.php', 'qr.php', 'feed.php'];
 

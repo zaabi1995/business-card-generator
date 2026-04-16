@@ -38,7 +38,7 @@ if (!function_exists('getBasePath')) {
             $scriptDir = dirname($scriptPath);
             
             // Known subdirectories that are part of the app
-            $appDirs = ['admin', 'includes', 'company', 'amwalpay', 'paymob', 'webhooks', 'super', 'install', 'share', 'printshop', 'api', 'database', 'bhd'];
+            $appDirs = ['admin', 'includes', 'company', 'amwalpay', 'paymob', 'webhooks', 'super', 'install', 'share', 'printshop', 'api', 'database', 'bhd', 'tools'];
             
             // Navigate up through app directories to find the root
             while (in_array(basename($scriptDir), $appDirs) && $scriptDir !== '/' && $scriptDir !== '.') {
