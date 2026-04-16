@@ -9,13 +9,43 @@
  * You can also manually configure it using this template.
  */
 
-// Secure session configuration
-if (session_status() === PHP_SESSION_NONE) {
+// Start session — public SEO pages skip session unless tracking params are present
+// (session_start() forces no-cache headers which hurts Google indexing).
+$scriptName = basename($_SERVER['SCRIPT_NAME'] ?? '');
+
+$publicSeoPages = [
+    'blog.php', 'about.php', 'faq.php', 'contact.php', 'terms.php',
+    'privacy.php', 'security.php', 'cookies.php', 'careers.php',
+    'sitemap.php', 'index.php', 'intro.php',
+    'restaurants.php', 'construction.php', 'healthcare.php',
+    'real-estate.php', 'tourism.php',
+];
+$alwaysSkipSession = ['vcf.php', 'qr.php', 'feed.php'];
+
+$hasTrackingParam = !empty($_GET['ref']) || !empty($_GET['utm_source'])
+    || !empty($_GET['utm_medium']) || !empty($_GET['utm_campaign']);
+
+$isPublicSeo = in_array($scriptName, $publicSeoPages);
+$skipSession = in_array($scriptName, $alwaysSkipSession)
+    || ($isPublicSeo && !$hasTrackingParam);
+
+if ($isPublicSeo && $hasTrackingParam && session_status() === PHP_SESSION_NONE) {
+    session_cache_limiter('public');
+    session_cache_expire(60);
+}
+
+if (!$skipSession && session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_httponly', 1);
     ini_set('session.cookie_secure', 1);
     ini_set('session.use_strict_mode', 1);
     ini_set('session.cookie_samesite', 'Lax');
     session_start();
+}
+
+// Emit SEO-friendly cache headers on public pages that skipped session.
+if ($skipSession && $isPublicSeo && !headers_sent()) {
+    header('Cache-Control: public, max-age=3600, s-maxage=3600');
+    header('Vary: Accept-Encoding');
 }
 
 // Environment detection
