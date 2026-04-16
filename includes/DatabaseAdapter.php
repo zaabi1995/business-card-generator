@@ -316,6 +316,19 @@ class DatabaseAdapter {
     }
 
     /**
+     * Coerce a form value ('1', '0', 'on', '', true, false) to a 0/1 int.
+     * Falls back to $default when input is null or the empty string.
+     */
+    private static function normalizeBoolFlag($raw, $default = 0) {
+        if ($raw === null || $raw === '') return (int)(bool)$default;
+        if (is_bool($raw)) return $raw ? 1 : 0;
+        $s = strtolower(trim((string)$raw));
+        if (in_array($s, ['1', 'true', 'on', 'yes'], true)) return 1;
+        if (in_array($s, ['0', 'false', 'off', 'no'], true)) return 0;
+        return (int)(bool)$raw;
+    }
+
+    /**
      * Validate & normalize a Dynamic QR redirect URL.
      * Returns null for empty/invalid input. Only http(s) URLs accepted.
      * Max 1024 chars (column width).
@@ -366,9 +379,10 @@ class DatabaseAdapter {
             'address_en' => trim($data['address_en'] ?? $data['address'] ?? ''),
             'address_ar' => trim($data['address_ar'] ?? ''),
             'qr_redirect_url' => self::sanitizeQrRedirectUrl($data['qr_redirect_url'] ?? null),
+            'card_dark_mode_toggle' => self::normalizeBoolFlag($data['card_dark_mode_toggle'] ?? 1, 1),
             'created_at' => date('Y-m-d H:i:s')
         ];
-        
+
         try {
             self::$db->insert('employees', $employee);
             return ['success' => true, 'id' => $employee['id'], 'employee' => $employee];
@@ -409,6 +423,7 @@ class DatabaseAdapter {
             'address_en' => trim($data['address_en'] ?? $data['address'] ?? ''),
             'address_ar' => trim($data['address_ar'] ?? ''),
             'qr_redirect_url' => self::sanitizeQrRedirectUrl($data['qr_redirect_url'] ?? null),
+            'card_dark_mode_toggle' => self::normalizeBoolFlag($data['card_dark_mode_toggle'] ?? 1, 1),
             'updated_at' => date('Y-m-d H:i:s')
         ];
         
