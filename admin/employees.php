@@ -1119,6 +1119,40 @@ adminHeader('Employees', 'employees');
                     <input type="hidden" name="card_dark_mode_toggle" :value="cardDarkModeToggle ? '1' : '0'">
                 </div>
 
+                <!-- Viral "Made with Cardify" footer — Pro-tier opt-out -->
+                <?php $__proUnlocked = !$isFreePlan; ?>
+                <div class="mt-4 p-4 rounded-xl bg-sky-50 border border-sky-100">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <h4 class="text-sm font-bold text-sky-900 flex items-center gap-2">
+                                <i class="fa-solid fa-eye-slash"></i>
+                                Hide "Made with Cardify" footer
+                                <?php if (!$__proUnlocked): ?>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">Pro</span>
+                                <?php endif; ?>
+                            </h4>
+                            <p class="text-xs text-sky-700 mt-1">
+                                Removes the small "Made with Cardify · Create yours free" footer
+                                from this employee's public digital card.
+                                <?php if (!$__proUnlocked): ?>
+                                    <span class="block mt-1 text-amber-700 font-medium">
+                                        Upgrade to Pro to unlock white-label cards.
+                                    </span>
+                                <?php endif; ?>
+                            </p>
+                        </div>
+                        <label class="inline-flex items-center gap-2 <?php echo $__proUnlocked ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'; ?> select-none shrink-0"
+                               <?php if (!$__proUnlocked): ?>title="Upgrade to Pro to unlock white-label cards"<?php endif; ?>>
+                            <input type="checkbox"
+                                   x-model="hideCardifyBranding"
+                                   <?php if (!$__proUnlocked): ?>disabled<?php endif; ?>
+                                   class="w-4 h-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500">
+                            <span class="text-xs font-semibold text-sky-800">Hide footer</span>
+                        </label>
+                    </div>
+                    <input type="hidden" name="hide_cardify_branding" :value="hideCardifyBranding ? '1' : '0'">
+                </div>
+
                 <div class="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
                     <button type="button" @click="showModal = false" class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors">
                         Cancel
@@ -1457,6 +1491,7 @@ function employeeManager() {
         },
         qrRedirectEnabled: false,
         cardDarkModeToggle: true,
+        hideCardifyBranding: false,
 
         // Tracker URL printed on the card — never changes post-print.
         qrTrackerUrl() {
@@ -1494,6 +1529,7 @@ function employeeManager() {
             };
             this.qrRedirectEnabled = false;
             this.cardDarkModeToggle = true;
+            this.hideCardifyBranding = false;
             this.showModal = true;
         },
 
@@ -1507,6 +1543,7 @@ function employeeManager() {
             };
             this.qrRedirectEnabled = false;
             this.cardDarkModeToggle = true;
+            this.hideCardifyBranding = false;
             this.showModal = true;
         },
 
@@ -1518,6 +1555,7 @@ function employeeManager() {
             this.cardDarkModeToggle = employee.card_dark_mode_toggle === undefined || employee.card_dark_mode_toggle === null
                 ? true
                 : Number(employee.card_dark_mode_toggle) === 1;
+            this.hideCardifyBranding = Number(employee.hide_cardify_branding || 0) === 1;
             this.showModal = true;
         },
 
@@ -1535,6 +1573,7 @@ function employeeManager() {
             this.cardDarkModeToggle = emp.card_dark_mode_toggle === undefined || emp.card_dark_mode_toggle === null
                 ? true
                 : Number(emp.card_dark_mode_toggle) === 1;
+            this.hideCardifyBranding = Number(emp.hide_cardify_branding || 0) === 1;
             this.showModal = true;
         },
         

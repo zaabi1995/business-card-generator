@@ -790,6 +790,60 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         /* Show SUN when we're currently dark (click to go light); MOON when currently light. */
         body.force-dark .theme-toggle .theme-icon-sun { display: block; }
         body.force-light .theme-toggle .theme-icon-moon { display: block; }
+
+        /* Viral "Made with Cardify" footer — appears on every public card so
+           each scan becomes a Cardify impression. Tasteful, small, always there
+           (think "Designed in Figma"). Pro-tier users can hide via admin. */
+        .cardify-viral-footer {
+            display: flex;
+            justify-content: center;
+            padding: 20px 0 28px;
+            margin-top: 8px;
+        }
+        .cardify-viral-footer .viral-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            min-height: 44px;
+            padding: 10px 16px;
+            font-size: 12.5px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            letter-spacing: 0.2px;
+            text-decoration: none;
+            color: <?php echo $isDarkPage ? 'rgba(255,255,255,0.55)' : 'rgba(26,26,46,0.55)'; ?>;
+            background: <?php echo $isDarkPage ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'; ?>;
+            border: 1px solid <?php echo $isDarkPage ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'; ?>;
+            border-radius: 999px;
+            transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .cardify-viral-footer .viral-link strong {
+            font-weight: 600;
+            color: <?php echo $isDarkPage ? 'rgba(255,255,255,0.82)' : 'rgba(26,26,46,0.82)'; ?>;
+            transition: color 0.18s ease;
+        }
+        .cardify-viral-footer .viral-logo {
+            display: inline-flex;
+            align-items: center;
+            color: #009bc1; /* Cardify / BHD brand blue */
+            opacity: 0.78;
+            transition: opacity 0.18s ease;
+        }
+        .cardify-viral-footer .viral-link:hover {
+            color: <?php echo $isDarkPage ? 'rgba(255,255,255,0.88)' : 'rgba(26,26,46,0.88)'; ?>;
+            border-color: rgba(0,155,193,0.35);
+            background: <?php echo $isDarkPage ? 'rgba(0,155,193,0.08)' : 'rgba(0,155,193,0.06)'; ?>;
+        }
+        .cardify-viral-footer .viral-link:hover strong { color: #009bc1; }
+        .cardify-viral-footer .viral-link:hover .viral-logo { opacity: 1; }
+        .cardify-viral-footer .viral-link:focus-visible {
+            outline: 2px solid #009bc1;
+            outline-offset: 2px;
+        }
+        @media (max-width: 420px) {
+            .cardify-viral-footer { padding: 16px 12px 24px; }
+            .cardify-viral-footer .viral-link { font-size: 12px; width: 100%; justify-content: center; }
+        }
     </style>
 </head>
 <body class="<?php echo $isDarkPage ? 'force-dark' : 'force-light'; ?>">
@@ -1440,15 +1494,51 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         </script>
         <?php endif; ?>
 
-        <!-- Powered by Cardify -->
-        <div style="text-align: center; padding: 24px 0 16px;">
-            <a href="https://cardify.om?ref=digital_card&utm_source=card&utm_medium=qr&utm_campaign=powered_by"
-               style="display: inline-flex; align-items: center; gap: 6px; color: #fff; text-decoration: none; font-size: 12px; font-family: -apple-system, system-ui, sans-serif; letter-spacing: 0.3px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 6px 14px;"
-               target="_blank" rel="noopener">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.7"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-                <span style="opacity:0.7;">Digital card by</span> <strong style="opacity:1;">Cardify.om</strong>
-            </a>
-        </div>
+        <!-- Viral "Made with Cardify" footer — every public card scan becomes a
+             Cardify impression. Owner can hide via admin (Pro tier only).
+             Links through /card_click.php so we measure conversion. -->
+        <?php
+            // Pro-tier gate: only respect hide flag when company is on paid plan.
+            // Column may be absent pre-migration 065 — coalesce safely.
+            $__hideBranding = (int)($employee['hide_cardify_branding'] ?? 0) === 1;
+            $__brandingPaid = false;
+            try {
+                require_once INCLUDES_DIR . '/Billing.php';
+                $__brandingPaid = Billing::hasFeature($company['id'], 'custom_branding');
+            } catch (Throwable $e) {
+                $__brandingPaid = false;
+            }
+            $__showViralFooter = !($__hideBranding && $__brandingPaid);
+        ?>
+        <?php if ($__showViralFooter): ?>
+            <?php
+                $__claimDest  = '/claim?utm_source=card&utm_medium=viral_footer'
+                              . '&utm_campaign=made_with_cardify'
+                              . '&utm_content=' . urlencode($employee['id']);
+                $__claimHref  = $cardClickUrl('viral_footer_click', $__claimDest);
+                $__viralLabelHtml = $isRtl
+                    ? 'أُنشئ بـ <strong>Cardify</strong> · أنشئ بطاقتك مجاناً'
+                    : 'Made with <strong>Cardify</strong> · Create yours free';
+            ?>
+            <div class="cardify-viral-footer">
+                <a href="<?php echo htmlspecialchars($__claimHref, ENT_QUOTES); ?>"
+                   class="viral-link"
+                   aria-label="<?php echo $isRtl ? 'أُنشئ بطاقتك مجاناً مع Cardify' : 'Made with Cardify — create yours free'; ?>"
+                   rel="noopener">
+                    <span class="viral-logo" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="6" width="20" height="13" rx="2.5"/>
+                            <path d="M6 11h6"/>
+                            <path d="M6 14h4"/>
+                            <circle cx="17" cy="13" r="1.6" fill="currentColor" stroke="none"/>
+                        </svg>
+                    </span>
+                    <span class="viral-text"><?php echo $__viralLabelHtml; ?></span>
+                </a>
+            </div>
+        <?php endif; ?>
     </div>
 
     <div class="copy-toast" id="copyToast">Link copied!</div>
