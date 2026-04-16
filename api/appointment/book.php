@@ -85,22 +85,64 @@ try {
         exit;
     }
 
-    $id = Appointments::generateUuid();
     $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
-    $db->insert('appointments', [
-        'id' => $id,
-        'employee_id' => $employee['id'],
-        'company_id' => $employee['company_id'],
-        'visitor_name' => $name,
-        'visitor_email' => $email ?: null,
-        'visitor_phone' => $phone ?: null,
-        'visitor_notes' => $notes ?: null,
-        'slot_start' => $match['start'],
-        'slot_end' => $match['end'],
-        'status' => 'pending',
-        'ip' => $ip,
-    ]);
+    // Rate limit: max 5 pending/confirmed bookings per IP per hour (site-wide)
+    // AND max 3 bookings per (IP, employee) per hour. Cancelled bookings don't
+    // count toward the limit.
+    $ipCount = $db->fetchOne(
+        "SELECT COUNT(*) AS c FROM appointments
+         WHERE ip = :ip
+           AND status <> 'cancelled'
+           AND created_at > (NOW() - INTERVAL 1 HOUR)",
+        ['ip' => $ip]
+    );
+    if ((int)($ipCount['c'] ?? 0) >= 5) {
+        http_response_code(429);
+        echo json_encode(['success' => false, 'error' => 'Too many booking attempts. Please try again later.']);
+        exit;
+    }
+    $pairCount = $db->fetchOne(
+        "SELECT COUNT(*) AS c FROM appointments
+         WHERE ip = :ip AND employee_id = :eid
+           AND status <> 'cancelled'
+           AND created_at > (NOW() - INTERVAL 1 HOUR)",
+        ['ip' => $ip, 'eid' => $employee['id']]
+    );
+    if ((int)($pairCount['c'] ?? 0) >= 3) {
+        http_response_code(429);
+        echo json_encode(['success' => false, 'error' => 'Too many booking attempts for this profile.']);
+        exit;
+    }
+
+    $id = Appointments::generateUuid();
+
+    // INSERT. The (employee_id, slot_start) UNIQUE constraint (migration 062)
+    // prevents TOCTOU double-booking: two parallel requests both see the slot
+    // as free, but only one INSERT succeeds. The other gets ER_DUP_ENTRY (1062).
+    try {
+        $db->insert('appointments', [
+            'id' => $id,
+            'employee_id' => $employee['id'],
+            'company_id' => $employee['company_id'],
+            'visitor_name' => $name,
+            'visitor_email' => $email ?: null,
+            'visitor_phone' => $phone ?: null,
+            'visitor_notes' => $notes ?: null,
+            'slot_start' => $match['start'],
+            'slot_end' => $match['end'],
+            'status' => 'pending',
+            'ip' => $ip,
+        ]);
+    } catch (PDOException $e) {
+        // MySQL duplicate key → slot taken between check and insert.
+        if ($e->getCode() === '23000' || strpos($e->getMessage(), '1062') !== false) {
+            http_response_code(409);
+            echo json_encode(['success' => false, 'error' => 'Slot no longer available']);
+            exit;
+        }
+        throw $e;
+    }
 
     // Email owner (non-fatal on failure)
     try {
