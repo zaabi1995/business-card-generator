@@ -277,6 +277,437 @@ class CardAnalytics
         ];
     }
 
+    // ==================================================================
+    // Growth Dashboard helpers
+    // ==================================================================
+
+    /**
+     * Top performing cards for a company over the last N days.
+     * Returns: [{employee_id, name, views, clicks, viral_clicks, saves, conversion}]
+     */
+    public static function getTopCards($companyId, $days = 7, $limit = 20)
+    {
+        self::init();
+        $days  = (int) $days  > 0 ? (int) $days  : 7;
+        $limit = (int) $limit > 0 ? (int) $limit : 20;
+        $start = date('Y-m-d 00:00:00', strtotime("-{$days} days"));
+
+        $where = $companyId ? 'AND e.company_id = :cid' : '';
+        $params = ['start' => $start];
+        if ($companyId) {
+            $params['cid'] = $companyId;
+        }
+
+        // Aggregate event counts per employee, joined to employees for name.
+        $sql = "SELECT
+                    e.id AS employee_id,
+                    COALESCE(NULLIF(e.name_en, ''), NULLIF(e.name_ar, ''), e.email) AS name,
+                    SUM(ev.event_type = 'view')               AS views,
+                    SUM(ev.event_type LIKE 'click\\_%' AND ev.event_type <> 'short_link_click') AS clicks,
+                    SUM(ev.event_type = 'viral_footer_click') AS viral_clicks,
+                    SUM(ev.event_type = 'save_contact')       AS saves
+                FROM employees e
+                LEFT JOIN card_events ev
+                       ON ev.employee_id = e.id
+                      AND ev.created_at >= :start
+                WHERE e.status = 'active' {$where}
+                GROUP BY e.id, name
+                HAVING views > 0 OR clicks > 0 OR viral_clicks > 0 OR saves > 0
+                ORDER BY views DESC, clicks DESC
+                LIMIT {$limit}";
+
+        $rows = self::$db->fetchAll($sql, $params) ?: [];
+        foreach ($rows as &$r) {
+            $v = (int) $r['views'];
+            $s = (int) $r['saves'];
+            $r['views']        = $v;
+            $r['clicks']       = (int) $r['clicks'];
+            $r['viral_clicks'] = (int) $r['viral_clicks'];
+            $r['saves']        = $s;
+            $r['conversion']   = $v > 0 ? round(100 * $s / $v, 1) : 0.0;
+        }
+        return $rows;
+    }
+
+    /**
+     * 5-stage funnel: views -> qr_scans -> cta clicks -> saves -> viral clicks.
+     */
+    public static function getFunnelSummary($companyId, $days = 7)
+    {
+        self::init();
+        $days  = (int) $days > 0 ? (int) $days : 7;
+        $start = date('Y-m-d 00:00:00', strtotime("-{$days} days"));
+
+        $where = $companyId ? 'AND company_id = :cid' : '';
+        $params = ['start' => $start];
+        if ($companyId) {
+            $params['cid'] = $companyId;
+        }
+
+        $rows = self::$db->fetchAll(
+            "SELECT event_type, COUNT(*) AS c
+               FROM card_events
+              WHERE created_at >= :start {$where}
+              GROUP BY event_type",
+            $params
+        ) ?: [];
+
+        $stages = [
+            'views'         => 0,
+            'qr_scans'      => 0,
+            'cta_clicks'    => 0,
+            'saves'         => 0,
+            'viral_clicks'  => 0,
+        ];
+        foreach ($rows as $r) {
+            $c = (int) $r['c'];
+            $t = $r['event_type'];
+            if ($t === 'view') {
+                $stages['views'] += $c;
+            } elseif ($t === 'qr_scan') {
+                $stages['qr_scans'] += $c;
+            } elseif ($t === 'save_contact') {
+                $stages['saves'] += $c;
+            } elseif ($t === 'viral_footer_click') {
+                $stages['viral_clicks'] += $c;
+            } elseif (strpos($t, 'click_') === 0 && $t !== 'short_link_click') {
+                $stages['cta_clicks'] += $c;
+            }
+        }
+        return $stages;
+    }
+
+    /**
+     * % of ACTIVE cards (employees with status='active' AND >=1 event in last 30d)
+     * that have each public-card section enabled.
+     */
+    public static function getSectionAdoption($companyId)
+    {
+        self::init();
+        $start30 = date('Y-m-d 00:00:00', strtotime('-30 days'));
+
+        $params = ['start' => $start30];
+        $where  = '';
+        if ($companyId) {
+            $where = 'AND e.company_id = :cid';
+            $params['cid'] = $companyId;
+        }
+
+        // Active cards = status='active' AND at least 1 card_event in last 30d.
+        $activeRow = self::$db->fetchOne(
+            "SELECT COUNT(DISTINCT e.id) AS c
+               FROM employees e
+               JOIN card_events ev ON ev.employee_id = e.id
+              WHERE e.status = 'active'
+                AND ev.created_at >= :start {$where}",
+            $params
+        );
+        $totalActive = (int) ($activeRow['c'] ?? 0);
+
+        $sections = [
+            'bio', 'services', 'gallery', 'testimonials',
+            'lead_form', 'video', 'location', 'offers',
+            'faq', 'hours', 'products',
+        ];
+
+        // Build a sum(col) query that respects column existence.
+        $cols = self::$db->fetchAll(
+            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'employee_card_sections'"
+        ) ?: [];
+        $have = array_flip(array_column($cols, 'COLUMN_NAME'));
+
+        if ($totalActive === 0) {
+            $out = [];
+            foreach ($sections as $s) {
+                $out[] = [
+                    'section' => $s,
+                    'enabled' => 0,
+                    'total'   => 0,
+                    'percent' => 0.0,
+                    'has_column' => isset($have[$s . '_enabled']),
+                ];
+            }
+            return ['total_active' => 0, 'sections' => $out];
+        }
+
+        // Select only columns that actually exist.
+        $selects = [];
+        foreach ($sections as $s) {
+            $col = $s . '_enabled';
+            if (isset($have[$col])) {
+                $selects[] = "SUM(s.`{$col}` = 1) AS `{$s}`";
+            } else {
+                $selects[] = "0 AS `{$s}`";
+            }
+        }
+
+        $sql = "SELECT " . implode(', ', $selects) . "
+                  FROM employees e
+                  JOIN card_events ev ON ev.employee_id = e.id
+                  LEFT JOIN employee_card_sections s ON s.employee_id = e.id
+                 WHERE e.status = 'active'
+                   AND ev.created_at >= :start {$where}";
+
+        $row = self::$db->fetchOne($sql, $params) ?: [];
+
+        $out = [];
+        foreach ($sections as $s) {
+            $enabled = (int) ($row[$s] ?? 0);
+            $out[] = [
+                'section'    => $s,
+                'enabled'    => $enabled,
+                'total'      => $totalActive,
+                'percent'    => $totalActive > 0 ? round(100 * $enabled / $totalActive, 1) : 0.0,
+                'has_column' => isset($have[$s . '_enabled']),
+            ];
+        }
+        return ['total_active' => $totalActive, 'sections' => $out];
+    }
+
+    /**
+     * Company-scoped daily time series for the last N days covering all event
+     * categories used by the Growth Dashboard line chart.
+     */
+    public static function getCompanyTimeSeries($companyId, $days = 30)
+    {
+        self::init();
+        $days  = (int) $days > 0 ? (int) $days : 30;
+        $start = date('Y-m-d 00:00:00', strtotime("-{$days} days"));
+
+        $where = $companyId ? 'AND company_id = :cid' : '';
+        $params = ['start' => $start];
+        if ($companyId) {
+            $params['cid'] = $companyId;
+        }
+
+        $rows = self::$db->fetchAll(
+            "SELECT DATE(created_at) AS d,
+                    SUM(event_type = 'view')               AS views,
+                    SUM(event_type = 'click_phone')        AS c_phone,
+                    SUM(event_type = 'click_whatsapp')     AS c_whatsapp,
+                    SUM(event_type = 'click_email')        AS c_email,
+                    SUM(event_type = 'save_contact')       AS saves,
+                    SUM(event_type = 'viral_footer_click') AS viral_clicks
+               FROM card_events
+              WHERE created_at >= :start {$where}
+              GROUP BY DATE(created_at)
+              ORDER BY d ASC",
+            $params
+        ) ?: [];
+
+        $map = [];
+        foreach ($rows as $r) {
+            $map[$r['d']] = $r;
+        }
+        $series = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $d = date('Y-m-d', strtotime("-{$i} days"));
+            $r = $map[$d] ?? [];
+            $series[] = [
+                'date'         => $d,
+                'views'        => (int) ($r['views']       ?? 0),
+                'c_phone'      => (int) ($r['c_phone']     ?? 0),
+                'c_whatsapp'   => (int) ($r['c_whatsapp']  ?? 0),
+                'c_email'      => (int) ($r['c_email']     ?? 0),
+                'saves'        => (int) ($r['saves']       ?? 0),
+                'viral_clicks' => (int) ($r['viral_clicks'] ?? 0),
+            ];
+        }
+        return $series;
+    }
+
+    /**
+     * Events totals (views + any click_*) for a company/date range, with
+     * previous-period comparison for delta arrows.
+     */
+    public static function getEventTotals($companyId, $days = 7)
+    {
+        self::init();
+        $days = (int) $days > 0 ? (int) $days : 7;
+
+        $end      = date('Y-m-d 00:00:00', strtotime('+1 day'));
+        $start    = date('Y-m-d 00:00:00', strtotime("-{$days} days"));
+        $prevEnd  = $start;
+        $prevStart = date('Y-m-d 00:00:00', strtotime("-" . (2 * $days) . " days"));
+
+        $where = $companyId ? 'AND company_id = :cid' : '';
+
+        $totalFor = function ($s, $e) use ($where, $companyId) {
+            $params = ['s' => $s, 'e' => $e];
+            if ($companyId) {
+                $params['cid'] = $companyId;
+            }
+            $r = self::$db->fetchOne(
+                "SELECT COUNT(*) AS c
+                   FROM card_events
+                  WHERE created_at >= :s AND created_at < :e {$where}
+                    AND (event_type = 'view' OR event_type LIKE 'click\\_%')",
+                $params
+            );
+            return (int) ($r['c'] ?? 0);
+        };
+
+        $cur  = $totalFor($start, $end);
+        $prev = $totalFor($prevStart, $prevEnd);
+        $delta = $prev > 0 ? round(100 * ($cur - $prev) / $prev, 1) : ($cur > 0 ? 100.0 : 0.0);
+
+        return ['current' => $cur, 'previous' => $prev, 'delta_pct' => $delta];
+    }
+
+    /**
+     * Active card count: status='active' AND >=1 view in last N days (default 30).
+     */
+    public static function getActiveCardCount($companyId, $days = 30)
+    {
+        self::init();
+        $days  = (int) $days > 0 ? (int) $days : 30;
+        $start = date('Y-m-d 00:00:00', strtotime("-{$days} days"));
+
+        $where = $companyId ? 'AND e.company_id = :cid' : '';
+        $params = ['start' => $start];
+        if ($companyId) {
+            $params['cid'] = $companyId;
+        }
+
+        $r = self::$db->fetchOne(
+            "SELECT COUNT(DISTINCT e.id) AS c
+               FROM employees e
+               JOIN card_events ev ON ev.employee_id = e.id AND ev.event_type = 'view'
+              WHERE e.status = 'active'
+                AND ev.created_at >= :start {$where}",
+            $params
+        );
+        return (int) ($r['c'] ?? 0);
+    }
+
+    /**
+     * New cardify_signup_leads in last N days (returns 0 if the table is missing).
+     */
+    public static function getNewLeadsCount($companyId, $days = 7)
+    {
+        self::init();
+        $days  = (int) $days > 0 ? (int) $days : 7;
+        $start = date('Y-m-d 00:00:00', strtotime("-{$days} days"));
+
+        try {
+            $exists = self::$db->fetchOne(
+                "SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.TABLES
+                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cardify_signup_leads'"
+            );
+            if ((int) ($exists['c'] ?? 0) === 0) {
+                return 0;
+            }
+            // cardify_signup_leads is global (not company-scoped); super_admin sees all.
+            $r = self::$db->fetchOne(
+                "SELECT COUNT(*) AS c FROM cardify_signup_leads WHERE created_at >= :start",
+                ['start' => $start]
+            );
+            return (int) ($r['c'] ?? 0);
+        } catch (Exception $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Viral-footer click total over last N days (company-scoped).
+     */
+    public static function getViralClicks($companyId, $days = 7)
+    {
+        self::init();
+        $days  = (int) $days > 0 ? (int) $days : 7;
+        $start = date('Y-m-d 00:00:00', strtotime("-{$days} days"));
+
+        $where = $companyId ? 'AND company_id = :cid' : '';
+        $params = ['start' => $start];
+        if ($companyId) {
+            $params['cid'] = $companyId;
+        }
+        $r = self::$db->fetchOne(
+            "SELECT COUNT(*) AS c FROM card_events
+              WHERE event_type = 'viral_footer_click'
+                AND created_at >= :start {$where}",
+            $params
+        );
+        return (int) ($r['c'] ?? 0);
+    }
+
+    /**
+     * Scan -> Save conversion proxy: share of distinct visitor sessions that
+     * both viewed and saved_contact in the same UTC day within the last N days.
+     */
+    public static function getScanToSaveRate($companyId, $days = 7)
+    {
+        self::init();
+        $days  = (int) $days > 0 ? (int) $days : 7;
+        $start = date('Y-m-d 00:00:00', strtotime("-{$days} days"));
+
+        $where = $companyId ? 'AND company_id = :cid' : '';
+        $params = ['start' => $start];
+        if ($companyId) {
+            $params['cid'] = $companyId;
+        }
+
+        $view = self::$db->fetchOne(
+            "SELECT COUNT(DISTINCT visitor_id) AS c FROM card_events
+              WHERE event_type IN ('view','qr_scan')
+                AND visitor_id IS NOT NULL
+                AND created_at >= :start {$where}",
+            $params
+        );
+        $save = self::$db->fetchOne(
+            "SELECT COUNT(DISTINCT visitor_id) AS c FROM card_events
+              WHERE event_type = 'save_contact'
+                AND visitor_id IS NOT NULL
+                AND created_at >= :start {$where}",
+            $params
+        );
+        $v = (int) ($view['c'] ?? 0);
+        $s = (int) ($save['c'] ?? 0);
+        return [
+            'views' => $v,
+            'saves' => $s,
+            'rate'  => $v > 0 ? round(100 * $s / $v, 2) : 0.0,
+        ];
+    }
+
+    /**
+     * Feature health: per known feature table, returns {table, rows, status}
+     * where status is OK (rows>0), EMPTY (rows=0), or MISSING (table absent).
+     */
+    public static function getFeatureHealth()
+    {
+        self::init();
+        $features = [
+            'card_events', 'employee_card_sections', 'employee_card_services',
+            'employee_card_gallery', 'employee_card_testimonials', 'employee_card_leads',
+            'employee_card_offers', 'employee_card_faqs', 'employee_business_hours',
+            'employee_card_products', 'nfc_cards', 'appointments', 'short_links',
+            'card_requests', 'qr_scans', 'cardify_signup_leads',
+        ];
+        $out = [];
+        foreach ($features as $t) {
+            $status = 'MISSING';
+            $rows = 0;
+            try {
+                $e = self::$db->fetchOne(
+                    "SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.TABLES
+                      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t",
+                    ['t' => $t]
+                );
+                if ((int) ($e['c'] ?? 0) > 0) {
+                    $r = self::$db->fetchOne("SELECT COUNT(*) AS c FROM `{$t}`");
+                    $rows = (int) ($r['c'] ?? 0);
+                    $status = $rows > 0 ? 'OK' : 'EMPTY';
+                }
+            } catch (Exception $e) {
+                $status = 'ERROR';
+            }
+            $out[] = ['table' => $t, 'rows' => $rows, 'status' => $status];
+        }
+        return $out;
+    }
+
     // ------------------------------------------------------------------
     // Re-implemented helpers (kept private so this class stands alone,
     // but mirror QRTracker semantics so numbers line up).
