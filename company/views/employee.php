@@ -9,6 +9,7 @@
 require_once INCLUDES_DIR . '/Currency.php';
 require_once INCLUDES_DIR . '/CardSections.php';
 require_once INCLUDES_DIR . '/Appointments.php';
+require_once INCLUDES_DIR . '/EmployeeSocials.php';
 
 $employeeId = $_SESSION['employee_id'] ?? $_SESSION['user_id'] ?? null;
 $message = null;
@@ -73,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
     'add_offer', 'delete_offer',
     'approve_testimonial', 'reject_testimonial',
     'update_appointments',
+    'update_socials',
 ], true)) {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
         $message = 'Invalid request token. Please refresh and try again.';
@@ -201,6 +203,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                     'notification_email' => $_POST['appt_email'] ?? '',
                 ]);
                 $message = 'Appointment settings saved.';
+            } elseif ($action === 'update_socials') {
+                $platforms = $_POST['social_platform'] ?? [];
+                $urls      = $_POST['social_url'] ?? [];
+                $items = [];
+                $count = is_array($platforms) ? count($platforms) : 0;
+                for ($i = 0; $i < $count; $i++) {
+                    $items[] = [
+                        'platform' => $platforms[$i] ?? '',
+                        'url'      => $urls[$i] ?? '',
+                    ];
+                }
+                $saved = EmployeeSocials::replaceAll($employeeId, $company['id'], $items);
+                $message = 'Social links saved (' . (int)$saved . ').';
             }
         } catch (Throwable $e) {
             $message = 'Action failed: ' . $e->getMessage();
@@ -217,6 +232,7 @@ $sectionGallery = CardSections::loadGallery($employeeId);
 $sectionTestimonials = CardSections::loadTestimonials($employeeId);
 $sectionOffers = CardSections::loadOffers($employeeId, false);
 $pendingTestimonials = CardSections::loadPendingTestimonials($employeeId);
+$socialLinks = EmployeeSocials::loadForEmployee($employeeId);
 $rejectedTestimonials = CardSections::loadRejectedTestimonials($employeeId);
 $apptSettings = Appointments::loadSettings($employeeId, $company['id']);
 $apptDays = explode(',', $apptSettings['available_days'] ?? '');
@@ -794,6 +810,82 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <button class="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm">Add Offer</button>
                 </form>
             </div>
+        </div>
+
+        <!-- Enhanced Social Links -->
+        <div class="mt-8 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-gray-100">
+                <h2 class="font-semibold text-gray-900"><i class="fa-solid fa-share-nodes mr-1 text-gray-500"></i> Social Links</h2>
+                <p class="text-sm text-gray-500">Add as many social profiles as you want — drag to reorder. Each one renders as a circular icon on your public card.</p>
+            </div>
+            <form method="post" class="p-6 space-y-4"
+                  x-data="socialLinksEditor(<?php echo htmlspecialchars(json_encode(array_map(function($s){ return ['platform'=>$s['platform'],'url'=>$s['url']]; }, $socialLinks)), ENT_QUOTES, 'UTF-8'); ?>)"
+                  @submit="syncHiddenInputs($event)">
+                <input type="hidden" name="action" value="update_socials">
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+
+                <div class="space-y-2">
+                    <template x-for="(row, idx) in rows" :key="idx">
+                        <div class="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-lg"
+                             draggable="true"
+                             @dragstart="dragStart($event, idx)"
+                             @dragover.prevent
+                             @drop.prevent="dropOn($event, idx)">
+                            <span class="cursor-grab text-gray-400 select-none px-1" title="Drag to reorder">
+                                <i class="fa-solid fa-grip-vertical"></i>
+                            </span>
+                            <select x-model="row.platform"
+                                    class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm w-44">
+                                <option value="">Select platform…</option>
+                                <?php foreach (EmployeeSocials::PLATFORMS as $key => $p): ?>
+                                <option value="<?php echo htmlspecialchars($key); ?>"><?php echo htmlspecialchars($p['label']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <input type="url" x-model="row.url"
+                                   :placeholder="platformHint(row.platform)"
+                                   class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+                            <button type="button" @click="rows.splice(idx,1)" class="text-red-500 p-2 hover:bg-red-50 rounded-lg" title="Remove">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Hidden submission inputs rendered at submit time -->
+                <div class="hidden">
+                    <template x-for="(row, idx) in rows" :key="'h'+idx">
+                        <div>
+                            <input type="hidden" name="social_platform[]" :value="row.platform">
+                            <input type="hidden" name="social_url[]" :value="row.url">
+                        </div>
+                    </template>
+                </div>
+
+                <div class="flex items-center justify-between pt-2">
+                    <button type="button" @click="rows.push({platform:'', url:''})" class="px-3 py-2 border border-dashed border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+                        <i class="fa-solid fa-plus mr-1"></i> Add social link
+                    </button>
+                    <button type="submit" class="px-6 py-2 btn-primary rounded-lg font-medium">Save Links</button>
+                </div>
+            </form>
+            <script>
+                function socialLinksEditor(initial) {
+                    const hints = <?php echo json_encode(array_map(function($p){ return $p['hint']; }, EmployeeSocials::PLATFORMS)); ?>;
+                    return {
+                        rows: Array.isArray(initial) && initial.length ? initial.map(r => ({platform: r.platform || '', url: r.url || ''})) : [{platform:'', url:''}],
+                        dragIndex: null,
+                        platformHint(p) { return hints[p] || 'https://…'; },
+                        dragStart(e, idx) { this.dragIndex = idx; e.dataTransfer.effectAllowed = 'move'; },
+                        dropOn(e, idx) {
+                            if (this.dragIndex === null || this.dragIndex === idx) return;
+                            const [moved] = this.rows.splice(this.dragIndex, 1);
+                            this.rows.splice(idx, 0, moved);
+                            this.dragIndex = null;
+                        },
+                        syncHiddenInputs() { /* Alpine re-renders hidden inputs from rows on submit */ }
+                    };
+                }
+            </script>
         </div>
         </section>
         <!-- /CARD TAB -->
