@@ -16,7 +16,7 @@ $scriptName = basename($_SERVER['SCRIPT_NAME'] ?? '');
 $publicSeoPages = [
     'blog.php', 'about.php', 'faq.php', 'contact.php', 'terms.php',
     'privacy.php', 'security.php', 'cookies.php', 'careers.php',
-    'sitemap.php', 'index.php', 'intro.php',
+    'sitemap.php', 'index.php', 'intro.php', 'get-started.php',
     'restaurants.php', 'construction.php', 'healthcare.php',
     'real-estate.php', 'tourism.php',
 ];
