@@ -537,6 +537,17 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             border: 1px solid #ddd;
             <?php endif; ?>
         }
+        .btn-pdf {
+            <?php if ($isDarkPage): ?>
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+            <?php else: ?>
+            background: #f3f4f6;
+            color: #111;
+            border: 1px solid #d1d5db;
+            <?php endif; ?>
+        }
         /* Wallet buttons */
         .wallet-buttons {
             display: flex;
@@ -824,10 +835,12 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         <?php endif; ?>
 
         <!-- Save & Share -->
+        <?php $pdfUrl = '/card-pdf.php?i=' . urlencode($employee['id']); ?>
         <div class="bottom-buttons">
             <?php if ($email): ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('save_contact', $vcfUrl)); ?>" class="bottom-btn btn-save" download>Save Contact</a>
             <?php endif; ?>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('download_pdf', $pdfUrl)); ?>" class="bottom-btn btn-pdf" download>Download PDF</a>
             <button class="bottom-btn btn-share" onclick="shareCard()">Share</button>
         </div>
 
