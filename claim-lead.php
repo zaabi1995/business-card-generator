@@ -44,10 +44,20 @@ if ($token === '' || !preg_match('/^[a-f0-9]{32,64}$/i', $token)) {
     exit;
 }
 
+// Look up by SHA-256 hash first (Codex round-3 finding #5 — magic tokens must
+// not sit in the DB as plaintext). Fall back to legacy plaintext lookup during
+// the transition window so any link sent before migration 067 still works.
+$tokenHash = hash('sha256', $token);
 $lead = $db->fetchOne(
-    "SELECT * FROM bulk_claim_leads WHERE magic_token = :t LIMIT 1",
-    ['t' => $token]
+    "SELECT * FROM bulk_claim_leads WHERE magic_token_hash = :h LIMIT 1",
+    ['h' => $tokenHash]
 );
+if (!$lead) {
+    $lead = $db->fetchOne(
+        "SELECT * FROM bulk_claim_leads WHERE magic_token = :t LIMIT 1",
+        ['t' => $token]
+    );
+}
 if (!$lead) {
     http_response_code(404);
     renderClaimError('Link not found.', 'This claim link does not exist. Please WhatsApp us if you think this is a mistake.');
@@ -99,29 +109,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Atomically claim (one-time-use guard).
-    $stmt = $db->getConnection()->prepare(
-        "UPDATE bulk_claim_leads
-            SET token_used_at = NOW(), claimed_at = COALESCE(claimed_at, NOW())
-          WHERE id = :id
-            AND token_used_at IS NULL"
-    );
-    $stmt->execute([':id' => $lead['id']]);
-    $claimed = $stmt->rowCount() > 0;
+    // Atomically claim inside a transaction (Codex round-3 finding #4 —
+    // previously, a failure between burning token_used_at and flipping the
+    // employee to active left the token permanently dead). Both updates now
+    // commit together or roll back together.
+    $claimed  = false;
+    $txOwner  = false;
+    $pdo      = $db->getConnection();
+    try {
+        if (!$pdo->inTransaction()) {
+            $pdo->beginTransaction();
+            $txOwner = true;
+        }
+
+        $stmt = $pdo->prepare(
+            "UPDATE bulk_claim_leads
+                SET token_used_at = NOW(), claimed_at = COALESCE(claimed_at, NOW())
+              WHERE id = :id
+                AND token_used_at IS NULL"
+        );
+        $stmt->execute([':id' => $lead['id']]);
+        $claimed = $stmt->rowCount() > 0;
+
+        if ($claimed) {
+            // Promote the employee out of 'unclaimed' in the same txn.
+            $empStmt = $pdo->prepare(
+                "UPDATE employees SET status = 'active' WHERE id = :id"
+            );
+            $empStmt->execute([':id' => $employee['id']]);
+        }
+
+        if ($txOwner) {
+            $pdo->commit();
+            $txOwner = false;
+        }
+    } catch (Throwable $e) {
+        if ($txOwner && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('claim-lead txn: ' . $e->getMessage());
+        http_response_code(500);
+        renderClaimError('Something went wrong.', 'Please try again in a moment.');
+        exit;
+    }
 
     if (!$claimed) {
         header('Location: ' . ($lead['card_url'] ?: '/'));
         exit;
     }
 
-    // Promote the employee out of 'unclaimed'
-    $db->update('employees', [
-        'status' => 'active',
-    ], 'id = :id', ['id' => $employee['id']]);
-
-    // Bump batch counters
+    // Bump batch counters (non-fatal — outside the claim txn by design).
     try {
-        $db->getConnection()->prepare(
+        $pdo->prepare(
             "UPDATE bulk_claim_batches SET claimed = claimed + 1 WHERE id = :b"
         )->execute([':b' => $lead['batch_id']]);
     } catch (Throwable $e) { /* non-fatal */ }

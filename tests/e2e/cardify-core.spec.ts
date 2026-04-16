@@ -102,9 +102,20 @@ test.describe('Cardify — PDF download', () => {
 });
 
 test.describe('Cardify — viral footer → /claim', () => {
+  // Clearly-fake test phone (Oman local format 00000000 → +96800000000).
+  // Never belongs to a real subscriber; safe even if a future revision of
+  // claim.php re-introduces WA side-effects.
+  const TEST_PHONE_LOCAL = '00000000';
+  const TEST_PHONE_E164 = '+96800000000';
+
   test('Clicking "Create yours free" lands on /claim with a phone input', async ({
     page,
+    request,
   }) => {
+    // Tag every request this test makes so claim.php flags the lead row as
+    // source='e2e_test' and we can purge it in cleanup.
+    await page.setExtraHTTPHeaders({ 'X-E2E-Test': '1' });
+
     await page.goto(cardPath(), { waitUntil: 'networkidle' });
 
     // The viral-footer link tracks via /card_click.php?dest=/claim... — clicking
@@ -125,8 +136,8 @@ test.describe('Cardify — viral footer → /claim', () => {
     const phone = page.locator('input[type="tel"], input[name="phone"]').first();
     await expect(phone, 'phone input').toBeVisible();
 
-    // Submit a dummy phone
-    await phone.fill('99999999');
+    // Submit a clearly-fake phone (Codex round-3 finding #3).
+    await phone.fill(TEST_PHONE_LOCAL);
 
     const submit = page
       .getByRole('button', { name: /send me the link|أرسل لي الرابط/i })
@@ -154,6 +165,26 @@ test.describe('Cardify — viral footer → /claim', () => {
         .toBeVisible();
     } else {
       expect(successVisible).toBe(true);
+    }
+
+    // Cleanup — best-effort delete of the test lead so the table doesn't
+    // accumulate junk rows across nightly CI runs. Relies on an opt-in
+    // admin endpoint at /api/e2e-cleanup.php (gated by X-E2E-Test header +
+    // E2E_CLEANUP_TOKEN env var on the server). Failure is non-fatal — we
+    // never want cleanup to fail a smoke test.
+    const cleanupToken = process.env.E2E_CLEANUP_TOKEN;
+    if (cleanupToken) {
+      try {
+        await request.post('/api/e2e-cleanup.php', {
+          headers: {
+            'X-E2E-Test': '1',
+            'X-E2E-Cleanup-Token': cleanupToken,
+          },
+          data: { phone: TEST_PHONE_E164 },
+        });
+      } catch (_e) {
+        /* non-fatal */
+      }
     }
   });
 });
