@@ -72,6 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
     'upload_gallery', 'delete_gallery',
     'add_testimonial', 'delete_testimonial',
     'add_offer', 'delete_offer',
+    'add_product', 'delete_product', 'reorder_products',
     'approve_testimonial', 'reject_testimonial',
     'update_appointments',
     'update_socials',
@@ -99,6 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                     'location_enabled' => !empty($_POST['location_enabled']),
                     'location_address' => $_POST['location_address'] ?? '',
                     'location_label' => $_POST['location_label'] ?? '',
+                    'products_enabled' => !empty($_POST['products_enabled']),
                     'section_order' => $_POST['section_order'] ?? '',
                 ]);
                 $message = 'Public card sections saved.';
@@ -185,6 +187,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
             } elseif ($action === 'delete_offer') {
                 CardSections::deleteOffer($employeeId, $_POST['offer_id'] ?? '');
                 $message = 'Offer removed.';
+            } elseif ($action === 'add_product') {
+                $imagePath = null;
+                if (!empty($_FILES['product_image']) && !empty($_FILES['product_image']['name'])) {
+                    $err = null;
+                    $imagePath = CardSections::handleImageUpload($_FILES['product_image'], $employeeId, 'products', $err);
+                    if ($err) {
+                        $message = 'Product image upload: ' . $err;
+                        $messageType = 'error';
+                    }
+                }
+                $pid = CardSections::addProduct(
+                    $employeeId,
+                    $company['id'],
+                    $_POST['product_title'] ?? '',
+                    $_POST['product_description'] ?? '',
+                    $_POST['product_price'] ?? 0,
+                    $imagePath,
+                    $_POST['product_whatsapp_message'] ?? ''
+                );
+                if ($pid && empty($message)) {
+                    $message = 'Product added.';
+                } elseif (!$pid) {
+                    $message = 'Product title is required.';
+                    $messageType = 'error';
+                }
+            } elseif ($action === 'delete_product') {
+                CardSections::deleteProduct($employeeId, $_POST['product_id'] ?? '');
+                $message = 'Product removed.';
+            } elseif ($action === 'reorder_products') {
+                $order = $_POST['product_order'] ?? [];
+                if (is_string($order)) {
+                    $order = array_filter(array_map('trim', explode(',', $order)));
+                }
+                CardSections::reorderProducts($employeeId, is_array($order) ? $order : []);
+                $message = 'Product order saved.';
             } elseif ($action === 'approve_testimonial') {
                 $ok = CardSections::setTestimonialStatus($employeeId, $_POST['testimonial_id'] ?? '', 'approved');
                 $message = $ok ? 'Testimonial approved.' : 'Could not approve.';
@@ -234,6 +271,7 @@ $sectionServices = CardSections::loadServices($employeeId);
 $sectionGallery = CardSections::loadGallery($employeeId);
 $sectionTestimonials = CardSections::loadTestimonials($employeeId);
 $sectionOffers = CardSections::loadOffers($employeeId, false);
+$sectionProducts = CardSections::loadProducts($employeeId, false);
 $pendingTestimonials = CardSections::loadPendingTestimonials($employeeId);
 $socialLinks = EmployeeSocials::loadForEmployee($employeeId);
 $rejectedTestimonials = CardSections::loadRejectedTestimonials($employeeId);
@@ -573,6 +611,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <input type="checkbox" name="location_enabled" <?php echo !empty($sectionMaster['location_enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
                         <span class="text-sm font-medium text-gray-800"><i class="fa-solid fa-location-dot mr-1"></i> Location</span>
                     </label>
+                    <label class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                        <input type="checkbox" name="products_enabled" <?php echo !empty($sectionMaster['products_enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
+                        <span class="text-sm font-medium text-gray-800"><i class="fa-solid fa-bag-shopping mr-1"></i> Products</span>
+                    </label>
                 </div>
 
                 <div class="grid md:grid-cols-3 gap-3">
@@ -632,7 +674,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <p class="text-xs text-gray-500 mt-1">Defaults to your account email if blank.</p>
                 </div>
 
-                <input type="hidden" name="section_order" value="<?php echo sanitize($sectionMaster['section_order'] ?? 'bio,offers,services,gallery,video,testimonials,lead_form,location'); ?>">
+                <input type="hidden" name="section_order" value="<?php echo sanitize($sectionMaster['section_order'] ?? 'bio,offers,services,products,gallery,video,testimonials,lead_form,location'); ?>">
 
                 <button type="submit" class="px-6 py-2 btn-primary rounded-lg font-medium">Save Sections</button>
             </form>
@@ -835,6 +877,74 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <button class="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm">Add Offer</button>
                 </form>
             </div>
+
+            <div class="px-6 pb-6 border-t border-gray-100 pt-6">
+                <h3 class="font-semibold text-gray-900 mb-3"><i class="fa-solid fa-bag-shopping mr-1 text-gray-500"></i> Products</h3>
+                <p class="text-xs text-gray-500 mb-3">Showcase a small catalog on your card. Each row becomes a tile with image, title, price, and an "Order via WhatsApp" button. Drag to reorder.</p>
+
+                <?php if (!empty($sectionProducts)): ?>
+                <form method="post" id="productReorderForm"
+                      x-data="productReorder(<?php echo htmlspecialchars(json_encode(array_map(function($p){ return ['id'=>$p['id'],'title'=>$p['title'],'price'=>$p['price'],'image'=>$p['image_path'] ?? '']; }, $sectionProducts)), ENT_QUOTES, 'UTF-8'); ?>)"
+                      @submit="syncOrder($event)">
+                    <input type="hidden" name="action" value="reorder_products">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                    <input type="hidden" name="product_order" :value="rows.map(r=>r.id).join(',')">
+
+                    <div class="space-y-2 mb-3">
+                        <template x-for="(row, idx) in rows" :key="row.id">
+                            <div class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-move"
+                                 draggable="true"
+                                 @dragstart="dragStart($event, idx)"
+                                 @dragover.prevent
+                                 @drop="drop($event, idx)">
+                                <i class="fa-solid fa-grip-vertical text-gray-400"></i>
+                                <template x-if="row.image">
+                                    <img :src="row.image" alt="" class="w-12 h-12 rounded-lg object-cover border border-gray-200">
+                                </template>
+                                <template x-if="!row.image">
+                                    <div class="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center text-gray-500"><i class="fa-solid fa-image"></i></div>
+                                </template>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-800 truncate" x-text="row.title"></div>
+                                    <div class="text-xs text-gray-500" x-text="'OMR ' + Number(row.price).toFixed(3)"></div>
+                                </div>
+                                <form method="post" onsubmit="return confirm('Remove this product?');">
+                                    <input type="hidden" name="action" value="delete_product">
+                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                                    <input type="hidden" name="product_id" :value="row.id">
+                                    <button type="submit" class="text-red-500 text-sm" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                                </form>
+                            </div>
+                        </template>
+                    </div>
+                    <button type="submit" class="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50">Save order</button>
+                </form>
+                <?php endif; ?>
+
+                <form method="post" enctype="multipart/form-data" class="mt-4 space-y-2">
+                    <input type="hidden" name="action" value="add_product">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                    <div class="grid md:grid-cols-2 gap-2">
+                        <input type="text" name="product_title" placeholder="Product title (e.g. Custom Ceramic Mug)" required maxlength="255"
+                               class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                        <input type="number" name="product_price" step="0.001" min="0" placeholder="Price (OMR, 3 decimals)" required
+                               class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                    </div>
+                    <textarea name="product_description" rows="2" placeholder="Short description (optional)" maxlength="4000"
+                              class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"></textarea>
+                    <div class="grid md:grid-cols-2 gap-2">
+                        <label class="flex flex-col gap-1 text-xs text-gray-600">
+                            Product image
+                            <input type="file" name="product_image" accept="image/jpeg,image/png,image/webp" class="text-sm">
+                        </label>
+                        <input type="text" name="product_whatsapp_message" maxlength="500"
+                               placeholder="WA message template (use {title}, {price})"
+                               class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                    </div>
+                    <p class="text-[11px] text-gray-500">Defaults to "I'd like to order {title} for {price}" when the template is blank.</p>
+                    <button class="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm">Add Product</button>
+                </form>
+            </div>
         </div>
 
         <!-- Enhanced Social Links -->
@@ -908,6 +1018,20 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             this.dragIndex = null;
                         },
                         syncHiddenInputs() { /* Alpine re-renders hidden inputs from rows on submit */ }
+                    };
+                }
+                function productReorder(initial) {
+                    return {
+                        rows: Array.isArray(initial) ? initial.slice() : [],
+                        dragIndex: null,
+                        dragStart(e, idx) { this.dragIndex = idx; e.dataTransfer.effectAllowed = 'move'; },
+                        drop(e, idx) {
+                            if (this.dragIndex === null || this.dragIndex === idx) return;
+                            const [moved] = this.rows.splice(this.dragIndex, 1);
+                            this.rows.splice(idx, 0, moved);
+                            this.dragIndex = null;
+                        },
+                        syncOrder() { /* hidden input already bound via :value */ }
                     };
                 }
             </script>

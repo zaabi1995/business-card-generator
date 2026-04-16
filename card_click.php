@@ -21,6 +21,7 @@ $dest       = (string) ($_GET['dest'] ?? '');
 $allowedCta = [
     'click_phone', 'click_mobile', 'click_whatsapp', 'click_email',
     'click_website', 'click_map', 'click_social', 'save_contact', 'wallet_add',
+    'product_order_click',
 ];
 
 /**
