@@ -65,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
     'update_sections', 'add_service', 'delete_service',
     'upload_gallery', 'delete_gallery',
     'add_testimonial', 'delete_testimonial',
+    'add_offer', 'delete_offer',
 ], true)) {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
         $message = 'Invalid request token. Please refresh and try again.';
@@ -81,6 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                     'testimonials_enabled' => !empty($_POST['testimonials_enabled']),
                     'lead_form_enabled' => !empty($_POST['lead_form_enabled']),
                     'lead_form_email' => $_POST['lead_form_email'] ?? '',
+                    'offers_enabled' => !empty($_POST['offers_enabled']),
                     'section_order' => $_POST['section_order'] ?? '',
                 ]);
                 $message = 'Public card sections saved.';
@@ -133,6 +135,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
             } elseif ($action === 'delete_testimonial') {
                 CardSections::deleteTestimonial($employeeId, $_POST['testimonial_id'] ?? '');
                 $message = 'Testimonial removed.';
+            } elseif ($action === 'add_offer') {
+                $oid = CardSections::addOffer(
+                    $employeeId,
+                    $company['id'],
+                    $_POST['offer_title'] ?? '',
+                    $_POST['offer_description'] ?? '',
+                    $_POST['offer_discount_label'] ?? '',
+                    $_POST['offer_valid_until'] ?? '',
+                    $_POST['offer_badge_color'] ?? ''
+                );
+                if ($oid) {
+                    $message = 'Offer added.';
+                } else {
+                    $message = 'Offer title is required.';
+                    $messageType = 'error';
+                }
+            } elseif ($action === 'delete_offer') {
+                CardSections::deleteOffer($employeeId, $_POST['offer_id'] ?? '');
+                $message = 'Offer removed.';
             }
         } catch (Throwable $e) {
             $message = 'Action failed: ' . $e->getMessage();
@@ -147,6 +168,7 @@ $sectionMaster = CardSections::loadMaster($employeeId, $company['id']);
 $sectionServices = CardSections::loadServices($employeeId);
 $sectionGallery = CardSections::loadGallery($employeeId);
 $sectionTestimonials = CardSections::loadTestimonials($employeeId);
+$sectionOffers = CardSections::loadOffers($employeeId, false);
 
 // Get employee's generated cards
 $generatedCards = [];
@@ -385,9 +407,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <input type="checkbox" name="testimonials_enabled" <?php echo !empty($sectionMaster['testimonials_enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
                         <span class="text-sm font-medium text-gray-800"><i class="fa-solid fa-quote-right mr-1"></i> Testimonials</span>
                     </label>
-                    <label class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200 md:col-span-2">
+                    <label class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
                         <input type="checkbox" name="lead_form_enabled" <?php echo !empty($sectionMaster['lead_form_enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
                         <span class="text-sm font-medium text-gray-800"><i class="fa-solid fa-envelope-open-text mr-1"></i> Lead Form</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                        <input type="checkbox" name="offers_enabled" <?php echo !empty($sectionMaster['offers_enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
+                        <span class="text-sm font-medium text-gray-800"><i class="fa-solid fa-tags mr-1"></i> Offers</span>
                     </label>
                 </div>
 
@@ -405,7 +431,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <p class="text-xs text-gray-500 mt-1">Defaults to your account email if blank.</p>
                 </div>
 
-                <input type="hidden" name="section_order" value="<?php echo sanitize($sectionMaster['section_order'] ?? 'bio,services,gallery,testimonials,lead_form'); ?>">
+                <input type="hidden" name="section_order" value="<?php echo sanitize($sectionMaster['section_order'] ?? 'bio,services,gallery,testimonials,lead_form,offers'); ?>">
 
                 <button type="submit" class="px-6 py-2 btn-primary rounded-lg font-medium">Save Sections</button>
             </form>
@@ -502,6 +528,80 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <input type="text" name="testimonial_quote" placeholder="What they said" required class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm md:col-span-2">
                     <input type="file" name="testimonial_photo" accept="image/jpeg,image/png,image/webp" class="text-sm">
                     <button class="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm md:col-span-4 md:justify-self-start">Add Testimonial</button>
+                </form>
+            </div>
+
+            <div class="px-6 pb-6 border-t border-gray-100 pt-6">
+                <h3 class="font-semibold text-gray-900 mb-3"><i class="fa-solid fa-tags mr-1 text-gray-500"></i> Offers</h3>
+                <p class="text-xs text-gray-500 mb-3">Time-limited offers for cardholders to claim. Each Redeem click increments the counter and is logged in analytics.</p>
+                <?php if (!empty($sectionOffers)): ?>
+                <div class="space-y-2 mb-4">
+                    <?php foreach ($sectionOffers as $offer): ?>
+                    <?php
+                        $isExpired = !empty($offer['valid_until']) && strtotime($offer['valid_until']) < strtotime(date('Y-m-d'));
+                    ?>
+                    <div class="flex items-start gap-3 p-3 border border-gray-200 rounded-lg <?php echo $isExpired ? 'bg-gray-50' : ''; ?>">
+                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-bold text-white whitespace-nowrap"
+                              style="background: <?php echo sanitize($offer['badge_color'] ?: '#009bc1'); ?>;">
+                            <?php echo sanitize($offer['discount_label'] ?: 'OFFER'); ?>
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium text-gray-800">
+                                <?php echo sanitize($offer['title']); ?>
+                                <?php if ($isExpired): ?>
+                                    <span class="ml-1 text-xs text-red-600 font-normal">(expired)</span>
+                                <?php endif; ?>
+                            </div>
+                            <?php if (!empty($offer['description'])): ?>
+                            <div class="text-xs text-gray-500"><?php echo sanitize($offer['description']); ?></div>
+                            <?php endif; ?>
+                            <div class="text-xs text-gray-400 mt-1">
+                                <?php if (!empty($offer['valid_until'])): ?>
+                                    Valid until <?php echo sanitize($offer['valid_until']); ?> ·
+                                <?php endif; ?>
+                                Redeemed <?php echo (int)$offer['redemption_count']; ?>×
+                            </div>
+                        </div>
+                        <form method="post" onsubmit="return confirm('Remove this offer?');">
+                            <input type="hidden" name="action" value="delete_offer">
+                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                            <input type="hidden" name="offer_id" value="<?php echo sanitize($offer['id']); ?>">
+                            <button class="text-red-500 text-sm"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+                <form method="post" class="space-y-2">
+                    <input type="hidden" name="action" value="add_offer">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                    <div class="grid md:grid-cols-2 gap-2">
+                        <input type="text" name="offer_title" placeholder="Offer title (e.g. Welcome discount)" required maxlength="255"
+                               class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                        <input type="text" name="offer_discount_label" placeholder="Discount (e.g. 10% off, BOGO, Free delivery)" maxlength="64"
+                               class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                    </div>
+                    <input type="text" name="offer_description" placeholder="Short description shown on card" maxlength="2000"
+                           class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                    <div class="grid md:grid-cols-3 gap-2 items-center">
+                        <label class="text-xs text-gray-600 flex flex-col gap-1">
+                            Valid until (optional)
+                            <input type="date" name="offer_valid_until" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                        </label>
+                        <div class="md:col-span-2">
+                            <div class="text-xs text-gray-600 mb-1">Badge color</div>
+                            <div class="flex flex-wrap gap-2">
+                                <?php foreach (CardSections::OFFER_PALETTE as $idx => $color): ?>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="offer_badge_color" value="<?php echo sanitize($color); ?>" <?php echo $idx === 0 ? 'checked' : ''; ?> class="sr-only peer">
+                                    <span class="block w-7 h-7 rounded-full border-2 border-white ring-2 ring-transparent peer-checked:ring-gray-900"
+                                          style="background: <?php echo sanitize($color); ?>;"></span>
+                                </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm">Add Offer</button>
                 </form>
             </div>
         </div>
