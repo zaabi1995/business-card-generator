@@ -4,6 +4,7 @@
  */
 require_once INCLUDES_DIR . '/Currency.php';
 require_once INCLUDES_DIR . '/CardSections.php';
+require_once INCLUDES_DIR . '/Appointments.php';
 
 $employeeId = $_SESSION['employee_id'] ?? $_SESSION['user_id'] ?? null;
 $message = null;
@@ -67,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
     'add_testimonial', 'delete_testimonial',
     'add_offer', 'delete_offer',
     'approve_testimonial', 'reject_testimonial',
+    'update_appointments',
 ], true)) {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
         $message = 'Invalid request token. Please refresh and try again.';
@@ -78,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                 CardSections::saveMaster($employeeId, $company['id'], [
                     'bio_enabled' => !empty($_POST['bio_enabled']),
                     'bio_text' => $_POST['bio_text'] ?? '',
+                    'bio_text_ar' => $_POST['bio_text_ar'] ?? '',
                     'services_enabled' => !empty($_POST['services_enabled']),
                     'gallery_enabled' => !empty($_POST['gallery_enabled']),
                     'testimonials_enabled' => !empty($_POST['testimonials_enabled']),
@@ -88,12 +91,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                 ]);
                 $message = 'Public card sections saved.';
             } elseif ($action === 'add_service') {
-                CardSections::addService(
+                $newServiceId = CardSections::addService(
                     $employeeId,
                     $_POST['service_icon'] ?? 'fa-solid fa-star',
                     $_POST['service_title'] ?? '',
                     $_POST['service_description'] ?? ''
                 );
+                if ($newServiceId) {
+                    $arTitle = trim((string)($_POST['service_title_ar'] ?? ''));
+                    $arDesc  = trim((string)($_POST['service_description_ar'] ?? ''));
+                    if ($arTitle !== '' || $arDesc !== '') {
+                        CardSections::upsertServiceTranslation($newServiceId, 'ar', $arTitle, $arDesc);
+                    }
+                }
                 $message = 'Service added.';
             } elseif ($action === 'delete_service') {
                 CardSections::deleteService($employeeId, $_POST['service_id'] ?? '');
@@ -129,6 +139,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                     $photoPath,
                     ['status' => 'approved'] // owner-added → auto-approved
                 );
+                if ($tid) {
+                    $arName = trim((string)($_POST['testimonial_name_ar'] ?? ''));
+                    $arQuote = trim((string)($_POST['testimonial_quote_ar'] ?? ''));
+                    if ($arName !== '' || $arQuote !== '') {
+                        CardSections::upsertTestimonialTranslation($tid, 'ar', $arName, $arQuote);
+                    }
+                }
                 if ($tid && empty($message)) $message = 'Testimonial added.';
                 if (!$tid) {
                     $message = 'Name and quote are required.';
@@ -164,6 +181,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                 $ok = CardSections::setTestimonialStatus($employeeId, $_POST['testimonial_id'] ?? '', 'rejected');
                 $message = $ok ? 'Testimonial rejected.' : 'Could not reject.';
                 $messageType = $ok ? 'success' : 'error';
+            } elseif ($action === 'update_appointments') {
+                Appointments::saveSettings($employeeId, $company['id'], [
+                    'enabled' => !empty($_POST['appt_enabled']),
+                    'duration_minutes' => $_POST['appt_duration'] ?? 30,
+                    'buffer_minutes' => $_POST['appt_buffer'] ?? 0,
+                    'timezone' => $_POST['appt_timezone'] ?? 'Asia/Muscat',
+                    'available_days' => $_POST['appt_days'] ?? [],
+                    'available_start' => $_POST['appt_start'] ?? '09:00',
+                    'available_end' => $_POST['appt_end'] ?? '17:00',
+                    'max_advance_days' => $_POST['appt_max_advance'] ?? 30,
+                    'notification_email' => $_POST['appt_email'] ?? '',
+                ]);
+                $message = 'Appointment settings saved.';
             }
         } catch (Throwable $e) {
             $message = 'Action failed: ' . $e->getMessage();
@@ -181,6 +211,8 @@ $sectionTestimonials = CardSections::loadTestimonials($employeeId);
 $sectionOffers = CardSections::loadOffers($employeeId, false);
 $pendingTestimonials = CardSections::loadPendingTestimonials($employeeId);
 $rejectedTestimonials = CardSections::loadRejectedTestimonials($employeeId);
+$apptSettings = Appointments::loadSettings($employeeId, $company['id']);
+$apptDays = explode(',', $apptSettings['available_days'] ?? '');
 
 // Get employee's generated cards
 $generatedCards = [];
@@ -429,10 +461,17 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </label>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-                    <textarea name="bio_text" rows="4" placeholder="A short paragraph about you. Use **text** for bold."
-                              class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"><?php echo sanitize($sectionMaster['bio_text'] ?? ''); ?></textarea>
+                <div class="grid md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Bio (English) <span class="text-xs text-gray-400">— primary</span></label>
+                        <textarea name="bio_text" rows="4" placeholder="A short paragraph about you. Use **text** for bold."
+                                  class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"><?php echo sanitize($sectionMaster['bio_text'] ?? ''); ?></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">السيرة (العربية) <span class="text-xs text-gray-400">— optional</span></label>
+                        <textarea name="bio_text_ar" rows="4" dir="rtl" placeholder="نبذة قصيرة عنك."
+                                  class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"><?php echo sanitize($sectionMaster['bio_text_ar'] ?? ''); ?></textarea>
+                    </div>
                 </div>
 
                 <div>
@@ -471,12 +510,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <?php endforeach; ?>
                 </div>
                 <?php endif; ?>
-                <form method="post" class="grid md:grid-cols-4 gap-2">
+                <form method="post" class="space-y-2">
                     <input type="hidden" name="action" value="add_service">
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
-                    <input type="text" name="service_icon" placeholder="fa-solid fa-star" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-                    <input type="text" name="service_title" placeholder="Title" required class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-                    <input type="text" name="service_description" placeholder="Short description" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                    <div class="grid md:grid-cols-4 gap-2">
+                        <input type="text" name="service_icon" placeholder="fa-solid fa-star" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                        <input type="text" name="service_title" placeholder="Title (EN)" required class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                        <input type="text" name="service_description" placeholder="Description (EN)" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm md:col-span-2">
+                    </div>
+                    <div class="grid md:grid-cols-4 gap-2">
+                        <div class="md:col-span-1 text-xs text-gray-500 self-center">Arabic (optional)</div>
+                        <input type="text" name="service_title_ar" dir="rtl" placeholder="العنوان" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                        <input type="text" name="service_description_ar" dir="rtl" placeholder="الوصف" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm md:col-span-2">
+                    </div>
                     <button class="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm">Add Service</button>
                 </form>
                 <p class="text-xs text-gray-500 mt-2">Icon uses <a href="https://fontawesome.com/icons" target="_blank" class="underline">Font Awesome</a> class names.</p>
@@ -599,13 +645,22 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </div>
                 <?php endif; ?>
 
-                <form method="post" enctype="multipart/form-data" class="grid md:grid-cols-4 gap-2">
+                <form method="post" enctype="multipart/form-data" class="space-y-2">
                     <input type="hidden" name="action" value="add_testimonial">
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
-                    <input type="text" name="testimonial_name" placeholder="Client name" required class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-                    <input type="text" name="testimonial_quote" placeholder="What they said" required class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm md:col-span-2">
-                    <input type="file" name="testimonial_photo" accept="image/jpeg,image/png,image/webp" class="text-sm">
-                    <button class="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm md:col-span-4 md:justify-self-start">Add Testimonial</button>
+                    <div class="grid md:grid-cols-4 gap-2">
+                        <input type="text" name="testimonial_name" placeholder="Client name (EN)" required class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                        <input type="text" name="testimonial_quote" placeholder="What they said (EN)" required class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm md:col-span-2">
+                        <input type="file" name="testimonial_photo" accept="image/jpeg,image/png,image/webp" class="text-sm">
+                    </div>
+                    <!-- AR fields preserved below if present -->
+
+                    <div class="grid md:grid-cols-4 gap-2">
+                        <div class="md:col-span-1 text-xs text-gray-500 self-center">Arabic (optional)</div>
+                        <input type="text" name="testimonial_name_ar" dir="rtl" placeholder="اسم العميل" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                        <input type="text" name="testimonial_quote_ar" dir="rtl" placeholder="الاقتباس" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm md:col-span-2">
+                    </div>
+                    <button class="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm">Add Testimonial</button>
                 </form>
 
                 <?php if (!empty($rejectedTestimonials)): ?>
@@ -720,6 +775,86 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <button class="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm">Add Offer</button>
                 </form>
             </div>
+        </div>
+
+        <!-- Appointment Booking -->
+        <div class="mt-8 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                    <h2 class="font-semibold text-gray-900"><i class="fa-solid fa-calendar-check text-blue-600 mr-1"></i> Appointment Booking</h2>
+                    <p class="text-sm text-gray-500">Let visitors of your card book a meeting with you.</p>
+                </div>
+                <a href="<?php echo getBasePath(); ?>admin/appointments.php" class="text-sm text-blue-600 hover:underline">View bookings &rarr;</a>
+            </div>
+            <form method="post" class="p-6 space-y-5">
+                <input type="hidden" name="action" value="update_appointments">
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+
+                <label class="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                    <input type="checkbox" name="appt_enabled" <?php echo !empty($apptSettings['enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
+                    <span class="text-sm font-medium text-gray-800">Enable appointment booking on my public card</span>
+                </label>
+
+                <div class="grid md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Meeting duration (min)</label>
+                        <input type="number" name="appt_duration" min="5" max="480" value="<?php echo (int)($apptSettings['duration_minutes'] ?? 30); ?>"
+                               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Buffer between meetings (min)</label>
+                        <input type="number" name="appt_buffer" min="0" max="240" value="<?php echo (int)($apptSettings['buffer_minutes'] ?? 0); ?>"
+                               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Max advance booking (days)</label>
+                        <input type="number" name="appt_max_advance" min="1" max="365" value="<?php echo (int)($apptSettings['max_advance_days'] ?? 30); ?>"
+                               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Day starts</label>
+                        <input type="time" name="appt_start" value="<?php echo sanitize(substr($apptSettings['available_start'] ?? '09:00:00', 0, 5)); ?>"
+                               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Day ends</label>
+                        <input type="time" name="appt_end" value="<?php echo sanitize(substr($apptSettings['available_end'] ?? '17:00:00', 0, 5)); ?>"
+                               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+                        <input type="text" name="appt_timezone" value="<?php echo sanitize($apptSettings['timezone'] ?? 'Asia/Muscat'); ?>"
+                               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Available days</label>
+                    <div class="flex flex-wrap gap-2">
+                        <?php foreach (Appointments::DAY_KEYS as $d):
+                            $checked = in_array($d, $apptDays, true);
+                        ?>
+                        <label class="flex items-center gap-2 px-3 py-2 rounded-lg border <?php echo $checked ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-gray-50 border-gray-200 text-gray-700'; ?> text-sm cursor-pointer">
+                            <input type="checkbox" name="appt_days[]" value="<?php echo $d; ?>" <?php echo $checked ? 'checked' : ''; ?>>
+                            <?php echo strtoupper($d); ?>
+                        </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Notify email when booked</label>
+                    <input type="email" name="appt_email" placeholder="<?php echo sanitize($employee['email'] ?? ''); ?>"
+                           value="<?php echo sanitize($apptSettings['notification_email'] ?? ''); ?>"
+                           class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p class="text-xs text-gray-500 mt-1">Defaults to your account email if blank.</p>
+                </div>
+
+                <button type="submit" class="px-6 py-2 btn-primary rounded-lg font-medium">Save Appointment Settings</button>
+            </form>
         </div>
     </main>
 </div>

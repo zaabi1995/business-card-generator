@@ -15,6 +15,7 @@ try {
     require_once __DIR__ . '/config.php';
     require_once INCLUDES_DIR . '/QRTracker.php';
     require_once INCLUDES_DIR . '/CardSections.php';
+    require_once INCLUDES_DIR . '/Appointments.php';
     require_once INCLUDES_DIR . '/CardAnalytics.php';
 
     $companySlug = trim($_GET['company_slug'] ?? '');
@@ -107,10 +108,17 @@ try {
     // Build VCF download URL — short format (?i=id) produces smaller QR codes
     $vcfUrl = '/qr.php?i=' . urlencode($employee['id']);
 
-    // Employee contact data
-    $name = $employee['name_en'] ?? $employee['name'] ?? 'Employee';
-    $position = $employee['position'] ?? $employee['job_title'] ?? '';
-    $companyName = $company['name'] ?? '';
+    // ---- Locale resolution (sets cookie if ?lang= present) -------------
+    $locale = CardSections::resolveLocale();
+    $isRtl = CardSections::isRtl($locale);
+
+    // Employee contact data — localized with EN fallback
+    $name = CardSections::tColumn($employee, 'name', $locale);
+    if (trim((string)$name) === '') $name = $employee['name'] ?? 'Employee';
+    $position = CardSections::tColumn($employee, 'position', $locale);
+    if (trim((string)$position) === '') $position = $employee['position'] ?? $employee['job_title'] ?? '';
+    $companyName = CardSections::tColumn($company, 'name', $locale);
+    if (trim((string)$companyName) === '') $companyName = $company['name'] ?? '';
     $phone = $employee['phone'] ?? '';
     $mobile = $employee['mobile'] ?? '';
     $email = $employee['email'] ?? '';
@@ -123,9 +131,12 @@ try {
     // Logo path
     $logoPath = ($theme && !empty($theme['logo_path'])) ? $theme['logo_path'] : '';
 
-    // Public card sections
+    // Public card sections (localized with EN fallback)
     $sectionMaster = CardSections::loadMaster($employee['id'], $company['id']);
-    $sectionServices = !empty($sectionMaster['services_enabled']) ? CardSections::loadServices($employee['id']) : [];
+    $bioText = $locale === 'ar' && trim((string)($sectionMaster['bio_text_ar'] ?? '')) !== ''
+        ? $sectionMaster['bio_text_ar']
+        : ($sectionMaster['bio_text'] ?? '');
+    $sectionServices = !empty($sectionMaster['services_enabled']) ? CardSections::loadServicesLocalized($employee['id'], $locale) : [];
     $sectionGallery = !empty($sectionMaster['gallery_enabled']) ? CardSections::loadGallery($employee['id']) : [];
     $sectionTestimonials = !empty($sectionMaster['testimonials_enabled']) ? CardSections::loadApprovedTestimonials($employee['id']) : [];
     $sectionOffers = !empty($sectionMaster['offers_enabled']) ? CardSections::loadOffers($employee['id'], true) : [];
@@ -133,6 +144,10 @@ try {
     if (!in_array('offers', $sectionOrder, true)) {
         $sectionOrder[] = 'offers';
     }
+
+    // Appointment booking settings (rendered as its own section after card sections)
+    $apptSettings = Appointments::loadSettings($employee['id'], $company['id']);
+    $apptEnabled = !empty($apptSettings['enabled']);
 
     // Wallet pass endpoints (feature-flagged — buttons render only when enabled)
     require_once INCLUDES_DIR . '/AppleWalletPass.php';
@@ -205,9 +220,16 @@ function renderBranded404($company, $theme) {
 
 // Render the digital card page
 ob_end_clean();
+// Build language switcher URLs (preserve current path, swap lang param)
+$__currentPath = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
+$__qs = $_GET;
+unset($__qs['lang'], $__qs['company_slug'], $__qs['employee_id']);
+$__qBase = $__qs ? ('?' . http_build_query($__qs) . '&') : '?';
+$switchEnUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=en', ENT_QUOTES);
+$switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTES);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo $isRtl ? 'ar' : 'en'; ?>"<?php echo $isRtl ? ' dir="rtl"' : ''; ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -220,11 +242,16 @@ ob_end_clean();
     <meta property="og:image" content="<?php echo htmlspecialchars($frontImage); ?>">
     <?php endif; ?>
     <link rel="icon" href="<?php echo $logoPath ? htmlspecialchars($logoPath) : '/favicon.svg'; ?>">
+    <?php if ($isRtl): ?>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <?php endif; ?>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             min-height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: <?php echo $isRtl ? "'Noto Sans Arabic', " : ''; ?>-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             -webkit-font-smoothing: antialiased;
             <?php if ($isDarkPage): ?>
             background: linear-gradient(to bottom, #141421, #1a1a2e);
@@ -785,6 +812,130 @@ ob_end_clean();
                 </div>
             <?php endif; ?>
         <?php endforeach; ?>
+
+        <?php if ($apptEnabled): ?>
+        <!-- Appointment Booking Widget -->
+        <div class="card-section" id="apptSection">
+            <h3>Book a meeting</h3>
+            <div id="apptStep1">
+                <label style="display:block;font-size:12px;color:#aaa;margin-bottom:6px;">Choose a date</label>
+                <input type="date" id="apptDate" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:inherit;font:inherit;">
+                <div id="apptSlots" style="margin-top:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
+                <div id="apptSlotsEmpty" style="display:none;text-align:center;color:#aaa;font-size:13px;padding:14px 0;">No slots available on this day.</div>
+            </div>
+            <form id="apptForm" style="display:none;margin-top:12px;" autocomplete="off">
+                <div id="apptChosen" style="background:rgba(255,255,255,0.08);padding:10px;border-radius:8px;font-size:13px;margin-bottom:10px;"></div>
+                <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee['id']); ?>">
+                <input type="hidden" name="slot_start" id="apptSlotStart">
+                <div class="hp" style="position:absolute;left:-9999px;"><label>Website<input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
+                <div id="apptError" style="display:none;color:#ff6b6b;font-size:13px;margin-bottom:8px;"></div>
+                <input type="text" name="name" placeholder="Your name" required maxlength="255" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:inherit;font:inherit;margin-bottom:8px;">
+                <input type="email" name="email" placeholder="Email" maxlength="255" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:inherit;font:inherit;margin-bottom:8px;">
+                <input type="tel" name="phone" placeholder="Phone" maxlength="50" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:inherit;font:inherit;margin-bottom:8px;">
+                <textarea name="notes" placeholder="Notes (optional)" maxlength="4000" rows="3" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:inherit;font:inherit;margin-bottom:8px;"></textarea>
+                <div style="display:flex;gap:8px;">
+                    <button type="button" id="apptBack" style="flex:0 0 auto;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:inherit;cursor:pointer;">Back</button>
+                    <button type="submit" id="apptSubmit" style="flex:1;padding:10px 14px;border-radius:8px;border:none;background:<?php echo htmlspecialchars($accentColor ?? '#2563eb'); ?>;color:#fff;font-weight:600;cursor:pointer;">Confirm booking</button>
+                </div>
+            </form>
+            <div id="apptSuccess" style="display:none;text-align:center;padding:18px;">
+                <div style="font-size:32px;margin-bottom:6px;">&#10003;</div>
+                <div style="font-weight:600;">Request sent!</div>
+                <div style="font-size:13px;color:#aaa;margin-top:4px;">You'll get a confirmation email shortly.</div>
+            </div>
+        </div>
+        <script>
+        (function(){
+            var EID = <?php echo json_encode($employee['id']); ?>;
+            var MAX_ADV = <?php echo (int)$apptSettings['max_advance_days']; ?>;
+            var dateInput = document.getElementById('apptDate');
+            var slotsEl   = document.getElementById('apptSlots');
+            var emptyEl   = document.getElementById('apptSlotsEmpty');
+            var step1     = document.getElementById('apptStep1');
+            var form      = document.getElementById('apptForm');
+            var slotInput = document.getElementById('apptSlotStart');
+            var chosenEl  = document.getElementById('apptChosen');
+            var backBtn   = document.getElementById('apptBack');
+            var errEl     = document.getElementById('apptError');
+            var submitBtn = document.getElementById('apptSubmit');
+            var successEl = document.getElementById('apptSuccess');
+
+            function pad(n){return n<10?'0'+n:''+n;}
+            var today = new Date();
+            var max = new Date(); max.setDate(max.getDate() + MAX_ADV);
+            dateInput.min = today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
+            dateInput.max = max.getFullYear()+'-'+pad(max.getMonth()+1)+'-'+pad(max.getDate());
+            dateInput.value = dateInput.min;
+
+            function loadSlots() {
+                slotsEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#aaa;font-size:13px;padding:8px 0;">Loading...</div>';
+                emptyEl.style.display = 'none';
+                fetch('/api/appointment/slots.php?eid='+encodeURIComponent(EID)+'&date='+encodeURIComponent(dateInput.value))
+                    .then(function(r){return r.json();})
+                    .then(function(res){
+                        slotsEl.innerHTML = '';
+                        if (!res.success || !res.slots || !res.slots.length) {
+                            emptyEl.style.display = 'block';
+                            return;
+                        }
+                        res.slots.forEach(function(s){
+                            var b = document.createElement('button');
+                            b.type = 'button';
+                            b.textContent = s.label;
+                            b.style.cssText = 'padding:8px 4px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:inherit;font:inherit;cursor:pointer;font-size:13px;';
+                            b.addEventListener('click', function(){
+                                slotInput.value = s.start;
+                                chosenEl.textContent = dateInput.value + ' at ' + s.label;
+                                step1.style.display = 'none';
+                                form.style.display = 'block';
+                            });
+                            slotsEl.appendChild(b);
+                        });
+                    })
+                    .catch(function(){
+                        slotsEl.innerHTML = '';
+                        emptyEl.textContent = 'Could not load slots. Try again.';
+                        emptyEl.style.display = 'block';
+                    });
+            }
+            dateInput.addEventListener('change', loadSlots);
+            loadSlots();
+
+            backBtn.addEventListener('click', function(){
+                form.style.display = 'none';
+                step1.style.display = 'block';
+            });
+
+            form.addEventListener('submit', function(e){
+                e.preventDefault();
+                errEl.style.display = 'none';
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Booking...';
+                var data = new FormData(form);
+                fetch('/api/appointment/book.php', { method: 'POST', body: data })
+                    .then(function(r){return r.json().catch(function(){return {success:false,error:'Network error'};});})
+                    .then(function(res){
+                        if (res && res.success) {
+                            form.style.display = 'none';
+                            step1.style.display = 'none';
+                            successEl.style.display = 'block';
+                        } else {
+                            errEl.textContent = (res && res.error) || 'Booking failed.';
+                            errEl.style.display = 'block';
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = 'Confirm booking';
+                        }
+                    })
+                    .catch(function(){
+                        errEl.textContent = 'Network error. Try again.';
+                        errEl.style.display = 'block';
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Confirm booking';
+                    });
+            });
+        })();
+        </script>
+        <?php endif; ?>
 
         <?php if ($appleWalletEnabled || $googleWalletEnabled): ?>
         <!-- Add to Wallet -->
