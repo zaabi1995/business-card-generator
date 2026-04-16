@@ -75,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
     'approve_testimonial', 'reject_testimonial',
     'update_appointments',
     'update_socials',
+    'add_faq', 'delete_faq', 'reorder_faqs',
 ], true)) {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
         $message = 'Invalid request token. Please refresh and try again.';
@@ -99,6 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                     'location_enabled' => !empty($_POST['location_enabled']),
                     'location_address' => $_POST['location_address'] ?? '',
                     'location_label' => $_POST['location_label'] ?? '',
+                    'faq_enabled' => !empty($_POST['faq_enabled']),
                     'section_order' => $_POST['section_order'] ?? '',
                 ]);
                 $message = 'Public card sections saved.';
@@ -219,6 +221,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                 }
                 $saved = EmployeeSocials::replaceAll($employeeId, $company['id'], $items);
                 $message = 'Social links saved (' . (int)$saved . ').';
+            } elseif ($action === 'add_faq') {
+                $fid = CardSections::addFaq(
+                    $employeeId,
+                    $company['id'],
+                    $_POST['faq_question'] ?? '',
+                    $_POST['faq_answer'] ?? '',
+                    $_POST['faq_question_ar'] ?? '',
+                    $_POST['faq_answer_ar'] ?? ''
+                );
+                if ($fid) {
+                    $message = 'FAQ added.';
+                } else {
+                    $message = 'Question and answer are required.';
+                    $messageType = 'error';
+                }
+            } elseif ($action === 'delete_faq') {
+                CardSections::deleteFaq($employeeId, $_POST['faq_id'] ?? '');
+                $message = 'FAQ removed.';
+            } elseif ($action === 'reorder_faqs') {
+                $orderRaw = (string)($_POST['faq_order'] ?? '');
+                $ids = array_values(array_filter(array_map('trim', explode(',', $orderRaw))));
+                CardSections::reorderFaqs($employeeId, $ids);
+                $message = 'FAQ order updated.';
             }
         } catch (Throwable $e) {
             $message = 'Action failed: ' . $e->getMessage();
@@ -236,6 +261,7 @@ $sectionTestimonials = CardSections::loadTestimonials($employeeId);
 $sectionOffers = CardSections::loadOffers($employeeId, false);
 $pendingTestimonials = CardSections::loadPendingTestimonials($employeeId);
 $socialLinks = EmployeeSocials::loadForEmployee($employeeId);
+$sectionFaqs = CardSections::loadFaqs($employeeId);
 $rejectedTestimonials = CardSections::loadRejectedTestimonials($employeeId);
 $apptSettings = Appointments::loadSettings($employeeId, $company['id']);
 $apptDays = explode(',', $apptSettings['available_days'] ?? '');
@@ -573,6 +599,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <input type="checkbox" name="location_enabled" <?php echo !empty($sectionMaster['location_enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
                         <span class="text-sm font-medium text-gray-800"><i class="fa-solid fa-location-dot mr-1"></i> Location</span>
                     </label>
+                    <label class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                        <input type="checkbox" name="faq_enabled" <?php echo !empty($sectionMaster['faq_enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
+                        <span class="text-sm font-medium text-gray-800"><i class="fa-solid fa-circle-question mr-1"></i> FAQ</span>
+                    </label>
                 </div>
 
                 <div class="grid md:grid-cols-3 gap-3">
@@ -632,7 +662,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <p class="text-xs text-gray-500 mt-1">Defaults to your account email if blank.</p>
                 </div>
 
-                <input type="hidden" name="section_order" value="<?php echo sanitize($sectionMaster['section_order'] ?? 'bio,offers,services,gallery,video,testimonials,lead_form,location'); ?>">
+                <input type="hidden" name="section_order" value="<?php echo sanitize($sectionMaster['section_order'] ?? 'bio,offers,services,gallery,video,testimonials,faq,lead_form,location'); ?>">
 
                 <button type="submit" class="px-6 py-2 btn-primary rounded-lg font-medium">Save Sections</button>
             </form>
@@ -833,6 +863,94 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         </div>
                     </div>
                     <button class="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm">Add Offer</button>
+                </form>
+            </div>
+
+            <div class="px-6 pb-6 border-t border-gray-100 pt-6">
+                <h3 class="font-semibold text-gray-900 mb-3"><i class="fa-solid fa-circle-question mr-1 text-gray-500"></i> FAQ</h3>
+                <p class="text-xs text-gray-500 mb-3">Expandable Q&amp;A list shown on your public card. Visitors tap a question to reveal the answer.</p>
+
+                <?php if (!empty($sectionFaqs)): ?>
+                <form method="post" class="mb-4"
+                      x-data="{
+                        ids: <?php echo htmlspecialchars(json_encode(array_map(function($f){ return $f['id']; }, $sectionFaqs)), ENT_QUOTES, 'UTF-8'); ?>,
+                        dragFrom: null,
+                        dragStart(i){ this.dragFrom = i; },
+                        dropOn(i){
+                            if (this.dragFrom === null || this.dragFrom === i) return;
+                            const moved = this.ids.splice(this.dragFrom,1)[0];
+                            this.ids.splice(i,0,moved);
+                            this.dragFrom = null;
+                            document.getElementById('faqOrderHidden').value = this.ids.join(',');
+                            this.$root.querySelector('button[type=submit]').disabled = false;
+                            // Visually reorder the DOM rows
+                            const list = this.$refs.list;
+                            this.ids.forEach(id => {
+                                const el = list.querySelector('[data-faq-id=\"'+id+'\"]');
+                                if (el) list.appendChild(el);
+                            });
+                        }
+                      }">
+                    <input type="hidden" name="action" value="reorder_faqs">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                    <input type="hidden" id="faqOrderHidden" name="faq_order" value="<?php echo sanitize(implode(',', array_map(function($f){ return $f['id']; }, $sectionFaqs))); ?>">
+
+                    <div class="space-y-2" x-ref="list">
+                        <?php foreach ($sectionFaqs as $i => $faq): ?>
+                        <div class="flex items-start gap-3 p-3 border border-gray-200 rounded-lg bg-white"
+                             data-faq-id="<?php echo sanitize($faq['id']); ?>"
+                             draggable="true"
+                             @dragstart="dragStart(<?php echo $i; ?>)"
+                             @dragover.prevent
+                             @drop.prevent="dropOn(<?php echo $i; ?>)">
+                            <span class="cursor-grab text-gray-400 select-none pt-1" title="Drag to reorder">
+                                <i class="fa-solid fa-grip-vertical"></i>
+                            </span>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-gray-800"><?php echo sanitize($faq['question']); ?></div>
+                                <div class="text-xs text-gray-500 whitespace-pre-line mt-1"><?php echo sanitize($faq['answer']); ?></div>
+                                <?php if (!empty($faq['question_ar']) || !empty($faq['answer_ar'])): ?>
+                                <div class="mt-2 pt-2 border-t border-dashed border-gray-200" dir="rtl">
+                                    <?php if (!empty($faq['question_ar'])): ?>
+                                    <div class="text-sm font-medium text-gray-800"><?php echo sanitize($faq['question_ar']); ?></div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($faq['answer_ar'])): ?>
+                                    <div class="text-xs text-gray-500 whitespace-pre-line mt-1"><?php echo sanitize($faq['answer_ar']); ?></div>
+                                    <?php endif; ?>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                            <form method="post" onsubmit="return confirm('Remove this FAQ?');">
+                                <input type="hidden" name="action" value="delete_faq">
+                                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                                <input type="hidden" name="faq_id" value="<?php echo sanitize($faq['id']); ?>">
+                                <button class="text-red-500 text-sm"><i class="fa-solid fa-trash"></i></button>
+                            </form>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <button type="submit" class="mt-3 px-3 py-2 bg-gray-900 text-white rounded-lg text-sm" disabled>Save order</button>
+                </form>
+                <?php endif; ?>
+
+                <form method="post" class="space-y-2">
+                    <input type="hidden" name="action" value="add_faq">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                    <div class="grid gap-2">
+                        <input type="text" name="faq_question" placeholder="Question (EN)" required maxlength="500"
+                               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                        <textarea name="faq_answer" placeholder="Answer (EN)" required rows="3"
+                                  class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"></textarea>
+                    </div>
+                    <div class="grid gap-2 pt-2 border-t border-dashed border-gray-200" dir="rtl">
+                        <div class="text-xs text-gray-500 self-center" dir="ltr">Arabic (optional — falls back to English)</div>
+                        <input type="text" name="faq_question_ar" dir="rtl" placeholder="السؤال" maxlength="500"
+                               class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                        <textarea name="faq_answer_ar" dir="rtl" placeholder="الإجابة" rows="3"
+                                  class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"></textarea>
+                    </div>
+                    <button class="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm">Add FAQ</button>
                 </form>
             </div>
         </div>
