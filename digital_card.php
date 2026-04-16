@@ -195,12 +195,16 @@ try {
         $sectionTestimonials = [];
     }
     $sectionOffers = !empty($sectionMaster['offers_enabled']) ? CardSections::loadOffers($employee['id'], true) : [];
+    $sectionFaqs = !empty($sectionMaster['faq_enabled']) ? CardSections::loadFaqsLocalized($employee['id'], $locale) : [];
     $sectionOrder = array_values(array_filter(array_map('trim', explode(',', $sectionMaster['section_order'] ?? implode(',', CardSections::SECTION_KEYS)))));
     if (!in_array('offers', $sectionOrder, true)) {
         $sectionOrder[] = 'offers';
     }
     if (!in_array('location', $sectionOrder, true)) {
         $sectionOrder[] = 'location';
+    }
+    if (!in_array('faq', $sectionOrder, true)) {
+        $sectionOrder[] = 'faq';
     }
 
     // Appointment booking settings (rendered as its own section after card sections)
@@ -646,6 +650,15 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .video-frame { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; background: #000; }
         .video-frame iframe, .video-frame video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
         .video-link-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px; background: <?php echo htmlspecialchars($accentColor); ?>; color: #fff; font-size: 14px; font-weight: 600; text-decoration: none; }
+        .faq-list { display: flex; flex-direction: column; gap: 8px; }
+        .faq-item { border-radius: 10px; <?php echo $isDarkPage ? 'background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);' : 'background: #fafafa; border: 1px solid #ececec;'; ?> overflow: hidden; }
+        .faq-item[open] { <?php echo $isDarkPage ? 'background: rgba(255,255,255,0.06);' : 'background: #fff; border-color: #e0e0e0;'; ?> }
+        .faq-q { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; font-size: 14px; font-weight: 600; <?php echo $isDarkPage ? 'color:#eee;' : 'color:#1a1a2e;'; ?> user-select: none; }
+        .faq-q::-webkit-details-marker { display: none; }
+        .faq-q-text { flex: 1; line-height: 1.4; <?php echo $isRtl ? 'text-align:right;' : ''; ?> }
+        .faq-icon { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: <?php echo htmlspecialchars($accentColor); ?>22; color: <?php echo htmlspecialchars($accentColor); ?>; font-size: 11px; transition: transform 0.2s ease; }
+        .faq-item[open] .faq-icon i::before { content: "\f068"; /* fa-minus */ }
+        .faq-a { padding: 0 14px 14px; font-size: 13px; line-height: 1.55; <?php echo $isDarkPage ? 'color:#bbb;' : 'color:#555;'; ?> <?php echo $isRtl ? 'text-align:right;' : ''; ?> }
         .offers-list { display: flex; flex-direction: column; gap: 10px; }
         .offer-card { padding: 12px; border-radius: 12px; <?php echo $isDarkPage ? 'background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);' : 'background: #fafafa; border: 1px solid #ececec;'; ?> }
         .offer-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
@@ -1073,6 +1086,22 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                         <?php echo htmlspecialchars($directionsLabel); ?>
                     </a>
                 </div>
+            <?php elseif ($__sec === 'faq' && !empty($sectionMaster['faq_enabled']) && !empty($sectionFaqs)): ?>
+                <?php $faqTitle = ($locale === 'ar') ? 'الأسئلة الشائعة' : 'FAQ'; ?>
+                <div class="card-section">
+                    <h3><?php echo htmlspecialchars($faqTitle); ?></h3>
+                    <div class="faq-list">
+                        <?php foreach ($sectionFaqs as $__faq): ?>
+                        <details class="faq-item">
+                            <summary class="faq-q">
+                                <span class="faq-q-text"><?php echo htmlspecialchars($__faq['question']); ?></span>
+                                <span class="faq-icon" aria-hidden="true"><i class="fa-solid fa-plus"></i></span>
+                            </summary>
+                            <div class="faq-a"><?php echo nl2br(htmlspecialchars($__faq['answer'])); ?></div>
+                        </details>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
             <?php elseif ($__sec === 'lead_form' && !empty($sectionMaster['lead_form_enabled'])): ?>
                 <div class="card-section">
                     <h3>Get in Touch</h3>
@@ -1454,5 +1483,23 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     'url' => 'https://cardify.om/' . ($company['slug'] ?? '') . '/card/' . ($employee['id'] ?? '')
 ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?>
 </script>
+<?php if (!empty($sectionMaster['faq_enabled']) && !empty($sectionFaqs)): ?>
+<script type="application/ld+json">
+<?= json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'FAQPage',
+    'mainEntity' => array_map(function ($f) {
+        return [
+            '@type' => 'Question',
+            'name' => (string)($f['question'] ?? ''),
+            'acceptedAnswer' => [
+                '@type' => 'Answer',
+                'text' => (string)($f['answer'] ?? ''),
+            ],
+        ];
+    }, $sectionFaqs),
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?>
+</script>
+<?php endif; ?>
 </body>
 </html>
