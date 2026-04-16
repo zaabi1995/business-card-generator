@@ -30,6 +30,9 @@ $allowedCta = [
     'click_phone', 'click_mobile', 'click_whatsapp', 'click_email',
     'click_website', 'click_map', 'click_social', 'save_contact', 'wallet_add',
     'product_order_click',
+    // PDF download CTA — emitted from the public card's bottom bar. Dest
+    // points at same-origin /card-pdf.php so redirect-host check is harmless.
+    'download_pdf',
     // Viral "Made with Cardify" footer on every public card — routes visitors
     // to the /claim landing page. Tracked so we can measure conversion from
     // card view → claim-page click (the whole point of the viral loop).

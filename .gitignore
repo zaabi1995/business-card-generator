@@ -73,3 +73,9 @@ malware.*
 .ftpquota
 data/oman-enterprises*.xlsx
 data/oman-enterprises-enriched.csv
+
+# Playwright E2E artifacts
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
