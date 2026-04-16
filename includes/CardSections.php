@@ -10,7 +10,7 @@ class CardSections
 {
     // Display order on the public card page. Offers placed early (high-value CTA),
     // followed by bio → services/gallery → testimonials (social proof) → lead_form (bottom CTA).
-    const SECTION_KEYS = ['bio', 'offers', 'services', 'gallery', 'video', 'testimonials', 'lead_form', 'location', 'hours'];
+    const SECTION_KEYS = ['bio', 'offers', 'services', 'gallery', 'video', 'testimonials', 'faq', 'lead_form', 'location', 'hours'];
     const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
     // PHP date('N') returns 1=Mon..7=Sun; map to our keys.
     const DAY_BY_ISO = [1 => 'mon', 2 => 'tue', 3 => 'wed', 4 => 'thu', 5 => 'fri', 6 => 'sat', 7 => 'sun'];
@@ -69,6 +69,7 @@ class CardSections
                 'video_title' => '',
                 'hours_enabled' => 0,
                 'hours_timezone' => self::DEFAULT_TZ,
+                'faq_enabled' => 0,
                 'section_order' => implode(',', self::SECTION_KEYS),
             ];
         }
@@ -89,6 +90,9 @@ class CardSections
             if (!array_key_exists($k, $row) || $row[$k] === null) {
                 $row[$k] = $v;
             }
+        }
+        if (!array_key_exists('faq_enabled', $row)) {
+            $row['faq_enabled'] = 0;
         }
         return $row;
     }
@@ -289,12 +293,14 @@ class CardSections
                  video_enabled, video_url, video_title,
                  location_enabled, location_address, location_lat, location_lng, location_label,
                  hours_enabled, hours_timezone,
+                 faq_enabled,
                  section_order)
              VALUES
                 (:eid, :cid, :be, :bt, :bta, :se, :ge, :te, :le, :lem, :oe,
                  :ve, :vu, :vt,
                  :loce, :loca, :loclat, :loclng, :loclbl,
                  :he, :htz,
+                 :fe,
                  :ord)
              ON DUPLICATE KEY UPDATE
                 bio_enabled = VALUES(bio_enabled),
@@ -316,6 +322,7 @@ class CardSections
                 location_label = VALUES(location_label),
                 hours_enabled = VALUES(hours_enabled),
                 hours_timezone = VALUES(hours_timezone),
+                faq_enabled = VALUES(faq_enabled),
                 section_order = VALUES(section_order)"
         );
         $videoUrl = trim((string)($data['video_url'] ?? ''));
@@ -344,6 +351,7 @@ class CardSections
             'loclbl' => $locLabel,
             'he' => !empty($data['hours_enabled']) ? 1 : 0,
             'htz' => $tz,
+            'fe' => !empty($data['faq_enabled']) ? 1 : 0,
             'ord' => $order,
         ]);
     }
@@ -996,6 +1004,83 @@ class CardSections
             'ip' => mb_substr((string)$ip, 0, 64),
         ]);
         return $id;
+    }
+
+    // ---- FAQ section -----------------------------------------------------
+
+    /**
+     * Load all FAQs for an employee (ordered by position, created_at).
+     */
+    public static function loadFaqs($employeeId)
+    {
+        return Database::getInstance()->fetchAll(
+            "SELECT * FROM employee_card_faqs WHERE employee_id = :eid ORDER BY position, created_at",
+            ['eid' => $employeeId]
+        );
+    }
+
+    public static function addFaq($employeeId, $companyId, $question, $answer, $questionAr = '', $answerAr = '')
+    {
+        $question = trim((string)$question);
+        $answer   = trim((string)$answer);
+        if ($question === '' || $answer === '') return false;
+
+        $questionAr = trim((string)$questionAr);
+        $answerAr   = trim((string)$answerAr);
+
+        $id = self::uuid();
+        Database::getInstance()->insert('employee_card_faqs', [
+            'id' => $id,
+            'employee_id' => $employeeId,
+            'company_id' => $companyId,
+            'question' => mb_substr($question, 0, 500),
+            'answer' => $answer,
+            'question_ar' => $questionAr !== '' ? mb_substr($questionAr, 0, 500) : null,
+            'answer_ar' => $answerAr !== '' ? $answerAr : null,
+            'position' => 0,
+        ]);
+        return $id;
+    }
+
+    public static function deleteFaq($employeeId, $faqId)
+    {
+        Database::getInstance()->getConnection()
+            ->prepare("DELETE FROM employee_card_faqs WHERE id = :id AND employee_id = :eid")
+            ->execute(['id' => $faqId, 'eid' => $employeeId]);
+    }
+
+    /**
+     * Reorder FAQs by updating the position column. $orderedIds is the new order (top → bottom).
+     */
+    public static function reorderFaqs($employeeId, array $orderedIds)
+    {
+        $pdo = Database::getInstance()->getConnection();
+        $stmt = $pdo->prepare(
+            "UPDATE employee_card_faqs SET position = :pos WHERE id = :id AND employee_id = :eid"
+        );
+        $pos = 0;
+        foreach ($orderedIds as $fid) {
+            $fid = trim((string)$fid);
+            if ($fid === '') continue;
+            $stmt->execute(['pos' => $pos++, 'id' => $fid, 'eid' => $employeeId]);
+        }
+    }
+
+    /**
+     * Return list with localized question/answer (AR overlay with EN fallback).
+     */
+    public static function loadFaqsLocalized($employeeId, $locale)
+    {
+        $locale = in_array($locale, self::SUPPORTED_LOCALES, true) ? $locale : self::DEFAULT_LOCALE;
+        $rows = self::loadFaqs($employeeId);
+        if ($locale === 'en' || empty($rows)) return $rows;
+        foreach ($rows as &$r) {
+            $qAr = trim((string)($r['question_ar'] ?? ''));
+            $aAr = trim((string)($r['answer_ar'] ?? ''));
+            if ($qAr !== '') $r['question'] = $qAr;
+            if ($aAr !== '') $r['answer']   = $aAr;
+        }
+        return $rows;
     }
 
     /**
