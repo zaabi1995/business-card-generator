@@ -329,6 +329,30 @@ class DatabaseAdapter {
     }
 
     /**
+     * Pro-tier gate for the "hide Made with Cardify footer" flag.
+     *
+     * The checkbox is rendered only for paid plans, but do NOT trust the client —
+     * an attacker could flip the hidden field on a free plan. We validate the
+     * company's plan server-side via Billing::hasFeature(custom_branding).
+     *
+     * Free plans always return 0 (footer stays on), regardless of input.
+     */
+    private static function resolveHideCardifyBranding($raw, $companyId) {
+        $requested = self::normalizeBoolFlag($raw, 0);
+        if ($requested !== 1) return 0;
+        if (!$companyId) return 0;
+        try {
+            if (!class_exists('Billing')) {
+                require_once __DIR__ . '/Billing.php';
+            }
+            return Billing::hasFeature($companyId, 'custom_branding') ? 1 : 0;
+        } catch (Throwable $e) {
+            error_log('resolveHideCardifyBranding failed: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
      * Validate & normalize a Dynamic QR redirect URL.
      * Returns null for empty/invalid input. Only http(s) URLs accepted.
      * Max 1024 chars (column width).
@@ -380,6 +404,9 @@ class DatabaseAdapter {
             'address_ar' => trim($data['address_ar'] ?? ''),
             'qr_redirect_url' => self::sanitizeQrRedirectUrl($data['qr_redirect_url'] ?? null),
             'card_dark_mode_toggle' => self::normalizeBoolFlag($data['card_dark_mode_toggle'] ?? 1, 1),
+            // Pro-tier only: hide "Made with Cardify" viral footer. Free plans
+            // always get 0 regardless of what the form posted — server-side gate.
+            'hide_cardify_branding' => self::resolveHideCardifyBranding($data['hide_cardify_branding'] ?? 0, $companyId),
             'created_at' => date('Y-m-d H:i:s')
         ];
 
@@ -424,6 +451,8 @@ class DatabaseAdapter {
             'address_ar' => trim($data['address_ar'] ?? ''),
             'qr_redirect_url' => self::sanitizeQrRedirectUrl($data['qr_redirect_url'] ?? null),
             'card_dark_mode_toggle' => self::normalizeBoolFlag($data['card_dark_mode_toggle'] ?? 1, 1),
+            // Pro-tier only: hide "Made with Cardify" viral footer (see migration 065).
+            'hide_cardify_branding' => self::resolveHideCardifyBranding($data['hide_cardify_branding'] ?? 0, $companyId),
             'updated_at' => date('Y-m-d H:i:s')
         ];
         

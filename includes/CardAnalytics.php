@@ -31,6 +31,8 @@ class CardAnalytics
         'offer_redeem',
         'product_order_click',
         'short_link_click',
+        'viral_footer_click',
+        'viral_footer_view',
     ];
 
     private static function init()
