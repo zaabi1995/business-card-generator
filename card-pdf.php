@@ -212,8 +212,10 @@ HTML;
         || filesize($cachePath) < 1024;
 
     if ($needsRender) {
+        // `command -v` returns the path even when open_basedir hides it from PHP stat.
+        // We trust exec() (which bypasses open_basedir) rather than is_file() here.
         $bin = trim((string)@shell_exec('command -v wkhtmltopdf 2>/dev/null'));
-        if ($bin === '' || !is_file($bin)) {
+        if ($bin === '') {
             // Fallback to TCPDF if composer is available locally.
             $tcpdf = BASE_DIR . '/vendor/tecnickcom/tcpdf/tcpdf.php';
             if (!is_file($tcpdf)) {
