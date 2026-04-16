@@ -10,7 +10,7 @@ class CardSections
 {
     // Display order on the public card page. Offers placed early (high-value CTA),
     // followed by bio → services/gallery → testimonials (social proof) → lead_form (bottom CTA).
-    const SECTION_KEYS = ['bio', 'offers', 'services', 'gallery', 'testimonials', 'lead_form'];
+    const SECTION_KEYS = ['bio', 'offers', 'services', 'gallery', 'testimonials', 'lead_form', 'location'];
     const OFFER_PALETTE = ['#009bc1', '#ffbb00', '#824598', '#45c0ba', '#e74c3c', '#27ae60', '#111827'];
     const SUPPORTED_LOCALES = ['en', 'ar'];
     const DEFAULT_LOCALE = 'en';
@@ -47,11 +47,21 @@ class CardSections
                 'lead_form_enabled' => 0,
                 'lead_form_email' => '',
                 'offers_enabled' => 0,
+                'location_enabled' => 0,
+                'location_address' => '',
+                'location_lat' => null,
+                'location_lng' => null,
+                'location_label' => '',
                 'section_order' => implode(',', self::SECTION_KEYS),
             ];
         }
         if (!array_key_exists('offers_enabled', $row)) {
             $row['offers_enabled'] = 0;
+        }
+        foreach (['location_enabled' => 0, 'location_address' => '', 'location_lat' => null, 'location_lng' => null, 'location_label' => ''] as $k => $v) {
+            if (!array_key_exists($k, $row)) {
+                $row[$k] = $v;
+            }
         }
         return $row;
     }
@@ -235,12 +245,19 @@ class CardSections
         }
         $order = implode(',', $orderParts);
 
+        $locAddr = mb_substr(trim((string)($data['location_address'] ?? '')), 0, 512);
+        $locLabel = mb_substr(trim((string)($data['location_label'] ?? '')), 0, 120);
+        $locLat = isset($data['location_lat']) && $data['location_lat'] !== '' && is_numeric($data['location_lat']) ? (float)$data['location_lat'] : null;
+        $locLng = isset($data['location_lng']) && $data['location_lng'] !== '' && is_numeric($data['location_lng']) ? (float)$data['location_lng'] : null;
+
         $stmt = $pdo->prepare(
             "INSERT INTO employee_card_sections
                 (employee_id, company_id, bio_enabled, bio_text, bio_text_ar, services_enabled, gallery_enabled,
-                 testimonials_enabled, lead_form_enabled, lead_form_email, offers_enabled, section_order)
+                 testimonials_enabled, lead_form_enabled, lead_form_email, offers_enabled,
+                 location_enabled, location_address, location_lat, location_lng, location_label, section_order)
              VALUES
-                (:eid, :cid, :be, :bt, :bta, :se, :ge, :te, :le, :lem, :oe, :ord)
+                (:eid, :cid, :be, :bt, :bta, :se, :ge, :te, :le, :lem, :oe,
+                 :loce, :loca, :loclat, :loclng, :loclbl, :ord)
              ON DUPLICATE KEY UPDATE
                 bio_enabled = VALUES(bio_enabled),
                 bio_text = VALUES(bio_text),
@@ -251,6 +268,11 @@ class CardSections
                 lead_form_enabled = VALUES(lead_form_enabled),
                 lead_form_email = VALUES(lead_form_email),
                 offers_enabled = VALUES(offers_enabled),
+                location_enabled = VALUES(location_enabled),
+                location_address = VALUES(location_address),
+                location_lat = VALUES(location_lat),
+                location_lng = VALUES(location_lng),
+                location_label = VALUES(location_label),
                 section_order = VALUES(section_order)"
         );
         $stmt->execute([
@@ -265,6 +287,11 @@ class CardSections
             'le' => !empty($data['lead_form_enabled']) ? 1 : 0,
             'lem' => trim((string)($data['lead_form_email'] ?? '')),
             'oe' => !empty($data['offers_enabled']) ? 1 : 0,
+            'loce' => !empty($data['location_enabled']) ? 1 : 0,
+            'loca' => $locAddr,
+            'loclat' => $locLat,
+            'loclng' => $locLng,
+            'loclbl' => $locLabel,
             'ord' => $order,
         ]);
     }

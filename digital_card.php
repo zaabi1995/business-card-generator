@@ -185,6 +185,9 @@ try {
     if (!in_array('offers', $sectionOrder, true)) {
         $sectionOrder[] = 'offers';
     }
+    if (!in_array('location', $sectionOrder, true)) {
+        $sectionOrder[] = 'location';
+    }
 
     // Appointment booking settings (rendered as its own section after card sections)
     $apptSettings = Appointments::loadSettings($employee['id'], $company['id']);
@@ -889,6 +892,43 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                             </div>
                         <?php endforeach; ?>
                     </div>
+                </div>
+            <?php elseif ($__sec === 'location' && !empty($sectionMaster['location_enabled']) && !empty(trim((string)($sectionMaster['location_address'] ?? '')))): ?>
+                <?php
+                    $locAddr = trim((string)$sectionMaster['location_address']);
+                    $locLabel = trim((string)($sectionMaster['location_label'] ?? ''));
+                    $mapsQ = urlencode($locAddr);
+                    $embedUrl = 'https://www.google.com/maps?q=' . $mapsQ . '&output=embed';
+                    $directionsUrl = 'https://www.google.com/maps?q=' . $mapsQ;
+                    $directionsLabel = ($locale === 'ar') ? 'احصل على الاتجاهات' : 'Get Directions';
+                    $locTitle = ($locale === 'ar') ? 'الموقع' : 'Location';
+                ?>
+                <div class="card-section">
+                    <h3><?php echo htmlspecialchars($locTitle); ?></h3>
+                    <?php if ($locLabel !== ''): ?>
+                    <div style="font-size:13px; color:#555; margin-bottom:8px;<?php echo $isRtl ? 'text-align:right;' : ''; ?>">
+                        <i class="fa-solid fa-location-dot" style="color:<?php echo htmlspecialchars($accentColor); ?>;"></i>
+                        <?php echo htmlspecialchars($locLabel); ?>
+                    </div>
+                    <?php endif; ?>
+                    <div style="position:relative; width:100%; padding-bottom:56.25%; border-radius:12px; overflow:hidden; border:1px solid rgba(0,0,0,0.08); background:#f3f4f6;">
+                        <iframe
+                            src="<?php echo htmlspecialchars($embedUrl); ?>"
+                            style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;"
+                            loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade"
+                            allowfullscreen
+                            title="<?php echo htmlspecialchars($locTitle); ?>"></iframe>
+                    </div>
+                    <div style="font-size:13px; color:#6b7280; margin-top:8px;<?php echo $isRtl ? 'text-align:right;' : ''; ?>">
+                        <?php echo htmlspecialchars($locAddr); ?>
+                    </div>
+                    <a href="<?php echo htmlspecialchars($directionsUrl); ?>"
+                       target="_blank" rel="noopener"
+                       style="display:inline-flex; align-items:center; gap:8px; margin-top:10px; padding:10px 16px; border-radius:10px; background:<?php echo htmlspecialchars($accentColor); ?>; color:#fff; font-weight:600; font-size:14px; text-decoration:none;">
+                        <i class="fa-solid fa-diamond-turn-right"></i>
+                        <?php echo htmlspecialchars($directionsLabel); ?>
+                    </a>
                 </div>
             <?php elseif ($__sec === 'lead_form' && !empty($sectionMaster['lead_form_enabled'])): ?>
                 <div class="card-section">
