@@ -127,7 +127,7 @@ try {
     $sectionMaster = CardSections::loadMaster($employee['id'], $company['id']);
     $sectionServices = !empty($sectionMaster['services_enabled']) ? CardSections::loadServices($employee['id']) : [];
     $sectionGallery = !empty($sectionMaster['gallery_enabled']) ? CardSections::loadGallery($employee['id']) : [];
-    $sectionTestimonials = !empty($sectionMaster['testimonials_enabled']) ? CardSections::loadTestimonials($employee['id']) : [];
+    $sectionTestimonials = !empty($sectionMaster['testimonials_enabled']) ? CardSections::loadApprovedTestimonials($employee['id']) : [];
     $sectionOffers = !empty($sectionMaster['offers_enabled']) ? CardSections::loadOffers($employee['id'], true) : [];
     $sectionOrder = array_values(array_filter(array_map('trim', explode(',', $sectionMaster['section_order'] ?? implode(',', CardSections::SECTION_KEYS)))));
     if (!in_array('offers', $sectionOrder, true)) {
@@ -532,6 +532,12 @@ ob_end_clean();
         .testimonial-head img, .testimonial-head .ph-placeholder { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: rgba(127,127,127,0.15); display: flex; align-items: center; justify-content: center; color: #888; font-size: 14px; }
         .testimonial-name { font-size: 13px; font-weight: 600; <?php echo $isDarkPage ? 'color:#eee;' : 'color:#1a1a2e;'; ?> }
         .testimonial-quote { font-size: 13px; font-style: italic; line-height: 1.55; <?php echo $isDarkPage ? 'color:#bbb;' : 'color:#555;'; ?> }
+        .testimonial-stars { font-size: 14px; line-height: 1; margin: 4px 0 6px; letter-spacing: 1px; }
+        .testimonial-toggle { display: inline-block; margin-top: 8px; padding: 8px 14px; font-size: 13px; border-radius: 8px; border: 1px solid <?php echo $isDarkPage ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)'; ?>; background: transparent; color: inherit; cursor: pointer; }
+        .testimonial-toggle:hover { background: <?php echo $isDarkPage ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'; ?>; }
+        .star-picker { display: inline-flex; gap: 4px; font-size: 22px; line-height: 1; user-select: none; }
+        .star-picker .star { color: rgba(127,127,127,0.35); cursor: pointer; transition: color 0.1s; }
+        .star-picker .star.active { color: #f5b400; }
         .lead-form label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; <?php echo $isDarkPage ? 'color:#bbb;' : 'color:#555;'; ?> }
         .lead-form input, .lead-form textarea { width: 100%; padding: 10px 12px; border-radius: 8px; font-size: 14px; margin-bottom: 10px; font-family: inherit; box-sizing: border-box;
             <?php if ($isDarkPage): ?>background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #eee;<?php else: ?>background: #f7f7f9; border: 1px solid #e5e7eb; color: #1a1a2e;<?php endif; ?>
@@ -681,9 +687,10 @@ ob_end_clean();
                         <?php endforeach; ?>
                     </div>
                 </div>
-            <?php elseif ($__sec === 'testimonials' && !empty($sectionMaster['testimonials_enabled']) && !empty($sectionTestimonials)): ?>
+            <?php elseif ($__sec === 'testimonials' && !empty($sectionMaster['testimonials_enabled'])): ?>
                 <div class="card-section">
                     <h3>Testimonials</h3>
+                    <?php if (!empty($sectionTestimonials)): ?>
                     <?php foreach ($sectionTestimonials as $t): ?>
                         <div class="testimonial-item">
                             <div class="testimonial-head">
@@ -694,9 +701,42 @@ ob_end_clean();
                                 <?php endif; ?>
                                 <div class="testimonial-name"><?php echo htmlspecialchars($t['name']); ?></div>
                             </div>
+                            <?php if (!empty($t['rating']) && (int)$t['rating'] > 0): ?>
+                            <div class="testimonial-stars" aria-label="<?php echo (int)$t['rating']; ?> out of 5">
+                                <?php $r=(int)$t['rating']; for($i=1;$i<=5;$i++): ?>
+                                    <span style="color:<?php echo $i<=$r?'#f5b400':'rgba(127,127,127,0.3)'; ?>;">&#9733;</span>
+                                <?php endfor; ?>
+                            </div>
+                            <?php endif; ?>
                             <div class="testimonial-quote">&ldquo;<?php echo nl2br(htmlspecialchars($t['quote'])); ?>&rdquo;</div>
                         </div>
                     <?php endforeach; ?>
+                    <?php else: ?>
+                        <div style="font-size:13px; opacity:0.65; padding:8px 0 12px;">Be the first to leave a testimonial.</div>
+                    <?php endif; ?>
+
+                    <button type="button" class="testimonial-toggle" id="testimonialToggle" onclick="(function(b){var f=document.getElementById('testimonialFormWrap');var open=f.style.display==='block';f.style.display=open?'none':'block';b.textContent=open?'Leave a testimonial':'Cancel';})(this);">Leave a testimonial</button>
+                    <div id="testimonialFormWrap" style="display:none; margin-top:12px;">
+                        <form id="testimonialForm" class="lead-form" enctype="multipart/form-data" autocomplete="off">
+                            <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee['id']); ?>">
+                            <div class="hp" style="position:absolute;left:-10000px;"><label>Website<input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
+                            <div class="lead-error" id="testimonialError" style="display:none;"></div>
+                            <label>Your name<input type="text" name="name" required maxlength="255"></label>
+                            <label>Email (optional)<input type="email" name="email" maxlength="255"></label>
+                            <label>Rating
+                                <div class="star-picker" id="starPicker" role="radiogroup" aria-label="Rating">
+                                    <input type="hidden" name="rating" id="ratingInput" value="">
+                                    <?php for($i=1;$i<=5;$i++): ?>
+                                    <span class="star" data-val="<?php echo $i; ?>" role="radio" aria-checked="false" tabindex="0">&#9733;</span>
+                                    <?php endfor; ?>
+                                </div>
+                            </label>
+                            <label>Your testimonial<textarea name="quote" required maxlength="2000"></textarea></label>
+                            <label>Photo (optional)<input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></label>
+                            <button type="submit" id="testimonialSubmit">Submit for review</button>
+                        </form>
+                        <div class="lead-success" id="testimonialSuccess" style="display:none;">Thanks! Your testimonial is pending review.</div>
+                    </div>
                 </div>
             <?php elseif ($__sec === 'offers' && !empty($sectionMaster['offers_enabled']) && !empty($sectionOffers)): ?>
                 <div class="card-section">
@@ -833,6 +873,62 @@ ob_end_clean();
                 });
             }
         }
+
+        // Star picker for testimonial form
+        (function(){
+            var picker = document.getElementById('starPicker');
+            if (!picker) return;
+            var input = document.getElementById('ratingInput');
+            var stars = picker.querySelectorAll('.star');
+            function setVal(v) {
+                input.value = v;
+                stars.forEach(function(s){
+                    var sv = parseInt(s.getAttribute('data-val'),10);
+                    s.classList.toggle('active', sv <= v);
+                    s.setAttribute('aria-checked', sv === v ? 'true' : 'false');
+                });
+            }
+            stars.forEach(function(s){
+                s.addEventListener('click', function(){ setVal(parseInt(s.getAttribute('data-val'),10)); });
+                s.addEventListener('keydown', function(e){
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setVal(parseInt(s.getAttribute('data-val'),10)); }
+                });
+            });
+        })();
+
+        // Testimonial submit
+        (function(){
+            var form = document.getElementById('testimonialForm');
+            if (!form) return;
+            form.addEventListener('submit', function(e){
+                e.preventDefault();
+                var btn = document.getElementById('testimonialSubmit');
+                var err = document.getElementById('testimonialError');
+                err.style.display = 'none';
+                btn.disabled = true;
+                btn.textContent = 'Submitting...';
+                var data = new FormData(form);
+                fetch('/api/testimonial.php', { method: 'POST', body: data })
+                    .then(function(r){ return r.json().catch(function(){ return { success:false, error:'Network error' }; }); })
+                    .then(function(res){
+                        if (res && res.success) {
+                            form.style.display = 'none';
+                            document.getElementById('testimonialSuccess').style.display = 'block';
+                        } else {
+                            err.textContent = (res && res.error) || 'Failed to submit. Please try again.';
+                            err.style.display = 'block';
+                            btn.disabled = false;
+                            btn.textContent = 'Submit for review';
+                        }
+                    })
+                    .catch(function(){
+                        err.textContent = 'Network error. Try again.';
+                        err.style.display = 'block';
+                        btn.disabled = false;
+                        btn.textContent = 'Submit for review';
+                    });
+            });
+        })();
 
         // Lead form submit
         (function(){

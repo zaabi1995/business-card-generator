@@ -37,6 +37,13 @@ if (!file_exists($configFile)) {
 
 require_once $configFile;
 
+// Custom Domain check — if the Host header maps to a verified custom domain,
+// this serves the linked employee card and exits. Otherwise returns and the
+// normal landing-page flow continues unchanged.
+if (file_exists(__DIR__ . '/custom_domain_router.php')) {
+    require __DIR__ . '/custom_domain_router.php';
+}
+
 // Check if database is configured and installation is complete
 $needsInstallation = false;
 
