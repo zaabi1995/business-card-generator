@@ -75,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
     'approve_testimonial', 'reject_testimonial',
     'update_appointments',
     'update_socials',
+    'update_hours',
 ], true)) {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
         $message = 'Invalid request token. Please refresh and try again.';
@@ -99,6 +100,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                     'location_enabled' => !empty($_POST['location_enabled']),
                     'location_address' => $_POST['location_address'] ?? '',
                     'location_label' => $_POST['location_label'] ?? '',
+                    'hours_enabled' => !empty($_POST['hours_enabled']),
+                    'hours_timezone' => $_POST['hours_timezone'] ?? 'Asia/Muscat',
                     'section_order' => $_POST['section_order'] ?? '',
                 ]);
                 $message = 'Public card sections saved.';
@@ -219,6 +222,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                 }
                 $saved = EmployeeSocials::replaceAll($employeeId, $company['id'], $items);
                 $message = 'Social links saved (' . (int)$saved . ').';
+            } elseif ($action === 'update_hours') {
+                $days   = $_POST['hours_day']   ?? [];
+                $closed = $_POST['hours_closed']?? [];
+                $open   = $_POST['hours_open']  ?? [];
+                $close  = $_POST['hours_close'] ?? [];
+                $bs     = $_POST['hours_break_start'] ?? [];
+                $be     = $_POST['hours_break_end']   ?? [];
+                $schedule = [];
+                foreach (CardSections::DAY_KEYS as $d) {
+                    $schedule[$d] = [
+                        'is_closed'   => !empty($closed[$d]),
+                        'open_time'   => $open[$d]  ?? null,
+                        'close_time'  => $close[$d] ?? null,
+                        'break_start' => $bs[$d]    ?? null,
+                        'break_end'   => $be[$d]    ?? null,
+                    ];
+                }
+                CardSections::saveBusinessHours($employeeId, $schedule);
+                // Also persist the timezone + toggle with the master row.
+                $existing = CardSections::loadMaster($employeeId, $company['id']);
+                CardSections::saveMaster($employeeId, $company['id'], array_merge($existing, [
+                    'hours_enabled'  => !empty($_POST['hours_enabled']),
+                    'hours_timezone' => $_POST['hours_timezone'] ?? 'Asia/Muscat',
+                ]));
+                $message = 'Business hours saved.';
             }
         } catch (Throwable $e) {
             $message = 'Action failed: ' . $e->getMessage();
@@ -239,6 +267,8 @@ $socialLinks = EmployeeSocials::loadForEmployee($employeeId);
 $rejectedTestimonials = CardSections::loadRejectedTestimonials($employeeId);
 $apptSettings = Appointments::loadSettings($employeeId, $company['id']);
 $apptDays = explode(',', $apptSettings['available_days'] ?? '');
+$businessHours = CardSections::loadBusinessHours($employeeId);
+$timezoneList = timezone_identifiers_list();
 
 // Get employee's generated cards
 $generatedCards = [];
@@ -573,6 +603,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <input type="checkbox" name="location_enabled" <?php echo !empty($sectionMaster['location_enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
                         <span class="text-sm font-medium text-gray-800"><i class="fa-solid fa-location-dot mr-1"></i> Location</span>
                     </label>
+                    <label class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                        <input type="checkbox" name="hours_enabled" <?php echo !empty($sectionMaster['hours_enabled']) ? 'checked' : ''; ?> class="h-4 w-4">
+                        <span class="text-sm font-medium text-gray-800"><i class="fa-solid fa-clock mr-1"></i> Business Hours</span>
+                    </label>
                 </div>
 
                 <div class="grid md:grid-cols-3 gap-3">
@@ -632,7 +666,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <p class="text-xs text-gray-500 mt-1">Defaults to your account email if blank.</p>
                 </div>
 
-                <input type="hidden" name="section_order" value="<?php echo sanitize($sectionMaster['section_order'] ?? 'bio,offers,services,gallery,video,testimonials,lead_form,location'); ?>">
+                <input type="hidden" name="section_order" value="<?php echo sanitize($sectionMaster['section_order'] ?? 'bio,offers,services,gallery,video,testimonials,lead_form,location,hours'); ?>">
+                <input type="hidden" name="hours_timezone_shadow" value="<?php echo sanitize($sectionMaster['hours_timezone'] ?? 'Asia/Muscat'); ?>">
 
                 <button type="submit" class="px-6 py-2 btn-primary rounded-lg font-medium">Save Sections</button>
             </form>
@@ -908,6 +943,133 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             this.dragIndex = null;
                         },
                         syncHiddenInputs() { /* Alpine re-renders hidden inputs from rows on submit */ }
+                    };
+                }
+            </script>
+        </div>
+
+        <!-- Business Hours editor -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mt-6" x-data="businessHoursEditor(<?php echo htmlspecialchars(json_encode($businessHours), ENT_QUOTES); ?>)">
+            <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                    <h2 class="font-semibold text-gray-900"><i class="fa-solid fa-clock text-blue-600 mr-1"></i> Business Hours</h2>
+                    <p class="text-sm text-gray-500">Publish when you're open. Enable "Business Hours" above to show this on your card.</p>
+                </div>
+            </div>
+            <form method="post" class="p-6 space-y-4">
+                <input type="hidden" name="action" value="update_hours">
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                <input type="hidden" name="hours_enabled" value="1">
+
+                <!-- Presets -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs text-gray-500">Quick presets:</span>
+                    <button type="button" @click="presetWeekdays9to5()" class="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md">Weekdays 9-5</button>
+                    <button type="button" @click="presetWeekendsClosed()" class="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md">Weekends closed</button>
+                    <button type="button" @click="preset247()" class="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md">24/7</button>
+                    <button type="button" @click="copyFromMonday()" class="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md">Copy from Monday</button>
+                </div>
+
+                <!-- Timezone -->
+                <div class="grid md:grid-cols-3 gap-3">
+                    <div class="md:col-span-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+                        <select name="hours_timezone" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+                            <?php
+                            $currentTz = $sectionMaster['hours_timezone'] ?? 'Asia/Muscat';
+                            foreach ($timezoneList as $tz):
+                            ?>
+                            <option value="<?php echo sanitize($tz); ?>" <?php echo $tz === $currentTz ? 'selected' : ''; ?>><?php echo sanitize($tz); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 7-day grid -->
+                <div class="space-y-2">
+                    <?php
+                    $dayLabelsEn = CardSections::DAY_NAMES_EN;
+                    foreach (CardSections::DAY_KEYS as $d):
+                        $row = $businessHours[$d];
+                    ?>
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-2 items-center p-3 rounded-lg border border-gray-200 bg-gray-50">
+                        <div class="md:col-span-2 font-medium text-sm text-gray-800"><?php echo $dayLabelsEn[$d]; ?></div>
+                        <label class="md:col-span-2 inline-flex items-center gap-2 text-sm text-gray-700">
+                            <input type="checkbox" name="hours_closed[<?php echo $d; ?>]"
+                                   class="h-4 w-4"
+                                   x-model="days['<?php echo $d; ?>'].is_closed">
+                            <span>Closed</span>
+                        </label>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs text-gray-500">Open</label>
+                            <input type="time" name="hours_open[<?php echo $d; ?>]"
+                                   :disabled="days['<?php echo $d; ?>'].is_closed"
+                                   x-model="days['<?php echo $d; ?>'].open_time"
+                                   class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-sm disabled:bg-gray-100 disabled:text-gray-400">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs text-gray-500">Close</label>
+                            <input type="time" name="hours_close[<?php echo $d; ?>]"
+                                   :disabled="days['<?php echo $d; ?>'].is_closed"
+                                   x-model="days['<?php echo $d; ?>'].close_time"
+                                   class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-sm disabled:bg-gray-100 disabled:text-gray-400">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs text-gray-500">Break start <span class="text-gray-400">(opt.)</span></label>
+                            <input type="time" name="hours_break_start[<?php echo $d; ?>]"
+                                   :disabled="days['<?php echo $d; ?>'].is_closed"
+                                   x-model="days['<?php echo $d; ?>'].break_start"
+                                   class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-sm disabled:bg-gray-100 disabled:text-gray-400">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs text-gray-500">Break end</label>
+                            <input type="time" name="hours_break_end[<?php echo $d; ?>]"
+                                   :disabled="days['<?php echo $d; ?>'].is_closed"
+                                   x-model="days['<?php echo $d; ?>'].break_end"
+                                   class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-sm disabled:bg-gray-100 disabled:text-gray-400">
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <button type="submit" class="px-6 py-2 btn-primary rounded-lg font-medium">Save Hours</button>
+            </form>
+            <script>
+                function businessHoursEditor(initial) {
+                    const KEYS = ['mon','tue','wed','thu','fri','sat','sun'];
+                    const days = {};
+                    KEYS.forEach(k => {
+                        const r = initial[k] || {};
+                        days[k] = {
+                            is_closed: r.is_closed ? true : false,
+                            open_time:  (r.open_time  || '').slice(0,5),
+                            close_time: (r.close_time || '').slice(0,5),
+                            break_start:(r.break_start|| '').slice(0,5),
+                            break_end:  (r.break_end  || '').slice(0,5),
+                        };
+                    });
+                    return {
+                        days,
+                        presetWeekdays9to5() {
+                            ['mon','tue','wed','thu','fri'].forEach(k => {
+                                this.days[k] = { is_closed:false, open_time:'09:00', close_time:'17:00', break_start:'', break_end:'' };
+                            });
+                            ['sat','sun'].forEach(k => { this.days[k].is_closed = true; });
+                        },
+                        presetWeekendsClosed() {
+                            ['sat','sun'].forEach(k => { this.days[k].is_closed = true; });
+                        },
+                        preset247() {
+                            KEYS.forEach(k => {
+                                this.days[k] = { is_closed:false, open_time:'00:00', close_time:'23:59', break_start:'', break_end:'' };
+                            });
+                        },
+                        copyFromMonday() {
+                            const src = this.days.mon;
+                            ['tue','wed','thu','fri','sat','sun'].forEach(k => {
+                                this.days[k] = { ...src };
+                            });
+                        }
                     };
                 }
             </script>

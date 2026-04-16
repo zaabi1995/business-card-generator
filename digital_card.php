@@ -183,12 +183,18 @@ try {
         $sectionTestimonials = [];
     }
     $sectionOffers = !empty($sectionMaster['offers_enabled']) ? CardSections::loadOffers($employee['id'], true) : [];
+    $businessHours = !empty($sectionMaster['hours_enabled']) ? CardSections::loadBusinessHours($employee['id']) : [];
+    $businessTz = $sectionMaster['hours_timezone'] ?? 'Asia/Muscat';
+    $hoursStatus = !empty($businessHours) ? CardSections::computeOpenStatus($businessHours, $businessTz) : null;
     $sectionOrder = array_values(array_filter(array_map('trim', explode(',', $sectionMaster['section_order'] ?? implode(',', CardSections::SECTION_KEYS)))));
     if (!in_array('offers', $sectionOrder, true)) {
         $sectionOrder[] = 'offers';
     }
     if (!in_array('location', $sectionOrder, true)) {
         $sectionOrder[] = 'location';
+    }
+    if (!in_array('hours', $sectionOrder, true)) {
+        $sectionOrder[] = 'hours';
     }
 
     // Appointment booking settings (rendered as its own section after card sections)
@@ -1008,6 +1014,98 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                         <?php echo htmlspecialchars($directionsLabel); ?>
                     </a>
                 </div>
+            <?php elseif ($__sec === 'hours' && !empty($sectionMaster['hours_enabled']) && !empty($businessHours)): ?>
+                <?php
+                    $__hoursTitle = ($locale === 'ar') ? 'ساعات العمل' : 'Business Hours';
+                    $__openLabel = ($locale === 'ar') ? 'مفتوح الآن' : 'Open now';
+                    $__closedLabel = ($locale === 'ar') ? 'مغلق' : 'Closed';
+                    $__breakLabel = ($locale === 'ar') ? 'في استراحة' : 'On break';
+                    $__todayLabel = ($locale === 'ar') ? 'اليوم' : 'Today';
+                    $__tzLabel = ($locale === 'ar') ? 'المنطقة الزمنية' : 'Timezone';
+                    $__closesAt = ($locale === 'ar') ? 'يغلق في' : 'Closes at';
+                    $__opensAt = ($locale === 'ar') ? 'يفتح في' : 'Opens at';
+                    $__viewWeek = ($locale === 'ar') ? 'عرض الجدول الأسبوعي' : 'View weekly schedule';
+                    $__hideWeek = ($locale === 'ar') ? 'إخفاء الجدول' : 'Hide schedule';
+
+                    $__statusColor = !empty($hoursStatus['is_open']) ? '#16a34a' : (!empty($hoursStatus['on_break']) ? '#f59e0b' : '#ef4444');
+                    $__statusText = $__closedLabel;
+                    $__statusDetail = '';
+                    if (!empty($hoursStatus)) {
+                        if (!empty($hoursStatus['is_open'])) {
+                            $__statusText = $__openLabel;
+                            if (!empty($hoursStatus['closes_at'])) {
+                                $__statusDetail = $__closesAt . ' ' . htmlspecialchars($hoursStatus['closes_at']);
+                            }
+                        } elseif (!empty($hoursStatus['on_break'])) {
+                            $__statusText = $__breakLabel;
+                            if (!empty($hoursStatus['opens_at'])) {
+                                $__statusDetail = $__opensAt . ' ' . htmlspecialchars($hoursStatus['opens_at']);
+                            }
+                        } else {
+                            $__statusText = $__closedLabel;
+                            if (!empty($hoursStatus['opens_at'])) {
+                                $__dayName = CardSections::dayName($hoursStatus['opens_day'] ?? '', $locale);
+                                if (!empty($hoursStatus['same_day'])) {
+                                    $__statusDetail = $__opensAt . ' ' . htmlspecialchars($hoursStatus['opens_at']);
+                                } else {
+                                    $__statusDetail = $__opensAt . ' ' . htmlspecialchars($hoursStatus['opens_at']) . ' · ' . htmlspecialchars($__dayName);
+                                }
+                            }
+                        }
+                    }
+                    $__todayKey = $hoursStatus['today_key'] ?? 'mon';
+                ?>
+                <div class="card-section" data-hours-section>
+                    <h3><?php echo htmlspecialchars($__hoursTitle); ?></h3>
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;<?php echo $isRtl ? 'flex-direction:row-reverse;' : ''; ?>">
+                        <span style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; background:<?php echo $__statusColor; ?>22; color:<?php echo $__statusColor; ?>; font-size:13px; font-weight:600;">
+                            <span style="width:8px; height:8px; border-radius:50%; background:<?php echo $__statusColor; ?>;"></span>
+                            <?php echo htmlspecialchars($__statusText); ?>
+                        </span>
+                        <?php if ($__statusDetail !== ''): ?>
+                        <span style="font-size:13px; color:#6b7280;"><?php echo $__statusDetail; ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <button type="button"
+                            data-hours-toggle
+                            data-show-label="<?php echo htmlspecialchars($__viewWeek, ENT_QUOTES); ?>"
+                            data-hide-label="<?php echo htmlspecialchars($__hideWeek, ENT_QUOTES); ?>"
+                            style="margin-top:10px; display:inline-flex; align-items:center; gap:6px; background:transparent; border:1px solid rgba(0,0,0,0.12); color:inherit; padding:8px 14px; border-radius:8px; font-size:13px; cursor:pointer;">
+                        <i class="fa-solid fa-calendar-week"></i>
+                        <span data-hours-toggle-label><?php echo htmlspecialchars($__viewWeek); ?></span>
+                    </button>
+                    <div data-hours-week style="display:none; margin-top:10px; border-top:1px solid rgba(0,0,0,0.08); padding-top:10px;">
+                        <?php foreach (CardSections::DAY_KEYS as $__d):
+                            $__row = $businessHours[$__d] ?? ['is_closed' => true];
+                            $__isToday = ($__d === $__todayKey);
+                            $__dayName = CardSections::dayName($__d, $locale);
+                            $__closedText = ($locale === 'ar') ? 'مغلق' : 'Closed';
+                            $__rowBg = $__isToday ? 'background:' . $accentColor . '15;' : '';
+                        ?>
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:8px; margin-bottom:4px; <?php echo $__rowBg; ?> font-size:13px;<?php echo $isRtl ? 'flex-direction:row-reverse;' : ''; ?>">
+                            <div style="font-weight:<?php echo $__isToday ? '600' : '500'; ?>; color:<?php echo $__isToday ? $accentColor : 'inherit'; ?>;">
+                                <?php echo htmlspecialchars($__dayName); ?>
+                                <?php if ($__isToday): ?><span style="font-size:10px; margin-<?php echo $isRtl ? 'right' : 'left'; ?>:6px; text-transform:uppercase; opacity:0.7;"><?php echo htmlspecialchars($__todayLabel); ?></span><?php endif; ?>
+                            </div>
+                            <div style="color:#6b7280; font-variant-numeric:tabular-nums;">
+                                <?php if (!empty($__row['is_closed']) || empty($__row['open_time']) || empty($__row['close_time'])): ?>
+                                    <?php echo htmlspecialchars($__closedText); ?>
+                                <?php else: ?>
+                                    <?php echo htmlspecialchars(substr($__row['open_time'], 0, 5)); ?>–<?php echo htmlspecialchars(substr($__row['close_time'], 0, 5)); ?>
+                                    <?php if (!empty($__row['break_start']) && !empty($__row['break_end'])): ?>
+                                        <span style="font-size:11px; opacity:0.7; margin-<?php echo $isRtl ? 'right' : 'left'; ?>:4px;">
+                                            (<?php echo $locale === 'ar' ? 'استراحة' : 'break'; ?> <?php echo htmlspecialchars(substr($__row['break_start'], 0, 5)); ?>–<?php echo htmlspecialchars(substr($__row['break_end'], 0, 5)); ?>)
+                                        </span>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                        <div style="margin-top:6px; font-size:11px; color:#9ca3af;<?php echo $isRtl ? 'text-align:right;' : ''; ?>">
+                            <?php echo htmlspecialchars($__tzLabel); ?>: <?php echo htmlspecialchars($businessTz); ?>
+                        </div>
+                    </div>
+                </div>
             <?php elseif ($__sec === 'lead_form' && !empty($sectionMaster['lead_form_enabled'])): ?>
                 <div class="card-section">
                     <h3>Get in Touch</h3>
@@ -1329,19 +1427,73 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         })();
     </script>
 
+    <script>
+        // Business Hours: expand/collapse weekly schedule
+        (function () {
+            var toggles = document.querySelectorAll('[data-hours-toggle]');
+            toggles.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var section = btn.closest('[data-hours-section]');
+                    if (!section) return;
+                    var week = section.querySelector('[data-hours-week]');
+                    var label = section.querySelector('[data-hours-toggle-label]');
+                    if (!week) return;
+                    var isOpen = week.style.display !== 'none';
+                    week.style.display = isOpen ? 'none' : 'block';
+                    if (label) {
+                        label.textContent = isOpen
+                            ? (btn.getAttribute('data-show-label') || 'View weekly schedule')
+                            : (btn.getAttribute('data-hide-label') || 'Hide schedule');
+                    }
+                });
+            });
+        })();
+    </script>
+
+<?php
+    // Build Person JSON-LD (always emitted) and optionally a LocalBusiness
+    // sub-graph when business hours are published.
+    $__jsonLdGraph = [
+        [
+            '@type' => 'Person',
+            'name' => $employee['name_en'] ?? $employee['name'] ?? '',
+            'jobTitle' => $employee['position_en'] ?? $employee['position'] ?? '',
+            'worksFor' => [
+                '@type' => 'Organization',
+                'name' => $company['name_en'] ?? $company['name'] ?? '',
+            ],
+            'email' => $employee['email'] ?? '',
+            'telephone' => $employee['phone'] ?? $employee['mobile'] ?? '',
+            'url' => 'https://cardify.om/' . ($company['slug'] ?? '') . '/card/' . ($employee['id'] ?? ''),
+        ],
+    ];
+    if (!empty($sectionMaster['hours_enabled']) && !empty($businessHours)) {
+        $__openingSpecs = CardSections::buildSchemaOpeningHours($businessHours);
+        if (!empty($__openingSpecs)) {
+            $__localBiz = [
+                '@type' => 'LocalBusiness',
+                'name' => $company['name_en'] ?? $company['name'] ?? '',
+                'url' => 'https://cardify.om/' . ($company['slug'] ?? '') . '/card/' . ($employee['id'] ?? ''),
+                'openingHours' => $__openingSpecs,
+            ];
+            if (!empty(trim((string)($sectionMaster['location_address'] ?? '')))) {
+                $__localBiz['address'] = trim((string)$sectionMaster['location_address']);
+            }
+            if (!empty($sectionMaster['location_lat']) && !empty($sectionMaster['location_lng'])) {
+                $__localBiz['geo'] = [
+                    '@type' => 'GeoCoordinates',
+                    'latitude'  => (float)$sectionMaster['location_lat'],
+                    'longitude' => (float)$sectionMaster['location_lng'],
+                ];
+            }
+            $__jsonLdGraph[] = $__localBiz;
+        }
+    }
+?>
 <script type="application/ld+json">
 <?= json_encode([
     '@context' => 'https://schema.org',
-    '@type' => 'Person',
-    'name' => $employee['name_en'] ?? $employee['name'] ?? '',
-    'jobTitle' => $employee['position_en'] ?? $employee['position'] ?? '',
-    'worksFor' => [
-        '@type' => 'Organization',
-        'name' => $company['name_en'] ?? $company['name'] ?? ''
-    ],
-    'email' => $employee['email'] ?? '',
-    'telephone' => $employee['phone'] ?? $employee['mobile'] ?? '',
-    'url' => 'https://cardify.om/' . ($company['slug'] ?? '') . '/card/' . ($employee['id'] ?? '')
+    '@graph'   => $__jsonLdGraph,
 ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?>
 </script>
 </body>
