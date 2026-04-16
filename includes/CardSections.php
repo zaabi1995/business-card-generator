@@ -8,7 +8,8 @@
 
 class CardSections
 {
-    const SECTION_KEYS = ['bio', 'services', 'gallery', 'testimonials', 'lead_form'];
+    const SECTION_KEYS = ['bio', 'services', 'gallery', 'testimonials', 'lead_form', 'offers'];
+    const OFFER_PALETTE = ['#009bc1', '#ffbb00', '#824598', '#45c0ba', '#e74c3c', '#27ae60', '#111827'];
     const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
     const MAX_GALLERY_IMAGES = 12;
     const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp'];
@@ -39,8 +40,12 @@ class CardSections
                 'testimonials_enabled' => 0,
                 'lead_form_enabled' => 0,
                 'lead_form_email' => '',
+                'offers_enabled' => 0,
                 'section_order' => implode(',', self::SECTION_KEYS),
             ];
+        }
+        if (!array_key_exists('offers_enabled', $row)) {
+            $row['offers_enabled'] = 0;
         }
         return $row;
     }
@@ -117,6 +122,95 @@ class CardSections
     }
 
     /**
+     * Load offers for an employee.
+     *
+     * @param string $employeeId
+     * @param bool   $publicOnly  When true, filter to enabled + non-expired only.
+     */
+    public static function loadOffers($employeeId, $publicOnly = false)
+    {
+        if ($publicOnly) {
+            return Database::getInstance()->fetchAll(
+                "SELECT * FROM employee_card_offers
+                 WHERE employee_id = :eid
+                   AND enabled = 1
+                   AND (valid_until IS NULL OR valid_until >= CURDATE())
+                   AND (valid_from  IS NULL OR valid_from  <= CURDATE())
+                 ORDER BY position, created_at",
+                ['eid' => $employeeId]
+            );
+        }
+        return Database::getInstance()->fetchAll(
+            "SELECT * FROM employee_card_offers WHERE employee_id = :eid ORDER BY position, created_at",
+            ['eid' => $employeeId]
+        );
+    }
+
+    public static function addOffer($employeeId, $companyId, $title, $description, $discountLabel, $validUntil, $badgeColor)
+    {
+        $title = trim((string)$title);
+        if ($title === '') return false;
+
+        $color = trim((string)$badgeColor);
+        if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
+            $color = self::OFFER_PALETTE[0];
+        }
+
+        $vu = trim((string)$validUntil);
+        if ($vu === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $vu)) {
+            $vu = null;
+        }
+
+        $id = self::uuid();
+        Database::getInstance()->insert('employee_card_offers', [
+            'id' => $id,
+            'employee_id' => $employeeId,
+            'company_id' => $companyId,
+            'title' => mb_substr($title, 0, 255),
+            'description' => mb_substr(trim((string)$description), 0, 2000),
+            'discount_label' => mb_substr(trim((string)$discountLabel), 0, 64),
+            'valid_until' => $vu,
+            'badge_color' => $color,
+            'enabled' => 1,
+            'position' => 0,
+        ]);
+        return $id;
+    }
+
+    public static function deleteOffer($employeeId, $offerId)
+    {
+        Database::getInstance()->getConnection()
+            ->prepare("DELETE FROM employee_card_offers WHERE id = :id AND employee_id = :eid")
+            ->execute(['id' => $offerId, 'eid' => $employeeId]);
+    }
+
+    /**
+     * Atomic redemption increment. Returns the offer row (post-increment) or null
+     * if not found / expired / disabled / wrong employee.
+     */
+    public static function redeemOffer($employeeId, $offerId)
+    {
+        $pdo = Database::getInstance()->getConnection();
+        $stmt = $pdo->prepare(
+            "UPDATE employee_card_offers
+                SET redemption_count = redemption_count + 1
+              WHERE id = :id
+                AND employee_id = :eid
+                AND enabled = 1
+                AND (valid_until IS NULL OR valid_until >= CURDATE())
+                AND (valid_from  IS NULL OR valid_from  <= CURDATE())"
+        );
+        $stmt->execute(['id' => $offerId, 'eid' => $employeeId]);
+        if ($stmt->rowCount() === 0) {
+            return null;
+        }
+        return Database::getInstance()->fetchOne(
+            "SELECT * FROM employee_card_offers WHERE id = :id",
+            ['id' => $offerId]
+        );
+    }
+
+    /**
      * Upsert master row with toggle + bio state.
      */
     public static function saveMaster($employeeId, $companyId, array $data)
@@ -138,9 +232,9 @@ class CardSections
         $stmt = $pdo->prepare(
             "INSERT INTO employee_card_sections
                 (employee_id, company_id, bio_enabled, bio_text, services_enabled, gallery_enabled,
-                 testimonials_enabled, lead_form_enabled, lead_form_email, section_order)
+                 testimonials_enabled, lead_form_enabled, lead_form_email, offers_enabled, section_order)
              VALUES
-                (:eid, :cid, :be, :bt, :se, :ge, :te, :le, :lem, :ord)
+                (:eid, :cid, :be, :bt, :se, :ge, :te, :le, :lem, :oe, :ord)
              ON DUPLICATE KEY UPDATE
                 bio_enabled = VALUES(bio_enabled),
                 bio_text = VALUES(bio_text),
@@ -149,6 +243,7 @@ class CardSections
                 testimonials_enabled = VALUES(testimonials_enabled),
                 lead_form_enabled = VALUES(lead_form_enabled),
                 lead_form_email = VALUES(lead_form_email),
+                offers_enabled = VALUES(offers_enabled),
                 section_order = VALUES(section_order)"
         );
         $stmt->execute([
@@ -161,6 +256,7 @@ class CardSections
             'te' => !empty($data['testimonials_enabled']) ? 1 : 0,
             'le' => !empty($data['lead_form_enabled']) ? 1 : 0,
             'lem' => trim((string)($data['lead_form_email'] ?? '')),
+            'oe' => !empty($data['offers_enabled']) ? 1 : 0,
             'ord' => $order,
         ]);
     }

@@ -128,7 +128,11 @@ try {
     $sectionServices = !empty($sectionMaster['services_enabled']) ? CardSections::loadServices($employee['id']) : [];
     $sectionGallery = !empty($sectionMaster['gallery_enabled']) ? CardSections::loadGallery($employee['id']) : [];
     $sectionTestimonials = !empty($sectionMaster['testimonials_enabled']) ? CardSections::loadApprovedTestimonials($employee['id']) : [];
+    $sectionOffers = !empty($sectionMaster['offers_enabled']) ? CardSections::loadOffers($employee['id'], true) : [];
     $sectionOrder = array_values(array_filter(array_map('trim', explode(',', $sectionMaster['section_order'] ?? implode(',', CardSections::SECTION_KEYS)))));
+    if (!in_array('offers', $sectionOrder, true)) {
+        $sectionOrder[] = 'offers';
+    }
 
     // Wallet pass endpoints (feature-flagged — buttons render only when enabled)
     require_once INCLUDES_DIR . '/AppleWalletPass.php';
@@ -512,6 +516,16 @@ ob_end_clean();
         .service-body .service-desc  { font-size: 12px; <?php echo $isDarkPage ? 'color:#888;' : 'color:#666;'; ?> margin-top: 2px; line-height: 1.45; }
         .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .gallery-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; cursor: zoom-in; }
+        .offers-list { display: flex; flex-direction: column; gap: 10px; }
+        .offer-card { padding: 12px; border-radius: 12px; <?php echo $isDarkPage ? 'background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);' : 'background: #fafafa; border: 1px solid #ececec;'; ?> }
+        .offer-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+        .offer-badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #fff; letter-spacing: 0.3px; text-transform: uppercase; }
+        .offer-title { font-size: 14px; font-weight: 600; <?php echo $isDarkPage ? 'color:#eee;' : 'color:#1a1a2e;'; ?> }
+        .offer-desc { font-size: 13px; line-height: 1.5; <?php echo $isDarkPage ? 'color:#bbb;' : 'color:#555;'; ?> margin-bottom: 8px; }
+        .offer-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        .offer-valid { font-size: 11px; color: #888; }
+        .offer-redeem-btn { display: inline-block; padding: 8px 16px; border-radius: 8px; color: #fff; font-size: 12px; font-weight: 600; text-decoration: none; margin-left: auto; }
+        .offer-redeem-btn:hover { opacity: 0.9; }
         .testimonial-item { padding: 12px 0; <?php echo $isDarkPage ? 'border-bottom: 1px solid rgba(255,255,255,0.06);' : 'border-bottom: 1px solid #f0f0f0;'; ?> }
         .testimonial-item:last-child { border-bottom: none; }
         .testimonial-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
@@ -722,6 +736,36 @@ ob_end_clean();
                             <button type="submit" id="testimonialSubmit">Submit for review</button>
                         </form>
                         <div class="lead-success" id="testimonialSuccess" style="display:none;">Thanks! Your testimonial is pending review.</div>
+                    </div>
+                </div>
+            <?php elseif ($__sec === 'offers' && !empty($sectionMaster['offers_enabled']) && !empty($sectionOffers)): ?>
+                <div class="card-section">
+                    <h3>Offers</h3>
+                    <div class="offers-list">
+                        <?php foreach ($sectionOffers as $offer): ?>
+                            <div class="offer-card">
+                                <div class="offer-head">
+                                    <?php if (!empty($offer['discount_label'])): ?>
+                                    <span class="offer-badge" style="background: <?php echo htmlspecialchars($offer['badge_color'] ?: '#009bc1'); ?>;">
+                                        <?php echo htmlspecialchars($offer['discount_label']); ?>
+                                    </span>
+                                    <?php endif; ?>
+                                    <div class="offer-title"><?php echo htmlspecialchars($offer['title']); ?></div>
+                                </div>
+                                <?php if (!empty($offer['description'])): ?>
+                                <div class="offer-desc"><?php echo nl2br(htmlspecialchars($offer['description'])); ?></div>
+                                <?php endif; ?>
+                                <div class="offer-foot">
+                                    <?php if (!empty($offer['valid_until'])): ?>
+                                    <span class="offer-valid">Valid until <?php echo htmlspecialchars($offer['valid_until']); ?></span>
+                                    <?php endif; ?>
+                                    <a href="/api/offer/redeem.php?oid=<?php echo urlencode($offer['id']); ?>&amp;eid=<?php echo urlencode($employee['id']); ?>"
+                                       class="offer-redeem-btn"
+                                       style="background: <?php echo htmlspecialchars($offer['badge_color'] ?: '#009bc1'); ?>;"
+                                       rel="nofollow">Redeem</a>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
             <?php elseif ($__sec === 'lead_form' && !empty($sectionMaster['lead_form_enabled'])): ?>
