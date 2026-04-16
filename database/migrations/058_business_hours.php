@@ -1,6 +1,6 @@
 <?php
 /**
- * Migration 055: Business Hours Section
+ * Migration 058: Business Hours Section
  *
  * Adds "hours" section so employees can publish their weekly open/close
  * schedule on their digital card. The public render computes an Open/Closed
@@ -37,9 +37,9 @@ try {
             UNIQUE KEY `uk_employee_day` (`employee_id`, `day_of_week`),
             INDEX `idx_employee` (`employee_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-        echo "[055] Created employee_business_hours\n";
+        echo "[058] Created employee_business_hours\n";
     } else {
-        echo "[055] employee_business_hours already exists - skipped\n";
+        echo "[058] employee_business_hours already exists - skipped\n";
     }
 
     // --- 2. Extend employee_card_sections -------------------------------------
@@ -52,18 +52,18 @@ try {
         );
         $stmt->execute(['col' => $name]);
         if ((int)$stmt->fetchColumn() > 0) {
-            echo "[055] employee_card_sections.$name already exists - skipped\n";
+            echo "[058] employee_card_sections.$name already exists - skipped\n";
             return;
         }
         $pdo->exec("ALTER TABLE `employee_card_sections` ADD COLUMN $ddl");
-        echo "[055] Added column $name\n";
+        echo "[058] Added column $name\n";
     };
 
     $addColumn('hours_enabled', "`hours_enabled` TINYINT(1) NOT NULL DEFAULT 0 AFTER `location_label`");
     $addColumn('hours_timezone', "`hours_timezone` VARCHAR(50) NOT NULL DEFAULT 'Asia/Muscat' AFTER `hours_enabled`");
 
-    echo "[055] Migration complete\n";
+    echo "[058] Migration complete\n";
 } catch (Exception $e) {
-    echo "[055] ERROR: " . $e->getMessage() . "\n";
+    echo "[058] ERROR: " . $e->getMessage() . "\n";
     exit(1);
 }

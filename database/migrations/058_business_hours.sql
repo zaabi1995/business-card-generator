@@ -1,6 +1,6 @@
--- Migration 055: Business Hours Section
+-- Migration 058: Business Hours Section
 -- Adds weekly open/close schedule + timezone to employee card sections.
--- Idempotent runner in 055_business_hours.php; raw DDL below.
+-- Idempotent runner in 058_business_hours.php; raw DDL below.
 
 CREATE TABLE IF NOT EXISTS `employee_business_hours` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
