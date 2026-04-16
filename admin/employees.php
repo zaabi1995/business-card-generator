@@ -1095,6 +1095,30 @@ adminHeader('Employees', 'employees');
                     </template>
                 </div>
 
+                <!-- Public Card Theme Toggle -->
+                <div class="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-100">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <h4 class="text-sm font-bold text-amber-900 flex items-center gap-2">
+                                <i class="fa-solid fa-circle-half-stroke"></i>
+                                Public Card Theme Toggle
+                            </h4>
+                            <p class="text-xs text-amber-700 mt-1">
+                                Lets visitors flip your public card between light and dark mode with a sun/moon button.
+                                Uncheck to force your card's default theme for everyone.
+                            </p>
+                        </div>
+                        <label class="inline-flex items-center gap-2 cursor-pointer select-none shrink-0">
+                            <input type="checkbox"
+                                   x-model="cardDarkModeToggle"
+                                   class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500">
+                            <span class="text-xs font-semibold text-amber-800">Allow visitors to toggle theme</span>
+                        </label>
+                    </div>
+                    <!-- Always POST a canonical 0/1 so unchecking persists -->
+                    <input type="hidden" name="card_dark_mode_toggle" :value="cardDarkModeToggle ? '1' : '0'">
+                </div>
+
                 <div class="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
                     <button type="button" @click="showModal = false" class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors">
                         Cancel
@@ -1432,6 +1456,7 @@ function employeeManager() {
             qr_redirect_url: ''
         },
         qrRedirectEnabled: false,
+        cardDarkModeToggle: true,
 
         // Tracker URL printed on the card — never changes post-print.
         qrTrackerUrl() {
@@ -1468,6 +1493,7 @@ function employeeManager() {
                 qr_redirect_url: ''
             };
             this.qrRedirectEnabled = false;
+            this.cardDarkModeToggle = true;
             this.showModal = true;
         },
 
@@ -1480,6 +1506,7 @@ function employeeManager() {
                 qr_redirect_url: ''
             };
             this.qrRedirectEnabled = false;
+            this.cardDarkModeToggle = true;
             this.showModal = true;
         },
 
@@ -1487,6 +1514,10 @@ function employeeManager() {
             this.editingEmployee = true;
             this.formData = { ...employee, qr_redirect_url: employee.qr_redirect_url || '' };
             this.qrRedirectEnabled = !!(employee.qr_redirect_url && employee.qr_redirect_url.trim());
+            // DB stores 0/1; treat missing as 1 (default-on for existing rows)
+            this.cardDarkModeToggle = employee.card_dark_mode_toggle === undefined || employee.card_dark_mode_toggle === null
+                ? true
+                : Number(employee.card_dark_mode_toggle) === 1;
             this.showModal = true;
         },
 
@@ -1501,6 +1532,9 @@ function employeeManager() {
             const emp = this.detailData.employee || {};
             this.formData = { ...emp, qr_redirect_url: emp.qr_redirect_url || '' };
             this.qrRedirectEnabled = !!(emp.qr_redirect_url && String(emp.qr_redirect_url).trim());
+            this.cardDarkModeToggle = emp.card_dark_mode_toggle === undefined || emp.card_dark_mode_toggle === null
+                ? true
+                : Number(emp.card_dark_mode_toggle) === 1;
             this.showModal = true;
         },
         

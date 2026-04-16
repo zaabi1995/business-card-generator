@@ -110,6 +110,18 @@ try {
     $isDarkPage = ($themeMode === 'light'); // light card -> dark page
     $accentColor = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#d4af37';
 
+    // Visitor-facing dark mode toggle (migration 057). Default ON; owner can disable per card.
+    $themeToggleEnabled = !isset($employee['card_dark_mode_toggle'])
+        || $employee['card_dark_mode_toggle'] === null
+        || (int)$employee['card_dark_mode_toggle'] === 1;
+
+    // Cookie override (only when toggle is enabled) — keeps SSR theme in sync with visitor choice.
+    $cookieTheme = $_COOKIE['cardify_card_theme'] ?? '';
+    if ($themeToggleEnabled && in_array($cookieTheme, ['light', 'dark'], true)) {
+        $isDarkPage = ($cookieTheme === 'dark');
+    }
+    $defaultThemeMode = $isDarkPage ? 'dark' : 'light';
+
     // Card image paths — DB stores filenames, construct full web path
     $frontImage = '';
     $backImage = '';
@@ -666,14 +678,54 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             background: <?php echo $isDarkPage ? '#fff' : '#1a1a2e'; ?>;
             color: <?php echo $isDarkPage ? '#1a1a2e' : '#fff'; ?>;
         }
+
+        /* Visitor-facing theme toggle (sun/moon) — sits alongside the language switcher. */
+        .theme-toggle {
+            position: absolute;
+            top: 12px;
+            <?php echo $isRtl ? 'left' : 'right'; ?>: 78px; /* nudge inside of lang switcher */
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            background: rgba(0,0,0,0.06);
+            color: <?php echo $isDarkPage ? '#e8e8e8' : '#1a1a2e'; ?>;
+            border-radius: 999px;
+            backdrop-filter: blur(8px);
+            z-index: 50;
+            padding: 0;
+            transition: background 0.15s, color 0.15s, transform 0.15s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .theme-toggle:hover { background: rgba(0,0,0,0.12); }
+        .theme-toggle:active { transform: scale(0.92); }
+        .theme-toggle .theme-icon { display: none; }
+        /* Show SUN when we're currently dark (click to go light); MOON when currently light. */
+        body.force-dark .theme-toggle .theme-icon-sun { display: block; }
+        body.force-light .theme-toggle .theme-icon-moon { display: block; }
     </style>
 </head>
-<body>
+<body class="<?php echo $isDarkPage ? 'force-dark' : 'force-light'; ?>">
     <!-- Language switcher -->
     <nav class="lang-switcher" aria-label="Language">
         <a href="<?php echo $switchEnUrl; ?>" class="<?php echo $locale === 'en' ? 'active' : ''; ?>" hreflang="en">EN</a>
         <a href="<?php echo $switchArUrl; ?>" class="<?php echo $locale === 'ar' ? 'active' : ''; ?>" hreflang="ar">عربي</a>
     </nav>
+    <?php if ($themeToggleEnabled): ?>
+    <!-- Theme toggle (visitor override — persisted via cookie, 7d) -->
+    <button type="button"
+            class="theme-toggle"
+            id="themeToggle"
+            aria-label="<?php echo $isDarkPage ? 'Switch to light mode' : 'Switch to dark mode'; ?>"
+            title="<?php echo $isDarkPage ? 'Switch to light mode' : 'Switch to dark mode'; ?>"
+            data-mode="<?php echo $defaultThemeMode; ?>">
+        <svg class="theme-icon theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        <svg class="theme-icon theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+    </button>
+    <?php endif; ?>
     <div class="page-container">
         <!-- Company Logo -->
         <?php if ($logoPath): ?>
@@ -1077,6 +1129,51 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     <div class="copy-toast" id="copyToast">Link copied!</div>
 
     <script>
+        // ---- Theme toggle (visitor override) ----
+        (function(){
+            var COOKIE = 'cardify_card_theme';
+            var COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days
+
+            function readCookie(name) {
+                var parts = ('; ' + document.cookie).split('; ' + name + '=');
+                if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+                return '';
+            }
+            function writeCookie(value) {
+                // SameSite=Lax keeps the cookie on cross-site reloads (e.g. from QR scanners).
+                document.cookie = COOKIE + '=' + encodeURIComponent(value) +
+                    '; Max-Age=' + COOKIE_MAX_AGE + '; Path=/; SameSite=Lax';
+            }
+
+            var btn = document.getElementById('themeToggle');
+            if (!btn) return;
+
+            // On first load with NO cookie, honour prefers-color-scheme if it disagrees with the SSR default.
+            var existing = readCookie(COOKIE);
+            var current = btn.getAttribute('data-mode'); // 'light' | 'dark' as rendered
+            if (!existing && window.matchMedia) {
+                try {
+                    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    var preferred = prefersDark ? 'dark' : 'light';
+                    if (preferred !== current) {
+                        writeCookie(preferred);
+                        window.location.reload();
+                        return;
+                    }
+                } catch (e) { /* ignore */ }
+            }
+
+            btn.addEventListener('click', function(){
+                var next = current === 'dark' ? 'light' : 'dark';
+                writeCookie(next);
+                // Optimistic class swap for an instant tactile response before reload completes.
+                document.body.classList.remove('force-light', 'force-dark');
+                document.body.classList.add('force-' + next);
+                // Full reload so SSR re-renders every section with the correct $isDarkPage.
+                window.location.reload();
+            });
+        })();
+
         // Card flip
         const cardFlip = document.getElementById('cardFlip');
         const cardInner = document.getElementById('cardInner');
