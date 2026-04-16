@@ -19,6 +19,9 @@ $publicSeoPages = [
     'sitemap.php', 'index.php', 'intro.php', 'get-started.php',
     'restaurants.php', 'construction.php', 'healthcare.php',
     'real-estate.php', 'tourism.php',
+    // Free client-side tools (SEO content pages)
+    'vcard-qr-generator.php', 'email-signature-generator.php',
+    'whatsapp-qr-generator.php', 'nfc-business-card-guide.php',
 ];
 $alwaysSkipSession = ['vcf.php', 'qr.php', 'feed.php'];
 

@@ -71,3 +71,5 @@ php_errorlog
 malware.*
 .user.ini
 .ftpquota
+data/oman-enterprises*.xlsx
+data/oman-enterprises-enriched.csv

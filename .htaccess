@@ -74,6 +74,24 @@
     RewriteRule ^blog/?$ blog.php [L,QSA]
     RewriteRule ^blog/([a-z0-9-]+)/?$ blog.php?post=$1 [L,QSA]
 
+    # Free tools cluster (client-side utilities, SEO assets)
+    RewriteRule ^tools/?$ tools.php [L,QSA]
+    RewriteRule ^tools/vcard-qr-generator/?$ tools/vcard-qr-generator.php [L,QSA]
+    RewriteRule ^tools/email-signature-generator/?$ tools/email-signature-generator.php [L,QSA]
+    RewriteRule ^tools/whatsapp-qr-generator/?$ tools/whatsapp-qr-generator.php [L,QSA]
+    RewriteRule ^tools/nfc-business-card-guide/?$ tools/nfc-business-card-guide.php [L,QSA]
+
+    # Oman Business Index — directory of Omani enterprises (flagship + curated top companies)
+    RewriteRule ^oman-business-index/?$ oman-business-index.php [L,QSA]
+    RewriteRule ^companies/?$ companies.php [L,QSA]
+    RewriteRule ^companies/sector/([a-z0-9-]+)/?$ companies.php?view=sector&slug=$1 [L,QSA]
+    RewriteRule ^companies/wilayat/([a-z0-9-]+)/?$ companies.php?view=wilayat&slug=$1 [L,QSA]
+    RewriteRule ^companies/([a-z0-9-]+)/?$ companies.php?view=company&slug=$1 [L,QSA]
+    RewriteRule ^ar/companies/?$ companies.php?lang=ar [L,QSA]
+    RewriteRule ^ar/companies/sector/([a-z0-9-]+)/?$ companies.php?view=sector&slug=$1&lang=ar [L,QSA]
+    RewriteRule ^ar/companies/wilayat/([a-z0-9-]+)/?$ companies.php?view=wilayat&slug=$1&lang=ar [L,QSA]
+    RewriteRule ^ar/companies/([a-z0-9-]+)/?$ companies.php?view=company&slug=$1&lang=ar [L,QSA]
+
     # Careers clean URLs
     RewriteRule ^careers/?$ careers.php [L,QSA]
     RewriteRule ^careers/([a-z0-9-]+)/?$ careers.php?job=$1 [L,QSA]
@@ -119,7 +137,7 @@
     # Check if request is not for known paths and not a file
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|s/|company|webhooks|amwalpay|api|assets|uploads|data|printshop|industries|intro|blog|careers|about|contact|faq|terms|privacy|security|cookies|sitemap\.xml|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php)
+    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|s/|company|companies|ar|oman-business-index|webhooks|amwalpay|api|assets|uploads|data|printshop|industries|intro|blog|careers|about|contact|faq|terms|privacy|security|cookies|sitemap\.xml|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php)
     RewriteRule ^([a-z0-9-]+)/?$ router.php?company_slug=$1 [L,QSA]
 </IfModule>
 
