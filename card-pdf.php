@@ -99,8 +99,21 @@ try {
     $safeAccent = htmlspecialchars($accent, ENT_QUOTES, 'UTF-8');
     $year       = date('Y');
 
-    // QR code via chart.googleapis.com (same provider used by VCF.php).
-    $qrSrc = 'https://chart.googleapis.com/chart?cht=qr&chs=500x500&chld=M|1&chl=' . urlencode($cardUrl);
+    // QR code generated locally with phpqrcode (LGPL) — no external API
+    // calls, survives PHP-FPM with no outbound network.
+    $qrSrc = '';
+    $qrTmp = '';
+    try {
+        require_once INCLUDES_DIR . '/phpqrcode.php';
+        $qrTmp = tempnam(sys_get_temp_dir(), 'card-qr-') . '.png';
+        // QR_ECLEVEL_M = ~15% recovery, size 8, margin 2 → ~500x500
+        QRcode::png($cardUrl, $qrTmp, 'M', 8, 2);
+        if (is_file($qrTmp) && filesize($qrTmp) > 0) {
+            $qrSrc = 'file://' . $qrTmp;
+        }
+    } catch (Throwable $e) {
+        error_log('card-pdf QR gen: ' . $e->getMessage());
+    }
 
     // -------- Build printable HTML ----------------------------------------
     $html = <<<HTML
@@ -182,9 +195,11 @@ HTML;
         $html .= "<div class=\"row\"><span class=\"label\">Address</span>{$safeAddr}</div>";
     }
 
+    $html .= '<div class="qr-page">';
+    if ($qrSrc !== '') {
+        $html .= '<img src="' . htmlspecialchars($qrSrc, ENT_QUOTES, 'UTF-8') . '" alt="QR code">';
+    }
     $html .= <<<HTML
-<div class="qr-page">
-    <img src="{$qrSrc}" alt="QR code">
     <div class="hint">Scan to view live digital card</div>
     <div class="url">{$safeUrl}</div>
 </div>
@@ -239,6 +254,7 @@ HTML;
 
             $cmd = escapeshellcmd($bin)
                  . ' --quiet --encoding utf-8 --enable-local-file-access'
+                 . ' --load-error-handling ignore --load-media-error-handling ignore'
                  . ' --page-size A4 --margin-top 25mm --margin-bottom 25mm'
                  . ' --margin-left 20mm --margin-right 20mm'
                  . ' --disable-smart-shrinking'
@@ -255,12 +271,15 @@ HTML;
             $out = [];
             exec($cmd, $out, $rc);
             @unlink($tmpHtml);
+            if ($qrTmp !== '') { @unlink($qrTmp); }
 
             if ($rc !== 0 || !is_file($cachePath) || filesize($cachePath) < 1024) {
                 error_log('card-pdf wkhtmltopdf failed (rc=' . $rc . '): ' . implode("\n", $out));
                 throw new Exception('PDF render failed');
             }
         }
+    } else {
+        if ($qrTmp !== '' && is_file($qrTmp)) { @unlink($qrTmp); }
     }
 
     // Track this download as a card scan event (non-fatal).
