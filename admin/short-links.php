@@ -59,7 +59,17 @@ $isReserved = function (string $slug) use ($RESERVED_SLUGS): bool {
     return in_array(strtolower($slug), $RESERVED_SLUGS, true);
 };
 
-$validateDestination = function (string $url) {
+// Risky free/disposable TLDs commonly abused by phishing kits. Block at mint-time.
+$BLOCKED_TLDS = ['tk', 'ml', 'ga', 'cf', 'gq', 'xyz', 'top', 'click', 'country', 'stream'];
+
+// Other URL shorteners — chaining through cardify would launder the reputation.
+$BLOCKED_SHORTENERS = [
+    'bit.ly', 'bitly.com', 't.co', 'goo.gl', 'tinyurl.com', 'ow.ly', 'is.gd',
+    'buff.ly', 'cutt.ly', 'rebrand.ly', 'shorte.st', 'adf.ly', 'lnkd.in',
+    't.ly', 'rb.gy', 'short.io', 'yourls.org', 'v.gd', 's.id',
+];
+
+$validateDestination = function (string $url) use ($BLOCKED_TLDS, $BLOCKED_SHORTENERS) {
     if ($url === '' || strlen($url) > 1024) {
         return 'Destination URL must be 1–1024 characters.';
     }
@@ -77,6 +87,15 @@ $validateDestination = function (string $url) {
         if ($s !== '' && strtolower($s) === $host) {
             return 'Destination cannot point back to cardify.om.';
         }
+    }
+    // Block free/abused TLDs — common in phishing kits.
+    $tld = substr(strrchr($host, '.') ?: '', 1);
+    if ($tld !== '' && in_array($tld, $BLOCKED_TLDS, true)) {
+        return 'That destination TLD (.' . $tld . ') is not allowed. Please use your own domain.';
+    }
+    // Block other URL shorteners to prevent reputation laundering via chaining.
+    if (in_array($host, $BLOCKED_SHORTENERS, true)) {
+        return 'Destination cannot be another URL shortener.';
     }
     return null; // valid
 };
@@ -156,21 +175,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $messageType = 'error';
             } else {
                 try {
+                    // Super-admin creations are auto-approved; all others go
+                    // through moderation to prevent phishing abuse. See
+                    // migration 062 for the `approved` + `approved_by_user_id`
+                    // columns.
+                    $autoApproved = $isSuperAdmin ? 1 : 0;
+
                     $ins = $pdo->prepare(
                         "INSERT INTO short_links
-                            (company_id, slug, destination, title, expires_at, created_by_user_id)
+                            (company_id, slug, destination, title, expires_at,
+                             created_by_user_id, approved, approved_by_user_id, approved_at)
                          VALUES
-                            (:c, :s, :d, :t, :e, :u)"
+                            (:c, :s, :d, :t, :e, :u, :ap, :au, :at)"
                     );
                     $ins->execute([
-                        ':c' => $companyId,
-                        ':s' => $slug,
-                        ':d' => $destination,
-                        ':t' => $title !== '' ? substr($title, 0, 200) : null,
-                        ':e' => $expiresAt,
-                        ':u' => $userId,
+                        ':c'  => $companyId,
+                        ':s'  => $slug,
+                        ':d'  => $destination,
+                        ':t'  => $title !== '' ? substr($title, 0, 200) : null,
+                        ':e'  => $expiresAt,
+                        ':u'  => $userId,
+                        ':ap' => $autoApproved,
+                        ':au' => $autoApproved ? $userId : null,
+                        ':at' => $autoApproved ? date('Y-m-d H:i:s') : null,
                     ]);
-                    $message = 'Short link created: /s/' . $slug;
+                    if ($autoApproved) {
+                        $message = 'Short link created: /s/' . $slug;
+                    } else {
+                        $message = 'Short link /s/' . $slug . ' created — awaiting super-admin approval before it will redirect.';
+                    }
                 } catch (Exception $e) {
                     $message = 'Create failed: ' . $e->getMessage();
                     $messageType = 'error';
@@ -185,6 +218,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $del->execute([':id' => $id, ':c' => $companyId]);
                 $message = $del->rowCount() ? 'Short link deleted.' : 'Link not found.';
                 $messageType = $del->rowCount() ? 'success' : 'error';
+            }
+        } elseif ($action === 'approve' || $action === 'unapprove') {
+            // Super-admin moderation gate.
+            if (!$isSuperAdmin) {
+                $message = 'Only super admins can moderate short links.';
+                $messageType = 'error';
+            } else {
+                $id = (int)($_POST['id'] ?? 0);
+                if ($id > 0) {
+                    if ($action === 'approve') {
+                        $stmt = $pdo->prepare(
+                            "UPDATE short_links
+                                SET approved = 1,
+                                    approved_by_user_id = :u,
+                                    approved_at = NOW()
+                              WHERE id = :id"
+                        );
+                        $stmt->execute([':u' => $userId, ':id' => $id]);
+                        $message = $stmt->rowCount() ? 'Short link approved.' : 'Link not found.';
+                    } else {
+                        $stmt = $pdo->prepare(
+                            "UPDATE short_links
+                                SET approved = 0,
+                                    approved_by_user_id = NULL,
+                                    approved_at = NULL
+                              WHERE id = :id"
+                        );
+                        $stmt->execute([':id' => $id]);
+                        $message = $stmt->rowCount() ? 'Short link un-approved.' : 'Link not found.';
+                    }
+                    $messageType = $stmt->rowCount() ? 'success' : 'error';
+                }
             }
         } elseif ($action === 'update') {
             $id          = (int)($_POST['id'] ?? 0);
@@ -208,19 +273,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $messageType = 'error';
             } else {
                 try {
-                    $upd = $pdo->prepare(
-                        "UPDATE short_links
-                            SET destination = :d, title = :t, expires_at = :e
-                          WHERE id = :id AND company_id = :c"
-                    );
-                    $upd->execute([
-                        ':d'  => $destination,
-                        ':t'  => $title !== '' ? substr($title, 0, 200) : null,
-                        ':e'  => $expiresAt,
-                        ':id' => $id,
-                        ':c'  => $companyId,
-                    ]);
-                    $message = 'Short link updated.';
+                    // If destination changed for a non-super-admin, kick back to
+                    // pending so the new URL goes through moderation too.
+                    if ($isSuperAdmin) {
+                        $upd = $pdo->prepare(
+                            "UPDATE short_links
+                                SET destination = :d, title = :t, expires_at = :e
+                              WHERE id = :id AND company_id = :c"
+                        );
+                        $upd->execute([
+                            ':d'  => $destination,
+                            ':t'  => $title !== '' ? substr($title, 0, 200) : null,
+                            ':e'  => $expiresAt,
+                            ':id' => $id,
+                            ':c'  => $companyId,
+                        ]);
+                    } else {
+                        $cur = $pdo->prepare("SELECT destination FROM short_links WHERE id = :id AND company_id = :c");
+                        $cur->execute([':id' => $id, ':c' => $companyId]);
+                        $prevDest = (string)$cur->fetchColumn();
+                        $destChanged = ($prevDest !== '' && $prevDest !== $destination);
+
+                        $sql = "UPDATE short_links
+                                    SET destination = :d, title = :t, expires_at = :e"
+                             . ($destChanged ? ", approved = 0, approved_by_user_id = NULL, approved_at = NULL" : "")
+                             . " WHERE id = :id AND company_id = :c";
+                        $upd = $pdo->prepare($sql);
+                        $upd->execute([
+                            ':d'  => $destination,
+                            ':t'  => $title !== '' ? substr($title, 0, 200) : null,
+                            ':e'  => $expiresAt,
+                            ':id' => $id,
+                            ':c'  => $companyId,
+                        ]);
+                        if ($destChanged) {
+                            $message = 'Short link updated — destination changed, awaiting super-admin re-approval.';
+                        } else {
+                            $message = 'Short link updated.';
+                        }
+                    }
+                    if (empty($message)) {
+                        $message = 'Short link updated.';
+                    }
                 } catch (Exception $e) {
                     $message = 'Update failed: ' . $e->getMessage();
                     $messageType = 'error';
@@ -236,7 +330,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $links = [];
 try {
     $stmt = $pdo->prepare(
-        "SELECT id, slug, destination, title, click_count, expires_at, created_at
+        "SELECT id, slug, destination, title, click_count, expires_at, created_at,
+                approved, approved_at
            FROM short_links
           WHERE company_id = :c
           ORDER BY created_at DESC
@@ -361,10 +456,11 @@ adminHeader('Short Links', 'short-links');
                 <?php foreach ($links as $l):
                     $shortUrl = $shortPrefix . $l['slug'];
                     $expired = !empty($l['expires_at']) && strtotime($l['expires_at']) < time();
+                    $approved = !empty($l['approved']);
                 ?>
-                <tr class="<?= $expired ? 'opacity-60' : ''; ?>">
+                <tr class="<?= ($expired || !$approved) ? 'opacity-60' : ''; ?>">
                     <td class="px-4 py-3">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-wrap">
                             <a href="<?= sanitize($shortUrl); ?>" target="_blank" rel="noopener"
                                class="text-blue-600 hover:underline font-mono text-xs break-all"><?= sanitize($shortUrl); ?></a>
                             <button type="button"
@@ -372,6 +468,9 @@ adminHeader('Short Links', 'short-links');
                                     class="text-gray-400 hover:text-gray-600" title="Copy">
                                 <i class="fa-regular fa-copy"></i>
                             </button>
+                            <?php if (!$approved): ?>
+                                <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-semibold uppercase tracking-wide" title="Waiting for super-admin approval — will return 404 until approved">Pending</span>
+                            <?php endif; ?>
                         </div>
                     </td>
                     <td class="px-4 py-3 max-w-xs">
@@ -389,7 +488,28 @@ adminHeader('Short Links', 'short-links');
                         <?php endif; ?>
                     </td>
                     <td class="px-4 py-3 text-gray-500 text-xs"><?= sanitize(date('Y-m-d H:i', strtotime($l['created_at']))); ?></td>
-                    <td class="px-4 py-3 text-right">
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <?php if ($isSuperAdmin): ?>
+                            <?php if (!$approved): ?>
+                            <form method="post" class="inline-block mr-1">
+                                <?= csrfField(); ?>
+                                <input type="hidden" name="action" value="approve">
+                                <input type="hidden" name="id" value="<?= (int)$l['id']; ?>">
+                                <button type="submit" class="text-green-600 hover:text-green-800 text-xs" title="Approve (super-admin)">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                </button>
+                            </form>
+                            <?php else: ?>
+                            <form method="post" class="inline-block mr-1" onsubmit="return confirm('Un-approve this link? It will stop redirecting.');">
+                                <?= csrfField(); ?>
+                                <input type="hidden" name="action" value="unapprove">
+                                <input type="hidden" name="id" value="<?= (int)$l['id']; ?>">
+                                <button type="submit" class="text-amber-600 hover:text-amber-800 text-xs" title="Un-approve (super-admin)">
+                                    <i class="fa-solid fa-ban"></i>
+                                </button>
+                            </form>
+                            <?php endif; ?>
+                        <?php endif; ?>
                         <form method="post" class="inline-block" onsubmit="return confirm('Delete this short link? This cannot be undone.');">
                             <?= csrfField(); ?>
                             <input type="hidden" name="action" value="delete">

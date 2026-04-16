@@ -32,7 +32,7 @@ try {
     $pdo = $db->getConnection();
 
     $stmt = $pdo->prepare(
-        "SELECT id, company_id, destination, expires_at
+        "SELECT id, company_id, destination, expires_at, approved
            FROM short_links
           WHERE slug = :s
           LIMIT 1"
@@ -41,6 +41,16 @@ try {
     $link = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$link) {
+        http_response_code(404);
+        include __DIR__ . '/404.php';
+        exit;
+    }
+
+    // Moderation gate: unapproved links return 404 (not a leaky 403) until a
+    // super admin approves. Stops tenant admins from turning cardify.om into a
+    // free phishing redirector. Existing links are grandfathered as approved=1
+    // by migration 062 so this change is zero-impact for live traffic.
+    if (empty($link['approved'])) {
         http_response_code(404);
         include __DIR__ . '/404.php';
         exit;
