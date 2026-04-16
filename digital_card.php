@@ -1036,10 +1036,13 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                                     <?php if (!empty($offer['valid_until'])): ?>
                                     <span class="offer-valid">Valid until <?php echo htmlspecialchars($offer['valid_until']); ?></span>
                                     <?php endif; ?>
-                                    <a href="/api/offer/redeem.php?oid=<?php echo urlencode($offer['id']); ?>&amp;eid=<?php echo urlencode($employee['id']); ?>"
-                                       class="offer-redeem-btn"
-                                       style="background: <?php echo htmlspecialchars($offer['badge_color'] ?: '#009bc1'); ?>;"
-                                       rel="nofollow">Redeem</a>
+                                    <form method="post" action="/api/offer/redeem.php" style="margin:0;display:inline;">
+                                        <input type="hidden" name="oid" value="<?php echo htmlspecialchars($offer['id']); ?>">
+                                        <input type="hidden" name="eid" value="<?php echo htmlspecialchars($employee['id']); ?>">
+                                        <button type="submit"
+                                                class="offer-redeem-btn"
+                                                style="background: <?php echo htmlspecialchars($offer['badge_color'] ?: '#009bc1'); ?>;border:0;cursor:pointer;">Redeem</button>
+                                    </form>
                                 </div>
                             </div>
                         <?php endforeach; ?>
