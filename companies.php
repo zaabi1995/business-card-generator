@@ -22,6 +22,12 @@ $slug = $_GET['slug'] ?? null;
 $lang = ($_GET['lang'] ?? '') === 'ar' ? 'ar' : 'en';
 $isAr = $lang === 'ar';
 
+// Sector + wilayat content libraries (populated by content agents)
+$SECTOR_CONTENT  = is_file(__DIR__ . '/data/company_content/sectors.php')
+    ? (require __DIR__ . '/data/company_content/sectors.php') : [];
+$WILAYAT_CONTENT = is_file(__DIR__ . '/data/company_content/wilayats.php')
+    ? (require __DIR__ . '/data/company_content/wilayats.php') : [];
+
 $baseUrl = 'https://cardify.om';
 $basePrefix = $isAr ? '/ar/companies' : '/companies';
 $altPrefix  = $isAr ? '/companies'    : '/ar/companies';
@@ -293,21 +299,53 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
             </div>
 
             <?php
-                $summary = $isAr ? ($company['summary_ar'] ?: '') : ($company['summary_en'] ?: '');
-                if (!$summary) {
-                    // Auto-generated factual summary — avoids duplicate boilerplate across pages
-                    $secLabelEn = labelOf($company['sector'], $SECTORS, false);
-                    $wilLabelEn = labelOf($company['wilayat'], $WILAYATS, false);
-                    $sizeTxt = $company['size_bucket'] === 'large' ? 'large enterprise' : 'medium enterprise';
-                    $summary = $isAr
-                        ? "{$company['name_ar']} — شركة مصنفة كـ" . ($company['size_bucket'] === 'large' ? 'شركة كبيرة' : 'شركة متوسطة') . " في سجل وزارة التجارة والصناعة وترويج الاستثمار بسلطنة عُمان، تعمل ضمن قطاع " . labelOf($company['sector'], $SECTORS, true) . " في محافظة " . labelOf($company['wilayat'], $WILAYATS, true) . "."
-                        : "{$company['name_en']} is a {$sizeTxt} registered on the MoCIIP public register of the Sultanate of Oman, operating in the {$secLabelEn} sector in the {$wilLabelEn} governorate.";
+                $curatedSummary = $isAr ? ($company['summary_ar'] ?: '') : ($company['summary_en'] ?: '');
+                $secKey   = $company['sector'];
+                $wilKey   = $company['wilayat'];
+                $secBlock = $SECTOR_CONTENT[$secKey] ?? null;
+                $wilBlock = $WILAYAT_CONTENT[$wilKey] ?? null;
+                $secLabelEn = labelOf($secKey, $SECTORS, false);
+                $wilLabelEn = labelOf($wilKey, $WILAYATS, false);
+                $sizeTextEn = $company['size_bucket'] === 'large' ? 'large' : 'medium';
+                $displayName = $company['name_en'];
+
+                // Build "About" paragraphs
+                $aboutParas = [];
+                if ($curatedSummary) {
+                    foreach (preg_split("/\n\s*\n/", trim($curatedSummary)) as $p) {
+                        $p = trim($p);
+                        if ($p !== '') $aboutParas[] = $p;
+                    }
+                } else {
+                    if ($secBlock && !empty($secBlock['what_they_do'])) {
+                        $aboutParas[] = str_replace(['{company}', '{name}'], $displayName, $secBlock['what_they_do']);
+                    }
+                    if ($secBlock && !empty($secBlock['team_reality'])) {
+                        $aboutParas[] = $secBlock['team_reality'];
+                    }
+                    if ($wilBlock && !empty($wilBlock['snapshot'])) {
+                        $aboutParas[] = sprintf(
+                            '%s is based in %s. %s',
+                            $displayName,
+                            $wilLabelEn,
+                            $wilBlock['snapshot']
+                        );
+                    }
+                    $aboutParas[] = sprintf(
+                        '%s is listed as a %s enterprise on the MoCIIP public register of the Sultanate of Oman, classified under the %s sector in %s governorate.',
+                        $displayName, $sizeTextEn, $secLabelEn, $wilLabelEn
+                    );
                 }
             ?>
-            <div class="mt-8 prose prose-gray max-w-none">
-                <h2 class="text-xl font-semibold text-gray-900 mb-3"><?= t('About', 'نبذة', $isAr) ?></h2>
-                <p class="text-gray-700 leading-relaxed"><?= escq($summary) ?></p>
 
+            <!-- About section (curated summary or composed from sector/wilayat libraries) -->
+            <section class="mt-8">
+                <h2 class="text-xl font-bold text-gray-900 mb-3"><?= sprintf(t('About %s', 'نبذة عن %s', $isAr), escq($displayName)) ?></h2>
+                <div class="space-y-4 text-gray-700 leading-relaxed">
+                    <?php foreach ($aboutParas as $p): ?>
+                        <p><?= escq($p) ?></p>
+                    <?php endforeach; ?>
+                </div>
                 <?php if (!empty($company['website'])): ?>
                     <p class="mt-4">
                         <a href="<?= escq($company['website']) ?>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
@@ -316,43 +354,67 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                         </a>
                     </p>
                 <?php endif; ?>
-            </div>
+            </section>
 
-            <!-- Key facts (structured, avoids template-spam-looking prose) -->
-            <div class="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div class="p-4 rounded-xl bg-gray-50">
-                    <div class="text-xs uppercase tracking-wide text-gray-500 mb-1"><?= t('Sector', 'القطاع', $isAr) ?></div>
-                    <div class="font-semibold text-gray-900"><?= escq(labelOf($company['sector'], $SECTORS, $isAr)) ?></div>
+            <!-- Why Cardify fits this team (sector-specific) -->
+            <section class="mt-10 pt-8 border-t border-gray-200">
+                <h2 class="text-xl font-bold text-gray-900 mb-3">
+                    <?= sprintf(t('How Cardify fits %s teams', 'كيف تخدم Cardify فرق %s', $isAr), escq($displayName)) ?>
+                </h2>
+                <?php if ($secBlock && !empty($secBlock['cardify_fit'])): ?>
+                    <p class="text-gray-700 leading-relaxed mb-5"><?= escq($secBlock['cardify_fit']) ?></p>
+                <?php else: ?>
+                    <p class="text-gray-700 leading-relaxed mb-5">
+                        <?= t(
+                            'Cardify helps teams at companies like this one roll out consistent, branded digital business cards across every employee — with QR codes that save contacts straight to any phone, bilingual EN/AR fields, and bulk printed cards from local Omani print shops.',
+                            'تساعد Cardify فرق الشركات مثل هذه على إطلاق بطاقات عمل رقمية موحدة ومُصممة حسب الهوية البصرية، مع رموز QR تحفظ جهات الاتصال مباشرة في الهاتف، وحقول ثنائية اللغة، وطباعة من مطابع عُمانية محلية.',
+                            $isAr
+                        ) ?>
+                    </p>
+                <?php endif; ?>
+                <?php if ($secBlock && !empty($secBlock['use_cases']) && is_array($secBlock['use_cases'])): ?>
+                    <ul class="space-y-2.5 mb-6">
+                        <?php foreach ($secBlock['use_cases'] as $uc): ?>
+                            <li class="flex items-start gap-3 text-gray-700">
+                                <i class="fa-solid fa-check-circle text-blue-600 mt-1 flex-shrink-0"></i>
+                                <span><?= escq($uc) ?></span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+                <div class="flex flex-wrap gap-3">
+                    <a href="<?= $isAr ? '/ar/get-started' : '/get-started' ?>" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">
+                        <?= sprintf(t('Start free for %s team', 'ابدأ مجاناً لفريق %s', $isAr), escq($displayName)) ?>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                    <a href="/tools/vcard-qr-generator" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gray-100 text-gray-800 font-semibold hover:bg-gray-200">
+                        <?= t('Try the free QR card tool', 'جرّب أداة رمز QR المجانية', $isAr) ?>
+                    </a>
                 </div>
-                <div class="p-4 rounded-xl bg-gray-50">
-                    <div class="text-xs uppercase tracking-wide text-gray-500 mb-1"><?= t('Governorate', 'المحافظة', $isAr) ?></div>
-                    <div class="font-semibold text-gray-900"><?= escq(labelOf($company['wilayat'], $WILAYATS, $isAr)) ?></div>
-                </div>
-                <div class="p-4 rounded-xl bg-gray-50">
-                    <div class="text-xs uppercase tracking-wide text-gray-500 mb-1"><?= t('Size band', 'الحجم', $isAr) ?></div>
-                    <div class="font-semibold text-gray-900"><?= $company['size_bucket'] === 'large' ? t('Large', 'كبيرة', $isAr) : t('Medium', 'متوسطة', $isAr) ?></div>
-                </div>
-                <div class="p-4 rounded-xl bg-gray-50">
-                    <div class="text-xs uppercase tracking-wide text-gray-500 mb-1"><?= t('Country', 'الدولة', $isAr) ?></div>
-                    <div class="font-semibold text-gray-900"><?= t('Sultanate of Oman', 'سلطنة عُمان', $isAr) ?></div>
-                </div>
-            </div>
+            </section>
 
-            <!-- Subtle Cardify CTA (contextual, not promotional) -->
-            <div class="mt-10 p-6 rounded-xl border border-dashed border-gray-300 bg-gray-50">
-                <div class="flex items-start gap-4">
-                    <div class="text-2xl">💼</div>
-                    <div class="flex-1">
-                        <h3 class="font-semibold text-gray-900"><?= sprintf(t('Work at %s?', 'هل تعمل في %s؟', $isAr), escq($company['name_en'])) ?></h3>
-                        <p class="text-sm text-gray-600 mt-1">
-                            <?= t('Create a free digital business card for networking events, trade fairs, and client meetings across Oman.', 'أنشئ بطاقة عمل رقمية مجانية لفعاليات التواصل والمعارض التجارية واجتماعات العملاء في سلطنة عُمان.', $isAr) ?>
-                        </p>
-                        <a href="<?= $isAr ? '/ar/get-started' : '/get-started' ?>" class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700">
-                            <?= t('Create your card →', 'أنشئ بطاقتك ←', $isAr) ?>
-                        </a>
+            <!-- Compact quick-facts panel -->
+            <section class="mt-10 pt-8 border-t border-gray-200">
+                <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4"><?= t('Quick facts', 'معلومات سريعة', $isAr) ?></h2>
+                <dl class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                        <dt class="text-xs text-gray-500"><?= t('Sector', 'القطاع', $isAr) ?></dt>
+                        <dd class="mt-1 font-semibold text-gray-900 text-sm"><?= escq(labelOf($company['sector'], $SECTORS, $isAr)) ?></dd>
                     </div>
-                </div>
-            </div>
+                    <div>
+                        <dt class="text-xs text-gray-500"><?= t('Governorate', 'المحافظة', $isAr) ?></dt>
+                        <dd class="mt-1 font-semibold text-gray-900 text-sm"><?= escq(labelOf($company['wilayat'], $WILAYATS, $isAr)) ?></dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-gray-500"><?= t('Size band', 'الحجم', $isAr) ?></dt>
+                        <dd class="mt-1 font-semibold text-gray-900 text-sm"><?= $company['size_bucket'] === 'large' ? t('Large', 'كبيرة', $isAr) : t('Medium', 'متوسطة', $isAr) ?></dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-gray-500"><?= t('Country', 'الدولة', $isAr) ?></dt>
+                        <dd class="mt-1 font-semibold text-gray-900 text-sm"><?= t('Sultanate of Oman', 'سلطنة عُمان', $isAr) ?></dd>
+                    </div>
+                </dl>
+            </section>
         </article>
 
         <!-- Related: other companies in same sector + wilayat -->
