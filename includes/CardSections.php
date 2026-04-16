@@ -10,7 +10,7 @@ class CardSections
 {
     // Display order on the public card page. Offers placed early (high-value CTA),
     // followed by bio → services/gallery → testimonials (social proof) → lead_form (bottom CTA).
-    const SECTION_KEYS = ['bio', 'offers', 'services', 'gallery', 'testimonials', 'lead_form'];
+    const SECTION_KEYS = ['bio', 'offers', 'services', 'gallery', 'video', 'testimonials', 'lead_form'];
     const OFFER_PALETTE = ['#009bc1', '#ffbb00', '#824598', '#45c0ba', '#e74c3c', '#27ae60', '#111827'];
     const SUPPORTED_LOCALES = ['en', 'ar'];
     const DEFAULT_LOCALE = 'en';
@@ -47,11 +47,19 @@ class CardSections
                 'lead_form_enabled' => 0,
                 'lead_form_email' => '',
                 'offers_enabled' => 0,
+                'video_enabled' => 0,
+                'video_url' => '',
+                'video_title' => '',
                 'section_order' => implode(',', self::SECTION_KEYS),
             ];
         }
         if (!array_key_exists('offers_enabled', $row)) {
             $row['offers_enabled'] = 0;
+        }
+        if (!array_key_exists('video_enabled', $row)) {
+            $row['video_enabled'] = 0;
+            $row['video_url'] = '';
+            $row['video_title'] = '';
         }
         return $row;
     }
@@ -238,9 +246,10 @@ class CardSections
         $stmt = $pdo->prepare(
             "INSERT INTO employee_card_sections
                 (employee_id, company_id, bio_enabled, bio_text, bio_text_ar, services_enabled, gallery_enabled,
-                 testimonials_enabled, lead_form_enabled, lead_form_email, offers_enabled, section_order)
+                 testimonials_enabled, lead_form_enabled, lead_form_email, offers_enabled,
+                 video_enabled, video_url, video_title, section_order)
              VALUES
-                (:eid, :cid, :be, :bt, :bta, :se, :ge, :te, :le, :lem, :oe, :ord)
+                (:eid, :cid, :be, :bt, :bta, :se, :ge, :te, :le, :lem, :oe, :ve, :vu, :vt, :ord)
              ON DUPLICATE KEY UPDATE
                 bio_enabled = VALUES(bio_enabled),
                 bio_text = VALUES(bio_text),
@@ -251,8 +260,15 @@ class CardSections
                 lead_form_enabled = VALUES(lead_form_enabled),
                 lead_form_email = VALUES(lead_form_email),
                 offers_enabled = VALUES(offers_enabled),
+                video_enabled = VALUES(video_enabled),
+                video_url = VALUES(video_url),
+                video_title = VALUES(video_title),
                 section_order = VALUES(section_order)"
         );
+        $videoUrl = trim((string)($data['video_url'] ?? ''));
+        if ($videoUrl !== '' && !preg_match('#^https?://#i', $videoUrl)) {
+            $videoUrl = 'https://' . $videoUrl;
+        }
         $stmt->execute([
             'eid' => $employeeId,
             'cid' => $companyId,
@@ -265,8 +281,60 @@ class CardSections
             'le' => !empty($data['lead_form_enabled']) ? 1 : 0,
             'lem' => trim((string)($data['lead_form_email'] ?? '')),
             'oe' => !empty($data['offers_enabled']) ? 1 : 0,
+            've' => !empty($data['video_enabled']) ? 1 : 0,
+            'vu' => mb_substr($videoUrl, 0, 1024),
+            'vt' => mb_substr(trim((string)($data['video_title'] ?? '')), 0, 200),
             'ord' => $order,
         ]);
+    }
+
+    /**
+     * Parse a user-pasted URL into a renderable video spec.
+     *
+     * Returns an array:
+     *   ['type' => 'youtube'|'vimeo'|'file'|'link', 'embed' => '<iframe/src>', 'url' => original]
+     * or null if the URL is blank/invalid.
+     */
+    public static function parseVideoEmbed($url)
+    {
+        $url = trim((string)$url);
+        if ($url === '') return null;
+        if (!preg_match('#^https?://#i', $url)) return null;
+
+        // YouTube — youtu.be/ID, youtube.com/watch?v=ID, youtube.com/shorts/ID, /embed/ID
+        if (preg_match('#(?:youtube\.com/(?:watch\?(?:.*&)?v=|embed/|shorts/)|youtu\.be/)([A-Za-z0-9_-]{6,})#i', $url, $m)) {
+            return [
+                'type'  => 'youtube',
+                'embed' => 'https://www.youtube.com/embed/' . $m[1],
+                'url'   => $url,
+            ];
+        }
+
+        // Vimeo — vimeo.com/NUMERIC_ID (optionally /hash)
+        if (preg_match('#vimeo\.com/(?:video/)?(\d{5,})#i', $url, $m)) {
+            return [
+                'type'  => 'vimeo',
+                'embed' => 'https://player.vimeo.com/video/' . $m[1],
+                'url'   => $url,
+            ];
+        }
+
+        // Direct video file
+        $path = parse_url($url, PHP_URL_PATH);
+        if (is_string($path) && preg_match('/\.(mp4|webm|mov|m4v)(\?|$)/i', $path)) {
+            return [
+                'type'  => 'file',
+                'embed' => $url,
+                'url'   => $url,
+            ];
+        }
+
+        // Anything else — render as external "Watch video" link
+        return [
+            'type'  => 'link',
+            'embed' => $url,
+            'url'   => $url,
+        ];
     }
 
     // ---- i18n helpers ----------------------------------------------------
