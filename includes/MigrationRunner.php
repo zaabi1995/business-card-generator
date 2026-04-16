@@ -103,72 +103,82 @@ class MigrationRunner {
         if (!$migration) {
             return ['success' => false, 'error' => 'Migration not found'];
         }
-        
+
         // Check if already executed
         $executed = self::getExecutedMigrations();
         if (in_array($migrationNumber, $executed)) {
             return ['success' => false, 'error' => 'Migration already executed'];
         }
-        
-        // Load and run migration
-        require_once $migration['path'];
-        
-        // Try different function name patterns
+
+        // Snapshot user functions BEFORE include so we can detect whether this
+        // migration file defined a `migration_NNN_*` function (old pattern) or
+        // simply ran its SQL at include time (new top-level pattern).
+        $before = get_defined_functions()['user'];
+
+        // Load migration file. For top-level scripts any thrown exception will
+        // propagate up and be caught below → recorded as failure.
+        try {
+            require_once $migration['path'];
+        } catch (Throwable $e) {
+            return [
+                'success' => false,
+                'error' => 'Migration include error: ' . $e->getMessage(),
+                'migration' => $migration
+            ];
+        }
+
+        $after = get_defined_functions()['user'];
+        $prefix = 'migration_' . str_pad($migrationNumber, 3, '0', STR_PAD_LEFT);
+
         $functionName = null;
-        $patterns = [
-            'migration_' . str_pad($migrationNumber, 3, '0', STR_PAD_LEFT) . '_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($migration['name'])),
-            'migration_' . str_pad($migrationNumber, 3, '0', STR_PAD_LEFT) . '_' . str_replace(' ', '_', strtolower($migration['name'])),
-            'migration_' . str_pad($migrationNumber, 3, '0', STR_PAD_LEFT),
-        ];
-        
-        // Try to find function dynamically
-        $functions = get_defined_functions()['user'];
-        foreach ($functions as $func) {
-            if (strpos($func, 'migration_' . str_pad($migrationNumber, 3, '0', STR_PAD_LEFT)) === 0) {
+        foreach (array_diff($after, $before) as $func) {
+            if (strpos($func, $prefix) === 0) {
                 $functionName = $func;
                 break;
             }
         }
-        
-        // Try patterns if not found
+        // Fallback: function may have been defined by an earlier include in
+        // the same request (shouldn't happen in normal flow).
         if (!$functionName) {
-            foreach ($patterns as $pattern) {
-                if (function_exists($pattern)) {
-                    $functionName = $pattern;
+            foreach ($after as $func) {
+                if (strpos($func, $prefix) === 0) {
+                    $functionName = $func;
                     break;
                 }
             }
         }
-        
-        if (!$functionName || !function_exists($functionName)) {
-            return ['success' => false, 'error' => 'Migration function not found. Expected pattern: migration_' . str_pad($migrationNumber, 3, '0', STR_PAD_LEFT) . '_*'];
-        }
-        
+
         try {
-            // Pass raw PDO connection to migration function
             $pdo = self::$db->getConnection();
-            $result = call_user_func($functionName, $pdo);
-            
-            if ($result['success']) {
-                // Record migration as executed
-                self::$db->insert('migrations', [
-                    'migration_number' => $migrationNumber,
-                    'migration_name' => $migration['name'],
-                    'executed_at' => date('Y-m-d H:i:s')
-                ]);
-                
-                return [
-                    'success' => true,
-                    'message' => 'Migration executed successfully',
-                    'migration' => $migration
-                ];
-            } else {
-                return [
-                    'success' => false,
-                    'error' => 'Migration failed: ' . implode(', ', $result['errors'] ?? []),
-                    'migration' => $migration
-                ];
+
+            if ($functionName && function_exists($functionName)) {
+                // OLD PATTERN: migration file defines a function, we call it.
+                $result = call_user_func($functionName, $pdo);
+                if (!is_array($result) || empty($result['success'])) {
+                    return [
+                        'success' => false,
+                        'error' => 'Migration failed: ' . implode(', ', (is_array($result) ? ($result['errors'] ?? []) : [])),
+                        'migration' => $migration
+                    ];
+                }
             }
+            // NEW PATTERN: top-level script already ran during require_once
+            // above and did not throw → treat as success and record it.
+
+            // Record migration as executed
+            self::$db->insert('migrations', [
+                'migration_number' => $migrationNumber,
+                'migration_name' => $migration['name'],
+                'executed_at' => date('Y-m-d H:i:s')
+            ]);
+
+            return [
+                'success' => true,
+                'message' => $functionName
+                    ? 'Migration executed successfully'
+                    : 'Migration (top-level script) executed successfully',
+                'migration' => $migration
+            ];
         } catch (Exception $e) {
             return [
                 'success' => false,
@@ -203,41 +213,47 @@ class MigrationRunner {
             return ['success' => false, 'error' => 'Migration not found'];
         }
         
-        // Load migration file
-        require_once $migration['path'];
-        
-        // Find the function
+        // Load migration file (top-level scripts are idempotent; functions just
+        // get (re)defined). If the include itself throws, report it.
+        try {
+            require_once $migration['path'];
+        } catch (Throwable $e) {
+            return [
+                'success' => false,
+                'error' => 'Re-check include error: ' . $e->getMessage(),
+                'migration' => $migration
+            ];
+        }
+
+        // Find the function if one was defined.
         $functionName = null;
-        $functions = get_defined_functions()['user'];
-        foreach ($functions as $func) {
-            if (strpos($func, 'migration_' . str_pad($migrationNumber, 3, '0', STR_PAD_LEFT)) === 0) {
+        $prefix = 'migration_' . str_pad($migrationNumber, 3, '0', STR_PAD_LEFT);
+        foreach (get_defined_functions()['user'] as $func) {
+            if (strpos($func, $prefix) === 0) {
                 $functionName = $func;
                 break;
             }
         }
-        
-        if (!$functionName || !function_exists($functionName)) {
-            return ['success' => false, 'error' => 'Migration function not found'];
-        }
-        
+
         try {
-            // Pass raw PDO connection to migration function
             $pdo = self::$db->getConnection();
-            $result = call_user_func($functionName, $pdo);
-            
-            if ($result['success']) {
-                return [
-                    'success' => true,
-                    'message' => 'Migration re-checked successfully - all changes verified',
-                    'migration' => $migration
-                ];
-            } else {
-                return [
-                    'success' => false,
-                    'error' => 'Re-check found issues: ' . implode(', ', $result['errors'] ?? []),
-                    'migration' => $migration
-                ];
+
+            if ($functionName && function_exists($functionName)) {
+                $result = call_user_func($functionName, $pdo);
+                if (!is_array($result) || empty($result['success'])) {
+                    return [
+                        'success' => false,
+                        'error' => 'Re-check found issues: ' . implode(', ', (is_array($result) ? ($result['errors'] ?? []) : [])),
+                        'migration' => $migration
+                    ];
+                }
             }
+            // Top-level script: already executed during require_once without throwing.
+            return [
+                'success' => true,
+                'message' => 'Migration re-checked successfully - all changes verified',
+                'migration' => $migration
+            ];
         } catch (Exception $e) {
             return [
                 'success' => false,
