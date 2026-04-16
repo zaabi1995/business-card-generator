@@ -133,12 +133,36 @@ try {
 
     // Public card sections (localized with EN fallback)
     $sectionMaster = CardSections::loadMaster($employee['id'], $company['id']);
-    $bioText = $locale === 'ar' && trim((string)($sectionMaster['bio_text_ar'] ?? '')) !== ''
+    $bioText = ($locale === 'ar' && trim((string)($sectionMaster['bio_text_ar'] ?? '')) !== '')
         ? $sectionMaster['bio_text_ar']
         : ($sectionMaster['bio_text'] ?? '');
     $sectionServices = !empty($sectionMaster['services_enabled']) ? CardSections::loadServicesLocalized($employee['id'], $locale) : [];
     $sectionGallery = !empty($sectionMaster['gallery_enabled']) ? CardSections::loadGallery($employee['id']) : [];
-    $sectionTestimonials = !empty($sectionMaster['testimonials_enabled']) ? CardSections::loadApprovedTestimonials($employee['id']) : [];
+    // Approved-only testimonials, then overlay AR translations.
+    if (!empty($sectionMaster['testimonials_enabled'])) {
+        $sectionTestimonials = CardSections::loadApprovedTestimonials($employee['id']);
+        if ($locale === 'ar' && !empty($sectionTestimonials)) {
+            // Apply AR overlay (mirrors loadTestimonialsLocalized but on already-filtered set).
+            $ids = array_column($sectionTestimonials, 'id');
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = Database::getInstance()->getConnection()->prepare(
+                "SELECT testimonial_id, name, quote FROM employee_card_testimonials_i18n
+                 WHERE locale = ? AND testimonial_id IN ($placeholders)"
+            );
+            $stmt->execute(array_merge(['ar'], $ids));
+            $byId = [];
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) { $byId[$r['testimonial_id']] = $r; }
+            foreach ($sectionTestimonials as &$r) {
+                if (isset($byId[$r['id']])) {
+                    if (trim((string)$byId[$r['id']]['name'])  !== '') $r['name']  = $byId[$r['id']]['name'];
+                    if (trim((string)$byId[$r['id']]['quote']) !== '') $r['quote'] = $byId[$r['id']]['quote'];
+                }
+            }
+            unset($r);
+        }
+    } else {
+        $sectionTestimonials = [];
+    }
     $sectionOffers = !empty($sectionMaster['offers_enabled']) ? CardSections::loadOffers($employee['id'], true) : [];
     $sectionOrder = array_values(array_filter(array_map('trim', explode(',', $sectionMaster['section_order'] ?? implode(',', CardSections::SECTION_KEYS)))));
     if (!in_array('offers', $sectionOrder, true)) {
@@ -577,8 +601,40 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .lead-success { text-align: center; padding: 20px; font-size: 14px; color: <?php echo htmlspecialchars($accentColor); ?>; }
         .lead-error { color: #ef4444; font-size: 13px; margin-bottom: 8px; }
     </style>
+    <style>
+        .lang-switcher {
+            position: absolute;
+            top: 12px;
+            <?php echo $isRtl ? 'left' : 'right'; ?>: 12px;
+            display: flex;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(0,0,0,0.06);
+            padding: 4px 6px;
+            border-radius: 999px;
+            backdrop-filter: blur(8px);
+            z-index: 50;
+        }
+        .lang-switcher a {
+            text-decoration: none;
+            padding: 2px 8px;
+            border-radius: 999px;
+            color: <?php echo $isDarkPage ? '#bbb' : '#555'; ?>;
+            transition: all 0.15s;
+        }
+        .lang-switcher a.active {
+            background: <?php echo $isDarkPage ? '#fff' : '#1a1a2e'; ?>;
+            color: <?php echo $isDarkPage ? '#1a1a2e' : '#fff'; ?>;
+        }
+    </style>
 </head>
 <body>
+    <!-- Language switcher -->
+    <nav class="lang-switcher" aria-label="Language">
+        <a href="<?php echo $switchEnUrl; ?>" class="<?php echo $locale === 'en' ? 'active' : ''; ?>" hreflang="en">EN</a>
+        <a href="<?php echo $switchArUrl; ?>" class="<?php echo $locale === 'ar' ? 'active' : ''; ?>" hreflang="ar">عربي</a>
+    </nav>
     <div class="page-container">
         <!-- Company Logo -->
         <?php if ($logoPath): ?>
@@ -685,10 +741,10 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
 
         <!-- Public Card Sections -->
         <?php foreach ($sectionOrder as $__sec): ?>
-            <?php if ($__sec === 'bio' && !empty($sectionMaster['bio_enabled']) && !empty($sectionMaster['bio_text'])): ?>
+            <?php if ($__sec === 'bio' && !empty($sectionMaster['bio_enabled']) && !empty($bioText)): ?>
                 <div class="card-section">
                     <h3>About</h3>
-                    <div class="section-bio"><?php echo CardSections::renderBioHtml($sectionMaster['bio_text']); ?></div>
+                    <div class="section-bio"><?php echo CardSections::renderBioHtml($bioText); ?></div>
                 </div>
             <?php elseif ($__sec === 'services' && !empty($sectionMaster['services_enabled']) && !empty($sectionServices)): ?>
                 <div class="card-section">
