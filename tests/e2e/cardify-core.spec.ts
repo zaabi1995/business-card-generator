@@ -7,7 +7,7 @@
  * Run: BASE_URL=https://cardify.om npx playwright test
  */
 import { test, expect, Page } from '@playwright/test';
-import { KNOWN_CARD, cardPath } from './fixtures';
+import { KNOWN_CARD, BAD_UUID, cardPath } from './fixtures';
 
 const consoleErrors: string[] = [];
 
@@ -186,5 +186,224 @@ test.describe('Cardify — viral footer → /claim', () => {
         /* non-fatal */
       }
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Test 4 — QR redirect flow
+//
+// /qr.php?i=<eid> should either serve a vCard (default) or 302-redirect when
+// the employee has qr_redirect_url set. Unknown eid must 404, not 500.
+// ---------------------------------------------------------------------------
+test.describe('Cardify — qr.php endpoint', () => {
+  test('known eid returns vCard or 302 redirect (never 500)', async ({ request }) => {
+    const res = await request.get(`/qr.php?i=${KNOWN_CARD.eid}`, {
+      maxRedirects: 0,
+    });
+    const status = res.status();
+
+    // Accept either vCard-200 (no redirect set) or 302 (redirect set).
+    expect([200, 302], 'status').toContain(status);
+
+    if (status === 200) {
+      const ct = (res.headers()['content-type'] || '').toLowerCase();
+      expect(ct, 'content-type').toMatch(/vcard|octet-stream/);
+      const body = await res.text();
+      expect(body, 'vCard body prefix').toMatch(/^BEGIN:VCARD/);
+    } else {
+      // 302: we just check status + Location header exists. Don't follow.
+      const loc = res.headers()['location'];
+      expect(loc, 'Location header on 302').toBeTruthy();
+    }
+  });
+
+  test('unknown eid returns 404', async ({ request }) => {
+    const res = await request.get(`/qr.php?i=${BAD_UUID}`, {
+      maxRedirects: 0,
+    });
+    expect(res.status(), 'status').toBe(404);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Test 5 — Login page loads (auth UI, don't submit real credentials)
+//
+// Sanity-check that /login.php renders the form, embeds a CSRF token, and
+// the empty submit path goes through validation (not a 500). We don't test
+// actual auth — the test account lives in prod and we never POST real creds.
+// ---------------------------------------------------------------------------
+test.describe('Cardify — login page', () => {
+  test('renders form with email, password, CSRF, and logo', async ({ page }) => {
+    const res = await page.goto('/login.php', { waitUntil: 'domcontentloaded' });
+    expect(res?.status(), 'status').toBe(200);
+
+    await expect(page.locator('input[name="email"]'), 'email input').toBeVisible();
+    await expect(page.locator('input[name="password"]'), 'password input').toBeVisible();
+
+    // CSRF token hidden field must exist and be non-empty.
+    const csrfToken = await page
+      .locator('input[name="csrf_token"]')
+      .first()
+      .getAttribute('value');
+    expect(csrfToken, 'CSRF token present').toBeTruthy();
+    expect((csrfToken || '').length, 'CSRF token length').toBeGreaterThan(16);
+
+    // Brand logo renders (alt text contains the brand name).
+    const logo = page.locator('img[alt*="Cardify" i], img[src*="logo" i]').first();
+    await expect(logo, 'brand logo').toBeVisible();
+  });
+
+  test('POSTing empty body does not 500', async ({ request }) => {
+    // Send an empty POST (no CSRF, no credentials). Page must handle this
+    // gracefully: either 200 (re-render with error) or 4xx, never 5xx.
+    const res = await request.post('/login.php', {
+      maxRedirects: 0,
+      form: {},
+    });
+    expect(res.status(), 'status').toBeLessThan(500);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Test 6 — Admin pages must be auth-gated
+//
+// Catches regressions where a dev accidentally removes `requireAdmin()`
+// from the top of a new admin page. Each page must 302-redirect to /login
+// for an unauthenticated request.
+// ---------------------------------------------------------------------------
+test.describe('Cardify — admin auth gate', () => {
+  const gatedAdminPages = [
+    '/admin/growth.php',
+    '/admin/bulk-claim.php',
+    '/admin/card-analytics.php',
+  ];
+
+  for (const path of gatedAdminPages) {
+    test(`${path} redirects unauthenticated to /login`, async ({ request }) => {
+      const res = await request.get(path, { maxRedirects: 0 });
+      expect(res.status(), `${path} status`).toBe(302);
+
+      const loc = res.headers()['location'] || '';
+      expect(loc, `${path} Location header`).toMatch(/login\.php/);
+    });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Test 7 — Link shortener 404 on unknown slug
+//
+// /s/<slug> must 404 (not 500, not open-redirect to empty destination).
+// We never create a real short link from this test (admin-gated).
+// ---------------------------------------------------------------------------
+test.describe('Cardify — link shortener', () => {
+  test('unknown slug returns 404', async ({ request }) => {
+    const res = await request.get('/s/nonexistent-slug-99999', {
+      maxRedirects: 0,
+    });
+    expect(res.status(), 'status').toBe(404);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Test 8 — Bulk-claim magic-token flow (negative paths only)
+//
+// Positive flow requires a real magic token we can't safely generate in CI
+// (it burns a lead + dispatches a WA message). Validate the gate instead:
+// missing token → 400, malformed token → 400, and no path leaks a 500.
+// ---------------------------------------------------------------------------
+test.describe('Cardify — claim-lead guards', () => {
+  test('missing token → 400', async ({ request }) => {
+    const res = await request.get('/claim-lead.php', { maxRedirects: 0 });
+    expect(res.status(), 'status').toBe(400);
+  });
+
+  test('malformed token → 400 (never 500)', async ({ request }) => {
+    const res = await request.get('/claim-lead.php?token=invalid-hex', {
+      maxRedirects: 0,
+    });
+    // Implementation returns 400 for "not 32-64 hex chars". Accept 404 too
+    // in case the regex ever loosens and the lookup misses.
+    expect([400, 404], 'status').toContain(res.status());
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Test 9 — card_click.php scheme allow-list
+//
+// Codex-hardening round-2 established:
+//   tel: / mailto: / sms: / wa: / whitelisted https hosts only.
+// URL shorteners (goo.gl, bit.ly, …) must be rejected even though https.
+// javascript: must never redirect.
+// ---------------------------------------------------------------------------
+test.describe('Cardify — card_click.php scheme allow-list', () => {
+  test('tel: destination redirects (302)', async ({ request }) => {
+    const res = await request.get(
+      `/card_click.php?eid=${KNOWN_CARD.eid}&cta=click_phone&dest=${encodeURIComponent('tel:123')}`,
+      { maxRedirects: 0 }
+    );
+    expect(res.status(), 'status').toBe(302);
+    const loc = res.headers()['location'] || '';
+    expect(loc, 'Location header').toBe('tel:123');
+  });
+
+  test('goo.gl (URL shortener) is rejected', async ({ request }) => {
+    const res = await request.get(
+      `/card_click.php?eid=${KNOWN_CARD.eid}&cta=click_website&dest=${encodeURIComponent('https://goo.gl/abc')}`,
+      { maxRedirects: 0 }
+    );
+    expect(res.status(), 'status').toBe(400);
+  });
+
+  test('javascript: scheme is rejected', async ({ request }) => {
+    const res = await request.get(
+      `/card_click.php?eid=${KNOWN_CARD.eid}&cta=click_website&dest=${encodeURIComponent('javascript:alert(1)')}`,
+      { maxRedirects: 0 }
+    );
+    expect(res.status(), 'status').toBe(400);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Test 10 — SEO health (title + description, plus canonical on homepage)
+//
+// Catches regressions where a template rewrite drops the <title> or meta
+// description. Canonical is only asserted on the homepage — public card
+// pages intentionally don't set one (they're per-employee).
+// ---------------------------------------------------------------------------
+test.describe('Cardify — SEO health', () => {
+  test('homepage has title, description, canonical', async ({ page }) => {
+    const res = await page.goto('/', { waitUntil: 'domcontentloaded' });
+    expect(res?.status(), 'status').toBe(200);
+
+    const title = await page.title();
+    expect(title.length, 'title length').toBeGreaterThan(5);
+
+    const desc = await page
+      .locator('meta[name="description"]')
+      .first()
+      .getAttribute('content');
+    expect(desc, 'meta description').toBeTruthy();
+    expect((desc || '').length, 'description length').toBeGreaterThan(20);
+
+    const canonical = await page
+      .locator('link[rel="canonical"]')
+      .first()
+      .getAttribute('href');
+    expect(canonical, 'canonical href').toBeTruthy();
+    expect(canonical, 'canonical is absolute URL').toMatch(/^https?:\/\//);
+  });
+
+  test('public card page has title and description', async ({ page }) => {
+    const res = await page.goto(cardPath(), { waitUntil: 'domcontentloaded' });
+    expect(res?.status(), 'status').toBe(200);
+
+    const title = await page.title();
+    expect(title, 'title includes employee name').toContain(KNOWN_CARD.name);
+
+    const desc = await page
+      .locator('meta[name="description"]')
+      .first()
+      .getAttribute('content');
+    expect(desc, 'meta description').toBeTruthy();
   });
 });
