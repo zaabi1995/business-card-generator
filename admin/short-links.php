@@ -15,6 +15,7 @@ require_once __DIR__ . '/../config.php';
 requireAdmin();
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/admin-layout.php';
+require_once INCLUDES_DIR . '/UrlSafety.php';
 
 $db = Database::getInstance();
 $pdo = $db->getConnection();
@@ -59,17 +60,10 @@ $isReserved = function (string $slug) use ($RESERVED_SLUGS): bool {
     return in_array(strtolower($slug), $RESERVED_SLUGS, true);
 };
 
-// Risky free/disposable TLDs commonly abused by phishing kits. Block at mint-time.
-$BLOCKED_TLDS = ['tk', 'ml', 'ga', 'cf', 'gq', 'xyz', 'top', 'click', 'country', 'stream'];
-
-// Other URL shorteners — chaining through cardify would launder the reputation.
-$BLOCKED_SHORTENERS = [
-    'bit.ly', 'bitly.com', 't.co', 'goo.gl', 'tinyurl.com', 'ow.ly', 'is.gd',
-    'buff.ly', 'cutt.ly', 'rebrand.ly', 'shorte.st', 'adf.ly', 'lnkd.in',
-    't.ly', 'rb.gy', 'short.io', 'yourls.org', 'v.gd', 's.id',
-];
-
-$validateDestination = function (string $url) use ($BLOCKED_TLDS, $BLOCKED_SHORTENERS) {
+// TLDs / shorteners now come from includes/UrlSafety.php (UNSAFE_TLDS,
+// UNSAFE_SHORTENERS) so card_click.php and this admin share one source of
+// truth. (Codex round-2 Finding 1 + Finding 6.)
+$validateDestination = function (string $url) {
     if ($url === '' || strlen($url) > 1024) {
         return 'Destination URL must be 1–1024 characters.';
     }
@@ -77,24 +71,26 @@ $validateDestination = function (string $url) use ($BLOCKED_TLDS, $BLOCKED_SHORT
     if (!in_array($scheme, ['http', 'https'], true)) {
         return 'Destination must start with http:// or https://';
     }
-    $host = strtolower(parse_url($url, PHP_URL_HOST) ?: '');
+    // canonicalHost() lowercases and strips trailing dots so `bit.ly.` and
+    // `cardify.om.` can't bypass the blocklists below.
+    $host = canonicalHostFromUrl($url);
     if ($host === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
         return 'Destination URL is not valid.';
     }
     // Prevent self-redirect loops / infinite chains.
     $selfHosts = ['cardify.om', 'www.cardify.om', $_SERVER['HTTP_HOST'] ?? ''];
     foreach ($selfHosts as $s) {
-        if ($s !== '' && strtolower($s) === $host) {
+        if ($s !== '' && canonicalHost((string) $s) === $host) {
             return 'Destination cannot point back to cardify.om.';
         }
     }
     // Block free/abused TLDs — common in phishing kits.
-    $tld = substr(strrchr($host, '.') ?: '', 1);
-    if ($tld !== '' && in_array($tld, $BLOCKED_TLDS, true)) {
+    if (hasUnsafeTld($host)) {
+        $tld = substr(strrchr($host, '.') ?: '', 1);
         return 'That destination TLD (.' . $tld . ') is not allowed. Please use your own domain.';
     }
     // Block other URL shorteners to prevent reputation laundering via chaining.
-    if (in_array($host, $BLOCKED_SHORTENERS, true)) {
+    if (isUrlShortener($host)) {
         return 'Destination cannot be another URL shortener.';
     }
     return null; // valid
