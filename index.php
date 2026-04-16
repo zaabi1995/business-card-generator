@@ -1114,13 +1114,68 @@ HTML;
   "@type": "SoftwareApplication",
   "name": "Cardify",
   "applicationCategory": "BusinessApplication",
-  "operatingSystem": "Web",
+  "operatingSystem": "Web, iOS, Android",
   "url": "https://cardify.om",
+  "description": "Digital and printed business card SaaS for teams in Oman. Bilingual EN+AR, QR vCard auto-save, bulk team onboarding, local print-shop fulfilment.",
+  "inLanguage": ["en", "ar"],
+  "offers": [
+    {
+      "@type": "Offer",
+      "name": "Starter",
+      "price": "0",
+      "priceCurrency": "OMR",
+      "description": "Free forever — up to 3 employees, digital cards with QR vCard, bilingual EN+AR, basic analytics.",
+      "availability": "https://schema.org/InStock",
+      "url": "https://cardify.om/get-started"
+    },
+    {
+      "@type": "Offer",
+      "name": "Professional",
+      "price": "5",
+      "priceCurrency": "OMR",
+      "priceSpecification": {
+        "@type": "UnitPriceSpecification",
+        "price": "5",
+        "priceCurrency": "OMR",
+        "referenceQuantity": { "@type": "QuantitativeValue", "value": "1", "unitCode": "MON" }
+      },
+      "description": "For teams up to 10 employees — custom domain, team templates, printed card ordering, priority support.",
+      "availability": "https://schema.org/InStock",
+      "url": "https://cardify.om/get-started?plan=professional"
+    },
+    {
+      "@type": "Offer",
+      "name": "Business",
+      "price": "15",
+      "priceCurrency": "OMR",
+      "priceSpecification": {
+        "@type": "UnitPriceSpecification",
+        "price": "15",
+        "priceCurrency": "OMR",
+        "referenceQuantity": { "@type": "QuantitativeValue", "value": "1", "unitCode": "MON" }
+      },
+      "description": "For teams up to 50 employees — department management, SSO, advanced analytics, bulk printing discounts.",
+      "availability": "https://schema.org/InStock",
+      "url": "https://cardify.om/get-started?plan=business"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Cardify Business Card Platform",
+  "image": "https://cardify.om/assets/images/cardify-og.png",
+  "description": "SaaS for creating, managing, and printing branded digital + printed business cards for teams in Oman.",
+  "brand": { "@type": "Brand", "name": "Cardify" },
   "offers": {
-    "@type": "Offer",
-    "price": "0",
+    "@type": "AggregateOffer",
     "priceCurrency": "OMR",
-    "description": "Starter plan free — up to 3 employees. Professional from 5 OMR/mo for 10 employees. Business 15 OMR/mo for 50 employees."
+    "lowPrice": "0",
+    "highPrice": "15",
+    "offerCount": "3",
+    "availability": "https://schema.org/InStock"
   }
 }
 </script>

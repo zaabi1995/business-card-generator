@@ -173,9 +173,33 @@ if ($company) {
     $pageTitle = $isAr
         ? "$displayName — دليل الشركات العمانية | Cardify"
         : "$displayName — Oman Business Index | Cardify";
-    $pageDescription = $isAr
-        ? "معلومات عن {$displayName} — {$secLabel} في {$wilLabel}، عُمان. جزء من دليل Cardify لأكبر 2,414 شركة في السلطنة."
-        : "{$displayName} — {$secLabel} enterprise in {$wilLabel}, Oman. Profile from the Cardify index of the 2,414 largest businesses in the Sultanate.";
+
+    // Per-company unique meta description (Google dedupes near-identical descriptions).
+    // Priority: curated summary (first ~160 chars) → sector "what_they_do" personalised → factual fallback.
+    $curatedSummaryEn = (string) ($company['summary_en'] ?? '');
+    $curatedSummaryAr = (string) ($company['summary_ar'] ?? '');
+    $secBlockMeta = $SECTOR_CONTENT[$company['sector']] ?? null;
+    if ($isAr) {
+        if ($curatedSummaryAr !== '') {
+            $pageDescription = mb_substr(preg_replace('/\s+/', ' ', strip_tags($curatedSummaryAr)), 0, 155);
+        } else {
+            $pageDescription = sprintf('%s — %s في %s، عُمان. كيف يستخدم فريقها Cardify لبطاقات العمل الرقمية والمطبوعة.',
+                $displayName, $secLabel, $wilLabel);
+        }
+    } else {
+        if ($curatedSummaryEn !== '') {
+            $first = mb_substr(preg_replace('/\s+/', ' ', strip_tags($curatedSummaryEn)), 0, 155);
+            $pageDescription = $first;
+        } elseif ($secBlockMeta && !empty($secBlockMeta['what_they_do'])) {
+            // Sector-specific composed description (first sentence of what_they_do, prefixed with company)
+            $wtd = $secBlockMeta['what_they_do'];
+            $firstSent = preg_split('/(?<=[.!?])\s+/', $wtd, 2)[0] ?? $wtd;
+            $pageDescription = mb_substr("{$displayName} ({$secLabel}, {$wilLabel}). {$firstSent}", 0, 155);
+        } else {
+            $pageDescription = sprintf('%s — %s enterprise in %s governorate, Oman. Profile from the Cardify business index.',
+                $displayName, $secLabel, $wilLabel);
+        }
+    }
     $canonicalUrl = $baseUrl . $basePrefix . '/' . $company['slug'];
     $ogType = 'profile';
 
