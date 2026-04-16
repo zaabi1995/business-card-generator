@@ -61,12 +61,59 @@ class CardSections
         );
     }
 
-    public static function loadTestimonials($employeeId)
+    public static function loadTestimonials($employeeId, $status = null)
     {
+        if ($status !== null && in_array($status, ['pending', 'approved', 'rejected'], true)) {
+            return Database::getInstance()->fetchAll(
+                "SELECT * FROM employee_card_testimonials WHERE employee_id = :eid AND status = :st ORDER BY position, created_at",
+                ['eid' => $employeeId, 'st' => $status]
+            );
+        }
         return Database::getInstance()->fetchAll(
             "SELECT * FROM employee_card_testimonials WHERE employee_id = :eid ORDER BY position, created_at",
             ['eid' => $employeeId]
         );
+    }
+
+    public static function loadApprovedTestimonials($employeeId)
+    {
+        return self::loadTestimonials($employeeId, 'approved');
+    }
+
+    public static function loadPendingTestimonials($employeeId)
+    {
+        return self::loadTestimonials($employeeId, 'pending');
+    }
+
+    public static function loadRejectedTestimonials($employeeId)
+    {
+        return self::loadTestimonials($employeeId, 'rejected');
+    }
+
+    public static function setTestimonialStatus($employeeId, $tid, $status)
+    {
+        if (!in_array($status, ['pending', 'approved', 'rejected'], true)) {
+            return false;
+        }
+        $stmt = Database::getInstance()->getConnection()->prepare(
+            "UPDATE employee_card_testimonials SET status = :st WHERE id = :id AND employee_id = :eid"
+        );
+        $stmt->execute(['st' => $status, 'id' => $tid, 'eid' => $employeeId]);
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Rate-limit visitor testimonial submissions — 3 per IP per hour (across all employees).
+     */
+    public static function canSubmitTestimonial($ip)
+    {
+        $row = Database::getInstance()->fetchOne(
+            "SELECT COUNT(*) AS c FROM employee_card_testimonials
+             WHERE submitter_ip = :ip AND submitted_by_visitor = 1
+               AND created_at > (NOW() - INTERVAL 1 HOUR)",
+            ['ip' => $ip]
+        );
+        return (int)($row['c'] ?? 0) < 3;
     }
 
     /**
@@ -141,12 +188,25 @@ class CardSections
             ->execute(['id' => $serviceId, 'eid' => $employeeId]);
     }
 
-    public static function addTestimonial($employeeId, $name, $quote, $photoPath = null)
+    public static function addTestimonial($employeeId, $name, $quote, $photoPath = null, $opts = [])
     {
         $name = trim((string)$name);
         $quote = trim((string)$quote);
         if ($name === '' || $quote === '') return false;
         $id = self::uuid();
+
+        $status = isset($opts['status']) && in_array($opts['status'], ['pending', 'approved', 'rejected'], true)
+            ? $opts['status']
+            : 'approved'; // legacy default = owner-added (already approved)
+        $submittedByVisitor = !empty($opts['submitted_by_visitor']) ? 1 : 0;
+        $rating = isset($opts['rating']) ? (int)$opts['rating'] : null;
+        if ($rating !== null) {
+            $rating = max(0, min(5, $rating));
+        }
+        $visitorEmail = isset($opts['visitor_email']) ? trim((string)$opts['visitor_email']) : null;
+        if ($visitorEmail === '') $visitorEmail = null;
+        $submitterIp = isset($opts['submitter_ip']) ? mb_substr((string)$opts['submitter_ip'], 0, 64) : null;
+
         Database::getInstance()->insert('employee_card_testimonials', [
             'id' => $id,
             'employee_id' => $employeeId,
@@ -154,6 +214,11 @@ class CardSections
             'photo_path' => $photoPath,
             'quote' => mb_substr($quote, 0, 2000),
             'position' => 0,
+            'status' => $status,
+            'submitted_by_visitor' => $submittedByVisitor,
+            'visitor_email' => $visitorEmail,
+            'rating' => $rating,
+            'submitter_ip' => $submitterIp,
         ]);
         return $id;
     }

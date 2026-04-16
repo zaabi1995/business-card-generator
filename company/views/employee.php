@@ -65,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
     'update_sections', 'add_service', 'delete_service',
     'upload_gallery', 'delete_gallery',
     'add_testimonial', 'delete_testimonial',
+    'approve_testimonial', 'reject_testimonial',
 ], true)) {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
         $message = 'Invalid request token. Please refresh and try again.';
@@ -123,7 +124,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                     $employeeId,
                     $_POST['testimonial_name'] ?? '',
                     $_POST['testimonial_quote'] ?? '',
-                    $photoPath
+                    $photoPath,
+                    ['status' => 'approved'] // owner-added → auto-approved
                 );
                 if ($tid && empty($message)) $message = 'Testimonial added.';
                 if (!$tid) {
@@ -133,6 +135,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
             } elseif ($action === 'delete_testimonial') {
                 CardSections::deleteTestimonial($employeeId, $_POST['testimonial_id'] ?? '');
                 $message = 'Testimonial removed.';
+            } elseif ($action === 'approve_testimonial') {
+                $ok = CardSections::setTestimonialStatus($employeeId, $_POST['testimonial_id'] ?? '', 'approved');
+                $message = $ok ? 'Testimonial approved.' : 'Could not approve.';
+                $messageType = $ok ? 'success' : 'error';
+            } elseif ($action === 'reject_testimonial') {
+                $ok = CardSections::setTestimonialStatus($employeeId, $_POST['testimonial_id'] ?? '', 'rejected');
+                $message = $ok ? 'Testimonial rejected.' : 'Could not reject.';
+                $messageType = $ok ? 'success' : 'error';
             }
         } catch (Throwable $e) {
             $message = 'Action failed: ' . $e->getMessage();
@@ -146,7 +156,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
 $sectionMaster = CardSections::loadMaster($employeeId, $company['id']);
 $sectionServices = CardSections::loadServices($employeeId);
 $sectionGallery = CardSections::loadGallery($employeeId);
-$sectionTestimonials = CardSections::loadTestimonials($employeeId);
+$sectionTestimonials = CardSections::loadApprovedTestimonials($employeeId);
+$pendingTestimonials = CardSections::loadPendingTestimonials($employeeId);
+$rejectedTestimonials = CardSections::loadRejectedTestimonials($employeeId);
 
 // Get employee's generated cards
 $generatedCards = [];
@@ -471,7 +483,61 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
 
             <div class="px-6 pb-6 border-t border-gray-100 pt-6">
-                <h3 class="font-semibold text-gray-900 mb-3"><i class="fa-solid fa-quote-right mr-1 text-gray-500"></i> Testimonials</h3>
+                <h3 class="font-semibold text-gray-900 mb-3 flex items-center gap-2"><i class="fa-solid fa-quote-right mr-1 text-gray-500"></i> Testimonials
+                    <?php if (!empty($pendingTestimonials)): ?>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-yellow-100 text-yellow-800 border border-yellow-200"><?php echo count($pendingTestimonials); ?> pending review</span>
+                    <?php endif; ?>
+                </h3>
+
+                <?php if (!empty($pendingTestimonials)): ?>
+                <div class="mb-5 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
+                    <div class="text-xs uppercase tracking-wide text-yellow-800 font-semibold mb-2"><i class="fa-solid fa-clock mr-1"></i> Pending Review</div>
+                    <div class="space-y-2">
+                        <?php foreach ($pendingTestimonials as $t): ?>
+                        <div class="flex items-start gap-3 p-3 bg-white border border-yellow-200 rounded-lg">
+                            <?php if (!empty($t['photo_path'])): ?>
+                            <img src="<?php echo sanitize($t['photo_path']); ?>" alt="" class="w-10 h-10 rounded-full object-cover">
+                            <?php else: ?>
+                            <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500"><i class="fa-solid fa-user"></i></div>
+                            <?php endif; ?>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-gray-800 flex items-center gap-2">
+                                    <?php echo sanitize($t['name']); ?>
+                                    <?php if (!empty($t['submitted_by_visitor'])): ?>
+                                    <span class="text-[10px] uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">Visitor</span>
+                                    <?php endif; ?>
+                                </div>
+                                <?php if (!empty($t['visitor_email'])): ?>
+                                <div class="text-xs text-gray-500"><?php echo sanitize($t['visitor_email']); ?></div>
+                                <?php endif; ?>
+                                <?php if (!empty($t['rating']) && (int)$t['rating'] > 0): ?>
+                                <div class="text-xs text-yellow-600">
+                                    <?php $r=(int)$t['rating']; for($i=1;$i<=5;$i++) echo $i<=$r?'&#9733;':'&#9734;'; ?>
+                                </div>
+                                <?php endif; ?>
+                                <div class="text-xs text-gray-700 italic mt-1">&ldquo;<?php echo sanitize($t['quote']); ?>&rdquo;</div>
+                                <div class="text-[11px] text-gray-400 mt-1">Submitted <?php echo sanitize($t['created_at']); ?></div>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <form method="post">
+                                    <input type="hidden" name="action" value="approve_testimonial">
+                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                                    <input type="hidden" name="testimonial_id" value="<?php echo sanitize($t['id']); ?>">
+                                    <button class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"><i class="fa-solid fa-check mr-1"></i>Approve</button>
+                                </form>
+                                <form method="post">
+                                    <input type="hidden" name="action" value="reject_testimonial">
+                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                                    <input type="hidden" name="testimonial_id" value="<?php echo sanitize($t['id']); ?>">
+                                    <button class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded text-xs"><i class="fa-solid fa-xmark mr-1"></i>Reject</button>
+                                </form>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <?php if (!empty($sectionTestimonials)): ?>
                 <div class="space-y-2 mb-4">
                     <?php foreach ($sectionTestimonials as $t): ?>
@@ -482,7 +548,18 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500"><i class="fa-solid fa-user"></i></div>
                         <?php endif; ?>
                         <div class="flex-1 min-w-0">
-                            <div class="text-sm font-medium text-gray-800"><?php echo sanitize($t['name']); ?></div>
+                            <div class="text-sm font-medium text-gray-800 flex items-center gap-2">
+                                <?php echo sanitize($t['name']); ?>
+                                <span class="text-[10px] uppercase px-1.5 py-0.5 rounded bg-green-100 text-green-700">Approved</span>
+                                <?php if (!empty($t['submitted_by_visitor'])): ?>
+                                <span class="text-[10px] uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">Visitor</span>
+                                <?php endif; ?>
+                            </div>
+                            <?php if (!empty($t['rating']) && (int)$t['rating'] > 0): ?>
+                            <div class="text-xs text-yellow-600">
+                                <?php $r=(int)$t['rating']; for($i=1;$i<=5;$i++) echo $i<=$r?'&#9733;':'&#9734;'; ?>
+                            </div>
+                            <?php endif; ?>
                             <div class="text-xs text-gray-600 italic">&ldquo;<?php echo sanitize($t['quote']); ?>&rdquo;</div>
                         </div>
                         <form method="post" onsubmit="return confirm('Remove this testimonial?');">
@@ -495,6 +572,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <?php endforeach; ?>
                 </div>
                 <?php endif; ?>
+
                 <form method="post" enctype="multipart/form-data" class="grid md:grid-cols-4 gap-2">
                     <input type="hidden" name="action" value="add_testimonial">
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
@@ -503,6 +581,44 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <input type="file" name="testimonial_photo" accept="image/jpeg,image/png,image/webp" class="text-sm">
                     <button class="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm md:col-span-4 md:justify-self-start">Add Testimonial</button>
                 </form>
+
+                <?php if (!empty($rejectedTestimonials)): ?>
+                <details class="mt-5">
+                    <summary class="cursor-pointer text-xs text-gray-500 hover:text-gray-800"><i class="fa-solid fa-eye-slash mr-1"></i>Show <?php echo count($rejectedTestimonials); ?> rejected</summary>
+                    <div class="space-y-2 mt-2">
+                        <?php foreach ($rejectedTestimonials as $t): ?>
+                        <div class="flex items-start gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50 opacity-75">
+                            <?php if (!empty($t['photo_path'])): ?>
+                            <img src="<?php echo sanitize($t['photo_path']); ?>" alt="" class="w-10 h-10 rounded-full object-cover grayscale">
+                            <?php else: ?>
+                            <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-400"><i class="fa-solid fa-user"></i></div>
+                            <?php endif; ?>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                    <?php echo sanitize($t['name']); ?>
+                                    <span class="text-[10px] uppercase px-1.5 py-0.5 rounded bg-red-100 text-red-700">Rejected</span>
+                                </div>
+                                <div class="text-xs text-gray-500 italic">&ldquo;<?php echo sanitize($t['quote']); ?>&rdquo;</div>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <form method="post">
+                                    <input type="hidden" name="action" value="approve_testimonial">
+                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                                    <input type="hidden" name="testimonial_id" value="<?php echo sanitize($t['id']); ?>">
+                                    <button class="px-2 py-1 text-xs text-green-700 hover:underline">Restore</button>
+                                </form>
+                                <form method="post" onsubmit="return confirm('Remove permanently?');">
+                                    <input type="hidden" name="action" value="delete_testimonial">
+                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                                    <input type="hidden" name="testimonial_id" value="<?php echo sanitize($t['id']); ?>">
+                                    <button class="text-red-400 text-xs"><i class="fa-solid fa-trash"></i></button>
+                                </form>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </details>
+                <?php endif; ?>
             </div>
         </div>
     </main>
