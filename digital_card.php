@@ -590,6 +590,9 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .service-body .service-desc  { font-size: 12px; <?php echo $isDarkPage ? 'color:#888;' : 'color:#666;'; ?> margin-top: 2px; line-height: 1.45; }
         .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .gallery-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; cursor: zoom-in; }
+        .video-frame { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; background: #000; }
+        .video-frame iframe, .video-frame video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+        .video-link-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px; background: <?php echo htmlspecialchars($accentColor); ?>; color: #fff; font-size: 14px; font-weight: 600; text-decoration: none; }
         .offers-list { display: flex; flex-direction: column; gap: 10px; }
         .offer-card { padding: 12px; border-radius: 12px; <?php echo $isDarkPage ? 'background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);' : 'background: #fafafa; border: 1px solid #ececec;'; ?> }
         .offer-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
@@ -892,6 +895,34 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                             </div>
                         <?php endforeach; ?>
                     </div>
+                </div>
+            <?php elseif ($__sec === 'video' && !empty($sectionMaster['video_enabled'])
+                && ($__videoSpec = CardSections::parseVideoEmbed($sectionMaster['video_url'] ?? ''))): ?>
+                <div class="card-section">
+                    <h3><?php echo !empty($sectionMaster['video_title'])
+                        ? htmlspecialchars($sectionMaster['video_title'])
+                        : 'Video'; ?></h3>
+                    <?php if ($__videoSpec['type'] === 'youtube' || $__videoSpec['type'] === 'vimeo'): ?>
+                        <div class="video-frame">
+                            <iframe src="<?php echo htmlspecialchars($__videoSpec['embed']); ?>"
+                                    title="<?php echo htmlspecialchars($sectionMaster['video_title'] ?: 'Embedded video'); ?>"
+                                    loading="lazy"
+                                    referrerpolicy="strict-origin-when-cross-origin"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowfullscreen></iframe>
+                        </div>
+                    <?php elseif ($__videoSpec['type'] === 'file'): ?>
+                        <div class="video-frame">
+                            <video controls preload="metadata" playsinline>
+                                <source src="<?php echo htmlspecialchars($__videoSpec['embed']); ?>">
+                                Your browser does not support embedded video.
+                            </video>
+                        </div>
+                    <?php else: ?>
+                        <a href="<?php echo htmlspecialchars($__videoSpec['embed']); ?>" target="_blank" rel="noopener" class="video-link-btn">
+                            <i class="fa-solid fa-play"></i> Watch video
+                        </a>
+                    <?php endif; ?>
                 </div>
             <?php elseif ($__sec === 'location' && !empty($sectionMaster['location_enabled']) && !empty(trim((string)($sectionMaster['location_address'] ?? '')))): ?>
                 <?php
