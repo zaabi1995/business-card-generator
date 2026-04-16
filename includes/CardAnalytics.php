@@ -394,10 +394,13 @@ class CardAnalytics
         }
 
         // Active cards = status='active' AND at least 1 card_event in last 30d.
+        // NOTE: employees uses utf8mb4_unicode_ci, card_events uses
+        // utf8mb4_general_ci on some legacy installs — force the collation on
+        // the join predicate so MySQL doesn't throw "Illegal mix of collations".
         $activeRow = self::$db->fetchOne(
             "SELECT COUNT(DISTINCT e.id) AS c
                FROM employees e
-               JOIN card_events ev ON ev.employee_id = e.id
+               JOIN card_events ev ON ev.employee_id COLLATE utf8mb4_unicode_ci = e.id
               WHERE e.status = 'active'
                 AND ev.created_at >= :start {$where}",
             $params
@@ -453,7 +456,7 @@ class CardAnalytics
                   FROM (
                       SELECT DISTINCT e.id
                         FROM employees e
-                        JOIN card_events ev ON ev.employee_id = e.id
+                        JOIN card_events ev ON ev.employee_id COLLATE utf8mb4_unicode_ci = e.id
                        WHERE e.status = 'active'
                          AND ev.created_at >= :start {$where}
                   ) AS active_cards
