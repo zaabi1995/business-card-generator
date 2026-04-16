@@ -111,14 +111,23 @@ class WhatsApp {
         }
 
         $ch = curl_init($apiUrl);
-        curl_setopt_array($ch, [
+        $curlOpts = [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => json_encode($payload),
             CURLOPT_HTTPHEADER     => $headers,
             CURLOPT_TIMEOUT        => 20,
-            CURLOPT_SSL_VERIFYPEER => false,
-        ]);
+            // Security: verify TLS certificates. Codex round-3 finding #2.
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+        ];
+        // Prefer system CA bundle on aaPanel Ubuntu hosts. Falls back to
+        // PHP's default when the file isn't present.
+        $caBundle = '/etc/ssl/certs/ca-certificates.crt';
+        if (is_readable($caBundle)) {
+            $curlOpts[CURLOPT_CAINFO] = $caBundle;
+        }
+        curl_setopt_array($ch, $curlOpts);
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);

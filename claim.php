@@ -91,11 +91,23 @@ $formSuccess = false;
 $submittedPhone = '';
 $submittedEmail = '';
 
+// Codex round-3 finding #3: E2E test runs hit this endpoint from CI. Tag those
+// submissions so we can (a) flag them as test leads in the DB, (b) short-circuit
+// any WA side-effect if a future revision ever re-introduces one.
+$isE2ETest = !empty($_SERVER['HTTP_X_E2E_TEST']);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $ip = $_SERVER['HTTP_CF_CONNECTING_IP']
-        ?? $_SERVER['HTTP_X_FORWARDED_FOR']
-        ?? $_SERVER['REMOTE_ADDR']
-        ?? '0.0.0.0';
+    // Real client IP — CF takes precedence but we must NOT trust X-Forwarded-For
+    // from arbitrary clients because it's the key for our rate limiter and
+    // forging it lets an attacker bypass the per-IP cap. Only trust XFF when
+    // we're behind a known proxy (CF or local reverse proxy on 127.0.0.1).
+    $remote = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $ip = $remote;
+    if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+        $ip = $_SERVER['HTTP_CF_CONNECTING_IP'];
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR']) && in_array($remote, ['127.0.0.1', '::1'], true)) {
+        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+    }
     if (strpos($ip, ',') !== false) { $ip = trim(explode(',', $ip)[0]); }
 
     // Honeypot anti-spam — a bot will fill this; a human never sees it.
@@ -141,11 +153,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Insert lead row.
                 try {
                     $db = Database::getInstance();
+                    // Codex round-3 finding #1: NEVER send WhatsApp directly
+                    // from /claim — that would let any visitor use our Dardasha
+                    // line as a spam cannon (rate limit bypassable via XFF).
+                    //
+                    // Capture the lead into cardify_signup_leads and let Ali
+                    // triage from /admin/growth.php, which dispatches WA via the
+                    // hardened bulk-claim admin flow.
                     $db->insert('cardify_signup_leads', [
                         'id'              => generateUUID(),
                         'phone'           => $phone !== '' ? $phone : null,
                         'email'           => $email !== '' ? $email : null,
-                        'source'          => 'viral_footer',
+                        'source'          => $isE2ETest ? 'e2e_test' : 'viral_footer',
                         'utm_source'      => $utmSource !== ''   ? $utmSource   : null,
                         'utm_medium'      => $utmMedium !== ''   ? $utmMedium   : null,
                         'utm_campaign'    => $utmCampaign !== '' ? $utmCampaign : null,
@@ -154,21 +173,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'locale'          => $locale,
                         'ip_address'      => substr($ip, 0, 64),
                         'user_agent'      => substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 512),
-                        'status'          => 'new',
+                        'status'          => $isE2ETest ? 'test' : 'new',
                     ]);
-
-                    // Best-effort WhatsApp ping (non-fatal — fall back to silent).
-                    if ($phone !== '' && class_exists('WhatsApp')) {
-                        try {
-                            $signupUrl = 'https://cardify.om/signup?utm_source=viral_footer_claim';
-                            $msg = $isRtl
-                                ? "مرحباً! ابدأ ببطاقتك الرقمية مع Cardify خلال 60 ثانية:\n{$signupUrl}"
-                                : "Welcome to Cardify! Create your digital business card in 60 seconds:\n{$signupUrl}";
-                            WhatsApp::sendMessage($phone, $msg);
-                        } catch (Throwable $e) {
-                            error_log('claim.php WA send: ' . $e->getMessage());
-                        }
-                    }
 
                     $formSuccess = true;
                 } catch (Throwable $e) {
@@ -199,7 +205,7 @@ $t = $isRtl
         'email_ph'     => 'you@example.com',
         'cta'          => 'أرسل لي الرابط',
         'success_h'    => 'شكراً!',
-        'success_b'    => 'سنرسل لك رابط الإنشاء عبر واتساب.',
+        'success_b'    => 'سنتواصل معك عبر واتساب خلال 24 ساعة.',
         'see_example'  => 'شاهد مثال',
         'made_with'    => 'مصنوع بـ Cardify · أنشئ بطاقتك مجاناً',
     ]
@@ -214,7 +220,7 @@ $t = $isRtl
         'email_ph'     => 'you@example.com',
         'cta'          => 'Send me the link',
         'success_h'    => 'Thanks!',
-        'success_b'    => 'We\'ll WhatsApp you a link to create your card.',
+        'success_b'    => 'We\'ll WhatsApp you within 24 hours with a link to create your card.',
         'see_example'  => 'See an example card',
         'made_with'    => 'Made with Cardify · Create yours free',
     ];

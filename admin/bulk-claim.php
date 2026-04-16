@@ -268,22 +268,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // --- 2. Lead row with magic token ---
                     // 32 bytes → 64 hex chars (spec)
                     $token = bin2hex(random_bytes(32));
+                    // Codex r3 #5: also store a SHA-256 so /claim-lead.php can
+                    // look up by hash; the plaintext column is the legacy path
+                    // we'll drop once all outstanding links expire.
+                    $tokenHash = hash('sha256', $token);
                     $cardUrl = 'https://cardify.om/' . $companySlug . '/card/' . $employeeId;
 
                     try {
                         $db->insert('bulk_claim_leads', [
-                            'id'           => generateUUID(),
-                            'batch_id'     => $batchId,
-                            'name'         => $r['name'],
-                            'phone'        => $phone,
-                            'company_name' => $r['company_name'] ?: null,
-                            'title'        => $r['title'] ?: null,
-                            'email'        => $r['email'] ?: null,
-                            'magic_token'  => $token,
-                            'employee_id'  => $employeeId,
-                            'card_url'     => $cardUrl,
-                            'wa_status'    => 'pending',
-                            'expires_at'   => $nowExpiry,
+                            'id'              => generateUUID(),
+                            'batch_id'        => $batchId,
+                            'name'            => $r['name'],
+                            'phone'           => $phone,
+                            'company_name'    => $r['company_name'] ?: null,
+                            'title'           => $r['title'] ?: null,
+                            'email'           => $r['email'] ?: null,
+                            'magic_token'     => $token,
+                            'magic_token_hash' => $tokenHash,
+                            'employee_id'     => $employeeId,
+                            'card_url'        => $cardUrl,
+                            'wa_status'       => 'pending',
+                            'expires_at'      => $nowExpiry,
                         ]);
                     } catch (Throwable $le) {
                         error_log('[bulk-claim] lead insert failed: ' . $le->getMessage());

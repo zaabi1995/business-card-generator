@@ -431,23 +431,34 @@ class CardAnalytics
             return ['total_active' => 0, 'sections' => $out];
         }
 
-        // Select only columns that actually exist.
+        // Codex round-3 finding #6 — the previous query joined card_events
+        // then SUM()'d section_enabled per joined row, so every card counted
+        // once per event (massive over-count). Do it in two steps instead:
+        //
+        //   1) resolve the DISTINCT set of active employee_ids (from events),
+        //   2) count enabled flags in employee_card_sections for just those.
+        //
+        // One row per card → one vote per section. Clean percentages.
         $selects = [];
         foreach ($sections as $s) {
             $col = $s . '_enabled';
             if (isset($have[$col])) {
-                $selects[] = "SUM(s.`{$col}` = 1) AS `{$s}`";
+                $selects[] = "SUM(CASE WHEN s.`{$col}` = 1 THEN 1 ELSE 0 END) AS `{$s}`";
             } else {
                 $selects[] = "0 AS `{$s}`";
             }
         }
 
         $sql = "SELECT " . implode(', ', $selects) . "
-                  FROM employees e
-                  JOIN card_events ev ON ev.employee_id = e.id
-                  LEFT JOIN employee_card_sections s ON s.employee_id = e.id
-                 WHERE e.status = 'active'
-                   AND ev.created_at >= :start {$where}";
+                  FROM (
+                      SELECT DISTINCT e.id
+                        FROM employees e
+                        JOIN card_events ev ON ev.employee_id = e.id
+                       WHERE e.status = 'active'
+                         AND ev.created_at >= :start {$where}
+                  ) AS active_cards
+                  LEFT JOIN employee_card_sections s
+                         ON s.employee_id = active_cards.id";
 
         $row = self::$db->fetchOne($sql, $params) ?: [];
 
