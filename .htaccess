@@ -81,6 +81,10 @@
     RewriteRule ^tools/whatsapp-qr-generator/?$ tools/whatsapp-qr-generator.php [L,QSA]
     RewriteRule ^tools/nfc-business-card-guide/?$ tools/nfc-business-card-guide.php [L,QSA]
 
+    # Internal design system showcase
+    RewriteRule ^design-showcase/?$ design-showcase.php [L,QSA]
+    RewriteRule ^design/?$ design-showcase.php [L,QSA]
+
     # Oman Business Index — directory of Omani enterprises (flagship + curated top companies)
     RewriteRule ^oman-business-index/?$ oman-business-index.php [L,QSA]
     RewriteRule ^companies/?$ companies.php [L,QSA]
