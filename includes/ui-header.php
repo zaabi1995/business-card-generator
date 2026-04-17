@@ -246,9 +246,9 @@ if (!function_exists('renderNavigation')) {
         $defaultLinks = [
             ['href' => $basePath . '#features', 'label' => 'Features'],
             ['href' => $basePath . '#pricing', 'label' => 'Pricing'],
+            ['href' => $basePath . 'tools', 'label' => 'Free Tools'],
+            ['href' => $basePath . 'oman-business-index', 'label' => 'Oman Business Index'],
             ['href' => $basePath . 'blog', 'label' => 'Blog'],
-            ['href' => $basePath . 'about', 'label' => 'About'],
-            ['href' => $basePath . 'contact', 'label' => 'Contact'],
         ];
         
         $navLinks = $customLinks ?? $defaultLinks;

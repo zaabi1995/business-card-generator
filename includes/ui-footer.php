@@ -7,8 +7,8 @@ if ($currentPage !== 'index'):
 ?>
     <footer class="bg-gray-900 text-white mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-                <div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
+                <div class="lg:col-span-1">
                     <div class="flex items-center gap-3 mb-4">
                         <img src="<?= $bp ?>assets/images/logo-light.svg" alt="<?= $bn ?>" class="h-8 w-auto" onerror="this.style.display='none'">
                     </div>
@@ -24,21 +24,35 @@ if ($currentPage !== 'index'):
                     </ul>
                 </div>
                 <div>
+                    <h4 class="font-semibold mb-4">Free Tools</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="<?= $bp ?>tools" class="text-gray-400 hover:text-white transition-colors">All Tools</a></li>
+                        <li><a href="<?= $bp ?>tools/vcard-qr-generator" class="text-gray-400 hover:text-white transition-colors">vCard QR Generator</a></li>
+                        <li><a href="<?= $bp ?>tools/email-signature-generator" class="text-gray-400 hover:text-white transition-colors">Email Signature</a></li>
+                        <li><a href="<?= $bp ?>tools/whatsapp-qr-generator" class="text-gray-400 hover:text-white transition-colors">WhatsApp QR</a></li>
+                        <li><a href="<?= $bp ?>tools/nfc-business-card-guide" class="text-gray-400 hover:text-white transition-colors">NFC Card Guide</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Directory &amp; Solutions</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="<?= $bp ?>oman-business-index" class="text-gray-400 hover:text-white transition-colors">Oman Business Index</a></li>
+                        <li><a href="<?= $bp ?>companies" class="text-gray-400 hover:text-white transition-colors">Browse 2,414 Companies</a></li>
+                        <li><a href="<?= $bp ?>companies/sector/oil-gas" class="text-gray-400 hover:text-white transition-colors">Oil &amp; Gas</a></li>
+                        <li><a href="<?= $bp ?>companies/sector/construction" class="text-gray-400 hover:text-white transition-colors">Construction</a></li>
+                        <li><a href="<?= $bp ?>companies/wilayat/muscat" class="text-gray-400 hover:text-white transition-colors">Muscat Companies</a></li>
+                        <li><a href="<?= $bp ?>solutions" class="text-gray-400 hover:text-white transition-colors">All Solutions</a></li>
+                    </ul>
+                </div>
+                <div>
                     <h4 class="font-semibold mb-4">Company</h4>
                     <ul class="space-y-2 text-sm">
                         <li><a href="<?= $bp ?>about" class="text-gray-400 hover:text-white transition-colors">About</a></li>
                         <li><a href="<?= $bp ?>contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
                         <li><a href="<?= $bp ?>careers" class="text-gray-400 hover:text-white transition-colors">Careers</a></li>
                         <li><a href="<?= $bp ?>print-shops" class="text-gray-400 hover:text-white transition-colors">Print Shops</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Legal</h4>
-                    <ul class="space-y-2 text-sm">
                         <li><a href="<?= $bp ?>privacy" class="text-gray-400 hover:text-white transition-colors">Privacy</a></li>
                         <li><a href="<?= $bp ?>terms" class="text-gray-400 hover:text-white transition-colors">Terms</a></li>
-                        <li><a href="<?= $bp ?>cookies" class="text-gray-400 hover:text-white transition-colors">Cookies</a></li>
-                        <li><a href="<?= $bp ?>security" class="text-gray-400 hover:text-white transition-colors">Security</a></li>
                     </ul>
                 </div>
             </div>
