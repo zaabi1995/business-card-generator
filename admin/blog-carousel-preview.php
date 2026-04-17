@@ -14,7 +14,7 @@ $id = $_GET['id'] ?? '';
 if (!$id) { http_response_code(400); die('missing id'); }
 
 $db = Database::getInstance();
-$post = $db->fetchOne("SELECT id, title, slug, excerpt, body FROM blog_posts WHERE id = :id", ['id' => $id]);
+$post = $db->fetchOne("SELECT id, title, slug, excerpt, content AS body FROM blog_posts WHERE id = :id", ['id' => $id]);
 if (!$post) { http_response_code(404); die('not found'); }
 
 try {
