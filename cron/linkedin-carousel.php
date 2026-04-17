@@ -17,11 +17,9 @@ function carouselLog(string $m) {
 }
 
 function fallback(string $reason) {
-    carouselLog("Invoking legacy poster as fallback — reason: $reason");
-    $legacy = __DIR__ . '/linkedin-autoposter.php';
-    if (file_exists($legacy)) {
-        passthru('php ' . escapeshellarg($legacy));
-    }
+    // Legacy text+link poster is DISABLED as a fallback — we only want carousel posts.
+    // If the carousel fails, we skip today and retry tomorrow (post remains linkedin_posted IS NULL).
+    carouselLog("Fallback skipped (legacy text-link poster disabled). Reason: $reason");
 }
 
 try {
