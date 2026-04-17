@@ -33,11 +33,11 @@ class CarouselSlideGenerator {
     }
 
     private static function systemPrompt(): string {
-        return "You are a senior LinkedIn copywriter for Cardify, a bilingual (EN/AR) business card platform serving Oman.
+        return "You are a senior LinkedIn copywriter + art director for Cardify, a bilingual (EN/AR) business card platform serving Oman.
 
-Your job: turn a blog post into a 7-slide carousel payload.
+Your job: turn a blog post into a 7-slide carousel payload with copy AND cinematic photo direction for every slide.
 
-STYLE RULES:
+COPY RULES:
 - Hook (slide 1) must be contrarian, curiosity-inducing, or stat-led. Never generic. Under 12 words EN.
 - AR must be natural Gulf Arabic (Omani phrasing preferred) — never machine-literal. Short, punchy.
 - Tension (slide 2) sets up the problem the blog solves. One line.
@@ -45,7 +45,18 @@ STYLE RULES:
 - Takeaway: the 'aha'. Pithy. Quotable. Under 15 words EN.
 - CTA: action-oriented, soft pitch for cardify.om. Under 10 words EN.
 
-Return ONLY the JSON object, no prose, no markdown fences.";
+IMAGE PROMPT RULES (7 slides × 1 prompt each):
+- Each prompt produces one cinematic editorial photograph, 1080x1350 vertical, for a LinkedIn carousel.
+- Consistent visual language across all 7 slides: same color grade (warm amber + deep shadow), shallow depth of field, natural light or golden hour, moody but premium.
+- Subjects must be Oman-appropriate (Arab/Gulf people in modest business attire or dishdasha/abaya; Muscat/Sohar/Salalah settings; local architecture; no stereotypes or tourist imagery).
+- DO NOT include any text, letters, logos, watermarks, or UI in images — text is overlaid later.
+- Leave negative space in the bottom third of every image for text overlay. Keep subjects upper-half or side.
+- Each slide's image should visually echo the slide's content (hook, tension, specific point, takeaway, CTA).
+
+Return ONLY the JSON object, no prose, no markdown fences.
+
+Output schema additions:
+- image_prompts: array of 7 strings — prompt for slides 1..7 in order. Each prompt 40-80 words.";
     }
 
     private static function userPrompt(array $post): string {
@@ -68,6 +79,7 @@ Return ONLY the JSON object, no prose, no markdown fences.";
                 'takeaway_ar' => 'string',
                 'cta_en' => 'string',
                 'cta_ar' => 'string',
+                'image_prompts' => ['slide1 prompt', 'slide2 prompt', 'slide3 prompt', 'slide4 prompt', 'slide5 prompt', 'slide6 prompt', 'slide7 prompt'],
             ],
         ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     }
@@ -122,13 +134,17 @@ Return ONLY the JSON object, no prose, no markdown fences.";
         $data = json_decode($raw, true);
         if (!is_array($data)) return null;
 
-        $required = ['hook_en', 'hook_ar', 'tension', 'points', 'takeaway_en', 'takeaway_ar', 'cta_en', 'cta_ar'];
+        $required = ['hook_en', 'hook_ar', 'tension', 'points', 'takeaway_en', 'takeaway_ar', 'cta_en', 'cta_ar', 'image_prompts'];
         foreach ($required as $key) {
             if (!isset($data[$key])) return null;
         }
         if (!is_array($data['points']) || count($data['points']) !== 3) return null;
         foreach ($data['points'] as $p) {
             if (!isset($p['number'], $p['text'])) return null;
+        }
+        if (!is_array($data['image_prompts']) || count($data['image_prompts']) !== 7) return null;
+        foreach ($data['image_prompts'] as $p) {
+            if (!is_string($p) || strlen($p) < 10) return null;
         }
         return $data;
     }
