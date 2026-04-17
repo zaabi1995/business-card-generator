@@ -192,6 +192,17 @@ adminHeader('Blog Management', 'content');
                     </a>
                     <?php endif; ?>
                 </div>
+                <?php if ($editPost && !empty($editPost['id'])): ?>
+                <div class="mt-3">
+                    <a href="/admin/blog-carousel-preview.php?id=<?php echo htmlspecialchars($editPost['id']); ?>"
+                       target="_blank"
+                       class="inline-flex items-center gap-2 px-3 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors">
+                        <i class="fa-brands fa-linkedin"></i>
+                        Preview LinkedIn carousel
+                    </a>
+                    <span class="text-xs text-gray-500 ml-2">Generates the PDF Cardify will post at 9 AM</span>
+                </div>
+                <?php endif; ?>
             </form>
         </div>
     </div>
