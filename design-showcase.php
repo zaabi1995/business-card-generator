@@ -191,11 +191,38 @@ require_once INCLUDES_DIR . '/ui-header.php';
        tab: 'overview',
        /* Single source of truth — at most one overlay is visible at a time. */
        overlay: null,
+       _lastTrigger: null,
        get modalOpen()  { return this.overlay === 'modal'; },
        set modalOpen(v) { this.overlay = v ? 'modal' : (this.overlay === 'modal' ? null : this.overlay); },
        get drawerOpen()  { return this.overlay === 'drawer'; },
        set drawerOpen(v) { this.overlay = v ? 'drawer' : (this.overlay === 'drawer' ? null : this.overlay); },
-       closeOverlays() { this.overlay = null; },
+       openOverlay(name, ev) {
+         this._lastTrigger = (ev && ev.currentTarget) || document.activeElement;
+         this.overlay = name;
+       },
+       closeOverlays() {
+         this.overlay = null;
+         const t = this._lastTrigger;
+         this._lastTrigger = null;
+         this.$nextTick(() => { try { t && t.focus && t.focus(); } catch(_) {} });
+       },
+       focusFirst(container) {
+         if (!container) return;
+         this.$nextTick(() => {
+           const sel = 'a[href],button:not([disabled]),textarea,input:not([type=hidden]):not([disabled]),select,[tabindex]:not([tabindex=\"-1\"])';
+           const el = container.querySelector(sel);
+           if (el) { try { el.focus(); } catch(_) {} }
+         });
+       },
+       trapTab(ev, container) {
+         if (ev.key !== 'Tab' || !container) return;
+         const sel = 'a[href],button:not([disabled]),textarea,input:not([type=hidden]):not([disabled]),select,[tabindex]:not([tabindex=\"-1\"])';
+         const nodes = Array.from(container.querySelectorAll(sel)).filter(n => n.offsetParent !== null);
+         if (!nodes.length) return;
+         const first = nodes[0], last = nodes[nodes.length - 1];
+         if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
+         else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+       },
        toast: null,
        rtl: false,
        copy(v) {
@@ -959,8 +986,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <p class="mt-1 text-sm text-gray-500 max-w-prose">Modals for destructive confirmations, drawers for filters, tooltips for icon buttons.</p>
           </header>
           <div class="flex flex-wrap gap-3">
-            <button type="button" @click="overlay = 'modal'" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition text-sm">Open modal</button>
-            <button type="button" @click="overlay = 'drawer'" class="inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-lg border border-gray-300 transition text-sm">Open drawer</button>
+            <button type="button" @click="openOverlay('modal', $event)" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition text-sm">Open modal</button>
+            <button type="button" @click="openOverlay('drawer', $event)" class="inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-lg border border-gray-300 transition text-sm">Open drawer</button>
             <span class="relative inline-flex group">
               <button type="button" aria-label="Info" class="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-gray-300 bg-white text-gray-700 hover:border-blue-500 hover:text-blue-600 transition"><i class="fa-solid fa-circle-info"></i></button>
               <span class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 whitespace-nowrap rounded-md bg-gray-900 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 transition pointer-events-none">Tooltip on hover</span>
@@ -1111,8 +1138,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
   <!-- MODAL -->
   <div x-cloak x-show="modalOpen" x-transition.opacity
        role="dialog" aria-modal="true" aria-labelledby="showcase-modal-title"
+       x-effect="if (modalOpen) focusFirst($refs.modalPanel)"
+       @keydown.tab="trapTab($event, $refs.modalPanel)"
        class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/50" @click="closeOverlays()">
-    <div @click.stop class="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
+    <div x-ref="modalPanel" tabindex="-1" @click.stop class="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
       <h3 id="showcase-modal-title" class="text-xl font-bold text-gray-900">Delete this card?</h3>
       <p class="mt-2 text-sm text-gray-500">Ahmed Al-Balushi's digital card at <code class="font-mono text-xs">/acme/ahmed</code> will stop working immediately. Any printed QR codes pointing to this URL will show a "card not found" page.</p>
       <div class="mt-5 flex justify-end gap-2">
@@ -1125,8 +1154,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
   <!-- DRAWER -->
   <div x-cloak x-show="drawerOpen" x-transition.opacity
        role="dialog" aria-modal="true" aria-labelledby="showcase-drawer-title"
+       x-effect="if (drawerOpen) focusFirst($refs.drawerPanel)"
+       @keydown.tab="trapTab($event, $refs.drawerPanel)"
        class="fixed inset-0 z-[60] flex justify-end bg-gray-900/50" @click="closeOverlays()">
-    <div @click.stop class="bg-white w-full max-w-sm h-full border-l border-gray-200 p-6 shadow-2xl overflow-y-auto">
+    <div x-ref="drawerPanel" tabindex="-1" @click.stop class="bg-white w-full max-w-sm h-full border-l border-gray-200 p-6 shadow-2xl overflow-y-auto">
       <div class="flex items-center justify-between">
         <h3 id="showcase-drawer-title" class="text-lg font-bold text-gray-900">Filter cards</h3>
         <button type="button" @click="closeOverlays()" aria-label="Close" class="text-gray-500 hover:text-gray-900 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
