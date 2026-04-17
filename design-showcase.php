@@ -185,67 +185,85 @@ require_once INCLUDES_DIR . '/ui-header.php';
   }
 </style>
 
+<script>
+  // Registered before Alpine boots so <div x-data="showcase()"> can resolve it.
+  // Defined as a plain function (not Alpine.data) to avoid ordering issues
+  // with the deferred Alpine CDN script.
+  window.showcase = function () {
+    var FOCUSABLE = [
+      'a[href]',
+      'button:not([disabled])',
+      'textarea',
+      'input:not([type=hidden]):not([disabled])',
+      'select',
+      '[tabindex]:not([tabindex="-1"])'
+    ].join(',');
+    return {
+      copied: '',
+      tab: 'overview',
+      // Single source of truth — at most one overlay is visible at a time.
+      overlay: null,
+      _lastTrigger: null,
+      get modalOpen()  { return this.overlay === 'modal'; },
+      set modalOpen(v) { this.overlay = v ? 'modal' : (this.overlay === 'modal' ? null : this.overlay); },
+      get drawerOpen()  { return this.overlay === 'drawer'; },
+      set drawerOpen(v) { this.overlay = v ? 'drawer' : (this.overlay === 'drawer' ? null : this.overlay); },
+      openOverlay: function (name, ev) {
+        this._lastTrigger = (ev && ev.currentTarget) || document.activeElement;
+        this.overlay = name;
+      },
+      closeOverlays: function () {
+        this.overlay = null;
+        var t = this._lastTrigger;
+        this._lastTrigger = null;
+        this.$nextTick(function () { try { t && t.focus && t.focus(); } catch (_) {} });
+      },
+      focusFirst: function (container) {
+        if (!container) return;
+        this.$nextTick(function () {
+          var el = container.querySelector(FOCUSABLE);
+          if (el) { try { el.focus(); } catch (_) {} }
+        });
+      },
+      trapTab: function (ev, container) {
+        if (ev.key !== 'Tab' || !container) return;
+        var nodes = Array.prototype.slice.call(container.querySelectorAll(FOCUSABLE))
+          .filter(function (n) { return n.offsetParent !== null; });
+        if (!nodes.length) return;
+        var first = nodes[0], last = nodes[nodes.length - 1];
+        if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
+        else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+      },
+      toast: null,
+      rtl: false,
+      copy: function (v) {
+        if (!v) return;
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(v);
+          } else {
+            var ta = document.createElement('textarea');
+            ta.value = v; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); } catch (_) {}
+            document.body.removeChild(ta);
+          }
+          this.copied = v;
+          var self = this;
+          setTimeout(function () { self.copied = ''; }, 1200);
+        } catch (e) {}
+      },
+      showToast: function (kind) {
+        this.toast = kind;
+        var self = this;
+        setTimeout(function () { self.toast = null; }, 2400);
+      }
+    };
+  };
+</script>
+
 <div class="pt-24 pb-20 bg-gradient-to-b from-gray-50 to-white min-h-screen"
-     x-data="{
-       copied: '',
-       tab: 'overview',
-       /* Single source of truth — at most one overlay is visible at a time. */
-       overlay: null,
-       _lastTrigger: null,
-       get modalOpen()  { return this.overlay === 'modal'; },
-       set modalOpen(v) { this.overlay = v ? 'modal' : (this.overlay === 'modal' ? null : this.overlay); },
-       get drawerOpen()  { return this.overlay === 'drawer'; },
-       set drawerOpen(v) { this.overlay = v ? 'drawer' : (this.overlay === 'drawer' ? null : this.overlay); },
-       openOverlay(name, ev) {
-         this._lastTrigger = (ev && ev.currentTarget) || document.activeElement;
-         this.overlay = name;
-       },
-       closeOverlays() {
-         this.overlay = null;
-         const t = this._lastTrigger;
-         this._lastTrigger = null;
-         this.$nextTick(() => { try { t && t.focus && t.focus(); } catch(_) {} });
-       },
-       focusFirst(container) {
-         if (!container) return;
-         this.$nextTick(() => {
-           const sel = 'a[href],button:not([disabled]),textarea,input:not([type=hidden]):not([disabled]),select,[tabindex]:not([tabindex=\"-1\"])';
-           const el = container.querySelector(sel);
-           if (el) { try { el.focus(); } catch(_) {} }
-         });
-       },
-       trapTab(ev, container) {
-         if (ev.key !== 'Tab' || !container) return;
-         const sel = 'a[href],button:not([disabled]),textarea,input:not([type=hidden]):not([disabled]),select,[tabindex]:not([tabindex=\"-1\"])';
-         const nodes = Array.from(container.querySelectorAll(sel)).filter(n => n.offsetParent !== null);
-         if (!nodes.length) return;
-         const first = nodes[0], last = nodes[nodes.length - 1];
-         if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
-         else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
-       },
-       toast: null,
-       rtl: false,
-       copy(v) {
-         if (!v) return;
-         try {
-           if (navigator.clipboard && navigator.clipboard.writeText) {
-             navigator.clipboard.writeText(v);
-           } else {
-             const ta = document.createElement('textarea');
-             ta.value = v; ta.style.position = 'fixed'; ta.style.opacity = '0';
-             document.body.appendChild(ta); ta.select();
-             try { document.execCommand('copy'); } catch(_) {}
-             document.body.removeChild(ta);
-           }
-           this.copied = v;
-           setTimeout(() => this.copied = '', 1200);
-         } catch(e) {}
-       },
-       showToast(kind) {
-         this.toast = kind;
-         setTimeout(() => this.toast = null, 2400);
-       }
-     }"
+     x-data="showcase()"
      x-effect="document.body.classList.toggle('overflow-hidden', overlay !== null)"
      @keydown.escape.window="closeOverlays()">
 
