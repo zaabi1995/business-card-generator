@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <pattern id="m" patternUnits="userSpaceOnUse" width="60" height="60">
+      <g stroke="#fafaf7" stroke-width="0.8" fill="none">
+        <polygon points="30,4 52,17 52,43 30,56 8,43 8,17"/>
+        <polygon points="30,14 42,21 42,35 30,42 18,35 18,21"/>
+        <line x1="30" y1="4" x2="30" y2="14"/>
+        <line x1="30" y1="42" x2="30" y2="56"/>
+        <line x1="8" y1="17" x2="18" y2="21"/>
+        <line x1="52" y1="17" x2="42" y2="21"/>
+        <line x1="8" y1="43" x2="18" y2="35"/>
+        <line x1="52" y1="43" x2="42" y2="35"/>
+      </g>
+    </pattern>
+  </defs>
+  <rect width="120" height="120" fill="url(#m)"/>
+</svg>
