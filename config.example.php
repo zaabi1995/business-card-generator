@@ -151,6 +151,10 @@ if (!defined('STRIPE_PUBLIC_KEY')) define('STRIPE_PUBLIC_KEY', ''); // Stripe pu
 if (!defined('LINKEDIN_CLIENT_ID')) define('LINKEDIN_CLIENT_ID', '');        // LinkedIn app client ID
 if (!defined('LINKEDIN_CLIENT_SECRET')) define('LINKEDIN_CLIENT_SECRET', ''); // LinkedIn app client secret
 
+// Anthropic Claude API (used by LinkedIn carousel slide generator)
+// Accepts either a console API key (sk-ant-api03-...) or a Claude Code OAuth token (sk-ant-oat01-...)
+if (!defined('ANTHROPIC_API_KEY')) define('ANTHROPIC_API_KEY', '');
+
 // Print Webhook Configuration
 // Global secret for verifying print status webhooks (per-shop secrets take priority)
 // Callers must send X-Webhook-Signature: sha256=<hmac_hex_of_body>
