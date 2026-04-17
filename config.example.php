@@ -155,6 +155,9 @@ if (!defined('LINKEDIN_CLIENT_SECRET')) define('LINKEDIN_CLIENT_SECRET', ''); //
 // Accepts either a console API key (sk-ant-api03-...) or a Claude Code OAuth token (sk-ant-oat01-...)
 if (!defined('ANTHROPIC_API_KEY')) define('ANTHROPIC_API_KEY', '');
 
+// Google Gemini API (used by LinkedIn carousel image generator)
+if (!defined('GEMINI_API_KEY')) define('GEMINI_API_KEY', '');
+
 // Print Webhook Configuration
 // Global secret for verifying print status webhooks (per-shop secrets take priority)
 // Callers must send X-Webhook-Signature: sha256=<hmac_hex_of_body>

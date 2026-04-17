@@ -1,7 +1,9 @@
 <?php
+require_once __DIR__ . '/CarouselImageGenerator.php';
+
 /**
  * CarouselPDFRenderer
- * PHP wrapper that feeds slide JSON to the Node + Playwright renderer.
+ * Orchestrates Gemini image gen + feeds slide JSON to the Node + Playwright renderer.
  */
 class CarouselPDFRenderer {
     public static function render(array $slides, string $outputPdfPath, string $blogUrl): void {
@@ -12,6 +14,7 @@ class CarouselPDFRenderer {
         }
 
         $slides['qr_data_url'] = self::qrDataUrl($blogUrl);
+        $slides['images'] = CarouselImageGenerator::generate($slides['image_prompts']);
 
         $inputPath = tempnam(sys_get_temp_dir(), 'carousel_in_') . '.json';
         file_put_contents($inputPath, json_encode($slides, JSON_UNESCAPED_UNICODE));

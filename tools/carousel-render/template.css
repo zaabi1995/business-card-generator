@@ -37,17 +37,70 @@ html, body { background: var(--bg); color: var(--fg); }
   width: 1080px;
   height: 1350px;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 96px;
   page-break-after: always;
   overflow: hidden;
   background: var(--bg);
 }
 .slide:last-child { page-break-after: auto; }
 
-.content { position: relative; z-index: 2; width: 100%; }
+.bg-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.gradient {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.grad-bottom {
+  background: linear-gradient(
+    to top,
+    rgba(10,10,10,0.96) 0%,
+    rgba(10,10,10,0.85) 26%,
+    rgba(10,10,10,0.35) 52%,
+    rgba(10,10,10,0.05) 72%,
+    rgba(10,10,10,0) 100%
+  );
+}
+.grad-full {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(10,10,10,0.35) 0%,
+    rgba(10,10,10,0.75) 55%,
+    rgba(10,10,10,0.92) 100%
+  );
+}
+.grad-blue {
+  background: linear-gradient(
+    to top,
+    rgba(37,99,235,0.96) 0%,
+    rgba(37,99,235,0.85) 35%,
+    rgba(37,99,235,0.55) 65%,
+    rgba(37,99,235,0.25) 100%
+  );
+}
+
+.content {
+  position: absolute;
+  z-index: 3;
+  left: 96px;
+  right: 96px;
+}
+.content.bottom {
+  bottom: 132px;
+  text-align: left;
+}
+.content.center {
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
+}
 
 .counter {
   position: absolute;
@@ -57,10 +110,14 @@ html, body { background: var(--bg); color: var(--fg); }
   font-size: 22px;
   letter-spacing: 0.2em;
   color: var(--fg);
-  opacity: 0.7;
-  z-index: 3;
+  opacity: 0.85;
+  z-index: 4;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(10,10,10,0.35);
+  backdrop-filter: blur(6px);
 }
-.cta-counter { color: var(--fg); opacity: 0.9; }
+.cta-counter { background: rgba(255,255,255,0.18); }
 
 .wordmark {
   position: absolute;
@@ -68,69 +125,57 @@ html, body { background: var(--bg); color: var(--fg); }
   left: 72px;
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
-  font-size: 28px;
+  font-size: 24px;
   letter-spacing: -0.01em;
   color: var(--fg);
-  opacity: 0.55;
-  z-index: 3;
-}
-
-.motif {
-  position: absolute;
-  inset: 0;
-  background-image: url('mashrabiya.svg');
-  background-size: 240px 240px;
-  opacity: 0.05;
-  z-index: 1;
+  opacity: 0.7;
+  z-index: 4;
 }
 
 /* Slide 01 — Hook */
-.hook .content { text-align: center; }
 .hook .hook-en {
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
-  font-size: 132px;
+  font-size: 108px;
   line-height: 1.02;
   letter-spacing: -0.03em;
   color: var(--fg);
 }
 .hook .hook-ar {
-  margin-top: 56px;
+  margin-top: 32px;
   font-family: 'Noto Sans Arabic', sans-serif;
   font-weight: 700;
-  font-size: 68px;
+  font-size: 54px;
   line-height: 1.35;
   color: var(--fg);
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 /* Slide 02 — Tension */
-.tension .content { text-align: left; }
 .tension .tension-text {
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
-  font-size: 82px;
+  font-size: 72px;
   line-height: 1.1;
   letter-spacing: -0.025em;
   color: var(--fg);
 }
 
 /* Slides 03-05 — Points */
-.point .content { text-align: left; }
 .point .big-num {
   display: block;
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
-  font-size: 320px;
+  font-size: 180px;
   line-height: 0.9;
   color: var(--accent);
   letter-spacing: -0.05em;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 .point .point-text {
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
-  font-size: 64px;
+  font-size: 56px;
   line-height: 1.15;
   letter-spacing: -0.02em;
   color: var(--fg);
@@ -138,60 +183,63 @@ html, body { background: var(--bg); color: var(--fg); }
 }
 
 /* Slide 06 — Takeaway */
-.takeaway .content { text-align: center; }
 .takeaway .takeaway-en {
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
-  font-size: 96px;
+  font-size: 84px;
   line-height: 1.1;
   letter-spacing: -0.025em;
   color: var(--fg);
+  text-shadow: 0 2px 28px rgba(0,0,0,0.55);
 }
 .takeaway .takeaway-ar {
-  margin-top: 56px;
+  margin-top: 42px;
   font-family: 'Noto Sans Arabic', sans-serif;
   font-weight: 700;
-  font-size: 56px;
+  font-size: 48px;
   line-height: 1.4;
   color: var(--fg);
-  opacity: 0.85;
+  opacity: 0.95;
+  text-shadow: 0 2px 24px rgba(0,0,0,0.55);
 }
 
 /* Slide 07 — CTA */
-.cta { background: var(--accent); }
-.cta .motif { opacity: 0.08; }
-.cta .content { text-align: center; }
 .cta .cta-en {
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
-  font-size: 88px;
+  font-size: 82px;
   line-height: 1.08;
   letter-spacing: -0.02em;
   color: var(--fg);
+  text-shadow: 0 2px 20px rgba(0,0,0,0.4);
 }
 .cta .cta-ar {
-  margin-top: 40px;
+  margin-top: 32px;
   font-family: 'Noto Sans Arabic', sans-serif;
   font-weight: 700;
-  font-size: 52px;
+  font-size: 48px;
   color: var(--fg);
-  opacity: 0.92;
+  opacity: 0.95;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.4);
 }
 .cta .cta-url {
-  margin-top: 72px;
+  margin-top: 56px;
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
-  font-size: 48px;
+  font-size: 44px;
   letter-spacing: 0.02em;
   color: var(--fg);
 }
 .cta .qr {
   display: block;
-  margin: 56px auto 0;
-  width: 280px;
-  height: 280px;
-  border-radius: 20px;
+  margin: 40px auto 0;
+  width: 240px;
+  height: 240px;
+  border-radius: 18px;
   background: var(--fg);
-  padding: 16px;
+  padding: 14px;
+  position: relative;
+  z-index: 3;
+  object-fit: contain;
 }
 .cta .wordmark { display: none; }

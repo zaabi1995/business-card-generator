@@ -17,7 +17,8 @@ async function main() {
   const data = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
   const template = fs.readFileSync(path.join(__dirname, 'template.html'), 'utf8');
 
-  const rendered = template
+  const imgs = data.images || [];
+  let rendered = template
     .replace('{{HOOK_EN}}', escapeHtml(data.hook_en))
     .replace('{{HOOK_AR}}', escapeHtml(data.hook_ar))
     .replace('{{TENSION}}', escapeHtml(data.tension))
@@ -32,6 +33,9 @@ async function main() {
     .replace('{{CTA_EN}}', escapeHtml(data.cta_en))
     .replace('{{CTA_AR}}', escapeHtml(data.cta_ar))
     .replace('{{QR_DATA_URL}}', data.qr_data_url || '');
+  for (let i = 1; i <= 7; i++) {
+    rendered = rendered.replace(`{{IMG_${i}}}`, imgs[i - 1] || '');
+  }
 
   const tmpHtml = path.join(__dirname, '.tmp-render.html');
   fs.writeFileSync(tmpHtml, rendered);
