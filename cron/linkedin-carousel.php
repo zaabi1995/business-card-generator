@@ -35,7 +35,7 @@ try {
 
 $today = date('Y-m-d');
 $stmt = $pdo->prepare(
-    "SELECT id, title, slug, excerpt, body, status
+    "SELECT id, title, slug, excerpt, content AS body, status
      FROM blog_posts
      WHERE status IN ('draft','published')
        AND DATE(published_at) <= ?
