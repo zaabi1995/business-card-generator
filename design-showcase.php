@@ -688,7 +688,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
               ['i' => 'fa-triangle-exclamation', 'bg' => 'bg-amber-50', 'border' => 'border-amber-200', 'text' => 'text-amber-700', 'title' => 'Trial ends in 3 days', 'body' => 'Upgrade to Team plan to keep your 24 published cards online.'],
               ['i' => 'fa-circle-xmark', 'bg' => 'bg-red-50', 'border' => 'border-red-200', 'text' => 'text-red-700', 'title' => 'Payment failed', 'body' => 'Paymob returned a decline. Try a different card or switch to bank transfer.'],
             ] as $a): ?>
-              <div class="rounded-xl border <?= $a['border'] ?> <?= $a['bg'] ?> p-4 flex gap-3" x-data="{ show: true }" x-show="show">
+              <div class="rounded-xl border <?= $a['border'] ?> <?= $a['bg'] ?> p-4 gap-3" x-data="{ show: true }" :class="show ? 'flex' : 'hidden'">
                 <i class="fa-solid <?= $a['i'] ?> <?= $a['text'] ?> text-lg flex-shrink-0 mt-0.5"></i>
                 <div class="flex-1">
                   <div class="font-bold text-sm <?= $a['text'] ?>"><?= $a['title'] ?></div>
@@ -1154,11 +1154,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
   </div>
 
   <!-- MODAL -->
-  <div x-cloak x-show="modalOpen" x-transition.opacity
+  <div x-cloak
+       :class="modalOpen ? 'flex' : 'hidden'"
        role="dialog" aria-modal="true" aria-labelledby="showcase-modal-title"
        x-effect="if (modalOpen) focusFirst($refs.modalPanel)"
        @keydown.tab="trapTab($event, $refs.modalPanel)"
-       class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/50" @click="closeOverlays()">
+       class="fixed inset-0 z-[60] items-center justify-center p-4 bg-gray-900/50" @click="closeOverlays()">
     <div x-ref="modalPanel" tabindex="-1" @click.stop class="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
       <h3 id="showcase-modal-title" class="text-xl font-bold text-gray-900">Delete this card?</h3>
       <p class="mt-2 text-sm text-gray-500">Ahmed Al-Balushi's digital card at <code class="font-mono text-xs">/acme/ahmed</code> will stop working immediately. Any printed QR codes pointing to this URL will show a "card not found" page.</p>
@@ -1170,11 +1171,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
   </div>
 
   <!-- DRAWER -->
-  <div x-cloak x-show="drawerOpen" x-transition.opacity
+  <div x-cloak
+       :class="drawerOpen ? 'flex' : 'hidden'"
        role="dialog" aria-modal="true" aria-labelledby="showcase-drawer-title"
        x-effect="if (drawerOpen) focusFirst($refs.drawerPanel)"
        @keydown.tab="trapTab($event, $refs.drawerPanel)"
-       class="fixed inset-0 z-[60] flex justify-end bg-gray-900/50" @click="closeOverlays()">
+       class="fixed inset-0 z-[60] justify-end bg-gray-900/50" @click="closeOverlays()">
     <div x-ref="drawerPanel" tabindex="-1" @click.stop class="bg-white w-full max-w-sm h-full border-l border-gray-200 p-6 shadow-2xl overflow-y-auto">
       <div class="flex items-center justify-between">
         <h3 id="showcase-drawer-title" class="text-lg font-bold text-gray-900">Filter cards</h3>
