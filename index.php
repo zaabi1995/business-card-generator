@@ -222,9 +222,9 @@ $showNavigation = true;
 $navLinks = [
     ['href' => '#features', 'label' => 'Features'],
     ['href' => '#pricing', 'label' => 'Pricing'],
+    ['href' => getBasePath() . 'tools', 'label' => 'Free Tools'],
+    ['href' => getBasePath() . 'oman-business-index', 'label' => 'Oman Business Index'],
     ['href' => getBasePath() . 'blog', 'label' => 'Blog'],
-    ['href' => getBasePath() . 'about', 'label' => 'About'],
-    ['href' => getBasePath() . 'contact', 'label' => 'Contact'],
 ];
 
 // Include Auth for navigation state
@@ -949,6 +949,128 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
     <?php endif; ?>
 
+    <!-- ========== FREE TOOLS & DIRECTORIES (SEO HUB) ========== -->
+    <section id="resources" class="py-16 lg:py-24 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <span class="inline-block text-sm font-semibold text-blue-600 uppercase tracking-wider mb-3">Free for everyone</span>
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4">
+                    Free Tools &amp; Oman Business Directory
+                </h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                    Use our free business card tools, or browse the public directory of 2,414 Omani enterprises by sector and governorate.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 mb-12">
+                <!-- Free Tools -->
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-100">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center">
+                            <i class="fa-solid fa-toolbox text-xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900">Free Tools</h3>
+                    </div>
+                    <p class="text-gray-600 mb-6">Generate what you need in seconds — no sign-up required.</p>
+                    <ul class="space-y-3 mb-6">
+                        <li>
+                            <a href="/tools/vcard-qr-generator" class="flex items-start gap-3 p-3 rounded-lg hover:bg-white transition group">
+                                <i class="fa-solid fa-qrcode text-blue-600 mt-1"></i>
+                                <div>
+                                    <div class="font-semibold text-gray-900 group-hover:text-blue-700">vCard QR Generator</div>
+                                    <div class="text-sm text-gray-500">Create a contact-card QR in seconds</div>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/tools/email-signature-generator" class="flex items-start gap-3 p-3 rounded-lg hover:bg-white transition group">
+                                <i class="fa-solid fa-envelope text-blue-600 mt-1"></i>
+                                <div>
+                                    <div class="font-semibold text-gray-900 group-hover:text-blue-700">Email Signature Generator</div>
+                                    <div class="text-sm text-gray-500">Branded EN/AR signatures for Gmail &amp; Outlook</div>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/tools/whatsapp-qr-generator" class="flex items-start gap-3 p-3 rounded-lg hover:bg-white transition group">
+                                <i class="fa-brands fa-whatsapp text-blue-600 mt-1"></i>
+                                <div>
+                                    <div class="font-semibold text-gray-900 group-hover:text-blue-700">WhatsApp QR Generator</div>
+                                    <div class="text-sm text-gray-500">Chat-link QR codes with pre-filled message</div>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/tools/nfc-business-card-guide" class="flex items-start gap-3 p-3 rounded-lg hover:bg-white transition group">
+                                <i class="fa-solid fa-wifi text-blue-600 mt-1"></i>
+                                <div>
+                                    <div class="font-semibold text-gray-900 group-hover:text-blue-700">NFC Business Card Guide</div>
+                                    <div class="text-sm text-gray-500">How tap-to-share works, step by step</div>
+                                </div>
+                            </a>
+                        </li>
+                    </ul>
+                    <a href="/tools" class="inline-flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-800">
+                        Browse all free tools
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+
+                <!-- Oman Business Directory -->
+                <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-8 border border-emerald-100">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center">
+                            <i class="fa-solid fa-building-columns text-xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900">Oman Business Index</h3>
+                    </div>
+                    <p class="text-gray-600 mb-6">Free public directory of the 2,414 largest enterprises in Oman, sourced from MoCIIP.</p>
+                    <div class="grid grid-cols-2 gap-2 mb-6">
+                        <a href="/companies/sector/oil-gas" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-emerald-100 hover:text-emerald-700 transition font-medium border border-gray-100">Oil &amp; Gas</a>
+                        <a href="/companies/sector/construction" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-emerald-100 hover:text-emerald-700 transition font-medium border border-gray-100">Construction</a>
+                        <a href="/companies/sector/finance" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-emerald-100 hover:text-emerald-700 transition font-medium border border-gray-100">Finance &amp; Banking</a>
+                        <a href="/companies/sector/trading" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-emerald-100 hover:text-emerald-700 transition font-medium border border-gray-100">Trading</a>
+                        <a href="/companies/sector/manufacturing" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-emerald-100 hover:text-emerald-700 transition font-medium border border-gray-100">Manufacturing</a>
+                        <a href="/companies/sector/hospitality-tourism" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-emerald-100 hover:text-emerald-700 transition font-medium border border-gray-100">Hospitality</a>
+                        <a href="/companies/wilayat/muscat" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-emerald-100 hover:text-emerald-700 transition font-medium border border-gray-100">Muscat</a>
+                        <a href="/companies/wilayat/dhofar" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-emerald-100 hover:text-emerald-700 transition font-medium border border-gray-100">Dhofar / Salalah</a>
+                    </div>
+                    <a href="/oman-business-index" class="inline-flex items-center gap-2 text-emerald-700 font-semibold hover:text-emerald-800">
+                        Explore the full directory
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Solutions Row -->
+            <div class="bg-gray-50 rounded-2xl p-8">
+                <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-purple-600 text-white flex items-center justify-center">
+                            <i class="fa-solid fa-lightbulb"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900">Solutions for Your Industry</h3>
+                    </div>
+                    <a href="/solutions" class="text-sm font-semibold text-purple-700 hover:text-purple-800">View all 20 solutions →</a>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <a href="/solutions/business-cards-oman-construction-companies" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Construction &amp; Contracting</a>
+                    <a href="/solutions/digital-business-cards-oil-gas-oman" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Oil &amp; Gas</a>
+                    <a href="/solutions/business-cards-oman-bank-employees" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Bank Employees</a>
+                    <a href="/solutions/business-cards-muscat-doctors-clinics" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Doctors &amp; Clinics</a>
+                    <a href="/solutions/business-cards-omani-law-firms" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Law Firms</a>
+                    <a href="/solutions/digital-cards-oman-real-estate-agents" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Real Estate</a>
+                    <a href="/solutions/qr-code-menu-muscat-restaurants" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Restaurants QR Menu</a>
+                    <a href="/solutions/bilingual-arabic-english-business-cards" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Bilingual AR/EN Cards</a>
+                    <a href="/solutions/nfc-business-cards-oman-executives" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">NFC for Executives</a>
+                    <a href="/solutions/business-cards-oman-government-employees" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Government Employees</a>
+                    <a href="/solutions/business-cards-oman-startups" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Startups</a>
+                    <a href="/solutions/salalah-tourism-business-cards" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Salalah Tourism</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- ========== CTA SECTION (Flowbite Style) ========== -->
     <section class="py-16 lg:py-24 bg-gradient-to-br from-blue-600 to-indigo-700">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -996,13 +1118,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <!-- ========== FOOTER ========== -->
     <footer id="contact" class="bg-gray-900 text-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+            <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
                 <!-- Brand -->
                 <div class="lg:col-span-1">
                     <div class="flex items-center gap-3 mb-6">
                         <img src="<?php echo assetUrl('images/logo-light.svg'); ?>" alt="<?php echo $brandName; ?>" class="h-10 w-auto">
                     </div>
-                    <p class="text-gray-400 mb-4 leading-relaxed">
+                    <p class="text-gray-400 mb-4 leading-relaxed text-sm">
                         The modern way to create and share professional business cards. Built for teams of all sizes.
                     </p>
                     <div class="flex gap-3 mb-6">
@@ -1015,32 +1137,49 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <!-- Product Links -->
                 <div>
                     <h4 class="font-bold text-lg mb-6">Product</h4>
-                    <ul class="space-y-4">
+                    <ul class="space-y-3">
                         <li><a href="#features" class="text-gray-400 hover:text-white transition-colors">Features</a></li>
-                        <li><a href="#how-it-works" class="text-gray-400 hover:text-white transition-colors">How it Works</a></li>
+                        <li><a href="#pricing" class="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
+                        <li><a href="#resources" class="text-gray-400 hover:text-white transition-colors">Free Tools</a></li>
                         <li><a href="<?php echo getBasePath(); ?>company/register.php" class="text-gray-400 hover:text-white transition-colors">Get Started</a></li>
                     </ul>
                 </div>
 
-                <!-- Company Links -->
+                <!-- Free Tools -->
+                <div>
+                    <h4 class="font-bold text-lg mb-6">Free Tools</h4>
+                    <ul class="space-y-3">
+                        <li><a href="<?php echo getBasePath(); ?>tools/vcard-qr-generator" class="text-gray-400 hover:text-white transition-colors">vCard QR Generator</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>tools/email-signature-generator" class="text-gray-400 hover:text-white transition-colors">Email Signature</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>tools/whatsapp-qr-generator" class="text-gray-400 hover:text-white transition-colors">WhatsApp QR</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>tools/nfc-business-card-guide" class="text-gray-400 hover:text-white transition-colors">NFC Card Guide</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>tools" class="text-gray-400 hover:text-white transition-colors">All Tools</a></li>
+                    </ul>
+                </div>
+
+                <!-- Directory & Solutions -->
+                <div>
+                    <h4 class="font-bold text-lg mb-6">Directory &amp; Solutions</h4>
+                    <ul class="space-y-3">
+                        <li><a href="<?php echo getBasePath(); ?>oman-business-index" class="text-gray-400 hover:text-white transition-colors">Oman Business Index</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>companies" class="text-gray-400 hover:text-white transition-colors">Browse 2,414 Companies</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>companies/sector/oil-gas" class="text-gray-400 hover:text-white transition-colors">Oil &amp; Gas</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>companies/sector/construction" class="text-gray-400 hover:text-white transition-colors">Construction</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>companies/wilayat/muscat" class="text-gray-400 hover:text-white transition-colors">Muscat Companies</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>solutions" class="text-gray-400 hover:text-white transition-colors">All Solutions</a></li>
+                    </ul>
+                </div>
+
+                <!-- Company + Legal -->
                 <div>
                     <h4 class="font-bold text-lg mb-6">Company</h4>
-                    <ul class="space-y-4">
+                    <ul class="space-y-3">
                         <li><a href="<?php echo getBasePath(); ?>about" class="text-gray-400 hover:text-white transition-colors">About Us</a></li>
                         <li><a href="<?php echo getBasePath(); ?>blog" class="text-gray-400 hover:text-white transition-colors">Blog</a></li>
                         <li><a href="<?php echo getBasePath(); ?>careers" class="text-gray-400 hover:text-white transition-colors">Careers</a></li>
                         <li><a href="<?php echo getBasePath(); ?>contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
-                    </ul>
-                </div>
-
-                <!-- Legal Links -->
-                <div>
-                    <h4 class="font-bold text-lg mb-6">Legal</h4>
-                    <ul class="space-y-4">
-                        <li><a href="<?php echo getBasePath(); ?>privacy" class="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>terms" class="text-gray-400 hover:text-white transition-colors">Terms of Service</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>cookies" class="text-gray-400 hover:text-white transition-colors">Cookie Policy</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>security" class="text-gray-400 hover:text-white transition-colors">Security</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>privacy" class="text-gray-400 hover:text-white transition-colors">Privacy</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>terms" class="text-gray-400 hover:text-white transition-colors">Terms</a></li>
                     </ul>
                 </div>
             </div>

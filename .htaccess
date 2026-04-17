@@ -122,8 +122,15 @@
     RewriteRule ^get-started/?$ get-started.php [L,QSA]
     RewriteRule ^claim/?$ claim.php [L,QSA]
 
-    # Sitemap
+    # Sitemap index + child sitemaps (split so Google can prioritise crawling)
     RewriteRule ^sitemap\.xml$ sitemap.php [L]
+    RewriteRule ^sitemap-static\.xml$       sitemap.php?part=static       [L,QSA]
+    RewriteRule ^sitemap-tools\.xml$        sitemap.php?part=tools        [L,QSA]
+    RewriteRule ^sitemap-solutions\.xml$    sitemap.php?part=solutions    [L,QSA]
+    RewriteRule ^sitemap-directory\.xml$    sitemap.php?part=directory    [L,QSA]
+    RewriteRule ^sitemap-companies\.xml$    sitemap.php?part=companies    [L,QSA]
+    RewriteRule ^sitemap-companies-ar\.xml$ sitemap.php?part=companies-ar [L,QSA]
+    RewriteRule ^sitemap-blog\.xml$         sitemap.php?part=blog         [L,QSA]
 
     # Print shop portal clean URLs
     # Example: cardify.om/printshop/dashboard
@@ -146,7 +153,7 @@
     # Check if request is not for known paths and not a file
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|s/|company|companies|ar|oman-business-index|webhooks|amwalpay|api|assets|uploads|data|printshop|industries|solutions|intro|blog|careers|about|contact|faq|terms|privacy|security|cookies|sitemap\.xml|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php)
+    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|s/|company|companies|ar|oman-business-index|webhooks|amwalpay|api|assets|uploads|data|printshop|industries|solutions|intro|blog|careers|about|contact|faq|terms|privacy|security|cookies|sitemap\.xml|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php|design-showcase|design)
     RewriteRule ^([a-z0-9-]+)/?$ router.php?company_slug=$1 [L,QSA]
 </IfModule>
 

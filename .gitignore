@@ -51,6 +51,9 @@ tmp/
 *.sql.gz
 *.sql.bak
 
+# Bulk-claim CSV seeds (contain customer PII — local only)
+docs/bulk-claim-seed*.csv
+
 # IDE specific
 .phpunit.result.cache
 .php-cs-fixer.cache

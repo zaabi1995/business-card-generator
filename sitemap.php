@@ -1,7 +1,13 @@
 <?php
 /**
- * Dynamic XML Sitemap Generator for Cardify.om
- * Outputs a valid XML sitemap with static pages, blog posts, careers, companies, and digital cards.
+ * Cardify.om sitemap controller.
+ *
+ * Outputs either:
+ *   - A sitemap index at /sitemap.xml (default)
+ *   - One of the child sitemaps at /sitemap-{part}.xml (via .htaccess rewrite → sitemap.php?part=X)
+ *
+ * Splitting by topic helps Google prioritise crawling (the whole 4,974-URL
+ * flat list was sitting at "Discovered — not indexed" indefinitely).
  */
 
 header('Content-Type: application/xml; charset=UTF-8');
@@ -9,241 +15,212 @@ header('Content-Type: application/xml; charset=UTF-8');
 require_once __DIR__ . '/config.php';
 
 $baseUrl = 'https://cardify.om';
-$today = date('Y-m-d');
+$today   = date('Y-m-d');
+$part    = (string) ($_GET['part'] ?? 'index');
 
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-    <!-- Static Pages -->
-    <url>
-        <loc><?= $baseUrl ?>/</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>1.0</priority>
-    </url>
-    <url>
-        <loc><?= $baseUrl ?>/about</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <url>
-        <loc><?= $baseUrl ?>/blog</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc><?= $baseUrl ?>/careers</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <url>
-        <loc><?= $baseUrl ?>/faq</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
-    </url>
-    <url>
-        <loc><?= $baseUrl ?>/get-started</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc><?= $baseUrl ?>/contact</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <url>
-        <loc><?= $baseUrl ?>/intro</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <url>
-        <loc><?= $baseUrl ?>/terms</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>yearly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <url>
-        <loc><?= $baseUrl ?>/privacy</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>yearly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <url>
-        <loc><?= $baseUrl ?>/security</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>yearly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <url>
-        <loc><?= $baseUrl ?>/cookies</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>yearly</changefreq>
-        <priority>0.8</priority>
-    </url>
 
-    <!-- Industry Landing Pages -->
-    <url>
-        <loc><?= $baseUrl ?>/industries/restaurants</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
-    </url>
-    <url>
-        <loc><?= $baseUrl ?>/industries/construction</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
-    </url>
-    <url>
-        <loc><?= $baseUrl ?>/industries/healthcare</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
-    </url>
-    <url>
-        <loc><?= $baseUrl ?>/industries/real-estate</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
-    </url>
-    <url>
-        <loc><?= $baseUrl ?>/industries/tourism</loc>
-        <lastmod><?= $today ?></lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
-    </url>
+/**
+ * Escape a URL for XML.
+ */
+function smX($s) { return htmlspecialchars((string) $s, ENT_XML1 | ENT_QUOTES, 'UTF-8'); }
 
-<?php
-// Blog posts (with Google Image sitemap data)
+/**
+ * Render a single <url> entry.
+ */
+function smUrl($loc, $lastmod, $changefreq = 'monthly', $priority = '0.5') {
+    echo "    <url>\n";
+    echo "        <loc>" . smX($loc) . "</loc>\n";
+    echo "        <lastmod>{$lastmod}</lastmod>\n";
+    echo "        <changefreq>{$changefreq}</changefreq>\n";
+    echo "        <priority>{$priority}</priority>\n";
+    echo "    </url>\n";
+}
+
+/**
+ * Render a single <sitemap> entry in the index.
+ */
+function smChild($loc, $lastmod) {
+    echo "    <sitemap>\n";
+    echo "        <loc>" . smX($loc) . "</loc>\n";
+    echo "        <lastmod>{$lastmod}</lastmod>\n";
+    echo "    </sitemap>\n";
+}
+
+// --- Sitemap index -----------------------------------------------------
+if ($part === 'index') {
+    echo '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+    smChild("{$baseUrl}/sitemap-static.xml",       $today);
+    smChild("{$baseUrl}/sitemap-tools.xml",        $today);
+    smChild("{$baseUrl}/sitemap-solutions.xml",    $today);
+    smChild("{$baseUrl}/sitemap-directory.xml",    $today);
+    smChild("{$baseUrl}/sitemap-companies.xml",    $today);
+    smChild("{$baseUrl}/sitemap-companies-ar.xml", $today);
+    smChild("{$baseUrl}/sitemap-blog.xml",         $today);
+    echo '</sitemapindex>' . "\n";
+    exit;
+}
+
+// --- Child sitemaps ----------------------------------------------------
+echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">' . "\n";
+
 try {
     $db = Database::getInstance();
-    $posts = $db->fetchAll(
-        "SELECT slug, title, featured_image, updated_at
-         FROM blog_posts
-         WHERE status = 'published'
-         ORDER BY updated_at DESC"
-    );
-    foreach ($posts as $post) {
-        $lastmod = date('Y-m-d', strtotime($post['updated_at']));
-        $url = $baseUrl . '/blog/' . htmlspecialchars($post['slug']);
-        echo "    <url>\n";
-        echo "        <loc>{$url}</loc>\n";
-        echo "        <lastmod>{$lastmod}</lastmod>\n";
-        echo "        <changefreq>weekly</changefreq>\n";
-        echo "        <priority>0.7</priority>\n";
-        if (!empty($post['featured_image'])) {
-            $imgUrl = $baseUrl . '/' . ltrim(htmlspecialchars($post['featured_image']), '/');
-            echo "        <image:image>\n";
-            echo "            <image:loc>{$imgUrl}</image:loc>\n";
-            echo "            <image:title>" . htmlspecialchars($post['title']) . "</image:title>\n";
-            echo "        </image:image>\n";
-        }
-        echo "    </url>\n";
-    }
-} catch (Exception $e) {
-    // Blog posts table may not exist yet
+} catch (Throwable $e) {
+    $db = null;
 }
 
-// Career listings
-try {
-    $careers = $db->fetchAll("SELECT slug, updated_at FROM career_listings WHERE status = 'open' ORDER BY updated_at DESC");
-    foreach ($careers as $career) {
-        $lastmod = date('Y-m-d', strtotime($career['updated_at']));
-        echo "    <url>\n";
-        echo "        <loc>{$baseUrl}/careers/" . htmlspecialchars($career['slug']) . "</loc>\n";
-        echo "        <lastmod>{$lastmod}</lastmod>\n";
-        echo "        <changefreq>weekly</changefreq>\n";
-        echo "        <priority>0.6</priority>\n";
-        echo "    </url>\n";
+if ($part === 'static') {
+    // Top-level product, legal, marketing pages + industry landings.
+    $staticPages = [
+        ['/',             'weekly',  '1.0'],
+        ['/about',        'monthly', '0.8'],
+        ['/blog',         'weekly',  '0.9'],
+        ['/careers',      'weekly',  '0.8'],
+        ['/faq',          'monthly', '0.7'],
+        ['/get-started',  'monthly', '0.9'],
+        ['/contact',      'monthly', '0.8'],
+        ['/intro',        'monthly', '0.8'],
+        ['/terms',        'yearly',  '0.4'],
+        ['/privacy',      'yearly',  '0.4'],
+        ['/security',     'yearly',  '0.4'],
+        ['/cookies',      'yearly',  '0.4'],
+        ['/print-shops',  'weekly',  '0.8'],
+        ['/industries/restaurants',  'monthly', '0.7'],
+        ['/industries/construction', 'monthly', '0.7'],
+        ['/industries/healthcare',   'monthly', '0.7'],
+        ['/industries/real-estate',  'monthly', '0.7'],
+        ['/industries/tourism',      'monthly', '0.7'],
+    ];
+    foreach ($staticPages as [$path, $freq, $prio]) {
+        smUrl($baseUrl . $path, $today, $freq, $prio);
     }
-} catch (Exception $e) {
-    // Career listings table may not exist yet
+
+} elseif ($part === 'tools') {
+    smUrl("{$baseUrl}/tools", $today, 'monthly', '0.9');
+    $tools = [
+        'vcard-qr-generator',
+        'email-signature-generator',
+        'whatsapp-qr-generator',
+        'nfc-business-card-guide',
+    ];
+    foreach ($tools as $t) {
+        smUrl("{$baseUrl}/tools/{$t}", $today, 'monthly', '0.8');
+    }
+
+} elseif ($part === 'solutions') {
+    smUrl("{$baseUrl}/solutions", $today, 'monthly', '0.9');
+    $solutions = [
+        'digital-business-cards-oman-sales-teams',
+        'bilingual-arabic-english-business-cards',
+        'qr-code-menu-muscat-restaurants',
+        'business-cards-for-ramadan-networking',
+        'nfc-business-cards-oman-executives',
+        'digital-business-cards-oil-gas-oman',
+        'business-cards-omani-law-firms',
+        'digital-cards-oman-real-estate-agents',
+        'business-cards-muscat-doctors-clinics',
+        'business-cards-oman-construction-companies',
+        'digital-business-cards-sohar-industrial-port',
+        'salalah-tourism-business-cards',
+        'business-cards-oman-bank-employees',
+        'business-cards-for-oman-trade-fairs',
+        'digital-business-cards-oman-hotels',
+        'business-cards-oman-government-employees',
+        'business-cards-oman-freelancers-consultants',
+        'business-cards-oman-startups',
+        'business-cards-oman-omanisation',
+        'business-cards-duqm-free-zone',
+    ];
+    foreach ($solutions as $s) {
+        smUrl("{$baseUrl}/solutions/{$s}", $today, 'monthly', '0.7');
+    }
+
+} elseif ($part === 'directory') {
+    // Flagship + directory hubs (indexes, sector hubs, wilayat hubs) — NOT individual companies.
+    smUrl("{$baseUrl}/oman-business-index",    $today, 'monthly', '0.9');
+    smUrl("{$baseUrl}/ar/oman-business-index", $today, 'monthly', '0.8');
+    smUrl("{$baseUrl}/companies",              $today, 'weekly',  '0.9');
+    smUrl("{$baseUrl}/ar/companies",           $today, 'weekly',  '0.8');
+
+    if ($db) {
+        try {
+            foreach ($db->fetchAll("SELECT DISTINCT sector FROM om_companies ORDER BY sector ASC") as $s) {
+                $slug = $s['sector'];
+                smUrl("{$baseUrl}/companies/sector/{$slug}",    $today, 'weekly', '0.7');
+                smUrl("{$baseUrl}/ar/companies/sector/{$slug}", $today, 'weekly', '0.6');
+            }
+            foreach ($db->fetchAll("SELECT DISTINCT wilayat FROM om_companies ORDER BY wilayat ASC") as $w) {
+                $slug = $w['wilayat'];
+                smUrl("{$baseUrl}/companies/wilayat/{$slug}",    $today, 'weekly', '0.7');
+                smUrl("{$baseUrl}/ar/companies/wilayat/{$slug}", $today, 'weekly', '0.6');
+            }
+        } catch (Throwable $e) { /* table may not exist */ }
+    }
+
+} elseif ($part === 'companies') {
+    // English company profiles only — each sitemap stays ≤ 50k URLs.
+    if ($db) {
+        try {
+            $rows = $db->fetchAll("SELECT slug, updated_at FROM om_companies ORDER BY size_bucket ASC, id ASC");
+            foreach ($rows as $c) {
+                $lastmod = date('Y-m-d', strtotime($c['updated_at']));
+                smUrl("{$baseUrl}/companies/" . $c['slug'], $lastmod, 'monthly', '0.5');
+            }
+        } catch (Throwable $e) { /* table may not exist */ }
+    }
+
+} elseif ($part === 'companies-ar') {
+    // Arabic company profiles only.
+    if ($db) {
+        try {
+            $rows = $db->fetchAll("SELECT slug, updated_at FROM om_companies ORDER BY size_bucket ASC, id ASC");
+            foreach ($rows as $c) {
+                $lastmod = date('Y-m-d', strtotime($c['updated_at']));
+                smUrl("{$baseUrl}/ar/companies/" . $c['slug'], $lastmod, 'monthly', '0.4');
+            }
+        } catch (Throwable $e) { /* table may not exist */ }
+    }
+
+} elseif ($part === 'blog') {
+    // Blog posts (with image metadata) + career listings.
+    if ($db) {
+        try {
+            $posts = $db->fetchAll(
+                "SELECT slug, title, featured_image, updated_at
+                   FROM blog_posts
+                  WHERE status = 'published'
+                  ORDER BY updated_at DESC"
+            );
+            foreach ($posts as $post) {
+                $lastmod = date('Y-m-d', strtotime($post['updated_at']));
+                $url = $baseUrl . '/blog/' . $post['slug'];
+                echo "    <url>\n";
+                echo "        <loc>" . smX($url) . "</loc>\n";
+                echo "        <lastmod>{$lastmod}</lastmod>\n";
+                echo "        <changefreq>weekly</changefreq>\n";
+                echo "        <priority>0.7</priority>\n";
+                if (!empty($post['featured_image'])) {
+                    $imgUrl = $baseUrl . '/' . ltrim($post['featured_image'], '/');
+                    echo "        <image:image>\n";
+                    echo "            <image:loc>" . smX($imgUrl) . "</image:loc>\n";
+                    echo "            <image:title>" . smX($post['title']) . "</image:title>\n";
+                    echo "        </image:image>\n";
+                }
+                echo "    </url>\n";
+            }
+        } catch (Throwable $e) { /* blog_posts may not exist */ }
+        try {
+            $careers = $db->fetchAll("SELECT slug, updated_at FROM career_listings WHERE status = 'open' ORDER BY updated_at DESC");
+            foreach ($careers as $c) {
+                $lastmod = date('Y-m-d', strtotime($c['updated_at']));
+                smUrl("{$baseUrl}/careers/" . $c['slug'], $lastmod, 'weekly', '0.6');
+            }
+        } catch (Throwable $e) { /* career_listings may not exist */ }
+    }
+
+} else {
+    // Unknown part — empty urlset (Google will just see no URLs; still valid XML).
 }
 
-// --- Oman Business Index: flagship + tools + solutions + directory ---
-
-// Flagship landing
-echo "    <url>\n        <loc>{$baseUrl}/oman-business-index</loc>\n        <lastmod>{$today}</lastmod>\n        <changefreq>monthly</changefreq>\n        <priority>0.9</priority>\n    </url>\n";
-echo "    <url>\n        <loc>{$baseUrl}/ar/oman-business-index</loc>\n        <lastmod>{$today}</lastmod>\n        <changefreq>monthly</changefreq>\n        <priority>0.8</priority>\n    </url>\n";
-
-// Tools hub + individual tools
-$tools = ['vcard-qr-generator', 'email-signature-generator', 'whatsapp-qr-generator', 'nfc-business-card-guide'];
-echo "    <url>\n        <loc>{$baseUrl}/tools</loc>\n        <lastmod>{$today}</lastmod>\n        <changefreq>monthly</changefreq>\n        <priority>0.8</priority>\n    </url>\n";
-foreach ($tools as $t) {
-    echo "    <url>\n        <loc>{$baseUrl}/tools/{$t}</loc>\n        <lastmod>{$today}</lastmod>\n        <changefreq>monthly</changefreq>\n        <priority>0.8</priority>\n    </url>\n";
-}
-
-// Solution pages hub + individual
-$solutions = [
-    'digital-business-cards-oman-sales-teams',
-    'bilingual-arabic-english-business-cards',
-    'qr-code-menu-muscat-restaurants',
-    'business-cards-for-ramadan-networking',
-    'nfc-business-cards-oman-executives',
-    'digital-business-cards-oil-gas-oman',
-    'business-cards-omani-law-firms',
-    'digital-cards-oman-real-estate-agents',
-    'business-cards-muscat-doctors-clinics',
-    'business-cards-oman-construction-companies',
-    'digital-business-cards-sohar-industrial-port',
-    'salalah-tourism-business-cards',
-    'business-cards-oman-bank-employees',
-    'business-cards-for-oman-trade-fairs',
-    'digital-business-cards-oman-hotels',
-    'business-cards-oman-government-employees',
-    'business-cards-oman-freelancers-consultants',
-    'business-cards-oman-startups',
-    'business-cards-oman-omanisation',
-    'business-cards-duqm-free-zone',
-];
-echo "    <url>\n        <loc>{$baseUrl}/solutions</loc>\n        <lastmod>{$today}</lastmod>\n        <changefreq>monthly</changefreq>\n        <priority>0.8</priority>\n    </url>\n";
-foreach ($solutions as $s) {
-    echo "    <url>\n        <loc>{$baseUrl}/solutions/{$s}</loc>\n        <lastmod>{$today}</lastmod>\n        <changefreq>monthly</changefreq>\n        <priority>0.7</priority>\n    </url>\n";
-}
-
-// /companies index (EN + AR)
-echo "    <url>\n        <loc>{$baseUrl}/companies</loc>\n        <lastmod>{$today}</lastmod>\n        <changefreq>weekly</changefreq>\n        <priority>0.9</priority>\n    </url>\n";
-echo "    <url>\n        <loc>{$baseUrl}/ar/companies</loc>\n        <lastmod>{$today}</lastmod>\n        <changefreq>weekly</changefreq>\n        <priority>0.8</priority>\n    </url>\n";
-
-// Sector hubs (EN + AR)
-try {
-    $sectors = $db->fetchAll("SELECT DISTINCT sector FROM om_companies ORDER BY sector ASC");
-    foreach ($sectors as $s) {
-        $slug = htmlspecialchars($s['sector']);
-        echo "    <url>\n        <loc>{$baseUrl}/companies/sector/{$slug}</loc>\n        <lastmod>{$today}</lastmod>\n        <changefreq>weekly</changefreq>\n        <priority>0.7</priority>\n    </url>\n";
-        echo "    <url>\n        <loc>{$baseUrl}/ar/companies/sector/{$slug}</loc>\n        <lastmod>{$today}</lastmod>\n        <changefreq>weekly</changefreq>\n        <priority>0.6</priority>\n    </url>\n";
-    }
-} catch (Exception $e) {}
-
-// Wilayat hubs (EN + AR)
-try {
-    $wilayats = $db->fetchAll("SELECT DISTINCT wilayat FROM om_companies ORDER BY wilayat ASC");
-    foreach ($wilayats as $w) {
-        $slug = htmlspecialchars($w['wilayat']);
-        echo "    <url>\n        <loc>{$baseUrl}/companies/wilayat/{$slug}</loc>\n        <lastmod>{$today}</lastmod>\n        <changefreq>weekly</changefreq>\n        <priority>0.7</priority>\n    </url>\n";
-        echo "    <url>\n        <loc>{$baseUrl}/ar/companies/wilayat/{$slug}</loc>\n        <lastmod>{$today}</lastmod>\n        <changefreq>weekly</changefreq>\n        <priority>0.6</priority>\n    </url>\n";
-    }
-} catch (Exception $e) {}
-
-// Individual company pages (EN + AR for each)
-try {
-    $companies = $db->fetchAll("SELECT slug, updated_at FROM om_companies ORDER BY size_bucket ASC, id ASC");
-    foreach ($companies as $c) {
-        $slug = htmlspecialchars($c['slug']);
-        $lastmod = date('Y-m-d', strtotime($c['updated_at']));
-        echo "    <url>\n        <loc>{$baseUrl}/companies/{$slug}</loc>\n        <lastmod>{$lastmod}</lastmod>\n        <changefreq>monthly</changefreq>\n        <priority>0.5</priority>\n    </url>\n";
-        echo "    <url>\n        <loc>{$baseUrl}/ar/companies/{$slug}</loc>\n        <lastmod>{$lastmod}</lastmod>\n        <changefreq>monthly</changefreq>\n        <priority>0.4</priority>\n    </url>\n";
-    }
-} catch (Exception $e) {}
-
-// Digital cards (customer-specific) are still excluded — they're noindexed.
-?>
-</urlset>
+echo '</urlset>' . "\n";
