@@ -189,13 +189,27 @@ require_once INCLUDES_DIR . '/ui-header.php';
      x-data="{
        copied: '',
        tab: 'overview',
-       modalOpen: false,
-       drawerOpen: false,
+       /* Single source of truth — at most one overlay is visible at a time. */
+       overlay: null,
+       get modalOpen()  { return this.overlay === 'modal'; },
+       set modalOpen(v) { this.overlay = v ? 'modal' : (this.overlay === 'modal' ? null : this.overlay); },
+       get drawerOpen()  { return this.overlay === 'drawer'; },
+       set drawerOpen(v) { this.overlay = v ? 'drawer' : (this.overlay === 'drawer' ? null : this.overlay); },
+       closeOverlays() { this.overlay = null; },
        toast: null,
        rtl: false,
        copy(v) {
+         if (!v) return;
          try {
-           navigator.clipboard.writeText(v);
+           if (navigator.clipboard && navigator.clipboard.writeText) {
+             navigator.clipboard.writeText(v);
+           } else {
+             const ta = document.createElement('textarea');
+             ta.value = v; ta.style.position = 'fixed'; ta.style.opacity = '0';
+             document.body.appendChild(ta); ta.select();
+             try { document.execCommand('copy'); } catch(_) {}
+             document.body.removeChild(ta);
+           }
            this.copied = v;
            setTimeout(() => this.copied = '', 1200);
          } catch(e) {}
@@ -204,7 +218,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
          this.toast = kind;
          setTimeout(() => this.toast = null, 2400);
        }
-     }">
+     }"
+     x-effect="document.body.classList.toggle('overflow-hidden', overlay !== null)"
+     @keydown.escape.window="closeOverlays()">
 
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -943,8 +959,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <p class="mt-1 text-sm text-gray-500 max-w-prose">Modals for destructive confirmations, drawers for filters, tooltips for icon buttons.</p>
           </header>
           <div class="flex flex-wrap gap-3">
-            <button type="button" @click="modalOpen = true" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition text-sm">Open modal</button>
-            <button type="button" @click="drawerOpen = true" class="inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-lg border border-gray-300 transition text-sm">Open drawer</button>
+            <button type="button" @click="overlay = 'modal'" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition text-sm">Open modal</button>
+            <button type="button" @click="overlay = 'drawer'" class="inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-lg border border-gray-300 transition text-sm">Open drawer</button>
             <span class="relative inline-flex group">
               <button type="button" aria-label="Info" class="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-gray-300 bg-white text-gray-700 hover:border-blue-500 hover:text-blue-600 transition"><i class="fa-solid fa-circle-info"></i></button>
               <span class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 whitespace-nowrap rounded-md bg-gray-900 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 transition pointer-events-none">Tooltip on hover</span>
@@ -1093,25 +1109,27 @@ require_once INCLUDES_DIR . '/ui-header.php';
   </div>
 
   <!-- MODAL -->
-  <div x-cloak x-show="modalOpen" @keydown.escape.window="modalOpen = false"
-       class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/50" @click="modalOpen = false">
+  <div x-cloak x-show="modalOpen" x-transition.opacity
+       role="dialog" aria-modal="true" aria-labelledby="showcase-modal-title"
+       class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/50" @click="closeOverlays()">
     <div @click.stop class="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
-      <h3 class="text-xl font-bold text-gray-900">Delete this card?</h3>
+      <h3 id="showcase-modal-title" class="text-xl font-bold text-gray-900">Delete this card?</h3>
       <p class="mt-2 text-sm text-gray-500">Ahmed Al-Balushi's digital card at <code class="font-mono text-xs">/acme/ahmed</code> will stop working immediately. Any printed QR codes pointing to this URL will show a "card not found" page.</p>
       <div class="mt-5 flex justify-end gap-2">
-        <button type="button" @click="modalOpen = false" class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-lg border border-gray-300 transition text-sm">Keep card</button>
-        <button type="button" @click="modalOpen = false; showToast('error')" class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition text-sm">Delete card</button>
+        <button type="button" @click="closeOverlays()" class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-lg border border-gray-300 transition text-sm">Keep card</button>
+        <button type="button" @click="closeOverlays(); showToast('error')" class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition text-sm">Delete card</button>
       </div>
     </div>
   </div>
 
   <!-- DRAWER -->
-  <div x-cloak x-show="drawerOpen" @keydown.escape.window="drawerOpen = false"
-       class="fixed inset-0 z-[60] flex justify-end bg-gray-900/50" @click="drawerOpen = false">
+  <div x-cloak x-show="drawerOpen" x-transition.opacity
+       role="dialog" aria-modal="true" aria-labelledby="showcase-drawer-title"
+       class="fixed inset-0 z-[60] flex justify-end bg-gray-900/50" @click="closeOverlays()">
     <div @click.stop class="bg-white w-full max-w-sm h-full border-l border-gray-200 p-6 shadow-2xl overflow-y-auto">
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-bold text-gray-900">Filter cards</h3>
-        <button type="button" @click="drawerOpen = false" aria-label="Close" class="text-gray-500 hover:text-gray-900 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+        <h3 id="showcase-drawer-title" class="text-lg font-bold text-gray-900">Filter cards</h3>
+        <button type="button" @click="closeOverlays()" aria-label="Close" class="text-gray-500 hover:text-gray-900 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
       <div class="mt-4 space-y-4">
         <div>
@@ -1130,7 +1148,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
           <label class="block text-sm font-semibold text-gray-700 mb-1">Created after</label>
           <input type="date" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition">
         </div>
-        <button type="button" @click="drawerOpen = false; showToast('success')" class="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition">Apply filters</button>
+        <button type="button" @click="closeOverlays(); showToast('success')" class="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition">Apply filters</button>
       </div>
     </div>
   </div>
