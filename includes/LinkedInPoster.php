@@ -5,7 +5,7 @@
  * Flow: initializeUpload → PUT PDF → create post referencing document URN.
  */
 class LinkedInPoster {
-    private const VERSION = '202404';
+    private const VERSION = '202510';
 
     public static function postDocument(
         string $accessToken,
