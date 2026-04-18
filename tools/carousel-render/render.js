@@ -5,6 +5,8 @@
  */
 const fs = require('fs');
 const path = require('path');
+// Use a system-wide Playwright browsers cache so both root (cron) and www (PHP-FPM) see it
+process.env.PLAYWRIGHT_BROWSERS_PATH = process.env.PLAYWRIGHT_BROWSERS_PATH || '/usr/local/playwright-browsers';
 const { chromium } = require('playwright');
 
 async function main() {
