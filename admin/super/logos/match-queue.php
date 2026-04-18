@@ -19,8 +19,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
         // from /storage/logos/pending/{id}.{ext} into /storage/logos/indexed/.
         // Seeder intentionally staged queued files under pending/ so a verified
         // public logo at /storage/logos/indexed/ couldn't be clobbered on disk.
+        //
+        // Derived variants (png_512, png_2048) from the OLD logo must be cleared
+        // — otherwise public pages keep serving the old 512/2048 renders even
+        // after the canonical logo is replaced. Re-render via scripts/render-
+        // logo-variants.php --only-missing after confirm.
         $root = dirname(__DIR__, 3);
-        $updates = [];
+        $updates = [
+            // Always reset derived size variants; they're stale once canonical changes.
+            'logo_png_512_path'  => null,
+            'logo_png_2048_path' => null,
+            // Null the three canonical columns by default; repopulate below only
+            // for formats where a file actually exists after promotion.
+            'logo_svg_path'      => null,
+            'logo_png_path'      => null,
+            'logo_webp_path'     => null,
+        ];
         foreach (['svg' => 'logo_svg_path', 'png' => 'logo_png_path', 'webp' => 'logo_webp_path'] as $ext => $col) {
             $pendingRel = "/storage/logos/pending/{$id}.{$ext}";
             $indexedRel = "/storage/logos/indexed/{$id}.{$ext}";
@@ -39,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
                        "logo_updated_at = NOW()"];
         $params = [':id' => $id];
         foreach ($updates as $col => $val) {
+            // Use named placeholder per column; NULL passed through.
             $setClauses[] = "$col = :" . $col;
             $params[':' . $col] = $val;
         }
@@ -55,15 +70,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
             $abs = $root . "/storage/logos/pending/{$id}.{$ext}";
             if (is_file($abs)) @unlink($abs);
         }
-        // Clear match_pending on all rows; for verified/takedown also preserve
-        // their existing public logo paths — only clear paths when the row has
-        // no public status to protect.
-        $status = $db->fetchOne("SELECT logo_status FROM om_companies WHERE id = :id", [':id' => $id])['logo_status'] ?? 'none';
-        if (in_array($status, ['verified', 'takedown'], true)) {
+        // Determine if row currently has a LIVE public logo. If so, reject is
+        // just "discard the queued replacement" — never touch the live asset.
+        // Only nuke paths + reset status when there's no existing public logo.
+        $row = $db->fetchOne(
+            "SELECT logo_status, logo_svg_path, logo_png_path, logo_webp_path
+               FROM om_companies WHERE id = :id",
+            [':id' => $id]
+        ) ?: [];
+        $hasLivePath   = !empty($row['logo_svg_path']) || !empty($row['logo_png_path']) || !empty($row['logo_webp_path']);
+        $isPublicState = in_array($row['logo_status'] ?? '', ['indexed', 'verified', 'takedown'], true);
+
+        if ($hasLivePath || $isPublicState) {
+            // Preserve the existing public logo; just clear the match flag.
             $db->getConnection()->prepare(
                 "UPDATE om_companies SET logo_match_pending = 0, logo_updated_at = NOW() WHERE id = :id"
             )->execute([':id' => $id]);
         } else {
+            // No public logo to protect — safe to reset.
             $db->getConnection()->prepare(
                 "UPDATE om_companies SET
                     logo_status = 'none',
