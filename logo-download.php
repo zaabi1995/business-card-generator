@@ -31,14 +31,20 @@ if (!LogoLibrary::canDownload($company)) {
     die('Downloads are only available for verified logos. Claim this profile to verify.');
 }
 
-// Rate limit: 30 downloads/hour per IP
+// Rate limit: 30 downloads/hour per IP, atomic via rate_limits table
+// (non-atomic SELECT COUNT then INSERT lets parallel fetches bypass the cap).
 $ipHash = LogoLibrary::ipHash();
+$bucket = (int) floor(time() / 3600);
+$db->getConnection()->prepare(
+    "INSERT INTO rate_limits (action, ip, bucket, count, window_sec)
+     VALUES ('logo_download', :ip, :b, 1, 3600)
+     ON DUPLICATE KEY UPDATE count = count + 1"
+)->execute([':ip' => $ipHash, ':b' => $bucket]);
 $recent = (int) ($db->fetchOne(
-    "SELECT COUNT(*) c FROM logo_downloads
-     WHERE ip_hash = :i AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)",
-    [':i' => $ipHash]
-)['c'] ?? 0);
-if ($recent >= 30) {
+    "SELECT count FROM rate_limits WHERE action = 'logo_download' AND ip = :ip AND bucket = :b",
+    [':ip' => $ipHash, ':b' => $bucket]
+)['count'] ?? 0);
+if ($recent > 30) {
     http_response_code(429);
     header('Retry-After: 3600');
     die('Rate limit exceeded');

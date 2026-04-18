@@ -171,18 +171,35 @@ foreach ($entries as $e) {
         $companyId = (int) $matched['id'];
         $report['queued']++;
     } else {
-        $slug = strtolower(preg_replace('~[^a-z0-9]+~i', '-', $e['name']));
-        $slug = trim($slug, '-') ?: 'indexed-' . substr(md5($e['name']), 0, 8);
-        $slug .= '-' . substr(md5($e['name']), 0, 4); // dedupe suffix
-        try {
-            $pdo->prepare("INSERT INTO om_companies (name_en, name_ar, slug, sector, wilayat, size_bucket, curated)
-                           VALUES (:n, :n, :s, 'other', 'muscat', 'medium', 0)")
-                ->execute([':n' => $e['name'], ':s' => $slug]);
-            $companyId = (int) $pdo->lastInsertId();
-            $report['new_rows']++;
-        } catch (Throwable $t) {
-            $report['errors'][] = "insert new row failed for {$e['name']}: " . $t->getMessage();
-            continue;
+        // Before creating a new row, re-check against rows we created earlier
+        // IN THIS SAME SEED RUN (matching was computed once against the
+        // pre-seed snapshot, so same-run duplicates slip through otherwise).
+        static $sessionInserts = [];
+        $dupeHit = null;
+        foreach ($sessionInserts as $cand) {
+            if (similarity($e['name'], $cand['name']) >= 0.90) {
+                $dupeHit = $cand;
+                break;
+            }
+        }
+        if ($dupeHit) {
+            $companyId = (int) $dupeHit['id'];
+            $report['auto_linked']++; // treat as auto-link onto the just-created row
+        } else {
+            $slug = strtolower(preg_replace('~[^a-z0-9]+~i', '-', $e['name']));
+            $slug = trim($slug, '-') ?: 'indexed-' . substr(md5($e['name']), 0, 8);
+            $slug .= '-' . substr(md5($e['name']), 0, 4); // dedupe suffix
+            try {
+                $pdo->prepare("INSERT INTO om_companies (name_en, name_ar, slug, sector, wilayat, size_bucket, curated)
+                               VALUES (:n, :n, :s, 'other', 'muscat', 'medium', 0)")
+                    ->execute([':n' => $e['name'], ':s' => $slug]);
+                $companyId = (int) $pdo->lastInsertId();
+                $report['new_rows']++;
+                $sessionInserts[] = ['id' => $companyId, 'name' => $e['name']];
+            } catch (Throwable $t) {
+                $report['errors'][] = "insert new row failed for {$e['name']}: " . $t->getMessage();
+                continue;
+            }
         }
     }
 
@@ -231,17 +248,44 @@ foreach ($entries as $e) {
     // stored + previewed on /admin/super/logos/match-queue.
     // CRITICAL: when queued, also preserve existing logo_*_path columns so
     // an unreviewed 2oman asset never overwrites a verified/indexed public logo.
-    // Match-queue preview reads the file directly from /storage/logos/indexed/{id}.{ext}.
+    // Match-queue preview reads the file directly from /storage/logos/pending/{id}.{ext}.
     // PDO emulate_prepares=false: each placeholder must be unique.
+    //
+    // For auto_link (is_queue=0): we're authoritatively replacing the public
+    // logo. Clear every OTHER format + all derived size variants first so old
+    // svg/webp/png_512/png_2048 don't keep serving publicly after the PNG
+    // (etc.) is replaced. If the row was 'verified' / 'takedown' we don't
+    // touch it — those states are protected from the seeder entirely.
     $relPath = "$destRelDir/{$companyId}.$ext";
+    if (!$isQueue) {
+        // Purge old files from /storage/logos/indexed/ that we're about to
+        // replace (different extensions the old logo used to live at).
+        foreach (['svg', 'png', 'webp'] as $oldExt) {
+            if ($oldExt === $ext) continue;
+            $oldAbs = dirname(__DIR__) . "/storage/logos/indexed/{$companyId}.{$oldExt}";
+            if (is_file($oldAbs)) @unlink($oldAbs);
+        }
+        foreach (['512', '2048'] as $size) {
+            $oldSize = dirname(__DIR__) . "/storage/logos/indexed/{$companyId}-{$size}.png";
+            if (is_file($oldSize)) @unlink($oldSize);
+        }
+    }
     $pdo->prepare("UPDATE om_companies SET
         logo_status          = IF(logo_status IN ('verified','takedown'), logo_status,
                                  IF(:is_queue = 1, logo_status, 'indexed')),
         logo_source          = '2oman_net',
         logo_source_url      = :su,
-        logo_png_path        = IF(:is_png  = 1 AND :is_queue = 0, :rel_png,  logo_png_path),
-        logo_svg_path        = IF(:is_svg  = 1 AND :is_queue = 0, :rel_svg,  logo_svg_path),
-        logo_webp_path       = IF(:is_webp = 1 AND :is_queue = 0, :rel_webp, logo_webp_path),
+        logo_png_path        = IF(:is_queue = 1,
+                                  logo_png_path,
+                                  IF(:is_png  = 1, :rel_png,  NULL)),
+        logo_svg_path        = IF(:is_queue = 1,
+                                  logo_svg_path,
+                                  IF(:is_svg  = 1, :rel_svg,  NULL)),
+        logo_webp_path       = IF(:is_queue = 1,
+                                  logo_webp_path,
+                                  IF(:is_webp = 1, :rel_webp, NULL)),
+        logo_png_512_path    = IF(:is_queue = 1, logo_png_512_path,  NULL),
+        logo_png_2048_path   = IF(:is_queue = 1, logo_png_2048_path, NULL),
         logo_width           = IF(:is_queue = 1, logo_width,           :w),
         logo_height          = IF(:is_queue = 1, logo_height,          :h),
         logo_dominant_color  = IF(:is_queue = 1, logo_dominant_color,  :c),

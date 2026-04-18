@@ -25,12 +25,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
         // after the canonical logo is replaced. Re-render via scripts/render-
         // logo-variants.php --only-missing after confirm.
         $root = dirname(__DIR__, 3);
+        // Which extensions does the queued replacement actually provide?
+        $pendingExts = [];
+        foreach (['svg', 'png', 'webp'] as $ext) {
+            if (is_file($root . "/storage/logos/pending/{$id}.{$ext}")) {
+                $pendingExts[] = $ext;
+            }
+        }
+        // Delete any EXISTING indexed files that are NOT part of the queued
+        // replacement — otherwise confirming a PNG replacement would reattach
+        // a stale old SVG because is_file() returns true for it.
+        foreach (['svg', 'png', 'webp', 'jpg', 'jpeg'] as $existingExt) {
+            if (in_array($existingExt, $pendingExts, true)) continue;
+            $stale = $root . "/storage/logos/indexed/{$id}.{$existingExt}";
+            if (is_file($stale)) @unlink($stale);
+        }
+        // Derived size variants are always stale once canonical changes.
+        foreach (['512', '2048'] as $size) {
+            $stale = $root . "/storage/logos/indexed/{$id}-{$size}.png";
+            if (is_file($stale)) @unlink($stale);
+        }
+
         $updates = [
-            // Always reset derived size variants; they're stale once canonical changes.
             'logo_png_512_path'  => null,
             'logo_png_2048_path' => null,
-            // Null the three canonical columns by default; repopulate below only
-            // for formats where a file actually exists after promotion.
             'logo_svg_path'      => null,
             'logo_png_path'      => null,
             'logo_webp_path'     => null,
