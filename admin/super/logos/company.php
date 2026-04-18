@@ -67,11 +67,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
                 'webp' => 'logo_webp_path',
                 default => 'logo_png_path',
             };
+            // Admin replace: clear ALL variant columns + size-specific PNGs +
+            // WebP, then write the new column. Otherwise stale paths keep
+            // appearing in hero/ZIP/OG pipelines.
             $db->getConnection()->prepare(
                 "UPDATE om_companies SET
-                    $col = :p,
-                    logo_source = 'admin_upload',
-                    logo_updated_at = NOW()
+                    logo_svg_path       = NULL,
+                    logo_png_path       = NULL,
+                    logo_png_512_path   = NULL,
+                    logo_png_2048_path  = NULL,
+                    logo_webp_path      = NULL,
+                    $col                = :p,
+                    logo_source         = 'admin_upload',
+                    logo_updated_at     = NOW()
                  WHERE id = :id"
             )->execute([':p' => $dest, ':id' => $id]);
         }

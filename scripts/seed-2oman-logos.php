@@ -212,8 +212,9 @@ foreach ($entries as $e) {
     [$w, $h] = @getimagesize($destFile) ?: [null, null];
     $dom     = LogoLibrary::dominantColor($destFile);
 
-    $isSvg = $ext === 'svg';
-    $isPng = $ext === 'png';
+    $isSvg   = $ext === 'svg';
+    $isPng   = $ext === 'png';
+    $isWebp  = $ext === 'webp';
     $isQueue = $decision === 'queue';
 
     // Queue (0.75–0.89 fuzzy match) → admin must confirm before going public.
@@ -227,8 +228,9 @@ foreach ($entries as $e) {
                                  IF(:is_queue = 1, logo_status, 'indexed')),
         logo_source          = '2oman_net',
         logo_source_url      = :su,
-        logo_png_path        = IF(:is_png = 1, :rel_png, logo_png_path),
-        logo_svg_path        = IF(:is_svg = 1, :rel_svg, logo_svg_path),
+        logo_png_path        = IF(:is_png  = 1, :rel_png,  logo_png_path),
+        logo_svg_path        = IF(:is_svg  = 1, :rel_svg,  logo_svg_path),
+        logo_webp_path       = IF(:is_webp = 1, :rel_webp, logo_webp_path),
         logo_width           = :w,
         logo_height          = :h,
         logo_dominant_color  = :c,
@@ -236,17 +238,19 @@ foreach ($entries as $e) {
         logo_updated_at      = NOW()
         WHERE id = :id")
        ->execute([
-           ':su'      => $src,
-           ':is_png'  => $isPng ? 1 : 0,
-           ':is_svg'  => $isSvg ? 1 : 0,
-           ':is_queue'=> $isQueue ? 1 : 0,
-           ':rel_png' => $relPath,
-           ':rel_svg' => $relPath,
-           ':w'       => $w,
-           ':h'       => $h,
-           ':c'       => $dom,
-           ':mp'     => $decision === 'queue' ? 1 : 0,
-           ':id'     => $companyId,
+           ':su'       => $src,
+           ':is_png'   => $isPng  ? 1 : 0,
+           ':is_svg'   => $isSvg  ? 1 : 0,
+           ':is_webp'  => $isWebp ? 1 : 0,
+           ':is_queue' => $isQueue ? 1 : 0,
+           ':rel_png'  => $relPath,
+           ':rel_svg'  => $relPath,
+           ':rel_webp' => $relPath,
+           ':w'        => $w,
+           ':h'        => $h,
+           ':c'        => $dom,
+           ':mp'       => $decision === 'queue' ? 1 : 0,
+           ':id'       => $companyId,
        ]);
 
     usleep($CRAWL_DELAY_MS * 1000);

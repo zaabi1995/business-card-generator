@@ -325,8 +325,22 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
             </div>
             <div class="p-8 lg:p-10">
             <div class="flex items-start gap-5 flex-wrap">
-                <?php if (!empty($company['logo_url'])): ?>
-                    <img src="<?= escq($company['logo_url']) ?>" alt="<?= escq($company['name_en']) ?> logo" class="w-20 h-20 rounded-xl object-contain bg-gray-50 border border-gray-200 flex-shrink-0 -mt-16 shadow-lg ring-4 ring-white">
+                <?php
+                    /* Legacy logo_url header avatar. Suppress when the Logo Library
+                       has flagged the logo as taken down so the takedown actually hides
+                       the mark. Library logos (logo_svg_path etc.) also take precedence. */
+                    $headerLogoUrl = null;
+                    if (($company['logo_status'] ?? 'none') !== 'takedown') {
+                        $headerLogoUrl = $company['logo_svg_path']
+                                      ?? null;
+                        $headerLogoUrl = $headerLogoUrl
+                                      ?: ($company['logo_png_path'] ?? null)
+                                      ?: ($company['logo_webp_path'] ?? null)
+                                      ?: ($company['logo_url'] ?? null);
+                    }
+                ?>
+                <?php if ($headerLogoUrl): ?>
+                    <img src="<?= escq($headerLogoUrl) ?>" alt="<?= escq($company['name_en']) ?> logo" class="w-20 h-20 rounded-xl object-contain bg-gray-50 border border-gray-200 flex-shrink-0 -mt-16 shadow-lg ring-4 ring-white">
                 <?php else: ?>
                     <div class="w-20 h-20 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-3xl font-bold flex-shrink-0 -mt-16 shadow-lg ring-4 ring-white">
                         <?= escq(mb_substr($company['name_en'], 0, 1)) ?>
