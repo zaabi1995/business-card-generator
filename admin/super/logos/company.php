@@ -44,9 +44,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
         $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
         if (in_array($ext, ['svg', 'png', 'jpg', 'jpeg', 'webp'], true)) {
             $root = dirname(__DIR__, 3);
-            $dest = "/storage/logos/verified/{$id}.{$ext}";
             @mkdir($root . '/storage/logos/verified', 0755, true);
+            $dest = "/storage/logos/verified/{$id}.{$ext}";
             move_uploaded_file($_FILES['logo']['tmp_name'], $root . $dest);
+
+            // Normalize JPEG → PNG so logo_png_path actually points at a PNG
+            // (downstream: imagecreatefrompng, image/png MIME).
+            if (in_array($ext, ['jpg', 'jpeg'], true)) {
+                $jpgImg = @imagecreatefromjpeg($root . $dest);
+                if ($jpgImg) {
+                    $pngDest = "/storage/logos/verified/{$id}.png";
+                    imagepng($jpgImg, $root . $pngDest, 9);
+                    imagedestroy($jpgImg);
+                    @unlink($root . $dest);
+                    $dest = $pngDest;
+                    $ext = 'png';
+                }
+            }
+
             $col = match ($ext) {
                 'svg'  => 'logo_svg_path',
                 'webp' => 'logo_webp_path',

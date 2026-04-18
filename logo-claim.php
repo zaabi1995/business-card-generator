@@ -51,18 +51,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $proofUrl = null;
 
-            if ($proofType === 'cr_document' && !empty($_FILES['proof_file']['tmp_name'])) {
-                $allowed = ['application/pdf', 'image/jpeg', 'image/png'];
-                $mime = mime_content_type($_FILES['proof_file']['tmp_name']);
-                if (!in_array($mime, $allowed, true) || $_FILES['proof_file']['size'] > 5 * 1024 * 1024) {
-                    $error = 'Proof file must be PDF/JPG/PNG under 5MB';
+            if ($proofType === 'cr_document') {
+                if (empty($_FILES['proof_file']['tmp_name'])) {
+                    $error = 'Please upload your CR document (PDF/JPG/PNG, ≤5MB)';
                 } else {
-                    $dir = __DIR__ . '/storage/logos/pending';
-                    @mkdir($dir, 0755, true);
-                    $ext = pathinfo($_FILES['proof_file']['name'], PATHINFO_EXTENSION);
-                    $fn = 'claim_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . preg_replace('/[^a-z0-9]/i', '', $ext);
-                    move_uploaded_file($_FILES['proof_file']['tmp_name'], "$dir/$fn");
-                    $proofUrl = "/storage/logos/pending/$fn";
+                    $allowed = ['application/pdf', 'image/jpeg', 'image/png'];
+                    $mime = mime_content_type($_FILES['proof_file']['tmp_name']);
+                    if (!in_array($mime, $allowed, true) || $_FILES['proof_file']['size'] > 5 * 1024 * 1024) {
+                        $error = 'Proof file must be PDF/JPG/PNG under 5MB';
+                    } else {
+                        $dir = __DIR__ . '/storage/logos/pending';
+                        @mkdir($dir, 0755, true);
+                        $ext = pathinfo($_FILES['proof_file']['name'], PATHINFO_EXTENSION);
+                        $fn = 'claim_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . preg_replace('/[^a-z0-9]/i', '', $ext);
+                        move_uploaded_file($_FILES['proof_file']['tmp_name'], "$dir/$fn");
+                        $proofUrl = "/storage/logos/pending/$fn";
+                    }
                 }
             }
 
