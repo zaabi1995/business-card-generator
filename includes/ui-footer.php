@@ -1,10 +1,24 @@
 <?php
 // Site-wide footer (skip on homepage which has its own footer)
 $currentPage = basename($_SERVER['SCRIPT_NAME'] ?? '', '.php');
-if ($currentPage !== 'index'):
-    $bp = function_exists('getBasePath') ? getBasePath() : '/';
-    $bn = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
+$bp = function_exists('getBasePath') ? getBasePath() : '/';
+$bn = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
+
+// Minimal footer for auth/utility pages (login, signup, register, etc.)
+// Opt-in via $minimalFooter = true; in the page before including this file.
+if (!empty($minimalFooter)):
 ?>
+    <footer class="border-t border-gray-200 bg-white mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-gray-500">
+            <p>&copy; <?= date('Y') ?> <?= $bn ?>. Made in Oman.</p>
+            <div class="flex items-center gap-5">
+                <a href="<?= $bp ?>privacy" class="hover:text-gray-700">Privacy</a>
+                <a href="<?= $bp ?>terms" class="hover:text-gray-700">Terms</a>
+                <a href="<?= $bp ?>contact" class="hover:text-gray-700">Contact</a>
+            </div>
+        </div>
+    </footer>
+<?php elseif ($currentPage !== 'index'): ?>
     <footer class="bg-gray-900 text-white mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
