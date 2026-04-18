@@ -84,6 +84,22 @@
       </a>
     <?php endforeach; ?>
   </div>
+  <?php
+    $page       = $data['page'];
+    $totalPages = (int) ceil(max(1, $data['total']) / $data['per_page']);
+    if ($totalPages > 1):
+  ?>
+    <nav class="mt-8 flex justify-center gap-2" aria-label="<?= $isAr ? 'الصفحات' : 'Pagination' ?>">
+      <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++):
+            $qs = $_GET; $qs['page'] = $p; ?>
+        <a href="?<?= http_build_query($qs) ?>"
+           class="px-3 py-1 rounded <?= $p === $page ? 'bg-cyan-600 text-white' : 'bg-white border' ?>">
+          <?= $p ?>
+        </a>
+      <?php endfor; ?>
+    </nav>
+  <?php endif; ?>
+
   <p class="mt-8 text-sm text-gray-600">
     <?= $isAr ? 'استكشف أيضاً' : 'Explore also' ?>:
     <a href="/logos" class="underline text-cyan-700">

@@ -78,10 +78,43 @@ class LogoTakedownService {
         }
 
         $pdo = $db->getConnection();
+
+        // Fetch every path we need to purge from disk BEFORE we null them out.
+        $paths = $db->fetchOne(
+            "SELECT logo_svg_path, logo_png_path, logo_png_512_path,
+                    logo_png_2048_path, logo_webp_path, logo_url
+               FROM om_companies WHERE id = :id",
+            [':id' => $t['company_id']]
+        ) ?: [];
+
         $pdo->prepare("UPDATE logo_takedowns SET status = 'logo_hidden', decided_by = :d, decided_at = NOW(), resolution_notes = :n WHERE id = :id")
             ->execute([':d' => $deciderUserId, ':n' => $notes, ':id' => $takedownId]);
-        $pdo->prepare("UPDATE om_companies SET logo_status = 'takedown', logo_updated_at = NOW() WHERE id = :id")
-            ->execute([':id' => $t['company_id']]);
+
+        // Flip status AND clear paths + deprecated logo_url so nothing public can
+        // still reach the mark. Physical files are deleted below.
+        $pdo->prepare(
+            "UPDATE om_companies SET
+                logo_status        = 'takedown',
+                logo_svg_path      = NULL,
+                logo_png_path      = NULL,
+                logo_png_512_path  = NULL,
+                logo_png_2048_path = NULL,
+                logo_webp_path     = NULL,
+                logo_url           = NULL,
+                logo_updated_at    = NOW()
+             WHERE id = :id"
+        )->execute([':id' => $t['company_id']]);
+
+        // Delete files on disk. Only touch paths under /storage/logos/ (defensive)
+        // so a stray value can't trick us into unlinking outside the library.
+        $root = dirname(__DIR__);
+        foreach ($paths as $relPath) {
+            if (!is_string($relPath) || $relPath === '') continue;
+            if (strpos($relPath, '/storage/logos/') !== 0) continue;
+            $abs = $root . $relPath;
+            if (is_file($abs)) @unlink($abs);
+        }
+
         return ['ok' => true];
     }
 
