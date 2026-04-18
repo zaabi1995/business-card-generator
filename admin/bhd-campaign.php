@@ -33,7 +33,7 @@ $referralStats = $db->fetchAll("
 ");
 
 $bhdCompanies = $db->fetchAll("
-    SELECT c.id, c.name, c.admin_email, c.phone, c.created_at, c.onboarding_completed,
+    SELECT c.id, c.name, c.admin_email, c.created_at, c.onboarding_completed,
            COUNT(po.id) AS order_count,
            SUM(CASE WHEN po.status != 'cancelled' THEN po.total ELSE 0 END) AS total_revenue
     FROM companies c
@@ -344,7 +344,6 @@ adminHeader('BHD Campaign Manager', 'reports');
                         <td class="px-6 py-3 font-medium text-gray-900"><?= sanitize($comp['name']) ?></td>
                         <td class="px-6 py-3 text-gray-600">
                             <?php if ($comp['admin_email']): ?><div><?= sanitize($comp['admin_email']) ?></div><?php endif; ?>
-                            <?php if ($comp['phone']): ?><div class="text-xs"><?= sanitize($comp['phone']) ?></div><?php endif; ?>
                         </td>
                         <td class="px-6 py-3 text-right"><?= (int)$comp['order_count'] ?></td>
                         <td class="px-6 py-3 text-right font-medium"><?= number_format($comp['total_revenue'] ?? 0, 3) ?> OMR</td>
