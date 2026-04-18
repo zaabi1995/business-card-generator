@@ -128,12 +128,12 @@ adminHeader('LinkedIn Carousels', 'linkedin-carousels');
     <div class="flex items-start justify-between flex-wrap gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <i class="fa-brands fa-linkedin text-[#0a66c2]"></i> LinkedIn Carousels
+                <i class="fa-brands fa-linkedin" style="color: #2563eb;"></i> LinkedIn Carousels
             </h1>
             <p class="text-sm text-gray-600 mt-1 max-w-2xl">
                 Cron auto-generates the next due carousel at <strong>9 AM Oman time</strong>.
                 Copy the caption, download the PDF, then post manually to the
-                <a href="<?= $cardifyLinkedInUrl ?>" target="_blank" class="text-[#0a66c2] underline">Cardify LinkedIn page</a>.
+                <a href="<?= $cardifyLinkedInUrl ?>" target="_blank" class="text-blue-600 underline">Cardify LinkedIn page</a>.
             </p>
         </div>
         <div class="grid grid-cols-4 gap-2 text-center">
@@ -156,42 +156,42 @@ adminHeader('LinkedIn Carousels', 'linkedin-carousels');
 <?php if ($heroPost && $filter === 'all'): ?>
     <!-- HERO: Today's ready-to-post carousel -->
     <?php $heroSlides = $heroPost['linkedin_carousel_data'] ? json_decode($heroPost['linkedin_carousel_data'], true) : null; ?>
-    <div class="bg-gradient-to-br from-[#0a66c2] to-[#004182] text-white rounded-2xl shadow-xl mb-8 overflow-hidden">
-        <div class="p-6 border-b border-white/20">
-            <div class="flex items-center gap-2 mb-1">
-                <span class="px-2 py-0.5 text-[11px] uppercase tracking-wider bg-white/20 rounded font-semibold">Ready to post now</span>
-                <span class="text-xs text-white/80">Generated <?= htmlspecialchars(date('M j, H:i', strtotime($heroPost['linkedin_generated_at']))) ?></span>
+    <div class="rounded-2xl shadow-xl mb-8 overflow-hidden" style="background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); color: #fff;">
+        <div class="p-6" style="border-bottom: 1px solid rgba(255,255,255,0.20);">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="px-2 py-0.5 text-xs uppercase font-semibold rounded" style="background: rgba(255,255,255,0.22); color: #fff; letter-spacing: 0.05em;">Ready to post now</span>
+                <span class="text-xs" style="color: rgba(255,255,255,0.85);">Generated <?= htmlspecialchars(date('M j, H:i', strtotime($heroPost['linkedin_generated_at']))) ?></span>
             </div>
-            <h2 class="text-2xl font-bold leading-tight">
-                <a href="https://cardify.om/blog/<?= htmlspecialchars($heroPost['slug']) ?>" target="_blank" class="hover:underline"><?= htmlspecialchars($heroPost['title']) ?></a>
+            <h2 class="text-2xl font-bold leading-tight" style="color: #fff;">
+                <a href="https://cardify.om/blog/<?= htmlspecialchars($heroPost['slug']) ?>" target="_blank" style="color: #fff; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><?= htmlspecialchars($heroPost['title']) ?></a>
             </h2>
         </div>
 
-        <div class="p-6 grid lg:grid-cols-3 gap-5 bg-white/5">
-            <!-- LEFT: Caption (the text Ali pastes into LinkedIn) -->
+        <div class="p-6 grid lg:grid-cols-3 gap-5" style="background: rgba(0,0,0,0.10);">
+            <!-- LEFT: Caption -->
             <div class="lg:col-span-2">
                 <div class="flex items-center justify-between mb-2">
-                    <label class="text-xs font-semibold uppercase tracking-wider text-white/90">LinkedIn caption (paste this)</label>
-                    <button type="button" onclick="copyHero()" id="heroCopyBtn" class="px-3 py-1.5 bg-white text-[#0a66c2] text-sm font-semibold rounded-md hover:bg-gray-100">
+                    <label class="text-xs font-semibold uppercase" style="color: #fff; letter-spacing: 0.05em;">LinkedIn caption (paste this)</label>
+                    <button type="button" onclick="copyHero()" id="heroCopyBtn" class="px-3 py-1.5 text-sm font-semibold rounded-md" style="background: #fff; color: #2563eb; border: 0; cursor: pointer;">
                         <i class="fa-solid fa-copy"></i> Copy caption
                     </button>
                 </div>
-                <textarea id="heroCaption" readonly class="w-full h-44 text-sm font-mono bg-white text-gray-900 rounded-lg p-4 border-0 resize-none focus:ring-2 focus:ring-white/50"><?= htmlspecialchars($heroPost['linkedin_commentary'] ?? '') ?></textarea>
+                <textarea id="heroCaption" readonly class="w-full text-sm font-mono rounded-lg p-4 resize-none" style="height: 11rem; background: #fff; color: #111827; border: 0;"><?= htmlspecialchars($heroPost['linkedin_commentary'] ?? '') ?></textarea>
             </div>
 
             <!-- RIGHT: Actions -->
             <div class="space-y-3">
-                <a href="/admin/super/linkedin-carousel-download.php?id=<?= $heroPost['id'] ?>" download class="block text-center px-4 py-3 bg-white text-[#0a66c2] text-sm font-semibold rounded-lg hover:bg-gray-100">
+                <a href="/admin/super/linkedin-carousel-download.php?id=<?= $heroPost['id'] ?>" download class="block text-center px-4 py-3 text-sm font-semibold rounded-lg" style="background: #fff; color: #2563eb; text-decoration: none;">
                     <i class="fa-solid fa-file-arrow-down"></i> Download PDF carousel
                 </a>
-                <a href="<?= $cardifyLinkedInUrl ?>" target="_blank" class="block text-center px-4 py-3 bg-white/15 hover:bg-white/25 text-white text-sm font-semibold rounded-lg border border-white/30">
+                <a href="<?= $cardifyLinkedInUrl ?>" target="_blank" class="block text-center px-4 py-3 text-sm font-semibold rounded-lg" style="background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.4); text-decoration: none;">
                     <i class="fa-brands fa-linkedin"></i> Open Cardify LinkedIn
                 </a>
                 <form method="POST" class="block">
                     <?= csrfField() ?>
                     <input type="hidden" name="action" value="mark_posted">
                     <input type="hidden" name="id" value="<?= $heroPost['id'] ?>">
-                    <button type="submit" class="w-full px-4 py-3 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-lg">
+                    <button type="submit" class="w-full px-4 py-3 text-sm font-semibold rounded-lg" style="background: #16a34a; color: #fff; border: 0; cursor: pointer;">
                         <i class="fa-solid fa-check-circle"></i> Mark as posted
                     </button>
                 </form>
@@ -199,16 +199,16 @@ adminHeader('LinkedIn Carousels', 'linkedin-carousels');
                     <?= csrfField() ?>
                     <input type="hidden" name="action" value="regenerate">
                     <input type="hidden" name="id" value="<?= $heroPost['id'] ?>">
-                    <button type="submit" class="w-full px-3 py-2 bg-transparent hover:bg-white/10 text-white/80 text-xs font-medium rounded border border-white/20">
-                        <i class="fa-solid fa-rotate"></i> Regenerate (don't like the copy)
+                    <button type="submit" class="w-full px-3 py-2 text-xs font-medium rounded" style="background: transparent; color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.30); cursor: pointer;">
+                        <i class="fa-solid fa-rotate"></i> Regenerate
                     </button>
                 </form>
             </div>
         </div>
 
         <?php if ($heroSlides): ?>
-        <details class="bg-white/5 border-t border-white/15">
-            <summary class="px-6 py-3 cursor-pointer text-xs uppercase tracking-wider text-white/85 hover:bg-white/10">
+        <details style="background: rgba(0,0,0,0.15); border-top: 1px solid rgba(255,255,255,0.15);">
+            <summary class="px-6 py-3 cursor-pointer text-xs uppercase font-semibold" style="color: #fff; letter-spacing: 0.05em;">
                 <i class="fa-solid fa-list"></i> View per-slide copy (10 elements)
             </summary>
             <div class="px-6 pb-6 grid sm:grid-cols-2 gap-x-6 gap-y-1 text-xs">
@@ -228,10 +228,10 @@ adminHeader('LinkedIn Carousels', 'linkedin-carousels');
                 foreach ($items as $label => $val):
                     $isAr = strpos($label, 'AR') !== false;
                 ?>
-                <div class="flex items-center gap-2 py-1.5 border-b border-white/10">
-                    <span class="w-20 flex-shrink-0 text-white/60"><?= $label ?>:</span>
-                    <span class="flex-1 truncate text-white <?= $isAr ? 'text-right' : '' ?>" <?= $isAr ? 'dir="rtl"' : '' ?>><?= htmlspecialchars($val) ?></span>
-                    <button type="button" onclick="copyTextDirectly(this, <?= json_encode($val, JSON_HEX_QUOT|JSON_HEX_APOS|JSON_HEX_AMP|JSON_UNESCAPED_UNICODE) ?>)" class="px-1.5 py-0.5 bg-white/15 hover:bg-white/30 text-white rounded">
+                <div class="flex items-center gap-2 py-1.5" style="border-bottom: 1px solid rgba(255,255,255,0.12);">
+                    <span class="w-20 flex-shrink-0" style="color: rgba(255,255,255,0.7);"><?= $label ?>:</span>
+                    <span class="flex-1 truncate <?= $isAr ? 'text-right' : '' ?>" style="color: #fff;" <?= $isAr ? 'dir="rtl"' : '' ?>><?= htmlspecialchars($val) ?></span>
+                    <button type="button" onclick="copyTextDirectly(this, <?= json_encode($val, JSON_HEX_QUOT|JSON_HEX_APOS|JSON_HEX_AMP|JSON_UNESCAPED_UNICODE) ?>)" class="px-1.5 py-0.5 rounded" style="background: rgba(255,255,255,0.18); color: #fff; border: 0; cursor: pointer;">
                         <i class="fa-solid fa-copy"></i>
                     </button>
                 </div>
