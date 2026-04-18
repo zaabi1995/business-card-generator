@@ -72,8 +72,11 @@ if ($format === 'zip') {
     }
     $readme = "Logo bundle for {$company['name_en']}\n"
             . "Indexed by Cardify — https://cardify.om/logos\n\n"
-            . "All marks are property of their respective owners.\n"
-            . "This bundle is provided to the verified owner of the profile.\n\n"
+            . "All marks are property of their respective owners. This bundle\n"
+            . "is published because the brand owner has verified their profile;\n"
+            . "use is permitted for identification and reference only (nominative\n"
+            . "fair use). Commercial reuse, redistribution, and derivative works\n"
+            . "require the owner's permission.\n\n"
             . "Need business cards? Visit https://cardify.om/pricing\n";
     $zip->addFromString('README.txt', $readme);
     $zip->close();

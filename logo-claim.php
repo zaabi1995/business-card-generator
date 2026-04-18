@@ -64,8 +64,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         @mkdir($dir, 0755, true);
                         $ext = pathinfo($_FILES['proof_file']['name'], PATHINFO_EXTENSION);
                         $fn = 'claim_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . preg_replace('/[^a-z0-9]/i', '', $ext);
-                        move_uploaded_file($_FILES['proof_file']['tmp_name'], "$dir/$fn");
-                        $proofUrl = "/storage/logos/pending/$fn";
+                        if (!move_uploaded_file($_FILES['proof_file']['tmp_name'], "$dir/$fn")) {
+                            $error = 'Could not save proof file. Check back later.';
+                        } else {
+                            $proofUrl = "/storage/logos/pending/$fn";
+                        }
                     }
                 }
             }

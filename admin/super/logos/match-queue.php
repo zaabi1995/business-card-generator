@@ -16,15 +16,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
     $id     = (int) ($_POST['id'] ?? 0);
     if ($action === 'confirm' && $id) {
         // Confirm flips logo_status to 'indexed' AND promotes the staged file
-        // from /storage/logos/indexed/{id}.{ext} into the appropriate column.
-        // Seeder intentionally left path columns alone for queued rows so a
-        // public verified logo couldn't be clobbered by an unreviewed one.
+        // from /storage/logos/pending/{id}.{ext} into /storage/logos/indexed/.
+        // Seeder intentionally staged queued files under pending/ so a verified
+        // public logo at /storage/logos/indexed/ couldn't be clobbered on disk.
         $root = dirname(__DIR__, 3);
         $updates = [];
         foreach (['svg' => 'logo_svg_path', 'png' => 'logo_png_path', 'webp' => 'logo_webp_path'] as $ext => $col) {
-            $rel = "/storage/logos/indexed/{$id}.{$ext}";
-            if (is_file($root . $rel)) {
-                $updates[$col] = $rel;
+            $pendingRel = "/storage/logos/pending/{$id}.{$ext}";
+            $indexedRel = "/storage/logos/indexed/{$id}.{$ext}";
+            if (is_file($root . $pendingRel)) {
+                @mkdir($root . '/storage/logos/indexed', 0755, true);
+                // Overwrite existing indexed file; match-queue is the admin's
+                // explicit go-ahead to publish the new asset.
+                @rename($root . $pendingRel, $root . $indexedRel);
+            }
+            if (is_file($root . $indexedRel)) {
+                $updates[$col] = $indexedRel;
             }
         }
         $setClauses = ["logo_status = IF(logo_status IN ('verified','takedown'), logo_status, 'indexed')",
@@ -39,12 +46,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
             "UPDATE om_companies SET " . implode(', ', $setClauses) . " WHERE id = :id"
         )->execute($params);
     } elseif ($action === 'reject' && $id) {
-        // Delete any staged files in /storage/logos/indexed/{id}.* that the
-        // seeder wrote for this queued row. For queued rows we didn't populate
-        // path columns, so the staged files are the only leftover.
+        // Delete staged files under /storage/logos/pending/{id}.* that the
+        // seeder wrote for this queued row. Public /storage/logos/indexed/
+        // files are not touched here — rejecting a queue entry must never
+        // delete an already-public logo.
         $root = dirname(__DIR__, 3);
         foreach (['svg', 'png', 'webp', 'jpg', 'jpeg'] as $ext) {
-            $abs = $root . "/storage/logos/indexed/{$id}.{$ext}";
+            $abs = $root . "/storage/logos/pending/{$id}.{$ext}";
             if (is_file($abs)) @unlink($abs);
         }
         // Clear match_pending on all rows; for verified/takedown also preserve
@@ -89,10 +97,19 @@ function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
  * verified one), so we glob the indexed/ directory to find the staged file.
  */
 function queuePreviewSrc(int $companyId, ?string $svgPath, ?string $pngPath): ?string {
+    $root = dirname(__DIR__, 3);
+    // Prefer the staged pending file via admin-auth'd endpoint (nginx blocks
+    // direct /storage/logos/pending/ access). Fall back to indexed/ (the
+    // CURRENT live logo) so reviewers can compare against what's already
+    // published.
+    foreach (['svg', 'png', 'webp', 'jpg', 'jpeg'] as $ext) {
+        if (is_file($root . "/storage/logos/pending/{$companyId}.{$ext}")) {
+            return "/admin/super/logos/pending-preview.php?id={$companyId}&ext={$ext}";
+        }
+    }
     if ($svgPath) return $svgPath;
     if ($pngPath) return $pngPath;
-    $root = dirname(__DIR__, 3);
-    foreach (['svg', 'png', 'webp', 'jpg', 'jpeg'] as $ext) {
+    foreach (['svg', 'png', 'webp'] as $ext) {
         $rel = "/storage/logos/indexed/{$companyId}.{$ext}";
         if (is_file($root . $rel)) return $rel;
     }

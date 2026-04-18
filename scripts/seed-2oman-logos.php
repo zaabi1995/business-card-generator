@@ -186,8 +186,11 @@ foreach ($entries as $e) {
         }
     }
 
-    // Save file under indexed/
-    $destRelDir = "/storage/logos/indexed";
+    // Queued files go under pending/ so they can't overwrite a live
+    // /storage/logos/indexed/{id}.{ext} asset on disk before admin review.
+    // Admin match-queue.php previews from pending/, confirm promotes to indexed/,
+    // reject deletes from pending/.
+    $destRelDir = $decision === 'queue' ? "/storage/logos/pending" : "/storage/logos/indexed";
     $destAbsDir = dirname(__DIR__) . $destRelDir;
     @mkdir($destAbsDir, 0755, true);
     $destFile = "$destAbsDir/{$companyId}.$ext";

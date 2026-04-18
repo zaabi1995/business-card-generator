@@ -89,6 +89,27 @@ class LogoClaimService {
                 logo_verified_at        = NOW(),
                 logo_updated_at         = NOW()
               WHERE id = :id")->execute([':u' => $userId, ':id' => $companyId]);
+
+            // Auto-reject any older pending sibling claims on the same company.
+            // Otherwise a later decideClaim('approved') on a stale pending row
+            // would silently overwrite logo_claimed_by_user_id.
+            $pdo->prepare(
+                "UPDATE logo_claims SET
+                    status         = 'rejected',
+                    decided_by     = :u,
+                    decided_at     = NOW(),
+                    decision_notes = CONCAT(COALESCE(decision_notes, ''),
+                        IF(decision_notes IS NULL OR decision_notes = '', '', '\n'),
+                        '[auto-rejected: claim #', :sibling_id, ' auto-verified via domain match]')
+                 WHERE company_id = :cid
+                   AND status     = 'pending'
+                   AND id        != :claim_id"
+            )->execute([
+                ':u'          => $userId,
+                ':sibling_id' => $claimId,
+                ':cid'        => $companyId,
+                ':claim_id'   => $claimId,
+            ]);
         } else {
             // Don't downgrade verified/takedown; move 'none'/'indexed' to 'pending'
             $pdo->prepare("UPDATE om_companies SET
