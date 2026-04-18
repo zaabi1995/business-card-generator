@@ -19,7 +19,8 @@
     ],
     "require": {
         "php": ">=7.4",
-        "tecnickcom/tcpdf": "^6.10"
+        "tecnickcom/tcpdf": "^6.10",
+        "ksubileau/color-thief-php": "^2.0"
     },
     "suggest": {
         "phpoffice/phpspreadsheet": "For Excel file import support"
