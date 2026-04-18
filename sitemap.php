@@ -221,7 +221,9 @@ if ($part === 'static') {
     }
 
 } elseif ($part === 'logos') {
-    // Omani Logo Library — hub + terms/press + 23 sector pages.
+    // Omani Logo Library — hub + terms/press + 23 sector pages + image entries
+    // for every indexed/verified logo (Google Images surfaces them from
+    // <image:image> blocks, not just <img> tags on a page).
     smUrl("{$baseUrl}/logos",       $today, 'daily',   '0.9');
     smUrl("{$baseUrl}/logos/press", $today, 'monthly', '0.5');
     smUrl("{$baseUrl}/logos/terms", $today, 'yearly',  '0.3');
@@ -237,6 +239,48 @@ if ($part === 'static') {
                 smUrl("{$baseUrl}/logos/{$s['sector']}", $today, 'weekly', '0.7');
             }
         } catch (Throwable $e) { /* om_companies may lack logo_status until migration runs */ }
+
+        // Per-logo entries with Google Image sitemap extensions.
+        // /companies/{slug} is the canonical logo page; the image extension
+        // tells Google the logo URL + title + license so Image Search can
+        // surface it.
+        try {
+            $logos = $db->fetchAll(
+                "SELECT slug, name_en, name_ar, logo_svg_path, logo_png_path,
+                        logo_png_2048_path, logo_webp_path, logo_updated_at, logo_status
+                   FROM om_companies
+                  WHERE logo_status IN ('indexed','verified')
+                  ORDER BY logo_updated_at DESC"
+            );
+            $licenseUrl = "{$baseUrl}/logos/terms";
+            foreach ($logos as $l) {
+                // Pick the highest-fidelity public URL for the image loc.
+                $rel = $l['logo_svg_path']
+                    ?: $l['logo_png_2048_path']
+                    ?: $l['logo_png_path']
+                    ?: $l['logo_webp_path'];
+                if (!$rel) continue;
+                $imgUrl = $baseUrl . $rel;
+                $pageUrl = "{$baseUrl}/companies/{$l['slug']}";
+                $lastmod = $l['logo_updated_at']
+                    ? date('Y-m-d', strtotime($l['logo_updated_at']))
+                    : $today;
+                $caption = trim(($l['name_en'] ?? '') . ' logo');
+                $title   = trim(($l['name_en'] ?? '') . ' logo — Omani Logo Library');
+                echo "    <url>\n";
+                echo "        <loc>" . smX($pageUrl) . "</loc>\n";
+                echo "        <lastmod>{$lastmod}</lastmod>\n";
+                echo "        <changefreq>monthly</changefreq>\n";
+                echo "        <priority>0.6</priority>\n";
+                echo "        <image:image>\n";
+                echo "            <image:loc>" . smX($imgUrl) . "</image:loc>\n";
+                echo "            <image:title>" . smX($title) . "</image:title>\n";
+                echo "            <image:caption>" . smX($caption) . "</image:caption>\n";
+                echo "            <image:license>" . smX($licenseUrl) . "</image:license>\n";
+                echo "        </image:image>\n";
+                echo "    </url>\n";
+            }
+        } catch (Throwable $e) { /* fields may be missing */ }
     }
 
 } else {

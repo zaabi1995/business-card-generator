@@ -80,14 +80,16 @@ $companyId = (int) ($company['id'] ?? 0);
                 </h2>
 
                 <?php if ($src): ?>
-                    <div class="mt-5 flex flex-wrap gap-2 justify-center md:justify-<?= $isAr ? 'end' : 'start' ?>">
-                        <?php if ($canDownload): ?>
+                    <!-- Download buttons — available whether indexed or verified -->
+                    <?php if ($canDownload): ?>
+                        <div class="mt-5 flex flex-wrap gap-2 justify-center md:justify-<?= $isAr ? 'end' : 'start' ?>">
                             <?php
                                 $formats = [
                                     'svg'      => ['SVG',         'logo_svg_path',      'fa-code'],
                                     'png_1024' => ['PNG · 1024',  'logo_png_path',      'fa-image'],
                                     'png_2048' => ['PNG · 2048',  'logo_png_2048_path', 'fa-image'],
                                     'png_512'  => ['PNG · 512',   'logo_png_512_path',  'fa-image'],
+                                    'webp'     => ['WebP',        'logo_webp_path',     'fa-image'],
                                     'zip'      => ['ZIP bundle',  null,                 'fa-box'],
                                 ];
                                 $primaryPlaced = false;
@@ -101,27 +103,32 @@ $companyId = (int) ($company['id'] ?? 0);
                                         : 'bg-white border border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600';
                             ?>
                                 <a href="/logo-download?company=<?= $companyId ?>&format=<?= logo_hero_esc($fmt) ?>"
-                                   class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold transition <?= $cls ?>">
+                                   class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold transition <?= $cls ?>"
+                                   rel="nofollow"
+                                   download>
                                     <i class="fa-solid <?= logo_hero_esc($icon) ?> text-xs"></i>
                                     <?= logo_hero_esc($label) ?>
                                 </a>
                             <?php endforeach; ?>
-                        <?php else: ?>
-                            <a href="/logo-claim?company=<?= $companyId ?>"
-                               class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40 transition">
-                                <i class="fa-solid fa-circle-check text-xs"></i>
-                                <?= $isAr ? 'المطالبة بهذا الشعار' : 'Claim this logo' ?>
+                        </div>
+
+                        <!-- Secondary row: claim + takedown -->
+                        <div class="mt-3 flex flex-wrap gap-3 items-center justify-center md:justify-<?= $isAr ? 'end' : 'start' ?> text-xs">
+                            <?php if ($status !== 'verified'): ?>
+                                <a href="/logo-claim?company=<?= $companyId ?>"
+                                   class="inline-flex items-center gap-1.5 text-gray-500 hover:text-blue-600 transition">
+                                    <i class="fa-solid fa-circle-check text-[10px]"></i>
+                                    <?= $isAr ? 'هل هذا شعار شركتك؟ طالب به' : 'Is this your company\'s logo? Claim it' ?>
+                                </a>
+                                <span class="text-gray-300">·</span>
+                            <?php endif; ?>
+                            <a href="/logo-takedown?company=<?= $companyId ?>"
+                               class="inline-flex items-center gap-1.5 text-gray-400 hover:text-rose-600 transition">
+                                <i class="fa-solid fa-flag text-[10px]"></i>
+                                <?= $isAr ? 'إبلاغ / إزالة' : 'Report / takedown' ?>
                             </a>
-                            <span class="inline-flex items-center text-xs text-gray-500 px-2">
-                                <?= $isAr ? 'التنزيل متاح بعد التوثيق' : 'Downloads available after verification' ?>
-                            </span>
-                        <?php endif; ?>
-                        <a href="/logo-takedown?company=<?= $companyId ?>"
-                           class="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-rose-600 px-2 transition self-center">
-                            <i class="fa-solid fa-flag text-[10px]"></i>
-                            <?= $isAr ? 'إبلاغ / إزالة' : 'Report / takedown' ?>
-                        </a>
-                    </div>
+                        </div>
+                    <?php endif; ?>
                 <?php else: ?>
                     <!-- No logo yet -->
                     <div class="mt-5 flex flex-wrap gap-2 justify-center md:justify-<?= $isAr ? 'end' : 'start' ?>">

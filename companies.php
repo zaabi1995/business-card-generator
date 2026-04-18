@@ -205,6 +205,33 @@ if ($company) {
     // Per-company composed OG image (sector background + name overlay)
     $ogImage = $baseUrl . '/og/company/' . $company['slug'] . '.jpg';
 
+    // --- Logo-focused SEO overrides ---
+    // When a company has an indexed/verified logo, bend title + description to
+    // target high-intent long-tail queries ("{Company} logo", "{Company} logo
+    // download", "{Company} logo svg"). This is what pulls Google Image /
+    // organic traffic to the library — without this the pages compete with
+    // the OBI profile for generic keywords.
+    $hasPublicLogo = !empty($company['logo_status'])
+        && in_array($company['logo_status'], ['indexed', 'verified'], true)
+        && (!empty($company['logo_svg_path']) || !empty($company['logo_png_path']) || !empty($company['logo_webp_path']));
+    if ($hasPublicLogo) {
+        $availableFormats = [];
+        if (!empty($company['logo_svg_path']))      $availableFormats[] = 'SVG';
+        if (!empty($company['logo_png_path']))      $availableFormats[] = 'PNG 1024';
+        if (!empty($company['logo_png_2048_path'])) $availableFormats[] = 'PNG 2048';
+        if (!empty($company['logo_webp_path']))     $availableFormats[] = 'WebP';
+        $formatsStr = implode(' + ', $availableFormats);
+        $verifiedTag = $company['logo_status'] === 'verified'
+            ? ($isAr ? ' (موثَّق)' : ' (verified)')
+            : '';
+        $pageTitle = $isAr
+            ? "شعار $displayName — تنزيل {$formatsStr}{$verifiedTag} | مكتبة الشعارات العمانية"
+            : "$displayName Logo — Download {$formatsStr}{$verifiedTag} | Omani Logo Library";
+        $pageDescription = $isAr
+            ? mb_substr("حمّل شعار $displayName بصيغة {$formatsStr} من مكتبة الشعارات العمانية على Cardify. مفهرس للتعريف والبحث فقط. " . ($wilLabel ? "{$secLabel}، {$wilLabel}." : ''), 0, 155)
+            : mb_substr("Download the $displayName logo in {$formatsStr} from the Omani Logo Library by Cardify. Indexed for identification and research. " . ($secLabel ? "{$secLabel} sector, {$wilLabel} governorate, Oman." : ''), 0, 155);
+    }
+
     $orgLd = [
         '@context' => 'https://schema.org',
         '@type' => 'Organization',

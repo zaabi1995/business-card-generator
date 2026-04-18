@@ -85,8 +85,16 @@ class LogoLibrary {
         };
     }
 
+    /**
+     * Can this logo be downloaded right now?
+     * Library policy: allow SVG/PNG/WebP downloads for BOTH 'indexed' and
+     * 'verified' statuses — the library is a public reference archive and
+     * downloads are helpful for journalists, designers, researchers. Takedown
+     * and disputed statuses remain blocked. Verified logos get a little extra
+     * (the "Verified by owner" badge), but download gating is the same.
+     */
     public static function canDownload(array $company): bool {
-        return ($company['logo_status'] ?? 'none') === 'verified';
+        return in_array($company['logo_status'] ?? 'none', ['indexed', 'verified'], true);
     }
 
     /**
