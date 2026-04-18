@@ -202,6 +202,11 @@ Options -Indexes
     RewriteRule ^logos/press/?$                logos.php?view=press   [L,QSA]
     RewriteRule ^logos/terms/?$                logos.php?view=terms   [L,QSA]
     RewriteRule ^logos/([a-z0-9-]+)/?$         logos.php?view=sector&sector=$1 [L,QSA]
+    # Arabic variants — logos.php reads ?lang=ar for RTL + AR copy.
+    RewriteRule ^ar/logos/?$                   logos.php?view=hub&lang=ar   [L,QSA]
+    RewriteRule ^ar/logos/press/?$             logos.php?view=press&lang=ar [L,QSA]
+    RewriteRule ^ar/logos/terms/?$             logos.php?view=terms&lang=ar [L,QSA]
+    RewriteRule ^ar/logos/([a-z0-9-]+)/?$      logos.php?view=sector&sector=$1&lang=ar [L,QSA]
     RewriteRule ^logo-claim/?$                 logo-claim.php         [L,QSA]
     RewriteRule ^logo-takedown/?$              logo-takedown.php      [L,QSA]
     RewriteRule ^logo-download/?$              logo-download.php      [L,QSA]

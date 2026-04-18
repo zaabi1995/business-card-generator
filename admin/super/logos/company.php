@@ -103,6 +103,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
                 'webp' => 'logo_webp_path',
                 default => 'logo_png_path',
             };
+
+            // Snapshot old files BEFORE clearing path columns so we can delete them.
+            // Skip the file we just wrote ($dest) to avoid deleting the new upload if
+            // it happens to reuse an old path.
+            $oldPaths = $db->fetchOne(
+                "SELECT logo_svg_path, logo_png_path, logo_png_512_path,
+                        logo_png_2048_path, logo_webp_path
+                   FROM om_companies WHERE id = :id",
+                [':id' => $id]
+            ) ?: [];
+
             // Admin replace: clear ALL variant columns + size-specific PNGs +
             // WebP, then write the new column. Otherwise stale paths keep
             // appearing in hero/ZIP/OG pipelines.
@@ -118,6 +129,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
                     logo_updated_at     = NOW()
                  WHERE id = :id"
             )->execute([':p' => $dest, ':id' => $id]);
+
+            // Delete superseded files from disk so the old SVG/PNG/WebP/size
+            // variants aren't still fetchable at their URLs.
+            foreach ($oldPaths as $relPath) {
+                if (!is_string($relPath) || $relPath === '' || $relPath === $dest) continue;
+                if (strpos($relPath, '/storage/logos/') !== 0) continue;
+                $oldAbs = $root . $relPath;
+                if (is_file($oldAbs)) @unlink($oldAbs);
+            }
         }
     }
     header("Location: /admin/super/logos/company.php?id=$id&saved=1");

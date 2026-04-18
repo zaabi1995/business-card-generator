@@ -22,6 +22,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
         if (!$res['ok']) $flash = 'hide_failed:' . $res['error'];
     } elseif ($action === 'reject' && $id) {
         LogoTakedownService::reject($db, $id, $me['id'], $notes ?: null);
+    } elseif ($action === 'attach' && $id) {
+        // Admin resolves an unmatched takedown by attaching a company_id.
+        $newCompanyId = (int) ($_POST['attach_company_id'] ?? 0);
+        if ($newCompanyId > 0) {
+            $company = $db->fetchOne("SELECT id FROM om_companies WHERE id = :id", [':id' => $newCompanyId]);
+            if ($company) {
+                $db->getConnection()->prepare(
+                    "UPDATE logo_takedowns SET company_id = :c WHERE id = :id AND company_id = 0"
+                )->execute([':c' => $newCompanyId, ':id' => $id]);
+            } else {
+                $flash = 'attach_failed:company_id ' . $newCompanyId . ' not found';
+            }
+        } else {
+            $flash = 'attach_failed:provide a numeric company id';
+        }
     }
     // Pass error message as a session flash so the redirect preserves it.
     if ($flash) $_SESSION['logo_takedowns_flash'] = $flash;
@@ -50,6 +65,10 @@ function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
   <div class="mt-4 p-3 bg-amber-50 border border-amber-300 rounded text-sm text-amber-900">
     Could not hide logo: <?= esc(substr($flash, strlen('hide_failed:'))) ?>
   </div>
+<?php elseif ($flash && str_starts_with($flash, 'attach_failed:')): ?>
+  <div class="mt-4 p-3 bg-amber-50 border border-amber-300 rounded text-sm text-amber-900">
+    Could not attach company: <?= esc(substr($flash, strlen('attach_failed:'))) ?>
+  </div>
 <?php endif; ?>
 
 <div class="space-y-4 mt-6">
@@ -61,9 +80,17 @@ function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
             <a href="/companies/<?= esc($r['company_slug']) ?>" target="_blank"
                class="font-semibold underline"><?= esc($r['company_name']) ?></a>
           <?php else: ?>
-            <span class="font-semibold text-amber-700">
-              Unmatched company — resolve before deciding
-            </span>
+            <div class="font-semibold text-amber-700">
+              Unmatched company — attach a company_id before Hide
+            </div>
+            <form method="post" class="mt-2 flex gap-1 items-center">
+              <input type="hidden" name="csrf_token" value="<?= esc($csrfToken) ?>">
+              <input type="hidden" name="takedown_id" value="<?= (int) $r['id'] ?>">
+              <input type="hidden" name="action" value="attach">
+              <input type="number" name="attach_company_id" placeholder="company_id"
+                     class="w-32 border rounded px-2 py-1 text-xs" min="1" required>
+              <button class="px-2 py-1 bg-amber-600 text-white text-xs rounded">Attach</button>
+            </form>
           <?php endif; ?>
           <div class="text-sm text-gray-600 mt-1">
             From: <?= esc($r['requester_name']) ?>
