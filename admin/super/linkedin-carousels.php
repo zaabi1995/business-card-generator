@@ -105,11 +105,21 @@ $excludeHero = $heroPost ? ' AND id != ' . (int)$heroPost['id'] : '';
 $posts = $db->fetchAll(
     "SELECT id, title, slug, status, published_at,
             linkedin_carousel_pdf, linkedin_carousel_data, linkedin_commentary,
-            linkedin_generated_at, linkedin_marked_posted_at
+            linkedin_generated_at, linkedin_marked_posted_at,
+            CASE
+                WHEN linkedin_marked_posted_at IS NOT NULL THEN 2
+                WHEN linkedin_generated_at IS NOT NULL THEN 0
+                ELSE 1
+            END AS sort_priority
      FROM blog_posts
      WHERE $where $excludeHero
-     ORDER BY published_at DESC
-     LIMIT 200"
+     ORDER BY sort_priority ASC,
+              CASE
+                WHEN linkedin_generated_at IS NOT NULL THEN linkedin_generated_at
+                WHEN linkedin_marked_posted_at IS NOT NULL THEN linkedin_marked_posted_at
+                ELSE published_at
+              END DESC
+     LIMIT 500"
 );
 
 $cardifyLinkedInUrl = 'https://www.linkedin.com/company/111727648/admin/page-posts/published/';
@@ -261,42 +271,42 @@ adminHeader('LinkedIn Carousels', 'linkedin-carousels');
             $isPosted = !empty($p['linkedin_marked_posted_at']);
         ?>
         <div class="px-5 py-3 hover:bg-gray-50">
-            <div class="flex items-start gap-3">
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
                 <!-- Status pill -->
-                <div class="flex-shrink-0 mt-1 w-20">
+                <div style="flex: 0 0 96px; padding-top: 4px;">
                     <?php if ($isPosted): ?>
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-green-100 text-green-700 rounded">
+                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; background: #dcfce7; color: #15803d; border-radius: 4px;">
                             <i class="fa-solid fa-check"></i> POSTED
                         </span>
                     <?php elseif ($hasData): ?>
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-blue-100 text-blue-700 rounded">
+                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; background: #dbeafe; color: #1d4ed8; border-radius: 4px;">
                             <i class="fa-solid fa-circle-dot"></i> READY
                         </span>
                     <?php else: ?>
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-amber-100 text-amber-700 rounded">
+                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; background: #fef3c7; color: #b45309; border-radius: 4px;">
                             <i class="fa-regular fa-clock"></i> WAITING
                         </span>
                     <?php endif; ?>
                 </div>
 
                 <!-- Title + meta -->
-                <div class="flex-1 min-w-0">
-                    <h4 class="font-medium text-gray-900 truncate <?= $isPosted ? 'opacity-60' : '' ?>">
-                        <a href="https://cardify.om/blog/<?= htmlspecialchars($p['slug']) ?>" target="_blank" class="hover:underline"><?= htmlspecialchars($p['title']) ?></a>
+                <div style="flex: 1 1 auto; min-width: 0;">
+                    <h4 class="font-medium text-gray-900" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; <?= $isPosted ? 'opacity: 0.6;' : '' ?>">
+                        <a href="https://cardify.om/blog/<?= htmlspecialchars($p['slug']) ?>" target="_blank" style="color: inherit; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><?= htmlspecialchars($p['title']) ?></a>
                     </h4>
-                    <div class="text-xs text-gray-500 mt-0.5 flex items-center gap-3 flex-wrap">
+                    <div class="text-xs text-gray-500" style="margin-top: 4px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
                         <span><i class="fa-regular fa-calendar"></i> <?= htmlspecialchars(date('Y-m-d', strtotime($p['published_at']))) ?></span>
                         <?php if ($hasData): ?>
-                            <span><i class="fa-solid fa-wand-magic-sparkles text-blue-500"></i> Generated <?= htmlspecialchars(date('M j, H:i', strtotime($p['linkedin_generated_at']))) ?></span>
+                            <span><i class="fa-solid fa-wand-magic-sparkles" style="color: #3b82f6;"></i> Generated <?= htmlspecialchars(date('M j, H:i', strtotime($p['linkedin_generated_at']))) ?></span>
                         <?php endif; ?>
                         <?php if ($isPosted): ?>
-                            <span class="text-green-600"><i class="fa-solid fa-paper-plane"></i> Posted <?= htmlspecialchars(date('M j, H:i', strtotime($p['linkedin_marked_posted_at']))) ?></span>
+                            <span style="color: #16a34a;"><i class="fa-solid fa-paper-plane"></i> Posted <?= htmlspecialchars(date('M j, H:i', strtotime($p['linkedin_marked_posted_at']))) ?></span>
                         <?php endif; ?>
                     </div>
                 </div>
 
                 <!-- Actions -->
-                <div class="flex-shrink-0 flex items-center gap-1.5">
+                <div style="flex: 0 0 auto; display: flex; align-items: center; gap: 6px;">
                     <?php if (!$hasData): ?>
                         <form method="POST" class="inline">
                             <?= csrfField() ?>
