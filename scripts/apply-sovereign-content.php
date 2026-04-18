@@ -18,6 +18,12 @@ $map = require '/www/wwwroot/cardify.om/data/logo_library/sovereign_content.php'
 function normalize(string $s): string {
     $s = mb_strtolower(trim($s), 'UTF-8');
     $s = preg_replace('/^the\s+/', '', $s);
+    // Strip corporate suffixes and & / commas so variants collapse:
+    //   "Asyad Group SAOC" ≡ "ASYAD Group"
+    //   "Oman Chamber of Commerce & Industry" ≡ "Oman Chamber of Commerce Industry"
+    //   "Ministry of Commerce, Industry and Investment Promotion" ≡ same without comma
+    $s = preg_replace('/\b(saoc|saog|s\.a\.o\.c\.|llc|sa?oc|s\.p\.c\.|spc|co\.?|limited|ltd)\b/', '', $s);
+    $s = str_replace(['&', ','], [' and ', ' '], $s);
     $s = preg_replace('/\s+/', ' ', $s);
     return trim($s);
 }
