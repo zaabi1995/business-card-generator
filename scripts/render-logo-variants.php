@@ -95,7 +95,15 @@ foreach ($rows as $r) {
 
     $updates = [];
 
-    foreach ([512, 1024, 2048] as $size) {
+    // Process sizes in DESCENDING order. Size 1024 writes to
+    // /storage/logos/indexed/{id}.png — which is ALSO $pngAbs (the source).
+    // If we ran ascending, 1024 would overwrite the source, then 2048 would
+    // read the already-downsampled 1024 render and fail the no-upscale guard.
+    // Descending means 2048 reads the pristine original first, then 1024
+    // replaces the source (fine since it's the canonical column itself), then
+    // 512 downsamples from the 1024 render which is still acceptable for the
+    // smaller tile.
+    foreach ([2048, 1024, 512] as $size) {
         $col = $size === 1024 ? 'logo_png_path' : "logo_png_{$size}_path";
         [$rel, $abs] = outPngPath($root, $id, $size);
         if ($MISS && !empty($r[$col])) continue;

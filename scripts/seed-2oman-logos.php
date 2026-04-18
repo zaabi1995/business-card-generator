@@ -270,6 +270,36 @@ foreach ($entries as $e) {
             if (is_file($oldSize)) @unlink($oldSize);
         }
     }
+    // PROTECT verified + takedown rows: never overwrite their paths, status,
+    // or metadata from a seed run. Seeds only act on 'none'/'indexed'/'pending'
+    // rows. Use :is_protected = (current status IN verified|takedown) ? 1 : 0
+    // to gate every mutation.
+    $protectedCheck = $db->fetchOne(
+        "SELECT logo_status FROM om_companies WHERE id = :id",
+        [':id' => $companyId]
+    );
+    $isProtected = in_array($protectedCheck['logo_status'] ?? '', ['verified', 'takedown'], true);
+    if ($isProtected && !$isQueue) {
+        // Auto-link on verified/takedown → treat like queue (stage for review)
+        // so admin can decide, instead of silently replacing the claimant's logo.
+        $isQueue = true;
+        $report['queued']++;
+        $report['auto_linked']--;
+        // Stage the file under pending/ instead of indexed/ — move the file.
+        $pendingRel = "/storage/logos/pending/{$companyId}.{$ext}";
+        $pendingAbs = dirname(__DIR__) . $pendingRel;
+        @mkdir(dirname($pendingAbs), 0755, true);
+        if (is_file($destFile) && $destFile !== $pendingAbs) {
+            @rename($destFile, $pendingAbs);
+            $destFile = $pendingAbs;
+            $relPath  = $pendingRel;
+        }
+        // Flag for admin review
+        $pdo->prepare("UPDATE om_companies SET logo_match_pending = 1, logo_updated_at = NOW() WHERE id = :id")
+            ->execute([':id' => $companyId]);
+        continue; // Skip the authoritative UPDATE below; match-queue handles promotion.
+    }
+
     $pdo->prepare("UPDATE om_companies SET
         logo_status          = IF(logo_status IN ('verified','takedown'), logo_status,
                                  IF(:is_queue = 1, logo_status, 'indexed')),

@@ -178,7 +178,12 @@ class LogoClaimService {
                 ':claim_id'   => $claimId,
             ]);
         } else {
-            // Only revert 'pending' → 'indexed' if there are no other pending claims
+            // Only revert 'pending' if there are no other pending claims.
+            // Revert direction depends on whether the row actually has a
+            // public logo: rows with logo paths → 'indexed' (publicly
+            // listable); rows with no logo → 'none' (excluded from the
+            // public library). Otherwise a rejected claim on a no-logo
+            // company would silently make it appear in the hub.
             $stillPending = (int) ($db->fetchOne(
                 "SELECT COUNT(*) c FROM logo_claims
                  WHERE company_id = :cid AND status = 'pending'",
@@ -186,7 +191,11 @@ class LogoClaimService {
             )['c'] ?? 0);
             if ($stillPending === 0) {
                 $pdo->prepare("UPDATE om_companies SET
-                    logo_status     = IF(logo_status = 'pending', 'indexed', logo_status),
+                    logo_status     = IF(logo_status = 'pending',
+                        IF(logo_svg_path IS NOT NULL
+                           OR logo_png_path IS NOT NULL
+                           OR logo_webp_path IS NOT NULL, 'indexed', 'none'),
+                        logo_status),
                     logo_updated_at = NOW()
                   WHERE id = :id")->execute([':id' => $claim['company_id']]);
             }
