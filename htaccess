@@ -70,6 +70,25 @@ Options -Indexes
     RewriteRule ^data/ - [F,L]
     RewriteRule ^logs/ - [F,L]
     RewriteRule ^api/check-slug\.php$ - [L]  # Allow API endpoint
+
+    # --- Omani Logo Library --- (mirrors docs/logos-nginx-rewrites.conf)
+    RewriteRule ^logos/?$                    logos.php?view=hub     [L,QSA]
+    RewriteRule ^logos/press/?$              logos.php?view=press   [L,QSA]
+    RewriteRule ^logos/terms/?$              logos.php?view=terms   [L,QSA]
+    RewriteRule ^logos/([a-z0-9-]+)/?$       logos.php?view=sector&sector=$1 [L,QSA]
+    RewriteRule ^logo-claim/?$               logo-claim.php         [L,QSA]
+    RewriteRule ^logo-takedown/?$            logo-takedown.php      [L,QSA]
+    RewriteRule ^logo-download/?$            logo-download.php      [L,QSA]
+    RewriteRule ^api/logos/list/?$           api/logos/list.php     [L,QSA]
+    RewriteRule ^api/logos/show/([a-z0-9-]+)/?$ api/logos/show.php?slug=$1 [L,QSA]
+    RewriteRule ^api/logos/show/?$           api/logos/show.php     [L,QSA]
+    RewriteRule ^api/logos/sectors/?$        api/logos/sectors.php  [L,QSA]
+    RewriteRule ^api/logos/stats/?$          api/logos/stats.php    [L,QSA]
+    RewriteRule ^sitemap-logos\.xml$         sitemap.php?part=logos [L,QSA]
+
+    # Admin-only: block direct access to pending uploads (served via PHP endpoint)
+    RewriteRule ^storage/logos/pending/ - [F,L]
+
     RewriteRule ^api/ - [F,L]  # Block other API files
 </IfModule>
 

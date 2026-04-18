@@ -53,7 +53,7 @@ function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
           </div>
           <?php if ($r['proof_url']): ?>
             <div class="text-sm mt-1">
-              <a class="text-cyan-700 underline" href="<?= esc($r['proof_url']) ?>" target="_blank">
+              <a class="text-cyan-700 underline" href="/admin/super/logos/proof.php?claim=<?= (int) $r['id'] ?>" target="_blank">
                 View proof file
               </a>
             </div>

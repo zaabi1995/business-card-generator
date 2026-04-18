@@ -55,17 +55,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
             }
 
             // Normalize JPEG → PNG so logo_png_path actually points at a PNG
-            // (downstream: imagecreatefrompng, image/png MIME).
+            // (downstream: imagecreatefrompng, image/png MIME). If GD can't
+            // decode the JPEG, abort — we must never write a .jpg into a
+            // column downstream code treats as PNG.
             if (in_array($ext, ['jpg', 'jpeg'], true)) {
                 $jpgImg = @imagecreatefromjpeg($root . $dest);
-                if ($jpgImg) {
-                    $pngDest = "/storage/logos/verified/{$id}.png";
-                    imagepng($jpgImg, $root . $pngDest, 9);
-                    imagedestroy($jpgImg);
+                if (!$jpgImg) {
                     @unlink($root . $dest);
-                    $dest = $pngDest;
-                    $ext = 'png';
+                    header("Location: /admin/super/logos/company.php?id=$id&upload_error=1");
+                    exit;
                 }
+                $pngDest = "/storage/logos/verified/{$id}.png";
+                imagepng($jpgImg, $root . $pngDest, 9);
+                imagedestroy($jpgImg);
+                @unlink($root . $dest);
+                $dest = $pngDest;
+                $ext = 'png';
             }
 
             $col = match ($ext) {

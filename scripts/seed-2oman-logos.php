@@ -200,16 +200,21 @@ foreach ($entries as $e) {
     }
 
     // Normalize JPEG → PNG so downstream (imagecreatefrompng, image/png MIME) works.
+    // If GD can't decode the JPEG, skip the row entirely — we must not write a
+    // .jpg into a column downstream code treats as PNG.
     if (in_array($ext, ['jpg', 'jpeg'], true)) {
         $jpgImg = @imagecreatefromjpeg($destFile);
-        if ($jpgImg) {
-            $pngFile = "$destAbsDir/{$companyId}.png";
-            imagepng($jpgImg, $pngFile, 9);
-            imagedestroy($jpgImg);
+        if (!$jpgImg) {
             @unlink($destFile);
-            $destFile = $pngFile;
-            $ext = 'png';
+            $report['errors'][] = "jpeg decode failed for {$e['name']} ($src)";
+            continue;
         }
+        $pngFile = "$destAbsDir/{$companyId}.png";
+        imagepng($jpgImg, $pngFile, 9);
+        imagedestroy($jpgImg);
+        @unlink($destFile);
+        $destFile = $pngFile;
+        $ext = 'png';
     }
 
     [$w, $h] = @getimagesize($destFile) ?: [null, null];

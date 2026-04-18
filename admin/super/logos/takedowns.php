@@ -16,14 +16,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
     $id     = (int) ($_POST['takedown_id'] ?? 0);
     $action = $_POST['action'] ?? '';
     $notes  = trim($_POST['notes'] ?? '');
+    $flash  = null;
     if ($action === 'hide' && $id) {
-        LogoTakedownService::hideLogo($db, $id, $me['id'], $notes ?: null);
+        $res = LogoTakedownService::hideLogo($db, $id, $me['id'], $notes ?: null);
+        if (!$res['ok']) $flash = 'hide_failed:' . $res['error'];
     } elseif ($action === 'reject' && $id) {
         LogoTakedownService::reject($db, $id, $me['id'], $notes ?: null);
     }
+    // Pass error message as a session flash so the redirect preserves it.
+    if ($flash) $_SESSION['logo_takedowns_flash'] = $flash;
     header('Location: /admin/super/logos/takedowns.php');
     exit;
 }
+$flash = $_SESSION['logo_takedowns_flash'] ?? null;
+unset($_SESSION['logo_takedowns_flash']);
 
 $rows = $db->fetchAll(
     "SELECT t.*, co.name_en AS company_name, co.slug AS company_slug
@@ -39,6 +45,12 @@ adminHeader('Takedown queue');
 function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 ?>
 <h1 class="text-2xl font-bold">Takedowns (<?= count($rows) ?>)</h1>
+
+<?php if ($flash && str_starts_with($flash, 'hide_failed:')): ?>
+  <div class="mt-4 p-3 bg-amber-50 border border-amber-300 rounded text-sm text-amber-900">
+    Could not hide logo: <?= esc(substr($flash, strlen('hide_failed:'))) ?>
+  </div>
+<?php endif; ?>
 
 <div class="space-y-4 mt-6">
   <?php foreach ($rows as $r): ?>
