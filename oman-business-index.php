@@ -969,6 +969,25 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <!-- ============================================================
+         UPSTREAM — GCC Business Index (part of a larger federation)
+         ============================================================ -->
+    <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="rounded-2xl p-6 md:p-8 bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div class="max-w-xl">
+                <p class="text-xs uppercase tracking-wider text-blue-200 font-semibold mb-2">Part of a larger federation</p>
+                <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">GCC Business Index 2026</h2>
+                <p class="text-blue-100">
+                    Oman is the first country fully indexed. Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait are rolling out through 2026 under the same methodology.
+                </p>
+            </div>
+            <a href="/gcc-business-index" class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white text-blue-700 font-semibold hover:bg-blue-50 transition self-start md:self-center whitespace-nowrap">
+                Open GCC index
+                <i class="fa-solid fa-arrow-right text-xs"></i>
+            </a>
+        </div>
+    </section>
+
+    <!-- ============================================================
          COMPANION ARCHIVE — OMANI LOGO LIBRARY (visual gallery)
          ============================================================ -->
     <section id="logo-library" class="bg-gray-50 border-y border-gray-100 scroll-mt-24">
