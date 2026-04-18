@@ -218,6 +218,29 @@ if ($company) {
         ],
     ];
     if (!empty($company['logo_url'])) $orgLd['logo'] = $company['logo_url'];
+
+    // Prefer Logo Library sources over deprecated logo_url
+    $libraryLogo = $company['logo_svg_path'] ?? null
+                ?: $company['logo_png_path'] ?? null
+                ?: $company['logo_webp_path'] ?? null;
+    if ($libraryLogo) {
+        $orgLd['logo'] = $baseUrl . $libraryLogo;
+    }
+
+    // ImageObject for the logo itself (nominative/reference-use disclosure)
+    $imageLd = null;
+    if ($libraryLogo) {
+        $imageLd = [
+            '@context'            => 'https://schema.org',
+            '@type'               => 'ImageObject',
+            'contentUrl'          => $baseUrl . $libraryLogo,
+            'caption'             => $company['name_en'] . ' logo',
+            'creator'             => ['@type' => 'Organization', 'name' => $company['name_en']],
+            'copyrightHolder'     => ['@type' => 'Organization', 'name' => $company['name_en']],
+            'acquireLicensePage'  => $baseUrl . '/logos/terms',
+        ];
+    }
+
     $crumbLd = [
         '@context' => 'https://schema.org',
         '@type' => 'BreadcrumbList',
@@ -230,6 +253,7 @@ if ($company) {
     ];
     $extraHead = '<script type="application/ld+json">' . json_encode($orgLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
                . '<script type="application/ld+json">' . json_encode($crumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+               . ($imageLd ? '<script type="application/ld+json">' . json_encode($imageLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' : '')
                . '<link rel="alternate" hreflang="en" href="' . $baseUrl . '/companies/' . $company['slug'] . '">'
                . '<link rel="alternate" hreflang="ar" href="' . $baseUrl . '/ar/companies/' . $company['slug'] . '">'
                . '<link rel="alternate" hreflang="x-default" href="' . $baseUrl . '/companies/' . $company['slug'] . '">';
@@ -301,8 +325,22 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
             </div>
             <div class="p-8 lg:p-10">
             <div class="flex items-start gap-5 flex-wrap">
-                <?php if (!empty($company['logo_url'])): ?>
-                    <img src="<?= escq($company['logo_url']) ?>" alt="<?= escq($company['name_en']) ?> logo" class="w-20 h-20 rounded-xl object-contain bg-gray-50 border border-gray-200 flex-shrink-0 -mt-16 shadow-lg ring-4 ring-white">
+                <?php
+                    /* Legacy logo_url header avatar. Suppress when the Logo Library
+                       has flagged the logo as taken down so the takedown actually hides
+                       the mark. Library logos (logo_svg_path etc.) also take precedence. */
+                    $headerLogoUrl = null;
+                    if (($company['logo_status'] ?? 'none') !== 'takedown') {
+                        $headerLogoUrl = $company['logo_svg_path']
+                                      ?? null;
+                        $headerLogoUrl = $headerLogoUrl
+                                      ?: ($company['logo_png_path'] ?? null)
+                                      ?: ($company['logo_webp_path'] ?? null)
+                                      ?: ($company['logo_url'] ?? null);
+                    }
+                ?>
+                <?php if ($headerLogoUrl): ?>
+                    <img src="<?= escq($headerLogoUrl) ?>" alt="<?= escq($company['name_en']) ?> logo" class="w-20 h-20 rounded-xl object-contain bg-gray-50 border border-gray-200 flex-shrink-0 -mt-16 shadow-lg ring-4 ring-white">
                 <?php else: ?>
                     <div class="w-20 h-20 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-3xl font-bold flex-shrink-0 -mt-16 shadow-lg ring-4 ring-white">
                         <?= escq(mb_substr($company['name_en'], 0, 1)) ?>
@@ -331,6 +369,13 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                     </div>
                 </div>
             </div>
+
+            <?php
+                /* Logo Library hero — status badge, download / claim CTA, takedown link */
+                if (!empty($company['logo_status']) && $company['logo_status'] !== 'takedown') {
+                    include __DIR__ . '/views/partials/company_logo_hero.php';
+                }
+            ?>
 
             <?php
                 $curatedSummary = $isAr ? ($company['summary_ar'] ?: '') : ($company['summary_en'] ?: '');

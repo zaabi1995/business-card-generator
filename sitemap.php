@@ -57,6 +57,7 @@ if ($part === 'index') {
     smChild("{$baseUrl}/sitemap-companies.xml",    $today);
     smChild("{$baseUrl}/sitemap-companies-ar.xml", $today);
     smChild("{$baseUrl}/sitemap-blog.xml",         $today);
+    smChild("{$baseUrl}/sitemap-logos.xml",        $today);
     echo '</sitemapindex>' . "\n";
     exit;
 }
@@ -217,6 +218,25 @@ if ($part === 'static') {
                 smUrl("{$baseUrl}/careers/" . $c['slug'], $lastmod, 'weekly', '0.6');
             }
         } catch (Throwable $e) { /* career_listings may not exist */ }
+    }
+
+} elseif ($part === 'logos') {
+    // Omani Logo Library — hub + terms/press + 23 sector pages.
+    smUrl("{$baseUrl}/logos",       $today, 'daily',   '0.9');
+    smUrl("{$baseUrl}/logos/press", $today, 'monthly', '0.5');
+    smUrl("{$baseUrl}/logos/terms", $today, 'yearly',  '0.3');
+
+    if ($db) {
+        try {
+            $sectors = $db->fetchAll(
+                "SELECT DISTINCT sector FROM om_companies
+                  WHERE logo_status IN ('indexed','verified')
+                  ORDER BY sector ASC"
+            );
+            foreach ($sectors as $s) {
+                smUrl("{$baseUrl}/logos/{$s['sector']}", $today, 'weekly', '0.7');
+            }
+        } catch (Throwable $e) { /* om_companies may lack logo_status until migration runs */ }
     }
 
 } else {

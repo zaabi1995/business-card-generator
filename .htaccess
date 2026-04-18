@@ -153,7 +153,7 @@
     # Check if request is not for known paths and not a file
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|s/|company|companies|ar|oman-business-index|webhooks|amwalpay|api|assets|uploads|data|printshop|industries|solutions|intro|blog|careers|about|contact|faq|terms|privacy|security|cookies|sitemap\.xml|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php|design-showcase|design)
+    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|s/|company|companies|ar|oman-business-index|webhooks|amwalpay|api|assets|uploads|data|printshop|industries|solutions|intro|blog|careers|about|contact|faq|terms|privacy|security|cookies|sitemap\.xml|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php|design-showcase|design|logos|logo-claim|logo-takedown|logo-download|sitemap-logos\.xml)
     RewriteRule ^([a-z0-9-]+)/?$ router.php?company_slug=$1 [L,QSA]
 </IfModule>
 
@@ -196,6 +196,33 @@ Options -Indexes
     RewriteRule ^api/file-manager.php$ - [L]  # Allow file-manager API
     RewriteRule ^api/linkedin/callback\.php$ - [L]  # Allow LinkedIn OAuth callback
     RewriteRule ^api/print-ready\.php$ - [L]  # Allow print-ready PDF generator API
+
+    # --- Omani Logo Library --- (mirrors docs/logos-nginx-rewrites.conf)
+    RewriteRule ^logos/?$                      logos.php?view=hub     [L,QSA]
+    RewriteRule ^logos/press/?$                logos.php?view=press   [L,QSA]
+    RewriteRule ^logos/terms/?$                logos.php?view=terms   [L,QSA]
+    RewriteRule ^logos/([a-z0-9-]+)/?$         logos.php?view=sector&sector=$1 [L,QSA]
+    # Arabic variants — logos.php reads ?lang=ar for RTL + AR copy.
+    RewriteRule ^ar/logos/?$                   logos.php?view=hub&lang=ar   [L,QSA]
+    RewriteRule ^ar/logos/press/?$             logos.php?view=press&lang=ar [L,QSA]
+    RewriteRule ^ar/logos/terms/?$             logos.php?view=terms&lang=ar [L,QSA]
+    RewriteRule ^ar/logos/([a-z0-9-]+)/?$      logos.php?view=sector&sector=$1&lang=ar [L,QSA]
+    RewriteRule ^logo-claim/?$                 logo-claim.php         [L,QSA]
+    RewriteRule ^logo-takedown/?$              logo-takedown.php      [L,QSA]
+    RewriteRule ^logo-download/?$              logo-download.php      [L,QSA]
+    RewriteRule ^api/logos/list/?$             api/logos/list.php     [L,QSA]
+    RewriteRule ^api/logos/show/([a-z0-9-]+)/?$  api/logos/show.php?slug=$1 [L,QSA]
+    RewriteRule ^api/logos/show/?$             api/logos/show.php     [L,QSA]
+    RewriteRule ^api/logos/sectors/?$          api/logos/sectors.php  [L,QSA]
+    RewriteRule ^api/logos/stats/?$            api/logos/stats.php    [L,QSA]
+    RewriteRule ^sitemap-logos\.xml$           sitemap.php?part=logos [L,QSA]
+
+    # Allow rewritten logo API .php targets (Apache re-runs rules after internal rewrite).
+    RewriteRule ^api/logos/(list|show|sectors|stats)\.php$ - [L]
+
+    # Admin-only: block direct access to pending uploads (served via PHP endpoint).
+    RewriteRule ^storage/logos/pending/ - [F,L]
+
     RewriteRule ^api/ - [F,L]  # Block other API files
 </IfModule>
 

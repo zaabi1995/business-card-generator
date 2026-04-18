@@ -82,3 +82,13 @@ playwright-report/
 test-results/
 blob-report/
 playwright/.cache/
+
+# Logo library runtime storage (files tracked via .gitkeep only)
+/storage/logos/indexed/*
+/storage/logos/verified/*
+/storage/logos/pending/*
+/storage/og/logos/*
+!/storage/logos/indexed/.gitkeep
+!/storage/logos/verified/.gitkeep
+!/storage/logos/pending/.gitkeep
+!/storage/og/logos/.gitkeep
