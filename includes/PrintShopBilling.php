@@ -53,7 +53,7 @@ class PrintShopBilling {
     public static function payOnline(int $orderId, array $billingData = []): array {
         $db = Database::getInstance();
         $order = $db->fetchOne(
-            "SELECT po.*, c.name as company_name, c.admin_email, c.billing_email, c.phone as company_phone
+            "SELECT po.*, c.name as company_name, c.admin_email, c.billing_email
              FROM print_orders po
              JOIN companies c ON c.id = po.company_id
              WHERE po.id = :id",
@@ -73,7 +73,7 @@ class PrintShopBilling {
             'first_name' => $order['company_name'] ?? 'Customer',
             'last_name' => '',
             'email' => $order['billing_email'] ?? $order['admin_email'] ?? '',
-            'phone_number' => $order['shipping_phone'] ?? $order['company_phone'] ?? '',
+            'phone_number' => $order['shipping_phone'] ?? '',
             'street' => $order['shipping_address'] ?? '',
             'city' => $order['shipping_city'] ?? '',
             'state' => $order['shipping_state'] ?? '',
@@ -97,7 +97,7 @@ class PrintShopBilling {
     public static function payOnlineAmount(int $orderId, float $amount, string $description = ''): array {
         $db = Database::getInstance();
         $order = $db->fetchOne(
-            "SELECT po.*, c.name as company_name, c.admin_email, c.billing_email, c.phone as company_phone
+            "SELECT po.*, c.name as company_name, c.admin_email, c.billing_email
              FROM print_orders po
              JOIN companies c ON c.id = po.company_id
              WHERE po.id = :id",
@@ -111,7 +111,7 @@ class PrintShopBilling {
             'first_name' => $order['company_name'] ?? 'Customer',
             'last_name' => '',
             'email' => $order['billing_email'] ?? $order['admin_email'] ?? '',
-            'phone_number' => $order['shipping_phone'] ?? $order['company_phone'] ?? '',
+            'phone_number' => $order['shipping_phone'] ?? '',
             'street' => $order['shipping_address'] ?? '',
             'city' => $order['shipping_city'] ?? '',
             'state' => $order['shipping_state'] ?? '',
