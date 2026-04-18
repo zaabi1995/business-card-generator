@@ -87,6 +87,8 @@
 
     # Oman Business Index — directory of Omani enterprises (flagship + curated top companies)
     RewriteRule ^oman-business-index/?$ oman-business-index.php [L,QSA]
+    RewriteRule ^gcc-business-index/?$  gcc-business-index.php [L,QSA]
+    RewriteRule ^ar/gcc-business-index/?$ gcc-business-index.php?lang=ar [L,QSA]
     RewriteRule ^companies/?$ companies.php [L,QSA]
     RewriteRule ^companies/sector/([a-z0-9-]+)/?$ companies.php?view=sector&slug=$1 [L,QSA]
     RewriteRule ^companies/wilayat/([a-z0-9-]+)/?$ companies.php?view=wilayat&slug=$1 [L,QSA]
@@ -153,7 +155,7 @@
     # Check if request is not for known paths and not a file
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|s/|company|companies|ar|oman-business-index|webhooks|amwalpay|api|assets|uploads|data|printshop|industries|solutions|intro|blog|careers|about|contact|faq|terms|privacy|security|cookies|sitemap\.xml|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php|design-showcase|design|logos|logo-claim|logo-takedown|logo-download|sitemap-logos\.xml)
+    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|s/|company|companies|ar|oman-business-index|gcc-business-index|webhooks|amwalpay|api|assets|uploads|data|printshop|industries|solutions|intro|blog|careers|about|contact|faq|terms|privacy|security|cookies|sitemap\.xml|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php|design-showcase|design|logos|logo-claim|logo-takedown|logo-download|sitemap-logos\.xml)
     RewriteRule ^([a-z0-9-]+)/?$ router.php?company_slug=$1 [L,QSA]
 </IfModule>
 
