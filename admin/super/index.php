@@ -214,6 +214,24 @@ adminHeader('Super Admin Dashboard', 'dashboard');
                 <p class="text-sm text-gray-500">Run migrations</p>
             </div>
         </a>
+        <a href="blog.php" class="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+            <div class="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                <i class="fa-solid fa-pen-nib"></i>
+            </div>
+            <div>
+                <p class="font-semibold text-gray-900">Blog Posts</p>
+                <p class="text-sm text-gray-500">Write &amp; schedule posts</p>
+            </div>
+        </a>
+        <a href="linkedin-carousels.php" class="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+            <div class="w-10 h-10 rounded-lg bg-[#0a66c2]/10 text-[#0a66c2] flex items-center justify-center">
+                <i class="fa-brands fa-linkedin"></i>
+            </div>
+            <div>
+                <p class="font-semibold text-gray-900">LinkedIn Carousels</p>
+                <p class="text-sm text-gray-500">Generated daily — copy &amp; post manually</p>
+            </div>
+        </a>
         <a href="../whatsapp_settings.php" class="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
             <div class="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
                 <i class="fa-brands fa-whatsapp"></i>
