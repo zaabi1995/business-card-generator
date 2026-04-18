@@ -141,5 +141,59 @@ $companyId = (int) ($company['id'] ?? 0);
                 <?php endif; ?>
             </div>
         </div>
+
+        <?php if ($src): ?>
+            <!-- Logo metadata strip -->
+            <?php
+                $formats = [];
+                if (!empty($company['logo_svg_path']))      $formats[] = 'SVG';
+                if (!empty($company['logo_png_path']))      $formats[] = 'PNG';
+                if (!empty($company['logo_webp_path']))     $formats[] = 'WebP';
+                $formatsStr = $formats ? implode(' · ', $formats) : '—';
+                $dimText = ($company['logo_width'] ?? 0) && ($company['logo_height'] ?? 0)
+                    ? ((int) $company['logo_width']) . ' × ' . ((int) $company['logo_height']) . ' px'
+                    : '—';
+                $sourceRaw = (string) ($company['logo_source'] ?? '');
+                $sourceLabel = match ($sourceRaw) {
+                    '2oman_net'    => $isAr ? '2oman.net (مفهرس)' : 'Indexed from 2oman.net',
+                    'company_web'  => $isAr ? 'موقع الشركة' : 'Company website',
+                    'user_upload'  => $isAr ? 'مالك الشركة' : 'Uploaded by owner',
+                    'admin_upload' => $isAr ? 'محرر المكتبة' : 'Library editor',
+                    default        => $isAr ? 'مصدر عام' : 'Public source',
+                };
+                $updated = !empty($company['logo_updated_at']) ? date('M j, Y', strtotime($company['logo_updated_at'])) : null;
+            ?>
+            <div class="border-t border-gray-100 px-6 md:px-8 py-4">
+                <dl class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <dt class="text-xs text-gray-500 mb-0.5"><?= $isAr ? 'الصيغ المتوفرة' : 'Formats' ?></dt>
+                        <dd class="font-semibold text-gray-900"><?= logo_hero_esc($formatsStr) ?></dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-gray-500 mb-0.5"><?= $isAr ? 'الأبعاد (الأصل)' : 'Dimensions (source)' ?></dt>
+                        <dd class="font-semibold text-gray-900"><?= logo_hero_esc($dimText) ?></dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-gray-500 mb-0.5"><?= $isAr ? 'المصدر' : 'Source' ?></dt>
+                        <dd class="font-semibold text-gray-900"><?= logo_hero_esc($sourceLabel) ?></dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-gray-500 mb-0.5"><?= $isAr ? 'الترخيص' : 'License' ?></dt>
+                        <dd class="font-semibold text-gray-900">
+                            <a href="/logos/terms" class="text-blue-600 hover:text-blue-700 inline-flex items-center gap-1">
+                                <?= $isAr ? 'استخدام تعريفي' : 'Nominative use' ?>
+                                <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                            </a>
+                        </dd>
+                    </div>
+                </dl>
+                <?php if ($updated): ?>
+                    <p class="mt-2 text-xs text-gray-400">
+                        <i class="fa-regular fa-clock text-[10px] <?= $isAr ? 'ml-1' : 'mr-1' ?>"></i>
+                        <?= $isAr ? 'آخر تحديث' : 'Last updated' ?> <?= logo_hero_esc($updated) ?>
+                    </p>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
     </div>
 </section>

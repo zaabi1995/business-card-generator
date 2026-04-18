@@ -415,6 +415,34 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                 $sizeTextEn = $company['size_bucket'] === 'large' ? 'large' : 'medium';
                 $displayName = $company['name_en'];
 
+                // Detect sovereign / ministerial / authority entities. They
+                // are state-sector bodies — none of them "roll out business
+                // cards for their team" via Cardify, and commercial-banking
+                // sector boilerplate is wrong for them. We drop the upsell
+                // section entirely for sovereign entities and restrict the
+                // About content to their curated summary only.
+                $sovereignNamePatterns = [
+                    '/^ministry\s+of\b/i',
+                    '/\bauthority\b/i',
+                    '/\bcentral\s+bank\b/i',
+                    '/\bchamber\s+of\s+commerce\b/i',
+                    '/\bvision\s+2040\b/i',
+                    '/\bnational\s+cent(re|er)\b/i',
+                    '/\bgeneral\s+secretariat\b/i',
+                    '/\bmedical\s+specialty\s+board\b/i',
+                    '/\basyad\s+group\b/i',
+                    '/\bsohar\s+port\b/i',
+                ];
+                $isSovereign = false;
+                foreach ($sovereignNamePatterns as $re) {
+                    if (preg_match($re, (string) ($company['name_en'] ?? ''))) { $isSovereign = true; break; }
+                }
+                if (!$isSovereign) {
+                    // Also treat the MoCIIP ministerial pack rows as sovereign.
+                    $srcUrl = (string) ($company['logo_source_url'] ?? '');
+                    if (strpos($srcUrl, 'MoCIIP ministerial pack') === 0) $isSovereign = true;
+                }
+
                 // Build "About" paragraphs
                 $aboutParas = [];
                 if ($curatedSummary) {
@@ -422,6 +450,14 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                         $p = trim($p);
                         if ($p !== '') $aboutParas[] = $p;
                     }
+                } elseif ($isSovereign) {
+                    // Sovereign entity with no curated summary yet — keep it
+                    // factual and minimal. No commercial-sector boilerplate.
+                    $aboutParas[] = sprintf(
+                        '%s is a state-sector entity of the Sultanate of Oman, classified under %s in %s governorate.',
+                        $displayName, $secLabelEn, $wilLabelEn
+                    );
+                    $aboutParas[] = 'This page displays the logo as indexed in the Omani Logo Library. The mark remains the property of the Sultanate of Oman and its representing body.';
                 } else {
                     if ($secBlock && !empty($secBlock['what_they_do'])) {
                         $aboutParas[] = str_replace(['{company}', '{name}'], $displayName, $secBlock['what_they_do']);
@@ -462,6 +498,12 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                 <?php endif; ?>
             </section>
 
+            <?php
+                /* "More logos from {sector}" strip — only for rows with a public logo. */
+                include __DIR__ . '/views/partials/company_logo_related.php';
+            ?>
+
+            <?php if (!$isSovereign): /* Commercial upsell only for private-sector companies */ ?>
             <!-- Why Cardify fits this team (sector-specific) -->
             <section class="mt-10 pt-8 border-t border-gray-200">
                 <h2 class="text-xl font-bold text-gray-900 mb-3">
@@ -498,6 +540,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                     </a>
                 </div>
             </section>
+            <?php endif; /* !$isSovereign */ ?>
 
             <!-- Compact quick-facts panel -->
             <section class="mt-10 pt-8 border-t border-gray-200">
