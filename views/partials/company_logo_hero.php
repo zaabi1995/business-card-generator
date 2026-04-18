@@ -1,6 +1,9 @@
 <?php
 /**
- * Logo hero section for /companies/{slug} pages.
+ * Logo hero section for /companies/{slug} pages. Slots into companies.php
+ * (which uses canonical Cardify chrome) between the header card and the
+ * summary content. Styling matches design-showcase: rounded-2xl, gray-200
+ * borders, blue-600 primary, emerald-600 verified, subtle shadows.
  *
  * @var array $company  om_companies row with logo_* fields
  * @var bool  $isAr
@@ -9,89 +12,127 @@ if (!class_exists('LogoLibrary')) {
     require_once __DIR__ . '/../../includes/LogoLibrary.php';
 }
 
-// Partial is included from both companies.php (defines escq()) and logos.php
-// (defines esc()). Provide a local alias so either entry point works.
 if (!function_exists('logo_hero_esc')) {
     function logo_hero_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 }
 
-$status = $company['logo_status'] ?? 'none';
-$badge  = LogoLibrary::statusBadge($status);
-$src    = $company['logo_webp_path']
-       ?: $company['logo_png_path']
-       ?: $company['logo_svg_path']
-       ?: $company['logo_png_512_path']
-       ?: null;
-$bg = $company['logo_dominant_color'] ?: '#f8fafc';
-$canDownload = LogoLibrary::canDownload($company);
+$status  = $company['logo_status'] ?? 'none';
+$src     = $company['logo_webp_path']
+        ?: $company['logo_png_path']
+        ?: $company['logo_svg_path']
+        ?: $company['logo_png_512_path']
+        ?: null;
+$bg           = $company['logo_dominant_color'] ?: '#f8fafc';
+$canDownload  = LogoLibrary::canDownload($company);
 
-// Only render hero if there's actually something to show or a claim CTA to offer
-if (!$src && $status === 'takedown') return;
+// Hide entirely on takedown
+if ($status === 'takedown') return;
+
+// Status pill (matches design-showcase badge pattern)
+$badge = match ($status) {
+    'verified' => ['label' => $isAr ? 'موثَّق' : 'Verified', 'ring' => 'bg-emerald-50 text-emerald-700 ring-emerald-200', 'dot' => 'bg-emerald-500'],
+    'indexed'  => ['label' => $isAr ? 'مفهرس'  : 'Indexed',  'ring' => 'bg-blue-50 text-blue-700 ring-blue-200',         'dot' => 'bg-blue-500'],
+    'pending'  => ['label' => $isAr ? 'قيد المراجعة' : 'Pending review', 'ring' => 'bg-amber-50 text-amber-700 ring-amber-200', 'dot' => 'bg-amber-500'],
+    'disputed' => ['label' => $isAr ? 'متنازع عليه' : 'Disputed', 'ring' => 'bg-rose-50 text-rose-700 ring-rose-200',    'dot' => 'bg-rose-500'],
+    default    => ['label' => $isAr ? 'بدون شعار' : 'No logo',   'ring' => 'bg-gray-50 text-gray-600 ring-gray-200',      'dot' => 'bg-gray-400'],
+};
+
+$companyId = (int) ($company['id'] ?? 0);
 ?>
-<section class="my-8 rounded-2xl overflow-hidden border" style="background: <?= logo_hero_esc($bg) ?>12">
-  <div class="flex flex-col md:flex-row items-center gap-6 p-6 md:p-8">
-    <div class="w-48 h-48 flex items-center justify-center bg-white rounded-xl shadow-sm flex-shrink-0">
-      <?php if ($src): ?>
-        <img src="<?= logo_hero_esc($src) ?>" alt="<?= logo_hero_esc($company['name_en']) ?> logo"
-             class="max-h-full max-w-full object-contain">
-      <?php else: ?>
-        <div class="text-gray-400 text-4xl font-bold">
-          <?= logo_hero_esc(mb_substr($company['name_en'] ?? '??', 0, 2)) ?>
+
+<section class="mt-8 mb-10 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <!-- Tinted band using dominant color, kept subtle -->
+    <div class="h-1.5" style="background: <?= logo_hero_esc($bg) ?>"></div>
+
+    <div class="p-6 md:p-8">
+        <div class="flex flex-col md:flex-row gap-6">
+
+            <!-- Logo tile -->
+            <div class="shrink-0 w-40 h-40 md:w-44 md:h-44 mx-auto md:mx-0 bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-2xl flex items-center justify-center p-5">
+                <?php if ($src): ?>
+                    <img src="<?= logo_hero_esc($src) ?>" alt="<?= logo_hero_esc($company['name_en'] ?? '') ?> logo"
+                         class="max-h-full max-w-full object-contain">
+                <?php else: ?>
+                    <div class="text-gray-300 text-4xl font-extrabold">
+                        <?= logo_hero_esc(mb_substr($company['name_en'] ?? '??', 0, 2)) ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Meta + actions -->
+            <div class="flex-1 min-w-0 text-center md:text-<?= $isAr ? 'right' : 'left' ?>">
+                <!-- Status + library label -->
+                <div class="flex flex-wrap gap-2 justify-center md:justify-start items-center">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ring-1 ring-inset text-xs font-semibold <?= logo_hero_esc($badge['ring']) ?>">
+                        <span class="w-1.5 h-1.5 rounded-full <?= logo_hero_esc($badge['dot']) ?>"></span>
+                        <?= logo_hero_esc($badge['label']) ?>
+                    </span>
+                    <a href="/logos" class="text-xs text-gray-500 hover:text-blue-600 inline-flex items-center gap-1">
+                        <i class="fa-solid fa-folder-open text-[10px]"></i>
+                        <?= $isAr ? 'من مكتبة الشعارات العمانية' : 'From the Omani Logo Library' ?>
+                    </a>
+                </div>
+
+                <h2 class="mt-2 text-xl md:text-2xl font-bold text-gray-900">
+                    <?= $isAr
+                        ? logo_hero_esc($company['name_ar'] ?: $company['name_en'] ?? '')
+                        : logo_hero_esc($company['name_en'] ?? '') ?>
+                </h2>
+
+                <?php if ($src): ?>
+                    <div class="mt-5 flex flex-wrap gap-2 justify-center md:justify-<?= $isAr ? 'end' : 'start' ?>">
+                        <?php if ($canDownload): ?>
+                            <?php
+                                $formats = [
+                                    'svg'      => ['SVG',         'logo_svg_path',      'fa-code'],
+                                    'png_1024' => ['PNG · 1024',  'logo_png_path',      'fa-image'],
+                                    'png_2048' => ['PNG · 2048',  'logo_png_2048_path', 'fa-image'],
+                                    'png_512'  => ['PNG · 512',   'logo_png_512_path',  'fa-image'],
+                                    'zip'      => ['ZIP bundle',  null,                 'fa-box'],
+                                ];
+                                $primaryPlaced = false;
+                                foreach ($formats as $fmt => [$label, $col, $icon]):
+                                    $available = $fmt === 'zip' ? true : !empty($company[$col] ?? null);
+                                    if (!$available) continue;
+                                    $primary = !$primaryPlaced && ($fmt === 'svg' || $fmt === 'png_1024');
+                                    $primaryPlaced = $primaryPlaced || $primary;
+                                    $cls = $primary
+                                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40'
+                                        : 'bg-white border border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600';
+                            ?>
+                                <a href="/logo-download?company=<?= $companyId ?>&format=<?= logo_hero_esc($fmt) ?>"
+                                   class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold transition <?= $cls ?>">
+                                    <i class="fa-solid <?= logo_hero_esc($icon) ?> text-xs"></i>
+                                    <?= logo_hero_esc($label) ?>
+                                </a>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <a href="/logo-claim?company=<?= $companyId ?>"
+                               class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40 transition">
+                                <i class="fa-solid fa-circle-check text-xs"></i>
+                                <?= $isAr ? 'المطالبة بهذا الشعار' : 'Claim this logo' ?>
+                            </a>
+                            <span class="inline-flex items-center text-xs text-gray-500 px-2">
+                                <?= $isAr ? 'التنزيل متاح بعد التوثيق' : 'Downloads available after verification' ?>
+                            </span>
+                        <?php endif; ?>
+                        <a href="/logo-takedown?company=<?= $companyId ?>"
+                           class="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-rose-600 px-2 transition self-center">
+                            <i class="fa-solid fa-flag text-[10px]"></i>
+                            <?= $isAr ? 'إبلاغ / إزالة' : 'Report / takedown' ?>
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <!-- No logo yet -->
+                    <div class="mt-5 flex flex-wrap gap-2 justify-center md:justify-<?= $isAr ? 'end' : 'start' ?>">
+                        <a href="/logo-claim?company=<?= $companyId ?>"
+                           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 transition">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                            <?= $isAr ? 'أضف شعار هذه الشركة' : 'Add a logo for this company' ?>
+                        </a>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
-      <?php endif; ?>
     </div>
-    <div class="flex-1 text-center md:text-left">
-      <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-           style="color: <?= logo_hero_esc($badge['color']) ?>; background: <?= logo_hero_esc($badge['color']) ?>15">
-        <span class="w-1.5 h-1.5 rounded-full" style="background: <?= logo_hero_esc($badge['color']) ?>"></span>
-        <?= logo_hero_esc($badge['label']) ?>
-      </div>
-      <h2 class="text-2xl font-bold mt-2">
-        <?= logo_hero_esc($isAr ? ($company['name_ar'] ?? '') : ($company['name_en'] ?? '')) ?>
-      </h2>
-      <?php if ($src): ?>
-        <div class="mt-4 flex flex-wrap gap-2 justify-center md:justify-start">
-          <?php if ($canDownload): ?>
-            <?php
-              $formats = [
-                  'svg'      => ['Download SVG',  'logo_svg_path'],
-                  'png_512'  => ['PNG 512',       'logo_png_512_path'],
-                  'png_1024' => ['PNG 1024',      'logo_png_path'],
-                  'png_2048' => ['PNG 2048',      'logo_png_2048_path'],
-                  'zip'      => ['ZIP bundle',    null],
-              ];
-              foreach ($formats as $fmt => [$label, $col]):
-                $available = $fmt === 'zip' ? true : !empty($company[$col] ?? null);
-            ?>
-              <?php if ($available): ?>
-                <a href="/logo-download?company=<?= (int) ($company['id'] ?? 0) ?>&format=<?= logo_hero_esc($fmt) ?>"
-                   class="px-3 py-1.5 text-sm bg-white border rounded-lg hover:bg-gray-50">
-                  <?= logo_hero_esc($label) ?>
-                </a>
-              <?php endif; ?>
-            <?php endforeach; ?>
-          <?php else: ?>
-            <a href="/logo-claim?company=<?= (int) ($company['id'] ?? 0) ?>"
-               class="px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-medium">
-              <?= $isAr ? 'احصل على ملكية هذا الشعار' : 'Claim this logo' ?>
-            </a>
-            <span class="text-xs text-gray-500 self-center">
-              <?= $isAr ? 'التنزيل متاح بعد التوثيق' : 'Downloads available after verification' ?>
-            </span>
-          <?php endif; ?>
-          <a href="/logo-takedown?company=<?= (int) ($company['id'] ?? 0) ?>"
-             class="text-xs text-gray-500 underline self-center">
-            <?= $isAr ? 'إبلاغ / إزالة' : 'Report / takedown' ?>
-          </a>
-        </div>
-      <?php else: ?>
-        <div class="mt-4">
-          <a href="/logo-claim?company=<?= (int) ($company['id'] ?? 0) ?>"
-             class="inline-block px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-medium">
-            <?= $isAr ? 'أضف شعار هذه الشركة' : 'Add a logo for this company' ?>
-          </a>
-        </div>
-      <?php endif; ?>
-    </div>
-  </div>
 </section>

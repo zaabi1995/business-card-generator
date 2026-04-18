@@ -96,101 +96,145 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $csrfToken = generateCSRFToken();
 
-function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
+function claim_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
+
+$pageTitle       = 'Claim ' . $company['name_en'] . ' — Logo Library';
+$pageDescription = 'Verify ownership of ' . $company['name_en'] . ' to unlock logo downloads.';
+$canonicalUrl    = 'https://cardify.om/logo-claim?company=' . $companyId;
+$bodyClass       = 'bg-white';
+$showNavigation  = true;
+$metaRobots      = 'noindex,nofollow';
+
+require_once INCLUDES_DIR . '/ui-header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Claim <?= esc($company['name_en']) ?> — Logo Library</title>
-<meta name="robots" content="noindex,nofollow">
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50">
-<?php include __DIR__ . '/includes/partials/nav.php'; ?>
-<main class="max-w-2xl mx-auto px-4 py-10">
-  <a href="/companies/<?= esc($company['slug']) ?>"
-     class="text-sm text-gray-500 hover:underline">← Back to <?= esc($company['name_en']) ?></a>
-  <h1 class="text-3xl font-bold mt-2">Claim <?= esc($company['name_en']) ?></h1>
-  <p class="text-gray-600 mt-1">
-    Verify you represent this company to unlock logo downloads and profile management.
-  </p>
 
-  <?php if ($success): ?>
-    <div class="mt-6 p-4 bg-green-50 border border-green-300 rounded-lg">
-      <?php if (!empty($success['auto_verified'])): ?>
-        <h2 class="font-bold text-green-800">Verified instantly ✓</h2>
-        <p class="text-sm mt-1">Your company domain matched. The logo is now verified and downloadable.</p>
-        <a href="/companies/<?= esc($company['slug']) ?>"
-           class="inline-block mt-3 px-4 py-2 bg-green-700 text-white rounded-lg">Back to profile</a>
-        <p class="mt-3 text-xs text-gray-600">
-          Next step: <a href="/pricing" class="underline">order business cards for your team</a>.
-        </p>
-      <?php else: ?>
-        <h2 class="font-bold text-green-800">Claim submitted</h2>
-        <p class="text-sm mt-1">Your claim is in our review queue. We'll respond within 48 hours.</p>
-        <a href="/companies/<?= esc($company['slug']) ?>"
-           class="inline-block mt-3 px-4 py-2 bg-green-700 text-white rounded-lg">Back to profile</a>
-      <?php endif; ?>
+<div class="bg-gradient-to-b from-gray-50 to-white pt-28 pb-16">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <a href="/companies/<?= claim_esc($company['slug']) ?>" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-600 mb-4">
+            <i class="fa-solid fa-arrow-left text-xs"></i>
+            Back to <?= claim_esc($company['name_en']) ?>
+        </a>
+
+        <div class="mb-8">
+            <span class="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-wide mb-3">
+                Claim · Verify ownership
+            </span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">
+                Claim <?= claim_esc($company['name_en']) ?>
+            </h1>
+            <p class="text-lg text-gray-600">
+                Verify you represent this company to unlock logo downloads and profile management.
+            </p>
+        </div>
+
+        <?php if ($success): ?>
+            <?php if (!empty($success['auto_verified'])): ?>
+                <div class="rounded-2xl p-6 lg:p-8 bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 shrink-0 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h2 class="text-xl font-bold text-emerald-900">Verified instantly</h2>
+                            <p class="text-emerald-800 mt-1">Your company domain matched. The logo is now verified and downloadable.</p>
+                            <div class="mt-5 flex flex-wrap gap-3">
+                                <a href="/companies/<?= claim_esc($company['slug']) ?>"
+                                   class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold shadow shadow-emerald-700/30 transition">
+                                    Back to profile <i class="fa-solid fa-arrow-right text-xs"></i>
+                                </a>
+                                <a href="/pricing"
+                                   class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white border border-emerald-200 text-emerald-800 hover:border-emerald-400 text-sm font-semibold transition">
+                                    Order business cards for your team
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="rounded-2xl p-6 lg:p-8 bg-white border border-gray-200 shadow-sm">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 shrink-0 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-hourglass-half"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h2 class="text-xl font-bold text-gray-900">Claim submitted</h2>
+                            <p class="text-gray-600 mt-1">Your claim is in our review queue. We'll respond within 48 hours.</p>
+                            <a href="/companies/<?= claim_esc($company['slug']) ?>"
+                               class="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow shadow-blue-600/20 transition">
+                                Back to profile <i class="fa-solid fa-arrow-right text-xs"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+        <?php else: ?>
+            <?php if ($error): ?>
+                <div class="mb-5 rounded-lg bg-rose-50 border border-rose-200 p-4 text-sm text-rose-900 flex gap-3">
+                    <i class="fa-solid fa-triangle-exclamation mt-0.5 text-rose-600"></i>
+                    <?= claim_esc($error) ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="post" enctype="multipart/form-data" class="bg-white border border-gray-200 rounded-2xl p-6 lg:p-8 shadow-sm space-y-5">
+                <input type="hidden" name="csrf_token" value="<?= claim_esc($csrfToken) ?>">
+                <input type="hidden" name="company" value="<?= (int) $companyId ?>">
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-900 mb-1.5">Proof type</label>
+                    <select name="proof_type" id="proof_type"
+                            class="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                        <option value="domain_email">Company email (<?= claim_esc($user['email']) ?>) — fastest, auto-verifies if domain matches</option>
+                        <option value="cr_document">Upload CR document (PDF/image)</option>
+                        <option value="domain_dns">Add DNS TXT record (instructions via email)</option>
+                        <option value="other">Other (describe in note)</option>
+                    </select>
+                </div>
+
+                <div id="proof_file_wrap" style="display:none">
+                    <label class="block text-sm font-semibold text-gray-900 mb-1.5">Proof file (PDF/JPG/PNG, ≤5MB)</label>
+                    <input type="file" name="proof_file" accept=".pdf,image/png,image/jpeg"
+                           class="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-900 mb-1.5">Your role at the company</label>
+                    <select name="role_at_company"
+                            class="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                        <option value="">—</option>
+                        <option>Owner</option>
+                        <option>CEO / Managing Director</option>
+                        <option>Marketing</option>
+                        <option>Admin</option>
+                        <option>Legal</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-900 mb-1.5">Note (optional)</label>
+                    <textarea name="note" rows="3"
+                              class="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-y"></textarea>
+                </div>
+
+                <div class="flex items-center gap-3 pt-2">
+                    <button class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40 transition">
+                        Submit claim <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                    <a href="/companies/<?= claim_esc($company['slug']) ?>" class="text-sm text-gray-500 hover:text-blue-600">Cancel</a>
+                </div>
+            </form>
+
+            <script>
+              (function () {
+                var sel = document.getElementById('proof_type');
+                var wrap = document.getElementById('proof_file_wrap');
+                function sync() { wrap.style.display = sel.value === 'cr_document' ? 'block' : 'none'; }
+                sel.addEventListener('change', sync); sync();
+              })();
+            </script>
+        <?php endif; ?>
     </div>
-  <?php else: ?>
-    <?php if ($error): ?>
-      <div class="mt-4 p-3 bg-red-50 border border-red-300 rounded text-sm text-red-800">
-        <?= esc($error) ?>
-      </div>
-    <?php endif; ?>
-    <form method="post" enctype="multipart/form-data"
-          class="mt-6 space-y-4 bg-white border rounded-lg p-6">
-      <input type="hidden" name="csrf_token" value="<?= esc($csrfToken) ?>">
-      <input type="hidden" name="company" value="<?= (int) $companyId ?>">
+</div>
 
-      <div>
-        <label class="block text-sm font-medium">Proof type</label>
-        <select name="proof_type" id="proof_type" class="mt-1 w-full border rounded px-3 py-2">
-          <option value="domain_email">
-            Company email (<?= esc($user['email']) ?>) — fastest, auto-verifies if domain matches
-          </option>
-          <option value="cr_document">Upload CR document (PDF/image)</option>
-          <option value="domain_dns">Add DNS TXT record (instructions via email)</option>
-          <option value="other">Other (describe in note)</option>
-        </select>
-      </div>
-
-      <div id="proof_file_wrap" style="display:none">
-        <label class="block text-sm font-medium">Proof file (PDF/JPG/PNG, ≤5MB)</label>
-        <input type="file" name="proof_file" accept=".pdf,image/png,image/jpeg"
-               class="mt-1 w-full border rounded px-3 py-2">
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium">Your role at the company</label>
-        <select name="role_at_company" class="mt-1 w-full border rounded px-3 py-2">
-          <option value="">—</option>
-          <option>Owner</option>
-          <option>CEO / Managing Director</option>
-          <option>Marketing</option>
-          <option>Admin</option>
-          <option>Legal</option>
-          <option>Other</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium">Note (optional)</label>
-        <textarea name="note" rows="3" class="mt-1 w-full border rounded px-3 py-2"></textarea>
-      </div>
-
-      <button class="px-5 py-2.5 bg-cyan-600 text-white rounded-lg font-medium">Submit claim</button>
-    </form>
-
-    <script>
-      const sel = document.getElementById('proof_type');
-      const wrap = document.getElementById('proof_file_wrap');
-      const sync = () => { wrap.style.display = sel.value === 'cr_document' ? 'block' : 'none'; };
-      sel.addEventListener('change', sync); sync();
-    </script>
-  <?php endif; ?>
-</main>
-</body>
-</html>
+<?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>
