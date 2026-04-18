@@ -1,13 +1,15 @@
 <?php
 /**
- * LinkedIn Carousel Autoposter
- * Publishes the next-due blog post as a LinkedIn document carousel.
- * On any fatal failure, falls back to legacy text+link poster (linkedin-autoposter.php).
+ * LinkedIn Carousel Generator (cron).
+ * Generates the next-due blog post's slide JSON + PDF + commentary, saves to DB.
+ * Does NOT post to LinkedIn — Ali manually posts to the Cardify company page
+ * via the admin section at /admin/super/linkedin-carousels.php.
  *
  * Cron: 0 9 * * * php /www/wwwroot/cardify.om/cron/linkedin-carousel.php
  */
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../includes/LinkedInCarousel.php';
+require_once __DIR__ . '/../includes/CarouselSlideGenerator.php';
+require_once __DIR__ . '/../includes/CarouselPDFRenderer.php';
 
 $logFile = __DIR__ . '/../logs/linkedin-carousel.log';
 function carouselLog(string $m) {
@@ -16,18 +18,11 @@ function carouselLog(string $m) {
     file_put_contents($logFile, date('[Y-m-d H:i:s] ') . $m . "\n", FILE_APPEND);
 }
 
-function fallback(string $reason) {
-    // Legacy text+link poster is DISABLED as a fallback — we only want carousel posts.
-    // If the carousel fails, we skip today and retry tomorrow (post remains linkedin_posted IS NULL).
-    carouselLog("Fallback skipped (legacy text-link poster disabled). Reason: $reason");
-}
-
 try {
     $pdo = Database::getInstance()->getConnection();
     if (!$pdo) throw new RuntimeException('DB not connected');
 } catch (Throwable $e) {
     carouselLog('DB ERROR: ' . $e->getMessage());
-    fallback('DB init failed');
     exit(1);
 }
 
@@ -37,7 +32,8 @@ $stmt = $pdo->prepare(
      FROM blog_posts
      WHERE status IN ('draft','published')
        AND DATE(published_at) <= ?
-       AND linkedin_posted IS NULL
+       AND linkedin_generated_at IS NULL
+       AND linkedin_marked_posted_at IS NULL
      ORDER BY published_at ASC
      LIMIT 1"
 );
@@ -45,7 +41,7 @@ $stmt->execute([$today]);
 $post = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$post) {
-    carouselLog('No posts due today');
+    carouselLog('No posts pending generation');
     exit(0);
 }
 
@@ -55,25 +51,39 @@ if ($post['status'] === 'draft') {
 }
 
 try {
-    $result = LinkedInCarousel::postForBlog($post, $pdo, $logFile);
+    carouselLog("Generating carousel for: {$post['title']}");
+    $slides = CarouselSlideGenerator::generate($post);
+    carouselLog("Slide JSON generated");
 
+    $pdfDir = dirname(__DIR__) . '/uploads/linkedin-carousels';
+    if (!is_dir($pdfDir)) mkdir($pdfDir, 0755, true);
+    $pdfPath = $pdfDir . '/' . date('Y-m-d') . '-' . preg_replace('/[^a-z0-9-]/i', '-', $post['slug']) . '.pdf';
+    $blogUrl = 'https://cardify.om/blog/' . $post['slug'];
+    CarouselPDFRenderer::render($slides, $pdfPath, $blogUrl);
+    carouselLog("PDF rendered: $pdfPath (" . filesize($pdfPath) . " bytes)");
+
+    $commentary = $slides['hook_en']
+        . "\n\n" . $slides['hook_ar']
+        . "\n\nSwipe through, or read the full post: " . $blogUrl
+        . "\n\n#Cardify #Oman #DigitalBusinessCards #Branding";
+
+    $relPdf = str_replace(dirname(__DIR__) . '/', '', $pdfPath);
     $upd = $pdo->prepare(
         "UPDATE blog_posts
-         SET linkedin_posted = NOW(),
-             linkedin_post_id = ?,
-             linkedin_carousel_pdf = ?,
-             linkedin_company_post_id = ?
+         SET linkedin_carousel_pdf = ?,
+             linkedin_carousel_data = ?,
+             linkedin_commentary = ?,
+             linkedin_generated_at = NOW()
          WHERE id = ?"
     );
     $upd->execute([
-        $result['personal_post_id'],
-        str_replace(dirname(__DIR__) . '/', '', $result['pdf_path']),
-        $result['company_post_id'],
+        $relPdf,
+        json_encode($slides, JSON_UNESCAPED_UNICODE),
+        $commentary,
         $post['id'],
     ]);
-    carouselLog("SUCCESS: {$post['title']} | personal={$result['personal_post_id']} | company=" . ($result['company_post_id'] ?? 'n/a'));
+    carouselLog("READY for manual posting: {$post['title']} | pdf=$relPdf");
 } catch (Throwable $e) {
-    carouselLog("CAROUSEL FAILED for {$post['title']}: " . $e->getMessage());
-    fallback("Post {$post['id']}: " . $e->getMessage());
+    carouselLog("CAROUSEL GENERATE FAILED for {$post['title']}: " . $e->getMessage());
     exit(1);
 }
