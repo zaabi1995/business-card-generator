@@ -43,6 +43,7 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 $pageTitle = 'Sign In';
 $htmlClass = 'h-full bg-white';
 $bodyClass = 'h-full';
+$minimalFooter = true; // use compact footer on auth pages
 $extraHead = <<<HTML
     <style>
         .form-input {

@@ -129,6 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $pageTitle = 'Register Your Print Shop';
 $bodyClass = 'bg-gray-50';
+$minimalFooter = true; // compact footer for auth page
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
 

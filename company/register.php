@@ -263,6 +263,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } // end CSRF else
 }
 ?>
+$minimalFooter = true; // compact footer for auth page
 <?php require_once INCLUDES_DIR . '/ui-header.php'; ?>
     <div class="flex min-h-full">
         <!-- Left Side - Form -->
