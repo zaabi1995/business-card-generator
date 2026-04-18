@@ -110,11 +110,21 @@ class Payment {
         // Build real billing data from company info, with overrides
         $companyName = $company['name'] ?? 'Customer';
         $nameParts = explode(' ', $companyName, 2);
+        // Paymob requires non-empty first_name, last_name, phone_number — coalesce empty strings too
+        $coalesce = static function(...$vals) {
+            foreach ($vals as $v) {
+                if ($v !== null && $v !== '') return $v;
+            }
+            return '';
+        };
         $paymobBilling = [
-            'first_name' => $billingData['first_name'] ?? $nameParts[0],
-            'last_name' => $billingData['last_name'] ?? ($nameParts[1] ?? $nameParts[0]),
-            'phone_number' => $billingData['phone_number'] ?? $billingData['phone'] ?? ($company['phone'] ?? '+96800000000'),
-            'email' => $billingData['email'] ?? ($company['billing_email'] ?? $company['admin_email'] ?? (
+            'first_name' => $coalesce($billingData['first_name'] ?? null, $nameParts[0], 'Customer'),
+            'last_name' => $coalesce($billingData['last_name'] ?? null, $nameParts[1] ?? null, $nameParts[0], 'N/A'),
+            'phone_number' => $coalesce($billingData['phone_number'] ?? null, $billingData['phone'] ?? null, $company['phone'] ?? null, '+96800000000'),
+            'email' => $coalesce(
+                $billingData['email'] ?? null,
+                $company['billing_email'] ?? null,
+                $company['admin_email'] ?? null,
                 // Paymob risk rules flag repeated emails. Fall back to a unique
                 // per-company pseudo-email derived from company name + id.
                 (function() use ($company, $companyId) {
@@ -122,7 +132,7 @@ class Payment {
                     if ($slug === '') $slug = 'company' . $companyId;
                     return substr($slug, 0, 40) . '@cardify.om';
                 })()
-            )),
+            ),
             'apartment' => 'N/A',
             'floor' => 'N/A',
             'street' => $billingData['street'] ?? ($company['address'] ?? 'N/A'),
