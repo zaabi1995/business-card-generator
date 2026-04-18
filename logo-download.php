@@ -27,8 +27,16 @@ if (!$company) {
 }
 
 if (!LogoLibrary::canDownload($company)) {
+    // Downloads allowed for indexed + verified. Blocked for 'none', 'pending',
+    // 'disputed', or 'takedown' states.
     http_response_code(403);
-    die('Downloads are only available for verified logos. Claim this profile to verify.');
+    $msg = match ($company['logo_status'] ?? 'none') {
+        'takedown' => 'This logo has been removed at the brand owner\'s request.',
+        'disputed' => 'This logo is under review.',
+        'pending'  => 'A claim is pending review for this logo.',
+        default    => 'No logo available for download.',
+    };
+    die($msg);
 }
 
 // Rate limit: 30 downloads/hour per IP, atomic via rate_limits table

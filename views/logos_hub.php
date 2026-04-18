@@ -21,14 +21,107 @@ $bodyClass       = 'bg-white';
 $showNavigation  = true;
 $ogImage         = 'https://cardify.om/storage/og/logos/hub.png';
 
-$extraHead = '<script type="application/ld+json">' . json_encode([
-    "@context"       => "https://schema.org",
-    "@type"          => "CollectionPage",
-    "name"           => $title,
-    "url"            => $canonical,
-    "description"    => "Public archive of Omani company logos, indexed from public sources and verified by owners.",
-    "numberOfItems"  => $total,
-], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+// JSON-LD: CollectionPage + BreadcrumbList + FAQPage + DataCatalog.
+// Google commonly surfaces FAQPage rich results and image carousels from these.
+$faqQuestions = [
+    [
+        'q_en' => 'Is it free to download these Omani logos?',
+        'a_en' => 'Yes. Browsing and downloading indexed + verified logos from the Omani Logo Library is free. The logos themselves remain trademarks of their respective owners.',
+        'q_ar' => 'هل التنزيل مجاني؟',
+        'a_ar' => 'نعم. تصفح وتنزيل الشعارات المفهرسة والموثَّقة من مكتبة الشعارات العمانية مجاني. تبقى الشعارات علامات تجارية مملوكة لأصحابها.',
+    ],
+    [
+        'q_en' => 'Can I use these logos commercially?',
+        'a_en' => 'The library is built under nominative / reference-use principles. You may use logos for identification and reference (journalism, research, internal documents). Commercial reuse, redistribution, and derivative works require the owner\'s permission.',
+        'q_ar' => 'هل يمكنني استخدام هذه الشعارات تجارياً؟',
+        'a_ar' => 'المكتبة مبنية على مبدأ الاستخدام التعريفي. يمكنك استخدام الشعارات للتعريف والبحث والصحافة والمستندات الداخلية. الاستخدام التجاري وإعادة التوزيع والأعمال المشتقة تتطلب إذن المالك.',
+    ],
+    [
+        'q_en' => 'How do I claim my company\'s logo?',
+        'a_en' => 'Open your company profile and click "Claim this logo". Sign in with your company email — if the domain matches, you\'re verified instantly. Otherwise we review manually within 48 hours.',
+        'q_ar' => 'كيف أطالب بشعار شركتي؟',
+        'a_ar' => 'افتح ملف شركتك واضغط على "المطالبة بهذا الشعار". سجّل الدخول ببريد شركتك — إذا تطابق النطاق، يتم التوثيق فوراً. وإلا نراجع الطلب يدوياً خلال ٤٨ ساعة.',
+    ],
+    [
+        'q_en' => 'What file formats are available?',
+        'a_en' => 'We serve SVG (when available), PNG at 512, 1024, and 2048 pixels, and WebP for web use. A ZIP bundle with all formats is available for verified logos.',
+        'q_ar' => 'ما الصيغ المتوفرة؟',
+        'a_ar' => 'نوفر SVG عند توفره، وPNG بأحجام ٥١٢ و١٠٢٤ و٢٠٤٨ بكسل، وWebP للاستخدام على الويب. كما تتوفر حزمة ZIP تحتوي كل الصيغ للشعارات الموثَّقة.',
+    ],
+    [
+        'q_en' => 'How do I request removal of a logo?',
+        'a_en' => 'Submit the takedown form at /logo-takedown. We acknowledge within 48 hours and hide valid requests within 24 hours of prima-facie verification.',
+        'q_ar' => 'كيف أطلب إزالة شعار؟',
+        'a_ar' => 'قدّم نموذج الإزالة على /logo-takedown. نرد خلال ٤٨ ساعة ونخفي الطلبات الصحيحة خلال ٢٤ ساعة من التحقق الأولي.',
+    ],
+    [
+        'q_en' => 'Is there an API?',
+        'a_en' => 'Yes. GET /api/logos/list, /api/logos/show, /api/logos/sectors, /api/logos/stats are all public, CORS-enabled, and rate-limited to 60 req/min per IP.',
+        'q_ar' => 'هل هناك واجهة برمجية؟',
+        'a_ar' => 'نعم. الطلبات GET /api/logos/list و /show و /sectors و /stats جميعها عامة ومفعَّلة CORS ومحدودة بـ٦٠ طلب/دقيقة لكل IP.',
+    ],
+];
+
+$jsonLdBlocks = [];
+
+$jsonLdBlocks[] = [
+    "@context"      => "https://schema.org",
+    "@type"         => "CollectionPage",
+    "name"          => $title,
+    "url"           => $canonical,
+    "description"   => "Public archive of Omani company logos, indexed from public sources and verified by owners.",
+    "inLanguage"    => $isAr ? 'ar' : 'en',
+    "numberOfItems" => $total,
+    "isPartOf"      => ["@type" => "WebSite", "name" => "Cardify", "url" => "https://cardify.om"],
+    "about"         => ["@type" => "Thing", "name" => "Omani companies and brand marks"],
+];
+
+$jsonLdBlocks[] = [
+    "@context" => "https://schema.org",
+    "@type"    => "BreadcrumbList",
+    "itemListElement" => [
+        ["@type" => "ListItem", "position" => 1, "name" => "Cardify",       "item" => "https://cardify.om"],
+        ["@type" => "ListItem", "position" => 2, "name" => "Logo Library",  "item" => "https://cardify.om/logos"],
+    ],
+];
+
+$jsonLdBlocks[] = [
+    "@context"    => "https://schema.org",
+    "@type"       => "FAQPage",
+    "mainEntity"  => array_map(fn($q) => [
+        "@type"          => "Question",
+        "name"           => $isAr ? $q['q_ar'] : $q['q_en'],
+        "acceptedAnswer" => [
+            "@type" => "Answer",
+            "text"  => $isAr ? $q['a_ar'] : $q['a_en'],
+        ],
+    ], $faqQuestions),
+];
+
+$jsonLdBlocks[] = [
+    "@context"   => "https://schema.org",
+    "@type"      => "DataCatalog",
+    "name"       => "Omani Logo Library — Public API",
+    "url"        => "https://cardify.om/logos/press",
+    "license"    => "https://cardify.om/logos/terms",
+    "isAccessibleForFree" => true,
+    "distribution" => [
+        ["@type" => "DataDownload", "encodingFormat" => "application/json", "contentUrl" => "https://cardify.om/api/logos/list"],
+        ["@type" => "DataDownload", "encodingFormat" => "application/json", "contentUrl" => "https://cardify.om/api/logos/sectors"],
+        ["@type" => "DataDownload", "encodingFormat" => "application/json", "contentUrl" => "https://cardify.om/api/logos/stats"],
+    ],
+];
+
+$extraHead = '';
+foreach ($jsonLdBlocks as $block) {
+    $extraHead .= '<script type="application/ld+json">'
+               . json_encode($block, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+               . '</script>';
+}
+// Hreflang alternates
+$extraHead .= '<link rel="alternate" hreflang="en" href="https://cardify.om/logos">';
+$extraHead .= '<link rel="alternate" hreflang="ar" href="https://cardify.om/ar/logos">';
+$extraHead .= '<link rel="alternate" hreflang="x-default" href="https://cardify.om/logos">';
 
 require_once INCLUDES_DIR . '/ui-header.php';
 
@@ -168,6 +261,31 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                         ? 'جميع العلامات مملوكة لأصحابها. نستجيب لطلبات الإزالة خلال ٢٤ ساعة.'
                         : 'All marks belong to their owners. Takedown requests honored within 24 hours.' ?>
                 </p>
+            </div>
+        </div>
+
+        <!-- FAQ — helps SEO (FAQPage schema) + trust -->
+        <div class="mt-16">
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">
+                <?= $isAr ? 'أسئلة شائعة' : 'Frequently asked' ?>
+            </h2>
+            <p class="text-gray-600 mb-6">
+                <?= $isAr
+                    ? 'الحقوق، التنزيل، المطالبة، طلبات الإزالة، والواجهة البرمجية.'
+                    : 'Licensing, downloads, claims, takedowns, and the public API.' ?>
+            </p>
+            <div class="space-y-3">
+                <?php foreach ($faqQuestions as $i => $q): ?>
+                    <details class="group bg-white border border-gray-200 rounded-xl hover:border-blue-300 transition overflow-hidden"<?= $i === 0 ? ' open' : '' ?>>
+                        <summary class="flex items-center justify-between gap-4 px-5 py-4 cursor-pointer list-none">
+                            <span class="font-semibold text-gray-900"><?= logos_esc($isAr ? $q['q_ar'] : $q['q_en']) ?></span>
+                            <i class="fa-solid fa-chevron-down text-gray-400 text-sm transition group-open:rotate-180"></i>
+                        </summary>
+                        <div class="px-5 pb-4 text-gray-600 leading-relaxed">
+                            <?= logos_esc($isAr ? $q['a_ar'] : $q['a_en']) ?>
+                        </div>
+                    </details>
+                <?php endforeach; ?>
             </div>
         </div>
 

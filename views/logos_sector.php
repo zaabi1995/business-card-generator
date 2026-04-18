@@ -12,27 +12,77 @@
  * @var bool   $isAr
  */
 
-$pageTitle       = $title;
-$pageDescription = "Browse {$data['total']} Omani {$sectorLabel} company logos. Indexed, searchable, downloadable on claim.";
+// Title / description lean into the "Omani {sector} logo" long-tail — that's
+// the query pattern for Google Image search on branded marks.
+$pageTitle = $isAr
+    ? "شعارات شركات {$sectorLabel} في عُمان — تنزيل SVG و PNG | Cardify"
+    : "Omani {$sectorLabel} Logos — Download SVG + PNG | Cardify";
+$pageDescription = $isAr
+    ? mb_substr("تصفّح {$data['total']} من شعارات شركات {$sectorLabel} العمانية. أرشيف عام مفهرس، قابل للبحث، متاح للتنزيل بصيغ SVG و PNG.", 0, 155)
+    : mb_substr("Browse {$data['total']} Omani {$sectorLabel} company logos. Free SVG + PNG downloads, indexed from public sources for identification and reference.", 0, 155);
 $canonicalUrl    = $canonical;
 $bodyClass       = 'bg-white';
 $showNavigation  = true;
 $ogImage         = "https://cardify.om/storage/og/logos/{$sectorSlug}.png";
 
-$extraHead = '<script type="application/ld+json">' . json_encode([
-    "@context"     => "https://schema.org",
-    "@type"        => "CollectionPage",
-    "name"         => $title,
-    "url"          => $canonical,
-    "breadcrumb"   => [
-        "@type" => "BreadcrumbList",
+// JSON-LD: CollectionPage + BreadcrumbList + ItemList of up to 20 logo
+// samples (helps Google understand what's on the page for image carousels).
+$itemListEls = [];
+foreach (array_slice($data['rows'], 0, 20) as $idx => $r) {
+    $src = $r['logo_svg_path']
+        ?: $r['logo_png_path']
+        ?: $r['logo_webp_path']
+        ?: $r['logo_png_512_path'];
+    if (!$src) continue;
+    $itemListEls[] = [
+        "@type"    => "ListItem",
+        "position" => $idx + 1,
+        "url"      => "https://cardify.om/companies/" . $r['slug'],
+        "name"     => $r['name_en'],
+        "image"    => "https://cardify.om" . $src,
+    ];
+}
+
+$jsonLdBlocks = [
+    [
+        "@context"    => "https://schema.org",
+        "@type"       => "CollectionPage",
+        "name"        => $title,
+        "url"         => $canonical,
+        "inLanguage"  => $isAr ? 'ar' : 'en',
+        "numberOfItems" => $data['total'],
+        "about"       => ["@type" => "Thing", "name" => "Omani $sectorLabel companies"],
+    ],
+    [
+        "@context" => "https://schema.org",
+        "@type"    => "BreadcrumbList",
         "itemListElement" => [
-            ["@type" => "ListItem", "position" => 1, "name" => "Logo Library", "item" => "https://cardify.om/logos"],
-            ["@type" => "ListItem", "position" => 2, "name" => $sectorLabel, "item" => $canonical],
+            ["@type" => "ListItem", "position" => 1, "name" => "Cardify",       "item" => "https://cardify.om"],
+            ["@type" => "ListItem", "position" => 2, "name" => "Logo Library",  "item" => "https://cardify.om/logos"],
+            ["@type" => "ListItem", "position" => 3, "name" => $sectorLabel,    "item" => $canonical],
         ],
     ],
-    "numberOfItems" => $data['total'],
-], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+];
+if ($itemListEls) {
+    $jsonLdBlocks[] = [
+        "@context"        => "https://schema.org",
+        "@type"           => "ItemList",
+        "itemListOrder"   => "https://schema.org/ItemListOrderAscending",
+        "numberOfItems"   => count($itemListEls),
+        "itemListElement" => $itemListEls,
+    ];
+}
+
+$extraHead = '';
+foreach ($jsonLdBlocks as $block) {
+    $extraHead .= '<script type="application/ld+json">'
+               . json_encode($block, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+               . '</script>';
+}
+// Hreflang alternates
+$extraHead .= '<link rel="alternate" hreflang="en" href="https://cardify.om/logos/' . htmlspecialchars($sectorSlug, ENT_QUOTES) . '">';
+$extraHead .= '<link rel="alternate" hreflang="ar" href="https://cardify.om/ar/logos/' . htmlspecialchars($sectorSlug, ENT_QUOTES) . '">';
+$extraHead .= '<link rel="alternate" hreflang="x-default" href="https://cardify.om/logos/' . htmlspecialchars($sectorSlug, ENT_QUOTES) . '">';
 
 require_once INCLUDES_DIR . '/ui-header.php';
 

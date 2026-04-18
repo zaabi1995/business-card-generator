@@ -45,8 +45,16 @@ function nameFromUrl(u) {
   try {
     const base = new URL(u).pathname.split('/').pop() || '';
     const stem = base.replace(/\.[a-z0-9]+$/i, '');
-    const humanized = stem.replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
-    if (/^(svglogo|logo|image|img|file|asset)[-_ ]?\d*$/i.test(humanized)) return '';
+    let humanized = stem.replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
+    // Strip trailing artboard counters: "Foo 01", "Foo 02 1", "Foo-01", "Foo 1"
+    humanized = humanized.replace(/\s+\d{1,3}(\s+\d{1,3})?$/, '').trim();
+    // Strip trailing locale marker "Ar" (Aquafina-Ar, etc.)
+    humanized = humanized.replace(/\s+Ar$/i, '').trim();
+    // Title-case when all lowercase (URL was lowercased)
+    if (humanized === humanized.toLowerCase()) {
+      humanized = humanized.replace(/\b\w/g, ch => ch.toUpperCase());
+    }
+    if (/^(svglogo|logo|image|img|file|asset)\s*\d*$/i.test(humanized)) return '';
     if (humanized.length < 2) return '';
     return humanized;
   } catch (e) { return ''; }

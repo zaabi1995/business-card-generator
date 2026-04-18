@@ -16,4 +16,14 @@ Disallow: /database/
 Disallow: /company/
 Disallow: */admin/*
 
+# Public Omani Logo Library API (JSON endpoints, documented at /logos/press).
+# Crawlable so ecosystem tools + AI search engines can verify schema claims.
+Allow: /api/logos/
+
+# Logo storage (indexable — Google Image Search pulls from <image:loc> in sitemap-logos.xml)
+Allow: /storage/logos/indexed/
+Allow: /storage/logos/verified/
+Allow: /storage/og/logos/
+Disallow: /storage/logos/pending/
+
 Sitemap: https://cardify.om/sitemap.xml
