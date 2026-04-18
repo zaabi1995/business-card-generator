@@ -46,7 +46,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
             $root = dirname(__DIR__, 3);
             @mkdir($root . '/storage/logos/verified', 0755, true);
             $dest = "/storage/logos/verified/{$id}.{$ext}";
-            move_uploaded_file($_FILES['logo']['tmp_name'], $root . $dest);
+            if (!move_uploaded_file($_FILES['logo']['tmp_name'], $root . $dest)) {
+                // Abort the whole action — don't clear existing variant paths
+                // or point the row at a file we never wrote. Disk full, perms,
+                // or rejected move would otherwise nuke the live logo silently.
+                header("Location: /admin/super/logos/company.php?id=$id&upload_error=1");
+                exit;
+            }
 
             // Normalize JPEG → PNG so logo_png_path actually points at a PNG
             // (downstream: imagecreatefrompng, image/png MIME).
@@ -106,6 +112,12 @@ function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 
 <?php if (isset($_GET['saved'])): ?>
   <div class="mt-4 p-2 bg-green-50 border border-green-300 rounded text-sm">Saved.</div>
+<?php endif; ?>
+<?php if (isset($_GET['upload_error'])): ?>
+  <div class="mt-4 p-2 bg-red-50 border border-red-300 rounded text-sm text-red-800">
+    Upload failed (move_uploaded_file returned false). Existing logo preserved.
+    Check file permissions on /storage/logos/verified/ and disk space.
+  </div>
 <?php endif; ?>
 
 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">

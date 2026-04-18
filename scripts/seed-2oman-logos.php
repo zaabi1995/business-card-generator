@@ -221,19 +221,22 @@ foreach ($entries as $e) {
     // Hub/API/sitemap filter on logo_status IN ('indexed','verified'), so we
     // leave unqueued rows at whatever state they were in. Files are still
     // stored + previewed on /admin/super/logos/match-queue.
-    // PDO emulate_prepares=false on this codebase: each placeholder must be unique.
+    // CRITICAL: when queued, also preserve existing logo_*_path columns so
+    // an unreviewed 2oman asset never overwrites a verified/indexed public logo.
+    // Match-queue preview reads the file directly from /storage/logos/indexed/{id}.{ext}.
+    // PDO emulate_prepares=false: each placeholder must be unique.
     $relPath = "$destRelDir/{$companyId}.$ext";
     $pdo->prepare("UPDATE om_companies SET
         logo_status          = IF(logo_status IN ('verified','takedown'), logo_status,
                                  IF(:is_queue = 1, logo_status, 'indexed')),
         logo_source          = '2oman_net',
         logo_source_url      = :su,
-        logo_png_path        = IF(:is_png  = 1, :rel_png,  logo_png_path),
-        logo_svg_path        = IF(:is_svg  = 1, :rel_svg,  logo_svg_path),
-        logo_webp_path       = IF(:is_webp = 1, :rel_webp, logo_webp_path),
-        logo_width           = :w,
-        logo_height          = :h,
-        logo_dominant_color  = :c,
+        logo_png_path        = IF(:is_png  = 1 AND :is_queue = 0, :rel_png,  logo_png_path),
+        logo_svg_path        = IF(:is_svg  = 1 AND :is_queue = 0, :rel_svg,  logo_svg_path),
+        logo_webp_path       = IF(:is_webp = 1 AND :is_queue = 0, :rel_webp, logo_webp_path),
+        logo_width           = IF(:is_queue = 1, logo_width,           :w),
+        logo_height          = IF(:is_queue = 1, logo_height,          :h),
+        logo_dominant_color  = IF(:is_queue = 1, logo_dominant_color,  :c),
         logo_match_pending   = IF(:mp = 1, 1, logo_match_pending),
         logo_updated_at      = NOW()
         WHERE id = :id")

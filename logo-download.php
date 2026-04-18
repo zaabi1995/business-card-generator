@@ -54,7 +54,11 @@ $col = match ($format) {
 };
 
 if ($format === 'zip') {
-    $zipPath = tempnam(sys_get_temp_dir(), 'logozip_') . '.zip';
+    // tempnam() creates a file; appending `.zip` would orphan the original,
+    // so we delete the placeholder before writing the archive.
+    $zipPath = tempnam(sys_get_temp_dir(), 'logozip_');
+    @unlink($zipPath);
+    $zipPath .= '.zip';
     $zip = new ZipArchive();
     $zip->open($zipPath, ZipArchive::CREATE);
     $root = __DIR__;

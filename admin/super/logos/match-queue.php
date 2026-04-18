@@ -15,25 +15,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
     $action = $_POST['action'] ?? '';
     $id     = (int) ($_POST['id'] ?? 0);
     if ($action === 'confirm' && $id) {
-        // Confirm flips logo_status to 'indexed' (publishable) unless it's already
-        // verified/takedown. Seeder left queued rows at their prior status so they
-        // wouldn't appear publicly until a human confirmed the match.
+        // Confirm flips logo_status to 'indexed' AND promotes the staged file
+        // from /storage/logos/indexed/{id}.{ext} into the appropriate column.
+        // Seeder intentionally left path columns alone for queued rows so a
+        // public verified logo couldn't be clobbered by an unreviewed one.
+        $root = dirname(__DIR__, 3);
+        $updates = [];
+        foreach (['svg' => 'logo_svg_path', 'png' => 'logo_png_path', 'webp' => 'logo_webp_path'] as $ext => $col) {
+            $rel = "/storage/logos/indexed/{$id}.{$ext}";
+            if (is_file($root . $rel)) {
+                $updates[$col] = $rel;
+            }
+        }
+        $setClauses = ["logo_status = IF(logo_status IN ('verified','takedown'), logo_status, 'indexed')",
+                       "logo_match_pending = 0",
+                       "logo_updated_at = NOW()"];
+        $params = [':id' => $id];
+        foreach ($updates as $col => $val) {
+            $setClauses[] = "$col = :" . $col;
+            $params[':' . $col] = $val;
+        }
         $db->getConnection()->prepare(
-            "UPDATE om_companies SET
-                logo_status = IF(logo_status IN ('verified','takedown'), logo_status, 'indexed'),
-                logo_match_pending = 0,
-                logo_updated_at = NOW()
-             WHERE id = :id"
-        )->execute([':id' => $id]);
+            "UPDATE om_companies SET " . implode(', ', $setClauses) . " WHERE id = :id"
+        )->execute($params);
     } elseif ($action === 'reject' && $id) {
-        $db->getConnection()->prepare(
-            "UPDATE om_companies SET
-                logo_status = 'none',
-                logo_svg_path = NULL, logo_png_path = NULL, logo_webp_path = NULL,
-                logo_png_512_path = NULL, logo_png_2048_path = NULL,
-                logo_match_pending = 0
-             WHERE id = :id"
-        )->execute([':id' => $id]);
+        // Delete any staged files in /storage/logos/indexed/{id}.* that the
+        // seeder wrote for this queued row. For queued rows we didn't populate
+        // path columns, so the staged files are the only leftover.
+        $root = dirname(__DIR__, 3);
+        foreach (['svg', 'png', 'webp', 'jpg', 'jpeg'] as $ext) {
+            $abs = $root . "/storage/logos/indexed/{$id}.{$ext}";
+            if (is_file($abs)) @unlink($abs);
+        }
+        // Clear match_pending on all rows; for verified/takedown also preserve
+        // their existing public logo paths — only clear paths when the row has
+        // no public status to protect.
+        $status = $db->fetchOne("SELECT logo_status FROM om_companies WHERE id = :id", [':id' => $id])['logo_status'] ?? 'none';
+        if (in_array($status, ['verified', 'takedown'], true)) {
+            $db->getConnection()->prepare(
+                "UPDATE om_companies SET logo_match_pending = 0, logo_updated_at = NOW() WHERE id = :id"
+            )->execute([':id' => $id]);
+        } else {
+            $db->getConnection()->prepare(
+                "UPDATE om_companies SET
+                    logo_status = 'none',
+                    logo_svg_path = NULL, logo_png_path = NULL, logo_webp_path = NULL,
+                    logo_png_512_path = NULL, logo_png_2048_path = NULL,
+                    logo_match_pending = 0,
+                    logo_updated_at = NOW()
+                 WHERE id = :id"
+            )->execute([':id' => $id]);
+        }
     }
     header('Location: /admin/super/logos/match-queue.php');
     exit;
@@ -50,6 +82,22 @@ $csrfToken = generateCSRFToken();
 adminHeader('Match queue');
 
 function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
+
+/**
+ * Resolve queue preview. For queued rows the seeder intentionally leaves
+ * logo_*_path columns alone (so unreviewed logos can't overwrite a public
+ * verified one), so we glob the indexed/ directory to find the staged file.
+ */
+function queuePreviewSrc(int $companyId, ?string $svgPath, ?string $pngPath): ?string {
+    if ($svgPath) return $svgPath;
+    if ($pngPath) return $pngPath;
+    $root = dirname(__DIR__, 3);
+    foreach (['svg', 'png', 'webp', 'jpg', 'jpeg'] as $ext) {
+        $rel = "/storage/logos/indexed/{$companyId}.{$ext}";
+        if (is_file($root . $rel)) return $rel;
+    }
+    return null;
+}
 ?>
 <h1 class="text-2xl font-bold">Match queue (<?= count($rows) ?>)</h1>
 <p class="text-sm text-gray-600 mt-1">
@@ -58,7 +106,7 @@ function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 </p>
 
 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-  <?php foreach ($rows as $r): $src = $r['logo_svg_path'] ?: $r['logo_png_path']; ?>
+  <?php foreach ($rows as $r): $src = queuePreviewSrc((int) $r['id'], $r['logo_svg_path'], $r['logo_png_path']); ?>
     <div class="flex items-center gap-4 bg-white border rounded p-3">
       <?php if ($src): ?>
         <img src="<?= esc($src) ?>" class="w-16 h-16 object-contain bg-gray-50 p-1 rounded">
