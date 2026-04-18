@@ -119,7 +119,12 @@ class LogoLibrary {
     }
 
     public static function ipHash(): string {
-        return hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|cardify-logo-salt');
+        // Use the shared getClientIp() helper so deployments behind Cloudflare /
+        // reverse proxies hash the real client IP, not the proxy address.
+        if (!function_exists('getClientIp')) {
+            require_once __DIR__ . '/UrlSafety.php';
+        }
+        return hash('sha256', getClientIp() . '|cardify-logo-salt');
     }
 
     public static function uaHash(): string {

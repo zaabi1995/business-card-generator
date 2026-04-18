@@ -65,6 +65,18 @@ class LogoTakedownService {
     public static function hideLogo(Database $db, int $takedownId, string $deciderUserId, ?string $notes): array {
         $t = $db->fetchOne("SELECT company_id FROM logo_takedowns WHERE id = :id", [':id' => $takedownId]);
         if (!$t) return ['ok' => false, 'error' => 'Not found'];
+
+        // Unmatched (company_id=0) takedowns can't be "hidden" directly — the target
+        // company needs to be resolved first. Refuse here so admins don't silently
+        // close unresolved requests thinking they've hidden something.
+        if ((int) $t['company_id'] <= 0) {
+            return [
+                'ok'    => false,
+                'error' => 'Resolve the company for this takedown before hiding. '
+                         . 'Edit the company_id on the row (or reject) first.',
+            ];
+        }
+
         $pdo = $db->getConnection();
         $pdo->prepare("UPDATE logo_takedowns SET status = 'logo_hidden', decided_by = :d, decided_at = NOW(), resolution_notes = :n WHERE id = :id")
             ->execute([':d' => $deciderUserId, ':n' => $notes, ':id' => $takedownId]);

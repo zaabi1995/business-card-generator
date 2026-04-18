@@ -136,6 +136,26 @@ class LogoClaimService {
                 logo_verified_at        = NOW(),
                 logo_updated_at         = NOW()
               WHERE id = :id")->execute([':u' => $claim['user_id'], ':id' => $claim['company_id']]);
+
+            // Auto-reject sibling pending claims on the same company so a later
+            // approval can't silently transfer ownership to a different user.
+            $pdo->prepare(
+                "UPDATE logo_claims SET
+                    status         = 'rejected',
+                    decided_by     = :d,
+                    decided_at     = NOW(),
+                    decision_notes = CONCAT(COALESCE(decision_notes, ''),
+                        IF(decision_notes IS NULL OR decision_notes = '', '', '\n'),
+                        '[auto-rejected: sibling claim #', :sibling_id, ' was approved]')
+                 WHERE company_id = :cid
+                   AND status     = 'pending'
+                   AND id        != :claim_id"
+            )->execute([
+                ':d'          => $deciderUserId,
+                ':sibling_id' => $claimId,
+                ':cid'        => $claim['company_id'],
+                ':claim_id'   => $claimId,
+            ]);
         } else {
             // Only revert 'pending' → 'indexed' if there are no other pending claims
             $stillPending = (int) ($db->fetchOne(

@@ -6,6 +6,7 @@
  * Rate limit: 60 req/min/IP via rate_limits table.
  */
 require_once __DIR__ . '/../../config.php';
+require_once INCLUDES_DIR . '/UrlSafety.php';
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('X-Attribution: cardify.om/logos');
@@ -13,8 +14,8 @@ header('X-Attribution: cardify.om/logos');
 $db  = Database::getInstance();
 $pdo = $db->getConnection();
 
-// Rate limit
-$ip     = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+// Rate limit — use real client IP (handles Cloudflare / reverse proxies).
+$ip     = getClientIp();
 $bucket = (int) floor(time() / 60);
 $pdo->prepare(
     "INSERT INTO rate_limits (action, ip, bucket, count, window_sec)
