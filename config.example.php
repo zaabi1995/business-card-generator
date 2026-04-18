@@ -12,6 +12,15 @@
 // Start session — public SEO pages skip session unless tracking params are present
 // (session_start() forces no-cache headers which hurts Google indexing).
 $scriptName = basename($_SERVER['SCRIPT_NAME'] ?? '');
+$requestUri = $_SERVER['REQUEST_URI'] ?? '';
+
+// Authenticated/admin routes — never apply public-SEO caching to these,
+// otherwise browsers cache redirects and users get redirect loops after role changes
+$adminPathPrefixes = ['/admin/', '/admin', '/printshop/', '/printshop', '/api/'];
+$isAdminPath = false;
+foreach ($adminPathPrefixes as $prefix) {
+    if (strpos($requestUri, $prefix) === 0) { $isAdminPath = true; break; }
+}
 
 $publicSeoPages = [
     'blog.php', 'about.php', 'faq.php', 'contact.php', 'terms.php',
@@ -52,7 +61,7 @@ $alwaysSkipSession = ['vcf.php', 'qr.php', 'feed.php'];
 $hasTrackingParam = !empty($_GET['ref']) || !empty($_GET['utm_source'])
     || !empty($_GET['utm_medium']) || !empty($_GET['utm_campaign']);
 
-$isPublicSeo = in_array($scriptName, $publicSeoPages);
+$isPublicSeo = in_array($scriptName, $publicSeoPages) && !$isAdminPath;
 $skipSession = in_array($scriptName, $alwaysSkipSession)
     || ($isPublicSeo && !$hasTrackingParam);
 
