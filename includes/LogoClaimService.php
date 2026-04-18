@@ -54,7 +54,17 @@ class LogoClaimService {
         $autoVerify = false;
         if ($proofType === 'domain_email') {
             $companyDomain = $company['website_domain_cache'] ?? null;
-            if ($companyDomain && LogoLibrary::emailDomainMatchesCompany($userEmail, $companyDomain)) {
+            $hasLogoAsset  = !empty($company['logo_svg_path'])
+                           || !empty($company['logo_png_path'])
+                           || !empty($company['logo_webp_path']);
+            // Auto-verify only when there's actually a logo asset to be
+            // verified. Otherwise a domain-match on a no-logo row would
+            // flip the row to 'verified' and list it in the hub with
+            // nothing to render/download.
+            if ($hasLogoAsset
+                && $companyDomain
+                && LogoLibrary::emailDomainMatchesCompany($userEmail, $companyDomain)
+            ) {
                 $matchingCompanies = LogoLibrary::countCompaniesForDomain($db, $companyDomain);
                 if ($matchingCompanies === 1) {
                     $autoVerify = true;

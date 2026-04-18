@@ -203,6 +203,22 @@ foreach ($entries as $e) {
         }
     }
 
+    // Pre-check: if the target row is verified/takedown, downgrade decision
+    // to 'queue' NOW so the file lands in pending/ from the start. Writing to
+    // indexed/{id}.{ext} first would clobber the live asset on disk (we'd
+    // later rename to pending/, but the damage is already done — the
+    // indexed/ file is now the unreviewed 2oman asset, not the verified one).
+    $currentStatus = $db->fetchOne(
+        "SELECT logo_status FROM om_companies WHERE id = :id",
+        [':id' => $companyId]
+    )['logo_status'] ?? 'none';
+    if ($decision === 'auto_link' && in_array($currentStatus, ['verified', 'takedown'], true)) {
+        $decision = 'queue';
+        $isQueue = true;  // used later in the UPDATE guard
+        $report['auto_linked']--;
+        $report['queued']++;
+    }
+
     // Queued files go under pending/ so they can't overwrite a live
     // /storage/logos/indexed/{id}.{ext} asset on disk before admin review.
     // Admin match-queue.php previews from pending/, confirm promotes to indexed/,
@@ -270,35 +286,11 @@ foreach ($entries as $e) {
             if (is_file($oldSize)) @unlink($oldSize);
         }
     }
-    // PROTECT verified + takedown rows: never overwrite their paths, status,
-    // or metadata from a seed run. Seeds only act on 'none'/'indexed'/'pending'
-    // rows. Use :is_protected = (current status IN verified|takedown) ? 1 : 0
-    // to gate every mutation.
-    $protectedCheck = $db->fetchOne(
-        "SELECT logo_status FROM om_companies WHERE id = :id",
-        [':id' => $companyId]
-    );
-    $isProtected = in_array($protectedCheck['logo_status'] ?? '', ['verified', 'takedown'], true);
-    if ($isProtected && !$isQueue) {
-        // Auto-link on verified/takedown → treat like queue (stage for review)
-        // so admin can decide, instead of silently replacing the claimant's logo.
-        $isQueue = true;
-        $report['queued']++;
-        $report['auto_linked']--;
-        // Stage the file under pending/ instead of indexed/ — move the file.
-        $pendingRel = "/storage/logos/pending/{$companyId}.{$ext}";
-        $pendingAbs = dirname(__DIR__) . $pendingRel;
-        @mkdir(dirname($pendingAbs), 0755, true);
-        if (is_file($destFile) && $destFile !== $pendingAbs) {
-            @rename($destFile, $pendingAbs);
-            $destFile = $pendingAbs;
-            $relPath  = $pendingRel;
-        }
-        // Flag for admin review
-        $pdo->prepare("UPDATE om_companies SET logo_match_pending = 1, logo_updated_at = NOW() WHERE id = :id")
-            ->execute([':id' => $companyId]);
-        continue; // Skip the authoritative UPDATE below; match-queue handles promotion.
-    }
+    // Verified/takedown protection is applied up front (pre-download): if the
+    // current row status is verified/takedown, decision is already flipped to
+    // 'queue' and the file is staged under pending/. The UPDATE below's
+    // :is_queue guard then preserves the live logo paths, and
+    // logo_match_pending=1 surfaces it in admin/match-queue for explicit review.
 
     $pdo->prepare("UPDATE om_companies SET
         logo_status          = IF(logo_status IN ('verified','takedown'), logo_status,

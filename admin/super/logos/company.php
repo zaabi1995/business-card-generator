@@ -37,9 +37,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
              WHERE id = :id"
         )->execute([':id' => $id]);
     } elseif ($action === 'hide') {
+        // Full takedown: clear paths + delete files on disk, matching
+        // LogoTakedownService::hideLogo(). Flipping status alone would leave
+        // files publicly fetchable to anyone with a previously-seen URL.
+        $paths = $db->fetchOne(
+            "SELECT logo_svg_path, logo_png_path, logo_png_512_path,
+                    logo_png_2048_path, logo_webp_path, logo_url
+               FROM om_companies WHERE id = :id",
+            [':id' => $id]
+        ) ?: [];
         $db->getConnection()->prepare(
-            "UPDATE om_companies SET logo_status = 'takedown', logo_updated_at = NOW() WHERE id = :id"
+            "UPDATE om_companies SET
+                logo_status        = 'takedown',
+                logo_svg_path      = NULL,
+                logo_png_path      = NULL,
+                logo_png_512_path  = NULL,
+                logo_png_2048_path = NULL,
+                logo_webp_path     = NULL,
+                logo_url           = NULL,
+                logo_updated_at    = NOW()
+             WHERE id = :id"
         )->execute([':id' => $id]);
+        $rootRepo = dirname(__DIR__, 3);
+        foreach ($paths as $relPath) {
+            if (!is_string($relPath) || $relPath === '') continue;
+            if (strpos($relPath, '/storage/logos/') !== 0) continue;
+            $abs = $rootRepo . $relPath;
+            if (is_file($abs)) @unlink($abs);
+        }
     } elseif ($action === 'upload' && !empty($_FILES['logo']['tmp_name'])) {
         $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
         if (in_array($ext, ['svg', 'png', 'jpg', 'jpeg', 'webp'], true)) {
