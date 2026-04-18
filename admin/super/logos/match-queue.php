@@ -15,8 +15,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
     $action = $_POST['action'] ?? '';
     $id     = (int) ($_POST['id'] ?? 0);
     if ($action === 'confirm' && $id) {
+        // Confirm flips logo_status to 'indexed' (publishable) unless it's already
+        // verified/takedown. Seeder left queued rows at their prior status so they
+        // wouldn't appear publicly until a human confirmed the match.
         $db->getConnection()->prepare(
-            "UPDATE om_companies SET logo_match_pending = 0 WHERE id = :id"
+            "UPDATE om_companies SET
+                logo_status = IF(logo_status IN ('verified','takedown'), logo_status, 'indexed'),
+                logo_match_pending = 0,
+                logo_updated_at = NOW()
+             WHERE id = :id"
         )->execute([':id' => $id]);
     } elseif ($action === 'reject' && $id) {
         $db->getConnection()->prepare(

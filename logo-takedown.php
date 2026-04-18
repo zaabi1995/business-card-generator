@@ -21,21 +21,25 @@ $success = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
         $error = 'Invalid CSRF token';
-    } elseif (!$companyId) {
-        $error = 'Missing company';
     } else {
-        $fields = [
-            'name'         => trim($_POST['name'] ?? ''),
-            'email'        => sanitizeEmail($_POST['email'] ?? ''),
-            'role'         => trim($_POST['role'] ?? '') ?: null,
-            'claim_basis'  => trim($_POST['claim_basis'] ?? ''),
-            'related_urls' => trim($_POST['related_urls'] ?? '') ?: null,
-        ];
-        if (!$fields['name'] || !$fields['email'] || !$fields['claim_basis']) {
-            $error = 'Name, email, and basis are required';
+        $hint = trim($_POST['company_hint'] ?? '');
+        if (!$companyId && $hint === '') {
+            $error = 'Please specify which company the takedown is for.';
         } else {
-            $res = LogoTakedownService::submit($db, $companyId, $fields);
-            if ($res['ok']) $success = $res; else $error = $res['error'];
+            $fields = [
+                'name'         => trim($_POST['name'] ?? ''),
+                'email'        => sanitizeEmail($_POST['email'] ?? ''),
+                'role'         => trim($_POST['role'] ?? '') ?: null,
+                'claim_basis'  => trim($_POST['claim_basis'] ?? ''),
+                'related_urls' => trim($_POST['related_urls'] ?? '') ?: null,
+                'company_hint' => $hint ?: null,
+            ];
+            if (!$fields['name'] || !$fields['email'] || !$fields['claim_basis']) {
+                $error = 'Name, email, and basis are required';
+            } else {
+                $res = LogoTakedownService::submit($db, $companyId, $fields);
+                if ($res['ok']) $success = $res; else $error = $res['error'];
+            }
         }
     }
 }

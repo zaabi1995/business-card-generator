@@ -196,18 +196,39 @@ foreach ($entries as $e) {
         continue;
     }
 
+    // Normalize JPEG → PNG so downstream (imagecreatefrompng, image/png MIME) works.
+    if (in_array($ext, ['jpg', 'jpeg'], true)) {
+        $jpgImg = @imagecreatefromjpeg($destFile);
+        if ($jpgImg) {
+            $pngFile = "$destAbsDir/{$companyId}.png";
+            imagepng($jpgImg, $pngFile, 9);
+            imagedestroy($jpgImg);
+            @unlink($destFile);
+            $destFile = $pngFile;
+            $ext = 'png';
+        }
+    }
+
     [$w, $h] = @getimagesize($destFile) ?: [null, null];
     $dom     = LogoLibrary::dominantColor($destFile);
 
     $isSvg = $ext === 'svg';
-    $isPngLike = in_array($ext, ['png', 'jpg', 'jpeg'], true);
+    $isPng = $ext === 'png';
+    $isQueue = $decision === 'queue';
 
+    // Queue (0.75–0.89 fuzzy match) → admin must confirm before going public.
+    // Hub/API/sitemap filter on logo_status IN ('indexed','verified'), so we
+    // leave unqueued rows at whatever state they were in. Files are still
+    // stored + previewed on /admin/super/logos/match-queue.
+    // PDO emulate_prepares=false on this codebase: each placeholder must be unique.
+    $relPath = "$destRelDir/{$companyId}.$ext";
     $pdo->prepare("UPDATE om_companies SET
-        logo_status          = IF(logo_status IN ('verified','takedown'), logo_status, 'indexed'),
+        logo_status          = IF(logo_status IN ('verified','takedown'), logo_status,
+                                 IF(:is_queue = 1, logo_status, 'indexed')),
         logo_source          = '2oman_net',
         logo_source_url      = :su,
-        logo_png_path        = IF(:is_png = 1, :rel, logo_png_path),
-        logo_svg_path        = IF(:is_svg = 1, :rel, logo_svg_path),
+        logo_png_path        = IF(:is_png = 1, :rel_png, logo_png_path),
+        logo_svg_path        = IF(:is_svg = 1, :rel_svg, logo_svg_path),
         logo_width           = :w,
         logo_height          = :h,
         logo_dominant_color  = :c,
@@ -215,13 +236,15 @@ foreach ($entries as $e) {
         logo_updated_at      = NOW()
         WHERE id = :id")
        ->execute([
-           ':su'     => $src,
-           ':is_png' => $isPngLike ? 1 : 0,
-           ':is_svg' => $isSvg ? 1 : 0,
-           ':rel'    => "$destRelDir/{$companyId}.$ext",
-           ':w'      => $w,
-           ':h'      => $h,
-           ':c'      => $dom,
+           ':su'      => $src,
+           ':is_png'  => $isPng ? 1 : 0,
+           ':is_svg'  => $isSvg ? 1 : 0,
+           ':is_queue'=> $isQueue ? 1 : 0,
+           ':rel_png' => $relPath,
+           ':rel_svg' => $relPath,
+           ':w'       => $w,
+           ':h'       => $h,
+           ':c'       => $dom,
            ':mp'     => $decision === 'queue' ? 1 : 0,
            ':id'     => $companyId,
        ]);

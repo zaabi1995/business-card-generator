@@ -13,11 +13,17 @@ class LogoTakedownService {
     public static function submit(Database $db, int $companyId, array $fields): array {
         $pdo = $db->getConnection();
 
-        $company = $db->fetchOne(
-            "SELECT id, name_en, logo_status FROM om_companies WHERE id = :id",
-            [':id' => $companyId]
-        );
-        if (!$company) return ['ok' => false, 'error' => 'Company not found'];
+        // Company ID of 0 + company_hint is the "unresolved" sentinel: admin triages
+        // by hint text. Otherwise the company row must exist.
+        if ($companyId > 0) {
+            $company = $db->fetchOne(
+                "SELECT id, name_en, logo_status FROM om_companies WHERE id = :id",
+                [':id' => $companyId]
+            );
+            if (!$company) return ['ok' => false, 'error' => 'Company not found'];
+        } elseif (empty($fields['company_hint'])) {
+            return ['ok' => false, 'error' => 'Company not specified'];
+        }
 
         $ipHash = LogoLibrary::ipHash();
         $recent = (int) ($db->fetchOne(
@@ -27,6 +33,13 @@ class LogoTakedownService {
         )['c'] ?? 0);
         if ($recent >= 3) {
             return ['ok' => false, 'error' => 'Too many requests; try again later'];
+        }
+
+        // Prepend the company hint to claim_basis so admin triage sees it without
+        // needing an extra column.
+        $claimBasis = $fields['claim_basis'];
+        if (empty($companyId) && !empty($fields['company_hint'])) {
+            $claimBasis = '[UNMATCHED COMPANY — hint: ' . $fields['company_hint'] . "]\n\n" . $claimBasis;
         }
 
         $pdo->prepare(
@@ -40,7 +53,7 @@ class LogoTakedownService {
             ':rn'  => $fields['name'],
             ':re'  => $fields['email'],
             ':rr'  => $fields['role'] ?? null,
-            ':cb'  => $fields['claim_basis'],
+            ':cb'  => $claimBasis,
             ':pu'  => $fields['proof_url'] ?? null,
             ':ru'  => $fields['related_urls'] ?? null,
             ':ip'  => $ipHash,

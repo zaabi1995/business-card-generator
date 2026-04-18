@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
 $rows = $db->fetchAll(
     "SELECT t.*, co.name_en AS company_name, co.slug AS company_slug
        FROM logo_takedowns t
-       JOIN om_companies co ON co.id = t.company_id
+  LEFT JOIN om_companies co ON co.id = t.company_id
       WHERE t.status IN ('received', 'under_review')
       ORDER BY t.created_at ASC"
 );
@@ -45,8 +45,14 @@ function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
     <div class="bg-white border rounded p-4">
       <div class="flex flex-col md:flex-row justify-between gap-4">
         <div class="flex-1 min-w-0">
-          <a href="/companies/<?= esc($r['company_slug']) ?>" target="_blank"
-             class="font-semibold underline"><?= esc($r['company_name']) ?></a>
+          <?php if ($r['company_slug']): ?>
+            <a href="/companies/<?= esc($r['company_slug']) ?>" target="_blank"
+               class="font-semibold underline"><?= esc($r['company_name']) ?></a>
+          <?php else: ?>
+            <span class="font-semibold text-amber-700">
+              Unmatched company — resolve before deciding
+            </span>
+          <?php endif; ?>
           <div class="text-sm text-gray-600 mt-1">
             From: <?= esc($r['requester_name']) ?>
             &lt;<?= esc($r['requester_email']) ?>&gt;
