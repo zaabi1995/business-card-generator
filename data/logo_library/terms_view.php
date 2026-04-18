@@ -9,6 +9,30 @@ $bodyClass       = 'bg-white';
 $showNavigation  = true;
 $metaRobots      = 'index,follow';
 
+$extraHead =
+    '<script type="application/ld+json">' . json_encode([
+        "@context"   => "https://schema.org",
+        "@type"      => "WebPage",
+        "name"       => $title,
+        "url"        => $canonicalUrl,
+        "inLanguage" => $isAr ? 'ar' : 'en',
+        "about"      => ["@type" => "Thing", "name" => "Omani Logo Library terms and license"],
+        "license"    => $canonicalUrl,
+        "publisher"  => ["@type" => "Organization", "name" => "Cardify", "url" => "https://cardify.om"],
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+    . '<script type="application/ld+json">' . json_encode([
+        "@context" => "https://schema.org",
+        "@type"    => "BreadcrumbList",
+        "itemListElement" => [
+            ["@type" => "ListItem", "position" => 1, "name" => "Cardify",      "item" => "https://cardify.om"],
+            ["@type" => "ListItem", "position" => 2, "name" => "Logo Library", "item" => "https://cardify.om/logos"],
+            ["@type" => "ListItem", "position" => 3, "name" => ($isAr ? 'الشروط' : 'Terms'), "item" => $canonicalUrl],
+        ],
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+    . '<link rel="alternate" hreflang="en" href="https://cardify.om/logos/terms">'
+    . '<link rel="alternate" hreflang="ar" href="https://cardify.om/ar/logos/terms">'
+    . '<link rel="alternate" hreflang="x-default" href="https://cardify.om/logos/terms">';
+
 require_once INCLUDES_DIR . '/ui-header.php';
 
 function logos_terms_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }

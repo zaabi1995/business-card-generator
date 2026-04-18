@@ -153,6 +153,32 @@ try {
     foreach ($rows as $r) $wilayatCounts[$r['wilayat']] = (int) $r['c'];
 } catch (Throwable $e) { /* noop */ }
 
+// --- Logo Library sample (for the visual gallery section) ---
+// Pull a curated sample across as many sectors as possible, preferring
+// verified > indexed and recent updates. Cap at ~30 so the page stays fast.
+$logoSample = [];
+try {
+    $logoSample = $db->fetchAll(
+        "SELECT c.id, c.slug, c.name_en, c.name_ar, c.sector,
+                c.logo_svg_path, c.logo_png_path, c.logo_webp_path,
+                c.logo_png_512_path, c.logo_dominant_color, c.logo_status
+           FROM om_companies c
+          WHERE c.logo_status IN ('indexed','verified')
+            AND (c.logo_svg_path IS NOT NULL
+                 OR c.logo_png_path IS NOT NULL
+                 OR c.logo_webp_path IS NOT NULL)
+          ORDER BY FIELD(c.logo_status,'verified','indexed'),
+                   c.logo_updated_at DESC
+          LIMIT 30"
+    );
+} catch (Throwable $e) { $logoSample = []; }
+$logoTotal = 0;
+try {
+    $logoTotal = (int) ($db->fetchOne(
+        "SELECT COUNT(*) c FROM om_companies WHERE logo_status IN ('indexed','verified')"
+    )['c'] ?? 0);
+} catch (Throwable $e) {}
+
 // --- Derived helpers ---
 $totalFmt    = number_format($stats['total']);
 $largeFmt    = number_format($stats['large_count']);
@@ -276,6 +302,10 @@ $faq = [
     [
         'q' => 'Why did Cardify publish this?',
         'a' => 'Cardify is a business-card platform built in Oman, for Oman. We rely on accurate public company data every day to help professionals network. Publishing the index back to the community — bilingual, free, and search-engine indexable — strengthens the digital backbone of Oman\'s private sector and directly supports Vision 2040\'s economic diversification and digital transformation priorities.',
+    ],
+    [
+        'q' => 'Where can I download Omani company logos?',
+        'a' => 'The companion Omani Logo Library at cardify.om/logos hosts downloadable brand marks (SVG + PNG) for companies covered in this index — spanning ministries, sovereign entities, banks, logistics, retail, and more. Logos are indexed for identification and reference; brand owners can claim and verify their profiles, and request takedowns through the takedown form.',
     ],
 ];
 
@@ -939,21 +969,101 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <!-- ============================================================
-         COMPANION ARCHIVE — LOGO LIBRARY
+         COMPANION ARCHIVE — OMANI LOGO LIBRARY (visual gallery)
          ============================================================ -->
-    <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div class="rounded-2xl p-8 md:p-12 bg-gradient-to-br from-cyan-50 to-slate-50">
-            <p class="text-xs uppercase tracking-wider text-cyan-700 font-semibold">Companion archive</p>
-            <h2 class="text-3xl font-bold mt-2">The Omani Logo Library</h2>
-            <p class="mt-3 text-lg text-gray-700 max-w-2xl">
-                Every company in this index has a profile — and most have a logo.
-                Browse <?= obiEscq(number_format($stats['total'])) ?>+ Omani brand marks,
-                indexed and owner-verifiable.
-            </p>
-            <a href="/logos"
-               class="inline-block mt-5 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg font-medium">
-               Explore the Logo Library →
-            </a>
+    <section id="logo-library" class="bg-gray-50 border-y border-gray-100 scroll-mt-24">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
+                <div class="max-w-2xl">
+                    <p class="text-xs uppercase tracking-wider text-blue-700 font-semibold mb-3">Companion archive</p>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900">The Omani Logo Library</h2>
+                    <p class="mt-3 text-lg text-gray-600">
+                        Every company in this index can have a logo. <?= obiEscq(number_format($logoTotal)) ?>+ Omani brand marks
+                        are already indexed — ministries, sovereign entities, banks, logistics, retail, and more.
+                        Search, filter by sector, and download SVG / PNG for identification and reference use.
+                    </p>
+                </div>
+                <a href="/logos"
+                   class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg shadow-blue-600/20 whitespace-nowrap self-start md:self-end">
+                    Open the Logo Library
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
+            </div>
+
+            <?php if ($logoSample): ?>
+                <div class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-10 gap-2.5">
+                    <?php foreach ($logoSample as $l):
+                        $src = $l['logo_webp_path']
+                            ?: $l['logo_png_512_path']
+                            ?: $l['logo_png_path']
+                            ?: $l['logo_svg_path'];
+                        if (!$src) continue;
+                    ?>
+                        <a href="/companies/<?= obiEscq($l['slug']) ?>"
+                           class="group bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition p-3 aspect-square flex items-center justify-center"
+                           title="<?= obiEscq($l['name_en']) ?> logo">
+                            <img src="<?= obiEscq($src) ?>"
+                                 alt="<?= obiEscq($l['name_en']) ?> logo"
+                                 loading="lazy"
+                                 class="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform">
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- Sector shortcuts -->
+            <div class="mt-8">
+                <p class="text-sm font-semibold text-gray-600 mb-3">Browse by sector</p>
+                <div class="flex flex-wrap gap-2">
+                    <?php
+                        $sectorLinks = [
+                            ['slug' => 'government-defense',    'label' => 'Government'],
+                            ['slug' => 'finance',               'label' => 'Banks & Finance'],
+                            ['slug' => 'logistics-shipping',    'label' => 'Logistics & Shipping'],
+                            ['slug' => 'oil-gas',               'label' => 'Oil & Gas'],
+                            ['slug' => 'healthcare',            'label' => 'Healthcare'],
+                            ['slug' => 'education',             'label' => 'Education'],
+                            ['slug' => 'telecom',               'label' => 'Telecom'],
+                            ['slug' => 'food-beverage',         'label' => 'Food & Beverage'],
+                            ['slug' => 'hospitality-tourism',   'label' => 'Hospitality'],
+                            ['slug' => 'retail',                'label' => 'Retail'],
+                            ['slug' => 'manufacturing',         'label' => 'Manufacturing'],
+                            ['slug' => 'real-estate',           'label' => 'Real Estate'],
+                        ];
+                        foreach ($sectorLinks as $s): ?>
+                        <a href="/logos/<?= obiEscq($s['slug']) ?>"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-sm text-gray-700 hover:border-blue-300 hover:text-blue-600 transition">
+                            <?= obiEscq($s['label']) ?>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-gray-400"></i>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <!-- Micro-FAQ for search engines + users -->
+            <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div class="bg-white rounded-xl border border-gray-200 p-5">
+                    <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-1">Why a logo library?</h3>
+                    <p class="text-sm text-gray-600 leading-relaxed">Research, journalism, pitch decks, dashboards, and analyst reports all need Omani brand marks at the right resolution. This archive centralizes them.</p>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-200 p-5">
+                    <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-1">Is it free?</h3>
+                    <p class="text-sm text-gray-600 leading-relaxed">Yes. Browsing and downloading indexed + verified logos is free. Marks remain trademarks of their owners; use is permitted for identification under nominative fair-use.</p>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-200 p-5">
+                    <div class="w-9 h-9 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center mb-3">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-1">Takedown-ready</h3>
+                    <p class="text-sm text-gray-600 leading-relaxed">Brand owners can <a href="/logo-takedown" class="text-blue-600 hover:underline font-medium">request removal</a>. We acknowledge within 48 hours and hide within 24 hours of valid requests.</p>
+                </div>
+            </div>
         </div>
     </section>
 
