@@ -6,6 +6,26 @@ $canonicalUrl    = 'https://cardify.om/logos/press';
 $bodyClass       = 'bg-white';
 $showNavigation  = true;
 
+$extraHead =
+    '<script type="application/ld+json">' . json_encode([
+        "@context" => "https://schema.org",
+        "@type"    => "WebPage",
+        "name"     => $title,
+        "url"      => $canonicalUrl,
+        "inLanguage" => "en",
+        "about"    => ["@type" => "Thing", "name" => "Omani Logo Library press kit"],
+        "publisher" => ["@type" => "Organization", "name" => "Cardify", "url" => "https://cardify.om"],
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+    . '<script type="application/ld+json">' . json_encode([
+        "@context" => "https://schema.org",
+        "@type"    => "BreadcrumbList",
+        "itemListElement" => [
+            ["@type" => "ListItem", "position" => 1, "name" => "Cardify",      "item" => "https://cardify.om"],
+            ["@type" => "ListItem", "position" => 2, "name" => "Logo Library", "item" => "https://cardify.om/logos"],
+            ["@type" => "ListItem", "position" => 3, "name" => "Press kit",    "item" => $canonicalUrl],
+        ],
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+
 require_once INCLUDES_DIR . '/ui-header.php';
 
 function logos_press_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }

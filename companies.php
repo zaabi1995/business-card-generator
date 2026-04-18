@@ -635,6 +635,66 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
             ?>
         </p>
 
+        <?php
+            /* Logo strip — only on sector hubs. Shows indexed/verified logos
+               scoped to this sector with a CTA to /logos/{sector}. */
+            if ($hubSector) {
+                $hubLogoSample = [];
+                try {
+                    $hubLogoSample = $db->fetchAll(
+                        "SELECT slug, name_en, logo_svg_path, logo_png_path,
+                                logo_webp_path, logo_png_512_path
+                           FROM om_companies
+                          WHERE sector = :s
+                            AND logo_status IN ('indexed','verified')
+                            AND (logo_svg_path IS NOT NULL
+                                 OR logo_png_path IS NOT NULL
+                                 OR logo_webp_path IS NOT NULL)
+                          ORDER BY FIELD(logo_status,'verified','indexed'),
+                                   logo_updated_at DESC
+                          LIMIT 12",
+                        [':s' => $hubSector]
+                    );
+                    $hubLogoCount = (int) ($db->fetchOne(
+                        "SELECT COUNT(*) c FROM om_companies
+                          WHERE sector = :s AND logo_status IN ('indexed','verified')",
+                        [':s' => $hubSector]
+                    )['c'] ?? 0);
+                } catch (Throwable $e) { $hubLogoSample = []; $hubLogoCount = 0; }
+            }
+        ?>
+
+        <?php if ($hubSector && !empty($hubLogoSample)): ?>
+            <section class="mb-10 bg-white border border-gray-200 rounded-2xl p-6">
+                <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+                    <div>
+                        <p class="text-xs uppercase tracking-wider text-blue-700 font-semibold mb-1"><?= t('Logos', 'شعارات', $isAr) ?></p>
+                        <h2 class="text-lg font-bold text-gray-900">
+                            <?= escq(sprintf(t('%d %s logos available', '%d شعار %s متوفر', $isAr), $hubLogoCount, $hubLabel)) ?>
+                        </h2>
+                    </div>
+                    <a href="<?= $isAr ? '/ar' : '' ?>/logos/<?= escq($hubSector) ?>"
+                       class="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700">
+                        <?= t('Open the sector library', 'افتح مكتبة القطاع', $isAr) ?>
+                        <i class="fa-solid fa-arrow-<?= $isAr ? 'left' : 'right' ?> text-xs"></i>
+                    </a>
+                </div>
+                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2.5">
+                    <?php foreach ($hubLogoSample as $l):
+                        $src = $l['logo_webp_path'] ?: $l['logo_png_512_path']
+                            ?: $l['logo_png_path'] ?: $l['logo_svg_path'];
+                        if (!$src) continue;
+                    ?>
+                        <a href="<?= $basePrefix ?>/<?= escq($l['slug']) ?>"
+                           class="group bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition p-3 aspect-square flex items-center justify-center">
+                            <img src="<?= escq($src) ?>" alt="<?= escq($l['name_en']) ?> logo"
+                                 loading="lazy" class="max-h-full max-w-full object-contain">
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endif; ?>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <?php foreach ($companies as $c): ?>
                 <a href="<?= $basePrefix ?>/<?= escq($c['slug']) ?>" class="p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition">
