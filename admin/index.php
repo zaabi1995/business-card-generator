@@ -23,6 +23,23 @@ if (!Auth::isLoggedIn()) {
     exit;
 }
 
+// Refresh role from DB to catch role/company changes since last session write
+// (prevents redirect loops when admin changes a user's role mid-session).
+if (!empty($_SESSION['user_id'])) {
+    $db = Database::getInstance();
+    $fresh = $db->fetchOne("SELECT role, company_id FROM users WHERE id = :id", ['id' => $_SESSION['user_id']]);
+    if ($fresh) {
+        if (!empty($fresh['role']) && $fresh['role'] !== ($_SESSION['user_role'] ?? null)) {
+            $_SESSION['user_role'] = $fresh['role'];
+        }
+        if (isset($fresh['company_id']) && $fresh['company_id'] !== ($_SESSION['user_company_id'] ?? null)) {
+            $_SESSION['user_company_id'] = $fresh['company_id'];
+            // Clear stale company_slug if company changed
+            unset($_SESSION['company_slug']);
+        }
+    }
+}
+
 // Redirect print shop users to their dashboard
 $currentRole = Auth::getCurrentRole();
 if ($currentRole === 'print_shop') {
