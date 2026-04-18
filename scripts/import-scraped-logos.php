@@ -29,6 +29,10 @@ if (!is_array($entries)) {
 
 $db  = Database::getInstance();
 $pdo = $db->getConnection();
+// One-shot import script — enable emulated prepares so we can reuse the same
+// :is_queue placeholder across multiple IF(…) branches in one UPDATE without
+// hitting HY093 "Invalid parameter number". Does not affect request-path code.
+$pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
 
 $allCompanies = $pdo->query(
     "SELECT id, name_en, name_ar, slug, website_domain_cache, logo_status
