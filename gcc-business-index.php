@@ -47,6 +47,7 @@ try {
 $countries = [
     [
         'code'      => 'OM',
+        'country_slug' => 'oman',
         'name_en'   => 'Oman',
         'name_ar'   => 'عُمان',
         'flag'      => '🇴🇲',
@@ -64,6 +65,7 @@ $countries = [
     ],
     [
         'code'      => 'SA',
+        'country_slug' => 'saudi-arabia',
         'name_en'   => 'Saudi Arabia',
         'name_ar'   => 'المملكة العربية السعودية',
         'flag'      => '🇸🇦',
@@ -81,6 +83,7 @@ $countries = [
     ],
     [
         'code'      => 'AE',
+        'country_slug' => 'uae',
         'name_en'   => 'United Arab Emirates',
         'name_ar'   => 'الإمارات العربية المتحدة',
         'flag'      => '🇦🇪',
@@ -98,6 +101,7 @@ $countries = [
     ],
     [
         'code'      => 'QA',
+        'country_slug' => 'qatar',
         'name_en'   => 'Qatar',
         'name_ar'   => 'قطر',
         'flag'      => '🇶🇦',
@@ -115,6 +119,7 @@ $countries = [
     ],
     [
         'code'      => 'BH',
+        'country_slug' => 'bahrain',
         'name_en'   => 'Bahrain',
         'name_ar'   => 'البحرين',
         'flag'      => '🇧🇭',
@@ -132,6 +137,7 @@ $countries = [
     ],
     [
         'code'      => 'KW',
+        'country_slug' => 'kuwait',
         'name_en'   => 'Kuwait',
         'name_ar'   => 'الكويت',
         'flag'      => '🇰🇼',
@@ -392,10 +398,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <?php endif; ?>
                     </div>
                 <?php else: ?>
-                    <a href="mailto:contact@cardify.om?subject=<?= urlencode('Early access: ' . $c['name_en'] . ' Business Index') ?>" class="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700">
-                        Get notified when <?= gccEsc($c['name_en']) ?> ships
-                        <i class="fa-solid fa-envelope text-xs"></i>
-                    </a>
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <a href="/gcc/<?= gccEsc($c['country_slug'] ?? strtolower($c['code'])) ?>" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition">
+                            <?= gccEsc($c['name_en']) ?> preview <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </a>
+                        <a href="mailto:contact@cardify.om?subject=<?= urlencode('Early access: ' . $c['name_en'] . ' Business Index') ?>" class="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700">
+                            <i class="fa-solid fa-envelope text-xs"></i> Get notified
+                        </a>
+                    </div>
                 <?php endif; ?>
             </article>
         <?php endforeach; ?>

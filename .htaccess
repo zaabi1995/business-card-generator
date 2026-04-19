@@ -122,6 +122,9 @@
     RewriteRule ^industries/government/?$ industries/government.php [L,QSA]
     RewriteRule ^industries/?$ industries/index.php [L,QSA]
 
+    # GCC country landing pages (SEO: "business cards Saudi Arabia", etc)
+    RewriteRule ^gcc/(saudi-arabia|uae|qatar|bahrain|kuwait|oman)/?$ gcc/country.php?country=$1 [L,QSA]
+
     # Oman-specific solution pages (commercial intent SEO)
     RewriteRule ^solutions/?$ solutions.php [L,QSA]
     RewriteRule ^solutions/([a-z0-9-]+)/?$ solutions/$1.php [L,QSA]
@@ -168,7 +171,7 @@
     # Check if request is not for known paths and not a file
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|s/|company|companies|ar|oman-business-index|gcc-business-index|webhooks|amwalpay|api|assets|uploads|data|printshop|industries|solutions|intro|blog|careers|about|contact|faq|terms|privacy|security|cookies|sitemap\.xml|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php|design-showcase|design|logos|logo-claim|logo-takedown|logo-download|sitemap-logos\.xml)
+    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|s/|company|companies|ar|oman-business-index|gcc-business-index|gcc|webhooks|amwalpay|api|assets|uploads|data|printshop|industries|solutions|intro|blog|careers|about|contact|faq|terms|privacy|security|cookies|sitemap\.xml|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php|design-showcase|design|logos|logo-claim|logo-takedown|logo-download|sitemap-logos\.xml)
     RewriteRule ^([a-z0-9-]+)/?$ router.php?company_slug=$1 [L,QSA]
 </IfModule>
 
