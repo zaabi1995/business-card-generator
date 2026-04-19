@@ -324,7 +324,7 @@ if ($company) {
                . '<link rel="alternate" hreflang="en" href="' . $baseUrl . '/companies">'
                . '<link rel="alternate" hreflang="ar" href="' . $baseUrl . '/ar/companies">';
 }
-
+$suppressDefaultHreflang = true;
 require_once INCLUDES_DIR . '/ui-header.php';
 
 function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }

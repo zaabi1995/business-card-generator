@@ -32,7 +32,7 @@ $extraHead =
     . '<link rel="alternate" hreflang="en" href="https://cardify.om/logos/terms">'
     . '<link rel="alternate" hreflang="ar" href="https://cardify.om/ar/logos/terms">'
     . '<link rel="alternate" hreflang="x-default" href="https://cardify.om/logos/terms">';
-
+$suppressDefaultHreflang = true;
 require_once INCLUDES_DIR . '/ui-header.php';
 
 function logos_terms_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }

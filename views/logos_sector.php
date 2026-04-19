@@ -83,7 +83,7 @@ foreach ($jsonLdBlocks as $block) {
 $extraHead .= '<link rel="alternate" hreflang="en" href="https://cardify.om/logos/' . htmlspecialchars($sectorSlug, ENT_QUOTES) . '">';
 $extraHead .= '<link rel="alternate" hreflang="ar" href="https://cardify.om/ar/logos/' . htmlspecialchars($sectorSlug, ENT_QUOTES) . '">';
 $extraHead .= '<link rel="alternate" hreflang="x-default" href="https://cardify.om/logos/' . htmlspecialchars($sectorSlug, ENT_QUOTES) . '">';
-
+$suppressDefaultHreflang = true;
 require_once INCLUDES_DIR . '/ui-header.php';
 
 function logos_sector_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
