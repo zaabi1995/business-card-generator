@@ -359,7 +359,7 @@ $extraHead =
     . '<link rel="alternate" hreflang="x-default" href="' . $baseUrl . '/oman-business-index">'
     . '<meta name="article:published_time" content="2026-04-01">'
     . '<meta name="article:modified_time" content="' . obiEscq($lastUpdatedIso) . '">';
-
+$suppressDefaultHreflang = true;
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
 

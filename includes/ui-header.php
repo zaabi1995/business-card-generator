@@ -59,6 +59,17 @@ if (!empty($_GET['utm_source']) && empty($_SESSION['utm_source'])) {
     <?php endif; ?>
     <?php if (!empty($canonicalUrl)): ?>
     <link rel="canonical" href="<?php echo htmlspecialchars($canonicalUrl); ?>">
+    <?php
+    // Default hreflang: every EN canonical page advertises itself as the
+    // English and default-language version so Google won't treat it as a
+    // country-silo. Pages that ship a real Arabic variant override this by
+    // emitting full hreflang inside $extraHead (and should use $suppressDefaultHreflang=true
+    // to avoid a duplicate self-referential en tag).
+    if (empty($suppressDefaultHreflang)):
+    ?>
+    <link rel="alternate" hreflang="en" href="<?php echo htmlspecialchars($canonicalUrl); ?>">
+    <link rel="alternate" hreflang="x-default" href="<?php echo htmlspecialchars($canonicalUrl); ?>">
+    <?php endif; ?>
     <?php endif; ?>
     <?php if (defined('GOOGLE_SITE_VERIFICATION') && GOOGLE_SITE_VERIFICATION): ?>
     <meta name="google-site-verification" content="<?= GOOGLE_SITE_VERIFICATION ?>">
