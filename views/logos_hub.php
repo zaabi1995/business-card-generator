@@ -289,8 +289,57 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
             </div>
         </div>
 
+        <!-- Cross-link: GCC Business Index + country landing pages -->
+        <div class="mt-12 bg-gray-50 border border-gray-200 rounded-2xl p-8 lg:p-10">
+            <div class="flex items-center gap-3 mb-3">
+                <i class="fa-solid fa-globe text-blue-600 text-xl"></i>
+                <h2 class="text-2xl font-bold text-gray-900"><?= $isAr ? 'توسعنا في الخليج' : 'Part of the wider GCC Business Index' ?></h2>
+            </div>
+            <p class="text-gray-600 mb-5 max-w-2xl">
+                <?= $isAr
+                    ? 'مكتبة الشعارات العمانية هي أحد أعمدة مؤشر أعمال دول الخليج التعاوني. استكشف التوسع في السعودية والإمارات وقطر والبحرين والكويت.'
+                    : 'The Omani Logo Library is one pillar of the GCC Business Index. Explore our expansion into Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait.' ?>
+            </p>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <a href="/gcc/oman" class="group bg-white border border-gray-200 hover:border-blue-300 rounded-xl p-3 text-center transition">
+                    <div class="text-2xl mb-1">🇴🇲</div>
+                    <div class="text-xs font-semibold text-gray-900 group-hover:text-blue-700">Oman</div>
+                    <div class="text-[10px] text-emerald-600 font-medium">Live</div>
+                </a>
+                <a href="/gcc/saudi-arabia" class="group bg-white border border-gray-200 hover:border-blue-300 rounded-xl p-3 text-center transition">
+                    <div class="text-2xl mb-1">🇸🇦</div>
+                    <div class="text-xs font-semibold text-gray-900 group-hover:text-blue-700">Saudi Arabia</div>
+                    <div class="text-[10px] text-gray-500">2026</div>
+                </a>
+                <a href="/gcc/uae" class="group bg-white border border-gray-200 hover:border-blue-300 rounded-xl p-3 text-center transition">
+                    <div class="text-2xl mb-1">🇦🇪</div>
+                    <div class="text-xs font-semibold text-gray-900 group-hover:text-blue-700">UAE</div>
+                    <div class="text-[10px] text-gray-500">2026</div>
+                </a>
+                <a href="/gcc/qatar" class="group bg-white border border-gray-200 hover:border-blue-300 rounded-xl p-3 text-center transition">
+                    <div class="text-2xl mb-1">🇶🇦</div>
+                    <div class="text-xs font-semibold text-gray-900 group-hover:text-blue-700">Qatar</div>
+                    <div class="text-[10px] text-gray-500">2026</div>
+                </a>
+                <a href="/gcc/bahrain" class="group bg-white border border-gray-200 hover:border-blue-300 rounded-xl p-3 text-center transition">
+                    <div class="text-2xl mb-1">🇧🇭</div>
+                    <div class="text-xs font-semibold text-gray-900 group-hover:text-blue-700">Bahrain</div>
+                    <div class="text-[10px] text-gray-500">2026</div>
+                </a>
+                <a href="/gcc/kuwait" class="group bg-white border border-gray-200 hover:border-blue-300 rounded-xl p-3 text-center transition">
+                    <div class="text-2xl mb-1">🇰🇼</div>
+                    <div class="text-xs font-semibold text-gray-900 group-hover:text-blue-700">Kuwait</div>
+                    <div class="text-[10px] text-gray-500">2026</div>
+                </a>
+            </div>
+            <a href="/gcc-business-index" class="inline-flex items-center gap-2 mt-5 text-sm font-semibold text-blue-700 hover:text-blue-800">
+                <?= $isAr ? 'افتح مؤشر أعمال دول الخليج' : 'Open the GCC Business Index' ?>
+                <i class="fa-solid fa-arrow-<?= $isAr ? 'left' : 'right' ?> text-xs"></i>
+            </a>
+        </div>
+
         <!-- Cross-link to OBI -->
-        <div class="mt-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-8 lg:p-10 text-white">
+        <div class="mt-6 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-8 lg:p-10 text-white">
             <div class="flex flex-col md:flex-row items-start md:items-center gap-6 md:justify-between">
                 <div class="max-w-xl">
                     <h2 class="text-2xl sm:text-3xl font-bold mb-2">
