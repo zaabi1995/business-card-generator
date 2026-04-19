@@ -77,6 +77,7 @@ if (!empty($minimalFooter)):
                         <li><a href="<?= $bp ?>about" class="text-gray-400 hover:text-white transition-colors">About</a></li>
                         <li><a href="<?= $bp ?>contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
                         <li><a href="<?= $bp ?>careers" class="text-gray-400 hover:text-white transition-colors">Careers</a></li>
+                        <li><a href="<?= $bp ?>press-kit" class="text-gray-400 hover:text-white transition-colors">Press &amp; Media</a></li>
                         <li><a href="<?= $bp ?>print-shops" class="text-gray-400 hover:text-white transition-colors">Print Shops</a></li>
                         <li><a href="<?= $bp ?>privacy" class="text-gray-400 hover:text-white transition-colors">Privacy</a></li>
                         <li><a href="<?= $bp ?>terms" class="text-gray-400 hover:text-white transition-colors">Terms</a></li>

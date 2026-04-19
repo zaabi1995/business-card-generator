@@ -18,7 +18,7 @@ require_once INCLUDES_DIR . '/Auth.php';
 
 $pageTitle       = 'Press & Media Kit — Cardify (Business-Identity Platform for the GCC)';
 $pageDescription = 'Official press and media kit for Cardify: company facts, brand assets, downloadable datasets (Oman Business Index, Omani Logo Library, GCC Business Index), citation format, and press contact.';
-$canonicalUrl    = 'https://cardify.om/press';
+$canonicalUrl    = 'https://cardify.om/press-kit';
 $showNavigation  = true;
 
 $db = Database::getInstance();

@@ -126,6 +126,8 @@
     RewriteRule ^gcc/(saudi-arabia|uae|qatar|bahrain|kuwait|oman)/?$ gcc/country.php?country=$1 [L,QSA]
 
     # Press & media kit (backlink-magnet asset for journalists / researchers)
+    # Canonical URL: /press-kit (dodges a sticky Cloudflare cache entry on /press)
+    RewriteRule ^press-kit/?$                      press.php [L,QSA]
     RewriteRule ^press/?$                          press.php [L,QSA]
     RewriteRule ^media-kit/?$                      press.php [L,QSA]
 
@@ -175,7 +177,7 @@
     # Check if request is not for known paths and not a file
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|s/|company|companies|ar|oman-business-index|gcc-business-index|gcc|press|webhooks|amwalpay|api|assets|uploads|data|printshop|industries|solutions|intro|blog|careers|about|contact|faq|terms|privacy|security|cookies|sitemap\.xml|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php|design-showcase|design|logos|logo-claim|logo-takedown|logo-download|sitemap-logos\.xml)
+    RewriteCond %{REQUEST_URI} !^/(admin|login|logout|install|share|s/|company|companies|ar|oman-business-index|gcc-business-index|gcc|press|press-kit|media-kit|webhooks|amwalpay|api|assets|uploads|data|printshop|industries|solutions|intro|blog|careers|about|contact|faq|terms|privacy|security|cookies|sitemap\.xml|print-shops\.php|generate_card_html\.php|download_card\.php|index\.php|router\.php|vcf\.php|profile\.php|intro\.php|design-showcase|design|logos|logo-claim|logo-takedown|logo-download|sitemap-logos\.xml)
     RewriteRule ^([a-z0-9-]+)/?$ router.php?company_slug=$1 [L,QSA]
 </IfModule>
 
