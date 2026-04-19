@@ -229,34 +229,57 @@ $companyRow = [];
 if ($companyId && DatabaseAdapter::useDatabase()) {
     try {
         $companyRow = $db->fetchOne(
-            "SELECT referral_source, onboarding_completed, plan, subscription_status, phone FROM companies WHERE id = :id",
+            "SELECT referral_source, onboarding_completed, plan, subscription_status, phone, phone_backfill_skips FROM companies WHERE id = :id",
             ['id' => $companyId]
         ) ?: [];
         $companyReferralSource = $companyRow['referral_source'] ?? null;
     } catch (Exception $e) {
-        // legacy installs without `phone` column — fall back
+        // legacy installs without `phone` / `phone_backfill_skips` — fall back
         try {
             $companyRow = $db->fetchOne(
-                "SELECT referral_source, onboarding_completed, plan, subscription_status FROM companies WHERE id = :id",
+                "SELECT referral_source, onboarding_completed, plan, subscription_status, phone FROM companies WHERE id = :id",
                 ['id' => $companyId]
             ) ?: [];
             $companyReferralSource = $companyRow['referral_source'] ?? null;
-        } catch (Exception $e2) {}
+        } catch (Exception $e2) {
+            try {
+                $companyRow = $db->fetchOne(
+                    "SELECT referral_source, onboarding_completed, plan, subscription_status FROM companies WHERE id = :id",
+                    ['id' => $companyId]
+                ) ?: [];
+                $companyReferralSource = $companyRow['referral_source'] ?? null;
+            } catch (Exception $e3) {}
+        }
     }
 }
 
-// Phone-capture prompt — shown once per session if admin has no phone on file.
-// Dismissal is session-scoped; we re-prompt next login until phone is saved.
+// Phone-capture prompt — shown if admin has no phone on file.
+// Dismissal: session-scoped suppression (don't re-pop on every page load) +
+// persistent counter on companies.phone_backfill_skips (BHD-224 spec:
+// "dismissible after 3 skips" — once we hit 3, we never show this banner
+// again for this company).
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'dismiss_phone_prompt') {
     if (validateCSRFToken($_POST['csrf_token'] ?? '')) {
         $_SESSION['phone_prompt_dismissed'] = true;
+        if ($companyId) {
+            try {
+                // LEAST(...,3) so the counter is bounded — used as a hard suppression cap.
+                $db->getConnection()
+                    ->prepare("UPDATE companies SET phone_backfill_skips = LEAST(IFNULL(phone_backfill_skips, 0) + 1, 3) WHERE id = :id")
+                    ->execute([':id' => $companyId]);
+            } catch (Exception $e) {
+                // Column missing on legacy install — counter just won't persist.
+            }
+        }
     }
     header('Location: ' . $_SERVER['REQUEST_URI']);
     exit;
 }
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_phone_prompt') {
     if (validateCSRFToken($_POST['csrf_token'] ?? '') && $companyId) {
-        $rawPhone = trim($_POST['phone'] ?? '');
+        // Prefer the canonical E.164 string from intl-tel-input over the
+        // visible national-format field.
+        $rawPhone = trim($_POST['phone_e164'] ?? $_POST['phone'] ?? '');
         if ($rawPhone !== '') {
             require_once INCLUDES_DIR . '/WhatsApp.php';
             $digits = WhatsApp::normalizePhone($rawPhone);
@@ -278,11 +301,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
     exit;
 }
 $adminHasPhone = !empty(trim($companyRow['phone'] ?? ''));
+$adminBackfillSkips = (int) ($companyRow['phone_backfill_skips'] ?? 0);
 $showPhonePrompt = (
     !$adminHasPhone
     && $currentRole !== 'super_admin'
     && empty($_SESSION['phone_prompt_dismissed'])
     && array_key_exists('phone', $companyRow) // column must exist (post-migration)
+    && $adminBackfillSkips < 3                // honour the persistent skip cap
 );
 $companyPlan = $companyRow['plan'] ?? 'free';
 $isFreePlan = ($companyPlan === 'free' && ($companyRow['subscription_status'] ?? '') !== 'active');
@@ -357,7 +382,12 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
 ?>
 
 <?php if ($showPhonePrompt): ?>
-<!-- Phone Backfill Prompt -->
+<!-- Phone Backfill Prompt (BHD-224) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/css/intlTelInput.css">
+<style>
+    #bhd224-banner-phone + .iti, .iti:has(#bhd224-banner-phone) { width: 12rem; display: inline-block; }
+    #bhd224-banner-phone.iti__tel-input { padding-left: 3.5rem !important; }
+</style>
 <div class="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4" id="phone-prompt-banner">
     <form method="post" class="flex flex-col sm:flex-row sm:items-center gap-3">
         <?= csrfField(); ?>
@@ -372,21 +402,54 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
             </div>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
-            <input type="tel" name="phone" autocomplete="tel" inputmode="tel" required
-                   pattern="^\+?[0-9\s\-\(\)]{8,}$"
-                   placeholder="+968 9XXX XXXX"
-                   class="px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm w-44 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+            <input type="tel" id="bhd224-banner-phone" name="phone" autocomplete="tel" inputmode="tel" required
+                   placeholder="9XXX XXXX"
+                   class="px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm w-48 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+            <input type="hidden" name="phone_e164" id="bhd224-banner-phone-e164" value="">
             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm whitespace-nowrap">
                 Save
             </button>
         </div>
     </form>
-    <form method="post" class="text-right mt-2">
+    <form method="post" class="flex justify-between items-center mt-2">
         <?= csrfField(); ?>
         <input type="hidden" name="action" value="dismiss_phone_prompt">
-        <button type="submit" class="text-xs text-blue-600 hover:text-blue-800 underline">Not now</button>
+        <span class="text-[11px] text-blue-700/70">
+            <?php if ($adminBackfillSkips > 0): ?>
+                Reminded <?= 3 - $adminBackfillSkips ?> more time<?= ($adminBackfillSkips === 2) ? '' : 's' ?> after this — then we'll stop.
+            <?php endif; ?>
+        </span>
+        <button type="submit" class="text-xs text-blue-600 hover:text-blue-800 underline">
+            <?= $adminBackfillSkips >= 2 ? 'Stop reminding me' : 'Not now' ?>
+        </button>
     </form>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js"></script>
+<script>
+(function () {
+    var phoneEl = document.getElementById('bhd224-banner-phone');
+    var hiddenEl = document.getElementById('bhd224-banner-phone-e164');
+    if (!phoneEl || !window.intlTelInput) return;
+    var iti = window.intlTelInput(phoneEl, {
+        initialCountry: 'om',
+        preferredCountries: ['om', 'ae', 'sa', 'qa', 'bh', 'kw'],
+        separateDialCode: true,
+        autoPlaceholder: 'aggressive',
+        utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/utils.js'
+    });
+    var form = phoneEl.closest('form');
+    if (form) {
+        form.addEventListener('submit', function () {
+            try {
+                if (phoneEl.value.trim() === '') { hiddenEl.value = ''; return; }
+                hiddenEl.value = iti.isValidNumber() ? iti.getNumber() : (iti.getNumber() || phoneEl.value.trim());
+            } catch (err) {
+                hiddenEl.value = phoneEl.value.trim();
+            }
+        });
+    }
+})();
+</script>
 <?php endif; ?>
 
 <?php if ($showWelcome): ?>

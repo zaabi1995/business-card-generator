@@ -37,9 +37,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 'billing_email'  => trim($_POST['billing_email'] ?? ''),
                 'updated_at'     => date('Y-m-d H:i:s'),
             ];
-            // Normalize phone to E.164 when provided; allow empty to clear it (opt-out)
-            if (isset($_POST['phone'])) {
-                $rawPhone = trim($_POST['phone']);
+            // Normalize phone to E.164 when provided; allow empty to clear it (opt-out).
+            // intl-tel-input posts the canonical international number into
+            // `phone_e164` — prefer that over the visible field, which only
+            // contains the national-format number when separateDialCode is on.
+            if (isset($_POST['phone']) || isset($_POST['phone_e164'])) {
+                $rawPhone = trim($_POST['phone_e164'] ?? $_POST['phone'] ?? '');
                 if ($rawPhone === '') {
                     $updateData['phone'] = '';
                 } else {
@@ -614,12 +617,12 @@ adminHeader('My Dashboard', 'customer-dashboard');
                     WhatsApp / Phone
                     <span class="text-gray-400 font-normal text-xs">(for order updates)</span>
                 </label>
-                <input type="tel" name="phone" value="<?= sanitize($company['phone'] ?? ''); ?>"
+                <input type="tel" name="phone" id="bhd224-phone-edit" value="<?= sanitize($company['phone'] ?? ''); ?>"
                        autocomplete="tel" inputmode="tel"
-                       pattern="^\+?[0-9\s\-\(\)]{8,}$"
-                       placeholder="+968 9XXX XXXX"
+                       placeholder="9XXX XXXX"
                        class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm">
-                <p class="mt-1 text-xs text-gray-500">Used for order status updates and onboarding. You can leave blank to opt out.</p>
+                <input type="hidden" name="phone_e164" id="bhd224-phone-e164" value="">
+                <p class="mt-1 text-xs text-gray-500">Used for order status updates and onboarding. Leave blank to opt out.</p>
             </div>
 
             <?php if ($hasWebsite): ?>
@@ -721,4 +724,35 @@ adminHeader('My Dashboard', 'customer-dashboard');
 
 <?php endif; ?>
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/css/intlTelInput.css">
+<style>
+    #bhd224-phone-edit + .iti, .iti:has(> #bhd224-phone-edit) { width: 100%; display: block; }
+    #bhd224-phone-edit.iti__tel-input { padding-left: 3.5rem !important; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js"></script>
+<script>
+(function () {
+    var phoneEl = document.getElementById('bhd224-phone-edit');
+    var hiddenEl = document.getElementById('bhd224-phone-e164');
+    if (!phoneEl || !window.intlTelInput) return;
+    var iti = window.intlTelInput(phoneEl, {
+        initialCountry: 'om',
+        preferredCountries: ['om', 'ae', 'sa', 'qa', 'bh', 'kw'],
+        separateDialCode: true,
+        autoPlaceholder: 'aggressive',
+        utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/utils.js'
+    });
+    var form = phoneEl.closest('form');
+    if (form) {
+        form.addEventListener('submit', function () {
+            try {
+                if (phoneEl.value.trim() === '') { hiddenEl.value = ''; return; }
+                hiddenEl.value = iti.isValidNumber() ? iti.getNumber() : (iti.getNumber() || phoneEl.value.trim());
+            } catch (err) {
+                hiddenEl.value = phoneEl.value.trim();
+            }
+        });
+    }
+})();
+</script>
 <?php adminFooter(); ?>

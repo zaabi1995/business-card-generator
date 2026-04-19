@@ -47,6 +47,7 @@ $pageTitle = 'Create Account';
 $htmlClass = 'h-full bg-white';
 $bodyClass = 'h-full';
 $extraHead = <<<HTML
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/css/intlTelInput.css">
     <style>
         .form-input {
             display: block;
@@ -72,6 +73,8 @@ $extraHead = <<<HTML
             color: #6b7280;
             cursor: not-allowed;
         }
+        .iti { width: 100%; display: block; }
+        .iti__tel-input.form-input { padding-left: 3.5rem; }
     </style>
     <script>
         function checkEmailDomain() {
@@ -120,12 +123,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
     $customSlug = trim($_POST['company_slug'] ?? '');
     $userName = trim($_POST['user_name'] ?? '');
-    $phoneRaw = trim($_POST['phone'] ?? '');
+    // Phone capture: prefer the canonical E.164 string from intl-tel-input,
+    // fall back to the raw `phone` field for non-JS clients. `phone_skipped=1`
+    // means the user explicitly hit "Skip for now" in the widget — honour it
+    // and ship an empty string so signup never blocks (per BHD-224 spec:
+    // required-with-skip).
+    $phoneSkipped = ($_POST['phone_skipped'] ?? '') === '1';
+    $phoneRaw = $phoneSkipped ? '' : trim($_POST['phone_e164'] ?? $_POST['phone'] ?? '');
     $phone = '';
     if ($phoneRaw !== '') {
         require_once INCLUDES_DIR . '/WhatsApp.php';
         $digits = WhatsApp::normalizePhone($phoneRaw);
-        // Require at least 8 digits (Oman local) after normalization
+        // Require at least 8 digits (Oman local) after normalization.
         if (strlen($digits) >= 8) {
             $phone = '+' . $digits;
         }
@@ -418,9 +427,10 @@ $minimalFooter = true; // compact footer for auth page
                         </p>
                     </div>
 
-                    <div>
+                    <div id="phone-field-wrapper">
                         <label for="phone" class="block text-sm font-medium text-gray-900">
-                            WhatsApp number <span class="text-gray-400 font-normal">(optional)</span>
+                            WhatsApp number
+                            <span class="text-gray-400 font-normal" id="phone-required-hint">(required — we use this for onboarding)</span>
                         </label>
                         <div class="mt-2">
                             <input type="tel" name="phone" id="phone"
@@ -428,10 +438,15 @@ $minimalFooter = true; // compact footer for auth page
                                    class="form-input"
                                    autocomplete="tel"
                                    inputmode="tel"
-                                   pattern="^\+?[0-9\s\-\(\)]{8,}$"
-                                   placeholder="+968 9XXX XXXX">
+                                   placeholder="9XXX XXXX"
+                                   required>
+                            <input type="hidden" name="phone_e164" id="phone_e164" value="">
+                            <input type="hidden" name="phone_skipped" id="phone_skipped" value="0">
                         </div>
-                        <p class="mt-1.5 text-xs text-gray-500">Used only for onboarding messages and account recovery. You can opt out anytime.</p>
+                        <p class="mt-1.5 text-xs text-gray-500" id="phone-help">
+                            We'll send onboarding tips on WhatsApp — no marketing without your opt-in.
+                            <a href="#" id="phone-skip-link" class="ml-1 font-medium text-gray-700 hover:text-gray-900">Skip for now</a>
+                        </p>
                     </div>
 
                     <div>
@@ -536,4 +551,57 @@ $minimalFooter = true; // compact footer for auth page
             </div>
         </div>
     </div>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js"></script>
+<script>
+(function () {
+    var phoneEl = document.getElementById('phone');
+    var hiddenEl = document.getElementById('phone_e164');
+    var skippedEl = document.getElementById('phone_skipped');
+    var skipLink = document.getElementById('phone-skip-link');
+    var helpEl = document.getElementById('phone-help');
+    var requiredHint = document.getElementById('phone-required-hint');
+    if (!phoneEl || !window.intlTelInput) return;
+
+    var iti = window.intlTelInput(phoneEl, {
+        initialCountry: 'om',
+        preferredCountries: ['om', 'ae', 'sa', 'qa', 'bh', 'kw'],
+        separateDialCode: true,
+        autoPlaceholder: 'aggressive',
+        utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/utils.js'
+    });
+
+    if (skipLink) {
+        skipLink.addEventListener('click', function (e) {
+            e.preventDefault();
+            phoneEl.value = '';
+            hiddenEl.value = '';
+            skippedEl.value = '1';
+            phoneEl.required = false;
+            phoneEl.disabled = true;
+            phoneEl.placeholder = 'Skipped — add later from your dashboard';
+            if (requiredHint) { requiredHint.textContent = '(skipped — you can add it later)'; }
+            if (helpEl) { helpEl.textContent = "We'll prompt you again from your dashboard. No phone, no WA messages."; }
+        });
+    }
+
+    var form = phoneEl.closest('form');
+    if (form) {
+        form.addEventListener('submit', function () {
+            if (skippedEl.value === '1') { hiddenEl.value = ''; return; }
+            try {
+                if (iti.isValidNumber()) {
+                    hiddenEl.value = iti.getNumber();
+                } else if (phoneEl.value.trim() !== '') {
+                    // Best effort — let server-side normalization decide.
+                    hiddenEl.value = iti.getNumber() || phoneEl.value.trim();
+                } else {
+                    hiddenEl.value = '';
+                }
+            } catch (err) {
+                hiddenEl.value = phoneEl.value.trim();
+            }
+        });
+    }
+})();
+</script>
 <?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>
