@@ -92,6 +92,10 @@ if ($part === 'static') {
         ['/industries/healthcare',   'monthly', '0.7'],
         ['/industries/real-estate',  'monthly', '0.7'],
         ['/industries/tourism',      'monthly', '0.7'],
+        ['/industries/banking',      'monthly', '0.75'],
+        ['/industries/logistics',    'monthly', '0.75'],
+        ['/industries/oil-gas',      'monthly', '0.75'],
+        ['/industries/government',   'monthly', '0.75'],
     ];
     foreach ($staticPages as [$path, $freq, $prio]) {
         smUrl($baseUrl . $path, $today, $freq, $prio);
