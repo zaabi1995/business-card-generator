@@ -21,7 +21,7 @@ if (!empty($minimalFooter)):
 <?php elseif ($currentPage !== 'index'): ?>
     <footer class="bg-gray-900 text-white mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
+            <div class="grid md:grid-cols-2 lg:grid-cols-6 gap-8 mb-8">
                 <div class="lg:col-span-1">
                     <div class="flex items-center gap-3 mb-4">
                         <img src="<?= $bp ?>assets/images/logo-light.svg" alt="<?= $bn ?>" class="h-8 w-auto" onerror="this.style.display='none'">
@@ -48,14 +48,27 @@ if (!empty($minimalFooter)):
                     </ul>
                 </div>
                 <div>
-                    <h4 class="font-semibold mb-4">Directory &amp; Solutions</h4>
+                    <h4 class="font-semibold mb-4">Directory &amp; Data</h4>
                     <ul class="space-y-2 text-sm">
+                        <li><a href="<?= $bp ?>gcc-business-index" class="text-gray-400 hover:text-white transition-colors">GCC Business Index</a></li>
                         <li><a href="<?= $bp ?>oman-business-index" class="text-gray-400 hover:text-white transition-colors">Oman Business Index</a></li>
                         <li><a href="<?= $bp ?>companies" class="text-gray-400 hover:text-white transition-colors">Browse 2,414 Companies</a></li>
-                        <li><a href="<?= $bp ?>companies/sector/oil-gas" class="text-gray-400 hover:text-white transition-colors">Oil &amp; Gas</a></li>
-                        <li><a href="<?= $bp ?>companies/sector/construction" class="text-gray-400 hover:text-white transition-colors">Construction</a></li>
-                        <li><a href="<?= $bp ?>companies/wilayat/muscat" class="text-gray-400 hover:text-white transition-colors">Muscat Companies</a></li>
+                        <li><a href="<?= $bp ?>logos" class="text-gray-400 hover:text-white transition-colors">Omani Logo Library</a></li>
                         <li><a href="<?= $bp ?>solutions" class="text-gray-400 hover:text-white transition-colors">All Solutions</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">For Industries</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="<?= $bp ?>industries/banking" class="text-gray-400 hover:text-white transition-colors">Banking &amp; Finance</a></li>
+                        <li><a href="<?= $bp ?>industries/oil-gas" class="text-gray-400 hover:text-white transition-colors">Oil &amp; Gas</a></li>
+                        <li><a href="<?= $bp ?>industries/logistics" class="text-gray-400 hover:text-white transition-colors">Logistics</a></li>
+                        <li><a href="<?= $bp ?>industries/government" class="text-gray-400 hover:text-white transition-colors">Government</a></li>
+                        <li><a href="<?= $bp ?>industries/construction" class="text-gray-400 hover:text-white transition-colors">Construction</a></li>
+                        <li><a href="<?= $bp ?>industries/real-estate" class="text-gray-400 hover:text-white transition-colors">Real Estate</a></li>
+                        <li><a href="<?= $bp ?>industries/healthcare" class="text-gray-400 hover:text-white transition-colors">Healthcare</a></li>
+                        <li><a href="<?= $bp ?>industries/tourism" class="text-gray-400 hover:text-white transition-colors">Tourism</a></li>
+                        <li><a href="<?= $bp ?>industries/restaurants" class="text-gray-400 hover:text-white transition-colors">Restaurants</a></li>
                     </ul>
                 </div>
                 <div>
