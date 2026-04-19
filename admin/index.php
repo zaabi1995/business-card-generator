@@ -229,12 +229,61 @@ $companyRow = [];
 if ($companyId && DatabaseAdapter::useDatabase()) {
     try {
         $companyRow = $db->fetchOne(
-            "SELECT referral_source, onboarding_completed, plan, subscription_status FROM companies WHERE id = :id",
+            "SELECT referral_source, onboarding_completed, plan, subscription_status, phone FROM companies WHERE id = :id",
             ['id' => $companyId]
         ) ?: [];
         $companyReferralSource = $companyRow['referral_source'] ?? null;
-    } catch (Exception $e) {}
+    } catch (Exception $e) {
+        // legacy installs without `phone` column — fall back
+        try {
+            $companyRow = $db->fetchOne(
+                "SELECT referral_source, onboarding_completed, plan, subscription_status FROM companies WHERE id = :id",
+                ['id' => $companyId]
+            ) ?: [];
+            $companyReferralSource = $companyRow['referral_source'] ?? null;
+        } catch (Exception $e2) {}
+    }
 }
+
+// Phone-capture prompt — shown once per session if admin has no phone on file.
+// Dismissal is session-scoped; we re-prompt next login until phone is saved.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'dismiss_phone_prompt') {
+    if (validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $_SESSION['phone_prompt_dismissed'] = true;
+    }
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit;
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_phone_prompt') {
+    if (validateCSRFToken($_POST['csrf_token'] ?? '') && $companyId) {
+        $rawPhone = trim($_POST['phone'] ?? '');
+        if ($rawPhone !== '') {
+            require_once INCLUDES_DIR . '/WhatsApp.php';
+            $digits = WhatsApp::normalizePhone($rawPhone);
+            $normalized = strlen($digits) >= 8 ? '+' . $digits : $rawPhone;
+            try {
+                $db->update('companies', ['phone' => $normalized], 'id = :id', ['id' => $companyId]);
+                if (!empty($_SESSION['user_id'])) {
+                    try {
+                        $db->update('users', ['phone' => $normalized], 'id = :id', ['id' => $_SESSION['user_id']]);
+                    } catch (Exception $e) { /* users.phone may not exist yet */ }
+                }
+                $_SESSION['phone_prompt_dismissed'] = true;
+            } catch (Exception $e) {
+                error_log('[phone-prompt] save failed: ' . $e->getMessage());
+            }
+        }
+    }
+    header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?'));
+    exit;
+}
+$adminHasPhone = !empty(trim($companyRow['phone'] ?? ''));
+$showPhonePrompt = (
+    !$adminHasPhone
+    && $currentRole !== 'super_admin'
+    && empty($_SESSION['phone_prompt_dismissed'])
+    && array_key_exists('phone', $companyRow) // column must exist (post-migration)
+);
 $companyPlan = $companyRow['plan'] ?? 'free';
 $isFreePlan = ($companyPlan === 'free' && ($companyRow['subscription_status'] ?? '') !== 'active');
 // Cards generated this month (for free plan limit indicator)
@@ -306,6 +355,39 @@ $checklistSteps = [
 $checklistAllDone = array_reduce($checklistSteps, fn($carry, $s) => $carry && $s['done'], true);
 $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
 ?>
+
+<?php if ($showPhonePrompt): ?>
+<!-- Phone Backfill Prompt -->
+<div class="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4" id="phone-prompt-banner">
+    <form method="post" class="flex flex-col sm:flex-row sm:items-center gap-3">
+        <?= csrfField(); ?>
+        <input type="hidden" name="action" value="save_phone_prompt">
+        <div class="flex items-start gap-3 flex-1">
+            <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <i class="fa-brands fa-whatsapp text-blue-600"></i>
+            </div>
+            <div>
+                <p class="font-semibold text-blue-900 text-sm">Add your WhatsApp number</p>
+                <p class="text-blue-700 text-xs mt-0.5">We'll message you on WhatsApp for order status and onboarding tips. Leave blank to opt out.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+            <input type="tel" name="phone" autocomplete="tel" inputmode="tel" required
+                   pattern="^\+?[0-9\s\-\(\)]{8,}$"
+                   placeholder="+968 9XXX XXXX"
+                   class="px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm w-44 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm whitespace-nowrap">
+                Save
+            </button>
+        </div>
+    </form>
+    <form method="post" class="text-right mt-2">
+        <?= csrfField(); ?>
+        <input type="hidden" name="action" value="dismiss_phone_prompt">
+        <button type="submit" class="text-xs text-blue-600 hover:text-blue-800 underline">Not now</button>
+    </form>
+</div>
+<?php endif; ?>
 
 <?php if ($showWelcome): ?>
 <!-- Post-onboarding Welcome Banner -->

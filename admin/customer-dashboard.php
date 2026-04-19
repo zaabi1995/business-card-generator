@@ -37,8 +37,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 'billing_email'  => trim($_POST['billing_email'] ?? ''),
                 'updated_at'     => date('Y-m-d H:i:s'),
             ];
+            // Normalize phone to E.164 when provided; allow empty to clear it (opt-out)
+            if (isset($_POST['phone'])) {
+                $rawPhone = trim($_POST['phone']);
+                if ($rawPhone === '') {
+                    $updateData['phone'] = '';
+                } else {
+                    require_once INCLUDES_DIR . '/WhatsApp.php';
+                    $digits = WhatsApp::normalizePhone($rawPhone);
+                    $updateData['phone'] = strlen($digits) >= 8 ? '+' . $digits : $rawPhone;
+                }
+            }
             // Optional fields that may or may not exist
-            if (isset($_POST['phone'])) $updateData['phone'] = trim($_POST['phone']);
             if (isset($_POST['address'])) $updateData['address'] = trim($_POST['address']);
             if (isset($_POST['website'])) $updateData['website'] = trim($_POST['website']);
 
@@ -594,19 +604,23 @@ adminHeader('My Dashboard', 'customer-dashboard');
             </div>
 
             <?php
-            // Check if optional columns exist
-            $hasPhone   = isset($company['phone']);
-            $hasAddress = isset($company['address']);
-            $hasWebsite = isset($company['website']);
+            // Optional columns that may not exist on legacy installs
+            $hasAddress = array_key_exists('address', $company);
+            $hasWebsite = array_key_exists('website', $company);
             ?>
 
-            <?php if ($hasPhone): ?>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    WhatsApp / Phone
+                    <span class="text-gray-400 font-normal text-xs">(for order updates)</span>
+                </label>
                 <input type="tel" name="phone" value="<?= sanitize($company['phone'] ?? ''); ?>"
+                       autocomplete="tel" inputmode="tel"
+                       pattern="^\+?[0-9\s\-\(\)]{8,}$"
+                       placeholder="+968 9XXX XXXX"
                        class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm">
+                <p class="mt-1 text-xs text-gray-500">Used for order status updates and onboarding. You can leave blank to opt out.</p>
             </div>
-            <?php endif; ?>
 
             <?php if ($hasWebsite): ?>
             <div>

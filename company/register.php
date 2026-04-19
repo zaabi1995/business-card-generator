@@ -120,6 +120,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
     $customSlug = trim($_POST['company_slug'] ?? '');
     $userName = trim($_POST['user_name'] ?? '');
+    $phoneRaw = trim($_POST['phone'] ?? '');
+    $phone = '';
+    if ($phoneRaw !== '') {
+        require_once INCLUDES_DIR . '/WhatsApp.php';
+        $digits = WhatsApp::normalizePhone($phoneRaw);
+        // Require at least 8 digits (Oman local) after normalization
+        if (strlen($digits) >= 8) {
+            $phone = '+' . $digits;
+        }
+    }
 
     // Validation
     if (empty($name)) {
@@ -159,6 +169,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'created_at' => date('Y-m-d H:i:s')
                     ];
                     
+                    if ($phone !== '') {
+                        $employeeData['phone'] = $phone;
+                    }
                     $empResult = addEmployee($employeeData, $existingCompany['id']);
                     if ($empResult['success'] ?? false) {
                         $info = 'Your request to join ' . htmlspecialchars($existingCompany['name']) . ' has been submitted. You will be notified once approved.';
@@ -189,6 +202,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             if ($pendingReferral) {
                                 $updates['referral_source'] = $pendingReferral;
                             }
+                            if ($phone !== '') {
+                                $updates['phone'] = $phone;
+                            }
                             if (!empty($updates)) {
                                 $db->update('companies', $updates, 'id = :id', ['id' => $company['id']]);
                             }
@@ -199,6 +215,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     // Create user record for the admin
                     $userResult = Auth::createUser($email, $password, $userName ?: $name, 'company', $company['id']);
+
+                    // Best-effort: attach phone to the user row so admin-side prompts
+                    // and per-user notifications can target it. Column may not exist
+                    // on legacy installs — silently ignore.
+                    if ($phone !== '' && !empty($userResult['user_id'])) {
+                        try {
+                            $db = Database::getInstance();
+                            $db->update('users', ['phone' => $phone], 'id = :id', ['id' => $userResult['user_id']]);
+                        } catch (Exception $e) {
+                            // column missing — migration 074 adds it
+                        }
+                    }
 
                     // Send welcome email
                     $siteName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
@@ -222,7 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         Notifier::send('signup', [
                             'name'       => $userName ?: $name,
                             'email'      => $email,
-                            'phone'      => trim($_POST['phone'] ?? ''),
+                            'phone'      => $phone, // normalized E.164, empty string if user skipped
                             'company_id' => $company['id'] ?? null,
                         ], [
                             'name'        => $userName ?: $name,
@@ -398,9 +426,12 @@ $minimalFooter = true; // compact footer for auth page
                             <input type="tel" name="phone" id="phone"
                                    value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
                                    class="form-input"
+                                   autocomplete="tel"
+                                   inputmode="tel"
+                                   pattern="^\+?[0-9\s\-\(\)]{8,}$"
                                    placeholder="+968 9XXX XXXX">
                         </div>
-                        <p class="mt-1.5 text-xs text-gray-500">We'll send you a welcome message on WhatsApp</p>
+                        <p class="mt-1.5 text-xs text-gray-500">Used only for onboarding messages and account recovery. You can opt out anytime.</p>
                     </div>
 
                     <div>
