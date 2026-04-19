@@ -260,6 +260,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
 
+                    // BHD-244: seed a starter template immediately so every new
+                    // signup lands on a dashboard with a usable template. The
+                    // function is idempotent (no-op if templates already exist),
+                    // so the onboarding wizard's own seedStarterTemplate() call
+                    // with the user's chosen variant still short-circuits safely.
+                    try {
+                        seedStarterTemplate(Database::getInstance(), $company['id'], 'bhd-classic');
+                    } catch (Throwable $e) {
+                        error_log('[register] seedStarterTemplate failed: ' . $e->getMessage());
+                    }
+
                     // Send welcome email
                     $siteName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                     $companySlug = $company['slug'] ?? '';

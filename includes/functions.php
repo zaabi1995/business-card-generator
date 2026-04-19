@@ -1422,3 +1422,166 @@ if (!function_exists('formatPrice')) {
         return Currency::format($amt, $cur);
     }
 }
+
+/**
+ * Seed a starter template pair (front + back) for a company.
+ * Idempotent: no-op if the company already has any templates.
+ * Shared between api/onboarding.php and company/register.php so
+ * every new signup lands on a dashboard with a usable template.
+ */
+if (!function_exists('seedStarterTemplate')) {
+    function seedStarterTemplate($db, $companyId, $templateKey = 'bhd-classic') {
+        try {
+            $existing = $db->fetchOne(
+                "SELECT COUNT(*) as cnt FROM templates WHERE company_id = :id",
+                ['id' => $companyId]
+            );
+            if (($existing['cnt'] ?? 0) > 0) return;
+
+            $templates = getBhdTemplateDefinitions();
+            if (!isset($templates[$templateKey])) {
+                $templateKey = 'bhd-classic';
+            }
+
+            $def = $templates[$templateKey];
+            $pairId = generateUUID();
+            $now = date('Y-m-d H:i:s');
+
+            $db->insert('templates', [
+                'id'                    => generateUUID(),
+                'company_id'            => $companyId,
+                'pair_id'               => $pairId,
+                'name'                  => $def['name'] . ' (Front)',
+                'side'                  => 'front',
+                'background_image_path' => '',
+                'fields_json'           => json_encode($def['front_fields']),
+                'settings_json'         => json_encode($def['settings']),
+                'is_active'             => 1,
+                'is_shared'             => 0,
+                'created_at'            => $now,
+                'updated_at'            => $now,
+            ]);
+
+            $db->insert('templates', [
+                'id'                    => generateUUID(),
+                'company_id'            => $companyId,
+                'pair_id'               => $pairId,
+                'name'                  => $def['name'] . ' (Back)',
+                'side'                  => 'back',
+                'background_image_path' => '',
+                'fields_json'           => json_encode($def['back_fields']),
+                'settings_json'         => json_encode($def['settings']),
+                'is_active'             => 1,
+                'is_shared'             => 0,
+                'created_at'            => $now,
+                'updated_at'            => $now,
+            ]);
+        } catch (Exception $e) {
+            error_log('[seedStarterTemplate] failed for company ' . $companyId . ': ' . $e->getMessage());
+        }
+    }
+}
+
+if (!function_exists('getBhdTemplateDefinitions')) {
+    function getBhdTemplateDefinitions() {
+        $standardSettings = [
+            'cardSize'        => 'standard',
+            'cardOrientation' => 'landscape',
+            'dpi'             => 300,
+            'bleedEnabled'    => false,
+            'bleedSize'       => 3,
+            'bleedUnit'       => 'mm',
+        ];
+
+        $classicFront = [
+            'name_en' => [
+                'enabled' => true, 'x' => 60, 'y' => 70,
+                'fontSize' => 26, 'fontFamily' => 'Inter', 'fontWeight' => 'bold',
+                'fill' => '#1f2937', 'textAlign' => 'left', 'originX' => 'left', 'originY' => 'top'
+            ],
+            'position_en' => [
+                'enabled' => true, 'x' => 60, 'y' => 108,
+                'fontSize' => 14, 'fontFamily' => 'Inter', 'fontWeight' => 'normal',
+                'fill' => '#009bc1', 'textAlign' => 'left', 'originX' => 'left', 'originY' => 'top'
+            ],
+            'company_en' => [
+                'enabled' => true, 'x' => 60, 'y' => 135,
+                'fontSize' => 12, 'fontFamily' => 'Inter', 'fontWeight' => 'normal',
+                'fill' => '#6b7280', 'textAlign' => 'left', 'originX' => 'left', 'originY' => 'top'
+            ],
+            'phone' => [
+                'enabled' => true, 'x' => 60, 'y' => 175,
+                'fontSize' => 12, 'fontFamily' => 'Inter', 'fontWeight' => 'normal',
+                'fill' => '#374151', 'textAlign' => 'left', 'originX' => 'left', 'originY' => 'top'
+            ],
+            'email' => [
+                'enabled' => true, 'x' => 60, 'y' => 198,
+                'fontSize' => 12, 'fontFamily' => 'Inter', 'fontWeight' => 'normal',
+                'fill' => '#374151', 'textAlign' => 'left', 'originX' => 'left', 'originY' => 'top'
+            ],
+            'website' => [
+                'enabled' => true, 'x' => 60, 'y' => 221,
+                'fontSize' => 12, 'fontFamily' => 'Inter', 'fontWeight' => 'normal',
+                'fill' => '#009bc1', 'textAlign' => 'left', 'originX' => 'left', 'originY' => 'top'
+            ],
+        ];
+
+        $classicBack = [
+            'company_en' => [
+                'enabled' => true, 'x' => 500, 'y' => 130,
+                'fontSize' => 22, 'fontFamily' => 'Inter', 'fontWeight' => 'bold',
+                'fill' => '#1f2937', 'textAlign' => 'center', 'originX' => 'center', 'originY' => 'top'
+            ],
+            'website' => [
+                'enabled' => true, 'x' => 500, 'y' => 165,
+                'fontSize' => 12, 'fontFamily' => 'Inter', 'fontWeight' => 'normal',
+                'fill' => '#009bc1', 'textAlign' => 'center', 'originX' => 'center', 'originY' => 'top'
+            ],
+        ];
+
+        $navyFront = array_merge($classicFront, [
+            'name_en' => array_merge($classicFront['name_en'], ['fill' => '#ffffff']),
+            'position_en' => array_merge($classicFront['position_en'], ['fill' => '#009bc1']),
+            'company_en' => array_merge($classicFront['company_en'], ['fill' => '#94a3b8']),
+            'phone' => array_merge($classicFront['phone'], ['fill' => '#cbd5e1']),
+            'email' => array_merge($classicFront['email'], ['fill' => '#cbd5e1']),
+            'website' => array_merge($classicFront['website'], ['fill' => '#38bdf8']),
+        ]);
+
+        $skyFront = array_merge($classicFront, [
+            'name_en' => array_merge($classicFront['name_en'], ['fill' => '#ffffff']),
+            'position_en' => array_merge($classicFront['position_en'], ['fill' => '#e0f7ff']),
+            'company_en' => array_merge($classicFront['company_en'], ['fill' => '#cceeff']),
+            'phone' => array_merge($classicFront['phone'], ['fill' => '#ffffff']),
+            'email' => array_merge($classicFront['email'], ['fill' => '#ffffff']),
+            'website' => array_merge($classicFront['website'], ['fill' => '#ffffff']),
+        ]);
+
+        return [
+            'bhd-classic' => [
+                'name'         => 'BHD Classic',
+                'front_fields' => $classicFront,
+                'back_fields'  => $classicBack,
+                'settings'     => array_merge($standardSettings, ['backgroundColor' => '#ffffff']),
+            ],
+            'bhd-navy' => [
+                'name'         => 'BHD Navy',
+                'front_fields' => $navyFront,
+                'back_fields'  => array_merge($classicBack, [
+                    'company_en' => array_merge($classicBack['company_en'], ['fill' => '#ffffff']),
+                    'website' => array_merge($classicBack['website'], ['fill' => '#38bdf8']),
+                ]),
+                'settings'     => array_merge($standardSettings, ['backgroundColor' => '#0f172a']),
+            ],
+            'bhd-sky' => [
+                'name'         => 'BHD Sky',
+                'front_fields' => $skyFront,
+                'back_fields'  => array_merge($classicBack, [
+                    'company_en' => array_merge($classicBack['company_en'], ['fill' => '#ffffff']),
+                    'website' => array_merge($classicBack['website'], ['fill' => '#ffffff']),
+                ]),
+                'settings'     => array_merge($standardSettings, ['backgroundColor' => '#009bc1']),
+            ],
+        ];
+    }
+}
