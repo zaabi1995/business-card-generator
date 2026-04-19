@@ -467,3 +467,96 @@
   color: #111827;
 }
 .cardify-plan-cta--on-dark:hover { background: #f3f4f6; }
+
+/* ================================================================
+   LOGO LIBRARY — download buttons + meta actions (BHD design language)
+   Teal accent #009bc1 across all primary CTAs. Neutrals for secondary.
+   ================================================================ */
+.cardify-logo-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+@media (min-width: 768px) {
+  .cardify-logo-downloads { justify-content: flex-start; }
+  .cardify-logo-downloads.is-rtl { justify-content: flex-end; }
+}
+
+.cardify-dl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  transition: border-color .15s ease, color .15s ease, background .15s ease, box-shadow .15s ease, transform .1s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.cardify-dl-btn i {
+  font-size: 11px;
+  color: #9ca3af;
+  transition: color .15s ease;
+}
+.cardify-dl-btn:hover {
+  border-color: #009bc1;
+  color: #007fa0;
+  background: #f0fafd;
+}
+.cardify-dl-btn:hover i { color: #009bc1; }
+.cardify-dl-btn:active { transform: translateY(1px); }
+.cardify-dl-btn:focus-visible {
+  outline: none;
+  border-color: #009bc1;
+  box-shadow: 0 0 0 3px rgba(0, 155, 193, 0.2);
+}
+
+.cardify-dl-btn--primary {
+  background: #009bc1;
+  color: #ffffff;
+  border-color: #009bc1;
+  box-shadow: 0 4px 12px rgba(0, 155, 193, 0.28);
+}
+.cardify-dl-btn--primary i { color: rgba(255, 255, 255, 0.85); }
+.cardify-dl-btn--primary:hover {
+  background: #007fa0;
+  border-color: #007fa0;
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(0, 155, 193, 0.38);
+}
+.cardify-dl-btn--primary:hover i { color: #ffffff; }
+
+/* Secondary meta row: "Claim it" + "Report / takedown" */
+.cardify-logo-meta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+@media (min-width: 768px) {
+  .cardify-logo-meta-actions { justify-content: flex-start; }
+  .cardify-logo-meta-actions.is-rtl { justify-content: flex-end; }
+}
+.cardify-logo-meta-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color .15s ease;
+}
+.cardify-logo-meta-link i { font-size: 10px; opacity: .75; }
+.cardify-logo-meta-link:hover { color: #009bc1; }
+.cardify-logo-meta-link--flag { color: #9ca3af; }
+.cardify-logo-meta-link--flag:hover { color: #e11d48; }
+.cardify-logo-meta-sep { color: #d1d5db; user-select: none; }

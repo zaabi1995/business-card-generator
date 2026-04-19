@@ -82,15 +82,15 @@ $companyId = (int) ($company['id'] ?? 0);
                 <?php if ($src): ?>
                     <!-- Download buttons — available whether indexed or verified -->
                     <?php if ($canDownload): ?>
-                        <div class="mt-5 flex flex-wrap gap-2 justify-center md:justify-<?= $isAr ? 'end' : 'start' ?>">
+                        <div class="cardify-logo-downloads mt-5 <?= $isAr ? 'is-rtl' : '' ?>">
                             <?php
                                 $formats = [
-                                    'svg'      => ['SVG',         'logo_svg_path',      'fa-code'],
+                                    'svg'      => ['SVG',         'logo_svg_path',      'fa-bezier-curve'],
                                     'png_1024' => ['PNG · 1024',  'logo_png_path',      'fa-image'],
                                     'png_2048' => ['PNG · 2048',  'logo_png_2048_path', 'fa-image'],
                                     'png_512'  => ['PNG · 512',   'logo_png_512_path',  'fa-image'],
                                     'webp'     => ['WebP',        'logo_webp_path',     'fa-image'],
-                                    'zip'      => ['ZIP bundle',  null,                 'fa-box'],
+                                    'zip'      => ['ZIP bundle',  null,                 'fa-box-archive'],
                                 ];
                                 $primaryPlaced = false;
                                 foreach ($formats as $fmt => [$label, $col, $icon]):
@@ -98,33 +98,28 @@ $companyId = (int) ($company['id'] ?? 0);
                                     if (!$available) continue;
                                     $primary = !$primaryPlaced && ($fmt === 'svg' || $fmt === 'png_1024');
                                     $primaryPlaced = $primaryPlaced || $primary;
-                                    $cls = $primary
-                                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40'
-                                        : 'bg-white border border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600';
                             ?>
                                 <a href="/logo-download?company=<?= $companyId ?>&format=<?= logo_hero_esc($fmt) ?>"
-                                   class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold transition <?= $cls ?>"
+                                   class="cardify-dl-btn <?= $primary ? 'cardify-dl-btn--primary' : '' ?>"
                                    rel="nofollow"
                                    download>
-                                    <i class="fa-solid <?= logo_hero_esc($icon) ?> text-xs"></i>
-                                    <?= logo_hero_esc($label) ?>
+                                    <i class="fa-solid <?= logo_hero_esc($icon) ?>" aria-hidden="true"></i>
+                                    <span><?= logo_hero_esc($label) ?></span>
                                 </a>
                             <?php endforeach; ?>
                         </div>
 
                         <!-- Secondary row: claim + takedown -->
-                        <div class="mt-3 flex flex-wrap gap-3 items-center justify-center md:justify-<?= $isAr ? 'end' : 'start' ?> text-xs">
+                        <div class="cardify-logo-meta-actions mt-3 <?= $isAr ? 'is-rtl' : '' ?>">
                             <?php if ($status !== 'verified'): ?>
-                                <a href="/logo-claim?company=<?= $companyId ?>"
-                                   class="inline-flex items-center gap-1.5 text-gray-500 hover:text-blue-600 transition">
-                                    <i class="fa-solid fa-circle-check text-[10px]"></i>
+                                <a href="/logo-claim?company=<?= $companyId ?>" class="cardify-logo-meta-link cardify-logo-meta-link--claim">
+                                    <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
                                     <?= $isAr ? 'هل هذا شعار شركتك؟ طالب به' : 'Is this your company\'s logo? Claim it' ?>
                                 </a>
-                                <span class="text-gray-300">·</span>
+                                <span class="cardify-logo-meta-sep" aria-hidden="true">·</span>
                             <?php endif; ?>
-                            <a href="/logo-takedown?company=<?= $companyId ?>"
-                               class="inline-flex items-center gap-1.5 text-gray-400 hover:text-rose-600 transition">
-                                <i class="fa-solid fa-flag text-[10px]"></i>
+                            <a href="/logo-takedown?company=<?= $companyId ?>" class="cardify-logo-meta-link cardify-logo-meta-link--flag">
+                                <i class="fa-solid fa-flag" aria-hidden="true"></i>
                                 <?= $isAr ? 'إبلاغ / إزالة' : 'Report / takedown' ?>
                             </a>
                         </div>
@@ -132,10 +127,9 @@ $companyId = (int) ($company['id'] ?? 0);
                 <?php else: ?>
                     <!-- No logo yet -->
                     <div class="mt-5 flex flex-wrap gap-2 justify-center md:justify-<?= $isAr ? 'end' : 'start' ?>">
-                        <a href="/logo-claim?company=<?= $companyId ?>"
-                           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 transition">
-                            <i class="fa-solid fa-plus text-xs"></i>
-                            <?= $isAr ? 'أضف شعار هذه الشركة' : 'Add a logo for this company' ?>
+                        <a href="/logo-claim?company=<?= $companyId ?>" class="cardify-dl-btn cardify-dl-btn--primary">
+                            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                            <span><?= $isAr ? 'أضف شعار هذه الشركة' : 'Add a logo for this company' ?></span>
                         </a>
                     </div>
                 <?php endif; ?>
