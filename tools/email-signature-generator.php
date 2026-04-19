@@ -51,8 +51,46 @@ $breadcrumbLd = [
     ],
 ];
 
+$faq = [
+    ['q' => 'Is the email signature generator really free?', 'a' => 'Yes. No account, no watermark, no ad inserted into your signature, no "upgrade to remove logo" trick. The HTML you copy is yours.'],
+    ['q' => 'Does the signature render correctly in Gmail and Outlook?', 'a' => 'Yes. We output table-based HTML with inline styles, which is the only format that survives Gmail, Outlook (desktop and web), Apple Mail, and mobile clients consistently. No flexbox, no CSS grid — those break in Outlook.'],
+    ['q' => 'How do I install the signature in Gmail?', 'a' => 'Copy the HTML with the Rich Copy button, open Gmail → Settings → See all settings → General → Signature, paste into the signature editor, and save. Send a test email to yourself to verify.'],
+    ['q' => 'Can I include both Arabic and English text?', 'a' => 'Yes. Paste Arabic into any field and the signature renders bilingual with correct right-to-left alignment where appropriate. Arabic names, titles, and addresses are supported.'],
+    ['q' => 'Will my data be saved on your servers?', 'a' => 'No. The whole generator is a single HTML page — nothing is posted anywhere. Refresh the page and all your inputs are gone. If you need to edit the signature later, bookmark the URL and type your details again.'],
+    ['q' => 'What if my logo URL stops working?', 'a' => 'Email clients need the logo hosted somewhere public. Use your company website\'s logo URL, a CDN, or a Cardify digital card asset. If the URL breaks, recipients see the alt text instead.'],
+];
+
+$howToLd = [
+    '@context' => 'https://schema.org',
+    '@type' => 'HowTo',
+    'name' => 'How to create a professional email signature for free',
+    'description' => 'Generate a clean, Gmail and Outlook compatible HTML email signature from your contact details in under a minute.',
+    'totalTime' => 'PT3M',
+    'tool' => [
+        ['@type' => 'HowToTool', 'name' => 'Cardify Email Signature Generator'],
+    ],
+    'step' => [
+        ['@type' => 'HowToStep', 'position' => 1, 'name' => 'Enter your details', 'text' => 'Type your name, title, company, phone, email, and website. The live preview updates as you type.'],
+        ['@type' => 'HowToStep', 'position' => 2, 'name' => 'Add a logo URL (optional)', 'text' => 'Paste a public URL to your company logo. Keep it under 400px wide for Gmail and Outlook compatibility.'],
+        ['@type' => 'HowToStep', 'position' => 3, 'name' => 'Copy the signature', 'text' => 'Click Copy HTML for rich clients like Gmail and Outlook, or Copy plain text for clients that strip HTML.'],
+        ['@type' => 'HowToStep', 'position' => 4, 'name' => 'Install in your email client', 'text' => 'Paste into Gmail Settings → Signature, Outlook File → Options → Mail → Signatures, or Apple Mail → Settings → Signatures. Send a test to verify rendering.'],
+    ],
+];
+
+$faqLd = [
+    '@context' => 'https://schema.org',
+    '@type' => 'FAQPage',
+    'mainEntity' => array_map(fn($q) => [
+        '@type' => 'Question',
+        'name' => $q['q'],
+        'acceptedAnswer' => ['@type' => 'Answer', 'text' => $q['a']],
+    ], $faq),
+];
+
 $extraHead = '<script type="application/ld+json">' . json_encode($softwareLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
-           . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+           . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+           . '<script type="application/ld+json">' . json_encode($howToLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+           . '<script type="application/ld+json">' . json_encode($faqLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
 $showNavigation = true;
 require_once INCLUDES_DIR . '/ui-header.php';
@@ -308,5 +346,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     render();
 })();
 </script>
+
+<?php include __DIR__ . '/../views/partials/tool_seo_faq.php'; ?>
 
 <?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>
