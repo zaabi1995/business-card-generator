@@ -151,8 +151,8 @@ if (isset($_GET['company_slug'])) {
 // Brand name
 $brandName = 'Cardify';
 $tagline = 'Business Cards Made Simple';
-$pageTitle = 'Cardify — Digital & Printed Business Cards in Oman';
-$pageDescription = 'Create, manage, and print professional business cards for your team in Oman. Digital cards with QR codes, NFC sharing, and online ordering. Free to start.';
+$pageTitle = 'Cardify — Digital & Printed Business Cards for the GCC';
+$pageDescription = 'Bilingual Arabic/English digital and printed business cards for teams across the Gulf: Oman (live), Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait (rolling out 2026). QR vCard save, Apple Wallet, NFC, bulk provisioning. Free to start.';
 $canonicalUrl = 'https://cardify.om/';
 $bodyClass = 'bg-white';
 
@@ -195,12 +195,23 @@ try {
 }
 
 // WebSite JSON-LD for homepage (Organization + SoftwareApp already in body of index.php)
+// Adds SearchAction so Google can surface a sitelinks search box in SERP.
 $siteLd = [
     '@context' => 'https://schema.org',
     '@type' => 'WebSite',
     'name' => 'Cardify',
+    'alternateName' => 'Cardify GCC',
     'url' => 'https://cardify.om/',
+    'inLanguage' => ['en', 'ar'],
     'publisher' => ['@type' => 'Organization', 'name' => 'Cardify'],
+    'potentialAction' => [
+        '@type' => 'SearchAction',
+        'target' => [
+            '@type' => 'EntryPoint',
+            'urlTemplate' => 'https://cardify.om/companies?q={search_term_string}',
+        ],
+        'query-input' => 'required name=search_term_string',
+    ],
 ];
 $homeJsonLd = '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES) . '</script>';
 
@@ -1231,19 +1242,49 @@ HTML;
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": "Cardify",
+  "alternateName": ["Cardify Oman", "Cardify GCC"],
   "url": "https://cardify.om",
   "logo": "https://cardify.om/assets/images/logo.svg",
-  "description": "SaaS platform for creating and managing professional digital and printed business cards in Oman",
+  "description": "Business-identity platform for the Gulf: digital and printed business cards, public logo libraries, and the GCC Business Index. Built in Oman, expanding across Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait through 2026.",
   "address": {
     "@type": "PostalAddress",
     "addressCountry": "OM",
     "addressLocality": "Muscat"
   },
+  "foundingDate": "2024",
+  "foundingLocation": {
+    "@type": "Place",
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "OM",
+      "addressLocality": "Muscat"
+    }
+  },
+  "areaServed": [
+    { "@type": "Country", "name": "Oman", "alternateName": "عُمان", "identifier": "OMN" },
+    { "@type": "Country", "name": "Saudi Arabia", "alternateName": "المملكة العربية السعودية", "identifier": "SAU" },
+    { "@type": "Country", "name": "United Arab Emirates", "alternateName": "الإمارات العربية المتحدة", "identifier": "ARE" },
+    { "@type": "Country", "name": "Qatar", "alternateName": "قطر", "identifier": "QAT" },
+    { "@type": "Country", "name": "Bahrain", "alternateName": "البحرين", "identifier": "BHR" },
+    { "@type": "Country", "name": "Kuwait", "alternateName": "الكويت", "identifier": "KWT" }
+  ],
+  "knowsLanguage": ["en", "ar"],
   "sameAs": ["https://instagram.com/cardifyom"],
   "contactPoint": {
     "@type": "ContactPoint",
     "contactType": "customer service",
-    "url": "https://cardify.om/contact"
+    "url": "https://cardify.om/contact",
+    "availableLanguage": ["en", "ar"]
+  },
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Cardify Product Catalog",
+    "itemListElement": [
+      { "@type": "OfferCatalog", "name": "Digital Business Cards", "url": "https://cardify.om/" },
+      { "@type": "OfferCatalog", "name": "Omani Logo Library", "url": "https://cardify.om/logos" },
+      { "@type": "OfferCatalog", "name": "Oman Business Index", "url": "https://cardify.om/oman-business-index" },
+      { "@type": "OfferCatalog", "name": "GCC Business Index", "url": "https://cardify.om/gcc-business-index" }
+    ]
   }
 }
 </script>
@@ -1255,7 +1296,7 @@ HTML;
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "Web, iOS, Android",
   "url": "https://cardify.om",
-  "description": "Digital and printed business card SaaS for teams in Oman. Bilingual EN+AR, QR vCard auto-save, bulk team onboarding, local print-shop fulfilment.",
+  "description": "Digital and printed business card SaaS for teams across the GCC. Bilingual EN+AR, QR vCard auto-save, Apple Wallet + Google Wallet, bulk team onboarding, local print fulfilment. Available in Oman, Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait.",
   "inLanguage": ["en", "ar"],
   "offers": [
     {

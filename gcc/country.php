@@ -209,7 +209,7 @@ if (!isset($countries[$slug])) {
     http_response_code(404);
     require_once INCLUDES_DIR . '/ui-header.php';
     echo '<main class="max-w-xl mx-auto p-16 text-center"><h1 class="text-2xl font-bold mb-4">Country not found</h1><p class="text-gray-600 mb-6">We cover the six GCC countries. Pick one:</p>';
-    foreach ($countries as $s => $c) echo '<a href="/gcc/' . htmlspecialchars($s) . '" class="inline-block m-1 px-4 py-2 rounded-lg bg-blue-600 text-white">' . $c['flag'] . ' ' . $c['name'] . '</a>';
+    foreach ($countries as $s => $c) echo '<a href="' . htmlspecialchars(getBasePath() . 'gcc/' . $s) . '" class="inline-block m-1 px-4 py-2 rounded-lg bg-blue-600 text-white">' . $c['flag'] . ' ' . $c['name'] . '</a>';
     echo '</main>';
     require_once INCLUDES_DIR . '/ui-footer.php';
     exit;
