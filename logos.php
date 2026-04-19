@@ -53,8 +53,9 @@ function fetchLogoRows(Database $db, array $filters, int $page = 1, int $perPage
     if (!empty($filters['wilayat']))       { $where[] = "wilayat = :w"; $params[':w'] = $filters['wilayat']; }
     if (!empty($filters['verified_only'])) { $where[] = "logo_status = 'verified'"; }
     if (!empty($filters['q'])) {
-        $where[] = "(name_en LIKE :q OR name_ar LIKE :q)";
-        $params[':q'] = '%' . $filters['q'] . '%';
+        $where[] = "(name_en LIKE :q_en OR name_ar LIKE :q_ar)";
+        $params[':q_en'] = '%' . $filters['q'] . '%';
+        $params[':q_ar'] = '%' . $filters['q'] . '%';
     }
     $whereSql = implode(' AND ', $where);
     $offset   = max(0, ($page - 1) * $perPage);
