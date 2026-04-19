@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 64" width="340" height="64" role="img" aria-label="Arabian.CEO">
+  <title>Arabian.CEO</title>
+  <!-- Motion streaks (top-right of star) -->
+  <line x1="52" y1="8" x2="43" y2="16" stroke="#f97316" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+  <line x1="58" y1="22" x2="47" y2="26" stroke="#f97316" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+  <line x1="54" y1="37" x2="44" y2="33" stroke="#f97316" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+  <!-- 5-point star centered at (26,32) -->
+  <path d="M26,10 L31.29,24.72 L46.92,25.2 L34.56,34.78 L38.93,49.8 L26,41 L13.07,49.8 L17.44,34.78 L5.08,25.2 L20.71,24.72 Z" fill="#f97316"/>
+  <!-- Wordmark -->
+  <text font-family="'Helvetica Neue',Arial,Helvetica,sans-serif" font-size="30" font-weight="800" letter-spacing="-0.8">
+    <tspan x="64" y="40" fill="#ffffff">Arabian</tspan><tspan fill="#f97316">.</tspan><tspan fill="#f97316">CEO</tspan>
+  </text>
+</svg>
