@@ -111,6 +111,10 @@
     RewriteRule ^industries/healthcare/?$ industries/healthcare.php [L,QSA]
     RewriteRule ^industries/real-estate/?$ industries/real-estate.php [L,QSA]
     RewriteRule ^industries/tourism/?$ industries/tourism.php [L,QSA]
+    RewriteRule ^industries/banking/?$ industries/banking.php [L,QSA]
+    RewriteRule ^industries/logistics/?$ industries/logistics.php [L,QSA]
+    RewriteRule ^industries/oil-gas/?$ industries/oil-gas.php [L,QSA]
+    RewriteRule ^industries/government/?$ industries/government.php [L,QSA]
 
     # Oman-specific solution pages (commercial intent SEO)
     RewriteRule ^solutions/?$ solutions.php [L,QSA]
