@@ -142,7 +142,7 @@ if ($part === 'static') {
     smUrl("{$baseUrl}/oman-business-index",    $today, 'monthly', '0.9');
     smUrl("{$baseUrl}/ar/oman-business-index", $today, 'monthly', '0.8');
     smUrl("{$baseUrl}/gcc-business-index",     $today, 'weekly',  '0.95');
-    smUrl("{$baseUrl}/ar/gcc-business-index",  $today, 'weekly',  '0.8');
+    // /ar/gcc-business-index not yet published — English-only flagship for now.
     smUrl("{$baseUrl}/companies",              $today, 'weekly',  '0.9');
     smUrl("{$baseUrl}/ar/companies",           $today, 'weekly',  '0.8');
 

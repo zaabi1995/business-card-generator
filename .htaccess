@@ -93,7 +93,10 @@
     # Oman Business Index — directory of Omani enterprises (flagship + curated top companies)
     RewriteRule ^oman-business-index/?$ oman-business-index.php [L,QSA]
     RewriteRule ^gcc-business-index/?$  gcc-business-index.php [L,QSA]
-    RewriteRule ^ar/gcc-business-index/?$ gcc-business-index.php?lang=ar [L,QSA]
+    # No /ar/gcc-business-index rewrite yet — the page has no Arabic
+    # localization. Route (and hreflang / sitemap entries) will be added
+    # when translated content lands. Do NOT expose a locale route that
+    # serves the English page — it creates a duplicate indexed as AR.
     RewriteRule ^companies/?$ companies.php [L,QSA]
     RewriteRule ^companies/sector/([a-z0-9-]+)/?$ companies.php?view=sector&slug=$1 [L,QSA]
     RewriteRule ^companies/wilayat/([a-z0-9-]+)/?$ companies.php?view=wilayat&slug=$1 [L,QSA]
