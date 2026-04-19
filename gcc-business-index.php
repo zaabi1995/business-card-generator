@@ -384,22 +384,26 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <p class="text-sm text-gray-600 leading-relaxed mb-5 flex-grow"><?= gccEsc($c['note']) ?></p>
 
+                <?php $countrySlug = $c['country_slug'] ?? strtolower($c['code']); ?>
                 <?php if ($isLive): ?>
                     <div class="flex flex-wrap gap-2">
                         <?php if ($c['index_url']): ?>
-                            <a href="<?= gccEsc($c['index_url']) ?>" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition">
+                            <a href="<?= gccEsc(getBasePath() . ltrim($c['index_url'], '/')) ?>" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition">
                                 Open index <i class="fa-solid fa-arrow-right text-xs"></i>
                             </a>
                         <?php endif; ?>
                         <?php if ($c['logos_url']): ?>
-                            <a href="<?= gccEsc($c['logos_url']) ?>" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600 text-sm font-semibold transition">
+                            <a href="<?= gccEsc(getBasePath() . ltrim($c['logos_url'], '/')) ?>" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600 text-sm font-semibold transition">
                                 Logo library
                             </a>
                         <?php endif; ?>
+                        <a href="<?= gccEsc(getBasePath() . 'gcc/' . $countrySlug) ?>" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600 text-sm font-semibold transition">
+                            Country page
+                        </a>
                     </div>
                 <?php else: ?>
                     <div class="flex flex-wrap gap-2 items-center">
-                        <a href="/gcc/<?= gccEsc($c['country_slug'] ?? strtolower($c['code'])) ?>" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition">
+                        <a href="<?= gccEsc(getBasePath() . 'gcc/' . $countrySlug) ?>" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition">
                             <?= gccEsc($c['name_en']) ?> preview <i class="fa-solid fa-arrow-right text-xs"></i>
                         </a>
                         <a href="mailto:contact@cardify.om?subject=<?= urlencode('Early access: ' . $c['name_en'] . ' Business Index') ?>" class="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700">
