@@ -123,7 +123,8 @@ if (!empty($_GET['utm_source']) && empty($_SESSION['utm_source'])) {
     <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css"></noscript>
     
     <!-- Custom Overrides -->
-    <link rel="stylesheet" href="<?php echo assetUrl('css/cardify-overrides.css'); ?>"><?php /* Local fallback assets kept for offline use */ ?>
+    <?php $cardifyOverridesVersion = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/css/cardify-overrides.css') ?: time(); ?>
+    <link rel="stylesheet" href="<?php echo assetUrl('css/cardify-overrides.css'); ?>?v=<?php echo $cardifyOverridesVersion; ?>"><?php /* Local fallback assets kept for offline use */ ?>
     
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
