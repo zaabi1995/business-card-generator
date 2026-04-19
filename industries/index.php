@@ -55,54 +55,70 @@ $extraHead = '<script type="application/ld+json">' . json_encode($breadcrumbLd, 
 
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
-<div class="min-h-screen bg-gray-50">
-    <section class="bg-gradient-to-b from-white to-gray-50 pt-28 pb-12 border-b border-gray-100">
+<div class="min-h-screen bg-white">
+    <section class="relative overflow-hidden bg-gradient-to-b from-blue-50 via-white to-white border-b border-gray-100 pt-28 pb-16">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <nav class="text-sm text-gray-500 mb-3" aria-label="Breadcrumb">
-                <a href="<?= getBasePath() ?>" class="hover:text-blue-600">Home</a>
+            <nav class="text-sm text-gray-500 mb-4" aria-label="Breadcrumb">
+                <a href="<?= getBasePath() ?>" class="hover:text-blue-600 transition">Home</a>
                 <span class="mx-2">/</span>
                 <span class="text-gray-700">Industries</span>
             </nav>
-            <span class="text-blue-700 font-semibold text-sm uppercase tracking-wider">Industries</span>
-            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mt-2 mb-4">Digital business cards, tuned to every industry</h1>
-            <p class="text-gray-600 text-lg max-w-3xl">Bilingual EN/AR cards that actually fit how banks, oil companies, logistics firms, ministries, and restaurants in Oman and the GCC introduce themselves. Brand-locked templates. Bulk provisioning. Zero reprints when someone's title changes.</p>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-blue-200 text-blue-700 text-xs font-semibold tracking-wide uppercase shadow-sm mb-5">
+                <i class="fa-solid fa-briefcase text-[10px]"></i> Industries
+            </div>
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-4">Digital business cards, tuned to every industry</h1>
+            <p class="text-gray-600 text-lg max-w-3xl leading-relaxed">Bilingual EN/AR cards that actually fit how banks, oil companies, logistics firms, ministries, and restaurants in Oman and the GCC introduce themselves. Brand-locked templates. Bulk provisioning. Zero reprints when someone's title changes.</p>
         </div>
     </section>
 
-    <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+    <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div class="mb-8">
+            <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider">Solutions</span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2">9 industries we're tuned for</h2>
+        </div>
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             <?php foreach ($industries as $it): ?>
-                <a href="<?= getBasePath() ?>industries/<?= htmlspecialchars($it['slug']) ?>" class="group block bg-white rounded-2xl border border-gray-200 p-6 hover:border-blue-300 hover:shadow-md transition">
+                <a href="<?= getBasePath() ?>industries/<?= htmlspecialchars($it['slug']) ?>" class="group block bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 p-6 transition">
                     <div class="flex items-center gap-3 mb-3">
-                        <div class="w-11 h-11 rounded-xl <?= $it['tint'] ?> flex items-center justify-center text-lg">
+                        <div class="w-12 h-12 shrink-0 rounded-xl <?= $it['tint'] ?> border border-current/10 flex items-center justify-center text-lg">
                             <i class="<?= $it['icon'] ?>"></i>
                         </div>
-                        <h2 class="text-lg font-bold text-gray-900 group-hover:text-blue-700"><?= htmlspecialchars($it['name']) ?></h2>
+                        <h3 class="text-lg font-bold text-gray-900 group-hover:text-blue-700 transition"><?= htmlspecialchars($it['name']) ?></h3>
                     </div>
                     <p class="text-gray-600 text-sm leading-relaxed mb-4"><?= htmlspecialchars($it['desc']) ?></p>
-                    <span class="text-sm font-semibold text-blue-700 inline-flex items-center gap-1">
-                        View solution <i class="fa-solid fa-arrow-right text-xs transition group-hover:translate-x-1"></i>
+                    <span class="text-sm font-semibold text-blue-700 inline-flex items-center gap-1.5 group-hover:text-blue-800">
+                        View solution <i class="fa-solid fa-arrow-right text-xs transition group-hover:translate-x-0.5"></i>
                     </span>
                 </a>
             <?php endforeach; ?>
         </div>
     </section>
 
-    <section class="bg-white border-y border-gray-100 py-14">
+    <section class="bg-gray-50 border-y border-gray-100 py-16">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-3">Looking for data, logos, or tools?</h2>
-            <p class="text-gray-600 mb-8 max-w-2xl mx-auto">Cardify also runs the <strong>GCC Business Index</strong>, the <strong>Omani Logo Library</strong>, and free <strong>QR / signature tools</strong> used by hundreds of teams across the region.</p>
+            <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider">Beyond industries</span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-3">Looking for data, logos, or free tools?</h2>
+            <p class="text-gray-600 mb-8 max-w-2xl mx-auto">Cardify also runs the <strong>GCC Business Index</strong>, the <strong>Omani Logo Library</strong>, and free QR / signature tools used by hundreds of teams across the region.</p>
             <div class="grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
-                <a href="<?= getBasePath() ?>gcc-business-index" class="bg-blue-50 border border-blue-100 rounded-xl p-5 hover:bg-blue-100 transition text-left">
-                    <div class="font-bold text-gray-900 mb-1">GCC Business Index</div>
+                <a href="<?= getBasePath() ?>gcc-business-index" class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition text-left group">
+                    <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-3 group-hover:bg-blue-100 transition">
+                        <i class="fa-solid fa-globe"></i>
+                    </div>
+                    <div class="font-bold text-gray-900 mb-1 group-hover:text-blue-700 transition">GCC Business Index</div>
                     <div class="text-sm text-gray-600">Six-country directory.</div>
                 </a>
-                <a href="<?= getBasePath() ?>logos" class="bg-emerald-50 border border-emerald-100 rounded-xl p-5 hover:bg-emerald-100 transition text-left">
-                    <div class="font-bold text-gray-900 mb-1">Omani Logo Library</div>
+                <a href="<?= getBasePath() ?>logos" class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-emerald-300 transition text-left group">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 group-hover:bg-emerald-100 transition">
+                        <i class="fa-solid fa-image"></i>
+                    </div>
+                    <div class="font-bold text-gray-900 mb-1 group-hover:text-emerald-700 transition">Omani Logo Library</div>
                     <div class="text-sm text-gray-600">80+ verified logos, free to download.</div>
                 </a>
-                <a href="<?= getBasePath() ?>tools" class="bg-purple-50 border border-purple-100 rounded-xl p-5 hover:bg-purple-100 transition text-left">
-                    <div class="font-bold text-gray-900 mb-1">Free Tools</div>
+                <a href="<?= getBasePath() ?>tools" class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-purple-300 transition text-left group">
+                    <div class="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center mb-3 group-hover:bg-purple-100 transition">
+                        <i class="fa-solid fa-wrench"></i>
+                    </div>
+                    <div class="font-bold text-gray-900 mb-1 group-hover:text-purple-700 transition">Free Tools</div>
                     <div class="text-sm text-gray-600">QR, vCard, email signature.</div>
                 </a>
             </div>

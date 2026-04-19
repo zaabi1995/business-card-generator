@@ -294,56 +294,65 @@ $extraHead = ''
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
 <div class="min-h-screen bg-white">
-    <section class="bg-gradient-to-br <?= $escq($c['accent']) ?> text-white pt-28 pb-16">
+    <section class="relative overflow-hidden bg-gradient-to-b from-blue-50 via-white to-white border-b border-gray-100 pt-28 pb-16">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <nav class="text-sm text-white/80 mb-3" aria-label="Breadcrumb">
-                <a href="<?= getBasePath() ?>" class="hover:text-white">Home</a>
+            <nav class="text-sm text-gray-500 mb-4" aria-label="Breadcrumb">
+                <a href="<?= getBasePath() ?>" class="hover:text-blue-600 transition">Home</a>
                 <span class="mx-2">/</span>
-                <a href="<?= getBasePath() ?>gcc-business-index" class="hover:text-white">GCC Business Index</a>
+                <a href="<?= getBasePath() ?>gcc-business-index" class="hover:text-blue-600 transition">GCC Business Index</a>
                 <span class="mx-2">/</span>
-                <span class="text-white"><?= $escq($c['name']) ?></span>
+                <span class="text-gray-700"><?= $escq($c['name']) ?></span>
             </nav>
-            <div class="flex items-center gap-4 mb-6">
-                <div class="text-6xl leading-none"><?= $c['flag'] ?></div>
-                <div>
-                    <div class="text-white/80 text-sm font-semibold uppercase tracking-wider"><?= $escq($c['name_ar']) ?> · <?= $escq($c['code']) ?></div>
-                    <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight mt-1"><?= $escq($c['hero_headline']) ?></h1>
-                </div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-blue-200 text-blue-700 text-xs font-semibold tracking-wide uppercase shadow-sm mb-5">
+                <span class="text-base leading-none"><?= $c['flag'] ?></span>
+                <?= $escq($c['code']) ?> · <?= $escq($c['name_ar']) ?>
+                <?php if ($slug === 'oman'): ?>
+                    <span class="inline-flex items-center gap-1 ml-1 bg-green-100 text-green-700 rounded-full px-2 py-0.5 text-[10px] uppercase"><i class="fa-solid fa-circle text-[6px]"></i> Live</span>
+                <?php else: ?>
+                    <span class="inline-flex items-center gap-1 ml-1 bg-amber-100 text-amber-700 rounded-full px-2 py-0.5 text-[10px] uppercase">2026</span>
+                <?php endif; ?>
             </div>
-            <p class="text-white/90 text-lg max-w-3xl leading-relaxed mb-8"><?= $escq($c['hero_sub']) ?></p>
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-4"><?= $escq($c['hero_headline']) ?></h1>
+            <p class="text-gray-600 text-lg max-w-3xl leading-relaxed mb-7"><?= $escq($c['hero_sub']) ?></p>
             <div class="flex flex-wrap gap-3">
                 <?php if ($slug === 'oman'): ?>
-                    <a href="<?= getBasePath() ?>oman-business-index" class="bg-white text-gray-900 font-bold px-6 py-3 rounded-lg hover:bg-gray-100 transition">Browse Oman Business Index →</a>
-                    <a href="<?= getBasePath() ?>intro" class="bg-white/10 backdrop-blur border border-white/30 text-white font-semibold px-6 py-3 rounded-lg hover:bg-white/20 transition">Get started with Cardify</a>
+                    <a href="<?= getBasePath() ?>oman-business-index" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white font-semibold shadow-sm hover:bg-blue-700 transition">Browse Oman Business Index <i class="fa-solid fa-arrow-right text-xs"></i></a>
+                    <a href="<?= getBasePath() ?>intro" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white border border-gray-200 text-gray-700 font-semibold shadow-sm hover:border-blue-300 hover:text-blue-700 transition">Get started with Cardify</a>
                 <?php else: ?>
-                    <a href="<?= getBasePath() ?>intro?ref=gcc-<?= $escq($slug) ?>" class="bg-white text-gray-900 font-bold px-6 py-3 rounded-lg hover:bg-gray-100 transition">Request early access →</a>
-                    <a href="<?= getBasePath() ?>gcc-business-index" class="bg-white/10 backdrop-blur border border-white/30 text-white font-semibold px-6 py-3 rounded-lg hover:bg-white/20 transition">Explore GCC Business Index</a>
+                    <a href="<?= getBasePath() ?>intro?ref=gcc-<?= $escq($slug) ?>" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white font-semibold shadow-sm hover:bg-blue-700 transition">Request early access <i class="fa-solid fa-arrow-right text-xs"></i></a>
+                    <a href="<?= getBasePath() ?>gcc-business-index" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white border border-gray-200 text-gray-700 font-semibold shadow-sm hover:border-blue-300 hover:text-blue-700 transition">Explore GCC Business Index</a>
                 <?php endif; ?>
             </div>
         </div>
     </section>
 
-    <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+    <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div class="grid lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-1 bg-gray-50 rounded-2xl p-6 border border-gray-200">
-                <h2 class="text-lg font-bold text-gray-900 mb-4"><?= $escq($c['name']) ?> at a glance</h2>
+            <div class="lg:col-span-1 bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-2xl"><?= $c['flag'] ?></span>
+                    <h2 class="text-lg font-bold text-gray-900"><?= $escq($c['name']) ?> at a glance</h2>
+                </div>
                 <dl class="space-y-3 text-sm">
-                    <div class="flex justify-between"><dt class="text-gray-500">Capital</dt><dd class="font-semibold text-gray-900"><?= $escq($c['capital']) ?></dd></div>
-                    <div class="flex justify-between"><dt class="text-gray-500">Currency</dt><dd class="font-semibold text-gray-900"><?= $escq($c['currency']) ?></dd></div>
-                    <div class="flex justify-between"><dt class="text-gray-500">Companies (est.)</dt><dd class="font-semibold text-gray-900"><?= $escq($c['company_count_approx']) ?></dd></div>
-                    <div class="flex justify-between"><dt class="text-gray-500">Registry</dt><dd class="font-semibold text-gray-900 text-right"><?= $escq($c['registry_name']) ?></dd></div>
-                    <div class="flex justify-between"><dt class="text-gray-500">Regulator</dt><dd class="font-semibold text-gray-900 text-right"><?= $escq($c['registrar_name']) ?></dd></div>
+                    <div class="flex justify-between gap-3 pb-3 border-b border-gray-100"><dt class="text-gray-500">Capital</dt><dd class="font-semibold text-gray-900"><?= $escq($c['capital']) ?></dd></div>
+                    <div class="flex justify-between gap-3 pb-3 border-b border-gray-100"><dt class="text-gray-500">Currency</dt><dd class="font-semibold text-gray-900"><?= $escq($c['currency']) ?></dd></div>
+                    <div class="flex justify-between gap-3 pb-3 border-b border-gray-100"><dt class="text-gray-500">Companies (est.)</dt><dd class="font-semibold text-gray-900 text-right"><?= $escq($c['company_count_approx']) ?></dd></div>
+                    <div class="flex justify-between gap-3 pb-3 border-b border-gray-100"><dt class="text-gray-500">Registry</dt><dd class="font-semibold text-gray-900 text-right"><?= $escq($c['registry_name']) ?></dd></div>
+                    <div class="flex justify-between gap-3"><dt class="text-gray-500">Regulator</dt><dd class="font-semibold text-gray-900 text-right"><?= $escq($c['registrar_name']) ?></dd></div>
                 </dl>
-                <a href="<?= $escq($c['registrar_url']) ?>" target="_blank" rel="noopener nofollow" class="inline-flex items-center gap-1 text-sm font-semibold text-blue-700 hover:text-blue-800 mt-4">Visit official registrar <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a>
+                <a href="<?= $escq($c['registrar_url']) ?>" target="_blank" rel="noopener nofollow" class="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-700 hover:text-blue-800 mt-5">Visit official registrar <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a>
             </div>
 
             <div class="lg:col-span-2">
-                <h2 class="text-2xl font-extrabold text-gray-900 mb-4">Why Cardify for <?= $escq($c['name']) ?></h2>
+                <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider">Why us</span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-5">Why Cardify for <?= $escq($c['name']) ?></h2>
                 <ul class="space-y-3">
                     <?php foreach ($c['value_props'] as $vp): ?>
-                        <li class="flex items-start gap-3 bg-white border border-gray-200 rounded-xl p-4">
-                            <i class="fa-solid fa-circle-check text-emerald-600 mt-1"></i>
-                            <span class="text-gray-800 leading-relaxed"><?= $escq($vp) ?></span>
+                        <li class="flex items-start gap-3 bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-blue-200 transition">
+                            <div class="w-8 h-8 shrink-0 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
+                                <i class="fa-solid fa-check text-sm"></i>
+                            </div>
+                            <span class="text-gray-800 leading-relaxed pt-0.5"><?= $escq($vp) ?></span>
                         </li>
                     <?php endforeach; ?>
                 </ul>
@@ -351,70 +360,74 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
     </section>
 
-    <section class="bg-gray-50 border-y border-gray-100 py-14">
+    <section class="bg-gray-50 border-y border-gray-100 py-16">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="text-2xl font-extrabold text-gray-900 mb-2">Sectors we cover in <?= $escq($c['name']) ?></h2>
-            <p class="text-gray-600 mb-6">Every sector gets a dedicated industry page with pricing, examples, and templates.</p>
+            <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider">Sectors</span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-3">Sectors we cover in <?= $escq($c['name']) ?></h2>
+            <p class="text-gray-600 mb-7 max-w-3xl">Every sector gets a dedicated industry page with pricing, examples, and templates.</p>
             <div class="flex flex-wrap gap-2">
                 <?php foreach ($c['sectors'] as $sec): ?>
-                    <span class="inline-flex items-center gap-2 <?= $escq($c['tint']) ?> rounded-full px-4 py-2 text-sm font-semibold">
-                        <i class="fa-solid fa-industry text-xs"></i> <?= $escq($sec) ?>
+                    <span class="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:border-blue-300 hover:text-blue-700 transition">
+                        <i class="fa-solid fa-industry text-xs text-gray-400"></i> <?= $escq($sec) ?>
                     </span>
                 <?php endforeach; ?>
             </div>
         </div>
     </section>
 
-    <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <h2 class="text-2xl font-extrabold text-gray-900 mb-2">Major <?= $escq($c['name']) ?> companies in our sights</h2>
-        <p class="text-gray-600 mb-6">We will launch <?= $escq($c['name']) ?> with logo entries and team cards for many of these firms. Know someone there? <a href="<?= getBasePath() ?>contact" class="text-blue-700 font-semibold hover:text-blue-800">Introduce us →</a></p>
+    <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider">Target companies</span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-3">Major <?= $escq($c['name']) ?> companies in our sights</h2>
+        <p class="text-gray-600 mb-7 max-w-3xl">We will launch <?= $escq($c['name']) ?> with logo entries and team cards for many of these firms. Know someone there? <a href="<?= getBasePath() ?>contact" class="text-blue-700 font-semibold hover:text-blue-800">Introduce us &rarr;</a></p>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <?php foreach ($c['majors'] as $m): ?>
-                <div class="bg-white border border-gray-200 rounded-xl p-4 text-center">
+                <div class="bg-white border border-gray-200 rounded-2xl p-4 text-center shadow-sm hover:shadow-md hover:border-blue-200 transition">
                     <div class="font-bold text-gray-900 text-sm"><?= $escq($m) ?></div>
                 </div>
             <?php endforeach; ?>
         </div>
     </section>
 
-    <section class="bg-white border-t border-gray-100 py-14">
+    <section class="bg-white border-t border-gray-100 py-16">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <span class="text-blue-700 font-semibold text-sm uppercase tracking-wider">FAQ</span>
+            <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider">FAQ</span>
             <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-6">Frequently asked about <?= $escq($c['name']) ?></h2>
             <div class="space-y-3">
                 <?php foreach ($c['faq'] as $i => $q): ?>
-                    <details class="group bg-gray-50 border border-gray-200 rounded-xl hover:border-blue-300 transition overflow-hidden"<?= $i === 0 ? ' open' : '' ?>>
+                    <details class="group bg-white border border-gray-200 rounded-2xl shadow-sm hover:border-blue-300 transition overflow-hidden"<?= $i === 0 ? ' open' : '' ?>>
                         <summary class="flex items-center justify-between gap-4 px-5 py-4 cursor-pointer list-none">
                             <span class="font-semibold text-gray-900"><?= $escq($q['q']) ?></span>
                             <i class="fa-solid fa-chevron-down text-gray-400 text-sm transition group-open:rotate-180"></i>
                         </summary>
-                        <div class="px-5 pb-4 text-gray-600 leading-relaxed"><?= $escq($q['a']) ?></div>
+                        <div class="px-5 pb-5 text-gray-600 leading-relaxed"><?= $escq($q['a']) ?></div>
                     </details>
                 <?php endforeach; ?>
             </div>
         </div>
     </section>
 
-    <section class="bg-gray-900 text-white py-16">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-3xl font-extrabold mb-3">Building something in <?= $escq($c['name']) ?>?</h2>
-            <p class="text-gray-300 mb-8 text-lg max-w-2xl mx-auto">Get early access to Cardify for <?= $escq($c['name']) ?>. We pilot 1-on-1 with a few anchor enterprises in each country before opening general availability.</p>
-            <div class="flex flex-wrap gap-3 justify-center">
-                <a href="<?= getBasePath() ?>intro?ref=gcc-<?= $escq($slug) ?>" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg transition">Request early access</a>
-                <a href="<?= getBasePath() ?>contact" class="bg-white/10 border border-white/20 hover:bg-white/20 text-white font-semibold px-6 py-3 rounded-lg transition">Talk to our team</a>
+    <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-10 sm:p-14 text-center text-white shadow-xl">
+            <div class="text-5xl mb-4"><?= $c['flag'] ?></div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold mb-3">Building something in <?= $escq($c['name']) ?>?</h2>
+            <p class="text-blue-100 mb-8 max-w-2xl mx-auto">Get early access to Cardify for <?= $escq($c['name']) ?>. We pilot 1-on-1 with a few anchor enterprises in each country before opening general availability.</p>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <a href="<?= getBasePath() ?>intro?ref=gcc-<?= $escq($slug) ?>" class="inline-flex items-center justify-center gap-2 bg-white text-blue-700 font-bold px-6 py-3 rounded-lg hover:bg-blue-50 shadow-sm transition">Request early access <i class="fa-solid fa-arrow-right text-xs"></i></a>
+                <a href="<?= getBasePath() ?>contact" class="inline-flex items-center justify-center gap-2 bg-white/10 border border-white/30 text-white font-semibold px-6 py-3 rounded-lg hover:bg-white/20 transition">Talk to our team</a>
             </div>
-            <p class="text-gray-500 text-sm mt-6">Oman is live · KSA, UAE, Qatar, Bahrain, Kuwait in onboarding through 2026</p>
+            <p class="text-blue-200 text-sm mt-6">Oman is live · KSA, UAE, Qatar, Bahrain, Kuwait in onboarding through 2026</p>
         </div>
     </section>
 
-    <section class="bg-white border-t border-gray-100 py-10">
+    <section class="bg-gray-50 border-t border-gray-100 py-12">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">Explore other GCC markets</h3>
-            <div class="grid sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider">Other markets</span>
+            <h3 class="text-xl sm:text-2xl font-extrabold text-gray-900 mt-2 mb-5">Explore other GCC markets</h3>
+            <div class="grid sm:grid-cols-3 lg:grid-cols-5 gap-3">
                 <?php foreach ($countries as $s => $oc): if ($s === $slug) continue; ?>
-                    <a href="<?= getBasePath() ?>gcc/<?= $escq($s) ?>" class="group block bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-xl p-4 text-center transition">
-                        <div class="text-3xl mb-1"><?= $oc['flag'] ?></div>
-                        <div class="font-semibold text-gray-900 group-hover:text-blue-700 text-sm"><?= $escq($oc['name']) ?></div>
+                    <a href="<?= getBasePath() ?>gcc/<?= $escq($s) ?>" class="group block bg-white hover:border-blue-300 border border-gray-200 rounded-2xl p-4 text-center shadow-sm hover:shadow-md transition">
+                        <div class="text-3xl mb-2"><?= $oc['flag'] ?></div>
+                        <div class="font-semibold text-gray-900 group-hover:text-blue-700 text-sm transition"><?= $escq($oc['name']) ?></div>
                     </a>
                 <?php endforeach; ?>
             </div>
