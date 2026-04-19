@@ -51,8 +51,46 @@ $breadcrumbLd = [
     ],
 ];
 
+$faq = [
+    ['q' => 'Is this vCard QR generator really free, with no sign-up?', 'a' => 'Yes. No account, no watermark, no email capture. The QR code you download is yours to use on printed cards, email signatures, office signage, or anything else — commercial use included.'],
+    ['q' => 'Does the QR code work on both iPhone and Android?', 'a' => 'Yes. iOS 11 and later and Android 9 and later both scan vCard QR codes natively from the camera app. No third-party scanner required. Older devices may need a free QR scanner app.'],
+    ['q' => 'Does any of my contact data get uploaded to Cardify?', 'a' => 'No. Everything runs entirely inside your browser. Your name, phone, email, and address never leave your device — we cannot see them even if we wanted to.'],
+    ['q' => 'What format is the downloaded QR code?', 'a' => 'A 1024×1024 PNG with a transparent-free white background. That resolution stays crisp on a business card, a flyer, or an A3 office poster. Use the Copy button if you need the raw .vcf text instead.'],
+    ['q' => 'Does it support Arabic names and addresses?', 'a' => 'Yes. vCard 3.0 is UTF-8, so Arabic names, company names, and addresses encode correctly. Most scanners save them exactly as typed.'],
+    ['q' => 'Can I print this QR on my business cards with Cardify?', 'a' => 'Absolutely — that is the core use case. Design your Cardify card, drop the QR on the back, and every scan adds you to the recipient\'s phone in one tap.'],
+];
+
+$howToLd = [
+    '@context' => 'https://schema.org',
+    '@type' => 'HowTo',
+    'name' => 'How to create a vCard QR code for your business card',
+    'description' => 'Generate a scannable vCard QR code from your contact details and download it as a high-resolution PNG for print.',
+    'totalTime' => 'PT2M',
+    'tool' => [
+        ['@type' => 'HowToTool', 'name' => 'Cardify vCard QR Code Generator'],
+    ],
+    'step' => [
+        ['@type' => 'HowToStep', 'position' => 1, 'name' => 'Enter your name and phone', 'text' => 'Type your full name and a reachable phone number — these are the only required fields.'],
+        ['@type' => 'HowToStep', 'position' => 2, 'name' => 'Add optional contact details', 'text' => 'Fill in job title, company, email, website, and address as needed. The QR preview updates live.'],
+        ['@type' => 'HowToStep', 'position' => 3, 'name' => 'Download the PNG', 'text' => 'Click Download PNG to get a 1024×1024 image ready to drop on a business card, flyer, or signature.'],
+        ['@type' => 'HowToStep', 'position' => 4, 'name' => 'Test the scan', 'text' => 'Open your phone camera and scan the QR. The Save Contact prompt should appear with all details pre-filled.'],
+    ],
+];
+
+$faqLd = [
+    '@context' => 'https://schema.org',
+    '@type' => 'FAQPage',
+    'mainEntity' => array_map(fn($q) => [
+        '@type' => 'Question',
+        'name' => $q['q'],
+        'acceptedAnswer' => ['@type' => 'Answer', 'text' => $q['a']],
+    ], $faq),
+];
+
 $extraHead = '<script type="application/ld+json">' . json_encode($softwareLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
            . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+           . '<script type="application/ld+json">' . json_encode($howToLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+           . '<script type="application/ld+json">' . json_encode($faqLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
            . '<script defer src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>';
 
 $showNavigation = true;
@@ -288,5 +326,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     }, 100);
 })();
 </script>
+
+<?php include __DIR__ . '/../views/partials/tool_seo_faq.php'; ?>
 
 <?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>

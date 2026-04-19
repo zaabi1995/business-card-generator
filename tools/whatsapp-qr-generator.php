@@ -50,8 +50,46 @@ $breadcrumbLd = [
     ],
 ];
 
+$faq = [
+    ['q' => 'How does a WhatsApp QR code work?', 'a' => 'Behind the scenes, the QR encodes a wa.me URL — WhatsApp\'s official click-to-chat link format. When someone scans the QR with their phone camera, their browser opens the link and WhatsApp launches a chat with your number and any pre-filled message you set.'],
+    ['q' => 'Do I need to be "WhatsApp Business" to use this?', 'a' => 'No. wa.me works with both regular WhatsApp and WhatsApp Business. Either number type accepts incoming chats from scans.'],
+    ['q' => 'What country code should I pick?', 'a' => 'Pick the country code matching your number. The tool defaults to +968 Oman, but there are picker entries for every GCC country. If a scanner is abroad, the country code is what makes sure the message reaches your number.'],
+    ['q' => 'Can I pre-fill a message for the customer?', 'a' => 'Yes. The pre-filled message box lets you set any greeting — "Hi, I saw your menu at the restaurant" or "I\'d like to order 50 business cards" — and the recipient only has to tap send. This dramatically increases reply rates for shop signs and menus.'],
+    ['q' => 'Does this work if I change my phone number later?', 'a' => 'You would need to regenerate the QR with the new number and reprint. For signs and cards that may change, pair the QR with a short redirect URL you control (Cardify digital cards do this automatically).'],
+    ['q' => 'Is the QR image free to use on commercial materials?', 'a' => 'Yes. Print it on shop windows, restaurant menus, delivery boxes, business cards, exhibition banners — anywhere. No license required, no Cardify watermark.'],
+];
+
+$howToLd = [
+    '@context' => 'https://schema.org',
+    '@type' => 'HowTo',
+    'name' => 'How to create a WhatsApp QR code for click-to-chat',
+    'description' => 'Generate a scannable QR code that opens a WhatsApp chat with your number and an optional pre-filled message.',
+    'totalTime' => 'PT1M',
+    'tool' => [
+        ['@type' => 'HowToTool', 'name' => 'Cardify WhatsApp QR Code Generator'],
+    ],
+    'step' => [
+        ['@type' => 'HowToStep', 'position' => 1, 'name' => 'Pick your country code', 'text' => 'Select the country code for your WhatsApp number. Oman (+968) is the default; every GCC code is supported.'],
+        ['@type' => 'HowToStep', 'position' => 2, 'name' => 'Enter your number', 'text' => 'Type your WhatsApp number without spaces or dashes. Any number registered with regular or Business WhatsApp will work.'],
+        ['@type' => 'HowToStep', 'position' => 3, 'name' => 'Set a pre-filled message (optional)', 'text' => 'Add a greeting so customers don\'t have to type from a blank chat. "Hi, I saw your ad" or "I\'d like to order" works well.'],
+        ['@type' => 'HowToStep', 'position' => 4, 'name' => 'Download the PNG', 'text' => 'Click Download PNG to get a 1024×1024 image for print. Paste the wa.me URL on social bios or websites where a QR is not needed.'],
+    ],
+];
+
+$faqLd = [
+    '@context' => 'https://schema.org',
+    '@type' => 'FAQPage',
+    'mainEntity' => array_map(fn($q) => [
+        '@type' => 'Question',
+        'name' => $q['q'],
+        'acceptedAnswer' => ['@type' => 'Answer', 'text' => $q['a']],
+    ], $faq),
+];
+
 $extraHead = '<script type="application/ld+json">' . json_encode($softwareLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
            . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+           . '<script type="application/ld+json">' . json_encode($howToLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+           . '<script type="application/ld+json">' . json_encode($faqLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
            . '<script defer src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>';
 
 $showNavigation = true;
@@ -268,5 +306,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     render();
 })();
 </script>
+
+<?php include __DIR__ . '/../views/partials/tool_seo_faq.php'; ?>
 
 <?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>
