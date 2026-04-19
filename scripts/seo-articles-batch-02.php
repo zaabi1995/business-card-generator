@@ -272,17 +272,23 @@ HTML,
 ];
 
 $db = Database::getInstance();
+$pdo = $db->getConnection();
 foreach ($posts as $p) {
     $exists = $db->fetchOne("SELECT id FROM blog_posts WHERE slug=?", [$p['slug']]);
     if ($exists) {
-        echo "SKIP (exists): {$p['slug']}\n";
+        printf("  · %s — already exists (id=%d), skip\n", $p['slug'], $exists['id']);
         continue;
     }
-    $db->execute(
+    $pdo->prepare(
         "INSERT INTO blog_posts (title, slug, excerpt, content, status, author_name, published_at, created_at, updated_at)
-         VALUES (?, ?, ?, ?, 'published', ?, NOW(), NOW(), NOW())",
-        [$p['title'], $p['slug'], $p['excerpt'], $p['content'], $p['author_name']]
-    );
-    echo "INSERTED: {$p['slug']}\n";
+         VALUES (:t, :s, :e, :c, 'published', :a, NOW(), NOW(), NOW())"
+    )->execute([
+        ':t' => $p['title'],
+        ':s' => $p['slug'],
+        ':e' => $p['excerpt'],
+        ':c' => $p['content'],
+        ':a' => $p['author_name'],
+    ]);
+    printf("  ✓ inserted %s (id=%d)\n", $p['slug'], (int) $pdo->lastInsertId());
 }
-echo "\nDone.\n";
+echo "\nBatch 2 done.\n";
