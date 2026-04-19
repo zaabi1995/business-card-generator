@@ -16,6 +16,7 @@ if (function_exists('isProduction') && !isProduction()) {
 }
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/admin-layout.php';
+require_once INCLUDES_DIR . '/Referral.php';
 
 // Check authentication and role
 if (!Auth::isLoggedIn()) {
@@ -379,6 +380,25 @@ $checklistSteps = [
 ];
 $checklistAllDone = array_reduce($checklistSteps, fn($carry, $s) => $carry && $s['done'], true);
 $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
+
+// BHD-234: referral share card (every logged-in company admin gets one).
+$referralCode = null;
+$referralShareUrl = null;
+$referralStats = ['signups' => 0, 'paid' => 0];
+$referralWhatsAppHref = null;
+if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
+    try {
+        $referralCode = Referral::ensureCodeForUser($_SESSION['user_id']);
+        if ($referralCode) {
+            $referralShareUrl = Referral::shareUrl($referralCode);
+            $referralStats = Referral::statsForUser($_SESSION['user_id']);
+            $waMsg = "👋 جربت Cardify مؤخراً — بطاقات أعمال رقمية احترافية في دقائق. جرّبها مجاناً:\n{$referralShareUrl}\n\nI've been using Cardify — digital business cards done right. Free to try:\n{$referralShareUrl}";
+            $referralWhatsAppHref = 'https://wa.me/?text=' . rawurlencode($waMsg);
+        }
+    } catch (Throwable $e) {
+        error_log('[dashboard] referral card failed: ' . $e->getMessage());
+    }
+}
 ?>
 
 <?php if ($showPhonePrompt): ?>
@@ -581,6 +601,80 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
         <?php endforeach; ?>
     </div>
 </div>
+<?php endif; ?>
+
+<?php if ($referralCode && $referralShareUrl): ?>
+<!-- Referral Share Card (BHD-234) -->
+<div class="mb-8 rounded-2xl overflow-hidden shadow-lg relative" id="referral-share-card">
+    <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-6 sm:p-7 text-white">
+        <div class="flex flex-col lg:flex-row lg:items-center gap-6">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-10 h-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-gift text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg leading-tight">Share Cardify — earn 3 months free</h3>
+                        <p class="text-indigo-100 text-sm">Send your link to a friend. When they upgrade to paid, you get 3 months on us.</p>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex flex-col sm:flex-row gap-2">
+                    <div class="flex-1 bg-white/15 backdrop-blur rounded-lg px-3 py-2.5 flex items-center gap-2 min-w-0">
+                        <i class="fa-solid fa-link text-white/70 text-xs flex-shrink-0"></i>
+                        <input type="text" readonly value="<?= htmlspecialchars($referralShareUrl) ?>" id="bhd234-ref-url"
+                               class="flex-1 bg-transparent text-white text-sm font-mono tracking-tight outline-none min-w-0 truncate"
+                               onclick="this.select()">
+                    </div>
+                    <button type="button" onclick="bhd234CopyRef()" id="bhd234-copy-btn"
+                            class="bg-white text-indigo-700 font-semibold px-4 py-2.5 rounded-lg text-sm hover:bg-indigo-50 transition-all whitespace-nowrap flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-copy text-xs"></i>
+                        <span id="bhd234-copy-label">Copy link</span>
+                    </button>
+                    <a href="<?= htmlspecialchars($referralWhatsAppHref) ?>" target="_blank" rel="noopener"
+                       class="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2">
+                        <i class="fa-brands fa-whatsapp"></i>
+                        Share on WhatsApp
+                    </a>
+                </div>
+            </div>
+
+            <div class="lg:border-l lg:border-white/15 lg:pl-6 flex lg:flex-col gap-6 lg:gap-3 justify-start lg:justify-center flex-shrink-0">
+                <div class="text-center lg:text-left">
+                    <p class="text-3xl font-bold leading-none"><?= (int)$referralStats['signups'] ?></p>
+                    <p class="text-indigo-100 text-xs mt-1">signed up</p>
+                </div>
+                <div class="text-center lg:text-left">
+                    <p class="text-3xl font-bold leading-none"><?= (int)$referralStats['paid'] ?></p>
+                    <p class="text-indigo-100 text-xs mt-1">went paid</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    window.bhd234CopyRef = function () {
+        var input = document.getElementById('bhd234-ref-url');
+        var label = document.getElementById('bhd234-copy-label');
+        if (!input) return;
+        try {
+            input.select();
+            input.setSelectionRange(0, 99999);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(input.value);
+            } else {
+                document.execCommand('copy');
+            }
+            if (label) {
+                var prev = label.textContent;
+                label.textContent = 'Copied!';
+                setTimeout(function () { label.textContent = prev; }, 1600);
+            }
+        } catch (e) { /* ignore */ }
+    };
+})();
+</script>
 <?php endif; ?>
 
 <!-- Stats Cards -->

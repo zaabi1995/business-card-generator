@@ -493,6 +493,14 @@ class Payment {
         );
 
         error_log("Subscription activated: company={$companyId} plan={$planId} cycle={$billingCycle} expires={$expiresAt}");
+
+        // BHD-234: referral reward on first paid conversion.
+        try {
+            require_once INCLUDES_DIR . '/Referral.php';
+            Referral::onPaidConversion((string)$companyId, (float)($payment['amount'] ?? 0));
+        } catch (Throwable $e) {
+            error_log('[referral] paid hook failed: ' . $e->getMessage());
+        }
     }
 
     /**

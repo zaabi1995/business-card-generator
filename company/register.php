@@ -9,6 +9,7 @@
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/Mailer.php';
+require_once INCLUDES_DIR . '/Referral.php';
 
 // Redirect if already logged in
 if (Auth::isLoggedIn()) {
@@ -30,6 +31,14 @@ if ($refSource) {
     $_SESSION['pending_referral'] = preg_replace('/[^a-z0-9_\-]/i', '', $refSource);
 }
 $pendingReferral = $_SESSION['pending_referral'] ?? null;
+
+// BHD-234: user-level referral code (distinct from `ref=` source tag). Accept
+// both ?ref_code= and the r.php-captured session/cookie.
+$incomingRefCode = $_GET['ref_code'] ?? null;
+if ($incomingRefCode) {
+    Referral::capturePending((string)$incomingRefCode);
+}
+$pendingRefCode = Referral::readPending();
 
 // Check if prefilled email has business domain
 if (!empty($prefillEmail) && isValidEmail($prefillEmail)) {
@@ -234,6 +243,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $db->update('users', ['phone' => $phone], 'id = :id', ['id' => $userResult['user_id']]);
                         } catch (Exception $e) {
                             // column missing — migration 074 adds it
+                        }
+                    }
+
+                    // BHD-234: give the new user a referral code and attribute them
+                    // back to the referrer (if they came in via /r/<code>).
+                    if (!empty($userResult['user_id'])) {
+                        try {
+                            Referral::ensureCodeForUser($userResult['user_id']);
+                            if ($pendingRefCode) {
+                                Referral::attributeSignup($userResult['user_id'], $pendingRefCode);
+                                Referral::clearPending();
+                            }
+                        } catch (Throwable $e) {
+                            error_log('[register] referral wiring failed: ' . $e->getMessage());
                         }
                     }
 

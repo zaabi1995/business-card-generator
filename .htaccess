@@ -66,6 +66,11 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^s/([A-Za-z0-9_-]{1,20})/?$ s.php?slug=$1 [L,QSA]
+
+    # Referral link (cardify.om/r/<code>) — BHD-234
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^r/([A-Za-z0-9]{4,16})/?$ r.php?code=$1 [L,QSA]
     
     # Intro/onboarding page (clean URL)
     RewriteRule ^intro/?$ intro.php [L,QSA]

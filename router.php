@@ -20,9 +20,9 @@ if (!$companySlug) {
 
 // Known paths that should not be treated as company slugs
 $knownPaths = [
-    'admin', 'login', 'logout', 'install', 'share', 's', 'company',
+    'admin', 'login', 'logout', 'install', 'share', 's', 'r', 'company',
     'webhooks', 'amwalpay', 'generate_card_html.php', 'download_card.php',
-    'index.php', 'router.php', 's.php', 'assets', 'uploads', 'data'
+    'index.php', 'router.php', 's.php', 'r.php', 'assets', 'uploads', 'data'
 ];
 
 // Check if it's a known path

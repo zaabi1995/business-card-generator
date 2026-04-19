@@ -321,6 +321,14 @@ class Billing {
                 'id = :id', ['id' => $transaction['company_id']]
             );
             unset($_SESSION['paymob_payment_' . $merchantOrderId]);
+
+            // BHD-234: referral reward on first paid conversion.
+            try {
+                require_once INCLUDES_DIR . '/Referral.php';
+                Referral::onPaidConversion((string)$transaction['company_id'], (float)($transaction['amount'] ?? 0));
+            } catch (Throwable $e) {
+                error_log('[referral] paid hook failed (paymob legacy): ' . $e->getMessage());
+            }
         }
 
         return ['success' => true, 'status' => $transactionStatus, 'transaction_id' => $transaction['id']];
@@ -443,7 +451,7 @@ class Billing {
         // If payment successful, update company subscription
         if ($transactionStatus === 'completed') {
             $expiresAt = date('Y-m-d H:i:s', strtotime('+1 ' . ($transaction['payment_method'] === 'yearly' ? 'year' : 'month')));
-            
+
             $db->update('companies',
                 [
                     'plan' => $transaction['plan_id'],
@@ -454,9 +462,17 @@ class Billing {
                 'id = :id',
                 ['id' => $transaction['company_id']]
             );
-            
+
             // Clear session
             unset($_SESSION['amwal_payment_' . $orderId]);
+
+            // BHD-234: referral reward on first paid conversion.
+            try {
+                require_once INCLUDES_DIR . '/Referral.php';
+                Referral::onPaidConversion((string)$transaction['company_id'], (float)($transaction['amount'] ?? 0));
+            } catch (Throwable $e) {
+                error_log('[referral] paid hook failed (amwal): ' . $e->getMessage());
+            }
         }
         
         return [
