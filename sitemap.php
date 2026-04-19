@@ -88,7 +88,6 @@ if ($part === 'static') {
         ['/cookies',      'yearly',  '0.4'],
         ['/print-shops',  'weekly',  '0.8'],
         ['/industries',              'monthly', '0.85'],
-        ['/press',                   'monthly', '0.85'],
         ['/gcc/saudi-arabia',        'monthly', '0.9'],
         ['/gcc/uae',                 'monthly', '0.9'],
         ['/gcc/qatar',               'monthly', '0.85'],

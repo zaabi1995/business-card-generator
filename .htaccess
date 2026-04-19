@@ -127,6 +127,7 @@
 
     # Press & media kit (backlink-magnet asset for journalists / researchers)
     RewriteRule ^press/?$                          press.php [L,QSA]
+    RewriteRule ^media-kit/?$                      press.php [L,QSA]
 
     # Oman-specific solution pages (commercial intent SEO)
     RewriteRule ^solutions/?$ solutions.php [L,QSA]
