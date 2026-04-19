@@ -637,176 +637,96 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
 
             <!-- Pricing Grid -->
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            <div class="cardify-pricing-grid">
                 <!-- Starter -->
-                <div class="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col">
-                    <div class="mb-6">
-                        <h3 class="text-lg font-bold text-gray-900">Starter</h3>
-                        <p class="text-sm text-gray-500 mt-1">For freelancers and solo professionals</p>
+                <div class="cardify-plan">
+                    <div class="cardify-plan-header">
+                        <h3 class="cardify-plan-name">Starter</h3>
+                        <p class="cardify-plan-tagline">For freelancers and solo professionals</p>
                     </div>
-                    <div class="mb-6">
-                        <div class="flex items-baseline gap-1">
-                            <span class="text-4xl font-extrabold text-gray-900">Free</span>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-1">No credit card required</p>
+                    <div class="cardify-plan-price">
+                        <span class="cardify-plan-price-value">Free</span>
+                        <p class="cardify-plan-price-sub">No credit card required</p>
                     </div>
-                    <ul class="space-y-3 mb-8 flex-1">
-                        <li class="flex items-start gap-2 text-sm text-gray-600">
-                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
-                            Up to 3 team members
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-600">
-                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
-                            Digital cards with QR code
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-600">
-                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
-                            3 card templates
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-600">
-                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
-                            Email support
-                        </li>
+                    <ul class="cardify-plan-features">
+                        <li><i class="fa-solid fa-check cardify-tick"></i>Up to 3 team members</li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i>Digital cards with QR code</li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i>3 card templates</li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i>Email support</li>
                     </ul>
-                    <a href="<?= getBasePath() ?>company/register.php" class="block text-center py-3 px-4 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold hover:border-blue-300 hover:text-blue-600 transition-colors">
-                        Get Started Free
-                    </a>
+                    <a href="<?= getBasePath() ?>company/register.php" class="cardify-plan-cta cardify-plan-cta--ghost">Get Started Free</a>
                 </div>
 
                 <!-- Professional (Popular) -->
-                <div class="bg-white rounded-2xl border-2 border-blue-600 p-6 flex flex-col relative shadow-lg shadow-blue-100">
-                    <div class="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <span class="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">Most Popular</span>
+                <div class="cardify-plan cardify-plan--featured">
+                    <span class="cardify-plan-badge">Most Popular</span>
+                    <div class="cardify-plan-header">
+                        <h3 class="cardify-plan-name">Professional</h3>
+                        <p class="cardify-plan-tagline">For growing teams</p>
                     </div>
-                    <div class="mb-6">
-                        <h3 class="text-lg font-bold text-gray-900">Professional</h3>
-                        <p class="text-sm text-gray-500 mt-1">For growing teams</p>
-                    </div>
-                    <div class="mb-6">
-                        <div class="flex items-baseline gap-1">
-                            <span class="text-4xl font-extrabold text-gray-900" x-text="annual ? '4.167' : '5.000'">5.000</span>
-                            <span class="text-gray-500 text-sm font-medium">OMR/mo</span>
+                    <div class="cardify-plan-price">
+                        <div class="cardify-plan-price-row">
+                            <span class="cardify-plan-price-value cardify-plan-price-value--num" x-text="annual ? '4.167' : '5.000'">5.000</span>
+                            <span class="cardify-plan-price-unit">OMR/mo</span>
                         </div>
-                        <p class="text-sm text-gray-500 mt-1" x-show="annual">Billed 50.000 OMR/year</p>
-                        <p class="text-sm text-gray-500 mt-1" x-show="!annual">Billed monthly</p>
+                        <p class="cardify-plan-price-sub" x-show="annual">Billed 50.000 OMR/year</p>
+                        <p class="cardify-plan-price-sub" x-show="!annual">Billed monthly</p>
                     </div>
-                    <ul class="space-y-3 mb-8 flex-1">
-                        <li class="flex items-start gap-2 text-sm text-gray-600">
-                            <i class="fa-solid fa-check text-blue-500 mt-0.5 flex-shrink-0"></i>
-                            Up to 10 team members
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-600">
-                            <i class="fa-solid fa-check text-blue-500 mt-0.5 flex-shrink-0"></i>
-                            Unlimited templates
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-600">
-                            <i class="fa-solid fa-check text-blue-500 mt-0.5 flex-shrink-0"></i>
-                            Custom branding
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-600">
-                            <i class="fa-solid fa-check text-blue-500 mt-0.5 flex-shrink-0"></i>
-                            CSV bulk import
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-600">
-                            <i class="fa-solid fa-check text-blue-500 mt-0.5 flex-shrink-0"></i>
-                            Analytics dashboard
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-600">
-                            <i class="fa-solid fa-check text-blue-500 mt-0.5 flex-shrink-0"></i>
-                            Priority support
-                        </li>
+                    <ul class="cardify-plan-features">
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>Up to 10 team members</li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>Unlimited templates</li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>Custom branding</li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>CSV bulk import</li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>Analytics dashboard</li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>Priority support</li>
                     </ul>
-                    <a href="<?= getBasePath() ?>company/register.php?plan=professional" class="block text-center py-3 px-4 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors shadow-md">
-                        Start Free Trial
-                    </a>
+                    <a href="<?= getBasePath() ?>company/register.php?plan=professional" class="cardify-plan-cta cardify-plan-cta--primary">Start Free Trial</a>
                 </div>
 
                 <!-- Business -->
-                <div class="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col">
-                    <div class="mb-6">
-                        <h3 class="text-lg font-bold text-gray-900">Business</h3>
-                        <p class="text-sm text-gray-500 mt-1">For scaling companies</p>
+                <div class="cardify-plan">
+                    <div class="cardify-plan-header">
+                        <h3 class="cardify-plan-name">Business</h3>
+                        <p class="cardify-plan-tagline">For scaling companies</p>
                     </div>
-                    <div class="mb-6">
-                        <div class="flex items-baseline gap-1">
-                            <span class="text-4xl font-extrabold text-gray-900" x-text="annual ? '12.500' : '15.000'">15.000</span>
-                            <span class="text-gray-500 text-sm font-medium">OMR/mo</span>
+                    <div class="cardify-plan-price">
+                        <div class="cardify-plan-price-row">
+                            <span class="cardify-plan-price-value cardify-plan-price-value--num" x-text="annual ? '12.500' : '15.000'">15.000</span>
+                            <span class="cardify-plan-price-unit">OMR/mo</span>
                         </div>
-                        <p class="text-sm text-gray-500 mt-1" x-show="annual">Billed 150.000 OMR/year</p>
-                        <p class="text-sm text-gray-500 mt-1" x-show="!annual">Billed monthly</p>
+                        <p class="cardify-plan-price-sub" x-show="annual">Billed 150.000 OMR/year</p>
+                        <p class="cardify-plan-price-sub" x-show="!annual">Billed monthly</p>
                     </div>
-                    <ul class="space-y-3 mb-8 flex-1">
-                        <li class="flex items-start gap-2 text-sm text-gray-600">
-                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
-                            Up to 50 team members
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-600">
-                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
-                            Everything in Professional
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-600">
-                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
-                            Print ordering integration
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-600">
-                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
-                            NFC card support
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-600">
-                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
-                            Dedicated account manager
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-600">
-                            <i class="fa-solid fa-check text-green-500 mt-0.5 flex-shrink-0"></i>
-                            API access
-                        </li>
+                    <ul class="cardify-plan-features">
+                        <li><i class="fa-solid fa-check cardify-tick"></i>Up to 50 team members</li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i>Everything in Professional</li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i>Print ordering integration</li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i>NFC card support</li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i>Dedicated account manager</li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i>API access</li>
                     </ul>
-                    <a href="<?= getBasePath() ?>company/register.php?plan=business" class="block text-center py-3 px-4 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold hover:border-blue-300 hover:text-blue-600 transition-colors">
-                        Start Free Trial
-                    </a>
+                    <a href="<?= getBasePath() ?>company/register.php?plan=business" class="cardify-plan-cta cardify-plan-cta--ghost">Start Free Trial</a>
                 </div>
 
                 <!-- Enterprise -->
-                <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 flex flex-col text-white">
-                    <div class="mb-6">
-                        <h3 class="text-lg font-bold">Enterprise</h3>
-                        <p class="text-sm text-gray-400 mt-1">For large organisations</p>
+                <div class="cardify-plan cardify-plan--dark">
+                    <div class="cardify-plan-header">
+                        <h3 class="cardify-plan-name">Enterprise</h3>
+                        <p class="cardify-plan-tagline">For large organisations</p>
                     </div>
-                    <div class="mb-6">
-                        <div class="flex items-baseline gap-1">
-                            <span class="text-4xl font-extrabold">Custom</span>
-                        </div>
-                        <p class="text-sm text-gray-400 mt-1">Tailored to your needs</p>
+                    <div class="cardify-plan-price">
+                        <span class="cardify-plan-price-value">Custom</span>
+                        <p class="cardify-plan-price-sub">Tailored to your needs</p>
                     </div>
-                    <ul class="space-y-3 mb-8 flex-1">
-                        <li class="flex items-start gap-2 text-sm text-gray-300">
-                            <i class="fa-solid fa-check text-amber-400 mt-0.5 flex-shrink-0"></i>
-                            Unlimited employees
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-300">
-                            <i class="fa-solid fa-check text-amber-400 mt-0.5 flex-shrink-0"></i>
-                            Everything in Business
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-300">
-                            <i class="fa-solid fa-check text-amber-400 mt-0.5 flex-shrink-0"></i>
-                            Custom integrations
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-300">
-                            <i class="fa-solid fa-check text-amber-400 mt-0.5 flex-shrink-0"></i>
-                            SLA guarantee
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-300">
-                            <i class="fa-solid fa-check text-amber-400 mt-0.5 flex-shrink-0"></i>
-                            White-label options
-                        </li>
-                        <li class="flex items-start gap-2 text-sm text-gray-300">
-                            <i class="fa-solid fa-check text-amber-400 mt-0.5 flex-shrink-0"></i>
-                            On-premise deployment
-                        </li>
+                    <ul class="cardify-plan-features">
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>Unlimited employees</li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>Everything in Business</li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>Custom integrations</li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>SLA guarantee</li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>White-label options</li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>On-premise deployment</li>
                     </ul>
-                    <a href="https://wa.me/96899899100?text=Hi%2C%20I%27m%20interested%20in%20Cardify%20Enterprise" target="_blank" rel="noopener" class="block text-center py-3 px-4 rounded-xl bg-white text-gray-900 font-semibold hover:bg-gray-100 transition-colors">
-                        Contact Sales
-                    </a>
+                    <a href="https://wa.me/96899899100?text=Hi%2C%20I%27m%20interested%20in%20Cardify%20Enterprise" target="_blank" rel="noopener" class="cardify-plan-cta cardify-plan-cta--on-dark">Contact Sales</a>
                 </div>
             </div>
 
