@@ -91,6 +91,9 @@ if ($singlePost) {
             'logo' => [
                 '@type' => 'ImageObject',
                 'url' => 'https://cardify.om/assets/images/logo.svg',
+                'creditText' => 'Cardify',
+                'copyrightNotice' => '© Cardify',
+                'license' => 'https://cardify.om/terms',
             ],
         ],
         'mainEntityOfPage' => [

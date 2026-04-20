@@ -31,7 +31,7 @@ $articleJsonLd = [
     'publisher' => [
         '@type' => 'Organization',
         'name' => $brandName,
-        'logo' => ['@type' => 'ImageObject', 'url' => 'https://cardify.om/assets/images/logo.svg'],
+        'logo' => ['@type' => 'ImageObject', 'url' => 'https://cardify.om/assets/images/logo.svg', 'creditText' => 'Cardify', 'copyrightNotice' => '© Cardify', 'license' => 'https://cardify.om/terms'],
     ],
     'inLanguage' => 'en-OM',
 ];

@@ -250,6 +250,9 @@ $datasetLd = [
         'logo'  => [
             '@type' => 'ImageObject',
             'url'   => 'https://cardify.om/assets/images/cardify-logo.png',
+            'creditText' => 'Cardify',
+            'copyrightNotice' => '© Cardify',
+            'license' => 'https://cardify.om/terms',
         ],
     ],
     'distribution'  => [
