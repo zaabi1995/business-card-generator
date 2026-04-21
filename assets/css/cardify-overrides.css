@@ -714,3 +714,34 @@ html[dir="rtl"] .omr,
 html[dir="rtl"] [data-currency="OMR"] {
     font-family: "IBM Plex Sans Arabic", "Inter", sans-serif;
 }
+
+/* Extended RTL utility flips, covers patterns spotted during audit */
+html[dir="rtl"] .justify-start { justify-content: flex-end !important; }
+html[dir="rtl"] .justify-end   { justify-content: flex-start !important; }
+html[dir="rtl"] .items-start   { align-items: flex-start; } /* vertical, no flip */
+html[dir="rtl"] .float-left    { float: right !important; }
+html[dir="rtl"] .float-right   { float: left  !important; }
+
+/* space-x-N, Tailwind emits margin-left on children; flip to margin-right */
+html[dir="rtl"] .space-x-1 > :not([hidden]) ~ :not([hidden]) { margin-right: 0.25rem !important; margin-left: 0 !important; }
+html[dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]) { margin-right: 0.5rem  !important; margin-left: 0 !important; }
+html[dir="rtl"] .space-x-3 > :not([hidden]) ~ :not([hidden]) { margin-right: 0.75rem !important; margin-left: 0 !important; }
+html[dir="rtl"] .space-x-4 > :not([hidden]) ~ :not([hidden]) { margin-right: 1rem    !important; margin-left: 0 !important; }
+html[dir="rtl"] .space-x-6 > :not([hidden]) ~ :not([hidden]) { margin-right: 1.5rem  !important; margin-left: 0 !important; }
+
+/* Positional utilities for dropdowns and menus */
+html[dir="rtl"] .origin-top-right { transform-origin: top left !important; }
+html[dir="rtl"] .origin-top-left  { transform-origin: top right !important; }
+
+/* Rounded corners, flip left/right pairs */
+html[dir="rtl"] .rounded-l-lg { border-top-right-radius: 0.5rem !important; border-bottom-right-radius: 0.5rem !important; border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; }
+html[dir="rtl"] .rounded-r-lg { border-top-left-radius:  0.5rem !important; border-bottom-left-radius:  0.5rem !important; border-top-right-radius:0 !important; border-bottom-right-radius:0 !important; }
+html[dir="rtl"] .rounded-l-md { border-top-right-radius: 0.375rem !important; border-bottom-right-radius: 0.375rem !important; border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; }
+html[dir="rtl"] .rounded-r-md { border-top-left-radius:  0.375rem !important; border-bottom-left-radius:  0.375rem !important; border-top-right-radius:0 !important; border-bottom-right-radius:0 !important; }
+
+/* Tables, flip text alignment of numeric cells only when authored as text-right */
+html[dir="rtl"] td.text-right, html[dir="rtl"] th.text-right { text-align: left !important; }
+html[dir="rtl"] td.text-left,  html[dir="rtl"] th.text-left  { text-align: right !important; }
+
+/* Breadcrumbs and separators that use chevrons, swap direction */
+html[dir="rtl"] .fa-chevron-right.breadcrumb-sep { transform: scaleX(-1); }

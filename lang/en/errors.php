@@ -30,4 +30,10 @@ return [
     'cannot_delete_self'  => 'You cannot delete your own account.',
     'subscription_expired'=> 'Your subscription expired. Renew to continue.',
     'slug_taken'          => 'That name is already taken. Pick another.',
+    'page_404_title'      => 'Page not found',
+    'page_404_body'       => 'Looks like you followed a bad link. If you think this is a problem on our end, please let us know.',
+    'page_500_title'      => 'Something went wrong',
+    'page_500_body'       => 'We hit an unexpected error. Our team has been notified. Please try again in a moment.',
+    'go_home'             => 'Go back home',
+    'contact_support'     => 'Contact support',
 ];

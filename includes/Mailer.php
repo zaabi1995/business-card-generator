@@ -730,6 +730,68 @@ HTML;
      * @param array $options Optional: ['company_id' => int, 'employee_id' => int, 'recipient_name' => string]
      * @return bool Success status
      */
+    /**
+     * Locale-aware templated mail.
+     *
+     * Pulls `{$key}_subject` and `{$key}_body` from lang/{locale}/emails.php,
+     * interpolates named params via :name, and ships via self::send().
+     *
+     * Usage:
+     *   Mailer::sendTemplated($to, 'welcome', 'ar', ['name' => 'Ali']);
+     *   Mailer::sendTemplated($to, 'otp', $employee['locale'] ?? 'en', ['code' => $code]);
+     *
+     * Wraps body in a minimal bilingual HTML shell that honors RTL for Arabic.
+     */
+    public static function sendTemplated($to, string $key, string $locale = 'en', array $params = [], array $attachments = [], array $options = [])
+    {
+        if (!class_exists('I18n')) {
+            require_once __DIR__ . '/I18n.php';
+        }
+        $subject = I18n::t("emails.{$key}_subject", $params, $locale);
+        $bodyText = I18n::t("emails.{$key}_body",    $params, $locale);
+        if ($subject === "emails.{$key}_subject" || $bodyText === "emails.{$key}_body") {
+            self::$lastError = "Templated mail key missing: emails.{$key}_{subject|body} in locale {$locale}";
+            return false;
+        }
+        $dir  = ($locale === 'ar') ? 'rtl' : 'ltr';
+        $font = ($locale === 'ar') ? '"IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif' : 'Inter, "Segoe UI", Arial, sans-serif';
+        $greet = I18n::t('emails.greeting_name', ['name' => $params['name'] ?? $params['admin_name'] ?? ''], $locale);
+        if (empty($params['name']) && empty($params['admin_name'])) {
+            $greet = I18n::t('emails.greeting_there', [], $locale);
+        }
+        $signoff     = I18n::t('emails.signoff', [], $locale);
+        $signoffTeam = I18n::t('emails.signoff_team', [], $locale);
+        $addr        = I18n::t('emails.footer_address', [], $locale);
+        $unsubLabel  = I18n::t('emails.footer_unsubscribe', [], $locale);
+
+        $ctaBlock = '';
+        if (!empty($options['cta_url'])) {
+            $ctaLabelKey = $options['cta_label_key'] ?? "{$key}_cta";
+            $ctaLabel = I18n::t("emails.{$ctaLabelKey}", $params, $locale);
+            if ($ctaLabel === "emails.{$ctaLabelKey}") { $ctaLabel = I18n::t('common.open', [], $locale); }
+            $ctaBlock = '<p style="margin:24px 0;"><a href="' . htmlspecialchars($options['cta_url']) . '" style="display:inline-block;background:#009bc1;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;">' . htmlspecialchars($ctaLabel) . '</a></p>';
+        }
+
+        $body = '<!doctype html><html lang="' . $locale . '" dir="' . $dir . '"><head><meta charset="utf-8"></head>'
+              . '<body style="margin:0;padding:0;background:#f8fafc;font-family:' . $font . ';color:#0f172a;line-height:1.55;">'
+              . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f8fafc;padding:24px 0;"><tr><td align="center">'
+              . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="background:#ffffff;border-radius:12px;padding:32px;box-shadow:0 1px 3px rgba(15,23,42,0.06);">'
+              . '<tr><td>'
+              . '<p style="margin:0 0 16px;">' . htmlspecialchars($greet) . '</p>'
+              . '<p style="margin:0 0 16px;">' . htmlspecialchars($bodyText) . '</p>'
+              . $ctaBlock
+              . '<p style="margin:24px 0 4px;">' . htmlspecialchars($signoff) . '</p>'
+              . '<p style="margin:0;color:#475569;">' . htmlspecialchars($signoffTeam) . '</p>'
+              . '</td></tr></table>'
+              . '<p style="margin:16px 0 4px;color:#94a3b8;font-size:12px;">' . htmlspecialchars($addr) . '</p>'
+              . (!empty($options['unsub_url']) ? '<p style="margin:0;color:#94a3b8;font-size:12px;"><a href="' . htmlspecialchars($options['unsub_url']) . '" style="color:#94a3b8;">' . htmlspecialchars($unsubLabel) . '</a></p>' : '')
+              . '</td></tr></table></body></html>';
+
+        self::$currentTemplate = "i18n:{$key}:{$locale}";
+        self::$currentMetadata = ['template_key' => $key, 'locale' => $locale, 'template_params' => $params];
+        return self::send($to, $subject, $body, $attachments, $options);
+    }
+
     public static function sendTemplate($to, $template, $data = [], $attachments = [], $options = []) {
         $templates = self::getTemplates();
         

@@ -1,0 +1,25 @@
+name: i18n parity check
+
+on:
+  pull_request:
+    paths:
+      - 'lang/**'
+      - 'scripts/i18n-audit.php'
+      - '.github/workflows/i18n.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'lang/**'
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - name: Run i18n audit + parity check
+        run: php scripts/i18n-audit.php
