@@ -17,10 +17,10 @@
 - [x] 002. Seed `lang/en/common.php` + `lang/ar/common.php` → 4209597 80+ common keys
 - [x] 003. Wire locale detection (`?lang=` > cookie > session > Accept-Language > `en`) → 4209597 I18n::boot() in functions.php
 - [x] 004. Global `t()` + `currentLocale()` + `currentDir()` + `isRtl()` helpers → 4209597
-- [ ] 005. Add `<html dir="<?= I18n::getDir() ?>" lang="<?= I18n::getLocale() ?>">` to every layout (`ui-header.php`, `admin-layout.php`, portal chrome).
-- [ ] 006. Preload IBM Plex Sans Arabic (400/600/700) via `<link rel="preload">` when `dir=rtl`. Fallback stack: `"IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif`.
-- [ ] 007. Add RTL-aware CSS: `.cardify-app[dir="rtl"]` selectors for margins/padding, logical properties where possible (margin-inline-start/end).
-- [ ] 008. Add language switcher component: dropdown in top nav with EN / العربية, persists to cookie, reloads with `?lang=` param.
+- [x] 005. `<html lang/dir>` wired from I18n in ui-header.php + admin-layout.php + og:locale reflects locale → 368e83e
+- [x] 006. IBM Plex Sans Arabic (300-700) loaded only when dir=rtl → 368e83e (via fonts.googleapis.com combined family param)
+- [x] 007. RTL-aware CSS: text-align flips, Tailwind margin/padding flips (1-6), icon-position swap, FA arrow glyph swap → 368e83e
+- [x] 008. `.cardify-lang-switch` pill + includes/lang-switcher.php wired into public and admin nav → 368e83e
 - [ ] 009. Split lang files: `lang/{en,ar}/{common,admin,portal,printshop,emails,errors,onboarding,wizard,marketplace,analytics,auth}.php`. Each returns an array; `I18n.php` autoloads on namespace access.
 - [ ] 010. Add CLI script `scripts/i18n-audit.php` that greps for hard-coded English strings in `admin/*.php`, `printshop/*.php`, `portal.php`, `companies.php`, etc., and reports untranslated count per file.
 - [ ] 011. Add CI check (`.github/workflows/i18n.yml`): fails PR if EN and AR keys diverge.
