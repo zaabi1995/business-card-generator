@@ -251,32 +251,38 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="lg:col-span-6 text-center lg:text-left">
                     <!-- Badge -->
                     <div class="inline-flex items-center gap-2 py-1 pl-1 pr-4 mb-6 text-sm bg-white border border-gray-200 rounded-full shadow-sm">
-                        <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 font-semibold text-xs px-3 py-1 rounded-full"><span>🇴🇲</span> Oman</span>
-                        <span class="font-medium text-gray-700">Built for teams of 100–2000</span>
+                        <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 font-semibold text-xs px-3 py-1 rounded-full"><span>🇴🇲</span> <?= htmlspecialchars(t('landing.hero_badge_loc')) ?></span>
+                        <span class="font-medium text-gray-700"><?= htmlspecialchars(t('landing.hero_badge_copy')) ?></span>
                     </div>
 
                     <!-- Headline -->
                     <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-gray-900 mb-6">
-                        One Template.
-                        <span class="text-blue-600 block">Every Employee.</span>
-                        <span class="text-gray-500 text-3xl sm:text-4xl lg:text-5xl">Done.</span>
+                        <?= htmlspecialchars(t('landing.hero_h1_line1')) ?>
+                        <span class="text-blue-600 block"><?= htmlspecialchars(t('landing.hero_h1_line2')) ?></span>
+                        <span class="text-gray-500 text-3xl sm:text-4xl lg:text-5xl"><?= htmlspecialchars(t('landing.hero_h1_line3')) ?></span>
                     </h1>
 
                     <!-- Subheadline -->
                     <p class="text-lg lg:text-xl text-gray-600 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                        Stop coordinating card orders manually. Upload your team, generate a unique card for every employee, and order professional prints — delivered across Oman.
-                        <strong class="text-gray-900">From 6 OMR per design.</strong>
+                        <?= htmlspecialchars(t('landing.hero_subhead')) ?>
+                        <strong class="text-gray-900"><?= htmlspecialchars(t('landing.hero_price_tag')) ?></strong>
                     </p>
 
                     <!-- CTA Buttons -->
                     <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-10">
                         <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl hover:-translate-y-0.5 text-lg">
-                            Start Free
+                            <?= htmlspecialchars(t('landing.cta_start_free')) ?>
                             <i class="fa-solid fa-arrow-right"></i>
                         </a>
-                        <a href="https://wa.me/96899899100?text=Hi%2C%20I'd%20like%20a%20demo%20of%20Cardify%20for%20my%20company" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all text-lg">
+                        <?php
+                            $cardifyDemoMsg = (currentLocale() === 'ar')
+                                ? 'مرحباً، أرغب بعرض توضيحي لكارديفاي لشركتي'
+                                : 'Hi, I would like a demo of Cardify for my company';
+                            $cardifyDemoUrl = 'https://wa.me/96899899100?text=' . rawurlencode($cardifyDemoMsg);
+                        ?>
+                        <a href="<?= htmlspecialchars($cardifyDemoUrl) ?>" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all text-lg">
                             <i class="fa-brands fa-whatsapp"></i>
-                            Request a Demo
+                            <?= htmlspecialchars(t('landing.cta_request_demo')) ?>
                         </a>
                     </div>
 
@@ -284,19 +290,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="flex flex-wrap items-center justify-center lg:justify-start gap-3 text-sm">
                         <div class="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-full">
                             <i class="fa-solid fa-circle-check"></i>
-                            <span>Free to Design</span>
+                            <span><?= htmlspecialchars(t('landing.trust_free_design')) ?></span>
                         </div>
                         <div class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full">
                             <i class="fa-solid fa-print"></i>
-                            <span>Printed by BHD Muscat</span>
+                            <span><?= htmlspecialchars(t('landing.trust_printed_by')) ?></span>
                         </div>
                         <div class="flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full">
                             <i class="fa-solid fa-users"></i>
-                            <span>Bulk CSV Import</span>
+                            <span><?= htmlspecialchars(t('landing.trust_bulk_csv')) ?></span>
                         </div>
                         <div class="flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full">
                             <i class="fa-solid fa-language"></i>
-                            <span>Arabic + English</span>
+                            <span><?= htmlspecialchars(t('landing.trust_bilingual')) ?></span>
                         </div>
                     </div>
                 </div>
@@ -389,22 +395,22 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
                         <i class="fa-solid fa-palette text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-bold mb-2">Design Once</h3>
-                    <p class="text-blue-100 text-sm">Create one template, generate cards for all your employees automatically</p>
+                    <h3 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_design_title')) ?></h3>
+                    <p class="text-blue-100 text-sm"><?= htmlspecialchars(t('landing.vp_design_body')) ?></p>
                 </div>
                 <div class="flex flex-col items-center">
                     <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
                         <i class="fa-solid fa-print text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-bold mb-2">Print Instantly</h3>
-                    <p class="text-blue-100 text-sm">Order from verified local print shops directly from your dashboard</p>
+                    <h3 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_print_title')) ?></h3>
+                    <p class="text-blue-100 text-sm"><?= htmlspecialchars(t('landing.vp_print_body')) ?></p>
                 </div>
                 <div class="flex flex-col items-center">
                     <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
                         <i class="fa-solid fa-gift text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-bold mb-2">Start Free</h3>
-                    <p class="text-blue-100 text-sm">Free starter plan with no credit card required. Upgrade when you grow</p>
+                    <h3 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_free_title')) ?></h3>
+                    <p class="text-blue-100 text-sm"><?= htmlspecialchars(t('landing.vp_free_body')) ?></p>
                 </div>
             </div>
         </div>

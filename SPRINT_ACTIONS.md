@@ -36,7 +36,7 @@
 
 ## B, i18n Page-by-Page Translation (021-080)
 
-- [ ] 021. Translate `index.php` (landing page) headlines, value props, CTAs.
+- [x] 021. Landing hero + value-prop banner wrapped in t() via new landing.php namespace (22 keys EN+AR); demo-request WhatsApp message auto-switches to Arabic when locale=ar → PENDING_SHA. Features/how-it-works/pricing/testimonials/blog/resources/footer deferred to actions 511-517 (see Appended).
 - [ ] 022. Translate `login.php` + OTP input flow.
 - [ ] 023. Translate `register.php` / company signup.
 - [ ] 024. Translate `about.php`.
@@ -592,3 +592,11 @@
 ## Appended Actions (discovered during iterations)
 
 <!-- Future iterations append here -->
+
+- [ ] 511. index.php: translate `#features` section (6 feature tiles: Design Once, Verified Print Shops, Arabic & English, Team & Departments, Smart QR Codes, Employee Portal). Extend landing.php with feat_* keys.
+- [ ] 512. index.php: translate `#how-it-works` section (3 steps: Create Account, Add Team, Print & Share). Extend with how_* keys.
+- [ ] 513. index.php: translate `#pricing` section (Starter/Professional/Business/Enterprise tiers, feature lists, CTAs). Dedicated lang/{en,ar}/pricing.php.
+- [ ] 514. index.php: translate `#testimonials` section (4 testimonial quotes, author names, companies). Dedicated lang/{en,ar}/testimonials.php.
+- [ ] 515. index.php: translate `From the Blog` heading + view-all CTA. Blog post titles stay in their authored locale.
+- [ ] 516. index.php: translate `#resources` section (Free Tools card, Omani Logo Library card, Oman Business Index card).
+- [ ] 517. includes/ui-footer.php: translate nav groups (Product, Company, Resources, Legal), column headers, newsletter copy, copyright line.
