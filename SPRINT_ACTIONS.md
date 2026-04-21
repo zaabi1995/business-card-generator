@@ -37,7 +37,7 @@
 ## B, i18n Page-by-Page Translation (021-080)
 
 - [x] 021. Landing hero + value-prop banner wrapped in t() via new landing.php namespace (22 keys EN+AR); demo-request WhatsApp message auto-switches to Arabic when locale=ar → aa3f12c. Features/how-it-works/pricing/testimonials/blog/resources/footer deferred to actions 511-517 (see Appended).
-- [x] 022. `login.php` fully t()-ified: headline, register-as links, form labels, placeholders, remember/forgot, submit, one-login panel, role badges, back-home, right-panel welcome + tagline + trust signals. OTP labels already live in auth.php namespace, wired when OTP UI ships (actions 112-113). → PENDING_SHA
+- [x] 022. `login.php` fully t()-ified: headline, register-as links, form labels, placeholders, remember/forgot, submit, one-login panel, role badges, back-home, right-panel welcome + tagline + trust signals. OTP labels already live in auth.php namespace, wired when OTP UI ships (actions 112-113). → b6e9873
 - [ ] 023. Translate `register.php` / company signup.
 - [ ] 024. Translate `about.php`.
 - [ ] 025. Translate `careers.php`.
