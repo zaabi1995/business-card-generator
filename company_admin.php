@@ -108,16 +108,35 @@ try {
     $userCompanyId = $_SESSION['user_company_id'] ?? null;
     $userRole = $_SESSION['user_role'] ?? null;
 
-    // Only admin-level roles can access the company admin panel
+    // Only admin-level roles can access the company admin panel.
+    // Non-admin roles (e.g. employees) go to their own home, never back through
+    // login (stale session would redirect them here again and loop).
     $adminRoles = ['super_admin', 'admin', 'company', 'company_admin'];
     if (!in_array($userRole, $adminRoles)) {
-        header('Location: ' . getBasePath() . 'login.php?error=unauthorized');
+        if ($userRole === 'print_shop') {
+            header('Location: ' . getBasePath() . 'printshop/dashboard.php');
+        } elseif ($userRole === 'employee' && !empty($_SESSION['company_slug'])) {
+            header('Location: ' . getBasePath() . $_SESSION['company_slug'] . '/');
+        } else {
+            header('Location: ' . getBasePath() . 'login.php?error=unauthorized');
+        }
         exit;
     }
 
-    // Super admins can access any company, others must match their own company
+    // Admin-level user but wrong company: bounce to their OWN company admin
+    // instead of /login.php (which could send them right back and loop).
     if ($userRole !== 'super_admin' && $userCompanyId && $userCompanyId !== $company['id']) {
-        header('Location: ' . getBasePath() . 'login.php?error=unauthorized');
+        $ownSlug = $_SESSION['company_slug'] ?? null;
+        if (!$ownSlug) {
+            $ownCompany = findCompanyById($userCompanyId);
+            $ownSlug = $ownCompany['slug'] ?? null;
+        }
+        if ($ownSlug && $ownSlug !== $companySlug) {
+            header('Location: ' . getBasePath() . $ownSlug . '/admin/');
+        } else {
+            // No usable own-slug: force a clean sign-out so they can re-auth
+            header('Location: ' . getBasePath() . 'login.php?error=unauthorized');
+        }
         exit;
     }
 
