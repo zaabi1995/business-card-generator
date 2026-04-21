@@ -1,6 +1,6 @@
 # Cardify.om SEO Phase 1: Technical SEO Foundation
 
-> **Goal**: Make Cardify.om fully discoverable by search engines, optimized for social sharing, and instrumented with analytics — targeting 1000+ customers through organic search in Oman.
+> **Goal**: Make Cardify.om fully discoverable by search engines, optimized for social sharing, and instrumented with analytics, targeting 1000+ customers through organic search in Oman.
 
 ## Context
 
@@ -34,7 +34,7 @@ Create `/sitemap.php` that outputs XML sitemap:
 ### 1.3 Google Analytics
 - Add `GA_MEASUREMENT_ID` to `config.example.php` (and actual config on VPS)
 - Add gtag.js script to `includes/ui-header.php`, only when GA_MEASUREMENT_ID is configured
-- Fire on all pages (public and admin — admin traffic is negligible)
+- Fire on all pages (public and admin, admin traffic is negligible)
 
 ### 1.4 Google Search Console
 - Add `GOOGLE_SITE_VERIFICATION` to config
@@ -71,11 +71,11 @@ Add to `includes/ui-header.php` after existing meta tags:
 
 ### 2.4 Per-Page Variables
 Every public page must set before including ui-header.php:
-- `$pageTitle` — Already exists, keep using
-- `$pageDescription` — Unique, keyword-rich, 120-160 chars
-- `$canonicalUrl` — Full URL for that page
-- `$ogImage` — Optional override (default: cardify-og.png)
-- `$ogType` — Optional override (default: "website", blog posts use "article")
+- `$pageTitle`, Already exists, keep using
+- `$pageDescription`, Unique, keyword-rich, 120-160 chars
+- `$canonicalUrl`, Full URL for that page
+- `$ogImage`, Optional override (default: cardify-og.png)
+- `$ogType`, Optional override (default: "website", blog posts use "article")
 
 ### 2.5 OG Image
 Create a 1200x630 branded PNG at `assets/images/cardify-og.png`:
@@ -220,20 +220,20 @@ Long-tail: "free business card maker Oman", "digital NFC business cards Muscat",
 ---
 
 ## Files to Create
-- `robots.txt` — Crawler directives
-- `sitemap.php` — Dynamic XML sitemap
-- `assets/images/cardify-og.png` — Social sharing image
+- `robots.txt`, Crawler directives
+- `sitemap.php`, Dynamic XML sitemap
+- `assets/images/cardify-og.png`, Social sharing image
 
 ## Files to Modify
-- `includes/ui-header.php` — OG tags, Twitter cards, canonical, GA, JSON-LD, Search Console
-- `.htaccess` — Blog/career/static clean URL rewrites, sitemap rewrite, HSTS
-- `index.php` — Organization + SoftwareApplication JSON-LD, updated meta
-- `about.php` — Updated meta description
-- `blog.php` — Article JSON-LD, updated meta, clean URL links
-- `careers.php` — JobPosting JSON-LD, updated meta, clean URL links
-- `contact.php` — Updated meta description
-- `intro.php` — Updated meta description
-- `terms.php`, `privacy.php`, `security.php`, `cookies.php` — Updated meta
-- `digital_card.php` — "Powered by Cardify" footer
-- `admin/send_card_email.php` — Cardify footer in emails
-- `config.example.php` — GA_MEASUREMENT_ID, GOOGLE_SITE_VERIFICATION constants
+- `includes/ui-header.php`, OG tags, Twitter cards, canonical, GA, JSON-LD, Search Console
+- `.htaccess`, Blog/career/static clean URL rewrites, sitemap rewrite, HSTS
+- `index.php`, Organization + SoftwareApplication JSON-LD, updated meta
+- `about.php`, Updated meta description
+- `blog.php`, Article JSON-LD, updated meta, clean URL links
+- `careers.php`, JobPosting JSON-LD, updated meta, clean URL links
+- `contact.php`, Updated meta description
+- `intro.php`, Updated meta description
+- `terms.php`, `privacy.php`, `security.php`, `cookies.php`, Updated meta
+- `digital_card.php`, "Powered by Cardify" footer
+- `admin/send_card_email.php`, Cardify footer in emails
+- `config.example.php`, GA_MEASUREMENT_ID, GOOGLE_SITE_VERIFICATION constants

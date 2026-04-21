@@ -1,7 +1,7 @@
-# Public Card Sections — Bio, Services, Gallery, Testimonials, Lead Form
+# Public Card Sections, Bio, Services, Gallery, Testimonials, Lead Form
 
 **Branch:** `infy-card-sections-v2`
-**Inspiration (clean-room):** Infy vCard `vcard_sections` — one row per vcard with a flag column per section type.
+**Inspiration (clean-room):** Infy vCard `vcard_sections`, one row per vcard with a flag column per section type.
 
 ## Goal
 Enhance `/{slug}/card/{employee_id}` (rendered by `digital_card.php`) with richer below-the-fold sections so scan recipients see a full profile. Card owner edits via the employee portal (`/{slug}/employee` → `company/views/employee.php`).
@@ -11,13 +11,13 @@ Enhance `/{slug}/card/{employee_id}` (rendered by `digital_card.php`) with riche
 - Mobile-first single-column render below existing contact block.
 
 ## Schema (migration `044_card_sections.php`)
-Two-level model — master flags row + child rows for lists:
+Two-level model, master flags row + child rows for lists:
 
-1. `employee_card_sections` — 1:1 with employee (toggles + bio_text + section_order CSV + lead_form_email)
-2. `employee_card_services` — id, employee_id, icon, title, description, position
-3. `employee_card_gallery` — id, employee_id, file_path, caption, position
-4. `employee_card_testimonials` — id, employee_id, name, photo_path, quote, position
-5. `employee_card_leads` — id, employee_id, company_id, name, email, phone, message, ip, created_at
+1. `employee_card_sections`, 1:1 with employee (toggles + bio_text + section_order CSV + lead_form_email)
+2. `employee_card_services`, id, employee_id, icon, title, description, position
+3. `employee_card_gallery`, id, employee_id, file_path, caption, position
+4. `employee_card_testimonials`, id, employee_id, name, photo_path, quote, position
+5. `employee_card_leads`, id, employee_id, company_id, name, email, phone, message, ip, created_at
 
 All rows cascade on employee delete.
 

@@ -1,7 +1,7 @@
 # Cardify.om Security Audit Report
 **Date:** 2026-03-12
 **Auditor:** Comprehensive automated audit (5 parallel agents + manual review)
-**Scope:** Full backend codebase — authentication, database, API, billing, file uploads, email, multi-tenancy
+**Scope:** Full backend codebase, authentication, database, API, billing, file uploads, email, multi-tenancy
 
 ---
 
@@ -19,20 +19,20 @@ Cardify.om is a PHP/MySQL multi-tenant SaaS for digital business card generation
 
 | # | Issue | File(s) | Fix |
 |---|-------|---------|-----|
-| C1 | **Session fixation** — no `session_regenerate_id()` on login | `includes/Auth.php` | Added `session_regenerate_id(true)` to all 3 login methods |
-| C2 | **No brute force protection** — unlimited login attempts | `includes/Auth.php` | Added IP-based rate limiting: 10 attempts per 15 minutes |
-| C3 | **20 debug/test files** in production — info disclosure, potential RCE | `admin/debug-*`, `admin/test-*`, `fix-*`, `test_*` | Removed all 20 files from repo |
-| C4 | **SVG upload XSS** — SVG files can contain embedded JavaScript | `includes/functions.php`, `admin/save_template.php`, `includes/PrintShop.php` | Removed `image/svg+xml` from all upload allowed types |
+| C1 | **Session fixation**, no `session_regenerate_id()` on login | `includes/Auth.php` | Added `session_regenerate_id(true)` to all 3 login methods |
+| C2 | **No brute force protection**, unlimited login attempts | `includes/Auth.php` | Added IP-based rate limiting: 10 attempts per 15 minutes |
+| C3 | **20 debug/test files** in production, info disclosure, potential RCE | `admin/debug-*`, `admin/test-*`, `fix-*`, `test_*` | Removed all 20 files from repo |
+| C4 | **SVG upload XSS**, SVG files can contain embedded JavaScript | `includes/functions.php`, `admin/save_template.php`, `includes/PrintShop.php` | Removed `image/svg+xml` from all upload allowed types |
 | C5 | **Webhook processes payments without signature** | `webhooks/payment.php`, `includes/Billing.php` | Require signature when secure_key configured; use `hash_equals` |
-| C6 | **Hardcoded credentials on server** — ADMIN_PASSWORD, weak email password | `config.php` (server only) | Remove ADMIN_PASSWORD, rotate email password during deploy |
+| C6 | **Hardcoded credentials on server**, ADMIN_PASSWORD, weak email password | `config.php` (server only) | Remove ADMIN_PASSWORD, rotate email password during deploy |
 
 ### HIGH
 
 | # | Issue | File(s) | Fix |
 |---|-------|---------|-----|
 | H1 | **Missing CSRF on 6 admin endpoints** | `admin/generated.php`, `order_detail.php`, `order_print.php`, `print_orders.php`, `printer.php`, `share.php` | Added `validateCSRFToken()` to all 6 files |
-| H2 | **API endpoint without auth** — employee email enumeration | `api/check-employee.php` | Added `Auth::isLoggedIn()` check and POST-only requirement |
-| H3 | **Logout via GET parameter** — CSRF vulnerability | `admin/index.php` | Removed GET logout; use dedicated `logout.php` |
+| H2 | **API endpoint without auth**, employee email enumeration | `api/check-employee.php` | Added `Auth::isLoggedIn()` check and POST-only requirement |
+| H3 | **Logout via GET parameter**, CSRF vulnerability | `admin/index.php` | Removed GET logout; use dedicated `logout.php` |
 | H4 | **CORS wildcard** on public API | `api/get_templates_public.php` | Restrict to `cardify.om` origins in production |
 | H5 | **No PHP execution prevention** in upload directories | `uploads/`, `data/`, `logs/` | Added `.htaccess` files to deny PHP execution |
 | H6 | **Download endpoint without auth** | `download_card.php` | Added `Auth::isLoggedIn()` check |
@@ -50,11 +50,11 @@ Cardify.om is a PHP/MySQL multi-tenant SaaS for digital business card generation
 | M5 | **User role leaked in error** | `api/print-ready.php` | Removed role from access denied message |
 | M6 | **GitHub PAT in git remote URL** on server | Server `.git/config` | Will fix during deployment |
 | M7 | **OpenAI API key exposed** in server config | Server `config.php` | Move to environment variable during deploy |
-| M8 | **Contact form doesn't send email** | `contact.php` | Functional gap — noted for implementation |
+| M8 | **Contact form doesn't send email** | `contact.php` | Functional gap, noted for implementation |
 | M9 | **Password reset token not hashed** in DB | `forgot-password.php` | Low risk (tokens expire in 1 hour, use random_bytes) |
 | M10 | **No rate limiting on password reset** | `forgot-password.php` | Recommended for future improvement |
 | M11 | **No Content-Security-Policy header** | `config.php` | Complex to implement with inline scripts; recommended for future |
-| M12 | **Stripe integration stub** — returns "not implemented" | `includes/Billing.php` | Informational — remove or implement when needed |
+| M12 | **Stripe integration stub**, returns "not implemented" | `includes/Billing.php` | Informational, remove or implement when needed |
 
 ---
 
@@ -66,24 +66,24 @@ A second deep audit pass uncovered additional issues. All fixed in commit a876b4
 
 | # | Issue | File(s) | Fix |
 |---|-------|---------|-----|
-| C7 | **Payment amount not re-verified on callback** — attacker could forge amount | `includes/Billing.php` | Compare callback Amount against stored transaction amount; reject mismatches |
-| C8 | **amwalpay/callback.php passes null signature** — bypasses verification | `amwalpay/callback.php` | Read signature from header/POST instead of hardcoded null |
+| C7 | **Payment amount not re-verified on callback**, attacker could forge amount | `includes/Billing.php` | Compare callback Amount against stored transaction amount; reject mismatches |
+| C8 | **amwalpay/callback.php passes null signature**, bypasses verification | `amwalpay/callback.php` | Read signature from header/POST instead of hardcoded null |
 
 ### HIGH
 
 | # | Issue | File(s) | Fix |
 |---|-------|---------|-----|
-| H9 | **IDOR in print-ready PDF** — any user can generate/download any order's PDF | `api/print-ready.php` | Added company ownership verification to detect, generate, and download handlers |
+| H9 | **IDOR in print-ready PDF**, any user can generate/download any order's PDF | `api/print-ready.php` | Added company ownership verification to detect, generate, and download handlers |
 | H10 | **Employee profile update missing CSRF** | `company/views/employee.php` | Added `validateCSRFToken()` check |
-| H11 | **Company context set for unauthenticated visitors** — session pollution | `company/index.php` | Only call `setCompanyContext()` for authenticated company members |
+| H11 | **Company context set for unauthenticated visitors**, session pollution | `company/index.php` | Only call `setCompanyContext()` for authenticated company members |
 | H12 | **Portal passcode timing-vulnerable comparison** | `portal.php` | Changed `===` to `hash_equals()` |
 
 ### LOW
 
 | # | Issue | File(s) | Fix |
 |---|-------|---------|-----|
-| L1 | **requireAdmin() doesn't enforce role** — any logged-in user passes | `includes/functions.php` | Added admin role verification |
-| L2 | **Billing plan limits fail-open** — allows unlimited access if DB fails | `includes/Billing.php` | Changed to fail-closed (deny if limits can't be verified) |
+| L1 | **requireAdmin() doesn't enforce role**, any logged-in user passes | `includes/functions.php` | Added admin role verification |
+| L2 | **Billing plan limits fail-open**, allows unlimited access if DB fails | `includes/Billing.php` | Changed to fail-closed (deny if limits can't be verified) |
 
 ---
 
@@ -91,17 +91,17 @@ A second deep audit pass uncovered additional issues. All fixed in commit a876b4
 
 The codebase already has strong fundamentals:
 
-- **PDO with prepared statements** (`ATTR_EMULATE_PREPARES = false`) — prevents SQL injection
+- **PDO with prepared statements** (`ATTR_EMULATE_PREPARES = false`), prevents SQL injection
 - **bcrypt password hashing** (`PASSWORD_BCRYPT` / `PASSWORD_DEFAULT`)
-- **CSRF token system** — implemented on most forms
-- **Input sanitization** — `htmlspecialchars(ENT_QUOTES, UTF-8)` and `filter_var` used
-- **File upload validation** — MIME type verification via `finfo_file()`
-- **Multi-tenancy isolation** — company_id scoping on all data operations
-- **Role-based access control** — Auth class with role hierarchy
+- **CSRF token system**, implemented on most forms
+- **Input sanitization**, `htmlspecialchars(ENT_QUOTES, UTF-8)` and `filter_var` used
+- **File upload validation**, MIME type verification via `finfo_file()`
+- **Multi-tenancy isolation**, company_id scoping on all data operations
+- **Role-based access control**, Auth class with role hierarchy
 - **HTTPS enforcement** in production
-- **Security headers** — X-Content-Type-Options, X-Frame-Options, HSTS
-- **Audit logging** — AuditLog class tracks user actions
-- **Config secrets excluded from git** — `.gitignore` covers `config.php`
+- **Security headers**, X-Content-Type-Options, X-Frame-Options, HSTS
+- **Audit logging**, AuditLog class tracks user actions
+- **Config secrets excluded from git**, `.gitignore` covers `config.php`
 
 ---
 
@@ -123,30 +123,30 @@ The codebase already has strong fundamentals:
 ## Files Modified
 
 ### Security Fixes
-- `includes/Auth.php` — session regeneration, brute force protection
-- `includes/Billing.php` — signature verification, LIKE wildcard escape
-- `includes/functions.php` — removed SVG from uploads
-- `includes/PrintShop.php` — removed SVG from uploads
-- `admin/save_template.php` — CSRF check, removed SVG from uploads
-- `admin/index.php` — removed GET logout
-- `webhooks/payment.php` — POST-only, signature required
-- `api/check-employee.php` — auth required, generic errors
-- `api/get_templates_public.php` — CORS restriction, no slug leak
-- `api/print-ready.php` — generic errors, no role leak, IDOR ownership checks
-- `download_card.php` — auth required
-- `amwalpay/callback.php` — signature from header/POST instead of null
-- `company/views/employee.php` — CSRF on profile update
-- `company/index.php` — company context only for authenticated users
-- `portal.php` — timing-safe passcode comparison
-- `company_admin.php` — removed dead route
+- `includes/Auth.php`, session regeneration, brute force protection
+- `includes/Billing.php`, signature verification, LIKE wildcard escape
+- `includes/functions.php`, removed SVG from uploads
+- `includes/PrintShop.php`, removed SVG from uploads
+- `admin/save_template.php`, CSRF check, removed SVG from uploads
+- `admin/index.php`, removed GET logout
+- `webhooks/payment.php`, POST-only, signature required
+- `api/check-employee.php`, auth required, generic errors
+- `api/get_templates_public.php`, CORS restriction, no slug leak
+- `api/print-ready.php`, generic errors, no role leak, IDOR ownership checks
+- `download_card.php`, auth required
+- `amwalpay/callback.php`, signature from header/POST instead of null
+- `company/views/employee.php`, CSRF on profile update
+- `company/index.php`, company context only for authenticated users
+- `portal.php`, timing-safe passcode comparison
+- `company_admin.php`, removed dead route
 
 ### New Protection Files
-- `uploads/.htaccess` — prevent PHP execution
-- `data/.htaccess` — prevent direct file access
-- `logs/.htaccess` — deny all access
+- `uploads/.htaccess`, prevent PHP execution
+- `data/.htaccess`, prevent direct file access
+- `logs/.htaccess`, deny all access
 
 ### Configuration
-- `config.example.php` — session hardening, Permissions-Policy header
+- `config.example.php`, session hardening, Permissions-Policy header
 
 ### Removed (20 debug/test files)
 - `admin/analytics_debug.php`, `admin/check-php-errors.php`, `admin/db-check.php`

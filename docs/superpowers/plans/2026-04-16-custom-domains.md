@@ -1,4 +1,4 @@
-# Plan — Custom Domain per Card (ported from Infy vCard)
+# Plan, Custom Domain per Card (ported from Infy vCard)
 
 **Date:** 2026-04-16
 **Branch:** `infy-custom-domains`
@@ -11,7 +11,7 @@ their Cardify card. They add a CNAME → cardify.om → backend resolves the
 incoming `Host:` header to a card. v1 = pure PHP + DB. SSL is manual via
 certbot per domain.
 
-## DB — migration 050
+## DB, migration 050
 Table `employee_custom_domains`:
 - `id` VARCHAR(36) PK
 - `employee_id` VARCHAR(36) NOT NULL  (FK logical → employees)
@@ -25,7 +25,7 @@ Table `employee_custom_domains`:
 - `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 - INDEX(domain), INDEX(employee_id), INDEX(company_id)
 
-Idempotent — `SHOW TABLES LIKE` guard.
+Idempotent, `SHOW TABLES LIKE` guard.
 
 ## Verification flow (CNAME)
 1. Admin opens employee row → "Custom Domain" panel → enters `ceo.acme.com`.
@@ -50,7 +50,7 @@ New file `custom_domain_router.php`:
 
 `index.php` and/or `router.php` will require this BEFORE existing routing,
 returning early if it serves a card. If it returns false, original flow runs
-unchanged. **No nginx changes for v1** — Ali manually adds `server_name` per
+unchanged. **No nginx changes for v1**, Ali manually adds `server_name` per
 domain when issuing certs.
 
 ## Admin UI
@@ -58,8 +58,7 @@ domain when issuing certs.
   company + add/verify/delete).
 - Plus an inline panel link from the employee edit modal (small CTA: "Manage
   Custom Domain →" deep links to the admin page filtered by employee).
-- Pro-tier gate via `Billing::getCompanyPlanInfo($companyId)` —
-  free plan sees an upgrade prompt instead of the form.
+- Pro-tier gate via `Billing::getCompanyPlanInfo($companyId)`, free plan sees an upgrade prompt instead of the form.
 
 ## v1 scope
 **INCLUDED**
@@ -107,7 +106,7 @@ For each verified domain, on the VPS:
 6. Cert auto-renews via certbot's systemd timer.
 
 ## Risk
-- PHP+DB is contained, can't break existing routing — `custom_domain_router.php`
+- PHP+DB is contained, can't break existing routing, `custom_domain_router.php`
   short-circuits ONLY when host is unknown. Safe to merge.
 - Nginx vhost edits are NOT done by code; require manual approval per domain.
 

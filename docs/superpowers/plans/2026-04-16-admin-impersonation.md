@@ -1,29 +1,29 @@
-# Admin "Login as" Impersonation — Plan
+# Admin "Login as" Impersonation, Plan
 
 **Date:** 2026-04-16
 **Branch:** `infy-admin-impersonate`
 **Estimate:** ~4 hours
 
 ## Problem
-Super admins need to reproduce user issues and answer support questions from the user's perspective. Currently they must reset passwords to impersonate — destructive and traceable only to password changes.
+Super admins need to reproduce user issues and answer support questions from the user's perspective. Currently they must reset passwords to impersonate, destructive and traceable only to password changes.
 
 ## Solution
 Session-swap impersonation. Super admin clicks "Login as" on a company row → their admin session is stashed, they become that company admin → sticky banner on every page → "Exit impersonation" restores admin session.
 
 ## What is a "user" in Cardify?
-Cardify's primary tenants are **companies** (each has `admin_email` + `password_hash` in the `companies` table, or a linked row in `users` with `role IN ('company_admin','admin','company')`). For v1, we impersonate **company admins** — i.e. each row in `/admin/super/companies.php` gets a "Login as" action. Employee impersonation is out of scope for this PR.
+Cardify's primary tenants are **companies** (each has `admin_email` + `password_hash` in the `companies` table, or a linked row in `users` with `role IN ('company_admin','admin','company')`). For v1, we impersonate **company admins**, i.e. each row in `/admin/super/companies.php` gets a "Login as" action. Employee impersonation is out of scope for this PR.
 
 ## Files to touch
 
 ### New
-- `admin/impersonate.php` — POST handler for start/stop
-- `includes/Impersonation.php` — helper class (isImpersonating, banner, guards)
+- `admin/impersonate.php`, POST handler for start/stop
+- `includes/Impersonation.php`, helper class (isImpersonating, banner, guards)
 
 ### Modified
-- `admin/super/companies.php` — add "Login as" button to each row + JS confirm modal
-- `includes/admin-layout.php` — inject banner at top of `<body>` when impersonating
-- `includes/Auth.php` — `logout()` must clear impersonation stash so it never persists
-- `logout.php` — same (belt + suspenders)
+- `admin/super/companies.php`, add "Login as" button to each row + JS confirm modal
+- `includes/admin-layout.php`, inject banner at top of `<body>` when impersonating
+- `includes/Auth.php`, `logout()` must clear impersonation stash so it never persists
+- `logout.php`, same (belt + suspenders)
 
 ## Routes
 
@@ -34,7 +34,7 @@ Cardify's primary tenants are **companies** (each has `admin_email` + `password_
 4. Stash current session snapshot into `$_SESSION['impersonator']`:
    - `admin_id`, `admin_email`, `admin_name`, `admin_role` (super_admin)
    - `started_at` (ISO timestamp)
-   - `audit_id` (UUID — so stop can link to same row)
+   - `audit_id` (UUID, so stop can link to same row)
 5. Log to `audit_logs`: action=`impersonate_start`, entity_type=`company`, entity_id=company.id, after_data={admin_email, target_company, target_admin_email}
 6. Overwrite session: set `user_id='company_'.$company['id']`, `user_role='company_admin'`, `company_id`, `company_slug`, `company_name`, `user_email=admin_email`, `user_name=company.name`
 7. `session_regenerate_id(true)` so old session id isn't reusable
@@ -73,7 +73,7 @@ $_SESSION['impersonator'] = [
     <div>
       <i class="fa-solid fa-user-secret mr-2"></i>
       You are logged in as <strong>{target_company_name}</strong>
-      (admin: {admin_email}) — started {relative_time}
+      (admin: {admin_email}), started {relative_time}
     </div>
     <form method="POST" action="{basePath}admin/impersonate.php?action=stop" class="m-0">
       <input type="hidden" name="csrf_token" value="...">
@@ -91,15 +91,15 @@ Add `body { padding-top: 40px !important; }` when impersonating so banner doesn'
 1. **Admin-only start**: only `super_admin` can POST start. Explicit `Auth::requireRole('super_admin')` at top of handler BEFORE any DB work.
 2. **CSRF**: both start and stop require valid `csrf_token`. Existing `functions.php` already provides `getCsrfToken()` / `validateCsrfToken()` helpers.
 3. **Audit log**: every start and stop writes a row with admin_id, target_company_id, ip, user_agent (AuditLog already captures these).
-4. **Logout clears stash**: modify `Auth::logout()` to call `session_unset()` — already does. Also explicitly `unset($_SESSION['impersonator'])` before destroy. If someone logs out while impersonating, they should come back as themselves — actually simpler: just destroy everything, make them log in fresh. Document this.
+4. **Logout clears stash**: modify `Auth::logout()` to call `session_unset()`, already does. Also explicitly `unset($_SESSION['impersonator'])` before destroy. If someone logs out while impersonating, they should come back as themselves, actually simpler: just destroy everything, make them log in fresh. Document this.
 5. **Nested impersonation blocked**: if `$_SESSION['impersonator']` is already set, the start handler refuses (prevents admin-A impersonates admin-B impersonates C).
-6. **Sensitive actions warning**: for v1, we add a CSS class `data-impersonating="true"` on `<body>` when active. Defer actually disabling password-change forms to a follow-up — out of scope for 4h estimate but documented in PR.
+6. **Sensitive actions warning**: for v1, we add a CSS class `data-impersonating="true"` on `<body>` when active. Defer actually disabling password-change forms to a follow-up, out of scope for 4h estimate but documented in PR.
 7. **Session fixation**: `session_regenerate_id(true)` on both start and stop.
 
 ## Audit log entries
 Uses existing `audit_logs` table. Two actions:
-- `impersonate_start` — entity_type=`company`, entity_id=target company id, after_data={admin_id, admin_email, target_company_id, target_admin_email, audit_id}
-- `impersonate_stop` — entity_type=`company`, entity_id=target company id, before_data={audit_id, started_at}, after_data={stopped_at, duration_seconds}
+- `impersonate_start`, entity_type=`company`, entity_id=target company id, after_data={admin_id, admin_email, target_company_id, target_admin_email, audit_id}
+- `impersonate_stop`, entity_type=`company`, entity_id=target company id, before_data={audit_id, started_at}, after_data={stopped_at, duration_seconds}
 
 Queryable via existing `/admin/audit-logs.php` with `action=impersonate_start,impersonate_stop`.
 
@@ -120,9 +120,9 @@ Add a button between "Visit Portal" and "Delete":
 1. `php -l` every touched file
 2. Log in as super admin → see "Login as" on each row
 3. Click Login as → confirm → land on company dashboard with banner
-4. Navigate around — banner persists on every admin page
+4. Navigate around, banner persists on every admin page
 5. Click Exit → returned to `/admin/super/companies.php` as super_admin, banner gone
-6. `SELECT * FROM audit_logs WHERE action LIKE 'impersonate%' ORDER BY created_at DESC LIMIT 4` — 2 rows visible
+6. `SELECT * FROM audit_logs WHERE action LIKE 'impersonate%' ORDER BY created_at DESC LIMIT 4`, 2 rows visible
 7. Log out while impersonating → log back in → not impersonating (stash cleared)
 8. Non-super-admin POST to `impersonate.php` → 403/redirect
 9. Missing CSRF token → rejected

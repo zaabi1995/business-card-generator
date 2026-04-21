@@ -3,7 +3,7 @@
 **Branch:** `infy-nfc-provisioning`
 **Goal:** Print shops/admins program physical NFC tags with each employee's Cardify card URL using a phone's Web NFC API.
 
-## Schema — `nfc_cards`
+## Schema, `nfc_cards`
 ```sql
 CREATE TABLE nfc_cards (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -22,12 +22,12 @@ CREATE TABLE nfc_cards (
 ```
 
 ## Files
-- `database/migrations/051_nfc_cards.php` — idempotent table create
-- `admin/nfc/batch.php` — bulk QR sheet generator (CSV upload or all employees) + progress
-- `admin/nfc/write.php?eid=X` — Web NFC writer page (mobile, Chrome Android)
-- `admin/nfc/mark-programmed.php` — POST endpoint to record write
-- `admin/nfc/sheet.php?batch=X` — print-friendly QR sheet for batch
-- `includes/admin-layout.php` — add "NFC Tags" sidebar entry
+- `database/migrations/051_nfc_cards.php`, idempotent table create
+- `admin/nfc/batch.php`, bulk QR sheet generator (CSV upload or all employees) + progress
+- `admin/nfc/write.php?eid=X`, Web NFC writer page (mobile, Chrome Android)
+- `admin/nfc/mark-programmed.php`, POST endpoint to record write
+- `admin/nfc/sheet.php?batch=X`, print-friendly QR sheet for batch
+- `includes/admin-layout.php`, add "NFC Tags" sidebar entry
 
 ## Flow
 1. Admin opens `/admin/nfc/batch.php`, uploads CSV of employee emails OR selects all employees → batch row created, QR sheet rendered.

@@ -1,4 +1,4 @@
-# Print Order Payment & Credit System — Design Spec
+# Print Order Payment & Credit System, Design Spec
 
 ## Goal
 
@@ -6,7 +6,7 @@ Add payment collection for print orders and a credit account system to Cardify.o
 
 ## Context
 
-- Cardify is a multi-tenant SaaS platform — print shops run their own business
+- Cardify is a multi-tenant SaaS platform, print shops run their own business
 - All payments flow through Cardify's single Paymob merchant account (future: split payments)
 - Paymob endpoint: `oman.paymob.com` (Oman regional)
 - Integration IDs: 48380 (Card), 48381 (OmanNet), 48389 (Apple Pay)
@@ -21,11 +21,11 @@ Add payment collection for print orders and a credit account system to Cardify.o
 
 | Class | File | Responsibility |
 |-------|------|----------------|
-| `Payment` | `includes/Payment.php` | All Paymob transactions — subscriptions AND print orders. Single entry point for creating payment intents, handling callbacks, tracking status. |
+| `Payment` | `includes/Payment.php` | All Paymob transactions, subscriptions AND print orders. Single entry point for creating payment intents, handling callbacks, tracking status. |
 | `CreditManager` | `includes/CreditManager.php` | Credit accounts per company-per-printshop. Print shop sets limits, terms, approves requests. Tracks balance, generates ledger. |
 | `PrintShopBilling` | `includes/PrintShopBilling.php` | Bridges print orders with payments. Checkout flow: pay now (Paymob) or charge to credit. PO upload. |
 
-### Existing Classes — Changes
+### Existing Classes, Changes
 
 | Class | Change |
 |-------|--------|
@@ -40,11 +40,11 @@ Company places print order
   → Order created in print_orders (status: pending, payment_status: pending)
   → PrintShopBilling::checkout($orderId)
     → Has approved credit account with sufficient balance?
-      → YES: Show options — "Pay Now" or "Charge to Credit"
+      → YES: Show options, "Pay Now" or "Charge to Credit"
       → NO: "Pay Now" only (+ option to "Request Credit" for future orders)
 
 Pay Now:
-  → Payment::createIntent('print_order', $orderId, $amount, ...)
+  → Payment::createIntent('print_order', $orderId, $amount...)
   → Redirect to Paymob checkout
   → Callback → Payment::handleCallback()
     → Updates payment record + print_orders.payment_status = 'paid'
@@ -161,7 +161,7 @@ CREATE TABLE credit_transactions (
 
 ### Modified Tables
 
-#### `print_orders` — Add columns
+#### `print_orders`, Add columns
 
 ```sql
 ALTER TABLE print_orders
@@ -171,11 +171,11 @@ ALTER TABLE print_orders
 
 The existing PO columns (`po_number`, `po_file_path`, `po_required`, `po_approved`, etc.) are already in the schema and will be activated.
 
-**Legacy orders:** Existing print_orders rows will have `NULL` for both `payment_method` and `payment_id`. This is acceptable — `NULL` means "created before payment system" and all queries should handle this with `IS NULL` or `COALESCE`.
+**Legacy orders:** Existing print_orders rows will have `NULL` for both `payment_method` and `payment_id`. This is acceptable, `NULL` means "created before payment system" and all queries should handle this with `IS NULL` or `COALESCE`.
 
 ### Migration from `payment_transactions`
 
-The existing `payment_transactions` table stays for backward compatibility. New subscription payments go to `payments` table. No data migration needed — old records remain in `payment_transactions`.
+The existing `payment_transactions` table stays for backward compatibility. New subscription payments go to `payments` table. No data migration needed, old records remain in `payment_transactions`.
 
 **Field mapping (old → new):**
 - `payment_transactions.plan_id` → `payments.reference_id` (type='subscription')
@@ -186,15 +186,15 @@ The existing `payment_transactions` table stays for backward compatibility. New 
 
 ### Existing Codebase Notes
 
-- `PrintShopIntegration::updateOrderStatus()` has a `$validStatuses` array — must add `'confirmed'` to it
+- `PrintShopIntegration::updateOrderStatus()` has a `$validStatuses` array, must add `'confirmed'` to it
 - The `/printshop/` directory already exists with `dashboard.php`, `orders.php`, `settings.php`. New pages follow the same auth pattern: print shop user authenticated via `Auth::requireRole('printshop')` or session-based shop ownership check. Layout uses the same `printshop-layout.php` includes.
-- `PrintShopIntegration::ensureHighQualityForOrder()` references a `require_hq` column not in migration 027 — pre-existing issue, not addressed in this spec
+- `PrintShopIntegration::ensureHighQualityForOrder()` references a `require_hq` column not in migration 027, pre-existing issue, not addressed in this spec
 
 ## Class Design
 
 ### Payment.php
 
-**Config access:** `Payment` reads Paymob credentials from PHP constants defined in `config.php` (`PAYMOB_SECRET_KEY`, `PAYMOB_PUBLIC_KEY`, `PAYMOB_HMAC_SECRET`, `PAYMOB_INTEGRATION_IDS`). This matches how other classes like `DatabaseAdapter` access config — via constants, not constructor injection. The existing `Billing` class uses constructor injection, but that pattern is only needed because `Billing` supports multiple gateways. `Payment` is Paymob-only.
+**Config access:** `Payment` reads Paymob credentials from PHP constants defined in `config.php` (`PAYMOB_SECRET_KEY`, `PAYMOB_PUBLIC_KEY`, `PAYMOB_HMAC_SECRET`, `PAYMOB_INTEGRATION_IDS`). This matches how other classes like `DatabaseAdapter` access config, via constants, not constructor injection. The existing `Billing` class uses constructor injection, but that pattern is only needed because `Billing` supports multiple gateways. `Payment` is Paymob-only.
 
 ```php
 class Payment {
@@ -353,7 +353,7 @@ class PrintShopBilling {
 
 ### Company Side (under `/admin/`)
 
-#### `admin/order-checkout.php` — Order Payment Page
+#### `admin/order-checkout.php`, Order Payment Page
 
 After placing a print order, company lands here to pay.
 
@@ -361,10 +361,10 @@ After placing a print order, company lands here to pay.
 - **Pay Now** button → Paymob checkout redirect
 - **Charge to Credit** button → only if approved credit account with sufficient balance
 - **Request Credit** link → modal to request credit from this print shop
-- **Upload PO** — file upload (PDF/image, max 5MB) + optional PO number field
+- **Upload PO**, file upload (PDF/image, max 5MB) + optional PO number field
 - PO upload available regardless of payment method
 
-#### `admin/credit-accounts.php` — Company's Credit Accounts
+#### `admin/credit-accounts.php`, Company's Credit Accounts
 
 - List of all credit accounts across print shops
 - Status (pending/approved/suspended)
@@ -374,7 +374,7 @@ After placing a print order, company lands here to pay.
 
 ### Print Shop Side (under `/printshop/`)
 
-#### `printshop/credit-accounts.php` — Manage Credit Accounts
+#### `printshop/credit-accounts.php`, Manage Credit Accounts
 
 - List all company credit accounts for this shop
 - Pending requests with approve/reject actions
@@ -382,7 +382,7 @@ After placing a print order, company lands here to pay.
 - Suspend/reactivate accounts
 - Quick stats: total outstanding, overdue amounts
 
-#### `printshop/credit-ledger.php` — Credit Ledger
+#### `printshop/credit-ledger.php`, Credit Ledger
 
 - Transaction history per credit account
 - Filter by date range, type (charge/payment/adjustment)
@@ -402,10 +402,10 @@ After placing a print order, company lands here to pay.
 
 ### Changes to `Billing.php`
 
-1. Remove `createPaymobPaymentIntent()` — replaced by `Payment::createIntent('subscription', ...)`
-2. Remove `handlePaymobCallback()` — replaced by `Payment::handleCallback()`
-3. Remove `computePaymobHmac()` — moved to `Payment::verifyHmac()`
-4. Remove `toSmallestUnit()` — moved to `Payment::toSmallestUnit()`
+1. Remove `createPaymobPaymentIntent()`, replaced by `Payment::createIntent('subscription'...)`
+2. Remove `handlePaymobCallback()`, replaced by `Payment::handleCallback()`
+3. Remove `computePaymobHmac()`, moved to `Payment::verifyHmac()`
+4. Remove `toSmallestUnit()`, moved to `Payment::toSmallestUnit()`
 5. Keep: `createSubscription()` but have it call `Payment::createIntent()` internally
 6. Keep: all plan management, limits, feature gates unchanged
 
@@ -416,7 +416,7 @@ After placing a print order, company lands here to pay.
 
 ## PO Workflow
 
-Purchase Orders are simple document attachments — no formal approval workflow beyond what already exists in the `print_orders` table:
+Purchase Orders are simple document attachments, no formal approval workflow beyond what already exists in the `print_orders` table:
 
 1. Company uploads PO (PDF/image) during checkout or after
 2. PO stored at `uploads/purchase_orders/{company_id}/{order_id}_{timestamp}.{ext}`

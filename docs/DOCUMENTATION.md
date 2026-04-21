@@ -743,7 +743,7 @@ bc/
 
 # Roadmap
 
-## Phase 1 — MVP ✅ COMPLETE
+## Phase 1, MVP ✅ COMPLETE
 
 - ✅ Single-tenant business card generator
 - ✅ Visual template editor
@@ -754,7 +754,7 @@ bc/
 - ✅ Installation wizard
 - ✅ Billing structure
 
-## Phase 2 — Multi-Tenant Foundation ✅ COMPLETE
+## Phase 2, Multi-Tenant Foundation ✅ COMPLETE
 
 - ✅ Introduce companies (tenant context)
 - ✅ Company registration + login
@@ -762,21 +762,21 @@ bc/
 - ✅ Per-company storage layout
 - ✅ Database migration system
 
-## Phase 3 — Productization (In Progress)
+## Phase 3, Productization (In Progress)
 
 - ✅ Bulk import (CSV/Excel)
 - ⏭ Template library (starter templates)
 - ⏭ Analytics: generation counts, active employees
 - ⏭ Better admin UX (audit log, changes history)
 
-## Phase 4 — Monetization & Scale
+## Phase 4, Monetization & Scale
 
 - ✅ Subscriptions + billing structure (Amwal Pay ready)
 - ⏭ Plan limits enforcement
 - ⏭ White-label + custom domains
 - ⏭ SSO (SAML/OIDC) for enterprise
 
-## Phase 5 — Future Enhancements
+## Phase 5, Future Enhancements
 
 - ⏭ QR code generation (vCard)
 - ⏭ PDF export
