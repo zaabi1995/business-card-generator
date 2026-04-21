@@ -1,4 +1,4 @@
-# Cardify Full System Interconnection — Implementation Plan
+# Cardify Full System Interconnection, Implementation Plan
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -101,7 +101,7 @@ git commit -m "fix: add null safety for department lookup in send_card_email.php
 ### Task 3: Fix ORDER BY created_at references
 
 **Files:**
-- Modify: `admin/employees.php` (line ~70 — known `ORDER BY created_at` on card_requests query)
+- Modify: `admin/employees.php` (line ~70, known `ORDER BY created_at` on card_requests query)
 - Search: other PHP files for any remaining `created_at` references in card_requests context
 
 - [ ] **Step 1: Fix known bug in admin/employees.php**
@@ -223,7 +223,7 @@ ssh root@147.93.20.54 "nginx -t && nginx -s reload"
 
 ---
 
-### Task 7: Build digital_card.php — data loading and theme detection
+### Task 7: Build digital_card.php, data loading and theme detection
 
 **Files:**
 - Create: `digital_card.php` (project root)
@@ -252,7 +252,7 @@ Add `echo json_encode(['company' => $company['name'], 'employee' => $employee['n
 
 ---
 
-### Task 8: Build digital_card.php — HTML template with flip animation
+### Task 8: Build digital_card.php, HTML template with flip animation
 
 **Files:**
 - Modify: `digital_card.php` (continue building)
@@ -279,8 +279,8 @@ JS: `onclick` handler that toggles `.flipped` class and fades hint.
 
 Below the card:
 - Employee name (h1) + position + company name, centered
-- Action buttons row (flex, gap): Call (`tel:`), WhatsApp (`https://api.whatsapp.com/send?phone=` + digits only, no `+`), Email (`mailto:`) — only show buttons where data exists
-- Contact details list in a rounded card: phone, mobile, email, website, address rows with icons — only rows where data exists, each tappable
+- Action buttons row (flex, gap): Call (`tel:`), WhatsApp (`https://api.whatsapp.com/send?phone=` + digits only, no `+`), Email (`mailto:`), only show buttons where data exists
+- Contact details list in a rounded card: phone, mobile, email, website, address rows with icons, only rows where data exists, each tappable
 
 - [ ] **Step 1d: Add Save Contact + Share buttons and footer**
 
@@ -351,7 +351,7 @@ To:
 const cardUrl = `${window.location.origin}/${this.companySlug}/card/${employee.id}`;
 ```
 
-**Important:** The variable `vcfUrl` is referenced at approximately 5 downstream locations (lines ~506, ~515, ~536, ~598, ~599) where it's used for QR code generation and other card features. Rename ALL of these references to `cardUrl`. Search for every occurrence of `vcfUrl` in the file and update them. The VCF download link is still available on the digital card page — this only changes what the QR code points to.
+**Important:** The variable `vcfUrl` is referenced at approximately 5 downstream locations (lines ~506, ~515, ~536, ~598, ~599) where it's used for QR code generation and other card features. Rename ALL of these references to `cardUrl`. Search for every occurrence of `vcfUrl` in the file and update them. The VCF download link is still available on the digital card page, this only changes what the QR code points to.
 
 - [ ] **Step 7: Commit**
 
@@ -434,8 +434,8 @@ Response check: `$response['success'] === true`.
 - [ ] **Step 3: Add notification methods for card events**
 
 Add (or update existing) methods:
-- `sendCardReadyNotification($employee, $company, $digitalCardUrl)` — "Your business card is ready! View: {url}"
-- `sendCardRequestApproved($employee, $company, $digitalCardUrl)` — "Your card request has been approved! View: {url}"
+- `sendCardReadyNotification($employee, $company, $digitalCardUrl)`, "Your business card is ready! View: {url}"
+- `sendCardRequestApproved($employee, $company, $digitalCardUrl)`, "Your card request has been approved! View: {url}"
 
 These call `sendMessage()` with the employee's mobile number.
 

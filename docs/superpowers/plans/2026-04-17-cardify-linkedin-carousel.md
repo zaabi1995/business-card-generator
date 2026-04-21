@@ -4,7 +4,7 @@
 
 **Goal:** Replace Cardify's text + link daily LinkedIn post with bold, bilingual 7-slide carousel PDFs generated from each scheduled blog post, posted to Ali's personal profile today and cross-posted from the Cardify company page once LinkedIn approves Community Management API.
 
-**Architecture:** A PHP cron on VPS invokes a Claude Sonnet 4.6 API call that turns blog body into structured slide JSON, renders the JSON through an HTML/CSS template into a 7-page PDF via Node + Playwright (both already installed on VPS), uploads the PDF to LinkedIn as a Document UGC post on Ali's personal profile, and — if an organization access token exists — cross-posts from the Cardify company page. Old text-link poster is kept as a safe fallback.
+**Architecture:** A PHP cron on VPS invokes a Claude Sonnet 4.6 API call that turns blog body into structured slide JSON, renders the JSON through an HTML/CSS template into a 7-page PDF via Node + Playwright (both already installed on VPS), uploads the PDF to LinkedIn as a Document UGC post on Ali's personal profile, and, if an organization access token exists, cross-posts from the Cardify company page. Old text-link poster is kept as a safe fallback.
 
 **Tech Stack:** PHP 7.4 (core), Claude Anthropic Messages API (`claude-sonnet-4-6`), Node 22 + Playwright (already on VPS), LinkedIn UGC + Assets API, MySQL (existing `bc` database), Space Grotesk + Inter + Noto Sans Arabic fonts.
 
@@ -41,7 +41,7 @@ cardify.om/
 
 ---
 
-## Phase 1 — Database + Infrastructure
+## Phase 1, Database + Infrastructure
 
 ### Task 1: Create carousel migration
 
@@ -69,7 +69,7 @@ try {
 }
 ```
 
-- [ ] **Step 2: Run locally (or skip — run on VPS in deploy phase)**
+- [ ] **Step 2: Run locally (or skip, run on VPS in deploy phase)**
 
 Run: `php database/migrations/065_blog_posts_carousel_columns.php`
 Expected: `Migration 065: blog_posts carousel columns added` (or "already exist, skipping").
@@ -92,7 +92,7 @@ git commit -m "migration: add linkedin_carousel_pdf + linkedin_company_post_id t
 Find the existing API-key definitions section (after Paymob constants) and append:
 
 ```php
-// Anthropic Claude API — used by LinkedIn carousel generator
+// Anthropic Claude API, used by LinkedIn carousel generator
 define('ANTHROPIC_API_KEY', 'sk-ant-api03-YOUR-KEY-HERE');
 ```
 
@@ -105,7 +105,7 @@ git commit -m "config: add ANTHROPIC_API_KEY placeholder for carousel generator"
 
 ---
 
-## Phase 2 — Claude Slide Generator
+## Phase 2, Claude Slide Generator
 
 ### Task 3: Build `CarouselSlideGenerator`
 
@@ -150,7 +150,7 @@ Your job: turn a blog post into a 7-slide carousel payload.
 
 STYLE RULES:
 - Hook (slide 1) must be contrarian, curiosity-inducing, or stat-led. Never generic. Under 12 words EN.
-- AR must be natural Gulf Arabic (Omani phrasing preferred) — never machine-literal. Short, punchy.
+- AR must be natural Gulf Arabic (Omani phrasing preferred), never machine-literal. Short, punchy.
 - Tension (slide 2) sets up the problem the blog solves. One line.
 - 3 key points: each is a concrete statement with a number, fact, or specific detail pulled from the blog. 12-20 words each. No filler.
 - Takeaway: the 'aha'. Pithy. Quotable. Under 15 words EN.
@@ -260,12 +260,12 @@ Delete the smoke test after verifying.
 
 ```bash
 git add includes/CarouselSlideGenerator.php
-git commit -m "feat: CarouselSlideGenerator — Claude Sonnet 4.6 blog → slide JSON"
+git commit -m "feat: CarouselSlideGenerator, Claude Sonnet 4.6 blog → slide JSON"
 ```
 
 ---
 
-## Phase 3 — HTML Template + Playwright Renderer
+## Phase 3, HTML Template + Playwright Renderer
 
 ### Task 4: Create template workspace + install fonts
 
@@ -290,9 +290,9 @@ git commit -m "feat: CarouselSlideGenerator — Claude Sonnet 4.6 blog → slide
 }
 ```
 
-Note: do NOT run `npm install` yet — VPS already has `/usr/local/bin/playwright`. Local install is only for testing; deploy step runs `npm install --omit=dev` on VPS.
+Note: do NOT run `npm install` yet, VPS already has `/usr/local/bin/playwright`. Local install is only for testing; deploy step runs `npm install --omit=dev` on VPS.
 
-- [ ] **Step 2: Download font WOFF2 files (commit them — small, self-hosted)**
+- [ ] **Step 2: Download font WOFF2 files (commit them, small, self-hosted)**
 
 ```bash
 mkdir -p tools/carousel-render/fonts
@@ -338,7 +338,7 @@ File: `tools/carousel-render/mashrabiya.svg`
 
 ```bash
 git add tools/carousel-render/package.json tools/carousel-render/fonts/ tools/carousel-render/mashrabiya.svg
-git commit -m "feat: carousel renderer scaffold — fonts + motif + package.json"
+git commit -m "feat: carousel renderer scaffold, fonts + motif + package.json"
 ```
 
 ### Task 5: Build HTML template
@@ -359,7 +359,7 @@ git commit -m "feat: carousel renderer scaffold — fonts + motif + package.json
 </head>
 <body>
 
-<!-- Slide 01 — Hook -->
+<!-- Slide 01, Hook -->
 <section class="slide hook">
   <div class="motif"></div>
   <span class="counter">01/07</span>
@@ -370,7 +370,7 @@ git commit -m "feat: carousel renderer scaffold — fonts + motif + package.json
   <span class="wordmark">Cardify</span>
 </section>
 
-<!-- Slide 02 — Tension -->
+<!-- Slide 02, Tension -->
 <section class="slide tension">
   <span class="counter">02/07</span>
   <div class="content">
@@ -379,7 +379,7 @@ git commit -m "feat: carousel renderer scaffold — fonts + motif + package.json
   <span class="wordmark">Cardify</span>
 </section>
 
-<!-- Slide 03 — Point 1 -->
+<!-- Slide 03, Point 1 -->
 <section class="slide point">
   <span class="counter">03/07</span>
   <div class="content">
@@ -389,7 +389,7 @@ git commit -m "feat: carousel renderer scaffold — fonts + motif + package.json
   <span class="wordmark">Cardify</span>
 </section>
 
-<!-- Slide 04 — Point 2 -->
+<!-- Slide 04, Point 2 -->
 <section class="slide point">
   <span class="counter">04/07</span>
   <div class="content">
@@ -399,7 +399,7 @@ git commit -m "feat: carousel renderer scaffold — fonts + motif + package.json
   <span class="wordmark">Cardify</span>
 </section>
 
-<!-- Slide 05 — Point 3 -->
+<!-- Slide 05, Point 3 -->
 <section class="slide point">
   <span class="counter">05/07</span>
   <div class="content">
@@ -409,7 +409,7 @@ git commit -m "feat: carousel renderer scaffold — fonts + motif + package.json
   <span class="wordmark">Cardify</span>
 </section>
 
-<!-- Slide 06 — Takeaway -->
+<!-- Slide 06, Takeaway -->
 <section class="slide takeaway">
   <span class="counter">06/07</span>
   <div class="content">
@@ -419,7 +419,7 @@ git commit -m "feat: carousel renderer scaffold — fonts + motif + package.json
   <span class="wordmark">Cardify</span>
 </section>
 
-<!-- Slide 07 — CTA -->
+<!-- Slide 07, CTA -->
 <section class="slide cta">
   <div class="motif"></div>
   <span class="counter cta-counter">07/07</span>
@@ -524,7 +524,7 @@ html, body { background: var(--bg); color: var(--fg); }
   z-index: 1;
 }
 
-/* Slide 01 — Hook */
+/* Slide 01, Hook */
 .hook .content { text-align: center; }
 .hook .hook-en {
   font-family: 'Space Grotesk', sans-serif;
@@ -544,7 +544,7 @@ html, body { background: var(--bg); color: var(--fg); }
   opacity: 0.85;
 }
 
-/* Slide 02 — Tension */
+/* Slide 02, Tension */
 .tension .content { text-align: left; }
 .tension .tension-text {
   font-family: 'Space Grotesk', sans-serif;
@@ -555,7 +555,7 @@ html, body { background: var(--bg); color: var(--fg); }
   color: var(--fg);
 }
 
-/* Slides 03-05 — Points */
+/* Slides 03-05, Points */
 .point .content { text-align: left; }
 .point .big-num {
   display: block;
@@ -577,7 +577,7 @@ html, body { background: var(--bg); color: var(--fg); }
   max-width: 820px;
 }
 
-/* Slide 06 — Takeaway */
+/* Slide 06, Takeaway */
 .takeaway .content { text-align: center; }
 .takeaway .takeaway-en {
   font-family: 'Space Grotesk', sans-serif;
@@ -597,7 +597,7 @@ html, body { background: var(--bg); color: var(--fg); }
   opacity: 0.85;
 }
 
-/* Slide 07 — CTA */
+/* Slide 07, CTA */
 .cta { background: var(--accent); }
 .cta .motif { opacity: 0.08; }
 .cta .content { text-align: center; }
@@ -737,7 +737,7 @@ echo '{
   "tension": "Most Omani companies still hand out a card that lands in a drawer.",
   "points": [
     {"number":"01","text":"Print cards average 0.300 OMR per handover."},
-    {"number":"02","text":"A digital card updates when your title changes — no reprint."},
+    {"number":"02","text":"A digital card updates when your title changes, no reprint."},
     {"number":"03","text":"NFC + QR means one tap shares full contact details."}
   ],
   "takeaway_en": "Print for ceremony. Digital for everything else.",
@@ -805,7 +805,7 @@ class CarouselPDFRenderer {
     }
 
     private static function qrDataUrl(string $url): string {
-        // Use Google Chart API fallback — returns PNG bytes we base64-encode
+        // Use Google Chart API fallback, returns PNG bytes we base64-encode
         $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=' . urlencode($url);
         $ctx = stream_context_create(['http' => ['timeout' => 8]]);
         $png = @file_get_contents($qrUrl, false, $ctx);
@@ -840,7 +840,7 @@ git commit -m "feat: CarouselPDFRenderer PHP wrapper + QR data-URL injection"
 
 ---
 
-## Phase 4 — LinkedIn Document Upload
+## Phase 4, LinkedIn Document Upload
 
 ### Task 8: Build `LinkedInPoster` class
 
@@ -953,12 +953,12 @@ class LinkedInPoster {
 
 ```bash
 git add includes/LinkedInPoster.php
-git commit -m "feat: LinkedInPoster — v2 Assets + UGC document (carousel) upload"
+git commit -m "feat: LinkedInPoster, v2 Assets + UGC document (carousel) upload"
 ```
 
 ---
 
-## Phase 5 — Orchestrator + Cron Entry
+## Phase 5, Orchestrator + Cron Entry
 
 ### Task 9: Build `LinkedInCarousel` orchestrator
 
@@ -994,7 +994,7 @@ class LinkedInCarousel {
         CarouselPDFRenderer::render($slides, $pdfPath, $blogUrl);
         self::log($logFile, "PDF rendered: $pdfPath (" . filesize($pdfPath) . " bytes)");
 
-        // 3) Build commentary (short — carousel carries the narrative)
+        // 3) Build commentary (short, carousel carries the narrative)
         $commentary = $slides['hook_en']
             . "\n\n" . $slides['hook_ar']
             . "\n\nSwipe through, or read the full post: " . $blogUrl
@@ -1037,7 +1037,7 @@ class LinkedInCarousel {
                 self::log($logFile, "Company page post FAILED (personal still OK): " . $e->getMessage());
             }
         } else {
-            self::log($logFile, "Skip company post — org token not configured");
+            self::log($logFile, "Skip company post, org token not configured");
         }
 
         return [
@@ -1157,7 +1157,7 @@ try {
 }
 
 function fallback(string $reason) {
-    carouselLog("Invoking legacy poster as fallback — reason: $reason");
+    carouselLog("Invoking legacy poster as fallback, reason: $reason");
     $legacy = __DIR__ . '/linkedin-autoposter.php';
     if (file_exists($legacy)) {
         passthru('php ' . escapeshellarg($legacy));
@@ -1169,12 +1169,12 @@ function fallback(string $reason) {
 
 ```bash
 git add cron/linkedin-carousel.php
-git commit -m "feat: cron entry — linkedin-carousel.php with legacy fallback"
+git commit -m "feat: cron entry, linkedin-carousel.php with legacy fallback"
 ```
 
 ---
 
-## Phase 6 — Org OAuth + Admin Preview
+## Phase 6, Org OAuth + Admin Preview
 
 ### Task 11: Build `/api/linkedin/connect-company.php`
 
@@ -1186,7 +1186,7 @@ git commit -m "feat: cron entry — linkedin-carousel.php with legacy fallback"
 ```php
 <?php
 /**
- * LinkedIn OAuth — captures org (Cardify company page) access token.
+ * LinkedIn OAuth, captures org (Cardify company page) access token.
  * Saves to system_settings.linkedin_org_access_token.
  * Scopes requested: openid profile email w_member_social w_organization_social r_organization_social
  */
@@ -1252,7 +1252,7 @@ if (isset($_GET['code'])) {
     echo '<p><strong>Organizations this token can post as:</strong></p>';
     echo '<ul style="text-align:left;display:inline-block">';
     foreach ($orgs as $o) echo '<li>' . htmlspecialchars($o) . '</li>';
-    if (!$orgs) echo '<li style="color:#c00">(none — you may not be a Cardify page admin, or Community Management API scope is still pending)</li>';
+    if (!$orgs) echo '<li style="color:#c00">(none, you may not be a Cardify page admin, or Community Management API scope is still pending)</li>';
     echo '</ul>';
     echo '<p><a href="/admin">Back to Admin</a></p></body></html>';
     exit;
@@ -1278,13 +1278,13 @@ exit;
 
 - [ ] **Step 2: Remember to add redirect URI to LinkedIn app (deploy task)**
 
-The new URI `https://cardify.om/api/linkedin/connect-company` must be added under **Authorized redirect URLs** in the LinkedIn developer portal for whichever app carries the `w_organization_social` approval. (Deploy task reminder — see Phase 7.)
+The new URI `https://cardify.om/api/linkedin/connect-company` must be added under **Authorized redirect URLs** in the LinkedIn developer portal for whichever app carries the `w_organization_social` approval. (Deploy task reminder, see Phase 7.)
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add api/linkedin/connect-company.php
-git commit -m "feat: /api/linkedin/connect-company — OAuth capture for org token"
+git commit -m "feat: /api/linkedin/connect-company, OAuth capture for org token"
 ```
 
 ### Task 12: Build admin preview endpoint
@@ -1334,7 +1334,7 @@ try {
 
 - [ ] **Step 2: Add preview button to blog edit page**
 
-Modify `admin/super/blog.php` — find the blog post edit form's action buttons section and add:
+Modify `admin/super/blog.php`, find the blog post edit form's action buttons section and add:
 
 ```php
 <?php if (!empty($post['id'])): ?>
@@ -1347,7 +1347,7 @@ Modify `admin/super/blog.php` — find the blog post edit form's action buttons 
 <?php endif; ?>
 ```
 
-(Match existing button styling — may need to adjust class names to match project conventions after inspecting the file.)
+(Match existing button styling, may need to adjust class names to match project conventions after inspecting the file.)
 
 - [ ] **Step 3: Commit**
 
@@ -1358,7 +1358,7 @@ git commit -m "feat: admin preview endpoint + button for LinkedIn carousel"
 
 ---
 
-## Phase 7 — Deploy + Verify
+## Phase 7, Deploy + Verify
 
 ### Task 13: Deploy code to VPS
 
@@ -1375,7 +1375,7 @@ git push origin design-showcase
 ssh root@147.93.20.54 "cd /www/wwwroot/cardify.om && git pull origin design-showcase"
 ```
 
-(Or merge to main and push, depending on Ali's branch policy — confirm before pushing to main.)
+(Or merge to main and push, depending on Ali's branch policy, confirm before pushing to main.)
 
 - [ ] **Step 3: Run migration**
 
@@ -1417,7 +1417,7 @@ ssh root@147.93.20.54 "mkdir -p /www/wwwroot/cardify.om/uploads/linkedin-carouse
 
 Manual step (Ali): in LinkedIn Developer Portal for the active app, add `https://cardify.om/api/linkedin/connect-company` to Authorized redirect URLs. Not blocking for personal-profile carousel posts, only needed for company OAuth.
 
-### Task 14: Live smoke test — preview endpoint
+### Task 14: Live smoke test, preview endpoint
 
 - [ ] **Step 1: Log into admin + hit preview endpoint**
 
@@ -1475,7 +1475,7 @@ Generating carousel for: <title>
 Slide JSON generated
 PDF rendered: ...
 Personal post OK: urn:li:share:...
-Skip company post — org token not configured
+Skip company post, org token not configured
 SUCCESS: <title> | personal=urn:li:share:... | company=n/a
 ```
 
@@ -1496,7 +1496,7 @@ ssh root@147.93.20.54 "cd /www/wwwroot/cardify.om && git pull origin design-show
 
 ---
 
-## Phase 8 — Post-approval activation (whenever LinkedIn approves Community Management API)
+## Phase 8, Post-approval activation (whenever LinkedIn approves Community Management API)
 
 These steps run only after LinkedIn emails approval.
 

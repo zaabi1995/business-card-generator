@@ -1,10 +1,10 @@
-# Print Order Payment & Credit System — Implementation Plan
+# Print Order Payment & Credit System, Implementation Plan
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add payment collection for print orders (via Paymob) and a credit account system (managed by print shops) to Cardify.om.
 
-**Architecture:** Three new classes — `Payment.php` (unified Paymob handler), `CreditManager.php` (credit accounts & ledger), `PrintShopBilling.php` (order checkout bridge). Refactor `Billing.php` to delegate Paymob calls to `Payment.php`.
+**Architecture:** Three new classes, `Payment.php` (unified Paymob handler), `CreditManager.php` (credit accounts & ledger), `PrintShopBilling.php` (order checkout bridge). Refactor `Billing.php` to delegate Paymob calls to `Payment.php`.
 
 **Tech Stack:** PHP 7.4+ (no framework), MySQL, Paymob Unified Checkout (oman.paymob.com), Tailwind CSS
 
@@ -14,7 +14,7 @@
 
 ## CRITICAL: Database API & Include Patterns
 
-**All code in this plan must use these patterns.** The code samples below show the conceptual structure — adapt all DB calls to match:
+**All code in this plan must use these patterns.** The code samples below show the conceptual structure, adapt all DB calls to match:
 
 ### Database Class API (`Database::getInstance()`)
 ```php
@@ -117,7 +117,7 @@ echo "Migration done\n";
 - Create: `database/migrations/031_credit_tables.php`
 - Create: `database/migrations/032_print_orders_payment_columns.php`
 
-- [ ] **Step 1: Create migration 030 — payments table**
+- [ ] **Step 1: Create migration 030, payments table**
 
 ```php
 <?php
@@ -162,7 +162,7 @@ try {
 }
 ```
 
-- [ ] **Step 2: Create migration 031 — credit tables**
+- [ ] **Step 2: Create migration 031, credit tables**
 
 ```php
 <?php
@@ -224,7 +224,7 @@ try {
 }
 ```
 
-- [ ] **Step 3: Create migration 032 — print_orders payment columns**
+- [ ] **Step 3: Create migration 032, print_orders payment columns**
 
 ```php
 <?php
@@ -265,7 +265,7 @@ git add database/migrations/030_payments_table.php database/migrations/031_credi
 git commit -m "feat: add payment, credit_accounts, credit_transactions tables and print_orders columns"
 ```
 
-### Task 2: Payment.php — Unified Paymob Handler
+### Task 2: Payment.php, Unified Paymob Handler
 
 **Files:**
 - Create: `includes/Payment.php`
@@ -669,7 +669,7 @@ Add to `Payment.php`:
 
 ```bash
 git add includes/Payment.php
-git commit -m "feat: add Payment.php — unified Paymob handler for subscriptions and print orders"
+git commit -m "feat: add Payment.php, unified Paymob handler for subscriptions and print orders"
 ```
 
 ### Task 3: Refactor Billing.php & Callback
@@ -679,7 +679,7 @@ git commit -m "feat: add Payment.php — unified Paymob handler for subscription
 - Modify: `paymob/callback.php` (route through Payment.php)
 - Modify: `admin/billing.php` (update subscription flow)
 
-- [ ] **Step 1: Update Billing.php — delegate to Payment.php**
+- [ ] **Step 1: Update Billing.php, delegate to Payment.php**
 
 In `Billing.php`, replace `createPaymobPaymentIntent()` body (around line 101) to delegate:
 
@@ -790,7 +790,7 @@ Verify `admin/billing.php` subscription flow works with the refactored code. The
 2. Which calls `createPaymobPaymentIntent()` (now delegates to Payment.php)
 3. Returns `payment_url` → redirect to Paymob
 
-No changes needed in `admin/billing.php` — the `Billing` class method signatures are unchanged.
+No changes needed in `admin/billing.php`, the `Billing` class method signatures are unchanged.
 
 - [ ] **Step 4: Commit refactored files**
 
@@ -826,7 +826,7 @@ git commit -m "feat: add 'confirmed' to valid order statuses for payment flow"
 
 ## Chunk 2: CreditManager.php
 
-### Task 5: CreditManager — Core Methods
+### Task 5: CreditManager, Core Methods
 
 **Files:**
 - Create: `includes/CreditManager.php`
@@ -860,7 +860,7 @@ class CreditManager {
             if ($existing['status'] === 'approved') {
                 return ['error' => 'Credit account already active'];
             }
-            // Rejected/suspended — allow re-request by updating
+            // Rejected/suspended, allow re-request by updating
             $db->execute(
                 "UPDATE credit_accounts SET status = 'pending', requested_limit = :limit,
                  request_notes = :notes, rejected_reason = NULL, updated_at = NOW()
@@ -1177,7 +1177,7 @@ class CreditManager {
 
 ```bash
 git add includes/CreditManager.php
-git commit -m "feat: add CreditManager.php — credit accounts, charges, payments, ledger"
+git commit -m "feat: add CreditManager.php, credit accounts, charges, payments, ledger"
 ```
 
 ---
@@ -1386,7 +1386,7 @@ class PrintShopBilling {
 
 ```bash
 git add includes/PrintShopBilling.php
-git commit -m "feat: add PrintShopBilling.php — order checkout, credit charge, PO upload"
+git commit -m "feat: add PrintShopBilling.php, order checkout, credit charge, PO upload"
 ```
 
 ### Task 7: Order Checkout Page (Company Side)
@@ -1494,7 +1494,7 @@ if ($order['company_id'] !== $companyId && !Auth::hasRole('super_admin')) {
     exit;
 }
 
-$pageTitle = 'Order Payment — ' . ($order['order_number'] ?? 'Order #' . $orderId);
+$pageTitle = 'Order Payment, ' . ($order['order_number'] ?? 'Order #' . $orderId);
 include __DIR__ . '/includes/admin-header.php';
 ?>
 
@@ -1544,7 +1544,7 @@ include __DIR__ . '/includes/admin-header.php';
             <?= csrfField() ?>
             <input type="hidden" name="action" value="pay_online">
             <button type="submit" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition">
-                Pay Now — <?= number_format($order['total'] ?? 0, 3) ?> <?= $order['currency'] ?? 'OMR' ?>
+                Pay Now, <?= number_format($order['total'] ?? 0, 3) ?> <?= $order['currency'] ?? 'OMR' ?>
             </button>
             <p class="text-xs text-gray-500 mt-1 text-center">Card, OmanNet, or Apple Pay via Paymob</p>
         </form>
@@ -1590,7 +1590,7 @@ include __DIR__ . '/includes/admin-header.php';
     </div>
     <?php else: ?>
     <div class="bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-lg mb-6 text-center">
-        <span class="text-2xl">&#10003;</span> Payment complete — <?= htmlspecialchars($order['payment_method'] ?? 'online') ?>
+        <span class="text-2xl">&#10003;</span> Payment complete, <?= htmlspecialchars($order['payment_method'] ?? 'online') ?>
     </div>
     <?php endif; ?>
 
@@ -1609,7 +1609,7 @@ include __DIR__ . '/includes/admin-header.php';
                 <input type="text" name="po_number" class="w-full border rounded-lg px-3 py-2" placeholder="e.g. PO-2026-001">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">PO Document (PDF, JPG, PNG — max 5MB)</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">PO Document (PDF, JPG, PNG, max 5MB)</label>
                 <input type="file" name="po_file" accept=".pdf,.jpg,.jpeg,.png" required class="w-full">
             </div>
             <button type="submit" class="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition">

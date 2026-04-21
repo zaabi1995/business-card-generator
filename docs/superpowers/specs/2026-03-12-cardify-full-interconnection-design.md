@@ -1,4 +1,4 @@
-# Cardify.om — Full System Interconnection & Digital Card Page
+# Cardify.om, Full System Interconnection & Digital Card Page
 
 **Date:** 2026-03-12
 **Status:** Approved
@@ -11,10 +11,10 @@
 Cardify.om is 95% built but has several gaps preventing full end-to-end operation:
 
 1. **3 bugs** block core functionality (missing PHP function, ORDER BY wrong column, broken email sending)
-2. **No digital card page** — QR codes on printed cards have nowhere useful to land
-3. **Share links viewer** is a stub — doesn't show actual employee cards
-4. **WhatsApp notifications** use a placeholder API — not wired to Dardasha
-5. **Email system** is fully coded but unverified on VPS — may not be sending
+2. **No digital card page**, QR codes on printed cards have nowhere useful to land
+3. **Share links viewer** is a stub, doesn't show actual employee cards
+4. **WhatsApp notifications** use a placeholder API, not wired to Dardasha
+5. **Email system** is fully coded but unverified on VPS, may not be sending
 6. **Minor wiring gaps** in notification chains and navigation
 
 ## Success Criteria
@@ -61,13 +61,13 @@ public static function findDepartmentById($id, $companyId = null) {
 
 ### 1b. Fix `card_requests` ORDER BY column
 
-The `card_requests` table has `submitted_at` (not `created_at`). Fix the ORDER BY clause in the code that references `created_at` to use `submitted_at` instead. Do NOT add a duplicate `created_at` column — `submitted_at` is the canonical timestamp.
+The `card_requests` table has `submitted_at` (not `created_at`). Fix the ORDER BY clause in the code that references `created_at` to use `submitted_at` instead. Do NOT add a duplicate `created_at` column, `submitted_at` is the canonical timestamp.
 
 **Impact:** Fixes ORDER BY error when loading card requests dashboard.
 
 ### 1c. `send_card_email.php` null safety
 
-Wrap `findDepartmentById()` calls in null checks — employee may not have a department assigned:
+Wrap `findDepartmentById()` calls in null checks, employee may not have a department assigned:
 
 ```php
 $department = null;
@@ -118,7 +118,7 @@ During batch generation:
 5. **Luminance >= 128** → `theme_mode = 'light'` (light card → dark page)
 6. Store in `generated_cards.theme_mode`
 
-At render time, `digital_card.php` reads `theme_mode` from the DB — no image processing on page load.
+At render time, `digital_card.php` reads `theme_mode` from the DB, no image processing on page load.
 
 **Fallback:** If `theme_mode` is NULL (legacy cards), use company theme's `secondary_color` to decide. If no theme exists, default to dark page.
 
@@ -126,31 +126,31 @@ Company `primary_color` used for accent elements (buttons, links) in both modes.
 
 ### Page Layout (top → bottom, mobile-first)
 
-1. **Company logo** — from `company_themes.logo_path`, centered, ~120px wide
-2. **Flippable card** — CSS 3D perspective transform, tap to toggle front/back
+1. **Company logo**, from `company_themes.logo_path`, centered, ~120px wide
+2. **Flippable card**, CSS 3D perspective transform, tap to toggle front/back
    - Front face: `<img>` of web-optimized card front PNG
    - Back face: `<img>` of web-optimized card back PNG
    - "Tap card to flip" hint, fades after first interaction
-3. **Employee name + title** — centered below card
-4. **Action buttons row** — up to 3 equal buttons:
-   - **Call** → `tel:+968XXXXXXXX` (uses mobile number, falls back to phone) — only if phone/mobile exists
-   - **WhatsApp** → `https://api.whatsapp.com/send?phone=968XXXXXXXX` (NOT wa.me — blocked in Oman) — only if mobile exists
-   - **Email** → `mailto:employee@company.com` — only if email exists
-5. **Contact details list** — rounded card with tappable rows:
-   - Phone, Mobile, Email, Website, Address — each with icon, tappable action
+3. **Employee name + title**, centered below card
+4. **Action buttons row**, up to 3 equal buttons:
+   - **Call** → `tel:+968XXXXXXXX` (uses mobile number, falls back to phone), only if phone/mobile exists
+   - **WhatsApp** → `https://api.whatsapp.com/send?phone=968XXXXXXXX` (NOT wa.me, blocked in Oman), only if mobile exists
+   - **Email** → `mailto:employee@company.com`, only if email exists
+5. **Contact details list**, rounded card with tappable rows:
+   - Phone, Mobile, Email, Website, Address, each with icon, tappable action
    - Only show rows where data exists
-6. **Save Contact + Share** — two buttons:
+6. **Save Contact + Share**, two buttons:
    - Save Contact → downloads `.vcf` via `/{company_slug}/{employee_email}.vcf`
    - Share → native Web Share API (`navigator.share`) with fallback to copy-link modal
-7. **Footer** — "Powered by Cardify" with link
-8. **Branded 404** — If company/employee not found, show styled page: "This card is no longer available" with company logo if possible
+7. **Footer**, "Powered by Cardify" with link
+8. **Branded 404**, If company/employee not found, show styled page: "This card is no longer available" with company logo if possible
 
 ### Card Image Optimization
 
 During batch card generation (`admin/batch_generate.php`), generate an additional web-optimized version:
 
-- **Full resolution (existing):** 1050×600px PNG — used for print and admin download
-- **Web optimized (new):** 788×450px PNG (~150 DPI equivalent) — used for digital card page
+- **Full resolution (existing):** 1050×600px PNG, used for print and admin download
+- **Web optimized (new):** 788×450px PNG (~150 DPI equivalent), used for digital card page
 - Filename pattern: `card_front_web_{timestamp}_{hash}.png` / `card_back_web_{timestamp}_{hash}.png`
 - Stored alongside full-res in `/uploads/companies/{id}/cards/`
 
@@ -231,15 +231,15 @@ Rewrite `share/index.php` as a thin gateway:
    JOIN companies c ON c.id = dl.company_id
    WHERE dl.share_token = ? AND dl.is_active = 1
    ```
-3. Check expiration (`expires_at`) — show styled "Link expired" message
-4. Check password protection (`password_hash` on design_links) — show password form if set
-5. Check max access (`max_access` on design_links vs `access_count`) — show limit message if exceeded
+3. Check expiration (`expires_at`), show styled "Link expired" message
+4. Check password protection (`password_hash` on design_links), show password form if set
+5. Check max access (`max_access` on design_links vs `access_count`), show limit message if exceeded
 6. Increment counter: `view_count` for share_links, `access_count` for design_links
 7. **Route based on link type:**
    - **Employee share link** (from `share_links`, has `employee_id`) → redirect to `/{company_slug}/card/{employee_id}` (slug from JOIN)
    - **Design/template link** (from `design_links`, has `template_id`) → render template preview with sample data using adaptive theme
 
-This avoids duplicating card rendering logic — the digital card page handles all employee card display.
+This avoids duplicating card rendering logic, the digital card page handles all employee card display.
 
 ---
 
@@ -296,7 +296,7 @@ Update `admin/whatsapp_settings.php`:
 
 ---
 
-## Section 5: Email — Verify & Fix
+## Section 5: Email, Verify & Fix
 
 ### Current State
 
@@ -320,7 +320,7 @@ Update `admin/whatsapp_settings.php`:
 | Print order quotation issued | `sendDocumentEmail()` in printshop | Company admin email |
 | Print order shipped | `sendDocumentEmail()` in printshop | Company admin email |
 
-5. **Email logging:** All sends already log to `email_logs` table — verify logs appear after test sends.
+5. **Email logging:** All sends already log to `email_logs` table, verify logs appear after test sends.
 
 ---
 
@@ -337,7 +337,7 @@ The digital card page logs the scan (same `QRTracker` class, deduplicates by vis
 
 ### 6b. Navigation Consistency
 
-Company admin sidebar currently shows super-admin-only links (Companies, All Employees, Print Shops, Subscriptions, Email Logs). These should be hidden for company admin users — only show for super admins.
+Company admin sidebar currently shows super-admin-only links (Companies, All Employees, Print Shops, Subscriptions, Email Logs). These should be hidden for company admin users, only show for super admins.
 
 Check the role/permission logic in the sidebar template and conditionally render these menu items.
 
@@ -359,7 +359,7 @@ Verify end-to-end that when `PrintShopIntegration::createOrder()` is called:
 | `generated_cards` | Add `back_web_path VARCHAR(500) DEFAULT NULL` |
 | `generated_cards` | Add `theme_mode ENUM('light','dark') DEFAULT NULL` |
 
-No changes to `card_requests` — fix the PHP code to use `submitted_at` instead of `created_at`.
+No changes to `card_requests`, fix the PHP code to use `submitted_at` instead of `created_at`.
 
 ---
 
@@ -382,8 +382,8 @@ No changes to `card_requests` — fix the PHP code to use `submitted_at` instead
 
 ## Out of Scope
 
-- Print shop ERP integration (Odoo sync) — already working, no changes
-- Billing/subscription system — already working
-- Template editor (Fabric.js) — already working
-- Bulk import — already working
-- Blog/careers/marketing pages — not related
+- Print shop ERP integration (Odoo sync), already working, no changes
+- Billing/subscription system, already working
+- Template editor (Fabric.js), already working
+- Bulk import, already working
+- Blog/careers/marketing pages, not related

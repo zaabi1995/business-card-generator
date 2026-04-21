@@ -16,11 +16,11 @@ When scanned/opened on an iPhone or Android, the user can save the card to their
 
 Cardify is flat PHP (not Laravel). Implementation uses top-level PHP entry points consistent with `digital_card.php`, `qr.php`, `vcf.php`:
 
-- `wallet_apple.php` — accepts `?i=<employee_id>` (and optional `?c=<company_slug>`), returns `.pkpass` binary
-- `wallet_google.php` — same params, issues a 302 redirect to the Google Wallet save URL
-- `includes/AppleWalletPass.php` — clean-room pure-PHP PKPass generator (uses `openssl_pkcs7_sign`)
-- `includes/GoogleWalletPass.php` — generic pass JWT builder using RS256 service-account signing
-- `includes/jwt.php` — minimal RS256 JWT signer (no composer dependency; ~40 LOC)
+- `wallet_apple.php`, accepts `?i=<employee_id>` (and optional `?c=<company_slug>`), returns `.pkpass` binary
+- `wallet_google.php`, same params, issues a 302 redirect to the Google Wallet save URL
+- `includes/AppleWalletPass.php`, clean-room pure-PHP PKPass generator (uses `openssl_pkcs7_sign`)
+- `includes/GoogleWalletPass.php`, generic pass JWT builder using RS256 service-account signing
+- `includes/jwt.php`, minimal RS256 JWT signer (no composer dependency; ~40 LOC)
 
 Fabric.js editor and Paymob flows are untouched. Existing `config.php`/`config.example.php` gets new env constants; absent credentials cause the endpoints to render a clear admin-facing error and the buttons to hide.
 
@@ -37,15 +37,15 @@ Infy's `GoogleWalletAPIController` was read for reference only; none of their mo
 
 Before Apple Wallet buttons can render, Ali must provision:
 
-1. **Apple Developer Program membership** — $99/yr. If not enrolled: https://developer.apple.com/programs/enroll/
-2. **Create a Pass Type ID** — developer.apple.com → Certificates, IDs & Profiles → Identifiers → "+" → "Pass Type IDs" → `pass.om.cardify.businesscard` (reverse-DNS)
-3. **Generate a CSR on macOS** — Keychain Access → Certificate Assistant → "Request a Certificate from a Certificate Authority" → save `.certSigningRequest`
-4. **Issue the Pass Type certificate** — upload CSR to the Pass Type ID, download `.cer`, double-click to install in Keychain
-5. **Export as `.p12`** — Keychain Access → right-click the private key + cert pair → Export Items → `.p12` with a strong password
-6. **Download the WWDR G4 intermediate** — https://www.apple.com/certificateauthority/AppleWWDRCAG4.cer → convert to PEM: `openssl x509 -inform DER -in AppleWWDRCAG4.cer -out wwdr.pem`
-7. **Convert .p12 to PEM** — `openssl pkcs12 -in cardify_pass.p12 -out cardify_pass.pem -nodes`
+1. **Apple Developer Program membership**, $99/yr. If not enrolled: https://developer.apple.com/programs/enroll/
+2. **Create a Pass Type ID**, developer.apple.com → Certificates, IDs & Profiles → Identifiers → "+" → "Pass Type IDs" → `pass.om.cardify.businesscard` (reverse-DNS)
+3. **Generate a CSR on macOS**, Keychain Access → Certificate Assistant → "Request a Certificate from a Certificate Authority" → save `.certSigningRequest`
+4. **Issue the Pass Type certificate**, upload CSR to the Pass Type ID, download `.cer`, double-click to install in Keychain
+5. **Export as `.p12`**, Keychain Access → right-click the private key + cert pair → Export Items → `.p12` with a strong password
+6. **Download the WWDR G4 intermediate**, https://www.apple.com/certificateauthority/AppleWWDRCAG4.cer → convert to PEM: `openssl x509 -inform DER -in AppleWWDRCAG4.cer -out wwdr.pem`
+7. **Convert .p12 to PEM**, `openssl pkcs12 -in cardify_pass.p12 -out cardify_pass.pem -nodes`
 8. **Upload both files to the VPS** at `/www/wwwroot/cardify.om/data/wallet/` (0600 perms, www-data:www-data)
-9. **Find Team ID** — developer.apple.com → Membership (10-char string like `ABC1234DEF`)
+9. **Find Team ID**, developer.apple.com → Membership (10-char string like `ABC1234DEF`)
 10. **Set env vars in `config.php`:**
 
 ```php
@@ -60,11 +60,11 @@ define('APPLE_WALLET_ORG_NAME', 'Cardify');
 
 ## Google Wallet: What Ali Needs
 
-1. **Google Cloud project** — https://console.cloud.google.com → New Project "Cardify Wallet"
-2. **Enable Google Wallet API** — console → APIs & Services → Library → "Google Wallet API" → Enable
-3. **Apply for Wallet Issuer account** — https://pay.google.com/business/console → sign up for an Issuer ID (10-16 digit number, free)
-4. **Create a service account** — console → IAM → Service Accounts → Create → role "Wallet Object Issuer" → download JSON key
-5. **Grant Issuer access** — in pay.google.com/business/console, add the service account's email as a user for your Issuer ID
+1. **Google Cloud project**, https://console.cloud.google.com → New Project "Cardify Wallet"
+2. **Enable Google Wallet API**, console → APIs & Services → Library → "Google Wallet API" → Enable
+3. **Apply for Wallet Issuer account**, https://pay.google.com/business/console → sign up for an Issuer ID (10-16 digit number, free)
+4. **Create a service account**, console → IAM → Service Accounts → Create → role "Wallet Object Issuer" → download JSON key
+5. **Grant Issuer access**, in pay.google.com/business/console, add the service account's email as a user for your Issuer ID
 6. **Upload key to VPS** at `/www/wwwroot/cardify.om/data/wallet/google-wallet-sa.json` (0600)
 7. **Set env vars in `config.php`:**
 
@@ -72,7 +72,7 @@ define('APPLE_WALLET_ORG_NAME', 'Cardify');
 define('GOOGLE_WALLET_ENABLED', true);
 define('GOOGLE_WALLET_SERVICE_ACCOUNT_JSON', '/www/wwwroot/cardify.om/data/wallet/google-wallet-sa.json');
 define('GOOGLE_WALLET_ISSUER_ID', '3388000000012345678');
-define('GOOGLE_WALLET_CLASS_ID', 'cardify_business_card_v1'); // arbitrary — created lazily on first save
+define('GOOGLE_WALLET_CLASS_ID', 'cardify_business_card_v1'); // arbitrary, created lazily on first save
 ```
 
 First pass save will auto-create the generic class if it doesn't exist (via REST API from the service account).
@@ -95,7 +95,7 @@ Both platforms use a "generic" pass type (Apple) / "genericClass" (Google) since
 
 ## Endpoint Security
 
-Both endpoints are public (no auth) — matching `vcf.php`. They only read by `employee_id + company_slug` (same as `digital_card.php`). Rate limit is inherited from nginx. No PII leaks: all fields already exposed on the public card page.
+Both endpoints are public (no auth), matching `vcf.php`. They only read by `employee_id + company_slug` (same as `digital_card.php`). Rate limit is inherited from nginx. No PII leaks: all fields already exposed on the public card page.
 
 ## Feature Flag & UI
 
@@ -121,6 +121,6 @@ If a user hits the endpoint when disabled, they see a friendly `503` page: "Wall
 
 ## Non-goals
 
-- Pass updates / push notifications (requires an APNs token + webservice endpoint — V2 feature).
+- Pass updates / push notifications (requires an APNs token + webservice endpoint, V2 feature).
 - Multiple languages in pass (EN only for V1).
 - Custom strip/background images beyond the logo.
