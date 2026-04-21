@@ -170,6 +170,35 @@ function csrfField() {
 }
 
 /**
+ * Same-origin guard for anonymous POST endpoints.
+ *
+ * Public forms (testimonials, appointment booking, lead capture) have no
+ * server-issued CSRF token because the submitter has no session. Instead we
+ * reject POSTs whose Origin / Referer header doesn't belong to this host,
+ * which together with SameSite=Lax session cookies defeats the standard CSRF
+ * vectors without breaking legitimate browser submissions.
+ *
+ * Returns true if the request is same-origin (or carries no Origin/Referer
+ * at all — some browsers strip both for privacy, so we don't hard-fail).
+ */
+function isSameOriginRequest(): bool {
+    $host = defined('APP_HOST') ? APP_HOST : ($_SERVER['HTTP_HOST'] ?? '');
+    $allowed = array_filter([$host, 'cardify.om', 'www.cardify.om']);
+
+    $origin  = $_SERVER['HTTP_ORIGIN']  ?? '';
+    $referer = $_SERVER['HTTP_REFERER'] ?? '';
+
+    foreach ([$origin, $referer] as $h) {
+        if ($h === '') continue;
+        $parsedHost = strtolower(parse_url($h, PHP_URL_HOST) ?: '');
+        if ($parsedHost === '') continue;
+        return in_array($parsedHost, $allowed, true);
+    }
+    // No Origin AND no Referer — privacy mode or native client; allow through.
+    return true;
+}
+
+/**
  * Sanitize email
  */
 function sanitizeEmail($email) {

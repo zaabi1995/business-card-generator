@@ -41,5 +41,15 @@ if ($company) {
     exit;
 }
 
-// Not a company slug, continue normal routing
-return false;
+// Unknown slug: render the real 404 page (with status 404) instead of an
+// empty 200 body. The nginx catch-all routes every `/xxx` here; without this,
+// /signup, /pricing, /foo-bar all returned a blank 200, which is worse than a
+// 404 for users AND for search engines.
+http_response_code(404);
+$notFound = __DIR__ . '/404.php';
+if (is_file($notFound)) {
+    require $notFound;
+} else {
+    echo '<!doctype html><title>404</title><h1>Not found</h1>';
+}
+exit;

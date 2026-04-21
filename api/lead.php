@@ -19,6 +19,11 @@ try {
         echo json_encode(['success' => false, 'error' => 'Method not allowed']);
         exit;
     }
+    if (!isSameOriginRequest()) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Cross-origin POST blocked']);
+        exit;
+    }
 
     $employeeId = trim($_POST['employee_id'] ?? '');
     $name = trim($_POST['name'] ?? '');

@@ -1084,6 +1084,32 @@ class CardSections
         }
         @chmod($absPath, 0644);
 
+        // Re-encode via GD to strip any appended PHP/JS payload and verify
+        // the bytes are a real, parseable image. A polyglot that tricked
+        // finfo won't survive imagecreatefrom*/image* round-tripping.
+        if (function_exists('imagecreatefromstring')) {
+            $raw = @file_get_contents($absPath);
+            $img = $raw !== false ? @imagecreatefromstring($raw) : false;
+            if ($img === false) {
+                @unlink($absPath);
+                $error = 'Image data could not be decoded';
+                return null;
+            }
+            $ok = false;
+            switch ($mime) {
+                case 'image/jpeg': $ok = @imagejpeg($img, $absPath, 88); break;
+                case 'image/png':  $ok = @imagepng($img,  $absPath, 6);  break;
+                case 'image/webp': $ok = function_exists('imagewebp') ? @imagewebp($img, $absPath, 85) : true; break;
+            }
+            @imagedestroy($img);
+            if (!$ok) {
+                @unlink($absPath);
+                $error = 'Image re-encode failed';
+                return null;
+            }
+            @chmod($absPath, 0644);
+        }
+
         return '/' . $relDir . '/' . $filename;
     }
 
