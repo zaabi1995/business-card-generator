@@ -18,8 +18,11 @@ $db = Database::getInstance();
 $jobs = [];
 $singleJob = null;
 
-// Check if viewing single job
+// Check if viewing single job. Same slug guard as blog.php.
 $jobSlug = $_GET['job'] ?? null;
+if (is_string($jobSlug) && !preg_match('~^[a-z0-9_-]{1,120}$~i', $jobSlug)) {
+    $jobSlug = null;
+}
 
 if ($db->tableExists('career_listings')) {
     if ($jobSlug) {

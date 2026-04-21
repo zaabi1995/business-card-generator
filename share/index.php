@@ -119,10 +119,18 @@ if ($shareRow) {
         ['id' => $shareRow['id']]
     );
 
-    // Redirect to digital card
-    $location = '/' . ltrim($shareRow['company_slug'], '/') . '/card/' . $shareRow['employee_id'];
-    header('Location: ' . $location, true, 302);
-    exit;
+    // Redirect to digital card. Defensive: validate slug + id shape so a
+    // tampered share_links row can't inject a header (CR/LF) or send us to
+    // a different host.
+    $slug = preg_match('~^[a-z0-9-]{1,64}$~i', $shareRow['company_slug'] ?? '')
+        ? $shareRow['company_slug'] : null;
+    $empId = preg_match('~^[a-z0-9_-]{1,64}$~i', $shareRow['employee_id'] ?? '')
+        ? $shareRow['employee_id'] : null;
+    if ($slug && $empId) {
+        header('Location: /' . $slug . '/card/' . $empId, true, 302);
+        exit;
+    }
+    renderErrorPage('Link Invalid', 'This share link points to a record we could not resolve.', 410);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

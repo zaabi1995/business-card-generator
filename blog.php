@@ -18,8 +18,12 @@ $db = Database::getInstance();
 $posts = [];
 $singlePost = null;
 
-// Check if viewing single post
+// Check if viewing single post. Validate slug charset before hitting the DB so
+// weird inputs (unicode, SQL-like strings, length bombs) never reach PDO.
 $postSlug = $_GET['post'] ?? null;
+if (is_string($postSlug) && !preg_match('~^[a-z0-9_-]{1,120}$~i', $postSlug)) {
+    $postSlug = null;
+}
 
 if ($db->tableExists('blog_posts')) {
     if ($postSlug) {

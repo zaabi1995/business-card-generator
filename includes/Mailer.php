@@ -220,10 +220,13 @@ class Mailer {
         // Connect to SMTP server
         $contextOptions = [];
         if ($config['encryption'] === 'ssl') {
+            // Verify the SMTP peer by default. Operators who truly need to
+            // talk to a self-signed relay can set SMTP_INSECURE=1 in config.
+            $insecure = defined('SMTP_INSECURE') && SMTP_INSECURE;
             $contextOptions['ssl'] = [
-                'verify_peer' => false,
-                'verify_peer_name' => false,
-                'allow_self_signed' => true
+                'verify_peer'       => !$insecure,
+                'verify_peer_name'  => !$insecure,
+                'allow_self_signed' => $insecure,
             ];
             $host = 'ssl://' . $config['host'];
         } elseif ($config['encryption'] === 'tls') {

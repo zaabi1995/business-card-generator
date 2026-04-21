@@ -73,10 +73,17 @@ if (!empty($lead['expires_at']) && strtotime($lead['expires_at']) < time()) {
 
 // Already used?
 if (!empty($lead['token_used_at']) || !empty($lead['claimed_at'])) {
-    // Gracefully send them to the card they already claimed
+    // Gracefully send them to the card they already claimed.
+    // Defensive: only redirect if card_url is same-origin. Even though the
+    // admin bulk-claim tool always builds it as https://cardify.om/..., the
+    // column is a free-form VARCHAR(512), so we validate before trusting it.
     if (!empty($lead['card_url'])) {
-        header('Location: ' . $lead['card_url']);
-        exit;
+        $host = strtolower(parse_url($lead['card_url'], PHP_URL_HOST) ?: '');
+        $allowed = ['cardify.om', 'www.cardify.om', defined('APP_HOST') ? APP_HOST : ''];
+        if (in_array($host, array_filter($allowed), true)) {
+            header('Location: ' . $lead['card_url']);
+            exit;
+        }
     }
     renderClaimError('Already claimed.', 'This card has already been claimed.');
     exit;
