@@ -1,0 +1,594 @@
+# Cardify Sprint Actions, Autonomous Loop Backlog
+
+**Rules for iteration:**
+- Pick the FIRST unchecked `[ ]` action (top to bottom).
+- Invoke superpowers:systematic-debugging if ANY existing code is touched.
+- Every commit: `git push origin main` + `ssh root@147.93.20.54 "/usr/local/bin/deploy-cardify.sh"`.
+- Every new string → `lang/en.php` AND `lang/ar.php` in same commit.
+- After completing, change `[ ]` to `[x]`, add `→ {SHA} {one-line outcome}` inline.
+- If action uncovers a new bug or gap, append a new numbered action to the end.
+- Never skip; if blocked, mark `[~]` and add `BLOCKED: reason` and move on.
+
+---
+
+## A, i18n Infrastructure (001-020)
+
+- [ ] 001. Create `includes/I18n.php` with `I18n::t($key, $params=[])`, `I18n::setLocale($l)`, `I18n::getLocale()`, `I18n::getDir()`, `I18n::all()`. Dot-notation key lookup, param interpolation via `:name`, fallback to `en` then to key string.
+- [ ] 002. Create `lang/en.php` and `lang/ar.php` with at minimum `common.yes/no/save/cancel/edit/delete/back/next/loading/search/filter/export/print/download/close/confirm/actions/status/active/inactive/created/updated/none`.
+- [ ] 003. Wire locale detection: `?lang=ar` → cookie `cardify_lang` (1yr) → session → `Accept-Language` → default `en`. Add to `config.php` bootstrap.
+- [ ] 004. Add global `t()` helper function in `includes/helpers.php` as alias for `I18n::t()`.
+- [ ] 005. Add `<html dir="<?= I18n::getDir() ?>" lang="<?= I18n::getLocale() ?>">` to every layout (`ui-header.php`, `admin-layout.php`, portal chrome).
+- [ ] 006. Preload IBM Plex Sans Arabic (400/600/700) via `<link rel="preload">` when `dir=rtl`. Fallback stack: `"IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif`.
+- [ ] 007. Add RTL-aware CSS: `.cardify-app[dir="rtl"]` selectors for margins/padding, logical properties where possible (margin-inline-start/end).
+- [ ] 008. Add language switcher component: dropdown in top nav with EN / العربية, persists to cookie, reloads with `?lang=` param.
+- [ ] 009. Split lang files: `lang/{en,ar}/{common,admin,portal,printshop,emails,errors,onboarding,wizard,marketplace,analytics,auth}.php`. Each returns an array; `I18n.php` autoloads on namespace access.
+- [ ] 010. Add CLI script `scripts/i18n-audit.php` that greps for hard-coded English strings in `admin/*.php`, `printshop/*.php`, `portal.php`, `companies.php`, etc., and reports untranslated count per file.
+- [ ] 011. Add CI check (`.github/workflows/i18n.yml`): fails PR if EN and AR keys diverge.
+- [ ] 012. Add Arabic pluralization helper (`I18n::plural($count, 'zero', 'one', 'two', 'few', 'many', 'other')`, Arabic has 6 plural forms).
+- [ ] 013. Add OMR currency helper `Currency::format($amount, $locale)`: "OMR 12.500" vs "١٢٫٥٠٠ ر.ع." Arabic numerals honored.
+- [ ] 014. Add date helper `I18n::formatDate($ts, $locale)`: "22 Apr 2026" / "٢٢ أبريل ٢٠٢٦".
+- [ ] 015. Add time-ago helper `I18n::timeAgo($ts)`: "5 min ago" / "قبل ٥ دقائق".
+- [ ] 016. Seed `lang/en/errors.php` + `lang/ar/errors.php` with top 30 friendly error messages.
+- [ ] 017. Migrate `PortalChrome.css` + `portal.css` to use logical properties for RTL.
+- [ ] 018. Add `dir`-aware utility classes (`.text-start`, `.text-end`, `.pl-4-rtl`, etc.) to `cardify-overrides.css`.
+- [ ] 019. Translate 404.php + 500.php + 502.html to bilingual (auto-detect locale cookie, fallback EN).
+- [ ] 020. Add `lang/{en,ar}/emails.php` schema and wire `Mailer::sendTemplated($template, $to, $locale, $params)`.
+
+## B, i18n Page-by-Page Translation (021-080)
+
+- [ ] 021. Translate `index.php` (landing page) headlines, value props, CTAs.
+- [ ] 022. Translate `login.php` + OTP input flow.
+- [ ] 023. Translate `register.php` / company signup.
+- [ ] 024. Translate `about.php`.
+- [ ] 025. Translate `careers.php`.
+- [ ] 026. Translate `blog.php` listing (posts stay in authored locale).
+- [ ] 027. Translate `companies.php` + `/companies/{slug}` profile.
+- [ ] 028. Translate `logos.php` + sector filter + terms + press pages.
+- [ ] 029. Translate `oman-business-index.php`.
+- [ ] 030. Translate `claim.php` + `claim-lead.php`.
+- [ ] 031. Translate `order-checkout.php` + `order-receipt.php`.
+- [ ] 032. Translate `admin/index.php` dashboard.
+- [ ] 033. Translate `admin/employees.php` + employee modal.
+- [ ] 034. Translate `admin/departments.php`.
+- [ ] 035. Translate `admin/generated.php` (generated cards list).
+- [ ] 036. Translate `admin/auto_generate.php`.
+- [ ] 037. Translate `admin/batch_generate.php` + `batch-auto-generate.php`.
+- [ ] 038. Translate `admin/billing.php` + `check-billing.php`.
+- [ ] 039. Translate `admin/credit-accounts.php`.
+- [ ] 040. Translate `admin/custom-domains.php` (simplify DNS instructions).
+- [ ] 041. Translate `admin/analytics.php` + `card-analytics.php`.
+- [ ] 042. Translate `admin/audit-logs.php`.
+- [ ] 043. Translate `admin/fx-rates.php`.
+- [ ] 044. Translate `admin/appointments.php`.
+- [ ] 045. Translate `admin/bhd-campaign.php`.
+- [ ] 046. Translate `admin/growth.php`.
+- [ ] 047. Translate `admin/odoo_settings.php` (and rename links to ERP Settings).
+- [ ] 048. Translate `admin/impersonate.php` (super-admin only).
+- [ ] 049. Translate `admin/companies.php` (super-admin only).
+- [ ] 050. Translate `admin/customer-dashboard.php`.
+- [ ] 051. Translate `admin/bulk-claim.php`.
+- [ ] 052. Translate `admin/order_detail.php`.
+- [ ] 053. Translate `admin/blog-carousel-preview.php`.
+- [ ] 054. Translate `admin/templates.php` (template picker).
+- [ ] 055. Translate `admin/template-editor.php`.
+- [ ] 056. Translate all admin empty states.
+- [ ] 057. Translate all admin nav labels.
+- [ ] 058. Translate `printshop/dashboard.php`.
+- [ ] 059. Translate `printshop/orders.php` + `order.php`.
+- [ ] 060. Translate `printshop/credit-accounts.php` + `credit-ledger.php`.
+- [ ] 061. Translate `printshop/templates.php` + `template-editor.php` + `template-requests.php`.
+- [ ] 062. Translate `printshop/analytics.php`.
+- [ ] 063. Translate `printshop/settings.php` + `profile.php`.
+- [ ] 064. Translate `printshop/register.php` + `login.php`.
+- [ ] 065. Translate `portal.php` (customer portal).
+- [ ] 066. Translate `digital_card.php` (employee-facing card page).
+- [ ] 067. Translate `card-pdf.php` download labels.
+- [ ] 068. Translate OTP WhatsApp message template.
+- [ ] 069. Translate OTP email template.
+- [ ] 070. Translate invite WhatsApp message (employee onboarding).
+- [ ] 071. Translate invite email (employee onboarding).
+- [ ] 072. Translate print order confirmation email.
+- [ ] 073. Translate print shop new-order notification.
+- [ ] 074. Translate payment receipt email.
+- [ ] 075. Translate monthly analytics report email.
+- [ ] 076. Translate credit-account approval email.
+- [ ] 077. Translate password-reset email.
+- [ ] 078. Translate 30-day restore warning email (soft-delete cron).
+- [ ] 079. Sweep inline `<button>Submit</button>` type literals, replace with `t()`.
+- [ ] 080. Run `scripts/i18n-audit.php`, commit report showing 0 untranslated strings in admin + portal + printshop.
+
+## C, Onboarding Wizard (081-110)
+
+- [ ] 081. Create DB table `company_onboarding` (company_id, step, data JSON, completed_at).
+- [ ] 082. Create `admin/onboarding.php` wrapper page, redirect on first-login.
+- [ ] 083. Step 1: upload logo, drag-drop, auto-extract dominant color via `LogoLibrary::dominantColor()`.
+- [ ] 084. Step 2: brand colors (primary/accent), pre-filled from logo, editable swatches.
+- [ ] 085. Step 3: template picker with live preview (sample employee + company brand injected).
+- [ ] 086. Step 4: add first employee form (name/title/phone/email).
+- [ ] 087. Step 5: digital card preview with shareable URL.
+- [ ] 088. Step 6: CSV upload or paste-list for team bulk-invite.
+- [ ] 089. Step 7: order physical cards or skip.
+- [ ] 090. Skip/resume support: state saved after each step.
+- [ ] 091. Progress indicator (X of 7) with locale-aware labels.
+- [ ] 092. Wizard lives inside existing admin layout; full width, no sidebar on this page.
+- [ ] 093. Auto-seed demo tenant: on signup, create 5 sample employees labeled "Demo, replace me" so admin plays with data.
+- [ ] 094. "Skip demo data" button removes seeded employees.
+- [ ] 095. Wizard analytics: track completion rate per step (into `audit_log`).
+- [ ] 096. Wizard mobile: every step thumb-reachable on 375px viewport.
+- [ ] 097. Bilingual copy: every step label, help text, placeholder.
+- [ ] 098. Success screen: confetti + "You're live" + links to dashboard/orders/team.
+- [ ] 099. Resume prompt: if admin logs in with pending onboarding, show banner "Finish setup (2 of 7)".
+- [ ] 100. Wizard skip policy: admin can skip but wizard re-appears every 24h until done.
+- [ ] 101. Wizard video walkthrough: optional 2-minute Loom embed, top-right of every step.
+- [ ] 102. Pre-populate company name + contact from signup form (no re-typing).
+- [ ] 103. Validate each step server-side to prevent skipping ahead via URL manipulation.
+- [ ] 104. Add "Back" button to every step except 1.
+- [ ] 105. Add keyboard nav: Enter = next, Esc = save & close.
+- [ ] 106. Success step triggers welcome email + WhatsApp to admin's phone.
+- [ ] 107. Step 3 template preview uses same rendering engine as production digital cards (no divergence).
+- [ ] 108. Step 6 CSV: accepts `name,title,email,phone,department` columns, validates headers, preview first 5 rows before import.
+- [ ] 109. Step 6 paste-list: accepts `Name | Title | Phone` format, parses into rows.
+- [ ] 110. Step 7 skip records a flag; dashboard later shows "Order physical cards (recommended)" banner.
+
+## D, Company Registration Redesign (111-125)
+
+- [ ] 111. Rewrite `/register` to 3 fields: company name, admin phone, admin email.
+- [ ] 112. OTP-first flow: send 6-digit OTP via Dardasha WhatsApp to admin phone, fallback to email if phone fails.
+- [ ] 113. Remove password creation from signup, replace with magic-link OTP on every login.
+- [ ] 114. Add optional password setup post-signup under Settings → Security.
+- [ ] 115. Slug auto-generated from company name with collision detection + override field.
+- [ ] 116. Tenant provisioning happens instantly after OTP verify; no email-confirmation-link step.
+- [ ] 117. Redirect to onboarding wizard after tenant created.
+- [ ] 118. Bilingual signup form + OTP message.
+- [ ] 119. Signup page shows trust signals: "trusted by 50+ Omani companies," logo strip from `om_companies curated=1`.
+- [ ] 120. Rate limit OTP sends: 3 per hour per phone, 10 per day per IP.
+- [ ] 121. Add reCAPTCHA v3 (invisible) on signup endpoint.
+- [ ] 122. Terms of service + privacy policy acceptance checkbox, link to `/terms` + `/privacy` (bilingual pages).
+- [ ] 123. GDPR/Oman PDPL notice on signup: "we store your data in Oman, comply with PDPL."
+- [ ] 124. Referral code field (optional): tracks which existing company referred.
+- [ ] 125. Post-signup: Slack/WhatsApp alert to BHD admin "New tenant: {company}".
+
+## E, Employee Self-Service (126-150)
+
+- [ ] 126. Create `portal/employee-edit.php`, accessible via magic-link token (no login).
+- [ ] 127. DB table `employee_edit_tokens` (employee_id, token, expires_at, used_at).
+- [ ] 128. Token minted on employee creation + resent on demand by admin.
+- [ ] 129. Edit page: name, title, phone, mobile, email, LinkedIn, Instagram, Twitter, website, photo upload.
+- [ ] 130. Photo upload: real MIME check, resize to 512x512, WebP + PNG fallback.
+- [ ] 131. Save instantly (no submit button, debounced).
+- [ ] 132. Preview of updated digital card live below form.
+- [ ] 133. "Save and generate new Apple Wallet pass" button regenerates `.pkpass`.
+- [ ] 134. "Download my card" → PDF (both sides) + save to device.
+- [ ] 135. "Share my card" → native share API → WhatsApp / SMS / Email prefilled.
+- [ ] 136. Bilingual page (detects recipient locale from admin-set preference or prompts on first load).
+- [ ] 137. Token expires 30 days after last use; admin sees expired tokens and can resend.
+- [ ] 138. Abuse guard: edits logged to `audit_log` with IP + UA.
+- [ ] 139. Rate limit: 10 saves per minute per token.
+- [ ] 140. Mobile-first layout; tap targets >= 44px.
+- [ ] 141. Department dropdown populated from company's departments, employee can request change (goes to admin for approval).
+- [ ] 142. Email notify admin on employee edit (opt-out per-company).
+- [ ] 143. Employee page shows analytics-lite: "Your card was scanned 47 times this month."
+- [ ] 144. Social icons: add/remove dynamically, preview order.
+- [ ] 145. Custom field support: if company defined "Extension Number," employee can fill it.
+- [ ] 146. NFC write QR code: employee scans with NFC writer app, programs their own tag.
+- [ ] 147. Print request: employee can request 10 reprints, goes to admin approval queue.
+- [ ] 148. "Leave company" button: sends request to admin, on approval employee is deactivated + card invalidated.
+- [ ] 149. Employee can set preferred contact: "tap my card = open WhatsApp vs dial phone vs save contact."
+- [ ] 150. WhatsApp/email invite template includes a 2-minute GIF showing edit flow.
+
+## F, Template Editor Upgrades (151-180)
+
+- [ ] 151. Add "Set as company default" button to template editor.
+- [ ] 152. DB: `companies.default_template_id`, applied when generating cards if employee has no per-employee override.
+- [ ] 153. DB: `departments.template_id` (nullable), overrides company default.
+- [ ] 154. Version history: on save, insert new row in `template_versions` (template_id, version_number, fabric_json, created_by, created_at).
+- [ ] 155. Generated cards reference a specific version, editing template doesn't break existing cards.
+- [ ] 156. "Revert to version X" action in editor.
+- [ ] 157. Mobile editor: touch drag on Fabric.js canvas, pinch to zoom.
+- [ ] 158. Bilingual card: front in EN, back in AR, auto-mirror text fields.
+- [ ] 159. Auto-contrast: if card background is dark, labels flip to white.
+- [ ] 160. Font picker uses `GoogleFonts.php` with 20-font curated list + full list behind "more."
+- [ ] 161. Color picker respects brand tokens (company primary/accent preselected).
+- [ ] 162. QR placement: toggle on/off, position 4 corners.
+- [ ] 163. Logo placement: drag logo anywhere, snap to guides.
+- [ ] 164. Preset layouts: 10 pre-designed templates tagged by industry (law, retail, F&B, tech, gov).
+- [ ] 165. "Preview with any employee" dropdown: pick any employee to see how their data fills the template.
+- [ ] 166. Print-ready output: 3.5×2 in, 3mm bleed, CMYK PDF via `PrintReadyGenerator.php`.
+- [ ] 167. Digital output: 800×500px PNG + SVG.
+- [ ] 168. Template lock: admin-lock disables employee self-edit of template.
+- [ ] 169. Template lint: warn if text overflows, contrast <4.5:1, logo <200px, font size <9pt.
+- [ ] 170. Template duplicate button.
+- [ ] 171. Template archive (soft-delete) with restore.
+- [ ] 172. Template-level metadata: tags, description, industry, created_by.
+- [ ] 173. Share template across companies (super-admin feature): make template public.
+- [ ] 174. Template gallery: `/admin/templates` becomes a grid of cards, filter by industry, sort by "most used."
+- [ ] 175. Drag-and-drop from template library to "my templates."
+- [ ] 176. Fabric.js upgrade: current version if <5.3, upgrade to 5.3+ for mobile-touch reliability.
+- [ ] 177. Canvas undo/redo: `ctrl+z` / `ctrl+shift+z` bound.
+- [ ] 178. Fabric.js save autosaves every 10 seconds to localStorage as well as server draft.
+- [ ] 179. Template preview OG image auto-generated for share links.
+- [ ] 180. Bilingual labels for every editor control.
+
+## G, Print Order Flow (181-210)
+
+- [ ] 181. Rewrite `admin/order-checkout.php` as 4 steps: (1) pick employees, (2) pick quantity per employee, (3) pick print shop, (4) pay.
+- [ ] 182. Step 1: multi-select employee list with "all," "by department," "by template."
+- [ ] 183. Step 2: default 100/employee, editable inline, total = sum.
+- [ ] 184. Step 3: marketplace grid of print shops (distance, rating, price/card, turnaround).
+- [ ] 185. Step 4: payment options: Paymob card/OmanNet/ApplePay, Credit Account, PO, Cash-on-delivery (if shop supports).
+- [ ] 186. Order confirmation page with order number, estimated delivery, print-shop contact.
+- [ ] 187. Order tracking page with 6 states: queued, printing, ready, shipped, delivered, cancelled.
+- [ ] 188. Each state triggers WhatsApp + email notification in recipient locale.
+- [ ] 189. DB: `print_orders.per_employee_qty` JSON map {employee_id: qty}.
+- [ ] 190. Split-pay support: pay for 100 now via card, 200 via credit account.
+- [ ] 191. Receipt auto-generated in both locales, stored in `storage/receipts/`.
+- [ ] 192. Receipt PDF includes tax breakdown (5% Oman VAT), CR number, IBAN, bilingual line items.
+- [ ] 193. Receipt emailed + WhatsApp link + downloadable from order page.
+- [ ] 194. Admin can cancel order within 2 hours of placement (refund initiated, print shop notified).
+- [ ] 195. Print shop can reject order within 1 hour (order re-routed to next shop or refunded).
+- [ ] 196. Quote generated before payment (bilingual PDF).
+- [ ] 197. Quote expires in 7 days, price locked during window.
+- [ ] 198. Order notes field: "deliver after 3 pm" free-text, passed to print shop.
+- [ ] 199. Address book: company saves delivery addresses, picks from dropdown.
+- [ ] 200. Repeat-order: "reorder last month's batch" 1-click.
+- [ ] 201. Partial reprint: "reprint for John only" single-employee flow.
+- [ ] 202. Rush order surcharge: +20% for <24h turnaround.
+- [ ] 203. Volume discount: auto-apply 5% at 500 cards, 10% at 2000.
+- [ ] 204. Referral credit: if order placed via referral link, admin gets 5% credit to account.
+- [ ] 205. Pre-order QA: PDF proof sent to admin WhatsApp, must approve before printing.
+- [ ] 206. Print shop QA: photo-of-finished-stack uploaded before shipping.
+- [ ] 207. Delivery: Aramex/ONAC integration for tracking link (start with manual paste-in-link, upgrade later).
+- [ ] 208. Customer receives delivery confirmation with photo-of-delivered.
+- [ ] 209. Post-delivery: automatic review request SMS+email 3 days later.
+- [ ] 210. Bilingual all stages.
+
+## H, Print Shop Marketplace (211-235)
+
+- [ ] 211. Public page `/print-shops` listing all approved shops (grid, filterable).
+- [ ] 212. Public page `/print-shops/{slug}` with profile: services, pricing, photos, reviews.
+- [ ] 213. DB: `print_shop_reviews` (order_id, rating, comment, reply, created_at).
+- [ ] 214. Review request sent post-delivery.
+- [ ] 215. Print shop reply to review.
+- [ ] 216. Rating aggregate + review count on marketplace grid.
+- [ ] 217. Turnaround SLA: shop sets 24h/48h/3d/5d options, shown on grid.
+- [ ] 218. Price/card: shop sets base price, marketplace shows range.
+- [ ] 219. Distance: geolocate admin + shop, show km.
+- [ ] 220. Featured shops: super-admin can mark featured (paid placement later).
+- [ ] 221. Shop photos: upload up to 10, shown on profile.
+- [ ] 222. Shop services: certificates, ISO, machines listed.
+- [ ] 223. Shop hours + holiday calendar affects SLA display.
+- [ ] 224. Shop chat: button "message this shop," opens WhatsApp thread via Dardasha.
+- [ ] 225. Shop order volume display: "120 orders completed this year."
+- [ ] 226. Shop verification badge: BHD-verified means we audited their work.
+- [ ] 227. Shop onboarding wizard (parallel to company): 5 steps, register/KYC/services/pricing/payout.
+- [ ] 228. Shop KYC upload: CR, bank IBAN, owner ID.
+- [ ] 229. Shop payout: monthly auto-payout via ERP to their IBAN.
+- [ ] 230. Shop dispute flow: disputed order → mediator (super-admin) reviews.
+- [ ] 231. Shop blocks: shop can decline specific companies (e.g., competitor).
+- [ ] 232. Shop leaderboard: homepage section, top 5 by volume/rating.
+- [ ] 233. Shop coverage map: which wilayats they deliver to.
+- [ ] 234. Shop specializations: "cards only," "cards+brochures," "premium finishes."
+- [ ] 235. Bilingual every shop page.
+
+## I, Analytics Dashboard (236-260)
+
+- [ ] 236. Redesign `admin/analytics.php` to "did this pay off?" KPI layout.
+- [ ] 237. KPI cards: total taps, unique visitors, contacts saved, WhatsApp clicks, website clicks.
+- [ ] 238. Sparkline charts, 30-day rolling.
+- [ ] 239. Top 10 employees by engagement.
+- [ ] 240. Geographic heatmap (country + wilayat).
+- [ ] 241. Conversion funnel: tap → contact save → WhatsApp message → lead.
+- [ ] 242. Device breakdown (mobile/desktop).
+- [ ] 243. OS breakdown (iOS/Android).
+- [ ] 244. Referrer breakdown.
+- [ ] 245. Peak hour analysis.
+- [ ] 246. Export to CSV.
+- [ ] 247. Export to PDF (bilingual).
+- [ ] 248. Monthly email auto-sent to admin with summary (bilingual).
+- [ ] 249. Per-employee card analytics page: `/admin/employees/{id}/analytics`.
+- [ ] 250. Goal tracking: admin sets "reach 1000 taps/month," progress bar.
+- [ ] 251. Event log: every tap with timestamp + geo + device.
+- [ ] 252. Lead capture form (optional): custom fields, submissions feed dashboard.
+- [ ] 253. UTM tracking on card links.
+- [ ] 254. A/B test: same employee two designs, see which gets more engagement.
+- [ ] 255. QR vs NFC split.
+- [ ] 256. Social click-through breakdown.
+- [ ] 257. Compare-periods: this month vs last.
+- [ ] 258. Alerts: "John's card engagement dropped 50% this week."
+- [ ] 259. Bilingual labels everywhere.
+- [ ] 260. Print shop analytics: same dashboard for shops (orders/revenue/avg-rating/repeat-rate).
+
+## J, Admin UX (261-295)
+
+- [ ] 261. Redesign admin sidebar: 5 groups (Dashboard, Team, Cards, Orders, Settings) with collapsible sections.
+- [ ] 262. Mobile: sidebar becomes drawer off-canvas, hamburger top-left.
+- [ ] 263. Cmd+K global search: fuzzy search over employees, departments, orders, settings.
+- [ ] 264. Cmd+K result groups: jump to page, open employee modal, run action.
+- [ ] 265. Keyboard shortcuts cheatsheet on `?`.
+- [ ] 266. Shortcuts: `g d` dashboard, `g t` team, `g o` orders, `g s` settings, `c` create (contextual), `/` focus search.
+- [ ] 267. Breadcrumbs on every nested admin page.
+- [ ] 268. Sticky page header with primary action button.
+- [ ] 269. Toast notifications bottom-right, auto-dismiss 5s.
+- [ ] 270. Loading states: skeleton loaders, never blank whiteflash.
+- [ ] 271. Optimistic UI on toggle/save actions.
+- [ ] 272. Undo toast: "Deleted John, Undo" (5s window).
+- [ ] 273. Bulk actions bar: sticky top when rows selected.
+- [ ] 274. Bulk: delete, change template, change department, resend invite, export.
+- [ ] 275. Filter UI: chip-based filters, multi-select.
+- [ ] 276. Sort UI: click column header, persist preference.
+- [ ] 277. Column picker: toggle columns, persist.
+- [ ] 278. Saved views: "my filters" save + name + share.
+- [ ] 279. Empty state for every list with CTA + illustration.
+- [ ] 280. Inline tooltips on every non-obvious form field.
+- [ ] 281. Help button top-right opens context-aware help drawer.
+- [ ] 282. Help content sourced from `lang/{en,ar}/help/{page}.md`.
+- [ ] 283. What's New modal on login if new release, auto-shows release notes.
+- [ ] 284. Feature tour (Shepherd.js or custom) for dashboard on first visit post-onboarding.
+- [ ] 285. Mobile admin: every page QA'd on 375px and 414px.
+- [ ] 286. Tablet admin: 768px layout tested.
+- [ ] 287. PWA manifest + service worker, installable from mobile browser.
+- [ ] 288. Offline banner if network drops.
+- [ ] 289. Dark mode optional (respect OS pref).
+- [ ] 290. Accessibility: WCAG AA contrast, focus rings, aria-labels.
+- [ ] 291. Keyboard nav end-to-end: every page navigable without mouse.
+- [ ] 292. Screen reader pass: aria-live for toasts, aria-label on icon buttons.
+- [ ] 293. Date picker localized (ar uses Hijri optional toggle).
+- [ ] 294. Number inputs localized (Arabic-Indic optional).
+- [ ] 295. Every icon button has a tooltip.
+
+## K, Design System Tokens + Components (296-320)
+
+- [ ] 296. Create `assets/css/cardify-tokens.css` with colors, spacing, radius, shadow, font tokens.
+- [ ] 297. Move all color literals to tokens (`--cardify-primary-500: #009bc1`, etc.).
+- [ ] 298. 9-step gray scale via OKLCH.
+- [ ] 299. Typography scale: 12/14/16/18/20/24/32/40/48 px.
+- [ ] 300. Create `assets/css/cardify-components.css` with `.btn`, `.input`, `.card`, `.table`, `.modal`, `.toast`, `.badge`, `.chip`.
+- [ ] 301. Primary/secondary/ghost button variants.
+- [ ] 302. Danger button variant (reserved for destructive).
+- [ ] 303. Loading state on every button.
+- [ ] 304. Disabled state with tooltip explaining why.
+- [ ] 305. Form input base with label, help, error.
+- [ ] 306. Select component with search.
+- [ ] 307. Combobox (creatable select).
+- [ ] 308. Toggle switch component.
+- [ ] 309. Radio group + checkbox group components.
+- [ ] 310. File upload dropzone component.
+- [ ] 311. Color picker component.
+- [ ] 312. Image cropper component (employee photo).
+- [ ] 313. Date picker component.
+- [ ] 314. Time picker.
+- [ ] 315. Range slider.
+- [ ] 316. Tag input (for socials).
+- [ ] 317. Pagination component.
+- [ ] 318. Tabs component.
+- [ ] 319. Accordion component.
+- [ ] 320. Icon library picker (Heroicons + FA Pro).
+
+## L, Empty States + Tooltips (321-340)
+
+- [ ] 321. Empty employees list: "No team yet" + Add + CSV import + demo-seed CTAs.
+- [ ] 322. Empty orders: "No orders yet" + Order Cards CTA.
+- [ ] 323. Empty analytics: "No data yet, share cards to collect taps" + Copy link.
+- [ ] 324. Empty templates: "Start from a preset" + gallery.
+- [ ] 325. Empty credit accounts: "Apply for credit" CTA.
+- [ ] 326. Empty departments: "Organize your team" + Create Dept CTA.
+- [ ] 327. Empty audit log: "No activity yet."
+- [ ] 328. Empty marketplace search: "Try another location" + reset.
+- [ ] 329. Employee form tooltip on each field.
+- [ ] 330. Template editor tooltip on each control.
+- [ ] 331. Order checkout tooltip on each payment method.
+- [ ] 332. Credit account tooltip on each limit field.
+- [ ] 333. Settings tooltip on each toggle.
+- [ ] 334. Onboarding step tooltip on "what does this do."
+- [ ] 335. Portal page tooltip on share/download buttons.
+- [ ] 336. Analytics tooltip on each KPI explaining calculation.
+- [ ] 337. Template-lint warnings with inline fix suggestion.
+- [ ] 338. DNS instructions for custom domain rewritten plain-English + bilingual.
+- [ ] 339. Help icon (i) next to every "technical" label.
+- [ ] 340. First-time-user tooltips on empty pages.
+
+## M, Forms + Validation (341-355)
+
+- [ ] 341. Employee form: 3 required (name/email/title), rest under Advanced accordion.
+- [ ] 342. Inline validation on blur (not on submit only).
+- [ ] 343. Phone validation: E.164 + `intl-tel-input` widget.
+- [ ] 344. Email validation: MX check via API.
+- [ ] 345. URL validation for socials: auto-prefix https://.
+- [ ] 346. Server-side validation mirrored client-side.
+- [ ] 347. Friendly errors: "This email is already used by another employee, did you mean to update them?"
+- [ ] 348. Autosave on long forms (every 10s).
+- [ ] 349. Unsaved changes warning on navigation.
+- [ ] 350. Required field indicators only on required (no asterisk spam).
+- [ ] 351. Placeholder copy friendly (no "Enter name here").
+- [ ] 352. Character counters where limit exists.
+- [ ] 353. Password strength meter (on settings).
+- [ ] 354. File size + type hints inline above uploaders.
+- [ ] 355. Destructive confirm: typed confirmation for delete-many.
+
+## N, Performance (356-370)
+
+- [ ] 356. Audit `admin/employees.php` for N+1, batch-load joins.
+- [ ] 357. Audit `admin/analytics.php` SQL, add indexes.
+- [ ] 358. Audit `companies.php` lookup joins.
+- [ ] 359. Add Redis or file-based cache for logo library queries.
+- [ ] 360. Lazy-load images (`loading="lazy"`).
+- [ ] 361. WebP fallback for all images.
+- [ ] 362. CSS minify pipeline.
+- [ ] 363. JS minify pipeline.
+- [ ] 364. Critical CSS inline on landing page.
+- [ ] 365. Defer non-critical JS.
+- [ ] 366. CDN for static assets (Cloudflare already in front, add cache headers).
+- [ ] 367. HTTP/2 push (via nginx if supported).
+- [ ] 368. Brotli compression enabled.
+- [ ] 369. Response time monitor per endpoint.
+- [ ] 370. Web Vitals beacon to analytics (LCP/FID/CLS).
+
+## O, Notifications + Emails (371-390)
+
+- [ ] 371. Bilingual email templates in `lang/{en,ar}/emails/*.blade` or equivalent.
+- [ ] 372. SMTP via VPS mail server (alali/bhd) with DKIM.
+- [ ] 373. Transactional: welcome, OTP, invite, order confirm, order status, receipt.
+- [ ] 374. Marketing: monthly report, new feature, tips (opt-out per user).
+- [ ] 375. Notification preferences page: user picks email/WhatsApp/both/none per event.
+- [ ] 376. WhatsApp via Dardasha line, templates in both locales.
+- [ ] 377. In-app notification bell with unread count.
+- [ ] 378. Notification events: order received, order shipped, credit approved, team member joined, analytics spike, review received.
+- [ ] 379. Digest mode: instead of per-event, daily 9am summary.
+- [ ] 380. System banner for outages.
+- [ ] 381. Admin-to-team broadcast: "All cards reprinting next week."
+- [ ] 382. Employee-to-admin request: handled via notification.
+- [ ] 383. SLA reminders: "You have 3 cards pending approval for 24h."
+- [ ] 384. Review request nudge: 3 days post-delivery.
+- [ ] 385. Re-engagement: "Your card engagement is low, try these 3 tips."
+- [ ] 386. Birthday WhatsApp: if employee DOB set, auto-send.
+- [ ] 387. Employee anniversary (if hire date set).
+- [ ] 388. Unsubscribe per-type.
+- [ ] 389. DKIM/SPF/DMARC re-audit.
+- [ ] 390. Email analytics: opens/clicks per template.
+
+## P, Audit + Soft-Delete + Undo (391-405)
+
+- [ ] 391. Audit log page: `admin/audit-logs.php`, filter by actor/action/date.
+- [ ] 392. Log every mutating action: create/update/delete/login/otp/payment.
+- [ ] 393. Log includes IP, UA, old/new values for updates.
+- [ ] 394. Soft-delete: add `deleted_at` nullable to employees, templates, orders, credit accounts.
+- [ ] 395. Queries filter `deleted_at IS NULL` by default.
+- [ ] 396. Restore UI in admin → Recycle Bin.
+- [ ] 397. 30-day hard-delete cron.
+- [ ] 398. Export-my-data: company admin triggers ZIP of all their data (GDPR/PDPL).
+- [ ] 399. Delete-my-tenant: 30-day grace then purge.
+- [ ] 400. Undo toasts wired (5s window) for delete employee / archive template.
+- [ ] 401. Admin can undo own actions within 1 minute via audit log "Undo" button.
+- [ ] 402. Audit log bilingual labels.
+- [ ] 403. Audit log export CSV.
+- [ ] 404. Immutable log: `audit_log` table prevents UPDATE/DELETE via trigger.
+- [ ] 405. Suspicious activity alert: 10+ deletes in 1 min → pause + notify.
+
+## Q, Security (406-420)
+
+- [ ] 406. Rate limit OTP endpoint: 3/hour/phone, 10/day/IP.
+- [ ] 407. Rate limit login: 5/min/IP, 20/day/user.
+- [ ] 408. Rate limit public endpoints (logo download, card view): 60/min/IP.
+- [ ] 409. CSRF sweep: every POST handler uses `validateCSRFToken`.
+- [ ] 410. SQL injection sweep: audit raw `$db->exec` calls, convert to prepared.
+- [ ] 411. XSS sweep: audit echo of $user-controlled, wrap in `sanitize()`.
+- [ ] 412. Content Security Policy header added (nonce-based).
+- [ ] 413. HSTS header.
+- [ ] 414. X-Frame-Options deny except embed-allowed pages.
+- [ ] 415. Cookie flags: HttpOnly, Secure, SameSite=Lax.
+- [ ] 416. Session rotation on login.
+- [ ] 417. Password policy: min 10 chars, bcrypt cost 12.
+- [ ] 418. 2FA optional for admin (TOTP via `otp-dardasha`).
+- [ ] 419. Super-admin IP allowlist.
+- [ ] 420. File upload: sandbox to `/storage/uploads`, never executable, strip EXIF.
+
+## R, Public Pages + SEO (421-440)
+
+- [ ] 421. Sitemap index covers: static pages, companies, logos, print shops, blog.
+- [ ] 422. Per-locale sitemap variants.
+- [ ] 423. hreflang on every bilingual page.
+- [ ] 424. Schema.org markup: Organization, Product, Review, Article.
+- [ ] 425. OG images for every company profile (auto-rendered Playwright).
+- [ ] 426. OG images for every print shop.
+- [ ] 427. OG images for blog articles.
+- [ ] 428. Breadcrumb schema.
+- [ ] 429. FAQ schema on FAQ pages.
+- [ ] 430. robots.txt audit + update.
+- [ ] 431. 301s for legacy URLs.
+- [ ] 432. Core Web Vitals pass on landing.
+- [ ] 433. Landing page conversion copy pass.
+- [ ] 434. Testimonials section on landing (real quotes).
+- [ ] 435. Case studies page: 3 real companies.
+- [ ] 436. Pricing page: clear tiers, OMR, bilingual.
+- [ ] 437. FAQ page with 20 common questions bilingual.
+- [ ] 438. Contact page with form + WhatsApp + map.
+- [ ] 439. Terms + Privacy bilingual.
+- [ ] 440. Blog bilingual (per post; slug-en, slug-ar where applicable).
+
+## S, ERP Sync + Billing (441-455)
+
+- [ ] 441. Health-check endpoint `/api/erp-health`, returns OK if token valid.
+- [ ] 442. Alert on ERP sync failure (WhatsApp to Ali).
+- [ ] 443. Retry queue for failed syncs (exponential backoff).
+- [ ] 444. Bilingual ERP invoice PDFs.
+- [ ] 445. Tax breakdown on invoice (5% VAT).
+- [ ] 446. Company CR / tax ID fields on billing.
+- [ ] 447. Invoice list view in company admin with download.
+- [ ] 448. Payment history view.
+- [ ] 449. Credit statement view (downloadable PDF).
+- [ ] 450. Auto-charge card-credits on card-generate (not on order).
+- [ ] 451. Top-up card credits page with Paymob.
+- [ ] 452. Bulk buy discount on credits.
+- [ ] 453. Audit cash_flow from card-credit purchases to ERP client ledger.
+- [ ] 454. Monthly ERP reconciliation script.
+- [ ] 455. Failed-payment retry: 3 attempts over 7 days.
+
+## T, Monitoring + Ops (456-470)
+
+- [ ] 456. Sentry (free tier) integration, PHP + frontend.
+- [ ] 457. Uptime monitor (StatusCake or Uptime Robot).
+- [ ] 458. Status page `/status` live.
+- [ ] 459. Nightly DB dump to B2/S3.
+- [ ] 460. Nightly storage dir backup.
+- [ ] 461. Weekly restore test.
+- [ ] 462. Log rotation (nginx + PHP errors).
+- [ ] 463. Disk-usage alert at 80%.
+- [ ] 464. Slow query log review cron.
+- [ ] 465. Deploy script pre-flight (lint PHP, syntax check).
+- [ ] 466. Deploy script post-flight (smoke test 5 URLs).
+- [ ] 467. Rollback command documented + tested.
+- [ ] 468. Staging env mirror (subdomain stage.cardify.om).
+- [ ] 469. Load test with k6 (100 concurrent users).
+- [ ] 470. Incident runbook at `/ops/runbook.md`.
+
+## U, End-to-End QA (471-495)
+
+- [ ] 471. E2E Journey A: register company EN, OTP, land in wizard.
+- [ ] 472. E2E Journey A: register company AR, OTP, land in wizard.
+- [ ] 473. E2E Journey B: complete 7-step wizard in EN.
+- [ ] 474. E2E Journey B: complete 7-step wizard in AR.
+- [ ] 475. E2E Journey C: design template EN, save, preview.
+- [ ] 476. E2E Journey C: design template AR, save, preview.
+- [ ] 477. E2E Journey D: employee receives invite, edits self, saves.
+- [ ] 478. E2E Journey D: employee in AR.
+- [ ] 479. E2E Journey E: admin orders 100 cards via Paymob EN.
+- [ ] 480. E2E Journey E: via Credit Account AR.
+- [ ] 481. E2E Journey E: via PO upload AR.
+- [ ] 482. E2E Journey F: analytics loads, filter by month, export CSV.
+- [ ] 483. E2E Journey G: print shop marketplace browse, pick, order.
+- [ ] 484. E2E mobile 375px: every journey.
+- [ ] 485. E2E 414px: every journey.
+- [ ] 486. E2E tablet 768px: every journey.
+- [ ] 487. E2E Safari iOS latest.
+- [ ] 488. E2E Chrome Android latest.
+- [ ] 489. E2E slow-3G throttled.
+- [ ] 490. QA NFC write flow with test tag.
+- [ ] 491. QA Apple Wallet pass install on iPhone.
+- [ ] 492. QA Google Wallet pass install on Android.
+- [ ] 493. QA keyboard-only navigation.
+- [ ] 494. QA screen reader (VoiceOver + NVDA).
+- [ ] 495. QA localization: no untranslated strings on any page.
+
+## V, Final Polish + Release (496-510)
+
+- [ ] 496. Changelog page `/changelog` bilingual.
+- [ ] 497. Release notes for v2.0 sprint.
+- [ ] 498. Update DOCUMENTATION.md.
+- [ ] 499. Update CLAUDE.md project context.
+- [ ] 500. Update memory `cardify.md`.
+- [ ] 501. Deploy to prod.
+- [ ] 502. Smoke test post-deploy.
+- [ ] 503. Post tweet / LinkedIn.
+- [ ] 504. Email existing customers about upgrade.
+- [ ] 505. WhatsApp existing customers.
+- [ ] 506. Monitor Sentry for 24h post-release.
+- [ ] 507. Collect feedback form responses.
+- [ ] 508. Triage new actions discovered → append.
+- [ ] 509. Final self-review loop iteration.
+- [ ] 510. Close sprint, write retro at `/Users/ali/claude/obsidian/claude-vault/cardify-sprint-retro.md`.
+
+---
+
+## Appended Actions (discovered during iterations)
+
+<!-- Future iterations append here -->
