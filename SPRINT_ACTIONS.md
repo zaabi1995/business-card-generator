@@ -13,10 +13,10 @@
 
 ## A, i18n Infrastructure (001-020)
 
-- [ ] 001. Create `includes/I18n.php` with `I18n::t($key, $params=[])`, `I18n::setLocale($l)`, `I18n::getLocale()`, `I18n::getDir()`, `I18n::all()`. Dot-notation key lookup, param interpolation via `:name`, fallback to `en` then to key string.
-- [ ] 002. Create `lang/en.php` and `lang/ar.php` with at minimum `common.yes/no/save/cancel/edit/delete/back/next/loading/search/filter/export/print/download/close/confirm/actions/status/active/inactive/created/updated/none`.
-- [ ] 003. Wire locale detection: `?lang=ar` → cookie `cardify_lang` (1yr) → session → `Accept-Language` → default `en`. Add to `config.php` bootstrap.
-- [ ] 004. Add global `t()` helper function in `includes/helpers.php` as alias for `I18n::t()`.
+- [x] 001. Create `includes/I18n.php` → 4209597 class with dot lookup, plural/currency/date helpers, fallback chain
+- [x] 002. Seed `lang/en/common.php` + `lang/ar/common.php` → 4209597 80+ common keys
+- [x] 003. Wire locale detection (`?lang=` > cookie > session > Accept-Language > `en`) → 4209597 I18n::boot() in functions.php
+- [x] 004. Global `t()` + `currentLocale()` + `currentDir()` + `isRtl()` helpers → 4209597
 - [ ] 005. Add `<html dir="<?= I18n::getDir() ?>" lang="<?= I18n::getLocale() ?>">` to every layout (`ui-header.php`, `admin-layout.php`, portal chrome).
 - [ ] 006. Preload IBM Plex Sans Arabic (400/600/700) via `<link rel="preload">` when `dir=rtl`. Fallback stack: `"IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif`.
 - [ ] 007. Add RTL-aware CSS: `.cardify-app[dir="rtl"]` selectors for margins/padding, logical properties where possible (margin-inline-start/end).
