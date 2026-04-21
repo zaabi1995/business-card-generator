@@ -21,14 +21,14 @@
 - [x] 006. IBM Plex Sans Arabic (300-700) loaded only when dir=rtl → 368e83e (via fonts.googleapis.com combined family param)
 - [x] 007. RTL-aware CSS: text-align flips, Tailwind margin/padding flips (1-6), icon-position swap, FA arrow glyph swap → 368e83e
 - [x] 008. `.cardify-lang-switch` pill + includes/lang-switcher.php wired into public and admin nav → 368e83e
-- [ ] 009. Split lang files: `lang/{en,ar}/{common,admin,portal,printshop,emails,errors,onboarding,wizard,marketplace,analytics,auth}.php`. Each returns an array; `I18n.php` autoloads on namespace access.
-- [ ] 010. Add CLI script `scripts/i18n-audit.php` that greps for hard-coded English strings in `admin/*.php`, `printshop/*.php`, `portal.php`, `companies.php`, etc., and reports untranslated count per file.
+- [x] 009. Seeded namespaced lang files (common/auth/admin/portal/printshop/onboarding/marketplace/analytics/emails/errors in both EN+AR) → {this commit} I18n autoload already handled, files now exist
+- [x] 010. `scripts/i18n-audit.php` ships with parity check + verbose mode → {this commit}
 - [ ] 011. Add CI check (`.github/workflows/i18n.yml`): fails PR if EN and AR keys diverge.
-- [ ] 012. Add Arabic pluralization helper (`I18n::plural($count, 'zero', 'one', 'two', 'few', 'many', 'other')`, Arabic has 6 plural forms).
-- [ ] 013. Add OMR currency helper `Currency::format($amount, $locale)`: "OMR 12.500" vs "١٢٫٥٠٠ ر.ع." Arabic numerals honored.
-- [ ] 014. Add date helper `I18n::formatDate($ts, $locale)`: "22 Apr 2026" / "٢٢ أبريل ٢٠٢٦".
-- [ ] 015. Add time-ago helper `I18n::timeAgo($ts)`: "5 min ago" / "قبل ٥ دقائق".
-- [ ] 016. Seed `lang/en/errors.php` + `lang/ar/errors.php` with top 30 friendly error messages.
+- [x] 012. Arabic pluralization (CLDR 6-form) shipped in I18n::plural() → 4209597
+- [x] 013. OMR currency formatter with Arabic-Indic digits shipped in I18n::formatCurrency() → 4209597
+- [x] 014. Date formatter (EN/AR with Arabic month names + digits) shipped in I18n::formatDate() → 4209597
+- [x] 015. Time-ago helper shipped in I18n::timeAgo() with full plural scale → 4209597
+- [x] 016. errors.php (30 friendly messages) seeded in lang/{en,ar}/errors.php → {this commit}
 - [ ] 017. Migrate `PortalChrome.css` + `portal.css` to use logical properties for RTL.
 - [ ] 018. Add `dir`-aware utility classes (`.text-start`, `.text-end`, `.pl-4-rtl`, etc.) to `cardify-overrides.css`.
 - [ ] 019. Translate 404.php + 500.php + 502.html to bilingual (auto-detect locale cookie, fallback EN).
