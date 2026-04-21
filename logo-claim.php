@@ -55,15 +55,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (empty($_FILES['proof_file']['tmp_name'])) {
                     $error = 'Please upload your CR document (PDF/JPG/PNG, ≤5MB)';
                 } else {
-                    $allowed = ['application/pdf', 'image/jpeg', 'image/png'];
-                    $mime = mime_content_type($_FILES['proof_file']['tmp_name']);
-                    if (!in_array($mime, $allowed, true) || $_FILES['proof_file']['size'] > 5 * 1024 * 1024) {
+                    $mimeToExt = [
+                        'application/pdf' => 'pdf',
+                        'image/jpeg'      => 'jpg',
+                        'image/png'       => 'png',
+                    ];
+                    $finfo = new \finfo(FILEINFO_MIME_TYPE);
+                    $mime  = $finfo->file($_FILES['proof_file']['tmp_name']);
+                    if (!isset($mimeToExt[$mime]) || $_FILES['proof_file']['size'] > 5 * 1024 * 1024) {
                         $error = 'Proof file must be PDF/JPG/PNG under 5MB';
                     } else {
                         $dir = __DIR__ . '/storage/logos/pending';
                         @mkdir($dir, 0755, true);
-                        $ext = pathinfo($_FILES['proof_file']['name'], PATHINFO_EXTENSION);
-                        $fn = 'claim_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . preg_replace('/[^a-z0-9]/i', '', $ext);
+                        $ext = $mimeToExt[$mime];
+                        $fn  = 'claim_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
                         if (!move_uploaded_file($_FILES['proof_file']['tmp_name'], "$dir/$fn")) {
                             $error = 'Could not save proof file. Check back later.';
                         } else {
