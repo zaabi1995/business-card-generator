@@ -3,6 +3,34 @@
  * Cardify Helper Functions
  */
 
+// I18n bootstrap, loaded for every request via config.php -> functions.php chain.
+if (!class_exists('I18n')) {
+    require_once __DIR__ . '/I18n.php';
+}
+I18n::boot();
+
+/**
+ * Global translation helper. Alias for I18n::t().
+ * t('common.save') / t('auth.welcome', ['name' => $name])
+ */
+if (!function_exists('t')) {
+    function t(string $key, array $params = [], ?string $locale = null): string {
+        return I18n::t($key, $params, $locale);
+    }
+}
+
+if (!function_exists('currentLocale')) {
+    function currentLocale(): string { return I18n::getLocale(); }
+}
+
+if (!function_exists('currentDir')) {
+    function currentDir(): string { return I18n::getDir(); }
+}
+
+if (!function_exists('isRtl')) {
+    function isRtl(): bool { return I18n::isRtl(); }
+}
+
 /**
  * Get base URL (protocol + domain + base path)
  * @return string Full base URL (e.g., 'https://cardify.om/')
