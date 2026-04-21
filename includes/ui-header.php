@@ -43,8 +43,13 @@ if (!empty($_GET['utm_source']) && empty($_SESSION['utm_source'])) {
     $_SESSION['utm_campaign'] = substr(preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['utm_campaign'] ?? ''), 0, 50);
 }
 ?>
+<?php
+$cardifyLocale = function_exists('currentLocale') ? currentLocale() : 'en';
+$cardifyDir    = function_exists('currentDir')    ? currentDir()    : 'ltr';
+$cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
+?>
 <!DOCTYPE html>
-<html lang="en" class="<?php echo htmlspecialchars($htmlClass); ?>">
+<html lang="<?= htmlspecialchars($cardifyLocale) ?>" dir="<?= htmlspecialchars($cardifyDir) ?>" class="<?php echo htmlspecialchars($htmlClass); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -84,7 +89,12 @@ if (!empty($_GET['utm_source']) && empty($_SESSION['utm_source'])) {
     <meta property="og:url" content="<?= htmlspecialchars($canonicalUrl) ?>">
     <?php endif; ?>
     <meta property="og:image" content="<?= htmlspecialchars($ogImage ?? getBaseUrl() . 'assets/images/cardify-og.png') ?>">
-    <meta property="og:locale" content="en_US">
+    <meta property="og:locale" content="<?= htmlspecialchars($cardifyOgLocale) ?>">
+    <?php if ($cardifyLocale === 'ar'): ?>
+    <meta property="og:locale:alternate" content="en_US">
+    <?php else: ?>
+    <meta property="og:locale:alternate" content="ar_OM">
+    <?php endif; ?>
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
@@ -106,10 +116,14 @@ if (!empty($_GET['utm_source']) && empty($_SESSION['utm_source'])) {
     <link rel="icon" href="<?php echo getBasePath(); ?>favicon.svg" type="image/svg+xml">
     <link rel="alternate icon" href="<?php echo getBasePath(); ?>favicon.ico">
     
-    <!-- Google Fonts - Inter -->
+    <!-- Google Fonts - Inter + (when rtl) IBM Plex Sans Arabic -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <?php if ($cardifyDir === 'rtl'): ?>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <?php else: ?>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <?php endif; ?>
     
     <!-- Preconnect to CDNs (parallel DNS+TLS) -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
@@ -313,7 +327,12 @@ if (!function_exists('renderNavigation')) {
                                 Get Started Free
                             </a>
                         <?php endif; ?>
-                        
+
+                        <!-- Language Switcher -->
+                        <span class="hidden md:inline-flex">
+                            <?php require INCLUDES_DIR . '/lang-switcher.php'; ?>
+                        </span>
+
                         <!-- Mobile Menu Button -->
                         <button type="button" class="lg:hidden p-2 text-gray-600 hover:text-blue-600" id="mobile-menu-btn">
                             <i class="fa-solid fa-bars text-xl"></i>

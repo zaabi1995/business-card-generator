@@ -137,9 +137,11 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     $userName = $currentUser['name'] ?? $currentUser['email'] ?? 'Admin';
     $userEmail = $currentUser['email'] ?? '';
     $userInitials = strtoupper(substr($userName, 0, 2));
+    $adminLocale = function_exists('currentLocale') ? currentLocale() : 'en';
+    $adminDir    = function_exists('currentDir')    ? currentDir()    : 'ltr';
 ?>
 <!DOCTYPE html>
-<html lang="en" data-product="cardify">
+<html lang="<?= htmlspecialchars($adminLocale) ?>" dir="<?= htmlspecialchars($adminDir) ?>" data-product="cardify">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -149,10 +151,14 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     <!-- BHD Design Language Tokens -->
     <link rel="stylesheet" href="<?php echo $basePath; ?>assets/css/bhd-tokens.css">
 
-    <!-- Fonts -->
+    <!-- Fonts, Inter + (when rtl) IBM Plex Sans Arabic -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <?php if ($adminDir === 'rtl'): ?>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <?php else: ?>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <?php endif; ?>
 
     <!-- Font Awesome (CDN) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -337,6 +343,11 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
                         <span class="sr-only">View notifications</span>
                         <i class="fa-solid fa-bell w-5 h-5"></i>
                     </button>
+
+                    <!-- Language Switcher -->
+                    <span class="hidden sm:inline-flex mr-2">
+                        <?php require INCLUDES_DIR . '/lang-switcher.php'; ?>
+                    </span>
 
                     <!-- User dropdown -->
                     <div class="flex items-center ml-1" x-data="{ open: false }">

@@ -631,3 +631,86 @@
     font-family: 'DM Mono', 'Courier New', monospace;
     font-feature-settings: 'tnum' 1;
 }
+
+/* ------------------------------------------------------------------
+   RTL / Arabic support
+   Applied via html[dir="rtl"] set by I18n layer.
+   Uses logical properties where possible to avoid per-selector flips.
+-------------------------------------------------------------------*/
+html[dir="rtl"] {
+    font-family: "IBM Plex Sans Arabic", "Inter", "Segoe UI", Tahoma, sans-serif;
+}
+html[dir="rtl"] body {
+    letter-spacing: 0;
+}
+html[dir="rtl"] .text-left  { text-align: right !important; }
+html[dir="rtl"] .text-right { text-align: left  !important; }
+
+/* Tailwind margin/padding flips for common utility names.
+   Only pairs we actually use elsewhere in the codebase. */
+html[dir="rtl"] .ml-1 { margin-left: 0 !important; margin-right: 0.25rem !important; }
+html[dir="rtl"] .ml-2 { margin-left: 0 !important; margin-right: 0.5rem  !important; }
+html[dir="rtl"] .ml-3 { margin-left: 0 !important; margin-right: 0.75rem !important; }
+html[dir="rtl"] .ml-4 { margin-left: 0 !important; margin-right: 1rem    !important; }
+html[dir="rtl"] .ml-6 { margin-left: 0 !important; margin-right: 1.5rem  !important; }
+html[dir="rtl"] .mr-1 { margin-right: 0 !important; margin-left: 0.25rem !important; }
+html[dir="rtl"] .mr-2 { margin-right: 0 !important; margin-left: 0.5rem  !important; }
+html[dir="rtl"] .mr-3 { margin-right: 0 !important; margin-left: 0.75rem !important; }
+html[dir="rtl"] .mr-4 { margin-right: 0 !important; margin-left: 1rem    !important; }
+html[dir="rtl"] .mr-6 { margin-right: 0 !important; margin-left: 1.5rem  !important; }
+html[dir="rtl"] .pl-2 { padding-left: 0 !important; padding-right: 0.5rem  !important; }
+html[dir="rtl"] .pl-3 { padding-left: 0 !important; padding-right: 0.75rem !important; }
+html[dir="rtl"] .pl-4 { padding-left: 0 !important; padding-right: 1rem    !important; }
+html[dir="rtl"] .pr-2 { padding-right: 0 !important; padding-left: 0.5rem  !important; }
+html[dir="rtl"] .pr-3 { padding-right: 0 !important; padding-left: 0.75rem !important; }
+html[dir="rtl"] .pr-4 { padding-right: 0 !important; padding-left: 1rem    !important; }
+
+/* Form icons that sit on one side, flip positioning */
+html[dir="rtl"] .left-0,  html[dir="rtl"] .left-2,  html[dir="rtl"] .left-3,  html[dir="rtl"] .left-4  { right: 0; left: auto !important; }
+html[dir="rtl"] .right-0, html[dir="rtl"] .right-2, html[dir="rtl"] .right-3, html[dir="rtl"] .right-4 { left:  0; right: auto !important; }
+
+/* FontAwesome icons that use rotation for direction, flip arrows */
+html[dir="rtl"] .fa-arrow-right::before { content: "\f060"; } /* left */
+html[dir="rtl"] .fa-arrow-left::before  { content: "\f061"; } /* right */
+html[dir="rtl"] .fa-chevron-right::before { content: "\f053"; }
+html[dir="rtl"] .fa-chevron-left::before  { content: "\f054"; }
+html[dir="rtl"] .fa-angle-right::before { content: "\f104"; }
+html[dir="rtl"] .fa-angle-left::before  { content: "\f105"; }
+
+/* Borders commonly used on left/right */
+html[dir="rtl"] .border-l { border-left: 0 !important; border-right-width: 1px !important; }
+html[dir="rtl"] .border-r { border-right: 0 !important; border-left-width:  1px !important; }
+
+/* ------------------------------------------------------------------
+   Language switcher component
+   <a class="cardify-lang-switch" href="?lang=ar">العربية</a>
+-------------------------------------------------------------------*/
+.cardify-lang-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #475569;
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    text-decoration: none;
+    transition: all 150ms ease-out;
+    line-height: 1;
+}
+.cardify-lang-switch:hover {
+    color: #009bc1;
+    border-color: #009bc1;
+    background: rgba(0, 155, 193, 0.05);
+}
+.cardify-lang-switch i,
+.cardify-lang-switch svg { font-size: 0.8125rem; opacity: 0.7; }
+html[dir="rtl"] .cardify-lang-switch { font-family: "IBM Plex Sans Arabic", "Inter", sans-serif; }
+
+/* OMR in Arabic uses the Arabic glyphs, not DM Mono */
+html[dir="rtl"] .omr,
+html[dir="rtl"] [data-currency="OMR"] {
+    font-family: "IBM Plex Sans Arabic", "Inter", sans-serif;
+}
