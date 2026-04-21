@@ -23,16 +23,16 @@
 - [x] 008. `.cardify-lang-switch` pill + includes/lang-switcher.php wired into public and admin nav → 368e83e
 - [x] 009. Seeded namespaced lang files (common/auth/admin/portal/printshop/onboarding/marketplace/analytics/emails/errors in both EN+AR) → 9041dba I18n autoload already handled, files now exist
 - [x] 010. `scripts/i18n-audit.php` ships with parity check + verbose mode → 9041dba
-- [x] 011. `.github/workflows/i18n.yml` runs audit on PR + push to main, fails on key divergence → PENDING_SHA
+- [x] 011. `.github/workflows/i18n.yml` runs audit on PR + push to main, fails on key divergence → f5540ae
 - [x] 012. Arabic pluralization (CLDR 6-form) shipped in I18n::plural() → 4209597
 - [x] 013. OMR currency formatter with Arabic-Indic digits shipped in I18n::formatCurrency() → 4209597
 - [x] 014. Date formatter (EN/AR with Arabic month names + digits) shipped in I18n::formatDate() → 4209597
 - [x] 015. Time-ago helper shipped in I18n::timeAgo() with full plural scale → 4209597
 - [x] 016. errors.php (30 friendly messages) seeded in lang/{en,ar}/errors.php → 9041dba
 - [~] 017. BLOCKED: no PortalChrome.css / portal.css file exists in this repo; portal.php uses inline Tailwind. Logical-property migration happens as part of per-page Category B translations where inline utilities are audited.
-- [x] 018. Extended RTL utilities (justify-*/space-x-*/rounded-l|r-*/table text-align/origin-top-*/float flips) → PENDING_SHA
-- [x] 019. 404.php + 500.php translated via t('errors.*') + t('common.try_again'). 502.html left static (nginx serves when PHP is down, cannot execute I18n). → PENDING_SHA
-- [x] 020. Mailer::sendTemplated() shipped with locale+dir-aware HTML shell, IBM Plex Arabic font for rtl, CTA block, signoff + footer + unsubscribe link, pulls keys from lang/{locale}/emails.php → PENDING_SHA
+- [x] 018. Extended RTL utilities (justify-*/space-x-*/rounded-l|r-*/table text-align/origin-top-*/float flips) → f5540ae
+- [x] 019. 404.php + 500.php translated via t('errors.*') + t('common.try_again'). 502.html left static (nginx serves when PHP is down, cannot execute I18n). → f5540ae
+- [x] 020. Mailer::sendTemplated() shipped with locale+dir-aware HTML shell, IBM Plex Arabic font for rtl, CTA block, signoff + footer + unsubscribe link, pulls keys from lang/{locale}/emails.php → f5540ae
 
 ## B, i18n Page-by-Page Translation (021-080)
 
