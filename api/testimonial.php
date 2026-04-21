@@ -68,7 +68,7 @@ try {
 
     // Client IP via shared helper (Codex round-2 Finding 3 — match writes).
     $ip = getClientIp();
-    if (!CardSections::canSubmitTestimonial($ip)) {
+    if (!CardSections::canSubmitTestimonial($ip, $employeeId)) {
         http_response_code(429);
         echo json_encode(['success' => false, 'error' => 'Too many submissions, try again later']);
         exit;

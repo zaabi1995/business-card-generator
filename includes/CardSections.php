@@ -159,17 +159,34 @@ class CardSections
     }
 
     /**
-     * Rate-limit visitor testimonial submissions — 3 per IP per hour (across all employees).
+     * Rate-limit visitor testimonial submissions.
+     *
+     * Two layers:
+     *  - site-wide: 3 per IP per hour (prevents a single IP from farming cards)
+     *  - per-card: 1 per IP per employee per day (prevents pile-on spam on one
+     *    target before moderation catches up)
      */
-    public static function canSubmitTestimonial($ip)
+    public static function canSubmitTestimonial($ip, $employeeId = null)
     {
-        $row = Database::getInstance()->fetchOne(
+        $db = Database::getInstance();
+        $row = $db->fetchOne(
             "SELECT COUNT(*) AS c FROM employee_card_testimonials
              WHERE submitter_ip = :ip AND submitted_by_visitor = 1
                AND created_at > (NOW() - INTERVAL 1 HOUR)",
             ['ip' => $ip]
         );
-        return (int)($row['c'] ?? 0) < 3;
+        if ((int)($row['c'] ?? 0) >= 3) return false;
+
+        if ($employeeId) {
+            $perCard = $db->fetchOne(
+                "SELECT COUNT(*) AS c FROM employee_card_testimonials
+                 WHERE submitter_ip = :ip AND employee_id = :eid AND submitted_by_visitor = 1
+                   AND created_at > (NOW() - INTERVAL 1 DAY)",
+                ['ip' => $ip, 'eid' => $employeeId]
+            );
+            if ((int)($perCard['c'] ?? 0) >= 1) return false;
+        }
+        return true;
     }
 
     /**

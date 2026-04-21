@@ -61,6 +61,16 @@ class QRTracker {
             'landing_url' => self::getCurrentUrl()
         ];
         
+        // Cap per-IP scan writes at 100/hour to prevent stat-farming bots
+        // from amplifying our write load (3 writes per scan × many scans).
+        // Fail-open if the limiter isn't available, so legit traffic still tracks.
+        try {
+            require_once __DIR__ . '/RateLimiter.php';
+            if (!RateLimiter::check('qr_scan', $ipAddress, 100, 3600)) {
+                return ['success' => false, 'error' => 'rate_limited', 'visitor_id' => $visitorId];
+            }
+        } catch (\Throwable $e) { /* ignore — don't block tracking on limiter bug */ }
+
         try {
             // Insert scan record
             $scanId = self::$db->insert('qr_scans', $scanData);
