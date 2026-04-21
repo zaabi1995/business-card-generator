@@ -14,15 +14,19 @@ if ($redirectUrl && !preg_match('#^/[a-zA-Z0-9/_.\-?&=%]*$#', $redirectUrl)) {
     $redirectUrl = null; // Reject suspicious redirects
 }
 
-// If caller reports an unauthorized access, kill the stale session so we don't
+// If caller reports an unauthorized access, clear auth state so we don't
 // redirect the user straight back to the page that rejected them (loop).
+// Keep the session alive so the CSRF token on the rendered form still
+// matches on submit (session_destroy + re-start mid-request breaks CSRF).
 if (($_GET['error'] ?? '') === 'unauthorized' && Auth::isLoggedIn()) {
-    $_SESSION = [];
-    if (ini_get('session.use_cookies')) {
-        $p = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
+    foreach (['user_id','user_email','user_name','user_role','user_company_id',
+              'company_id','company_slug','company_name','employee_id',
+              'current_company_slug'] as $_k) {
+        unset($_SESSION[$_k]);
     }
-    @session_destroy();
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        @session_regenerate_id(true);
+    }
     $info = 'You were signed out. Please sign in again.';
 }
 
