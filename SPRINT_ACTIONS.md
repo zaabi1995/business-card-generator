@@ -36,7 +36,7 @@
 
 ## B, i18n Page-by-Page Translation (021-080)
 
-- [x] 021. Landing hero + value-prop banner wrapped in t() via new landing.php namespace (22 keys EN+AR); demo-request WhatsApp message auto-switches to Arabic when locale=ar → PENDING_SHA. Features/how-it-works/pricing/testimonials/blog/resources/footer deferred to actions 511-517 (see Appended).
+- [x] 021. Landing hero + value-prop banner wrapped in t() via new landing.php namespace (22 keys EN+AR); demo-request WhatsApp message auto-switches to Arabic when locale=ar → aa3f12c. Features/how-it-works/pricing/testimonials/blog/resources/footer deferred to actions 511-517 (see Appended).
 - [ ] 022. Translate `login.php` + OTP input flow.
 - [ ] 023. Translate `register.php` / company signup.
 - [ ] 024. Translate `about.php`.
