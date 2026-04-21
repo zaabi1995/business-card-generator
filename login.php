@@ -56,7 +56,7 @@ $error = null;
 $info = null;
 $prefillEmail = $_GET['email'] ?? '';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
-$pageTitle = 'Sign In';
+$pageTitle = t('auth.sign_in');
 $htmlClass = 'h-full bg-white';
 $bodyClass = 'h-full';
 $minimalFooter = true; // use compact footer on auth pages
@@ -128,13 +128,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <img src="<?php echo assetUrl('images/logo.svg'); ?>" class="h-10 w-auto" alt="<?php echo $brandName; ?>">
                     </a>
                     <h2 class="mt-8 text-2xl font-bold tracking-tight text-gray-900">
-                        Sign in to your account
+                        <?= htmlspecialchars(t('auth.sign_in_headline')) ?>
                     </h2>
                     <p class="mt-2 text-sm text-gray-600">
-                        Not a member? Register as a
-                        <a href="<?php echo getBasePath(); ?>company/register.php" class="font-semibold text-blue-600 hover:text-blue-500">Company</a>
-                        or
-                        <a href="<?php echo getBasePath(); ?>printshop/register.php" class="font-semibold text-purple-600 hover:text-purple-500">Print Shop</a>
+                        <?= htmlspecialchars(t('auth.not_member')) ?>
+                        <a href="<?php echo getBasePath(); ?>company/register.php" class="font-semibold text-blue-600 hover:text-blue-500"><?= htmlspecialchars(t('auth.as_company')) ?></a>
+                        <?= htmlspecialchars(t('auth.or')) ?>
+                        <a href="<?php echo getBasePath(); ?>printshop/register.php" class="font-semibold text-purple-600 hover:text-purple-500"><?= htmlspecialchars(t('auth.as_printshop')) ?></a>
                     </p>
                 </div>
 
@@ -159,24 +159,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php echo csrfField(); ?>
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-900">
-                            Email address
+                            <?= htmlspecialchars(t('auth.email')) ?>
                         </label>
                         <div class="mt-2">
                             <input type="email" name="email" id="email" autocomplete="email"
                                    value="<?php echo htmlspecialchars($_POST['email'] ?? $prefillEmail); ?>"
-                                   class="form-input" 
-                                   placeholder="name@company.com" required>
+                                   class="form-input"
+                                   placeholder="<?= htmlspecialchars(t('auth.placeholder_email')) ?>" required>
                         </div>
                     </div>
 
                     <div>
                         <label for="password" class="block text-sm font-medium text-gray-900">
-                            Password
+                            <?= htmlspecialchars(t('auth.password')) ?>
                         </label>
                         <div class="mt-2">
                             <input type="password" name="password" id="password" autocomplete="current-password"
-                                   class="form-input" 
-                                   placeholder="••••••••" required>
+                                   class="form-input"
+                                   placeholder="<?= htmlspecialchars(t('auth.placeholder_password')) ?>" required>
                         </div>
                     </div>
 
@@ -184,16 +184,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="flex items-center gap-3">
                             <input id="remember" name="remember" type="checkbox"
                                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600">
-                            <label for="remember" class="text-sm text-gray-900">Remember me</label>
+                            <label for="remember" class="text-sm text-gray-900"><?= htmlspecialchars(t('auth.remember_me')) ?></label>
                         </div>
                         <a href="<?php echo getBasePath(); ?>forgot-password.php" class="text-sm font-semibold text-blue-600 hover:text-blue-500">
-                            Forgot password?
+                            <?= htmlspecialchars(t('auth.forgot_password')) ?>
                         </a>
                     </div>
 
                     <div>
                         <button type="submit" class="flex w-full justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">
-                            Sign in
+                            <?= htmlspecialchars(t('auth.sign_in')) ?>
                             <i class="fa-solid fa-arrow-right ml-2"></i>
                         </button>
                     </div>
@@ -203,12 +203,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="mt-8 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
                     <p class="text-sm text-gray-700 text-center font-medium mb-2">
                         <i class="fa-solid fa-wand-magic-sparkles text-blue-500 mr-2"></i>
-                        One login for everyone
+                        <?= htmlspecialchars(t('auth.one_login_title')) ?>
                     </p>
                     <div class="flex justify-center gap-4 text-xs text-gray-500">
-                        <span><i class="fa-solid fa-building text-blue-500 mr-1"></i> Companies</span>
-                        <span><i class="fa-solid fa-store text-purple-500 mr-1"></i> Print Shops</span>
-                        <span><i class="fa-solid fa-shield text-green-500 mr-1"></i> Admins</span>
+                        <span><i class="fa-solid fa-building text-blue-500 mr-1"></i> <?= htmlspecialchars(t('auth.role_companies')) ?></span>
+                        <span><i class="fa-solid fa-store text-purple-500 mr-1"></i> <?= htmlspecialchars(t('auth.role_printshops')) ?></span>
+                        <span><i class="fa-solid fa-shield text-green-500 mr-1"></i> <?= htmlspecialchars(t('auth.role_admins')) ?></span>
                     </div>
                 </div>
 
@@ -216,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p class="mt-10 text-center text-sm text-gray-500">
                     <a href="<?php echo getBasePath(); ?>" class="font-medium text-gray-700 hover:text-gray-900">
                         <i class="fa-solid fa-arrow-left mr-1"></i>
-                        Back to homepage
+                        <?= htmlspecialchars(t('auth.back_home')) ?>
                     </a>
                 </p>
             </div>
@@ -234,25 +234,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="absolute inset-0 flex flex-col justify-end p-12 text-white">
                 <div class="max-w-lg">
                     <h3 class="text-3xl font-bold">
-                        Welcome back to <?php echo $brandName; ?>
+                        <?= htmlspecialchars(t('auth.panel_welcome_back', ['brand' => $brandName])) ?>
                     </h3>
                     <p class="mt-4 text-lg text-gray-200 leading-relaxed">
-                        Manage your digital business cards, employees, and company branding all in one place.
+                        <?= htmlspecialchars(t('auth.panel_tagline')) ?>
                     </p>
-                    
+
                     <!-- Trust signals -->
                     <div class="mt-8 flex flex-wrap gap-6">
                         <div class="flex items-center gap-2 text-sm">
                             <svg class="w-5 h-5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/></svg>
-                            <span>Built for Oman</span>
+                            <span><?= htmlspecialchars(t('auth.trust_oman')) ?></span>
                         </div>
                         <div class="flex items-center gap-2 text-sm">
                             <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                            <span>Paymob verified</span>
+                            <span><?= htmlspecialchars(t('auth.trust_paymob')) ?></span>
                         </div>
                         <div class="flex items-center gap-2 text-sm">
                             <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                            <span>Real-time updates</span>
+                            <span><?= htmlspecialchars(t('auth.trust_realtime')) ?></span>
                         </div>
                     </div>
                 </div>
