@@ -4,9 +4,11 @@ $currentPage = basename($_SERVER['SCRIPT_NAME'] ?? '', '.php');
 $bp = function_exists('getBasePath') ? getBasePath() : '/';
 $bn = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
-// Minimal footer for auth/utility pages (login, signup, register, etc.)
-// Opt-in via $minimalFooter = true; in the page before including this file.
-if (!empty($minimalFooter)):
+// Pages that own their footer entirely (e.g. branded company portals) can
+// set $skipFooter = true; before including this file. Scripts below still run.
+if (!empty($skipFooter)):
+    // intentionally render nothing here
+elseif (!empty($minimalFooter)):
 ?>
     <footer class="border-t border-gray-200 bg-white mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-gray-500">

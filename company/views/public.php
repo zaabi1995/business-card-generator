@@ -118,6 +118,9 @@ $extraHead = '<style>
     }
     ' . (!empty($companyTheme['custom_css']) ? preg_replace('/<\s*\/?\s*(style|script)[^>]*>/i', '', $companyTheme['custom_css']) : '') . '
 </style>';
+// This page renders its own compact branded footer below, so suppress the
+// site-wide marketing footer. Scripts in ui-footer.php still run.
+$skipFooter = true;
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
 
@@ -128,7 +131,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <?php if ($companyTheme && !empty($companyTheme['logo_path'])): ?>
-                    <img src="<?php echo getBasePath() . 'uploads/' . ltrim($companyTheme['logo_path'], '/'); ?>" alt="<?php echo $companyName; ?>" class="h-10">
+                    <img src="<?php echo htmlspecialchars(getBasePath() . 'uploads/' . ltrim($companyTheme['logo_path'], '/'), ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8'); ?>" class="h-10">
                     <?php else: ?>
                     <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold">
                         <?php echo strtoupper(substr($company['name'], 0, 2)); ?>
@@ -347,24 +350,18 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </section>
     </main>
 
-    <!-- Footer -->
-    <footer class="border-t border-gray-200 bg-white">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div class="flex items-center gap-3">
-                    <?php if ($companyTheme && !empty($companyTheme['logo_path'])): ?>
-                    <img src="<?php echo getBasePath() . 'uploads/' . ltrim($companyTheme['logo_path'], '/'); ?>" alt="<?php echo $companyName; ?>" class="h-8 opacity-60">
-                    <?php endif; ?>
-                    <p class="text-sm text-gray-500">
-                        &copy; <?php echo date('Y'); ?> <?php echo $companyName; ?>
-                    </p>
-                </div>
-                <div class="flex items-center gap-6 text-sm text-gray-500">
-                    <a href="<?php echo getBasePath() . $companySlug; ?>/portal" class="hover:text-gray-700">Request Card</a>
-                    <a href="<?php echo getBasePath() . $companySlug; ?>/admin/login" class="hover:text-gray-700">Admin Login</a>
-                    <span class="text-gray-300">|</span>
-                    <span>Powered by <a href="<?php echo getBasePath(); ?>" class="text-blue-600 hover:underline">Cardify</a></span>
-                </div>
+    <!-- Compact branded footer (login-style) -->
+    <footer class="border-t border-gray-200 bg-white mt-auto">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-500">
+            <p>
+                &copy; <?php echo date('Y'); ?> <?php echo $companyName; ?>
+                <span class="text-gray-300 mx-2">&middot;</span>
+                Powered by <a href="<?php echo getBasePath(); ?>" class="text-blue-600 hover:underline">Cardify</a>
+            </p>
+            <div class="flex items-center gap-5">
+                <a href="<?php echo getBasePath() . $companySlug; ?>/portal" class="hover:text-gray-700">Request Card</a>
+                <a href="<?php echo getBasePath() . $companySlug; ?>/admin/login" class="hover:text-gray-700">Admin</a>
+                <a href="<?php echo getBasePath(); ?>privacy" class="hover:text-gray-700">Privacy</a>
             </div>
         </div>
     </footer>
