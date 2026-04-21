@@ -273,6 +273,10 @@ class CreditManager {
         int $orderId,
         float $amount
     ): array {
+        if (!is_finite($amount) || $amount <= 0) {
+            return ['error' => 'Amount must be a positive number'];
+        }
+
         $db = Database::getInstance();
 
         $db->beginTransaction();
@@ -332,6 +336,10 @@ class CreditManager {
         ?string $notes = null,
         ?string $recordedBy = null
     ): array {
+        if (!is_finite($amount) || $amount <= 0) {
+            return ['error' => 'Amount must be a positive number'];
+        }
+
         $db = Database::getInstance();
         $conn = $db->getConnection();
 
@@ -343,6 +351,13 @@ class CreditManager {
             if (!$account) {
                 $conn->rollBack();
                 return ['error' => 'Credit account not found'];
+            }
+
+            // Never credit beyond what was actually owed.
+            $amount = min($amount, (float)$account['balance_used']);
+            if ($amount <= 0) {
+                $conn->rollBack();
+                return ['error' => 'No outstanding balance to pay'];
             }
 
             $newBalance = max(0, (float)$account['balance_used'] - $amount);
@@ -375,6 +390,10 @@ class CreditManager {
         int $orderId,
         float $amount
     ): array {
+        if (!is_finite($amount) || $amount <= 0) {
+            return ['error' => 'Amount must be a positive number'];
+        }
+
         $db = Database::getInstance();
         $conn = $db->getConnection();
 
@@ -386,6 +405,22 @@ class CreditManager {
             if (!$account) {
                 $conn->rollBack();
                 return ['error' => 'Credit account not found'];
+            }
+
+            // Cap refund at the net charge recorded for this order, so we
+            // cannot hand back more credit than was charged.
+            $charged = $conn->prepare(
+                "SELECT COALESCE(SUM(CASE WHEN type='charge' THEN amount WHEN type='refund' THEN -amount ELSE 0 END),0) AS net
+                 FROM credit_transactions WHERE credit_account_id = ? AND order_id = ?"
+            );
+            $charged->execute([$creditAccountId, $orderId]);
+            $netCharged = (float)($charged->fetchColumn() ?: 0);
+            if ($netCharged <= 0) {
+                $conn->rollBack();
+                return ['error' => 'No refundable charge for this order'];
+            }
+            if ($amount > $netCharged) {
+                $amount = $netCharged;
             }
 
             $newBalance = max(0, (float)$account['balance_used'] - $amount);

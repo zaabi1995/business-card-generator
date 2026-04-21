@@ -25,30 +25,13 @@ class Auth {
 
         $email = sanitizeEmail($email);
 
-        // Brute force protection: rate limit login attempts per IP
+        // Brute force protection — persistent per-IP counter in the DB so it
+        // survives cookie clears and new browser sessions. 10 attempts per
+        // 15-minute rolling bucket, fail-open if the limiter backend is down.
+        require_once __DIR__ . '/RateLimiter.php';
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-        $rateLimitKey = 'login_attempts_' . md5($ip);
-        $maxAttempts = 10;
-        $lockoutMinutes = 15;
-
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            if (!isset($_SESSION[$rateLimitKey])) {
-                $_SESSION[$rateLimitKey] = ['count' => 0, 'first_attempt' => time()];
-            }
-
-            $attempts = &$_SESSION[$rateLimitKey];
-
-            // Reset counter if lockout period has passed
-            if ((time() - $attempts['first_attempt']) > ($lockoutMinutes * 60)) {
-                $attempts = ['count' => 0, 'first_attempt' => time()];
-            }
-
-            if ($attempts['count'] >= $maxAttempts) {
-                $remainingMinutes = ceil(($lockoutMinutes * 60 - (time() - $attempts['first_attempt'])) / 60);
-                return ['success' => false, 'error' => "Too many login attempts. Please try again in {$remainingMinutes} minutes."];
-            }
-
-            $attempts['count']++;
+        if (!RateLimiter::check('login_attempt', $ip, 10, 900)) {
+            return ['success' => false, 'error' => 'Too many login attempts. Please try again in 15 minutes.'];
         }
         
         // Step 1: Check users table (super_admin, admin, company roles)

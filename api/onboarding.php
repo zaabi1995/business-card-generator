@@ -124,6 +124,7 @@ function uploadCompanyLogo($file, $companyId) {
 
     $dest = $uploadDir . '/logo.' . $ext;
     if (!move_uploaded_file($file['tmp_name'], $dest)) return null;
+    @chmod($dest, 0644);
 
     return getWebPath($dest);
 }

@@ -10,14 +10,22 @@ header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 
+require_once __DIR__ . '/../config.php';
+
+// API key lives in config so it can be rotated without a git commit.
+// Falls back to the old hardcoded key only if nothing is configured, to keep
+// existing integrations working during the rotation window.
+$expectedKey = defined('FILE_MANAGER_API_KEY') && FILE_MANAGER_API_KEY !== ''
+    ? FILE_MANAGER_API_KEY
+    : 'bhd-fm-cardify-2026';
+
 $apiKey = $_SERVER['HTTP_X_API_KEY'] ?? $_GET['key'] ?? '';
-if ($apiKey !== 'bhd-fm-cardify-2026') {
+if (!is_string($apiKey) || !hash_equals($expectedKey, $apiKey)) {
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
     exit;
 }
 
-require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/VCF.php';
 
 $action = $_GET['action'] ?? '';

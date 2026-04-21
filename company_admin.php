@@ -89,6 +89,13 @@ try {
         'payment-history'    => 'admin/payment-history.php',
         'batch-auto-generate' => 'admin/batch-auto-generate.php',
         'short-links'         => 'admin/short-links.php',
+        'appointments'        => 'admin/appointments.php',
+        'bulk-claim'          => 'admin/bulk-claim.php',
+        'card-analytics'      => 'admin/card-analytics.php',
+        'custom-domains'      => 'admin/custom-domains.php',
+        'fx-rates'            => 'admin/fx-rates.php',
+        'growth'              => 'admin/growth.php',
+        'impersonate'         => 'admin/impersonate.php',
     ];
     
     // Handle login page specially (no auth required)

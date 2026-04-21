@@ -521,7 +521,8 @@ class PrintShop {
         if (!move_uploaded_file($file['tmp_name'], $filePath)) {
             return ['success' => false, 'error' => 'Failed to save file'];
         }
-        
+        @chmod($filePath, 0644);
+
         // Update database
         $logoPath = '/uploads/print_shops/' . $shopId . '/' . $filename;
         $result = self::update($shopId, ['logo_path' => $logoPath]);

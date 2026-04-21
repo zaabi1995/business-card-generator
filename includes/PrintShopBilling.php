@@ -175,16 +175,24 @@ class PrintShopBilling {
             return ['error' => 'Order not found'];
         }
 
-        // Validate file
-        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+        // Validate size first (cheap check)
         $maxSize = 5 * 1024 * 1024; // 5MB
-
-        if (!in_array($file['type'], $allowedTypes)) {
-            return ['error' => 'Invalid file type. Allowed: PDF, JPG, PNG'];
-        }
-        if ($file['size'] > $maxSize) {
+        if (($file['size'] ?? 0) > $maxSize) {
             return ['error' => 'File too large. Maximum 5MB'];
         }
+
+        // Real MIME detection — never trust $_FILES['type'] (client-controlled).
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $realMime = $finfo->file($file['tmp_name'] ?? '');
+        $mimeToExt = [
+            'application/pdf' => 'pdf',
+            'image/jpeg'      => 'jpg',
+            'image/png'       => 'png',
+        ];
+        if (!isset($mimeToExt[$realMime])) {
+            return ['error' => 'Invalid file type. Allowed: PDF, JPG, PNG'];
+        }
+        $ext = $mimeToExt[$realMime];
 
         // Create upload directory
         $uploadDir = dirname(__DIR__) . '/uploads/purchase_orders/' . $order['company_id'];
@@ -192,15 +200,15 @@ class PrintShopBilling {
             mkdir($uploadDir, 0755, true);
         }
 
-        // Save file
-        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $safeName = $orderId . '_' . time() . '.' . $ext;
+        // Save file under a server-derived name; never use the client filename.
+        $safeName = $orderId . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
         $filePath = $uploadDir . '/' . $safeName;
         $relativePath = 'uploads/purchase_orders/' . $order['company_id'] . '/' . $safeName;
 
         if (!move_uploaded_file($file['tmp_name'], $filePath)) {
             return ['error' => 'Failed to save file'];
         }
+        @chmod($filePath, 0644);
 
         // Update order
         $db->query(
