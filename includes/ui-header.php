@@ -133,6 +133,18 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <link rel="preload" as="image" href="<?php echo htmlspecialchars($lcpImage, ENT_QUOTES); ?>" fetchpriority="high">
     <?php endif; ?>
 
+    <?php
+      /* Sentry browser bootstrap (Cat T action 456). Emits DSN + loads
+         /assets/js/cardify-sentry.js if SENTRY_DSN_PUBLIC is defined. */
+      if (class_exists('Sentry')) {
+          $sentryBootstrap = Sentry::browserBootstrap();
+          if ($sentryBootstrap) {
+              echo $sentryBootstrap . "\n";
+              echo '<script defer src="' . htmlspecialchars(getBasePath()) . 'assets/js/cardify-sentry.js"></script>' . "\n";
+          }
+      }
+    ?>
+
     <!-- Font Awesome (CDN) — preloaded fonts, non-blocking CSS -->
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>

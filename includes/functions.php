@@ -9,6 +9,14 @@ if (!class_exists('I18n')) {
 }
 I18n::boot();
 
+// Sentry bootstrap (Cat T action 456). No-op unless SENTRY_DSN is
+// defined in config.php. Installs set_exception_handler +
+// register_shutdown_function so uncaught / fatal errors get reported.
+if (!class_exists('Sentry')) {
+    require_once __DIR__ . '/Sentry.php';
+}
+Sentry::init();
+
 /**
  * Global translation helper. Alias for I18n::t().
  * t('common.save') / t('auth.welcome', ['name' => $name])
