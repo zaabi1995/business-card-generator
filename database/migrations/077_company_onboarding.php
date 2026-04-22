@@ -46,7 +46,7 @@ SQL);
         SELECT c.id, 7, NOW()
         FROM companies c
         WHERE EXISTS (
-            SELECT 1 FROM generated_card_log g WHERE g.company_id = c.id LIMIT 1
+            SELECT 1 FROM generated_cards g WHERE g.company_id = c.id LIMIT 1
         )
         AND NOT EXISTS (SELECT 1 FROM company_onboarding o WHERE o.company_id = c.id)
 SQL);
