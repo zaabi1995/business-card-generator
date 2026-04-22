@@ -93,3 +93,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-22 22:20 | #469 | 1bb786d | Cat T k6 load: 100-VU 2-min profile, 80/15/5 read mix, p95<1500ms + fail<1% thresholds, read-only. Queued 824 for VPS install + first baseline run.
 2026-04-22 22:35 | #470 | 3a6a157 | Cat T runbook: ops/runbook.md 10 sections, symptom→check→fix→escalate format, wires in every sprint-built alert + script.
 2026-04-22 22:50 | #471+472 | 3c940ea | Cat U E2E Journey A: tests/e2e/register-flow.spec.ts 4 read-only checks (EN render, AR RTL, login link, empty-POST no-5xx), 4/4 passed prod. Full happy path queued as 825 (needs stage OTP bypass).
+2026-04-22 23:05 | #473+474 | 6dcc128 | Cat U E2E wizard: auth-gate redirect EN+AR + bidirectional step_* i18n parity scan, 3/3 passed prod. Full 7-step walk queued as 826 (needs stage + TEST_OTP).

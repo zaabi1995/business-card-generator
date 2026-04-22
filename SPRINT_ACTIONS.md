@@ -514,8 +514,8 @@
 
 - [x] 471. E2E Journey A register company EN: tests/e2e/register-flow.spec.ts checks EN /company/register renders + form + CSRF + all fields (admin_email/user_name/company_name/company_slug/phone/phone_e164/password). 4/4 passed vs prod. → 3c940ea
 - [x] 472. E2E Journey A register company AR: same spec file asserts AR variant renders, dir=rtl (attribute or computed), form + CSRF + admin_email present. 4/4 passed vs prod. → 3c940ea
-- [ ] 473. E2E Journey B: complete 7-step wizard in EN.
-- [ ] 474. E2E Journey B: complete 7-step wizard in AR.
+- [x] 473. E2E Journey B wizard EN: tests/e2e/wizard-flow.spec.ts verifies /admin/onboarding unauth → login redirect (non-5xx) + walks every step_* key in lang/en/onboarding.php. 3/3 passed prod. → 6dcc128
+- [x] 474. E2E Journey B wizard AR: same spec asserts /admin/onboarding?lang=ar unauth→login + AR locale has every step_* key EN defines (bidirectional set diff). → 6dcc128
 - [ ] 475. E2E Journey C: design template EN, save, preview.
 - [ ] 476. E2E Journey C: design template AR, save, preview.
 - [ ] 477. E2E Journey D: employee receives invite, edits self, saves.
@@ -877,3 +877,4 @@
 - [ ] 823. Create `stage` branch on GitHub from current main tip and push once, so ops/stage-provision.sh has something to checkout. Script tolerates missing branch but won't deploy until it exists.
 - [ ] 824. Install k6 on VPS (apt via k6.io repo), run ops/k6-load-test.js against stage.cardify.om once staging is up (action 822), capture baseline p95 + fail rate into repo.
 - [ ] 825. Add TEST_OTP bypass env (only on stage) so full register→OTP→wizard happy-path E2E can run on stage.cardify.om. Design: when APP_ENV=stage AND request email ends in @cardify.test, OtpService returns the code instead of mailing it. Then the spec can read and submit.
+- [ ] 826. Full happy-path wizard E2E on stage.cardify.om: seed a test company via admin API, log in via TEST_OTP bypass, walk all 7 steps (logo upload, colors, template, first-employee, preview, invite-team, order), assert each step saves + `finish` lands on /admin/dashboard with onboarding.status=completed. Needs actions 822 + 825 first.
