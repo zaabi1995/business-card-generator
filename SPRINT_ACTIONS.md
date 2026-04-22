@@ -260,31 +260,31 @@
 
 ## I, Analytics Dashboard (236-260)
 
-- [ ] 236. Redesign `admin/analytics.php` to "did this pay off?" KPI layout.
-- [ ] 237. KPI cards: total taps, unique visitors, contacts saved, WhatsApp clicks, website clicks.
-- [ ] 238. Sparkline charts, 30-day rolling.
-- [ ] 239. Top 10 employees by engagement.
-- [ ] 240. Geographic heatmap (country + wilayat).
-- [ ] 241. Conversion funnel: tap → contact save → WhatsApp message → lead.
-- [ ] 242. Device breakdown (mobile/desktop).
-- [ ] 243. OS breakdown (iOS/Android).
-- [ ] 244. Referrer breakdown.
-- [ ] 245. Peak hour analysis.
-- [ ] 246. Export to CSV.
-- [ ] 247. Export to PDF (bilingual).
-- [ ] 248. Monthly email auto-sent to admin with summary (bilingual).
-- [ ] 249. Per-employee card analytics page: `/admin/employees/{id}/analytics`.
-- [ ] 250. Goal tracking: admin sets "reach 1000 taps/month," progress bar.
-- [ ] 251. Event log: every tap with timestamp + geo + device.
-- [ ] 252. Lead capture form (optional): custom fields, submissions feed dashboard.
-- [ ] 253. UTM tracking on card links.
-- [ ] 254. A/B test: same employee two designs, see which gets more engagement.
-- [ ] 255. QR vs NFC split.
-- [ ] 256. Social click-through breakdown.
-- [ ] 257. Compare-periods: this month vs last.
-- [ ] 258. Alerts: "John's card engagement dropped 50% this week."
-- [ ] 259. Bilingual labels everywhere.
-- [ ] 260. Print shop analytics: same dashboard for shops (orders/revenue/avg-rating/repeat-rate).
+- [~] 236. "Did this pay off?" dashboard rewrite deferred to action 660.
+- [~] 237. 5 KPI cards deferred to action 661.
+- [~] 238. 30-day sparkline chart deferred to action 662.
+- [~] 239. Top-10 employees by engagement widget deferred to action 663.
+- [x] 240. card_events.wilayat + existing country_code/country_name columns shipped. Heatmap UI deferred to action 664. → f1accfe
+- [~] 241. Conversion funnel UI deferred to action 665.
+- [x] 242. card_events.device_type enum already exists (pre-existing). Breakdown UI deferred to action 666.
+- [x] 243. card_events.os VARCHAR(32) already exists (pre-existing). Breakdown UI deferred to action 667.
+- [x] 244. card_events.referrer VARCHAR(1024) already exists (pre-existing). Breakdown UI deferred to action 668.
+- [~] 245. Peak-hour chart deferred to action 669.
+- [~] 246. CSV export deferred to action 670.
+- [~] 247. Bilingual PDF export deferred to action 671.
+- [x] 248. analytics_reports subscription table shipped (cadence, locale, last_sent_at, last_sent_status, UNIQUE per company+email+cadence). Cron dispatcher deferred to action 672. → f1accfe
+- [~] 249. Per-employee analytics page deferred to action 673.
+- [x] 250. analytics_goals table shipped (metric enum taps/saves/wa_clicks/site_clicks/leads, target_value, achieved_value, achieved_at, UNIQUE period). Goal-setter UI + progress bar deferred to action 674. → f1accfe
+- [x] 251. Event log already recorded via card_events (every row has timestamp + geo + device_type + os + referrer + visitor_id). Raw-event viewer UI deferred to action 675.
+- [x] 252. lead_captures table shipped (name/email/phone/message/custom_fields JSON/UTM/referrer/status enum/notified_at). Form builder + submissions feed UI deferred to action 676. → f1accfe
+- [x] 253. card_events.utm_source/medium/campaign columns shipped + idx_utm attribution index. Link-builder helper deferred to action 677. → f1accfe
+- [x] 254. card_ab_tests table + card_events.ab_variant column shipped. Variant router + winner calc deferred to action 678. → f1accfe
+- [~] 255. QR-vs-NFC split breakdown deferred to action 679 (derivable from card_events.event_type + cta_target).
+- [~] 256. Social click-through breakdown deferred to action 680 (card_events.event_type='click_social' + cta_target).
+- [~] 257. Compare-periods toggle deferred to action 681.
+- [x] 258. analytics_alerts table shipped (rule_type enum engagement_drop/engagement_spike/goal_reached/no_activity, threshold_pct, window_days, last_triggered_at + last_value_observed for dedupe). Rule-check cron + dispatch deferred to action 682. → f1accfe
+- [x] 259. Analytics bilingual coverage already via action 041 adminchrome + analytics namespace (action 009). New charts/KPIs pick up strings as widgets ship in 660-678.
+- [~] 260. Print-shop side analytics mirror deferred to action 683.
 
 ## J, Admin UX (261-295)
 
@@ -730,3 +730,28 @@
 - [ ] 657. Homepage top-5 shops leaderboard section, ordered by (total_orders DESC, rating DESC) with "Top-rated print shops in Oman" heading.
 - [ ] 658. Wilayat coverage selector UI on /printshop/settings.php + map-style display on shop profile.
 - [ ] 659. Specializations chips input on /printshop/settings.php (cards-only / cards+brochures / premium finishes / NFC / wallet cards).
+- [ ] 660. "Did this pay off?" admin/analytics.php rewrite: 5-KPI top strip + sparkline + breakdowns + funnel in a single compact layout, driven by pulls from card_events + lead_captures + analytics_goals.
+- [ ] 661. KPI tile component: total taps / unique visitors / contacts saved / WhatsApp clicks / website clicks, each with 30-day delta arrow.
+- [ ] 662. 30-day rolling sparkline using card_events time-series bucketed by day.
+- [ ] 663. Top-10 employees by engagement (JOIN employees + aggregate card_events for the period).
+- [ ] 664. Geographic heatmap: country_code layer + Oman wilayat sub-layer via the new card_events.wilayat column.
+- [ ] 665. Conversion funnel widget: view → save_contact → click_whatsapp → lead_captures row, with per-step drop-off %.
+- [ ] 666. Device breakdown donut (card_events.device_type).
+- [ ] 667. OS breakdown bar (card_events.os).
+- [ ] 668. Referrer breakdown list (card_events.referrer top domains).
+- [ ] 669. Peak-hour heatmap (7×24 grid of card_events.created_at).
+- [ ] 670. CSV export of card_events for the selected period.
+- [ ] 671. PDF export bilingual (wkhtmltopdf of dashboard snapshot with IBM Plex Arabic for rtl).
+- [ ] 672. Monthly report cron: scans analytics_reports, renders dashboard HTML + CSV, sends via Mailer::sendTemplated using monthly_report_* keys (already bilingual from action 068).
+- [ ] 673. /admin/card-analytics.php per-employee deep view (already has page title from action 041; body widgets wire up here).
+- [ ] 674. Goal-setter UI + progress bar: create/edit analytics_goals row, show achieved_value/target_value donut + projected-finish date.
+- [ ] 675. Raw-event viewer: filterable table of card_events rows with timestamp + event_type + geo + device.
+- [ ] 676. Lead capture form builder: admin configures which fields to collect, dashboard consumes lead_captures submissions with status workflow.
+- [ ] 677. UTM link-builder helper: "Your card URL with UTM", admin picks source/medium/campaign, returns the pre-tagged link.
+- [ ] 678. A/B test variant router: 50/50 split via card_ab_tests.split_pct, records card_events.ab_variant, computes winner when p < 0.05 or after 90 days.
+- [ ] 679. QR-vs-NFC split breakdown (group card_events by qr_scan event_type vs others).
+- [ ] 680. Social click-through breakdown (filter event_type='click_social' + group by cta_target).
+- [ ] 681. Compare-to-previous-period toggle on the analytics dashboard.
+- [ ] 682. Alert-rules cron: checks analytics_alerts rows, compares recent engagement against threshold, dispatches WhatsApp + email when fired.
+- [ ] 683. Print-shop analytics mirror: /printshop/analytics.php KPI strip (orders / revenue / avg rating / repeat-rate), pulls from print_orders + print_shop_reviews (already page-title-bilingual via action 062).
+- [ ] 684. Wilayat detection at event ingest: extract from card_events.ip_address via MaxMind/ip-api so the action 664 heatmap has real data (currently column is NULL).
