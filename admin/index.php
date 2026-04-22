@@ -1480,7 +1480,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                                 </div>
                                 
                                 <div x-show="field.enabled && key !== 'qr_code'" class="space-y-2 mt-2">
-                                    <div class="flex gap-2">
+                                    <div class="flex gap-2 items-end">
                                         <div class="flex-1">
                                             <label class="text-xs text-gray-500 block mb-1 flex items-center gap-1">
                                                 <span>Size</span>
@@ -1489,18 +1489,29 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                                             <div class="relative">
                                                 <input type="number"
                                                        :value="pxToPt(field.fontSize)"
-                                                       @change="updateFieldProperty(key, 'fontSize', ptToPx(parseFloat($event.target.value) || 0))"
-                                                       min="4" max="96" step="0.5"
-                                                       class="w-full pl-2 pr-7 py-1 bg-white border border-gray-200 rounded text-xs text-gray-900">
+                                                       @input="updateFieldProperty(key, 'fontSize', ptToPx(parseFloat($event.target.value) || 0))"
+                                                       min="1" max="999" step="0.5"
+                                                       class="w-full pl-2 pr-7 py-1 bg-white border border-gray-200 rounded text-xs text-gray-900 [appearance:textfield] [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:m-0">
                                                 <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 pointer-events-none">pt</span>
                                             </div>
                                         </div>
-                                        <div class="w-12">
+                                        <div class="flex-shrink-0">
                                             <label class="text-xs text-gray-500 block mb-1">Color</label>
-                                            <input type="color" 
-                                                   :value="field.fill || field.color || '#1f2937'" 
-                                                   @change="updateFieldProperty(key, 'fill', $event.target.value)" 
-                                                   class="w-full h-7 rounded cursor-pointer border border-gray-200">
+                                            <div class="flex items-center gap-1">
+                                                <input type="color"
+                                                       :value="field.fill || field.color || '#1f2937'"
+                                                       @input="updateFieldProperty(key, 'fill', $event.target.value)"
+                                                       class="w-7 h-7 rounded cursor-pointer border border-gray-200 flex-shrink-0"
+                                                       title="Pick color">
+                                                <input type="text"
+                                                       :value="field.fill || field.color || '#1f2937'"
+                                                       @input="onHexInput(key, $event.target.value)"
+                                                       maxlength="7"
+                                                       placeholder="#000000"
+                                                       spellcheck="false"
+                                                       class="w-[5.5rem] px-1.5 py-1 bg-white border border-gray-200 rounded text-xs font-mono uppercase tracking-tight text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                                       title="Hex color">
+                                            </div>
                                         </div>
                                     </div>
                                     <div x-data="{ fontOpen: false, fontQuery: '' }" @click.outside="fontOpen = false" class="relative">
@@ -1571,6 +1582,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                                             <label class="text-xs text-gray-500 block mb-1">Weight</label>
                                             <select
                                                 @change="updateFieldProperty(key, 'fontWeight', $event.target.value === 'normal' ? 'normal' : parseInt($event.target.value))"
+                                                @input="updateFieldProperty(key, 'fontWeight', $event.target.value === 'normal' ? 'normal' : parseInt($event.target.value))"
                                                 class="w-full px-2 py-1 bg-white border border-gray-200 rounded text-xs text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                                                 <template x-for="w in fontWeights" :key="w.value">
                                                     <option :value="w.value"
@@ -1761,6 +1773,28 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
             //   1pt = 1/72 inch, so at 300 DPI → 4.1667 px/pt.
             // These helpers convert between the two; if the card DPI
             // changes, point values stay stable across sizes.
+            // Accept hex colour input live. Supports #rgb, #rgba, #rrggbb,
+            // #rrggbbaa with or without the leading '#'. Only commits once
+            // the entry is a valid colour so typing intermediate values
+            // like 'ff' or 'ff00' doesn't flash the preview to black.
+            onHexInput: function(key, raw) {
+                var v = (raw || '').toString().trim().replace(/^#+/, '');
+                if (!/^[0-9a-fA-F]+$/.test(v)) return;
+                var hex;
+                if (v.length === 3) {
+                    hex = '#' + v[0] + v[0] + v[1] + v[1] + v[2] + v[2];
+                } else if (v.length === 6) {
+                    hex = '#' + v;
+                } else if (v.length === 4) {
+                    hex = '#' + v[0] + v[0] + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
+                } else if (v.length === 8) {
+                    hex = '#' + v;
+                } else {
+                    return; // wait for more typing
+                }
+                this.updateFieldProperty(key, 'fill', hex.toLowerCase());
+            },
+
             pxToPt: function(px) {
                 var dpi = this.dpi || 300;
                 if (!px && px !== 0) return '';
