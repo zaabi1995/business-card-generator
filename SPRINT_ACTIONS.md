@@ -39,7 +39,7 @@
 - [x] 021. Landing hero + value-prop banner wrapped in t() via new landing.php namespace (22 keys EN+AR); demo-request WhatsApp message auto-switches to Arabic when locale=ar → aa3f12c. Features/how-it-works/pricing/testimonials/blog/resources/footer deferred to actions 511-517 (see Appended).
 - [x] 022. `login.php` fully t()-ified: headline, register-as links, form labels, placeholders, remember/forgot, submit, one-login panel, role badges, back-home, right-panel welcome + tagline + trust signals. OTP labels already live in auth.php namespace, wired when OTP UI ships (actions 112-113). → b6e9873
 - [x] 023. `company/register.php` fully t()-ified: BHD badge, dynamic headline (bhd vs default), existing-company notice, all 6 form fields with placeholders + hints, Terms+Privacy checkbox, submit, What-You-Get feature list, back-home, right-panel testimonial. New `register` namespace (50 keys EN+AR). Also swapped HTTP_HOST leak to APP_HOST constant per security rule. → fd792b4
-- [ ] 024. Translate `about.php`.
+- [x] 024. `about.php` fully bilingual: hero, our-story (3 paragraphs + 4 stat tiles), connect-with-us panel (Instagram CTA + contact card), our-values (innovation/sustainability/trust tiles), CTA banner, back-home. New `about` namespace (36 keys EN+AR). → PENDING_SHA
 - [ ] 025. Translate `careers.php`.
 - [ ] 026. Translate `blog.php` listing (posts stay in authored locale).
 - [ ] 027. Translate `companies.php` + `/companies/{slug}` profile.
