@@ -222,7 +222,7 @@ $companySlug = getCurrentCompanySlug() ?? 'demo';
 $baseUrl = getBaseUrl();
 
 // Start admin layout
-adminHeader('Dashboard', 'dashboard');
+adminHeader(t('dashboard.page_title'), 'dashboard');
 
 // Get company referral source, plan info for welcome banner + usage indicator
 $companyReferralSource = null;
@@ -417,7 +417,7 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
                 <i class="fa-brands fa-whatsapp text-blue-600"></i>
             </div>
             <div>
-                <p class="font-semibold text-blue-900 text-sm">Add your WhatsApp number</p>
+                <p class="font-semibold text-blue-900 text-sm"><?= htmlspecialchars(t('dashboard.add_wa_title')) ?></p>
                 <p class="text-blue-700 text-xs mt-0.5">We'll message you on WhatsApp for order status and onboarding tips. Leave blank to opt out.</p>
             </div>
         </div>
@@ -480,8 +480,8 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
             <i class="fa-solid fa-rocket text-white text-xl"></i>
         </div>
         <div>
-            <h3 class="font-bold text-lg">You're all set! Welcome to Cardify.</h3>
-            <p class="text-blue-100 text-sm mt-0.5">Create your first digital business card — add yourself and generate your card in 60 seconds.</p>
+            <h3 class="font-bold text-lg"><?= htmlspecialchars(t('dashboard.all_set_title')) ?></h3>
+            <p class="text-blue-100 text-sm mt-0.5"><?= htmlspecialchars(t('dashboard.all_set_body')) ?></p>
         </div>
     </div>
     <div class="flex items-center gap-3 flex-shrink-0">
@@ -503,7 +503,7 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
             <i class="fa-solid fa-circle-exclamation text-amber-500"></i>
         </div>
         <div>
-            <p class="font-semibold text-amber-900 text-sm">Complete your account setup</p>
+            <p class="font-semibold text-amber-900 text-sm"><?= htmlspecialchars(t('dashboard.complete_setup')) ?></p>
             <p class="text-amber-700 text-xs mt-0.5">Upload your logo and pick a card template to get started in 2 minutes.</p>
         </div>
     </div>
@@ -521,7 +521,7 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
             <i class="fa-solid fa-paintbrush text-white text-lg"></i>
         </div>
         <div>
-            <h3 class="font-bold">One step left — design your card template</h3>
+            <h3 class="font-bold"><?= htmlspecialchars(t('dashboard.design_template_h3')) ?></h3>
             <p class="text-purple-100 text-sm mt-0.5">You have <?= $employeeCount ?> employee<?= $employeeCount !== 1 ? 's' : '' ?> ready. Set up a card template and generate all cards in seconds.</p>
         </div>
     </div>
@@ -542,7 +542,7 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
             <i class="fa-solid fa-id-card text-white text-lg"></i>
         </div>
         <div>
-            <h3 class="font-bold">Your team is ready — generate their cards now</h3>
+            <h3 class="font-bold"><?= htmlspecialchars(t('dashboard.team_ready_h3')) ?></h3>
             <p class="text-green-100 text-sm mt-0.5">You have <?= $employeeCount ?> employee<?= $employeeCount !== 1 ? 's' : '' ?> set up. Generate all cards in one click.</p>
         </div>
     </div>
@@ -567,7 +567,7 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
                 <i class="fa-solid fa-list-check text-blue-600 text-sm"></i>
             </div>
             <div>
-                <h3 class="font-semibold text-gray-900 text-sm">Getting Started</h3>
+                <h3 class="font-semibold text-gray-900 text-sm"><?= htmlspecialchars(t('dashboard.getting_started')) ?></h3>
                 <p class="text-xs text-gray-500"><?= $checklistDoneCount ?>/<?= count($checklistSteps) ?> steps complete</p>
             </div>
         </div>
@@ -614,7 +614,7 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
                         <i class="fa-solid fa-gift text-white text-lg"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-lg leading-tight">Share Cardify — earn 3 months free</h3>
+                        <h3 class="font-bold text-lg leading-tight"><?= htmlspecialchars(t('dashboard.refer_h3')) ?></h3>
                         <p class="text-indigo-100 text-sm">Send your link to a friend. When they upgrade to paid, you get 3 months on us.</p>
                     </div>
                 </div>
@@ -741,8 +741,8 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
                 <i class="fa-solid fa-chart-line text-cyan-600 text-lg"></i>
             </div>
             <div>
-                <h3 class="font-semibold text-gray-900 text-sm">Card Views</h3>
-                <p class="text-xs text-gray-500">How often your digital cards are viewed</p>
+                <h3 class="font-semibold text-gray-900 text-sm"><?= htmlspecialchars(t('dashboard.card_views')) ?></h3>
+                <p class="text-xs text-gray-500"><?= htmlspecialchars(t('dashboard.views_help')) ?></p>
             </div>
         </div>
         <a href="<?= htmlspecialchars($_analyticsUrl) ?>" class="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
@@ -809,7 +809,7 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
             </div>
             <div class="flex-1">
                 <div class="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>Cards this month</span>
+                    <span><?= htmlspecialchars(t('dashboard.cards_this_month')) ?></span>
                     <span class="font-medium <?= $cardsThisMonth >= 10 ? 'text-red-600' : ($cardsThisMonth >= 8 ? 'text-amber-600' : 'text-gray-600') ?>"><?= $cardsThisMonth ?>/10</span>
                 </div>
                 <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -832,8 +832,8 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
                 <i class="fa-solid fa-user-plus text-blue-600 text-xl"></i>
             </div>
             <div>
-                <p class="font-semibold text-gray-900">Add Employee</p>
-                <p class="text-gray-500 text-sm">Create a new team member</p>
+                <p class="font-semibold text-gray-900"><?= htmlspecialchars(t('dashboard.qa_add_employee')) ?></p>
+                <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('dashboard.qa_add_employee_sub')) ?></p>
             </div>
         </div>
     </a>
@@ -844,8 +844,8 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
                 <i class="fa-solid fa-wand-magic-sparkles text-green-600 text-xl"></i>
             </div>
             <div>
-                <p class="font-semibold text-gray-900">Generate Cards</p>
-                <p class="text-gray-500 text-sm">Batch generate business cards</p>
+                <p class="font-semibold text-gray-900"><?= htmlspecialchars(t('dashboard.qa_batch_title')) ?></p>
+                <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('dashboard.qa_batch_sub')) ?></p>
             </div>
         </div>
     </a>
@@ -856,8 +856,8 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
                 <i class="fa-solid fa-share-nodes text-purple-600 text-xl"></i>
             </div>
             <div>
-                <p class="font-semibold text-gray-900">Share Links</p>
-                <p class="text-gray-500 text-sm">Manage sharing options</p>
+                <p class="font-semibold text-gray-900"><?= htmlspecialchars(t('dashboard.qa_share_title')) ?></p>
+                <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('dashboard.qa_share_sub')) ?></p>
             </div>
         </div>
     </a>
@@ -884,7 +884,7 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
         
         <!-- Add Card Design Form -->
         <div x-show="showAddModal" x-cloak class="p-6 border-b border-gray-100 bg-gray-50">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Create New Card Design</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t('dashboard.create_new_design')) ?></h3>
             <p class="text-sm text-gray-600 mb-4">This will create both front and back templates for your card. You can upload background designs for each side.</p>
             <form @submit.prevent="addTemplatePair()">
                 <div class="grid md:grid-cols-3 gap-4">
@@ -1004,7 +1004,7 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
         <!-- Card Designs List -->
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
             <div class="p-4 border-b border-gray-100">
-                <h3 class="font-semibold text-gray-900">Card Designs</h3>
+                <h3 class="font-semibold text-gray-900"><?= htmlspecialchars(t('dashboard.card_designs')) ?></h3>
             </div>
             
             <div class="p-4 space-y-3" x-show="getCardDesigns().length > 0">
@@ -1067,8 +1067,8 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
             
             <div x-show="getCardDesigns().length === 0" class="p-12 text-center text-gray-500">
                 <i class="fa-solid fa-palette text-4xl mb-4 opacity-30"></i>
-                <p class="font-medium text-gray-700">No card designs yet</p>
-                <p class="text-sm mt-1 mb-5">Create your first card template to get started</p>
+                <p class="font-medium text-gray-700"><?= htmlspecialchars(t('dashboard.no_designs')) ?></p>
+                <p class="text-sm mt-1 mb-5"><?= htmlspecialchars(t('dashboard.no_designs_cta')) ?></p>
                 <button @click="showAddModal = true; $nextTick(() => document.getElementById('template-editor').scrollIntoView({behavior:'smooth'}))"
                     class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm transition-colors">
                     <i class="fa-solid fa-plus"></i>
@@ -1083,7 +1083,7 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
             <div class="p-4 border-b border-gray-100">
                 <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center gap-3">
-                        <h3 class="font-semibold text-gray-900" x-text="selectedTemplate ? selectedTemplate.name : 'Edit Template'"></h3>
+                        <h3 class="font-semibold text-gray-900" x-text="selectedTemplate ? selectedTemplate.name : <?= json_encode(t('dashboard.edit_template')) ?>"></h3>
                         <!-- Front/Back Toggle -->
                         <div class="flex items-center bg-gray-100 rounded-lg p-1">
                             <button 
@@ -1352,7 +1352,7 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
                 
                 <!-- Field Controls -->
                 <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                    <h4 class="font-medium text-gray-900 mb-3">Field Settings</h4>
+                    <h4 class="font-medium text-gray-900 mb-3"><?= htmlspecialchars(t('dashboard.field_settings')) ?></h4>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
                         <template x-for="(field, key) in (selectedTemplate && selectedTemplate.fields ? selectedTemplate.fields : {})" :key="key">
                             <div class="bg-white rounded-lg p-3 border border-gray-200">
@@ -1506,8 +1506,8 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
         <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm flex items-center justify-center p-12" x-show="!selectedTemplate">
             <div class="text-center text-gray-400">
                 <i class="fa-solid fa-mouse-pointer text-4xl mb-4 opacity-50"></i>
-                <p class="text-gray-600">Select a template to edit</p>
-                <p class="text-sm mt-1">Or create a new one</p>
+                <p class="text-gray-600"><?= htmlspecialchars(t('dashboard.select_template')) ?></p>
+                <p class="text-sm mt-1"><?= htmlspecialchars(t('dashboard.or_create_new')) ?></p>
             </div>
         </div>
     </div>
