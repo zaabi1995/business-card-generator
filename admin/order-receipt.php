@@ -20,6 +20,12 @@ if (!$orderId) {
 
 $order = $db->fetchOne("
     SELECT po.*, c.name AS company_name, c.address AS company_address,
+           c.cr_number AS company_cr_number, c.tax_id AS company_tax_id,
+           c.vat_registered AS company_vat_registered,
+           c.billing_address AS company_billing_address,
+           c.billing_city AS company_billing_city,
+           c.billing_postcode AS company_billing_postcode,
+           c.billing_country AS company_billing_country,
            ps.name AS shop_name, ps.email AS shop_email, ps.phone AS shop_phone,
            ps.address AS shop_address, ps.city AS shop_city, ps.country AS shop_country
     FROM print_orders po
@@ -138,8 +144,27 @@ $pageTitle = t('order.receipt_header') . ' #' . ($order['order_number'] ?? $orde
             <div>
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2"><?= htmlspecialchars(t('order.receipt_billed_to')) ?></p>
                 <p class="font-semibold text-gray-900"><?= htmlspecialchars($order['company_name'] ?? 'N/A') ?></p>
+                <?php if (!empty($order['company_billing_address'])): ?>
+                <p class="text-sm text-gray-600 whitespace-pre-line"><?= htmlspecialchars($order['company_billing_address']) ?></p>
+                <?php endif; ?>
+                <?php
+                    $billLoc = trim(implode(', ', array_filter([
+                        $order['company_billing_city'] ?? '',
+                        $order['company_billing_postcode'] ?? '',
+                        $order['company_billing_country'] ?? '',
+                    ])));
+                ?>
+                <?php if ($billLoc !== ''): ?>
+                <p class="text-sm text-gray-600"><?= htmlspecialchars($billLoc) ?></p>
+                <?php endif; ?>
+                <?php if (!empty($order['company_cr_number'])): ?>
+                <p class="text-xs text-gray-500 mt-2"><?= htmlspecialchars(t('order.receipt_cr')) ?>: <span class="font-mono text-gray-700"><?= htmlspecialchars($order['company_cr_number']) ?></span></p>
+                <?php endif; ?>
+                <?php if (!empty($order['company_tax_id'])): ?>
+                <p class="text-xs text-gray-500"><?= htmlspecialchars(t('order.receipt_tax_id')) ?>: <span class="font-mono text-gray-700"><?= htmlspecialchars($order['company_tax_id']) ?></span></p>
+                <?php endif; ?>
                 <?php if ($order['shipping_name']): ?>
-                <p class="text-sm text-gray-600"><?= htmlspecialchars($order['shipping_name']) ?></p>
+                <p class="text-sm text-gray-600 mt-2"><?= htmlspecialchars(t('order.receipt_ship_to')) ?>: <?= htmlspecialchars($order['shipping_name']) ?></p>
                 <?php endif; ?>
                 <?php if ($order['shipping_address']): ?>
                 <p class="text-sm text-gray-600"><?= htmlspecialchars($order['shipping_address']) ?></p>

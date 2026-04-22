@@ -1,0 +1,20 @@
+<?php
+return [
+    'page_title'          => 'Billing info',
+    'page_sub'            => 'Your legal identifiers and billing address. These appear on every Cardify invoice and sync to BHD-ERP.',
+    'cr_number'           => 'Commercial Registration (CR) number',
+    'cr_number_hint'      => 'Your Oman CR number (7 or 8 digits). Example: 1334733.',
+    'vat_registered_label'=> 'We are registered for Oman VAT (5%)',
+    'tax_id'              => 'Tax Authority number (VAT)',
+    'tax_id_hint'         => 'Your OTA tax registration number. Leave empty if not VAT-registered.',
+    'billing_address_h'   => 'Billing address',
+    'billing_address'     => 'Street address',
+    'billing_address_ph'  => 'Building, street, neighbourhood, PO Box',
+    'billing_city'        => 'City',
+    'billing_postcode'    => 'Postal code',
+    'billing_country'     => 'Country',
+    'save_btn'            => 'Save billing info',
+    'saved'               => 'Billing info saved.',
+    'err_save'            => 'Could not save billing info. Please try again.',
+    'err_csrf'            => 'Your form session expired. Please reload and try again.',
+];
