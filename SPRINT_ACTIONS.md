@@ -80,9 +80,9 @@
 - [x] 062. printshop/analytics.php title + h1 + 5 widget headers (Revenue Over Time / Order Status / Order Volume by Month / Top Customers / Paper Types) → 403a370 (chart tooltips + legend deferred to action 543)
 - [x] 063. printshop/settings.php title + h1 Shop Settings (Capacity & Availability section seeded) + profile.php title + h1 Shop Profile → 403a370 (settings form fields + profile photo/hours form deferred to action 544)
 - [x] 064. printshop/register.php (title + h1 "Register Your Print Shop" + "Registration Submitted" confirmation copy) → 403a370 (multi-step form fields deferred to action 545). printshop/login.php deferred: shares login.php chrome already translated in action 022 via auth namespace; if a dedicated file exists it uses same auth.* keys.
-- [ ] 065. Translate `portal.php` (customer portal).
-- [ ] 066. Translate `digital_card.php` (employee-facing card page).
-- [ ] 067. Translate `card-pdf.php` download labels.
+- [x] 065. portal.php (1909L) customer-portal primary flow bilingual: Portal Disabled banner + back link, 4-digit Access Code block (h2 + department-specific/generic prompt + input label + Access Portal CTA), Request Submitted success page (h2 + body + What Happens Next 4-step list + Submit Another link), Request Form (h2 + sub + domain restriction note + Email label + domain hint + existing-employee notice + "What would you like to do?" + Update My Information / Request Additional Cards radio labels + sub). New `cardportal` namespace (28 keys EN+AR). Deep form fields (quantity, delivery method, upload photo, address, notes, recaptcha) deferred to action 546. → PENDING_SHA
+- [~] 066. digital_card.php already heavily bilingual via $locale + $isRtl + CardSections::* helpers (47 usages). Only 4 hardcoded English phrases remain, deferred to action 547 for targeted pass.
+- [~] 067. card-pdf.php N/A: endpoint streams a wkhtmltopdf-generated PDF; no UI chrome to translate. Internal button labels inside the PDF layout are already handled by the shared card-renderer that respects $locale.
 - [ ] 068. Translate OTP WhatsApp message template.
 - [ ] 069. Translate OTP email template.
 - [ ] 070. Translate invite WhatsApp message (employee onboarding).
@@ -620,7 +620,9 @@
 - [ ] 542. printshop/template-editor.php form (size/finish/paper options, price tiers, turnaround, preview canvas) + template-requests.php request approval UI (customer details, requested edits, approve/reject). Est. ~60 strings.
 - [ ] 543. printshop/analytics.php chart tooltips, legend labels, time-range selector, empty states when no data, download-report CTA. Est. ~30 strings.
 - [ ] 544. printshop/settings.php multi-section form (shop info, services, pricing, hours, paper types, finishes, delivery, payout, notifications) + profile.php form fields (name, CR, IBAN, photo, hours, holiday calendar). Est. ~140 strings.
-- [ ] 545. printshop/register.php multi-step wizard (business info, services, pricing, KYC upload, payout setup, T&C). Est. ~80 strings. Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
+- [ ] 545. printshop/register.php multi-step wizard (business info, services, pricing, KYC upload, payout setup, T&C). Est. ~80 strings.
+- [ ] 546. portal.php deep form fields: quantity spinner + bulk tiers, delivery method radio (pickup/delivery/ship), address input, photo uploader (with crop), notes textarea, recaptcha, submit button, terms acceptance, preview column refresh+expire hint. Est. ~40 strings.
+- [ ] 547. digital_card.php remaining 4 hardcoded English phrases (grep revealed 4 non-localised strings out of 47 $locale/$isRtl usages, likely admin-only toggle labels). Target: 100% coverage pass. Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
 - [ ] 511. index.php: translate `#features` section (6 feature tiles: Design Once, Verified Print Shops, Arabic & English, Team & Departments, Smart QR Codes, Employee Portal). Extend landing.php with feat_* keys.
 - [ ] 512. index.php: translate `#how-it-works` section (3 steps: Create Account, Add Team, Print & Share). Extend with how_* keys.
 - [ ] 513. index.php: translate `#pricing` section (Starter/Professional/Business/Enterprise tiers, feature lists, CTAs). Dedicated lang/{en,ar}/pricing.php.

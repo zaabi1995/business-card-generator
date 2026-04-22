@@ -685,11 +685,11 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                 <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fa-solid fa-lock text-red-600 text-2xl"></i>
                 </div>
-                <h2 class="text-xl font-bold text-gray-900 mb-2">Portal Disabled</h2>
-                <p class="text-gray-600">The employee portal is currently disabled for this company.</p>
+                <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('cardportal.portal_disabled_h2')) ?></h2>
+                <p class="text-gray-600"><?= htmlspecialchars(t('cardportal.portal_disabled_body')) ?></p>
                 <p class="mt-4">
                     <a href="<?php echo getBasePath() . $companySlug; ?>" class="text-blue-600 hover:text-blue-700 font-medium">
-                        <i class="fa-solid fa-arrow-left mr-1"></i> Back to Company Page
+                        <i class="fa-solid fa-arrow-left mr-1"></i> <?= htmlspecialchars(t('cardportal.back_to_company')) ?>
                     </a>
                 </p>
             </div>
@@ -699,12 +699,12 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
             <div class="max-w-sm mx-auto bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-6 text-white text-center">
                     <i class="fa-solid fa-lock text-4xl mb-3"></i>
-                    <h2 class="text-xl font-bold">Access Code Required</h2>
+                    <h2 class="text-xl font-bold"><?= htmlspecialchars(t('cardportal.access_code_h2')) ?></h2>
                     <p class="text-blue-100 text-sm mt-1">
                         <?php if ($passcodeType === 'department'): ?>
-                            Enter the 4-digit code for <?php echo htmlspecialchars($selectedDepartment['name']); ?>
+                            <?= htmlspecialchars(t('cardportal.access_code_dept', ['name' => $selectedDepartment['name']])) ?>
                         <?php else: ?>
-                            Enter the 4-digit access code
+                            <?= htmlspecialchars(t('cardportal.access_code_generic')) ?>
                         <?php endif; ?>
                     </p>
                 </div>
@@ -721,7 +721,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                 <form method="POST" class="p-6" id="passcodeForm">
                     <?php echo csrfField(); ?>
                     <div class="mb-6">
-                        <label class="block text-sm font-semibold text-gray-700 mb-3 text-center">Enter Code</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-3 text-center"><?= htmlspecialchars(t('cardportal.enter_code_label')) ?></label>
                         <!-- Hidden input for form submission -->
                         <input type="hidden" name="portal_passcode" id="passcodeInput">
                         <!-- 4-digit code input boxes -->
@@ -742,13 +742,13 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     </div>
                     <button type="submit" class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors">
                         <i class="fa-solid fa-unlock mr-2"></i>
-                        Access Portal
+                        <?= htmlspecialchars(t('cardportal.access_portal_btn')) ?>
                     </button>
                 </form>
                 
                 <div class="px-6 pb-6 text-center">
                     <a href="<?php echo getBasePath() . $companySlug; ?>" class="text-sm text-gray-500 hover:text-gray-700">
-                        <i class="fa-solid fa-arrow-left mr-1"></i> Back to Company Page
+                        <i class="fa-solid fa-arrow-left mr-1"></i> <?= htmlspecialchars(t('cardportal.back_to_company')) ?>
                     </a>
                 </div>
             </div>
@@ -825,23 +825,22 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                 <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fa-solid fa-check text-green-600 text-2xl"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-2">Request Submitted!</h2>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('cardportal.request_submitted_h2')) ?></h2>
                 <p class="text-gray-600 mb-6">
-                    Thank you for submitting your business card request. You will receive a confirmation email shortly.
-                    Your request will be reviewed by an administrator.
+                    <?= htmlspecialchars(t('cardportal.request_submitted_body')) ?>
                 </p>
                 <div class="bg-blue-50 rounded-lg p-4 text-left inline-block">
-                    <h3 class="font-semibold text-blue-900 mb-2">What happens next?</h3>
+                    <h3 class="font-semibold text-blue-900 mb-2"><?= htmlspecialchars(t('cardportal.whats_next')) ?></h3>
                     <ul class="text-sm text-blue-800 space-y-1">
-                        <li><i class="fa-solid fa-envelope mr-2"></i>You'll receive a confirmation email</li>
-                        <li><i class="fa-solid fa-clock mr-2"></i>An administrator will review your request</li>
-                        <li><i class="fa-solid fa-id-card mr-2"></i>Once approved, your card will be generated</li>
-                        <li><i class="fa-solid fa-paper-plane mr-2"></i>You'll receive your business card via email</li>
+                        <li><i class="fa-solid fa-envelope mr-2"></i><?= htmlspecialchars(t('cardportal.next_email')) ?></li>
+                        <li><i class="fa-solid fa-clock mr-2"></i><?= htmlspecialchars(t('cardportal.next_review')) ?></li>
+                        <li><i class="fa-solid fa-id-card mr-2"></i><?= htmlspecialchars(t('cardportal.next_generate')) ?></li>
+                        <li><i class="fa-solid fa-paper-plane mr-2"></i><?= htmlspecialchars(t('cardportal.next_deliver')) ?></li>
                     </ul>
                 </div>
                 <p class="mt-6">
                     <a href="<?php echo getBasePath() . $companySlug . '/portal'; ?>" class="text-blue-600 hover:text-blue-700 font-medium">
-                        <i class="fa-solid fa-arrow-left mr-1"></i> Submit another request
+                        <i class="fa-solid fa-arrow-left mr-1"></i> <?= htmlspecialchars(t('cardportal.submit_another')) ?>
                     </a>
                 </p>
             </div>
@@ -854,12 +853,12 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
             <!-- Request Form -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8 text-white">
-                    <h2 class="text-2xl font-bold">Request Your Business Card</h2>
-                    <p class="mt-1 text-blue-100">Fill in your information below to request a business card.</p>
+                    <h2 class="text-2xl font-bold"><?= htmlspecialchars(t('cardportal.request_form_h2')) ?></h2>
+                    <p class="mt-1 text-blue-100"><?= htmlspecialchars(t('cardportal.request_form_sub')) ?></p>
                     <?php if ($companyDomain): ?>
                     <p class="mt-2 text-sm text-blue-200">
                         <i class="fa-solid fa-info-circle mr-1"></i>
-                        Only @<?php echo htmlspecialchars($companyDomain); ?> email addresses are accepted.
+                        <?= htmlspecialchars(t('cardportal.domain_restricted', ['domain' => $companyDomain])) ?>
                     </p>
                     <?php endif; ?>
                 </div>
@@ -882,7 +881,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     <!-- Email (always shown - required for submission) -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Email Address <span class="text-red-500">*</span>
+                            <?= htmlspecialchars(t('cardportal.email_label')) ?> <span class="text-red-500">*</span>
                         </label>
                         <input type="email" name="email" id="email" required
                                value="<?php echo htmlspecialchars($formData['email'] ?? ''); ?>"
@@ -890,12 +889,12 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                                class="form-input"
                                onblur="checkExistingEmployee(this.value)">
                         <?php if ($companyDomain): ?>
-                        <p class="mt-1 text-xs text-gray-500">Must be an @<?php echo htmlspecialchars($companyDomain); ?> email address</p>
+                        <p class="mt-1 text-xs text-gray-500"><?= htmlspecialchars(t('cardportal.email_domain_hint', ['domain' => $companyDomain])) ?></p>
                         <?php endif; ?>
                         <div id="existingEmployeeNotice" class="hidden mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                             <p class="text-sm text-blue-800">
                                 <i class="fa-solid fa-info-circle mr-1"></i>
-                                <span id="existingEmployeeMessage">You already have a record in the system.</span>
+                                <span id="existingEmployeeMessage"><?= htmlspecialchars(t('cardportal.existing_employee')) ?></span>
                             </p>
                         </div>
                     </div>
@@ -903,21 +902,21 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     <!-- Request Type (shown for existing employees) -->
                     <div id="requestTypeSection" class="hidden">
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            What would you like to do? <span class="text-red-500">*</span>
+                            <?= htmlspecialchars(t('cardportal.what_to_do')) ?> <span class="text-red-500">*</span>
                         </label>
                         <div class="space-y-2">
                             <label class="flex items-start p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                                 <input type="radio" name="request_type" value="update" class="mt-0.5 mr-3" checked>
                                 <div>
-                                    <span class="font-medium text-gray-900">Update My Information</span>
-                                    <p class="text-xs text-gray-500">Changed position, phone number, or other details</p>
+                                    <span class="font-medium text-gray-900"><?= htmlspecialchars(t('cardportal.update_info')) ?></span>
+                                    <p class="text-xs text-gray-500"><?= htmlspecialchars(t('cardportal.update_info_sub')) ?></p>
                                 </div>
                             </label>
                             <label class="flex items-start p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                                 <input type="radio" name="request_type" value="reprint" class="mt-0.5 mr-3">
                                 <div>
-                                    <span class="font-medium text-gray-900">Request Additional Cards</span>
-                                    <p class="text-xs text-gray-500">Need more cards with my current information</p>
+                                    <span class="font-medium text-gray-900"><?= htmlspecialchars(t('cardportal.request_more')) ?></span>
+                                    <p class="text-xs text-gray-500"><?= htmlspecialchars(t('cardportal.request_more_sub')) ?></p>
                                 </div>
                             </label>
                         </div>
