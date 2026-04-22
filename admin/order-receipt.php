@@ -49,18 +49,30 @@ $paidFull   = $order['payment_status'] === 'paid' && ($order['deposit_amount'] ?
 $paidDeposit = ($order['deposit_amount'] ?? 0) > 0 && ($order['balance_due'] ?? 0) > 0;
 $receiptDate = $order['deposit_paid_at'] ?? $order['balance_paid_at'] ?? $order['updated_at'];
 
-$pageTitle = 'Payment Receipt #' . ($order['order_number'] ?? $orderId);
+// Bilingual render. Query param wins, then session locale. (Cat S action 444)
+if (isset($_GET['lang']) && in_array($_GET['lang'], ['en','ar'], true)) {
+    I18n::setLocale($_GET['lang']);
+}
+$locale = I18n::getLocale();
+$isAr   = $locale === 'ar';
+$altLang = $isAr ? 'en' : 'ar';
+$altUrl  = $_SERVER['REQUEST_URI'];
+$altUrl  = preg_replace('/([?&])lang=[a-z]+/', '$1lang=' . $altLang, $altUrl);
+if (strpos($altUrl, 'lang=') === false) {
+    $altUrl .= (strpos($altUrl, '?') === false ? '?' : '&') . 'lang=' . $altLang;
+}
+$pageTitle = t('order.receipt_header') . ' #' . ($order['order_number'] ?? $orderId);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= $locale ?>" dir="<?= $isAr ? 'rtl' : 'ltr' ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= htmlspecialchars($pageTitle) ?></title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-* { font-family: 'Inter', sans-serif; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+* { font-family: <?= $isAr ? "'IBM Plex Sans Arabic', 'Inter', sans-serif" : "'Inter', sans-serif" ?>; }
 @media print {
     .no-print { display: none !important; }
     body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
@@ -81,6 +93,9 @@ $pageTitle = 'Payment Receipt #' . ($order['order_number'] ?? $orderId);
     <div class="flex items-center gap-2">
         <a href="<?= getBasePath() ?>admin/order-checkout.php?order=<?= $orderId ?>" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors">
             <i class="fa-solid fa-arrow-left mr-1"></i> <?= htmlspecialchars(t('order.receipt_back_payment')) ?>
+        </a>
+        <a href="<?= htmlspecialchars($altUrl) ?>" class="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors" title="<?= $isAr ? 'English' : 'العربية' ?>">
+            <i class="fa-solid fa-language mr-1"></i> <?= $isAr ? 'EN' : 'AR' ?>
         </a>
         <button onclick="window.print()" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
             <i class="fa-solid fa-print mr-1"></i> <?= htmlspecialchars(t('order.receipt_print_save')) ?>
@@ -222,7 +237,7 @@ $pageTitle = 'Payment Receipt #' . ($order['order_number'] ?? $orderId);
 
         <!-- Payment Method -->
         <div class="px-8 py-5 border-b border-gray-100 bg-gray-50">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between flex-wrap gap-3">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                         <i class="fa-solid fa-credit-card text-blue-600 text-sm"></i>
@@ -232,8 +247,14 @@ $pageTitle = 'Payment Receipt #' . ($order['order_number'] ?? $orderId);
                         <p class="font-medium text-gray-900"><?= ucfirst($order['payment_method'] ?? 'Online') ?></p>
                     </div>
                 </div>
+                <?php if (!empty($order['erp_invoice_number'])): ?>
+                <div class="<?= $isAr ? 'text-left' : 'text-right' ?>">
+                    <p class="text-xs text-gray-500"><?= htmlspecialchars(t('order.receipt_erp_invoice')) ?></p>
+                    <p class="font-mono font-semibold text-gray-900"><?= htmlspecialchars($order['erp_invoice_number']) ?></p>
+                </div>
+                <?php endif; ?>
                 <?php if (!empty($order['tracking_number'])): ?>
-                <div class="text-right">
+                <div class="<?= $isAr ? 'text-left' : 'text-right' ?>">
                     <p class="text-xs text-gray-500"><?= htmlspecialchars(t('order.receipt_tracking')) ?></p>
                     <p class="font-medium text-gray-900"><?= htmlspecialchars($order['tracking_number']) ?></p>
                 </div>
@@ -244,7 +265,12 @@ $pageTitle = 'Payment Receipt #' . ($order['order_number'] ?? $orderId);
         <!-- Footer -->
         <div class="px-8 py-5 text-center">
             <p class="text-sm text-gray-500"><?= htmlspecialchars(t('order.receipt_footer')) ?></p>
-            <p class="text-xs text-gray-400 mt-1">Cardify.om &bull; cardify.om</p>
+            <p class="text-xs text-gray-500 mt-3">
+                <strong><?= $isAr ? 'مجموعة BHD' : 'BHD Group' ?></strong>
+                · <?= $isAr ? 'بن حيدر درويش ش.ش.و' : 'Bin Haider Darwish S.P.C.' ?>
+                · <?= $isAr ? 'س.ت 1334733' : 'C.R. 1334733' ?>
+            </p>
+            <p class="text-xs text-gray-400 mt-1">cardify.om · info@cardify.om · +968 9889 9100</p>
         </div>
 
     </div>

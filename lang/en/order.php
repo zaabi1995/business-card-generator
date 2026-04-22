@@ -82,5 +82,6 @@ return [
     'receipt_total_paid'    => 'Total paid',
     'receipt_payment_method'=> 'Payment method',
     'receipt_tracking'      => 'Tracking',
+    'receipt_erp_invoice'   => 'ERP Invoice',
     'receipt_footer'        => 'Thank you for your order. For questions, contact your print shop.',
 ];

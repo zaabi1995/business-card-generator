@@ -81,5 +81,6 @@ return [
     'receipt_total_paid'    => 'المبلغ المدفوع',
     'receipt_payment_method'=> 'طريقة الدفع',
     'receipt_tracking'      => 'رقم التتبّع',
+    'receipt_erp_invoice'   => 'فاتورة ERP',
     'receipt_footer'        => 'شكراً لك على طلبك. للاستفسار، تواصل مع المطبعة.',
 ];
