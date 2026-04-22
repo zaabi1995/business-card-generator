@@ -469,7 +469,7 @@
 - [x] 434. Testimonials section on landing: 4 real client quotes (Ahmed Al-Balushi Managing Director Muscat Trading, Fatima Al-Rashdi Marketing Manager Gulf Solutions, Khalid Al-Habsi HR Director Oman Tech Services, Sara Al-Kindi Operations Lead Salalah Enterprises) retained after user confirmation that these are real clients. → 307fa02
 - [x] 435. Case studies page: /case-studies hub + /case-studies/{slug} detail bilingual at /ar/ too. 3 real BHD-family Cardify customers (BHD Printing - [ ] 435. Case studies page: 3 real companies. Designing / CupsByAA / Alali Investment). Each detail page: meta row + challenge/solution/result narrative + pull quote + logo + closing CTA. Seo helper breadcrumb + Article JSON-LD. Lang files 43 keys each EN+AR, nginx rewrites added. → 6cd8404
 - [x] 436. Pricing page: /pricing + /ar/pricing bilingual, 4 OMR tiers (Starter 0 / Professional 5 / Business 15 / Enterprise custom), Alpine monthly-yearly toggle (save 17%), print pricing block (6/9/15/25 OMR), 6-question FAQ. Seo::product JSON-LD on paid tiers + Seo::faqPage schema. 58 lang keys EN+AR parity OK. Nginx rewrites. → 595ca7e
-- [ ] 437. FAQ page with 20 common questions bilingual.
+- [x] 437. FAQ page bilingual with 20 questions: /faq + /ar/faq, 20 Q/A across 6 categories (Getting started 4, Digital cards 4, Printing 4, Teams 3, Billing 3, Tech 2). Seo::faqPage ld+json schema + Seo::breadcrumbs. 45 lang keys EN+AR parity OK. 20 details blocks verified in both locales. → 9a8e6ec
 - [ ] 438. Contact page with form + WhatsApp + map.
 - [ ] 439. Terms + Privacy bilingual.
 - [ ] 440. Blog bilingual (per post; slug-en, slug-ar where applicable).
