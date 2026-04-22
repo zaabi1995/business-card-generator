@@ -503,7 +503,7 @@
 - [x] 462. Log rotation: ops/logrotate-cardify installed at /etc/logrotate.d/cardify covers /var/log/cardify-*.log (daily×30, su root root for group-writable /var/log) + PHP-FPM php-fpm.log + slow.log (weekly×8, SIGUSR1 reload). aaPanel already handles /www/wwwlogs/. Force-run verified .1 + .2.gz pattern. → (repo-only) → 6a05534..current
 - [x] 463. Disk-usage alert at 80%: scripts/disk-alert.sh checks / + /www + /var via df, WhatsApp-alerts Ali (+96871616161) via includes/WhatsApp.php helper when any mount ≥80%, with 6-hour per-alert cooldown via /var/lib/cardify/disk-alert.ts. Message includes offending mount + top 5 biggest paths (du -sh) + worst pct. Cron */30 * * * * installed; dry run detected root 88%, throttled correctly. → 3d81b80
 - [x] 464. Slow-query log review cron: scripts/slow-query-report.sh parses /www/server/data/mysql-slow.log (MariaDB slow_query_log=ON long_query_time=3s) via mysqldumpslow top-20-by-avg + top-10-by-count, emails ali@bhd.om, archives gz under /var/log/cardify-slow/ (12-week retention), truncates live file. Cron 15 7 * * 1. Live test report emailed OK. → 82917fe
-- [ ] 465. Deploy script pre-flight (lint PHP, syntax check).
+- [x] 465. Deploy pre-flight: /usr/local/bin/deploy-cardify.sh (mirrored in repo ops/deploy-cardify.sh) runs php -l on every changed .php file after git pull; any syntax error triggers `git reset --hard BEFORE` and exits 2 WITHOUT reloading php-fpm, so OPcache keeps serving the previous good tree. Lint gate moves typos from runtime to deploy-time. → 4c44387
 - [ ] 466. Deploy script post-flight (smoke test 5 URLs).
 - [ ] 467. Rollback command documented + tested.
 - [ ] 468. Staging env mirror (subdomain stage.cardify.om).
