@@ -87,3 +87,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-22 20:55 | #464 | 82917fe | Cat T slow-query: weekly mysqldumpslow top-20 → ali@bhd.om + gz archive + truncate, cron 15 7 * * 1. First report emailed successfully.
 2026-04-22 21:10 | #465 | 4c44387 | Cat T deploy pre-flight: php -l on changed .php files, git reset --hard + exit 2 on fail, no FPM reload on rollback. Mirrored at ops/deploy-cardify.sh.
 
+2026-04-22 21:35 | #466 | a0e922a | Cat T deploy post-flight: 5-URL smoke with status+marker, 2s FPM warm + 1-retry, pure-bash case substring. Rollback-on-fail exit 3. Verified 5/5 OK.
