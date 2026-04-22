@@ -459,7 +459,7 @@ $currentStepIndex = array_search($order['status'], $statusSteps);
 
 $currency = $order['currency'] ?? $printShop['currency'] ?? 'OMR';
 
-$pageTitle = 'Order #' . $orderId . ' - ' . ($printShop['name'] ?? 'Print Shop');
+$pageTitle = t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $printShop['name'] ?? 'Print Shop']);
 $bodyClass = 'bg-gray-50';
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
@@ -498,7 +498,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <a href="orders.php" class="text-sm text-blue-600 hover:text-blue-700 mb-1 inline-flex items-center gap-1">
                     <i class="fa-solid fa-arrow-left"></i> Back to Orders
                 </a>
-                <h1 class="text-2xl font-bold text-gray-900">Order #<?php echo $orderId; ?></h1>
+                <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t("printshoppages.h1_order_n", ["n" => $orderId])) ?></h1>
                 <p class="text-gray-500">Placed on <?php echo date('F j, Y \a\t g:i A', strtotime($order['created_at'])); ?></p>
             </div>
             <span class="inline-flex px-4 py-2 rounded-lg text-sm font-semibold border <?php echo $statusColors[$order['status']] ?? 'bg-gray-100 text-gray-700'; ?>">

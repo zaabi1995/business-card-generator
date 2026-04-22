@@ -41,7 +41,7 @@ if ($templateId) {
     );
 }
 
-$pageTitle = $template ? 'Edit Template' : 'New Template';
+$pageTitle = $template ? t('printshoppages.title_template_edit') : t('printshoppages.title_template_new');
 $bodyClass = 'bg-gray-50';
 
 // Extra head for Fabric.js

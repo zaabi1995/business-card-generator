@@ -84,7 +84,7 @@ $recentRequests = $db->fetchAll(
     ['shop' => $shopId]
 );
 
-$pageTitle = 'Card Templates';
+$pageTitle = t('printshoppages.title_templates');
 $bodyClass = 'bg-gray-50';
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
@@ -122,7 +122,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Card Templates</h1>
+            <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t("printshoppages.h1_templates")) ?></h1>
             <p class="text-sm text-gray-500 mt-1">Upload templates and let customers fill in their details to order</p>
         </div>
         <a href="<?= getBasePath() ?>printshop/template-editor.php"
@@ -241,7 +241,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <?php if (!empty($recentRequests)): ?>
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <h2 class="font-semibold text-gray-900 text-sm">Recent Customer Requests</h2>
+            <h2 class="font-semibold text-gray-900 text-sm"><?= htmlspecialchars(t("printshoppages.recent_customer_requests")) ?></h2>
             <a href="<?= getBasePath() ?>printshop/template-requests.php" class="text-xs text-blue-600 hover:underline">View all</a>
         </div>
         <div class="divide-y divide-gray-100">

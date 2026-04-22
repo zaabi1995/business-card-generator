@@ -94,7 +94,7 @@ $txIcons = [
     'adjustment' => 'fa-sliders'
 ];
 
-$pageTitle = 'Credit Ledger - ' . ($company['name'] ?? 'Account');
+$pageTitle = t('printshoppages.title_credit_ledger', ['name' => $company['name'] ?? 'Account']);
 $bodyClass = 'bg-gray-50';
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
@@ -133,7 +133,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-4"><i class="fa-solid fa-circle-check mr-1"></i> <?= htmlspecialchars($success) ?></div>
         <?php endif; ?>
 
-        <h1 class="text-2xl font-bold mb-2">Credit Ledger</h1>
+        <h1 class="text-2xl font-bold mb-2"><?= htmlspecialchars(t("printshoppages.h1_credit_ledger")) ?></h1>
         <p class="text-gray-500 mb-6"><?= htmlspecialchars($company['name'] ?? '') ?> &middot; <?= htmlspecialchars($company['admin_email'] ?? '') ?></p>
 
         <!-- Account Summary -->

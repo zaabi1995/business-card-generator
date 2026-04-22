@@ -112,7 +112,7 @@ $chartMonths   = array_column($monthlyData, 'month');
 $chartRevenue  = array_column($monthlyData, 'revenue');
 $chartOrders   = array_column($monthlyData, 'total_orders');
 
-$pageTitle = 'Analytics - ' . $printShop['name'];
+$pageTitle = t('printshoppages.title_analytics', ['shop' => $printShop['name']]);
 $bodyClass = 'bg-gray-50';
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
@@ -151,7 +151,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <!-- Header + period selector -->
         <div class="flex items-center justify-between mb-6">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Analytics</h1>
+                <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t("printshoppages.h1_analytics")) ?></h1>
                 <p class="text-gray-500">Revenue and performance overview</p>
             </div>
             <div class="flex items-center gap-2">
@@ -197,7 +197,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <!-- Revenue Chart -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                <h2 class="text-base font-semibold text-gray-900 mb-4">Revenue Over Time</h2>
+                <h2 class="text-base font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t("printshoppages.revenue_over_time")) ?></h2>
                 <?php if (empty($monthlyData)): ?>
                 <div class="flex items-center justify-center h-48 text-gray-400">
                     <div class="text-center"><i class="fa-solid fa-chart-line text-4xl mb-2"></i><p>No data yet</p></div>
@@ -209,7 +209,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
             <!-- Status Breakdown -->
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-                <h2 class="text-base font-semibold text-gray-900 mb-4">Order Status</h2>
+                <h2 class="text-base font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t("printshoppages.order_status")) ?></h2>
                 <?php if (empty($statusBreakdown)): ?>
                 <div class="flex items-center justify-center h-48 text-gray-400 text-sm">No data</div>
                 <?php else: ?>
@@ -243,7 +243,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
         <!-- Orders Volume Chart -->
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
-            <h2 class="text-base font-semibold text-gray-900 mb-4">Order Volume by Month</h2>
+            <h2 class="text-base font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t("printshoppages.order_volume_by_month")) ?></h2>
             <?php if (empty($monthlyData)): ?>
             <div class="flex items-center justify-center h-32 text-gray-400 text-sm">No data</div>
             <?php else: ?>
@@ -257,7 +257,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <!-- Top Customers -->
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100">
-                    <h2 class="text-base font-semibold text-gray-900">Top Customers</h2>
+                    <h2 class="text-base font-semibold text-gray-900"><?= htmlspecialchars(t("printshoppages.top_customers")) ?></h2>
                 </div>
                 <?php if (empty($topCustomers)): ?>
                 <div class="p-6 text-center text-gray-400 text-sm">No orders yet</div>
@@ -291,7 +291,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <!-- Paper Type & Finish Breakdown -->
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100">
-                    <h2 class="text-base font-semibold text-gray-900">Paper Types</h2>
+                    <h2 class="text-base font-semibold text-gray-900"><?= htmlspecialchars(t("printshoppages.paper_types")) ?></h2>
                 </div>
                 <?php if (empty($paperBreakdown)): ?>
                 <div class="p-6 text-center text-gray-400 text-sm">No orders yet</div>

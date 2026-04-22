@@ -78,7 +78,7 @@ $statusColors = [
     'cancelled' => 'bg-red-100 text-red-700'
 ];
 
-$pageTitle = $printShop['name'] . ' - Dashboard';
+$pageTitle = t('printshoppages.title_dashboard', ['shop' => $printShop['name']]);
 $bodyClass = 'bg-gray-50';
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>

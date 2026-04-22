@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$pageTitle = 'Profile - ' . $printShop['name'];
+$pageTitle = t('printshoppages.title_profile', ['shop' => $printShop['name']]);
 $bodyClass = 'bg-gray-50';
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
@@ -146,7 +146,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <!-- Header -->
         <div class="flex items-center justify-between mb-8">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Shop Profile</h1>
+                <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t("printshoppages.h1_shop_profile")) ?></h1>
                 <p class="text-gray-500">Manage your public profile and account settings</p>
             </div>
             <a href="dashboard.php" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors">

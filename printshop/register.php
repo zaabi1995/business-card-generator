@@ -127,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$pageTitle = 'Register Your Print Shop';
+$pageTitle = t('printshoppages.title_register');
 $bodyClass = 'bg-gray-50';
 $minimalFooter = true; // compact footer for auth page
 require_once INCLUDES_DIR . '/ui-header.php';
@@ -140,7 +140,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <a href="<?php echo getBasePath(); ?>" class="inline-flex items-center gap-2 text-2xl font-bold text-gray-900 mb-4">
                 <img src="<?php echo getBasePath(); ?>assets/images/logo.svg" alt="Cardify" class="h-10 w-auto">
             </a>
-            <h1 class="text-3xl font-bold text-gray-900">Register Your Print Shop</h1>
+            <h1 class="text-3xl font-bold text-gray-900"><?= htmlspecialchars(t("printshoppages.h1_register")) ?></h1>
             <p class="mt-2 text-gray-600">Join our marketplace and receive business card orders from companies</p>
         </div>
         

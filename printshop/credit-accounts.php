@@ -114,7 +114,7 @@ $suspendedAccounts = CreditManager::getShopAccounts($shopId, 'suspended');
 $outstanding       = CreditManager::getOutstandingSummary($shopId);
 $totalOutstanding  = array_sum(array_column($outstanding, 'balance_used'));
 
-$pageTitle = 'Credit Accounts - ' . $printShop['name'];
+$pageTitle = t('printshoppages.title_credit_accounts', ['shop' => $printShop['name']]);
 $bodyClass = 'bg-gray-50';
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
@@ -149,7 +149,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-4"><i class="fa-solid fa-circle-check mr-1"></i> <?= htmlspecialchars($success) ?></div>
     <?php endif; ?>
 
-    <h1 class="text-2xl font-bold mb-6">Credit Accounts</h1>
+    <h1 class="text-2xl font-bold mb-6"><?= htmlspecialchars(t("printshoppages.h1_credit_accounts")) ?></h1>
 
     <!-- Stats -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

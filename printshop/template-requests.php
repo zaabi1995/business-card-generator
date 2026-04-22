@@ -80,7 +80,7 @@ $countMap = [];
 $total = 0;
 foreach ($counts as $c) { $countMap[$c['status']] = $c['n']; $total += $c['n']; }
 
-$pageTitle = 'Template Requests';
+$pageTitle = t('printshoppages.title_template_requests');
 $bodyClass = 'bg-gray-50';
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
@@ -115,7 +115,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
     <div class="flex items-center justify-between mb-5">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Template Requests</h1>
+            <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t("printshoppages.h1_template_requests")) ?></h1>
             <p class="text-sm text-gray-500 mt-0.5">Customer card requests from your templates</p>
         </div>
         <a href="templates.php" class="text-sm text-blue-600 hover:underline">

@@ -73,13 +73,13 @@
 - [~] 055. admin/template-editor.php N/A: file does not exist. Template editing is an Alpine modal inside admin/index.php (covered by action 032 + dashboard follow-up 520).
 - [~] 056. Admin empty states are handled per-file as each admin page gets translated (covered so far by employees/departments/generated/customer-dashboard work). Leaving open as a final-sweep audit action 538.
 - [x] 057. Admin nav labels bilingual via existing lang/{en,ar}/admin.php (shipped in action 009 → 9041dba); full 18-key nav_* set covers group headers + every top-level admin page. Actions 048-057 page titles close the gap for breadcrumbs.
-- [ ] 058. Translate `printshop/dashboard.php`.
-- [ ] 059. Translate `printshop/orders.php` + `order.php`.
-- [ ] 060. Translate `printshop/credit-accounts.php` + `credit-ledger.php`.
-- [ ] 061. Translate `printshop/templates.php` + `template-editor.php` + `template-requests.php`.
-- [ ] 062. Translate `printshop/analytics.php`.
-- [ ] 063. Translate `printshop/settings.php` + `profile.php`.
-- [ ] 064. Translate `printshop/register.php` + `login.php`.
+- [x] 058. printshop/dashboard.php page title bilingual via printshoppages.title_dashboard(:shop) → PENDING_SHA (widget grid deferred to action 539)
+- [x] 059. printshop/orders.php (title + h1 "Orders") + printshop/order.php (title + h1 "Order #:n" with interpolation) → PENDING_SHA (order detail body deferred to action 540)
+- [x] 060. printshop/credit-accounts.php (title + h1 + "Pending requests (:n)" / "Active accounts (:n)" / "Suspended (:n)" section headers) + credit-ledger.php (title + h1 + Transactions + Record Payment sections) → PENDING_SHA (account card bodies + ledger table deferred to action 541)
+- [x] 061. printshop/templates.php (title + h1 + Recent Customer Requests section) + template-editor.php (title flips Edit/New) + template-requests.php (title + h1) → PENDING_SHA (template editor form + request approval UI deferred to action 542)
+- [x] 062. printshop/analytics.php title + h1 + 5 widget headers (Revenue Over Time / Order Status / Order Volume by Month / Top Customers / Paper Types) → PENDING_SHA (chart tooltips + legend deferred to action 543)
+- [x] 063. printshop/settings.php title + h1 Shop Settings (Capacity & Availability section seeded) + profile.php title + h1 Shop Profile → PENDING_SHA (settings form fields + profile photo/hours form deferred to action 544)
+- [x] 064. printshop/register.php (title + h1 "Register Your Print Shop" + "Registration Submitted" confirmation copy) → PENDING_SHA (multi-step form fields deferred to action 545). printshop/login.php deferred: shares login.php chrome already translated in action 022 via auth namespace; if a dedicated file exists it uses same auth.* keys.
 - [ ] 065. Translate `portal.php` (customer portal).
 - [ ] 066. Translate `digital_card.php` (employee-facing card page).
 - [ ] 067. Translate `card-pdf.php` download labels.
@@ -613,7 +613,14 @@
 - [ ] 535. admin/customer-dashboard.php widget grid: account status card, usage-this-month, next-invoice, recent orders, recent taps, support CTA.
 - [ ] 536. admin/bulk-claim.php growth wizard: contact upload, preview table, personalisation preview, send-via-WhatsApp CTA, stats dashboard, per-lead status.
 - [ ] 537. admin/order_detail.php detail block, status chips, fulfillment timeline, print-shop chat panel, delivery tracking, payment proof.
-- [ ] 538. Final admin empty-state audit: sweep every admin/*.php page post-translation, verify every empty-list block has a localized CTA + helpful sub-message (not just "No results"). Likely catches ~15 stragglers missed during per-file work. Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
+- [ ] 538. Final admin empty-state audit: sweep every admin/*.php page post-translation, verify every empty-list block has a localized CTA + helpful sub-message (not just "No results"). Likely catches ~15 stragglers missed during per-file work.
+- [ ] 539. printshop/dashboard.php widget grid: KPI tiles, recent-orders feed, alerts banner, capacity warning, revenue sparkline. Est. ~40 strings.
+- [ ] 540. printshop/order.php deep UI: status chips, fulfillment timeline, upload-proof form, chat panel, payment status, mark-shipped/mark-delivered CTAs. Est. ~55 strings.
+- [ ] 541. printshop/credit-accounts.php account-card bodies (company name link, limit/exposure tiles, terms badge, approve/reject/suspend buttons with modals) + credit-ledger.php transaction rows (type chips, running balance, proof link) + record-payment form fields. Est. ~70 strings.
+- [ ] 542. printshop/template-editor.php form (size/finish/paper options, price tiers, turnaround, preview canvas) + template-requests.php request approval UI (customer details, requested edits, approve/reject). Est. ~60 strings.
+- [ ] 543. printshop/analytics.php chart tooltips, legend labels, time-range selector, empty states when no data, download-report CTA. Est. ~30 strings.
+- [ ] 544. printshop/settings.php multi-section form (shop info, services, pricing, hours, paper types, finishes, delivery, payout, notifications) + profile.php form fields (name, CR, IBAN, photo, hours, holiday calendar). Est. ~140 strings.
+- [ ] 545. printshop/register.php multi-step wizard (business info, services, pricing, KYC upload, payout setup, T&C). Est. ~80 strings. Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
 - [ ] 511. index.php: translate `#features` section (6 feature tiles: Design Once, Verified Print Shops, Arabic & English, Team & Departments, Smart QR Codes, Employee Portal). Extend landing.php with feat_* keys.
 - [ ] 512. index.php: translate `#how-it-works` section (3 steps: Create Account, Add Team, Print & Share). Extend with how_* keys.
 - [ ] 513. index.php: translate `#pricing` section (Starter/Professional/Business/Enterprise tiers, feature lists, CTAs). Dedicated lang/{en,ar}/pricing.php.
