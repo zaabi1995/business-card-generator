@@ -548,7 +548,7 @@
 - [x] 501. Deploy to prod: v2.0 sprint live at https://cardify.om (HEAD=5bd251d). Deploy script auto-rolled chown/chmod + PHP-FPM reload + 5-URL smoke all green. → 5bd251d
 - [x] 502. Smoke test post-deploy: /api/health 200 status=up all checks (app/db/storage) green 0ms; Playwright cardify-core.spec.ts 54 passed across chromium + Safari iOS + Chrome Android 40.8s. → 5bd251d
 - [~] 503. Post tweet / LinkedIn: BLOCKED on Ali approval per standing "show drafts first" rule. ops/launch-posts.md has 3 drafts (Twitter 261-char + LinkedIn long-form + Instagram carousel hint) + posting checklist gating every channel on explicit OK. Queued 840. → a9f72e9
-- [ ] 504. Email existing customers about upgrade.
+- [~] 504. Email existing customers: BLOCKED on Ali approval per NEVER-send-emails-without-draft-first rule + MHD outreach exclusion. ops/launch-email.md has EN + AR bodies (7-bullet summary, Alis signature, WA fallback) + segmentation rules (active companies, valid admin_email, 11 MHD slugs excluded) + 7-step send checklist (spot-check → Ali-first test → 20/hr Hostinger-friendly batches → per-send log). Queued 841. → d6ea541
 - [ ] 505. WhatsApp existing customers.
 - [ ] 506. Monitor Sentry for 24h post-release.
 - [ ] 507. Collect feedback form responses.
@@ -892,3 +892,4 @@
 - [ ] 838. Monthly: walk ops/qa-screen-reader-manual.md once on prod with VoiceOver (macOS) + NVDA (Windows), record in ops/qa-screen-reader-log.md.
 - [ ] 839. Route /ar/ landing so /ar returns the same homepage with ?lang=ar (currently 404s because no nginx rewrite). Once live, re-enable the skipped case in tests/e2e/i18n-leak.spec.ts.
 - [ ] 840. Ali reviews ops/launch-posts.md. On approval: post the Twitter short via @cardify_om, run post-linkedin skill on the LinkedIn body, run instagram-graphics skill for the 4-slide carousel then post manually to @cardify.om. Flip 503 to [x] once each channel is confirmed live.
+- [ ] 841. Ali approves ops/launch-email.md bodies + segmentation, then DBA runs the SQL, saves ops/launch-email-list.csv, sends to ali@bhd.om first, waits for Ali's green, then runs the 20/hr batch via Mailer::sendTemplated logging to data/launch-email-sent.csv.

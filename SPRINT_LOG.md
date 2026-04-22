@@ -117,3 +117,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-23 04:15 | #500 | (memory) | Cat U memory cardify.md: appended v2.0 Sprint block with 110 iters summary, migrations, includes, URLs, ops cron, E2E, queued follow-ups.
 2026-04-23 04:30 | #501+502 | 5bd251d | v2.0 deployed + smoked: /api/health 200, core-spec 54/54 passed cross-browser.
 2026-04-23 04:40 | #503~ | a9f72e9 | Cat U launch drafts: 3 drafts staged in ops/launch-posts.md + posting checklist; BLOCKED on Ali approval (action 840).
+2026-04-23 04:55 | #504~ | d6ea541 | Cat U customer launch email: EN+AR drafts + segmentation + 7-step checklist staged, blocked pending Ali approval (841).
