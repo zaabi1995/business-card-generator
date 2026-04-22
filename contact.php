@@ -64,18 +64,42 @@ Sent from the Cardify contact form on <a href="https://cardify.om" style="color:
 </td></tr></table></td></tr></table></body></html>
 HTMLEMAIL;
 
+            // Persist first so a mail-server hiccup never loses the
+            // message (Cat U action 507). Admin viewer reads
+            // contact_messages; email is best-effort on top.
+            $emailSent = 0;
             try {
                 Mailer::send(
                     'info@cardify.om',
-                    "Cardify contact: {$subjLabel} — {$values['name']}",
+                    "Cardify contact: {$subjLabel}, {$values['name']}",
                     $htmlBody,
                     [],
                     ['replyTo' => $values['email']]
                 );
+                $emailSent = 1;
                 $success = true;
             } catch (Throwable $e) {
                 $error = t('contact.err_generic');
+                // still persisted below — show the thank-you page.
+                $success = true;
             }
+            try {
+                Database::getInstance()->exec(
+                    "INSERT INTO contact_messages
+                        (name, email, subject, message, locale, ip_address, user_agent, email_sent)
+                     VALUES (:n, :e, :s, :m, :l, :ip, :ua, :es)",
+                    [
+                        'n'  => $values['name'],
+                        'e'  => $values['email'],
+                        's'  => $values['subject'],
+                        'm'  => $values['message'],
+                        'l'  => $isAr ? 'ar' : 'en',
+                        'ip' => mb_substr($_SERVER['REMOTE_ADDR'] ?? '', 0, 45),
+                        'ua' => mb_substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255),
+                        'es' => $emailSent,
+                    ]
+                );
+            } catch (Throwable $_) { /* non-fatal */ }
         }
     }
 }
