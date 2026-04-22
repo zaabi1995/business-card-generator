@@ -69,3 +69,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-22 15:40 | #446 | de5893c | Cat S CR/tax ID: migration 090 (7 company columns) + admin/billing-info.php CRUD + pageMap registration + receipt Billed-to block with CR/Tax ID/address. Billing_info namespace + order keys parity OK. Migration applied live.
 2026-04-22 15:55 | #447 | abd348a | Cat S /admin/invoices: year+search filters, summary strip, table with Download→receipt, pageMap registered. 14 keys parity OK.
 2026-04-22 16:10 | #448 | ef97a45 | Cat S /admin/payments-history: type/status/year filters + summary + status pills, 17 keys parity OK.
+2026-04-22 16:30 | #449 | ec03fd1 | Cat S /admin/credit-statement: account+date filter + KPI + ledger + ?print=1 bilingual PDF, 27 keys parity OK.
