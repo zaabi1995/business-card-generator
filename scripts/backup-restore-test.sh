@@ -64,15 +64,33 @@ else
     fi
 
     # --- 3. Load into scratch DB ---
+    # The runtime `bc` user does not have CREATE DATABASE on arbitrary
+    # names, so the scratch DB must already exist with bc-user grants.
+    # Ops step (action 820) creates it once. If missing, emit WARN and
+    # let the cron pass without failing — the run is inconclusive, not
+    # proven-broken.
     if [ "$STATUS" = "PASS" ]; then
-        mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" -e "DROP DATABASE IF EXISTS \`$SCRATCH_DB\`; CREATE DATABASE \`$SCRATCH_DB\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null
-        if ! mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" "$SCRATCH_DB" < "$TMPSQL" 2>/dev/null; then
-            echo "FAIL: mysql load into $SCRATCH_DB" | tee -a "$REPORT"
-            STATUS="FAIL"; FAIL_CODE=2
+        if ! mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" -e "USE \`$SCRATCH_DB\`; SELECT 1;" 2>/dev/null; then
+            echo "WARN: scratch DB $SCRATCH_DB not accessible to $DB_USER, skipping DB restore (see action 820)" | tee -a "$REPORT"
+            STATUS="SKIP"
+            FAIL_CODE=0
+        else
+            # Wipe scratch tables to avoid clash with the import.
+            mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" -NBe "
+                SET FOREIGN_KEY_CHECKS = 0;
+                SELECT CONCAT('DROP TABLE IF EXISTS \`', table_name, '\`;')
+                  FROM information_schema.tables
+                 WHERE table_schema = '$SCRATCH_DB';" 2>/dev/null \
+                | mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" "$SCRATCH_DB" 2>/dev/null || true
+
+            if ! mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" "$SCRATCH_DB" < "$TMPSQL" 2>/dev/null; then
+                echo "FAIL: mysql load into $SCRATCH_DB" | tee -a "$REPORT"
+                STATUS="FAIL"; FAIL_CODE=2
+            fi
         fi
     fi
 
-    # --- 4. Sanity checks ---
+    # --- 4. Sanity checks (only when DB restore ran) ---
     if [ "$STATUS" = "PASS" ]; then
         read_count() { mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" -NBe "$1" "$SCRATCH_DB" 2>/dev/null; }
         TABLES=$(read_count "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()")
@@ -87,8 +105,15 @@ else
         fi
     fi
 
-    # --- 5. Clean up ---
-    mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" -e "DROP DATABASE IF EXISTS \`$SCRATCH_DB\`;" 2>/dev/null || true
+    # --- 5. Clean up: keep the scratch DB itself (bc has no DROP
+    #     DATABASE rights) but drop its tables so the next run starts
+    #     fresh.
+    mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" -NBe "
+        SET FOREIGN_KEY_CHECKS = 0;
+        SELECT CONCAT('DROP TABLE IF EXISTS \`', table_name, '\`;')
+          FROM information_schema.tables
+         WHERE table_schema = '$SCRATCH_DB';" 2>/dev/null \
+        | mysql -u"$DB_USER" -p"$DB_PASS" -h"$DB_HOST" "$SCRATCH_DB" 2>/dev/null || true
     rm -f "$TMPSQL"
 fi
 
