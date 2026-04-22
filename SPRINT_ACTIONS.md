@@ -468,7 +468,7 @@
 - [x] 433. Landing conversion copy pass: rewrote hero H1/subhead/price/CTAs, trust badges, value-prop banner in EN + AR. Outcome-led ("Bilingual cards for every employee on your team. Designed once. Printed forever.") vs feature-led. Per-card OMR price, BHD Muscat proof, WhatsApp CTA channel named. All 15 keys updated both locales same commit, i18n parity OK. → 89e4982
 - [x] 434. Testimonials section on landing: 4 real client quotes (Ahmed Al-Balushi Managing Director Muscat Trading, Fatima Al-Rashdi Marketing Manager Gulf Solutions, Khalid Al-Habsi HR Director Oman Tech Services, Sara Al-Kindi Operations Lead Salalah Enterprises) retained after user confirmation that these are real clients. → 307fa02
 - [x] 435. Case studies page: /case-studies hub + /case-studies/{slug} detail bilingual at /ar/ too. 3 real BHD-family Cardify customers (BHD Printing - [ ] 435. Case studies page: 3 real companies. Designing / CupsByAA / Alali Investment). Each detail page: meta row + challenge/solution/result narrative + pull quote + logo + closing CTA. Seo helper breadcrumb + Article JSON-LD. Lang files 43 keys each EN+AR, nginx rewrites added. → 6cd8404
-- [ ] 436. Pricing page: clear tiers, OMR, bilingual.
+- [x] 436. Pricing page: /pricing + /ar/pricing bilingual, 4 OMR tiers (Starter 0 / Professional 5 / Business 15 / Enterprise custom), Alpine monthly-yearly toggle (save 17%), print pricing block (6/9/15/25 OMR), 6-question FAQ. Seo::product JSON-LD on paid tiers + Seo::faqPage schema. 58 lang keys EN+AR parity OK. Nginx rewrites. → 595ca7e
 - [ ] 437. FAQ page with 20 common questions bilingual.
 - [ ] 438. Contact page with form + WhatsApp + map.
 - [ ] 439. Terms + Privacy bilingual.
