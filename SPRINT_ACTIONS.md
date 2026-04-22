@@ -497,7 +497,7 @@
 - [x] 456. Sentry integration PHP + frontend: includes/Sentry.php (no-dep, DSN regex, Store API POST, exception + shutdown handlers) + assets/js/cardify-sentry.js (sendBeacon-preferred error + unhandledrejection + window.cardifyTrackError) + ui-header browser bootstrap. No-op until SENTRY_DSN / SENTRY_DSN_PUBLIC defined in config.php. Home 200 post-deploy, sentry.js 200. → dcff538
 - [x] 457. Uptime monitor wiring: GET /api/health returns 200 JSON {status:up, checks:{app,db,storage}, latency_ms} with 503 on degraded; ops/uptime-monitors.json version-controlled config covering home + health + paymob callback + erp-health + TLS expiry; Ali WA/email as contacts. Live 200/87ms all green. → 860d4bd
 - [x] 458. Status page /status live: bilingual /status + /ar/status with overall banner (up/degraded/down) + 5 component probes (app / DB / storage / ERP sync / Paymob TLS socket) + 30-day incident timeline from new status_incidents table (migration 093). 26 lang keys EN+AR parity OK, nginx rewrites, Cache-Control no-store. Live 200 both locales, all systems green. → 34e8902
-- [ ] 459. Nightly DB dump to B2/S3.
+- [x] 459. Nightly DB dump: scripts/backup-db.sh (mysqldump --single-transaction + gzip -9 + optional gpg AES256 when CARDIFY_BACKUP_PASS set), /var/backups/cardify/ mode 0600 files in 0700 dir, 30-file rotation, opt-in rclone offsite via CARDIFY_BACKUP_REMOTE (b2/s3/wasabi). Cron 25 2 * * * installed on VPS, first run 724 KB OK. → 0be85ce
 - [ ] 460. Nightly storage dir backup.
 - [ ] 461. Weekly restore test.
 - [ ] 462. Log rotation (nginx + PHP errors).
@@ -870,3 +870,4 @@
 - [ ] 816. Confirm no lingering print-order flow still decrements card_credits (search Payment.php / PrintShopIntegration.php) — the new ledger is authoritative; order-time deduction should be removed if still present.
 - [ ] 817. Create "cardify-prod" project on Sentry and drop SENTRY_DSN + SENTRY_DSN_PUBLIC into config.php on VPS; verify an Uncaught exception surfaces server-side and a browser unhandledrejection surfaces client-side.
 - [ ] 818. Paste ops/uptime-monitors.json into Uptime Robot (or StatusCake) account to activate the external monitor; verify alerts route to Ali's WhatsApp + email.
+- [ ] 819. Set CARDIFY_BACKUP_PASS + CARDIFY_BACKUP_REMOTE on the VPS (Backblaze B2 bucket "cardify-backups" via rclone) so nightly backups sync offsite encrypted. Ensures backups survive a VPS loss.
