@@ -27,4 +27,36 @@ return [
     'go_dashboard'        => 'الانتقال إلى الرئيسية',
     'primary_color'       => 'اللون الأساسي',
     'accent_color'        => 'لون التمييز',
+
+    'logo_upload_hint'    => 'PNG أو SVG، حتى 5 ميغابايت. الخلفية الشفّافة أفضل.',
+    'logo_drag_drop'      => 'اسحب شعارك هنا أو اضغط للاختيار',
+    'logo_change'         => 'تغيير الشعار',
+
+    'template_minimal'    => 'بسيط',
+    'template_bold'       => 'جريء',
+    'template_classic'    => 'كلاسيكي',
+
+    'first_name'          => 'الاسم',
+    'first_title'         => 'المسمّى الوظيفي',
+    'first_email'         => 'البريد الإلكتروني',
+    'first_phone'         => 'رقم الهاتف',
+
+    'card_url_label'      => 'رابط البطاقة للمشاركة',
+    'copy'                => 'نسخ',
+    'copied'              => 'تم النسخ',
+
+    'paste_list_label'    => 'الصق قائمة، كل شخص في سطر: "الاسم، البريد، المسمى"',
+    'paste_list_ph'       => "سارة البلوشي، sarah@company.com، مسؤولة تسويق\nأحمد السيابي، ahmed@company.com، مهندس أول",
+    'upload_csv_label'    => 'أو ارفع ملف CSV',
+    'csv_headers_hint'    => 'الأعمدة: name، email، title، department (القسم اختياري)',
+
+    'order_qty_label'     => 'عدد البطاقات لكل شخص',
+    'order_per_card'      => 'السعر لكل بطاقة',
+    'order_estimate'      => 'التقدير الإجمالي',
+
+    'nav_next'            => 'التالي',
+    'nav_back'            => 'السابق',
+    'save_progress'       => 'احفظ وأكمِل لاحقاً',
+    'saving'              => 'جاري الحفظ...',
+    'saved'               => 'تم الحفظ',
 ];

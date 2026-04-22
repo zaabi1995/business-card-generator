@@ -96,6 +96,8 @@ try {
         'fx-rates'            => 'admin/fx-rates.php',
         'growth'              => 'admin/growth.php',
         'impersonate'         => 'admin/impersonate.php',
+        'onboarding'          => 'admin/onboarding.php',
+        'onboarding-save'     => 'admin/onboarding-save.php',
     ];
     
     // Handle login page specially (no auth required)

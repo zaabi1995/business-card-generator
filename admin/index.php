@@ -59,6 +59,18 @@ $userRole = Auth::getCurrentRole();
 
 $companyId = getCurrentCompanyId();
 
+// First-login redirect, send admins who have never touched the wizard to it.
+// Acknowledged-and-suppressed tenants (skipped within the last 24h, or any
+// tenant with completed_at) are handled inside Onboarding::shouldShowWizard().
+if ($companyId && !isset($_GET['wizard']) && !isset($_GET['no_onboard'])) {
+    require_once INCLUDES_DIR . '/Onboarding.php';
+    if (Onboarding::shouldShowWizard($companyId)) {
+        $onboardUrl = getAdminBasePath() . 'onboarding' . ((defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php');
+        header('Location: ' . $onboardUrl);
+        exit;
+    }
+}
+
 // Get company theme for styling
 $companyTheme = null;
 if ($companyId && DatabaseAdapter::useDatabase()) {

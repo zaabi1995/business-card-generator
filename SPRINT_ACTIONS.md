@@ -102,15 +102,16 @@
 ## C, Onboarding Wizard (081-110)
 
 - [x] 081. Migration 077 ships company_onboarding table (PK company_id, step TINYINT, data JSON, started/updated/completed/skipped/resume_nudge timestamps, 2 indexes). Backfill marks any company with >=1 generated_cards row as completed, preventing the resume banner from showing for existing active tenants (3 companies backfilled on prod). utf8mb4_unicode_ci. → 3c190d6
-- [ ] 082. Create `admin/onboarding.php` wrapper page, redirect on first-login.
-- [ ] 083. Step 1: upload logo, drag-drop, auto-extract dominant color via `LogoLibrary::dominantColor()`.
-- [ ] 084. Step 2: brand colors (primary/accent), pre-filled from logo, editable swatches.
-- [ ] 085. Step 3: template picker with live preview (sample employee + company brand injected).
-- [ ] 086. Step 4: add first employee form (name/title/phone/email).
-- [ ] 087. Step 5: digital card preview with shareable URL.
-- [ ] 088. Step 6: CSV upload or paste-list for team bulk-invite.
-- [ ] 089. Step 7: order physical cards or skip.
-- [ ] 090. Skip/resume support: state saved after each step.
+- [x] 082. admin/onboarding.php wrapper page live; 7-step Alpine.js state machine, adminHeader+admin-layout chrome. Wrapped in the existing admin auth flow via requireAdmin(). First-login redirect wired in admin/index.php via Onboarding::shouldShowWizard() guard (completed_at or 24h-skip suppresses). Registered in company_admin.php pageMap for /{slug}/admin/onboarding. → PENDING_SHA
+- [x] 083. Step 1 (logo): drag-drop label + file-input (PNG/SVG/JPEG), live preview thumbnail after selection, change-logo state. Auto-dominant-color extraction via LogoLibrary::dominantColor() deferred to action 553 (needs server-side roundtrip to run after logo upload persists).
+- [x] 084. Step 2 (colors): primary + accent paired inputs (HTML5 `<input type="color">` swatch + hex text field), defaults to BHD teal + purple. Live-updates the template gradient preview on step 3/5.
+- [x] 085. Step 3 (template picker): 3 presets (Minimal / Bold / Classic) rendered as gradient cards using the step-2 brand colors, click-to-select with blue ring highlight. Real Fabric.js live-preview with actual employee data deferred to action 554.
+- [x] 086. Step 4 (first employee): Name / Job title / Email / Phone form (email + phone pinned dir=ltr).
+- [x] 087. Step 5 (preview): server-less live card preview using step-2 colors + step-4 employee data, "Shareable card URL" input + Copy/Copied button (Alpine clipboard).
+- [x] 088. Step 6 (invite team): large paste-list textarea with Arabic-aware placeholder + CSV file input with headers hint. Server-side CSV parse + import pipe deferred to action 555.
+- [x] 089. Step 7 (order cards): per-person qty input (default 100) + OMR 0.120 static per-card rate + live OMR estimate. Actual price-per-card lookup from Plans + checkout handoff deferred to action 556.
+- [x] 090. Skip/resume support: includes/Onboarding.php (get/isComplete/shouldShowWizard/saveStep/markSkipped/markCompleted), admin/onboarding-save.php POST endpoint (JSON body {step, payload}, CSRF via X-CSRF-Token header, skip=1 param, 2MB payload cap to stay under max_allowed_packet). Resume banner on dashboard already backed by step+completed_at columns.
+→ PENDING_SHA
 - [ ] 091. Progress indicator (X of 7) with locale-aware labels.
 - [ ] 092. Wizard lives inside existing admin layout; full width, no sidebar on this page.
 - [ ] 093. Auto-seed demo tenant: on signup, create 5 sample employees labeled "Demo, replace me" so admin plays with data.
@@ -629,7 +630,11 @@
 - [ ] 549. Invite WhatsApp + email templates for employee onboarding: build includes/notifications/templates/employee_invite.{whatsapp,email}.{en,ar}.php alongside action 126 (employee self-service edit flow). Must include the magic-link token URL + company branding hook.
 - [ ] 550. Monthly analytics report email template: build includes/notifications/templates/monthly_report.email.{en,ar}.php alongside the cron job that sends it. Keys already seeded in lang/emails.php monthly_report_*.
 - [ ] 551. Credit-account approval email template: build includes/notifications/templates/credit_approved.email.{en,ar}.php when the credit approval workflow (printshop side, action 227) is built. Keys already seeded in lang/emails.php credit_approved_*.
-- [ ] 552. 30-day trash-warning email template: build includes/notifications/templates/trash_warning.email.{en,ar}.php alongside the soft-delete cron (action 397). Keys already seeded in lang/emails.php trash_warning_*. Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
+- [ ] 552. 30-day trash-warning email template: build includes/notifications/templates/trash_warning.email.{en,ar}.php alongside the soft-delete cron (action 397). Keys already seeded in lang/emails.php trash_warning_*.
+- [ ] 553. Logo dominant-color auto-extract: on step-1 save, call LogoLibrary::dominantColor() on the uploaded logo and prefill step-2 primary color in the saved JSON. Requires a server-side temp-file roundtrip because step-1 currently holds a data: URL client-side.
+- [ ] 554. Template-picker live preview: swap the simple gradient cards for Fabric.js renders using actual step-4 employee data + step-2 colors, so admins see exactly what each template will produce. Hook into CardLayouts::renderFront() shared helper.
+- [ ] 555. CSV import pipeline: parse the uploaded CSV server-side on step-6 commit, validate headers + email format, preview the first 5 rows, on wizard finish bulk-insert into employees table and queue WhatsApp invites through the action-549 template.
+- [ ] 556. Order-cards step wiring: real price lookup from Plans + quantity breakpoints (static 0.120 is a placeholder), integrate with PrintShopBilling::createOrder() on wizard finish so admins land in the normal order-checkout flow with cards pre-selected. Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
 - [ ] 511. index.php: translate `#features` section (6 feature tiles: Design Once, Verified Print Shops, Arabic & English, Team & Departments, Smart QR Codes, Employee Portal). Extend landing.php with feat_* keys.
 - [ ] 512. index.php: translate `#how-it-works` section (3 steps: Create Account, Add Team, Print & Share). Extend with how_* keys.
 - [ ] 513. index.php: translate `#pricing` section (Starter/Professional/Business/Enterprise tiers, feature lists, CTAs). Dedicated lang/{en,ar}/pricing.php.

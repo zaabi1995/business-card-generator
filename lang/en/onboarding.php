@@ -27,4 +27,42 @@ return [
     'go_dashboard'        => 'Go to dashboard',
     'primary_color'       => 'Primary color',
     'accent_color'        => 'Accent color',
+
+    // Step 1 logo
+    'logo_upload_hint'    => 'PNG or SVG, up to 5 MB. Clear background works best.',
+    'logo_drag_drop'      => 'Drag your logo here or click to browse',
+    'logo_change'         => 'Change logo',
+
+    // Step 3 template
+    'template_minimal'    => 'Minimal',
+    'template_bold'       => 'Bold',
+    'template_classic'    => 'Classic',
+
+    // Step 4 first employee
+    'first_name'          => 'Name',
+    'first_title'         => 'Job title',
+    'first_email'         => 'Email',
+    'first_phone'         => 'Phone',
+
+    // Step 5 preview
+    'card_url_label'      => 'Shareable card URL',
+    'copy'                => 'Copy',
+    'copied'              => 'Copied',
+
+    // Step 6 invite
+    'paste_list_label'    => 'Paste list, one per line, "Name, email, title"',
+    'paste_list_ph'       => "Sarah Al Balushi, sarah@company.com, Marketing lead\nAhmed Al Siyabi, ahmed@company.com, Senior engineer",
+    'upload_csv_label'    => 'Or upload a CSV',
+    'csv_headers_hint'    => 'Columns: name, email, title, department (department optional)',
+
+    // Step 7 order
+    'order_qty_label'     => 'Cards per person',
+    'order_per_card'      => 'Price per card',
+    'order_estimate'      => 'Estimated total',
+
+    'nav_next'            => 'Next',
+    'nav_back'            => 'Back',
+    'save_progress'       => 'Save and continue later',
+    'saving'              => 'Saving...',
+    'saved'               => 'Saved',
 ];
