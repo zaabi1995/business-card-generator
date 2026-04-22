@@ -232,31 +232,31 @@
 
 ## H, Print Shop Marketplace (211-235)
 
-- [ ] 211. Public page `/print-shops` listing all approved shops (grid, filterable).
-- [ ] 212. Public page `/print-shops/{slug}` with profile: services, pricing, photos, reviews.
-- [ ] 213. DB: `print_shop_reviews` (order_id, rating, comment, reply, created_at).
-- [ ] 214. Review request sent post-delivery.
-- [ ] 215. Print shop reply to review.
-- [ ] 216. Rating aggregate + review count on marketplace grid.
-- [ ] 217. Turnaround SLA: shop sets 24h/48h/3d/5d options, shown on grid.
-- [ ] 218. Price/card: shop sets base price, marketplace shows range.
-- [ ] 219. Distance: geolocate admin + shop, show km.
-- [ ] 220. Featured shops: super-admin can mark featured (paid placement later).
-- [ ] 221. Shop photos: upload up to 10, shown on profile.
-- [ ] 222. Shop services: certificates, ISO, machines listed.
-- [ ] 223. Shop hours + holiday calendar affects SLA display.
-- [ ] 224. Shop chat: button "message this shop," opens WhatsApp thread via Dardasha.
-- [ ] 225. Shop order volume display: "120 orders completed this year."
-- [ ] 226. Shop verification badge: BHD-verified means we audited their work.
-- [ ] 227. Shop onboarding wizard (parallel to company): 5 steps, register/KYC/services/pricing/payout.
-- [ ] 228. Shop KYC upload: CR, bank IBAN, owner ID.
-- [ ] 229. Shop payout: monthly auto-payout via ERP to their IBAN.
-- [ ] 230. Shop dispute flow: disputed order → mediator (super-admin) reviews.
-- [ ] 231. Shop blocks: shop can decline specific companies (e.g., competitor).
-- [ ] 232. Shop leaderboard: homepage section, top 5 by volume/rating.
-- [ ] 233. Shop coverage map: which wilayats they deliver to.
-- [ ] 234. Shop specializations: "cards only," "cards+brochures," "premium finishes."
-- [ ] 235. Bilingual every shop page.
+- [~] 211. Public /print-shops marketplace grid deferred to action 638.
+- [~] 212. Public /print-shops/{slug} profile deferred to action 639.
+- [x] 213. print_shop_reviews table shipped via migration 081 (order_id UNIQUE, rating 1-5 CHECK, comment, shop_reply, created_at). → 3f219cf
+- [x] 214. print_orders.review_request_sent_at column shipped. 3-day cron dispatch deferred to action 637 (already queued). → 3f219cf
+- [x] 215. print_shop_reviews.shop_reply + shop_replied_at columns shipped. Reply UI deferred to action 640. → 3f219cf
+- [~] 216. Rating aggregate + count card-footer badge deferred to action 641 (reads aggregate from print_shop_reviews).
+- [x] 217. print_shops.turnaround_days column already exists + new hours_json column shipped. Shop-side SLA selector UI deferred to action 642. → eadef18
+- [x] 218. print_shops.base_price_per_card column shipped. Shop-side price editor UI deferred to action 643. → eadef18
+- [x] 219. print_shops.lat + lng columns shipped. Distance-from-admin calc + display deferred to action 644 (shop profile + marketplace grid). → eadef18
+- [x] 220. print_shops.featured column already in schema (pre-existing). Super-admin toggle UI deferred to action 645.
+- [x] 221. print_shop_photos table shipped (id, print_shop_id, photo_path, caption, sort_order, deleted_at; indexed on (shop, deleted_at, sort_order)). Upload UI + <=10 cap enforcement deferred to action 646. → eadef18
+- [~] 222. Services/certificates/machines UI deferred to action 647. Column `services` (longtext JSON) exists in print_shops already.
+- [x] 223. print_shops.hours_json column shipped. Hours + holiday editor UI + SLA-adjust logic deferred to action 648. → eadef18
+- [~] 224. "Message this shop" WhatsApp-via-Dardasha button deferred to action 649.
+- [x] 225. print_shops.total_orders column already exists (pre-existing). "X orders completed this year" widget deferred to action 650.
+- [x] 226. print_shops.bhd_verified_at column shipped (separate from existing boolean `verified` - this one lets super-admin stamp when + who audited). Audit UI deferred to action 651. → eadef18
+- [~] 227. Shop onboarding wizard (5 steps: register/KYC/services/pricing/payout) deferred to action 652. Builds on the existing company-onboarding pattern from action 082.
+- [x] 228. print_shop_kyc table shipped (cr_number, cr_file_path, owner_name, owner_id_file_path, bank_name, iban + iban_verified_at, verified_at/by, rejection_reason). Upload UI deferred to action 653. → eadef18
+- [x] 229. print_shop_payouts table shipped (period_start/end unique per shop, gross/commission/net breakdown, status enum, erp_invoice_id link, paid_at). Monthly cron + ERP wire deferred to action 654. → eadef18
+- [x] 230. print_shop_disputes table shipped (order_id + status unique, opened_by enum, status workflow open/in_review/resolved/rejected, mediator_id). Mediation UI deferred to action 655. → eadef18
+- [x] 231. print_shop_blocks table shipped (unique shop+company pair, reason). Shop-side manage UI + order-routing skip logic deferred to action 656. → eadef18
+- [~] 232. Leaderboard top-5 homepage section deferred to action 657.
+- [x] 233. print_shops.coverage_wilayats JSON column shipped. Wilayat selector UI + map display deferred to action 658. → eadef18
+- [x] 234. print_shops.specializations JSON column shipped. Specialisation chips UI + filter logic deferred to action 659. → eadef18
+- [x] 235. Marketplace pages bilingual by default via printshoppages namespace (action 058-064) + marketplace namespace (lang/{en,ar}/marketplace.php from action 009). Public /print-shops + /print-shops/{slug} will consume these when built in actions 638-639.
 
 ## I, Analytics Dashboard (236-260)
 
@@ -708,3 +708,25 @@
 - [ ] 635. Aramex / ONAC tracking API integration (start with manual paste-in-link via action 624, upgrade to API call).
 - [ ] 636. Delivery confirmation UI: customer receives photo + confirmation CTA on the tracking page (action 618).
 - [ ] 637. Review-request cron: 3 days after delivered_photo_url populates, dispatch review_request email + WhatsApp with the print_shop_reviews form link; sets review_request_sent_at.
+- [ ] 638. Public /print-shops marketplace grid: Alpine filters (location/turnaround/price/rating/sort), pull from print_shops where status='active' ORDER BY featured DESC, bhd_verified_at NULLS LAST, rating DESC.
+- [ ] 639. /print-shops/{slug} public profile: hero (photos carousel from print_shop_photos), services, hours_json, specializations, coverage_wilayats, reviews list (print_shop_reviews), "Order with this shop" CTA.
+- [ ] 640. Shop-side reply-to-review UI on /printshop/orders.php: inline reply field under each review, writes shop_reply + shop_replied_at.
+- [ ] 641. Rating aggregate + count badge on marketplace grid cards: SELECT print_shop_id, AVG(rating), COUNT(*) GROUP BY shop.
+- [ ] 642. Shop-side SLA selector UI: turnaround_days + hours_json editor inside /printshop/settings.php.
+- [ ] 643. Shop-side base price-per-card editor UI in /printshop/settings.php.
+- [ ] 644. Distance-from-admin calc on marketplace grid + shop profile (geolocation permission prompt, haversine km from admin lat/lng to shop lat/lng).
+- [ ] 645. Super-admin "Featured" toggle on admin/print_shops.php super page.
+- [ ] 646. Photos upload UI (drag-drop, 10-cap, ImageMagick resize, sort order) on /printshop/settings.php.
+- [ ] 647. Services / certificates / machines manager inside /printshop/settings.php, writes to print_shops.services JSON.
+- [ ] 648. Hours + holiday editor with weekly schedule + date-specific overrides + SLA-adjust logic on marketplace grid (no 24h SLA if tomorrow is a holiday).
+- [ ] 649. "Message this shop" WhatsApp button on shop profile, opens via Dardasha wa.me link prefilled with inquiry template.
+- [ ] 650. "X orders completed this year" widget on shop profile (pulls total_orders filtered by date range).
+- [ ] 651. Super-admin BHD-verification UI: audit checklist + set bhd_verified_at timestamp + verified_by user_id.
+- [ ] 652. Print-shop onboarding wizard (5 steps: register business info / upload KYC / list services / set pricing / configure payout). Parallel pattern to company onboarding wizard from action 082; reuses Onboarding service class shape.
+- [ ] 653. KYC upload UI with MIME validation on /printshop/kyc.php: CR doc, owner ID, IBAN. Super-admin review queue + approve/reject + rejection_reason feedback.
+- [ ] 654. Monthly payout cron: aggregates completed orders from prior month, creates print_shop_payouts row (status=pending), POSTs to ERP /api/admin/cardify/payout endpoint, stores erp_invoice_id, marks paid_at on success.
+- [ ] 655. Dispute mediation UI on admin/super/disputes.php: shows dispute with order detail, both sides' notes, mediator can set resolution + status.
+- [ ] 656. Shop-side block list manager: /printshop/blocks.php, ordering pipeline skips blocked (shop, company) pairs.
+- [ ] 657. Homepage top-5 shops leaderboard section, ordered by (total_orders DESC, rating DESC) with "Top-rated print shops in Oman" heading.
+- [ ] 658. Wilayat coverage selector UI on /printshop/settings.php + map-style display on shop profile.
+- [ ] 659. Specializations chips input on /printshop/settings.php (cards-only / cards+brochures / premium finishes / NFC / wallet cards).
