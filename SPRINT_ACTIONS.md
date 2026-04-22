@@ -296,10 +296,10 @@
 - [~] 266. g d / g t / g o / g s / c / `/` bindings deferred to action 690.
 - [~] 267. Breadcrumbs on nested pages deferred to action 691.
 - [~] 268. Sticky page header with primary action deferred to action 692.
-- [x] 269. cardifyToast.push({variant, title, body, duration, action}) component shipped in assets/js/cardify-toast.js + css; aria-live polite container, 5 second default dismiss, success/error/info/warn variants, RTL-safe via inset-inline-end. Wired into admin-layout so every admin/* page gets it. → PENDING_SHA
+- [x] 269. cardifyToast.push({variant, title, body, duration, action}) component shipped in assets/js/cardify-toast.js + css; aria-live polite container, 5 second default dismiss, success/error/info/warn variants, RTL-safe via inset-inline-end. Wired into admin-layout so every admin/* page gets it. → cf46123
 - [~] 270. Skeleton loaders deferred to action 693.
 - [~] 271. Optimistic UI patterns deferred to action 694.
-- [x] 272. cardifyToast.undo(message, onUndo) helper shipped; 6-second window, Undo action button. Call-site wiring on delete handlers deferred to action 695. → PENDING_SHA
+- [x] 272. cardifyToast.undo(message, onUndo) helper shipped; 6-second window, Undo action button. Call-site wiring on delete handlers deferred to action 695. → cf46123
 - [~] 273-278. Bulk-actions bar, filter chips, sort, column picker, saved views deferred to actions 696-700.
 - [x] 279. Shared `.cardify-empty` primitive shipped in cardify-toast.css (dashed border card, muted icon slot, title + body + CTA). Individual empty-state replacements across admin pages deferred to action 701.
 - [~] 280. Inline form-field tooltips deferred to action 702.
@@ -309,7 +309,7 @@
 - [~] 284. Shepherd.js feature tour deferred to action 706.
 - [~] 285. 375/414 mobile QA sweep deferred to action 707.
 - [~] 286. 768 tablet QA sweep deferred to action 708.
-- [x] 287. manifest.webmanifest + sw.js shipped, wired into admin-layout.php. theme-color #009bc1, apple-mobile-web-app-capable meta, 3 shortcuts (Employees / Generate cards / Print orders). Service worker caches static shell only, NEVER_CACHE list protects /admin /printshop /api /portal /paymob /webhooks. → PENDING_SHA
+- [x] 287. manifest.webmanifest + sw.js shipped, wired into admin-layout.php. theme-color #009bc1, apple-mobile-web-app-capable meta, 3 shortcuts (Employees / Generate cards / Print orders). Service worker caches static shell only, NEVER_CACHE list protects /admin /printshop /api /portal /paymob /webhooks. → cf46123
 - [~] 288. Offline banner when network drops deferred to action 709.
 - [~] 289. Dark mode (OS pref) deferred to action 710.
 - [~] 290. WCAG AA audit deferred to action 711.
@@ -321,19 +321,19 @@
 
 ## K, Design System Tokens + Components (296-320)
 
-- [x] 296. assets/css/cardify-tokens.css shipped with 10-step primary + accent scales, 9-step OKLCH gray, semantic aliases (bg/surface/text/border/link), spacing scale (4-96px), radius tokens (xs→2xl + full), 3-level shadow + focus ring, typography scale (12→48px), motion tokens, z-index stack. RTL swap of sans→IBM-Plex-Arabic. → PENDING_SHA
-- [x] 297. All hardcoded brand hex values replaced with --cardify-primary-* / --cardify-accent-* tokens in the new tokens/components files. Sweep of remaining inline literals across admin/* deferred to action 717. → PENDING_SHA
-- [x] 298. 9-step gray scale via OKLCH (50→900) shipped. → PENDING_SHA
-- [x] 299. Typography scale tokens (--cardify-text-xs..5xl) shipped. → PENDING_SHA
-- [x] 300. assets/css/cardify-components.css shipped with .cardify-btn + variants + sizes + icon + loading state, .cardify-input/select/textarea with aria-invalid, .cardify-field wrapper, .cardify-switch, .cardify-card, .cardify-table with hover + striped, .cardify-badge (4 variants) + .cardify-chip with pressed state, .cardify-modal scaffold with backdrop + dialog animations, focus-visible ring, .cardify-sr-only. → PENDING_SHA
-- [x] 301. .cardify-btn--primary / --secondary / --ghost shipped. → PENDING_SHA
-- [x] 302. .cardify-btn--danger shipped (reserved palette, hover #b91c1c). → PENDING_SHA
-- [x] 303. .cardify-btn.is-loading with inline spinner (pure CSS, no extra DOM). → PENDING_SHA
-- [x] 304. .cardify-btn[disabled] / .is-disabled shipped. Tooltip-explaining-why deferred to tooltip primitive (action 702). → PENDING_SHA
-- [x] 305. .cardify-field wraps .cardify-field__label + input + __help + __error; __error binds via aria-invalid. → PENDING_SHA
+- [x] 296. assets/css/cardify-tokens.css shipped with 10-step primary + accent scales, 9-step OKLCH gray, semantic aliases (bg/surface/text/border/link), spacing scale (4-96px), radius tokens (xs→2xl + full), 3-level shadow + focus ring, typography scale (12→48px), motion tokens, z-index stack. RTL swap of sans→IBM-Plex-Arabic. → cf46123
+- [x] 297. All hardcoded brand hex values replaced with --cardify-primary-* / --cardify-accent-* tokens in the new tokens/components files. Sweep of remaining inline literals across admin/* deferred to action 717. → cf46123
+- [x] 298. 9-step gray scale via OKLCH (50→900) shipped. → cf46123
+- [x] 299. Typography scale tokens (--cardify-text-xs..5xl) shipped. → cf46123
+- [x] 300. assets/css/cardify-components.css shipped with .cardify-btn + variants + sizes + icon + loading state, .cardify-input/select/textarea with aria-invalid, .cardify-field wrapper, .cardify-switch, .cardify-card, .cardify-table with hover + striped, .cardify-badge (4 variants) + .cardify-chip with pressed state, .cardify-modal scaffold with backdrop + dialog animations, focus-visible ring, .cardify-sr-only. → cf46123
+- [x] 301. .cardify-btn--primary / --secondary / --ghost shipped. → cf46123
+- [x] 302. .cardify-btn--danger shipped (reserved palette, hover #b91c1c). → cf46123
+- [x] 303. .cardify-btn.is-loading with inline spinner (pure CSS, no extra DOM). → cf46123
+- [x] 304. .cardify-btn[disabled] / .is-disabled shipped. Tooltip-explaining-why deferred to tooltip primitive (action 702). → cf46123
+- [x] 305. .cardify-field wraps .cardify-field__label + input + __help + __error; __error binds via aria-invalid. → cf46123
 - [~] 306. Searchable select deferred to action 718 (needs JS component, not CSS-only).
 - [~] 307. Combobox (creatable select) deferred to action 719.
-- [x] 308. .cardify-switch toggle shipped (RTL-aware slider direction). → PENDING_SHA
+- [x] 308. .cardify-switch toggle shipped (RTL-aware slider direction). → cf46123
 - [~] 309. Styled radio + checkbox groups deferred to action 720 (bases render natively today).
 - [~] 310. File-upload dropzone component deferred to action 721.
 - [~] 311. Color-picker component deferred to action 722 (HTML5 <input type="color"> in use via onboarding wizard).
