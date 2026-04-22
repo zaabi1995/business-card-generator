@@ -37,10 +37,10 @@ if ($employeeId) {
         exit;
     }
     $stats = QRTracker::getEmployeeStats($employeeId, $days);
-    $pageTitle = 'Analytics: ' . ($employee['name_en'] ?? $employee['email']);
+    $pageTitle = t('adminchrome.analytics_prefix', ['name' => $employee['name_en'] ?? $employee['email']]);
 } else {
     $stats = QRTracker::getCompanyStats($companyId, $days);
-    $pageTitle = 'QR Scan Analytics';
+    $pageTitle = t('adminchrome.qr_scan_analytics');
 }
 
 // Get all employees for dropdown

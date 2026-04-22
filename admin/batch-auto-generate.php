@@ -85,7 +85,7 @@ if (!$hasTemplates) {
     }
 }
 
-adminHeader('Generate All Cards', 'employees');
+adminHeader(t('adminchrome.batch_auto_generate'), 'employees');
 ?>
 
 <!-- Fonts for pre-designed layouts -->

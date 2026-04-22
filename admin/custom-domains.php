@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isPro) {
 $domains = $isPro ? CustomDomain::listForCompany($companyId) : [];
 $employees = loadEmployees($companyId);
 
-adminHeader('Custom Domains', 'custom-domains');
+adminHeader(t('adminchrome.custom_domains'), 'custom-domains');
 ?>
 
 <div class="p-6 max-w-6xl mx-auto">

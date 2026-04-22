@@ -23,7 +23,7 @@ require_once INCLUDES_DIR . '/admin-layout.php';
 
 // Check if Billing class exists
 if (!file_exists(INCLUDES_DIR . '/Billing.php')) {
-    adminHeader('Billing', 'billing');
+    adminHeader(t('adminchrome.billing'), 'billing');
     echo '<div class="bg-amber-50 border border-amber-200 rounded-xl p-6 text-amber-700">';
     echo '<i class="fa-solid fa-exclamation-triangle mr-2"></i>';
     echo 'Billing module is not configured. Please contact your administrator.';
@@ -36,7 +36,7 @@ try {
     require_once INCLUDES_DIR . '/Billing.php';
 } catch (Throwable $e) {
     error_log("Billing.php load error: " . $e->getMessage());
-    adminHeader('Billing', 'billing');
+    adminHeader(t('adminchrome.billing'), 'billing');
     echo '<div class="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700">';
     echo 'Error loading billing module: ' . htmlspecialchars($e->getMessage());
     echo '</div>';
@@ -72,7 +72,7 @@ try {
     $billing = new Billing($gateway, $billingConfig);
 } catch (Throwable $e) {
     error_log("Billing init error: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine());
-    adminHeader('Billing', 'billing');
+    adminHeader(t('adminchrome.billing'), 'billing');
     echo '<div class="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700">';
     echo '<i class="fa-solid fa-exclamation-circle mr-2"></i>';
     echo 'Error initializing billing system: ' . htmlspecialchars($e->getMessage());
@@ -289,7 +289,7 @@ try {
     // templates table might not exist
 }
 
-adminHeader('Billing', 'billing');
+adminHeader(t('adminchrome.billing'), 'billing');
 ?>
 
 <!-- Alert Message -->

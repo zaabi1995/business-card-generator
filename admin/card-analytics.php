@@ -45,8 +45,8 @@ $stats = $employee
     : ['days' => $days, 'kpis' => ['views' => 0, 'clicks' => 0, 'unique_visitors' => 0, 'qr_scans' => 0, 'saves' => 0, 'wallet_adds' => 0], 'series' => [], 'cta' => [], 'devices' => [], 'referrers' => [], 'countries' => []];
 
 $pageTitle = $employee
-    ? ('Card Analytics: ' . ($employee['name_en'] ?? $employee['email'] ?? 'Employee'))
-    : 'Card Analytics';
+    ? t('adminchrome.card_analytics_prefix', ['name' => $employee['name_en'] ?? $employee['email'] ?? 'Employee'])
+    : t('adminchrome.card_analytics');
 
 function ca_flag($code)
 {

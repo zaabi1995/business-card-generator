@@ -61,7 +61,7 @@ foreach ($accounts as $acc) {
     }
 }
 
-adminHeader('Credit Accounts', 'print');
+adminHeader(t('adminchrome.credit_accounts'), 'print');
 ?>
 
 <div class="max-w-5xl mx-auto">

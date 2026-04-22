@@ -114,7 +114,7 @@ $hasTemplates = $frontTemplate || $backTemplate;
 $companySlug = getCurrentCompanySlug() ?? '';
 $baseUrl = getBaseUrl();
 
-adminHeader('Batch Generate', 'generated');
+adminHeader(t('adminchrome.batch_generate'), 'generated');
 ?>
 
 <?php if ($isFreePlan): ?>
