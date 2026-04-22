@@ -240,6 +240,11 @@ $navLinks = [
 
 // Include Auth for navigation state
 require_once INCLUDES_DIR . '/Auth.php';
+
+// Hint the browser to start downloading the hero screenshot before the
+// stylesheet parse completes. Biggest measurable LCP win on /.
+$lcpImage = assetUrl('images/landing/light-dash.png');
+
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
 
@@ -611,7 +616,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <!-- Screenshot -->
                 <div class="relative">
                     <div class="relative rounded-xl overflow-hidden shadow-2xl border-8 border-white/10">
-                        <img src="<?php echo assetUrl('images/landing/light-dash.png'); ?>" alt="Cardify Dashboard" class="w-full" loading="lazy">
+                        <img src="<?php echo assetUrl('images/landing/light-dash.png'); ?>" alt="Cardify Dashboard" class="w-full h-auto" width="1175" height="605" fetchpriority="high" decoding="async">
                     </div>
                     <!-- Decorative elements -->
                     <div class="absolute -top-4 -right-4 w-24 h-24 bg-amber-400 rounded-full opacity-20 blur-xl"></div>
@@ -864,7 +869,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 ?>
                 <article class="group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl transition-shadow">
                     <a href="<?= htmlspecialchars($postUrl) ?>" class="block aspect-video bg-gray-100 overflow-hidden">
-                        <img src="<?= getBasePath() . $img ?>" alt="<?= htmlspecialchars($post['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy">
+                        <img src="<?= getBasePath() . $img ?>" alt="<?= htmlspecialchars($post['title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform" width="1200" height="675" loading="lazy" decoding="async">
                     </a>
                     <div class="p-6">
                         <time class="text-sm text-gray-500"><?= $postDate ?></time>

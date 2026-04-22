@@ -500,7 +500,7 @@ function adminFooter() {
     
     <!-- Flowbite JS (Local) -->
     <?php $flowbiteJsVersion = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/flowbite/app.bundle.js') ?: time(); ?>
-    <script src="/assets/flowbite/app.bundle.js?v=<?php echo $flowbiteJsVersion; ?>"></script>
+    <script defer src="/assets/flowbite/app.bundle.js?v=<?php echo $flowbiteJsVersion; ?>"></script>
     
     <!-- Card Editor JS -->
     <script src="<?php echo getBasePath(); ?>assets/js/font-loader.js"></script>

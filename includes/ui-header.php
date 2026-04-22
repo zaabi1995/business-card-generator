@@ -129,6 +129,10 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 
+    <?php if (!empty($lcpImage)): /* Per-page LCP preload (set $lcpImage before require to prioritize the hero). */ ?>
+    <link rel="preload" as="image" href="<?php echo htmlspecialchars($lcpImage, ENT_QUOTES); ?>" fetchpriority="high">
+    <?php endif; ?>
+
     <!-- Font Awesome (CDN) — preloaded fonts, non-blocking CSS -->
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>

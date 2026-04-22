@@ -20,7 +20,9 @@ class Redirects
         '/home'           => '/',
         '/home.html'      => '/',
         '/index.html'     => '/',
-        '/index.php'      => '/',
+        // /index.php intentionally NOT remapped here. Nginx's default index
+        // directive serves / via an internal rewrite to index.php; mapping
+        // it to / causes a 301 loop.
         '/sign-in'        => '/login.php',
         '/signin'         => '/login.php',
         '/log-in'         => '/login.php',

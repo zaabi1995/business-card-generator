@@ -132,7 +132,7 @@ if ($currentPage !== 'index' && !($currentPage === 'blog' && isset($singlePost))
 
     <!-- Flowbite JS (CDN) -->
 <?php $flowbiteJsVersion = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/flowbite/app.bundle.js') ?: time(); ?>
-<script src="/assets/flowbite/app.bundle.js?v=<?php echo $flowbiteJsVersion; ?>"></script>
+<script defer src="/assets/flowbite/app.bundle.js?v=<?php echo $flowbiteJsVersion; ?>"></script>
     
     <!-- Page Loader Script (JS enhancement - CSS handles fallback) -->
     <script>
