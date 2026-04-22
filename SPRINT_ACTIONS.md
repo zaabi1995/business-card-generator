@@ -485,7 +485,7 @@
 - [x] 447. Invoice list in company admin: /admin/invoices (page registered), summary strip (count+total+VAT), table with year filter + search by order/ERP invoice number + download button opening bilingual receipt for Save-as-PDF. Tax lazy-fallback for legacy orders. 14 lang keys EN+AR parity OK. → abd348a
 - [x] 448. Payment history view: /admin/payments-history (pageMap registered). Triple filter (type/status/year), summary strip (total paid + pending/failed/refunded counts), table with date/type/reference/method/amount/status pill. Pulls directly from payments table covering subscription/print_order/card_order. 17 keys EN+AR parity OK. → ef97a45
 - [x] 449. Credit statement with downloadable PDF: /admin/credit-statement (pageMap registered). Account+date-range filters, KPI strip (limit/used/charges/payments), ledger table with running balance; ?print=1 renders bilingual A4 statement (print shop + period + opening/closing + totals + BHD legal footer) for Save-as-PDF. 27 keys EN+AR parity OK. → ec03fd1
-- [ ] 450. Auto-charge card-credits on card-generate (not on order).
+- [x] 450. Auto-charge card credits on generate: migration 091 (card_credit_ledger with UNIQUE company+employee+reason for idempotency) + includes/CardCredits.php (GENERATE_COST=1, atomic decrement via SELECT FOR UPDATE, race-safe via UNIQUE index); log_generation.php charges on first generation per employee and returns {balance,charged,reason} in JSON. Regen free. Insufficient credits does not block. → ec04b17
 - [ ] 451. Top-up card credits page with Paymob.
 - [ ] 452. Bulk buy discount on credits.
 - [ ] 453. Audit cash_flow from card-credit purchases to ERP client ledger.
@@ -866,3 +866,5 @@
 - [ ] 812. Wire Tax::persistOnOrder() into PrintShopIntegration + direct-order creation paths so VAT columns are written at insert time rather than via lazy-backfill on first receipt view.
 - [ ] 813. Extend ERPSync::recordPayment payload to include clientCr, clientTaxId, clientBillingAddress so BHD-ERP writes them on the ERP-side client record + invoice header (coordinate with action 811).
 - [ ] 814. Link "Billing info" page from admin sidebar + settings nav.
+- [ ] 815. Card editor UI: consume `credits.balance` + `credits.reason` from log_generation.php response and show an inline "X credits left" badge + "Top up" nudge when reason='insufficient'.
+- [ ] 816. Confirm no lingering print-order flow still decrements card_credits (search Payment.php / PrintShopIntegration.php) — the new ledger is authoritative; order-time deduction should be removed if still present.
