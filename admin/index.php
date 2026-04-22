@@ -1634,22 +1634,6 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 </div>
 
 <script>
-    // Diagnostic probe for the stray %3Cdiv%20class= 404, logs the
-    // offending element's outerHTML + parent so we can trace the source.
-    (function() {
-        window.addEventListener('error', function(ev) {
-            var t = ev.target;
-            if (!t || t === window) return;
-            var url = t.currentSrc || t.src || t.href || '';
-            if (typeof url !== 'string') return;
-            if (url.indexOf('%3Cdiv') !== -1 || url.indexOf('<div') !== -1) {
-                console.warn('[bg-404 probe] offending element:', t);
-                try { console.warn('[bg-404 probe] outerHTML:', t.outerHTML); } catch(e) {}
-                try { console.warn('[bg-404 probe] parent outerHTML:', t.parentElement && t.parentElement.outerHTML); } catch(e) {}
-            }
-        }, true);
-    })();
-
     function templateEditor() {
         return {
             csrfToken: '<?php echo generateCSRFToken(); ?>',
@@ -2610,9 +2594,9 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
             getBackgroundUrl: function(template) {
                 if (!template || !template.backgroundImage) return '';
                 var raw = String(template.backgroundImage);
-                // Guard against stray HTML/expressions landing in the field
-                // (a render-timing race was causing <img src="<div class=...">
-                // 404s on /ohb/admin/%3Cdiv%20class=).
+                // Guard against stray HTML/expressions landing in the field.
+                // A render-timing race was producing stray 404s on URLs that
+                // looked like HTML fragments; belt-and-braces reject here.
                 if (raw.indexOf('<') !== -1 || raw.indexOf('>') !== -1) return '';
                 if (!/^[\/A-Za-z0-9][\w\-\.\/:]*$/.test(raw.replace(/^\//, ''))) return '';
                 var path = raw.replace(/^\//, '');
