@@ -84,3 +84,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-22 20:10 | #461 | b8d0f65 | Cat T restore test: tolerant script (DB path SKIP without grants, tar tzf always runs), cron 45 3 * * 0, emails PASS/FAIL/SKIP. First run SKIP+tar 818 entries OK. Grant queued as 820.
 2026-04-22 20:25 | #462 | (ops+repo) | Cat T log rotation: /etc/logrotate.d/cardify deployed, cron logs daily×30 + PHP weekly×8 SIGUSR1, aaPanel nginx config already covers /www/wwwlogs/.
 2026-04-22 20:40 | #463 | 3d81b80 | Cat T disk-alert: scripts/disk-alert.sh WhatsApps Ali at 80% with 6h cooldown + top-5 biggest paths, cron */30, seeded state file to prevent first-run spam. Root 88% noted (action 821).
+2026-04-22 20:55 | #464 | 82917fe | Cat T slow-query: weekly mysqldumpslow top-20 → ali@bhd.om + gz archive + truncate, cron 15 7 * * 1. First report emailed successfully.
