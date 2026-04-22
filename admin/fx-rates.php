@@ -70,7 +70,7 @@ $rates = $db->fetchAll(
 );
 $csrfToken = generateCSRFToken();
 
-adminHeader('FX Rates', 'fx-rates');
+adminHeader(t('adminchrome.fx_rates'), 'fx-rates');
 ?>
 
 <div class="max-w-5xl mx-auto px-4 py-8">

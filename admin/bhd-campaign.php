@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
 // Default WhatsApp template
 $defaultWhatsapp = "Hello! BHD Printing now offers digital business cards through Cardify.\n\nDesign, share, and print professional cards for your team — in minutes.\n\nGet started FREE: https://cardify.om/bhd\n\nYour BHD Printing team";
 
-adminHeader('BHD Campaign Manager', 'reports');
+adminHeader(t('adminchrome.bhd_campaign_manager'), 'reports');
 ?>
 
 <div class="max-w-6xl mx-auto">

@@ -123,7 +123,7 @@ try {
 } catch (Exception $e) {}
 
 $basePath = getAdminBasePath();
-adminHeader('Appointments', 'appointments');
+adminHeader(t('adminchrome.appointments'), 'appointments');
 ?>
 
 <?php if ($message): ?>

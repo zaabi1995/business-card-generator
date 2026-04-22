@@ -149,7 +149,7 @@ try {
     // Table might not exist
 }
 
-adminHeader('Audit Logs', 'audit-logs');
+adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
 ?>
 
 <!-- Statistics Cards -->

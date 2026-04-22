@@ -12,4 +12,11 @@ return [
     'qr_scan_analytics'     => 'QR scan analytics',
     'card_analytics_prefix' => 'Card analytics: :name',
     'card_analytics'        => 'Card analytics',
+
+    'audit_logs'            => 'Audit logs',
+    'fx_rates'              => 'FX rates',
+    'appointments'          => 'Appointments',
+    'bhd_campaign_manager'  => 'BHD campaign manager',
+    'growth_dashboard'      => 'Growth dashboard',
+    'odoo_integration'      => 'Odoo integration',
 ];

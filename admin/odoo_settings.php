@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $settings = OdooIntegration::getSettings();
 
-adminHeader('Odoo Integration', 'odoo');
+adminHeader(t('adminchrome.odoo_integration'), 'odoo');
 ?>
 
 <!-- Alert Message -->

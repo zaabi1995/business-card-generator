@@ -71,7 +71,7 @@ $topCards       = CardAnalytics::getTopCards($companyId, $kpiDays, 20);
 $funnel         = CardAnalytics::getFunnelSummary($companyId, $kpiDays);
 $featureHealth  = CardAnalytics::getFeatureHealth();
 
-$pageTitle = 'Growth Dashboard';
+$pageTitle = t('adminchrome.growth_dashboard');
 
 // Section labels for the bar chart
 $sectionLabels = [

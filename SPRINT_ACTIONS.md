@@ -57,12 +57,12 @@
 - [x] 039. credit-accounts.php page title bilingual → 19894e9 (table + credit-request form deferred to action 525)
 - [x] 040. custom-domains.php page title bilingual → 19894e9 (DNS instructions simplification + translation deferred to action 526)
 - [x] 041. analytics.php + card-analytics.php page titles bilingual with :name interpolation for single-employee view; dropdown selector and chart labels deferred to action 527 → 19894e9
-- [ ] 042. Translate `admin/audit-logs.php`.
-- [ ] 043. Translate `admin/fx-rates.php`.
-- [ ] 044. Translate `admin/appointments.php`.
-- [ ] 045. Translate `admin/bhd-campaign.php`.
-- [ ] 046. Translate `admin/growth.php`.
-- [ ] 047. Translate `admin/odoo_settings.php` (and rename links to ERP Settings).
+- [x] 042. admin/audit-logs.php page title bilingual (adminchrome.audit_logs) → PENDING_SHA (log table + filters deferred to action 528)
+- [x] 043. admin/fx-rates.php page title bilingual (adminchrome.fx_rates) → PENDING_SHA (rates table + Reuters source deferred to action 529)
+- [x] 044. admin/appointments.php page title bilingual (adminchrome.appointments) → PENDING_SHA (calendar grid + booking form deferred to action 530)
+- [x] 045. admin/bhd-campaign.php page title bilingual (adminchrome.bhd_campaign_manager) → PENDING_SHA (campaign dashboard + metrics deferred to action 531)
+- [x] 046. admin/growth.php page title bilingual (adminchrome.growth_dashboard) → PENDING_SHA (growth metrics + experiments deferred to action 532)
+- [x] 047. admin/odoo_settings.php page title bilingual (adminchrome.odoo_integration) → PENDING_SHA. NOTE: nav links still read "Odoo Integration"; rename-to-"ERP Settings" UX pass deferred to action 533 (needs audit of all nav sidebars + links).
 - [ ] 048. Translate `admin/impersonate.php` (super-admin only).
 - [ ] 049. Translate `admin/companies.php` (super-admin only).
 - [ ] 050. Translate `admin/customer-dashboard.php`.
@@ -602,7 +602,13 @@
 - [ ] 524. admin/billing.php pricing tiers + feature matrix + subscription state + invoices-this-year table + change-plan/cancel modals. Est. ~80 strings.
 - [ ] 525. admin/credit-accounts.php account cards, limit + terms table, credit-request CTA copy, ledger mini-table. Est. ~35 strings.
 - [ ] 526. admin/custom-domains.php simplify + translate DNS instructions (currently developer-speak). Rewrite in plain English for the default locale as part of this action, then translate. Est. ~45 strings.
-- [ ] 527. admin/analytics.php + admin/card-analytics.php dropdown labels, KPI tile titles, chart axis titles, country list, device breakdown, empty states. Est. ~55 strings. Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
+- [ ] 527. admin/analytics.php + admin/card-analytics.php dropdown labels, KPI tile titles, chart axis titles, country list, device breakdown, empty states. Est. ~55 strings.
+- [ ] 528. admin/audit-logs.php filters (actor/action/date), table column headers, row-level action descriptions, empty state. Est. ~30 strings.
+- [ ] 529. admin/fx-rates.php rates table headers, last-updated banner, Reuters-source attribution, add-rate modal. Est. ~20 strings.
+- [ ] 530. admin/appointments.php calendar grid, list view, booking modal (time/service/client/notes), status chips. Est. ~50 strings.
+- [ ] 531. admin/bhd-campaign.php campaign dashboard (targets, CTAs sent, responses), campaign-create form, per-campaign detail view. Est. ~70 strings.
+- [ ] 532. admin/growth.php growth metrics widgets (cohort, churn, expansion), experiment list, experiment-detail drawer. Est. ~60 strings.
+- [ ] 533. Nav-link audit: rename "Odoo" / "Odoo Integration" to "ERP Settings" wherever it appears in admin sidebars, breadcrumbs, and page maps. Also update lang/{en,ar}/admin.php nav_erp_settings to "ERP Settings"/"إعدادات نظام الموارد" consistency check. Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
 - [ ] 511. index.php: translate `#features` section (6 feature tiles: Design Once, Verified Print Shops, Arabic & English, Team & Departments, Smart QR Codes, Employee Portal). Extend landing.php with feat_* keys.
 - [ ] 512. index.php: translate `#how-it-works` section (3 steps: Create Account, Add Team, Print & Share). Extend with how_* keys.
 - [ ] 513. index.php: translate `#pricing` section (Starter/Professional/Business/Enterprise tiers, feature lists, CTAs). Dedicated lang/{en,ar}/pricing.php.
