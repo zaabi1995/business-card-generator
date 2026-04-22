@@ -50,4 +50,10 @@ return [
     'testimonial_quote'    => 'غيّر كارديفاي طريقة إدارتنا لبطاقات العمل في مؤسستنا. الإعداد استغرق دقائق وفريقنا يحبّه.',
     'testimonial_author'   => 'سارة جونسون',
     'testimonial_role'     => 'رئيسة التسويق، TechCorp',
+
+    'pdpl_notice'          => 'بياناتك تُخزَّن في سلطنة عُمان وفقاً لقانون حماية البيانات الشخصية (PDPL).',
+
+    'referral_code'        => 'رمز الإحالة',
+    'referral_optional'    => '(اختياري)',
+    'referral_placeholder' => 'مثال: BHD2026',
 ];

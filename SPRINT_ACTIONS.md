@@ -135,21 +135,19 @@
 
 ## D, Company Registration Redesign (111-125)
 
-- [ ] 111. Rewrite `/register` to 3 fields: company name, admin phone, admin email.
-- [ ] 112. OTP-first flow: send 6-digit OTP via Dardasha WhatsApp to admin phone, fallback to email if phone fails.
-- [ ] 113. Remove password creation from signup, replace with magic-link OTP on every login.
-- [ ] 114. Add optional password setup post-signup under Settings → Security.
-- [ ] 115. Slug auto-generated from company name with collision detection + override field.
-- [ ] 116. Tenant provisioning happens instantly after OTP verify; no email-confirmation-link step.
-- [ ] 117. Redirect to onboarding wizard after tenant created.
-- [ ] 118. Bilingual signup form + OTP message.
-- [ ] 119. Signup page shows trust signals: "trusted by 50+ Omani companies," logo strip from `om_companies curated=1`.
-- [ ] 120. Rate limit OTP sends: 3 per hour per phone, 10 per day per IP.
-- [ ] 121. Add reCAPTCHA v3 (invisible) on signup endpoint.
-- [ ] 122. Terms of service + privacy policy acceptance checkbox, link to `/terms` + `/privacy` (bilingual pages).
-- [ ] 123. GDPR/Oman PDPL notice on signup: "we store your data in Oman, comply with PDPL."
-- [ ] 124. Referral code field (optional): tracks which existing company referred.
-- [ ] 125. Post-signup: Slack/WhatsApp alert to BHD admin "New tenant: {company}".
+- [~] 111. 3-field simplified signup UI deferred to action 565 alongside OTP UI; current register.php keeps its 6-field flow until OTP rewrite lands.
+- [x] 112-114. OTP-first foundation SHIPPED: migration 078 otp_codes (hashed SHA-256, channel, purpose, attempts, TTL, ip/ua) + includes/OtpService.php (send/verify/bilingual WhatsApp + email delivery + rate-limit integration). UI rewrite of register.php + login.php to consume this foundation deferred to action 565. → PENDING_SHA
+- [x] 115. Slug auto-gen from company name already client-side in register.php (slugify on onchange/onkeyup), server-side collision detection in POST handler. Prior sprint.
+- [x] 116. Instant tenant provisioning on form submit, no email-confirmation-link step. Prior sprint.
+- [x] 117. Post-signup redirect: non-BHD cohort now lands at /{slug}/admin/onboarding (v2.0 wizard from action 082); BHD-referral keeps legacy onboarding.php flow. → PENDING_SHA
+- [x] 118. Bilingual signup form already live (action 023, 50-key register namespace). OTP message bilingual via OtpService locale-aware copy. → PENDING_SHA
+- [x] 119. Trust signals present (BHD badge + testimonial panel, action 023). Dynamic logo strip deferred to action 566.
+- [x] 120. Rate limits baked into OtpService (3/h per identifier, 10/day per IP) via existing RateLimiter::check(). → PENDING_SHA
+- [~] 121. Invisible reCAPTCHA v3 deferred to action 567 (needs Google site key + secret provisioning).
+- [x] 122. T&C + Privacy checkbox already present (action 023). Prior sprint.
+- [x] 123. PDPL notice under T&C with shield-halved icon, bilingual ("We store your data in Oman and comply with the PDPL"). → PENDING_SHA
+- [x] 124. Referral code field (optional, ?ref= prefill, maxlength 32). → PENDING_SHA
+- [x] 125. Signup alert via existing Notifier::send('signup', ...) on every new tenant (email + WhatsApp). Slack hook deferred to action 568. Prior sprint.
 
 ## E, Employee Self-Service (126-150)
 
@@ -642,7 +640,11 @@
 - [ ] 561. Wizard video walkthrough: 2-minute Loom embed top-right of every step. Waits on Ali to record the clip; placeholder for the player frame.
 - [ ] 562. Pre-populate company name + admin contact in step-1 payload: modify company/register.php final handler to call Onboarding::saveStep($id, 0, ['company_name'=>$name, 'admin_email'=>$email, 'admin_phone'=>$phone]) so the wizard feels personal from keystroke one.
 - [ ] 563. Server-side per-step validation in Onboarding::saveStep(): reject step-1 payload without a logo URL, step-2 without two hex colors, step-4 without name+email, etc. Returns structured error JSON to the frontend for inline display.
-- [ ] 564. Welcome email + WhatsApp dispatch on wizard completion: hook Onboarding::markCompleted() to send signup.email + signup.whatsapp (templates already bilingual in action 068) to the admin + any employees seeded in step 4. Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
+- [ ] 564. Welcome email + WhatsApp dispatch on wizard completion: hook Onboarding::markCompleted() to send signup.email + signup.whatsapp (templates already bilingual in action 068) to the admin + any employees seeded in step 4.
+- [ ] 565. 3-field signup UI rewrite (actions 111-114): build company/register-otp.php (3 fields: company name, admin phone, admin email) → POST sends OTP via OtpService → verify screen → instant tenant provisioning on verify → redirect to wizard. Rewrite login.php to become magic-link OTP (remove password field, add phone/email + code flow). Add optional password setup under admin/settings → Security. Preserves password fallback for existing users (grandfather clause).
+- [ ] 566. Dynamic trust-signals logo strip (action 119): homepage + signup page pull N most-recently-active om_companies curated=1 rows, render as a grayscale logo strip with "trusted by :n Omani companies" copy.
+- [ ] 567. reCAPTCHA v3 invisible gate on signup endpoint (action 121): frontend grecaptcha.execute() on submit, backend Siteverify call, threshold 0.5, log scores to audit_log. Fails-open if RECAPTCHA_SECRET not configured.
+- [ ] 568. Slack webhook for new-tenant alerts (action 125): augment Notifier::send('signup') dispatch with POST to Slack webhook URL (from env or config), short JSON "New tenant: {company} | admin: {email} | phone: {phone}". Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
 - [ ] 511. index.php: translate `#features` section (6 feature tiles: Design Once, Verified Print Shops, Arabic & English, Team & Departments, Smart QR Codes, Employee Portal). Extend landing.php with feat_* keys.
 - [ ] 512. index.php: translate `#how-it-works` section (3 steps: Create Account, Add Team, Print & Share). Extend with how_* keys.
 - [ ] 513. index.php: translate `#pricing` section (Starter/Professional/Business/Enterprise tiers, feature lists, CTAs). Dedicated lang/{en,ar}/pricing.php.

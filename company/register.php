@@ -310,13 +310,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Login the new user
                     Auth::unifiedLogin($email, $password);
 
-                    // Redirect all new signups to onboarding wizard
-                    $source = 'general';
+                    // Redirect all new signups to the onboarding wizard.
+                    // BHD-referral cohort keeps the legacy onboarding.php flow
+                    // (tailored content, drip emails); everyone else goes to
+                    // the v2.0 wizard at /{slug}/admin/onboarding.
                     if ($pendingReferral === 'bhd') {
                         unset($_SESSION['pending_referral']);
-                        $source = 'bhd';
+                        header('Location: ' . getBasePath() . 'onboarding.php?source=bhd');
+                    } else {
+                        $companySlugForRedirect = $company['slug'] ?? '';
+                        if ($companySlugForRedirect) {
+                            header('Location: ' . getBasePath() . $companySlugForRedirect . '/admin/onboarding');
+                        } else {
+                            header('Location: ' . getBasePath() . 'admin/onboarding.php');
+                        }
                     }
-                    header('Location: ' . getBasePath() . 'onboarding.php?source=' . $source);
                     exit;
                 }
                 $error = $result['error'] ?? 'Failed to create company';
@@ -494,6 +502,20 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <p class="mt-1.5 text-xs text-gray-500"><?= htmlspecialchars(t('register.password_hint')) ?></p>
                     </div>
 
+                    <div>
+                        <label for="referral_code" class="block text-sm font-medium text-gray-900">
+                            <?= htmlspecialchars(t('register.referral_code')) ?>
+                            <span class="text-gray-400 text-xs font-normal"><?= htmlspecialchars(t('register.referral_optional')) ?></span>
+                        </label>
+                        <div class="mt-2">
+                            <input type="text" name="referral_code" id="referral_code"
+                                   value="<?php echo htmlspecialchars($_POST['referral_code'] ?? $_GET['ref'] ?? ''); ?>"
+                                   class="form-input"
+                                   placeholder="<?= htmlspecialchars(t('register.referral_placeholder')) ?>"
+                                   maxlength="32">
+                        </div>
+                    </div>
+
                     <div class="flex items-start gap-3">
                         <div class="flex h-6 shrink-0 items-center">
                             <input id="terms" name="terms" type="checkbox" required
@@ -506,6 +528,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <a href="<?php echo getBasePath(); ?>privacy.php" target="_blank" class="font-semibold text-blue-600 hover:text-blue-500"><?= htmlspecialchars(t('register.privacy')) ?></a>
                         </label>
                     </div>
+
+                    <p class="text-xs text-gray-500 flex items-start gap-2">
+                        <i class="fa-solid fa-shield-halved mt-0.5 text-emerald-600"></i>
+                        <span><?= htmlspecialchars(t('register.pdpl_notice')) ?></span>
+                    </p>
 
                     <div>
                         <button type="submit" class="flex w-full justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">

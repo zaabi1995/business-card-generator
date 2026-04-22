@@ -50,4 +50,12 @@ return [
     'testimonial_quote'    => 'Cardify transformed how we manage business cards across our organization. Setup took minutes and our team loves it.',
     'testimonial_author'   => 'Sarah Johnson',
     'testimonial_role'     => 'Head of Marketing, TechCorp',
+
+    // PDPL (Oman Personal Data Protection Law)
+    'pdpl_notice'          => 'We store your data in Oman and comply with the Personal Data Protection Law (PDPL).',
+
+    // Referral
+    'referral_code'        => 'Referral code',
+    'referral_optional'    => '(optional)',
+    'referral_placeholder' => 'e.g., BHD2026',
 ];
