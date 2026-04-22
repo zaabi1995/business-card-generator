@@ -540,7 +540,7 @@
 
 ## V, Final Polish + Release (496-510)
 
-- [ ] 496. Changelog page `/changelog` bilingual.
+- [x] 496. Changelog page /changelog bilingual: new /changelog + /ar/changelog powered by data/changelog.php entries (date/version/tag/title/body EN+AR); timeline UI with version + tag pills (Release/Feature/Fix/Security), locale-aware dates. Seeded with 4 real entries (v2.0, Paymob vault, Oman Business Index, ERP sync). 9 lang keys parity OK. → b94497e
 - [ ] 497. Release notes for v2.0 sprint.
 - [ ] 498. Update DOCUMENTATION.md.
 - [ ] 499. Update CLAUDE.md project context.
