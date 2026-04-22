@@ -501,7 +501,7 @@
 - [x] 460. Nightly storage dir backup: scripts/backup-storage.sh rsync --delete storage/+uploads/+data/ (excl cache/tmp) into /var/backups/cardify-storage/current/ then tar.gz snapshot, 14-file rotation, opt-in rclone offsite via shared CARDIFY_BACKUP_REMOTE. Cron 35 2 * * * installed; first run 147 MB snapshot + mirror synced. → 01fe327
 - [x] 461. Weekly restore test: scripts/backup-restore-test.sh picks newest DB backup, (decrypts if gpg), loads into scratch bc_restore_test DB, sanity checks (tables>=20 + employees/companies/templates counts + newest payment), drops scratch tables, verifies newest storage tarball via tar tzf, emails ali@bhd.om PASS/FAIL/SKIP. Cron 45 3 * * 0 installed; SKIP right now because bc user needs GRANT on bc_restore_test (queued 820). Tar integrity OK 818 entries. → b8d0f65
 - [x] 462. Log rotation: ops/logrotate-cardify installed at /etc/logrotate.d/cardify covers /var/log/cardify-*.log (daily×30, su root root for group-writable /var/log) + PHP-FPM php-fpm.log + slow.log (weekly×8, SIGUSR1 reload). aaPanel already handles /www/wwwlogs/. Force-run verified .1 + .2.gz pattern. → (repo-only) → 6a05534..current
-- [ ] 463. Disk-usage alert at 80%.
+- [x] 463. Disk-usage alert at 80%: scripts/disk-alert.sh checks / + /www + /var via df, WhatsApp-alerts Ali (+96871616161) via includes/WhatsApp.php helper when any mount ≥80%, with 6-hour per-alert cooldown via /var/lib/cardify/disk-alert.ts. Message includes offending mount + top 5 biggest paths (du -sh) + worst pct. Cron */30 * * * * installed; dry run detected root 88%, throttled correctly. → 3d81b80
 - [ ] 464. Slow query log review cron.
 - [ ] 465. Deploy script pre-flight (lint PHP, syntax check).
 - [ ] 466. Deploy script post-flight (smoke test 5 URLs).
@@ -872,3 +872,4 @@
 - [ ] 818. Paste ops/uptime-monitors.json into Uptime Robot (or StatusCake) account to activate the external monitor; verify alerts route to Ali's WhatsApp + email.
 - [ ] 819. Set CARDIFY_BACKUP_PASS + CARDIFY_BACKUP_REMOTE on the VPS (Backblaze B2 bucket "cardify-backups" via rclone) so nightly backups sync offsite encrypted. Ensures backups survive a VPS loss.
 - [ ] 820. One-time MySQL grant for restore-test: CREATE DATABASE bc_restore_test + GRANT ALL on bc_restore_test.* TO 'bc'@'localhost'. Requires DBA/aaPanel access with root credentials. Once granted, scripts/backup-restore-test.sh flips from SKIP → PASS.
+- [ ] 821. VPS at 88% already (memory vps.md notes 86% on Apr 7). Prune old backup tarballs, Docker images, apt cache; target <75% before the disk-alert starts firing weekly.
