@@ -593,6 +593,7 @@
 
 <!-- Future iterations append here -->
 
+- [ ] 518. Audit the codebase for other local `t()` redeclarations that shadow the global helper (same pattern as companies.php action 027). Candidate scan: `grep -n "function t(" --include="*.php" -r . | grep -v lang/ | grep -v I18n`. Rename any found to a file-scoped alias (e.g. `pageT`, `localT`) or refactor to the global `t('ns.key')` pattern.
 - [ ] 511. index.php: translate `#features` section (6 feature tiles: Design Once, Verified Print Shops, Arabic & English, Team & Departments, Smart QR Codes, Employee Portal). Extend landing.php with feat_* keys.
 - [ ] 512. index.php: translate `#how-it-works` section (3 steps: Create Account, Add Team, Print & Share). Extend with how_* keys.
 - [ ] 513. index.php: translate `#pricing` section (Starter/Professional/Business/Enterprise tiers, feature lists, CTAs). Dedicated lang/{en,ar}/pricing.php.
