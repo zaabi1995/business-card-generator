@@ -1206,14 +1206,27 @@ class CardEditor {
     /**
      * Resize canvas - Fabric.js 7.x uses setDimensions
      */
-    setDimensions(width, height) {
+    setDimensions(width, height, displayWidth, displayHeight) {
         if (!this.canvas) return;
-        
+
         this.options.width = width;
         this.options.height = height;
-        
-        // Fabric.js 7.x: use setDimensions instead of setWidth/setHeight
-        this.canvas.setDimensions({ width, height });
+
+        // Fabric resets both the backstore (internal resolution, which we
+        // keep at 300 DPI for export) and the CSS size together. That was
+        // making the canvas CSS width ~1087px while its wrapper is only
+        // 480px wide with overflow-hidden, visually cropping the right
+        // third of every uploaded design. Set them independently so the
+        // canvas renders full-resolution internally but displays fitted.
+        this.canvas.setDimensions({ width: width, height: height }, { backstoreOnly: true });
+
+        if (typeof displayWidth === 'number' && typeof displayHeight === 'number') {
+            this.canvas.setDimensions(
+                { width: displayWidth + 'px', height: displayHeight + 'px' },
+                { cssOnly: true }
+            );
+        }
+
         this.canvas.requestRenderAll();
     }
     

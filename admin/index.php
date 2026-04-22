@@ -1820,6 +1820,11 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                             clearInterval(timer);
                             if (!self.cardEditor.isReady) {
                                 console.error('CardEditor failed to initialize');
+                            } else {
+                                // Set the display (CSS) size so the canvas
+                                // fits the wrapper; internal backstore stays
+                                // at full 300 DPI for export quality.
+                                self.resizeCanvas();
                             }
                             resolve();
                         }
@@ -2063,13 +2068,23 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                 if (settings.backgroundTransform) template.backgroundTransform = settings.backgroundTransform;
             },
 
-            // Resize the canvas to current settings
+            // Resize the canvas to current settings. Internal dimensions
+            // stay at 300 DPI for export quality; the CSS size is the
+            // scaled-down display size so the wrapper never clips the
+            // uploaded artwork.
             resizeCanvas: function() {
                 if (!this.cardEditor || !this.cardEditor.canvas) return Promise.resolve();
                 var dims = this.getCanvasDimensions();
-                this.cardEditor.canvas.setDimensions({ width: dims.width, height: dims.height });
-                this.cardEditor.options.width = dims.width;
-                this.cardEditor.options.height = dims.height;
+                var scale = Math.min(this.maxDisplayWidth / dims.width, 320 / dims.height);
+                var displayWidth = Math.round(dims.width * scale);
+                var displayHeight = Math.round(dims.height * scale);
+                if (typeof this.cardEditor.setDimensions === 'function') {
+                    this.cardEditor.setDimensions(dims.width, dims.height, displayWidth, displayHeight);
+                } else {
+                    this.cardEditor.canvas.setDimensions({ width: dims.width, height: dims.height });
+                    this.cardEditor.options.width = dims.width;
+                    this.cardEditor.options.height = dims.height;
+                }
                 this.cardEditor.canvas.renderAll();
                 return Promise.resolve();
             },
