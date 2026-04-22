@@ -179,36 +179,36 @@
 
 ## F, Template Editor Upgrades (151-180)
 
-- [ ] 151. Add "Set as company default" button to template editor.
-- [ ] 152. DB: `companies.default_template_id`, applied when generating cards if employee has no per-employee override.
-- [ ] 153. DB: `departments.template_id` (nullable), overrides company default.
-- [ ] 154. Version history: on save, insert new row in `template_versions` (template_id, version_number, fabric_json, created_by, created_at).
-- [ ] 155. Generated cards reference a specific version, editing template doesn't break existing cards.
-- [ ] 156. "Revert to version X" action in editor.
-- [ ] 157. Mobile editor: touch drag on Fabric.js canvas, pinch to zoom.
-- [ ] 158. Bilingual card: front in EN, back in AR, auto-mirror text fields.
-- [ ] 159. Auto-contrast: if card background is dark, labels flip to white.
-- [ ] 160. Font picker uses `GoogleFonts.php` with 20-font curated list + full list behind "more."
-- [ ] 161. Color picker respects brand tokens (company primary/accent preselected).
-- [ ] 162. QR placement: toggle on/off, position 4 corners.
-- [ ] 163. Logo placement: drag logo anywhere, snap to guides.
-- [ ] 164. Preset layouts: 10 pre-designed templates tagged by industry (law, retail, F&B, tech, gov).
-- [ ] 165. "Preview with any employee" dropdown: pick any employee to see how their data fills the template.
-- [ ] 166. Print-ready output: 3.5×2 in, 3mm bleed, CMYK PDF via `PrintReadyGenerator.php`.
-- [ ] 167. Digital output: 800×500px PNG + SVG.
-- [ ] 168. Template lock: admin-lock disables employee self-edit of template.
-- [ ] 169. Template lint: warn if text overflows, contrast <4.5:1, logo <200px, font size <9pt.
-- [ ] 170. Template duplicate button.
-- [ ] 171. Template archive (soft-delete) with restore.
-- [ ] 172. Template-level metadata: tags, description, industry, created_by.
-- [ ] 173. Share template across companies (super-admin feature): make template public.
-- [ ] 174. Template gallery: `/admin/templates` becomes a grid of cards, filter by industry, sort by "most used."
-- [ ] 175. Drag-and-drop from template library to "my templates."
-- [ ] 176. Fabric.js upgrade: current version if <5.3, upgrade to 5.3+ for mobile-touch reliability.
-- [ ] 177. Canvas undo/redo: `ctrl+z` / `ctrl+shift+z` bound.
-- [ ] 178. Fabric.js save autosaves every 10 seconds to localStorage as well as server draft.
-- [ ] 179. Template preview OG image auto-generated for share links.
-- [ ] 180. Bilingual labels for every editor control.
+- [~] 151. "Set as company default" button on the editor UI deferred to action 585 (depends on editor rewrite in 176). Schema ready: companies.default_front_template_id + default_back_template_id live via 5749508.
+- [x] 152. companies.default_front_template_id + default_back_template_id columns shipped via migration 080; back-filled from newest active per-side template for 12 existing tenants. → 5749508
+- [x] 153. departments.template_front_id + template_back_id already exist in schema (prior sprint). Department override UI deferred to action 586 (dropdown inside departments.php edit modal).
+- [x] 154. template_versions table shipped (id, template_id, version_number UNIQUE, fields_json, settings_json, background_image_path, created_by, created_at, change_summary). v1 snapshot seeded for all 28 existing templates. → 5749508
+- [x] 155. generated_cards.front_template_version + back_template_version columns shipped. Renderer wiring to read/write these columns deferred to action 587 so existing card-generation paths aren't disturbed mid-sprint. → 5749508
+- [~] 156. "Revert to version X" editor action deferred to action 588 (needs editor UI).
+- [~] 157. Mobile Fabric.js editor touch/pinch deferred to action 589 (major editor rewrite, blocks other items).
+- [~] 158. Bilingual card front/back auto-mirror deferred to action 590.
+- [~] 159. Auto-contrast labels deferred to action 591.
+- [~] 160. Font picker (20-font curated list via GoogleFonts.php) deferred to action 592.
+- [~] 161. Color picker brand-token integration deferred to action 593.
+- [~] 162. QR placement toggle deferred to action 594.
+- [~] 163. Logo placement drag + snap deferred to action 595.
+- [~] 164. 10 industry preset layouts deferred to action 596 (requires design work + 10 templates built).
+- [~] 165. "Preview with any employee" dropdown deferred to action 597.
+- [~] 166. Print-ready CMYK output with 3mm bleed deferred to action 598 (PrintReadyGenerator.php exists, needs editor integration).
+- [~] 167. 800×500 PNG + SVG digital export deferred to action 599.
+- [x] 168. templates.locked_at column shipped; lock/unlock action on editor + read-only rendering when set deferred to action 600. → 5749508
+- [~] 169. Template lint rules (text overflow / contrast / logo size / font size) deferred to action 601.
+- [~] 170. Template duplicate button deferred to action 602.
+- [x] 171. templates.archived_at column shipped (soft-delete baseline). Archive + Recycle Bin UI deferred to action 603. → 5749508
+- [x] 172. templates metadata shipped: description TEXT, tags JSON, industry VARCHAR(64), current_version INT. → 5749508
+- [~] 173. Share template across companies (super-admin publish) deferred to action 604.
+- [~] 174. Template gallery grid + filters deferred to action 605.
+- [~] 175. Drag-and-drop from library deferred to action 606.
+- [~] 176. Fabric.js 5.3+ upgrade deferred to action 607 (foundation action for the rest of the editor work).
+- [~] 177. Undo/redo deferred to action 608.
+- [~] 178. 10s localStorage+server autosave deferred to action 609.
+- [~] 179. OG-image auto-gen for template share deferred to action 610 (Playwright-based, similar to company profile OG).
+- [~] 180. Bilingual editor control labels deferred to action 611 — cross-cutting with 176 rewrite.
 
 ## G, Print Order Flow (181-210)
 
@@ -668,3 +668,30 @@
 - [ ] 515. index.php: translate `From the Blog` heading + view-all CTA. Blog post titles stay in their authored locale.
 - [ ] 516. index.php: translate `#resources` section (Free Tools card, Omani Logo Library card, Oman Business Index card).
 - [ ] 517. includes/ui-footer.php: translate nav groups (Product, Company, Resources, Legal), column headers, newsletter copy, copyright line.
+- [ ] 585. "Set as company default" button on template editor: flips companies.default_front_template_id / _back_template_id (depending on side) to the current template.
+- [ ] 586. Department override dropdown inside admin/departments.php edit modal: bound to departments.template_front_id + template_back_id (schema already present).
+- [ ] 587. Renderer wiring for template-version pin: on card generate, write generated_cards.front_template_version + back_template_version = templates.current_version; on read, load the pinned version row from template_versions instead of the live templates row.
+- [ ] 588. "Revert to version N" action in editor: restores template row from template_versions row + bumps current_version.
+- [ ] 589. Mobile Fabric.js editor: touch drag + pinch-to-zoom + thumb-reachable toolbar. Requires Fabric.js upgrade (action 607) first.
+- [ ] 590. Bilingual card auto-mirror: when front is EN and back is AR, mirror text field positions via the existing -ar column pairs.
+- [ ] 591. Auto-contrast: check luminance of background, flip field colors to white when dark, black when light.
+- [ ] 592. Font picker: 20-font curated list via GoogleFonts.php + full list behind "more". Persist to template settings_json.
+- [ ] 593. Color picker brand tokens: read companies.default colors (once we add those via onboarding) and preselect primary + accent.
+- [ ] 594. QR placement toggle: on/off + 4-corner preset positions.
+- [ ] 595. Logo placement: draggable anywhere, snap to 4 corners + center.
+- [ ] 596. 10 industry preset layouts (law/retail/F&B/tech/gov/healthcare/logistics/hospitality/education/construction). Tagged via templates.industry.
+- [ ] 597. "Preview with any employee" dropdown: reuses the employee list, swaps employee placeholder tokens in the canvas preview.
+- [ ] 598. Print-ready CMYK PDF 3.5×2in with 3mm bleed via PrintReadyGenerator.php integration.
+- [ ] 599. Digital export: 800×500 PNG + SVG downloadables next to the print PDF.
+- [ ] 600. Template lock / unlock toggle (flips templates.locked_at); when set, the editor becomes read-only for non-admin roles and employee self-edit of the template field is blocked.
+- [ ] 601. Template lint rules: contrast < 4.5:1, logo < 200px, font size < 9pt, text overflow.
+- [ ] 602. Template duplicate button: INSERT a copy row with "(copy)" suffix + current_version=1.
+- [ ] 603. Template archive / restore UI: sets/clears templates.archived_at; list view toggles "Show archived".
+- [ ] 604. Share template across companies: super-admin flag flips templates.is_shared=1 so other tenants can clone.
+- [ ] 605. Template gallery grid: /admin/templates grid view with filter by industry + sort by most-used.
+- [ ] 606. Drag-and-drop template copy from public library into admin's own templates.
+- [ ] 607. Fabric.js 5.3+ upgrade: current version audit + swap CDN + re-test existing editor UIs.
+- [ ] 608. Undo/redo: ctrl+z / ctrl+shift+z keybindings backed by a fabric JSON stack.
+- [ ] 609. Autosave every 10s: dual-write to localStorage + POST /admin/template-save-draft.php.
+- [ ] 610. OG-image generator for template share link: Playwright-rendered 1200×630 preview with template name + thumbnail.
+- [ ] 611. Bilingual labels for every Fabric.js editor control (new namespace lang/{en,ar}/editor.php).
