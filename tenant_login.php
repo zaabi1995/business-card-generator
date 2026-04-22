@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
             if (!$user) {
                 $error = 'No account found for that ' . ($isEmail ? 'email' : 'phone') . '. Contact your admin.';
             } else {
-                $purpose = 'tenant_login:' . $companyId;
+                $purpose = 'tlogin:' . substr(hash('sha1', $companyId), 0, 12);
                 $res = OtpService::send($deliveryId, $channel, $purpose);
                 if (!empty($res['ok'])) {
                     $_SESSION['tlogin_identifier'] = $deliveryId;
