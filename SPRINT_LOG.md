@@ -15,3 +15,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-22 04:00 | #022 | b6e9873 | login.php fully bilingual: headline, register-as links, form, remember/forgot, one-login panel + role badges, back-home, right-side welcome + tagline + 3 trust signals. +18 auth.php keys.
 2026-04-22 04:10 | #023 | fd792b4 | company/register.php fully bilingual (50 keys in new register namespace): BHD badge, dynamic headline, 6-field form, T&C, feature list, testimonial. Bonus: HTTP_HOST→APP_HOST hardening on slug prefix.
 2026-04-22 04:20 | #024 | 0c6fd21 | about.php fully bilingual (36 keys in new about namespace): hero, story paragraphs, stat tiles, connect/contact panel, values tiles, CTA banner, back-home. :brand interpolation used for brand-name flow.
+2026-04-22 04:30 | #025 | d8533e2 | careers.php fully bilingual (45 keys in new careers namespace): single-job view + listing + benefit tiles + empty state + Don't-See-Your-Role banner. De-duped hardcoded benefitIcons array.
