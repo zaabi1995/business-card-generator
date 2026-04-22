@@ -518,7 +518,7 @@
 - [x] 474. E2E Journey B wizard AR: same spec asserts /admin/onboarding?lang=ar unauth→login + AR locale has every step_* key EN defines (bidirectional set diff). → 6dcc128
 - [x] 475. E2E Journey C template design EN: tests/e2e/template-flow.spec.ts covers /admin/theme.php unauth-redirect + public KNOWN_CARD EN render (name + save-contact affordance) + i18n parity on template keys. 5/5 passed prod. → c527be4
 - [x] 476. E2E Journey C template design AR: same spec file, AR variant of /admin/theme.php auth-gate + public KNOWN_CARD AR render (dir=rtl + Arabic lang + save-contact tolerated EN/AR). → c527be4
-- [ ] 477. E2E Journey D: employee receives invite, edits self, saves.
+- [x] 477. E2E Journey D employee invite + self-edit: tests/e2e/employee-invite-flow.spec.ts verifies no-token/random-token → expired page (EN + AR), GET on save endpoint leaks no PII, portal i18n parity on edit_my_details/save_changes/link_expired. 5/5 passed prod 3.7s. → af1c615
 - [ ] 478. E2E Journey D: employee in AR.
 - [ ] 479. E2E Journey E: admin orders 100 cards via Paymob EN.
 - [ ] 480. E2E Journey E: via Credit Account AR.
@@ -879,3 +879,4 @@
 - [ ] 825. Add TEST_OTP bypass env (only on stage) so full register→OTP→wizard happy-path E2E can run on stage.cardify.om. Design: when APP_ENV=stage AND request email ends in @cardify.test, OtpService returns the code instead of mailing it. Then the spec can read and submit.
 - [ ] 826. Full happy-path wizard E2E on stage.cardify.om: seed a test company via admin API, log in via TEST_OTP bypass, walk all 7 steps (logo upload, colors, template, first-employee, preview, invite-team, order), assert each step saves + `finish` lands on /admin/dashboard with onboarding.status=completed. Needs actions 822 + 825 first.
 - [ ] 827. Full template-editor happy-path E2E on stage.cardify.om: open /admin/theme.php, switch brand colour, drag a text layer, save, reload, assert the change persists, then visit the employee card and assert the new colour shows. Needs stage (822) + test company (825).
+- [ ] 828. Full employee-edit happy-path E2E on stage: admin API mints a token for a seeded employee, Playwright visits /portal/employee-edit?token=…, edits first_name + title, triggers autosave, reloads, asserts persisted. Needs stage (822) + admin API access with service token.
