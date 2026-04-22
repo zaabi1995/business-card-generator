@@ -257,13 +257,19 @@ if ($company) {
     // ImageObject for the logo itself (nominative/reference-use disclosure)
     $imageLd = null;
     if ($libraryLogo) {
+        $currentYear = date('Y');
         $imageLd = [
             '@context'            => 'https://schema.org',
             '@type'               => 'ImageObject',
             'contentUrl'          => $baseUrl . $libraryLogo,
+            'url'                 => $baseUrl . $libraryLogo,
             'caption'             => $company['name_en'] . ' logo',
+            'name'                => $company['name_en'] . ' logo',
             'creator'             => ['@type' => 'Organization', 'name' => $company['name_en']],
             'copyrightHolder'     => ['@type' => 'Organization', 'name' => $company['name_en']],
+            'copyrightNotice'     => '© ' . $currentYear . ' ' . $company['name_en'] . '. All rights reserved. Displayed by Cardify under nominative fair use.',
+            'creditText'          => $company['name_en'],
+            'license'             => $baseUrl . '/logos/terms',
             'acquireLicensePage'  => $baseUrl . '/logos/terms',
         ];
     }
