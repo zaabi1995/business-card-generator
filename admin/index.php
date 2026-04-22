@@ -1560,6 +1560,28 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="grid grid-cols-3 gap-2 mt-2">
+                                        <div class="col-span-2">
+                                            <label class="text-xs text-gray-500 block mb-1">Weight</label>
+                                            <select
+                                                @change="updateFieldProperty(key, 'fontWeight', $event.target.value === 'normal' ? 'normal' : parseInt($event.target.value))"
+                                                class="w-full px-2 py-1 bg-white border border-gray-200 rounded text-xs text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                                <template x-for="w in fontWeights" :key="w.value">
+                                                    <option :value="w.value"
+                                                            :selected="String(field.fontWeight || 'normal') === String(w.value) || (w.value === 'normal' && !field.fontWeight)"
+                                                            x-text="w.label"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs text-gray-500 block mb-1">Style</label>
+                                            <button type="button"
+                                                    @click="updateFieldProperty(key, 'fontStyle', (field.fontStyle === 'italic') ? 'normal' : 'italic')"
+                                                    :class="field.fontStyle === 'italic' ? 'bg-blue-50 border-blue-400 text-blue-700' : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'"
+                                                    class="w-full px-2 py-1 border rounded text-xs italic font-serif transition-colors"
+                                                    title="Toggle italic">I</button>
+                                        </div>
+                                    </div>
                                     <div>
                                         <label class="text-xs text-gray-500 block mb-1">Text Align</label>
                                         <div class="flex gap-1 bg-gray-100 rounded p-0.5">
@@ -1726,7 +1748,20 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                 'Arabic العربية': ['Cairo', 'Tajawal', 'Almarai', 'Noto Kufi Arabic', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Readex Pro', 'El Messiri', 'Changa', 'Reem Kufi', 'Amiri', 'Scheherazade New', 'Mada', 'Lalezar', 'Lemonada', 'Aref Ruqaa', 'Mirza', 'Rakkas', 'Baloo Bhaijaan 2', 'Noto Naskh Arabic', 'Noto Nastaliq Urdu', 'Lateef', 'Harmattan', 'Markazi Text', 'Gulzar'],
                 'Monospace': ['Roboto Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'Space Mono']
             },
-            
+
+            // Font weights for the Weight picker. Values that are integers
+            // map straight through to Fabric's fontWeight. 'normal' stays
+            // as the legacy default so existing designs don't shift.
+            fontWeights: [
+                { value: 300, label: 'Light' },
+                { value: 'normal', label: 'Regular' },
+                { value: 500, label: 'Medium' },
+                { value: 600, label: 'SemiBold' },
+                { value: 700, label: 'Bold' },
+                { value: 800, label: 'ExtraBold' }
+            ],
+
+
             maxDisplayWidth: 480, // Maximum width to display in editor
             showSizeModal: false, // For custom size modal
             
@@ -2464,6 +2499,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                             fontSize: field.fontSize,
                             fontFamily: field.fontFamily,
                             fontWeight: field.fontWeight || 'normal',
+                            fontStyle: field.fontStyle || 'normal',
                             fill: field.fill || field.color || '#333333',
                             textAlign: textAlign,
                             originX: originX
@@ -2673,6 +2709,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                                 fontSize: fontSize,
                                 fontFamily: fontFamily,
                                 fontWeight: field.fontWeight || 'normal',
+                                fontStyle: field.fontStyle || 'normal',
                                 fill: fill,
                                 textAlign: textAlign,
                                 originX: originX

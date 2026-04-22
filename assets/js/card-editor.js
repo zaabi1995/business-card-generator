@@ -717,6 +717,7 @@ class CardEditor {
             fontSize: options.fontSize || 16,
             fontFamily: fontFamily,
             fontWeight: options.fontWeight || 'normal',
+            fontStyle: options.fontStyle || 'normal',
             fill: options.fill || options.color || '#333333',
             // Text alignment
             textAlign: textAlign,
@@ -909,15 +910,16 @@ class CardEditor {
         if (!field) return;
         
         field.set(properties);
-        
-        // When font changes, we need to update coords and trigger proper re-render
-        if (properties.fontFamily) {
-            // Fabric.js needs setCoords() when text dimensions change
+
+        // Any property that changes glyph metrics (font, weight, style,
+        // size) needs setCoords + a dirty flag, otherwise the bounding
+        // box and selection handles stay stuck on the old geometry.
+        if (properties.fontFamily || properties.fontWeight ||
+            properties.fontStyle || properties.fontSize) {
             field.setCoords();
-            // Force a dirty state to ensure re-render
             field.set('dirty', true);
         }
-        
+
         this.canvas.requestRenderAll();
     }
     
