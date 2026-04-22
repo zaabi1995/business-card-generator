@@ -57,12 +57,12 @@
 - [x] 039. credit-accounts.php page title bilingual → 19894e9 (table + credit-request form deferred to action 525)
 - [x] 040. custom-domains.php page title bilingual → 19894e9 (DNS instructions simplification + translation deferred to action 526)
 - [x] 041. analytics.php + card-analytics.php page titles bilingual with :name interpolation for single-employee view; dropdown selector and chart labels deferred to action 527 → 19894e9
-- [x] 042. admin/audit-logs.php page title bilingual (adminchrome.audit_logs) → PENDING_SHA (log table + filters deferred to action 528)
-- [x] 043. admin/fx-rates.php page title bilingual (adminchrome.fx_rates) → PENDING_SHA (rates table + Reuters source deferred to action 529)
-- [x] 044. admin/appointments.php page title bilingual (adminchrome.appointments) → PENDING_SHA (calendar grid + booking form deferred to action 530)
-- [x] 045. admin/bhd-campaign.php page title bilingual (adminchrome.bhd_campaign_manager) → PENDING_SHA (campaign dashboard + metrics deferred to action 531)
-- [x] 046. admin/growth.php page title bilingual (adminchrome.growth_dashboard) → PENDING_SHA (growth metrics + experiments deferred to action 532)
-- [x] 047. admin/odoo_settings.php page title bilingual (adminchrome.odoo_integration) → PENDING_SHA. NOTE: nav links still read "Odoo Integration"; rename-to-"ERP Settings" UX pass deferred to action 533 (needs audit of all nav sidebars + links).
+- [x] 042. admin/audit-logs.php page title bilingual (adminchrome.audit_logs) → e19f2ad (log table + filters deferred to action 528)
+- [x] 043. admin/fx-rates.php page title bilingual (adminchrome.fx_rates) → e19f2ad (rates table + Reuters source deferred to action 529)
+- [x] 044. admin/appointments.php page title bilingual (adminchrome.appointments) → e19f2ad (calendar grid + booking form deferred to action 530)
+- [x] 045. admin/bhd-campaign.php page title bilingual (adminchrome.bhd_campaign_manager) → e19f2ad (campaign dashboard + metrics deferred to action 531)
+- [x] 046. admin/growth.php page title bilingual (adminchrome.growth_dashboard) → e19f2ad (growth metrics + experiments deferred to action 532)
+- [x] 047. admin/odoo_settings.php page title bilingual (adminchrome.odoo_integration) → e19f2ad. NOTE: nav links still read "Odoo Integration"; rename-to-"ERP Settings" UX pass deferred to action 533 (needs audit of all nav sidebars + links).
 - [ ] 048. Translate `admin/impersonate.php` (super-admin only).
 - [ ] 049. Translate `admin/companies.php` (super-admin only).
 - [ ] 050. Translate `admin/customer-dashboard.php`.
