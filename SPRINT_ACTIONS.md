@@ -466,7 +466,7 @@
 - [x] 431. 301s for legacy URLs: nginx block handles 23 static aliases (/home /index.html /sign-in /signin /log-in /sign-up /signup.html /register.html /contact-us /about-us /faqs /faq.html /pricing.html /terms.html /privacy.html /business-cards /digital-cards /demo /try /free-trial /logo-library /logos-library /home.html); includes/Redirects.php PHP fallback with DB-backed url_redirects table for dynamic renamed-slug aliases (migration 086). → 32d2d84
 - [x] 432. CWV pass on landing: LCP hero preload (link rel=preload as=image fetchpriority=high in ui-header.php, $lcpImage hook), hero img gains width/height/fetchpriority/decoding=async (was lazy, blocked LCP), blog-card imgs gain width=1200 height=675 (CLS fix), flowbite bundle switched to defer (was render-blocking). Rolled back broken /index.php 301 that caused site-wide redirect loop. → 6165d31
 - [x] 433. Landing conversion copy pass: rewrote hero H1/subhead/price/CTAs, trust badges, value-prop banner in EN + AR. Outcome-led ("Bilingual cards for every employee on your team. Designed once. Printed forever.") vs feature-led. Per-card OMR price, BHD Muscat proof, WhatsApp CTA channel named. All 15 keys updated both locales same commit, i18n parity OK. → 89e4982
-- [ ] 434. Testimonials section on landing (real quotes).
+- [x] 434. Real testimonials on landing: removed 4 fabricated client quotes that violated Alis "never fabricate" rule (Ahmed Al-Balushi / Fatima Al-Rashdi / Khalid Al-Habsi / Sara Al-Kindi all fake); shipped 2 attributable BHD-Group quotes (Ali Al-Zaabi Group CEO + BHD Group brand attribution). Data-driven via t() loop. Added WhatsApp volunteer CTA. 12 new keys EN+AR same commit. → a3b485e
 - [ ] 435. Case studies page: 3 real companies.
 - [ ] 436. Pricing page: clear tiers, OMR, bilingual.
 - [ ] 437. FAQ page with 20 common questions bilingual.
@@ -860,3 +860,4 @@
 - [ ] 806. Consolidate render-blocking CSS on landing: merge cardify-tokens.css + cardify-components.css + cardify-toast.css into one minified file served under /assets/css/cardify.min.css. Currently 3 requests.
 - [ ] 807. Convert light-dash.png to AVIF + WebP with PNG fallback via <picture>. Current 148KB PNG → likely 40-60KB WebP.
 - [ ] 808. Audit flag-icons.min.css (jsDelivr) usage — only needed on LocaleSwitcher. Conditionally load.
+- [ ] 809. Admin CRUD for landing testimonials: /admin/landing-testimonials page + testimonials_landing table (quote_en/ar, author, role, company_logo, display_order, status=draft|published). Lets Ali collect real client quotes and publish without a redeploy. Backfill the 2 BHD-Group quotes currently hard-coded.
