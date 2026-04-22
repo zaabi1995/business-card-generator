@@ -59,6 +59,11 @@ echo "Perms OK"
 systemctl reload php8.3-fpm 2>/dev/null || systemctl reload php-fpm 2>/dev/null || true
 echo "FPM reloaded"
 
+# Give the first request after reload ~2s to wake a worker (otherwise
+# the initial probe can see a cold-start empty body even though the
+# code is healthy).
+sleep 2
+
 # --- Post-flight smoke tests (Cat T action 466) ---
 # 5 URLs that exercise the major code paths. Per memory
 # feedback_smoke_tests_need_new_paths we avoid only "/" and reach
@@ -71,23 +76,31 @@ smoke_urls=(
   "GET|https://cardify.om/status|200|Cardify"
   "GET|https://cardify.om/login.php|200|<form"
 )
-for entry in "${smoke_urls[@]}"; do
-  IFS='|' read -r method url want_status need <<<"$entry"
+probe() {
+  local url="$1" want_status="$2" need="$3"
+  local hdr body status
   hdr=$(mktemp)
   body=$(curl -sL -A cardify-smoke/1.0 --max-time 8 -D "$hdr" "$url" 2>/dev/null || true)
   status=$(awk 'toupper($1) ~ /^HTTP/ {print $2}' "$hdr" | tail -n1)
   rm -f "$hdr"
-  if [ "$status" != "$want_status" ]; then
-    echo "SMOKE FAIL: $url status=$status (want $want_status)"
-    smoke_fail=$((smoke_fail + 1))
-    continue
+  [ "$status" = "$want_status" ] || { echo "status=$status"; return 1; }
+  printf '%s' "$body" | grep -q -- "$need" || { echo "no marker $need"; return 1; }
+  return 0
+}
+for entry in "${smoke_urls[@]}"; do
+  IFS='|' read -r method url want_status need <<<"$entry"
+  # One retry after 3s for cold-start blips on the first request.
+  if err=$(probe "$url" "$want_status" "$need"); then
+    echo "smoke OK: $url"
+  else
+    sleep 3
+    if err=$(probe "$url" "$want_status" "$need"); then
+      echo "smoke OK (2nd try): $url"
+    else
+      echo "SMOKE FAIL: $url ($err)"
+      smoke_fail=$((smoke_fail + 1))
+    fi
   fi
-  if ! printf '%s' "$body" | grep -q -- "$need"; then
-    echo "SMOKE FAIL: $url missing expected marker: $need"
-    smoke_fail=$((smoke_fail + 1))
-    continue
-  fi
-  echo "smoke OK: $url"
 done
 
 if [ "$smoke_fail" -gt 0 ]; then
