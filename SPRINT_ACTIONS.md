@@ -64,10 +64,10 @@
 - [x] 046. admin/growth.php page title bilingual (adminchrome.growth_dashboard) → e19f2ad (growth metrics + experiments deferred to action 532)
 - [x] 047. admin/odoo_settings.php page title bilingual (adminchrome.odoo_integration) → e19f2ad. NOTE: nav links still read "Odoo Integration"; rename-to-"ERP Settings" UX pass deferred to action 533 (needs audit of all nav sidebars + links).
 - [~] 048. admin/impersonate.php N/A: pure POST handler with only redirect-back error flashes; no UI chrome to translate.
-- [x] 049. admin/companies.php page title bilingual (adminchrome.companies) → PENDING_SHA (super-admin tenant table + filters deferred to action 534)
-- [x] 050. admin/customer-dashboard.php page title bilingual (adminchrome.my_dashboard) → PENDING_SHA (widget grid deferred to action 535)
-- [x] 051. admin/bulk-claim.php page title bilingual (adminchrome.bulk_claim) → PENDING_SHA (wizard deferred to action 536)
-- [x] 052. admin/order_detail.php page title bilingual with :n interpolation → PENDING_SHA (order detail block + history timeline deferred to action 537)
+- [x] 049. admin/companies.php page title bilingual (adminchrome.companies) → 205af20 (super-admin tenant table + filters deferred to action 534)
+- [x] 050. admin/customer-dashboard.php page title bilingual (adminchrome.my_dashboard) → 205af20 (widget grid deferred to action 535)
+- [x] 051. admin/bulk-claim.php page title bilingual (adminchrome.bulk_claim) → 205af20 (wizard deferred to action 536)
+- [x] 052. admin/order_detail.php page title bilingual with :n interpolation → 205af20 (order detail block + history timeline deferred to action 537)
 - [~] 053. admin/blog-carousel-preview.php N/A: PHP handler that streams a generated LinkedIn carousel PDF; no UI chrome.
 - [~] 054. admin/templates.php N/A: file does not exist. Template listing lives inside admin/index.php dashboard Card Designs panel (already in scope of action 032).
 - [~] 055. admin/template-editor.php N/A: file does not exist. Template editing is an Alpine modal inside admin/index.php (covered by action 032 + dashboard follow-up 520).
