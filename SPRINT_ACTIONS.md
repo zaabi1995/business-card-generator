@@ -379,18 +379,18 @@
 - [~] 356. admin/employees.php N+1 audit deferred to action 742. EXPLAIN-ANALYZE pass needed before refactor.
 - [~] 357. admin/analytics.php SQL audit + index adds deferred to action 743.
 - [~] 358. companies.php join audit deferred to action 744.
-- [x] 359. includes/Cache.php shipped: file-based cache with namespace sharding, TTL, put/get/remember/forget/flush/gc. Atomic writes via .tmp + rename. Logo library wiring deferred to action 745. → PENDING_SHA_MARK
+- [x] 359. includes/Cache.php shipped: file-based cache with namespace sharding, TTL, put/get/remember/forget/flush/gc. Atomic writes via .tmp + rename. Logo library wiring deferred to action 745. → 27e5997
 - [~] 360. Blanket loading="lazy" audit deferred to action 746.
 - [~] 361. WebP fallback audit deferred to action 747.
 - [~] 362. CSS minify pipeline deferred to action 748 (existing tailwind.min.css is pre-built; needs gulp/esbuild setup for the rest).
 - [~] 363. JS minify pipeline deferred to action 749.
 - [~] 364. Critical-CSS inline on landing deferred to action 750.
-- [x] 365. Defer-JS pattern already live: all cardify-*.js scripts loaded with `defer` attribute (prior shipments). → PENDING_SHA_MARK
+- [x] 365. Defer-JS pattern already live: all cardify-*.js scripts loaded with `defer` attribute (prior shipments). → 27e5997
 - [~] 366. Cloudflare static-asset cache headers deferred to action 751 (needs Cache-Control + immutable on versioned assets).
 - [~] 367. HTTP/2 push via nginx deferred to action 752.
 - [~] 368. Brotli on nginx deferred to action 753.
 - [~] 369. Per-endpoint response-time monitor deferred to action 754 (can be added as a tiny register_shutdown_function in config.php).
-- [x] 370. Web Vitals beacon shipped: assets/js/cardify-webvitals.js captures LCP/CLS/FID + nav timing (TTFB/DCL/load) via PerformanceObserver, 10% sample rate (overridable via <meta name="cardify-webvitals-sample">), sends via navigator.sendBeacon with fetch(keepalive) fallback. api/webvitals.php ingests to logs/webvitals/YYYY-MM-DD.jsonl with 4KB body cap + 60/min/IP rate limit. Wired into admin-layout. → PENDING_SHA_MARK
+- [x] 370. Web Vitals beacon shipped: assets/js/cardify-webvitals.js captures LCP/CLS/FID + nav timing (TTFB/DCL/load) via PerformanceObserver, 10% sample rate (overridable via <meta name="cardify-webvitals-sample">), sends via navigator.sendBeacon with fetch(keepalive) fallback. api/webvitals.php ingests to logs/webvitals/YYYY-MM-DD.jsonl with 4KB body cap + 60/min/IP rate limit. Wired into admin-layout. → 27e5997
 
 ## O, Notifications + Emails (371-390)
 
