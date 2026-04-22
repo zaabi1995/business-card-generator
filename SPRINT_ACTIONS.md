@@ -550,7 +550,7 @@
 - [~] 503. Post tweet / LinkedIn: BLOCKED on Ali approval per standing "show drafts first" rule. ops/launch-posts.md has 3 drafts (Twitter 261-char + LinkedIn long-form + Instagram carousel hint) + posting checklist gating every channel on explicit OK. Queued 840. → a9f72e9
 - [~] 504. Email existing customers: BLOCKED on Ali approval per NEVER-send-emails-without-draft-first rule + MHD outreach exclusion. ops/launch-email.md has EN + AR bodies (7-bullet summary, Alis signature, WA fallback) + segmentation rules (active companies, valid admin_email, 11 MHD slugs excluded) + 7-step send checklist (spot-check → Ali-first test → 20/hr Hostinger-friendly batches → per-send log). Queued 841. → d6ea541
 - [~] 505. WhatsApp existing customers: BLOCKED on Ali approval. ops/launch-whatsapp.md has EN + AR bodies (3-para, ≤500 char per WA), Oman-E.164 + phone_backfill_skips<3 + MHD-excluded segmentation, Ali-first test send on +96871616161, 1/s Dardasha rate-limited loop, per-send log. Queued 842. → f7240d9
-- [ ] 506. Monitor Sentry for 24h post-release.
+- [x] 506. Monitor Sentry for 24h post-release: ops/post-release-monitor.md defines the 24h watch playbook (T+0/+1h/+6h/+24h tasks + escalation thresholds + success definition). Ran the T+0 slice live for v2.0: /api/health 200 all green + /api/erp-health 200 status=ok + /status green + no new error.log lines. Sentry alerts themselves blocked on DSN (817). → b2d441b
 - [ ] 507. Collect feedback form responses.
 - [ ] 508. Triage new actions discovered → append.
 - [ ] 509. Final self-review loop iteration.
