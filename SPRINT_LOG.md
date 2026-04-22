@@ -73,3 +73,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-22 16:45 | #450 | ec04b17 | Cat S card-credits on generate: migration 091 + includes/CardCredits.php atomic+idempotent, log_generation.php wired; migration applied. Queued 815 (UI nag) + 816 (audit old flow).
 2026-04-22 17:00 | #451 | d0684b5 | Cat S /admin/card-credits: 4 bundles (10/50/100/500) volume-discounted → Paymob, balance hero + ledger, confirmCardOrder mirrors purchase to card_credit_ledger. 23 keys parity OK.
 2026-04-22 17:15 | #452 | 8abb2b6 | Cat S bulk discount: Save X% pills + save-vs-Starter on tiers + custom quantity Alpine widget sharing tier ladder with server. 8 keys parity OK.
+2026-04-22 17:30 | #453 | 3597169 | Cat S card-credit → ERP: recordCardCreditPurchase with CARDS- synthetic ref + idempotent 409, wired into confirmCardOrder, backfill CLI (dry=0 candidates), invoiceNumber persisted to payments.callback_data.
