@@ -543,7 +543,7 @@
 - [x] 496. Changelog page /changelog bilingual: new /changelog + /ar/changelog powered by data/changelog.php entries (date/version/tag/title/body EN+AR); timeline UI with version + tag pills (Release/Feature/Fix/Security), locale-aware dates. Seeded with 4 real entries (v2.0, Paymob vault, Oman Business Index, ERP sync). 9 lang keys parity OK. → b94497e
 - [x] 497. Release notes for v2.0 sprint: RELEASE_NOTES_v2.0.md summarises 107 iterations (286 closed + 177 partial/queued), highlights, per-category closed counts, all 18 migrations 077-094, new public + admin URLs, VPS cron schedule, 59 queued follow-ups 781-839, rollback history. → 647b3f6
 - [x] 498. Update DOCUMENTATION.md: header restamp (v2.0 / 2026-04-23 / live) + cross-refs to RELEASE_NOTES_v2.0.md + CHANGELOG.md + /changelog + ops/runbook.md; appended v2.0 catalogue section (14 new includes, migrations 077-094 pointer, 10 new public URLs, 7 new admin pages, ops surface, 16 Playwright specs, i18n invariants incl em-dash ban). → 10a9af9
-- [ ] 499. Update CLAUDE.md project context.
+- [x] 499. Update CLAUDE.md project context: created CLAUDE.md at repo root (no prior; includes/CLAUDE.md stays as narrow file) with 1-liner summary + pointers to 6 doc files + 7 invariants each linking the memory note that forced it (deploy-script, worktree-main, i18n same-commit, pageMap registration, utf8mb4 + PHP 8.3 bin, Paymob HMAC + atomic + 3-decimal + token vault, APP_HOST + CSRF + SecurityHeaders, em-dash ban) + 5-row gotchas table + work loop + test commands + stuck playbook. → 5bcded8
 - [ ] 500. Update memory `cardify.md`.
 - [ ] 501. Deploy to prod.
 - [ ] 502. Smoke test post-deploy.
