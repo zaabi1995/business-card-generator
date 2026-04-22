@@ -157,7 +157,9 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     <!-- BHD Design Language Tokens -->
     <link rel="stylesheet" href="<?php echo $basePath; ?>assets/css/bhd-tokens.css">
 
-    <!-- Shared toast + empty-state primitives (Cardify v2.0 Category J) -->
+    <!-- Cardify Design System: tokens + components + toast (Category K actions 296-320) -->
+    <link rel="stylesheet" href="<?php echo $basePath; ?>assets/css/cardify-tokens.css">
+    <link rel="stylesheet" href="<?php echo $basePath; ?>assets/css/cardify-components.css">
     <link rel="stylesheet" href="<?php echo $basePath; ?>assets/css/cardify-toast.css">
 
     <!-- Fonts, Inter + (when rtl) IBM Plex Sans Arabic -->

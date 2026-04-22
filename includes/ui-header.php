@@ -149,6 +149,8 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     
     <!-- Custom Overrides -->
     <?php $cardifyOverridesVersion = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/css/cardify-overrides.css') ?: time(); ?>
+    <link rel="stylesheet" href="<?php echo assetUrl('css/cardify-tokens.css'); ?>?v=<?php echo $cardifyOverridesVersion; ?>">
+    <link rel="stylesheet" href="<?php echo assetUrl('css/cardify-components.css'); ?>?v=<?php echo $cardifyOverridesVersion; ?>">
     <link rel="stylesheet" href="<?php echo assetUrl('css/cardify-overrides.css'); ?>?v=<?php echo $cardifyOverridesVersion; ?>"><?php /* Local fallback assets kept for offline use */ ?>
     
     <!-- Alpine.js -->

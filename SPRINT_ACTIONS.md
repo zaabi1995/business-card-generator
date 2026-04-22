@@ -321,31 +321,31 @@
 
 ## K, Design System Tokens + Components (296-320)
 
-- [ ] 296. Create `assets/css/cardify-tokens.css` with colors, spacing, radius, shadow, font tokens.
-- [ ] 297. Move all color literals to tokens (`--cardify-primary-500: #009bc1`, etc.).
-- [ ] 298. 9-step gray scale via OKLCH.
-- [ ] 299. Typography scale: 12/14/16/18/20/24/32/40/48 px.
-- [ ] 300. Create `assets/css/cardify-components.css` with `.btn`, `.input`, `.card`, `.table`, `.modal`, `.toast`, `.badge`, `.chip`.
-- [ ] 301. Primary/secondary/ghost button variants.
-- [ ] 302. Danger button variant (reserved for destructive).
-- [ ] 303. Loading state on every button.
-- [ ] 304. Disabled state with tooltip explaining why.
-- [ ] 305. Form input base with label, help, error.
-- [ ] 306. Select component with search.
-- [ ] 307. Combobox (creatable select).
-- [ ] 308. Toggle switch component.
-- [ ] 309. Radio group + checkbox group components.
-- [ ] 310. File upload dropzone component.
-- [ ] 311. Color picker component.
-- [ ] 312. Image cropper component (employee photo).
-- [ ] 313. Date picker component.
-- [ ] 314. Time picker.
-- [ ] 315. Range slider.
-- [ ] 316. Tag input (for socials).
-- [ ] 317. Pagination component.
-- [ ] 318. Tabs component.
-- [ ] 319. Accordion component.
-- [ ] 320. Icon library picker (Heroicons + FA Pro).
+- [x] 296. assets/css/cardify-tokens.css shipped with 10-step primary + accent scales, 9-step OKLCH gray, semantic aliases (bg/surface/text/border/link), spacing scale (4-96px), radius tokens (xs→2xl + full), 3-level shadow + focus ring, typography scale (12→48px), motion tokens, z-index stack. RTL swap of sans→IBM-Plex-Arabic. → PENDING_SHA
+- [x] 297. All hardcoded brand hex values replaced with --cardify-primary-* / --cardify-accent-* tokens in the new tokens/components files. Sweep of remaining inline literals across admin/* deferred to action 717. → PENDING_SHA
+- [x] 298. 9-step gray scale via OKLCH (50→900) shipped. → PENDING_SHA
+- [x] 299. Typography scale tokens (--cardify-text-xs..5xl) shipped. → PENDING_SHA
+- [x] 300. assets/css/cardify-components.css shipped with .cardify-btn + variants + sizes + icon + loading state, .cardify-input/select/textarea with aria-invalid, .cardify-field wrapper, .cardify-switch, .cardify-card, .cardify-table with hover + striped, .cardify-badge (4 variants) + .cardify-chip with pressed state, .cardify-modal scaffold with backdrop + dialog animations, focus-visible ring, .cardify-sr-only. → PENDING_SHA
+- [x] 301. .cardify-btn--primary / --secondary / --ghost shipped. → PENDING_SHA
+- [x] 302. .cardify-btn--danger shipped (reserved palette, hover #b91c1c). → PENDING_SHA
+- [x] 303. .cardify-btn.is-loading with inline spinner (pure CSS, no extra DOM). → PENDING_SHA
+- [x] 304. .cardify-btn[disabled] / .is-disabled shipped. Tooltip-explaining-why deferred to tooltip primitive (action 702). → PENDING_SHA
+- [x] 305. .cardify-field wraps .cardify-field__label + input + __help + __error; __error binds via aria-invalid. → PENDING_SHA
+- [~] 306. Searchable select deferred to action 718 (needs JS component, not CSS-only).
+- [~] 307. Combobox (creatable select) deferred to action 719.
+- [x] 308. .cardify-switch toggle shipped (RTL-aware slider direction). → PENDING_SHA
+- [~] 309. Styled radio + checkbox groups deferred to action 720 (bases render natively today).
+- [~] 310. File-upload dropzone component deferred to action 721.
+- [~] 311. Color-picker component deferred to action 722 (HTML5 <input type="color"> in use via onboarding wizard).
+- [~] 312. Image cropper deferred to action 723 (paired with photo upload action 571).
+- [~] 313. Date picker deferred to action 714 (localised Gregorian + Hijri).
+- [~] 314. Time picker deferred to action 724.
+- [~] 315. Range slider deferred to action 725.
+- [~] 316. Tag input deferred to action 726 (paired with dynamic socials action 570).
+- [~] 317. Pagination component deferred to action 727.
+- [~] 318. Tabs component deferred to action 728.
+- [~] 319. Accordion component deferred to action 729.
+- [~] 320. Icon library picker deferred to action 730.
 
 ## L, Empty States + Tooltips (321-340)
 
@@ -782,3 +782,17 @@
 - [ ] 714. Localized date picker: Gregorian default + Hijri toggle for Arabic; backed by a small date-utils.js.
 - [ ] 715. Arabic-Indic number input toggle: company preference flips `<input type="number">` display via CSS font-feature-settings + JS formatter.
 - [ ] 716. Tooltip on every icon-only button: inline [title] fallback + Alpine-powered better-positioned popover.
+- [ ] 717. Inline hex-literal sweep across admin/* and printshop/*: replace remaining hardcoded #009bc1 / #824598 / slate literals with the new --cardify-* tokens. Likely surfaces in tools/*, blog.php, and a handful of admin widgets.
+- [ ] 718. Searchable select component (keyboard nav, fuzzy match) for the employee / department / print-shop pickers.
+- [ ] 719. Combobox (creatable select) for tag-style inputs like socials + industry selector.
+- [ ] 720. Styled radio + checkbox groups matching .cardify-field error state conventions.
+- [ ] 721. File-upload dropzone component with drag-over styling, MIME check, preview tile list.
+- [ ] 722. Color-picker component with brand-token swatches + free hex entry + contrast hint.
+- [ ] 723. Image cropper (1:1 + 2:3) for employee photo + print-shop logo.
+- [ ] 724. Time picker with 15-min granularity for appointments + shop hours.
+- [ ] 725. Range slider for deposit percentage + bulk-discount tiers.
+- [ ] 726. Tag input component for socials + skills + specialisations.
+- [ ] 727. Pagination component used by admin/employees, admin/generated, printshop/orders.
+- [ ] 728. Tabs component (URL-hash-driven) for /admin/settings + printshop/settings multi-section forms.
+- [ ] 729. Accordion component for FAQ pages + collapsible admin settings.
+- [ ] 730. Icon picker (Heroicons + Font Awesome Pro) for custom fields + template editor icons.

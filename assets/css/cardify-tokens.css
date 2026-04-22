@@ -1,0 +1,156 @@
+/**
+ * Cardify Design System, Tokens
+ * Source of truth for color, spacing, radius, shadow, typography,
+ * and motion tokens. Consumed by cardify-components.css and every
+ * admin/portal/printshop page through admin-layout + ui-header.
+ *
+ * This file replaces the scattered hex literals that used to live
+ * across admin/* inline styles. Existing bhd-tokens.css stays for
+ * BHD-branded public pages (portal, company profile); cardify-*
+ * tokens mirror BHD colors but extend with grays, semantic colors,
+ * and a full 9-step scale.
+ *
+ * Convention: tokens defined on :root so they cascade everywhere.
+ * RTL-safe: all tokens are values, no positional assumptions.
+ */
+
+:root {
+    /* -----------------------------------------------------------------
+       Brand, BHD teal baseline + purple accent + amber CTA
+    ------------------------------------------------------------------ */
+    --cardify-primary-50:  #e6f5f9;
+    --cardify-primary-100: #b3e0ec;
+    --cardify-primary-200: #80cbde;
+    --cardify-primary-300: #4db7d1;
+    --cardify-primary-400: #26a6c7;
+    --cardify-primary-500: #009bc1;  /* BHD teal */
+    --cardify-primary-600: #0086a6;
+    --cardify-primary-700: #00708c;
+    --cardify-primary-800: #005b73;
+    --cardify-primary-900: #004559;
+
+    --cardify-accent-50:   #f4ecf6;
+    --cardify-accent-100:  #dfc5e6;
+    --cardify-accent-200:  #ca9ed6;
+    --cardify-accent-300:  #b577c6;
+    --cardify-accent-400:  #a0599b;
+    --cardify-accent-500:  #824598;  /* BHD purple */
+    --cardify-accent-600:  #6d3a80;
+    --cardify-accent-700:  #582f67;
+    --cardify-accent-800:  #43244f;
+    --cardify-accent-900:  #2e1936;
+
+    --cardify-attention-500: #ffbb00;  /* BHD yellow, attention CTAs */
+    --cardify-success-500:   #16a34a;
+    --cardify-warn-500:      #f59e0b;
+    --cardify-danger-500:    #dc2626;
+    --cardify-info-500:      #0284c7;
+
+    /* -----------------------------------------------------------------
+       Neutrals, 9-step scale via OKLCH (action 298).
+       Equivalent perceptual steps, avoids pure black/white.
+    ------------------------------------------------------------------ */
+    --cardify-gray-50:  oklch(98% 0.003 250);
+    --cardify-gray-100: oklch(96% 0.005 250);
+    --cardify-gray-200: oklch(92% 0.006 250);
+    --cardify-gray-300: oklch(86% 0.007 250);
+    --cardify-gray-400: oklch(70% 0.010 250);
+    --cardify-gray-500: oklch(56% 0.012 250);
+    --cardify-gray-600: oklch(44% 0.012 250);
+    --cardify-gray-700: oklch(34% 0.010 250);
+    --cardify-gray-800: oklch(22% 0.008 250);
+    --cardify-gray-900: oklch(14% 0.006 250);
+
+    /* -----------------------------------------------------------------
+       Semantic aliases, use these in components not raw scale tokens.
+    ------------------------------------------------------------------ */
+    --cardify-bg:           #ffffff;
+    --cardify-bg-muted:     var(--cardify-gray-50);
+    --cardify-surface:      #ffffff;
+    --cardify-border:       var(--cardify-gray-200);
+    --cardify-border-strong:var(--cardify-gray-300);
+    --cardify-text:         var(--cardify-gray-900);
+    --cardify-text-muted:   var(--cardify-gray-500);
+    --cardify-text-subtle:  var(--cardify-gray-400);
+    --cardify-link:         var(--cardify-primary-600);
+    --cardify-link-hover:   var(--cardify-primary-700);
+
+    /* -----------------------------------------------------------------
+       Spacing scale, 4px base, 8/12/16/24/32/48/64/96.
+    ------------------------------------------------------------------ */
+    --cardify-space-1:   4px;
+    --cardify-space-2:   8px;
+    --cardify-space-3:  12px;
+    --cardify-space-4:  16px;
+    --cardify-space-5:  20px;
+    --cardify-space-6:  24px;
+    --cardify-space-8:  32px;
+    --cardify-space-10: 40px;
+    --cardify-space-12: 48px;
+    --cardify-space-16: 64px;
+    --cardify-space-24: 96px;
+
+    /* -----------------------------------------------------------------
+       Radius tokens (action 300).
+       buttons 8px, inputs 8px, cards 16px, modals 16px, pills 999px.
+    ------------------------------------------------------------------ */
+    --cardify-radius-xs:  4px;   /* inputs inline */
+    --cardify-radius-sm:  6px;
+    --cardify-radius-md:  8px;   /* buttons, inputs default */
+    --cardify-radius-lg: 12px;
+    --cardify-radius-xl: 16px;   /* cards, modals */
+    --cardify-radius-2xl: 24px;
+    --cardify-radius-full: 9999px;
+
+    /* -----------------------------------------------------------------
+       Shadow tokens, 3 levels: sm (hover), md (card), lg (modal/drawer).
+    ------------------------------------------------------------------ */
+    --cardify-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+    --cardify-shadow-md: 0 4px 10px -2px rgba(15, 23, 42, 0.10), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+    --cardify-shadow-lg: 0 20px 40px -12px rgba(15, 23, 42, 0.20);
+    --cardify-shadow-focus: 0 0 0 3px rgba(0, 155, 193, 0.25);  /* brand focus ring */
+
+    /* -----------------------------------------------------------------
+       Typography scale (action 299). Matches Tailwind's rhythm.
+    ------------------------------------------------------------------ */
+    --cardify-font-sans: "Inter", "Segoe UI", Tahoma, Arial, sans-serif;
+    --cardify-font-arabic: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+    --cardify-font-mono: "DM Mono", "JetBrains Mono", Consolas, "Courier New", monospace;
+
+    --cardify-text-xs:   12px;
+    --cardify-text-sm:   14px;
+    --cardify-text-base: 16px;
+    --cardify-text-lg:   18px;
+    --cardify-text-xl:   20px;
+    --cardify-text-2xl:  24px;
+    --cardify-text-3xl:  32px;
+    --cardify-text-4xl:  40px;
+    --cardify-text-5xl:  48px;
+
+    --cardify-leading-tight: 1.2;
+    --cardify-leading-snug:  1.35;
+    --cardify-leading-normal:1.5;
+    --cardify-leading-relaxed:1.65;
+
+    /* -----------------------------------------------------------------
+       Motion, used by transitions + animations site-wide.
+    ------------------------------------------------------------------ */
+    --cardify-duration-fast:   100ms;
+    --cardify-duration-normal: 150ms;
+    --cardify-duration-slow:   250ms;
+    --cardify-ease-out: cubic-bezier(.2, .8, .3, 1);
+    --cardify-ease-io:  cubic-bezier(.4, .0, .2, 1);
+
+    /* -----------------------------------------------------------------
+       Z-index stack, deliberate ordering.
+    ------------------------------------------------------------------ */
+    --cardify-z-drawer:  70;
+    --cardify-z-modal:   80;
+    --cardify-z-toast: 10000;
+}
+
+/* Apply Arabic font stack when the document is rtl. Leaves Latin fallbacks
+   in place for mixed text like ltr phone numbers inside rtl paragraphs. */
+html[dir="rtl"] {
+    --cardify-font-sans: var(--cardify-font-arabic);
+}
