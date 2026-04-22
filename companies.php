@@ -72,7 +72,7 @@ $WILAYATS = [
     'al-wusta'           => ['en' => 'Al Wusta',            'ar' => 'الوسطى'],
 ];
 
-function t($en, $ar, $isAr) { return $isAr ? $ar : $en; }
+function cmpT($en, $ar, $isAr) { return $isAr ? $ar : $en; }
 function labelOf($key, $dict, $isAr) {
     return $dict[$key][$isAr ? 'ar' : 'en'] ?? ucwords(str_replace('-', ' ', $key));
 }
@@ -272,8 +272,8 @@ if ($company) {
         '@context' => 'https://schema.org',
         '@type' => 'BreadcrumbList',
         'itemListElement' => [
-            ['@type' => 'ListItem', 'position' => 1, 'name' => t('Home', 'الرئيسية', $isAr), 'item' => $baseUrl . ($isAr ? '/ar' : '/')],
-            ['@type' => 'ListItem', 'position' => 2, 'name' => t('Oman Business Index', 'دليل الشركات العمانية', $isAr), 'item' => $baseUrl . $basePrefix],
+            ['@type' => 'ListItem', 'position' => 1, 'name' => cmpT('Home', 'الرئيسية', $isAr), 'item' => $baseUrl . ($isAr ? '/ar' : '/')],
+            ['@type' => 'ListItem', 'position' => 2, 'name' => cmpT('Oman Business Index', 'دليل الشركات العمانية', $isAr), 'item' => $baseUrl . $basePrefix],
             ['@type' => 'ListItem', 'position' => 3, 'name' => $secLabel, 'item' => $baseUrl . $basePrefix . '/sector/' . $company['sector']],
             ['@type' => 'ListItem', 'position' => 4, 'name' => $displayName, 'item' => $canonicalUrl],
         ],
@@ -335,7 +335,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
     <!-- ============ COMPANY PROFILE ============ -->
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav aria-label="Breadcrumb" class="text-sm text-gray-500 mb-6 flex items-center gap-2 flex-wrap">
-            <a href="<?= $basePrefix ?>" class="hover:text-blue-700"><?= t('Oman Business Index', 'دليل الشركات العمانية', $isAr) ?></a>
+            <a href="<?= $basePrefix ?>" class="hover:text-blue-700"><?= cmpT('Oman Business Index', 'دليل الشركات العمانية', $isAr) ?></a>
             <span>/</span>
             <a href="<?= $basePrefix ?>/sector/<?= escq($company['sector']) ?>" class="hover:text-blue-700"><?= escq(labelOf($company['sector'], $SECTORS, $isAr)) ?></a>
             <span>/</span>
@@ -391,7 +391,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                         </a>
                         <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-sm font-medium">
                             <i class="fa-solid fa-building text-xs"></i>
-                            <?= $company['size_bucket'] === 'large' ? t('Large enterprise', 'شركة كبيرة', $isAr) : t('Medium enterprise', 'شركة متوسطة', $isAr) ?>
+                            <?= $company['size_bucket'] === 'large' ? cmpT('Large enterprise', 'شركة كبيرة', $isAr) : cmpT('Medium enterprise', 'شركة متوسطة', $isAr) ?>
                         </span>
                     </div>
                 </div>
@@ -482,7 +482,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 
             <!-- About section (curated summary or composed from sector/wilayat libraries) -->
             <section class="mt-8">
-                <h2 class="text-xl font-bold text-gray-900 mb-3"><?= sprintf(t('About %s', 'نبذة عن %s', $isAr), escq($displayName)) ?></h2>
+                <h2 class="text-xl font-bold text-gray-900 mb-3"><?= sprintf(cmpT('About %s', 'نبذة عن %s', $isAr), escq($displayName)) ?></h2>
                 <div class="space-y-4 text-gray-700 leading-relaxed">
                     <?php foreach ($aboutParas as $p): ?>
                         <p><?= escq($p) ?></p>
@@ -492,7 +492,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                     <p class="mt-4">
                         <a href="<?= escq($company['website']) ?>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
                             <i class="fa-solid fa-up-right-from-square text-sm"></i>
-                            <?= t('Visit official website', 'زيارة الموقع الرسمي', $isAr) ?>
+                            <?= cmpT('Visit official website', 'زيارة الموقع الرسمي', $isAr) ?>
                         </a>
                     </p>
                 <?php endif; ?>
@@ -507,13 +507,13 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
             <!-- Why Cardify fits this team (sector-specific) -->
             <section class="mt-10 pt-8 border-t border-gray-200">
                 <h2 class="text-xl font-bold text-gray-900 mb-3">
-                    <?= sprintf(t('How Cardify fits %s teams', 'كيف تخدم Cardify فرق %s', $isAr), escq($displayName)) ?>
+                    <?= sprintf(cmpT('How Cardify fits %s teams', 'كيف تخدم Cardify فرق %s', $isAr), escq($displayName)) ?>
                 </h2>
                 <?php if ($secBlock && !empty($secBlock['cardify_fit'])): ?>
                     <p class="text-gray-700 leading-relaxed mb-5"><?= escq($secBlock['cardify_fit']) ?></p>
                 <?php else: ?>
                     <p class="text-gray-700 leading-relaxed mb-5">
-                        <?= t(
+                        <?= cmpT(
                             'Cardify helps teams at companies like this one roll out consistent, branded digital business cards across every employee — with QR codes that save contacts straight to any phone, bilingual EN/AR fields, and bulk printed cards from local Omani print shops.',
                             'تساعد Cardify فرق الشركات مثل هذه على إطلاق بطاقات عمل رقمية موحدة ومُصممة حسب الهوية البصرية، مع رموز QR تحفظ جهات الاتصال مباشرة في الهاتف، وحقول ثنائية اللغة، وطباعة من مطابع عُمانية محلية.',
                             $isAr
@@ -532,11 +532,11 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                 <?php endif; ?>
                 <div class="flex flex-wrap gap-3">
                     <a href="<?= $isAr ? '/ar/get-started' : '/get-started' ?>" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">
-                        <?= sprintf(t('Start free for %s team', 'ابدأ مجاناً لفريق %s', $isAr), escq($displayName)) ?>
+                        <?= sprintf(cmpT('Start free for %s team', 'ابدأ مجاناً لفريق %s', $isAr), escq($displayName)) ?>
                         <i class="fa-solid fa-arrow-right text-xs"></i>
                     </a>
                     <a href="/tools/vcard-qr-generator" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gray-100 text-gray-800 font-semibold hover:bg-gray-200">
-                        <?= t('Try the free QR card tool', 'جرّب أداة رمز QR المجانية', $isAr) ?>
+                        <?= cmpT('Try the free QR card tool', 'جرّب أداة رمز QR المجانية', $isAr) ?>
                     </a>
                 </div>
             </section>
@@ -544,23 +544,23 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 
             <!-- Compact quick-facts panel -->
             <section class="mt-10 pt-8 border-t border-gray-200">
-                <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4"><?= t('Quick facts', 'معلومات سريعة', $isAr) ?></h2>
+                <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4"><?= cmpT('Quick facts', 'معلومات سريعة', $isAr) ?></h2>
                 <dl class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div>
-                        <dt class="text-xs text-gray-500"><?= t('Sector', 'القطاع', $isAr) ?></dt>
+                        <dt class="text-xs text-gray-500"><?= cmpT('Sector', 'القطاع', $isAr) ?></dt>
                         <dd class="mt-1 font-semibold text-gray-900 text-sm"><?= escq(labelOf($company['sector'], $SECTORS, $isAr)) ?></dd>
                     </div>
                     <div>
-                        <dt class="text-xs text-gray-500"><?= t('Governorate', 'المحافظة', $isAr) ?></dt>
+                        <dt class="text-xs text-gray-500"><?= cmpT('Governorate', 'المحافظة', $isAr) ?></dt>
                         <dd class="mt-1 font-semibold text-gray-900 text-sm"><?= escq(labelOf($company['wilayat'], $WILAYATS, $isAr)) ?></dd>
                     </div>
                     <div>
-                        <dt class="text-xs text-gray-500"><?= t('Size band', 'الحجم', $isAr) ?></dt>
-                        <dd class="mt-1 font-semibold text-gray-900 text-sm"><?= $company['size_bucket'] === 'large' ? t('Large', 'كبيرة', $isAr) : t('Medium', 'متوسطة', $isAr) ?></dd>
+                        <dt class="text-xs text-gray-500"><?= cmpT('Size band', 'الحجم', $isAr) ?></dt>
+                        <dd class="mt-1 font-semibold text-gray-900 text-sm"><?= $company['size_bucket'] === 'large' ? cmpT('Large', 'كبيرة', $isAr) : cmpT('Medium', 'متوسطة', $isAr) ?></dd>
                     </div>
                     <div>
-                        <dt class="text-xs text-gray-500"><?= t('Country', 'الدولة', $isAr) ?></dt>
-                        <dd class="mt-1 font-semibold text-gray-900 text-sm"><?= t('Sultanate of Oman', 'سلطنة عُمان', $isAr) ?></dd>
+                        <dt class="text-xs text-gray-500"><?= cmpT('Country', 'الدولة', $isAr) ?></dt>
+                        <dd class="mt-1 font-semibold text-gray-900 text-sm"><?= cmpT('Sultanate of Oman', 'سلطنة عُمان', $isAr) ?></dd>
                     </div>
                 </dl>
             </section>
@@ -580,7 +580,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
         ?>
         <?php if (!empty($related)): ?>
         <section class="mt-10">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4"><?= sprintf(t('Other %s companies in Oman', 'شركات أخرى في قطاع %s', $isAr), escq(labelOf($company['sector'], $SECTORS, $isAr))) ?></h2>
+            <h2 class="text-xl font-semibold text-gray-900 mb-4"><?= sprintf(cmpT('Other %s companies in Oman', 'شركات أخرى في قطاع %s', $isAr), escq(labelOf($company['sector'], $SECTORS, $isAr))) ?></h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <?php foreach ($related as $r): ?>
                     <a href="<?= $basePrefix ?>/<?= escq($r['slug']) ?>" class="p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition">
@@ -594,7 +594,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 
         <?php if (!empty($relatedWilayat)): ?>
         <section class="mt-8">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4"><?= sprintf(t('Other companies in %s', 'شركات أخرى في %s', $isAr), escq(labelOf($company['wilayat'], $WILAYATS, $isAr))) ?></h2>
+            <h2 class="text-xl font-semibold text-gray-900 mb-4"><?= sprintf(cmpT('Other companies in %s', 'شركات أخرى في %s', $isAr), escq(labelOf($company['wilayat'], $WILAYATS, $isAr))) ?></h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <?php foreach ($relatedWilayat as $r): ?>
                     <a href="<?= $basePrefix ?>/<?= escq($r['slug']) ?>" class="p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition">
@@ -607,9 +607,9 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
         <?php endif; ?>
 
         <p class="mt-10 text-xs text-gray-400 text-center">
-            <?= t('Source: MoCIIP public register · Last verified: ', 'المصدر: السجل العام لوزارة التجارة · آخر تحديث: ', $isAr) ?>
+            <?= cmpT('Source: MoCIIP public register · Last verified: ', 'المصدر: السجل العام لوزارة التجارة · آخر تحديث: ', $isAr) ?>
             <?= date('F Y', strtotime($company['updated_at'])) ?>
-            · <a href="/contact" class="underline hover:text-gray-600"><?= t('Request edit / takedown', 'طلب تعديل / إزالة', $isAr) ?></a>
+            · <a href="/contact" class="underline hover:text-gray-600"><?= cmpT('Request edit / takedown', 'طلب تعديل / إزالة', $isAr) ?></a>
         </p>
     </div>
 
@@ -617,21 +617,21 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
     <!-- ============ HUB PAGE (sector or wilayat) ============ -->
     <?php
         $hubLabel = $hubSector ? labelOf($hubSector, $SECTORS, $isAr) : labelOf($hubWilayat, $WILAYATS, $isAr);
-        $hubKind  = $hubSector ? t('sector', 'قطاع', $isAr) : t('governorate', 'محافظة', $isAr);
+        $hubKind  = $hubSector ? cmpT('sector', 'قطاع', $isAr) : cmpT('governorate', 'محافظة', $isAr);
     ?>
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav aria-label="Breadcrumb" class="text-sm text-gray-500 mb-4">
-            <a href="<?= $basePrefix ?>" class="hover:text-blue-700"><?= t('Oman Business Index', 'دليل الشركات العمانية', $isAr) ?></a>
+            <a href="<?= $basePrefix ?>" class="hover:text-blue-700"><?= cmpT('Oman Business Index', 'دليل الشركات العمانية', $isAr) ?></a>
             <span class="mx-2">/</span>
             <span class="text-gray-700"><?= escq($hubLabel) ?></span>
         </nav>
         <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-            <?= $hubSector ? escq(sprintf(t('%s Companies in Oman', 'شركات %s في عُمان', $isAr), $hubLabel)) : escq(sprintf(t('Companies in %s', 'الشركات في %s', $isAr), $hubLabel)) ?>
+            <?= $hubSector ? escq(sprintf(cmpT('%s Companies in Oman', 'شركات %s في عُمان', $isAr), $hubLabel)) : escq(sprintf(cmpT('Companies in %s', 'الشركات في %s', $isAr), $hubLabel)) ?>
         </h1>
         <p class="text-gray-600 mb-8 max-w-3xl">
             <?= $hubSector
-                ? sprintf(t('%d companies in the %s sector of the Sultanate of Oman, listed in the Cardify Business Index.', '%d شركة في قطاع %s بسلطنة عُمان ضمن دليل Cardify.', $isAr), $totalCount, $hubLabel)
-                : sprintf(t('%d companies operating in %s governorate, listed in the Cardify Business Index.', '%d شركة تعمل في محافظة %s ضمن دليل Cardify.', $isAr), $totalCount, $hubLabel)
+                ? sprintf(cmpT('%d companies in the %s sector of the Sultanate of Oman, listed in the Cardify Business Index.', '%d شركة في قطاع %s بسلطنة عُمان ضمن دليل Cardify.', $isAr), $totalCount, $hubLabel)
+                : sprintf(cmpT('%d companies operating in %s governorate, listed in the Cardify Business Index.', '%d شركة تعمل في محافظة %s ضمن دليل Cardify.', $isAr), $totalCount, $hubLabel)
             ?>
         </p>
 
@@ -668,14 +668,14 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
             <section class="mb-10 bg-white border border-gray-200 rounded-2xl p-6">
                 <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
                     <div>
-                        <p class="text-xs uppercase tracking-wider text-blue-700 font-semibold mb-1"><?= t('Logos', 'شعارات', $isAr) ?></p>
+                        <p class="text-xs uppercase tracking-wider text-blue-700 font-semibold mb-1"><?= cmpT('Logos', 'شعارات', $isAr) ?></p>
                         <h2 class="text-lg font-bold text-gray-900">
-                            <?= escq(sprintf(t('%d %s logos available', '%d شعار %s متوفر', $isAr), $hubLogoCount, $hubLabel)) ?>
+                            <?= escq(sprintf(cmpT('%d %s logos available', '%d شعار %s متوفر', $isAr), $hubLogoCount, $hubLabel)) ?>
                         </h2>
                     </div>
                     <a href="<?= $isAr ? '/ar' : '' ?>/logos/<?= escq($hubSector) ?>"
                        class="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700">
-                        <?= t('Open the sector library', 'افتح مكتبة القطاع', $isAr) ?>
+                        <?= cmpT('Open the sector library', 'افتح مكتبة القطاع', $isAr) ?>
                         <i class="fa-solid fa-arrow-<?= $isAr ? 'left' : 'right' ?> text-xs"></i>
                     </a>
                 </div>
@@ -711,7 +711,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                             <span><?= escq(labelOf($c['sector'], $SECTORS, $isAr)) ?></span>
                         <?php endif; ?>
                         <span class="ml-auto inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-[10px] uppercase tracking-wide">
-                            <?= $c['size_bucket'] === 'large' ? t('Large', 'كبيرة', $isAr) : t('Medium', 'متوسطة', $isAr) ?>
+                            <?= $c['size_bucket'] === 'large' ? cmpT('Large', 'كبيرة', $isAr) : cmpT('Medium', 'متوسطة', $isAr) ?>
                         </span>
                     </div>
                 </a>
@@ -724,10 +724,10 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-10">
             <h1 class="text-3xl sm:text-5xl font-bold text-gray-900 mb-4">
-                <?= t('Oman Business Index', 'دليل الشركات العمانية', $isAr) ?>
+                <?= cmpT('Oman Business Index', 'دليل الشركات العمانية', $isAr) ?>
             </h1>
             <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                <?= sprintf(t('A free public directory of the %d largest and medium-sized enterprises in the Sultanate of Oman.', 'دليل عام مجاني لأكبر %d شركة كبيرة ومتوسطة في سلطنة عُمان.', $isAr), $totalCount ?: 2414) ?>
+                <?= sprintf(cmpT('A free public directory of the %d largest and medium-sized enterprises in the Sultanate of Oman.', 'دليل عام مجاني لأكبر %d شركة كبيرة ومتوسطة في سلطنة عُمان.', $isAr), $totalCount ?: 2414) ?>
             </p>
         </div>
 
@@ -735,22 +735,22 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
         <form method="get" action="<?= $basePrefix ?>" class="bg-white rounded-2xl shadow-sm p-6 mb-8 grid grid-cols-1 md:grid-cols-4 gap-3">
             <?php if ($isAr): ?><input type="hidden" name="lang" value="ar"><?php endif; ?>
             <div class="md:col-span-2">
-                <label class="block text-xs font-semibold text-gray-600 mb-1"><?= t('Search', 'بحث', $isAr) ?></label>
-                <input type="search" name="q" value="<?= escq($_GET['q'] ?? '') ?>" placeholder="<?= t('Company name (EN or AR)…', 'اسم الشركة (عربي أو إنجليزي)…', $isAr) ?>" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none">
+                <label class="block text-xs font-semibold text-gray-600 mb-1"><?= cmpT('Search', 'بحث', $isAr) ?></label>
+                <input type="search" name="q" value="<?= escq($_GET['q'] ?? '') ?>" placeholder="<?= cmpT('Company name (EN or AR)…', 'اسم الشركة (عربي أو إنجليزي)…', $isAr) ?>" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none">
             </div>
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1"><?= t('Sector', 'القطاع', $isAr) ?></label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1"><?= cmpT('Sector', 'القطاع', $isAr) ?></label>
                 <select name="sector" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 outline-none">
-                    <option value=""><?= t('All sectors', 'كل القطاعات', $isAr) ?></option>
+                    <option value=""><?= cmpT('All sectors', 'كل القطاعات', $isAr) ?></option>
                     <?php foreach ($SECTORS as $k => $labels): ?>
                         <option value="<?= escq($k) ?>" <?= ($_GET['sector'] ?? '') === $k ? 'selected' : '' ?>><?= escq($labels[$isAr ? 'ar' : 'en']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1"><?= t('Governorate', 'المحافظة', $isAr) ?></label>
+                <label class="block text-xs font-semibold text-gray-600 mb-1"><?= cmpT('Governorate', 'المحافظة', $isAr) ?></label>
                 <select name="wilayat" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 outline-none">
-                    <option value=""><?= t('All governorates', 'كل المحافظات', $isAr) ?></option>
+                    <option value=""><?= cmpT('All governorates', 'كل المحافظات', $isAr) ?></option>
                     <?php foreach ($WILAYATS as $k => $labels): ?>
                         <option value="<?= escq($k) ?>" <?= ($_GET['wilayat'] ?? '') === $k ? 'selected' : '' ?>><?= escq($labels[$isAr ? 'ar' : 'en']) ?></option>
                     <?php endforeach; ?>
@@ -758,12 +758,12 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
             </div>
             <div class="md:col-span-4 flex justify-end">
                 <button type="submit" class="px-6 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">
-                    <?= t('Filter', 'تصفية', $isAr) ?>
+                    <?= cmpT('Filter', 'تصفية', $isAr) ?>
                 </button>
             </div>
         </form>
 
-        <p class="text-sm text-gray-500 mb-6"><?= sprintf(t('%d results', '%d نتيجة', $isAr), $totalCount) ?></p>
+        <p class="text-sm text-gray-500 mb-6"><?= sprintf(cmpT('%d results', '%d نتيجة', $isAr), $totalCount) ?></p>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <?php foreach ($companies as $c): ?>
@@ -804,7 +804,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 
         <!-- Browse by sector + wilayat -->
         <section class="mt-16">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4"><?= t('Browse by sector', 'تصفح حسب القطاع', $isAr) ?></h2>
+            <h2 class="text-2xl font-bold text-gray-900 mb-4"><?= cmpT('Browse by sector', 'تصفح حسب القطاع', $isAr) ?></h2>
             <div class="flex flex-wrap gap-2">
                 <?php foreach ($SECTORS as $k => $labels): ?>
                     <a href="<?= $basePrefix ?>/sector/<?= escq($k) ?>" class="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-50 text-blue-700 text-sm font-medium hover:bg-blue-100">
@@ -814,7 +814,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
             </div>
         </section>
         <section class="mt-10">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4"><?= t('Browse by governorate', 'تصفح حسب المحافظة', $isAr) ?></h2>
+            <h2 class="text-2xl font-bold text-gray-900 mb-4"><?= cmpT('Browse by governorate', 'تصفح حسب المحافظة', $isAr) ?></h2>
             <div class="flex flex-wrap gap-2">
                 <?php foreach ($WILAYATS as $k => $labels): ?>
                     <a href="<?= $basePrefix ?>/wilayat/<?= escq($k) ?>" class="inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-sm font-medium hover:bg-emerald-100">
@@ -826,14 +826,14 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 
         <!-- About the directory -->
         <section class="mt-16 bg-white rounded-2xl p-8 lg:p-10 shadow-sm">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4"><?= t('About this directory', 'عن هذا الدليل', $isAr) ?></h2>
+            <h2 class="text-2xl font-bold text-gray-900 mb-4"><?= cmpT('About this directory', 'عن هذا الدليل', $isAr) ?></h2>
             <div class="prose prose-gray max-w-none">
-                <p><?= t(
+                <p><?= cmpT(
                     'The Cardify Oman Business Index is a free, bilingual directory of large and medium enterprises registered in the Sultanate of Oman. Data is derived from the public register of the Ministry of Commerce, Industry and Investment Promotion (MoCIIP), supplemented with sector and governorate classifications generated by Cardify.',
                     'دليل Cardify للشركات العمانية هو دليل مجاني ثنائي اللغة للشركات الكبيرة والمتوسطة المسجلة في سلطنة عُمان. البيانات مشتقة من السجل العام لوزارة التجارة والصناعة وترويج الاستثمار، مع إضافة تصنيف قطاعي وجغرافي من Cardify.',
                     $isAr
                 ) ?></p>
-                <p><?= t(
+                <p><?= cmpT(
                     'Cardify does not claim any commercial relationship with the listed companies. If you represent a listed company and wish to request an edit or removal, please contact us.',
                     'لا تدعي Cardify وجود أي علاقة تجارية مع الشركات المدرجة. إذا كنت تمثل إحدى هذه الشركات وترغب في التعديل أو الإزالة، يرجى التواصل معنا.',
                     $isAr
