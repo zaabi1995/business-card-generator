@@ -499,7 +499,7 @@
 - [x] 458. Status page /status live: bilingual /status + /ar/status with overall banner (up/degraded/down) + 5 component probes (app / DB / storage / ERP sync / Paymob TLS socket) + 30-day incident timeline from new status_incidents table (migration 093). 26 lang keys EN+AR parity OK, nginx rewrites, Cache-Control no-store. Live 200 both locales, all systems green. → 34e8902
 - [x] 459. Nightly DB dump: scripts/backup-db.sh (mysqldump --single-transaction + gzip -9 + optional gpg AES256 when CARDIFY_BACKUP_PASS set), /var/backups/cardify/ mode 0600 files in 0700 dir, 30-file rotation, opt-in rclone offsite via CARDIFY_BACKUP_REMOTE (b2/s3/wasabi). Cron 25 2 * * * installed on VPS, first run 724 KB OK. → 0be85ce
 - [x] 460. Nightly storage dir backup: scripts/backup-storage.sh rsync --delete storage/+uploads/+data/ (excl cache/tmp) into /var/backups/cardify-storage/current/ then tar.gz snapshot, 14-file rotation, opt-in rclone offsite via shared CARDIFY_BACKUP_REMOTE. Cron 35 2 * * * installed; first run 147 MB snapshot + mirror synced. → 01fe327
-- [ ] 461. Weekly restore test.
+- [x] 461. Weekly restore test: scripts/backup-restore-test.sh picks newest DB backup, (decrypts if gpg), loads into scratch bc_restore_test DB, sanity checks (tables>=20 + employees/companies/templates counts + newest payment), drops scratch tables, verifies newest storage tarball via tar tzf, emails ali@bhd.om PASS/FAIL/SKIP. Cron 45 3 * * 0 installed; SKIP right now because bc user needs GRANT on bc_restore_test (queued 820). Tar integrity OK 818 entries. → b8d0f65
 - [ ] 462. Log rotation (nginx + PHP errors).
 - [ ] 463. Disk-usage alert at 80%.
 - [ ] 464. Slow query log review cron.
@@ -871,3 +871,4 @@
 - [ ] 817. Create "cardify-prod" project on Sentry and drop SENTRY_DSN + SENTRY_DSN_PUBLIC into config.php on VPS; verify an Uncaught exception surfaces server-side and a browser unhandledrejection surfaces client-side.
 - [ ] 818. Paste ops/uptime-monitors.json into Uptime Robot (or StatusCake) account to activate the external monitor; verify alerts route to Ali's WhatsApp + email.
 - [ ] 819. Set CARDIFY_BACKUP_PASS + CARDIFY_BACKUP_REMOTE on the VPS (Backblaze B2 bucket "cardify-backups" via rclone) so nightly backups sync offsite encrypted. Ensures backups survive a VPS loss.
+- [ ] 820. One-time MySQL grant for restore-test: CREATE DATABASE bc_restore_test + GRANT ALL on bc_restore_test.* TO 'bc'@'localhost'. Requires DBA/aaPanel access with root credentials. Once granted, scripts/backup-restore-test.sh flips from SKIP → PASS.
