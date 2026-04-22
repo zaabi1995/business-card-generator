@@ -119,6 +119,7 @@ class ERPSync {
 
         if ($curlErr) {
             self::markSyncError($orderId, "cURL error: $curlErr");
+            self::enqueueRetry($orderId, $paymentMethod, $paymentRef, $paymentNotes, $recordedByUserId, "cURL error: $curlErr");
             return ['success' => false, 'message' => "ERP connection failed: $curlErr"];
         }
 
@@ -135,12 +136,14 @@ class ERPSync {
                 " . (isset($erpData['invoiceNumber']) ? ", erp_invoice_number = " . $db->getConnection()->quote($erpData['invoiceNumber']) : '') . "
                 WHERE id = $orderId"
             );
+            self::markRetrySucceeded($orderId);
             return ['success' => true, 'message' => 'Already recorded in ERP', 'data' => $erpData];
         }
 
         if ($httpCode !== 200 || empty($data['success'])) {
             $errMsg = $data['message'] ?? "HTTP $httpCode";
             self::markSyncError($orderId, $errMsg);
+            self::enqueueRetry($orderId, $paymentMethod, $paymentRef, $paymentNotes, $recordedByUserId, $errMsg);
             return ['success' => false, 'message' => "ERP sync failed: $errMsg"];
         }
 
@@ -174,7 +177,124 @@ class ERPSync {
             'id'      => $orderId,
         ]);
 
+        self::markRetrySucceeded($orderId);
         return ['success' => true, 'message' => 'Payment synced to ERP', 'data' => $data];
+    }
+
+    /**
+     * Retry backoff ladder in minutes, max attempts = count(). After
+     * the final slot the retry row is marked 'exhausted' and manual
+     * intervention is required.
+     */
+    private const RETRY_MINUTES = [2, 5, 15, 60, 180, 720, 1440];
+
+    /**
+     * Enqueue or update a retry for a failing ERP sync. Persists the
+     * full recordPayment() argument set so the worker can replay it
+     * offline; uses exponential backoff. Safe to call repeatedly with
+     * the same order + new error.
+     */
+    public static function enqueueRetry(
+        int $orderId,
+        string $paymentMethod,
+        string $paymentRef,
+        string $paymentNotes,
+        string $recordedByUserId,
+        string $error
+    ): void {
+        try {
+            $db  = Database::getInstance();
+            $row = $db->fetchOne(
+                "SELECT id, attempts FROM erp_sync_retries WHERE order_id = :id AND status = 'pending' LIMIT 1",
+                ['id' => $orderId]
+            );
+            $attempts = (int) ($row['attempts'] ?? 0) + 1;
+            $slot     = min($attempts - 1, count(self::RETRY_MINUTES) - 1);
+            $delay    = self::RETRY_MINUTES[$slot];
+            $next     = (new DateTime('now'))->modify("+{$delay} minutes")->format('Y-m-d H:i:s');
+            $status   = $attempts >= count(self::RETRY_MINUTES) ? 'exhausted' : 'pending';
+
+            if ($row) {
+                $db->exec(
+                    "UPDATE erp_sync_retries SET
+                        attempts = :a, last_error = :e, last_tried_at = NOW(),
+                        next_retry_at = :n, status = :s
+                     WHERE id = :id",
+                    ['a' => $attempts, 'e' => mb_substr($error, 0, 2000), 'n' => $next, 's' => $status, 'id' => $row['id']]
+                );
+            } else {
+                $db->exec(
+                    "INSERT INTO erp_sync_retries
+                        (order_id, payment_method, payment_ref, payment_notes, recorded_by,
+                         attempts, last_error, last_tried_at, next_retry_at, status)
+                     VALUES (:oid, :m, :r, :n, :by, :a, :e, NOW(), :next, :s)",
+                    [
+                        'oid' => $orderId, 'm' => $paymentMethod, 'r' => $paymentRef,
+                        'n' => $paymentNotes, 'by' => $recordedByUserId,
+                        'a' => 1, 'e' => mb_substr($error, 0, 2000),
+                        'next' => $next, 's' => 'pending',
+                    ]
+                );
+            }
+        } catch (Throwable $_) { /* queue errors must never break the order flow */ }
+    }
+
+    /**
+     * Mark any pending retry for this order as succeeded. Called from
+     * recordPayment() on a successful sync (including the 409 idempotent
+     * case).
+     */
+    public static function markRetrySucceeded(int $orderId): void {
+        try {
+            $db = Database::getInstance();
+            $db->exec(
+                "UPDATE erp_sync_retries SET status = 'succeeded', updated_at = NOW()
+                 WHERE order_id = :id AND status = 'pending'",
+                ['id' => $orderId]
+            );
+        } catch (Throwable $_) { /* best effort */ }
+    }
+
+    /**
+     * Process due retries. Meant to be run by a cron every minute. Picks
+     * rows where status = 'pending' AND next_retry_at <= NOW(), replays
+     * recordPayment(), and updates the queue row based on the outcome.
+     *
+     * @param int $limit Max rows to process per tick (default 20).
+     * @return array {processed:int, succeeded:int, failed:int}
+     */
+    public static function runQueue(int $limit = 20): array {
+        $out = ['processed' => 0, 'succeeded' => 0, 'failed' => 0];
+        try {
+            $db   = Database::getInstance();
+            $rows = $db->fetchAll(
+                "SELECT * FROM erp_sync_retries
+                 WHERE status = 'pending' AND next_retry_at <= NOW()
+                 ORDER BY next_retry_at ASC
+                 LIMIT " . (int) $limit
+            );
+            foreach ($rows as $r) {
+                $out['processed']++;
+                $res = self::recordPayment(
+                    (int) $r['order_id'],
+                    (string) $r['payment_method'],
+                    (string) $r['payment_ref'],
+                    (string) ($r['payment_notes'] ?? ''),
+                    (string) $r['recorded_by']
+                );
+                if (!empty($res['success'])) {
+                    // recordPayment() already calls markRetrySucceeded() on
+                    // success; we just tally here for the runner log.
+                    $out['succeeded']++;
+                } else {
+                    $out['failed']++;
+                }
+            }
+        } catch (Throwable $e) {
+            // Surface to the runner stdout but don't re-throw.
+            error_log('ERPSync::runQueue error: ' . $e->getMessage());
+        }
+        return $out;
     }
 
     /**
