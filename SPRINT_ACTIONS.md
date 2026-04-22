@@ -151,31 +151,31 @@
 
 ## E, Employee Self-Service (126-150)
 
-- [ ] 126. Create `portal/employee-edit.php`, accessible via magic-link token (no login).
-- [ ] 127. DB table `employee_edit_tokens` (employee_id, token, expires_at, used_at).
-- [ ] 128. Token minted on employee creation + resent on demand by admin.
-- [ ] 129. Edit page: name, title, phone, mobile, email, LinkedIn, Instagram, Twitter, website, photo upload.
-- [ ] 130. Photo upload: real MIME check, resize to 512x512, WebP + PNG fallback.
-- [ ] 131. Save instantly (no submit button, debounced).
-- [ ] 132. Preview of updated digital card live below form.
-- [ ] 133. "Save and generate new Apple Wallet pass" button regenerates `.pkpass`.
-- [ ] 134. "Download my card" → PDF (both sides) + save to device.
-- [ ] 135. "Share my card" → native share API → WhatsApp / SMS / Email prefilled.
-- [ ] 136. Bilingual page (detects recipient locale from admin-set preference or prompts on first load).
-- [ ] 137. Token expires 30 days after last use; admin sees expired tokens and can resend.
-- [ ] 138. Abuse guard: edits logged to `audit_log` with IP + UA.
-- [ ] 139. Rate limit: 10 saves per minute per token.
-- [ ] 140. Mobile-first layout; tap targets >= 44px.
-- [ ] 141. Department dropdown populated from company's departments, employee can request change (goes to admin for approval).
-- [ ] 142. Email notify admin on employee edit (opt-out per-company).
-- [ ] 143. Employee page shows analytics-lite: "Your card was scanned 47 times this month."
-- [ ] 144. Social icons: add/remove dynamically, preview order.
-- [ ] 145. Custom field support: if company defined "Extension Number," employee can fill it.
-- [ ] 146. NFC write QR code: employee scans with NFC writer app, programs their own tag.
-- [ ] 147. Print request: employee can request 10 reprints, goes to admin approval queue.
-- [ ] 148. "Leave company" button: sends request to admin, on approval employee is deactivated + card invalidated.
-- [ ] 149. Employee can set preferred contact: "tap my card = open WhatsApp vs dial phone vs save contact."
-- [ ] 150. WhatsApp/email invite template includes a 2-minute GIF showing edit flow.
+- [x] 126. portal/employee-edit.php (token-gated, no-login, bilingual Alpine.js autosave form) + portal/employee-edit-save.php (JSON POST endpoint, CSRF, whitelist+validate fields, AuditLog). → PENDING_SHA
+- [x] 127. Migration 079: employee_edit_tokens table (PK id, employee_id, unique token_hash, created_at, expires_at, last_used_at, revoked_at, created_by, ip audit; 2 indexes). → PENDING_SHA
+- [~] 128. Mint-on-create hook deferred to action 569. Admin can manually mint via EmployeeEditToken::mint() today; auto-mint on INSERT employees + invite dispatch wires in next.
+- [x] 129. Edit form: name_en, position_en, phone, mobile, email, website (6 core fields). Dynamic socials + LinkedIn/Instagram/Twitter deferred to action 570.
+- [~] 130. Photo upload with MIME check + 512×512 resize + WebP fallback deferred to action 571 (needs imagick/ImageMagick on path; currently missing on prod per migration warning).
+- [x] 131. Autosave via Alpine @input.debounce.800ms + saveUrl POST. "Saving..."/"Saved" status pill updates automatically.
+- [x] 132. Live card preview under the badge, rendered with teal→purple BHD gradient and auto-updates bound to data reactivity. Full Fabric.js preview deferred to action 554 (shared with onboarding wizard 085).
+- [~] 133. Apple Wallet regen-on-save button deferred to action 572 (AppleWalletPass.php exists but needs token-gated wrap).
+- [~] 134. "Download my card" PDF button deferred to action 573 (reuse card-pdf.php with token gate).
+- [~] 135. Native Web Share API hook deferred to action 574.
+- [x] 136. Bilingual (html lang/dir driven by currentLocale(), IBM Plex Arabic preloaded when rtl, all strings through t('portal.*') + t('common.*') keys already in place from action 009).
+- [x] 137. Token TTL: 30 days from mint + idle-timeout reset at 30 days since last_used_at (EmployeeEditToken::verify enforces both). Admin view + re-send CTA deferred to action 575.
+- [x] 138. Audit: every successful save records AuditLog::record('employee_self_edit', [employee_id, company_id, fields, ip]).
+- [x] 139. Rate limit: 10 saves per minute per token via RateLimiter::check('emp_edit:'.hash_prefix).
+- [x] 140. Mobile-first layout: max-w-lg centered column, 0.625rem input padding, 44px tap targets across form controls, IBM Plex stack on Arabic.
+- [~] 141. Department dropdown + request-change workflow deferred to action 576.
+- [~] 142. Admin-notify-on-edit email deferred to action 577.
+- [~] 143. Per-employee analytics-lite deferred to action 578 (needs QRTracker::byEmployee wire-up into the edit header).
+- [~] 144. Dynamic social icon add/remove deferred to action 570 (same as 129 social fields).
+- [~] 145. Custom field support deferred to action 579.
+- [~] 146. NFC QR write flow deferred to action 580.
+- [~] 147. Employee reprint request queue deferred to action 581.
+- [~] 148. "Leave company" request flow deferred to action 582.
+- [~] 149. Preferred-contact primary-action setting deferred to action 583.
+- [~] 150. Invite-template walk-through GIF deferred to action 584 (needs content production).
 
 ## F, Template Editor Upgrades (151-180)
 
@@ -644,7 +644,23 @@
 - [ ] 565. 3-field signup UI rewrite (actions 111-114): build company/register-otp.php (3 fields: company name, admin phone, admin email) → POST sends OTP via OtpService → verify screen → instant tenant provisioning on verify → redirect to wizard. Rewrite login.php to become magic-link OTP (remove password field, add phone/email + code flow). Add optional password setup under admin/settings → Security. Preserves password fallback for existing users (grandfather clause).
 - [ ] 566. Dynamic trust-signals logo strip (action 119): homepage + signup page pull N most-recently-active om_companies curated=1 rows, render as a grayscale logo strip with "trusted by :n Omani companies" copy.
 - [ ] 567. reCAPTCHA v3 invisible gate on signup endpoint (action 121): frontend grecaptcha.execute() on submit, backend Siteverify call, threshold 0.5, log scores to audit_log. Fails-open if RECAPTCHA_SECRET not configured.
-- [ ] 568. Slack webhook for new-tenant alerts (action 125): augment Notifier::send('signup') dispatch with POST to Slack webhook URL (from env or config), short JSON "New tenant: {company} | admin: {email} | phone: {phone}". Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
+- [ ] 568. Slack webhook for new-tenant alerts (action 125): augment Notifier::send('signup') dispatch with POST to Slack webhook URL (from env or config), short JSON "New tenant: {company} | admin: {email} | phone: {phone}".
+- [ ] 569. Auto-mint employee edit token on INSERT employees + dispatch invite via WhatsApp (Dardasha) or email (Mailer) based on contact channel. Hook into the existing employee-create flow in admin/employees.php + bulk-claim.php + CSV import.
+- [ ] 570. Dynamic socials on portal/employee-edit.php: add/remove LinkedIn/Instagram/Twitter/TikTok/YouTube fields with per-row icons, stored in employees.socials JSON column (migration needed).
+- [ ] 571. Photo upload on portal/employee-edit.php: drag-drop label + real MIME check via finfo + ImageMagick resize to 512×512, output WebP + PNG fallback. Requires fixing libMagickWand-6 on the VPS (currently missing dep flagged by migration warnings).
+- [ ] 572. Apple Wallet regen-on-save button: wrap AppleWalletPass.php generation behind an employee-token guard, trigger on explicit button click to avoid regenerating on every keystroke.
+- [ ] 573. "Download my card" PDF button: token-gated wrap of card-pdf.php, streams the employee's vcard + QR PDF.
+- [ ] 574. Native Web Share API hook: if navigator.share available, prefill with employee card URL; fallback to WhatsApp/SMS/Email mailto link matrix.
+- [ ] 575. Admin view of edit tokens: admin/employees.php gets an "Edit link" column showing last-used-at + re-send button (re-mints via EmployeeEditToken::mint + dispatches invite template from action 569).
+- [ ] 576. Department dropdown + "request change" flow on portal edit: employee picks a dept, submits as admin-approval-queue row rather than direct write.
+- [ ] 577. Email notify admin on employee self-edit: opt-out setting in company_settings, dispatches to the admin's email summarising changed fields.
+- [ ] 578. Analytics-lite on edit page header: "Your card was scanned :n times this month" pulled from QRTracker::getEmployeeStats($id, 30).
+- [ ] 579. Company-defined custom fields: companies.custom_fields JSON column + matching input rows on the portal edit page.
+- [ ] 580. NFC QR write flow: employee scans with NFC Writer app; generate a tag-write URL that points to the employee card.
+- [ ] 581. Employee reprint request queue: "Request reprint" button on portal, creates a row admins review in /admin/requests.
+- [ ] 582. "Leave company" request: on approve, deactivate employee + invalidate card URL + revoke edit token.
+- [ ] 583. Preferred contact setting: tap behaviour chooser (Save contact / Open WhatsApp / Dial phone).
+- [ ] 584. Invite-template walk-through GIF: 2-minute screencast embed inside the WhatsApp/email invite. Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
 - [ ] 511. index.php: translate `#features` section (6 feature tiles: Design Once, Verified Print Shops, Arabic & English, Team & Departments, Smart QR Codes, Employee Portal). Extend landing.php with feat_* keys.
 - [ ] 512. index.php: translate `#how-it-works` section (3 steps: Create Account, Add Team, Print & Share). Extend with how_* keys.
 - [ ] 513. index.php: translate `#pricing` section (Starter/Professional/Business/Enterprise tiers, feature lists, CTAs). Dedicated lang/{en,ar}/pricing.php.
