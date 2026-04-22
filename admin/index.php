@@ -1482,12 +1482,18 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                                 <div x-show="field.enabled && key !== 'qr_code'" class="space-y-2 mt-2">
                                     <div class="flex gap-2">
                                         <div class="flex-1">
-                                            <label class="text-xs text-gray-500 block mb-1">Size</label>
-                                            <input type="number" 
-                                                   :value="field.fontSize" 
-                                                   @change="updateFieldProperty(key, 'fontSize', parseInt($event.target.value))" 
-                                                   min="8" max="72" 
-                                                   class="w-full px-2 py-1 bg-white border border-gray-200 rounded text-xs text-gray-900">
+                                            <label class="text-xs text-gray-500 block mb-1 flex items-center gap-1">
+                                                <span>Size</span>
+                                                <span class="text-[10px] text-gray-400 font-normal">pt (print)</span>
+                                            </label>
+                                            <div class="relative">
+                                                <input type="number"
+                                                       :value="pxToPt(field.fontSize)"
+                                                       @change="updateFieldProperty(key, 'fontSize', ptToPx(parseFloat($event.target.value) || 0))"
+                                                       min="4" max="96" step="0.5"
+                                                       class="w-full pl-2 pr-7 py-1 bg-white border border-gray-200 rounded text-xs text-gray-900">
+                                                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 pointer-events-none">pt</span>
+                                            </div>
                                         </div>
                                         <div class="w-12">
                                             <label class="text-xs text-gray-500 block mb-1">Color</label>
@@ -1747,6 +1753,22 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                 'Script': ['Dancing Script', 'Pacifico', 'Great Vibes', 'Sacramento', 'Allura', 'Lobster', 'Caveat', 'Kaushan Script'],
                 'Arabic العربية': ['Cairo', 'Tajawal', 'Almarai', 'Noto Kufi Arabic', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Readex Pro', 'El Messiri', 'Changa', 'Reem Kufi', 'Amiri', 'Scheherazade New', 'Mada', 'Lalezar', 'Lemonada', 'Aref Ruqaa', 'Mirza', 'Rakkas', 'Baloo Bhaijaan 2', 'Noto Naskh Arabic', 'Noto Nastaliq Urdu', 'Lateef', 'Harmattan', 'Markazi Text', 'Gulzar'],
                 'Monospace': ['Roboto Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'Space Mono']
+            },
+
+            // Font size is stored in canvas backstore pixels so the PDF/
+            // PNG exports stay print-accurate at any card size. The UI
+            // works in points (pt), the real print unit Illustrator uses:
+            //   1pt = 1/72 inch, so at 300 DPI → 4.1667 px/pt.
+            // These helpers convert between the two; if the card DPI
+            // changes, point values stay stable across sizes.
+            pxToPt: function(px) {
+                var dpi = this.dpi || 300;
+                if (!px && px !== 0) return '';
+                return Math.round((px * 72 / dpi) * 10) / 10;
+            },
+            ptToPx: function(pt) {
+                var dpi = this.dpi || 300;
+                return Math.max(1, Math.round(pt * dpi / 72));
             },
 
             // Font weights for the Weight picker. Values that are integers
