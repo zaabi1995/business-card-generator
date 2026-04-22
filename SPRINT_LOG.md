@@ -65,3 +65,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-22 14:45 | #442 | 0ad196c | Cat S ERP sync alert: markSyncError -> WhatsApp Ali with order/error/URL/health, 30min/order + 5/hr global throttle, file-backed to survive DB outage, AuditLog entry.
 2026-04-22 14:55 | #443 | e045d35 | Cat S ERP retry queue: migration 088, backoff ladder 2/5/15m/1h/3h/12h/24h x7, enqueue on error + markRetrySucceeded on success/409, scripts/erp-retry.php CLI + every-minute cron. Smoke: runner 0 pending 2ms.
 2026-04-22 15:10 | #444 | 30950ee | Cat S bilingual invoice receipt: admin/order-receipt.php switches lang/dir/font on ?lang; EN/AR switcher; shows erp_invoice_number; bilingual BHD legal footer. Queued 811 for BHD-ERP-side bilingual PDF template.
+2026-04-22 15:25 | #445 | 7c6c284 | Cat S VAT 5%: migration 089 + includes/Tax.php (breakdown/persist) + receipt shows subtotal/VAT/total rows with lazy backfill; 3 lang keys parity OK. Migration applied live.

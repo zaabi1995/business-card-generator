@@ -480,7 +480,7 @@
 - [x] 442. ERP sync failure alert: ERPSync::markSyncError now pings Alis WhatsApp (+96871616161) via ERPSync::alertFailure() with order ID + truncated error + order URL + /api/erp-health link. Throttled: 30-min cooldown per order + 5 alerts/hr global cap, file-backed under data/cache/erp-alerts (DB-independent). AuditLog entry erp_sync_failed when available. → 0ad196c
 - [x] 443. ERP sync retry queue: migration 088 (erp_sync_retries, unique pending per order); ERPSync::enqueueRetry+markRetrySucceeded+runQueue with backoff ladder [2,5,15,60,180,720,1440] min × 7 attempts then exhausted; scripts/erp-retry.php CLI runner wired to */1 cron on VPS (/var/log/cardify-erp-retry.log). → e045d35
 - [x] 444. Bilingual ERP-linked invoice receipt: admin/order-receipt.php now switches <html lang/dir> + IBM Plex Sans Arabic on ?lang=en/ar; one-tap EN/AR switcher in print bar; ERP invoice number surfaces next to payment method; bilingual legal-entity footer (BHD Group / CR 1334733 / info@cardify.om). 2 new lang keys parity OK. → 30950ee
-- [ ] 445. Tax breakdown on invoice (5% VAT).
+- [x] 445. 5% Oman VAT breakdown on invoice: migration 089 adds tax_rate/tax_amount/subtotal_excl_vat; includes/Tax.php (OMAN_VAT=0.05, breakdown/persistOnOrder/breakdownFromOrder) extracts from tax-inclusive totals; admin/order-receipt.php shows 3-row breakdown (Subtotal excl + VAT 5% + Total incl) with lazy backfill on first view. 3 new lang keys EN+AR parity OK. → 7c6c284
 - [ ] 446. Company CR / tax ID fields on billing.
 - [ ] 447. Invoice list view in company admin with download.
 - [ ] 448. Payment history view.
@@ -863,3 +863,4 @@
 - [ ] 809. Admin CRUD for landing testimonials: /admin/landing-testimonials page + testimonials_landing table (quote_en/ar, author, role, company_logo, display_order, status=draft|published). Lets Ali collect real client quotes and publish without a redeploy. Backfill the 2 BHD-Group quotes currently hard-coded.
 - [ ] 810. Admin blog-editor UI: add AR tabs for title_ar/slug_ar/excerpt_ar/content_ar/meta_desc_ar so marketing can translate existing posts without direct SQL. Migration 087 is already live.
 - [ ] 811. BHD-ERP side: add Arabic fields + bilingual PDF template to the Cardify-invoice endpoint on erp.bhd.om (separate repo). Cardify receipt is now bilingual; ERP accounting invoice is still English.
+- [ ] 812. Wire Tax::persistOnOrder() into PrintShopIntegration + direct-order creation paths so VAT columns are written at insert time rather than via lazy-backfill on first receipt view.
