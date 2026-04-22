@@ -530,7 +530,7 @@
 - [x] 486. E2E tablet 768px: extended tests/e2e/mobile-responsive.spec.ts with iPad portrait 768×1024; now 9 pages × 3 viewports = 27 combos, same invariants. 27/27 passed prod 31.6s. → e13aeaf
 - [x] 487. E2E Safari iOS latest: playwright.config.ts exposes "Safari iOS" project using devices["iPhone 14"] on webkit engine. Responsive sweep 27/27 passed on webkit vs live prod in 44s. Opt-in: npx playwright test --project="Safari iOS". → 540c174
 - [x] 488. E2E Chrome Android latest: same config adds "Chrome Android" project using devices["Pixel 7"] UA + 412×915. Opt-in: npx playwright test --project="Chrome Android". → 540c174
-- [ ] 489. E2E slow-3G throttled.
+- [x] 489. E2E slow-3G throttled: tests/e2e/slow-3g.spec.ts applies CDP Network.emulateNetworkConditions (400 Kbps up+down, 400ms latency) to /, /api/health, /pricing, /status; asserts 200 + marker within per-page budget and attaches JSON timing for trend analysis. Live prod: / 11.2s, /api/health 0.6s, /pricing 12.6s, /status 10.1s, 4/4 passed 35.0s. → 34c404e
 - [ ] 490. QA NFC write flow with test tag.
 - [ ] 491. QA Apple Wallet pass install on iPhone.
 - [ ] 492. QA Google Wallet pass install on Android.
