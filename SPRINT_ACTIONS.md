@@ -534,7 +534,7 @@
 - [x] 490. QA NFC write flow: tests/e2e/nfc-flow.spec.ts auth-gates /admin/nfc/batch + /admin/nfc/write in EN+AR (4 tests) + mark-programmed GET leak probe (1 test), 5/5 passed prod. Plus ops/qa-nfc-manual.md 5-minute Chrome-Android physical-tag QA procedure with happy/negative paths + regression triage. → b135ae3
 - [x] 491. QA Apple Wallet pass install: tests/e2e/wallet-flow.spec.ts covers /wallet_apple.php endpoint (bad UUID + real UUID, allows 200/302/404/410/503 since certs are pending per memory) + Add-to-Wallet affordance on card page never leaves "null" markup. 3/3 passed. ops/qa-wallet-manual.md has the iPhone install procedure for post-cert rollout. → d297f7b
 - [x] 492. QA Google Wallet pass install: covered in same ops/qa-wallet-manual.md Android Chrome procedure (Save button → Google Wallet app → dedup by objectId). Physical install queued 836 pending wallet certs. → d297f7b
-- [ ] 493. QA keyboard-only navigation.
+- [x] 493. QA keyboard-only navigation: tests/e2e/a11y-keyboard.spec.ts verifies 5 public pages Tab-advance ≥5 distinct stops (no focus trap) + first focused element has visible outline OR box-shadow ring (catches focus:outline-none without replacement). 10/11 passed, 1 skipped pending skip-link (action 837). → a272c83
 - [ ] 494. QA screen reader (VoiceOver + NVDA).
 - [ ] 495. QA localization: no untranslated strings on any page.
 
@@ -888,3 +888,4 @@
 - [ ] 834. Extend mobile-responsive.spec.ts to cover admin surfaces (/admin/dashboard /admin/employees /admin/print etc) at 375px+414px on stage, once a logged-in test user exists. Needs stage (822) + test session.
 - [ ] 835. Walk ops/qa-nfc-manual.md once per month on prod with an NTAG test tag from a fresh stock batch; record result + tag UID + date in ops/qa-nfc-log.md (create on first pass).
 - [ ] 836. When wallet certs land (Apple + Google), walk ops/qa-wallet-manual.md end-to-end on prod with a real iPhone + Android, log result in ops/qa-wallet-log.md.
+- [ ] 837. Add a "Skip to content" link at the top of every page (ui-header.php) that focuses on Tab and jumps to #main-content. Sighted users never see it; keyboard users can bypass the nav. Re-enable the currently-skipped spec in tests/e2e/a11y-keyboard.spec.ts.
