@@ -52,7 +52,7 @@ if (!empty($prefillEmail) && isValidEmail($prefillEmail)) {
 }
 
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
-$pageTitle = 'Create Account';
+$pageTitle = t('register.page_title');
 $htmlClass = 'h-full bg-white';
 $bodyClass = 'h-full';
 $extraHead = <<<HTML
@@ -351,20 +351,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <i class="fa-solid fa-print text-white text-xs"></i>
                         </div>
                         <div>
-                            <p class="text-sm font-semibold text-blue-900">Exclusive for BHD Printing customers</p>
-                            <p class="text-xs text-blue-600">Get BHD-branded templates pre-loaded for you</p>
+                            <p class="text-sm font-semibold text-blue-900"><?= htmlspecialchars(t('register.bhd_badge_title')) ?></p>
+                            <p class="text-xs text-blue-600"><?= htmlspecialchars(t('register.bhd_badge_body')) ?></p>
                         </div>
                     </div>
                     <?php endif; ?>
                     <h2 class="mt-8 text-2xl font-bold tracking-tight text-gray-900">
-                        <?php echo $pendingReferral === 'bhd' ? 'Create your free account' : 'Get started for free'; ?>
+                        <?= htmlspecialchars(t($pendingReferral === 'bhd' ? 'register.headline_bhd' : 'register.headline_default')) ?>
                     </h2>
                     <p class="mt-2 text-sm text-gray-600">
-                        Already registered?
+                        <?= htmlspecialchars(t('register.already_registered')) ?>
                         <a href="<?php echo getBasePath(); ?>login.php" class="font-semibold text-blue-600 hover:text-blue-500">
-                            Sign in
+                            <?= htmlspecialchars(t('register.sign_in_to_account')) ?>
                         </a>
-                        to your account.
                     </p>
                 </div>
 
@@ -383,7 +382,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div>
                         <span><?php echo htmlspecialchars($info); ?></span>
                         <p class="mt-2">
-                            <a href="<?php echo getBasePath(); ?>login.php" class="font-semibold underline">Go to Sign In</a>
+                            <a href="<?php echo getBasePath(); ?>login.php" class="font-semibold underline"><?= htmlspecialchars(t('register.info_go_signin')) ?></a>
                         </p>
                     </div>
                 </div>
@@ -394,8 +393,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="mt-6 flex items-start gap-3 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800">
                     <i class="fa-solid fa-building flex-shrink-0 mt-0.5"></i>
                     <div>
-                        <strong><?php echo htmlspecialchars($existingCompany['name']); ?></strong> already exists with this domain.
-                        <p class="mt-1">You can request to join as an employee.</p>
+                        <strong><?php echo htmlspecialchars($existingCompany['name']); ?></strong>
+                        <?= htmlspecialchars(str_replace(':name', '', t('register.existing_company', ['name' => '']))) ?>
+                        <p class="mt-1"><?= htmlspecialchars(t('register.existing_company_join')) ?></p>
                     </div>
                 </div>
                 <?php endif; ?>
@@ -405,66 +405,65 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <?php echo csrfField(); ?>
                     <div>
                         <label for="admin_email" class="block text-sm font-medium text-gray-900">
-                            Your email address
+                            <?= htmlspecialchars(t('register.your_email')) ?>
                         </label>
                         <div class="mt-2">
-                            <input type="email" name="admin_email" id="admin_email" 
+                            <input type="email" name="admin_email" id="admin_email"
                                    value="<?php echo htmlspecialchars($_POST['admin_email'] ?? $prefillEmail); ?>"
-                                   class="form-input" 
-                                   placeholder="you@company.com" required
+                                   class="form-input"
+                                   placeholder="<?= htmlspecialchars(t('register.placeholder_email')) ?>" required
                                    onchange="checkEmailDomain()" onkeyup="checkEmailDomain()">
                         </div>
                     </div>
 
                     <div>
                         <label for="user_name" class="block text-sm font-medium text-gray-900">
-                            Your name
+                            <?= htmlspecialchars(t('register.your_name')) ?>
                         </label>
                         <div class="mt-2">
-                            <input type="text" name="user_name" id="user_name" 
+                            <input type="text" name="user_name" id="user_name"
                                    value="<?php echo htmlspecialchars($_POST['user_name'] ?? $prefillName); ?>"
-                                   class="form-input" 
-                                   placeholder="John Smith" required>
+                                   class="form-input"
+                                   placeholder="<?= htmlspecialchars(t('register.placeholder_name')) ?>" required>
                         </div>
                     </div>
 
                     <div>
                         <label for="company_name" class="block text-sm font-medium text-gray-900">
-                            Company name
+                            <?= htmlspecialchars(t('register.company_name')) ?>
                         </label>
                         <div class="mt-2">
-                            <input type="text" name="company_name" id="company_name" 
+                            <input type="text" name="company_name" id="company_name"
                                    value="<?php echo htmlspecialchars($_POST['company_name'] ?? ''); ?>"
-                                   class="form-input" 
-                                   placeholder="Acme Corporation" required>
+                                   class="form-input"
+                                   placeholder="<?= htmlspecialchars(t('register.placeholder_company')) ?>" required>
                         </div>
                     </div>
 
                     <div id="slug-wrapper">
                         <label for="company_slug" class="block text-sm font-medium text-gray-900">
-                            Company URL
+                            <?= htmlspecialchars(t('register.company_url')) ?>
                         </label>
                         <div class="mt-2 flex items-center">
-                            <span class="text-sm text-gray-500 mr-1"><?php echo $_SERVER['HTTP_HOST'] ?? 'cardify.om'; ?>/</span>
-                            <input type="text" name="company_slug" id="company_slug" 
+                            <span class="text-sm text-gray-500 mr-1"><?php echo defined('APP_HOST') ? APP_HOST : 'cardify.om'; ?>/</span>
+                            <input type="text" name="company_slug" id="company_slug"
                                    value="<?php echo htmlspecialchars($_POST['company_slug'] ?? $suggestedSlug); ?>"
-                                   class="form-input flex-1" 
-                                   placeholder="<?php echo $suggestedSlug ?: 'your-company'; ?>"
-                                   <?php echo ($isBusinessDomain && $suggestedSlug) ? '' : ''; ?>>
+                                   class="form-input flex-1"
+                                   placeholder="<?php echo htmlspecialchars($suggestedSlug ?: t('register.placeholder_slug')); ?>">
                         </div>
                         <p id="domain-info" class="mt-1.5 text-xs text-gray-500">
                             <?php if ($isBusinessDomain): ?>
-                            <i class="fa-solid fa-building text-green-500 mr-1"></i>Business domain detected. URL auto-set from your domain.
+                            <i class="fa-solid fa-building text-green-500 mr-1"></i><?= htmlspecialchars(t('register.domain_detected')) ?>
                             <?php else: ?>
-                            Choose a unique URL for your company
+                            <?= htmlspecialchars(t('register.slug_hint')) ?>
                             <?php endif; ?>
                         </p>
                     </div>
 
                     <div id="phone-field-wrapper">
                         <label for="phone" class="block text-sm font-medium text-gray-900">
-                            WhatsApp number
-                            <span class="text-gray-400 font-normal" id="phone-required-hint">(required — we use this for onboarding)</span>
+                            <?= htmlspecialchars(t('register.whatsapp_number')) ?>
+                            <span class="text-gray-400 font-normal" id="phone-required-hint"><?= htmlspecialchars(t('register.whatsapp_required_hint')) ?></span>
                         </label>
                         <div class="mt-2">
                             <input type="tel" name="phone" id="phone"
@@ -472,27 +471,27 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                    class="form-input"
                                    autocomplete="tel"
                                    inputmode="tel"
-                                   placeholder="9XXX XXXX"
+                                   placeholder="<?= htmlspecialchars(t('register.phone_placeholder')) ?>"
                                    required>
                             <input type="hidden" name="phone_e164" id="phone_e164" value="">
                             <input type="hidden" name="phone_skipped" id="phone_skipped" value="0">
                         </div>
                         <p class="mt-1.5 text-xs text-gray-500" id="phone-help">
-                            We'll send onboarding tips on WhatsApp — no marketing without your opt-in.
-                            <a href="#" id="phone-skip-link" class="ml-1 font-medium text-gray-700 hover:text-gray-900">Skip for now</a>
+                            <?= htmlspecialchars(t('register.phone_help')) ?>
+                            <a href="#" id="phone-skip-link" class="ml-1 font-medium text-gray-700 hover:text-gray-900"><?= htmlspecialchars(t('register.phone_skip')) ?></a>
                         </p>
                     </div>
 
                     <div>
                         <label for="password" class="block text-sm font-medium text-gray-900">
-                            Password
+                            <?= htmlspecialchars(t('register.password')) ?>
                         </label>
                         <div class="mt-2">
-                            <input type="password" name="password" id="password" 
-                                   class="form-input" 
-                                   placeholder="••••••••" required minlength="8">
+                            <input type="password" name="password" id="password"
+                                   class="form-input"
+                                   placeholder="<?= htmlspecialchars(t('register.placeholder_password')) ?>" required minlength="8">
                         </div>
-                        <p class="mt-1.5 text-xs text-gray-500">Minimum 8 characters</p>
+                        <p class="mt-1.5 text-xs text-gray-500"><?= htmlspecialchars(t('register.password_hint')) ?></p>
                     </div>
 
                     <div class="flex items-start gap-3">
@@ -501,16 +500,16 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600">
                         </div>
                         <label for="terms" class="text-sm text-gray-600">
-                            I accept the
-                            <a href="<?php echo getBasePath(); ?>terms.php" target="_blank" class="font-semibold text-blue-600 hover:text-blue-500">Terms and Conditions</a>
-                            and
-                            <a href="<?php echo getBasePath(); ?>privacy.php" target="_blank" class="font-semibold text-blue-600 hover:text-blue-500">Privacy Policy</a>
+                            <?= htmlspecialchars(t('register.accept_terms')) ?>
+                            <a href="<?php echo getBasePath(); ?>terms.php" target="_blank" class="font-semibold text-blue-600 hover:text-blue-500"><?= htmlspecialchars(t('register.terms')) ?></a>
+                            <?= htmlspecialchars(t('register.and')) ?>
+                            <a href="<?php echo getBasePath(); ?>privacy.php" target="_blank" class="font-semibold text-blue-600 hover:text-blue-500"><?= htmlspecialchars(t('register.privacy')) ?></a>
                         </label>
                     </div>
 
                     <div>
                         <button type="submit" class="flex w-full justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">
-                            Create account
+                            <?= htmlspecialchars(t('register.submit')) ?>
                             <i class="fa-solid fa-arrow-right ml-2"></i>
                         </button>
                     </div>
@@ -523,7 +522,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <div class="w-full border-t border-gray-200"></div>
                         </div>
                         <div class="relative flex justify-center text-sm font-medium">
-                            <span class="bg-white px-6 text-gray-500">What you'll get</span>
+                            <span class="bg-white px-6 text-gray-500"><?= htmlspecialchars(t('register.what_you_get')) ?></span>
                         </div>
                     </div>
 
@@ -531,19 +530,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <ul class="mt-6 space-y-3 text-sm text-gray-600">
                         <li class="flex items-center gap-3">
                             <i class="fa-solid fa-circle-check text-green-500"></i>
-                            <span>Unlimited digital business cards</span>
+                            <span><?= htmlspecialchars(t('register.feat_unlimited')) ?></span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fa-solid fa-circle-check text-green-500"></i>
-                            <span>Custom branding & templates</span>
+                            <span><?= htmlspecialchars(t('register.feat_branding')) ?></span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fa-solid fa-circle-check text-green-500"></i>
-                            <span>Team management dashboard</span>
+                            <span><?= htmlspecialchars(t('register.feat_team')) ?></span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fa-solid fa-circle-check text-green-500"></i>
-                            <span>Free forever, no credit card required</span>
+                            <span><?= htmlspecialchars(t('register.feat_free')) ?></span>
                         </li>
                     </ul>
                 </div>
@@ -552,7 +551,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <p class="mt-10 text-center text-sm text-gray-500">
                     <a href="<?php echo getBasePath(); ?>" class="font-medium text-gray-700 hover:text-gray-900">
                         <i class="fa-solid fa-arrow-left mr-1"></i>
-                        Back to homepage
+                        <?= htmlspecialchars(t('register.back_home')) ?>
                     </a>
                 </p>
             </div>
@@ -570,15 +569,15 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="absolute inset-0 flex flex-col justify-end p-12 text-white">
                 <div class="max-w-lg">
                     <blockquote class="text-xl font-medium leading-relaxed">
-                        "Cardify transformed how we manage business cards across our organization. Setup took minutes and our team loves it."
+                        &ldquo;<?= htmlspecialchars(t('register.testimonial_quote')) ?>&rdquo;
                     </blockquote>
                     <div class="mt-6 flex items-center gap-4">
-                        <img class="h-12 w-12 rounded-full object-cover ring-2 ring-white/30" 
-                             src="<?php echo assetUrl('images/users/bonnie-green.png'); ?>" 
+                        <img class="h-12 w-12 rounded-full object-cover ring-2 ring-white/30"
+                             src="<?php echo assetUrl('images/users/bonnie-green.png'); ?>"
                              alt="">
                         <div>
-                            <p class="font-semibold">Sarah Johnson</p>
-                            <p class="text-sm text-blue-200">Head of Marketing, TechCorp</p>
+                            <p class="font-semibold"><?= htmlspecialchars(t('register.testimonial_author')) ?></p>
+                            <p class="text-sm text-blue-200"><?= htmlspecialchars(t('register.testimonial_role')) ?></p>
                         </div>
                     </div>
                 </div>
