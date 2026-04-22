@@ -542,6 +542,66 @@ class CardEditor {
         };
     }
 
+    setBackgroundLocked(locked) {
+        const img = this.backgroundImage;
+        if (!img || !this.canvas) return;
+        img.set({
+            selectable: !locked,
+            evented: !locked,
+            hasControls: !locked,
+            hasBorders: !locked,
+            lockMovementX: !!locked,
+            lockMovementY: !!locked,
+            lockScalingX: !!locked,
+            lockScalingY: !!locked,
+            lockRotation: !!locked,
+            hoverCursor: locked ? 'default' : 'move'
+        });
+        if (locked && this.canvas.getActiveObject() === img) {
+            this.canvas.discardActiveObject();
+        }
+        img.setCoords();
+        this.canvas.requestRenderAll();
+    }
+
+    centerBackground() {
+        const img = this.backgroundImage;
+        if (!img || !this.canvas) return;
+        const w = img.getScaledWidth ? img.getScaledWidth() : img.width * (img.scaleX || 1);
+        const h = img.getScaledHeight ? img.getScaledHeight() : img.height * (img.scaleY || 1);
+        img.set({
+            left: Math.round((this.canvas.width - w) / 2),
+            top: Math.round((this.canvas.height - h) / 2)
+        });
+        img.setCoords();
+        this.canvas.sendObjectToBack(img);
+        this.canvas.requestRenderAll();
+        if (this.options.onBackgroundTransform) {
+            this.options.onBackgroundTransform(this.getBackgroundTransform());
+        }
+    }
+
+    nudgeSelected(dx, dy) {
+        if (!this.canvas) return;
+        const active = this.canvas.getActiveObjects();
+        if (!active || active.length === 0) return;
+        active.forEach((obj) => {
+            obj.set({
+                left: (obj.left || 0) + dx,
+                top: (obj.top || 0) + dy
+            });
+            obj.setCoords();
+            if (!obj.isBackground) this._constrainToBounds(obj);
+            if (obj.fieldKey && this.options.onFieldMove) {
+                this.options.onFieldMove(obj.fieldKey, { x: obj.left, y: obj.top });
+            }
+            if (obj.isBackground && this.options.onBackgroundTransform) {
+                this.options.onBackgroundTransform(this.getBackgroundTransform());
+            }
+        });
+        this.canvas.requestRenderAll();
+    }
+
     resetBackgroundTransform() {
         const img = this.backgroundImage;
         if (!img || !this.canvas) return;

@@ -1227,13 +1227,28 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                                 <i class="fa-solid fa-exclamation-circle text-amber-500 mr-1"></i>No image
                             </span>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button type="button"
+                                    x-show="selectedTemplate && selectedTemplate.backgroundImage"
+                                    @click="toggleBackgroundLock()"
+                                    class="px-2.5 py-1.5 text-xs rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                                    :title="backgroundLocked ? 'Unlock to drag/resize the background' : 'Lock so clicks go to text, not the background'">
+                                <i class="fa-solid" :class="backgroundLocked ? 'fa-lock' : 'fa-lock-open'"></i>
+                                <span class="ml-1" x-text="backgroundLocked ? 'Locked' : 'Unlocked'"></span>
+                            </button>
+                            <button type="button"
+                                    x-show="selectedTemplate && selectedTemplate.backgroundImage"
+                                    @click="centerBackground()"
+                                    class="px-2.5 py-1.5 text-xs rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                                    title="Center the background on the card">
+                                <i class="fa-solid fa-crosshairs"></i>
+                            </button>
                             <button type="button"
                                     x-show="selectedTemplate && selectedTemplate.backgroundImage"
                                     @click="resetBackgroundFit()"
-                                    class="px-3 py-1.5 text-sm rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                                    class="px-2.5 py-1.5 text-xs rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
                                     title="Snap the background back to fill the card">
-                                <i class="fa-solid fa-expand mr-1"></i>Fit to card
+                                <i class="fa-solid fa-expand mr-1"></i>Fit
                             </button>
                             <label class="px-3 py-1.5 text-sm rounded-lg font-medium cursor-pointer transition-colors"
                                    :class="activeTab === 'front' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'">
@@ -1752,6 +1767,11 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                     }
                     return null;
                 });
+
+                // Arrow-key nudge for whatever is selected on the canvas.
+                document.addEventListener('keydown', function(e) {
+                    self.handleCanvasKeydown(e);
+                });
             },
             
             initCanvas: function() {
@@ -1967,6 +1987,41 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                 if (this.cardEditor && typeof this.cardEditor.resetBackgroundTransform === 'function') {
                     this.cardEditor.resetBackgroundTransform();
                 }
+            },
+
+            centerBackground: function() {
+                if (this.cardEditor && typeof this.cardEditor.centerBackground === 'function') {
+                    this.cardEditor.centerBackground();
+                }
+            },
+
+            backgroundLocked: true,
+            toggleBackgroundLock: function() {
+                this.backgroundLocked = !this.backgroundLocked;
+                if (this.cardEditor && typeof this.cardEditor.setBackgroundLocked === 'function') {
+                    this.cardEditor.setBackgroundLocked(this.backgroundLocked);
+                }
+                this.showStatus(this.backgroundLocked ? 'Background locked, click fields to edit' : 'Background unlocked, drag to reposition', 'success');
+            },
+
+            // Arrow-key nudge for whatever is selected on the canvas.
+            // Shift = 10px, plain arrow = 1px. Ignored while the user is
+            // typing in an input so the editor stays keyboard-friendly.
+            handleCanvasKeydown: function(event) {
+                var tag = (event.target && event.target.tagName) || '';
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || event.target.isContentEditable) return;
+                if (!this.cardEditor || !this.cardEditor.canvas) return;
+                var step = event.shiftKey ? 10 : 1;
+                var dx = 0, dy = 0;
+                switch (event.key) {
+                    case 'ArrowLeft': dx = -step; break;
+                    case 'ArrowRight': dx = step; break;
+                    case 'ArrowUp': dy = -step; break;
+                    case 'ArrowDown': dy = step; break;
+                    default: return;
+                }
+                event.preventDefault();
+                this.cardEditor.nudgeSelected(dx, dy);
             },
 
             getTemplateSettings: function() {
@@ -2354,6 +2409,12 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                         || null;
                     chain = chain.then(function() {
                         return self.cardEditor.loadBackground(bgUrl, savedTransform);
+                    }).then(function() {
+                        // Default to locked so clicks go straight to the
+                        // text fields; user opts-in via the Lock toggle.
+                        if (typeof self.cardEditor.setBackgroundLocked === 'function') {
+                            self.cardEditor.setBackgroundLocked(self.backgroundLocked);
+                        }
                     }).catch(function(e) {
                         console.warn('Background load error:', e);
                     });
@@ -2517,7 +2578,13 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
             
             getBackgroundUrl: function(template) {
                 if (!template || !template.backgroundImage) return '';
-                var path = template.backgroundImage.replace(/^\//, '');
+                var raw = String(template.backgroundImage);
+                // Guard against stray HTML/expressions landing in the field
+                // (a render-timing race was causing <img src="<div class=...">
+                // 404s on /ohb/admin/%3Cdiv%20class=).
+                if (raw.indexOf('<') !== -1 || raw.indexOf('>') !== -1) return '';
+                if (!/^[\/A-Za-z0-9][\w\-\.\/:]*$/.test(raw.replace(/^\//, ''))) return '';
+                var path = raw.replace(/^\//, '');
                 return this.basePath + path;
             },
             
@@ -2904,7 +2971,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                 console.log('Active objects:', activeObjects.length);
                 
                 if (activeObjects.length === 0) {
-                    this.showStatus('Select elements to align', 'error');
+                    this.showStatus('Click a field on the card first, then press the align button', 'error');
                     return;
                 }
                 
