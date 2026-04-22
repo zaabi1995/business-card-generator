@@ -463,7 +463,7 @@
 - [x] 428. Breadcrumb schema: Seo::breadcrumbs([[label,url], ...]) emits ld+json BreadcrumbList. → 5e89ece
 - [x] 429. FAQ schema: Seo::faqPage([[q,a], ...]) emits FAQPage. Rolled onto /faq pending its bilingual rebuild (action 437). → 5e89ece
 - [x] 430. robots.txt audit: added /portal /paymob-test /test /cron to Disallow; kept AI crawlers allowed for Logo Library attribution. → 5e89ece
-- [ ] 431. 301s for legacy URLs.
+- [x] 431. 301s for legacy URLs: nginx block handles 23 static aliases (/home /index.html /sign-in /signin /log-in /sign-up /signup.html /register.html /contact-us /about-us /faqs /faq.html /pricing.html /terms.html /privacy.html /business-cards /digital-cards /demo /try /free-trial /logo-library /logos-library /home.html); includes/Redirects.php PHP fallback with DB-backed url_redirects table for dynamic renamed-slug aliases (migration 086). → 32d2d84
 - [ ] 432. Core Web Vitals pass on landing.
 - [ ] 433. Landing page conversion copy pass.
 - [ ] 434. Testimonials section on landing (real quotes).
