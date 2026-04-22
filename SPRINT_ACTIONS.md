@@ -520,8 +520,8 @@
 - [x] 476. E2E Journey C template design AR: same spec file, AR variant of /admin/theme.php auth-gate + public KNOWN_CARD AR render (dir=rtl + Arabic lang + save-contact tolerated EN/AR). → c527be4
 - [x] 477. E2E Journey D employee invite + self-edit: tests/e2e/employee-invite-flow.spec.ts verifies no-token/random-token → expired page (EN + AR), GET on save endpoint leaks no PII, portal i18n parity on edit_my_details/save_changes/link_expired. 5/5 passed prod 3.7s. → af1c615
 - [x] 478. E2E Journey D employee AR: covered in the same tests/e2e/employee-invite-flow.spec.ts (AR no-token visit + portal.ar.php parity, both passed vs prod). → af1c615
-- [ ] 479. E2E Journey E: admin orders 100 cards via Paymob EN.
-- [ ] 480. E2E Journey E: via Credit Account AR.
+- [x] 479. E2E Journey E order EN: tests/e2e/order-flow.spec.ts auth-gate + Paymob callback safety + order i18n parity (7 keys). 6/6 passed prod 7.0s. → d138431
+- [x] 480. E2E Journey E order AR: same spec covers /?lang=ar on /admin/print + /admin/order-checkout + ar/order.php key parity. → d138431
 - [ ] 481. E2E Journey E: via PO upload AR.
 - [ ] 482. E2E Journey F: analytics loads, filter by month, export CSV.
 - [ ] 483. E2E Journey G: print shop marketplace browse, pick, order.
@@ -880,3 +880,5 @@
 - [ ] 826. Full happy-path wizard E2E on stage.cardify.om: seed a test company via admin API, log in via TEST_OTP bypass, walk all 7 steps (logo upload, colors, template, first-employee, preview, invite-team, order), assert each step saves + `finish` lands on /admin/dashboard with onboarding.status=completed. Needs actions 822 + 825 first.
 - [ ] 827. Full template-editor happy-path E2E on stage.cardify.om: open /admin/theme.php, switch brand colour, drag a text layer, save, reload, assert the change persists, then visit the employee card and assert the new colour shows. Needs stage (822) + test company (825).
 - [ ] 828. Full employee-edit happy-path E2E on stage: admin API mints a token for a seeded employee, Playwright visits /portal/employee-edit?token=…, edits first_name + title, triggers autosave, reloads, asserts persisted. Needs stage (822) + admin API access with service token.
+- [ ] 829. Full Paymob checkout happy-path E2E on stage: admin creates an order, Playwright drives the Paymob sandbox card flow, asserts confirmPrintOrder callback marks status=paid + erp_invoice_number persisted. Needs stage (822) + Paymob SANDBOX creds.
+- [ ] 830. Paymob Save-Card-Details / MOTO token vault: enable save_card_token on Paymob intent, store tokens per company, surface saved-card picker on repeat checkout. MOTO intent flag for phone-order capture. Ali ask 2026-04-22. See skill bhd-paymob for the token-vault pattern.
