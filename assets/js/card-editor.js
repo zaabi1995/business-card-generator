@@ -475,22 +475,15 @@ class CardEditor {
                 throw new Error('Fabric Image class not found');
             }
 
-            // SVGs need Fabric's native SVG loader; Image.fromURL would
-            // rasterise them against the browser's naturalWidth/Height
-            // (300x150 fallback for mm-sized SVGs), producing a zoomed-in
-            // preview. If SVG parsing fails, fall back to raster load so
-            // the user still sees their upload.
+            // SVGs: browser-rasterise at canvas size so gradients, clipPaths,
+            // patterns and filters all render faithfully (Fabric's own SVG
+            // parser drops a lot of those). Raster formats take the standard
+            // Image.fromURL path.
             const isSvg = /\.svg(\?|$)/i.test(imageUrl);
-            let img = null;
-            if (isSvg && typeof this.fabricRef.loadSVGFromURL === 'function') {
-                try {
-                    img = await this._loadSvgAsImage(imageUrl);
-                } catch (svgErr) {
-                    console.warn('SVG native load failed, falling back to raster:', svgErr);
-                    img = null;
-                }
-            }
-            if (!img) {
+            let img;
+            if (isSvg) {
+                img = await this._loadSvgAsRaster(imageUrl, ImageClass);
+            } else {
                 img = await ImageClass.fromURL(imageUrl, {
                     crossOrigin: 'anonymous'
                 });
@@ -569,56 +562,50 @@ class CardEditor {
         };
     }
 
-    async _loadSvgAsImage(imageUrl) {
-        const fabricRef = this.fabricRef;
+    async _loadSvgAsRaster(imageUrl, ImageClass) {
+        // Step 1: load the raw SVG as an HTMLImageElement. We'll read its
+        // intrinsic aspect from viewBox or explicit dimensions.
+        const imgEl = await new Promise((resolve, reject) => {
+            const el = new Image();
+            el.crossOrigin = 'anonymous';
+            el.onload = () => resolve(el);
+            el.onerror = (e) => reject(new Error('SVG failed to load: ' + imageUrl));
+            el.src = imageUrl;
+        });
 
-        // Fabric 7.x: loadSVGFromURL returns a Promise that resolves to
-        // { objects, options }. Some versions resolve to the array directly
-        // - normalize both shapes.
-        const raw = await fabricRef.loadSVGFromURL(imageUrl);
-        let objects, options;
-        if (Array.isArray(raw)) {
-            objects = raw;
-            options = {};
-        } else if (raw && typeof raw === 'object') {
-            objects = Array.isArray(raw.objects) ? raw.objects : [];
-            options = raw.options || {};
-            // Some builds put viewBox dims at the top level.
-            if (!options.width && typeof raw.width === 'number') options.width = raw.width;
-            if (!options.height && typeof raw.height === 'number') options.height = raw.height;
-        } else {
-            objects = [];
-            options = {};
-        }
+        // Step 2: pick a target size that matches the canvas backstore at
+        // native resolution. Browsers rasterise SVG smoothly at any size.
+        // If the SVG's intrinsic aspect differs from the canvas, letterbox
+        // it (fit) rather than distort - the user can unlock and reposition
+        // afterwards.
+        const cw = this.canvas.width;
+        const ch = this.canvas.height;
+        const iw = imgEl.naturalWidth || imgEl.width || cw;
+        const ih = imgEl.naturalHeight || imgEl.height || ch;
+        const fit = Math.min(cw / iw, ch / ih);
+        const drawW = Math.max(1, Math.round(iw * fit));
+        const drawH = Math.max(1, Math.round(ih * fit));
 
-        // Filter out nulls/undefined (some SVG elements can fail to parse).
-        objects = objects.filter(function(o) { return !!o; });
+        // Step 3: draw to an offscreen canvas at native canvas size with
+        // the SVG centred. Fabric gets a pre-sized bitmap with no further
+        // scaling needed, which also means no zoom/crop surprises.
+        const offscreen = document.createElement('canvas');
+        offscreen.width = cw;
+        offscreen.height = ch;
+        const ctx = offscreen.getContext('2d');
+        ctx.clearRect(0, 0, cw, ch);
+        ctx.drawImage(
+            imgEl,
+            Math.round((cw - drawW) / 2),
+            Math.round((ch - drawH) / 2),
+            drawW,
+            drawH
+        );
 
-        if (objects.length === 0) {
-            throw new Error('SVG parsed to 0 fabric objects (empty or unsupported SVG)');
-        }
-
-        const GroupClass = fabricRef.Group || (typeof fabric !== 'undefined' ? fabric.Group : null);
-        const util = fabricRef.util || (typeof fabric !== 'undefined' ? fabric.util : null);
-
-        let group;
-        if (util && typeof util.groupSVGElements === 'function') {
-            group = util.groupSVGElements(objects, options);
-        } else if (GroupClass) {
-            group = new GroupClass(objects, {});
-        } else {
-            throw new Error('Fabric Group class not available');
-        }
-
-        // Stash the viewBox dims so loadBackground can scale against the
-        // SVG's true intrinsic size, not Fabric's post-grouping bbox.
-        if (typeof options.width === 'number' && options.width > 0) {
-            group._svgWidth = options.width;
-        }
-        if (typeof options.height === 'number' && options.height > 0) {
-            group._svgHeight = options.height;
-        }
-        return group;
+        // Step 4: construct a Fabric Image directly from the canvas
+        // element. Fabric's Image constructor accepts any drawable source.
+        const img = new ImageClass(offscreen);
+        return img;
     }
 
     setBackgroundLocked(locked) {
