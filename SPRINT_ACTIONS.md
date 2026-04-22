@@ -102,7 +102,7 @@
 ## C, Onboarding Wizard (081-110)
 
 - [x] 081. Migration 077 ships company_onboarding table (PK company_id, step TINYINT, data JSON, started/updated/completed/skipped/resume_nudge timestamps, 2 indexes). Backfill marks any company with >=1 generated_cards row as completed, preventing the resume banner from showing for existing active tenants (3 companies backfilled on prod). utf8mb4_unicode_ci. → 3c190d6
-- [x] 082. admin/onboarding.php wrapper page live; 7-step Alpine.js state machine, adminHeader+admin-layout chrome. Wrapped in the existing admin auth flow via requireAdmin(). First-login redirect wired in admin/index.php via Onboarding::shouldShowWizard() guard (completed_at or 24h-skip suppresses). Registered in company_admin.php pageMap for /{slug}/admin/onboarding. → PENDING_SHA
+- [x] 082. admin/onboarding.php wrapper page live; 7-step Alpine.js state machine, adminHeader+admin-layout chrome. Wrapped in the existing admin auth flow via requireAdmin(). First-login redirect wired in admin/index.php via Onboarding::shouldShowWizard() guard (completed_at or 24h-skip suppresses). Registered in company_admin.php pageMap for /{slug}/admin/onboarding. → bb23a9d
 - [x] 083. Step 1 (logo): drag-drop label + file-input (PNG/SVG/JPEG), live preview thumbnail after selection, change-logo state. Auto-dominant-color extraction via LogoLibrary::dominantColor() deferred to action 553 (needs server-side roundtrip to run after logo upload persists).
 - [x] 084. Step 2 (colors): primary + accent paired inputs (HTML5 `<input type="color">` swatch + hex text field), defaults to BHD teal + purple. Live-updates the template gradient preview on step 3/5.
 - [x] 085. Step 3 (template picker): 3 presets (Minimal / Bold / Classic) rendered as gradient cards using the step-2 brand colors, click-to-select with blue ring highlight. Real Fabric.js live-preview with actual employee data deferred to action 554.
@@ -111,7 +111,7 @@
 - [x] 088. Step 6 (invite team): large paste-list textarea with Arabic-aware placeholder + CSV file input with headers hint. Server-side CSV parse + import pipe deferred to action 555.
 - [x] 089. Step 7 (order cards): per-person qty input (default 100) + OMR 0.120 static per-card rate + live OMR estimate. Actual price-per-card lookup from Plans + checkout handoff deferred to action 556.
 - [x] 090. Skip/resume support: includes/Onboarding.php (get/isComplete/shouldShowWizard/saveStep/markSkipped/markCompleted), admin/onboarding-save.php POST endpoint (JSON body {step, payload}, CSRF via X-CSRF-Token header, skip=1 param, 2MB payload cap to stay under max_allowed_packet). Resume banner on dashboard already backed by step+completed_at columns.
-→ PENDING_SHA
+→ bb23a9d
 - [ ] 091. Progress indicator (X of 7) with locale-aware labels.
 - [ ] 092. Wizard lives inside existing admin layout; full width, no sidebar on this page.
 - [ ] 093. Auto-seed demo tenant: on signup, create 5 sample employees labeled "Demo, replace me" so admin plays with data.
