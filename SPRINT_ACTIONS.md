@@ -547,7 +547,7 @@
 - [x] 500. Update memory cardify.md: appended v2.0 Sprint section to /Users/ali/.claude/projects/-Users-ali-claude/memory/cardify.md — 110 iters 286 closed, new root docs (CLAUDE.md/RELEASE_NOTES/runbook), migrations 077-094 key additions (saved_cards/payment_retries/erp_sync_retries/card_credit_ledger/url_redirects/vat_on_orders/company_billing_fields/status_incidents), 14 new includes, new public + admin URLs, ops cron schedule, 16 Playwright specs, 59 queued follow-ups 781-839, em-dash ban. → (memory-only)
 - [x] 501. Deploy to prod: v2.0 sprint live at https://cardify.om (HEAD=5bd251d). Deploy script auto-rolled chown/chmod + PHP-FPM reload + 5-URL smoke all green. → 5bd251d
 - [x] 502. Smoke test post-deploy: /api/health 200 status=up all checks (app/db/storage) green 0ms; Playwright cardify-core.spec.ts 54 passed across chromium + Safari iOS + Chrome Android 40.8s. → 5bd251d
-- [ ] 503. Post tweet / LinkedIn.
+- [~] 503. Post tweet / LinkedIn: BLOCKED on Ali approval per standing "show drafts first" rule. ops/launch-posts.md has 3 drafts (Twitter 261-char + LinkedIn long-form + Instagram carousel hint) + posting checklist gating every channel on explicit OK. Queued 840. → a9f72e9
 - [ ] 504. Email existing customers about upgrade.
 - [ ] 505. WhatsApp existing customers.
 - [ ] 506. Monitor Sentry for 24h post-release.
@@ -891,3 +891,4 @@
 - [ ] 837. Add a "Skip to content" link at the top of every page (ui-header.php) that focuses on Tab and jumps to #main-content. Sighted users never see it; keyboard users can bypass the nav. Re-enable the currently-skipped spec in tests/e2e/a11y-keyboard.spec.ts.
 - [ ] 838. Monthly: walk ops/qa-screen-reader-manual.md once on prod with VoiceOver (macOS) + NVDA (Windows), record in ops/qa-screen-reader-log.md.
 - [ ] 839. Route /ar/ landing so /ar returns the same homepage with ?lang=ar (currently 404s because no nginx rewrite). Once live, re-enable the skipped case in tests/e2e/i18n-leak.spec.ts.
+- [ ] 840. Ali reviews ops/launch-posts.md. On approval: post the Twitter short via @cardify_om, run post-linkedin skill on the LinkedIn body, run instagram-graphics skill for the 4-slide carousel then post manually to @cardify.om. Flip 503 to [x] once each channel is confirmed live.
