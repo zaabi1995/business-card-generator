@@ -84,7 +84,7 @@ probe() {
   status=$(awk 'toupper($1) ~ /^HTTP/ {print $2}' "$hdr" | tail -n1)
   rm -f "$hdr"
   [ "$status" = "$want_status" ] || { echo "status=$status"; return 1; }
-  printf '%s' "$body" | grep -q -- "$need" || { echo "no marker $need"; return 1; }
+  printf '%s' "$body" | grep -qF -- "$need" || { echo "no marker $need (body ${#body}b)"; return 1; }
   return 0
 }
 for entry in "${smoke_urls[@]}"; do
