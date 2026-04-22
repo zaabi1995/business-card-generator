@@ -168,17 +168,26 @@ try {
     // Set base path for admin pages to use company-specific URLs
     define('COMPANY_ADMIN_BASE', getBasePath() . $companySlug . '/admin/');
     
-    // Include the admin page
+    // Include the admin page. Buffered so that if a Throwable fires
+    // mid-render we discard the partially-emitted markup instead of
+    // splicing the error <div> into the middle of a script/style/attr
+    // (previously produced <script src="<div class=" 404s).
     $adminFile = __DIR__ . '/' . $pageMap[$page];
     if (file_exists($adminFile)) {
-        include $adminFile;
+        ob_start();
+        try {
+            include $adminFile;
+            echo ob_get_clean();
+        } catch (Throwable $e) {
+            ob_end_clean();
+            throw $e;
+        }
     } else {
         http_response_code(404);
         die('Admin file not found: ' . $pageMap[$page]);
     }
-    
+
 } catch (Throwable $e) {
-    // Only set response code if headers haven't been sent yet
     if (!headers_sent()) {
         http_response_code(500);
     }

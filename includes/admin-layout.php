@@ -655,13 +655,14 @@ function adminFooter() {
     </script>
 
     <!-- Shared toast + form helpers + service-worker + web-vitals beacon (Cardify v2.0 Cat J/M/N) -->
-    <script src="<?php echo $basePath; ?>assets/js/cardify-toast.js" defer></script>
-    <script src="<?php echo $basePath; ?>assets/js/cardify-forms.js" defer></script>
-    <script src="<?php echo $basePath; ?>assets/js/cardify-webvitals.js" defer></script>
+    <?php $__base = function_exists('getBasePath') ? getBasePath() : '/'; ?>
+    <script src="<?php echo $__base; ?>assets/js/cardify-toast.js" defer></script>
+    <script src="<?php echo $__base; ?>assets/js/cardify-forms.js" defer></script>
+    <script src="<?php echo $__base; ?>assets/js/cardify-webvitals.js" defer></script>
     <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('<?php echo $basePath; ?>sw.js', { scope: '<?php echo $basePath; ?>' })
+            navigator.serviceWorker.register('<?php echo $__base; ?>sw.js', { scope: '<?php echo $__base; ?>' })
                 .catch(() => { /* non-fatal */ });
         });
     }
