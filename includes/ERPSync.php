@@ -179,6 +179,7 @@ class ERPSync {
 
     /**
      * Mark an order's ERP sync as failed with an error message.
+     * Also fires a WhatsApp alert to Ali (throttled, see alertFailure()).
      */
     private static function markSyncError(int $orderId, string $error): void {
         $db = Database::getInstance();
@@ -189,5 +190,64 @@ class ERPSync {
             erp_last_sync   = NOW()
             WHERE id = :id
         ")->execute(['err' => $error, 'id' => $orderId]);
+
+        try { self::alertFailure($orderId, $error); } catch (Throwable $_) { /* alerts are never allowed to crash the order flow */ }
+    }
+
+    /**
+     * WhatsApp the failure to Ali (ERP owner), throttled (Cat S action
+     * 442). At most one alert per order per 30 minutes, and at most 5
+     * alerts globally per hour, so a broken token cannot flood.
+     *
+     * Storage is file-backed under /data/cache/erp-alerts/ to stay
+     * independent of MySQL health (the exact outage we are alerting on
+     * could be DB-side). File is ignored if the dir is not writable.
+     */
+    private static function alertFailure(int $orderId, string $error): void {
+        // Recipient: Ali personal (+96871616161, per memory feedback_fencing_otp_tests_ali_only
+        // — same rule applies to error alerts; only Ali gets pinged until we wire
+        // opt-in per-admin notifications).
+        $phone = '96871616161';
+
+        $cacheDir = (defined('BASE_DIR') ? BASE_DIR : dirname(__DIR__)) . '/data/cache/erp-alerts';
+        if (!is_dir($cacheDir)) @mkdir($cacheDir, 0775, true);
+
+        $perOrderKey  = $cacheDir . '/order-' . $orderId . '.ts';
+        $globalLogKey = $cacheDir . '/global.log';
+        $now          = time();
+
+        // Per-order throttle: 30 min between alerts for the same order.
+        if (is_file($perOrderKey) && ($now - (int) @file_get_contents($perOrderKey)) < 1800) return;
+
+        // Global hourly cap: 5 alerts in the last 3600 seconds.
+        $recent = [];
+        if (is_file($globalLogKey)) {
+            foreach (array_filter(explode("\n", (string) @file_get_contents($globalLogKey))) as $line) {
+                $t = (int) $line;
+                if ($now - $t < 3600) $recent[] = $t;
+            }
+            if (count($recent) >= 5) return;
+        }
+        $recent[] = $now;
+        @file_put_contents($globalLogKey, implode("\n", $recent));
+        @file_put_contents($perOrderKey, (string) $now);
+
+        $host    = defined('APP_HOST') ? APP_HOST : 'cardify.om';
+        $short   = mb_substr($error, 0, 280);
+        $msg     = "*Cardify ERP sync failed*\n"
+                 . "Order: CRDFY-{$orderId}\n"
+                 . "Error: {$short}\n"
+                 . "Time: " . date('Y-m-d H:i') . " (GMT+4)\n"
+                 . "Order URL: https://{$host}/admin/print-order.php?id={$orderId}\n"
+                 . "Health: https://{$host}/api/erp-health";
+
+        if (class_exists('WhatsApp')) {
+            try { WhatsApp::sendMessage($phone, $msg); } catch (Throwable $_) { /* swallow */ }
+        }
+
+        // Also record to audit_logs for the internal ops timeline.
+        if (class_exists('AuditLog')) {
+            try { AuditLog::log('erp_sync_failed', 'print_order', (string) $orderId, ['error' => $short]); } catch (Throwable $_) {}
+        }
     }
 }
