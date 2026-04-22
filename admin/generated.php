@@ -138,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error) && isset($_POST['acti
     }
 }
 
-adminHeader('Generated Cards', 'generated');
+adminHeader(t('generated.page_title'), 'generated');
 ?>
 
 <div x-data="{ searchQuery: '', showPreview: false, previewEntry: null }">
@@ -152,11 +152,11 @@ adminHeader('Generated Cards', 'generated');
     <!-- Page Header Actions -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-            <p class="text-gray-600"><?php echo count($generatedLog); ?> cards generated</p>
+            <p class="text-gray-600"><?= htmlspecialchars(t('generated.count_generated', ['n' => count($generatedLog)])) ?></p>
         </div>
         <a href="batch_generate.php" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2">
             <i class="fa-solid fa-wand-magic-sparkles"></i>
-            <span>Generate New Cards</span>
+            <span><?= htmlspecialchars(t('generated.generate_new_cards')) ?></span>
         </a>
     </div>
 
@@ -164,19 +164,19 @@ adminHeader('Generated Cards', 'generated');
     <?php if (isset($_GET['deleted'])): ?>
     <div class="mb-6 p-4 rounded-xl flex items-center gap-3 bg-green-50 border border-green-200 text-green-700">
         <i class="fa-solid fa-circle-check"></i>
-        Card entry deleted successfully.
+        <?= htmlspecialchars(t('generated.deleted_ok')) ?>
     </div>
     <?php endif; ?>
     <?php if (isset($_GET['sample_set'])): ?>
     <div class="mb-6 p-4 rounded-xl flex items-center gap-3 bg-green-50 border border-green-200 text-green-700">
         <i class="fa-solid fa-circle-check"></i>
-        Sample card set successfully! This card will be shown on the company landing page.
+        <?= htmlspecialchars(t('generated.sample_set_ok')) ?>
     </div>
     <?php endif; ?>
     <?php if (isset($_GET['sample_cleared'])): ?>
     <div class="mb-6 p-4 rounded-xl flex items-center gap-3 bg-blue-50 border border-blue-200 text-blue-700">
         <i class="fa-solid fa-info-circle"></i>
-        Sample card cleared. The most recent card will be shown instead.
+        <?= htmlspecialchars(t('generated.sample_cleared')) ?>
     </div>
     <?php endif; ?>
     
@@ -185,13 +185,13 @@ adminHeader('Generated Cards', 'generated');
     <div class="mb-6 p-4 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-between">
         <div class="flex items-center gap-3 text-purple-700">
             <i class="fa-solid fa-star"></i>
-            <span class="font-medium">A sample card is set for the landing page</span>
+            <span class="font-medium"><?= htmlspecialchars(t('generated.sample_banner')) ?></span>
         </div>
         <form method="post" class="inline">
             <?php echo csrfField(); ?>
             <input type="hidden" name="action" value="clear_sample">
             <button type="submit" class="text-sm text-purple-600 hover:text-purple-800 font-medium">
-                <i class="fa-solid fa-times mr-1"></i>Clear
+                <i class="fa-solid fa-times mr-1"></i><?= htmlspecialchars(t('generated.clear')) ?>
             </button>
         </form>
     </div>
@@ -205,14 +205,14 @@ adminHeader('Generated Cards', 'generated');
                 <input 
                     type="text" 
                     x-model="searchQuery"
-                    placeholder="Search by employee name..."
+                    placeholder="<?= htmlspecialchars(t('generated.search_placeholder')) ?>"
                     class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 >
             </div>
             <div class="flex items-center gap-4 text-sm text-gray-500">
-                <span><strong><?php echo count($generatedLog); ?></strong> cards total</span>
+                <span><?= htmlspecialchars(t('generated.cards_total', ['n' => count($generatedLog)])) ?></span>
                 <span class="text-gray-300">|</span>
-                <span><strong><?php echo count($cardsByEmployee); ?></strong> employees</span>
+                <span><?= htmlspecialchars(t('generated.employees_total', ['n' => count($cardsByEmployee)])) ?></span>
             </div>
         </div>
     </div>
@@ -223,13 +223,13 @@ adminHeader('Generated Cards', 'generated');
             <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Card Preview</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Employee</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Generated</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Version</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Format</th>
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">QR Analytics</th>
-                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"><?= htmlspecialchars(t('generated.col_preview')) ?></th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"><?= htmlspecialchars(t('generated.col_employee')) ?></th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"><?= htmlspecialchars(t('generated.col_generated')) ?></th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"><?= htmlspecialchars(t('generated.col_version')) ?></th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"><?= htmlspecialchars(t('generated.col_format')) ?></th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"><?= htmlspecialchars(t('generated.col_qr')) ?></th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider"><?= htmlspecialchars(t('generated.col_actions')) ?></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -315,7 +315,7 @@ adminHeader('Generated Cards', 'generated');
                                 </a>
                                 <?php endif; ?>
                                 <?php if ($isSample): ?>
-                                <span class="text-yellow-500" title="Sample card for landing page">
+                                <span class="text-yellow-500" title="<?= htmlspecialchars(t('generated.sample_tooltip')) ?>">
                                     <i class="fa-solid fa-star"></i>
                                 </span>
                                 <?php endif; ?>
@@ -401,7 +401,7 @@ adminHeader('Generated Cards', 'generated');
                                 <!-- Download Menu -->
                                 <div class="relative">
                                     <button @click="showMenu = !showMenu" @click.away="showMenu = false"
-                                        class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Download">
+                                        class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="<?= htmlspecialchars(t('generated.tt_download')) ?>">
                                         <i class="fa-solid fa-download"></i>
                                     </button>
                                     <div x-show="showMenu" x-transition x-cloak
@@ -410,27 +410,27 @@ adminHeader('Generated Cards', 'generated');
                                         <button onclick="downloadAsPDF('<?php echo $frontPdfUrl; ?>', '<?php echo $backPdfUrl; ?>', '<?php echo $employeeNameSlug; ?>')"
                                             class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                                             <i class="fa-solid fa-file-pdf text-red-500 w-4"></i>
-                                            PDF (High Quality)
+                                            <?= htmlspecialchars(t('generated.dl_pdf_hq')) ?>
                                         </button>
                                         <?php endif; ?>
                                         <?php if ($frontPngUrl && $backPngUrl): ?>
                                         <button onclick="downloadAsPNGs('<?php echo $frontPngUrl; ?>', '<?php echo $backPngUrl; ?>', '<?php echo $employeeNameSlug; ?>')"
                                             class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                                             <i class="fa-solid fa-file-zipper text-yellow-500 w-4"></i>
-                                            PNGs (ZIP)
+                                            <?= htmlspecialchars(t('generated.dl_pngs_zip')) ?>
                                         </button>
                                         <?php endif; ?>
                                         <hr class="my-1">
                                         <?php if ($frontPngUrl): ?>
                                         <a href="<?php echo $frontPngUrl; ?>" download class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                                             <i class="fa-solid fa-image text-blue-500 w-4"></i>
-                                            Front Only
+                                            <?= htmlspecialchars(t('generated.dl_front_only')) ?>
                                         </a>
                                         <?php endif; ?>
                                         <?php if ($backPngUrl): ?>
                                         <a href="<?php echo $backPngUrl; ?>" download class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                                             <i class="fa-solid fa-image text-green-500 w-4"></i>
-                                            Back Only
+                                            <?= htmlspecialchars(t('generated.dl_back_only')) ?>
                                         </a>
                                         <?php endif; ?>
                                     </div>
@@ -443,7 +443,7 @@ adminHeader('Generated Cards', 'generated');
                                     <input type="hidden" name="action" value="set_sample">
                                     <input type="hidden" name="sample_front" value="companies/<?php echo $companyId; ?>/cards/<?php echo htmlspecialchars($frontPath); ?>">
                                     <input type="hidden" name="sample_back" value="companies/<?php echo $companyId; ?>/cards/<?php echo htmlspecialchars($backPath); ?>">
-                                    <button type="submit" class="p-2 text-yellow-500 hover:bg-yellow-50 rounded-lg transition-colors" title="Set as sample">
+                                    <button type="submit" class="p-2 text-yellow-500 hover:bg-yellow-50 rounded-lg transition-colors" title="<?= htmlspecialchars(t('generated.tt_set_sample')) ?>">
                                         <i class="fa-regular fa-star"></i>
                                     </button>
                                 </form>
@@ -451,18 +451,18 @@ adminHeader('Generated Cards', 'generated');
                                 
                                 <!-- Order Print -->
                                 <a href="<?php echo $orderPrintUrl; ?>" 
-                                   class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Order Print">
+                                   class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="<?= htmlspecialchars(t('generated.tt_order_print')) ?>">
                                     <i class="fa-solid fa-print"></i>
                                 </a>
                                 
                                 <!-- Delete -->
-                                <form method="post" class="inline" onsubmit="return confirm('Delete this card? Files will be removed from server.')">
+                                <form method="post" class="inline" onsubmit="return confirm(<?= json_encode(t('generated.delete_confirm')) ?>)">
                                     <?php echo csrfField(); ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
                                     <input type="hidden" name="front_path" value="<?php echo htmlspecialchars($frontPath); ?>">
                                     <input type="hidden" name="back_path" value="<?php echo htmlspecialchars($backPath); ?>">
-                                    <button type="submit" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                                    <button type="submit" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="<?= htmlspecialchars(t('generated.tt_delete')) ?>">
                                         <i class="fa-solid fa-trash-can"></i>
                                     </button>
                                 </form>
@@ -478,10 +478,10 @@ adminHeader('Generated Cards', 'generated');
         <div class="p-12 text-center">
             <div class="text-gray-400">
                 <i class="fa-solid fa-id-card text-4xl mb-4 opacity-50"></i>
-                <p class="text-gray-600 font-medium">No cards generated yet</p>
-                <p class="text-sm mt-1 text-gray-500">Generate business cards for your employees</p>
+                <p class="text-gray-600 font-medium"><?= htmlspecialchars(t('generated.empty_h3')) ?></p>
+                <p class="text-sm mt-1 text-gray-500"><?= htmlspecialchars(t('generated.empty_body')) ?></p>
                 <a href="batch_generate.php" class="mt-4 inline-flex px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
-                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Generate Cards
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i><?= htmlspecialchars(t('generated.empty_cta')) ?>
                 </a>
             </div>
         </div>
