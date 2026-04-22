@@ -314,6 +314,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
     exit;
 }
 $adminHasPhone = !empty(trim($companyRow['phone'] ?? ''));
+// Tenant OTP-login users land here with users.phone already set (BHD-style
+// passwordless flow). Don't pester them to "add WhatsApp" again.
+if (!$adminHasPhone && !empty($_SESSION['user_id'])) {
+    try {
+        $userPhone = $db->fetchOne('SELECT phone FROM users WHERE id = :id LIMIT 1', ['id' => $_SESSION['user_id']]);
+        if (!empty(trim($userPhone['phone'] ?? ''))) {
+            $adminHasPhone = true;
+        }
+    } catch (Throwable $_) { /* users.phone column may not exist yet */ }
+}
 $adminBackfillSkips = (int) ($companyRow['phone_backfill_skips'] ?? 0);
 $showPhonePrompt = (
     !$adminHasPhone
