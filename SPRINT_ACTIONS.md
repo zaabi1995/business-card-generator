@@ -477,7 +477,7 @@
 ## S, ERP Sync + Billing (441-455)
 
 - [x] 441. /api/erp-health: JSON health endpoint; probes POST /api/admin/cardify/record-payment with empty body (valid token → 400 = auth_ok; 401/403 = auth_failed; network err = unreachable); 503 on degraded; rate-limited 30/min/IP; never leaks token value. Live 200 status=ok 69ms. → 6f9e2f9
-- [ ] 442. Alert on ERP sync failure (WhatsApp to Ali).
+- [x] 442. ERP sync failure alert: ERPSync::markSyncError now pings Alis WhatsApp (+96871616161) via ERPSync::alertFailure() with order ID + truncated error + order URL + /api/erp-health link. Throttled: 30-min cooldown per order + 5 alerts/hr global cap, file-backed under data/cache/erp-alerts (DB-independent). AuditLog entry erp_sync_failed when available. → 0ad196c
 - [ ] 443. Retry queue for failed syncs (exponential backoff).
 - [ ] 444. Bilingual ERP invoice PDFs.
 - [ ] 445. Tax breakdown on invoice (5% VAT).
