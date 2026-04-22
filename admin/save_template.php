@@ -75,7 +75,7 @@ function addTemplatePair() {
     }
 
     $destination = getCompanyTemplatesDir($companyId);
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'image/svg+xml'];
     
     $fields = json_decode($fieldsJson, true);
     if (!$fields) {
@@ -284,7 +284,7 @@ function updateTemplateBackground() {
     }
     
     $destination = getCompanyTemplatesDir($companyId);
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'image/svg+xml'];
     $uploadResult = handleFileUpload($_FILES['image'], $destination, $allowedTypes);
     
     if (!$uploadResult['success']) {
@@ -424,7 +424,7 @@ function addNewTemplate() {
 
     $destination = getCompanyTemplatesDir($companyId);
     // Allow images and PDFs for templates
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'image/svg+xml'];
     $uploadResult = handleFileUpload($_FILES['image'], $destination, $allowedTypes);
     if (!$uploadResult['success']) {
         throw new Exception($uploadResult['error']);
@@ -510,7 +510,7 @@ function updateTemplate() {
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                 $destination = $companyId ? getCompanyTemplatesDir($companyId) : TEMPLATES_DIR;
                 // Allow images and PDFs for templates
-                $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+                $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'image/svg+xml'];
                 $uploadResult = handleFileUpload($_FILES['image'], $destination, $allowedTypes);
                 if ($uploadResult['success']) {
                     // Delete old image

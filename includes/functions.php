@@ -1297,7 +1297,17 @@ function handleFileUpload($file, $destination, $allowedTypes = null, $maxSize = 
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $file['tmp_name']);
     finfo_close($finfo);
-    
+
+    // finfo often misreports SVG as text/xml, application/xml, text/html, or text/plain.
+    // If the file extension is .svg and the content looks like SVG, normalize to image/svg+xml.
+    $clientExt = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if ($clientExt === 'svg' && in_array($mimeType, ['text/xml', 'application/xml', 'text/html', 'text/plain', 'image/svg+xml'], true)) {
+        $head = @file_get_contents($file['tmp_name'], false, null, 0, 2048);
+        if ($head !== false && preg_match('/<svg[\s>]/i', $head)) {
+            $mimeType = 'image/svg+xml';
+        }
+    }
+
     if (!in_array($mimeType, $allowedTypes)) {
         return ['success' => false, 'error' => 'File type not allowed: ' . $mimeType];
     }
@@ -1319,6 +1329,7 @@ function handleFileUpload($file, $destination, $allowedTypes = null, $maxSize = 
             'image/gif' => 'gif',
             'image/webp' => 'webp',
             'application/pdf' => 'pdf',
+            'image/svg+xml' => 'svg',
         ];
         $extension = $mimeExtensions[$mimeType] ?? 'bin';
     }

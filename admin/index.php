@@ -1169,7 +1169,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
             <div class="p-4 border-b border-gray-100">
                 <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center gap-3">
-                        <h3 class="font-semibold text-gray-900" x-text="selectedTemplate ? selectedTemplate.name : <?= json_encode(t('dashboard.edit_template')) ?>"></h3>
+                        <h3 class="font-semibold text-gray-900" x-text="selectedTemplate ? selectedTemplate.name : <?= htmlspecialchars(json_encode(t('dashboard.edit_template')), ENT_QUOTES) ?>"></h3>
                         <!-- Front/Back Toggle -->
                         <div class="flex items-center bg-gray-100 rounded-lg p-1">
                             <button 
