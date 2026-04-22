@@ -290,3 +290,100 @@ html[dir="rtl"] .cardify-switch input:checked + .cardify-switch__slider::before 
     overflow: hidden; clip: rect(0,0,0,0);
     white-space: nowrap; border: 0;
 }
+
+/* ==================================================================
+   Tooltip primitive (Cardify v2.0 Category L, action 280/295/339)
+   Usage:
+     <button class="cardify-tip-trigger" data-tip="Helpful hint">
+       <i class="fa-regular fa-circle-question"></i>
+     </button>
+   Or with <label>Field <i class="cardify-tip" data-tip="explanation"></i></label>
+================================================================== */
+.cardify-tip,
+.cardify-tip-trigger {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--cardify-text-muted);
+    cursor: help;
+    background: transparent;
+    border: 0;
+    padding: 0;
+}
+.cardify-tip::before,
+.cardify-tip-trigger::before {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: var(--cardify-gray-900);
+    color: #ffffff;
+    font-size: var(--cardify-text-xs);
+    font-weight: 500;
+    font-family: var(--cardify-font-sans);
+    line-height: 1.4;
+    padding: 6px 10px;
+    border-radius: var(--cardify-radius-sm);
+    white-space: normal;
+    width: max-content;
+    max-width: 240px;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--cardify-duration-normal) var(--cardify-ease-out),
+                transform var(--cardify-duration-normal) var(--cardify-ease-out);
+    z-index: var(--cardify-z-toast);
+}
+.cardify-tip::after,
+.cardify-tip-trigger::after {
+    content: "";
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--cardify-gray-900);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--cardify-duration-normal) var(--cardify-ease-out);
+}
+.cardify-tip:hover::before,
+.cardify-tip:focus-visible::before,
+.cardify-tip-trigger:hover::before,
+.cardify-tip-trigger:focus-visible::before {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+.cardify-tip:hover::after,
+.cardify-tip:focus-visible::after,
+.cardify-tip-trigger:hover::after,
+.cardify-tip-trigger:focus-visible::after { opacity: 1; }
+
+/* Below-variant for tooltips near top edges (add class .cardify-tip--below) */
+.cardify-tip--below::before, .cardify-tip-trigger.cardify-tip--below::before {
+    bottom: auto; top: calc(100% + 8px);
+    transform: translateX(-50%) translateY(-4px);
+}
+.cardify-tip--below::after, .cardify-tip-trigger.cardify-tip--below::after {
+    bottom: auto; top: calc(100% + 2px);
+    border-top-color: transparent;
+    border-bottom-color: var(--cardify-gray-900);
+}
+
+/* RTL-safe: centred tooltip, no directional flip needed. But arrow+popover
+   live over the trigger so margin/inset are agnostic. */
+
+/* Help-icon next to a form label (consistent look across admin) */
+.cardify-help-icon {
+    display: inline-flex;
+    width: 16px; height: 16px;
+    margin-inline-start: 6px;
+    border-radius: var(--cardify-radius-full);
+    color: var(--cardify-text-muted);
+    cursor: help;
+    font-size: 13px;
+    align-items: center; justify-content: center;
+}
+.cardify-help-icon:hover { color: var(--cardify-primary-500); }

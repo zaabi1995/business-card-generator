@@ -349,26 +349,12 @@
 
 ## L, Empty States + Tooltips (321-340)
 
-- [ ] 321. Empty employees list: "No team yet" + Add + CSV import + demo-seed CTAs.
-- [ ] 322. Empty orders: "No orders yet" + Order Cards CTA.
-- [ ] 323. Empty analytics: "No data yet, share cards to collect taps" + Copy link.
-- [ ] 324. Empty templates: "Start from a preset" + gallery.
-- [ ] 325. Empty credit accounts: "Apply for credit" CTA.
-- [ ] 326. Empty departments: "Organize your team" + Create Dept CTA.
-- [ ] 327. Empty audit log: "No activity yet."
-- [ ] 328. Empty marketplace search: "Try another location" + reset.
-- [ ] 329. Employee form tooltip on each field.
-- [ ] 330. Template editor tooltip on each control.
-- [ ] 331. Order checkout tooltip on each payment method.
-- [ ] 332. Credit account tooltip on each limit field.
-- [ ] 333. Settings tooltip on each toggle.
-- [ ] 334. Onboarding step tooltip on "what does this do."
-- [ ] 335. Portal page tooltip on share/download buttons.
-- [ ] 336. Analytics tooltip on each KPI explaining calculation.
-- [ ] 337. Template-lint warnings with inline fix suggestion.
-- [ ] 338. DNS instructions for custom domain rewritten plain-English + bilingual.
-- [ ] 339. Help icon (i) next to every "technical" label.
-- [ ] 340. First-time-user tooltips on empty pages.
+- [~] 321-328. Per-page empty-state migrations use the shared .cardify-empty primitive (shipped in action 279). Each list page needs a contextual CTA wiring pass, deferred to action 731 (batch sweep).
+- [~] 329-336. Per-form tooltip wiring uses the new .cardify-tip primitive (shipped this iteration) + strings from the new `tooltips` namespace (38 EN+AR keys seeded). Field-by-field drop-in deferred to action 732.
+- [~] 337. Template-lint warning panel deferred to action 601 (already queued).
+- [~] 338. Custom-domain DNS instructions plain-English rewrite deferred to action 526 (already queued).
+- [x] 339. Generic .cardify-help-icon + .cardify-tip / .cardify-tip-trigger primitive shipped in cardify-components.css with popover arrow + below-variant + focus-visible trigger. → PENDING_SHA
+- [~] 340. First-time-user tooltips on empty pages deferred to action 706 (feature-tour).
 
 ## M, Forms + Validation (341-355)
 
@@ -796,3 +782,5 @@
 - [ ] 728. Tabs component (URL-hash-driven) for /admin/settings + printshop/settings multi-section forms.
 - [ ] 729. Accordion component for FAQ pages + collapsible admin settings.
 - [ ] 730. Icon picker (Heroicons + Font Awesome Pro) for custom fields + template editor icons.
+- [ ] 731. Per-page empty-state migration (actions 321-328): sweep admin/employees, admin/generated, admin/analytics, admin/templates, admin/credit-accounts, admin/departments, admin/audit-logs, and marketplace search. Swap every inline "No results" block for `.cardify-empty` with a contextual CTA (Add employee / Order cards / Share link / Browse presets / Apply for credit / Create department / etc.).
+- [ ] 732. Per-form tooltip drop-in (actions 329-336): wire lang/{en,ar}/tooltips.php strings into existing form labels on employees, template-editor, order-checkout, credit-accounts, settings, onboarding wizard, portal, analytics. Use `<i class="cardify-help-icon cardify-tip" data-tip="<?= t('tooltips.emp_name') ?>"></i>` pattern next to each label.
