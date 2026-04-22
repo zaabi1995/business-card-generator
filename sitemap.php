@@ -222,14 +222,20 @@ if ($part === 'static') {
     if ($db) {
         try {
             $posts = $db->fetchAll(
-                "SELECT slug, title, featured_image, updated_at
+                "SELECT slug, slug_ar, title, featured_image, updated_at
                    FROM blog_posts
                   WHERE status = 'published'
                   ORDER BY updated_at DESC"
             );
             foreach ($posts as $post) {
                 $lastmod = date('Y-m-d', strtotime($post['updated_at']));
-                $url = $baseUrl . '/blog/' . $post['slug'];
+                // If an AR translation ships (slug_ar populated), emit the
+                // AR URL too and mark both with xhtml:link alternates so
+                // Google treats them as one post in two languages.
+                $hasAr = !empty($post['slug_ar']);
+                $enUrl = $baseUrl . '/blog/' . $post['slug'];
+                $arUrl = $baseUrl . '/ar/blog/' . ($post['slug_ar'] ?? $post['slug']);
+                $url = $enUrl;
                 echo "    <url>\n";
                 echo "        <loc>" . smX($url) . "</loc>\n";
                 echo "        <lastmod>{$lastmod}</lastmod>\n";
@@ -242,8 +248,25 @@ if ($part === 'static') {
                     echo "            <image:title>" . smX($post['title']) . "</image:title>\n";
                     echo "        </image:image>\n";
                 }
+                if ($hasAr) {
+                    echo "        <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"" . smX($enUrl) . "\" />\n";
+                    echo "        <xhtml:link rel=\"alternate\" hreflang=\"ar\" href=\"" . smX($arUrl) . "\" />\n";
+                    echo "        <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"" . smX($enUrl) . "\" />\n";
+                }
                 echo "    </url>\n";
+                if ($hasAr) {
+                    echo "    <url>\n";
+                    echo "        <loc>" . smX($arUrl) . "</loc>\n";
+                    echo "        <lastmod>{$lastmod}</lastmod>\n";
+                    echo "        <changefreq>weekly</changefreq>\n";
+                    echo "        <priority>0.7</priority>\n";
+                    echo "        <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"" . smX($enUrl) . "\" />\n";
+                    echo "        <xhtml:link rel=\"alternate\" hreflang=\"ar\" href=\"" . smX($arUrl) . "\" />\n";
+                    echo "        <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"" . smX($enUrl) . "\" />\n";
+                    echo "    </url>\n";
+                }
             }
+            // SELECT slug_ar too for bilingual emission
         } catch (Throwable $e) { /* blog_posts may not exist */ }
         try {
             $careers = $db->fetchAll("SELECT slug, updated_at FROM career_listings WHERE status = 'open' ORDER BY updated_at DESC");

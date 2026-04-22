@@ -1,13 +1,31 @@
 <?php
 /**
- * Cardify - Blog
+ * Cardify - Blog (Cat R action 440: bilingual).
+ *
+ * When ?lang=ar (served via /ar/blog nginx rewrite), title/excerpt/
+ * content/slug fall back to {field}_ar if present, else show the EN
+ * original so English-only legacy posts keep working.
  */
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
+$lang  = ($_GET['lang'] ?? '') === 'ar' ? 'ar' : 'en';
+$isAr  = $lang === 'ar';
+$baseUrl = 'https://cardify.om';
+$blogBase = $baseUrl . ($isAr ? '/ar' : '') . '/blog';
+
+/** Pick locale-preferred column on a post row, EN fallback. */
+$L = function(array $row, string $field) use ($isAr) {
+    if ($isAr) {
+        $ar = $row[$field . '_ar'] ?? null;
+        if (is_string($ar) && trim($ar) !== '') return $ar;
+    }
+    return $row[$field] ?? '';
+};
+
 $pageTitle = t('blog.page_title');
 $pageDescription = t('blog.page_desc');
-$canonicalUrl = 'https://cardify.om/blog';
+$canonicalUrl = $blogBase;
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
 // Enable dynamic navigation
@@ -27,15 +45,19 @@ if (is_string($postSlug) && !preg_match('~^[a-z0-9_-]{1,120}$~i', $postSlug)) {
 
 if ($db->tableExists('blog_posts')) {
     if ($postSlug) {
-        // Single post view
+        // Single post view. Accept either the EN or AR slug.
         $singlePost = $db->fetchOne(
-            "SELECT * FROM blog_posts WHERE slug = ? AND status = 'published'",
-            [$postSlug]
+            "SELECT * FROM blog_posts WHERE (slug = :s OR slug_ar = :s) AND status = 'published' LIMIT 1",
+            ['s' => $postSlug]
         );
         if ($singlePost) {
-            $pageTitle = t('blog.single_page_title', ['title' => $singlePost['title']]);
-            $pageDescription = htmlspecialchars($singlePost['excerpt'] ?? substr(strip_tags($singlePost['content']), 0, 155));
-            $canonicalUrl = 'https://cardify.om/blog/' . $singlePost['slug'];
+            $displayTitle   = $L($singlePost, 'title');
+            $displayExcerpt = $L($singlePost, 'excerpt');
+            $displayContent = $L($singlePost, 'content');
+            $displaySlug    = $isAr && !empty($singlePost['slug_ar']) ? $singlePost['slug_ar'] : $singlePost['slug'];
+            $pageTitle = t('blog.single_page_title', ['title' => $displayTitle]);
+            $pageDescription = htmlspecialchars($displayExcerpt !== '' ? $displayExcerpt : mb_substr(strip_tags($displayContent), 0, 155));
+            $canonicalUrl = $blogBase . '/' . $displaySlug;
             $ogType = 'article';
             if (!empty($singlePost['featured_image'])) {
                 $ogImage = 'https://cardify.om/' . ltrim($singlePost['featured_image'], '/');
@@ -78,8 +100,9 @@ if ($singlePost) {
     $articleLd = [
         '@context' => 'https://schema.org',
         '@type' => 'BlogPosting',
-        'headline' => $singlePost['title'],
-        'description' => $singlePost['excerpt'] ?? substr(strip_tags($singlePost['content']), 0, 160),
+        'inLanguage' => $isAr ? 'ar' : 'en',
+        'headline' => $L($singlePost, 'title'),
+        'description' => $L($singlePost, 'excerpt') ?: mb_substr(strip_tags($L($singlePost, 'content')), 0, 160),
         'image' => $imageUrl,
         'url' => $canonicalUrl,
         'datePublished' => $published,
@@ -109,11 +132,19 @@ if ($singlePost) {
         '@context' => 'https://schema.org',
         '@type' => 'BreadcrumbList',
         'itemListElement' => [
-            ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => 'https://cardify.om/'],
-            ['@type' => 'ListItem', 'position' => 2, 'name' => 'Blog', 'item' => 'https://cardify.om/blog'],
-            ['@type' => 'ListItem', 'position' => 3, 'name' => $singlePost['title'], 'item' => $canonicalUrl],
+            ['@type' => 'ListItem', 'position' => 1, 'name' => $isAr ? 'الرئيسية' : 'Home', 'item' => $baseUrl . ($isAr ? '/ar/' : '/')],
+            ['@type' => 'ListItem', 'position' => 2, 'name' => $isAr ? 'المدوّنة' : 'Blog',    'item' => $blogBase],
+            ['@type' => 'ListItem', 'position' => 3, 'name' => $L($singlePost, 'title'),       'item' => $canonicalUrl],
         ],
     ];
+    // hreflang alternates when a translation exists
+    $altSlug = $isAr ? $singlePost['slug'] : ($singlePost['slug_ar'] ?? null);
+    if ($altSlug) {
+        $extraHead .= sprintf('<link rel="alternate" hreflang="%s" href="%s">' . "\n",
+            $isAr ? 'en' : 'ar',
+            $baseUrl . ($isAr ? '' : '/ar') . '/blog/' . $altSlug
+        );
+    }
     $extraHead .= '<script type="application/ld+json">' . json_encode($articleLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
     $extraHead .= '<script type="application/ld+json">' . json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
 } else {
@@ -140,14 +171,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <!-- Single Post View -->
     <div class="bg-white pt-28 pb-12">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <a href="<?php echo getBasePath(); ?>blog" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4">
+            <a href="<?= htmlspecialchars(($isAr ? "/ar" : "") . "/blog") ?>" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4">
                 <i class="fa-solid fa-arrow-left"></i>
                 <?= htmlspecialchars(t('blog.back_to_blog')) ?>
             </a>
-            <h1 class="text-4xl font-bold text-gray-900 mb-4"><?php echo htmlspecialchars($singlePost['title']); ?></h1>
+            <h1 class="text-4xl font-bold text-gray-900 mb-4"><?php echo htmlspecialchars($L($singlePost, 'title')); ?></h1>
             <?php
                 // Estimated read time: ~200 words/min average
-                $wordCount = str_word_count(strip_tags($singlePost['content'] ?? ''));
+                $wordCount = str_word_count(strip_tags($L($singlePost, 'content')));
                 $readMinutes = max(1, (int) ceil($wordCount / 200));
             ?>
             <div class="flex items-center gap-3 text-gray-500 flex-wrap">
@@ -183,13 +214,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </style>
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <article class="bg-white rounded-2xl shadow-sm p-8 lg:p-12 blog-content">
-            <?php echo $singlePost['content']; ?>
+            <?php echo $L($singlePost, 'content'); ?>
         </article>
 
         <!-- Social Sharing -->
         <?php
-        $shareUrl = urlencode('https://cardify.om/blog/' . $singlePost['slug']);
-        $shareTitle = urlencode($singlePost['title']);
+        $shareUrl = urlencode($blogBase . '/' . $displaySlug);
+        $shareTitle = urlencode($L($singlePost, 'title'));
         ?>
         <div class="mt-8 bg-white rounded-xl shadow-sm p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             <span class="text-gray-600 font-medium"><?= htmlspecialchars(t('blog.share_article')) ?></span>
@@ -206,7 +237,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                    class="w-10 h-10 rounded-full bg-blue-700 flex items-center justify-center hover:bg-blue-800 transition-colors">
                     <i class="fa-brands fa-linkedin-in text-lg" style="color:#fff"></i>
                 </a>
-                <button onclick="navigator.clipboard.writeText('https://cardify.om/blog/<?= $singlePost['slug'] ?>').then(()=>{this.innerHTML='<i class=\'fa-solid fa-check\' style=\'color:#374151\'></i>';setTimeout(()=>{this.innerHTML='<i class=\'fa-solid fa-link\' style=\'color:#374151\'></i>'},2000)})"
+                <button onclick="navigator.clipboard.writeText('<?= $blogBase ?>/<?= $displaySlug ?>').then(()=>{this.innerHTML='<i class=\'fa-solid fa-check\' style=\'color:#374151\'></i>';setTimeout(()=>{this.innerHTML='<i class=\'fa-solid fa-link\' style=\'color:#374151\'></i>'},2000)})"
                    class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors">
                     <i class="fa-solid fa-link" style="color:#374151"></i>
                 </button>
@@ -249,7 +280,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <?php endif; ?>
 
         <div class="mt-8 text-center">
-            <a href="<?php echo getBasePath(); ?>blog" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
+            <a href="<?= htmlspecialchars(($isAr ? "/ar" : "") . "/blog") ?>" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
                 <i class="fa-solid fa-arrow-left"></i>
                 <?= htmlspecialchars(t('blog.back_to_blog')) ?>
             </a>
@@ -289,10 +320,15 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <?php foreach ($posts as $index => $post): ?>
                 <article class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                     <!-- Post Image / Gradient Header -->
+                    <?php
+                        $cardTitle   = $L($post, 'title');
+                        $cardExcerpt = $L($post, 'excerpt');
+                        $cardSlug    = $isAr && !empty($post['slug_ar']) ? $post['slug_ar'] : $post['slug'];
+                    ?>
                     <?php if (!empty($post['featured_image'])): ?>
                     <div class="h-40 overflow-hidden">
                         <img src="<?= getBasePath() . htmlspecialchars($post['featured_image']) ?>"
-                             alt="<?= htmlspecialchars($post['title']) ?>"
+                             alt="<?= htmlspecialchars($cardTitle) ?>"
                              class="w-full h-full object-cover" loading="lazy">
                     </div>
                     <?php else: ?>
@@ -320,14 +356,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <?php endif; ?>
                         </div>
                         <h3 class="font-bold text-gray-900 mb-2 line-clamp-2">
-                            <?php echo htmlspecialchars($post['title']); ?>
+                            <?php echo htmlspecialchars($cardTitle); ?>
                         </h3>
-                        <?php if ($post['excerpt']): ?>
+                        <?php if ($cardExcerpt): ?>
                         <p class="text-gray-600 text-sm line-clamp-3 mb-4">
-                            <?php echo htmlspecialchars($post['excerpt']); ?>
+                            <?php echo htmlspecialchars($cardExcerpt); ?>
                         </p>
                         <?php endif; ?>
-                        <a href="<?php echo getBasePath(); ?>blog/<?php echo urlencode($post['slug']); ?>"
+                        <a href="<?= htmlspecialchars($blogBase) ?>/<?php echo urlencode($cardSlug); ?>"
                            class="text-blue-600 hover:text-blue-700 text-sm font-medium inline-flex items-center gap-1">
                             <?= htmlspecialchars(t('blog.read_more')) ?>
                             <i class="fa-solid fa-arrow-right text-xs"></i>
