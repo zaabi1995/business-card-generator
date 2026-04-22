@@ -364,14 +364,35 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
       .to-blue-600,.to-blue-700{--tw-gradient-to:var(--tbrand-2) var(--tw-gradient-to-position)!important}
       /* Page-loader brand gradient (line 293 fallback) uses hardcoded blue -
          swap to brand primary→secondary. */
-      .page-loader-brand{background:linear-gradient(135deg, var(--tbrand) 0%, var(--tbrand-2) 100%)!important;-webkit-background-clip:text;background-clip:text}
+      .page-loader-brand{background:none!important;color:var(--tbrand)!important;-webkit-text-fill-color:var(--tbrand)!important}
     </style>
 </head>
 <body class="bg-gray-50"<?php echo Impersonation::isActive() ? ' data-impersonating="true"' : ''; ?>>
     <?php Impersonation::renderBanner(); ?>
-    <!-- Page Loader (auto-hides via CSS after 1s even without JS) -->
+    <!-- Page Loader (auto-hides via CSS after 1s even without JS).
+         SVG inlined so the tenant brand colors apply via CSS variables. -->
     <div class="page-loader" id="pageLoader">
-        <img src="<?php echo $basePath; ?>assets/images/cardify-loader.svg" alt="Loading" width="100" height="100" onerror="this.style.display='none'">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100" height="100" role="img" aria-label="Loading" class="page-loader-svg">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="#e2e8f0" stroke-width="6"/>
+            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--tbrand)" stroke-width="6" stroke-linecap="round" stroke-dasharray="60 120">
+                <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.2s" repeatCount="indefinite"/>
+            </circle>
+            <g>
+                <rect x="26" y="36" width="68" height="44" rx="10" fill="var(--tbrand)">
+                    <animateTransform attributeName="transform" type="rotate" values="-3 60 58; 3 60 58; -3 60 58" dur="2.6s" repeatCount="indefinite"/>
+                </rect>
+                <rect x="34" y="44" width="52" height="28" rx="6" fill="#ffffff">
+                    <animate attributeName="opacity" values="1;0.9;1" dur="1.8s" repeatCount="indefinite"/>
+                </rect>
+                <rect x="40" y="50" width="10" height="10" rx="5" fill="var(--tbrand)" opacity="0.85"/>
+                <rect x="54" y="50" width="24" height="4" rx="2" fill="var(--tbrand)"/>
+                <rect x="54" y="58" width="18" height="4" rx="2" fill="var(--tbrand)" opacity="0.4"/>
+            </g>
+            <circle cx="60" cy="12" r="3" fill="var(--tbrand)"><animate attributeName="opacity" values="0;1;0" dur="1.2s" repeatCount="indefinite"/></circle>
+            <circle cx="108" cy="60" r="3" fill="var(--tbrand)"><animate attributeName="opacity" values="1;0;1" dur="1.2s" repeatCount="indefinite"/></circle>
+            <circle cx="60" cy="108" r="3" fill="var(--tbrand)"><animate attributeName="opacity" values="0;1;0" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle>
+            <circle cx="12" cy="60" r="3" fill="var(--tbrand)"><animate attributeName="opacity" values="1;0;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle>
+        </svg>
         <div class="page-loader-text">Loading...</div>
         <div class="page-loader-brand"><?php echo $brandName; ?></div>
     </div>
