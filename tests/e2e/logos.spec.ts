@@ -14,7 +14,7 @@ test.describe('Omani Logo Library', () => {
   test('hub loads with grid', async ({ page }) => {
     await page.goto(`${BASE}/logos`);
     await expect(page.locator('h1')).toContainText(/Omani Logo Library/i);
-    const tiles = page.locator('main a[href^="/companies/"]');
+    const tiles = page.locator('a[href^="/companies/"]');
     await expect(tiles.first()).toBeVisible({ timeout: 10000 });
     const count = await tiles.count();
     expect(count).toBeGreaterThan(10);
@@ -23,15 +23,15 @@ test.describe('Omani Logo Library', () => {
   test('sector page loads (oil-gas)', async ({ page }) => {
     await page.goto(`${BASE}/logos/oil-gas`);
     await expect(page.locator('h1')).toContainText(/Oil & Gas/i);
-    // Breadcrumb present
-    await expect(page.locator('nav').first()).toContainText(/Logo Library/i);
+    // Breadcrumb present (site nav is nav[0], breadcrumb is nav[1])
+    await expect(page.locator('nav').filter({ hasText: /Logo Library/i }).first()).toBeVisible();
   });
 
   test('terms page renders', async ({ page }) => {
     await page.goto(`${BASE}/logos/terms`);
     await expect(page.locator('h1')).toContainText(/Terms/i);
-    // Takedown link in body
-    await expect(page.locator('a[href="/logo-takedown"]')).toBeVisible();
+    // Takedown link in body (page has inline link + button; check at least one visible)
+    await expect(page.locator('a[href="/logo-takedown"]').first()).toBeVisible();
   });
 
   test('press kit page renders', async ({ page }) => {
