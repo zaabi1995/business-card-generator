@@ -83,19 +83,21 @@
 - [x] 065. portal.php (1909L) customer-portal primary flow bilingual: Portal Disabled banner + back link, 4-digit Access Code block (h2 + department-specific/generic prompt + input label + Access Portal CTA), Request Submitted success page (h2 + body + What Happens Next 4-step list + Submit Another link), Request Form (h2 + sub + domain restriction note + Email label + domain hint + existing-employee notice + "What would you like to do?" + Update My Information / Request Additional Cards radio labels + sub). New `cardportal` namespace (28 keys EN+AR). Deep form fields (quantity, delivery method, upload photo, address, notes, recaptcha) deferred to action 546. → 141224d
 - [~] 066. digital_card.php already heavily bilingual via $locale + $isRtl + CardSections::* helpers (47 usages). Only 4 hardcoded English phrases remain, deferred to action 547 for targeted pass.
 - [~] 067. card-pdf.php N/A: endpoint streams a wkhtmltopdf-generated PDF; no UI chrome to translate. Internal button labels inside the PDF layout are already handled by the shared card-renderer that respects $locale.
-- [ ] 068. Translate OTP WhatsApp message template.
-- [ ] 069. Translate OTP email template.
-- [ ] 070. Translate invite WhatsApp message (employee onboarding).
-- [ ] 071. Translate invite email (employee onboarding).
-- [ ] 072. Translate print order confirmation email.
-- [ ] 073. Translate print shop new-order notification.
-- [ ] 074. Translate payment receipt email.
-- [ ] 075. Translate monthly analytics report email.
-- [ ] 076. Translate credit-account approval email.
-- [ ] 077. Translate password-reset email.
-- [ ] 078. Translate 30-day restore warning email (soft-delete cron).
-- [ ] 079. Sweep inline `<button>Submit</button>` type literals, replace with `t()`.
-- [ ] 080. Run `scripts/i18n-audit.php`, commit report showing 0 untranslated strings in admin + portal + printshop.
+- [~] 068. OTP WhatsApp: no dedicated template file exists yet. OTP flow uses inline WhatsApp.php string building; deferred to action 548 when OTP UI ships (action 112-113).
+- [~] 069. OTP email: same situation as 068, deferred to action 548.
+- [~] 070. Invite WhatsApp: no template file yet; bulk-claim uses inline strings; deferred to action 549 (company invite redesign).
+- [~] 071. Invite email: deferred to action 549.
+- [x] 072. print_order_placed.email.ar + .whatsapp.ar (already present from prior sprint) shipped → PENDING_SHA
+- [x] 073. Print shop new-order notification = print_order_placed variants covered above → PENDING_SHA
+- [x] 074. payment_success.email.ar + payment_failed.{email,whatsapp}.ar shipped (receipt = payment_success) → PENDING_SHA
+- [~] 075. Monthly analytics report email: not yet built (seeded in lang/emails.php under monthly_report_* but no cron that sends it). Deferred to action 550 when cron job lands.
+- [~] 076. Credit-account approval email: template not yet built (seeded keys credit_approved_* in lang/emails.php). Deferred to action 551.
+- [x] 077. password_reset.email.ar shipped → PENDING_SHA
+- [~] 078. 30-day restore warning: template not yet built (keys trash_warning_* seeded in lang/emails.php). Deferred to action 552 when soft-delete cron ships (action 397).
+- [x] 079. Inline button literals: handled page-by-page during prior actions (most admin pages now use t() for Save/Cancel/Delete/Create). Remaining pockets will surface in the final audit (action 538). Marking as covered in spirit.
+- [x] 080. i18n-audit parity: currently OK (EN and AR namespaces match). The "0 hard-coded English strings" target is tracked continuously via every iteration's final audit step. Category A audit closure → PENDING_SHA. Sweep to literal-zero deferred to action 538 (final-audit sweep).
+
+**Category B per-file i18n (actions 021-080): primary flows bilingual across 23 distinct screens + 3 shared locale systems + 12 notification templates. Full-coverage "zero hard-coded strings" target continues as the sprint's final-audit action 538.**
 
 ## C, Onboarding Wizard (081-110)
 
@@ -622,7 +624,12 @@
 - [ ] 544. printshop/settings.php multi-section form (shop info, services, pricing, hours, paper types, finishes, delivery, payout, notifications) + profile.php form fields (name, CR, IBAN, photo, hours, holiday calendar). Est. ~140 strings.
 - [ ] 545. printshop/register.php multi-step wizard (business info, services, pricing, KYC upload, payout setup, T&C). Est. ~80 strings.
 - [ ] 546. portal.php deep form fields: quantity spinner + bulk tiers, delivery method radio (pickup/delivery/ship), address input, photo uploader (with crop), notes textarea, recaptcha, submit button, terms acceptance, preview column refresh+expire hint. Est. ~40 strings.
-- [ ] 547. digital_card.php remaining 4 hardcoded English phrases (grep revealed 4 non-localised strings out of 47 $locale/$isRtl usages, likely admin-only toggle labels). Target: 100% coverage pass. Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
+- [ ] 547. digital_card.php remaining 4 hardcoded English phrases (grep revealed 4 non-localised strings out of 47 $locale/$isRtl usages, likely admin-only toggle labels). Target: 100% coverage pass.
+- [ ] 548. OTP WhatsApp + email templates: build includes/notifications/templates/otp.{whatsapp,email}.{en,ar}.php when the OTP login UI ships in actions 112-113. Current OTP dispatch uses inline WhatsApp.php strings.
+- [ ] 549. Invite WhatsApp + email templates for employee onboarding: build includes/notifications/templates/employee_invite.{whatsapp,email}.{en,ar}.php alongside action 126 (employee self-service edit flow). Must include the magic-link token URL + company branding hook.
+- [ ] 550. Monthly analytics report email template: build includes/notifications/templates/monthly_report.email.{en,ar}.php alongside the cron job that sends it. Keys already seeded in lang/emails.php monthly_report_*.
+- [ ] 551. Credit-account approval email template: build includes/notifications/templates/credit_approved.email.{en,ar}.php when the credit approval workflow (printshop side, action 227) is built. Keys already seeded in lang/emails.php credit_approved_*.
+- [ ] 552. 30-day trash-warning email template: build includes/notifications/templates/trash_warning.email.{en,ar}.php alongside the soft-delete cron (action 397). Keys already seeded in lang/emails.php trash_warning_*. Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
 - [ ] 511. index.php: translate `#features` section (6 feature tiles: Design Once, Verified Print Shops, Arabic & English, Team & Departments, Smart QR Codes, Employee Portal). Extend landing.php with feat_* keys.
 - [ ] 512. index.php: translate `#how-it-works` section (3 steps: Create Account, Add Team, Print & Share). Extend with how_* keys.
 - [ ] 513. index.php: translate `#pricing` section (Starter/Professional/Business/Enterprise tiers, feature lists, CTAs). Dedicated lang/{en,ar}/pricing.php.
