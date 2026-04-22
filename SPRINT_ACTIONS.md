@@ -453,16 +453,16 @@
 
 ## R, Public Pages + SEO (421-440)
 
-- [ ] 421. Sitemap index covers: static pages, companies, logos, print shops, blog.
-- [ ] 422. Per-locale sitemap variants.
-- [ ] 423. hreflang on every bilingual page.
-- [ ] 424. Schema.org markup: Organization, Product, Review, Article.
+- [x] 421. Sitemap index covers static + tools + solutions + directory + companies + companies-ar + blog + logos + printshops (9 child sitemaps). /sitemap-printshops.xml added this iter. → 5e89ece
+- [x] 422. Per-locale sitemap variants: directory child emits EN+AR hubs; companies child emits bilingual pairs via smUrlBilingual(). → 5e89ece
+- [x] 423. hreflang wired two ways: sitemap xhtml:link rel=alternate on every bilingual <url>; Seo::hreflang($path) helper emits canonical + alternate link tags in <head>. → 5e89ece
+- [~] 424. Schema.org helpers shipped in Seo.php (Organization/Product/Review/Article/BreadcrumbList/FAQPage). Per-page rollout across 40+ pages deferred to 792.
 - [ ] 425. OG images for every company profile (auto-rendered Playwright).
 - [ ] 426. OG images for every print shop.
 - [ ] 427. OG images for blog articles.
-- [ ] 428. Breadcrumb schema.
-- [ ] 429. FAQ schema on FAQ pages.
-- [ ] 430. robots.txt audit + update.
+- [x] 428. Breadcrumb schema: Seo::breadcrumbs([[label,url], ...]) emits ld+json BreadcrumbList. → 5e89ece
+- [x] 429. FAQ schema: Seo::faqPage([[q,a], ...]) emits FAQPage. Rolled onto /faq pending its bilingual rebuild (action 437). → 5e89ece
+- [x] 430. robots.txt audit: added /portal /paymob-test /test /cron to Disallow; kept AI crawlers allowed for Logo Library attribution. → 5e89ece
 - [ ] 431. 301s for legacy URLs.
 - [ ] 432. Core Web Vitals pass on landing.
 - [ ] 433. Landing page conversion copy pass.
@@ -843,3 +843,16 @@
 - [ ] 789. 2FA TOTP setup page /admin/security: generate secret, show QR (otpauth:// URL), verify 6-digit code, persist companies.totp_secret_hash; enforce at login when set.
 - [ ] 790. Super-admin IP allowlist: super_admin_allowed_ips table + check on every /admin/super/* request; 403 with "contact support" if IP not allowed.
 - [ ] 791. File-upload sandbox: move uploads to /storage/uploads/, serve via .htaccess that disables PHP execution; strip EXIF via imagick/exiftool on image uploads.
+- [ ] 792. Roll Seo helper onto 40+ pages: add Seo::hreflang() + Seo::organization() + Seo::breadcrumbs() to /, /about, /blog, /faq, /pricing, /contact, /tools/*, /solutions/*, /industries/*, /companies/*, /logos/*, /print-shops. Measure schema pickup in GSC after 2 weeks.
+- [ ] 793. OG image generation pipeline: render 1200x630 PNG per company (name + sector + logo + BHD teal), cache in /storage/og/companies/{slug}.png, expose via og:image meta. Playwright worker, rebuild weekly from om_companies updated_at.
+- [ ] 794. OG image for every print shop (same pipeline, /storage/og/print-shops/{slug}.png).
+- [ ] 795. OG image for every published blog post (from featured_image or title card fallback).
+- [ ] 796. Add print_shops.slug column + route /print-shops/{slug} to a public profile page. Currently /print-shops is listing-only; per-shop SEO requires stable URLs.
+- [ ] 797. 301 redirect audit: inventory legacy URLs (old marketing paths, renamed industries, /en/ prefix if ever shipped). Record in redirects table + honour from index.php router.
+- [ ] 798. Core Web Vitals pass on /: LCP < 2.5s, CLS < 0.1, INP < 200ms. Audit hero image dimensions, font-display, tailwind.css size, defer third-party scripts.
+- [ ] 799. Landing-page conversion copy pass + testimonials block (real Omani client quotes) + case studies (3 companies with numbers).
+- [ ] 800. Pricing page /pricing bilingual with 3 tiers + Seo::product schema for each.
+- [ ] 801. FAQ page /faq: 20 common questions bilingual, wired to Seo::faqPage.
+- [ ] 802. Contact page /contact: form (Dardasha + SMTP fanout) + WhatsApp deep link + Muscat map.
+- [ ] 803. Terms + Privacy bilingual pages (/terms, /privacy, and /ar/ counterparts).
+- [ ] 804. Blog bilingual: slug-en + slug-ar on blog_posts, hreflang sibling lookup, Seo::article on every post.
