@@ -60,16 +60,23 @@ if (!$enabled || !$apiUrl || !$hasToken) {
     echo json_encode($result); exit;
 }
 
-// 2. Reachability + token validity against /api/admin/me.
-$probeUrl = rtrim($apiUrl, '/') . '/api/admin/me';
+// 2. Reachability + token validity. We POST an empty body to the live
+//    Cardify→ERP endpoint: a valid token yields a 400 validation
+//    error ("missing fields"), a bad/expired token yields 401/403,
+//    and an unreachable host yields 0 + curl error. All three signals
+//    are what we want from a health probe.
+$probeUrl = rtrim($apiUrl, '/') . '/api/admin/cardify/record-payment';
 $ch = curl_init($probeUrl);
 curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_CUSTOMREQUEST  => 'POST',
+    CURLOPT_POSTFIELDS     => '{}',
     CURLOPT_CONNECTTIMEOUT => 5,
     CURLOPT_TIMEOUT        => 8,
     CURLOPT_HTTPHEADER     => [
         'Authorization: Bearer ' . $settings['erp_api_token'],
         'Accept: application/json',
+        'Content-Type: application/json',
         'X-Cardify-Health: 1',
     ],
     CURLOPT_FOLLOWLOCATION => false,
@@ -79,9 +86,12 @@ $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $curlErr  = curl_error($ch);
 curl_close($ch);
 
-$result['checks']['reachable'] = $httpCode > 0;
-$result['checks']['auth_ok']   = $httpCode === 200;
-$result['latency_ms']          = (int) round((microtime(true) - $started) * 1000);
+$result['checks']['reachable']   = $httpCode > 0;
+// Treat 4xx that isn't an auth error as "auth worked, request just
+// didn't carry a real payment"; that's the healthy probe signal.
+$result['checks']['auth_ok']     = $httpCode > 0 && $httpCode !== 401 && $httpCode !== 403;
+$result['checks']['http_status'] = $httpCode;
+$result['latency_ms']            = (int) round((microtime(true) - $started) * 1000);
 
 if ($curlErr && $httpCode === 0) {
     http_response_code(503);
@@ -94,15 +104,14 @@ if ($httpCode === 401 || $httpCode === 403) {
     http_response_code(503);
     $result['status'] = 'auth_failed';
     $result['error']  = 'token_rejected_by_erp';
-    $result['checks']['http_status'] = $httpCode;
     echo json_encode($result); exit;
 }
 
-if ($httpCode !== 200) {
+// 5xx from ERP = ERP itself is unhealthy, treat as degraded.
+if ($httpCode >= 500) {
     http_response_code(503);
     $result['status'] = 'degraded';
-    $result['error']  = 'unexpected_status';
-    $result['checks']['http_status'] = $httpCode;
+    $result['error']  = 'erp_server_error';
     echo json_encode($result); exit;
 }
 
