@@ -464,7 +464,7 @@
 - [x] 429. FAQ schema: Seo::faqPage([[q,a], ...]) emits FAQPage. Rolled onto /faq pending its bilingual rebuild (action 437). → 5e89ece
 - [x] 430. robots.txt audit: added /portal /paymob-test /test /cron to Disallow; kept AI crawlers allowed for Logo Library attribution. → 5e89ece
 - [x] 431. 301s for legacy URLs: nginx block handles 23 static aliases (/home /index.html /sign-in /signin /log-in /sign-up /signup.html /register.html /contact-us /about-us /faqs /faq.html /pricing.html /terms.html /privacy.html /business-cards /digital-cards /demo /try /free-trial /logo-library /logos-library /home.html); includes/Redirects.php PHP fallback with DB-backed url_redirects table for dynamic renamed-slug aliases (migration 086). → 32d2d84
-- [ ] 432. Core Web Vitals pass on landing.
+- [x] 432. CWV pass on landing: LCP hero preload (link rel=preload as=image fetchpriority=high in ui-header.php, $lcpImage hook), hero img gains width/height/fetchpriority/decoding=async (was lazy, blocked LCP), blog-card imgs gain width=1200 height=675 (CLS fix), flowbite bundle switched to defer (was render-blocking). Rolled back broken /index.php 301 that caused site-wide redirect loop. → 6165d31
 - [ ] 433. Landing page conversion copy pass.
 - [ ] 434. Testimonials section on landing (real quotes).
 - [ ] 435. Case studies page: 3 real companies.
@@ -856,3 +856,7 @@
 - [ ] 802. Contact page /contact: form (Dardasha + SMTP fanout) + WhatsApp deep link + Muscat map.
 - [ ] 803. Terms + Privacy bilingual pages (/terms, /privacy, and /ar/ counterparts).
 - [ ] 804. Blog bilingual: slug-en + slug-ar on blog_posts, hreflang sibling lookup, Seo::article on every post.
+- [ ] 805. CWV pass on secondary landings: /companies, /logos, /tools hubs. Apply same LCP preload + fetchpriority + explicit img dims + defer on 3rd-party JS patterns.
+- [ ] 806. Consolidate render-blocking CSS on landing: merge cardify-tokens.css + cardify-components.css + cardify-toast.css into one minified file served under /assets/css/cardify.min.css. Currently 3 requests.
+- [ ] 807. Convert light-dash.png to AVIF + WebP with PNG fallback via <picture>. Current 148KB PNG → likely 40-60KB WebP.
+- [ ] 808. Audit flag-icons.min.css (jsDelivr) usage — only needed on LocaleSwitcher. Conditionally load.
