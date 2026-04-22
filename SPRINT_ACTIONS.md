@@ -476,7 +476,7 @@
 
 ## S, ERP Sync + Billing (441-455)
 
-- [ ] 441. Health-check endpoint `/api/erp-health`, returns OK if token valid.
+- [x] 441. /api/erp-health: JSON health endpoint; probes POST /api/admin/cardify/record-payment with empty body (valid token → 400 = auth_ok; 401/403 = auth_failed; network err = unreachable); 503 on degraded; rate-limited 30/min/IP; never leaks token value. Live 200 status=ok 69ms. → 6f9e2f9
 - [ ] 442. Alert on ERP sync failure (WhatsApp to Ali).
 - [ ] 443. Retry queue for failed syncs (exponential backoff).
 - [ ] 444. Bilingual ERP invoice PDFs.
