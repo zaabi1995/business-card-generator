@@ -519,7 +519,7 @@
 - [x] 475. E2E Journey C template design EN: tests/e2e/template-flow.spec.ts covers /admin/theme.php unauth-redirect + public KNOWN_CARD EN render (name + save-contact affordance) + i18n parity on template keys. 5/5 passed prod. → c527be4
 - [x] 476. E2E Journey C template design AR: same spec file, AR variant of /admin/theme.php auth-gate + public KNOWN_CARD AR render (dir=rtl + Arabic lang + save-contact tolerated EN/AR). → c527be4
 - [x] 477. E2E Journey D employee invite + self-edit: tests/e2e/employee-invite-flow.spec.ts verifies no-token/random-token → expired page (EN + AR), GET on save endpoint leaks no PII, portal i18n parity on edit_my_details/save_changes/link_expired. 5/5 passed prod 3.7s. → af1c615
-- [ ] 478. E2E Journey D: employee in AR.
+- [x] 478. E2E Journey D employee AR: covered in the same tests/e2e/employee-invite-flow.spec.ts (AR no-token visit + portal.ar.php parity, both passed vs prod). → af1c615
 - [ ] 479. E2E Journey E: admin orders 100 cards via Paymob EN.
 - [ ] 480. E2E Journey E: via Credit Account AR.
 - [ ] 481. E2E Journey E: via PO upload AR.
