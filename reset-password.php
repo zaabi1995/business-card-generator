@@ -35,8 +35,8 @@ $extraHead = <<<HTML
             transition: all 0.15s ease;
         }
         .form-input:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            border-color: #009bc1;
+            box-shadow: 0 0 0 3px rgba(0, 155, 193, 0.12);
         }
         .form-input::placeholder {
             color: #9ca3af;
@@ -253,7 +253,7 @@ function sendPasswordChangedEmail($email, $name) {
 </div>
 
 <p style="text-align: center; margin: 30px 0;">
-    <a href="{$loginUrl}" class="btn" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+    <a href="{$loginUrl}" class="btn" style="display: inline-block; padding: 12px 24px; background: #009bc1; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
         Sign In
     </a>
 </p>

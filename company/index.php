@@ -73,8 +73,8 @@ if ($isLoggedIn && $belongsToCompany) {
 }
 
 // Apply theme colors
-$primaryColor = $companyTheme['primary_color'] ?? '#3b82f6';
-$secondaryColor = $companyTheme['secondary_color'] ?? '#1e40af';
+$primaryColor = $companyTheme['primary_color'] ?? '#009bc1';
+$secondaryColor = $companyTheme['secondary_color'] ?? '#036e87';
 $pageTitle = sanitize($company['name']);
 $metaRobots = 'noindex, nofollow';
 

@@ -30,8 +30,8 @@ $extraHead = <<<HTML
             transition: all 0.15s ease;
         }
         .form-input:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            border-color: #009bc1;
+            box-shadow: 0 0 0 3px rgba(0, 155, 193, 0.12);
         }
         .form-input::placeholder {
             color: #9ca3af;
@@ -200,7 +200,7 @@ function sendNoAccountEmail($email) {
 
 <p><strong>If you're a company administrator:</strong></p>
 <p style="text-align: center; margin: 20px 0;">
-    <a href="{$registerUrl}" class="btn" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+    <a href="{$registerUrl}" class="btn" style="display: inline-block; padding: 12px 24px; background: #009bc1; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
         Register Your Company
     </a>
 </p>
@@ -209,9 +209,9 @@ function sendNoAccountEmail($email) {
 <p>Contact your company administrator to set up your account or check which email was used for your profile.</p>
 
 <p><strong>Need help?</strong></p>
-<p>If you believe this is an error, please <a href="{$contactUrl}" style="color: #2563eb;">contact us</a> and we'll help you sort it out.</p>
+<p>If you believe this is an error, please <a href="{$contactUrl}" style="color: #009bc1;">contact us</a> and we'll help you sort it out.</p>
 
-<div class="info-box" style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 15px 0; border-radius: 0 4px 4px 0;">
+<div class="info-box" style="background: #e6f7fb; border-left: 4px solid #009bc1; padding: 15px; margin: 15px 0; border-radius: 0 4px 4px 0;">
     <strong>Security Note:</strong><br>
     If you didn't request this, you can safely ignore this email. No action is required.
 </div>

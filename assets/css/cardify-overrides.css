@@ -613,13 +613,18 @@
 /* Gradient stops — used in hero CTAs (from-blue-600 to-indigo-700 etc) */
 .from-blue-600  { --tw-gradient-from: var(--bhd-teal-500) var(--tw-gradient-from-position) !important; }
 .from-blue-700  { --tw-gradient-from: var(--bhd-teal-600) var(--tw-gradient-from-position) !important; }
+.from-blue-800  { --tw-gradient-from: var(--bhd-teal-700) var(--tw-gradient-from-position) !important; }
+.from-blue-900  { --tw-gradient-from: var(--bhd-teal-800) var(--tw-gradient-from-position) !important; }
 .from-indigo-600 { --tw-gradient-from: var(--bhd-teal-600) var(--tw-gradient-from-position) !important; }
 .from-indigo-700 { --tw-gradient-from: var(--bhd-teal-700) var(--tw-gradient-from-position) !important; }
 .to-blue-600    { --tw-gradient-to:   var(--bhd-teal-500) var(--tw-gradient-to-position)   !important; }
 .to-blue-700    { --tw-gradient-to:   var(--bhd-teal-600) var(--tw-gradient-to-position)   !important; }
+.to-blue-800    { --tw-gradient-to:   var(--bhd-teal-700) var(--tw-gradient-to-position)   !important; }
+.to-blue-900    { --tw-gradient-to:   var(--bhd-teal-800) var(--tw-gradient-to-position)   !important; }
 .to-indigo-600  { --tw-gradient-to:   var(--bhd-teal-600) var(--tw-gradient-to-position)   !important; }
 .to-indigo-700  { --tw-gradient-to:   var(--bhd-teal-700) var(--tw-gradient-to-position)   !important; }
 .via-blue-700   { --tw-gradient-via:  var(--bhd-teal-600) var(--tw-gradient-via-position,50%)  !important; }
+.via-blue-800   { --tw-gradient-via:  var(--bhd-teal-700) var(--tw-gradient-via-position,50%)  !important; }
 .via-indigo-600 { --tw-gradient-via:  var(--bhd-teal-600) var(--tw-gradient-via-position,50%)  !important; }
 
 /* Shadow tints */

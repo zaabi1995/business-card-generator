@@ -208,7 +208,7 @@ if (empty($enabledFields)) {
 
 // Apply theme colors (like main page)
 $primaryColor = $companyTheme['primary_color'] ?? '#3b82f6';
-$secondaryColor = $companyTheme['secondary_color'] ?? '#1e40af';
+$secondaryColor = $companyTheme['secondary_color'] ?? '#036e87';
 
 $success = false;
 $error = $error ?? null;
@@ -459,8 +459,8 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
             transition: all 0.15s ease;
         }
         .form-input:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            border-color: #009bc1;
+            box-shadow: 0 0 0 3px rgba(0, 155, 193, 0.12);
         }
         .form-input::placeholder {
             color: #9ca3af;
@@ -619,7 +619,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
             margin-top: 8px;
             font-size: 20px;
             font-weight: 700;
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            background: linear-gradient(135deg, #009bc1 0%, #0284a1 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
