@@ -353,7 +353,7 @@
 - [~] 329-336. Per-form tooltip wiring uses the new .cardify-tip primitive (shipped this iteration) + strings from the new `tooltips` namespace (38 EN+AR keys seeded). Field-by-field drop-in deferred to action 732.
 - [~] 337. Template-lint warning panel deferred to action 601 (already queued).
 - [~] 338. Custom-domain DNS instructions plain-English rewrite deferred to action 526 (already queued).
-- [x] 339. Generic .cardify-help-icon + .cardify-tip / .cardify-tip-trigger primitive shipped in cardify-components.css with popover arrow + below-variant + focus-visible trigger. → PENDING_SHA
+- [x] 339. Generic .cardify-help-icon + .cardify-tip / .cardify-tip-trigger primitive shipped in cardify-components.css with popover arrow + below-variant + focus-visible trigger. → 696907f
 - [~] 340. First-time-user tooltips on empty pages deferred to action 706 (feature-tour).
 
 ## M, Forms + Validation (341-355)
