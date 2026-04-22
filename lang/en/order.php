@@ -83,5 +83,8 @@ return [
     'receipt_payment_method'=> 'Payment method',
     'receipt_tracking'      => 'Tracking',
     'receipt_erp_invoice'   => 'ERP Invoice',
+    'receipt_subtotal_excl_vat' => 'Subtotal (excl. VAT)',
+    'receipt_vat_row'       => 'VAT :pct%',
+    'receipt_total_incl_vat'=> 'Total (incl. VAT)',
     'receipt_footer'        => 'Thank you for your order. For questions, contact your print shop.',
 ];

@@ -82,5 +82,8 @@ return [
     'receipt_payment_method'=> 'طريقة الدفع',
     'receipt_tracking'      => 'رقم التتبّع',
     'receipt_erp_invoice'   => 'فاتورة ERP',
+    'receipt_subtotal_excl_vat' => 'المجموع الفرعي (غير شامل الضريبة)',
+    'receipt_vat_row'       => 'ضريبة القيمة المضافة :pct%',
+    'receipt_total_incl_vat'=> 'الإجمالي (شامل الضريبة)',
     'receipt_footer'        => 'شكراً لك على طلبك. للاستفسار، تواصل مع المطبعة.',
 ];

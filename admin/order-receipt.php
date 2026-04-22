@@ -5,6 +5,7 @@
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/Currency.php';
+require_once INCLUDES_DIR . '/Tax.php';
 require_once INCLUDES_DIR . '/admin-layout.php';
 
 requireAdmin();
@@ -211,10 +212,35 @@ $pageTitle = t('order.receipt_header') . ' #' . ($order['order_number'] ?? $orde
         </div>
 
         <!-- Totals -->
+        <?php
+        // Lazy backfill: any paid order that predates migration 089 gets its
+        // VAT breakdown computed + persisted the first time the receipt is
+        // viewed. Prices are tax-inclusive so the extraction is unambiguous.
+        $taxBreakdown = Tax::breakdownFromOrder($order);
+        if (!$taxBreakdown && (float) ($order['total'] ?? 0) > 0) {
+            Tax::persistOnOrder($orderId, (float) $order['total']);
+            $order = array_merge($order, [
+                'tax_rate'          => Tax::OMAN_VAT,
+                'tax_amount'        => Tax::breakdown((float) $order['total'])['tax'],
+                'subtotal_excl_vat' => Tax::breakdown((float) $order['total'])['subtotal'],
+            ]);
+            $taxBreakdown = Tax::breakdownFromOrder($order);
+        }
+        ?>
         <div class="px-8 py-6 border-b border-gray-100">
             <div class="space-y-2">
+                <?php if ($taxBreakdown): ?>
                 <div class="flex justify-between text-sm text-gray-600">
-                    <span><?= htmlspecialchars(t('order.receipt_total_row')) ?></span>
+                    <span><?= htmlspecialchars(t('order.receipt_subtotal_excl_vat')) ?></span>
+                    <span class="font-medium"><?= number_format($taxBreakdown['subtotal'], 3) ?> <?= $cur ?></span>
+                </div>
+                <div class="flex justify-between text-sm text-gray-600">
+                    <span><?= htmlspecialchars(t('order.receipt_vat_row', ['pct' => number_format($taxBreakdown['rate'] * 100, 0)])) ?></span>
+                    <span class="font-medium"><?= number_format($taxBreakdown['tax'], 3) ?> <?= $cur ?></span>
+                </div>
+                <?php endif; ?>
+                <div class="flex justify-between text-sm text-gray-600">
+                    <span><?= htmlspecialchars(t($taxBreakdown ? 'order.receipt_total_incl_vat' : 'order.receipt_total_row')) ?></span>
                     <span class="font-medium"><?= number_format($order['total'] ?? 0, 3) ?> <?= $cur ?></span>
                 </div>
                 <?php if ($paidDeposit): ?>
