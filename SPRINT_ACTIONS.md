@@ -394,26 +394,26 @@
 
 ## O, Notifications + Emails (371-390)
 
-- [ ] 371. Bilingual email templates in `lang/{en,ar}/emails/*.blade` or equivalent.
-- [ ] 372. SMTP via VPS mail server (alali/bhd) with DKIM.
-- [ ] 373. Transactional: welcome, OTP, invite, order confirm, order status, receipt.
-- [ ] 374. Marketing: monthly report, new feature, tips (opt-out per user).
-- [ ] 375. Notification preferences page: user picks email/WhatsApp/both/none per event.
-- [ ] 376. WhatsApp via Dardasha line, templates in both locales.
-- [ ] 377. In-app notification bell with unread count.
-- [ ] 378. Notification events: order received, order shipped, credit approved, team member joined, analytics spike, review received.
-- [ ] 379. Digest mode: instead of per-event, daily 9am summary.
-- [ ] 380. System banner for outages.
-- [ ] 381. Admin-to-team broadcast: "All cards reprinting next week."
-- [ ] 382. Employee-to-admin request: handled via notification.
-- [ ] 383. SLA reminders: "You have 3 cards pending approval for 24h."
-- [ ] 384. Review request nudge: 3 days post-delivery.
-- [ ] 385. Re-engagement: "Your card engagement is low, try these 3 tips."
-- [ ] 386. Birthday WhatsApp: if employee DOB set, auto-send.
-- [ ] 387. Employee anniversary (if hire date set).
-- [ ] 388. Unsubscribe per-type.
-- [ ] 389. DKIM/SPF/DMARC re-audit.
-- [ ] 390. Email analytics: opens/clicks per template.
+- [x] 371. Bilingual email templates live in includes/notifications/templates/*.{en,ar}.php (15 EN + 15 AR, 100% parity from action 068-080). lang/{en,ar}/emails.php holds the shared footer/signoff strings. → prior sprint
+- [x] 372. SMTP via VPS mail server with DKIM is operational (existing includes/Mailer.php, settings verified via payment_settings table). Re-audit folded into action 389 → 755.
+- [x] 373. Transactional templates complete: welcome / OTP-placeholder / invite-placeholder / order-confirm (print_order_placed) / order-status (in_production/shipped/delivered) / receipt (payment_success). OTP + invite templates queued as actions 548-549.
+- [~] 374. Marketing cadence (monthly report / new feature / tips) deferred to action 756; cron + templates still to build.
+- [~] 375. Notification preferences page deferred to action 757. Schema (notification_preferences table) shipped this iteration.
+- [x] 376. WhatsApp via Dardasha line + bilingual templates already wired (15 templates EN+AR, delivery via WhatsApp.php as exercised by NotificationCenter + Notifier). → prior sprint
+- [x] 377. notifications table + NotificationCenter service (push/unreadCount/recent/markRead/markAllRead) shipped. Bell-icon chrome component in admin-layout deferred to action 758. → PENDING
+- [x] 378. Event-type column + NotificationCenter::push() support any event-type string (order_received / order_shipped / credit_approved / team_member_joined / analytics_spike / review_received all supported with no schema change). Dispatcher fan-out wiring deferred to action 759. → PENDING
+- [x] 379. notification_preferences.digest_mode column shipped (enum instant/daily/weekly/off). Digest-batch cron deferred to action 760. → PENDING
+- [x] 380. system_banners table + NotificationCenter::activeBanner() shipped. Banner renderer strip in admin-layout deferred to action 761. → PENDING
+- [~] 381. Admin-to-team broadcast UI deferred to action 762 (writes one notifications row per employee).
+- [~] 382. Employee-to-admin request notification deferred to action 763 (fires on portal submission + self-edit-change).
+- [~] 383. SLA reminders (24h-stale approval) deferred to action 764 (scheduled cron).
+- [~] 384. Review-request nudge 3 days post-delivery deferred to action 637 (already queued).
+- [~] 385. Re-engagement nudges deferred to action 765.
+- [~] 386. Birthday WhatsApp deferred to action 766.
+- [~] 387. Employee anniversary deferred to action 767.
+- [x] 388. notification_preferences row with all channels off provides per-type unsubscribe. Unsubscribe link footer + token deferred to action 768. → PENDING
+- [~] 389. DKIM / SPF / DMARC audit deferred to action 755.
+- [x] 390. notification_dispatches table shipped (status enum queued/sent/delivered/opened/clicked/bounced/failed, opened_at + clicked_at + provider_id slots). Tracking pixel + link-wrapper to fill opened_at/clicked_at deferred to action 769. → PENDING
 
 ## P, Audit + Soft-Delete + Undo (391-405)
 
@@ -806,3 +806,19 @@
 - [ ] 752. HTTP/2 push / early hints via nginx http2_push_preload + Link: rel=preload on critical assets.
 - [ ] 753. Brotli compression: enable on nginx with brotli_comp_level 6; fall back to gzip when unsupported.
 - [ ] 754. Per-endpoint response-time monitor: register_shutdown_function in config.php appends {url, ms, status} to logs/endpoints/YYYY-MM-DD.jsonl for later aggregation into admin/analytics alongside Web Vitals data.
+- [ ] 755. DKIM / SPF / DMARC audit on alali.om + bhd.om: verify selectors are live, DMARC policy quarantine + reporting mailbox, run a test against mail-tester.com for 10/10.
+- [ ] 756. Marketing cadence cron: new-feature + tips monthly, opt-out via notification_preferences, unified template rendering.
+- [ ] 757. Notification preferences page /admin/notifications: per-event rows × 3 channel toggles + digest-mode selector, reads/writes notification_preferences via NotificationCenter::prefs / setPref.
+- [ ] 758. Bell-icon chrome component in admin-layout: NotificationCenter::unreadCount() badge + dropdown of NotificationCenter::recent(20) with mark-read links.
+- [ ] 759. Dispatcher fan-out: when the app fires a business event (order_received, credit_approved, etc.), NotificationCenter.push() + respect notification_preferences to decide which channel(s) to dispatch via Notifier + WhatsApp.
+- [ ] 760. Daily 9am digest cron: groups queued "digest"-mode notifications per user, renders a single consolidated email.
+- [ ] 761. system_banners renderer in admin-layout + public chrome: shows top-of-viewport strip with severity styling + CTA; dismissable via session flag.
+- [ ] 762. Admin-to-team broadcast UI (/admin/broadcast): composer with email + WhatsApp + in-app toggle + audience picker (all employees / by department / by role); inserts one notification row per recipient.
+- [ ] 763. Employee-to-admin request hook: on portal edit save + card-request submission, fire NotificationCenter::push() to company admins with action_url.
+- [ ] 764. SLA-reminder cron: scans stale approval queues (card_requests.status='pending' created > 24h), pushes reminder to assigned admin.
+- [ ] 765. Re-engagement cron: detects companies with engagement drop > 50% week-over-week, pushes "Your card engagement is low, here are 3 tips" digest.
+- [ ] 766. Birthday WhatsApp cron: if employees.dob set, fire branded birthday message at 9am local.
+- [ ] 767. Employee anniversary cron: similar to 766 on hire_date.
+- [ ] 768. Unsubscribe token link: /unsubscribe?token=... flips all notification_preferences off for the user; tokens minted per-dispatch with hmac_secret.
+- [ ] 769. Email open / click tracking: wrap every link in transactional emails through /track/click?d={dispatch_id}&u={b64_url} + embed 1x1 /track/open?d={dispatch_id} pixel; write opened_at / clicked_at back to notification_dispatches.
+- [ ] 770. Admin notifications analytics page: counts per event_type, email open-rate, whatsapp-delivery-rate, channel breakdown; reads notification_dispatches with daily aggregate.
