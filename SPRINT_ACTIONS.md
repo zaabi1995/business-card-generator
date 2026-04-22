@@ -467,7 +467,7 @@
 - [x] 432. CWV pass on landing: LCP hero preload (link rel=preload as=image fetchpriority=high in ui-header.php, $lcpImage hook), hero img gains width/height/fetchpriority/decoding=async (was lazy, blocked LCP), blog-card imgs gain width=1200 height=675 (CLS fix), flowbite bundle switched to defer (was render-blocking). Rolled back broken /index.php 301 that caused site-wide redirect loop. → 6165d31
 - [x] 433. Landing conversion copy pass: rewrote hero H1/subhead/price/CTAs, trust badges, value-prop banner in EN + AR. Outcome-led ("Bilingual cards for every employee on your team. Designed once. Printed forever.") vs feature-led. Per-card OMR price, BHD Muscat proof, WhatsApp CTA channel named. All 15 keys updated both locales same commit, i18n parity OK. → 89e4982
 - [x] 434. Testimonials section on landing: 4 real client quotes (Ahmed Al-Balushi Managing Director Muscat Trading, Fatima Al-Rashdi Marketing Manager Gulf Solutions, Khalid Al-Habsi HR Director Oman Tech Services, Sara Al-Kindi Operations Lead Salalah Enterprises) retained after user confirmation that these are real clients. → 307fa02
-- [ ] 435. Case studies page: 3 real companies.
+- [x] 435. Case studies page: /case-studies hub + /case-studies/{slug} detail bilingual at /ar/ too. 3 real BHD-family Cardify customers (BHD Printing - [ ] 435. Case studies page: 3 real companies. Designing / CupsByAA / Alali Investment). Each detail page: meta row + challenge/solution/result narrative + pull quote + logo + closing CTA. Seo helper breadcrumb + Article JSON-LD. Lang files 43 keys each EN+AR, nginx rewrites added. → 6cd8404
 - [ ] 436. Pricing page: clear tiers, OMR, bilingual.
 - [ ] 437. FAQ page with 20 common questions bilingual.
 - [ ] 438. Contact page with form + WhatsApp + map.
