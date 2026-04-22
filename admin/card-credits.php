@@ -24,24 +24,50 @@ $message = null;
 $messageType = 'success';
 
 // Bundle catalogue. Per-card price discounts with volume; all OMR.
+// BASE_PRICE is the Starter rate; savings per bundle = (BASE - tier) * count.
+// Keep this ladder in sync with CardCredits::priceFor() on the server side
+// so custom counts land on the same tier the UI advertises.
 $BUNDLES = [
     ['count' => 10,  'price_per' => 0.500, 'label_key' => 'bundle_starter',    'recommended' => false],
     ['count' => 50,  'price_per' => 0.400, 'label_key' => 'bundle_team',       'recommended' => true],
     ['count' => 100, 'price_per' => 0.350, 'label_key' => 'bundle_department', 'recommended' => false],
     ['count' => 500, 'price_per' => 0.280, 'label_key' => 'bundle_enterprise', 'recommended' => false],
 ];
+define('CC_BASE_PRICE', 0.500);
+
+/** Pick the best per-card price for an arbitrary count based on the ladder. */
+function ccTierPrice(int $count, array $bundles): float {
+    $price = $bundles[0]['price_per'];
+    foreach ($bundles as $b) {
+        if ($count >= $b['count']) $price = $b['price_per'];
+    }
+    return $price;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'buy') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
     require_once INCLUDES_DIR . '/Payment.php';
-    $chosen = (int) ($_POST['bundle'] ?? -1);
-    if (!isset($BUNDLES[$chosen])) {
+    $chosenRaw = $_POST['bundle'] ?? '';
+    $count = 0; $price = 0.0;
+
+    if ($chosenRaw === 'custom') {
+        $count = (int) ($_POST['custom_count'] ?? 0);
+        // Custom quantity is clamped to [10, 5000] and uses the same
+        // volume-tier ladder so bulk orders still get the discount.
+        $count = max(10, min(5000, $count));
+        $price = ccTierPrice($count, $BUNDLES);
+    } elseif (ctype_digit((string) $chosenRaw) && isset($BUNDLES[(int) $chosenRaw])) {
+        $b     = $BUNDLES[(int) $chosenRaw];
+        $count = (int) $b['count'];
+        $price = (float) $b['price_per'];
+    }
+
+    if ($count <= 0) {
         $message = t('card_credits.err_bundle');
         $messageType = 'error';
     } else {
-        $b = $BUNDLES[$chosen];
         $cur = defined('APP_CURRENCY') ? APP_CURRENCY : 'OMR';
-        $result = Payment::createCardOrderIntent($companyId, $b['count'], $b['price_per'], $cur);
+        $result = Payment::createCardOrderIntent($companyId, $count, $price, $cur);
         if (!empty($result['checkout_url'])) {
             header('Location: ' . $result['checkout_url']);
             exit;
@@ -96,10 +122,16 @@ adminHeader(t('card_credits.page_title'), 'billing');
         <input type="hidden" name="action" value="buy">
         <h2 class="text-lg font-bold text-gray-900 mb-4"><?= htmlspecialchars(t('card_credits.pick_bundle')) ?></h2>
         <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <?php foreach ($BUNDLES as $i => $b): $total = $b['count'] * $b['price_per']; ?>
+            <?php foreach ($BUNDLES as $i => $b):
+                $total    = $b['count'] * $b['price_per'];
+                $savings  = ($b['count'] * CC_BASE_PRICE) - $total;
+                $savePct  = CC_BASE_PRICE > 0 ? (int) round(((CC_BASE_PRICE - $b['price_per']) / CC_BASE_PRICE) * 100) : 0;
+            ?>
             <label class="relative bg-white rounded-2xl border-2 border-gray-200 hover:border-blue-400 p-6 cursor-pointer transition-all <?= $b['recommended'] ? 'ring-2 ring-blue-500 border-blue-500' : '' ?>">
                 <?php if ($b['recommended']): ?>
                 <span class="absolute top-2 right-2 rtl:left-2 rtl:right-auto bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full"><?= htmlspecialchars(t('card_credits.most_popular')) ?></span>
+                <?php elseif ($savePct > 0): ?>
+                <span class="absolute top-2 right-2 rtl:left-2 rtl:right-auto bg-green-50 text-green-700 border border-green-200 text-xs px-2 py-0.5 rounded-full"><?= htmlspecialchars(t('card_credits.save_pct', ['pct' => $savePct])) ?></span>
                 <?php endif; ?>
                 <input type="radio" name="bundle" value="<?= $i ?>" required class="sr-only peer">
                 <div class="peer-checked:border-blue-500">
@@ -109,12 +141,59 @@ adminHeader(t('card_credits.page_title'), 'billing');
                     <div class="border-t border-gray-100 pt-3">
                         <p class="text-xs text-gray-500"><?= number_format($b['price_per'], 3) ?> <?= htmlspecialchars(t('card_credits.per_card')) ?></p>
                         <p class="text-xl font-bold text-gray-900 mt-1"><?= number_format($total, 3) ?> <span class="text-sm font-medium text-gray-500">OMR</span></p>
+                        <?php if ($savings > 0): ?>
+                        <p class="text-xs text-green-700 mt-1 font-medium"><?= htmlspecialchars(t('card_credits.save_omr', ['amt' => number_format($savings, 3)])) ?></p>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div class="peer-checked:ring-4 peer-checked:ring-blue-200 rounded-xl absolute inset-0 pointer-events-none"></div>
             </label>
             <?php endforeach; ?>
         </div>
+
+        <!-- Custom amount (uses the same volume-tier ladder) -->
+        <div x-data="ccCustom()" class="mt-6 bg-white rounded-2xl border-2 border-gray-200 p-5">
+            <label class="flex items-center gap-3 cursor-pointer">
+                <input type="radio" name="bundle" value="custom" class="h-4 w-4 text-blue-600" @change="active = true">
+                <span class="font-semibold text-gray-900"><?= htmlspecialchars(t('card_credits.custom_h')) ?></span>
+                <span class="text-xs text-gray-500"><?= htmlspecialchars(t('card_credits.custom_hint')) ?></span>
+            </label>
+            <div class="mt-4 grid sm:grid-cols-3 gap-4 items-end" :class="active ? '' : 'opacity-60 pointer-events-none'">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1 uppercase"><?= htmlspecialchars(t('card_credits.custom_count')) ?></label>
+                    <input type="number" name="custom_count" min="10" max="5000" step="10"
+                           x-model.number="count"
+                           @input="active = true"
+                           class="w-full px-3 py-2 rounded-lg border border-gray-300 font-mono">
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 uppercase mb-1"><?= htmlspecialchars(t('card_credits.per_card')) ?></p>
+                    <p class="font-mono text-lg font-semibold text-gray-900" x-text="formatRate(pricePer())">—</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 uppercase mb-1"><?= htmlspecialchars(t('card_credits.custom_total')) ?></p>
+                    <p class="font-mono text-xl font-bold text-gray-900" x-text="formatTotal(count * pricePer())">—</p>
+                    <p x-show="count * (0.500 - pricePer()) > 0" class="text-xs text-green-700 font-medium mt-1"
+                       x-text="'<?= htmlspecialchars(t('card_credits.save_prefix')) ?> ' + formatTotal(count * (0.500 - pricePer()))"></p>
+                </div>
+            </div>
+        </div>
+        <script>
+          function ccCustom() {
+            const tiers = <?= json_encode(array_map(static fn($b) => ['count' => $b['count'], 'price' => $b['price_per']], $BUNDLES)) ?>;
+            return {
+              active: false,
+              count: 25,
+              pricePer() {
+                let p = tiers[0].price;
+                for (const t of tiers) if (this.count >= t.count) p = t.price;
+                return p;
+              },
+              formatRate(v) { return v.toFixed(3) + ' OMR'; },
+              formatTotal(v) { return v.toFixed(3) + ' OMR'; },
+            };
+          }
+        </script>
         <div class="mt-6 flex justify-end">
             <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow transition">
                 <i class="fa-solid fa-credit-card"></i>

@@ -14,6 +14,13 @@ return [
     'cards_word'       => 'cards',
     'per_card'         => 'OMR / card',
     'most_popular'     => 'Most popular',
+    'save_pct'         => 'Save :pct%',
+    'save_omr'         => 'Save :amt OMR vs Starter rate',
+    'save_prefix'      => 'Save',
+    'custom_h'         => 'Custom amount',
+    'custom_hint'      => 'Pick any quantity between 10 and 5,000. Volume discount applies automatically.',
+    'custom_count'     => 'Cards',
+    'custom_total'     => 'Total',
     'checkout_btn'     => 'Continue to secure checkout',
 
     'recent_h'         => 'Recent credit activity',
