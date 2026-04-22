@@ -205,8 +205,9 @@ button:hover{filter:brightness(0.95)} button.ghost{background:transparent;color:
 .lang-switch{position:absolute;top:16px;<?= $dir === 'rtl' ? 'left' : 'right' ?>:16px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;color:var(--muted);text-decoration:none;font-weight:500}
 .lang-switch:hover{color:var(--ink);border-color:var(--muted)}
 html[dir=rtl] .code{letter-spacing:8px;direction:ltr}
-html[dir=rtl] input[type=tel]{direction:ltr;text-align:right}
-html[dir=rtl] .iti{direction:ltr}
+.phone-wrap{direction:ltr}
+.phone-wrap .iti,.phone-wrap .iti *{direction:ltr !important;text-align:left}
+.phone-wrap input[type=tel]{direction:ltr !important;text-align:left;unicode-bidi:plaintext}
 </style>
 </head>
 <body>
@@ -238,7 +239,9 @@ html[dir=rtl] .iti{direction:ltr}
 
     <div id="pane-phone" class="pane" data-active="<?= $detectedPhone || !$identifier ? 'true' : 'false' ?>" role="tabpanel" aria-labelledby="tab-phone">
       <label for="phone"><?= htmlspecialchars(t('auth.tenant_phone_label')) ?></label>
-      <input type="tel" id="phone" autocomplete="tel" value="<?= htmlspecialchars($detectedPhone ? $identifier : '') ?>">
+      <div dir="ltr" class="phone-wrap">
+        <input type="tel" id="phone" dir="ltr" autocomplete="tel" value="<?= htmlspecialchars($detectedPhone ? $identifier : '') ?>">
+      </div>
       <div class="field-err" id="phone-err" role="alert"></div>
     </div>
 
