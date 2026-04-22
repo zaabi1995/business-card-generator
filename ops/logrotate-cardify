@@ -1,0 +1,47 @@
+# /etc/logrotate.d/cardify — Cat T action 462
+#
+# Rotates Cardify's own log streams. The nginx access/error logs under
+# /www/wwwlogs/ are already handled by aaPanel's /etc/logrotate.d/nginx
+# (daily, 14 copies, gzip). This file covers the gaps:
+#   1. /var/log/cardify-*.log — our cron scripts
+#   2. PHP-FPM php-fpm.log + slow.log on the PHP 8.3 build
+#
+# Install path: /etc/logrotate.d/cardify (root:root 0644).
+# Validate: `logrotate -d /etc/logrotate.d/cardify`.
+
+/var/log/cardify-*.log {
+    # /var/log is group-writable on Ubuntu 22.04, so we force logrotate
+    # to run as root:root explicitly.
+    su root root
+    daily
+    missingok
+    rotate 30
+    compress
+    delaycompress
+    notifempty
+    create 0640 root root
+    sharedscripts
+    postrotate
+        # Nothing to reload — cron scripts write via >> so new files
+        # come into existence automatically.
+    endscript
+}
+
+/www/server/php/83/var/log/php-fpm.log
+/www/server/php/83/var/log/slow.log {
+    weekly
+    missingok
+    rotate 8
+    compress
+    delaycompress
+    notifempty
+    create 0600 root root
+    sharedscripts
+    postrotate
+        # php-fpm holds an open FD on the log; SIGUSR1 reopens the file.
+        PID_FILE=/www/server/php/83/var/run/php-fpm.pid
+        if [ -f "$PID_FILE" ]; then
+            kill -USR1 "$(cat "$PID_FILE")" 2>/dev/null || true
+        fi
+    endscript
+}
