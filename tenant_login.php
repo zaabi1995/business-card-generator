@@ -10,6 +10,8 @@
 
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/WhatsApp.php';
+require_once INCLUDES_DIR . '/Mailer.php';
 require_once INCLUDES_DIR . '/OtpService.php';
 require_once INCLUDES_DIR . '/TenantHost.php';
 
