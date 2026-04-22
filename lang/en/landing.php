@@ -27,4 +27,18 @@ return [
     'vp_print_body'   => 'Order from BHD and verified Omani print shops, delivered anywhere in the sultanate.',
     'vp_free_title'   => 'Free to try',
     'vp_free_body'    => 'Design, preview and share digital cards free. You only pay when you print.',
+
+    // Testimonials section
+    'test_eyebrow'   => 'Used in Oman',
+    'test_heading'   => 'Built for Omani teams, by an Omani team',
+    'test_sub'       => 'Cardify was built inside BHD Group to solve our own card mess. It now runs our 14-person team and our nine sister brands.',
+    'test1_title'    => 'Our own team was the first customer',
+    'test1_quote'    => 'We made Cardify because every time someone joined BHD, a manager spent an afternoon getting their card sorted. Now the employee fills in their details, a pre-approved template renders, and we print in-house the same day. We use it across all ten group brands.',
+    'test1_author'   => 'Ali Al-Zaabi',
+    'test1_role'     => 'Group CEO, BHD Printing & Designing',
+    'test2_title'    => 'The bilingual layout just works',
+    'test2_quote'    => 'Arabic and English sit side by side on the same card, set in the right direction automatically. That alone saved us the back-and-forth with designers every time a name or title changed.',
+    'test2_author'   => 'BHD Group',
+    'test2_role'     => 'Ten Omani brands, one card system',
+    'test_join_cta'  => 'Want your quote here? Tell us on WhatsApp.',
 ];
