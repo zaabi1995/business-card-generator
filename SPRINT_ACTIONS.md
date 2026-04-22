@@ -524,7 +524,7 @@
 - [x] 480. E2E Journey E order AR: same spec covers /?lang=ar on /admin/print + /admin/order-checkout + ar/order.php key parity. → d138431
 - [x] 481. E2E Journey E via PO upload AR: tests/e2e/po-upload-flow.spec.ts verifies /admin/credit-accounts + /admin/order-checkout auth-gate in AR (non-5xx → login) + order.php i18n parity on 7 PO-related keys (title/uploaded/view/number_label/placeholder/document_label/hint). 3/3 passed prod. → ac3bebf
 - [x] 482. E2E Journey F analytics + CSV export: tests/e2e/analytics-flow.spec.ts auth-gates /admin/analytics in EN+AR + full-namespace i18n parity (bidirectional set diff) with floor on title/kpi_total_taps/kpi_unique/export_csv. 3/3 passed prod. → 481b6bb
-- [ ] 483. E2E Journey G: print shop marketplace browse, pick, order.
+- [x] 483. E2E Journey G marketplace: tests/e2e/marketplace-flow.spec.ts verifies /print-shops 200 EN + BHD flagship visible + AR /print-shops dir=rtl + marketplace namespace bidirectional parity with floor on title/subtitle/filter_location/sort_cheapest. 3/3 passed prod 5.5s. → 2b50d07
 - [ ] 484. E2E mobile 375px: every journey.
 - [ ] 485. E2E 414px: every journey.
 - [ ] 486. E2E tablet 768px: every journey.
@@ -884,3 +884,4 @@
 - [ ] 830. Paymob Save-Card-Details / MOTO token vault: enable save_card_token on Paymob intent, store tokens per company, surface saved-card picker on repeat checkout. MOTO intent flag for phone-order capture. Ali ask 2026-04-22. See skill bhd-paymob for the token-vault pattern.
 - [ ] 831. Full PO-upload happy-path E2E on stage: seed credit account with credit_limit>0, Playwright drives order-checkout → pick "pay by PO" → upload PDF → assert credit_transactions row appended + print_orders.po_file_path set. Needs stage (822).
 - [ ] 832. Full analytics happy-path E2E on stage: logged-in admin, load /admin/analytics, change month filter via the date picker, click Export CSV, assert a .csv downloaded with expected headers (employee, taps, saves, wa_clicks, site_clicks, leads). Needs stage + seeded analytics data.
+- [ ] 833. Full marketplace happy-path E2E on stage: logged-in admin, browse /print-shops, apply wilayat filter + sort by cheapest, click a shop card, assert /admin/order-checkout?print_shop_id=X loads with that shop preselected. Needs stage + seeded shops.
