@@ -495,7 +495,7 @@
 ## T, Monitoring + Ops (456-470)
 
 - [x] 456. Sentry integration PHP + frontend: includes/Sentry.php (no-dep, DSN regex, Store API POST, exception + shutdown handlers) + assets/js/cardify-sentry.js (sendBeacon-preferred error + unhandledrejection + window.cardifyTrackError) + ui-header browser bootstrap. No-op until SENTRY_DSN / SENTRY_DSN_PUBLIC defined in config.php. Home 200 post-deploy, sentry.js 200. → dcff538
-- [ ] 457. Uptime monitor (StatusCake or Uptime Robot).
+- [x] 457. Uptime monitor wiring: GET /api/health returns 200 JSON {status:up, checks:{app,db,storage}, latency_ms} with 503 on degraded; ops/uptime-monitors.json version-controlled config covering home + health + paymob callback + erp-health + TLS expiry; Ali WA/email as contacts. Live 200/87ms all green. → 860d4bd
 - [ ] 458. Status page `/status` live.
 - [ ] 459. Nightly DB dump to B2/S3.
 - [ ] 460. Nightly storage dir backup.
@@ -869,3 +869,4 @@
 - [ ] 815. Card editor UI: consume `credits.balance` + `credits.reason` from log_generation.php response and show an inline "X credits left" badge + "Top up" nudge when reason='insufficient'.
 - [ ] 816. Confirm no lingering print-order flow still decrements card_credits (search Payment.php / PrintShopIntegration.php) — the new ledger is authoritative; order-time deduction should be removed if still present.
 - [ ] 817. Create "cardify-prod" project on Sentry and drop SENTRY_DSN + SENTRY_DSN_PUBLIC into config.php on VPS; verify an Uncaught exception surfaces server-side and a browser unhandledrejection surfaces client-side.
+- [ ] 818. Paste ops/uptime-monitors.json into Uptime Robot (or StatusCake) account to activate the external monitor; verify alerts route to Ali's WhatsApp + email.
