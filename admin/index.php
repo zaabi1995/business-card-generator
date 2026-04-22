@@ -1634,6 +1634,22 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 </div>
 
 <script>
+    // Diagnostic probe for the stray %3Cdiv%20class= 404, logs the
+    // offending element's outerHTML + parent so we can trace the source.
+    (function() {
+        window.addEventListener('error', function(ev) {
+            var t = ev.target;
+            if (!t || t === window) return;
+            var url = t.currentSrc || t.src || t.href || '';
+            if (typeof url !== 'string') return;
+            if (url.indexOf('%3Cdiv') !== -1 || url.indexOf('<div') !== -1) {
+                console.warn('[bg-404 probe] offending element:', t);
+                try { console.warn('[bg-404 probe] outerHTML:', t.outerHTML); } catch(e) {}
+                try { console.warn('[bg-404 probe] parent outerHTML:', t.parentElement && t.parentElement.outerHTML); } catch(e) {}
+            }
+        }, true);
+    })();
+
     function templateEditor() {
         return {
             csrfToken: '<?php echo generateCSRFToken(); ?>',
