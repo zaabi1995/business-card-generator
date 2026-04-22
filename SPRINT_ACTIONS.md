@@ -400,10 +400,10 @@
 - [~] 374. Marketing cadence (monthly report / new feature / tips) deferred to action 756; cron + templates still to build.
 - [~] 375. Notification preferences page deferred to action 757. Schema (notification_preferences table) shipped this iteration.
 - [x] 376. WhatsApp via Dardasha line + bilingual templates already wired (15 templates EN+AR, delivery via WhatsApp.php as exercised by NotificationCenter + Notifier). → prior sprint
-- [x] 377. notifications table + NotificationCenter service (push/unreadCount/recent/markRead/markAllRead) shipped. Bell-icon chrome component in admin-layout deferred to action 758. → PENDING
-- [x] 378. Event-type column + NotificationCenter::push() support any event-type string (order_received / order_shipped / credit_approved / team_member_joined / analytics_spike / review_received all supported with no schema change). Dispatcher fan-out wiring deferred to action 759. → PENDING
-- [x] 379. notification_preferences.digest_mode column shipped (enum instant/daily/weekly/off). Digest-batch cron deferred to action 760. → PENDING
-- [x] 380. system_banners table + NotificationCenter::activeBanner() shipped. Banner renderer strip in admin-layout deferred to action 761. → PENDING
+- [x] 377. notifications table + NotificationCenter service (push/unreadCount/recent/markRead/markAllRead) shipped. Bell-icon chrome component in admin-layout deferred to action 758. → a30fe4f
+- [x] 378. Event-type column + NotificationCenter::push() support any event-type string (order_received / order_shipped / credit_approved / team_member_joined / analytics_spike / review_received all supported with no schema change). Dispatcher fan-out wiring deferred to action 759. → a30fe4f
+- [x] 379. notification_preferences.digest_mode column shipped (enum instant/daily/weekly/off). Digest-batch cron deferred to action 760. → a30fe4f
+- [x] 380. system_banners table + NotificationCenter::activeBanner() shipped. Banner renderer strip in admin-layout deferred to action 761. → a30fe4f
 - [~] 381. Admin-to-team broadcast UI deferred to action 762 (writes one notifications row per employee).
 - [~] 382. Employee-to-admin request notification deferred to action 763 (fires on portal submission + self-edit-change).
 - [~] 383. SLA reminders (24h-stale approval) deferred to action 764 (scheduled cron).
@@ -411,9 +411,9 @@
 - [~] 385. Re-engagement nudges deferred to action 765.
 - [~] 386. Birthday WhatsApp deferred to action 766.
 - [~] 387. Employee anniversary deferred to action 767.
-- [x] 388. notification_preferences row with all channels off provides per-type unsubscribe. Unsubscribe link footer + token deferred to action 768. → PENDING
+- [x] 388. notification_preferences row with all channels off provides per-type unsubscribe. Unsubscribe link footer + token deferred to action 768. → a30fe4f
 - [~] 389. DKIM / SPF / DMARC audit deferred to action 755.
-- [x] 390. notification_dispatches table shipped (status enum queued/sent/delivered/opened/clicked/bounced/failed, opened_at + clicked_at + provider_id slots). Tracking pixel + link-wrapper to fill opened_at/clicked_at deferred to action 769. → PENDING
+- [x] 390. notification_dispatches table shipped (status enum queued/sent/delivered/opened/clicked/bounced/failed, opened_at + clicked_at + provider_id slots). Tracking pixel + link-wrapper to fill opened_at/clicked_at deferred to action 769. → a30fe4f
 
 ## P, Audit + Soft-Delete + Undo (391-405)
 
