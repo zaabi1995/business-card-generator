@@ -610,6 +610,18 @@ class Payment {
         } catch (Throwable $_) { /* ledger table may not exist pre-091 */ }
 
         error_log("Card credits added: company={$companyId} cards={$cardCount}");
+
+        // Push the sale into BHD-ERP so the client ledger shows it
+        // (Cat S action 453). Non-fatal; failures only log.
+        try {
+            require_once INCLUDES_DIR . '/ERPSync.php';
+            $sync = ERPSync::recordCardCreditPurchase($payment['id']);
+            if (empty($sync['success'])) {
+                error_log("confirmCardOrder: ERP sync non-fatal failure: " . ($sync['message'] ?? 'unknown'));
+            }
+        } catch (Throwable $e) {
+            error_log("confirmCardOrder: ERP sync threw: " . $e->getMessage());
+        }
     }
 
     // --- Query methods ---

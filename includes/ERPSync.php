@@ -46,6 +46,114 @@ class ERPSync {
      * @param string $recordedByUserId  User ID (for audit)
      * @return array ['success'=>bool, 'message'=>string, 'data'=>array|null]
      */
+    /**
+     * Record a card-credit top-up against BHD-ERP (Cat S action 453).
+     *
+     * Card credits are digital-only; they don't flow through
+     * print_orders, so they used to skip the ERP sync entirely and
+     * show up only in Cardify's `payments` table. This pushes them
+     * into BHD-ERP as a Quote → Invoice → Payment chain with a
+     * synthetic CARDS-{paymentId-short} reference so accountants can
+     * reconcile Paymob payouts against the ERP client ledger.
+     *
+     * Returns ['success' => bool, 'message' => string, 'data' => ?array].
+     * Non-fatal on failure; caller logs + moves on. Idempotent via the
+     * 409-already-recorded path in BHD-ERP.
+     */
+    public static function recordCardCreditPurchase(string $paymentId): array {
+        if (!self::isEnabled()) return ['success' => true, 'message' => 'ERP sync disabled'];
+        $settings = self::getSettings();
+
+        $db = Database::getInstance();
+        $pay = $db->fetchOne(
+            "SELECT p.*, c.name AS company_name, c.erp_client_name
+               FROM payments p
+          LEFT JOIN companies c ON p.company_id = c.id
+              WHERE p.id = :id AND p.type = 'card_order' AND p.status = 'paid'",
+            ['id' => $paymentId]
+        );
+        if (!$pay) {
+            return ['success' => false, 'message' => "Card-credit payment $paymentId not found or not paid"];
+        }
+
+        $credit = $db->fetchOne(
+            "SELECT * FROM card_order_credits WHERE id = :id",
+            ['id' => $pay['reference_id']]
+        );
+        $cardCount = (int) ($credit['card_count'] ?? 0);
+
+        $clientName = !empty($pay['erp_client_name'])
+            ? $pay['erp_client_name']
+            : (!empty($settings['erp_client_name']) ? $settings['erp_client_name'] : $pay['company_name']);
+        if (empty($clientName)) {
+            return ['success' => false, 'message' => 'Cannot sync: no ERP client name configured'];
+        }
+
+        // CARDS-{first 8 of paymentId} is the ERP-side orderNumber and the
+        // dedup key. Keeps the UUID out of user-facing invoice numbers.
+        $shortRef    = 'CARDS-' . strtoupper(substr(str_replace('-', '', $paymentId), 0, 8));
+        $description = "Cardify card credits × {$cardCount} — {$shortRef}";
+
+        $payload = [
+            'clientName'    => $clientName,
+            'orderNumber'   => $shortRef,
+            'amount'        => (float) $pay['amount'],
+            'description'   => $description,
+            'paymentMethod' => 'bank_transfer', // Paymob card/apple-pay settle as bank transfer on our ERP side
+            'paymentRef'    => $pay['paymob_transaction_id'] ?: $shortRef,
+            'paymentDate'   => date('c', strtotime($pay['updated_at'] ?? $pay['created_at'])),
+            'notes'         => "Card-credit top-up via Paymob · company={$pay['company_id']}",
+        ];
+
+        $apiUrl = rtrim($settings['erp_api_url'], '/') . '/api/admin/cardify/record-payment';
+        $ch     = curl_init($apiUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload),
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $settings['erp_api_token'],
+            ],
+            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+        $body     = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlErr) {
+            error_log("ERPSync::recordCardCreditPurchase cURL error: $curlErr");
+            return ['success' => false, 'message' => $curlErr];
+        }
+        $data = json_decode($body, true) ?: [];
+
+        // 409 = idempotent re-record; 200 or 201 = fresh sync; else fail.
+        if ($httpCode === 409 || $httpCode === 200 || $httpCode === 201) {
+            // Persist the ERP IDs back onto payments so the admin can see them.
+            try {
+                $db->exec(
+                    "UPDATE payments SET
+                       callback_data = JSON_SET(COALESCE(callback_data, '{}'),
+                           '$.erp_invoice_number', :inv, '$.erp_invoice_id', :invid, '$.erp_short_ref', :ref)
+                     WHERE id = :id",
+                    [
+                        'inv'   => $data['invoiceNumber'] ?? null,
+                        'invid' => $data['invoiceId']     ?? null,
+                        'ref'   => $shortRef,
+                        'id'    => $paymentId,
+                    ]
+                );
+            } catch (Throwable $_) { /* JSON_SET may not be available on older MySQL */ }
+            return ['success' => true, 'message' => 'Card-credit purchase synced to ERP', 'data' => $data];
+        }
+
+        $errMsg = $data['message'] ?? "HTTP $httpCode";
+        error_log("ERPSync::recordCardCreditPurchase failed ($errMsg)");
+        return ['success' => false, 'message' => $errMsg];
+    }
+
     public static function recordPayment(
         int $orderId,
         string $paymentMethod,
