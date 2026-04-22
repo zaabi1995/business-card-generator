@@ -80,3 +80,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-22 18:40 | #457 | 860d4bd | Cat T uptime: /api/health 200 JSON with app+db+storage checks + ops/uptime-monitors.json config covering 5 probes. Live 87ms all green after data/cache chown www.
 2026-04-22 19:00 | #458 | 34e8902 | Cat T /status: 5 live component probes + incident timeline (migration 093 status_incidents), bilingual 26 keys parity OK, all green 27KB en / 28KB ar.
 2026-04-22 19:20 | #459 | 0be85ce | Cat T nightly DB backup: mysqldump+gzip+optional gpg, 30-day rotation, optional rclone offsite, cron 25 2 * * * installed, first run 724 KB.
+2026-04-22 19:40 | #460 | 01fe327 | Cat T storage backup: rsync+tar.gz 147 MB snapshot + 14-day rotation + optional rclone, cron 35 2 * * * installed.

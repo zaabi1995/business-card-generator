@@ -498,7 +498,7 @@
 - [x] 457. Uptime monitor wiring: GET /api/health returns 200 JSON {status:up, checks:{app,db,storage}, latency_ms} with 503 on degraded; ops/uptime-monitors.json version-controlled config covering home + health + paymob callback + erp-health + TLS expiry; Ali WA/email as contacts. Live 200/87ms all green. → 860d4bd
 - [x] 458. Status page /status live: bilingual /status + /ar/status with overall banner (up/degraded/down) + 5 component probes (app / DB / storage / ERP sync / Paymob TLS socket) + 30-day incident timeline from new status_incidents table (migration 093). 26 lang keys EN+AR parity OK, nginx rewrites, Cache-Control no-store. Live 200 both locales, all systems green. → 34e8902
 - [x] 459. Nightly DB dump: scripts/backup-db.sh (mysqldump --single-transaction + gzip -9 + optional gpg AES256 when CARDIFY_BACKUP_PASS set), /var/backups/cardify/ mode 0600 files in 0700 dir, 30-file rotation, opt-in rclone offsite via CARDIFY_BACKUP_REMOTE (b2/s3/wasabi). Cron 25 2 * * * installed on VPS, first run 724 KB OK. → 0be85ce
-- [ ] 460. Nightly storage dir backup.
+- [x] 460. Nightly storage dir backup: scripts/backup-storage.sh rsync --delete storage/+uploads/+data/ (excl cache/tmp) into /var/backups/cardify-storage/current/ then tar.gz snapshot, 14-file rotation, opt-in rclone offsite via shared CARDIFY_BACKUP_REMOTE. Cron 35 2 * * * installed; first run 147 MB snapshot + mirror synced. → 01fe327
 - [ ] 461. Weekly restore test.
 - [ ] 462. Log rotation (nginx + PHP errors).
 - [ ] 463. Disk-usage alert at 80%.
