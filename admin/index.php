@@ -688,7 +688,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 <?php if ($referralCode && $referralShareUrl): ?>
 <!-- Referral Share Card (BHD-234) -->
 <div class="mb-8 rounded-2xl overflow-hidden shadow-lg relative" id="referral-share-card">
-    <div class="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-6 sm:p-7 text-white">
+    <div class="p-6 sm:p-7 text-white" style="background: linear-gradient(135deg, #009bc1 0%, #007a99 60%, #005f78 100%);">
         <div class="flex flex-col lg:flex-row lg:items-center gap-6">
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-3 mb-2">
@@ -697,7 +697,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                     </div>
                     <div>
                         <h3 class="font-bold text-lg leading-tight"><?= htmlspecialchars(t('dashboard.refer_h3')) ?></h3>
-                        <p class="text-indigo-100 text-sm">Send your link to a friend. When they upgrade to paid, you get 3 months on us.</p>
+                        <p class="text-white/80 text-sm">Send your link to a friend. When they upgrade to paid, you get 3 months on us.</p>
                     </div>
                 </div>
 
@@ -709,12 +709,13 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                                onclick="this.select()">
                     </div>
                     <button type="button" onclick="bhd234CopyRef()" id="bhd234-copy-btn"
-                            class="bg-white text-indigo-700 font-semibold px-4 py-2.5 rounded-lg text-sm hover:bg-indigo-50 transition-all whitespace-nowrap flex items-center justify-center gap-2">
+                            class="bg-white font-semibold px-4 py-2.5 rounded-lg text-sm hover:bg-white/90 transition-all whitespace-nowrap flex items-center justify-center gap-2"
+                            style="color: #007a99;">
                         <i class="fa-solid fa-copy text-xs"></i>
                         <span id="bhd234-copy-label">Copy link</span>
                     </button>
                     <a href="<?= htmlspecialchars($referralWhatsAppHref) ?>" target="_blank" rel="noopener"
-                       class="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2">
+                       class="bg-[#25D366] hover:bg-[#1ebe57] text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2">
                         <i class="fa-brands fa-whatsapp"></i>
                         Share on WhatsApp
                     </a>
@@ -724,11 +725,11 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
             <div class="lg:border-l lg:border-white/15 lg:pl-6 flex lg:flex-col gap-6 lg:gap-3 justify-start lg:justify-center flex-shrink-0">
                 <div class="text-center lg:text-left">
                     <p class="text-3xl font-bold leading-none"><?= (int)$referralStats['signups'] ?></p>
-                    <p class="text-indigo-100 text-xs mt-1">signed up</p>
+                    <p class="text-white/80 text-xs mt-1">signed up</p>
                 </div>
                 <div class="text-center lg:text-left">
                     <p class="text-3xl font-bold leading-none"><?= (int)$referralStats['paid'] ?></p>
-                    <p class="text-indigo-100 text-xs mt-1">went paid</p>
+                    <p class="text-white/80 text-xs mt-1">went paid</p>
                 </div>
             </div>
         </div>
