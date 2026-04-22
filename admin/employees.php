@@ -562,7 +562,7 @@ function findColumn($header, $possibleNames) {
 }
 
 // Start admin layout
-adminHeader('Employees', 'employees');
+adminHeader(t('employees.page_title'), 'employees');
 ?>
 
 <?php if ($isFreePlan && !empty($employees)): ?>
@@ -570,10 +570,10 @@ adminHeader('Employees', 'employees');
 <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between">
     <div class="flex items-center gap-2 text-sm text-amber-700">
         <i class="fa-solid fa-info-circle"></i>
-        <span>Card previews shown in <strong>preview quality</strong>. Printed cards will be high quality.</span>
+        <span><?= htmlspecialchars(t('employees.free_plan_notice')) ?></span>
     </div>
     <a href="billing.php" class="text-sm text-amber-700 hover:text-amber-800 font-medium flex items-center gap-1">
-        <i class="fa-solid fa-crown"></i> Upgrade for HD
+        <i class="fa-solid fa-crown"></i> <?= htmlspecialchars(t('employees.upgrade_for_hd')) ?>
     </a>
 </div>
 <?php endif; ?>
@@ -582,7 +582,7 @@ adminHeader('Employees', 'employees');
     <!-- Page Header Actions -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-            <p class="text-gray-600"><?php echo count($employees); ?> team members</p>
+            <p class="text-gray-600"><?= htmlspecialchars(t('employees.team_members_count', ['n' => count($employees)])) ?></p>
         </div>
         <div class="flex items-center gap-3">
             <?php if (!empty($employees)): ?>
@@ -596,27 +596,27 @@ adminHeader('Employees', 'employees');
             }
             ?>
             <?php if ($employeesWithoutCards > 0): ?>
-            <a href="batch-auto-generate.php" class="px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium flex items-center gap-2" title="Generate cards for all employees who don't have one yet">
+            <a href="batch-auto-generate.php" class="px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium flex items-center gap-2" title="<?= htmlspecialchars(t('employees.generate_all_tooltip')) ?>">
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
-                <span class="hidden sm:inline">Generate All (<?php echo $employeesWithoutCards; ?>)</span>
+                <span class="hidden sm:inline"><?= htmlspecialchars(t('employees.generate_all', ['n' => $employeesWithoutCards])) ?></span>
             </a>
             <?php endif; ?>
-            <a href="batch_generate.php" class="px-4 py-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium flex items-center gap-2" title="Regenerate cards for multiple employees">
+            <a href="batch_generate.php" class="px-4 py-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium flex items-center gap-2" title="<?= htmlspecialchars(t('employees.bulk_regenerate_tooltip')) ?>">
                 <i class="fa-solid fa-rotate"></i>
-                <span class="hidden sm:inline">Bulk Regenerate</span>
+                <span class="hidden sm:inline"><?= htmlspecialchars(t('employees.bulk_regenerate')) ?></span>
             </a>
             <a href="?action=export" class="px-4 py-2 bg-gray-50 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium flex items-center gap-2">
                 <i class="fa-solid fa-file-export"></i>
-                <span class="hidden sm:inline">Export CSV</span>
+                <span class="hidden sm:inline"><?= htmlspecialchars(t('employees.export_csv')) ?></span>
             </a>
             <?php endif; ?>
             <button @click="showImportModal = true" class="px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium flex items-center gap-2">
                 <i class="fa-solid fa-file-import"></i>
-                <span class="hidden sm:inline">Import CSV</span>
+                <span class="hidden sm:inline"><?= htmlspecialchars(t('employees.import_csv')) ?></span>
             </button>
             <button @click="openAddModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2">
                 <i class="fa-solid fa-plus"></i>
-                <span>Add Employee</span>
+                <span><?= htmlspecialchars(t('employees.add_employee')) ?></span>
             </button>
         </div>
     </div>
@@ -637,13 +637,13 @@ adminHeader('Employees', 'employees');
                 <input 
                     type="text" 
                     x-model="searchQuery"
-                    placeholder="Search by name or email..."
+                    placeholder="<?= htmlspecialchars(t('employees.search_placeholder')) ?>"
                     class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 >
             </div>
             <?php if (!empty($departments)): ?>
             <select x-model="filterDepartment" class="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                <option value="">All Departments</option>
+                <option value=""><?= htmlspecialchars(t('employees.all_departments')) ?></option>
                 <?php foreach ($departments as $dept): ?>
                 <option value="<?php echo sanitize($dept['id']); ?>"><?php echo sanitize($dept['name']); ?></option>
                 <?php endforeach; ?>
@@ -658,12 +658,12 @@ adminHeader('Employees', 'employees');
             <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
-                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm">Employee</th>
-                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm hidden lg:table-cell">Position</th>
-                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm hidden md:table-cell">Department</th>
-                        <th class="text-center px-6 py-4 text-gray-600 font-semibold text-sm">Card Preview</th>
-                        <th class="text-center px-6 py-4 text-gray-600 font-semibold text-sm hidden sm:table-cell">QR Scans</th>
-                        <th class="text-right px-6 py-4 text-gray-600 font-semibold text-sm">Actions</th>
+                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm"><?= htmlspecialchars(t('employees.col_employee')) ?></th>
+                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm hidden lg:table-cell"><?= htmlspecialchars(t('employees.col_position')) ?></th>
+                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm hidden md:table-cell"><?= htmlspecialchars(t('employees.col_department')) ?></th>
+                        <th class="text-center px-6 py-4 text-gray-600 font-semibold text-sm"><?= htmlspecialchars(t('employees.col_card_preview')) ?></th>
+                        <th class="text-center px-6 py-4 text-gray-600 font-semibold text-sm hidden sm:table-cell"><?= htmlspecialchars(t('employees.col_qr_scans')) ?></th>
+                        <th class="text-right px-6 py-4 text-gray-600 font-semibold text-sm"><?= htmlspecialchars(t('employees.col_actions')) ?></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -901,18 +901,18 @@ adminHeader('Employees', 'employees');
                         <td colspan="5" class="px-6 py-12 text-center">
                             <div class="max-w-sm mx-auto">
                                 <i class="fa-solid fa-id-card text-4xl text-gray-300 mb-4"></i>
-                                <p class="text-gray-700 font-semibold mb-1">No employees yet</p>
-                                <p class="text-sm text-gray-500 mb-6">Add yourself first to get your digital business card, then add your team.</p>
+                                <p class="text-gray-700 font-semibold mb-1"><?= htmlspecialchars(t('employees.no_employees')) ?></p>
+                                <p class="text-sm text-gray-500 mb-6"><?= htmlspecialchars(t('employees.no_employees_body')) ?></p>
                                 <div class="flex flex-col sm:flex-row gap-3 justify-center">
                                     <?php if (!empty($adminEmail)): ?>
                                     <button @click="openAddMyself(<?php echo htmlspecialchars(json_encode(['name_en' => $adminName, 'email' => $adminEmail]), ENT_QUOTES); ?>)"
                                             class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm shadow-blue-200">
-                                        <i class="fa-solid fa-user-plus"></i>Add Myself First
+                                        <i class="fa-solid fa-user-plus"></i><?= htmlspecialchars(t('employees.add_myself_first')) ?>
                                     </button>
                                     <?php endif; ?>
                                     <button @click="openAddModal()"
                                             class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium transition-colors">
-                                        <i class="fa-solid fa-plus"></i>Add an Employee
+                                        <i class="fa-solid fa-plus"></i><?= htmlspecialchars(t('employees.add_an_employee')) ?>
                                     </button>
                                 </div>
                             </div>
@@ -1112,7 +1112,7 @@ adminHeader('Employees', 'employees');
                             <input type="checkbox"
                                    x-model="cardDarkModeToggle"
                                    class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500">
-                            <span class="text-xs font-semibold text-amber-800">Allow visitors to toggle theme</span>
+                            <span class="text-xs font-semibold text-amber-800"><?= htmlspecialchars(t('employees.dark_mode_hint')) ?></span>
                         </label>
                     </div>
                     <!-- Always POST a canonical 0/1 so unchecking persists -->
@@ -1308,7 +1308,7 @@ adminHeader('Employees', 'employees');
                             <template x-if="!detailData.latestCardUrl">
                                 <div class="text-center py-8 text-gray-400">
                                     <i class="fa-solid fa-image text-3xl mb-2"></i>
-                                    <p class="text-sm">No card generated yet</p>
+                                    <p class="text-sm"><?= htmlspecialchars(t('employees.no_card_generated')) ?></p>
                                 </div>
                             </template>
                         </div>
@@ -1374,7 +1374,7 @@ adminHeader('Employees', 'employees');
                                 </div>
                             </template>
                             <template x-if="!detailData.cards?.length">
-                                <p class="text-gray-400 text-sm text-center py-4">No cards generated</p>
+                                <p class="text-gray-400 text-sm text-center py-4"><?= htmlspecialchars(t('employees.no_cards_generated')) ?></p>
                             </template>
                         </div>
                         
@@ -1431,7 +1431,7 @@ adminHeader('Employees', 'employees');
                                 </div>
                             </template>
                             <template x-if="!detailData.printOrders?.length">
-                                <p class="text-gray-400 text-sm text-center py-4">No print orders</p>
+                                <p class="text-gray-400 text-sm text-center py-4"><?= htmlspecialchars(t('employees.no_print_orders')) ?></p>
                             </template>
                             <template x-if="detailData.lastPrintDate">
                                 <p class="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
