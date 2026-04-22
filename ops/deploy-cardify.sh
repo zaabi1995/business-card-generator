@@ -1,18 +1,15 @@
 #!/usr/bin/env bash
-# Cardify deploy with pre-flight PHP lint (Cat T action 465).
+# Cardify deploy with pre-flight PHP lint + post-flight smoke tests
+# (Cat T actions 465 + 466).
 #
 # Flow:
-#   1. git pull — note BEFORE + AFTER SHAs.
-#   2. Pre-flight: run `php -l` on every changed .php file. Any syntax
-#      error = immediate git reset --hard BEFORE and exit 2.
-#   3. Scoped chown/chmod on changed files + safety-net sweep.
+#   1. git pull — note BEFORE + AFTER.
+#   2. Pre-flight: php -l on every changed .php file, rollback on fail.
+#   3. Scoped chown/chmod + safety-net sweep.
 #   4. php-fpm reload to clear OPcache.
-#
-# The lint runs AFTER the pull because the old tree is what PHP-FPM
-# still serves from OPcache; a rollback takes effect atomically once
-# the FPM reload in step 4 is skipped.
+#   5. Post-flight: HTTP smoke 5 URLs, rollback + FPM re-reload on fail.
 
-set -euo pipefail
+set -uo pipefail
 cd /www/wwwroot/cardify.om
 
 BEFORE=$(git rev-parse HEAD)
@@ -33,8 +30,7 @@ while IFS= read -r f; do
   case "$f" in
     *.php)
       if ! out=$("$PHP_BIN" -l "$f" 2>&1); then
-        echo "LINT FAIL: $f"
-        echo "$out"
+        echo "LINT FAIL: $f"; echo "$out"
         errs=$((errs + 1))
       fi
       ;;
@@ -55,12 +51,53 @@ git diff --name-only --diff-filter=ACMR "$BEFORE" "$AFTER" | while read -r f; do
   chown www:www "$f" 2>/dev/null || true
   chmod 644 "$f" 2>/dev/null || true
 done
-# Safety net: any file owned by root gets www (e.g. merge artifacts)
 find . -type f ! -user www -exec chown www:www {} + 2>/dev/null || true
-# Any file with group-write or other-rwx gets normalized to 644
 find . -type f ! -perm 644 ! -name .user.ini -exec chmod 644 {} + 2>/dev/null || true
 find . -type d ! -perm 755 -exec chmod 755 {} + 2>/dev/null || true
 echo "Perms OK"
 
 systemctl reload php8.3-fpm 2>/dev/null || systemctl reload php-fpm 2>/dev/null || true
+echo "FPM reloaded"
+
+# --- Post-flight smoke tests (Cat T action 466) ---
+# 5 URLs that exercise the major code paths. Per memory
+# feedback_smoke_tests_need_new_paths we avoid only "/" and reach
+# into the app. Each entry: METHOD|URL|WANT_STATUS|MUST_CONTAIN
+smoke_fail=0
+smoke_urls=(
+  "GET|https://cardify.om/|200|<html"
+  "GET|https://cardify.om/api/health|200|\"status\":\"up\""
+  "GET|https://cardify.om/pricing|200|OMR"
+  "GET|https://cardify.om/status|200|Cardify"
+  "GET|https://cardify.om/login.php|200|<form"
+)
+for entry in "${smoke_urls[@]}"; do
+  IFS='|' read -r method url want_status need <<<"$entry"
+  hdr=$(mktemp)
+  body=$(curl -sL -A cardify-smoke/1.0 --max-time 8 -D "$hdr" "$url" 2>/dev/null || true)
+  status=$(awk 'toupper($1) ~ /^HTTP/ {print $2}' "$hdr" | tail -n1)
+  rm -f "$hdr"
+  if [ "$status" != "$want_status" ]; then
+    echo "SMOKE FAIL: $url status=$status (want $want_status)"
+    smoke_fail=$((smoke_fail + 1))
+    continue
+  fi
+  if ! printf '%s' "$body" | grep -q -- "$need"; then
+    echo "SMOKE FAIL: $url missing expected marker: $need"
+    smoke_fail=$((smoke_fail + 1))
+    continue
+  fi
+  echo "smoke OK: $url"
+done
+
+if [ "$smoke_fail" -gt 0 ]; then
+  echo "Post-flight: $smoke_fail URL(s) failed smoke test. Rolling back to $BEFORE."
+  git reset --hard "$BEFORE" >/dev/null
+  find . -type f ! -user www -exec chown www:www {} + 2>/dev/null || true
+  systemctl reload php8.3-fpm 2>/dev/null || systemctl reload php-fpm 2>/dev/null || true
+  echo "Deploy aborted. Rolled back + FPM reloaded on previous tree."
+  exit 3
+fi
+echo "Post-flight OK (5/5 URLs healthy)"
+
 echo "Deploy complete."
