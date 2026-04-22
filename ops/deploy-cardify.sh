@@ -84,7 +84,12 @@ probe() {
   status=$(awk 'toupper($1) ~ /^HTTP/ {print $2}' "$hdr" | tail -n1)
   rm -f "$hdr"
   [ "$status" = "$want_status" ] || { echo "status=$status"; return 1; }
-  printf '%s' "$body" | grep -qF -- "$need" || { echo "no marker $need (body ${#body}b)"; return 1; }
+  # Pure-bash substring match: avoids subshell + grep-pattern weirdness
+  # that tripped iter-85 when the body contained shell-special chars.
+  case "$body" in
+    *"$need"*) : ;;
+    *) echo "no marker $need (body ${#body}b)"; return 1 ;;
+  esac
   return 0
 }
 for entry in "${smoke_urls[@]}"; do
