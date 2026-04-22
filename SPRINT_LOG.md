@@ -59,3 +59,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-22 12:50 | #436 | 595ca7e | Cat R pricing page: /pricing + /ar/pricing, 4 OMR tiers + Alpine billing toggle + print-price block + 6 FAQ; Seo::product + Seo::faqPage schema; 58 lang keys parity OK; live 47KB en / 49KB ar.
 2026-04-22 13:05 | #437 | 9a8e6ec | Cat R FAQ bilingual 20 Q/A: 6 cats (GS 4/DC 4/PR 4/TM 3/BL 3/TC 2), Seo::faqPage + breadcrumbs, 45 keys parity OK. 58KB en / 63KB ar, 20 details each.
 2026-04-22 13:25 | #438 | 05e9159 | Cat R contact bilingual: /contact + /ar/contact, WhatsApp+email+address+social cards, form with CSRF+Mailer+WA fallback, Google Maps embed; 32 keys parity OK; 33KB en / 34KB ar.
+2026-04-22 13:55 | #439 | 2fcf6bb | Cat R Terms + Privacy bilingual: /terms /privacy EN+AR, shared legal-render.php + lang/legal.php sections, PDPL-aligned, BHD CR cited, Muscat courts, 7y retention. 4 URLs 200 (32-36KB).
