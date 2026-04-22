@@ -5,8 +5,8 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle = 'Cardify Blog — Business Card Tips & Trends in Oman';
-$pageDescription = 'Expert tips on business card design, networking, and professional branding for Omani businesses and entrepreneurs.';
+$pageTitle = t('blog.page_title');
+$pageDescription = t('blog.page_desc');
 $canonicalUrl = 'https://cardify.om/blog';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
@@ -33,7 +33,7 @@ if ($db->tableExists('blog_posts')) {
             [$postSlug]
         );
         if ($singlePost) {
-            $pageTitle = htmlspecialchars($singlePost['title']) . ' — Cardify Blog';
+            $pageTitle = t('blog.single_page_title', ['title' => $singlePost['title']]);
             $pageDescription = htmlspecialchars($singlePost['excerpt'] ?? substr(strip_tags($singlePost['content']), 0, 155));
             $canonicalUrl = 'https://cardify.om/blog/' . $singlePost['slug'];
             $ogType = 'article';
@@ -142,7 +142,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <a href="<?php echo getBasePath(); ?>blog" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4">
                 <i class="fa-solid fa-arrow-left"></i>
-                Back to Blog
+                <?= htmlspecialchars(t('blog.back_to_blog')) ?>
             </a>
             <h1 class="text-4xl font-bold text-gray-900 mb-4"><?php echo htmlspecialchars($singlePost['title']); ?></h1>
             <?php
@@ -156,13 +156,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-sm">
                         <?= strtoupper(substr($singlePost['author_name'], 0, 1)) ?>
                     </span>
-                    <span>By <?php echo htmlspecialchars($singlePost['author_name']); ?></span>
+                    <span><?= htmlspecialchars(t('blog.by_author', ['name' => $singlePost['author_name']])) ?></span>
                 </span>
                 <span class="text-gray-300">•</span>
                 <?php endif; ?>
-                <time datetime="<?= date('c', strtotime($singlePost['published_at'] ?? $singlePost['created_at'])) ?>"><?php echo date('F j, Y', strtotime($singlePost['published_at'] ?? $singlePost['created_at'])); ?></time>
+                <time datetime="<?= date('c', strtotime($singlePost['published_at'] ?? $singlePost['created_at'])) ?>"><?= htmlspecialchars(I18n::formatDate(strtotime($singlePost['published_at'] ?? $singlePost['created_at']))) ?></time>
                 <span class="text-gray-300">•</span>
-                <span class="inline-flex items-center gap-1"><i class="fa-regular fa-clock text-xs"></i> <?= $readMinutes ?> min read</span>
+                <span class="inline-flex items-center gap-1"><i class="fa-regular fa-clock text-xs"></i> <?= htmlspecialchars(t('blog.min_read', ['n' => $readMinutes])) ?></span>
             </div>
         </div>
     </div>
@@ -192,7 +192,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         $shareTitle = urlencode($singlePost['title']);
         ?>
         <div class="mt-8 bg-white rounded-xl shadow-sm p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span class="text-gray-600 font-medium">Share this article:</span>
+            <span class="text-gray-600 font-medium"><?= htmlspecialchars(t('blog.share_article')) ?></span>
             <div class="flex items-center gap-3">
                 <a href="https://api.whatsapp.com/send?text=<?= $shareTitle ?>%20<?= $shareUrl ?>" target="_blank" rel="noopener"
                    class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center hover:bg-green-600 transition-colors">
@@ -215,10 +215,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
         <!-- CTA Banner -->
         <div class="mt-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-8 text-center text-white">
-            <h3 class="text-2xl font-bold mb-2">Ready to create your business cards?</h3>
-            <p class="text-blue-100 mb-6">Join 500+ Omani companies using Cardify. Free to start.</p>
+            <h3 class="text-2xl font-bold mb-2"><?= htmlspecialchars(t('blog.cta_h3')) ?></h3>
+            <p class="text-blue-100 mb-6"><?= htmlspecialchars(t('blog.cta_body')) ?></p>
             <a href="<?= getBasePath() ?>intro" class="inline-block bg-white text-blue-700 font-semibold px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors">
-                Get Started Free
+                <?= htmlspecialchars(t('blog.cta_button')) ?>
             </a>
         </div>
 
@@ -233,7 +233,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         if (!empty($relatedPosts)):
         ?>
         <div class="mt-10">
-            <h3 class="text-xl font-bold text-gray-900 mb-6">Related Articles</h3>
+            <h3 class="text-xl font-bold text-gray-900 mb-6"><?= htmlspecialchars(t('blog.related_articles')) ?></h3>
             <div class="grid md:grid-cols-3 gap-6">
                 <?php foreach ($relatedPosts as $rp): ?>
                 <a href="<?= getBasePath() ?>blog/<?= urlencode($rp['slug']) ?>" class="bg-white rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow block">
@@ -251,7 +251,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="mt-8 text-center">
             <a href="<?php echo getBasePath(); ?>blog" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
                 <i class="fa-solid fa-arrow-left"></i>
-                Back to Blog
+                <?= htmlspecialchars(t('blog.back_to_blog')) ?>
             </a>
         </div>
     </div>
@@ -262,9 +262,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <!-- Blog Listing -->
     <div class="bg-white pt-28 pb-12">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl font-bold text-gray-900 mb-3">Blog</h1>
+            <h1 class="text-4xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('blog.h1')) ?></h1>
             <p class="text-gray-500 text-lg max-w-2xl mx-auto">
-                Insights, tips, and updates from the <?php echo $brandName; ?> team.
+                <?= htmlspecialchars(t('blog.hero_sub', ['brand' => $brandName])) ?>
             </p>
         </div>
     </div>
@@ -277,10 +277,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="w-20 h-20 rounded-full bg-blue-200 flex items-center justify-center mx-auto mb-6">
                 <i class="fa-solid fa-newspaper text-3xl text-blue-600"></i>
             </div>
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">Blog Coming Soon!</h2>
+            <h2 class="text-2xl font-bold text-gray-900 mb-4"><?= htmlspecialchars(t('blog.coming_soon_h2')) ?></h2>
             <p class="text-gray-600 max-w-2xl mx-auto">
-                We're working on creating valuable content about digital networking, productivity tips, 
-                and industry insights. Check back soon!
+                <?= htmlspecialchars(t('blog.coming_soon_body')) ?>
             </p>
         </div>
         <?php else: ?>
@@ -330,7 +329,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <?php endif; ?>
                         <a href="<?php echo getBasePath(); ?>blog/<?php echo urlencode($post['slug']); ?>"
                            class="text-blue-600 hover:text-blue-700 text-sm font-medium inline-flex items-center gap-1">
-                            Read More
+                            <?= htmlspecialchars(t('blog.read_more')) ?>
                             <i class="fa-solid fa-arrow-right text-xs"></i>
                         </a>
                     </div>
@@ -343,7 +342,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="text-center">
             <a href="<?php echo getBasePath(); ?>" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium">
                 <i class="fa-solid fa-arrow-left"></i>
-                Back to Home
+                <?= htmlspecialchars(t('blog.back_home')) ?>
             </a>
         </div>
     </div>
