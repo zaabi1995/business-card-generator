@@ -218,8 +218,8 @@ $mapEmbed= 'https://www.google.com/maps?q=' . rawurlencode('AK Tower Bousher Mus
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('contact.form_subject')) ?></label>
-                                <select name="subject" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <label for="contact-subject" class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('contact.form_subject')) ?></label>
+                                <select id="contact-subject" name="subject" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <?php foreach (['general','support','sales','partner','feedback'] as $o): ?>
                                         <option value="<?= $o ?>" <?= $values['subject'] === $o ? 'selected' : '' ?>><?= htmlspecialchars(t('contact.form_subj_' . $o)) ?></option>
                                     <?php endforeach; ?>
