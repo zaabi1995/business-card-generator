@@ -101,24 +101,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
                 ]);
             } else {
                 $purpose = 'tlogin:' . substr(hash('sha1', $companyId), 0, 12);
-                $res = OtpService::send($deliveryId, $channel, $purpose);
-                if (!empty($res['ok'])) {
-                    $_SESSION['tlogin_identifier']     = $deliveryId;
-                    $_SESSION['tlogin_channel']        = $channel;
-                    $_SESSION['tlogin_user_id']        = $user['id'];
-                    $_SESSION['tlogin_purpose']        = $purpose;
-                    $_SESSION['tlogin_pending_verify'] = true;
-                    $_SESSION['tlogin_notice']         = $channel === 'email'
-                        ? t('auth.tenant_notice_email')
-                        : t('auth.tenant_notice_wa');
-                    header('Location: /login');
-                    exit;
+                // Optimistic UX: stash session, issue the 302 immediately,
+                // then call OtpService::send AFTER the response is flushed.
+                // The user sees the "Enter code" page in <300ms while the
+                // 5-10s Dardasha round-trip happens in the background.
+                $_SESSION['tlogin_identifier']     = $deliveryId;
+                $_SESSION['tlogin_channel']        = $channel;
+                $_SESSION['tlogin_user_id']        = $user['id'];
+                $_SESSION['tlogin_purpose']        = $purpose;
+                $_SESSION['tlogin_pending_verify'] = true;
+                $_SESSION['tlogin_notice']         = $channel === 'email'
+                    ? t('auth.tenant_notice_email')
+                    : t('auth.tenant_notice_wa');
+                session_write_close();
+                header('Location: /login');
+                header('Content-Length: 0');
+                if (function_exists('fastcgi_finish_request')) {
+                    fastcgi_finish_request();
                 } else {
-                    $err = $res['error'] ?? 'unknown';
-                    $error = ($err === 'rate_limited_identifier' || $err === 'rate_limited_ip')
-                        ? t('auth.tenant_err_rate_limited')
-                        : t('auth.tenant_err_send_failed');
+                    @ob_end_flush(); flush();
                 }
+                ignore_user_abort(true);
+                $res = OtpService::send($deliveryId, $channel, $purpose);
+                if (empty($res['ok'])) {
+                    error_log('[tenant_login] background OTP send failed for ' . $deliveryId . ' ch=' . $channel . ': ' . ($res['error'] ?? 'unknown'));
+                }
+                exit;
             }
         }
     }
@@ -191,6 +199,9 @@ input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(0,155,193,.15)}
 .code{letter-spacing:8px;text-align:center;font-size:22px;font-family:ui-monospace,monospace}
 button{width:100%;margin-top:16px;padding:12px 14px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer}
 button:hover{filter:brightness(0.95)} button.ghost{background:transparent;color:var(--muted);font-weight:500;margin-top:8px}
+button[disabled]{opacity:.7;cursor:wait}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-inline-end:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
 .error{background:#fef2f2;color:#b91c1c;padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:8px}
 .notice{background:#ecfdf5;color:#065f46;padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:8px}
 .foot{margin-top:24px;font-size:12px;color:var(--muted);text-align:center}
@@ -341,6 +352,16 @@ html[dir=rtl] .code{letter-spacing:8px;direction:ltr}
       }
       hidden.value = v;
     }
+    // Instant feedback so the 5-10s Dardasha round-trip can't be double-clicked.
+    const btn = document.getElementById('submit-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.setAttribute('aria-busy', 'true');
+      const label = <?= json_encode(t('auth.tenant_send_code'), JSON_UNESCAPED_UNICODE) ?>;
+      btn.innerHTML = '<span class="spinner" aria-hidden="true"></span>' + label;
+    }
+    if (phoneTab) phoneTab.disabled = true;
+    if (emailTab) emailTab.disabled = true;
   });
 
   setTimeout(() => {
