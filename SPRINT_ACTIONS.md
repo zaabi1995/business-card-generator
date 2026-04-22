@@ -508,7 +508,7 @@
 - [x] 467. Rollback command documented + tested: /usr/local/bin/rollback-cardify.sh (mirror ops/rollback-cardify.sh) supports bare/HEAD~1/sha/tag target + --list + --status + --help; git reset --hard + perms sweep + FPM reload + 2s warm + 5-URL smoke (warn-only); tee to /var/log/cardify-rollback.log. End-to-end tested: rolled to HEAD~1 (5/5 OK) then forward to origin/main (5/5 OK) without breaking traffic. → 7703036
 - [~] 468. Staging env mirror stage.cardify.om: provisioning shipped (ops/stage-provision.sh idempotent one-shot that clones+branches+DB-seeds+configs+nginx-vhost+certbot+deploy-stage script; STAGE banner in ui-header.php under SHOW_STAGE_BANNER flag). BLOCKED on Cloudflare DNS A record stage.cardify.om → 147.93.20.54; queued as 822. Ship-ready once DNS lands. → ae3da00
 - [x] 469. k6 load test 100 concurrent users: ops/k6-load-test.js ramp 0→100 VUs over 30s + hold 60s + ramp down; 80/15/5 read mix across 17 paths; thresholds p95<1500ms + fail<1%; per-path Trend metric; read-only so never POSTs on prod. JSON summary to ops/k6-last-run.json. → 1bb786d
-- [ ] 470. Incident runbook at `/ops/runbook.md`.
+- [x] 470. Incident runbook at ops/runbook.md: 10 sections (5xx / ERP sync / DB / Paymob / disk / rollback / restore / contacts / diagnostics / post-incident checklist) each in symptom→check→fix→escalation shape, cross-referenced to /api/erp-health, payment_retries, disk-alert, rollback-cardify.sh, backup-restore-test.sh. → 3a6a157
 
 ## U, End-to-End QA (471-495)
 

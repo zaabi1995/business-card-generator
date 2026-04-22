@@ -91,3 +91,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-22 21:50 | #467 | 7703036 | Cat T rollback: rollback-cardify.sh with --list/--status/--help + reset --hard + smoke 5. E2E test: HEAD~1 then origin/main, 5/5 OK both ways.
 2026-04-22 22:05 | #468~ | ae3da00 | Cat T staging provisioning: stage-provision.sh one-shot + STAGE banner hook; blocked on Cloudflare DNS (queued 822) + stage branch creation (823).
 2026-04-22 22:20 | #469 | 1bb786d | Cat T k6 load: 100-VU 2-min profile, 80/15/5 read mix, p95<1500ms + fail<1% thresholds, read-only. Queued 824 for VPS install + first baseline run.
+2026-04-22 22:35 | #470 | 3a6a157 | Cat T runbook: ops/runbook.md 10 sections, symptom→check→fix→escalate format, wires in every sprint-built alert + script.
