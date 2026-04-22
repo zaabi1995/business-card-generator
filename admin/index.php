@@ -1581,14 +1581,16 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                                         <div class="col-span-2">
                                             <label class="text-xs text-gray-500 block mb-1">Weight</label>
                                             <select
+                                                :value="normalizedWeight(field)"
                                                 @change="updateFieldProperty(key, 'fontWeight', $event.target.value === 'normal' ? 'normal' : parseInt($event.target.value))"
                                                 @input="updateFieldProperty(key, 'fontWeight', $event.target.value === 'normal' ? 'normal' : parseInt($event.target.value))"
                                                 class="w-full px-2 py-1 bg-white border border-gray-200 rounded text-xs text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-                                                <template x-for="w in fontWeights" :key="w.value">
-                                                    <option :value="w.value"
-                                                            :selected="String(field.fontWeight || 'normal') === String(w.value) || (w.value === 'normal' && !field.fontWeight)"
-                                                            x-text="w.label"></option>
-                                                </template>
+                                                <option value="300">Light</option>
+                                                <option value="normal">Regular</option>
+                                                <option value="500">Medium</option>
+                                                <option value="600">SemiBold</option>
+                                                <option value="700">Bold</option>
+                                                <option value="800">ExtraBold</option>
                                             </select>
                                         </div>
                                         <div>
@@ -1777,6 +1779,27 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
             //   1pt = 1/72 inch, so at 300 DPI → 4.1667 px/pt.
             // These helpers convert between the two; if the card DPI
             // changes, point values stay stable across sizes.
+            // Normalise any stored fontWeight (legacy strings, empty, or
+            // numeric) to the set of values the Weight <select> shows, so
+            // the dropdown reflects the true state instead of silently
+            // falling back to its first option.
+            normalizedWeight: function(field) {
+                var w = field && field.fontWeight;
+                if (w === undefined || w === null || w === '') return 'normal';
+                if (w === 'bold' || w === 'bolder') return '700';
+                if (w === 'lighter') return '300';
+                if (w === 'normal') return 'normal';
+                var n = parseInt(w, 10);
+                if (isNaN(n)) return 'normal';
+                // Snap to the nearest picker value so 450 shows as Regular
+                // rather than nothing.
+                var values = [300, 400, 500, 600, 700, 800];
+                var nearest = values.reduce(function(a, b) {
+                    return Math.abs(b - n) < Math.abs(a - n) ? b : a;
+                }, 400);
+                return nearest === 400 ? 'normal' : String(nearest);
+            },
+
             // Accept hex colour input live. Supports #rgb, #rgba, #rrggbb,
             // #rrggbbaa with or without the leading '#'. Only commits once
             // the entry is a valid colour so typing intermediate values
