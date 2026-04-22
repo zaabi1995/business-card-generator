@@ -139,6 +139,36 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     $userInitials = strtoupper(substr($userName, 0, 2));
     $adminLocale = function_exists('currentLocale') ? currentLocale() : 'en';
     $adminDir    = function_exists('currentDir')    ? currentDir()    : 'ltr';
+
+    // Tenant theme: look up primary/secondary from company_themes so every
+    // admin page gets the tenant's brand colors (buttons, focus rings, nav
+    // accents, page-loader gradient). Cardify default when no row exists.
+    $tBrand    = '#2563eb';
+    $tBrand2   = '#1d4ed8';
+    $tBrandInk = '#ffffff';
+    $tBrandRing= 'rgba(37,99,235,.35)';
+    try {
+        $_cid = $_SESSION['company_id'] ?? null;
+        if ($_cid && class_exists('Database') && class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+            $_theme = Database::getInstance()->fetchOne(
+                'SELECT primary_color, secondary_color FROM company_themes WHERE company_id = :id LIMIT 1',
+                ['id' => $_cid]
+            );
+            if ($_theme) {
+                if (preg_match('/^#[0-9a-fA-F]{6}$/', $_theme['primary_color'] ?? '')) {
+                    $tBrand = $_theme['primary_color'];
+                }
+                if (preg_match('/^#[0-9a-fA-F]{6}$/', $_theme['secondary_color'] ?? '')) {
+                    $tBrand2 = $_theme['secondary_color'];
+                }
+            }
+        }
+    } catch (Throwable $_) { /* legacy installs without company_themes */ }
+    // Pick legible ink (sRGB luminance threshold 0.6): dark text on light brand, white on dark.
+    $_hex2 = ltrim($tBrand, '#');
+    $_lum = (0.2126 * hexdec(substr($_hex2, 0, 2)) + 0.7152 * hexdec(substr($_hex2, 2, 2)) + 0.0722 * hexdec(substr($_hex2, 4, 2))) / 255;
+    $tBrandInk = $_lum > 0.6 ? '#0f172a' : '#ffffff';
+    $tBrandRing = $tBrand . '59'; // ~35% alpha
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars($adminLocale) ?>" dir="<?= htmlspecialchars($adminDir) ?>" data-product="cardify">
@@ -150,7 +180,7 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
 
     <!-- PWA manifest + theme color (action 287) -->
     <link rel="manifest" href="<?php echo $basePath; ?>manifest.webmanifest">
-    <meta name="theme-color" content="#009bc1">
+    <meta name="theme-color" content="<?= htmlspecialchars($tBrand) ?>">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
@@ -307,6 +337,34 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
             opacity: 1;
             animation: none;
         }
+    </style>
+
+    <!-- Tenant brand override: maps common Tailwind blue utilities to the
+         tenant's primary color so every admin page (Dashboard, Employees,
+         Theme, etc.) picks up the brand without touching each template. -->
+    <style>
+      :root{
+        --tbrand: <?= htmlspecialchars($tBrand) ?>;
+        --tbrand-2: <?= htmlspecialchars($tBrand2) ?>;
+        --tbrand-ink: <?= htmlspecialchars($tBrandInk) ?>;
+        --tbrand-ring: <?= htmlspecialchars($tBrandRing) ?>;
+      }
+      .bg-blue-500,.bg-blue-600{background-color:var(--tbrand)!important;color:var(--tbrand-ink)!important}
+      .bg-blue-700,.hover\:bg-blue-700:hover,.hover\:bg-blue-600:hover,.hover\:bg-blue-500:hover{background-color:var(--tbrand-2)!important;color:var(--tbrand-ink)!important}
+      .bg-blue-50{background-color:color-mix(in srgb, var(--tbrand) 8%, white)!important}
+      .bg-blue-100{background-color:color-mix(in srgb, var(--tbrand) 18%, white)!important}
+      .text-blue-500,.text-blue-600,.text-blue-700,.text-blue-800,
+      .hover\:text-blue-600:hover,.hover\:text-blue-700:hover{color:var(--tbrand)!important}
+      .border-blue-400,.border-blue-500,.border-blue-600{border-color:var(--tbrand)!important}
+      .ring-blue-500,.ring-blue-600{--tw-ring-color:var(--tbrand-ring)!important}
+      .focus\:ring-blue-500:focus,.focus\:ring-blue-500\/20:focus{box-shadow:0 0 0 3px var(--tbrand-ring)!important}
+      .focus\:border-blue-500:focus{border-color:var(--tbrand)!important}
+      /* gradients from blue-* utilities */
+      .from-blue-500,.from-blue-600{--tw-gradient-from:var(--tbrand) var(--tw-gradient-from-position)!important;--tw-gradient-to:transparent var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)!important}
+      .to-blue-600,.to-blue-700{--tw-gradient-to:var(--tbrand-2) var(--tw-gradient-to-position)!important}
+      /* Page-loader brand gradient (line 293 fallback) uses hardcoded blue -
+         swap to brand primary→secondary. */
+      .page-loader-brand{background:linear-gradient(135deg, var(--tbrand) 0%, var(--tbrand-2) 100%)!important;-webkit-background-clip:text;background-clip:text}
     </style>
 </head>
 <body class="bg-gray-50"<?php echo Impersonation::isActive() ? ' data-impersonating="true"' : ''; ?>>
