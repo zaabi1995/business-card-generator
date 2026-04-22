@@ -148,7 +148,7 @@ $basePath = getAdminBasePath();
 $isCompanyAdmin = defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug']);
 $ext = $isCompanyAdmin ? '' : '.php';
 
-adminHeader('My Dashboard', 'customer-dashboard');
+adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
 ?>
 
 <?php if ($message): ?>

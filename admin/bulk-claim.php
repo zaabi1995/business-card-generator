@@ -380,7 +380,7 @@ $companiesForPicker = $db->fetchAll("SELECT id, name FROM companies ORDER BY nam
 
 $csrf = generateCSRFToken();
 
-adminHeader('Bulk Claim (Growth)', 'reports');
+adminHeader(t('adminchrome.bulk_claim'), 'reports');
 ?>
 
 <div class="max-w-6xl mx-auto">

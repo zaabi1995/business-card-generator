@@ -16,4 +16,9 @@ return [
     'bhd_campaign_manager'  => 'مدير حملات BHD',
     'growth_dashboard'      => 'لوحة النمو',
     'odoo_integration'      => 'تكامل Odoo',
+
+    'companies'             => 'الشركات',
+    'my_dashboard'          => 'لوحتي',
+    'bulk_claim'            => 'مطالبة جماعيّة (نمو)',
+    'order_number'          => 'الطلب #:n',
 ];

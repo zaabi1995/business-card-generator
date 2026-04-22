@@ -188,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-adminHeader('Companies', 'companies');
+adminHeader(t('adminchrome.companies'), 'companies');
 ?>
 
 <div x-data="companyManager()">

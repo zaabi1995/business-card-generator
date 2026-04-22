@@ -63,16 +63,16 @@
 - [x] 045. admin/bhd-campaign.php page title bilingual (adminchrome.bhd_campaign_manager) → e19f2ad (campaign dashboard + metrics deferred to action 531)
 - [x] 046. admin/growth.php page title bilingual (adminchrome.growth_dashboard) → e19f2ad (growth metrics + experiments deferred to action 532)
 - [x] 047. admin/odoo_settings.php page title bilingual (adminchrome.odoo_integration) → e19f2ad. NOTE: nav links still read "Odoo Integration"; rename-to-"ERP Settings" UX pass deferred to action 533 (needs audit of all nav sidebars + links).
-- [ ] 048. Translate `admin/impersonate.php` (super-admin only).
-- [ ] 049. Translate `admin/companies.php` (super-admin only).
-- [ ] 050. Translate `admin/customer-dashboard.php`.
-- [ ] 051. Translate `admin/bulk-claim.php`.
-- [ ] 052. Translate `admin/order_detail.php`.
-- [ ] 053. Translate `admin/blog-carousel-preview.php`.
-- [ ] 054. Translate `admin/templates.php` (template picker).
-- [ ] 055. Translate `admin/template-editor.php`.
-- [ ] 056. Translate all admin empty states.
-- [ ] 057. Translate all admin nav labels.
+- [~] 048. admin/impersonate.php N/A: pure POST handler with only redirect-back error flashes; no UI chrome to translate.
+- [x] 049. admin/companies.php page title bilingual (adminchrome.companies) → PENDING_SHA (super-admin tenant table + filters deferred to action 534)
+- [x] 050. admin/customer-dashboard.php page title bilingual (adminchrome.my_dashboard) → PENDING_SHA (widget grid deferred to action 535)
+- [x] 051. admin/bulk-claim.php page title bilingual (adminchrome.bulk_claim) → PENDING_SHA (wizard deferred to action 536)
+- [x] 052. admin/order_detail.php page title bilingual with :n interpolation → PENDING_SHA (order detail block + history timeline deferred to action 537)
+- [~] 053. admin/blog-carousel-preview.php N/A: PHP handler that streams a generated LinkedIn carousel PDF; no UI chrome.
+- [~] 054. admin/templates.php N/A: file does not exist. Template listing lives inside admin/index.php dashboard Card Designs panel (already in scope of action 032).
+- [~] 055. admin/template-editor.php N/A: file does not exist. Template editing is an Alpine modal inside admin/index.php (covered by action 032 + dashboard follow-up 520).
+- [~] 056. Admin empty states are handled per-file as each admin page gets translated (covered so far by employees/departments/generated/customer-dashboard work). Leaving open as a final-sweep audit action 538.
+- [x] 057. Admin nav labels bilingual via existing lang/{en,ar}/admin.php (shipped in action 009 → 9041dba); full 18-key nav_* set covers group headers + every top-level admin page. Actions 048-057 page titles close the gap for breadcrumbs.
 - [ ] 058. Translate `printshop/dashboard.php`.
 - [ ] 059. Translate `printshop/orders.php` + `order.php`.
 - [ ] 060. Translate `printshop/credit-accounts.php` + `credit-ledger.php`.
@@ -608,7 +608,12 @@
 - [ ] 530. admin/appointments.php calendar grid, list view, booking modal (time/service/client/notes), status chips. Est. ~50 strings.
 - [ ] 531. admin/bhd-campaign.php campaign dashboard (targets, CTAs sent, responses), campaign-create form, per-campaign detail view. Est. ~70 strings.
 - [ ] 532. admin/growth.php growth metrics widgets (cohort, churn, expansion), experiment list, experiment-detail drawer. Est. ~60 strings.
-- [ ] 533. Nav-link audit: rename "Odoo" / "Odoo Integration" to "ERP Settings" wherever it appears in admin sidebars, breadcrumbs, and page maps. Also update lang/{en,ar}/admin.php nav_erp_settings to "ERP Settings"/"إعدادات نظام الموارد" consistency check. Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
+- [ ] 533. Nav-link audit: rename "Odoo" / "Odoo Integration" to "ERP Settings" wherever it appears in admin sidebars, breadcrumbs, and page maps. Also update lang/{en,ar}/admin.php nav_erp_settings to "ERP Settings"/"إعدادات نظام الموارد" consistency check.
+- [ ] 534. admin/companies.php (super-admin tenant table) filters, column headers, per-row actions, impersonate CTA, credit tier badges.
+- [ ] 535. admin/customer-dashboard.php widget grid: account status card, usage-this-month, next-invoice, recent orders, recent taps, support CTA.
+- [ ] 536. admin/bulk-claim.php growth wizard: contact upload, preview table, personalisation preview, send-via-WhatsApp CTA, stats dashboard, per-lead status.
+- [ ] 537. admin/order_detail.php detail block, status chips, fulfillment timeline, print-shop chat panel, delivery tracking, payment proof.
+- [ ] 538. Final admin empty-state audit: sweep every admin/*.php page post-translation, verify every empty-list block has a localized CTA + helpful sub-message (not just "No results"). Likely catches ~15 stragglers missed during per-file work. Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
 - [ ] 511. index.php: translate `#features` section (6 feature tiles: Design Once, Verified Print Shops, Arabic & English, Team & Departments, Smart QR Codes, Employee Portal). Extend landing.php with feat_* keys.
 - [ ] 512. index.php: translate `#how-it-works` section (3 steps: Create Account, Add Team, Print & Share). Extend with how_* keys.
 - [ ] 513. index.php: translate `#pricing` section (Starter/Professional/Business/Enterprise tiers, feature lists, CTAs). Dedicated lang/{en,ar}/pricing.php.

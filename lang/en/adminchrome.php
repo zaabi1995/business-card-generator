@@ -19,4 +19,9 @@ return [
     'bhd_campaign_manager'  => 'BHD campaign manager',
     'growth_dashboard'      => 'Growth dashboard',
     'odoo_integration'      => 'Odoo integration',
+
+    'companies'             => 'Companies',
+    'my_dashboard'          => 'My dashboard',
+    'bulk_claim'            => 'Bulk claim (growth)',
+    'order_number'          => 'Order #:n',
 ];

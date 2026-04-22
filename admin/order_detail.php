@@ -157,7 +157,7 @@ $statusColors = [
     'cancelled' => 'bg-red-100 text-red-700 border-red-300'
 ];
 
-adminHeader('Order #' . $orderId, 'print');
+adminHeader(t('adminchrome.order_number', ['n' => $orderId]), 'print');
 ?>
 
 <!-- Back Link -->
