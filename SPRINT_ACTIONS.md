@@ -553,7 +553,7 @@
 - [x] 506. Monitor Sentry for 24h post-release: ops/post-release-monitor.md defines the 24h watch playbook (T+0/+1h/+6h/+24h tasks + escalation thresholds + success definition). Ran the T+0 slice live for v2.0: /api/health 200 all green + /api/erp-health 200 status=ok + /status green + no new error.log lines. Sentry alerts themselves blocked on DSN (817). → b2d441b
 - [x] 507. Collect feedback form responses: migration 096 contact_messages (name/email/subject/message/locale/ip/ua/email_sent/replied_at indexed on open-inbox) + contact.php persists every submit BEFORE mail attempt (so a mailer hiccup never loses a message) + admin/super/feedback.php super-admin inbox with filter (open/replied/subject/locale) + 3-KPI summary + CSRF-guarded Mark-replied. Migration applied live. → c820758
 - [x] 508. Triage new actions discovered + append: ops/backlog-triage.md groups the 63 queued follow-ups (actions 780-842) into 8 themed buckets (Ali approval / ops config / stage-E2E / SEO+CWV / security sweep / admin UX / hardware QA / small pathing) + shorthand dependency graph. Confirmed zero dropped: 63 queued = 63 append entries in SPRINT_LOG.md. → 7e42bad
-- [ ] 509. Final self-review loop iteration.
+- [x] 509. Final self-review: i18n-audit OK, /api/health 200 all-green, /api/erp-health 200 status=ok 46ms, 18 cardify cron entries installed on VPS, 20 sprint migrations shipped (077-096), no TODO/FIXME in new includes, full Playwright suite 138 passed + 2 skipped + 0 failed in 2.7min against live prod. Loop finds no new actions beyond the triaged 63 follow-ups. → 72e9b4d
 - [ ] 510. Close sprint, write retro at `/Users/ali/claude/obsidian/claude-vault/cardify-sprint-retro.md`.
 
 ---
