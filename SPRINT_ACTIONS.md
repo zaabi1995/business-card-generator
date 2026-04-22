@@ -359,20 +359,20 @@
 ## M, Forms + Validation (341-355)
 
 - [~] 341. Employee form 3-required + Advanced accordion deferred to action 521 (already queued with full modal rewrite).
-- [x] 342. cardifyForms.attachBlurValidation(form, rules) shipped: validates on blur, re-validates on input after first blur, writes errors into .cardify-field__error, toggles aria-invalid. Per-page wiring deferred to action 733. → PENDING_SHA_MARKER
-- [x] 343. cardifyForms.validators.phoneE164 shipped; intl-tel-input widget already loaded on register.php (action 023) and employee modal UI. → PENDING_SHA_MARKER
+- [x] 342. cardifyForms.attachBlurValidation(form, rules) shipped: validates on blur, re-validates on input after first blur, writes errors into .cardify-field__error, toggles aria-invalid. Per-page wiring deferred to action 733. → f522946
+- [x] 343. cardifyForms.validators.phoneE164 shipped; intl-tel-input widget already loaded on register.php (action 023) and employee modal UI. → f522946
 - [~] 344. Email MX check via API deferred to action 734 (needs a small backend endpoint hitting a DNS resolver).
-- [x] 345. cardifyForms.validators.url auto-prefixes https:// when missing + validates via URL constructor. → PENDING_SHA_MARKER
+- [x] 345. cardifyForms.validators.url auto-prefixes https:// when missing + validates via URL constructor. → f522946
 - [~] 346. Server-side schema-mirror validation deferred to action 735 (requires a shared Validator class in includes/).
 - [~] 347. Friendly "did you mean to update them?" errors deferred to action 736 (needs per-field smart duplicate-lookup).
 - [~] 348. 10s autosave wrapper deferred to action 737 (onboarding wizard already has it; generalised version needs a Cardify.Autosave helper).
-- [x] 349. cardifyForms.watchUnsavedChanges(form) shipped: snapshots initial state, listens for input/change, fires beforeunload prompt when dirty, .markClean() silences after save. → PENDING_SHA_MARKER
-- [x] 350. cardifyForms.requiredIndicator(labelText) helper returns the standard red asterisk + sr-only " (required)" wrap to avoid asterisk-spam. → PENDING_SHA_MARKER
+- [x] 349. cardifyForms.watchUnsavedChanges(form) shipped: snapshots initial state, listens for input/change, fires beforeunload prompt when dirty, .markClean() silences after save. → f522946
+- [x] 350. cardifyForms.requiredIndicator(labelText) helper returns the standard red asterisk + sr-only " (required)" wrap to avoid asterisk-spam. → f522946
 - [~] 351. Friendly placeholder copy audit deferred to action 738.
 - [~] 352. Character counters deferred to action 739.
-- [x] 353. cardifyForms.passwordStrength(v) shipped: 0-4 score based on length + case + digit + symbol; paired with password_very_weak..excellent error keys in EN+AR. Visual meter UI deferred to action 740. → PENDING_SHA_MARKER
+- [x] 353. cardifyForms.passwordStrength(v) shipped: 0-4 score based on length + case + digit + symbol; paired with password_very_weak..excellent error keys in EN+AR. Visual meter UI deferred to action 740. → f522946
 - [~] 354. File size + type hints audit deferred to action 741.
-- [x] 355. cardifyForms.confirmTyped(word, opts) shipped: modal asks the user to type a literal word (usually DELETE) before the Promise resolves true. Cancel + Esc + backdrop-click all resolve false. Uses .cardify-modal + .cardify-btn primitives from Category K. → PENDING_SHA_MARKER
+- [x] 355. cardifyForms.confirmTyped(word, opts) shipped: modal asks the user to type a literal word (usually DELETE) before the Promise resolves true. Cancel + Esc + backdrop-click all resolve false. Uses .cardify-modal + .cardify-btn primitives from Category K. → f522946
 
 ## N, Performance (356-370)
 
