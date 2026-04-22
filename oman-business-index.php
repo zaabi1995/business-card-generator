@@ -14,6 +14,13 @@ require_once INCLUDES_DIR . '/Auth.php';
 
 $db = Database::getInstance();
 
+// Locale detection for OBI chrome. Deep analytical prose below (executive
+// summary, methodology, key findings) stays in its authored English for now;
+// a banner directs Arabic readers to /companies for the fully bilingual
+// searchable directory.
+$lang = function_exists('currentLocale') ? currentLocale() : 'en';
+$isAr = ($lang === 'ar');
+
 // --- Canonical sector + wilayat labels (kept in sync with companies.php) ---
 $SECTORS = [
     'oil-gas'               => ['en' => 'Oil & Gas',              'ar' => 'النفط والغاز'],
@@ -206,8 +213,12 @@ $lastUpdatedIso   = date('c', $lastUpdatedTs);
 
 // --- Page metadata ---
 $baseUrl         = 'https://cardify.om';
-$pageTitle       = 'Oman Business Index 2026: 2,414 Largest Enterprises | Cardify';
-$pageDescription = 'Free public directory of the ' . $totalFmt . ' largest & medium enterprises in Oman — classified by sector and governorate, sourced from MoCIIP.';
+$pageTitle       = $isAr
+    ? 'دليل الأعمال العُماني 2026: أكبر 2,414 مؤسسة | كارديفاي'
+    : 'Oman Business Index 2026: 2,414 Largest Enterprises | Cardify';
+$pageDescription = $isAr
+    ? 'دليل عام مجاني يضمّ ' . $totalFmt . ' من أكبر الشركات والمؤسسات المتوسطة في عُمان، مصنّفة حسب القطاع والمحافظة، ومصدره السجل العام لوزارة التجارة.'
+    : 'Free public directory of the ' . $totalFmt . ' largest & medium enterprises in Oman, classified by sector and governorate, sourced from MoCIIP.';
 // Ensure under 155 chars; trim if needed.
 if (strlen($pageDescription) > 155) {
     $pageDescription = substr($pageDescription, 0, 152) . '...';
@@ -378,21 +389,28 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16 sm:pt-32 sm:pb-20">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-blue-200 text-blue-700 text-xs font-semibold tracking-wide uppercase shadow-sm">
                 <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-                Research Report &middot; Edition 2026
+                <?= $isAr ? 'تقرير بحثي · إصدار 2026' : 'Research Report &middot; Edition 2026' ?>
             </div>
             <h1 class="mt-5 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 leading-[1.08]">
-                Oman Business Index 2026:<br class="hidden sm:block">
-                <span class="text-blue-700">The <?= obiEscq($totalFmt) ?> Largest Enterprises</span> in the Sultanate
+                <?php if ($isAr): ?>
+                    دليل الأعمال العُماني 2026:<br class="hidden sm:block">
+                    <span class="text-blue-700">أكبر <?= obiEscq($totalFmt) ?> مؤسسة</span> في السلطنة
+                <?php else: ?>
+                    Oman Business Index 2026:<br class="hidden sm:block">
+                    <span class="text-blue-700">The <?= obiEscq($totalFmt) ?> Largest Enterprises</span> in the Sultanate
+                <?php endif; ?>
             </h1>
             <p class="mt-6 text-lg sm:text-xl text-gray-600 max-w-3xl leading-relaxed">
-                A free, bilingual, public directory of large and medium-sized enterprises registered in Oman —
-                sourced from the MoCIIP public register and classified by sector, governorate, and scale.
+                <?= $isAr
+                    ? 'دليل عام مجاني ثنائي اللغة للمؤسسات الكبيرة والمتوسطة المسجّلة في عُمان، مصدره السجل العام لوزارة التجارة ومصنّف حسب القطاع والمحافظة والحجم.'
+                    : 'A free, bilingual, public directory of large and medium-sized enterprises registered in Oman, sourced from the MoCIIP public register and classified by sector, governorate, and scale.' ?>
             </p>
 
             <div class="mt-6 flex flex-wrap items-center gap-3 text-sm text-gray-500">
                 <span class="inline-flex items-center gap-1.5">
                     <i class="fa-regular fa-calendar text-gray-400"></i>
-                    Last updated <time datetime="<?= obiEscq($lastUpdatedIso) ?>"><?= obiEscq($lastUpdatedHuman) ?></time>
+                    <?= $isAr ? 'آخر تحديث' : 'Last updated' ?>
+                    <time datetime="<?= obiEscq($lastUpdatedIso) ?>"><?= obiEscq($isAr ? I18n::formatDate($lastUpdatedTs, 'ar') : $lastUpdatedHuman) ?></time>
                 </span>
                 <span class="text-gray-300">&middot;</span>
                 <span class="inline-flex items-center gap-1.5">
@@ -402,46 +420,55 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <span class="text-gray-300">&middot;</span>
                 <span class="inline-flex items-center gap-1.5">
                     <i class="fa-solid fa-language text-gray-400"></i>
-                    EN &middot; AR
+                    <?= $isAr ? 'عربي · إنجليزي' : 'EN &middot; AR' ?>
                 </span>
             </div>
 
             <div class="mt-8 flex flex-wrap gap-3">
                 <a href="/companies" class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-blue-600 text-white font-semibold shadow-sm hover:bg-blue-700 transition">
                     <i class="fa-solid fa-magnifying-glass text-sm"></i>
-                    Search the full index
+                    <?= $isAr ? 'ابحث في الدليل الكامل' : 'Search the full index' ?>
                 </a>
                 <a href="#cite" class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-white text-gray-800 font-semibold border border-gray-200 hover:border-blue-300 hover:text-blue-700 transition">
                     <i class="fa-solid fa-quote-right text-sm"></i>
-                    Cite this index
+                    <?= $isAr ? 'اقتبس هذا الدليل' : 'Cite this index' ?>
                 </a>
                 <a href="#methodology" class="inline-flex items-center gap-2 px-5 py-3 rounded-lg text-gray-700 font-semibold hover:text-blue-700 transition">
-                    Methodology &rarr;
+                    <?= $isAr ? 'المنهجية ←' : 'Methodology &rarr;' ?>
                 </a>
             </div>
+
+            <?php if ($isAr): ?>
+            <div class="mt-8 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm p-4">
+                <i class="fa-solid fa-circle-info mr-1.5"></i>
+                التحليل المعمّق في هذه الصفحة (الملخّص التنفيذي والمنهجية والنتائج الرئيسية) متاح حالياً باللغة الإنجليزية.
+                للاستعراض العربي الكامل لكل شركة، <a href="/companies" class="font-semibold underline">افتح الدليل التفاعلي</a>
+                حيث تظهر الأسماء والأنشطة والبيانات ثنائيّة اللغة.
+            </div>
+            <?php endif; ?>
 
             <!-- Key stats grid -->
             <dl class="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
                 <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
-                    <dt class="text-xs uppercase tracking-wide text-gray-500">Total enterprises</dt>
+                    <dt class="text-xs uppercase tracking-wide text-gray-500"><?= $isAr ? 'إجمالي المؤسسات' : 'Total enterprises' ?></dt>
                     <dd class="mt-2 text-3xl font-bold text-gray-900 tabular-nums"><?= obiEscq($totalFmt) ?></dd>
                 </div>
                 <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
-                    <dt class="text-xs uppercase tracking-wide text-gray-500">Large enterprises</dt>
+                    <dt class="text-xs uppercase tracking-wide text-gray-500"><?= $isAr ? 'مؤسسات كبيرة' : 'Large enterprises' ?></dt>
                     <dd class="mt-2 text-3xl font-bold text-gray-900 tabular-nums"><?= obiEscq($largeFmt) ?></dd>
-                    <div class="text-xs text-gray-500 mt-1"><?= obiEscq($largePctOfTotal) ?>% of total</div>
+                    <div class="text-xs text-gray-500 mt-1"><?= obiEscq($largePctOfTotal) ?>% <?= $isAr ? 'من الإجمالي' : 'of total' ?></div>
                 </div>
                 <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
-                    <dt class="text-xs uppercase tracking-wide text-gray-500">Medium enterprises</dt>
+                    <dt class="text-xs uppercase tracking-wide text-gray-500"><?= $isAr ? 'مؤسسات متوسطة' : 'Medium enterprises' ?></dt>
                     <dd class="mt-2 text-3xl font-bold text-gray-900 tabular-nums"><?= obiEscq($mediumFmt) ?></dd>
-                    <div class="text-xs text-gray-500 mt-1"><?= obiEscq($mediumPctOfTotal) ?>% of total</div>
+                    <div class="text-xs text-gray-500 mt-1"><?= obiEscq($mediumPctOfTotal) ?>% <?= $isAr ? 'من الإجمالي' : 'of total' ?></div>
                 </div>
                 <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
-                    <dt class="text-xs uppercase tracking-wide text-gray-500">Sectors</dt>
+                    <dt class="text-xs uppercase tracking-wide text-gray-500"><?= $isAr ? 'القطاعات' : 'Sectors' ?></dt>
                     <dd class="mt-2 text-3xl font-bold text-gray-900 tabular-nums"><?= obiEscq($sectorFmt) ?></dd>
                 </div>
                 <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm col-span-2 sm:col-span-1">
-                    <dt class="text-xs uppercase tracking-wide text-gray-500">Governorates</dt>
+                    <dt class="text-xs uppercase tracking-wide text-gray-500"><?= $isAr ? 'المحافظات' : 'Governorates' ?></dt>
                     <dd class="mt-2 text-3xl font-bold text-gray-900 tabular-nums"><?= obiEscq($wilayatFmt) ?></dd>
                 </div>
             </dl>
@@ -456,9 +483,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
                 <i class="fa-solid fa-chart-line"></i>
             </div>
-            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700">Section 01</span>
+            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700"><?= $isAr ? 'القسم 01' : 'Section 01' ?></span>
         </div>
-        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Executive Summary</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= $isAr ? 'الملخّص التنفيذي' : 'Executive Summary' ?></h2>
         <div class="mt-6 space-y-5 text-lg text-gray-700 leading-relaxed">
             <p>
                 The Sultanate of Oman is in the middle of the most consequential economic transformation of its modern history.
@@ -497,9 +524,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
                 <i class="fa-solid fa-flask"></i>
             </div>
-            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700">Section 02</span>
+            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700"><?= $isAr ? 'القسم 02' : 'Section 02' ?></span>
         </div>
-        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Methodology</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= $isAr ? "المنهجية" : "Methodology" ?></h2>
 
         <div class="mt-6 space-y-5 text-lg text-gray-700 leading-relaxed">
             <p>
@@ -548,9 +575,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
                     <i class="fa-solid fa-lightbulb"></i>
                 </div>
-                <span class="text-xs font-semibold uppercase tracking-widest text-blue-700">Section 03</span>
+                <span class="text-xs font-semibold uppercase tracking-widest text-blue-700"><?= $isAr ? 'القسم 03' : 'Section 03' ?></span>
             </div>
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Key Findings</h2>
+            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= $isAr ? "النتائج الرئيسية" : "Key Findings" ?></h2>
             <p class="mt-4 text-lg text-gray-600 max-w-3xl">
                 All figures below are computed live against the <?= obiEscq($totalFmt) ?>-record dataset at the time this page is served.
                 They are not pre-rendered; they reflect the current state of the index.
@@ -713,9 +740,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
                 <i class="fa-solid fa-trophy"></i>
             </div>
-            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700">Section 04</span>
+            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700"><?= $isAr ? 'القسم 04' : 'Section 04' ?></span>
         </div>
-        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Top 10 Flagship Enterprises</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= $isAr ? "أبرز 10 مؤسسات رائدة" : "Top 10 Flagship Enterprises" ?></h2>
         <p class="mt-4 text-lg text-gray-600 max-w-3xl">
             A curated shortlist of ten flagship Omani enterprises — organisations that anchor the country's
             hydrocarbon, industrial, and financial backbone. Order is editorial and does not imply revenue ranking.
@@ -773,9 +800,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
                 <i class="fa-solid fa-layer-group"></i>
             </div>
-            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700">Section 05</span>
+            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700"><?= $isAr ? 'القسم 05' : 'Section 05' ?></span>
         </div>
-        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Explore by Sector</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= $isAr ? "استكشف حسب القطاع" : "Explore by Sector" ?></h2>
         <p class="mt-4 text-lg text-gray-600 max-w-3xl">
             Every enterprise in the index is assigned a canonical sector. Click any sector to view the full list of
             registered large and medium enterprises operating in that space.
@@ -808,9 +835,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
                 <i class="fa-solid fa-map-location-dot"></i>
             </div>
-            <span class="text-xs font-semibold uppercase tracking-widest text-emerald-700">Section 06</span>
+            <span class="text-xs font-semibold uppercase tracking-widest text-emerald-700"><?= $isAr ? 'القسم 06' : 'Section 06' ?></span>
         </div>
-        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Explore by Governorate</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= $isAr ? "استكشف حسب المحافظة" : "Explore by Governorate" ?></h2>
         <p class="mt-4 text-lg text-gray-600 max-w-3xl">
             Every enterprise is mapped to one of the <?= obiEscq($wilayatFmt) ?> governorates of the Sultanate based on
             its registered primary address. Click any governorate to open the regional listing.
@@ -840,7 +867,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur border border-white/20 text-xs font-semibold uppercase tracking-widest">
                 Section 07
             </div>
-            <h2 class="mt-5 text-3xl sm:text-5xl font-bold tracking-tight">Search the Full Index</h2>
+            <h2 class="mt-5 text-3xl sm:text-5xl font-bold tracking-tight"><?= $isAr ? "ابحث في الدليل الكامل" : "Search the Full Index" ?></h2>
             <p class="mt-4 text-lg text-blue-100 max-w-2xl mx-auto">
                 All <?= obiEscq($totalFmt) ?> enterprises are fully searchable — in English and Arabic — with filters
                 by sector and governorate, and paginated listings. Every company has its own permanent URL.
@@ -869,7 +896,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
             <span class="text-xs font-semibold uppercase tracking-widest text-blue-700">Section 08</span>
         </div>
-        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Cite This Index</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= $isAr ? "اقتبس هذا الدليل" : "Cite This Index" ?></h2>
         <p class="mt-4 text-lg text-gray-600 max-w-3xl">
             Journalists, analysts, and researchers are welcome — and encouraged — to cite the Oman Business Index.
             The dataset is published under a Creative Commons Attribution 4.0 International licence: reuse aggregate
@@ -914,7 +941,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
             <span class="text-xs font-semibold uppercase tracking-widest text-blue-700">Section 09</span>
         </div>
-        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">About Cardify</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= $isAr ? "عن كارديفاي" : "About Cardify" ?></h2>
         <p class="mt-6 text-lg text-gray-700 leading-relaxed">
             <strong>Cardify</strong> is the Sultanate's digital business-card platform — built in Oman, for Oman.
             We help companies issue beautiful, on-brand digital cards to every employee, and print physical cards on
@@ -945,7 +972,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </div>
                 <span class="text-xs font-semibold uppercase tracking-widest text-blue-700">Section 10</span>
             </div>
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Frequently Asked Questions</h2>
+            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= $isAr ? "الأسئلة الشائعة" : "Frequently Asked Questions" ?></h2>
 
             <div class="mt-10 space-y-3">
                 <?php foreach ($faq as $i => $item): ?>
