@@ -215,6 +215,53 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     <!-- Flag Icons CSS for country/phone dropdowns -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css">
     
+    <!-- Myriad Pro (licensed, self-hosted OTF). Weight mapping:
+         300 = Light, 400 = Regular, 600 = SemiBold, 700 = Bold. -->
+    <style>
+        @font-face {
+            font-family: 'Myriad Pro';
+            font-style: normal;
+            font-weight: 300;
+            font-display: swap;
+            src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-Light.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'Myriad Pro';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-Regular.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'Myriad Pro';
+            font-style: normal;
+            font-weight: 600;
+            font-display: swap;
+            src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-SemiBold.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'Myriad Pro';
+            font-style: italic;
+            font-weight: 600;
+            font-display: swap;
+            src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-SemiBoldIt.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'Myriad Pro';
+            font-style: normal;
+            font-weight: 700;
+            font-display: swap;
+            src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-Bold.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'Myriad Pro';
+            font-style: italic;
+            font-weight: 700;
+            font-display: swap;
+            src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-BoldIt.otf') format('opentype');
+        }
+    </style>
+
     <!-- Google Fonts for Card Editor (Arabic + English) -->
     <!-- Arabic Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Tajawal:wght@200;300;400;500;700;800;900&family=Almarai:wght@300;400;700;800&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@100;200;300;400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@200;300;400;500;600;700&family=El+Messiri:wght@400;500;600;700&family=Changa:wght@200;300;400;500;600;700;800&family=Reem+Kufi:wght@400;500;600;700&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;500;600;700&family=Mada:wght@200;300;400;500;600;700;800;900&family=Lalezar&family=Lemonada:wght@300;400;500;600;700&family=Aref+Ruqaa:wght@400;700&family=Mirza:wght@400;500;600;700&family=Rakkas&family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Lateef:wght@200;300;400;500;600;700;800&family=Harmattan:wght@400;500;600;700&family=Markazi+Text:wght@400;500;600;700&family=Gulzar&display=swap" rel="stylesheet">
