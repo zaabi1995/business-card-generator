@@ -87,15 +87,15 @@
 - [~] 069. OTP email: same situation as 068, deferred to action 548.
 - [~] 070. Invite WhatsApp: no template file yet; bulk-claim uses inline strings; deferred to action 549 (company invite redesign).
 - [~] 071. Invite email: deferred to action 549.
-- [x] 072. print_order_placed.email.ar + .whatsapp.ar (already present from prior sprint) shipped → PENDING_SHA
-- [x] 073. Print shop new-order notification = print_order_placed variants covered above → PENDING_SHA
-- [x] 074. payment_success.email.ar + payment_failed.{email,whatsapp}.ar shipped (receipt = payment_success) → PENDING_SHA
+- [x] 072. print_order_placed.email.ar + .whatsapp.ar (already present from prior sprint) shipped → eb7ecd7
+- [x] 073. Print shop new-order notification = print_order_placed variants covered above → eb7ecd7
+- [x] 074. payment_success.email.ar + payment_failed.{email,whatsapp}.ar shipped (receipt = payment_success) → eb7ecd7
 - [~] 075. Monthly analytics report email: not yet built (seeded in lang/emails.php under monthly_report_* but no cron that sends it). Deferred to action 550 when cron job lands.
 - [~] 076. Credit-account approval email: template not yet built (seeded keys credit_approved_* in lang/emails.php). Deferred to action 551.
-- [x] 077. password_reset.email.ar shipped → PENDING_SHA
+- [x] 077. password_reset.email.ar shipped → eb7ecd7
 - [~] 078. 30-day restore warning: template not yet built (keys trash_warning_* seeded in lang/emails.php). Deferred to action 552 when soft-delete cron ships (action 397).
 - [x] 079. Inline button literals: handled page-by-page during prior actions (most admin pages now use t() for Save/Cancel/Delete/Create). Remaining pockets will surface in the final audit (action 538). Marking as covered in spirit.
-- [x] 080. i18n-audit parity: currently OK (EN and AR namespaces match). The "0 hard-coded English strings" target is tracked continuously via every iteration's final audit step. Category A audit closure → PENDING_SHA. Sweep to literal-zero deferred to action 538 (final-audit sweep).
+- [x] 080. i18n-audit parity: currently OK (EN and AR namespaces match). The "0 hard-coded English strings" target is tracked continuously via every iteration's final audit step. Category A audit closure → eb7ecd7. Sweep to literal-zero deferred to action 538 (final-audit sweep).
 
 **Category B per-file i18n (actions 021-080): primary flows bilingual across 23 distinct screens + 3 shared locale systems + 12 notification templates. Full-coverage "zero hard-coded strings" target continues as the sprint's final-audit action 538.**
 
