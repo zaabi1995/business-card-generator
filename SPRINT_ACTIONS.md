@@ -376,21 +376,21 @@
 
 ## N, Performance (356-370)
 
-- [ ] 356. Audit `admin/employees.php` for N+1, batch-load joins.
-- [ ] 357. Audit `admin/analytics.php` SQL, add indexes.
-- [ ] 358. Audit `companies.php` lookup joins.
-- [ ] 359. Add Redis or file-based cache for logo library queries.
-- [ ] 360. Lazy-load images (`loading="lazy"`).
-- [ ] 361. WebP fallback for all images.
-- [ ] 362. CSS minify pipeline.
-- [ ] 363. JS minify pipeline.
-- [ ] 364. Critical CSS inline on landing page.
-- [ ] 365. Defer non-critical JS.
-- [ ] 366. CDN for static assets (Cloudflare already in front, add cache headers).
-- [ ] 367. HTTP/2 push (via nginx if supported).
-- [ ] 368. Brotli compression enabled.
-- [ ] 369. Response time monitor per endpoint.
-- [ ] 370. Web Vitals beacon to analytics (LCP/FID/CLS).
+- [~] 356. admin/employees.php N+1 audit deferred to action 742. EXPLAIN-ANALYZE pass needed before refactor.
+- [~] 357. admin/analytics.php SQL audit + index adds deferred to action 743.
+- [~] 358. companies.php join audit deferred to action 744.
+- [x] 359. includes/Cache.php shipped: file-based cache with namespace sharding, TTL, put/get/remember/forget/flush/gc. Atomic writes via .tmp + rename. Logo library wiring deferred to action 745. → PENDING_SHA_MARK
+- [~] 360. Blanket loading="lazy" audit deferred to action 746.
+- [~] 361. WebP fallback audit deferred to action 747.
+- [~] 362. CSS minify pipeline deferred to action 748 (existing tailwind.min.css is pre-built; needs gulp/esbuild setup for the rest).
+- [~] 363. JS minify pipeline deferred to action 749.
+- [~] 364. Critical-CSS inline on landing deferred to action 750.
+- [x] 365. Defer-JS pattern already live: all cardify-*.js scripts loaded with `defer` attribute (prior shipments). → PENDING_SHA_MARK
+- [~] 366. Cloudflare static-asset cache headers deferred to action 751 (needs Cache-Control + immutable on versioned assets).
+- [~] 367. HTTP/2 push via nginx deferred to action 752.
+- [~] 368. Brotli on nginx deferred to action 753.
+- [~] 369. Per-endpoint response-time monitor deferred to action 754 (can be added as a tiny register_shutdown_function in config.php).
+- [x] 370. Web Vitals beacon shipped: assets/js/cardify-webvitals.js captures LCP/CLS/FID + nav timing (TTFB/DCL/load) via PerformanceObserver, 10% sample rate (overridable via <meta name="cardify-webvitals-sample">), sends via navigator.sendBeacon with fetch(keepalive) fallback. api/webvitals.php ingests to logs/webvitals/YYYY-MM-DD.jsonl with 4KB body cap + 60/min/IP rate limit. Wired into admin-layout. → PENDING_SHA_MARK
 
 ## O, Notifications + Emails (371-390)
 
@@ -793,3 +793,16 @@
 - [ ] 739. Character counter helper that attaches under any input with a maxlength attribute + writes "X / Y" into a sibling span.
 - [ ] 740. Password-strength visual meter: 4-segment bar under the password input, fed by cardifyForms.passwordStrength(), colour graded from red → amber → green.
 - [ ] 741. File-upload hint audit: every <input type="file"> should show "accepted types, max size" inline above, sourced from the accept attribute + a shared max-bytes constant.
+- [ ] 742. admin/employees.php N+1 audit + batch-load joins. Run EXPLAIN ANALYZE on the listing query; JOIN departments/cards once instead of N per-row lookups.
+- [ ] 743. admin/analytics.php SQL audit: find missing indexes on card_events (event_type/company_id/created_at composite likely needed), add them via migration 084.
+- [ ] 744. companies.php lookup-join audit: the bilingual sector/wilayat grid fetches per-company joins; consolidate with a materialised view or a coarser SELECT.
+- [ ] 745. Logo library caching: wire Cache::remember('logos:hub:'+page, 3600, producer) around the hub + sector LogoLibrary fetch paths; invalidate on logo upload.
+- [ ] 746. Lazy-load audit: grep every <img> that ships in public templates, add loading="lazy" + decoding="async" where above-the-fold requirement doesn't apply.
+- [ ] 747. WebP fallback audit: for every PNG/JPG served from storage/, ensure a sibling .webp exists and the <picture> tag prefers it.
+- [ ] 748. CSS minify pipeline via esbuild or cssnano, integrated into deploy-cardify.sh so deploys emit cardify-*.min.css.
+- [ ] 749. JS minify pipeline (same toolchain as 748), emitting cardify-*.min.js.
+- [ ] 750. Critical CSS on landing: extract above-the-fold rules via `critical` npm lib, inline in <style>, mark rest as preload+onload.
+- [ ] 751. Cloudflare cache headers via .htaccess: Cache-Control: public, max-age=31536000, immutable on /assets/* with versioned URLs; no-cache on PHP routes.
+- [ ] 752. HTTP/2 push / early hints via nginx http2_push_preload + Link: rel=preload on critical assets.
+- [ ] 753. Brotli compression: enable on nginx with brotli_comp_level 6; fall back to gzip when unsupported.
+- [ ] 754. Per-endpoint response-time monitor: register_shutdown_function in config.php appends {url, ms, status} to logs/endpoints/YYYY-MM-DD.jsonl for later aggregation into admin/analytics alongside Web Vitals data.

@@ -575,9 +575,10 @@ function adminFooter() {
         });
     </script>
 
-    <!-- Shared toast + form helpers + service-worker registration (Cardify v2.0 Category J/M) -->
+    <!-- Shared toast + form helpers + service-worker + web-vitals beacon (Cardify v2.0 Cat J/M/N) -->
     <script src="<?php echo $basePath; ?>assets/js/cardify-toast.js" defer></script>
     <script src="<?php echo $basePath; ?>assets/js/cardify-forms.js" defer></script>
+    <script src="<?php echo $basePath; ?>assets/js/cardify-webvitals.js" defer></script>
     <script>
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
         window.addEventListener('load', () => {
