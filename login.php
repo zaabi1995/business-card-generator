@@ -7,6 +7,15 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
+// Tenant subdomains use OTP-only login
+if (file_exists(__DIR__ . '/includes/TenantHost.php')) {
+    require_once __DIR__ . '/includes/TenantHost.php';
+    if (TenantHost::isTenantHost()) {
+        require __DIR__ . '/tenant_login.php';
+        exit;
+    }
+}
+
 // Get redirect URL from query string (for company portal redirects)
 // Validate redirect is a safe relative path (no protocol-relative URLs like //evil.com)
 $redirectUrl = $_GET['redirect'] ?? null;

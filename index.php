@@ -37,7 +37,17 @@ if (!file_exists($configFile)) {
 
 require_once $configFile;
 
-// Custom Domain check — if the Host header maps to a verified custom domain,
+// Tenant subdomain check (e.g. ohb.cardify.om). If the host is a tenant
+// subdomain, route the root + /login here to the OTP login page.
+if (file_exists(__DIR__ . '/includes/TenantHost.php')) {
+    require_once __DIR__ . '/includes/TenantHost.php';
+    if (TenantHost::isTenantHost()) {
+        require __DIR__ . '/tenant_login.php';
+        exit;
+    }
+}
+
+// Custom Domain check, if the Host header maps to a verified custom domain,
 // this serves the linked employee card and exits. Otherwise returns and the
 // normal landing-page flow continues unchanged.
 if (file_exists(__DIR__ . '/custom_domain_router.php')) {
@@ -345,8 +355,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                 <button class="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
                                     <i class="fa-solid fa-address-book mr-2"></i>Save Contact
                                 </button>
-                                <button class="p-2.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition">
-                                    <i class="fa-solid fa-qrcode"></i>
+                                <button class="p-2.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition"
+                                        aria-label="<?= htmlspecialchars(t('common.show_qr')) ?>"
+                                        type="button">
+                                    <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
                                 </button>
                             </div>
                         </div>
