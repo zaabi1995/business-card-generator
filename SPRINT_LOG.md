@@ -101,3 +101,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-23 00:05 | #481 | ac3bebf | Cat U E2E PO upload AR: 2 auth-gates + 7-key PO i18n parity, 3/3 passed prod. Full walk queued as 831.
 2026-04-23 00:20 | #482 | 481b6bb | Cat U E2E analytics: auth-gate EN+AR + full namespace bidirectional parity. 3/3 passed prod. Full walk queued 832.
 2026-04-23 00:35 | #483 | 2b50d07 | Cat U E2E marketplace: public /print-shops EN 200 + BHD flagship visible, AR 200 RTL, marketplace namespace parity. 3/3 passed prod.
+2026-04-23 00:50 | #484+485 | 0792e37 | Cat U responsive: 9 public pages × 2 viewports (375+414), 18/18 passed prod 19.6s; scoped marker check dodges hidden desktop nav links. Full admin coverage queued 834.
