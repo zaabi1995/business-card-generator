@@ -1,15 +1,21 @@
 <?php
 /**
- * Cardify per-company OG image compositor.
+ * Cardify OG image compositor (Cat R actions 425-427).
  *
- * Takes a sector background (from /assets/images/og-sectors/{sector}.jpg)
- * and composites the company name + governorate + Cardify lockup on top.
- * Caches the rendered JPG to /cache/og/{slug}.jpg for 7 days.
+ * Composites a sector / brand background with a title + eyebrow + Cardify
+ * lockup. JPG output at 1200x630 cached for 7 days.
  *
- * URL: /og/company/{slug}.jpg   (see nginx rewrite)
- * Or:  /og.php?slug={slug}
+ * URLs (nginx rewrites):
+ *   /og/company/{slug}.jpg     → og.php?entity=company&slug=...
+ *   /og/print-shop/{slug}.jpg  → og.php?entity=printshop&slug=...
+ *   /og/blog/{slug}.jpg        → og.php?entity=blog&slug=...
+ *
+ * Default entity = company for backwards compat with historic links.
  */
 require_once __DIR__ . '/config.php';
+
+$entity = $_GET['entity'] ?? 'company';
+if (!in_array($entity, ['company', 'printshop', 'blog'], true)) $entity = 'company';
 
 $slug = isset($_GET['slug']) ? preg_replace('/[^a-z0-9-]/', '', $_GET['slug']) : '';
 if ($slug === '') {
@@ -18,18 +24,52 @@ if ($slug === '') {
 }
 
 $db = Database::getInstance();
-$company = $db->fetchOne(
-    "SELECT name_en, name_ar, sector, wilayat FROM om_companies WHERE slug = ? LIMIT 1",
-    [$slug]
-);
-if (!$company) {
-    header('Location: /assets/images/cardify-og.png', true, 302);
-    exit;
+$title = '';
+$eyebrow = '';
+$sectorKey = 'other';
+
+if ($entity === 'company') {
+    $row = $db->fetchOne(
+        "SELECT name_en, name_ar, sector, wilayat FROM om_companies WHERE slug = ? LIMIT 1",
+        [$slug]
+    );
+    if (!$row) { header('Location: /assets/images/cardify-og.png', true, 302); exit; }
+    $title = $row['name_en'];
+    $sectorKey = $row['sector'] ?? 'other';
+    $brandLine = 'Oman Business Index';
+} elseif ($entity === 'printshop') {
+    try {
+        $row = $db->fetchOne(
+            "SELECT name, city, country FROM print_shops WHERE slug = ? AND status = 'active' LIMIT 1",
+            [$slug]
+        );
+    } catch (Throwable $e) { $row = null; }
+    if (!$row) { header('Location: /assets/images/cardify-og.png', true, 302); exit; }
+    $title = $row['name'];
+    $loc = trim(($row['city'] ?? '') . (!empty($row['country']) ? ', ' . $row['country'] : ''));
+    $eyebrow = strtoupper('PRINT SHOP' . ($loc ? ' · ' . $loc : ''));
+    $brandLine = 'Cardify Print Shops';
+} else { // blog
+    try {
+        $row = $db->fetchOne(
+            "SELECT title, updated_at FROM blog_posts WHERE slug = ? AND status = 'published' LIMIT 1",
+            [$slug]
+        );
+    } catch (Throwable $e) { $row = null; }
+    if (!$row) { header('Location: /assets/images/cardify-og.png', true, 302); exit; }
+    $title = $row['title'];
+    $eyebrow = strtoupper('CARDIFY BLOG · ' . date('M Y', strtotime($row['updated_at'] ?? 'now')));
+    $brandLine = 'cardify.om/blog';
 }
 
 $cacheDir = __DIR__ . '/cache/og';
 if (!is_dir($cacheDir)) @mkdir($cacheDir, 0755, true);
-$cacheFile = $cacheDir . '/' . $slug . '.jpg';
+$cacheFile = $cacheDir . '/' . $entity . '-' . $slug . '.jpg';
+// Back-compat alias: company cache used to live at {slug}.jpg without prefix.
+$legacyFile = $cacheDir . '/' . $slug . '.jpg';
+if ($entity === 'company' && is_file($legacyFile) && !is_file($cacheFile)) {
+    @rename($legacyFile, $cacheFile);
+}
 
 if (is_file($cacheFile) && (time() - filemtime($cacheFile)) < 7 * 86400) {
     header('Content-Type: image/jpeg');
@@ -40,7 +80,7 @@ if (is_file($cacheFile) && (time() - filemtime($cacheFile)) < 7 * 86400) {
 }
 
 // --- Compose the image ---
-$bgPath = __DIR__ . '/assets/images/og-sectors/' . $company['sector'] . '.jpg';
+$bgPath = __DIR__ . '/assets/images/og-sectors/' . $sectorKey . '.jpg';
 if (!is_file($bgPath)) {
     $bgPath = __DIR__ . '/assets/images/og-sectors/other.jpg';
 }
@@ -71,9 +111,12 @@ $WILAYATS = [
     'al-sharqiyah-south' => 'Ash Sharqiyah South', 'al-batinah-north' => 'Al Batinah North',
     'al-batinah-south' => 'Al Batinah South', 'al-wusta' => 'Al Wusta',
 ];
-$sectorLabel  = $SECTORS[$company['sector']] ?? 'Enterprise';
-$wilayatLabel = $WILAYATS[$company['wilayat']] ?? 'Oman';
-$name = $company['name_en'];
+if ($entity === 'company') {
+    $sectorLabel  = $SECTORS[$row['sector']] ?? 'Enterprise';
+    $wilayatLabel = $WILAYATS[$row['wilayat']] ?? 'Oman';
+    $eyebrow = strtoupper($sectorLabel . ' · ' . $wilayatLabel);
+}
+$name = $title;
 // Trim common corporate suffixes for cleaner titles
 $name = preg_replace('/\s*(L\.L\.C\.?|LLC|S\.A\.O\.?G\.?|SAOG|S\.A\.O\.C\.?|SAOC|SPC|S\.P\.C\.?|\(.*?\))\s*$/i', '', $name);
 $name = trim($name);
@@ -120,8 +163,8 @@ foreach ($fontCandidates as $f) {
 }
 
 if ($fontBold) {
-    // Sector eyebrow (small, accent color)
-    imagettftext($canvas, 22, 0, 70, 150, $accent, $fontBold, strtoupper($sectorLabel . ' · ' . $wilayatLabel));
+    // Eyebrow (small, accent color) — sector+wilayat / printshop city / blog date
+    imagettftext($canvas, 22, 0, 70, 150, $accent, $fontBold, $eyebrow ?: 'CARDIFY');
 
     // Main company name — auto-shrink font + wrap to fit left 60% in max 2 lines
     $maxWidth = (int) ($W * 0.58);
@@ -178,7 +221,7 @@ if ($fontBold) {
 
     // Footer: Cardify brand lockup
     imagettftext($canvas, 20, 0, 70, $H - 60, $cream, $fontBold, 'cardify.om');
-    imagettftext($canvas, 16, 0, 70, $H - 35, $cream, $fontBold, 'Oman Business Index');
+    imagettftext($canvas, 16, 0, 70, $H - 35, $cream, $fontBold, $brandLine);
 } else {
     // No TTF available — fallback to built-in font (ugly but safe)
     imagestring($canvas, 5, 70, 200, $name, $white);
