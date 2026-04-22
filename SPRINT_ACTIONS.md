@@ -101,7 +101,7 @@
 
 ## C, Onboarding Wizard (081-110)
 
-- [ ] 081. Create DB table `company_onboarding` (company_id, step, data JSON, completed_at).
+- [x] 081. Migration 077 ships company_onboarding table (PK company_id, step TINYINT, data JSON, started/updated/completed/skipped/resume_nudge timestamps, 2 indexes). Backfill marks any company with >=1 generated_cards row as completed, preventing the resume banner from showing for existing active tenants (3 companies backfilled on prod). utf8mb4_unicode_ci. → 3c190d6
 - [ ] 082. Create `admin/onboarding.php` wrapper page, redirect on first-login.
 - [ ] 083. Step 1: upload logo, drag-drop, auto-extract dominant color via `LogoLibrary::dominantColor()`.
 - [ ] 084. Step 2: brand colors (primary/accent), pre-filled from logo, editable swatches.
