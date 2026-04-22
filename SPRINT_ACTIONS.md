@@ -481,7 +481,7 @@
 - [x] 443. ERP sync retry queue: migration 088 (erp_sync_retries, unique pending per order); ERPSync::enqueueRetry+markRetrySucceeded+runQueue with backoff ladder [2,5,15,60,180,720,1440] min × 7 attempts then exhausted; scripts/erp-retry.php CLI runner wired to */1 cron on VPS (/var/log/cardify-erp-retry.log). → e045d35
 - [x] 444. Bilingual ERP-linked invoice receipt: admin/order-receipt.php now switches <html lang/dir> + IBM Plex Sans Arabic on ?lang=en/ar; one-tap EN/AR switcher in print bar; ERP invoice number surfaces next to payment method; bilingual legal-entity footer (BHD Group / CR 1334733 / info@cardify.om). 2 new lang keys parity OK. → 30950ee
 - [x] 445. 5% Oman VAT breakdown on invoice: migration 089 adds tax_rate/tax_amount/subtotal_excl_vat; includes/Tax.php (OMAN_VAT=0.05, breakdown/persistOnOrder/breakdownFromOrder) extracts from tax-inclusive totals; admin/order-receipt.php shows 3-row breakdown (Subtotal excl + VAT 5% + Total incl) with lazy backfill on first view. 3 new lang keys EN+AR parity OK. → 7c6c284
-- [ ] 446. Company CR / tax ID fields on billing.
+- [x] 446. Company CR + tax ID on billing: migration 090 adds cr_number/tax_id/vat_registered/billing_address/city/postcode/country on companies; admin/billing-info.php CRUD page registered in company_admin pageMap; receipt shows billing address + CR No + Tax ID + ship_to block. 3 new order keys + new billing_info namespace EN+AR parity OK. → de5893c
 - [ ] 447. Invoice list view in company admin with download.
 - [ ] 448. Payment history view.
 - [ ] 449. Credit statement view (downloadable PDF).
@@ -864,3 +864,5 @@
 - [ ] 810. Admin blog-editor UI: add AR tabs for title_ar/slug_ar/excerpt_ar/content_ar/meta_desc_ar so marketing can translate existing posts without direct SQL. Migration 087 is already live.
 - [ ] 811. BHD-ERP side: add Arabic fields + bilingual PDF template to the Cardify-invoice endpoint on erp.bhd.om (separate repo). Cardify receipt is now bilingual; ERP accounting invoice is still English.
 - [ ] 812. Wire Tax::persistOnOrder() into PrintShopIntegration + direct-order creation paths so VAT columns are written at insert time rather than via lazy-backfill on first receipt view.
+- [ ] 813. Extend ERPSync::recordPayment payload to include clientCr, clientTaxId, clientBillingAddress so BHD-ERP writes them on the ERP-side client record + invoice header (coordinate with action 811).
+- [ ] 814. Link "Billing info" page from admin sidebar + settings nav.
