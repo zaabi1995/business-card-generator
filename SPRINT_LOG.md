@@ -89,3 +89,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 
 2026-04-22 21:35 | #466 | a0e922a | Cat T deploy post-flight: 5-URL smoke with status+marker, 2s FPM warm + 1-retry, pure-bash case substring. Rollback-on-fail exit 3. Verified 5/5 OK.
 2026-04-22 21:50 | #467 | 7703036 | Cat T rollback: rollback-cardify.sh with --list/--status/--help + reset --hard + smoke 5. E2E test: HEAD~1 then origin/main, 5/5 OK both ways.
+2026-04-22 22:05 | #468~ | ae3da00 | Cat T staging provisioning: stage-provision.sh one-shot + STAGE banner hook; blocked on Cloudflare DNS (queued 822) + stage branch creation (823).

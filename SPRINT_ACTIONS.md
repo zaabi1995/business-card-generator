@@ -506,7 +506,7 @@
 - [x] 465. Deploy pre-flight: /usr/local/bin/deploy-cardify.sh (mirrored in repo ops/deploy-cardify.sh) runs php -l on every changed .php file after git pull; any syntax error triggers `git reset --hard BEFORE` and exits 2 WITHOUT reloading php-fpm, so OPcache keeps serving the previous good tree. Lint gate moves typos from runtime to deploy-time. → 4c44387
 - [x] 466. Deploy post-flight smoke 5 URLs: /usr/local/bin/deploy-cardify.sh hits / + /api/health + /pricing + /status + /login.php after FPM reload; verifies HTTP status + content marker (pure-bash `case` substring; avoided subshell grep weirdness); 2s warm-up + one retry per URL; rollback on fail via git reset --hard + FPM re-reload + exit 3. → a0e922a
 - [x] 467. Rollback command documented + tested: /usr/local/bin/rollback-cardify.sh (mirror ops/rollback-cardify.sh) supports bare/HEAD~1/sha/tag target + --list + --status + --help; git reset --hard + perms sweep + FPM reload + 2s warm + 5-URL smoke (warn-only); tee to /var/log/cardify-rollback.log. End-to-end tested: rolled to HEAD~1 (5/5 OK) then forward to origin/main (5/5 OK) without breaking traffic. → 7703036
-- [ ] 468. Staging env mirror (subdomain stage.cardify.om).
+- [~] 468. Staging env mirror stage.cardify.om: provisioning shipped (ops/stage-provision.sh idempotent one-shot that clones+branches+DB-seeds+configs+nginx-vhost+certbot+deploy-stage script; STAGE banner in ui-header.php under SHOW_STAGE_BANNER flag). BLOCKED on Cloudflare DNS A record stage.cardify.om → 147.93.20.54; queued as 822. Ship-ready once DNS lands. → ae3da00
 - [ ] 469. Load test with k6 (100 concurrent users).
 - [ ] 470. Incident runbook at `/ops/runbook.md`.
 
@@ -873,3 +873,5 @@
 - [ ] 819. Set CARDIFY_BACKUP_PASS + CARDIFY_BACKUP_REMOTE on the VPS (Backblaze B2 bucket "cardify-backups" via rclone) so nightly backups sync offsite encrypted. Ensures backups survive a VPS loss.
 - [ ] 820. One-time MySQL grant for restore-test: CREATE DATABASE bc_restore_test + GRANT ALL on bc_restore_test.* TO 'bc'@'localhost'. Requires DBA/aaPanel access with root credentials. Once granted, scripts/backup-restore-test.sh flips from SKIP → PASS.
 - [ ] 821. VPS at 88% already (memory vps.md notes 86% on Apr 7). Prune old backup tarballs, Docker images, apt cache; target <75% before the disk-alert starts firing weekly.
+- [ ] 822. Add Cloudflare DNS A record: stage.cardify.om → 147.93.20.54 (proxied=false so Let's Encrypt can validate). Then SSH to the VPS and run `bash /www/wwwroot/cardify.om/ops/stage-provision.sh` to finish the stand-up.
+- [ ] 823. Create `stage` branch on GitHub from current main tip and push once, so ops/stage-provision.sh has something to checkout. Script tolerates missing branch but won't deploy until it exists.
