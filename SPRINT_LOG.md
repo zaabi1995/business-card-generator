@@ -112,3 +112,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-23 03:00 | #495 | de7ed8c | Cat U i18n-leak: source parity + runtime scan on 8 AR pages, 8/8 passed + 1 skipped /ar/ root (839 follow-up).
 2026-04-23 03:15 | #496 | b94497e | Cat U /changelog bilingual: data/changelog.php + /changelog + /ar/changelog timeline, 4 seed entries, 9 keys parity OK.
 2026-04-23 03:30 | #497 | 647b3f6 | Cat U v2.0 release notes: 117-line RELEASE_NOTES_v2.0.md with highlights + category table + migrations + new URLs + cron + queued follow-ups + incident history.
+2026-04-23 03:45 | #498 | 10a9af9 | Cat U DOCUMENTATION.md refresh: v2.0 header + appended catalogue of includes + migrations + URLs + pages + ops + tests + i18n rules. Legacy prose preserved with closing disclaimer.
