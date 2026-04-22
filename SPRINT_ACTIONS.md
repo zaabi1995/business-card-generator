@@ -73,13 +73,13 @@
 - [~] 055. admin/template-editor.php N/A: file does not exist. Template editing is an Alpine modal inside admin/index.php (covered by action 032 + dashboard follow-up 520).
 - [~] 056. Admin empty states are handled per-file as each admin page gets translated (covered so far by employees/departments/generated/customer-dashboard work). Leaving open as a final-sweep audit action 538.
 - [x] 057. Admin nav labels bilingual via existing lang/{en,ar}/admin.php (shipped in action 009 → 9041dba); full 18-key nav_* set covers group headers + every top-level admin page. Actions 048-057 page titles close the gap for breadcrumbs.
-- [x] 058. printshop/dashboard.php page title bilingual via printshoppages.title_dashboard(:shop) → PENDING_SHA (widget grid deferred to action 539)
-- [x] 059. printshop/orders.php (title + h1 "Orders") + printshop/order.php (title + h1 "Order #:n" with interpolation) → PENDING_SHA (order detail body deferred to action 540)
-- [x] 060. printshop/credit-accounts.php (title + h1 + "Pending requests (:n)" / "Active accounts (:n)" / "Suspended (:n)" section headers) + credit-ledger.php (title + h1 + Transactions + Record Payment sections) → PENDING_SHA (account card bodies + ledger table deferred to action 541)
-- [x] 061. printshop/templates.php (title + h1 + Recent Customer Requests section) + template-editor.php (title flips Edit/New) + template-requests.php (title + h1) → PENDING_SHA (template editor form + request approval UI deferred to action 542)
-- [x] 062. printshop/analytics.php title + h1 + 5 widget headers (Revenue Over Time / Order Status / Order Volume by Month / Top Customers / Paper Types) → PENDING_SHA (chart tooltips + legend deferred to action 543)
-- [x] 063. printshop/settings.php title + h1 Shop Settings (Capacity & Availability section seeded) + profile.php title + h1 Shop Profile → PENDING_SHA (settings form fields + profile photo/hours form deferred to action 544)
-- [x] 064. printshop/register.php (title + h1 "Register Your Print Shop" + "Registration Submitted" confirmation copy) → PENDING_SHA (multi-step form fields deferred to action 545). printshop/login.php deferred: shares login.php chrome already translated in action 022 via auth namespace; if a dedicated file exists it uses same auth.* keys.
+- [x] 058. printshop/dashboard.php page title bilingual via printshoppages.title_dashboard(:shop) → 403a370 (widget grid deferred to action 539)
+- [x] 059. printshop/orders.php (title + h1 "Orders") + printshop/order.php (title + h1 "Order #:n" with interpolation) → 403a370 (order detail body deferred to action 540)
+- [x] 060. printshop/credit-accounts.php (title + h1 + "Pending requests (:n)" / "Active accounts (:n)" / "Suspended (:n)" section headers) + credit-ledger.php (title + h1 + Transactions + Record Payment sections) → 403a370 (account card bodies + ledger table deferred to action 541)
+- [x] 061. printshop/templates.php (title + h1 + Recent Customer Requests section) + template-editor.php (title flips Edit/New) + template-requests.php (title + h1) → 403a370 (template editor form + request approval UI deferred to action 542)
+- [x] 062. printshop/analytics.php title + h1 + 5 widget headers (Revenue Over Time / Order Status / Order Volume by Month / Top Customers / Paper Types) → 403a370 (chart tooltips + legend deferred to action 543)
+- [x] 063. printshop/settings.php title + h1 Shop Settings (Capacity & Availability section seeded) + profile.php title + h1 Shop Profile → 403a370 (settings form fields + profile photo/hours form deferred to action 544)
+- [x] 064. printshop/register.php (title + h1 "Register Your Print Shop" + "Registration Submitted" confirmation copy) → 403a370 (multi-step form fields deferred to action 545). printshop/login.php deferred: shares login.php chrome already translated in action 022 via auth namespace; if a dedicated file exists it uses same auth.* keys.
 - [ ] 065. Translate `portal.php` (customer portal).
 - [ ] 066. Translate `digital_card.php` (employee-facing card page).
 - [ ] 067. Translate `card-pdf.php` download labels.
