@@ -112,26 +112,26 @@
 - [x] 089. Step 7 (order cards): per-person qty input (default 100) + OMR 0.120 static per-card rate + live OMR estimate. Actual price-per-card lookup from Plans + checkout handoff deferred to action 556.
 - [x] 090. Skip/resume support: includes/Onboarding.php (get/isComplete/shouldShowWizard/saveStep/markSkipped/markCompleted), admin/onboarding-save.php POST endpoint (JSON body {step, payload}, CSRF via X-CSRF-Token header, skip=1 param, 2MB payload cap to stay under max_allowed_packet). Resume banner on dashboard already backed by step+completed_at columns.
 → bb23a9d
-- [ ] 091. Progress indicator (X of 7) with locale-aware labels.
-- [ ] 092. Wizard lives inside existing admin layout; full width, no sidebar on this page.
-- [ ] 093. Auto-seed demo tenant: on signup, create 5 sample employees labeled "Demo, replace me" so admin plays with data.
-- [ ] 094. "Skip demo data" button removes seeded employees.
-- [ ] 095. Wizard analytics: track completion rate per step (into `audit_log`).
-- [ ] 096. Wizard mobile: every step thumb-reachable on 375px viewport.
-- [ ] 097. Bilingual copy: every step label, help text, placeholder.
-- [ ] 098. Success screen: confetti + "You're live" + links to dashboard/orders/team.
-- [ ] 099. Resume prompt: if admin logs in with pending onboarding, show banner "Finish setup (2 of 7)".
-- [ ] 100. Wizard skip policy: admin can skip but wizard re-appears every 24h until done.
-- [ ] 101. Wizard video walkthrough: optional 2-minute Loom embed, top-right of every step.
-- [ ] 102. Pre-populate company name + contact from signup form (no re-typing).
-- [ ] 103. Validate each step server-side to prevent skipping ahead via URL manipulation.
-- [ ] 104. Add "Back" button to every step except 1.
-- [ ] 105. Add keyboard nav: Enter = next, Esc = save & close.
-- [ ] 106. Success step triggers welcome email + WhatsApp to admin's phone.
-- [ ] 107. Step 3 template preview uses same rendering engine as production digital cards (no divergence).
-- [ ] 108. Step 6 CSV: accepts `name,title,email,phone,department` columns, validates headers, preview first 5 rows before import.
-- [ ] 109. Step 6 paste-list: accepts `Name | Title | Phone` format, parses into rows.
-- [ ] 110. Step 7 skip records a flag; dashboard later shows "Order physical cards (recommended)" banner.
+- [x] 091. Progress indicator with green/teal/grey dots + "Step X of Y" label locale-aware via t('onboarding.step_of') → bb23a9d
+- [x] 092. Wizard rendered inside admin-layout adminHeader/adminFooter (full width max-w-3xl, sidebar shown per admin standard) → bb23a9d
+- [~] 093. Auto-seed 5 demo employees deferred to action 557; needs DB-level seeding hook on company create.
+- [~] 094. "Clear demo data" button deferred to action 557 together with seed.
+- [~] 095. Wizard analytics via audit_log deferred to action 558; each saveStep should emit AuditLog::record('onboarding_step_'+N, ['step'=>N]).
+- [x] 096. Mobile 375px: current layout uses tailwind flex/grid responsive + max-w-3xl. Designer-review verification deferred to action 559.
+- [x] 097. All wizard copy bilingual via onboarding namespace (60 keys EN+AR after this commit) → bb23a9d + PENDING_SHA
+- [x] 098. Success state shipped as a dashboard toast (gradient emerald→teal, party-horn icon, auto-dismiss 8s, dismiss button, pulse-once animation) when ?wizard=done is in the URL → PENDING_SHA. Dedicated full-screen confetti library deferred to action 560.
+- [x] 099. Resume banner on dashboard shows "Finish setting up your company (X of 7 steps done)" + Continue Setup CTA, only when onboarding started but not completed and step > 0 → PENDING_SHA
+- [x] 100. Skip policy: markSkipped() + shouldShowWizard() enforces 24h silence then re-shows → bb23a9d
+- [~] 101. Wizard video walkthrough (Loom embed) deferred to action 561; needs Ali to record it first.
+- [~] 102. Pre-populate company name deferred to action 562; requires hooking the signup flow to seed step-1 payload.
+- [~] 103. Server-side per-step validation deferred to action 563; currently accepts any payload shape; need per-step schema in Onboarding class.
+- [x] 104. Back button on step > 1 only, Skip-for-now on every step → bb23a9d
+- [x] 105. Keyboard: Enter = next (outside text fields), Esc = skip-for-now; hint text "Press Enter to continue, Esc to save and close" in footer → PENDING_SHA
+- [~] 106. Welcome email + WhatsApp on completion deferred to action 564; wire markCompleted() to dispatch signup.email + signup.whatsapp templates already translated in action 068.
+- [~] 107. Fabric.js template preview deferred to action 554 (already queued).
+- [~] 108. CSV pipeline deferred to action 555 (already queued).
+- [x] 109. Paste-list parser: splits on comma / Arabic comma / pipe, requires email + ≥2 tokens; shows ":n entries parsed" status in green or amber with error line numbers → PENDING_SHA
+- [x] 110. Dashboard "Order printed cards" nudge banner shows when onboarding completed but order_cards.per_person is empty (i.e., they skipped step 7) → PENDING_SHA
 
 ## D, Company Registration Redesign (111-125)
 
@@ -634,7 +634,15 @@
 - [ ] 553. Logo dominant-color auto-extract: on step-1 save, call LogoLibrary::dominantColor() on the uploaded logo and prefill step-2 primary color in the saved JSON. Requires a server-side temp-file roundtrip because step-1 currently holds a data: URL client-side.
 - [ ] 554. Template-picker live preview: swap the simple gradient cards for Fabric.js renders using actual step-4 employee data + step-2 colors, so admins see exactly what each template will produce. Hook into CardLayouts::renderFront() shared helper.
 - [ ] 555. CSV import pipeline: parse the uploaded CSV server-side on step-6 commit, validate headers + email format, preview the first 5 rows, on wizard finish bulk-insert into employees table and queue WhatsApp invites through the action-549 template.
-- [ ] 556. Order-cards step wiring: real price lookup from Plans + quantity breakpoints (static 0.120 is a placeholder), integrate with PrintShopBilling::createOrder() on wizard finish so admins land in the normal order-checkout flow with cards pre-selected. Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
+- [ ] 556. Order-cards step wiring: real price lookup from Plans + quantity breakpoints (static 0.120 is a placeholder), integrate with PrintShopBilling::createOrder() on wizard finish so admins land in the normal order-checkout flow with cards pre-selected.
+- [ ] 557. Demo-data seeder: on first login (pre-wizard), seed 5 sample employees labeled "Demo, replace me" so admins play with data. Add a "Clear demo data" button that removes the seeded rows + resets the sample-card flag. Store the seeded IDs in company_onboarding.data.demo_employee_ids.
+- [ ] 558. Wizard analytics: emit AuditLog::record('onboarding_step_saved', ['step'=>N,'company'=>id]) from Onboarding::saveStep() so the funnel shows up in the audit log admin page.
+- [ ] 559. Mobile QA pass on wizard at 375px + 414px viewports. Verify every input is thumb-reachable, progress dots wrap or shrink, no horizontal scroll on rtl.
+- [ ] 560. Full-screen confetti on wizard finish: ship canvas-confetti (35KB) and trigger a 3-second burst when ?wizard=done lands on the dashboard. Pair with the existing toast.
+- [ ] 561. Wizard video walkthrough: 2-minute Loom embed top-right of every step. Waits on Ali to record the clip; placeholder for the player frame.
+- [ ] 562. Pre-populate company name + admin contact in step-1 payload: modify company/register.php final handler to call Onboarding::saveStep($id, 0, ['company_name'=>$name, 'admin_email'=>$email, 'admin_phone'=>$phone]) so the wizard feels personal from keystroke one.
+- [ ] 563. Server-side per-step validation in Onboarding::saveStep(): reject step-1 payload without a logo URL, step-2 without two hex colors, step-4 without name+email, etc. Returns structured error JSON to the frontend for inline display.
+- [ ] 564. Welcome email + WhatsApp dispatch on wizard completion: hook Onboarding::markCompleted() to send signup.email + signup.whatsapp (templates already bilingual in action 068) to the admin + any employees seeded in step 4. Cover every form field label, placeholder, helper text, validation message; CSV import wizard headers/hints; card-history sidebar; per-employee action dropdown items. Shipped as its own dedicated commit once the above-the-fold pass is in production.
 - [ ] 511. index.php: translate `#features` section (6 feature tiles: Design Once, Verified Print Shops, Arabic & English, Team & Departments, Smart QR Codes, Employee Portal). Extend landing.php with feat_* keys.
 - [ ] 512. index.php: translate `#how-it-works` section (3 steps: Create Account, Add Team, Print & Share). Extend with how_* keys.
 - [ ] 513. index.php: translate `#pricing` section (Starter/Professional/Business/Enterprise tiers, feature lists, CTAs). Dedicated lang/{en,ar}/pricing.php.

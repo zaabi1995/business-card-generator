@@ -65,4 +65,17 @@ return [
     'save_progress'       => 'Save and continue later',
     'saving'              => 'Saving...',
     'saved'               => 'Saved',
+
+    // Dashboard banners
+    'dashboard_resume'    => 'Finish setting up your company (:done of :total steps done)',
+    'dashboard_resume_cta'=> 'Continue setup',
+    'dashboard_order_nudge' => 'You have a digital card ready. Want printed cards shipped to your office?',
+    'dashboard_order_cta' => 'Order printed cards',
+
+    // Keyboard hint
+    'kbd_hint'            => 'Press Enter to continue, Esc to save and close',
+
+    // Paste-list parser
+    'paste_parsed'        => ':n entries parsed',
+    'paste_error'         => 'Some lines could not be parsed',
 ];

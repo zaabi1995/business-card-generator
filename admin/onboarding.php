@@ -215,6 +215,10 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
             <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.paste_list_label')) ?></label>
             <textarea x-model="data.invite_team.paste" rows="6" class="form-input font-mono text-sm"
                       :placeholder="<?= json_encode(t('onboarding.paste_list_ph')) ?>"></textarea>
+            <p class="mt-1 text-xs"
+               :class="parsedPaste.errors.length ? 'text-amber-600' : 'text-green-600'"
+               x-show="parsedPaste.count || parsedPaste.errors.length"
+               x-text="pasteStatus()"></p>
 
             <label class="block text-sm font-medium text-gray-700 mt-4 mb-2"><?= htmlspecialchars(t('onboarding.upload_csv_label')) ?></label>
             <input type="file" accept=".csv,text/csv" class="form-input"
@@ -255,6 +259,7 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
         <div x-show="step === 1"></div>
 
         <div class="flex items-center gap-3">
+            <span class="hidden sm:inline text-xs text-gray-400 mr-2"><?= htmlspecialchars(t('onboarding.kbd_hint')) ?></span>
             <button type="button" @click="skipForNow()" class="text-sm text-gray-500 hover:text-gray-700">
                 <?= htmlspecialchars(t('onboarding.skip_for_now')) ?>
             </button>
@@ -299,7 +304,39 @@ function onboarding(init) {
         stepLabels: { 1: <?= json_encode(t('onboarding.step_logo')) ?>, 2: <?= json_encode(t('onboarding.step_colors')) ?>, 3: <?= json_encode(t('onboarding.step_template')) ?>, 4: <?= json_encode(t('onboarding.step_first_employee')) ?>, 5: <?= json_encode(t('onboarding.step_preview')) ?>, 6: <?= json_encode(t('onboarding.step_invite_team')) ?>, 7: <?= json_encode(t('onboarding.step_order_cards')) ?> },
         tplLabels: { minimal: <?= json_encode(t('onboarding.template_minimal')) ?>, bold: <?= json_encode(t('onboarding.template_bold')) ?>, classic: <?= json_encode(t('onboarding.template_classic')) ?> },
 
-        init() { /* hook */ },
+        init() {
+            // Keyboard nav: Enter = next, Esc = save and close.
+            // Skip when the user is typing in a text field.
+            window.addEventListener('keydown', (e) => {
+                if (e.target && (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) return;
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.next(); }
+                if (e.key === 'Escape')               { e.preventDefault(); this.skipForNow(); }
+            });
+            this.$watch('data.invite_team.paste', (v) => { this.parsedPaste = this.parsePaste(v); });
+            this.parsedPaste = this.parsePaste(this.data.invite_team.paste || '');
+        },
+        parsedPaste: { count: 0, errors: [] },
+        parsePaste(raw) {
+            const out = { count: 0, errors: [] };
+            if (!raw || !raw.trim()) return out;
+            raw.split(/\r?\n/).forEach((line, i) => {
+                const parts = line.split(/[,،|]/).map(s => s.trim()).filter(Boolean);
+                if (parts.length === 0) return;
+                const email = parts.find(p => /@/.test(p));
+                if (!email || parts.length < 2) { out.errors.push(i + 1); return; }
+                out.count++;
+            });
+            return out;
+        },
+        pasteStatus() {
+            if (!this.parsedPaste.count && !this.parsedPaste.errors.length) return '';
+            const tpl = <?= json_encode(t('onboarding.paste_parsed')) ?>;
+            let s = tpl.replace(':n', this.parsedPaste.count);
+            if (this.parsedPaste.errors.length) {
+                s += ' · ' + (<?= json_encode(t('onboarding.paste_error')) ?>);
+            }
+            return s;
+        },
 
         stepOfLabel() {
             return (<?= json_encode(t('onboarding.step_of')) ?>)

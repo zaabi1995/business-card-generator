@@ -484,6 +484,66 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
 </script>
 <?php endif; ?>
 
+<?php
+// Onboarding resume + order-nudge banners (Cardify v2.0 sprint, actions 099 + 110).
+$onboardState = null;
+if ($companyId) {
+    require_once INCLUDES_DIR . '/Onboarding.php';
+    $onboardState = Onboarding::get($companyId);
+}
+$showResumeBanner = $onboardState && !empty($onboardState['started_at']) && empty($onboardState['completed_at']) && (int)$onboardState['step'] > 0 && (int)$onboardState['step'] < Onboarding::TOTAL_STEPS;
+$showOrderNudge  = $onboardState && !empty($onboardState['completed_at']) && empty($onboardState['data']['order_cards']['per_person']);
+$adminBase = rtrim(getAdminBasePath(), '/');
+$ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php';
+?>
+
+<?php if (isset($_GET['wizard']) && $_GET['wizard'] === 'done'): ?>
+<div class="mb-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-4 flex items-center justify-between gap-4 animate-pulse-once"
+     x-data="{ show: true }" x-show="show"
+     x-init="setTimeout(() => { show = false }, 8000)">
+    <div class="flex items-center gap-3">
+        <i class="fa-solid fa-party-horn text-2xl"></i>
+        <div>
+            <p class="font-bold text-lg"><?= htmlspecialchars(t('onboarding.congrats')) ?></p>
+            <p class="text-sm text-emerald-100"><?= htmlspecialchars(t('onboarding.congrats_subtitle')) ?></p>
+        </div>
+    </div>
+    <button @click="show = false" class="text-white/80 hover:text-white text-lg"><i class="fa-solid fa-times"></i></button>
+</div>
+<style>
+@keyframes pulseOnce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.01); } }
+.animate-pulse-once { animation: pulseOnce 1.5s ease-in-out 2; }
+</style>
+<?php endif; ?>
+
+<?php if ($showResumeBanner): ?>
+<div class="mb-4 rounded-xl bg-blue-50 border border-blue-200 p-4 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 text-blue-900">
+        <i class="fa-solid fa-list-check text-blue-600"></i>
+        <span class="text-sm font-medium">
+            <?= htmlspecialchars(t('onboarding.dashboard_resume', ['done' => (int)$onboardState['step'], 'total' => Onboarding::TOTAL_STEPS])) ?>
+        </span>
+    </div>
+    <a href="<?= $adminBase ?>/onboarding<?= $ext ?>" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg whitespace-nowrap">
+        <?= htmlspecialchars(t('onboarding.dashboard_resume_cta')) ?>
+        <i class="fa-solid fa-arrow-right ml-1"></i>
+    </a>
+</div>
+<?php endif; ?>
+
+<?php if ($showOrderNudge): ?>
+<div class="mb-4 rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 text-amber-900">
+        <i class="fa-solid fa-truck-fast text-amber-600"></i>
+        <span class="text-sm font-medium"><?= htmlspecialchars(t('onboarding.dashboard_order_nudge')) ?></span>
+    </div>
+    <a href="<?= $adminBase ?>/print<?= $ext ?>" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg whitespace-nowrap">
+        <?= htmlspecialchars(t('onboarding.dashboard_order_cta')) ?>
+        <i class="fa-solid fa-arrow-right ml-1"></i>
+    </a>
+</div>
+<?php endif; ?>
+
 <?php if ($showWelcome): ?>
 <!-- Post-onboarding Welcome Banner -->
 <div class="mb-6 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 p-6 text-white shadow-lg flex items-center justify-between gap-4" id="bhd-welcome-banner">

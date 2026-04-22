@@ -59,4 +59,14 @@ return [
     'save_progress'       => 'احفظ وأكمِل لاحقاً',
     'saving'              => 'جاري الحفظ...',
     'saved'               => 'تم الحفظ',
+
+    'dashboard_resume'    => 'أكمل إعداد شركتك (:done من :total خطوات)',
+    'dashboard_resume_cta'=> 'متابعة الإعداد',
+    'dashboard_order_nudge' => 'بطاقتك الرقمية جاهزة. هل تريد بطاقات مطبوعة تصل إلى مكتبك؟',
+    'dashboard_order_cta' => 'اطلب بطاقات مطبوعة',
+
+    'kbd_hint'            => 'اضغط Enter للمتابعة، Esc للحفظ والإغلاق',
+
+    'paste_parsed'        => 'تم تحليل :n مُدخَلاً',
+    'paste_error'         => 'تعذّر تحليل بعض الأسطر',
 ];
