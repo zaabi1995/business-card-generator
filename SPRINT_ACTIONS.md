@@ -489,7 +489,7 @@
 - [x] 451. Top-up card credits page with Paymob: /admin/card-credits (pageMap registered), balance hero + 4-bundle grid with volume discount (10/50/100/500 at 0.500/0.400/0.350/0.280 OMR per card) + recent-activity ledger. POST buys via Payment::createCardOrderIntent → Paymob; confirmCardOrder now mirrors to card_credit_ledger with reason=purchase. 23 keys EN+AR parity OK. → d0684b5
 - [x] 452. Bulk buy discount on credits: bundle cards show Save X% pill + Save :amt OMR per tier; new custom-amount widget (10-5000 step 10) live-computes per-card from shared tier ladder [10:0.500/50:0.400/100:0.350/500:0.280]; server clamps + snaps to tier. 8 new keys EN+AR parity OK. → 8abb2b6
 - [x] 453. Card-credit purchase → ERP ledger: ERPSync::recordCardCreditPurchase(paymentId) syncs Paymob card_order sales to BHD-ERP via /api/admin/cardify/record-payment with CARDS-xxxxxxxx synthetic orderNumber (dedup via ERP 409); Payment::confirmCardOrder hooks it; scripts/erp-card-credit-backfill.php replays historicals (dry run 0 candidates today). Non-fatal on failure. → 3597169
-- [ ] 454. Monthly ERP reconciliation script.
+- [x] 454. Monthly ERP reconciliation: scripts/erp-reconcile.php compares print-order + card-credit revenue vs synced totals for a month, lists unsynced rows + open retries, emits human-readable + JSON blocks, emails ali@bhd.om; cron `30 6 2 * *` on VPS logs to /var/log/cardify-erp-reconcile.log; sanity run for 2026-03 shows drift_count=0. → d811539
 - [ ] 455. Failed-payment retry: 3 attempts over 7 days.
 
 ## T, Monitoring + Ops (456-470)
