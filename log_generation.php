@@ -63,6 +63,12 @@ try {
         throw new Exception('Failed to log generation to database');
     }
 
+    // Charge 1 card credit on FIRST generation per employee (Cat S action 450).
+    // No-op on subsequent regenerations of the same employee thanks to the
+    // UNIQUE index on card_credit_ledger.
+    require_once INCLUDES_DIR . '/CardCredits.php';
+    $creditResult = CardCredits::chargeForGenerate($companyId, $employeeId);
+
     // Update web paths and theme_mode if provided
     if ($entry && ($frontWebUrl || $backWebUrl || $themeMode)) {
         try {
@@ -85,7 +91,15 @@ try {
         }
     }
 
-    echo json_encode(['success' => true, 'entry' => $entry]);
+    echo json_encode([
+        'success' => true,
+        'entry'   => $entry,
+        'credits' => [
+            'balance' => $creditResult['balance'] ?? null,
+            'charged' => $creditResult['charged'] ?? false,
+            'reason'  => $creditResult['reason']  ?? null,
+        ],
+    ]);
     
 } catch (Exception $e) {
     error_log("log_generation: " . $e->getMessage());
