@@ -70,6 +70,7 @@ try {
         'billing-info' => 'admin/billing-info.php',
         'invoices' => 'admin/invoices.php',
         'payments-history' => 'admin/payments-history.php',
+        'credit-statement' => 'admin/credit-statement.php',
         'print' => 'admin/print.php',
         'print_orders' => 'admin/print_orders.php',
         'print_settings' => 'admin/print_settings.php',
