@@ -500,7 +500,7 @@
 - [x] 459. Nightly DB dump: scripts/backup-db.sh (mysqldump --single-transaction + gzip -9 + optional gpg AES256 when CARDIFY_BACKUP_PASS set), /var/backups/cardify/ mode 0600 files in 0700 dir, 30-file rotation, opt-in rclone offsite via CARDIFY_BACKUP_REMOTE (b2/s3/wasabi). Cron 25 2 * * * installed on VPS, first run 724 KB OK. → 0be85ce
 - [x] 460. Nightly storage dir backup: scripts/backup-storage.sh rsync --delete storage/+uploads/+data/ (excl cache/tmp) into /var/backups/cardify-storage/current/ then tar.gz snapshot, 14-file rotation, opt-in rclone offsite via shared CARDIFY_BACKUP_REMOTE. Cron 35 2 * * * installed; first run 147 MB snapshot + mirror synced. → 01fe327
 - [x] 461. Weekly restore test: scripts/backup-restore-test.sh picks newest DB backup, (decrypts if gpg), loads into scratch bc_restore_test DB, sanity checks (tables>=20 + employees/companies/templates counts + newest payment), drops scratch tables, verifies newest storage tarball via tar tzf, emails ali@bhd.om PASS/FAIL/SKIP. Cron 45 3 * * 0 installed; SKIP right now because bc user needs GRANT on bc_restore_test (queued 820). Tar integrity OK 818 entries. → b8d0f65
-- [ ] 462. Log rotation (nginx + PHP errors).
+- [x] 462. Log rotation: ops/logrotate-cardify installed at /etc/logrotate.d/cardify covers /var/log/cardify-*.log (daily×30, su root root for group-writable /var/log) + PHP-FPM php-fpm.log + slow.log (weekly×8, SIGUSR1 reload). aaPanel already handles /www/wwwlogs/. Force-run verified .1 + .2.gz pattern. → (repo-only) → 6a05534..current
 - [ ] 463. Disk-usage alert at 80%.
 - [ ] 464. Slow query log review cron.
 - [ ] 465. Deploy script pre-flight (lint PHP, syntax check).

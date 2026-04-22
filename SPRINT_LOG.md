@@ -82,3 +82,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-22 19:20 | #459 | 0be85ce | Cat T nightly DB backup: mysqldump+gzip+optional gpg, 30-day rotation, optional rclone offsite, cron 25 2 * * * installed, first run 724 KB.
 2026-04-22 19:40 | #460 | 01fe327 | Cat T storage backup: rsync+tar.gz 147 MB snapshot + 14-day rotation + optional rclone, cron 35 2 * * * installed.
 2026-04-22 20:10 | #461 | b8d0f65 | Cat T restore test: tolerant script (DB path SKIP without grants, tar tzf always runs), cron 45 3 * * 0, emails PASS/FAIL/SKIP. First run SKIP+tar 818 entries OK. Grant queued as 820.
+2026-04-22 20:25 | #462 | (ops+repo) | Cat T log rotation: /etc/logrotate.d/cardify deployed, cron logs daily×30 + PHP weekly×8 SIGUSR1, aaPanel nginx config already covers /www/wwwlogs/.
