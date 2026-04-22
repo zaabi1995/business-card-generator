@@ -545,8 +545,8 @@
 - [x] 498. Update DOCUMENTATION.md: header restamp (v2.0 / 2026-04-23 / live) + cross-refs to RELEASE_NOTES_v2.0.md + CHANGELOG.md + /changelog + ops/runbook.md; appended v2.0 catalogue section (14 new includes, migrations 077-094 pointer, 10 new public URLs, 7 new admin pages, ops surface, 16 Playwright specs, i18n invariants incl em-dash ban). → 10a9af9
 - [x] 499. Update CLAUDE.md project context: created CLAUDE.md at repo root (no prior; includes/CLAUDE.md stays as narrow file) with 1-liner summary + pointers to 6 doc files + 7 invariants each linking the memory note that forced it (deploy-script, worktree-main, i18n same-commit, pageMap registration, utf8mb4 + PHP 8.3 bin, Paymob HMAC + atomic + 3-decimal + token vault, APP_HOST + CSRF + SecurityHeaders, em-dash ban) + 5-row gotchas table + work loop + test commands + stuck playbook. → 5bcded8
 - [x] 500. Update memory cardify.md: appended v2.0 Sprint section to /Users/ali/.claude/projects/-Users-ali-claude/memory/cardify.md — 110 iters 286 closed, new root docs (CLAUDE.md/RELEASE_NOTES/runbook), migrations 077-094 key additions (saved_cards/payment_retries/erp_sync_retries/card_credit_ledger/url_redirects/vat_on_orders/company_billing_fields/status_incidents), 14 new includes, new public + admin URLs, ops cron schedule, 16 Playwright specs, 59 queued follow-ups 781-839, em-dash ban. → (memory-only)
-- [ ] 501. Deploy to prod.
-- [ ] 502. Smoke test post-deploy.
+- [x] 501. Deploy to prod: v2.0 sprint live at https://cardify.om (HEAD=5bd251d). Deploy script auto-rolled chown/chmod + PHP-FPM reload + 5-URL smoke all green. → 5bd251d
+- [x] 502. Smoke test post-deploy: /api/health 200 status=up all checks (app/db/storage) green 0ms; Playwright cardify-core.spec.ts 54 passed across chromium + Safari iOS + Chrome Android 40.8s. → 5bd251d
 - [ ] 503. Post tweet / LinkedIn.
 - [ ] 504. Email existing customers about upgrade.
 - [ ] 505. WhatsApp existing customers.

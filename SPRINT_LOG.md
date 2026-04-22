@@ -115,3 +115,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-23 03:45 | #498 | 10a9af9 | Cat U DOCUMENTATION.md refresh: v2.0 header + appended catalogue of includes + migrations + URLs + pages + ops + tests + i18n rules. Legacy prose preserved with closing disclaimer.
 2026-04-23 04:00 | #499 | 5bcded8 | Cat U project CLAUDE.md: pointers + 7 invariants cross-referenced to memory files + gotchas table + work loop + test cmds.
 2026-04-23 04:15 | #500 | (memory) | Cat U memory cardify.md: appended v2.0 Sprint block with 110 iters summary, migrations, includes, URLs, ops cron, E2E, queued follow-ups.
+2026-04-23 04:30 | #501+502 | 5bd251d | v2.0 deployed + smoked: /api/health 200, core-spec 54/54 passed cross-browser.
