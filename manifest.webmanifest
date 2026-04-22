@@ -1,0 +1,55 @@
+{
+  "name": "Cardify, Business Card Platform",
+  "short_name": "Cardify",
+  "description": "Create, manage, and print professional business cards for your team in Oman.",
+  "start_url": "/admin/index.php?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#009bc1",
+  "lang": "en",
+  "dir": "auto",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/assets/images/logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/assets/images/cardify-og.png",
+      "type": "image/png",
+      "sizes": "1200x630",
+      "form_factor": "wide",
+      "label": "Cardify admin dashboard"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Employees",
+      "short_name": "Team",
+      "url": "/admin/employees.php",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Generate cards",
+      "url": "/admin/batch_generate.php",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Print orders",
+      "url": "/admin/print.php",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ]
+}

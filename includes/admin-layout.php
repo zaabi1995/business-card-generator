@@ -148,8 +148,17 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     <title><?php echo htmlspecialchars($pageTitle); ?> - <?php echo $brandName; ?></title>
     <link rel="icon" href="<?php echo $basePath; ?>favicon.svg" type="image/svg+xml">
 
+    <!-- PWA manifest + theme color (action 287) -->
+    <link rel="manifest" href="<?php echo $basePath; ?>manifest.webmanifest">
+    <meta name="theme-color" content="#009bc1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
     <!-- BHD Design Language Tokens -->
     <link rel="stylesheet" href="<?php echo $basePath; ?>assets/css/bhd-tokens.css">
+
+    <!-- Shared toast + empty-state primitives (Cardify v2.0 Category J) -->
+    <link rel="stylesheet" href="<?php echo $basePath; ?>assets/css/cardify-toast.css">
 
     <!-- Fonts, Inter + (when rtl) IBM Plex Sans Arabic -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -562,6 +571,17 @@ function adminFooter() {
                 sidebar.classList.add('hidden');
             }
         });
+    </script>
+
+    <!-- Shared toast component + service-worker registration (Cardify v2.0 Category J) -->
+    <script src="<?php echo $basePath; ?>assets/js/cardify-toast.js" defer></script>
+    <script>
+    if ('serviceWorker' in navigator && location.protocol === 'https:') {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('<?php echo $basePath; ?>sw.js', { scope: '<?php echo $basePath; ?>' })
+                .catch(() => { /* non-fatal */ });
+        });
+    }
     </script>
 </body>
 </html>

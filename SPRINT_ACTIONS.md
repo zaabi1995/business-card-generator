@@ -288,41 +288,36 @@
 
 ## J, Admin UX (261-295)
 
-- [ ] 261. Redesign admin sidebar: 5 groups (Dashboard, Team, Cards, Orders, Settings) with collapsible sections.
-- [ ] 262. Mobile: sidebar becomes drawer off-canvas, hamburger top-left.
-- [ ] 263. Cmd+K global search: fuzzy search over employees, departments, orders, settings.
-- [ ] 264. Cmd+K result groups: jump to page, open employee modal, run action.
-- [ ] 265. Keyboard shortcuts cheatsheet on `?`.
-- [ ] 266. Shortcuts: `g d` dashboard, `g t` team, `g o` orders, `g s` settings, `c` create (contextual), `/` focus search.
-- [ ] 267. Breadcrumbs on every nested admin page.
-- [ ] 268. Sticky page header with primary action button.
-- [ ] 269. Toast notifications bottom-right, auto-dismiss 5s.
-- [ ] 270. Loading states: skeleton loaders, never blank whiteflash.
-- [ ] 271. Optimistic UI on toggle/save actions.
-- [ ] 272. Undo toast: "Deleted John, Undo" (5s window).
-- [ ] 273. Bulk actions bar: sticky top when rows selected.
-- [ ] 274. Bulk: delete, change template, change department, resend invite, export.
-- [ ] 275. Filter UI: chip-based filters, multi-select.
-- [ ] 276. Sort UI: click column header, persist preference.
-- [ ] 277. Column picker: toggle columns, persist.
-- [ ] 278. Saved views: "my filters" save + name + share.
-- [ ] 279. Empty state for every list with CTA + illustration.
-- [ ] 280. Inline tooltips on every non-obvious form field.
-- [ ] 281. Help button top-right opens context-aware help drawer.
-- [ ] 282. Help content sourced from `lang/{en,ar}/help/{page}.md`.
-- [ ] 283. What's New modal on login if new release, auto-shows release notes.
-- [ ] 284. Feature tour (Shepherd.js or custom) for dashboard on first visit post-onboarding.
-- [ ] 285. Mobile admin: every page QA'd on 375px and 414px.
-- [ ] 286. Tablet admin: 768px layout tested.
-- [ ] 287. PWA manifest + service worker, installable from mobile browser.
-- [ ] 288. Offline banner if network drops.
-- [ ] 289. Dark mode optional (respect OS pref).
-- [ ] 290. Accessibility: WCAG AA contrast, focus rings, aria-labels.
-- [ ] 291. Keyboard nav end-to-end: every page navigable without mouse.
-- [ ] 292. Screen reader pass: aria-live for toasts, aria-label on icon buttons.
-- [ ] 293. Date picker localized (ar uses Hijri optional toggle).
-- [ ] 294. Number inputs localized (Arabic-Indic optional).
-- [ ] 295. Every icon button has a tooltip.
+- [~] 261. 5-group sidebar rewrite deferred to action 685.
+- [~] 262. Off-canvas drawer on mobile deferred to action 686.
+- [~] 263. Cmd+K fuzzy search deferred to action 687.
+- [~] 264. Cmd+K grouped results deferred to action 688.
+- [~] 265. Keyboard-shortcut cheatsheet modal deferred to action 689.
+- [~] 266. g d / g t / g o / g s / c / `/` bindings deferred to action 690.
+- [~] 267. Breadcrumbs on nested pages deferred to action 691.
+- [~] 268. Sticky page header with primary action deferred to action 692.
+- [x] 269. cardifyToast.push({variant, title, body, duration, action}) component shipped in assets/js/cardify-toast.js + css; aria-live polite container, 5 second default dismiss, success/error/info/warn variants, RTL-safe via inset-inline-end. Wired into admin-layout so every admin/* page gets it. → PENDING_SHA
+- [~] 270. Skeleton loaders deferred to action 693.
+- [~] 271. Optimistic UI patterns deferred to action 694.
+- [x] 272. cardifyToast.undo(message, onUndo) helper shipped; 6-second window, Undo action button. Call-site wiring on delete handlers deferred to action 695. → PENDING_SHA
+- [~] 273-278. Bulk-actions bar, filter chips, sort, column picker, saved views deferred to actions 696-700.
+- [x] 279. Shared `.cardify-empty` primitive shipped in cardify-toast.css (dashed border card, muted icon slot, title + body + CTA). Individual empty-state replacements across admin pages deferred to action 701.
+- [~] 280. Inline form-field tooltips deferred to action 702.
+- [~] 281. Help drawer top-right button deferred to action 703.
+- [~] 282. lang/{en,ar}/help/*.md per-page content files deferred to action 704.
+- [~] 283. What's-new modal on login deferred to action 705.
+- [~] 284. Shepherd.js feature tour deferred to action 706.
+- [~] 285. 375/414 mobile QA sweep deferred to action 707.
+- [~] 286. 768 tablet QA sweep deferred to action 708.
+- [x] 287. manifest.webmanifest + sw.js shipped, wired into admin-layout.php. theme-color #009bc1, apple-mobile-web-app-capable meta, 3 shortcuts (Employees / Generate cards / Print orders). Service worker caches static shell only, NEVER_CACHE list protects /admin /printshop /api /portal /paymob /webhooks. → PENDING_SHA
+- [~] 288. Offline banner when network drops deferred to action 709.
+- [~] 289. Dark mode (OS pref) deferred to action 710.
+- [~] 290. WCAG AA audit deferred to action 711.
+- [~] 291. Full-page keyboard-nav audit deferred to action 712.
+- [~] 292. Screen-reader pass deferred to action 713.
+- [~] 293. Localized date picker deferred to action 714.
+- [~] 294. Arabic-Indic number inputs deferred to action 715.
+- [~] 295. Tooltip on every icon button deferred to action 716.
 
 ## K, Design System Tokens + Components (296-320)
 
@@ -755,3 +750,35 @@
 - [ ] 682. Alert-rules cron: checks analytics_alerts rows, compares recent engagement against threshold, dispatches WhatsApp + email when fired.
 - [ ] 683. Print-shop analytics mirror: /printshop/analytics.php KPI strip (orders / revenue / avg rating / repeat-rate), pulls from print_orders + print_shop_reviews (already page-title-bilingual via action 062).
 - [ ] 684. Wilayat detection at event ingest: extract from card_events.ip_address via MaxMind/ip-api so the action 664 heatmap has real data (currently column is NULL).
+- [ ] 685. Admin sidebar 5-group rewrite (Dashboard / Team / Cards / Orders / Settings). Reorganise current flat nav into collapsible sections + group headers via lang/{en,ar}/admin.php nav_group_* keys (already seeded in action 009).
+- [ ] 686. Off-canvas drawer on < 1024 viewports with hamburger, slide-in animation, focus-trap.
+- [ ] 687. Cmd+K / Ctrl+K palette: opens a fuzzy-search modal over employees + departments + orders + settings pages.
+- [ ] 688. Palette result groups with icons: Pages / Employees / Orders / Actions.
+- [ ] 689. `?` cheatsheet modal listing all keyboard shortcuts grouped by scope.
+- [ ] 690. Shortcut bindings: g d (dashboard), g t (team), g o (orders), g s (settings), c (create, contextual on list pages), / (focus search).
+- [ ] 691. Breadcrumb strip injected under page header on every nested admin page (/admin/order-checkout → Orders > #123 > Checkout).
+- [ ] 692. Sticky page-header wrapper with primary-action slot so the Add/Create CTA stays visible while scrolling long tables.
+- [ ] 693. Skeleton-loader component (list rows + card shells) with Alpine x-show tied to loading state.
+- [ ] 694. Optimistic UI convention for toggle-style actions (Active/Inactive switch flips instantly + rollback on server error via cardifyToast).
+- [ ] 695. Wire delete handlers on admin/employees.php + admin/generated.php + admin/departments.php to cardifyToast.undo() with 6-second revert window that POSTs an undelete.
+- [ ] 696. Bulk-actions sticky bar that appears when >= 1 row is selected in any list table.
+- [ ] 697. Bulk actions: delete / change template / change department / resend invite / export.
+- [ ] 698. Chip-based filter UI (multi-select, removable chips above the table).
+- [ ] 699. Click-to-sort on table column headers with persisted admin_prefs row.
+- [ ] 700. Column picker + Saved Views: admin toggles which columns show and saves named filter combos.
+- [ ] 701. Per-page empty-state migration: replace every current "No results" block in admin/* with the shared .cardify-empty primitive + contextual CTA.
+- [ ] 702. Inline form-field tooltips: `<i class="fa-regular fa-circle-question" data-tip>` with aria-describedby + lang key per field.
+- [ ] 703. Help drawer button top-right of admin chrome; opens right-edge drawer with per-page content.
+- [ ] 704. Help content files lang/{en,ar}/help/{page}.md loaded by the drawer via page-slug lookup.
+- [ ] 705. What's-new modal on first login after a new release (session flag + releases table from action 497).
+- [ ] 706. Shepherd.js feature tour on first visit post-onboarding-wizard (hooks off company_onboarding.completed_at).
+- [ ] 707. Mobile QA sweep @ 375 + 414: every admin page verified manually via Playwright trace, regressions filed as individual bugs.
+- [ ] 708. Tablet QA sweep @ 768: grid/stack transitions verified.
+- [ ] 709. Offline banner: top-of-viewport bar when navigator.onLine flips false; dismissable + auto-hides on reconnect.
+- [ ] 710. Dark mode via prefers-color-scheme + user override toggle in settings.
+- [ ] 711. WCAG AA audit: contrast, focus rings, aria-labels, semantic headings. Log regressions as child actions.
+- [ ] 712. Keyboard-only navigation audit: tab order, skip-to-content link, focus-trap on modals.
+- [ ] 713. Screen-reader pass with VoiceOver + NVDA: aria-live on toasts, aria-describedby on field errors, aria-expanded on collapsibles.
+- [ ] 714. Localized date picker: Gregorian default + Hijri toggle for Arabic; backed by a small date-utils.js.
+- [ ] 715. Arabic-Indic number input toggle: company preference flips `<input type="number">` display via CSS font-feature-settings + JS formatter.
+- [ ] 716. Tooltip on every icon-only button: inline [title] fallback + Alpine-powered better-positioned popover.
