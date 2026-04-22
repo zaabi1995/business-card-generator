@@ -1,0 +1,48 @@
+{
+  "_comment": "Cardify uptime-monitor definitions (Cat T action 457). Feed this file into Uptime Robot or StatusCake. Keep it version-controlled so monitor coverage travels with the code.",
+  "service": "cardify.om",
+  "contacts": [
+    { "type": "whatsapp", "value": "96871616161", "label": "Ali (owner)" },
+    { "type": "email",    "value": "ali@bhd.om",   "label": "Ali email" }
+  ],
+  "monitors": [
+    {
+      "name": "Cardify home",
+      "url": "https://cardify.om/",
+      "interval_seconds": 300,
+      "method": "GET",
+      "expect_status": 200,
+      "expect_contains": "<html"
+    },
+    {
+      "name": "Cardify health",
+      "url": "https://cardify.om/api/health",
+      "interval_seconds": 120,
+      "method": "GET",
+      "expect_status": 200,
+      "expect_contains": "\"status\":\"up\""
+    },
+    {
+      "name": "Cardify Paymob callback",
+      "url": "https://cardify.om/paymob/callback.php",
+      "interval_seconds": 900,
+      "method": "GET",
+      "expect_status_in": [200, 400, 403],
+      "description": "GET returns an error body, but proves the route is not 404/5xx."
+    },
+    {
+      "name": "Cardify ERP sync",
+      "url": "https://cardify.om/api/erp-health",
+      "interval_seconds": 600,
+      "method": "GET",
+      "expect_status": 200,
+      "expect_contains": "\"status\":\"ok\""
+    },
+    {
+      "name": "Cardify landing TLS",
+      "url": "https://cardify.om/",
+      "ssl_check": true,
+      "alert_expiry_days": 14
+    }
+  ]
+}
