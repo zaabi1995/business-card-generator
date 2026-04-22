@@ -1,0 +1,71 @@
+<?php
+return [
+    'page_title'       => 'Case studies, Omani teams running on Cardify',
+    'page_desc'        => 'Three Omani companies, three different card problems, one toolkit. See how BHD, CupsByAA and Alali Investment use Cardify day to day.',
+
+    'hero_eyebrow'     => 'Proof, not promises',
+    'hero_heading'     => 'Three Omani teams, three different card problems, one toolkit',
+    'hero_sub'         => 'We run Cardify inside our own group first. Here is how BHD, CupsByAA and Alali Investment use it to ship bilingual cards to every employee.',
+
+    'meta_team_size'   => 'Team size',
+    'meta_industry'    => 'Industry',
+    'meta_live_since'  => 'On Cardify since',
+    'meta_outcome'     => 'Outcome',
+
+    'read_more'        => 'Read the full story',
+    'back_to_list'     => 'All case studies',
+    'visit_website'    => 'Visit website',
+
+    // BHD Printing & Designing
+    'bhd_name'         => 'BHD Printing & Designing',
+    'bhd_industry'     => 'Printing & design, ten-brand group',
+    'bhd_team'         => '14 people on the parent + nine sister brands',
+    'bhd_live_since'   => 'January 2026',
+    'bhd_summary'      => 'BHD built Cardify to solve its own card chaos. One approved bilingual template, cards for every employee, printed the same day in-house.',
+    'bhd_outcome'      => 'Onboarding went from half a day per new hire to ten minutes.',
+    'bhd_challenge_h'  => 'The problem',
+    'bhd_challenge_b'  => 'Every time someone joined one of the ten BHD brands, a manager spent an afternoon emailing the designer, waiting for a proof, and walking it to the press floor. With ten brands sharing the same press line, the queue was ugly.',
+    'bhd_solution_h'   => 'How Cardify fixed it',
+    'bhd_solution_b'   => 'One template per brand, approved by the Group CEO once, then reused. A new hire fills in their own details in the portal, the card renders with the right Arabic and English, and we print in-house the same day on the press that is already there.',
+    'bhd_result_h'     => 'What changed',
+    'bhd_result_b'     => 'New-hire card turnaround dropped from about four hours of manager time to under ten minutes of self-service. The group now prints roughly forty cards a month with zero designer hours spent on repeats.',
+    'bhd_quote'        => 'We made Cardify because our own team was bleeding designer hours on repeat work. Now the designer only touches the template, and the team handles the rest.',
+    'bhd_quote_author' => 'Ali Al-Zaabi, Group CEO',
+
+    // CupsByAA
+    'cup_name'         => 'CupsByAA',
+    'cup_industry'     => 'Custom cups + ecommerce',
+    'cup_team'         => '6 people, Muscat',
+    'cup_live_since'   => 'February 2026',
+    'cup_summary'      => 'A small e-commerce brand with a sales-heavy team that needed cards that looked consistent with the pastel playful brand, on a shoestring.',
+    'cup_outcome'      => 'Printed their whole team in one afternoon for under 50 OMR.',
+    'cup_challenge_h'  => 'The problem',
+    'cup_challenge_b'  => 'CupsByAA trade events are a monthly thing. Before Cardify, the founder was printing cards at Kinkos style shops every time a new sales rep joined, on mismatched stock in mismatched layouts.',
+    'cup_solution_h'   => 'How Cardify fixed it',
+    'cup_solution_b'   => 'We built one brand template in CupsByAA pastel palette, generated six cards from the employee roster, ordered 1,000 total prints through the marketplace, and they were delivered to the Muscat office within 48 hours.',
+    'cup_result_h'     => 'What changed',
+    'cup_result_b'     => 'Total cost for a whole-team print run landed under 50 OMR. The founder stopped thinking about cards as a chore and now onboards new sales reps with a card in hand on day one.',
+    'cup_quote'        => 'I used to spend a whole evening making cards every time we hired a sales rep. Now the hire signs up and walks into the next event with a card that matches the brand.',
+    'cup_quote_author' => 'CupsByAA founder',
+
+    // Alali Investment
+    'ali_name'         => 'Alali Investment',
+    'ali_industry'     => 'Holding & investment',
+    'ali_team'         => '5 senior executives, Muscat',
+    'ali_live_since'   => 'March 2026',
+    'ali_summary'      => 'A small but senior team that wanted understated executive cards, bilingual, with proper address and CR numbers on the back. No fuss, no branding gymnastics.',
+    'ali_outcome'      => 'Bilingual executive cards, shipped in one working day.',
+    'ali_challenge_h'  => 'The problem',
+    'ali_challenge_b'  => 'Executive cards matter in Oman. Alali wanted something understated, fully bilingual, with the CR number and the P.O. box on the reverse, and they did not want to sit through three design revisions.',
+    'ali_solution_h'   => 'How Cardify fixed it',
+    'ali_solution_b'   => 'We picked a minimal two-colour template, loaded the five executive profiles from a one-page CSV, pulled the CR number onto the back layout, and pressed Print. Five cards, one working day.',
+    'ali_result_h'     => 'What changed',
+    'ali_result_b'     => 'Five directors now carry matching bilingual cards that look exactly like the brand they represent. When one of them joins a new board, a fresh card is rendered in minutes, not days.',
+    'ali_quote'        => 'I wanted something sober, bilingual, and fast. Cardify gave us all three, and we reuse the same template for any new executive.',
+    'ali_quote_author' => 'Alali Investment board secretariat',
+
+    'closing_h'        => 'Your team, next?',
+    'closing_b'        => 'If your team makes cards more than once a year, Cardify will probably save you a designer day a month. Try it free.',
+    'closing_cta'      => 'Start free',
+    'closing_cta_wa'   => 'Book a demo on WhatsApp',
+];
