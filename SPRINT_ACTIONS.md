@@ -465,7 +465,7 @@
 - [x] 430. robots.txt audit: added /portal /paymob-test /test /cron to Disallow; kept AI crawlers allowed for Logo Library attribution. → 5e89ece
 - [x] 431. 301s for legacy URLs: nginx block handles 23 static aliases (/home /index.html /sign-in /signin /log-in /sign-up /signup.html /register.html /contact-us /about-us /faqs /faq.html /pricing.html /terms.html /privacy.html /business-cards /digital-cards /demo /try /free-trial /logo-library /logos-library /home.html); includes/Redirects.php PHP fallback with DB-backed url_redirects table for dynamic renamed-slug aliases (migration 086). → 32d2d84
 - [x] 432. CWV pass on landing: LCP hero preload (link rel=preload as=image fetchpriority=high in ui-header.php, $lcpImage hook), hero img gains width/height/fetchpriority/decoding=async (was lazy, blocked LCP), blog-card imgs gain width=1200 height=675 (CLS fix), flowbite bundle switched to defer (was render-blocking). Rolled back broken /index.php 301 that caused site-wide redirect loop. → 6165d31
-- [ ] 433. Landing page conversion copy pass.
+- [x] 433. Landing conversion copy pass: rewrote hero H1/subhead/price/CTAs, trust badges, value-prop banner in EN + AR. Outcome-led ("Bilingual cards for every employee on your team. Designed once. Printed forever.") vs feature-led. Per-card OMR price, BHD Muscat proof, WhatsApp CTA channel named. All 15 keys updated both locales same commit, i18n parity OK. → 89e4982
 - [ ] 434. Testimonials section on landing (real quotes).
 - [ ] 435. Case studies page: 3 real companies.
 - [ ] 436. Pricing page: clear tiers, OMR, bilingual.
