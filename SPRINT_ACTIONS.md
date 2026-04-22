@@ -118,20 +118,20 @@
 - [~] 094. "Clear demo data" button deferred to action 557 together with seed.
 - [~] 095. Wizard analytics via audit_log deferred to action 558; each saveStep should emit AuditLog::record('onboarding_step_'+N, ['step'=>N]).
 - [x] 096. Mobile 375px: current layout uses tailwind flex/grid responsive + max-w-3xl. Designer-review verification deferred to action 559.
-- [x] 097. All wizard copy bilingual via onboarding namespace (60 keys EN+AR after this commit) → bb23a9d + PENDING_SHA
-- [x] 098. Success state shipped as a dashboard toast (gradient emerald→teal, party-horn icon, auto-dismiss 8s, dismiss button, pulse-once animation) when ?wizard=done is in the URL → PENDING_SHA. Dedicated full-screen confetti library deferred to action 560.
-- [x] 099. Resume banner on dashboard shows "Finish setting up your company (X of 7 steps done)" + Continue Setup CTA, only when onboarding started but not completed and step > 0 → PENDING_SHA
+- [x] 097. All wizard copy bilingual via onboarding namespace (60 keys EN+AR after this commit) → bb23a9d + 6bd9cfb
+- [x] 098. Success state shipped as a dashboard toast (gradient emerald→teal, party-horn icon, auto-dismiss 8s, dismiss button, pulse-once animation) when ?wizard=done is in the URL → 6bd9cfb. Dedicated full-screen confetti library deferred to action 560.
+- [x] 099. Resume banner on dashboard shows "Finish setting up your company (X of 7 steps done)" + Continue Setup CTA, only when onboarding started but not completed and step > 0 → 6bd9cfb
 - [x] 100. Skip policy: markSkipped() + shouldShowWizard() enforces 24h silence then re-shows → bb23a9d
 - [~] 101. Wizard video walkthrough (Loom embed) deferred to action 561; needs Ali to record it first.
 - [~] 102. Pre-populate company name deferred to action 562; requires hooking the signup flow to seed step-1 payload.
 - [~] 103. Server-side per-step validation deferred to action 563; currently accepts any payload shape; need per-step schema in Onboarding class.
 - [x] 104. Back button on step > 1 only, Skip-for-now on every step → bb23a9d
-- [x] 105. Keyboard: Enter = next (outside text fields), Esc = skip-for-now; hint text "Press Enter to continue, Esc to save and close" in footer → PENDING_SHA
+- [x] 105. Keyboard: Enter = next (outside text fields), Esc = skip-for-now; hint text "Press Enter to continue, Esc to save and close" in footer → 6bd9cfb
 - [~] 106. Welcome email + WhatsApp on completion deferred to action 564; wire markCompleted() to dispatch signup.email + signup.whatsapp templates already translated in action 068.
 - [~] 107. Fabric.js template preview deferred to action 554 (already queued).
 - [~] 108. CSV pipeline deferred to action 555 (already queued).
-- [x] 109. Paste-list parser: splits on comma / Arabic comma / pipe, requires email + ≥2 tokens; shows ":n entries parsed" status in green or amber with error line numbers → PENDING_SHA
-- [x] 110. Dashboard "Order printed cards" nudge banner shows when onboarding completed but order_cards.per_person is empty (i.e., they skipped step 7) → PENDING_SHA
+- [x] 109. Paste-list parser: splits on comma / Arabic comma / pipe, requires email + ≥2 tokens; shows ":n entries parsed" status in green or amber with error line numbers → 6bd9cfb
+- [x] 110. Dashboard "Order printed cards" nudge banner shows when onboarding completed but order_cards.per_person is empty (i.e., they skipped step 7) → 6bd9cfb
 
 ## D, Company Registration Redesign (111-125)
 
