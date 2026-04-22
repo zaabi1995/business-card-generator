@@ -597,6 +597,18 @@ class Payment {
         $stmt = $conn->prepare("UPDATE companies SET card_credits = card_credits + ? WHERE id = ?");
         $stmt->execute([$cardCount, $companyId]);
 
+        // Mirror into card_credit_ledger so /admin/card-credits and the
+        // statement page see the top-up (Cat S action 451).
+        try {
+            $newBalance = (int) ($db->fetchOne("SELECT card_credits FROM companies WHERE id = :id", ['id' => $companyId])['card_credits'] ?? 0);
+            $db->exec(
+                "INSERT INTO card_credit_ledger
+                    (company_id, employee_id, delta, balance_after, reason, ref_id, notes)
+                 VALUES (:c, NULL, :d, :b, 'purchase', :ref, NULL)",
+                ['c' => $companyId, 'd' => $cardCount, 'b' => $newBalance, 'ref' => $refId]
+            );
+        } catch (Throwable $_) { /* ledger table may not exist pre-091 */ }
+
         error_log("Card credits added: company={$companyId} cards={$cardCount}");
     }
 
