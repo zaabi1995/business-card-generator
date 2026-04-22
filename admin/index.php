@@ -1228,6 +1228,13 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                             </span>
                         </div>
                         <div class="flex items-center gap-2">
+                            <button type="button"
+                                    x-show="selectedTemplate && selectedTemplate.backgroundImage"
+                                    @click="resetBackgroundFit()"
+                                    class="px-3 py-1.5 text-sm rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                                    title="Snap the background back to fill the card">
+                                <i class="fa-solid fa-expand mr-1"></i>Fit to card
+                            </button>
                             <label class="px-3 py-1.5 text-sm rounded-lg font-medium cursor-pointer transition-colors"
                                    :class="activeTab === 'front' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'">
                                 <i class="fa-solid fa-upload mr-1"></i>
@@ -1774,6 +1781,13 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                     },
                     onFieldSelect: function(key) {
                         // Could highlight field in controls
+                    },
+                    onBackgroundTransform: function(t) {
+                        if (!self.selectedTemplate) return;
+                        self.selectedTemplate.backgroundTransform = t;
+                        if (!self.selectedTemplate.settings) self.selectedTemplate.settings = {};
+                        self.selectedTemplate.settings.backgroundTransform = t;
+                        self.persistSettingsDebounced();
                     }
                 });
 
@@ -1928,7 +1942,41 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
             },
 
             // Collect size/orientation settings for persistence
+            // Lightweight "settings only" save (no field-position rescan)
+            // used to persist background transform after a drag/resize.
+            // Debounced so a continuous drag doesn't spam the server.
+            _persistTimer: null,
+            persistSettingsDebounced: function() {
+                var self = this;
+                if (this._persistTimer) clearTimeout(this._persistTimer);
+                this._persistTimer = setTimeout(function() {
+                    if (!self.selectedTemplate) return;
+                    var formData = self.newFormData('update');
+                    formData.append('id', self.selectedTemplate.id);
+                    formData.append('name', self.selectedTemplate.name);
+                    formData.append('fields', JSON.stringify(self.selectedTemplate.fields || {}));
+                    formData.append('settings', JSON.stringify(self.getTemplateSettings()));
+                    fetch('save_template', { method: 'POST', body: formData })
+                        .catch(function(e) { console.warn('Auto-save error:', e); });
+                }, 600);
+            },
+
+            // Reset the uploaded background's position/scale so it fills the
+            // canvas again. Handy after the user moves/resizes by mistake.
+            resetBackgroundFit: function() {
+                if (this.cardEditor && typeof this.cardEditor.resetBackgroundTransform === 'function') {
+                    this.cardEditor.resetBackgroundTransform();
+                }
+            },
+
             getTemplateSettings: function() {
+                var bgT = null;
+                if (this.cardEditor && typeof this.cardEditor.getBackgroundTransform === 'function') {
+                    bgT = this.cardEditor.getBackgroundTransform();
+                }
+                if (!bgT && this.selectedTemplate && this.selectedTemplate.backgroundTransform) {
+                    bgT = this.selectedTemplate.backgroundTransform;
+                }
                 return {
                     cardSize: this.cardSize,
                     cardOrientation: this.cardOrientation,
@@ -1938,7 +1986,8 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                     bleedUnit: this.bleedUnit,
                     customWidth: this.customWidth,
                     customHeight: this.customHeight,
-                    customUnit: this.customUnit
+                    customUnit: this.customUnit,
+                    backgroundTransform: bgT
                 };
             },
 
@@ -1956,6 +2005,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                 if (typeof settings.customWidth !== 'undefined') this.customWidth = settings.customWidth;
                 if (typeof settings.customHeight !== 'undefined') this.customHeight = settings.customHeight;
                 if (settings.customUnit) this.customUnit = settings.customUnit;
+                if (settings.backgroundTransform) template.backgroundTransform = settings.backgroundTransform;
             },
 
             // Resize the canvas to current settings
@@ -2159,12 +2209,19 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                             self.selectedTemplate.backgroundImage = result.backgroundImage;
                             // Update originalPdf if returned (for vector PDF export)
                             self.selectedTemplate.originalPdf = result.originalPdf || null;
-                            
+                            // A fresh upload resets any previous crop/position
+                            // so the new artwork fits the canvas cleanly.
+                            self.selectedTemplate.backgroundTransform = null;
+                            if (self.selectedTemplate.settings) {
+                                self.selectedTemplate.settings.backgroundTransform = null;
+                            }
+
                             // Update in templates array
                             for (var i = 0; i < self.templates.length; i++) {
                                 if (self.templates[i].id === self.selectedTemplate.id) {
                                     self.templates[i].backgroundImage = result.backgroundImage;
                                     self.templates[i].originalPdf = result.originalPdf || null;
+                                    self.templates[i].backgroundTransform = null;
                                     break;
                                 }
                             }
@@ -2288,11 +2345,15 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                     chain = chain.then(function() { return self.resizeCanvas(); });
                 }
                 
-                // Load background
+                // Load background, restoring any saved transform (position,
+                // scale, rotation) the user applied previously.
                 var bgUrl = this.getBackgroundUrl(template);
                 if (bgUrl) {
+                    var savedTransform = template.backgroundTransform
+                        || (template.settings && template.settings.backgroundTransform)
+                        || null;
                     chain = chain.then(function() {
-                        return self.cardEditor.loadBackground(bgUrl);
+                        return self.cardEditor.loadBackground(bgUrl, savedTransform);
                     }).catch(function(e) {
                         console.warn('Background load error:', e);
                     });

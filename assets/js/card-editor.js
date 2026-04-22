@@ -165,16 +165,17 @@ class CardEditor {
         this.canvas.on('object:moving', (e) => {
             const obj = e.target;
             if (!obj) return;
-            
-            // Apply snapping if enabled
+
+            // Background can move freely (no snap, no bounds) so the user
+            // can position artwork that intentionally overflows the card.
+            if (obj.isBackground) return;
+
             if (this.snapEnabled) {
                 this._snapToGuides(obj);
             }
-            
-            // Keep within bounds
+
             this._constrainToBounds(obj);
-            
-            // Callback
+
             if (obj.fieldKey && this.options.onFieldMove) {
                 this.options.onFieldMove(obj.fieldKey, {
                     x: obj.left,
@@ -182,19 +183,31 @@ class CardEditor {
                 });
             }
         });
-        
+
         // Object modified (after move/scale)
         this.canvas.on('object:modified', (e) => {
             this._clearAlignmentLines();
             const obj = e.target;
-            if (obj) {
-                this._constrainToBounds(obj);
-                if (obj.fieldKey && this.options.onFieldMove) {
-                    this.options.onFieldMove(obj.fieldKey, {
-                        x: obj.left,
-                        y: obj.top
-                    });
+            if (!obj) return;
+
+            if (obj.isBackground) {
+                // Keep background at the bottom of the stack even after
+                // drag/resize and push the change up so it can be saved.
+                if (this.canvas.sendObjectToBack) {
+                    this.canvas.sendObjectToBack(obj);
                 }
+                if (this.options.onBackgroundTransform) {
+                    this.options.onBackgroundTransform(this.getBackgroundTransform());
+                }
+                return;
+            }
+
+            this._constrainToBounds(obj);
+            if (obj.fieldKey && this.options.onFieldMove) {
+                this.options.onFieldMove(obj.fieldKey, {
+                    x: obj.left,
+                    y: obj.top
+                });
             }
         });
         
@@ -450,59 +463,100 @@ class CardEditor {
     /**
      * Load background image - Fabric.js 7.x (fromURL returns Promise)
      */
-    async loadBackground(imageUrl) {
+    async loadBackground(imageUrl, transform) {
         if (!this.canvas || !imageUrl) return;
-        
+
         try {
-            // Fabric.js 7.x: Image class can be FabricImage or Image
-            const ImageClass = this.fabricRef.FabricImage || 
-                               this.fabricRef.Image || 
+            const ImageClass = this.fabricRef.FabricImage ||
+                               this.fabricRef.Image ||
                                (typeof fabric !== 'undefined' ? (fabric.FabricImage || fabric.Image) : null);
-            
+
             if (!ImageClass) {
                 throw new Error('Fabric Image class not found');
             }
-            
-            // Fabric.js 7.x: Image.fromURL returns a Promise
+
             const img = await ImageClass.fromURL(imageUrl, {
                 crossOrigin: 'anonymous'
             });
-            
-            // Stretch the uploaded artwork to exactly fill the canvas so it
-            // matches what the user designed (no cropping, no letterboxing).
-            // When the upload's aspect ratio equals the card aspect (e.g. a
-            // 92x57 mm SVG on a 92x57 mm canvas) scaleX === scaleY and the
-            // art renders pixel-perfect. If aspects differ, fill is less
-            // destructive than cover (which crops) or contain (which gaps).
-            const scaleX = this.canvas.width / img.width;
-            const scaleY = this.canvas.height / img.height;
+
+            // Default transform: stretch artwork to exactly fill the canvas.
+            // Matching aspects render pixel-perfect; mismatched aspects
+            // stretch rather than crop. If a saved transform is supplied
+            // (user previously moved/resized the background), restore it.
+            let t = transform;
+            if (!t || typeof t !== 'object') {
+                t = {
+                    left: 0,
+                    top: 0,
+                    scaleX: this.canvas.width / img.width,
+                    scaleY: this.canvas.height / img.height,
+                    angle: 0
+                };
+            }
 
             img.set({
-                scaleX: scaleX,
-                scaleY: scaleY,
+                left: t.left || 0,
+                top: t.top || 0,
+                scaleX: typeof t.scaleX === 'number' ? t.scaleX : (this.canvas.width / img.width),
+                scaleY: typeof t.scaleY === 'number' ? t.scaleY : (this.canvas.height / img.height),
+                angle: t.angle || 0,
                 originX: 'left',
                 originY: 'top',
-                left: 0,
-                top: 0,
-                selectable: false,
-                evented: false,
+                selectable: true,
+                evented: true,
+                hasControls: true,
+                hasBorders: true,
+                lockRotation: false,
                 excludeFromExport: false
             });
-            
-            // Remove old background
+
+            // Tag so snapping, bounds-constraint, and selection logic can
+            // skip the background without special-casing by id.
+            img.isBackground = true;
+
             if (this.backgroundImage) {
                 this.canvas.remove(this.backgroundImage);
             }
-            
+
             this.backgroundImage = img;
             this.canvas.add(img);
             this.canvas.sendObjectToBack(img);
             this.canvas.requestRenderAll();
-            
+
             return img;
         } catch (e) {
             console.error('Background load error:', e);
             throw e;
+        }
+    }
+
+    getBackgroundTransform() {
+        const img = this.backgroundImage;
+        if (!img) return null;
+        return {
+            left: img.left || 0,
+            top: img.top || 0,
+            scaleX: typeof img.scaleX === 'number' ? img.scaleX : 1,
+            scaleY: typeof img.scaleY === 'number' ? img.scaleY : 1,
+            angle: img.angle || 0
+        };
+    }
+
+    resetBackgroundTransform() {
+        const img = this.backgroundImage;
+        if (!img || !this.canvas) return;
+        img.set({
+            left: 0,
+            top: 0,
+            scaleX: this.canvas.width / img.width,
+            scaleY: this.canvas.height / img.height,
+            angle: 0
+        });
+        img.setCoords();
+        this.canvas.sendObjectToBack(img);
+        this.canvas.requestRenderAll();
+        if (this.options.onBackgroundTransform) {
+            this.options.onBackgroundTransform(this.getBackgroundTransform());
         }
     }
     
