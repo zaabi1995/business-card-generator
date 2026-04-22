@@ -58,12 +58,36 @@ if ($part === 'index') {
     smChild("{$baseUrl}/sitemap-companies-ar.xml", $today);
     smChild("{$baseUrl}/sitemap-blog.xml",         $today);
     smChild("{$baseUrl}/sitemap-logos.xml",        $today);
+    smChild("{$baseUrl}/sitemap-printshops.xml",   $today);
     echo '</sitemapindex>' . "\n";
     exit;
 }
 
 // --- Child sitemaps ----------------------------------------------------
-echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">' . "\n";
+echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">' . "\n";
+
+/**
+ * Render a <url> with EN + AR <xhtml:link> hreflang alternates. Call for
+ * pages that exist in both /path and /ar/path. Google uses these pairs
+ * as reciprocal confirmation before treating them as true alternates.
+ */
+function smUrlBilingual($path, $lastmod, $changefreq = 'monthly', $priority = '0.5') {
+    global $baseUrl;
+    $path  = '/' . ltrim($path, '/');
+    $en    = $baseUrl . $path;
+    $ar    = $baseUrl . '/ar' . ($path === '/' ? '/' : $path);
+    foreach ([$en, $ar] as $loc) {
+        echo "    <url>\n";
+        echo "        <loc>" . smX($loc) . "</loc>\n";
+        echo "        <lastmod>{$lastmod}</lastmod>\n";
+        echo "        <changefreq>{$changefreq}</changefreq>\n";
+        echo "        <priority>{$priority}</priority>\n";
+        echo "        <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"" . smX($en) . "\" />\n";
+        echo "        <xhtml:link rel=\"alternate\" hreflang=\"ar\" href=\"" . smX($ar) . "\" />\n";
+        echo "        <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"" . smX($en) . "\" />\n";
+        echo "    </url>\n";
+    }
+}
 
 try {
     $db = Database::getInstance();
@@ -174,28 +198,24 @@ if ($part === 'static') {
     }
 
 } elseif ($part === 'companies') {
-    // English company profiles only — each sitemap stays ≤ 50k URLs.
+    // English company profiles. Each <url> declares both EN and AR
+    // alternates so Google treats /companies/slug and /ar/companies/slug
+    // as a confirmed bilingual pair (hreflang reciprocity).
     if ($db) {
         try {
             $rows = $db->fetchAll("SELECT slug, updated_at FROM om_companies ORDER BY size_bucket ASC, id ASC");
             foreach ($rows as $c) {
                 $lastmod = date('Y-m-d', strtotime($c['updated_at']));
-                smUrl("{$baseUrl}/companies/" . $c['slug'], $lastmod, 'monthly', '0.5');
+                smUrlBilingual('/companies/' . $c['slug'], $lastmod, 'monthly', '0.5');
             }
         } catch (Throwable $e) { /* table may not exist */ }
     }
 
 } elseif ($part === 'companies-ar') {
-    // Arabic company profiles only.
-    if ($db) {
-        try {
-            $rows = $db->fetchAll("SELECT slug, updated_at FROM om_companies ORDER BY size_bucket ASC, id ASC");
-            foreach ($rows as $c) {
-                $lastmod = date('Y-m-d', strtotime($c['updated_at']));
-                smUrl("{$baseUrl}/ar/companies/" . $c['slug'], $lastmod, 'monthly', '0.4');
-            }
-        } catch (Throwable $e) { /* table may not exist */ }
-    }
+    // Retained for backward compat with the index. Companies sitemap
+    // now emits bilingual pairs inline, so this child is intentionally
+    // a short stub pointing to the Arabic hub only.
+    smUrl("{$baseUrl}/ar/companies", $today, 'weekly', '0.7');
 
 } elseif ($part === 'blog') {
     // Blog posts (with image metadata) + career listings.
@@ -295,6 +315,25 @@ if ($part === 'static') {
                 echo "    </url>\n";
             }
         } catch (Throwable $e) { /* fields may be missing */ }
+    }
+
+} elseif ($part === 'printshops') {
+    // Public-facing print shop surfaces. Individual shops don't have
+    // public profile URLs yet; adding the listing hub + per-shop
+    // slug pages whenever they ship is tracked in action 788.
+    smUrlBilingual('/print-shops', $today, 'weekly', '0.8');
+    if ($db) {
+        try {
+            $shops = $db->fetchAll(
+                "SELECT slug, updated_at FROM print_shops
+                  WHERE status = 'active' AND slug IS NOT NULL AND slug != ''
+                  ORDER BY updated_at DESC"
+            );
+            foreach ($shops as $s) {
+                $lastmod = !empty($s['updated_at']) ? date('Y-m-d', strtotime($s['updated_at'])) : $today;
+                smUrl("{$baseUrl}/print-shops/" . $s['slug'], $lastmod, 'weekly', '0.6');
+            }
+        } catch (Throwable $e) { /* slug column may not exist yet */ }
     }
 
 } else {

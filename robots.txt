@@ -14,7 +14,15 @@ Disallow: /amwalpay/
 Disallow: /includes/
 Disallow: /database/
 Disallow: /company/
+Disallow: /portal/
+Disallow: /paymob-test/
+Disallow: /test/
+Disallow: /cron/
 Disallow: */admin/*
+
+# AI search crawlers are intentionally allowed so the Omani Logo Library
+# + business index show up in ChatGPT / Claude / Perplexity answers with
+# the correct schema.org attribution.
 
 # Public Omani Logo Library API (JSON endpoints, documented at /logos/press).
 # Crawlable so ecosystem tools + AI search engines can verify schema claims.
