@@ -177,11 +177,20 @@ class Payment {
             'redirection_url' => $callbackUrl,
             'items' => [],
             // Ask Paymob to return a reusable card_token on success so
-            // repeat customers can one-click pay + MOTO agents can run
-            // phone orders. Tokenisation is opt-out only for unusual
-            // cases (e.g. print_order where the billing row is anon).
-            // PCI scope stays at Paymob; we only get a token + last4.
-            'save_card_token' => true,
+            // repeat customers can one-click pay and MOTO agents can run
+            // phone orders. Paymob only tokenises when BOTH `save_card`
+            // and `recurring_payment_data.agreement` are present (the
+            // lone `save_card_token` field is not a real Paymob field).
+            // PCI scope stays at Paymob, we only get a token + last4.
+            'save_card' => true,
+            'recurring_payment_data' => [
+                'agreement' => [
+                    'id' => "CARDIFY-{$type}-{$specialReference}",
+                    'variable_amount' => false,
+                    'recurring_payment' => true,
+                    'expiry' => null,
+                ],
+            ],
         ];
 
         // Add item description based on type
@@ -298,18 +307,31 @@ class Payment {
                 $data['source_data_type'] = $obj['source_data']['type'] ?? '';
             }
             // Paymob returns the reusable card_token on the obj root
-            // when save_card_token=1 was on the intent. Shape varies a
-            // bit across Paymob flavours; pick the first one present.
-            $data['card_token'] = $obj['card_token']
-                ?? ($obj['token'] ?? '')
+            // when save_card+recurring_payment_data were on the intent.
+            // Shape varies a bit across Paymob flavours, pick the first
+            // one present.
+            $data['card_token'] = $obj['token']
+                ?? ($obj['card_token'] ?? '')
                 ?: ($obj['source_data']['card_token'] ?? '');
-            if (isset($obj['source_data'])) {
-                $data['card_brand']    = $obj['source_data']['sub_type'] ?? ($obj['source_data']['brand'] ?? '');
-                $data['card_last4']    = $obj['source_data']['pan'] ?? '';
-                $data['card_holder']   = $obj['source_data']['holder_name'] ?? '';
-                $data['card_exp_m']    = $obj['source_data']['expiry_month'] ?? null;
-                $data['card_exp_y']    = $obj['source_data']['expiry_year'] ?? null;
-            }
+
+            // Card detail fields. Per Paymob Oman webhook spec the
+            // holder/expiry/bin/issuer/country live on obj.data, while
+            // brand + last4 + payment method live on obj.source_data.
+            $objData = isset($obj['data']) && is_array($obj['data']) ? $obj['data'] : [];
+            $srcData = isset($obj['source_data']) && is_array($obj['source_data']) ? $obj['source_data'] : [];
+
+            $data['card_brand']         = $srcData['sub_type'] ?? ($srcData['brand'] ?? '');
+            $data['card_last4']         = $srcData['pan'] ?? '';
+            $data['card_payment_method']= $srcData['type'] ?? '';
+            $data['card_masked']        = $objData['card_num'] ?? '';
+            $data['card_type']          = $objData['card_type'] ?? '';
+            $data['card_holder']        = $objData['card_holder_name'] ?? ($objData['name_on_card'] ?? '');
+            $data['card_exp_m']         = $objData['expiry_month'] ?? null;
+            $data['card_exp_y']         = $objData['expiry_year'] ?? null;
+            $data['card_bin']           = $objData['bin'] ?? '';
+            $data['card_issuer']        = $objData['issuer'] ?? '';
+            $data['card_country']       = $objData['country'] ?? ($objData['card_country'] ?? '');
+            $data['card_integration_id']= $obj['integration_id'] ?? null;
         }
 
         // Merge GET params if available
@@ -418,28 +440,63 @@ class Payment {
             } catch (Throwable $_) {}
 
             // Persist the reusable Paymob card_token so repeat charges
-            // (MOTO phone orders + subscription renewals + one-click
+            // (MOTO phone orders, subscription renewals, one-click
             // top-ups) can pay without the customer present. PCI scope
-            // stays at Paymob; we store last4 + brand for display only.
+            // stays at Paymob, we only store last4 + masked PAN + brand
+            // for display + routing metadata (BIN, issuer, country).
+            //
+            // Upsert key is (company_id, last_four), same physical card
+            // re-saved overwrites the row (fresh token + timestamps),
+            // new card appends.
             if (!empty($data['card_token']) && !empty($payment['company_id'])) {
-                try {
-                    $db->exec(
-                        "INSERT IGNORE INTO saved_cards
-                            (company_id, paymob_token, brand, last_four, holder_name,
-                             expiry_month, expiry_year, last_used_at)
-                         VALUES (:c, :t, :b, :l4, :h, :em, :ey, NOW())",
-                        [
-                            'c'  => $payment['company_id'],
-                            't'  => $data['card_token'],
-                            'b'  => substr((string) ($data['card_brand']  ?? ''), 0, 24),
-                            'l4' => substr((string) ($data['card_last4']  ?? ''), -4),
-                            'h'  => substr((string) ($data['card_holder'] ?? ''), 0, 120),
-                            'em' => is_numeric($data['card_exp_m'] ?? null) ? (int) $data['card_exp_m'] : null,
-                            'ey' => is_numeric($data['card_exp_y'] ?? null) ? (int) $data['card_exp_y'] : null,
-                        ]
-                    );
-                } catch (Throwable $e) {
-                    error_log('saved_cards insert failed: ' . $e->getMessage());
+                $last4 = substr((string) ($data['card_last4'] ?? ''), -4);
+                if ($last4 !== '') {
+                    try {
+                        $db->exec(
+                            "INSERT INTO saved_cards
+                                (company_id, paymob_token, last_four, masked_number, brand,
+                                 card_type, payment_method, holder_name,
+                                 expiry_month, expiry_year, bin, issuer, country,
+                                 integration_id, last_used_at)
+                             VALUES
+                                (:c, :t, :l4, :mask, :b,
+                                 :ctype, :pmethod, :h,
+                                 :em, :ey, :bin, :iss, :cty,
+                                 :iid, NOW())
+                             ON DUPLICATE KEY UPDATE
+                                paymob_token = VALUES(paymob_token),
+                                masked_number = VALUES(masked_number),
+                                brand = VALUES(brand),
+                                card_type = VALUES(card_type),
+                                payment_method = VALUES(payment_method),
+                                holder_name = VALUES(holder_name),
+                                expiry_month = VALUES(expiry_month),
+                                expiry_year = VALUES(expiry_year),
+                                bin = VALUES(bin),
+                                issuer = VALUES(issuer),
+                                country = VALUES(country),
+                                integration_id = VALUES(integration_id),
+                                last_used_at = NOW()",
+                            [
+                                'c'       => $payment['company_id'],
+                                't'       => $data['card_token'],
+                                'l4'      => $last4,
+                                'mask'    => substr((string) ($data['card_masked'] ?? ''), 0, 32),
+                                'b'       => substr((string) ($data['card_brand'] ?? ''), 0, 24),
+                                'ctype'   => substr((string) ($data['card_type'] ?? ''), 0, 16),
+                                'pmethod' => substr((string) ($data['card_payment_method'] ?? ''), 0, 32),
+                                'h'       => substr((string) ($data['card_holder'] ?? ''), 0, 120),
+                                'em'      => is_numeric($data['card_exp_m'] ?? null) ? (int) $data['card_exp_m'] : null,
+                                'ey'      => is_numeric($data['card_exp_y'] ?? null) ? (int) $data['card_exp_y'] : null,
+                                'bin'     => substr((string) ($data['card_bin'] ?? ''), 0, 8),
+                                'iss'     => substr((string) ($data['card_issuer'] ?? ''), 0, 128),
+                                'cty'     => substr((string) ($data['card_country'] ?? ''), 0, 8),
+                                'iid'     => is_numeric($data['card_integration_id'] ?? null) ? (int) $data['card_integration_id'] : null,
+                            ]
+                        );
+                    } catch (Throwable $e) {
+                        error_log('saved_cards upsert failed: ' . $e->getMessage());
+                    }
                 }
             }
         } else {
