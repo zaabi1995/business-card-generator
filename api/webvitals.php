@@ -12,6 +12,8 @@
  * client can't flood the disk. Minimal response so beacons stay cheap.
  */
 header('Content-Type: application/json');
+$__secBoot = __DIR__ . '/../includes/SecurityHeaders.php';
+if (is_file($__secBoot)) { require_once $__secBoot; SecurityHeaders::send(); }
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     http_response_code(405);

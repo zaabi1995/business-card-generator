@@ -435,21 +435,21 @@
 
 ## Q, Security (406-420)
 
-- [ ] 406. Rate limit OTP endpoint: 3/hour/phone, 10/day/IP.
-- [ ] 407. Rate limit login: 5/min/IP, 20/day/user.
-- [ ] 408. Rate limit public endpoints (logo download, card view): 60/min/IP.
-- [ ] 409. CSRF sweep: every POST handler uses `validateCSRFToken`.
-- [ ] 410. SQL injection sweep: audit raw `$db->exec` calls, convert to prepared.
-- [ ] 411. XSS sweep: audit echo of $user-controlled, wrap in `sanitize()`.
-- [ ] 412. Content Security Policy header added (nonce-based).
-- [ ] 413. HSTS header.
-- [ ] 414. X-Frame-Options deny except embed-allowed pages.
-- [ ] 415. Cookie flags: HttpOnly, Secure, SameSite=Lax.
-- [ ] 416. Session rotation on login.
-- [ ] 417. Password policy: min 10 chars, bcrypt cost 12.
-- [ ] 418. 2FA optional for admin (TOTP via `otp-dardasha`).
-- [ ] 419. Super-admin IP allowlist.
-- [ ] 420. File upload: sandbox to `/storage/uploads`, never executable, strip EXIF.
+- [x] 406. OTP rate limit (3/h/phone + 10/day/IP) baked into OtpService via RateLimiter::check (action 112-114 infra, commit 56a2849).
+- [~] 407. Login rate limits (5/min/IP + 20/day/user) deferred to action 781; RateLimiter ready, just needs wiring in login.php.
+- [~] 408. 60/min/IP on public card-view / logo-download endpoints deferred to action 782; webvitals.php already has it as precedent.
+- [~] 409. CSRF sweep across every POST handler deferred to action 783.
+- [~] 410. Raw-SQL audit deferred to action 784.
+- [~] 411. XSS output-sanitisation sweep deferred to action 785.
+- [x] 412. SecurityHeaders.php ships CSP with nonce + report-only rollout (flip CSP_REPORT_ONLY=false in config to enforce). Auto-opt-in on /api/webvitals.php today; site-wide rollout deferred to action 786. → PENDING
+- [x] 413. Strict-Transport-Security: max-age=63072000; includeSubDomains; preload emitted when HTTPS via SecurityHeaders::send(). → PENDING
+- [x] 414. X-Frame-Options: DENY default + SecurityHeaders::allowFrameFor([...]) per-page override shipped. → PENDING
+- [x] 415. Session cookie hardening (HttpOnly + Secure on HTTPS + SameSite=Lax) via SecurityHeaders::send() before session_start. Global rollout via config.php wiring deferred to action 786. → PENDING
+- [~] 416. Session rotation (session_regenerate_id) on login deferred to action 787.
+- [~] 417. Password policy enforcement deferred to action 788 (cardifyForms.passwordStrength already gates client-side).
+- [~] 418. 2FA TOTP via otp-dardasha deferred to action 789.
+- [~] 419. Super-admin IP allowlist deferred to action 790.
+- [~] 420. File-upload sandboxing + EXIF strip deferred to action 791.
 
 ## R, Public Pages + SEO (421-440)
 
@@ -832,3 +832,14 @@
 - [ ] 778. Undo button in audit-log viewer: for actions recent enough to still have an undo_actions row (not consumed, not expired), surface a Revert button that restores before_state and marks consumed_at.
 - [ ] 779. Audit-log CSV export: server-stream CSV of filtered audit_logs rows, Content-Disposition: attachment, UTF-8 BOM.
 - [ ] 780. Suspicious-activity watcher: cron scans audit_logs for (action LIKE '%delete%' AND actor_id same AND 10+ rows in trailing minute); pauses the actor via session flag + pushes a critical NotificationCenter row to super_admin.
+- [ ] 781. Wire RateLimiter::check into login.php POST handler: 5/min/IP + 20/day/user, return 429 with friendly message when tripped.
+- [ ] 782. Rate-limit public read endpoints: card-pdf.php, logo-download.php, qr.php, og.php, share.php — 60/min/IP via RateLimiter.
+- [ ] 783. CSRF sweep: grep every `$_SERVER['REQUEST_METHOD'] === 'POST'` branch, ensure validateCSRFToken is called; file missing guards as child bugs.
+- [ ] 784. SQL-injection audit: grep raw `$db->exec(` + string-interpolated queries; convert to prepared statements with named params.
+- [ ] 785. XSS output audit: grep `echo $` + `<?= $` of user-controlled data; wrap in sanitize()/htmlspecialchars(). Focus on admin pages that render DB strings.
+- [ ] 786. Site-wide SecurityHeaders rollout: call SecurityHeaders::send() from config.php before any output. Start CSP as report-only; capture violation reports at /api/csp-report.php for a week; then flip to enforcing.
+- [ ] 787. Session rotation on login: session_regenerate_id(true) after successful Auth::unifiedLogin to invalidate pre-auth session IDs (login.php + company/register.php).
+- [ ] 788. Password policy enforcement: min 10 chars + require 1 digit + 1 non-alnum + not in top-10k-common list; server-side validate in register/change-password; bcrypt cost 12 upgrade via password_needs_rehash() on login.
+- [ ] 789. 2FA TOTP setup page /admin/security: generate secret, show QR (otpauth:// URL), verify 6-digit code, persist companies.totp_secret_hash; enforce at login when set.
+- [ ] 790. Super-admin IP allowlist: super_admin_allowed_ips table + check on every /admin/super/* request; 403 with "contact support" if IP not allowed.
+- [ ] 791. File-upload sandbox: move uploads to /storage/uploads/, serve via .htaccess that disables PHP execution; strip EXIF via imagick/exiftool on image uploads.
