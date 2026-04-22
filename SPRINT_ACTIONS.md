@@ -136,17 +136,17 @@
 ## D, Company Registration Redesign (111-125)
 
 - [~] 111. 3-field simplified signup UI deferred to action 565 alongside OTP UI; current register.php keeps its 6-field flow until OTP rewrite lands.
-- [x] 112-114. OTP-first foundation SHIPPED: migration 078 otp_codes (hashed SHA-256, channel, purpose, attempts, TTL, ip/ua) + includes/OtpService.php (send/verify/bilingual WhatsApp + email delivery + rate-limit integration). UI rewrite of register.php + login.php to consume this foundation deferred to action 565. → PENDING_SHA
+- [x] 112-114. OTP-first foundation SHIPPED: migration 078 otp_codes (hashed SHA-256, channel, purpose, attempts, TTL, ip/ua) + includes/OtpService.php (send/verify/bilingual WhatsApp + email delivery + rate-limit integration). UI rewrite of register.php + login.php to consume this foundation deferred to action 565. → 56a2849
 - [x] 115. Slug auto-gen from company name already client-side in register.php (slugify on onchange/onkeyup), server-side collision detection in POST handler. Prior sprint.
 - [x] 116. Instant tenant provisioning on form submit, no email-confirmation-link step. Prior sprint.
-- [x] 117. Post-signup redirect: non-BHD cohort now lands at /{slug}/admin/onboarding (v2.0 wizard from action 082); BHD-referral keeps legacy onboarding.php flow. → PENDING_SHA
-- [x] 118. Bilingual signup form already live (action 023, 50-key register namespace). OTP message bilingual via OtpService locale-aware copy. → PENDING_SHA
+- [x] 117. Post-signup redirect: non-BHD cohort now lands at /{slug}/admin/onboarding (v2.0 wizard from action 082); BHD-referral keeps legacy onboarding.php flow. → 56a2849
+- [x] 118. Bilingual signup form already live (action 023, 50-key register namespace). OTP message bilingual via OtpService locale-aware copy. → 56a2849
 - [x] 119. Trust signals present (BHD badge + testimonial panel, action 023). Dynamic logo strip deferred to action 566.
-- [x] 120. Rate limits baked into OtpService (3/h per identifier, 10/day per IP) via existing RateLimiter::check(). → PENDING_SHA
+- [x] 120. Rate limits baked into OtpService (3/h per identifier, 10/day per IP) via existing RateLimiter::check(). → 56a2849
 - [~] 121. Invisible reCAPTCHA v3 deferred to action 567 (needs Google site key + secret provisioning).
 - [x] 122. T&C + Privacy checkbox already present (action 023). Prior sprint.
-- [x] 123. PDPL notice under T&C with shield-halved icon, bilingual ("We store your data in Oman and comply with the PDPL"). → PENDING_SHA
-- [x] 124. Referral code field (optional, ?ref= prefill, maxlength 32). → PENDING_SHA
+- [x] 123. PDPL notice under T&C with shield-halved icon, bilingual ("We store your data in Oman and comply with the PDPL"). → 56a2849
+- [x] 124. Referral code field (optional, ?ref= prefill, maxlength 32). → 56a2849
 - [x] 125. Signup alert via existing Notifier::send('signup', ...) on every new tenant (email + WhatsApp). Slack hook deferred to action 568. Prior sprint.
 
 ## E, Employee Self-Service (126-150)
