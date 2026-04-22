@@ -103,22 +103,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Check for payment callback status
 if (isset($_GET['payment'])) {
-    if ($_GET['payment'] === 'success') $success = 'Payment successful! Your order is confirmed.';
-    if ($_GET['payment'] === 'error') $error = $_GET['message'] ?? 'Payment failed';
+    if ($_GET['payment'] === 'success') $success = t('order.payment_success');
+    if ($_GET['payment'] === 'error')   $error   = $_GET['message'] ?? t('order.payment_failed');
 }
 
 
 $cur = $order['currency'] ?? 'OMR';
 
-adminHeader('Order Payment', 'print');
+adminHeader(t('order.checkout_title'), 'print');
 ?>
 
 <div class="max-w-3xl mx-auto">
     <div class="mb-6">
         <a href="<?= getAdminBasePath() ?>print<?= (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php' ?>" class="text-sm text-gray-500 hover:text-gray-700">
-            <i class="fa-solid fa-arrow-left mr-1"></i> Back to Print Orders
+            <i class="fa-solid fa-arrow-left mr-1"></i> <?= htmlspecialchars(t('order.back_to_orders')) ?>
         </a>
-        <h1 class="text-2xl font-bold mt-2">Order Payment</h1>
+        <h1 class="text-2xl font-bold mt-2"><?= htmlspecialchars(t('order.checkout_title')) ?></h1>
     </div>
 
     <?php if ($error): ?>
@@ -134,19 +134,19 @@ adminHeader('Order Payment', 'print');
 
     <!-- Order Summary -->
     <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
-        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-receipt mr-2 text-gray-400"></i>Order Summary</h2>
+        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-receipt mr-2 text-gray-400"></i><?= htmlspecialchars(t('order.order_summary')) ?></h2>
         <div class="grid grid-cols-2 gap-3 text-sm">
-            <div><span class="text-gray-500">Order:</span> <strong><?= htmlspecialchars($order['order_number'] ?? '') ?></strong></div>
-            <div><span class="text-gray-500">Status:</span>
+            <div><span class="text-gray-500"><?= htmlspecialchars(t('order.order_number')) ?>:</span> <strong><?= htmlspecialchars($order['order_number'] ?? '') ?></strong></div>
+            <div><span class="text-gray-500"><?= htmlspecialchars(t('order.status')) ?>:</span>
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
                     <?= $order['status'] === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' ?>">
                     <?= htmlspecialchars(ucfirst($order['status'] ?? 'pending')) ?>
                 </span>
             </div>
-            <div><span class="text-gray-500">Quantity:</span> <?= (int)$order['quantity'] ?> cards</div>
-            <div><span class="text-gray-500">Paper:</span> <?= htmlspecialchars(ucfirst($order['paper_type'] ?? 'standard')) ?></div>
-            <div><span class="text-gray-500">Finish:</span> <?= htmlspecialchars(ucfirst($order['finish'] ?? 'matte')) ?></div>
-            <div><span class="text-gray-500">Payment:</span>
+            <div><span class="text-gray-500"><?= htmlspecialchars(t('common.quantity')) ?>:</span> <?= htmlspecialchars(t('order.quantity_cards', ['n' => (int)$order['quantity']])) ?></div>
+            <div><span class="text-gray-500"><?= htmlspecialchars(t('order.paper')) ?>:</span> <?= htmlspecialchars(ucfirst($order['paper_type'] ?? 'standard')) ?></div>
+            <div><span class="text-gray-500"><?= htmlspecialchars(t('order.finish')) ?>:</span> <?= htmlspecialchars(ucfirst($order['finish'] ?? 'matte')) ?></div>
+            <div><span class="text-gray-500"><?= htmlspecialchars(t('order.payment')) ?>:</span>
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
                     <?= $order['payment_status'] === 'paid' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700' ?>">
                     <?= htmlspecialchars(ucfirst($order['payment_status'] ?? 'pending')) ?>
@@ -154,15 +154,15 @@ adminHeader('Order Payment', 'print');
             </div>
         </div>
         <div class="border-t mt-4 pt-4 space-y-1">
-            <div class="flex justify-between text-sm"><span class="text-gray-500">Subtotal</span><span><?= number_format($order['subtotal'] ?? 0, 3) ?> <?= $cur ?></span></div>
+            <div class="flex justify-between text-sm"><span class="text-gray-500"><?= htmlspecialchars(t('order.subtotal')) ?></span><span><?= number_format($order['subtotal'] ?? 0, 3) ?> <?= $cur ?></span></div>
             <?php if (($order['setup_fee'] ?? 0) > 0): ?>
-                <div class="flex justify-between text-sm"><span class="text-gray-500">Setup Fee</span><span><?= number_format($order['setup_fee'], 3) ?> <?= $cur ?></span></div>
+                <div class="flex justify-between text-sm"><span class="text-gray-500"><?= htmlspecialchars(t('order.setup_fee')) ?></span><span><?= number_format($order['setup_fee'], 3) ?> <?= $cur ?></span></div>
             <?php endif; ?>
             <?php if (($order['shipping_fee'] ?? 0) > 0): ?>
-                <div class="flex justify-between text-sm"><span class="text-gray-500">Shipping</span><span><?= number_format($order['shipping_fee'], 3) ?> <?= $cur ?></span></div>
+                <div class="flex justify-between text-sm"><span class="text-gray-500"><?= htmlspecialchars(t('order.shipping_fee')) ?></span><span><?= number_format($order['shipping_fee'], 3) ?> <?= $cur ?></span></div>
             <?php endif; ?>
             <?php if (($order['express_fee'] ?? 0) > 0): ?>
-                <div class="flex justify-between text-sm"><span class="text-gray-500">Express Fee</span><span><?= number_format($order['express_fee'], 3) ?> <?= $cur ?></span></div>
+                <div class="flex justify-between text-sm"><span class="text-gray-500"><?= htmlspecialchars(t('order.express_fee')) ?></span><span><?= number_format($order['express_fee'], 3) ?> <?= $cur ?></span></div>
             <?php endif; ?>
             <?php
             $userCur = Currency::getUserCurrency();
@@ -171,7 +171,7 @@ adminHeader('Order Payment', 'print');
             $showSecondary = $userCur !== 'OMR';
             ?>
             <div class="mt-3 rounded-2xl bg-gray-50 p-5 border border-gray-200">
-                <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Order total</div>
+                <div class="text-xs text-gray-500 uppercase tracking-wide mb-1"><?= htmlspecialchars(t('order.order_total')) ?></div>
                 <div class="text-3xl font-extrabold text-gray-900">
                     <?= htmlspecialchars(Currency::format($displayTotal, $userCur)) ?>
                 </div>
@@ -187,7 +187,7 @@ adminHeader('Order Payment', 'print');
     <?php if ($order['payment_status'] !== 'paid'): ?>
     <!-- Payment Options -->
     <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
-        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-credit-card mr-2 text-gray-400"></i>Payment Options</h2>
+        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-credit-card mr-2 text-gray-400"></i><?= htmlspecialchars(t('order.payment_options')) ?></h2>
 
         <!-- Pay Now / Deposit -->
         <form method="POST" class="mb-4" id="payForm">
@@ -200,10 +200,10 @@ adminHeader('Order Payment', 'print');
             <div class="mb-4 p-4 bg-blue-50 border border-blue-100 rounded-xl">
                 <label class="flex items-center gap-2 cursor-pointer mb-3">
                     <input type="checkbox" id="depositToggle" class="rounded border-gray-300 text-blue-600" onchange="toggleDeposit(this)">
-                    <span class="text-sm font-medium text-gray-700">Pay a deposit instead of full amount</span>
+                    <span class="text-sm font-medium text-gray-700"><?= htmlspecialchars(t('order.deposit_toggle')) ?></span>
                 </label>
                 <div id="depositOptions" class="hidden">
-                    <p class="text-xs text-gray-500 mb-2">Choose deposit percentage (balance due before printing starts):</p>
+                    <p class="text-xs text-gray-500 mb-2"><?= htmlspecialchars(t('order.deposit_help')) ?></p>
                     <div class="flex items-center gap-2 flex-wrap">
                         <?php foreach ([25, 30, 50] as $pct): ?>
                         <button type="button" onclick="setDeposit(<?= $pct ?>)"
@@ -219,9 +219,9 @@ adminHeader('Order Payment', 'print');
 
             <button type="submit" id="payBtn" class="w-full bg-blue-600 text-white py-3 px-6 rounded-xl font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2">
                 <i class="fa-solid fa-lock"></i>
-                <span id="payBtnText">Pay Now — <?= number_format($order['total'] ?? 0, 3) ?> <?= $cur ?></span>
+                <span id="payBtnText"><?= htmlspecialchars(t('order.pay_now')) ?> &mdash; <?= number_format($order['total'] ?? 0, 3) ?> <?= $cur ?></span>
             </button>
-            <p class="text-xs text-gray-500 mt-2 text-center">Card, OmanNet, or Apple Pay via Paymob Secure Checkout</p>
+            <p class="text-xs text-gray-500 mt-2 text-center"><?= htmlspecialchars(t('order.paymob_hint')) ?></p>
         </form>
         <script>
         function toggleDeposit(cb) {
@@ -234,12 +234,14 @@ adminHeader('Order Payment', 'print');
             const cur = '<?= $cur ?>';
             const payBtnText = document.getElementById('payBtnText');
             document.querySelectorAll('.deposit-btn').forEach(b => b.classList.remove('bg-blue-600','text-white'));
+            const payDepositTpl = <?= json_encode(t('order.pay_deposit')) ?>;
+            const payNowTpl     = <?= json_encode(t('order.pay_now')) ?>;
             if (pct > 0) {
                 const amt = (total * pct / 100).toFixed(3);
-                payBtnText.textContent = `Pay ${pct}% Deposit — ${amt} ${cur}`;
+                payBtnText.textContent = payDepositTpl.replace(':pct', pct) + ` \u2014 ${amt} ${cur}`;
                 event.target.closest('.deposit-btn').classList.add('bg-blue-600','text-white');
             } else {
-                payBtnText.textContent = `Pay Now — ${total.toFixed(3)} ${cur}`;
+                payBtnText.textContent = payNowTpl + ` \u2014 ${total.toFixed(3)} ${cur}`;
             }
         }
         </script>
@@ -251,11 +253,11 @@ adminHeader('Order Payment', 'print');
             <input type="hidden" name="action" value="charge_credit">
             <button type="submit" class="w-full bg-emerald-600 text-white py-3 px-6 rounded-xl font-medium hover:bg-emerald-700 transition flex items-center justify-center gap-2">
                 <i class="fa-solid fa-building-columns"></i>
-                Charge to Credit Account
+                <?= htmlspecialchars(t('order.charge_credit')) ?>
             </button>
             <p class="text-xs text-gray-500 mt-2 text-center">
-                Available: <?= number_format($checkout['available_credit'], 3) ?> <?= $cur ?>
-                &middot; Terms: <?= strtoupper($checkout['credit_account']['payment_terms'] ?? 'net30') ?>
+                <?= htmlspecialchars(t('order.available')) ?>: <?= number_format($checkout['available_credit'], 3) ?> <?= $cur ?>
+                &middot; <?= htmlspecialchars(t('order.terms')) ?>: <?= strtoupper($checkout['credit_account']['payment_terms'] ?? 'net30') ?>
             </p>
         </form>
         <?php endif; ?>
@@ -265,23 +267,23 @@ adminHeader('Order Payment', 'print');
         <details class="border border-gray-200 rounded-xl p-4 mt-4">
             <summary class="cursor-pointer font-medium text-gray-700 flex items-center gap-2">
                 <i class="fa-solid fa-hand-holding-dollar text-gray-400"></i>
-                Request Credit Account
+                <?= htmlspecialchars(t('order.request_credit')) ?>
             </summary>
             <form method="POST" class="mt-4 space-y-3">
                 <?= csrfField() ?>
                 <input type="hidden" name="action" value="request_credit">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Requested Credit Limit (<?= $cur ?>)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('order.requested_limit', ['cur' => $cur])) ?></label>
                     <input type="number" name="requested_limit" step="0.001" min="0.001" required
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g. 500.000">
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="<?= htmlspecialchars(t('order.limit_placeholder')) ?>">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('order.notes_optional')) ?></label>
                     <textarea name="request_notes" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                              placeholder="Company details, expected order volume..."></textarea>
+                              placeholder="<?= htmlspecialchars(t('order.notes_placeholder')) ?>"></textarea>
                 </div>
                 <button type="submit" class="bg-gray-700 text-white py-2 px-4 rounded-lg hover:bg-gray-800 transition text-sm">
-                    Submit Credit Request
+                    <?= htmlspecialchars(t('order.submit_credit_request')) ?>
                 </button>
             </form>
         </details>
@@ -290,28 +292,28 @@ adminHeader('Order Payment', 'print');
     <?php else: ?>
     <div class="bg-green-50 border border-green-200 text-green-700 px-6 py-5 rounded-xl mb-6 text-center">
         <i class="fa-solid fa-circle-check text-2xl mb-2"></i>
-        <p class="font-semibold">Payment Complete</p>
-        <p class="text-sm mb-3">Paid via <?= htmlspecialchars(ucfirst($order['payment_method'] ?? 'online')) ?></p>
+        <p class="font-semibold"><?= htmlspecialchars(t('order.payment_complete')) ?></p>
+        <p class="text-sm mb-3"><?= htmlspecialchars(t('order.paid_via', ['method' => ucfirst($order['payment_method'] ?? 'online')])) ?></p>
         <a href="<?= getAdminBasePath() ?>order-receipt<?= (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php' ?>?order=<?= $orderId ?>"
            class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">
-            <i class="fa-solid fa-receipt"></i> View Receipt
+            <i class="fa-solid fa-receipt"></i> <?= htmlspecialchars(t('order.view_receipt')) ?>
         </a>
     </div>
     <?php endif; ?>
 
     <!-- Upload PO -->
     <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
-        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-file-invoice mr-2 text-gray-400"></i>Purchase Order (Optional)</h2>
+        <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-file-invoice mr-2 text-gray-400"></i><?= htmlspecialchars(t('order.po_title')) ?></h2>
         <?php if (!empty($order['po_file_path'])): ?>
             <div class="bg-gray-50 rounded-lg p-3 mb-3 flex items-center justify-between">
                 <div>
-                    <span class="text-sm text-green-600 font-medium"><i class="fa-solid fa-check mr-1"></i>PO Uploaded</span>
+                    <span class="text-sm text-green-600 font-medium"><i class="fa-solid fa-check mr-1"></i><?= htmlspecialchars(t('order.po_uploaded')) ?></span>
                     <?php if (!empty($order['po_number'])): ?>
                         <span class="text-sm text-gray-500 ml-2">#<?= htmlspecialchars($order['po_number']) ?></span>
                     <?php endif; ?>
                 </div>
                 <a href="<?= getBasePath() . htmlspecialchars($order['po_file_path']) ?>" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
-                    <i class="fa-solid fa-eye mr-1"></i>View
+                    <i class="fa-solid fa-eye mr-1"></i><?= htmlspecialchars(t('order.po_view')) ?>
                 </a>
             </div>
         <?php endif; ?>
@@ -320,17 +322,17 @@ adminHeader('Order Payment', 'print');
             <input type="hidden" name="action" value="upload_po">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">PO Number</label>
-                    <input type="text" name="po_number" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="e.g. PO-2026-001">
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('order.po_number_label')) ?></label>
+                    <input type="text" name="po_number" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="<?= htmlspecialchars(t('order.po_number_placeholder')) ?>">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">PO Document</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('order.po_document_label')) ?></label>
                     <input type="file" name="po_file" accept=".pdf,.jpg,.jpeg,.png" required class="w-full text-sm">
-                    <p class="text-xs text-gray-400 mt-1">PDF, JPG, PNG — max 5MB</p>
+                    <p class="text-xs text-gray-400 mt-1"><?= htmlspecialchars(t('order.po_document_hint')) ?></p>
                 </div>
             </div>
             <button type="submit" class="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition text-sm">
-                <i class="fa-solid fa-upload mr-1"></i> Upload PO
+                <i class="fa-solid fa-upload mr-1"></i> <?= htmlspecialchars(t('order.upload_po')) ?>
             </button>
         </form>
     </div>
