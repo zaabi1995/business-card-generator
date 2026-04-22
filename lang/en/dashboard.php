@@ -28,6 +28,23 @@ return [
     'qa_share_title'      => 'Share links',
     'qa_share_sub'        => 'Manage sharing options',
 
+    // KPI cards (Cat B action 520, partial)
+    'kpi_front_templates' => 'Front templates',
+    'kpi_back_templates'  => 'Back templates',
+    'kpi_employees'       => 'Employees',
+    'kpi_generated_cards' => 'Generated cards',
+
+    // Analytics widget periods
+    'full_analytics'      => 'Full analytics',
+    'period_7d'           => 'Last 7 days',
+    'period_30d'          => 'Last 30 days',
+    'period_all'          => 'All time',
+    'views_empty'         => 'No views yet. Share your digital cards to start tracking.',
+
+    // Free-plan usage indicator
+    'free_plan_usage'     => 'Free plan usage',
+    'near_limit'          => 'Near limit',
+
     // Card designs section
     'card_designs'        => 'Card designs',
     'create_new_design'   => 'Create new card design',

@@ -769,7 +769,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
             </div>
             <div>
                 <p class="text-3xl font-bold text-gray-900"><?php echo count($frontTemplates); ?></p>
-                <p class="text-gray-500 text-sm">Front Templates</p>
+                <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('dashboard.kpi_front_templates')) ?></p>
             </div>
         </div>
     </div>
@@ -781,7 +781,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
             </div>
             <div>
                 <p class="text-3xl font-bold text-gray-900"><?php echo count($backTemplates); ?></p>
-                <p class="text-gray-500 text-sm">Back Templates</p>
+                <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('dashboard.kpi_back_templates')) ?></p>
             </div>
         </div>
     </div>
@@ -793,7 +793,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
             </div>
             <div>
                 <p class="text-3xl font-bold text-gray-900"><?php echo $employeeCount; ?></p>
-                <p class="text-gray-500 text-sm">Employees</p>
+                <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('dashboard.kpi_employees')) ?></p>
             </div>
         </div>
     </div>
@@ -805,7 +805,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
             </div>
             <div>
                 <p class="text-3xl font-bold text-gray-900"><?php echo $generatedCount; ?></p>
-                <p class="text-gray-500 text-sm">Generated Cards</p>
+                <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('dashboard.kpi_generated_cards')) ?></p>
             </div>
         </div>
     </div>
@@ -829,22 +829,22 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
             </div>
         </div>
         <a href="<?= htmlspecialchars($_analyticsUrl) ?>" class="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
-            Full Analytics <i class="fa-solid fa-arrow-right text-xs"></i>
+            <?= htmlspecialchars(t('dashboard.full_analytics')) ?> <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
         </a>
     </div>
     <!-- Period stats -->
     <div class="grid grid-cols-3 gap-4 mb-5">
         <div class="text-center p-3 rounded-lg bg-gray-50">
             <p class="text-2xl font-bold text-gray-900"><?= number_format($views7d) ?></p>
-            <p class="text-xs text-gray-500 mt-0.5">Last 7 days</p>
+            <p class="text-xs text-gray-500 mt-0.5"><?= htmlspecialchars(t('dashboard.period_7d')) ?></p>
         </div>
         <div class="text-center p-3 rounded-lg bg-gray-50">
             <p class="text-2xl font-bold text-gray-900"><?= number_format($views30d) ?></p>
-            <p class="text-xs text-gray-500 mt-0.5">Last 30 days</p>
+            <p class="text-xs text-gray-500 mt-0.5"><?= htmlspecialchars(t('dashboard.period_30d')) ?></p>
         </div>
         <div class="text-center p-3 rounded-lg bg-gray-50">
             <p class="text-2xl font-bold text-gray-900"><?= number_format($viewsAllTime) ?></p>
-            <p class="text-xs text-gray-500 mt-0.5">All time</p>
+            <p class="text-xs text-gray-500 mt-0.5"><?= htmlspecialchars(t('dashboard.period_all')) ?></p>
         </div>
     </div>
     <!-- 7-day bar chart -->
@@ -859,7 +859,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
         <?php endforeach; ?>
     </div>
     <?php if ($viewsAllTime === 0): ?>
-    <p class="text-center text-sm text-gray-400 mt-3">No views yet. Share your digital cards to start tracking.</p>
+    <p class="text-center text-sm text-gray-400 mt-3"><?= htmlspecialchars(t('dashboard.views_empty')) ?></p>
     <?php endif; ?>
 </div>
 <?php endif; ?>
@@ -874,16 +874,16 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 <div class="bg-white rounded-xl border <?= $nearLimit ? 'border-amber-300' : 'border-gray-100' ?> shadow-sm p-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
     <div class="flex-1 min-w-0">
         <p class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-            <i class="fa-solid fa-gauge-simple text-gray-400"></i>
-            Free Plan Usage
+            <i class="fa-solid fa-gauge-simple text-gray-400" aria-hidden="true"></i>
+            <?= htmlspecialchars(t('dashboard.free_plan_usage')) ?>
             <?php if ($nearLimit): ?>
-            <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Near limit</span>
+            <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium"><?= htmlspecialchars(t('dashboard.near_limit')) ?></span>
             <?php endif; ?>
         </p>
         <div class="flex flex-col sm:flex-row gap-4">
             <div class="flex-1">
                 <div class="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>Employees</span>
+                    <span><?= htmlspecialchars(t('dashboard.kpi_employees')) ?></span>
                     <span class="font-medium <?= $employeeCount >= 5 ? 'text-red-600' : ($employeeCount >= 4 ? 'text-amber-600' : 'text-gray-600') ?>"><?= $employeeCount ?>/5</span>
                 </div>
                 <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
