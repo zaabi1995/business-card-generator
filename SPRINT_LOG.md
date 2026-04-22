@@ -125,3 +125,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-23 06:05 | #509 | 72e9b4d | Cat U final self-review: i18n+health+erp all green, 18 crons + 20 migrations, 138/140 Playwright passed 2.7min prod. No new actions discovered.
 2026-04-23 06:20 | #510 | (vault) | Cat U sprint closed. Retro at ~/obsidian/claude-vault/cardify-sprint-retro.md. 288 closed + 177 partial + 63 queued across 119 iters. 5 wins + 5 regrets + 3 surprises + 1-sentence takeaway.
 2026-04-23 06:30 | #519~ | skip | Cat B: BLOCKED on human Arabic business writer per action text — not auto-translatable. Queued 843.
+2026-04-23 06:50 | #520~ | 4d0dc5a | Cat B dashboard i18n: 10 strings (KPI + analytics + free-plan) wrapped + EN/AR, 13 keys added. Remaining 50 → action 844.
