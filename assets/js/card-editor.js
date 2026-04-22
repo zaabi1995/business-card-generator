@@ -475,21 +475,42 @@ class CardEditor {
                 throw new Error('Fabric Image class not found');
             }
 
-            const img = await ImageClass.fromURL(imageUrl, {
-                crossOrigin: 'anonymous'
-            });
+            // SVGs need Fabric's native SVG loader, otherwise Image.fromURL
+            // rasterizes them using the browser's naturalWidth/Height which
+            // defaults to 300x150 for SVGs with mm-based or missing sizing,
+            // producing a badly-zoomed preview. loadSVGFromURL respects the
+            // viewBox and hands us a correctly-proportioned Group.
+            const isSvg = /\.svg(\?|$)/i.test(imageUrl);
+            let img;
+            if (isSvg && typeof this.fabricRef.loadSVGFromURL === 'function') {
+                img = await this._loadSvgAsImage(imageUrl);
+            } else {
+                img = await ImageClass.fromURL(imageUrl, {
+                    crossOrigin: 'anonymous'
+                });
+            }
 
             // Default transform: stretch artwork to exactly fill the canvas.
             // Matching aspects render pixel-perfect; mismatched aspects
             // stretch rather than crop. If a saved transform is supplied
             // (user previously moved/resized the background), restore it.
+            //
+            // Prefer the SVG's parsed viewBox width/height when we have one
+            // (set by _loadSvgAsImage) over the Group's recomputed bbox,
+            // because groupSVGElements can round/change width when children
+            // sit inside the viewBox with padding.
+            const naturalW = (img._svgWidth && img._svgWidth > 0) ? img._svgWidth
+                : (img.width && img.width > 0 ? img.width : this.canvas.width);
+            const naturalH = (img._svgHeight && img._svgHeight > 0) ? img._svgHeight
+                : (img.height && img.height > 0 ? img.height : this.canvas.height);
+
             let t = transform;
             if (!t || typeof t !== 'object') {
                 t = {
                     left: 0,
                     top: 0,
-                    scaleX: this.canvas.width / img.width,
-                    scaleY: this.canvas.height / img.height,
+                    scaleX: this.canvas.width / naturalW,
+                    scaleY: this.canvas.height / naturalH,
                     angle: 0
                 };
             }
@@ -540,6 +561,47 @@ class CardEditor {
             scaleY: typeof img.scaleY === 'number' ? img.scaleY : 1,
             angle: img.angle || 0
         };
+    }
+
+    async _loadSvgAsImage(imageUrl) {
+        // Fabric.js 7: loadSVGFromURL returns a Promise in 7.x,
+        // callback-style in 6.x. Support both so this helper survives
+        // version bumps.
+        const fabricRef = this.fabricRef;
+        const loaded = await new Promise((resolve, reject) => {
+            try {
+                const ret = fabricRef.loadSVGFromURL(imageUrl, (objects, options) => {
+                    resolve({ objects: objects, options: options });
+                });
+                if (ret && typeof ret.then === 'function') {
+                    ret.then(function(r) { resolve(r); }).catch(reject);
+                }
+            } catch (e) { reject(e); }
+        });
+
+        const objects = loaded.objects || [];
+        const options = loaded.options || {};
+        const GroupClass = fabricRef.Group || (typeof fabric !== 'undefined' ? fabric.Group : null);
+        const util = fabricRef.util || (typeof fabric !== 'undefined' ? fabric.util : null);
+
+        let group;
+        if (util && typeof util.groupSVGElements === 'function') {
+            group = util.groupSVGElements(objects, options);
+        } else if (GroupClass) {
+            group = new GroupClass(objects, {});
+        } else {
+            throw new Error('Fabric Group class not available');
+        }
+
+        // Stash the viewBox dims so loadBackground can scale against the
+        // SVG's true intrinsic size, not Fabric's post-grouping bbox.
+        if (typeof options.width === 'number' && options.width > 0) {
+            group._svgWidth = options.width;
+        }
+        if (typeof options.height === 'number' && options.height > 0) {
+            group._svgHeight = options.height;
+        }
+        return group;
     }
 
     setBackgroundLocked(locked) {
