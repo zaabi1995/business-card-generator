@@ -2748,15 +2748,49 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                         if (enabled) {
                             var field = this.selectedTemplate.fields[key];
                             var dims = this.getCanvasDimensions();
-                            // Use sensible defaults if position is missing or would be off-screen
-                            var x = (field.x > 0 && field.x < dims.width - 50) ? field.x : dims.width / 2;
-                            var y = (field.y > 0 && field.y < dims.height - 20) ? field.y : dims.height / 2;
-                            var fontSize = field.fontSize || 16;
-                            var fontFamily = field.fontFamily || 'Inter';
-                            var fill = field.fill || field.color || '#333333';
-                            // Determine text alignment - default based on field type (Arabic = right, English = left)
+
+                            // Alignment/origin first so we can pick a sane
+                            // default X relative to the *current* canvas.
                             var textAlign = field.textAlign || (key.endsWith('_ar') ? 'right' : 'left');
                             var originX = field.originX || (textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'right' : 'left'));
+
+                            // Role-based vertical slot so name/position/company
+                            // each land in their own lane when first enabled.
+                            var verticalSlot = {
+                                name_en: 60,      name_ar: 60,
+                                position_en: 110, position_ar: 110,
+                                department_en: 155, department_ar: 155,
+                                company_en: 195,  company_ar: 195,
+                                phone: 245,       phone_ar: 245,
+                                mobile: 285,      mobile_ar: 285,
+                                fax: 325,         fax_ar: 325,
+                                email: 365,
+                                website: 405,     website_ar: 405,
+                                address: 445,     address_en: 445, address_ar: 445
+                            };
+                            var defaultY = verticalSlot[key] || 60;
+
+                            // Default X depends on alignment so right-aligned
+                            // Arabic text actually hugs the right edge of the
+                            // current card, not a hard-coded 1000px.
+                            var insetX = 60;
+                            var defaultX;
+                            if (originX === 'right') defaultX = dims.width - insetX;
+                            else if (originX === 'center') defaultX = dims.width / 2;
+                            else defaultX = insetX;
+
+                            // Trust stored coords only if they fall inside
+                            // the current canvas and make sense for this
+                            // origin (right-origin needs x > 0, left-origin
+                            // needs x < canvas.width).
+                            var xValid = typeof field.x === 'number' && field.x > 10 && field.x < dims.width - 10;
+                            var yValid = typeof field.y === 'number' && field.y > 0 && field.y < dims.height - 10;
+                            var x = xValid ? field.x : defaultX;
+                            var y = yValid ? field.y : defaultY;
+
+                            var fontSize = field.fontSize || 16;
+                            var fontFamily = field.fontFamily || (key.endsWith('_ar') ? 'Cairo' : 'Inter');
+                            var fill = field.fill || field.color || '#333333';
                             
                             this.cardEditor.addTextField(key, {
                                 text: this.getSampleText(key),
