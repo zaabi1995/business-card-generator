@@ -1757,14 +1757,18 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
             customHeight: 2,
             customUnit: 'in', // 'in' or 'mm'
             
-            // Font categories for the font selector
+            // Font categories for the font selector.
+            // Myriad Pro isn't available on Google Fonts (Adobe licensed).
+            // Source Sans 3 is its closest free cousin (same designer at
+            // Adobe) and Hind is another near-twin. Add an Adobe Fonts
+            // kit later for Myriad Pro if the license is acquired.
             fontCategories: {
-                'Sans-Serif': ['Inter', 'Plus Jakarta Sans', 'Montserrat', 'Roboto', 'Poppins', 'Open Sans', 'Lato', 'Nunito', 'Raleway', 'Work Sans', 'DM Sans', 'Outfit', 'Manrope', 'Urbanist', 'Lexend', 'Sora', 'Rubik', 'Quicksand', 'Ubuntu', 'Barlow', 'Jost'],
-                'Serif': ['Playfair Display', 'Merriweather', 'Lora', 'PT Serif', 'Libre Baskerville', 'EB Garamond', 'Cormorant Garamond', 'Spectral', 'Noto Serif', 'Vollkorn', 'Bodoni Moda'],
-                'Display': ['Bebas Neue', 'Oswald', 'Anton', 'Archivo Black', 'Righteous', 'Teko', 'Big Shoulders Display', 'Fredoka'],
-                'Script': ['Dancing Script', 'Pacifico', 'Great Vibes', 'Sacramento', 'Allura', 'Lobster', 'Caveat', 'Kaushan Script'],
-                'Arabic العربية': ['Cairo', 'Tajawal', 'Almarai', 'Noto Kufi Arabic', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Readex Pro', 'El Messiri', 'Changa', 'Reem Kufi', 'Amiri', 'Scheherazade New', 'Mada', 'Lalezar', 'Lemonada', 'Aref Ruqaa', 'Mirza', 'Rakkas', 'Baloo Bhaijaan 2', 'Noto Naskh Arabic', 'Noto Nastaliq Urdu', 'Lateef', 'Harmattan', 'Markazi Text', 'Gulzar'],
-                'Monospace': ['Roboto Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'Space Mono']
+                'Sans-Serif': ['Inter', 'Plus Jakarta Sans', 'Montserrat', 'Roboto', 'Poppins', 'Open Sans', 'Lato', 'Nunito', 'Nunito Sans', 'Raleway', 'Work Sans', 'DM Sans', 'Outfit', 'Manrope', 'Urbanist', 'Lexend', 'Sora', 'Rubik', 'Quicksand', 'Ubuntu', 'Barlow', 'Jost', 'Source Sans 3', 'Hind', 'Mulish', 'PT Sans', 'Cabin', 'Assistant', 'Karla', 'Figtree', 'Red Hat Display', 'Red Hat Text', 'Public Sans', 'Archivo', 'IBM Plex Sans', 'Onest', 'Geist'],
+                'Serif': ['Playfair Display', 'Merriweather', 'Lora', 'PT Serif', 'Libre Baskerville', 'EB Garamond', 'Cormorant Garamond', 'Spectral', 'Noto Serif', 'Vollkorn', 'Bodoni Moda', 'Source Serif 4', 'Fraunces', 'Crimson Pro', 'Alegreya', 'Libre Caslon Text', 'Newsreader', 'Roboto Serif'],
+                'Display': ['Bebas Neue', 'Oswald', 'Anton', 'Archivo Black', 'Righteous', 'Teko', 'Big Shoulders Display', 'Fredoka', 'Abril Fatface', 'Bungee', 'Comfortaa', 'Josefin Sans', 'Alfa Slab One', 'Chivo', 'Russo One', 'Unbounded'],
+                'Script': ['Dancing Script', 'Pacifico', 'Great Vibes', 'Sacramento', 'Allura', 'Lobster', 'Caveat', 'Kaushan Script', 'Satisfy', 'Shadows Into Light', 'Homemade Apple', 'Amatic SC', 'Parisienne'],
+                'Arabic العربية': ['Cairo', 'Tajawal', 'Almarai', 'Noto Kufi Arabic', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Readex Pro', 'El Messiri', 'Changa', 'Reem Kufi', 'Amiri', 'Scheherazade New', 'Mada', 'Lalezar', 'Lemonada', 'Aref Ruqaa', 'Mirza', 'Rakkas', 'Baloo Bhaijaan 2', 'Noto Naskh Arabic', 'Noto Nastaliq Urdu', 'Lateef', 'Harmattan', 'Markazi Text', 'Gulzar', 'Vazirmatn', 'Noto Sans Arabic Kufi'],
+                'Monospace': ['Roboto Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'Space Mono', 'IBM Plex Mono', 'Courier Prime', 'Inconsolata']
             },
 
             // Font size is stored in canvas backstore pixels so the PDF/
