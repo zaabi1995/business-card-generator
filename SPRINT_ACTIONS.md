@@ -531,7 +531,7 @@
 - [x] 487. E2E Safari iOS latest: playwright.config.ts exposes "Safari iOS" project using devices["iPhone 14"] on webkit engine. Responsive sweep 27/27 passed on webkit vs live prod in 44s. Opt-in: npx playwright test --project="Safari iOS". → 540c174
 - [x] 488. E2E Chrome Android latest: same config adds "Chrome Android" project using devices["Pixel 7"] UA + 412×915. Opt-in: npx playwright test --project="Chrome Android". → 540c174
 - [x] 489. E2E slow-3G throttled: tests/e2e/slow-3g.spec.ts applies CDP Network.emulateNetworkConditions (400 Kbps up+down, 400ms latency) to /, /api/health, /pricing, /status; asserts 200 + marker within per-page budget and attaches JSON timing for trend analysis. Live prod: / 11.2s, /api/health 0.6s, /pricing 12.6s, /status 10.1s, 4/4 passed 35.0s. → 34c404e
-- [ ] 490. QA NFC write flow with test tag.
+- [x] 490. QA NFC write flow: tests/e2e/nfc-flow.spec.ts auth-gates /admin/nfc/batch + /admin/nfc/write in EN+AR (4 tests) + mark-programmed GET leak probe (1 test), 5/5 passed prod. Plus ops/qa-nfc-manual.md 5-minute Chrome-Android physical-tag QA procedure with happy/negative paths + regression triage. → b135ae3
 - [ ] 491. QA Apple Wallet pass install on iPhone.
 - [ ] 492. QA Google Wallet pass install on Android.
 - [ ] 493. QA keyboard-only navigation.
@@ -886,3 +886,4 @@
 - [ ] 832. Full analytics happy-path E2E on stage: logged-in admin, load /admin/analytics, change month filter via the date picker, click Export CSV, assert a .csv downloaded with expected headers (employee, taps, saves, wa_clicks, site_clicks, leads). Needs stage + seeded analytics data.
 - [ ] 833. Full marketplace happy-path E2E on stage: logged-in admin, browse /print-shops, apply wilayat filter + sort by cheapest, click a shop card, assert /admin/order-checkout?print_shop_id=X loads with that shop preselected. Needs stage + seeded shops.
 - [ ] 834. Extend mobile-responsive.spec.ts to cover admin surfaces (/admin/dashboard /admin/employees /admin/print etc) at 375px+414px on stage, once a logged-in test user exists. Needs stage (822) + test session.
+- [ ] 835. Walk ops/qa-nfc-manual.md once per month on prod with an NTAG test tag from a fresh stock batch; record result + tag UID + date in ops/qa-nfc-log.md (create on first pass).

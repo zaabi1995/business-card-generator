@@ -105,3 +105,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-23 01:00 | #486 | e13aeaf | Cat U tablet: added 768×1024 to responsive sweep, 27/27 passed prod 31.6s.
 2026-04-23 01:20 | #487+488 | 540c174 | Cat U cross-browser: playwright.config Safari iOS (webkit) + Chrome Android (Pixel 7) projects, 27/27 responsive sweep passed on webkit vs prod.
 2026-04-23 01:35 | #489 | 34c404e | Cat U slow-3G: 400Kbps + 400ms CDP throttling, 4/4 passed prod with elapsed attachments for trend tracking.
+2026-04-23 01:50 | #490 | b135ae3 | Cat U NFC: 5-check Playwright spec (auth gates + GET leak probe) 5/5 passed + ops/qa-nfc-manual.md hardware procedure + queued monthly physical run 835.
