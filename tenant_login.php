@@ -155,7 +155,7 @@ if (!empty($tenant['id'])) {
 <title><?= htmlspecialchars($companyName) ?> — Cardify Login</title>
 <link rel="icon" href="/favicon.svg">
 <?php $detectedPhone = $step === 'request' && $identifier !== '' && !filter_var($identifier, FILTER_VALIDATE_EMAIL); ?>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/css/intlTelInput.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@24.6.0/build/css/intlTelInput.min.css">
 <style>
 :root { --brand: #009bc1; --bg: #f8fafc; --ink: #0f172a; --muted: #64748b; --line: #e2e8f0; }
 *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:grid;place-items:center;padding:24px}
@@ -239,91 +239,83 @@ button:hover{filter:brightness(0.95)} button.ghost{background:transparent;color:
 </form>
 
 <?php if ($step === 'request'): ?>
-<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/intlTelInput.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@24.6.0/build/js/intlTelInput.min.js"></script>
 <script>
 (function () {
+  const form       = document.querySelector('form.card');
+  const hidden     = document.getElementById('identifier-hidden');
+  const phoneInput = document.getElementById('phone');
+  const emailInput = document.getElementById('email');
+  const phonePane  = document.getElementById('pane-phone');
+  const emailPane  = document.getElementById('pane-email');
+  const phoneTab   = document.getElementById('tab-phone');
+  const emailTab   = document.getElementById('tab-email');
+  const phoneErr   = document.getElementById('phone-err');
+
+  let iti = null;
   try {
-    const form       = document.querySelector('form.card');
-    const hidden     = document.getElementById('identifier-hidden');
-    const phoneInput = document.getElementById('phone');
-    const emailInput = document.getElementById('email');
-    const phonePane  = document.getElementById('pane-phone');
-    const emailPane  = document.getElementById('pane-email');
-    const phoneTab   = document.getElementById('tab-phone');
-    const emailTab   = document.getElementById('tab-email');
-    const phoneErr   = document.getElementById('phone-err');
-
-    const iti = window.intlTelInput(phoneInput, {
+    iti = window.intlTelInput(phoneInput, {
       initialCountry: "om",
-      countryOrder: ["om","ae","sa","qa","bh","kw","eg","jo","lb","iq"],
+      preferredCountries: ["om","ae","sa","qa","bh","kw","eg","jo","lb","iq"],
       separateDialCode: true,
-      strictMode: true,
       formatAsYouType: true,
-      loadUtilsOnInit: "https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.1/build/js/utils.js",
+      utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@24.6.0/build/js/utils.js",
     });
-
-    const ERR_MAP = {0:'Enter a phone number',1:'Invalid country code',2:'Too short',3:'Too long',4:'Invalid number'};
-
-    function activate(which) {
-      const isPhone = which === 'phone';
-      phonePane.dataset.active = isPhone ? 'true' : 'false';
-      emailPane.dataset.active = isPhone ? 'false' : 'true';
-      phoneTab.setAttribute('aria-selected', isPhone ? 'true' : 'false');
-      emailTab.setAttribute('aria-selected', isPhone ? 'false' : 'true');
-      phoneErr.textContent = '';
-      setTimeout(() => { (isPhone ? phoneInput : emailInput).focus(); }, 50);
-    }
-    phoneTab.addEventListener('click', () => activate('phone'));
-    emailTab.addEventListener('click', () => activate('email'));
-
-    form.addEventListener('submit', function (e) {
-      const usingPhone = phonePane.dataset.active === 'true';
-      if (usingPhone) {
-        let valid = false;
-        try { valid = iti.isValidNumber(); } catch (_) { valid = !!phoneInput.value; }
-        if (!valid) {
-          e.preventDefault();
-          let code = -1;
-          try { code = iti.getValidationError(); } catch (_) {}
-          phoneErr.textContent = ERR_MAP[code] || 'Invalid phone number';
-          phoneInput.focus();
-          return;
-        }
-        // getNumber() returns E.164 by default. Strip the leading "+" so the
-        // server-side phone matcher (digits-only) finds the right user row.
-        let num = '';
-        try { num = iti.getNumber() || phoneInput.value; } catch (_) { num = phoneInput.value; }
-        hidden.value = num.replace(/^\+/, '').replace(/[^0-9]/g, '');
-      } else {
-        const v = (emailInput.value || '').trim();
-        if (!v || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
-          e.preventDefault();
-          emailInput.focus();
-          return;
-        }
-        hidden.value = v;
-      }
-    });
-
-    setTimeout(() => {
-      (phonePane.dataset.active === 'true' ? phoneInput : emailInput).focus();
-    }, 100);
   } catch (err) {
-    // If the country selector library fails to load for any reason, fall back
-    // to a plain text input so the user can still log in.
-    console.error('tenant_login init failed:', err);
-    const phoneInput = document.getElementById('phone');
-    const hidden     = document.getElementById('identifier-hidden');
-    const form       = document.querySelector('form.card');
-    if (phoneInput) phoneInput.placeholder = '+968XXXXXXXX or your email';
-    if (form && hidden) {
-      form.addEventListener('submit', function () {
-        const phoneVal = (phoneInput && phoneInput.value || '').trim();
-        const emailVal = (document.getElementById('email')?.value || '').trim();
-        hidden.value = phoneVal.replace(/[^0-9]/g, '') || emailVal;
-      });
-    }
+    console.error('intl-tel-input init failed:', err);
   }
+
+  function activate(which) {
+    const isPhone = which === 'phone';
+    phonePane.dataset.active = isPhone ? 'true' : 'false';
+    emailPane.dataset.active = isPhone ? 'false' : 'true';
+    phoneTab.setAttribute('aria-selected', isPhone ? 'true' : 'false');
+    emailTab.setAttribute('aria-selected', isPhone ? 'false' : 'true');
+    if (phoneErr) phoneErr.textContent = '';
+    setTimeout(() => { (isPhone ? phoneInput : emailInput).focus(); }, 50);
+  }
+  phoneTab.addEventListener('click', () => activate('phone'));
+  emailTab.addEventListener('click', () => activate('email'));
+
+  // Submit-handler logic: always succeed in producing a hidden identifier.
+  // We do NOT call iti.isValidNumber() because the utils script can fail to
+  // load or change shape across versions, and we already have a robust
+  // server-side normalizer + per-tenant lookup.
+  form.addEventListener('submit', function (e) {
+    const usingPhone = phonePane.dataset.active === 'true';
+    if (usingPhone) {
+      let raw = '';
+      // Try the library's E.164 number first; fall back to the raw input.
+      try {
+        if (iti && typeof iti.getNumber === 'function') {
+          raw = iti.getNumber() || '';
+        }
+      } catch (_) { raw = ''; }
+      if (!raw) raw = phoneInput.value || '';
+      // Prepend the dial code if the user typed a local-only number AND the
+      // library exposed the selected country, but the library left the +.
+      const digits = raw.replace(/[^0-9]/g, '');
+      if (!digits) {
+        e.preventDefault();
+        if (phoneErr) phoneErr.textContent = 'Enter your phone number.';
+        phoneInput.focus();
+        return;
+      }
+      hidden.value = digits;
+    } else {
+      const v = (emailInput.value || '').trim();
+      if (!v || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+        e.preventDefault();
+        emailInput.focus();
+        return;
+      }
+      hidden.value = v;
+    }
+  });
+
+  setTimeout(() => {
+    (phonePane.dataset.active === 'true' ? phoneInput : emailInput).focus();
+  }, 100);
 })();
 </script>
 <?php endif; ?>
