@@ -482,7 +482,7 @@
 - [x] 444. Bilingual ERP-linked invoice receipt: admin/order-receipt.php now switches <html lang/dir> + IBM Plex Sans Arabic on ?lang=en/ar; one-tap EN/AR switcher in print bar; ERP invoice number surfaces next to payment method; bilingual legal-entity footer (BHD Group / CR 1334733 / info@cardify.om). 2 new lang keys parity OK. → 30950ee
 - [x] 445. 5% Oman VAT breakdown on invoice: migration 089 adds tax_rate/tax_amount/subtotal_excl_vat; includes/Tax.php (OMAN_VAT=0.05, breakdown/persistOnOrder/breakdownFromOrder) extracts from tax-inclusive totals; admin/order-receipt.php shows 3-row breakdown (Subtotal excl + VAT 5% + Total incl) with lazy backfill on first view. 3 new lang keys EN+AR parity OK. → 7c6c284
 - [x] 446. Company CR + tax ID on billing: migration 090 adds cr_number/tax_id/vat_registered/billing_address/city/postcode/country on companies; admin/billing-info.php CRUD page registered in company_admin pageMap; receipt shows billing address + CR No + Tax ID + ship_to block. 3 new order keys + new billing_info namespace EN+AR parity OK. → de5893c
-- [ ] 447. Invoice list view in company admin with download.
+- [x] 447. Invoice list in company admin: /admin/invoices (page registered), summary strip (count+total+VAT), table with year filter + search by order/ERP invoice number + download button opening bilingual receipt for Save-as-PDF. Tax lazy-fallback for legacy orders. 14 lang keys EN+AR parity OK. → abd348a
 - [ ] 448. Payment history view.
 - [ ] 449. Credit statement view (downloadable PDF).
 - [ ] 450. Auto-charge card-credits on card-generate (not on order).

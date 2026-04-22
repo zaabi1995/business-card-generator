@@ -67,3 +67,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-22 15:10 | #444 | 30950ee | Cat S bilingual invoice receipt: admin/order-receipt.php switches lang/dir/font on ?lang; EN/AR switcher; shows erp_invoice_number; bilingual BHD legal footer. Queued 811 for BHD-ERP-side bilingual PDF template.
 2026-04-22 15:25 | #445 | 7c6c284 | Cat S VAT 5%: migration 089 + includes/Tax.php (breakdown/persist) + receipt shows subtotal/VAT/total rows with lazy backfill; 3 lang keys parity OK. Migration applied live.
 2026-04-22 15:40 | #446 | de5893c | Cat S CR/tax ID: migration 090 (7 company columns) + admin/billing-info.php CRUD + pageMap registration + receipt Billed-to block with CR/Tax ID/address. Billing_info namespace + order keys parity OK. Migration applied live.
+2026-04-22 15:55 | #447 | abd348a | Cat S /admin/invoices: year+search filters, summary strip, table with Download→receipt, pageMap registered. 14 keys parity OK.
