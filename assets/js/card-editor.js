@@ -468,15 +468,18 @@ class CardEditor {
                 crossOrigin: 'anonymous'
             });
             
-            // Scale to fit canvas
+            // Stretch the uploaded artwork to exactly fill the canvas so it
+            // matches what the user designed (no cropping, no letterboxing).
+            // When the upload's aspect ratio equals the card aspect (e.g. a
+            // 92x57 mm SVG on a 92x57 mm canvas) scaleX === scaleY and the
+            // art renders pixel-perfect. If aspects differ, fill is less
+            // destructive than cover (which crops) or contain (which gaps).
             const scaleX = this.canvas.width / img.width;
             const scaleY = this.canvas.height / img.height;
-            const scale = Math.max(scaleX, scaleY);
-            
+
             img.set({
-                scaleX: scale,
-                scaleY: scale,
-                // Fabric.js 7.x: explicitly set origin
+                scaleX: scaleX,
+                scaleY: scaleY,
                 originX: 'left',
                 originY: 'top',
                 left: 0,
