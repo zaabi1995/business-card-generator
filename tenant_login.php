@@ -19,6 +19,10 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
+// Defeat any intermediate caching: the form/verify pages must always be fresh.
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+
 $tenant = TenantHost::resolve();
 if (!$tenant) {
     http_response_code(404);
@@ -64,9 +68,18 @@ function tl_lookup_user(string $identifier, string $companyId): ?array {
     ) ?: null;
 }
 
-$step = $_POST['step'] ?? 'request';
+// PRG state: when a previous POST set up an OTP send, force the verify step
+// on the subsequent GET so the page visibly transitions and the back/forward
+// buttons don't replay the form submit.
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && !empty($_SESSION['tlogin_pending_verify'])) {
+    $_SESSION['tlogin_pending_verify'] = false;
+    $step = 'verify';
+} else {
+    $step = $_POST['step'] ?? 'request';
+}
 $error = null;
-$notice = null;
+$notice = $_SESSION['tlogin_notice'] ?? null;
+unset($_SESSION['tlogin_notice']);
 $identifier = trim($_POST['identifier'] ?? $_SESSION['tlogin_identifier'] ?? '');
 $channel = null;
 $displayIdentifier = $identifier;
@@ -88,15 +101,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
                 $purpose = 'tlogin:' . substr(hash('sha1', $companyId), 0, 12);
                 $res = OtpService::send($deliveryId, $channel, $purpose);
                 if (!empty($res['ok'])) {
-                    $_SESSION['tlogin_identifier'] = $deliveryId;
-                    $_SESSION['tlogin_channel']    = $channel;
-                    $_SESSION['tlogin_user_id']    = $user['id'];
-                    $_SESSION['tlogin_purpose']    = $purpose;
-                    $step = 'verify';
-                    $notice = ($channel === 'email')
+                    $_SESSION['tlogin_identifier']     = $deliveryId;
+                    $_SESSION['tlogin_channel']        = $channel;
+                    $_SESSION['tlogin_user_id']        = $user['id'];
+                    $_SESSION['tlogin_purpose']        = $purpose;
+                    $_SESSION['tlogin_pending_verify'] = true;
+                    $_SESSION['tlogin_notice']         = ($channel === 'email')
                         ? 'Code sent to your email.'
                         : 'Code sent via WhatsApp.';
-                    $displayIdentifier = $deliveryId;
+                    // PRG: redirect so the URL is a fresh GET on the verify step.
+                    header('Location: /login');
+                    exit;
                 } else {
                     $err = $res['error'] ?? 'unknown';
                     $error = ($err === 'rate_limited_identifier' || $err === 'rate_limited_ip')
