@@ -536,7 +536,7 @@
 - [x] 492. QA Google Wallet pass install: covered in same ops/qa-wallet-manual.md Android Chrome procedure (Save button → Google Wallet app → dedup by objectId). Physical install queued 836 pending wallet certs. → d297f7b
 - [x] 493. QA keyboard-only navigation: tests/e2e/a11y-keyboard.spec.ts verifies 5 public pages Tab-advance ≥5 distinct stops (no focus trap) + first focused element has visible outline OR box-shadow ring (catches focus:outline-none without replacement). 10/11 passed, 1 skipped pending skip-link (action 837). → a272c83
 - [x] 494. QA screen reader VoiceOver + NVDA: tests/e2e/a11y-semantics.spec.ts 4 checks × 5 public pages = 20 tests (single h1 + no img without alt + form fields labelled + buttons/links have accessible name). First run caught 3 real bugs (mobile menu toggle + hero QR button icon-only + /contact select missing label[for]), all fixed in-iter via aria-label + common.menu_toggle/show_qr i18n + label[for]/id linkage. 20/20 passed prod 19.6s. Plus ops/qa-screen-reader-manual.md walk for VoiceOver + NVDA. → d8b5fc7
-- [ ] 495. QA localization: no untranslated strings on any page.
+- [x] 495. QA localization no untranslated strings: tests/e2e/i18n-leak.spec.ts two-layer — source parity (bidirectional set diff across every lang/en ↔ lang/ar namespace) + runtime scan on 8 AR pages (/ar/pricing /status /faq /contact /case-studies /terms /privacy) grepping h1/h2/main/p/li/button/a/label for literal t() calls or dotted-key body leaks. 8 passed + 1 skipped (/ar/ root not routed, action 839). → de7ed8c
 
 ## V, Final Polish + Release (496-510)
 
@@ -890,3 +890,4 @@
 - [ ] 836. When wallet certs land (Apple + Google), walk ops/qa-wallet-manual.md end-to-end on prod with a real iPhone + Android, log result in ops/qa-wallet-log.md.
 - [ ] 837. Add a "Skip to content" link at the top of every page (ui-header.php) that focuses on Tab and jumps to #main-content. Sighted users never see it; keyboard users can bypass the nav. Re-enable the currently-skipped spec in tests/e2e/a11y-keyboard.spec.ts.
 - [ ] 838. Monthly: walk ops/qa-screen-reader-manual.md once on prod with VoiceOver (macOS) + NVDA (Windows), record in ops/qa-screen-reader-log.md.
+- [ ] 839. Route /ar/ landing so /ar returns the same homepage with ?lang=ar (currently 404s because no nginx rewrite). Once live, re-enable the skipped case in tests/e2e/i18n-leak.spec.ts.

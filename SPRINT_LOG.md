@@ -109,3 +109,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-23 02:05 | #491+492 | d297f7b | Cat U wallet QA: spec + hardware procedure, 3/3 endpoint tests passed, physical install queued 836 pending certs.
 2026-04-23 02:20 | #493 | a272c83 | Cat U a11y keyboard: 5 public pages × (tab-advance + focus indicator), 10/10 passed + 1 skipped pending skip-link (837).
 2026-04-23 02:45 | #494 | d8b5fc7 | Cat U a11y-semantics: 20-test scan caught 3 real bugs (mobile-menu + QR btn + contact-subject label), fixed; 20/20 passed. Manual SR walk documented + queued monthly 838.
+2026-04-23 03:00 | #495 | de7ed8c | Cat U i18n-leak: source parity + runtime scan on 8 AR pages, 8/8 passed + 1 skipped /ar/ root (839 follow-up).
