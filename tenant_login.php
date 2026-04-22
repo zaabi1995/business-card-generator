@@ -167,10 +167,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
 }
 
 $logoUrl = null;
+$brandPrimary = '#009bc1';
+$brandSecondary = '#0f172a';
 if (!empty($tenant['id'])) {
     $candidate = '/uploads/companies/' . $tenant['id'] . '/logo.png';
     if (is_file(__DIR__ . $candidate)) $logoUrl = $candidate;
+    try {
+        $theme = Database::getInstance()->fetchOne(
+            'SELECT primary_color, secondary_color, logo_path FROM company_themes WHERE company_id = :id LIMIT 1',
+            ['id' => $tenant['id']]
+        );
+        if ($theme) {
+            if (preg_match('/^#[0-9a-fA-F]{6}$/', $theme['primary_color'] ?? '')) {
+                $brandPrimary = $theme['primary_color'];
+            }
+            if (preg_match('/^#[0-9a-fA-F]{6}$/', $theme['secondary_color'] ?? '')) {
+                $brandSecondary = $theme['secondary_color'];
+            }
+            if (!$logoUrl && !empty($theme['logo_path']) && is_file(__DIR__ . $theme['logo_path'])) {
+                $logoUrl = $theme['logo_path'];
+            }
+        }
+    } catch (Throwable $_) { /* company_themes may not exist on legacy installs */ }
 }
+// Compute a semi-transparent focus-ring colour from the brand primary.
+$brandRing = $brandPrimary . '26'; // ~15% alpha (8-digit hex)
+
+// Pick legible button text: white on dark brand, near-black on light brand.
+// Standard relative-luminance (sRGB) threshold of 0.6.
+$_hex = ltrim($brandPrimary, '#');
+$_r = hexdec(substr($_hex, 0, 2)) / 255;
+$_g = hexdec(substr($_hex, 2, 2)) / 255;
+$_b = hexdec(substr($_hex, 4, 2)) / 255;
+$_lum = 0.2126 * $_r + 0.7152 * $_g + 0.0722 * $_b;
+$brandText = $_lum > 0.6 ? '#0f172a' : '#ffffff';
 
 $locale      = currentLocale();
 $dir         = isRtl() ? 'rtl' : 'ltr';
@@ -186,21 +216,21 @@ $switchUrl   = '/login?lang=' . $otherLocale;
 <?php $detectedPhone = $step === 'request' && $identifier !== '' && !filter_var($identifier, FILTER_VALIDATE_EMAIL); ?>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@24.6.0/build/css/intlTelInput.min.css">
 <style>
-:root { --brand: #009bc1; --bg: #f8fafc; --ink: #0f172a; --muted: #64748b; --line: #e2e8f0; }
+:root { --brand: <?= htmlspecialchars($brandPrimary) ?>; --brand-text: <?= htmlspecialchars($brandText) ?>; --brand-ring: <?= htmlspecialchars($brandRing) ?>; --brand-secondary: <?= htmlspecialchars($brandSecondary) ?>; --bg: #f8fafc; --ink: #0f172a; --muted: #64748b; --line: #e2e8f0; }
 *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:grid;place-items:center;padding:24px}
 .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:32px;width:100%;max-width:420px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
 .logo{display:flex;align-items:center;gap:12px;margin-bottom:24px}
 .logo img{width:48px;height:48px;border-radius:10px;object-fit:contain;background:#fff;border:1px solid var(--line)}
-.logo .badge{width:48px;height:48px;border-radius:10px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-size:18px}
+.logo .badge{width:48px;height:48px;border-radius:10px;background:var(--brand);color:var(--brand-text);display:grid;place-items:center;font-weight:700;font-size:18px}
 h1{font-size:20px;margin:0 0 4px;font-weight:700} .sub{color:var(--muted);font-size:14px;margin:0 0 20px}
 label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}
 input[type=email],input[type=tel],input[type=text]{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:15px;outline:none;transition:border .15s}
-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(0,155,193,.15)}
+input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-ring)}
 .code{letter-spacing:8px;text-align:center;font-size:22px;font-family:ui-monospace,monospace}
-button{width:100%;margin-top:16px;padding:12px 14px;background:var(--brand);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer}
+button{width:100%;margin-top:16px;padding:12px 14px;background:var(--brand);color:var(--brand-text);border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer}
 button:hover{filter:brightness(0.95)} button.ghost{background:transparent;color:var(--muted);font-weight:500;margin-top:8px}
 button[disabled]{opacity:.7;cursor:wait}
-.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-inline-end:8px}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-inline-end:8px;opacity:.85}
 @keyframes sp{to{transform:rotate(360deg)}}
 .error{background:#fef2f2;color:#b91c1c;padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:8px}
 .notice{background:#ecfdf5;color:#065f46;padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:8px}
