@@ -532,8 +532,8 @@
 - [x] 488. E2E Chrome Android latest: same config adds "Chrome Android" project using devices["Pixel 7"] UA + 412×915. Opt-in: npx playwright test --project="Chrome Android". → 540c174
 - [x] 489. E2E slow-3G throttled: tests/e2e/slow-3g.spec.ts applies CDP Network.emulateNetworkConditions (400 Kbps up+down, 400ms latency) to /, /api/health, /pricing, /status; asserts 200 + marker within per-page budget and attaches JSON timing for trend analysis. Live prod: / 11.2s, /api/health 0.6s, /pricing 12.6s, /status 10.1s, 4/4 passed 35.0s. → 34c404e
 - [x] 490. QA NFC write flow: tests/e2e/nfc-flow.spec.ts auth-gates /admin/nfc/batch + /admin/nfc/write in EN+AR (4 tests) + mark-programmed GET leak probe (1 test), 5/5 passed prod. Plus ops/qa-nfc-manual.md 5-minute Chrome-Android physical-tag QA procedure with happy/negative paths + regression triage. → b135ae3
-- [ ] 491. QA Apple Wallet pass install on iPhone.
-- [ ] 492. QA Google Wallet pass install on Android.
+- [x] 491. QA Apple Wallet pass install: tests/e2e/wallet-flow.spec.ts covers /wallet_apple.php endpoint (bad UUID + real UUID, allows 200/302/404/410/503 since certs are pending per memory) + Add-to-Wallet affordance on card page never leaves "null" markup. 3/3 passed. ops/qa-wallet-manual.md has the iPhone install procedure for post-cert rollout. → d297f7b
+- [x] 492. QA Google Wallet pass install: covered in same ops/qa-wallet-manual.md Android Chrome procedure (Save button → Google Wallet app → dedup by objectId). Physical install queued 836 pending wallet certs. → d297f7b
 - [ ] 493. QA keyboard-only navigation.
 - [ ] 494. QA screen reader (VoiceOver + NVDA).
 - [ ] 495. QA localization: no untranslated strings on any page.
@@ -887,3 +887,4 @@
 - [ ] 833. Full marketplace happy-path E2E on stage: logged-in admin, browse /print-shops, apply wilayat filter + sort by cheapest, click a shop card, assert /admin/order-checkout?print_shop_id=X loads with that shop preselected. Needs stage + seeded shops.
 - [ ] 834. Extend mobile-responsive.spec.ts to cover admin surfaces (/admin/dashboard /admin/employees /admin/print etc) at 375px+414px on stage, once a logged-in test user exists. Needs stage (822) + test session.
 - [ ] 835. Walk ops/qa-nfc-manual.md once per month on prod with an NTAG test tag from a fresh stock batch; record result + tag UID + date in ops/qa-nfc-log.md (create on first pass).
+- [ ] 836. When wallet certs land (Apple + Google), walk ops/qa-wallet-manual.md end-to-end on prod with a real iPhone + Android, log result in ops/qa-wallet-log.md.
