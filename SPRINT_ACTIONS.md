@@ -441,10 +441,10 @@
 - [~] 409. CSRF sweep across every POST handler deferred to action 783.
 - [~] 410. Raw-SQL audit deferred to action 784.
 - [~] 411. XSS output-sanitisation sweep deferred to action 785.
-- [x] 412. SecurityHeaders.php ships CSP with nonce + report-only rollout (flip CSP_REPORT_ONLY=false in config to enforce). Auto-opt-in on /api/webvitals.php today; site-wide rollout deferred to action 786. → PENDING
-- [x] 413. Strict-Transport-Security: max-age=63072000; includeSubDomains; preload emitted when HTTPS via SecurityHeaders::send(). → PENDING
-- [x] 414. X-Frame-Options: DENY default + SecurityHeaders::allowFrameFor([...]) per-page override shipped. → PENDING
-- [x] 415. Session cookie hardening (HttpOnly + Secure on HTTPS + SameSite=Lax) via SecurityHeaders::send() before session_start. Global rollout via config.php wiring deferred to action 786. → PENDING
+- [x] 412. SecurityHeaders.php ships CSP with nonce + report-only rollout (flip CSP_REPORT_ONLY=false in config to enforce). Auto-opt-in on /api/webvitals.php today; site-wide rollout deferred to action 786. → 4f82487
+- [x] 413. Strict-Transport-Security: max-age=63072000; includeSubDomains; preload emitted when HTTPS via SecurityHeaders::send(). → 4f82487
+- [x] 414. X-Frame-Options: DENY default + SecurityHeaders::allowFrameFor([...]) per-page override shipped. → 4f82487
+- [x] 415. Session cookie hardening (HttpOnly + Secure on HTTPS + SameSite=Lax) via SecurityHeaders::send() before session_start. Global rollout via config.php wiring deferred to action 786. → 4f82487
 - [~] 416. Session rotation (session_regenerate_id) on login deferred to action 787.
 - [~] 417. Password policy enforcement deferred to action 788 (cardifyForms.passwordStrength already gates client-side).
 - [~] 418. 2FA TOTP via otp-dardasha deferred to action 789.
