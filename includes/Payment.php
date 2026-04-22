@@ -390,6 +390,21 @@ class Payment {
             } elseif ($payment['type'] === 'card_order') {
                 self::confirmCardOrder($payment);
             }
+            // Cancel any open retry — a later successful payment closes the
+            // dunning loop whether it came through the retry link or a fresh
+            // checkout the user started themselves.
+            try {
+                require_once INCLUDES_DIR . '/PaymentRetry.php';
+                PaymentRetry::markSucceeded((string) $payment['id']);
+            } catch (Throwable $_) {}
+        } else {
+            // Payment failed — enqueue a dunning retry (Cat S action 455).
+            try {
+                require_once INCLUDES_DIR . '/PaymentRetry.php';
+                $failReason = (string) ($data['data.message'] ?? $data['message'] ?? 'declined');
+                $freshPayment = array_merge($payment, ['status' => 'failed']);
+                PaymentRetry::enqueueFromFailed($freshPayment, $failReason);
+            } catch (Throwable $_) {}
         }
 
         // Fire payment_success / payment_failed notifications via Notifier
