@@ -358,8 +358,10 @@ if (!function_exists('renderNavigation')) {
                         </span>
 
                         <!-- Mobile Menu Button -->
-                        <button type="button" class="lg:hidden p-2 text-gray-600 hover:text-blue-600" id="mobile-menu-btn">
-                            <i class="fa-solid fa-bars text-xl"></i>
+                        <button type="button" class="lg:hidden p-2 text-gray-600 hover:text-blue-600" id="mobile-menu-btn"
+                                aria-label="<?= htmlspecialchars(t('common.menu_toggle')) ?>"
+                                aria-expanded="false" aria-controls="mobile-menu">
+                            <i class="fa-solid fa-bars text-xl" aria-hidden="true"></i>
                         </button>
                     </div>
                 </div>

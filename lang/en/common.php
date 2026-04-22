@@ -5,6 +5,8 @@ return [
     'save'       => 'Save',
     'saving'     => 'Saving...',
     'saved'      => 'Saved',
+    'menu_toggle'=> 'Open menu',
+    'show_qr'    => 'Show QR code',
     'cancel'     => 'Cancel',
     'edit'       => 'Edit',
     'delete'     => 'Delete',

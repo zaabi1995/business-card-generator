@@ -5,6 +5,8 @@ return [
     'save'       => 'حفظ',
     'saving'     => 'جاري الحفظ...',
     'saved'      => 'تم الحفظ',
+    'menu_toggle'=> 'فتح القائمة',
+    'show_qr'    => 'عرض رمز QR',
     'cancel'     => 'إلغاء',
     'edit'       => 'تعديل',
     'delete'     => 'حذف',
