@@ -175,7 +175,13 @@ class Payment {
             'expiration' => 3600,
             'notification_url' => $callbackUrl,
             'redirection_url' => $callbackUrl,
-            'items' => []
+            'items' => [],
+            // Ask Paymob to return a reusable card_token on success so
+            // repeat customers can one-click pay + MOTO agents can run
+            // phone orders. Tokenisation is opt-out only for unusual
+            // cases (e.g. print_order where the billing row is anon).
+            // PCI scope stays at Paymob; we only get a token + last4.
+            'save_card_token' => true,
         ];
 
         // Add item description based on type
@@ -291,6 +297,19 @@ class Payment {
                 $data['source_data_sub_type'] = $obj['source_data']['sub_type'] ?? '';
                 $data['source_data_type'] = $obj['source_data']['type'] ?? '';
             }
+            // Paymob returns the reusable card_token on the obj root
+            // when save_card_token=1 was on the intent. Shape varies a
+            // bit across Paymob flavours; pick the first one present.
+            $data['card_token'] = $obj['card_token']
+                ?? ($obj['token'] ?? '')
+                ?: ($obj['source_data']['card_token'] ?? '');
+            if (isset($obj['source_data'])) {
+                $data['card_brand']    = $obj['source_data']['sub_type'] ?? ($obj['source_data']['brand'] ?? '');
+                $data['card_last4']    = $obj['source_data']['pan'] ?? '';
+                $data['card_holder']   = $obj['source_data']['holder_name'] ?? '';
+                $data['card_exp_m']    = $obj['source_data']['expiry_month'] ?? null;
+                $data['card_exp_y']    = $obj['source_data']['expiry_year'] ?? null;
+            }
         }
 
         // Merge GET params if available
@@ -397,6 +416,32 @@ class Payment {
                 require_once INCLUDES_DIR . '/PaymentRetry.php';
                 PaymentRetry::markSucceeded((string) $payment['id']);
             } catch (Throwable $_) {}
+
+            // Persist the reusable Paymob card_token so repeat charges
+            // (MOTO phone orders + subscription renewals + one-click
+            // top-ups) can pay without the customer present. PCI scope
+            // stays at Paymob; we store last4 + brand for display only.
+            if (!empty($data['card_token']) && !empty($payment['company_id'])) {
+                try {
+                    $db->exec(
+                        "INSERT IGNORE INTO saved_cards
+                            (company_id, paymob_token, brand, last_four, holder_name,
+                             expiry_month, expiry_year, last_used_at)
+                         VALUES (:c, :t, :b, :l4, :h, :em, :ey, NOW())",
+                        [
+                            'c'  => $payment['company_id'],
+                            't'  => $data['card_token'],
+                            'b'  => substr((string) ($data['card_brand']  ?? ''), 0, 24),
+                            'l4' => substr((string) ($data['card_last4']  ?? ''), -4),
+                            'h'  => substr((string) ($data['card_holder'] ?? ''), 0, 120),
+                            'em' => is_numeric($data['card_exp_m'] ?? null) ? (int) $data['card_exp_m'] : null,
+                            'ey' => is_numeric($data['card_exp_y'] ?? null) ? (int) $data['card_exp_y'] : null,
+                        ]
+                    );
+                } catch (Throwable $e) {
+                    error_log('saved_cards insert failed: ' . $e->getMessage());
+                }
+            }
         } else {
             // Payment failed — enqueue a dunning retry (Cat S action 455).
             try {
