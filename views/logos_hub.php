@@ -156,7 +156,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
             </div>
             <select name="sector" class="px-3 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                 <option value=""><?= $isAr ? 'كل القطاعات' : 'All sectors' ?></option>
-                <?php foreach ($SECTORS as $slug => $label): ?>
+                <?php foreach (($SECTOR_LABELS ?? $SECTORS) as $slug => $label): ?>
                     <option value="<?= logos_esc($slug) ?>" <?= ($_GET['sector'] ?? '') === $slug ? 'selected' : '' ?>>
                         <?= logos_esc($label) ?>
                     </option>

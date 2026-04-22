@@ -18,31 +18,37 @@ $view = $_GET['view'] ?? 'hub';
 $lang = ($_GET['lang'] ?? '') === 'ar' ? 'ar' : 'en';
 $isAr = $lang === 'ar';
 
-$SECTORS = [
-    'oil-gas'               => 'Oil & Gas',
-    'construction'          => 'Construction',
-    'trading'               => 'Trading',
-    'finance'               => 'Finance & Banking',
-    'real-estate'           => 'Real Estate',
-    'manufacturing'         => 'Manufacturing',
-    'logistics-shipping'    => 'Logistics & Shipping',
-    'food-beverage'         => 'Food & Beverage',
-    'healthcare'            => 'Healthcare',
-    'education'             => 'Education',
-    'hospitality-tourism'   => 'Hospitality & Tourism',
-    'technology'            => 'Technology',
-    'telecom'               => 'Telecommunications',
-    'automotive'            => 'Automotive',
-    'retail'                => 'Retail',
-    'agriculture-fisheries' => 'Agriculture & Fisheries',
-    'mining'                => 'Mining',
-    'utilities'             => 'Utilities',
-    'media-advertising'     => 'Media & Advertising',
-    'professional-services' => 'Professional Services',
-    'government-defense'    => 'Government & Defense',
-    'conglomerate'          => 'Conglomerate',
-    'other'                 => 'Other',
+// Bilingual sector labels, mirrors the $SECTORS map in companies.php.
+// Keep both files in sync until these labels are unified into a shared data file.
+$SECTORS_I18N = [
+    'oil-gas'               => ['en' => 'Oil & Gas',              'ar' => 'النفط والغاز'],
+    'construction'          => ['en' => 'Construction',           'ar' => 'الإنشاءات'],
+    'trading'               => ['en' => 'Trading',                'ar' => 'التجارة'],
+    'finance'               => ['en' => 'Finance & Banking',      'ar' => 'المالية والمصرفية'],
+    'real-estate'           => ['en' => 'Real Estate',            'ar' => 'العقارات'],
+    'manufacturing'         => ['en' => 'Manufacturing',          'ar' => 'التصنيع'],
+    'logistics-shipping'    => ['en' => 'Logistics & Shipping',   'ar' => 'الخدمات اللوجستية'],
+    'food-beverage'         => ['en' => 'Food & Beverage',        'ar' => 'الأغذية والمشروبات'],
+    'healthcare'            => ['en' => 'Healthcare',             'ar' => 'الرعاية الصحية'],
+    'education'             => ['en' => 'Education',              'ar' => 'التعليم'],
+    'hospitality-tourism'   => ['en' => 'Hospitality & Tourism',  'ar' => 'الضيافة والسياحة'],
+    'technology'            => ['en' => 'Technology',             'ar' => 'التكنولوجيا'],
+    'telecom'               => ['en' => 'Telecommunications',     'ar' => 'الاتصالات'],
+    'automotive'            => ['en' => 'Automotive',             'ar' => 'السيارات'],
+    'retail'                => ['en' => 'Retail',                 'ar' => 'تجارة التجزئة'],
+    'agriculture-fisheries' => ['en' => 'Agriculture & Fisheries','ar' => 'الزراعة والأسماك'],
+    'mining'                => ['en' => 'Mining',                 'ar' => 'التعدين'],
+    'utilities'             => ['en' => 'Utilities',              'ar' => 'المرافق'],
+    'media-advertising'     => ['en' => 'Media & Advertising',    'ar' => 'الإعلام والإعلان'],
+    'professional-services' => ['en' => 'Professional Services',  'ar' => 'الخدمات المهنية'],
+    'government-defense'    => ['en' => 'Government & Defense',   'ar' => 'الحكومة والدفاع'],
+    'conglomerate'          => ['en' => 'Conglomerate',           'ar' => 'مجموعة شركات'],
+    'other'                 => ['en' => 'Other',                  'ar' => 'أخرى'],
 ];
+// Legacy flat map for code paths that only need a slug -> English label.
+$SECTORS = array_map(fn($s) => $s['en'], $SECTORS_I18N);
+// Locale-resolved label map for rendering.
+$SECTOR_LABELS = array_map(fn($s) => $s[$lang] ?? $s['en'], $SECTORS_I18N);
 
 function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 
@@ -100,7 +106,7 @@ if ($view === 'terms') {
 
 // ---- press ----
 if ($view === 'press') {
-    $title = 'Press Kit — Omani Logo Library';
+    $title = $isAr ? 'الملف الإعلامي، مكتبة الشعارات العمانية' : 'Press Kit, Omani Logo Library';
     include __DIR__ . '/data/logo_library/press_view.php';
     return;
 }
@@ -113,7 +119,7 @@ if ($view === 'sector') {
         include __DIR__ . '/404.php';
         return;
     }
-    $sectorLabel = $SECTORS[$sectorSlug];
+    $sectorLabel = $SECTOR_LABELS[$sectorSlug];
     $page        = max(1, (int) ($_GET['page'] ?? 1));
     $filters = [
         'sector'        => $sectorSlug,
@@ -122,7 +128,9 @@ if ($view === 'sector') {
         'sort'          => $_GET['sort'] ?? 'alpha',
     ];
     $data = fetchLogoRows($db, $filters, $page, 60);
-    $title     = "Omani $sectorLabel Logos — {$data['total']} brands indexed";
+    $title     = $isAr
+        ? "شعارات {$sectorLabel} العمانية، {$data['total']} علامة مفهرسة"
+        : "Omani {$sectorLabel} Logos, {$data['total']} brands indexed";
     $canonical = "https://cardify.om/logos/" . $sectorSlug;
     include __DIR__ . '/views/logos_sector.php';
     return;
@@ -140,6 +148,8 @@ $filters = [
 $data      = fetchLogoRows($db, $filters, $page, 60);
 $total     = totalLogos($db);
 $counts    = sectorCounts($db);
-$title     = 'The Omani Logo Library — ' . number_format($total) . '+ Omani Brands';
+$title     = $isAr
+    ? 'مكتبة الشعارات العمانية، ' . number_format($total) . '+ علامة عُمانية'
+    : 'The Omani Logo Library, ' . number_format($total) . '+ Omani Brands';
 $canonical = 'https://cardify.om/logos' . ($page > 1 ? "?page=$page" : '');
 include __DIR__ . '/views/logos_hub.php';
