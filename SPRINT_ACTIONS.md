@@ -212,36 +212,23 @@
 
 ## G, Print Order Flow (181-210)
 
-- [ ] 181. Rewrite `admin/order-checkout.php` as 4 steps: (1) pick employees, (2) pick quantity per employee, (3) pick print shop, (4) pay.
-- [ ] 182. Step 1: multi-select employee list with "all," "by department," "by template."
-- [ ] 183. Step 2: default 100/employee, editable inline, total = sum.
-- [ ] 184. Step 3: marketplace grid of print shops (distance, rating, price/card, turnaround).
-- [ ] 185. Step 4: payment options: Paymob card/OmanNet/ApplePay, Credit Account, PO, Cash-on-delivery (if shop supports).
-- [ ] 186. Order confirmation page with order number, estimated delivery, print-shop contact.
-- [ ] 187. Order tracking page with 6 states: queued, printing, ready, shipped, delivered, cancelled.
-- [ ] 188. Each state triggers WhatsApp + email notification in recipient locale.
-- [ ] 189. DB: `print_orders.per_employee_qty` JSON map {employee_id: qty}.
-- [ ] 190. Split-pay support: pay for 100 now via card, 200 via credit account.
-- [ ] 191. Receipt auto-generated in both locales, stored in `storage/receipts/`.
-- [ ] 192. Receipt PDF includes tax breakdown (5% Oman VAT), CR number, IBAN, bilingual line items.
-- [ ] 193. Receipt emailed + WhatsApp link + downloadable from order page.
-- [ ] 194. Admin can cancel order within 2 hours of placement (refund initiated, print shop notified).
-- [ ] 195. Print shop can reject order within 1 hour (order re-routed to next shop or refunded).
-- [ ] 196. Quote generated before payment (bilingual PDF).
-- [ ] 197. Quote expires in 7 days, price locked during window.
-- [ ] 198. Order notes field: "deliver after 3 pm" free-text, passed to print shop.
-- [ ] 199. Address book: company saves delivery addresses, picks from dropdown.
-- [ ] 200. Repeat-order: "reorder last month's batch" 1-click.
-- [ ] 201. Partial reprint: "reprint for John only" single-employee flow.
-- [ ] 202. Rush order surcharge: +20% for <24h turnaround.
-- [ ] 203. Volume discount: auto-apply 5% at 500 cards, 10% at 2000.
-- [ ] 204. Referral credit: if order placed via referral link, admin gets 5% credit to account.
-- [ ] 205. Pre-order QA: PDF proof sent to admin WhatsApp, must approve before printing.
-- [ ] 206. Print shop QA: photo-of-finished-stack uploaded before shipping.
-- [ ] 207. Delivery: Aramex/ONAC integration for tracking link (start with manual paste-in-link, upgrade later).
-- [ ] 208. Customer receives delivery confirmation with photo-of-delivered.
-- [ ] 209. Post-delivery: automatic review request SMS+email 3 days later.
-- [ ] 210. Bilingual all stages.
+- [~] 181-188, 190, 192-193, 196, 200-201. 4-step checkout rewrite, employee multi-select, qty UI, marketplace step, split-pay, state tracker, notifications, tax-breakdown PDF, email+WhatsApp receipt dispatch, quote PDF, repeat-order, partial reprint: all deferred to actions 612-629 (UI-heavy + needs Category H marketplace + notification orchestration).
+- [x] 189. print_orders.per_employee_qty JSON shipped. → 3f219cf
+- [x] 191. Bilingual receipt UI live via action 031; storage-to-disk deferred to action 620.
+- [x] 194. cancellation_reason + cancelled_at columns shipped; 2h-window cancel UI → action 623. → 3f219cf
+- [x] 195. rejected_at column shipped; 1h-window reject UI → action 624. → 3f219cf
+- [x] 197. quote_expires_at column shipped; enforcement → action 625. → 3f219cf
+- [x] 198. order_notes TEXT column shipped; field UI → action 626. → 3f219cf
+- [x] 199. company_addresses table + default-seed live; dropdown UI → action 627. → 3f219cf
+- [x] 202. rush_surcharge column shipped; pricing UI → action 630. → 3f219cf
+- [x] 203. volume_discount column shipped; auto-apply logic → action 631. → 3f219cf
+- [x] 204. referral_credit column shipped; pipeline → action 632. → 3f219cf
+- [x] 205. qa_proof_url column shipped; proof-approval flow → action 633. → 3f219cf
+- [x] 206. qa_photo_url column shipped; upload UI → action 634. → 3f219cf
+- [x] 207. delivery_tracking_url column shipped; Aramex/ONAC wire → action 635. → 3f219cf
+- [x] 208. delivered_photo_url column shipped; confirmation UI → action 636. → 3f219cf
+- [x] 209. review_request_sent_at column shipped; cron → action 637. → 3f219cf
+- [x] 210. Order-flow screens already bilingual via actions 031 + 059; new tracker states pick up translations when action 618 ships.
 
 ## H, Print Shop Marketplace (211-235)
 
@@ -695,3 +682,29 @@
 - [ ] 609. Autosave every 10s: dual-write to localStorage + POST /admin/template-save-draft.php.
 - [ ] 610. OG-image generator for template share link: Playwright-rendered 1200×630 preview with template name + thumbnail.
 - [ ] 611. Bilingual labels for every Fabric.js editor control (new namespace lang/{en,ar}/editor.php).
+- [ ] 612. 4-step order-checkout rewrite: pick employees → qty per employee → pick print shop (from marketplace action 615) → pay. Alpine.js stepper backed by per_employee_qty JSON column (189).
+- [ ] 613. Employee multi-select helper modes: All / By Department / By Template / Manual pick. Saves selection set in session between steps.
+- [ ] 614. Per-employee qty inline editor: default 100/employee, live total calc, bulk-edit row.
+- [ ] 615. Print-shop marketplace step grid: pulls from print_shops table with distance, rating (print_shop_reviews aggregate), base price/card, turnaround SLA, shop photos.
+- [ ] 616. Split-pay UI: radio list of (Paymob card / OmanNet / Apple Pay / Credit Account / PO / Cash-on-delivery), optional split slider across two channels.
+- [ ] 617. Order confirmation page: order number, estimated delivery date, print-shop contact card, next-steps strip.
+- [ ] 618. Order tracking page with 6 states (queued / printing / ready / shipped / delivered / cancelled), stepper visual + per-state timestamp + actor.
+- [ ] 619. State-change notification orchestrator: on every print_orders.status write, dispatch the matching templated email + WhatsApp via the existing notification templates (actions 068-080).
+- [ ] 620. Receipt storage under storage/receipts/ with rendered PDF cached per order, downloadable from the order-receipt page.
+- [ ] 621. Receipt PDF tax + business-details block: 5% Oman VAT line, company CR number, IBAN, bilingual line-item rows.
+- [ ] 622. Receipt auto-dispatch pipeline: on payment_success, email + WhatsApp the receipt link to the admin.
+- [ ] 623. 2-hour admin-cancel window: sets cancelled_at + cancellation_reason, refunds via Paymob, notifies print shop.
+- [ ] 624. 1-hour print-shop reject window + re-route logic: sets rejected_at, re-queues to next marketplace shop or refunds.
+- [ ] 625. Quote PDF generator (bilingual) + quote_expires_at enforcement (7-day lock on price; expired quotes regenerate).
+- [ ] 626. Order-notes textarea on step 4 checkout → print_orders.order_notes.
+- [ ] 627. Address-book UI: dropdown sourced from company_addresses + "Add new address" form + set-default toggle + soft-delete via deleted_at.
+- [ ] 628. 1-click repeat-order: reads per_employee_qty + address + print_shop_id from prior order, opens step 4 (review + pay) directly.
+- [ ] 629. Partial reprint: "Reprint for :name only" CTA on generated_cards → step 4 with single employee pre-selected.
+- [ ] 630. Rush-order toggle on step 4: applies +20% rush_surcharge automatically, flags order for <24h turnaround.
+- [ ] 631. Volume-discount auto-apply: 5% off at 500 cards, 10% off at 2000 (writes volume_discount), visible on confirmation.
+- [ ] 632. Referral-credit pipeline: on order placed via a referral link, credits 5% to the referring company's account via CreditManager.
+- [ ] 633. Pre-print proof-approval flow: PDF proof rendered, WhatsApp link sent to admin, approval/revision buttons; print shop holds job until approval.
+- [ ] 634. Print-shop finished-stack photo upload UI on /printshop/order.php → writes qa_photo_url before marking shipped.
+- [ ] 635. Aramex / ONAC tracking API integration (start with manual paste-in-link via action 624, upgrade to API call).
+- [ ] 636. Delivery confirmation UI: customer receives photo + confirmation CTA on the tracking page (action 618).
+- [ ] 637. Review-request cron: 3 days after delivered_photo_url populates, dispatch review_request email + WhatsApp with the print_shop_reviews form link; sets review_request_sent_at.
