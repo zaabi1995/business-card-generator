@@ -475,16 +475,22 @@ class CardEditor {
                 throw new Error('Fabric Image class not found');
             }
 
-            // SVGs need Fabric's native SVG loader, otherwise Image.fromURL
-            // rasterizes them using the browser's naturalWidth/Height which
-            // defaults to 300x150 for SVGs with mm-based or missing sizing,
-            // producing a badly-zoomed preview. loadSVGFromURL respects the
-            // viewBox and hands us a correctly-proportioned Group.
+            // SVGs need Fabric's native SVG loader; Image.fromURL would
+            // rasterise them against the browser's naturalWidth/Height
+            // (300x150 fallback for mm-sized SVGs), producing a zoomed-in
+            // preview. If SVG parsing fails, fall back to raster load so
+            // the user still sees their upload.
             const isSvg = /\.svg(\?|$)/i.test(imageUrl);
-            let img;
+            let img = null;
             if (isSvg && typeof this.fabricRef.loadSVGFromURL === 'function') {
-                img = await this._loadSvgAsImage(imageUrl);
-            } else {
+                try {
+                    img = await this._loadSvgAsImage(imageUrl);
+                } catch (svgErr) {
+                    console.warn('SVG native load failed, falling back to raster:', svgErr);
+                    img = null;
+                }
+            }
+            if (!img) {
                 img = await ImageClass.fromURL(imageUrl, {
                     crossOrigin: 'anonymous'
                 });
@@ -564,23 +570,34 @@ class CardEditor {
     }
 
     async _loadSvgAsImage(imageUrl) {
-        // Fabric.js 7: loadSVGFromURL returns a Promise in 7.x,
-        // callback-style in 6.x. Support both so this helper survives
-        // version bumps.
         const fabricRef = this.fabricRef;
-        const loaded = await new Promise((resolve, reject) => {
-            try {
-                const ret = fabricRef.loadSVGFromURL(imageUrl, (objects, options) => {
-                    resolve({ objects: objects, options: options });
-                });
-                if (ret && typeof ret.then === 'function') {
-                    ret.then(function(r) { resolve(r); }).catch(reject);
-                }
-            } catch (e) { reject(e); }
-        });
 
-        const objects = loaded.objects || [];
-        const options = loaded.options || {};
+        // Fabric 7.x: loadSVGFromURL returns a Promise that resolves to
+        // { objects, options }. Some versions resolve to the array directly
+        // - normalize both shapes.
+        const raw = await fabricRef.loadSVGFromURL(imageUrl);
+        let objects, options;
+        if (Array.isArray(raw)) {
+            objects = raw;
+            options = {};
+        } else if (raw && typeof raw === 'object') {
+            objects = Array.isArray(raw.objects) ? raw.objects : [];
+            options = raw.options || {};
+            // Some builds put viewBox dims at the top level.
+            if (!options.width && typeof raw.width === 'number') options.width = raw.width;
+            if (!options.height && typeof raw.height === 'number') options.height = raw.height;
+        } else {
+            objects = [];
+            options = {};
+        }
+
+        // Filter out nulls/undefined (some SVG elements can fail to parse).
+        objects = objects.filter(function(o) { return !!o; });
+
+        if (objects.length === 0) {
+            throw new Error('SVG parsed to 0 fabric objects (empty or unsupported SVG)');
+        }
+
         const GroupClass = fabricRef.Group || (typeof fabric !== 'undefined' ? fabric.Group : null);
         const util = fabricRef.util || (typeof fabric !== 'undefined' ? fabric.util : null);
 
