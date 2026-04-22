@@ -552,7 +552,7 @@
 - [~] 505. WhatsApp existing customers: BLOCKED on Ali approval. ops/launch-whatsapp.md has EN + AR bodies (3-para, ≤500 char per WA), Oman-E.164 + phone_backfill_skips<3 + MHD-excluded segmentation, Ali-first test send on +96871616161, 1/s Dardasha rate-limited loop, per-send log. Queued 842. → f7240d9
 - [x] 506. Monitor Sentry for 24h post-release: ops/post-release-monitor.md defines the 24h watch playbook (T+0/+1h/+6h/+24h tasks + escalation thresholds + success definition). Ran the T+0 slice live for v2.0: /api/health 200 all green + /api/erp-health 200 status=ok + /status green + no new error.log lines. Sentry alerts themselves blocked on DSN (817). → b2d441b
 - [x] 507. Collect feedback form responses: migration 096 contact_messages (name/email/subject/message/locale/ip/ua/email_sent/replied_at indexed on open-inbox) + contact.php persists every submit BEFORE mail attempt (so a mailer hiccup never loses a message) + admin/super/feedback.php super-admin inbox with filter (open/replied/subject/locale) + 3-KPI summary + CSRF-guarded Mark-replied. Migration applied live. → c820758
-- [ ] 508. Triage new actions discovered → append.
+- [x] 508. Triage new actions discovered + append: ops/backlog-triage.md groups the 63 queued follow-ups (actions 780-842) into 8 themed buckets (Ali approval / ops config / stage-E2E / SEO+CWV / security sweep / admin UX / hardware QA / small pathing) + shorthand dependency graph. Confirmed zero dropped: 63 queued = 63 append entries in SPRINT_LOG.md. → 7e42bad
 - [ ] 509. Final self-review loop iteration.
 - [ ] 510. Close sprint, write retro at `/Users/ali/claude/obsidian/claude-vault/cardify-sprint-retro.md`.
 
