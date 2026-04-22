@@ -111,3 +111,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-23 02:45 | #494 | d8b5fc7 | Cat U a11y-semantics: 20-test scan caught 3 real bugs (mobile-menu + QR btn + contact-subject label), fixed; 20/20 passed. Manual SR walk documented + queued monthly 838.
 2026-04-23 03:00 | #495 | de7ed8c | Cat U i18n-leak: source parity + runtime scan on 8 AR pages, 8/8 passed + 1 skipped /ar/ root (839 follow-up).
 2026-04-23 03:15 | #496 | b94497e | Cat U /changelog bilingual: data/changelog.php + /changelog + /ar/changelog timeline, 4 seed entries, 9 keys parity OK.
+2026-04-23 03:30 | #497 | 647b3f6 | Cat U v2.0 release notes: 117-line RELEASE_NOTES_v2.0.md with highlights + category table + migrations + new URLs + cron + queued follow-ups + incident history.

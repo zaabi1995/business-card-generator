@@ -541,7 +541,7 @@
 ## V, Final Polish + Release (496-510)
 
 - [x] 496. Changelog page /changelog bilingual: new /changelog + /ar/changelog powered by data/changelog.php entries (date/version/tag/title/body EN+AR); timeline UI with version + tag pills (Release/Feature/Fix/Security), locale-aware dates. Seeded with 4 real entries (v2.0, Paymob vault, Oman Business Index, ERP sync). 9 lang keys parity OK. → b94497e
-- [ ] 497. Release notes for v2.0 sprint.
+- [x] 497. Release notes for v2.0 sprint: RELEASE_NOTES_v2.0.md summarises 107 iterations (286 closed + 177 partial/queued), highlights, per-category closed counts, all 18 migrations 077-094, new public + admin URLs, VPS cron schedule, 59 queued follow-ups 781-839, rollback history. → 647b3f6
 - [ ] 498. Update DOCUMENTATION.md.
 - [ ] 499. Update CLAUDE.md project context.
 - [ ] 500. Update memory `cardify.md`.
