@@ -358,21 +358,21 @@
 
 ## M, Forms + Validation (341-355)
 
-- [ ] 341. Employee form: 3 required (name/email/title), rest under Advanced accordion.
-- [ ] 342. Inline validation on blur (not on submit only).
-- [ ] 343. Phone validation: E.164 + `intl-tel-input` widget.
-- [ ] 344. Email validation: MX check via API.
-- [ ] 345. URL validation for socials: auto-prefix https://.
-- [ ] 346. Server-side validation mirrored client-side.
-- [ ] 347. Friendly errors: "This email is already used by another employee, did you mean to update them?"
-- [ ] 348. Autosave on long forms (every 10s).
-- [ ] 349. Unsaved changes warning on navigation.
-- [ ] 350. Required field indicators only on required (no asterisk spam).
-- [ ] 351. Placeholder copy friendly (no "Enter name here").
-- [ ] 352. Character counters where limit exists.
-- [ ] 353. Password strength meter (on settings).
-- [ ] 354. File size + type hints inline above uploaders.
-- [ ] 355. Destructive confirm: typed confirmation for delete-many.
+- [~] 341. Employee form 3-required + Advanced accordion deferred to action 521 (already queued with full modal rewrite).
+- [x] 342. cardifyForms.attachBlurValidation(form, rules) shipped: validates on blur, re-validates on input after first blur, writes errors into .cardify-field__error, toggles aria-invalid. Per-page wiring deferred to action 733. → PENDING_SHA_MARKER
+- [x] 343. cardifyForms.validators.phoneE164 shipped; intl-tel-input widget already loaded on register.php (action 023) and employee modal UI. → PENDING_SHA_MARKER
+- [~] 344. Email MX check via API deferred to action 734 (needs a small backend endpoint hitting a DNS resolver).
+- [x] 345. cardifyForms.validators.url auto-prefixes https:// when missing + validates via URL constructor. → PENDING_SHA_MARKER
+- [~] 346. Server-side schema-mirror validation deferred to action 735 (requires a shared Validator class in includes/).
+- [~] 347. Friendly "did you mean to update them?" errors deferred to action 736 (needs per-field smart duplicate-lookup).
+- [~] 348. 10s autosave wrapper deferred to action 737 (onboarding wizard already has it; generalised version needs a Cardify.Autosave helper).
+- [x] 349. cardifyForms.watchUnsavedChanges(form) shipped: snapshots initial state, listens for input/change, fires beforeunload prompt when dirty, .markClean() silences after save. → PENDING_SHA_MARKER
+- [x] 350. cardifyForms.requiredIndicator(labelText) helper returns the standard red asterisk + sr-only " (required)" wrap to avoid asterisk-spam. → PENDING_SHA_MARKER
+- [~] 351. Friendly placeholder copy audit deferred to action 738.
+- [~] 352. Character counters deferred to action 739.
+- [x] 353. cardifyForms.passwordStrength(v) shipped: 0-4 score based on length + case + digit + symbol; paired with password_very_weak..excellent error keys in EN+AR. Visual meter UI deferred to action 740. → PENDING_SHA_MARKER
+- [~] 354. File size + type hints audit deferred to action 741.
+- [x] 355. cardifyForms.confirmTyped(word, opts) shipped: modal asks the user to type a literal word (usually DELETE) before the Promise resolves true. Cancel + Esc + backdrop-click all resolve false. Uses .cardify-modal + .cardify-btn primitives from Category K. → PENDING_SHA_MARKER
 
 ## N, Performance (356-370)
 
@@ -784,3 +784,12 @@
 - [ ] 730. Icon picker (Heroicons + Font Awesome Pro) for custom fields + template editor icons.
 - [ ] 731. Per-page empty-state migration (actions 321-328): sweep admin/employees, admin/generated, admin/analytics, admin/templates, admin/credit-accounts, admin/departments, admin/audit-logs, and marketplace search. Swap every inline "No results" block for `.cardify-empty` with a contextual CTA (Add employee / Order cards / Share link / Browse presets / Apply for credit / Create department / etc.).
 - [ ] 732. Per-form tooltip drop-in (actions 329-336): wire lang/{en,ar}/tooltips.php strings into existing form labels on employees, template-editor, order-checkout, credit-accounts, settings, onboarding wizard, portal, analytics. Use `<i class="cardify-help-icon cardify-tip" data-tip="<?= t('tooltips.emp_name') ?>"></i>` pattern next to each label.
+- [ ] 733. Wire cardifyForms.attachBlurValidation into the 5 biggest admin forms (employee modal, template editor, order checkout, credit-account request, printshop settings). Each wiring defines per-field rules using cardifyForms.validators.
+- [ ] 734. Email MX-check endpoint /api/validate-email.php: DNS MX lookup + cached result per domain; called from cardifyForms.validators on blur for signup flows.
+- [ ] 735. Server-side shared Validator class in includes/Validator.php. Shared rule definitions with the client so server errors match client-side messages exactly.
+- [ ] 736. Smart duplicate-lookup email validator: on blur, hit /api/check-employee-email?email=... and surface "already used, update them?" with deep-link to the existing employee.
+- [ ] 737. Generalised cardifyAutosave helper: attach to any form, debounced POST to a save endpoint, status pill with saving/saved/error states. Factors out the pattern already in portal/employee-edit.php + onboarding wizard.
+- [ ] 738. Friendly-placeholder audit: sweep every admin form placeholder and replace "Enter X here" with either an example value or nothing.
+- [ ] 739. Character counter helper that attaches under any input with a maxlength attribute + writes "X / Y" into a sibling span.
+- [ ] 740. Password-strength visual meter: 4-segment bar under the password input, fed by cardifyForms.passwordStrength(), colour graded from red → amber → green.
+- [ ] 741. File-upload hint audit: every <input type="file"> should show "accepted types, max size" inline above, sourced from the accept attribute + a shared max-bytes constant.

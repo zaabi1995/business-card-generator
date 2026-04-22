@@ -36,4 +36,18 @@ return [
     'page_500_body'       => 'واجهنا خطأ غير متوقّع. تم إبلاغ فريقنا. الرجاء المحاولة بعد لحظات.',
     'go_home'             => 'العودة إلى الرئيسية',
     'contact_support'     => 'تواصل مع الدعم',
+
+    'validate_required'   => 'مطلوب',
+    'validate_email'      => 'البريد لا يبدو صحيحاً',
+    'validate_url'        => 'أدخل رابطاً صحيحاً',
+    'validate_phone'      => 'أدخل رقم هاتف صحيحاً',
+    'validate_min_len'    => 'على الأقل :n حرف',
+    'validate_max_len'    => 'على الأكثر :n حرف',
+    'unsaved_changes'     => 'لديك تعديلات غير محفوظة. هل تريد المغادرة؟',
+    'confirm_delete_word' => 'اكتب DELETE للتأكيد',
+    'password_very_weak'  => 'ضعيفة جداً',
+    'password_weak'       => 'ضعيفة',
+    'password_fair'       => 'مقبولة',
+    'password_strong'     => 'قوية',
+    'password_excellent'  => 'ممتازة',
 ];

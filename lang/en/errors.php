@@ -36,4 +36,19 @@ return [
     'page_500_body'       => 'We hit an unexpected error. Our team has been notified. Please try again in a moment.',
     'go_home'             => 'Go back home',
     'contact_support'     => 'Contact support',
+
+    // Form validation (Category M)
+    'validate_required'   => 'Required',
+    'validate_email'      => 'That email looks off',
+    'validate_url'        => 'Enter a valid URL',
+    'validate_phone'      => 'Enter a valid phone number',
+    'validate_min_len'    => 'At least :n characters',
+    'validate_max_len'    => 'At most :n characters',
+    'unsaved_changes'     => 'You have unsaved changes. Leave anyway?',
+    'confirm_delete_word' => 'Type DELETE to confirm',
+    'password_very_weak'  => 'Very weak',
+    'password_weak'       => 'Weak',
+    'password_fair'       => 'Fair',
+    'password_strong'     => 'Strong',
+    'password_excellent'  => 'Excellent',
 ];
