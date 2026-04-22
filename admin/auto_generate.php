@@ -185,7 +185,7 @@ if ($usePreDesigned) {
     $layoutBackHtml = CardLayouts::renderBack($selectedLayout, $employee, $company, $companyTheme);
 }
 
-adminHeader('Generating Card', 'employees');
+adminHeader(t('autogen.page_title'), 'employees');
 ?>
 
 <?php if ($isFreePlan): ?>
@@ -195,18 +195,17 @@ adminHeader('Generating Card', 'employees');
         <div class="flex items-start gap-3">
             <i class="fa-solid fa-info-circle text-amber-500 text-xl mt-0.5"></i>
             <div class="flex-1">
-                <h4 class="font-semibold text-amber-800">Preview Quality</h4>
+                <h4 class="font-semibold text-amber-800"><?= htmlspecialchars(t('autogen.quality_h4')) ?></h4>
                 <p class="text-sm text-amber-700 mt-1">
-                    You're on the <strong>Free Plan</strong>. Card previews are generated at lower resolution. 
-                    When ordering prints, cards will be produced at full print quality by the print shop.
+                    <?= htmlspecialchars(t('autogen.quality_body')) ?>
                 </p>
                 <div class="mt-3 flex flex-wrap gap-2">
                     <a href="billing.php" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium transition-colors">
                         <i class="fa-solid fa-crown"></i>
-                        Upgrade for HD Quality
+                        <?= htmlspecialchars(t('autogen.upgrade_cta')) ?>
                     </a>
                     <a href="billing.php" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-amber-700 hover:text-amber-800 text-sm font-medium">
-                        View Plans <i class="fa-solid fa-arrow-right"></i>
+                        <?= htmlspecialchars(t('autogen.view_plans')) ?> <i class="fa-solid fa-arrow-right"></i>
                     </a>
                 </div>
             </div>
@@ -221,8 +220,8 @@ adminHeader('Generating Card', 'employees');
     <!-- Layout Picker (shown first, auto-generates with default) -->
     <div x-show="status === 'picking'" x-cloak class="space-y-6">
         <div class="text-center mb-2">
-            <h2 class="text-xl font-bold text-gray-900">Choose a Card Layout</h2>
-            <p class="text-gray-500 text-sm mt-1">for <strong><?php echo sanitize($employee['name_en'] ?? $employee['email']); ?></strong></p>
+            <h2 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('autogen.choose_layout')) ?></h2>
+            <p class="text-gray-500 text-sm mt-1"><?= htmlspecialchars(t('autogen.for_employee', ['name' => sanitize($employee['name_en'] ?? $employee['email'])])) ?></p>
         </div>
         <!-- Layout Options -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -242,7 +241,7 @@ adminHeader('Generating Card', 'employees');
         </div>
         <div class="text-center">
             <button @click="generate()" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
-                <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Generate Card
+                <i class="fa-solid fa-wand-magic-sparkles mr-2"></i><?= htmlspecialchars(t('autogen.generate_card')) ?>
             </button>
         </div>
     </div>
@@ -252,8 +251,8 @@ adminHeader('Generating Card', 'employees');
         <div class="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-4">
             <i class="fa-solid fa-wand-magic-sparkles text-2xl text-blue-600 animate-pulse"></i>
         </div>
-        <h2 class="text-xl font-bold text-gray-900 mb-2">Generating Business Card</h2>
-        <p class="text-gray-600 mb-4">Creating card for <strong><?php echo sanitize($employee['name_en'] ?? $employee['email']); ?></strong></p>
+        <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('autogen.generating_card')) ?></h2>
+        <p class="text-gray-600 mb-4"><?= htmlspecialchars(t('autogen.creating_for', ['name' => sanitize($employee['name_en'] ?? $employee['email'])])) ?></p>
         <div class="flex items-center justify-center gap-2">
             <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
             <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
@@ -267,10 +266,10 @@ adminHeader('Generating Card', 'employees');
         <div class="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
             <i class="fa-solid fa-check text-2xl text-green-600"></i>
         </div>
-        <h2 class="text-xl font-bold text-gray-900 mb-2">Card Generated!</h2>
-        <p class="text-gray-500 text-sm mb-6">Your digital business card is live and ready to share.</p>
+        <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('autogen.card_generated')) ?></h2>
+        <p class="text-gray-500 text-sm mb-6"><?= htmlspecialchars(t('autogen.live_and_ready')) ?></p>
         <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 text-left">
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Your Digital Card Link</p>
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2"><?= htmlspecialchars(t('autogen.digital_link_label')) ?></p>
             <div class="flex items-center gap-2">
                 <input type="text" readonly :value="cardShareUrl"
                        class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 font-mono truncate">
@@ -278,23 +277,23 @@ adminHeader('Generating Card', 'employees');
                         class="flex-shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                         :class="copied ? 'bg-green-600 hover:bg-green-600' : ''">
                     <i :class="copied ? 'fa-solid fa-check' : 'fa-solid fa-copy'"></i>
-                    <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                    <span x-text="copied ? <?= json_encode(t('autogen.copied')) ?> : <?= json_encode(t('autogen.copy')) ?>"></span>
                 </button>
             </div>
         </div>
         <div class="flex flex-col sm:flex-row gap-3 justify-center mb-6">
             <a :href="cardShareUrl" target="_blank" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
-                <i class="fa-solid fa-eye"></i> View Card
+                <i class="fa-solid fa-eye"></i> <?= htmlspecialchars(t('autogen.view_card')) ?>
             </a>
             <a :href="waShareUrl" target="_blank" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition-colors">
-                <i class="fa-brands fa-whatsapp"></i> Share on WhatsApp
+                <i class="fa-brands fa-whatsapp"></i> <?= htmlspecialchars(t('autogen.share_whatsapp')) ?>
             </a>
             <a :href="continueUrl" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors">
-                <i class="fa-solid fa-arrow-right"></i> Continue
+                <i class="fa-solid fa-arrow-right"></i> <?= htmlspecialchars(t('autogen.continue')) ?>
             </a>
         </div>
-        <p class="text-xs text-gray-400">Redirecting in <span x-text="countdown"></span>s
-            <button @click="cancelRedirect()" class="text-blue-500 hover:underline ml-1">Stay here</button>
+        <p class="text-xs text-gray-400"><?= htmlspecialchars(str_replace(':sec', '', t('autogen.redirecting_in'))) ?><span x-text="countdown"></span>
+            <button @click="cancelRedirect()" class="text-blue-500 hover:underline ml-1"><?= htmlspecialchars(t('autogen.stay_here')) ?></button>
         </p>
     </div>
 
@@ -303,10 +302,10 @@ adminHeader('Generating Card', 'employees');
         <div class="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
             <i class="fa-solid fa-exclamation-triangle text-2xl text-red-600"></i>
         </div>
-        <h2 class="text-xl font-bold text-gray-900 mb-2">Generation Failed</h2>
+        <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('autogen.generation_failed')) ?></h2>
         <p class="text-gray-600 mb-4" x-text="errorMessage"></p>
         <button @click="status = 'picking'" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-            <i class="fa-solid fa-arrow-left mr-2"></i>Try Again
+            <i class="fa-solid fa-arrow-left mr-2"></i><?= htmlspecialchars(t('autogen.try_again')) ?>
         </button>
     </div>
 </div>
@@ -574,10 +573,10 @@ function layoutGenerator() {
             <i class="fa-solid fa-wand-magic-sparkles text-2xl text-blue-600 animate-pulse"></i>
         </div>
         <h2 class="text-xl font-bold text-gray-900 mb-2">
-            <?php echo $isRegenerate ? 'Regenerating' : 'Generating'; ?> Business Card
+            <?= htmlspecialchars($isRegenerate ? t('autogen.regenerating_card') : t('autogen.generating_card')) ?>
         </h2>
         <p class="text-gray-600 mb-4">
-            Creating card for <strong><?php echo sanitize($employee['name_en'] ?? $employee['email']); ?></strong>
+            <?= htmlspecialchars(t('autogen.creating_for', ['name' => sanitize($employee['name_en'] ?? $employee['email'])])) ?>
         </p>
         <div class="flex items-center justify-center gap-2">
             <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
@@ -592,12 +591,12 @@ function layoutGenerator() {
         <div class="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
             <i class="fa-solid fa-check text-2xl text-green-600"></i>
         </div>
-        <h2 class="text-xl font-bold text-gray-900 mb-2">Card Generated!</h2>
-        <p class="text-gray-500 text-sm mb-6">Your digital business card is live and ready to share.</p>
+        <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('autogen.card_generated')) ?></h2>
+        <p class="text-gray-500 text-sm mb-6"><?= htmlspecialchars(t('autogen.live_and_ready')) ?></p>
 
         <!-- Shareable Link -->
         <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 text-left">
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Your Digital Card Link</p>
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2"><?= htmlspecialchars(t('autogen.digital_link_label')) ?></p>
             <div class="flex items-center gap-2">
                 <input type="text" id="card-share-url" readonly
                        :value="cardShareUrl"
@@ -606,7 +605,7 @@ function layoutGenerator() {
                         class="flex-shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
                         :class="copied ? 'bg-green-600 hover:bg-green-600' : ''">
                     <i :class="copied ? 'fa-solid fa-check' : 'fa-solid fa-copy'"></i>
-                    <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                    <span x-text="copied ? <?= json_encode(t('autogen.copied')) ?> : <?= json_encode(t('autogen.copy')) ?>"></span>
                 </button>
             </div>
         </div>
@@ -616,22 +615,22 @@ function layoutGenerator() {
             <a :href="cardShareUrl" target="_blank"
                class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
                 <i class="fa-solid fa-eye"></i>
-                View Card
+                <?= htmlspecialchars(t('autogen.view_card')) ?>
             </a>
             <a :href="waShareUrl" target="_blank"
                class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition-colors">
                 <i class="fa-brands fa-whatsapp"></i>
-                Share on WhatsApp
+                <?= htmlspecialchars(t('autogen.share_whatsapp')) ?>
             </a>
             <a :href="continueUrl"
                class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors">
                 <i class="fa-solid fa-arrow-right"></i>
-                Continue
+                <?= htmlspecialchars(t('autogen.continue')) ?>
             </a>
         </div>
 
-        <p class="text-xs text-gray-400">Redirecting automatically in <span x-text="redirectCountdown"></span>s&hellip;
-            <button @click="cancelRedirect()" class="text-blue-500 hover:underline ml-1">Stay here</button>
+        <p class="text-xs text-gray-400"><?= htmlspecialchars(str_replace(':sec', '', t('autogen.redirecting_auto'))) ?><span x-text="redirectCountdown"></span>&hellip;
+            <button @click="cancelRedirect()" class="text-blue-500 hover:underline ml-1"><?= htmlspecialchars(t('autogen.stay_here')) ?></button>
         </p>
     </div>
     
@@ -640,10 +639,10 @@ function layoutGenerator() {
         <div class="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
             <i class="fa-solid fa-exclamation-triangle text-2xl text-red-600"></i>
         </div>
-        <h2 class="text-xl font-bold text-gray-900 mb-2">Generation Failed</h2>
+        <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('autogen.generation_failed')) ?></h2>
         <p class="text-gray-600 mb-4" x-text="errorMessage"></p>
         <a href="employees.php" class="inline-block px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-            <i class="fa-solid fa-arrow-left mr-2"></i>Back to Employees
+            <i class="fa-solid fa-arrow-left mr-2"></i><?= htmlspecialchars(t('autogen.back_to_employees')) ?>
         </a>
     </div>
 </div>
