@@ -76,3 +76,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-22 17:30 | #453 | 3597169 | Cat S card-credit → ERP: recordCardCreditPurchase with CARDS- synthetic ref + idempotent 409, wired into confirmCardOrder, backfill CLI (dry=0 candidates), invoiceNumber persisted to payments.callback_data.
 2026-04-22 17:45 | #454 | d811539 | Cat S ERP reconcile: prior-month drift check (print+card streams + unsynced rows + retries), email to ali@bhd.om, cron 30 6 2 * * installed; 2026-03 dry run drift=0.
 2026-04-22 18:00 | #455 | 72f6c90 | Cat S payment retry: migration 092 + PaymentRetry.php ladder 48/72/48h = 7 days, Paymob callback hooks, WhatsApp+email dunning, hourly cron installed. Sanity run 0 pending 7ms.
+2026-04-22 18:20 | #456 | dcff538 | Cat T Sentry wiring: PHP handlers + JS error reporter + ui-header bootstrap, all no-op until DSN defined. Smoke: home 200, sentry.js 200.
