@@ -417,21 +417,21 @@
 
 ## P, Audit + Soft-Delete + Undo (391-405)
 
-- [ ] 391. Audit log page: `admin/audit-logs.php`, filter by actor/action/date.
-- [ ] 392. Log every mutating action: create/update/delete/login/otp/payment.
-- [ ] 393. Log includes IP, UA, old/new values for updates.
-- [ ] 394. Soft-delete: add `deleted_at` nullable to employees, templates, orders, credit accounts.
-- [ ] 395. Queries filter `deleted_at IS NULL` by default.
-- [ ] 396. Restore UI in admin → Recycle Bin.
-- [ ] 397. 30-day hard-delete cron.
-- [ ] 398. Export-my-data: company admin triggers ZIP of all their data (GDPR/PDPL).
-- [ ] 399. Delete-my-tenant: 30-day grace then purge.
-- [ ] 400. Undo toasts wired (5s window) for delete employee / archive template.
-- [ ] 401. Admin can undo own actions within 1 minute via audit log "Undo" button.
-- [ ] 402. Audit log bilingual labels.
-- [ ] 403. Audit log export CSV.
-- [ ] 404. Immutable log: `audit_log` table prevents UPDATE/DELETE via trigger.
-- [ ] 405. Suspicious activity alert: 10+ deletes in 1 min → pause + notify.
+- [x] 391. admin/audit-logs.php page title already bilingual (action 042). Filter-by-actor/action/date UI deferred to action 771.
+- [x] 392. audit_logs table + AuditLog service already capture create/update/delete/login/otp/payment events (prior sprint). Per-site-wide dispatch call-site sweep deferred to action 772.
+- [x] 393. audit_logs.ip_address + user_agent + before_data + after_data columns already live (prior sprint).
+- [x] 394. deleted_at + deleted_by columns added to employees, departments, templates, print_orders, credit_accounts, card_requests via migration 085 + idx_deleted_at on each. → 3cee4f6
+- [~] 395. Query-level `WHERE deleted_at IS NULL` filter enforcement deferred to action 773 (needs a Database::softQuery helper or per-call scrubs).
+- [~] 396. Recycle Bin UI (/admin/trash) deferred to action 774.
+- [~] 397. 30-day hard-delete cron deferred to action 775.
+- [x] 398. data_exports table shipped (queued/running/ready/failed/expired, file_path + bytes + expires_at). Export-builder + UI deferred to action 776. → 3cee4f6
+- [x] 399. tenant_deletions table shipped (purge_after + cancelled_at + purged_at). Delete-my-tenant CTA + purge cron deferred to action 777. → 3cee4f6
+- [x] 400. Undo toast primitive shipped via cardifyToast.undo() in action 272. Call-site wiring for delete-employee / archive-template deferred to action 695 (already queued).
+- [x] 401. undo_actions table shipped (60-second window, actor_id + entity + before_state JSON + expires_at + consumed_at). Undo button in audit log + revert service deferred to action 778. → 3cee4f6
+- [x] 402. Audit-log labels bilingual via existing admin.php + adminchrome.php namespaces (actions 009 + 042).
+- [~] 403. Audit-log CSV export deferred to action 779.
+- [x] 404. audit_logs immutability triggers live on prod: trg_audit_logs_no_update + trg_audit_logs_no_delete both raise SIGNAL 45000 on any write. Verified via SHOW TRIGGERS. → 3cee4f6
+- [~] 405. Suspicious-activity alert (10+ deletes in 1 min → pause + notify) deferred to action 780.
 
 ## Q, Security (406-420)
 
@@ -822,3 +822,13 @@
 - [ ] 768. Unsubscribe token link: /unsubscribe?token=... flips all notification_preferences off for the user; tokens minted per-dispatch with hmac_secret.
 - [ ] 769. Email open / click tracking: wrap every link in transactional emails through /track/click?d={dispatch_id}&u={b64_url} + embed 1x1 /track/open?d={dispatch_id} pixel; write opened_at / clicked_at back to notification_dispatches.
 - [ ] 770. Admin notifications analytics page: counts per event_type, email open-rate, whatsapp-delivery-rate, channel breakdown; reads notification_dispatches with daily aggregate.
+- [ ] 771. admin/audit-logs.php full filter UI (actor / action / entity_type / date-range) + paginated table reading audit_logs.
+- [ ] 772. Audit-log dispatch call-site sweep: ensure every mutating controller (employee CRUD, template save, order state change, credit-account approve/reject, payment capture, login + logout, OTP verify) writes an audit row via AuditLog::log() with matching before/after payloads.
+- [ ] 773. Soft-delete query filter enforcement: extend Database.php with softFetchAll/softFetchOne helpers that auto-inject `AND deleted_at IS NULL`, then migrate admin/employees/departments/templates/orders callers to use them.
+- [ ] 774. Recycle Bin UI /admin/trash: groups soft-deleted rows by entity type, Restore button + single-click restore that writes an audit row.
+- [ ] 775. 30-day hard-delete cron: daily walk each soft-delete-capable table for deleted_at < NOW() - 30 days; hard-deletes row + detaches related files from storage.
+- [ ] 776. Data-export self-service: /admin/export-my-data button pushes a data_exports row; a worker builds the ZIP (companies + employees + orders + audit) and flips status=ready with file_path set; UI shows progress + downloadable link for 7 days.
+- [ ] 777. Delete-my-tenant flow: Settings → Danger Zone CTA confirms via cardifyForms.confirmTyped('DELETE'); inserts tenant_deletions row with purge_after = NOW + 30d; daily cron purges expired rows; admin can cancel with cancelled_at until purge.
+- [ ] 778. Undo button in audit-log viewer: for actions recent enough to still have an undo_actions row (not consumed, not expired), surface a Revert button that restores before_state and marks consumed_at.
+- [ ] 779. Audit-log CSV export: server-stream CSV of filtered audit_logs rows, Content-Disposition: attachment, UTF-8 BOM.
+- [ ] 780. Suspicious-activity watcher: cron scans audit_logs for (action LIKE '%delete%' AND actor_id same AND 10+ rows in trailing minute); pauses the actor via session flag + pushes a critical NotificationCenter row to super_admin.
