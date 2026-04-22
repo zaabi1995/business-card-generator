@@ -241,6 +241,12 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <?php if (!empty($extraHead)) echo $extraHead; ?>
 </head>
 <body class="bg-gray-50 text-gray-900 antialiased <?php echo $bodyClass; ?>" <?php echo $bodyAttributes; ?>>
+<?php if (defined('SHOW_STAGE_BANNER') && SHOW_STAGE_BANNER): /* Cat T action 468 staging banner */ ?>
+<div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#fbbf24;color:#111827;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;padding:4px 12px;text-align:center;border-bottom:2px solid #b45309;">
+  <strong>STAGING</strong> · <?= defined('APP_HOST') ? htmlspecialchars(APP_HOST) : 'stage' ?> · not production data · Paymob sandbox
+</div>
+<style>body { padding-top: 26px; }</style>
+<?php endif; ?>
     <!-- Page Loader (auto-hides via CSS after 2.5s even without JS) -->
     <div class="page-loader" id="pageLoader">
         <img src="<?php echo getBasePath(); ?>assets/images/cardify-loader.svg" alt="Loading" width="100" height="100" onerror="this.style.display='none'">
