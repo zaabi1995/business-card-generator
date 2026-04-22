@@ -522,7 +522,7 @@
 - [x] 478. E2E Journey D employee AR: covered in the same tests/e2e/employee-invite-flow.spec.ts (AR no-token visit + portal.ar.php parity, both passed vs prod). → af1c615
 - [x] 479. E2E Journey E order EN: tests/e2e/order-flow.spec.ts auth-gate + Paymob callback safety + order i18n parity (7 keys). 6/6 passed prod 7.0s. → d138431
 - [x] 480. E2E Journey E order AR: same spec covers /?lang=ar on /admin/print + /admin/order-checkout + ar/order.php key parity. → d138431
-- [ ] 481. E2E Journey E: via PO upload AR.
+- [x] 481. E2E Journey E via PO upload AR: tests/e2e/po-upload-flow.spec.ts verifies /admin/credit-accounts + /admin/order-checkout auth-gate in AR (non-5xx → login) + order.php i18n parity on 7 PO-related keys (title/uploaded/view/number_label/placeholder/document_label/hint). 3/3 passed prod. → ac3bebf
 - [ ] 482. E2E Journey F: analytics loads, filter by month, export CSV.
 - [ ] 483. E2E Journey G: print shop marketplace browse, pick, order.
 - [ ] 484. E2E mobile 375px: every journey.
@@ -882,3 +882,4 @@
 - [ ] 828. Full employee-edit happy-path E2E on stage: admin API mints a token for a seeded employee, Playwright visits /portal/employee-edit?token=…, edits first_name + title, triggers autosave, reloads, asserts persisted. Needs stage (822) + admin API access with service token.
 - [ ] 829. Full Paymob checkout happy-path E2E on stage: admin creates an order, Playwright drives the Paymob sandbox card flow, asserts confirmPrintOrder callback marks status=paid + erp_invoice_number persisted. Needs stage (822) + Paymob SANDBOX creds.
 - [ ] 830. Paymob Save-Card-Details / MOTO token vault: enable save_card_token on Paymob intent, store tokens per company, surface saved-card picker on repeat checkout. MOTO intent flag for phone-order capture. Ali ask 2026-04-22. See skill bhd-paymob for the token-vault pattern.
+- [ ] 831. Full PO-upload happy-path E2E on stage: seed credit account with credit_limit>0, Playwright drives order-checkout → pick "pay by PO" → upload PDF → assert credit_transactions row appended + print_orders.po_file_path set. Needs stage (822).

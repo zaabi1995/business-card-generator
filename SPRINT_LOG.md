@@ -98,3 +98,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-22 23:35 | #477 | af1c615 | Cat U E2E employee invite: expired-page (EN+AR) + random-token + GET save leak + portal i18n parity, 5/5 passed prod. Full walk queued as 828.
 2026-04-22 23:37 | #478 | af1c615 | Cat U E2E employee AR: same spec file handles /?lang=ar expired page + ar/portal.php key parity.
 2026-04-22 23:50 | #479+480 | d138431 | Cat U E2E order: 4 auth-gate + 1 callback safety + 1 i18n parity, 6/6 passed prod. Full Paymob walk queued 829. Ali requested MOTO card-save: queued 830.
+2026-04-23 00:05 | #481 | ac3bebf | Cat U E2E PO upload AR: 2 auth-gates + 7-key PO i18n parity, 3/3 passed prod. Full walk queued as 831.
