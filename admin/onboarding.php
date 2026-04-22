@@ -202,7 +202,7 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
                 <button type="button" @click="copyUrl()"
                         class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
                         :class="copied ? 'bg-green-600 hover:bg-green-600' : ''">
-                    <span x-text="copied ? <?= json_encode(t('onboarding.copied')) ?> : <?= json_encode(t('onboarding.copy')) ?>"></span>
+                    <span x-text="copied ? <?= htmlspecialchars(json_encode(t('onboarding.copied')), ENT_QUOTES) ?> : <?= htmlspecialchars(json_encode(t('onboarding.copy')), ENT_QUOTES) ?>"></span>
                 </button>
             </div>
         </div>
@@ -214,7 +214,7 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
 
             <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.paste_list_label')) ?></label>
             <textarea x-model="data.invite_team.paste" rows="6" class="form-input font-mono text-sm"
-                      :placeholder="<?= json_encode(t('onboarding.paste_list_ph')) ?>"></textarea>
+                      :placeholder="<?= htmlspecialchars(json_encode(t('onboarding.paste_list_ph')), ENT_QUOTES) ?>"></textarea>
             <p class="mt-1 text-xs"
                :class="parsedPaste.errors.length ? 'text-amber-600' : 'text-green-600'"
                x-show="parsedPaste.count || parsedPaste.errors.length"
@@ -267,7 +267,7 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
                     class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
                 <span x-show="saving"><i class="fa-solid fa-spinner fa-spin mr-1"></i><?= htmlspecialchars(t('onboarding.saving')) ?></span>
                 <span x-show="!saving">
-                    <span x-text="step < totalSteps ? <?= json_encode(t('onboarding.nav_next')) ?> : <?= json_encode(t('onboarding.finish')) ?>"></span>
+                    <span x-text="step < totalSteps ? <?= htmlspecialchars(json_encode(t('onboarding.nav_next')), ENT_QUOTES) ?> : <?= htmlspecialchars(json_encode(t('onboarding.finish')), ENT_QUOTES) ?>"></span>
                     <i class="fa-solid fa-arrow-right ml-1"></i>
                 </span>
             </button>
