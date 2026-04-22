@@ -154,6 +154,8 @@ if (!empty($tenant['id'])) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= htmlspecialchars($companyName) ?> — Cardify Login</title>
 <link rel="icon" href="/favicon.svg">
+<?php $detectedPhone = $step === 'request' && $identifier !== '' && !filter_var($identifier, FILTER_VALIDATE_EMAIL); ?>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@24.8.2/build/css/intlTelInput.min.css">
 <style>
 :root { --brand: #009bc1; --bg: #f8fafc; --ink: #0f172a; --muted: #64748b; --line: #e2e8f0; }
 *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:grid;place-items:center;padding:24px}
@@ -172,6 +174,13 @@ button:hover{filter:brightness(0.95)} button.ghost{background:transparent;color:
 .notice{background:#ecfdf5;color:#065f46;padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:8px}
 .foot{margin-top:24px;font-size:12px;color:var(--muted);text-align:center}
 .foot a{color:var(--brand);text-decoration:none}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:#f1f5f9;border-radius:10px;padding:4px;gap:4px;margin-bottom:4px}
+.tabs button{margin:0;padding:8px 12px;background:transparent;color:var(--muted);font-size:14px;border-radius:7px;transition:all .15s}
+.tabs button[aria-selected=true]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(15,23,42,.06)}
+.pane{display:none} .pane[data-active=true]{display:block}
+.iti{width:100%} .iti__tel-input{width:100%}
+.iti__country-list{font-size:14px}
+.field-err{color:#b91c1c;font-size:12px;margin-top:6px;min-height:16px}
 </style>
 </head>
 <body>
@@ -190,12 +199,28 @@ button:hover{filter:brightness(0.95)} button.ghost{background:transparent;color:
 
   <?php if ($step === 'request'): ?>
     <h1>Sign in</h1>
-    <p class="sub">Enter your email or phone. We'll send a one-time code.</p>
+    <p class="sub">We'll send a one-time code to your phone or email.</p>
     <?php if ($error): ?><div class="error"><?= htmlspecialchars($error) ?></div><?php endif; ?>
     <input type="hidden" name="step" value="request">
-    <label for="identifier">Email or phone</label>
-    <input type="text" name="identifier" id="identifier" autocomplete="username" required value="<?= htmlspecialchars($identifier) ?>" placeholder="you@example.com or 9XXXXXXX">
-    <button type="submit">Send code</button>
+    <input type="hidden" name="identifier" id="identifier-hidden" value="">
+
+    <div class="tabs" role="tablist" aria-label="Sign-in method">
+      <button type="button" id="tab-phone" role="tab" aria-selected="<?= $detectedPhone || !$identifier ? 'true' : 'false' ?>" aria-controls="pane-phone">Phone</button>
+      <button type="button" id="tab-email" role="tab" aria-selected="<?= $detectedPhone || !$identifier ? 'false' : 'true' ?>" aria-controls="pane-email">Email</button>
+    </div>
+
+    <div id="pane-phone" class="pane" data-active="<?= $detectedPhone || !$identifier ? 'true' : 'false' ?>" role="tabpanel" aria-labelledby="tab-phone">
+      <label for="phone">Phone number</label>
+      <input type="tel" id="phone" autocomplete="tel" value="<?= htmlspecialchars($detectedPhone ? $identifier : '') ?>">
+      <div class="field-err" id="phone-err" role="alert"></div>
+    </div>
+
+    <div id="pane-email" class="pane" data-active="<?= $detectedPhone || !$identifier ? 'false' : 'true' ?>" role="tabpanel" aria-labelledby="tab-email">
+      <label for="email">Email address</label>
+      <input type="email" id="email" autocomplete="email" value="<?= htmlspecialchars(!$detectedPhone ? $identifier : '') ?>" placeholder="you@example.com">
+    </div>
+
+    <button type="submit" id="submit-btn">Send code</button>
   <?php else: ?>
     <h1>Enter code</h1>
     <p class="sub">We sent a 6-digit code to <strong><?= htmlspecialchars($displayIdentifier) ?></strong>.</p>
@@ -212,5 +237,78 @@ button:hover{filter:brightness(0.95)} button.ghost{background:transparent;color:
     Trouble signing in? Email <a href="mailto:support@cardify.om">support@cardify.om</a>
   </div>
 </form>
+
+<?php if ($step === 'request'): ?>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@24.8.2/build/js/intlTelInput.min.js"></script>
+<script>
+(function () {
+  const form       = document.querySelector('form.card');
+  const hidden     = document.getElementById('identifier-hidden');
+  const phoneInput = document.getElementById('phone');
+  const emailInput = document.getElementById('email');
+  const phonePane  = document.getElementById('pane-phone');
+  const emailPane  = document.getElementById('pane-email');
+  const phoneTab   = document.getElementById('tab-phone');
+  const emailTab   = document.getElementById('tab-email');
+  const phoneErr   = document.getElementById('phone-err');
+
+  // GCC + wider Arab world first, then everything else. Users can scroll/search.
+  const iti = window.intlTelInput(phoneInput, {
+    initialCountry: "om",
+    countryOrder: ["om","ae","sa","qa","bh","kw","eg","jo","lb","iq"],
+    separateDialCode: true,
+    strictMode: true,
+    formatAsYouType: true,
+    utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@24.8.2/build/js/utils.js",
+  });
+
+  function activate(which) {
+    const isPhone = which === 'phone';
+    phonePane.dataset.active = isPhone ? 'true' : 'false';
+    emailPane.dataset.active = isPhone ? 'false' : 'true';
+    phoneTab.setAttribute('aria-selected', isPhone ? 'true' : 'false');
+    emailTab.setAttribute('aria-selected', isPhone ? 'false' : 'true');
+    phoneErr.textContent = '';
+    setTimeout(() => { (isPhone ? phoneInput : emailInput).focus(); }, 50);
+  }
+  phoneTab.addEventListener('click', () => activate('phone'));
+  emailTab.addEventListener('click', () => activate('email'));
+
+  form.addEventListener('submit', function (e) {
+    const usingPhone = phonePane.dataset.active === 'true';
+    if (usingPhone) {
+      if (!iti.isValidNumber()) {
+        e.preventDefault();
+        const codeMap = {0:'Enter a phone number', 1:'Invalid country code', 2:'Too short', 3:'Too long', 4:'Invalid number'};
+        phoneErr.textContent = codeMap[iti.getValidationError()] || 'Invalid phone number';
+        phoneInput.focus();
+        return;
+      }
+      // E.164 without the leading "+" — matches the normalizer on the server.
+      hidden.value = iti.getNumber(intlTelInput.utils.numberFormat.E164).replace(/^\+/, '');
+    } else {
+      const v = (emailInput.value || '').trim();
+      if (!v || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+        e.preventDefault();
+        emailInput.focus();
+        return;
+      }
+      hidden.value = v;
+    }
+  });
+
+  // Pre-populate a returning-user phone into intl-tel-input so the prior
+  // submission re-renders with the matching country flag.
+  if (phoneInput.value && phoneInput.value.length > 0) {
+    iti.promise.then(() => iti.setNumber('+' + phoneInput.value.replace(/^\+/, '')));
+  }
+
+  // Autofocus the first field of the active pane on load.
+  setTimeout(() => {
+    (phonePane.dataset.active === 'true' ? phoneInput : emailInput).focus();
+  }, 100);
+})();
+</script>
+<?php endif; ?>
 </body>
 </html>
