@@ -21,6 +21,7 @@ import { test, expect, devices } from '@playwright/test';
 const viewports = [
   { name: '375px iPhone SE', width: 375, height: 667 },
   { name: '414px iPhone 14 Pro Max', width: 414, height: 896 },
+  { name: '768px iPad portrait', width: 768, height: 1024 },
 ];
 
 // Each page: path, 1+ markers we expect to find above the fold.
