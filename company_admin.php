@@ -68,6 +68,7 @@ try {
         'theme' => 'admin/theme.php',
         'billing' => 'admin/billing.php',
         'billing-info' => 'admin/billing-info.php',
+        'invoices' => 'admin/invoices.php',
         'print' => 'admin/print.php',
         'print_orders' => 'admin/print_orders.php',
         'print_settings' => 'admin/print_settings.php',
