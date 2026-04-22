@@ -1634,6 +1634,69 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 </div>
 
 <script>
+    // Diagnostic probe v2 for the elusive %3Cdiv 404. Hooks error events,
+    // Image/HTMLImageElement src setter, and fetch, so whichever layer
+    // actually fires the request logs its full stack.
+    (function() {
+        function isBad(u) {
+            return typeof u === 'string' && (u.indexOf('%3Cdiv') !== -1 || u.indexOf('<div') !== -1);
+        }
+
+        window.addEventListener('error', function(ev) {
+            var t = ev.target;
+            if (!t || t === window) return;
+            var url = t.currentSrc || t.src || t.href || '';
+            if (isBad(url)) {
+                console.warn('[bg-404] resource error on element:', t);
+                try { console.warn('[bg-404] outerHTML:', t.outerHTML); } catch(e) {}
+                try { console.warn('[bg-404] parent:', t.parentElement && t.parentElement.outerHTML); } catch(e) {}
+                try { console.warn('[bg-404] attributes:', Array.from(t.attributes || []).map(function(a){return a.name+'='+a.value;}).join(' | ')); } catch(e) {}
+            }
+        }, true);
+
+        try {
+            var ImgProto = HTMLImageElement.prototype;
+            var srcDesc = Object.getOwnPropertyDescriptor(ImgProto, 'src');
+            if (srcDesc && srcDesc.set) {
+                Object.defineProperty(ImgProto, 'src', {
+                    configurable: true,
+                    enumerable: srcDesc.enumerable,
+                    get: srcDesc.get,
+                    set: function(v) {
+                        if (isBad(v)) {
+                            console.warn('[bg-404] img.src set to bad value:', v, 'on element:', this);
+                            console.trace('[bg-404] stack');
+                        }
+                        return srcDesc.set.call(this, v);
+                    }
+                });
+            }
+        } catch (e) { console.warn('[bg-404] could not hook HTMLImageElement.src', e); }
+
+        try {
+            var origSetAttr = Element.prototype.setAttribute;
+            Element.prototype.setAttribute = function(name, value) {
+                if ((name === 'src' || name === 'href') && isBad(value)) {
+                    console.warn('[bg-404] setAttribute('+name+',...) bad value:', value, 'on', this);
+                    console.trace('[bg-404] setAttribute stack');
+                }
+                return origSetAttr.apply(this, arguments);
+            };
+        } catch (e) { console.warn('[bg-404] could not hook setAttribute', e); }
+
+        try {
+            var origFetch = window.fetch;
+            window.fetch = function(input, init) {
+                var u = typeof input === 'string' ? input : (input && input.url) || '';
+                if (isBad(u)) {
+                    console.warn('[bg-404] fetch() bad URL:', u);
+                    console.trace('[bg-404] fetch stack');
+                }
+                return origFetch.apply(this, arguments);
+            };
+        } catch (e) { console.warn('[bg-404] could not hook fetch', e); }
+    })();
+
     function templateEditor() {
         return {
             csrfToken: '<?php echo generateCSRFToken(); ?>',
