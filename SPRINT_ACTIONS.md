@@ -505,7 +505,7 @@
 - [x] 464. Slow-query log review cron: scripts/slow-query-report.sh parses /www/server/data/mysql-slow.log (MariaDB slow_query_log=ON long_query_time=3s) via mysqldumpslow top-20-by-avg + top-10-by-count, emails ali@bhd.om, archives gz under /var/log/cardify-slow/ (12-week retention), truncates live file. Cron 15 7 * * 1. Live test report emailed OK. → 82917fe
 - [x] 465. Deploy pre-flight: /usr/local/bin/deploy-cardify.sh (mirrored in repo ops/deploy-cardify.sh) runs php -l on every changed .php file after git pull; any syntax error triggers `git reset --hard BEFORE` and exits 2 WITHOUT reloading php-fpm, so OPcache keeps serving the previous good tree. Lint gate moves typos from runtime to deploy-time. → 4c44387
 - [x] 466. Deploy post-flight smoke 5 URLs: /usr/local/bin/deploy-cardify.sh hits / + /api/health + /pricing + /status + /login.php after FPM reload; verifies HTTP status + content marker (pure-bash `case` substring; avoided subshell grep weirdness); 2s warm-up + one retry per URL; rollback on fail via git reset --hard + FPM re-reload + exit 3. → a0e922a
-- [ ] 467. Rollback command documented + tested.
+- [x] 467. Rollback command documented + tested: /usr/local/bin/rollback-cardify.sh (mirror ops/rollback-cardify.sh) supports bare/HEAD~1/sha/tag target + --list + --status + --help; git reset --hard + perms sweep + FPM reload + 2s warm + 5-URL smoke (warn-only); tee to /var/log/cardify-rollback.log. End-to-end tested: rolled to HEAD~1 (5/5 OK) then forward to origin/main (5/5 OK) without breaking traffic. → 7703036
 - [ ] 468. Staging env mirror (subdomain stage.cardify.om).
 - [ ] 469. Load test with k6 (100 concurrent users).
 - [ ] 470. Incident runbook at `/ops/runbook.md`.
