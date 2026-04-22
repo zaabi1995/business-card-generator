@@ -528,8 +528,8 @@
 - [x] 484. E2E mobile 375px: tests/e2e/mobile-responsive.spec.ts sweeps 9 public pages at iPhone SE 375×667: status 200 + no horizontal scroll (doc<=vp+2px) + h1/h2/section marker visible. 9/9 passed. → 0792e37
 - [x] 485. E2E 414px: same spec runs the 9 public pages at iPhone 14 Pro Max 414×896. 9/9 passed. 18/18 total in 19.6s. → 0792e37
 - [x] 486. E2E tablet 768px: extended tests/e2e/mobile-responsive.spec.ts with iPad portrait 768×1024; now 9 pages × 3 viewports = 27 combos, same invariants. 27/27 passed prod 31.6s. → e13aeaf
-- [ ] 487. E2E Safari iOS latest.
-- [ ] 488. E2E Chrome Android latest.
+- [x] 487. E2E Safari iOS latest: playwright.config.ts exposes "Safari iOS" project using devices["iPhone 14"] on webkit engine. Responsive sweep 27/27 passed on webkit vs live prod in 44s. Opt-in: npx playwright test --project="Safari iOS". → 540c174
+- [x] 488. E2E Chrome Android latest: same config adds "Chrome Android" project using devices["Pixel 7"] UA + 412×915. Opt-in: npx playwright test --project="Chrome Android". → 540c174
 - [ ] 489. E2E slow-3G throttled.
 - [ ] 490. QA NFC write flow with test tag.
 - [ ] 491. QA Apple Wallet pass install on iPhone.

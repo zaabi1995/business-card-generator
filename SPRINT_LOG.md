@@ -103,3 +103,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-23 00:35 | #483 | 2b50d07 | Cat U E2E marketplace: public /print-shops EN 200 + BHD flagship visible, AR 200 RTL, marketplace namespace parity. 3/3 passed prod.
 2026-04-23 00:50 | #484+485 | 0792e37 | Cat U responsive: 9 public pages × 2 viewports (375+414), 18/18 passed prod 19.6s; scoped marker check dodges hidden desktop nav links. Full admin coverage queued 834.
 2026-04-23 01:00 | #486 | e13aeaf | Cat U tablet: added 768×1024 to responsive sweep, 27/27 passed prod 31.6s.
+2026-04-23 01:20 | #487+488 | 540c174 | Cat U cross-browser: playwright.config Safari iOS (webkit) + Chrome Android (Pixel 7) projects, 27/27 responsive sweep passed on webkit vs prod.
