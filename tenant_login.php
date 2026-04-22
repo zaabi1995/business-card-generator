@@ -86,17 +86,19 @@ $displayIdentifier = $identifier;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
     if ($identifier === '') {
-        $error = 'Enter your email or phone number.';
+        $error = t('auth.tenant_err_enter_id');
     } else {
         $isEmail = filter_var($identifier, FILTER_VALIDATE_EMAIL) !== false;
         $channel = $isEmail ? 'email' : 'whatsapp';
         $deliveryId = $isEmail ? strtolower($identifier) : tl_normalize_phone($identifier);
         if (!$isEmail && strlen($deliveryId) < 8) {
-            $error = 'Enter a valid phone number.';
+            $error = t('auth.tenant_err_phone_invalid');
         } else {
             $user = tl_lookup_user($identifier, $companyId);
             if (!$user) {
-                $error = 'No account found for that ' . ($isEmail ? 'email' : 'phone') . '. Contact your admin.';
+                $error = t('auth.tenant_err_no_account', [
+                    'kind' => t($isEmail ? 'auth.tenant_kind_email' : 'auth.tenant_kind_phone'),
+                ]);
             } else {
                 $purpose = 'tlogin:' . substr(hash('sha1', $companyId), 0, 12);
                 $res = OtpService::send($deliveryId, $channel, $purpose);
@@ -106,17 +108,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
                     $_SESSION['tlogin_user_id']        = $user['id'];
                     $_SESSION['tlogin_purpose']        = $purpose;
                     $_SESSION['tlogin_pending_verify'] = true;
-                    $_SESSION['tlogin_notice']         = ($channel === 'email')
-                        ? 'Code sent to your email.'
-                        : 'Code sent via WhatsApp.';
-                    // PRG: redirect so the URL is a fresh GET on the verify step.
+                    $_SESSION['tlogin_notice']         = $channel === 'email'
+                        ? t('auth.tenant_notice_email')
+                        : t('auth.tenant_notice_wa');
                     header('Location: /login');
                     exit;
                 } else {
                     $err = $res['error'] ?? 'unknown';
                     $error = ($err === 'rate_limited_identifier' || $err === 'rate_limited_ip')
-                        ? 'Too many attempts. Try again later.'
-                        : 'Could not send code. Try the other channel.';
+                        ? t('auth.tenant_err_rate_limited')
+                        : t('auth.tenant_err_send_failed');
                 }
             }
         }
@@ -129,16 +130,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
     $displayIdentifier = $deliveryId;
     if ($deliveryId === '' || $purpose === '' || $userId === '') {
         $step = 'request';
-        $error = 'Session expired. Start over.';
+        $error = t('auth.tenant_err_session');
     } elseif (!preg_match('/^\d{6}$/', $code)) {
-        $error = 'Enter the 6-digit code.';
+        $error = t('auth.tenant_err_code_format');
     } else {
         $res = OtpService::verify($deliveryId, $code, $purpose);
         if (!empty($res['ok'])) {
             $db = Database::getInstance();
             $user = $db->fetchOne("SELECT * FROM users WHERE id = :id LIMIT 1", ['id' => $userId]);
             if (!$user || $user['company_id'] !== $companyId) {
-                $error = 'Account not found.';
+                $error = t('auth.tenant_err_account_404');
                 $step = 'request';
             } else {
                 unset($_SESSION['tlogin_identifier'], $_SESSION['tlogin_channel'], $_SESSION['tlogin_user_id'], $_SESSION['tlogin_purpose']);
@@ -149,9 +150,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
         } else {
             $err = $res['error'] ?? 'invalid';
             $error = match ($err) {
-                'expired_or_missing' => 'Code expired. Request a new one.',
-                'too_many_attempts'  => 'Too many tries. Request a new code.',
-                default              => 'Invalid code.',
+                'expired_or_missing' => t('auth.tenant_err_code_expired'),
+                'too_many_attempts'  => t('auth.tenant_err_too_many'),
+                default              => t('auth.tenant_err_code_invalid'),
             };
         }
     }
@@ -162,12 +163,17 @@ if (!empty($tenant['id'])) {
     $candidate = '/uploads/companies/' . $tenant['id'] . '/logo.png';
     if (is_file(__DIR__ . $candidate)) $logoUrl = $candidate;
 }
+
+$locale      = currentLocale();
+$dir         = isRtl() ? 'rtl' : 'ltr';
+$otherLocale = $locale === 'ar' ? 'en' : 'ar';
+$switchUrl   = '/login?lang=' . $otherLocale;
 ?><!doctype html>
-<html lang="en">
+<html lang="<?= htmlspecialchars($locale) ?>" dir="<?= $dir ?>">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= htmlspecialchars($companyName) ?> — Cardify Login</title>
+<title><?= htmlspecialchars($companyName) ?> — Cardify</title>
 <link rel="icon" href="/favicon.svg">
 <?php $detectedPhone = $step === 'request' && $identifier !== '' && !filter_var($identifier, FILTER_VALIDATE_EMAIL); ?>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@24.6.0/build/css/intlTelInput.min.css">
@@ -196,9 +202,15 @@ button:hover{filter:brightness(0.95)} button.ghost{background:transparent;color:
 .iti{width:100%} .iti__tel-input{width:100%}
 .iti__country-list{font-size:14px}
 .field-err{color:#b91c1c;font-size:12px;margin-top:6px;min-height:16px}
+.lang-switch{position:absolute;top:16px;<?= $dir === 'rtl' ? 'left' : 'right' ?>:16px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;color:var(--muted);text-decoration:none;font-weight:500}
+.lang-switch:hover{color:var(--ink);border-color:var(--muted)}
+html[dir=rtl] .code{letter-spacing:8px;direction:ltr}
+html[dir=rtl] input[type=tel]{direction:ltr;text-align:right}
+html[dir=rtl] .iti{direction:ltr}
 </style>
 </head>
 <body>
+<a href="<?= htmlspecialchars($switchUrl) ?>" class="lang-switch" rel="nofollow"><?= htmlspecialchars(t('auth.tenant_lang_switch')) ?></a>
 <form class="card" method="post" novalidate>
   <div class="logo">
     <?php if ($logoUrl): ?>
@@ -208,48 +220,48 @@ button:hover{filter:brightness(0.95)} button.ghost{background:transparent;color:
     <?php endif; ?>
     <div>
       <div style="font-weight:700;font-size:16px"><?= htmlspecialchars($companyName) ?></div>
-      <div style="font-size:12px;color:var(--muted)">Powered by Cardify</div>
+      <div style="font-size:12px;color:var(--muted)"><?= htmlspecialchars(t('auth.tenant_powered_by')) ?></div>
     </div>
   </div>
 
   <?php if ($step === 'request'): ?>
-    <h1>Sign in</h1>
-    <p class="sub">We'll send a one-time code to your phone or email.</p>
+    <h1><?= htmlspecialchars(t('auth.sign_in')) ?></h1>
+    <p class="sub"><?= htmlspecialchars(t('auth.tenant_subtitle')) ?></p>
     <?php if ($error): ?><div class="error"><?= htmlspecialchars($error) ?></div><?php endif; ?>
     <input type="hidden" name="step" value="request">
     <input type="hidden" name="identifier" id="identifier-hidden" value="">
 
-    <div class="tabs" role="tablist" aria-label="Sign-in method">
-      <button type="button" id="tab-phone" role="tab" aria-selected="<?= $detectedPhone || !$identifier ? 'true' : 'false' ?>" aria-controls="pane-phone">Phone</button>
-      <button type="button" id="tab-email" role="tab" aria-selected="<?= $detectedPhone || !$identifier ? 'false' : 'true' ?>" aria-controls="pane-email">Email</button>
+    <div class="tabs" role="tablist" aria-label="<?= htmlspecialchars(t('auth.email_or_phone')) ?>">
+      <button type="button" id="tab-phone" role="tab" aria-selected="<?= $detectedPhone || !$identifier ? 'true' : 'false' ?>" aria-controls="pane-phone"><?= htmlspecialchars(t('auth.phone')) ?></button>
+      <button type="button" id="tab-email" role="tab" aria-selected="<?= $detectedPhone || !$identifier ? 'false' : 'true' ?>" aria-controls="pane-email"><?= htmlspecialchars(t('auth.email')) ?></button>
     </div>
 
     <div id="pane-phone" class="pane" data-active="<?= $detectedPhone || !$identifier ? 'true' : 'false' ?>" role="tabpanel" aria-labelledby="tab-phone">
-      <label for="phone">Phone number</label>
+      <label for="phone"><?= htmlspecialchars(t('auth.tenant_phone_label')) ?></label>
       <input type="tel" id="phone" autocomplete="tel" value="<?= htmlspecialchars($detectedPhone ? $identifier : '') ?>">
       <div class="field-err" id="phone-err" role="alert"></div>
     </div>
 
     <div id="pane-email" class="pane" data-active="<?= $detectedPhone || !$identifier ? 'false' : 'true' ?>" role="tabpanel" aria-labelledby="tab-email">
-      <label for="email">Email address</label>
-      <input type="email" id="email" autocomplete="email" value="<?= htmlspecialchars(!$detectedPhone ? $identifier : '') ?>" placeholder="you@example.com">
+      <label for="email"><?= htmlspecialchars(t('auth.tenant_email_label')) ?></label>
+      <input type="email" id="email" autocomplete="email" value="<?= htmlspecialchars(!$detectedPhone ? $identifier : '') ?>" placeholder="<?= htmlspecialchars(t('auth.tenant_email_placeholder')) ?>">
     </div>
 
-    <button type="submit" id="submit-btn">Send code</button>
+    <button type="submit" id="submit-btn"><?= htmlspecialchars(t('auth.tenant_send_code')) ?></button>
   <?php else: ?>
-    <h1>Enter code</h1>
-    <p class="sub">We sent a 6-digit code to <strong><?= htmlspecialchars($displayIdentifier) ?></strong>.</p>
+    <h1><?= htmlspecialchars(t('auth.tenant_enter_code_h1')) ?></h1>
+    <p class="sub"><?= str_replace(':ident', '<strong>' . htmlspecialchars($displayIdentifier) . '</strong>', htmlspecialchars(t('auth.tenant_enter_code_sub', ['ident' => ':ident']))) ?></p>
     <?php if ($error): ?><div class="error"><?= htmlspecialchars($error) ?></div><?php endif; ?>
     <?php if ($notice): ?><div class="notice"><?= htmlspecialchars($notice) ?></div><?php endif; ?>
     <input type="hidden" name="step" value="verify">
-    <label for="code">6-digit code</label>
+    <label for="code"><?= htmlspecialchars(t('auth.tenant_code_label')) ?></label>
     <input type="text" name="code" id="code" inputmode="numeric" pattern="\d{6}" maxlength="6" autocomplete="one-time-code" class="code" required autofocus>
-    <button type="submit">Verify & sign in</button>
-    <a href="/login" style="text-decoration:none"><button type="button" class="ghost">Use a different email or phone</button></a>
+    <button type="submit"><?= htmlspecialchars(t('auth.tenant_verify_btn')) ?></button>
+    <a href="/login" style="text-decoration:none"><button type="button" class="ghost"><?= htmlspecialchars(t('auth.tenant_use_different')) ?></button></a>
   <?php endif; ?>
 
   <div class="foot">
-    Trouble signing in? Email <a href="mailto:support@cardify.om">support@cardify.om</a>
+    <?= str_replace(':email', '<a href="mailto:support@cardify.om">support@cardify.om</a>', htmlspecialchars(t('auth.tenant_support', ['email' => ':email']))) ?>
   </div>
 </form>
 
@@ -312,7 +324,7 @@ button:hover{filter:brightness(0.95)} button.ghost{background:transparent;color:
       const digits = raw.replace(/[^0-9]/g, '');
       if (!digits) {
         e.preventDefault();
-        if (phoneErr) phoneErr.textContent = 'Enter your phone number.';
+        if (phoneErr) phoneErr.textContent = <?= json_encode(t('auth.tenant_err_enter_phone'), JSON_UNESCAPED_UNICODE) ?>;
         phoneInput.focus();
         return;
       }
