@@ -151,8 +151,8 @@
 
 ## E, Employee Self-Service (126-150)
 
-- [x] 126. portal/employee-edit.php (token-gated, no-login, bilingual Alpine.js autosave form) + portal/employee-edit-save.php (JSON POST endpoint, CSRF, whitelist+validate fields, AuditLog). → PENDING_SHA
-- [x] 127. Migration 079: employee_edit_tokens table (PK id, employee_id, unique token_hash, created_at, expires_at, last_used_at, revoked_at, created_by, ip audit; 2 indexes). → PENDING_SHA
+- [x] 126. portal/employee-edit.php (token-gated, no-login, bilingual Alpine.js autosave form) + portal/employee-edit-save.php (JSON POST endpoint, CSRF, whitelist+validate fields, AuditLog). → ed92e5e
+- [x] 127. Migration 079: employee_edit_tokens table (PK id, employee_id, unique token_hash, created_at, expires_at, last_used_at, revoked_at, created_by, ip audit; 2 indexes). → ed92e5e
 - [~] 128. Mint-on-create hook deferred to action 569. Admin can manually mint via EmployeeEditToken::mint() today; auto-mint on INSERT employees + invite dispatch wires in next.
 - [x] 129. Edit form: name_en, position_en, phone, mobile, email, website (6 core fields). Dynamic socials + LinkedIn/Instagram/Twitter deferred to action 570.
 - [~] 130. Photo upload with MIME check + 512×512 resize + WebP fallback deferred to action 571 (needs imagick/ImageMagick on path; currently missing on prod per migration warning).
