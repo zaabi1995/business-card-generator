@@ -472,7 +472,7 @@
 - [x] 437. FAQ page bilingual with 20 questions: /faq + /ar/faq, 20 Q/A across 6 categories (Getting started 4, Digital cards 4, Printing 4, Teams 3, Billing 3, Tech 2). Seo::faqPage ld+json schema + Seo::breadcrumbs. 45 lang keys EN+AR parity OK. 20 details blocks verified in both locales. → 9a8e6ec
 - [x] 438. Contact page with form + WhatsApp + map, bilingual: /contact + /ar/contact, 4 side cards (WhatsApp Anna line 96899899100 / email info@cardify.om / AK Tower address / social), CSRF-guarded form routing to Mailer + WhatsApp fallback button on send-failure, Google Maps iframe embed pointing at AK Tower Bousher. 32 keys EN+AR parity OK. → 05e9159
 - [x] 439. Terms + Privacy bilingual: /terms + /ar/terms + /privacy + /ar/privacy. Shared includes/legal-render.php renderer, copy in lang/{en,ar}/legal.php structured sections. Oman-specific: BHD CR 1334733, Omani courts Muscat, 12-month liability cap, PDPL-aligned privacy with 7y print retention, MTCIT as complaints authority, processors named (BHD/Paymob/Google/Hostinger). Seo::breadcrumbs + nginx rewrites. → 2fcf6bb
-- [ ] 440. Blog bilingual (per post; slug-en, slug-ar where applicable).
+- [x] 440. Blog bilingual per-post: migration 087 adds title_ar / slug_ar UNIQUE / excerpt_ar / content_ar / meta_desc_ar on blog_posts (all nullable, EN fallback). blog.php $L() helper switches to AR columns when present; single-post lookup accepts either slug or slug_ar. /ar/blog and /ar/blog/{ar-slug} routed. BlogPosting JSON-LD gains inLanguage; head emits hreflang alternates; sitemap child emits bilingual pairs with xhtml:link reciprocity. → b9708bf
 
 ## S, ERP Sync + Billing (441-455)
 
@@ -861,3 +861,4 @@
 - [ ] 807. Convert light-dash.png to AVIF + WebP with PNG fallback via <picture>. Current 148KB PNG → likely 40-60KB WebP.
 - [ ] 808. Audit flag-icons.min.css (jsDelivr) usage — only needed on LocaleSwitcher. Conditionally load.
 - [ ] 809. Admin CRUD for landing testimonials: /admin/landing-testimonials page + testimonials_landing table (quote_en/ar, author, role, company_logo, display_order, status=draft|published). Lets Ali collect real client quotes and publish without a redeploy. Backfill the 2 BHD-Group quotes currently hard-coded.
+- [ ] 810. Admin blog-editor UI: add AR tabs for title_ar/slug_ar/excerpt_ar/content_ar/meta_desc_ar so marketing can translate existing posts without direct SQL. Migration 087 is already live.
