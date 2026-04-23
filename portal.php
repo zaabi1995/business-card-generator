@@ -1121,8 +1121,11 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     </div>
                     <?php endif; ?>
 
-                    <!-- Address 02 Arabic (second address arabic version) -->
-                    <?php if (!empty($enabledFields['address_ar']) || !empty($enabledFields['address'])): ?>
+                    <!-- Address 02 Arabic: only render when the designer has an
+                         explicit address_2_ar field on the template. No such
+                         key exists in OHB's current design, so this stays
+                         hidden unless a tenant adds it later. -->
+                    <?php if (!empty($enabledFields['address_2_ar'])): ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             Address 02 (Arabic)
