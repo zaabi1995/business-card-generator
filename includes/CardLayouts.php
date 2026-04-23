@@ -87,6 +87,16 @@ class CardLayouts {
         $secondary = ($theme && !empty($theme['secondary_color'])) ? $theme['secondary_color'] : '#0f3460';
         $logo = ($theme && !empty($theme['logo_path'])) ? $theme['logo_path'] : '';
 
+        // Auto-contrast helpers, pair with ColorContrast class. Layouts
+        // that drop text onto $accent / $secondary backgrounds should
+        // read $d['textOnPrimary'] / $d['textOnSecondary'] instead of
+        // hardcoding #fff so light brand colors stay legible.
+        if (!class_exists('ColorContrast')) {
+            require_once __DIR__ . '/ColorContrast.php';
+        }
+        $textOnPrimary   = ColorContrast::readableOn($accent);
+        $textOnSecondary = ColorContrast::readableOn($secondary);
+
         $e = function($k) use ($employee) {
             return htmlspecialchars($employee[$k] ?? '', ENT_QUOTES);
         };
@@ -149,6 +159,8 @@ class CardLayouts {
             'arabic' => $mirrorArabic,
             'dir' => $mirrorArabic ? 'rtl' : 'ltr',
             'font' => $mirrorArabic ? '\'IBM Plex Sans Arabic\',\'Noto Kufi Arabic\',sans-serif' : '\'Inter\',sans-serif',
+            'textOnPrimary' => $textOnPrimary,
+            'textOnSecondary' => $textOnSecondary,
         ];
     }
 
