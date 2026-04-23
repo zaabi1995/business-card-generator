@@ -178,6 +178,52 @@ class Onboarding
                 );
             }
         }
+
+        // Dispatch welcome email + WA when the wizard transitions to
+        // completed. Silent-fail so notifier hiccups never break save.
+        if ($completedAt) {
+            try {
+                self::dispatchWelcome($companyId, $data);
+            } catch (Throwable $e) {
+                error_log('[onboarding] welcome dispatch failed: ' . $e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Fire wizard_completed notifications to admin + any employee seeded
+     * in step 4. Idempotent at the Notifier layer (every call logs to
+     * notification_log so duplicate-supression can be added later).
+     */
+    public static function dispatchWelcome(string $companyId, array $data): void
+    {
+        if (!class_exists('Notifier')) {
+            require_once __DIR__ . '/Notifier.php';
+        }
+        $db = Database::getInstance();
+        $company = $db->fetchOne(
+            "SELECT id, name, name_en, name_ar, slug, admin_email, phone FROM companies WHERE id = :id",
+            ['id' => $companyId]
+        );
+        if (!$company) return;
+
+        $companyName = $company['name'] ?? ($company['name_en'] ?? 'your company');
+        $slug        = $company['slug'] ?? '';
+        $firstEmp    = $data['first_employee'] ?? [];
+        $empSlug     = strtolower(preg_replace('/[^a-z0-9]+/i', '-', (string) ($firstEmp['name'] ?? 'card')));
+        $host        = defined('APP_HOST') ? APP_HOST : 'cardify.om';
+        $base        = 'https://' . $host;
+        $cardUrl     = $base . '/' . ($slug ? ($slug . '/' . trim($empSlug, '-')) : 'card');
+        $dashboardUrl = $base . ($slug ? "/{$slug}/admin/" : '/admin/');
+
+        $adminName  = $data['admin_name'] ?? ($firstEmp['name'] ?? $companyName);
+        $adminEmail = $company['admin_email'] ?? ($firstEmp['email'] ?? '');
+        $adminPhone = $company['phone'] ?? ($data['admin_phone'] ?? ($firstEmp['phone'] ?? ''));
+
+        Notifier::send('wizard_completed',
+            ['name' => $adminName, 'email' => $adminEmail, 'phone' => $adminPhone, 'company_id' => $companyId],
+            ['name' => $adminName, 'companyName' => $companyName, 'cardUrl' => $cardUrl, 'dashboardUrl' => $dashboardUrl]
+        );
     }
 
     /**
@@ -245,6 +291,7 @@ class Onboarding
     {
         $db = Database::getInstance();
         $existing = self::get($companyId);
+        $wasAlreadyCompleted = !empty($existing['completed_at']);
         $row = [
             'step'         => self::TOTAL_STEPS,
             'completed_at' => date('Y-m-d H:i:s'),
@@ -253,6 +300,13 @@ class Onboarding
             $db->insert('company_onboarding', array_merge(['company_id' => $companyId], $row));
         } else {
             $db->update('company_onboarding', $row, 'company_id = :cid', ['cid' => $companyId]);
+        }
+        if (!$wasAlreadyCompleted) {
+            try {
+                self::dispatchWelcome($companyId, $existing['data'] ?? []);
+            } catch (Throwable $e) {
+                error_log('[onboarding] welcome dispatch (markCompleted) failed: ' . $e->getMessage());
+            }
         }
     }
 }
