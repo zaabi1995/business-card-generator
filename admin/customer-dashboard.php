@@ -26,7 +26,7 @@ $messageType = 'success';
 // Handle account settings update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-        $message = 'Invalid request token. Please refresh and try again.';
+        $message = t('customerdash.invalid_token');
         $messageType = 'error';
     } else {
         $action = $_POST['action'];
@@ -58,9 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             try {
                 $db->update('companies', $updateData, 'id = :id', ['id' => $companyId]);
                 $company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $companyId]);
-                $message = 'Account settings saved.';
+                $message = t('customerdash.account_saved');
             } catch (Exception $e) {
-                $message = 'Failed to save: ' . $e->getMessage();
+                $message = str_replace(':msg', $e->getMessage(), t('customerdash.save_failed'));
                 $messageType = 'error';
             }
         }
@@ -161,11 +161,11 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
 <!-- Page header -->
 <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-        <h1 class="text-2xl font-bold text-gray-900">My Dashboard</h1>
+        <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('customerdash.page_h1')) ?></h1>
         <p class="text-sm text-gray-500 mt-0.5"><?= sanitize($company['name'] ?? ''); ?></p>
     </div>
     <a href="<?= $basePath ?>print<?= $ext ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-        <i class="fa-solid fa-plus"></i> New Print Order
+        <i class="fa-solid fa-plus"></i> <?= htmlspecialchars(t('customerdash.new_print_order')) ?>
     </a>
 </div>
 
@@ -174,10 +174,10 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
     <nav class="-mb-px flex gap-6 overflow-x-auto" id="dashboard-tabs">
         <?php
         $tabs = [
-            'overview' => ['label' => 'Overview',        'icon' => 'fa-solid fa-chart-pie'],
-            'orders'   => ['label' => 'Order History',   'icon' => 'fa-solid fa-box'],
-            'designs'  => ['label' => 'Card Designs',    'icon' => 'fa-solid fa-id-card'],
-            'account'  => ['label' => 'Account Settings','icon' => 'fa-solid fa-gear'],
+            'overview' => ['label' => t('customerdash.tab_overview'), 'icon' => 'fa-solid fa-chart-pie'],
+            'orders'   => ['label' => t('customerdash.tab_orders'),   'icon' => 'fa-solid fa-box'],
+            'designs'  => ['label' => t('customerdash.tab_designs'),  'icon' => 'fa-solid fa-id-card'],
+            'account'  => ['label' => t('customerdash.tab_account'),  'icon' => 'fa-solid fa-gear'],
         ];
         foreach ($tabs as $key => $t):
             $active = $tab === $key;
@@ -185,7 +185,7 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
         <a href="?tab=<?= $key ?>"
            class="whitespace-nowrap pb-3 px-1 text-sm font-medium flex items-center gap-1.5 border-b-2 transition-colors
                   <?= $active ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'; ?>">
-            <i class="<?= $t['icon']; ?>"></i> <?= $t['label']; ?>
+            <i class="<?= $t['icon']; ?>"></i> <?= htmlspecialchars($t['label']); ?>
         </a>
         <?php endforeach; ?>
     </nav>
@@ -198,28 +198,28 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
     <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm p-5 hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between mb-2.5">
-            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">Total Orders</span>
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500"><?= htmlspecialchars(t('customerdash.kpi_total_orders')) ?></span>
             <span class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><i class="fa-solid fa-box"></i></span>
         </div>
         <p class="text-3xl font-bold tracking-tight text-gray-900"><?= number_format($orderCount); ?></p>
     </div>
     <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm p-5 hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between mb-2.5">
-            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">Total Spend</span>
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500"><?= htmlspecialchars(t('customerdash.kpi_total_spend')) ?></span>
             <span class="w-9 h-9 rounded-lg bg-green-50 text-green-600 flex items-center justify-center"><i class="fa-solid fa-coins"></i></span>
         </div>
         <p class="text-2xl font-bold tracking-tight text-gray-900"><?= Currency::formatHtml($totalSpend, $currency, 'lg'); ?></p>
     </div>
     <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm p-5 hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between mb-2.5">
-            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">Generated Cards</span>
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500"><?= htmlspecialchars(t('customerdash.kpi_generated')) ?></span>
             <span class="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center"><i class="fa-solid fa-id-card"></i></span>
         </div>
         <p class="text-3xl font-bold tracking-tight text-gray-900"><?= number_format($designCount); ?></p>
     </div>
     <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm p-5 hover:shadow-md transition-shadow">
         <div class="flex items-center justify-between mb-2.5">
-            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">Employees</span>
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500"><?= htmlspecialchars(t('customerdash.kpi_employees')) ?></span>
             <span class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><i class="fa-solid fa-users"></i></span>
         </div>
         <p class="text-3xl font-bold tracking-tight text-gray-900"><?= number_format($employeeCount); ?></p>
@@ -230,21 +230,21 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
     <!-- Recent Orders -->
     <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
         <div class="p-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 class="font-semibold text-gray-900">Recent Orders</h3>
-            <a href="?tab=orders" class="text-sm text-blue-600 hover:text-blue-800">View all</a>
+            <h3 class="font-semibold text-gray-900"><?= htmlspecialchars(t('customerdash.recent_orders_h')) ?></h3>
+            <a href="?tab=orders" class="text-sm text-blue-600 hover:text-blue-800"><?= htmlspecialchars(t('customerdash.view_all')) ?></a>
         </div>
         <div class="divide-y divide-gray-100">
             <?php $recent = array_slice($orders, 0, 5); ?>
             <?php if (empty($recent)): ?>
             <div class="p-6 text-center text-gray-500 text-sm">
-                No orders yet. <a href="<?= $basePath ?>print<?= $ext ?>" class="text-blue-600 hover:underline">Place your first order</a>
+                <?= str_replace(':url', htmlspecialchars($basePath . 'print' . $ext), t('customerdash.no_orders_cta')) ?>
             </div>
             <?php else: ?>
             <?php foreach ($recent as $o): ?>
             <div class="p-4 flex items-center justify-between">
                 <div class="min-w-0 flex-1">
                     <p class="font-medium text-gray-900 text-sm">#<?= sanitize($o['order_number']); ?></p>
-                    <p class="text-xs text-gray-500 truncate"><?= sanitize($o['employee_name']); ?> &middot; <?= number_format($o['quantity']); ?> cards</p>
+                    <p class="text-xs text-gray-500 truncate"><?= sanitize($o['employee_name']); ?> &middot; <?= htmlspecialchars(str_replace(':n', number_format($o['quantity']), t('customerdash.n_cards_short'))); ?></p>
                     <p class="text-xs text-gray-400"><?= date('M j, Y', strtotime($o['created_at'])); ?></p>
                 </div>
                 <div class="text-right ml-3 flex-shrink-0">
@@ -261,7 +261,7 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
                     };
                     ?>
                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium <?= $sc; ?>">
-                        <?= ucfirst($o['status']); ?>
+                        <?php $stk = 'customerdash.status_' . $o['status']; $stl = t($stk); echo htmlspecialchars($stl === $stk ? ucfirst($o['status']) : $stl); ?>
                     </span>
                 </div>
             </div>
@@ -273,14 +273,14 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
     <!-- Recent Designs -->
     <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
         <div class="p-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 class="font-semibold text-gray-900">Recent Card Designs</h3>
-            <a href="?tab=designs" class="text-sm text-blue-600 hover:text-blue-800">View all</a>
+            <h3 class="font-semibold text-gray-900"><?= htmlspecialchars(t('customerdash.recent_designs_h')) ?></h3>
+            <a href="?tab=designs" class="text-sm text-blue-600 hover:text-blue-800"><?= htmlspecialchars(t('customerdash.view_all')) ?></a>
         </div>
         <div class="divide-y divide-gray-100">
             <?php $recentCards = array_slice($generatedCards, 0, 5); ?>
             <?php if (empty($recentCards)): ?>
             <div class="p-6 text-center text-gray-500 text-sm">
-                No cards generated yet. <a href="<?= $basePath ?>generated<?= $ext ?>" class="text-blue-600 hover:underline">Generate cards</a>
+                <?= str_replace(':url', htmlspecialchars($basePath . 'generated' . $ext), t('customerdash.no_designs_cta')) ?>
             </div>
             <?php else: ?>
             <?php foreach ($recentCards as $card): ?>
@@ -312,21 +312,21 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
 <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
     <div class="p-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-            <h3 class="font-semibold text-gray-900">Order History</h3>
-            <p class="text-sm text-gray-500"><?= number_format(count($orders)); ?> orders total</p>
+            <h3 class="font-semibold text-gray-900"><?= htmlspecialchars(t('customerdash.orders_h')) ?></h3>
+            <p class="text-sm text-gray-500"><?= htmlspecialchars(str_replace(':n', number_format(count($orders)), t('customerdash.orders_total'))) ?></p>
         </div>
         <a href="<?= $basePath ?>print<?= $ext ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-            <i class="fa-solid fa-plus"></i> New Order
+            <i class="fa-solid fa-plus"></i> <?= htmlspecialchars(t('customerdash.new_order')) ?>
         </a>
     </div>
 
     <?php if (empty($orders)): ?>
     <div class="p-12 text-center text-gray-500">
         <i class="fa-solid fa-box text-4xl opacity-20 mb-3"></i>
-        <p class="font-medium">No orders yet</p>
-        <p class="text-sm mt-1">Place your first print order to get started.</p>
+        <p class="font-medium"><?= htmlspecialchars(t('customerdash.empty_orders_h')) ?></p>
+        <p class="text-sm mt-1"><?= htmlspecialchars(t('customerdash.empty_orders_body')) ?></p>
         <a href="<?= $basePath ?>print<?= $ext ?>" class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-            <i class="fa-solid fa-print"></i> Order Cards
+            <i class="fa-solid fa-print"></i> <?= htmlspecialchars(t('customerdash.order_cards_cta')) ?>
         </a>
     </div>
     <?php else: ?>
@@ -362,7 +362,7 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
             </div>
             <p class="text-sm text-gray-700 mb-1"><?= sanitize($o['employee_name']); ?><?= !empty($o['employee_position']) ? ' &mdash; ' . sanitize($o['employee_position']) : ''; ?></p>
             <div class="flex flex-wrap gap-2 text-xs text-gray-500 mb-3">
-                <span><?= number_format($o['quantity']); ?> cards</span>
+                <span><?= htmlspecialchars(str_replace(':n', number_format($o['quantity']), t('customerdash.n_cards_short'))) ?></span>
                 <span>&middot;</span>
                 <span><?= sanitize($o['paper_type'] ?? 'matte'); ?></span>
                 <?php if (!empty($o['finish']) && $o['finish'] !== 'standard'): ?>
@@ -374,12 +374,12 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
                 <div class="flex gap-2">
                     <a href="<?= $basePath ?>order_detail<?= $ext ?>?id=<?= (int)$o['id']; ?>"
                        class="text-xs px-3 py-1.5 border border-gray-200 rounded-lg text-gray-600 hover:border-gray-300 transition-colors">
-                        View
+                        <?= htmlspecialchars(t('customerdash.btn_view')) ?>
                     </a>
                     <?php if ($o['status'] !== 'cancelled'): ?>
                     <a href="<?= htmlspecialchars($reorderUrl); ?>"
                        class="text-xs px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 hover:bg-blue-100 transition-colors">
-                        <i class="fa-solid fa-rotate-right mr-1"></i>Reorder
+                        <i class="fa-solid fa-rotate-right mr-1"></i><?= htmlspecialchars(t('customerdash.btn_reorder')) ?>
                     </a>
                     <?php endif; ?>
                 </div>
@@ -393,12 +393,12 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
         <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
-                    <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Order</th>
-                    <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Employee</th>
-                    <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Details</th>
-                    <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Status</th>
-                    <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Total</th>
-                    <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Actions</th>
+                    <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3"><?= htmlspecialchars(t('customerdash.col_order')) ?></th>
+                    <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3"><?= htmlspecialchars(t('customerdash.col_employee')) ?></th>
+                    <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3"><?= htmlspecialchars(t('customerdash.col_details')) ?></th>
+                    <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3"><?= htmlspecialchars(t('customerdash.col_status')) ?></th>
+                    <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3"><?= htmlspecialchars(t('customerdash.col_total')) ?></th>
+                    <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wide px-4 py-3"><?= htmlspecialchars(t('customerdash.col_actions')) ?></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -431,7 +431,7 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
                         <?php endif; ?>
                     </td>
                     <td class="px-4 py-3 text-sm text-gray-600">
-                        <?= number_format($o['quantity']); ?> cards
+                        <?= htmlspecialchars(str_replace(':n', number_format($o['quantity']), t('customerdash.n_cards_short'))) ?>
                         &middot; <?= sanitize($o['paper_type'] ?? 'matte'); ?>
                         <?php if (!empty($o['finish']) && $o['finish'] !== 'standard'): ?>
                         &middot; <?= sanitize($o['finish']); ?>
@@ -440,19 +440,19 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
                     <td class="px-4 py-3">
                         <div class="flex flex-col gap-1">
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium <?= $sc; ?> w-fit">
-                                <?= ucfirst($o['status']); ?>
+                                <?php $stk = 'customerdash.status_' . $o['status']; $stl = t($stk); echo htmlspecialchars($stl === $stk ? ucfirst($o['status']) : $stl); ?>
                             </span>
                             <?php if (!empty($o['tracking_number'])): ?>
-                            <p class="text-xs text-gray-500">Track: <?= sanitize($o['tracking_number']); ?></p>
+                            <p class="text-xs text-gray-500"><?= htmlspecialchars(t('customerdash.track_prefix')) ?> <?= sanitize($o['tracking_number']); ?></p>
                             <?php endif; ?>
                         </div>
                     </td>
                     <td class="px-4 py-3 text-right">
                         <p class="font-semibold text-gray-900 text-sm"><?= Currency::formatHtml($o['total'], $currency, 'sm'); ?></p>
                         <?php if ($o['payment_status'] === 'paid'): ?>
-                        <p class="text-xs text-green-600">Paid</p>
+                        <p class="text-xs text-green-600"><?= htmlspecialchars(t('customerdash.paid')) ?></p>
                         <?php elseif ($o['payment_status'] === 'pending'): ?>
-                        <p class="text-xs text-amber-600">Unpaid</p>
+                        <p class="text-xs text-amber-600"><?= htmlspecialchars(t('customerdash.unpaid')) ?></p>
                         <?php endif; ?>
                     </td>
                     <td class="px-4 py-3 text-right">
@@ -463,9 +463,9 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
                             </a>
                             <?php if ($o['status'] !== 'cancelled'): ?>
                             <a href="<?= htmlspecialchars($reorderUrl); ?>"
-                               title="Reorder with same settings"
+                               title="<?= htmlspecialchars(t('customerdash.tip_reorder')) ?>"
                                class="text-xs px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 hover:bg-blue-100 transition-colors">
-                                <i class="fa-solid fa-rotate-right mr-1"></i>Reorder
+                                <i class="fa-solid fa-rotate-right mr-1"></i><?= htmlspecialchars(t('customerdash.btn_reorder')) ?>
                             </a>
                             <?php endif; ?>
                         </div>
@@ -485,8 +485,8 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
 <?php if (!empty($templates)): ?>
 <div class="mb-6">
     <div class="flex items-center justify-between mb-3">
-        <h3 class="font-semibold text-gray-900">Templates</h3>
-        <span class="text-sm text-gray-500"><?= count($templates); ?> saved</span>
+        <h3 class="font-semibold text-gray-900"><?= htmlspecialchars(t('customerdash.templates_h')) ?></h3>
+        <span class="text-sm text-gray-500"><?= htmlspecialchars(str_replace(':n', (string) count($templates), t('customerdash.n_saved'))) ?></span>
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         <?php foreach ($templates as $tpl): ?>
@@ -503,9 +503,9 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
             <div class="p-3">
                 <p class="font-medium text-gray-900 text-sm truncate"><?= sanitize($tpl['name']); ?></p>
                 <div class="flex items-center justify-between mt-1">
-                    <span class="text-xs text-gray-500"><?= ucfirst($tpl['side'] ?? 'front'); ?> side</span>
+                    <span class="text-xs text-gray-500"><?php $side = $tpl['side'] ?? 'front'; $sideLbl = $side === 'back' ? t('customerdash.side_back') : t('customerdash.side_front'); echo htmlspecialchars(str_replace(':side', $sideLbl, t('customerdash.side_suffix'))); ?></span>
                     <span class="text-xs px-1.5 py-0.5 rounded-full <?= $tpl['is_active'] ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'; ?>">
-                        <?= $tpl['is_active'] ? 'Active' : 'Inactive'; ?>
+                        <?= htmlspecialchars($tpl['is_active'] ? t('customerdash.tpl_active') : t('customerdash.tpl_inactive')); ?>
                     </span>
                 </div>
             </div>
@@ -519,19 +519,19 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
 <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
     <div class="p-4 border-b border-gray-100 flex items-center justify-between">
         <div>
-            <h3 class="font-semibold text-gray-900">Generated Cards</h3>
-            <p class="text-sm text-gray-500"><?= number_format(count($generatedCards)); ?> total</p>
+            <h3 class="font-semibold text-gray-900"><?= htmlspecialchars(t('customerdash.generated_h')) ?></h3>
+            <p class="text-sm text-gray-500"><?= htmlspecialchars(str_replace(':n', number_format(count($generatedCards)), t('customerdash.n_total'))) ?></p>
         </div>
-        <a href="<?= $basePath ?>generated<?= $ext ?>" class="text-sm text-blue-600 hover:text-blue-800">Manage</a>
+        <a href="<?= $basePath ?>generated<?= $ext ?>" class="text-sm text-blue-600 hover:text-blue-800"><?= htmlspecialchars(t('customerdash.manage')) ?></a>
     </div>
 
     <?php if (empty($generatedCards)): ?>
     <div class="p-12 text-center text-gray-500">
         <i class="fa-solid fa-id-card text-4xl opacity-20 mb-3"></i>
-        <p class="font-medium">No cards generated yet</p>
-        <p class="text-sm mt-1">Generate cards for your employees to build your library.</p>
+        <p class="font-medium"><?= htmlspecialchars(t('customerdash.empty_designs_h')) ?></p>
+        <p class="text-sm mt-1"><?= htmlspecialchars(t('customerdash.empty_designs_body')) ?></p>
         <a href="<?= $basePath ?>generated<?= $ext ?>" class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Cards
+            <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('customerdash.generate_cards')) ?>
         </a>
     </div>
     <?php else: ?>
@@ -557,18 +557,18 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
                 <div class="mt-2 flex gap-1.5">
                     <?php if (!empty($card['front_file_path'])): ?>
                     <a href="<?= getBasePath(); ?>download_card.php?id=<?= urlencode($card['id']); ?>&type=front"
-                       class="flex-1 text-center text-xs py-1 bg-white border border-gray-200 rounded text-gray-600 hover:border-gray-300 transition-colors" title="Download front">
+                       class="flex-1 text-center text-xs py-1 bg-white border border-gray-200 rounded text-gray-600 hover:border-gray-300 transition-colors" title="<?= htmlspecialchars(t('customerdash.tip_dl_front')) ?>">
                         <i class="fa-solid fa-download"></i>
                     </a>
                     <?php endif; ?>
                     <?php if (!empty($card['pdf_file_path'])): ?>
                     <a href="<?= imageUrl($card['pdf_file_path']); ?>"
-                       class="flex-1 text-center text-xs py-1 bg-white border border-gray-200 rounded text-gray-600 hover:border-gray-300 transition-colors" title="Download PDF">
+                       class="flex-1 text-center text-xs py-1 bg-white border border-gray-200 rounded text-gray-600 hover:border-gray-300 transition-colors" title="<?= htmlspecialchars(t('customerdash.tip_dl_pdf')) ?>">
                         PDF
                     </a>
                     <?php endif; ?>
                     <a href="<?= $basePath ?>print<?= $ext ?>?employee_id=<?= urlencode($card['employee_id'] ?? ''); ?>"
-                       class="flex-1 text-center text-xs py-1 bg-blue-50 border border-blue-200 rounded text-blue-700 hover:bg-blue-100 transition-colors" title="Print this card">
+                       class="flex-1 text-center text-xs py-1 bg-blue-50 border border-blue-200 rounded text-blue-700 hover:bg-blue-100 transition-colors" title="<?= htmlspecialchars(t('customerdash.tip_print_this')) ?>">
                         <i class="fa-solid fa-print"></i>
                     </a>
                 </div>
@@ -587,21 +587,21 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
     <!-- Company Info -->
     <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
         <div class="p-4 border-b border-gray-100">
-            <h3 class="font-semibold text-gray-900">Company Information</h3>
-            <p class="text-sm text-gray-500">Basic details about your organisation</p>
+            <h3 class="font-semibold text-gray-900"><?= htmlspecialchars(t('customerdash.company_info_h')) ?></h3>
+            <p class="text-sm text-gray-500"><?= htmlspecialchars(t('customerdash.company_info_sub')) ?></p>
         </div>
         <form method="post" class="p-6 space-y-4">
             <?= csrfField(); ?>
             <input type="hidden" name="action" value="update_account">
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('customerdash.field_name')) ?></label>
                 <input type="text" name="name" value="<?= sanitize($company['name'] ?? ''); ?>" required
                        class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm">
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Billing Email</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('customerdash.field_billing_email')) ?></label>
                 <input type="email" name="billing_email" value="<?= sanitize($company['billing_email'] ?? $company['admin_email'] ?? ''); ?>"
                        class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm">
             </div>
@@ -614,20 +614,20 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">
-                    WhatsApp / Phone
-                    <span class="text-gray-400 font-normal text-xs">(for order updates)</span>
+                    <?= htmlspecialchars(t('customerdash.field_phone')) ?>
+                    <span class="text-gray-400 font-normal text-xs"><?= htmlspecialchars(t('customerdash.field_phone_hint')) ?></span>
                 </label>
                 <input type="tel" name="phone" id="bhd224-phone-edit" value="<?= sanitize($company['phone'] ?? ''); ?>"
                        autocomplete="tel" inputmode="tel"
                        placeholder="9XXX XXXX"
                        class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm">
                 <input type="hidden" name="phone_e164" id="bhd224-phone-e164" value="">
-                <p class="mt-1 text-xs text-gray-500">Used for order status updates and onboarding. Leave blank to opt out.</p>
+                <p class="mt-1 text-xs text-gray-500"><?= htmlspecialchars(t('customerdash.phone_help')) ?></p>
             </div>
 
             <?php if ($hasWebsite): ?>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('customerdash.field_website')) ?></label>
                 <input type="url" name="website" value="<?= sanitize($company['website'] ?? ''); ?>"
                        class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm"
                        placeholder="https://yourcompany.com">
@@ -636,7 +636,7 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
 
             <?php if ($hasAddress): ?>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('customerdash.field_address')) ?></label>
                 <textarea name="address" rows="2"
                           class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm"><?= sanitize($company['address'] ?? ''); ?></textarea>
             </div>
@@ -644,7 +644,7 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
 
             <div class="pt-2">
                 <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-                    Save Changes
+                    <?= htmlspecialchars(t('customerdash.btn_save_changes')) ?>
                 </button>
             </div>
         </form>
@@ -654,11 +654,11 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
     <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
         <div class="p-4 border-b border-gray-100 flex items-center justify-between">
             <div>
-                <h3 class="font-semibold text-gray-900">Logo & Branding</h3>
-                <p class="text-sm text-gray-500">Customise your portal appearance</p>
+                <h3 class="font-semibold text-gray-900"><?= htmlspecialchars(t('customerdash.branding_h')) ?></h3>
+                <p class="text-sm text-gray-500"><?= htmlspecialchars(t('customerdash.branding_sub')) ?></p>
             </div>
             <a href="<?= $basePath ?>theme<?= $ext ?>" class="text-sm text-blue-600 hover:text-blue-800">
-                Manage Theme <i class="fa-solid fa-arrow-right ml-1"></i>
+                <?= htmlspecialchars(t('customerdash.manage_theme')) ?> <i class="fa-solid fa-arrow-right ml-1"></i>
             </a>
         </div>
         <div class="p-6">
@@ -677,13 +677,13 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
                 <div class="flex-1">
                     <?php if ($theme): ?>
                     <div class="flex items-center gap-3 mb-2">
-                        <div class="w-8 h-8 rounded-lg border border-gray-200" style="background:<?= sanitize($theme['primary_color'] ?? '#2563eb'); ?>;" title="Primary color"></div>
-                        <div class="w-8 h-8 rounded-lg border border-gray-200" style="background:<?= sanitize($theme['secondary_color'] ?? '#0f3460'); ?>;" title="Secondary color"></div>
-                        <span class="text-sm text-gray-500">Brand colors</span>
+                        <div class="w-8 h-8 rounded-lg border border-gray-200" style="background:<?= sanitize($theme['primary_color'] ?? '#2563eb'); ?>;" title="<?= htmlspecialchars(t('customerdash.tip_primary_color')) ?>"></div>
+                        <div class="w-8 h-8 rounded-lg border border-gray-200" style="background:<?= sanitize($theme['secondary_color'] ?? '#0f3460'); ?>;" title="<?= htmlspecialchars(t('customerdash.tip_secondary_color')) ?>"></div>
+                        <span class="text-sm text-gray-500"><?= htmlspecialchars(t('customerdash.brand_colors')) ?></span>
                     </div>
                     <?php endif; ?>
                     <a href="<?= $basePath ?>theme<?= $ext ?>" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 hover:border-gray-300 transition-colors">
-                        <i class="fa-solid fa-palette"></i> Edit Logo & Colors
+                        <i class="fa-solid fa-palette"></i> <?= htmlspecialchars(t('customerdash.edit_logo_colors')) ?>
                     </a>
                 </div>
             </div>
@@ -693,29 +693,29 @@ adminHeader(t('adminchrome.my_dashboard'), 'customer-dashboard');
     <!-- Account Info (read-only) -->
     <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
         <div class="p-4 border-b border-gray-100">
-            <h3 class="font-semibold text-gray-900">Account Details</h3>
+            <h3 class="font-semibold text-gray-900"><?= htmlspecialchars(t('customerdash.account_details_h')) ?></h3>
         </div>
         <div class="divide-y divide-gray-100">
             <div class="px-6 py-3 flex items-center justify-between">
-                <span class="text-sm text-gray-500">Plan</span>
+                <span class="text-sm text-gray-500"><?= htmlspecialchars(t('customerdash.acct_plan')) ?></span>
                 <span class="text-sm font-medium text-gray-900 capitalize"><?= sanitize($company['plan'] ?? 'free'); ?></span>
             </div>
             <div class="px-6 py-3 flex items-center justify-between">
-                <span class="text-sm text-gray-500">Currency</span>
+                <span class="text-sm text-gray-500"><?= htmlspecialchars(t('customerdash.acct_currency')) ?></span>
                 <span class="text-sm font-medium text-gray-900"><?= sanitize($company['currency'] ?? 'OMR'); ?></span>
             </div>
             <div class="px-6 py-3 flex items-center justify-between">
-                <span class="text-sm text-gray-500">Company Slug</span>
+                <span class="text-sm text-gray-500"><?= htmlspecialchars(t('customerdash.acct_slug')) ?></span>
                 <code class="text-sm text-gray-700 bg-gray-100 px-2 py-0.5 rounded"><?= sanitize($company['slug'] ?? ''); ?></code>
             </div>
             <div class="px-6 py-3 flex items-center justify-between">
-                <span class="text-sm text-gray-500">Member Since</span>
+                <span class="text-sm text-gray-500"><?= htmlspecialchars(t('customerdash.acct_since')) ?></span>
                 <span class="text-sm text-gray-700"><?= date('M j, Y', strtotime($company['created_at'] ?? 'now')); ?></span>
             </div>
         </div>
         <div class="p-4 border-t border-gray-100">
             <a href="<?= $basePath ?>billing<?= $ext ?>" class="text-sm text-blue-600 hover:text-blue-800">
-                Manage subscription <i class="fa-solid fa-arrow-right ml-1"></i>
+                <?= htmlspecialchars(t('customerdash.manage_subscription')) ?> <i class="fa-solid fa-arrow-right ml-1"></i>
             </a>
         </div>
     </div>
