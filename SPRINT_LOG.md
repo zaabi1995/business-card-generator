@@ -192,3 +192,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-23 23:25 | #584 | BLOCKED | Walkthrough GIF/screencast needs Ali to record + host. Marked [~], revisit when URL provided.
 2026-04-23 23:25 | #511 | b1ffe6f | index.php #features fully t()-wrapped: kicker + headline + subhead + 6 feature tiles + "New" pill. 18 landing.feat_* keys EN+AR.
 2026-04-23 23:45 | #512 | 441afe2 | index.php #how-it-works fully t()-wrapped: kicker/headline/subhead/3-step cards/CTA. 10 landing.how_* keys EN+AR.
+2026-04-23 23:55 | #513 | 1aeb76b | index.php #pricing fully bilingual via pricing namespace. 44 new pricing.home_* keys EN+AR cover kicker/headline/subhead/toggles/4 tier cards with tagline/price/sub/features/CTA.

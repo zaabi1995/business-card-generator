@@ -647,17 +647,17 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <!-- Section Header -->
             <div class="text-center mb-12">
                 <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full uppercase tracking-wide">
-                    Simple Pricing
+                    <?= htmlspecialchars(t('pricing.home_kicker')) ?>
                 </span>
-                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-3">Simple pricing</p>
-                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4">Plans for every team size</h2>
-                <p class="text-lg text-gray-600 max-w-2xl mx-auto">Start free, upgrade when you need more. All prices in Omani Rial.</p>
+                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-3"><?= htmlspecialchars(t('pricing.home_kicker')) ?></p>
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4"><?= htmlspecialchars(t('pricing.home_headline')) ?></h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto"><?= htmlspecialchars(t('pricing.home_subhead')) ?></p>
 
                 <!-- Billing Toggle -->
                 <div class="mt-8 inline-flex items-center gap-3 bg-gray-100 rounded-full p-1">
-                    <button @click="annual = false" :class="!annual ? 'bg-white shadow text-gray-900' : 'text-gray-500'" class="px-5 py-2 rounded-full text-sm font-semibold transition-all">Monthly</button>
+                    <button @click="annual = false" :class="!annual ? 'bg-white shadow text-gray-900' : 'text-gray-500'" class="px-5 py-2 rounded-full text-sm font-semibold transition-all"><?= htmlspecialchars(t('pricing.home_toggle_month')) ?></button>
                     <button @click="annual = true" :class="annual ? 'bg-white shadow text-gray-900' : 'text-gray-500'" class="px-5 py-2 rounded-full text-sm font-semibold transition-all">
-                        Annual <span class="text-green-600 text-xs font-bold ml-1">Save 17%</span>
+                        <?= htmlspecialchars(t('pricing.home_toggle_annual')) ?> <span class="text-green-600 text-xs font-bold ml-1"><?= htmlspecialchars(t('pricing.home_toggle_save')) ?></span>
                     </button>
                 </div>
             </div>
@@ -667,96 +667,96 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <!-- Starter -->
                 <div class="cardify-plan">
                     <div class="cardify-plan-header">
-                        <h3 class="cardify-plan-name">Starter</h3>
-                        <p class="cardify-plan-tagline">For freelancers and solo professionals</p>
+                        <h3 class="cardify-plan-name"><?= htmlspecialchars(t('pricing.starter_name')) ?></h3>
+                        <p class="cardify-plan-tagline"><?= htmlspecialchars(t('pricing.home_starter_tag')) ?></p>
                     </div>
                     <div class="cardify-plan-price">
-                        <span class="cardify-plan-price-value">Free</span>
-                        <p class="cardify-plan-price-sub">No credit card required</p>
+                        <span class="cardify-plan-price-value"><?= htmlspecialchars(t('pricing.home_starter_price')) ?></span>
+                        <p class="cardify-plan-price-sub"><?= htmlspecialchars(t('pricing.home_starter_sub')) ?></p>
                     </div>
                     <ul class="cardify-plan-features">
-                        <li><i class="fa-solid fa-check cardify-tick"></i>Up to 3 team members</li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i>Digital cards with QR code</li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i>3 card templates</li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i>Email support</li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_starter_f1')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_starter_f2')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_starter_f3')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_starter_f4')) ?></li>
                     </ul>
-                    <a href="<?= getBasePath() ?>company/register.php" class="cardify-plan-cta cardify-plan-cta--ghost">Get Started Free</a>
+                    <a href="<?= getBasePath() ?>company/register.php" class="cardify-plan-cta cardify-plan-cta--ghost"><?= htmlspecialchars(t('pricing.home_starter_cta')) ?></a>
                 </div>
 
                 <!-- Professional (Popular) -->
                 <div class="cardify-plan cardify-plan--featured">
-                    <span class="cardify-plan-badge">Most Popular</span>
+                    <span class="cardify-plan-badge"><?= htmlspecialchars(t('pricing.home_badge_popular')) ?></span>
                     <div class="cardify-plan-header">
-                        <h3 class="cardify-plan-name">Professional</h3>
-                        <p class="cardify-plan-tagline">For growing teams</p>
+                        <h3 class="cardify-plan-name"><?= htmlspecialchars(t('pricing.pro_name')) ?></h3>
+                        <p class="cardify-plan-tagline"><?= htmlspecialchars(t('pricing.home_pro_tag')) ?></p>
                     </div>
                     <div class="cardify-plan-price">
                         <div class="cardify-plan-price-row">
                             <span class="cardify-plan-price-value cardify-plan-price-value--num" x-text="annual ? '4.167' : '5.000'">5.000</span>
-                            <span class="cardify-plan-price-unit">OMR/mo</span>
+                            <span class="cardify-plan-price-unit"><?= htmlspecialchars(t('pricing.home_unit_month')) ?></span>
                         </div>
-                        <p class="cardify-plan-price-sub" x-show="annual">Billed 50.000 OMR/year</p>
-                        <p class="cardify-plan-price-sub" x-show="!annual">Billed monthly</p>
+                        <p class="cardify-plan-price-sub" x-show="annual"><?= htmlspecialchars(t('pricing.home_billed_year', ['amount' => '50.000'])) ?></p>
+                        <p class="cardify-plan-price-sub" x-show="!annual"><?= htmlspecialchars(t('pricing.home_billed_month')) ?></p>
                     </div>
                     <ul class="cardify-plan-features">
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>Up to 10 team members</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>Unlimited templates</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>Custom branding</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>CSV bulk import</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>Analytics dashboard</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>Priority support</li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i><?= htmlspecialchars(t('pricing.home_pro_f1')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i><?= htmlspecialchars(t('pricing.home_pro_f2')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i><?= htmlspecialchars(t('pricing.home_pro_f3')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i><?= htmlspecialchars(t('pricing.home_pro_f4')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i><?= htmlspecialchars(t('pricing.home_pro_f5')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i><?= htmlspecialchars(t('pricing.home_pro_f6')) ?></li>
                     </ul>
-                    <a href="<?= getBasePath() ?>company/register.php?plan=professional" class="cardify-plan-cta cardify-plan-cta--primary">Start Free Trial</a>
+                    <a href="<?= getBasePath() ?>company/register.php?plan=professional" class="cardify-plan-cta cardify-plan-cta--primary"><?= htmlspecialchars(t('pricing.home_pro_cta')) ?></a>
                 </div>
 
                 <!-- Business -->
                 <div class="cardify-plan">
                     <div class="cardify-plan-header">
-                        <h3 class="cardify-plan-name">Business</h3>
-                        <p class="cardify-plan-tagline">For scaling companies</p>
+                        <h3 class="cardify-plan-name"><?= htmlspecialchars(t('pricing.biz_name')) ?></h3>
+                        <p class="cardify-plan-tagline"><?= htmlspecialchars(t('pricing.home_biz_tag')) ?></p>
                     </div>
                     <div class="cardify-plan-price">
                         <div class="cardify-plan-price-row">
                             <span class="cardify-plan-price-value cardify-plan-price-value--num" x-text="annual ? '12.500' : '15.000'">15.000</span>
-                            <span class="cardify-plan-price-unit">OMR/mo</span>
+                            <span class="cardify-plan-price-unit"><?= htmlspecialchars(t('pricing.home_unit_month')) ?></span>
                         </div>
-                        <p class="cardify-plan-price-sub" x-show="annual">Billed 150.000 OMR/year</p>
-                        <p class="cardify-plan-price-sub" x-show="!annual">Billed monthly</p>
+                        <p class="cardify-plan-price-sub" x-show="annual"><?= htmlspecialchars(t('pricing.home_billed_year', ['amount' => '150.000'])) ?></p>
+                        <p class="cardify-plan-price-sub" x-show="!annual"><?= htmlspecialchars(t('pricing.home_billed_month')) ?></p>
                     </div>
                     <ul class="cardify-plan-features">
-                        <li><i class="fa-solid fa-check cardify-tick"></i>Up to 50 team members</li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i>Everything in Professional</li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i>Print ordering integration</li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i>NFC card support</li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i>Dedicated account manager</li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i>API access</li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_biz_f1')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_biz_f2')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_biz_f3')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_biz_f4')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_biz_f5')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_biz_f6')) ?></li>
                     </ul>
-                    <a href="<?= getBasePath() ?>company/register.php?plan=business" class="cardify-plan-cta cardify-plan-cta--ghost">Start Free Trial</a>
+                    <a href="<?= getBasePath() ?>company/register.php?plan=business" class="cardify-plan-cta cardify-plan-cta--ghost"><?= htmlspecialchars(t('pricing.home_biz_cta')) ?></a>
                 </div>
 
                 <!-- Enterprise -->
                 <div class="cardify-plan cardify-plan--dark">
                     <div class="cardify-plan-header">
-                        <h3 class="cardify-plan-name">Enterprise</h3>
-                        <p class="cardify-plan-tagline">For large organisations</p>
+                        <h3 class="cardify-plan-name"><?= htmlspecialchars(t('pricing.ent_name')) ?></h3>
+                        <p class="cardify-plan-tagline"><?= htmlspecialchars(t('pricing.home_ent_tag')) ?></p>
                     </div>
                     <div class="cardify-plan-price">
-                        <span class="cardify-plan-price-value">Custom</span>
-                        <p class="cardify-plan-price-sub">Tailored to your needs</p>
+                        <span class="cardify-plan-price-value"><?= htmlspecialchars(t('pricing.home_ent_price')) ?></span>
+                        <p class="cardify-plan-price-sub"><?= htmlspecialchars(t('pricing.home_ent_sub')) ?></p>
                     </div>
                     <ul class="cardify-plan-features">
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>Unlimited employees</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>Everything in Business</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>Custom integrations</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>SLA guarantee</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>White-label options</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>On-premise deployment</li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i><?= htmlspecialchars(t('pricing.home_ent_f1')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i><?= htmlspecialchars(t('pricing.home_ent_f2')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i><?= htmlspecialchars(t('pricing.home_ent_f3')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i><?= htmlspecialchars(t('pricing.home_ent_f4')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i><?= htmlspecialchars(t('pricing.home_ent_f5')) ?></li>
+                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i><?= htmlspecialchars(t('pricing.home_ent_f6')) ?></li>
                     </ul>
-                    <a href="https://wa.me/96899899100?text=Hi%2C%20I%27m%20interested%20in%20Cardify%20Enterprise" target="_blank" rel="noopener" class="cardify-plan-cta cardify-plan-cta--on-dark">Contact Sales</a>
+                    <a href="https://wa.me/96899899100?text=Hi%2C%20I%27m%20interested%20in%20Cardify%20Enterprise" target="_blank" rel="noopener" class="cardify-plan-cta cardify-plan-cta--on-dark"><?= htmlspecialchars(t('pricing.home_ent_cta')) ?></a>
                 </div>
             </div>
 
-            <p class="text-center text-sm text-gray-500 mt-8">All plans include a 14-day free trial. No credit card required to start.</p>
+            <p class="text-center text-sm text-gray-500 mt-8"><?= htmlspecialchars(t('pricing.home_footnote')) ?></p>
         </div>
     </section>
 
