@@ -569,7 +569,7 @@
 - [x] 522. Injected AUTOGEN_I18N const via json_encode + swapped 13 hardcoded statusMessage literals in layoutGenerator + autoGenerator. EN+AR parity verified.
 
 - [~] 523. Partial: batch-auto-generate.php fully wrapped (18 strings + BATCHGEN_I18N inject) via new `batchgen` namespace (20 keys EN+AR). Remaining batch_generate.php (826L Fabric.js path) queued as action 846.
-- [ ] 524. admin/billing.php pricing tiers + feature matrix + subscription state + invoices-this-year table + change-plan/cancel modals. Est. ~80 strings.
+- [x] 524. admin/billing.php full i18n: callbacks, current-plan, usage, premium banner, feature matrix, billing-cycle toggle, plans grid, unpaid orders, card credits, payment methods. 70+ strings, new `billing` namespace (75 keys EN+AR).
 - [ ] 525. admin/credit-accounts.php account cards, limit + terms table, credit-request CTA copy, ledger mini-table. Est. ~35 strings.
 - [ ] 526. admin/custom-domains.php simplify + translate DNS instructions (currently developer-speak). Rewrite in plain English for the default locale as part of this action, then translate. Est. ~45 strings.
 - [ ] 527. admin/analytics.php + admin/card-analytics.php dropdown labels, KPI tile titles, chart axis titles, country list, device breakdown, empty states. Est. ~55 strings.
