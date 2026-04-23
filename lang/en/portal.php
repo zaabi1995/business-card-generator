@@ -25,4 +25,37 @@ return [
     'request_reprint'   => 'Request reprint',
     'request_sent'      => 'Request sent',
     'contact_admin'     => 'Contact your admin',
+
+    // Request form
+    'request_notes_ph'  => 'e.g., Promoted to new position, ran out of cards, etc.',
+    'quantity_label'    => 'Number of Card Sets Needed',
+    'quantity_1'        => '1 set (standard)',
+    'quantity_n'        => ':n sets',
+    'quantity_hint'     => 'Each set typically contains 100 cards',
+
+    // Form fields
+    'full_name_en'      => 'Full Name (English)',
+    'full_name_ar'      => 'Full Name (Arabic)',
+    'ai_translate'      => 'AI Translate',
+    'position_en'       => 'Position/Title (English)',
+    'position_ar'       => 'Position/Title (Arabic)',
+    'department'        => 'Department',
+    'preselected'       => '(pre-selected)',
+    'select_department' => 'Select Department',
+    'phone_label'       => 'Phone Number',
+    'mobile_label'      => 'Mobile Number',
+    'website_label'     => 'Website',
+    'address_en'        => 'Address (English)',
+    'address_ar'        => 'Address (Arabic)',
+    'address_ph_en'     => 'Building, Street, City',
+    'address_ph_ar'     => 'المبنى، الشارع، المدينة',
+
+    // Preview + submit flow
+    'btn_generate_preview' => 'Generate Preview',
+    'generate_preview_hint' => 'Fill in your details above, then click to preview your card',
+    'preview_generated' => 'Preview Generated!',
+    'preview_review_hint' => 'Review your card on the right, then submit your request.',
+    'btn_submit_request' => 'Submit Request',
+    'btn_edit_details'  => 'Edit Details',
+    'card_template'     => 'Card Template',
 ];

@@ -25,4 +25,37 @@ return [
     'request_reprint'   => 'طلب إعادة طباعة',
     'request_sent'      => 'تم إرسال الطلب',
     'contact_admin'     => 'تواصل مع الإدارة',
+
+    // نموذج الطلب
+    'request_notes_ph'  => 'مثال: ترقية، نفاد البطاقات، إلخ.',
+    'quantity_label'    => 'عدد مجموعات البطاقات المطلوبة',
+    'quantity_1'        => 'مجموعة واحدة (قياسية)',
+    'quantity_n'        => ':n مجموعات',
+    'quantity_hint'     => 'كل مجموعة تحتوي عادة على 100 بطاقة',
+
+    // حقول النموذج
+    'full_name_en'      => 'الاسم الكامل (إنجليزي)',
+    'full_name_ar'      => 'الاسم الكامل (عربي)',
+    'ai_translate'      => 'ترجمة بالذكاء الاصطناعي',
+    'position_en'       => 'المنصب (إنجليزي)',
+    'position_ar'       => 'المنصب (عربي)',
+    'department'        => 'القسم',
+    'preselected'       => '(مُحدَّد مسبقاً)',
+    'select_department' => 'اختر القسم',
+    'phone_label'       => 'رقم الهاتف',
+    'mobile_label'      => 'رقم الجوّال',
+    'website_label'     => 'الموقع',
+    'address_en'        => 'العنوان (إنجليزي)',
+    'address_ar'        => 'العنوان (عربي)',
+    'address_ph_en'     => 'المبنى، الشارع، المدينة',
+    'address_ph_ar'     => 'المبنى، الشارع، المدينة',
+
+    // تدفّق المعاينة والإرسال
+    'btn_generate_preview' => 'توليد معاينة',
+    'generate_preview_hint' => 'املأ بياناتك أعلاه، ثم اضغط لمعاينة بطاقتك',
+    'preview_generated' => 'تمّ توليد المعاينة!',
+    'preview_review_hint' => 'راجع بطاقتك على اليمين، ثم أرسل طلبك.',
+    'btn_submit_request' => 'إرسال الطلب',
+    'btn_edit_details'  => 'تعديل البيانات',
+    'card_template'     => 'قالب البطاقة',
 ];

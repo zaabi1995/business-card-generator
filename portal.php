@@ -928,29 +928,29 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                             Reason for Request <span class="text-gray-400">(optional)</span>
                         </label>
                         <textarea name="request_notes" id="request_notes" rows="2"
-                                  placeholder="e.g., Promoted to new position, ran out of cards, etc."
+                                  placeholder="<?= htmlspecialchars(t('portal.request_notes_ph')) ?>"
                                   class="form-input resize-none"></textarea>
                     </div>
                     
                     <!-- Quantity for reprint requests -->
                     <div id="quantitySection" class="hidden">
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Number of Card Sets Needed
+                            <?= htmlspecialchars(t('portal.quantity_label')) ?>
                         </label>
                         <select name="quantity_requested" id="quantity_requested" class="form-input">
-                            <option value="1">1 set (standard)</option>
-                            <option value="2">2 sets</option>
-                            <option value="3">3 sets</option>
-                            <option value="5">5 sets</option>
+                            <option value="1"><?= htmlspecialchars(t('portal.quantity_1')) ?></option>
+                            <option value="2"><?= htmlspecialchars(str_replace(':n', '2', t('portal.quantity_n'))) ?></option>
+                            <option value="3"><?= htmlspecialchars(str_replace(':n', '3', t('portal.quantity_n'))) ?></option>
+                            <option value="5"><?= htmlspecialchars(str_replace(':n', '5', t('portal.quantity_n'))) ?></option>
                         </select>
-                        <p class="mt-1 text-xs text-gray-500">Each set typically contains 100 cards</p>
+                        <p class="mt-1 text-xs text-gray-500"><?= htmlspecialchars(t('portal.quantity_hint')) ?></p>
                     </div>
                     
                     <!-- Name English -->
                     <?php if (!empty($enabledFields['name_en'])): ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Full Name (English) <span class="text-red-500">*</span>
+                            <?= htmlspecialchars(t('portal.full_name_en')) ?> <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="name_en" id="name_en" required
                                value="<?php echo htmlspecialchars($formData['name_en'] ?? ''); ?>"
@@ -963,9 +963,9 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     <?php if (!empty($enabledFields['name_ar'])): ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Full Name (Arabic)
+                            <?= htmlspecialchars(t('portal.full_name_ar')) ?>
                             <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('name_en', 'name_ar', 'name')">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Translate
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
                         </label>
                         <input type="text" name="name_ar" id="name_ar"
@@ -978,7 +978,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     <!-- Position English -->
                     <?php if (!empty($enabledFields['position_en'])): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Position/Title (English)</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.position_en')) ?></label>
                         <input type="text" name="position_en" id="position_en"
                                value="<?php echo htmlspecialchars($formData['position_en'] ?? ''); ?>"
                                placeholder="Software Engineer"
@@ -990,9 +990,9 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     <?php if (!empty($enabledFields['position_ar'])): ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Position/Title (Arabic)
+                            <?= htmlspecialchars(t('portal.position_ar')) ?>
                             <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('position_en', 'position_ar', 'position')">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Translate
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
                         </label>
                         <input type="text" name="position_ar" id="position_ar"
@@ -1006,9 +1006,9 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     <?php if (!empty($departments)): ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Department
+                            <?= htmlspecialchars(t('portal.department')) ?>
                             <?php if ($selectedDepartment): ?>
-                            <span class="text-xs text-blue-600 font-normal ml-1">(pre-selected)</span>
+                            <span class="text-xs text-blue-600 font-normal ml-1"><?= htmlspecialchars(t('portal.preselected')) ?></span>
                             <?php endif; ?>
                         </label>
                         <?php if ($selectedDepartment): ?>
@@ -1016,7 +1016,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                         <div class="form-input bg-gray-100"><?php echo htmlspecialchars($selectedDepartment['name']); ?></div>
                         <?php else: ?>
                         <select name="department_id" id="department_id" class="form-input">
-                            <option value="">Select Department</option>
+                            <option value=""><?= htmlspecialchars(t('portal.select_department')) ?></option>
                             <?php foreach ($departments as $dept): ?>
                             <option value="<?php echo $dept['id']; ?>" 
                                     <?php echo ($formData['department_id'] ?? '') === $dept['id'] ? 'selected' : ''; ?>>
@@ -1031,7 +1031,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     <!-- Phone -->
                     <?php if (!empty($enabledFields['phone'])): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Phone Number</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.phone_label')) ?></label>
                         <input type="tel" name="phone" id="phone"
                                value="<?php echo htmlspecialchars($formData['phone'] ?? ''); ?>"
                                placeholder="+968 1234 5678"
@@ -1042,7 +1042,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     <!-- Mobile -->
                     <?php if (!empty($enabledFields['mobile'])): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Mobile Number</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.mobile_label')) ?></label>
                         <input type="tel" name="mobile" id="mobile"
                                value="<?php echo htmlspecialchars($formData['mobile'] ?? ''); ?>"
                                placeholder="+968 9876 5432"
@@ -1055,7 +1055,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     <!-- Website -->
                     <?php if (!empty($enabledFields['website'])): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Website</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.website_label')) ?></label>
                         <input type="text" name="website" id="website"
                                value="<?php echo htmlspecialchars($formData['website'] ?? ''); ?>"
                                placeholder="www.company.com"
@@ -1066,9 +1066,9 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     <!-- Address English -->
                     <?php if (!empty($enabledFields['address_en']) || !empty($enabledFields['address'])): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Address (English)</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.address_en')) ?></label>
                         <textarea name="address_en" id="address_en" rows="2"
-                                  placeholder="Building, Street, City"
+                                  placeholder="<?= htmlspecialchars(t('portal.address_ph_en')) ?>"
                                   class="form-input"><?php echo htmlspecialchars($formData['address_en'] ?? ''); ?></textarea>
                     </div>
                     <?php endif; ?>
@@ -1077,13 +1077,13 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     <?php if (!empty($enabledFields['address_ar'])): ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Address (Arabic)
+                            <?= htmlspecialchars(t('portal.address_ar')) ?>
                             <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('address_en', 'address_ar', 'address')">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Translate
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
                         </label>
                         <textarea name="address_ar" id="address_ar" rows="2"
-                                  placeholder="المبنى، الشارع، المدينة"
+                                  placeholder="<?= htmlspecialchars(t('portal.address_ph_ar')) ?>"
                                   class="form-input rtl-input"><?php echo htmlspecialchars($formData['address_ar'] ?? ''); ?></textarea>
                     </div>
                     <?php endif; ?>
@@ -1093,10 +1093,10 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                         <button type="button" id="generatePreviewBtn" onclick="generatePreview()"
                                 class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors flex items-center justify-center gap-2">
                             <i class="fa-solid fa-eye"></i>
-                            Generate Preview
+                            <?= htmlspecialchars(t('portal.btn_generate_preview')) ?>
                         </button>
                         <p class="mt-2 text-xs text-gray-500 text-center">
-                            Fill in your details above, then click to preview your card
+                            <?= htmlspecialchars(t('portal.generate_preview_hint')) ?>
                         </p>
                     </div>
                     
@@ -1105,17 +1105,17 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                         <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
                             <div class="flex items-center gap-2 text-green-800">
                                 <i class="fa-solid fa-check-circle"></i>
-                                <span class="font-medium text-sm">Preview Generated!</span>
+                                <span class="font-medium text-sm"><?= htmlspecialchars(t('portal.preview_generated')) ?></span>
                             </div>
-                            <p class="text-xs text-green-700 mt-1">Review your card on the right, then submit your request.</p>
+                            <p class="text-xs text-green-700 mt-1"><?= htmlspecialchars(t('portal.preview_review_hint')) ?></p>
                         </div>
                         <button type="submit" id="submitRequestBtn"
                                 class="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition-colors flex items-center justify-center gap-2">
                             <i class="fa-solid fa-paper-plane"></i>
-                            Submit Request
+                            <?= htmlspecialchars(t('portal.btn_submit_request')) ?>
                         </button>
                         <button type="button" onclick="editForm()" class="w-full mt-2 px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors">
-                            <i class="fa-solid fa-pencil mr-1"></i> Edit Details
+                            <i class="fa-solid fa-pencil mr-1"></i> <?= htmlspecialchars(t('portal.btn_edit_details')) ?>
                         </button>
                     </div>
                 </form>
@@ -1129,7 +1129,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                             <h3 class="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
                                 <i class="fa-solid fa-id-card text-blue-500"></i>
-                                <span id="previewTitle">Card Template</span>
+                                <span id="previewTitle"><?= htmlspecialchars(t('portal.card_template')) ?></span>
                             </h3>
                             
                             <!-- Initial: Show template backgrounds -->
