@@ -35,4 +35,7 @@ return [
     'cancel'               => 'إلغاء',
     'save_changes'         => 'حفظ التغييرات',
     'create_department'    => 'إنشاء قسم',
+    'field_front_template' => 'استبدال قالب الواجهة',
+    'field_back_template'  => 'استبدال قالب الظهر',
+    'side_override_hint'   => 'يُعطّل قالب الزوج أعلاه لهذه الجهة. اتركه فارغاً للوراثة.',
 ];

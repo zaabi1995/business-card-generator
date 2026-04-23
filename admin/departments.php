@@ -52,6 +52,17 @@ $legacyTemplates = $db->fetchAll(
     ['id' => $companyId]
 );
 
+// Per-side templates list for the per-side overrides (action 586).
+// `side` may be 'front' or 'back' on the legacy templates table.
+$frontTemplates = $db->fetchAll(
+    "SELECT id, name FROM templates WHERE company_id = :id AND side = 'front' ORDER BY name",
+    ['id' => $companyId]
+);
+$backTemplates = $db->fetchAll(
+    "SELECT id, name FROM templates WHERE company_id = :id AND side = 'back' ORDER BY name",
+    ['id' => $companyId]
+);
+
 // Handle create/update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
@@ -97,7 +108,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!empty($templatePairId)) {
                 $insertData['template_pair_id'] = $templatePairId;
             }
-            
+
+            // Per-side overrides (action 586), scope ids to this company
+            $frontId = trim($_POST['front_template_id'] ?? '');
+            $backId  = trim($_POST['back_template_id']  ?? '');
+            if ($frontId !== '') {
+                $ok = $db->fetchOne("SELECT id FROM templates WHERE id = :id AND company_id = :cid", ['id' => $frontId, 'cid' => $companyId]);
+                if ($ok) $insertData['front_template_id'] = $frontId;
+            }
+            if ($backId !== '') {
+                $ok = $db->fetchOne("SELECT id FROM templates WHERE id = :id AND company_id = :cid", ['id' => $backId, 'cid' => $companyId]);
+                if ($ok) $insertData['back_template_id'] = $backId;
+            }
+
             $db->insert('departments', $insertData);
             $message = 'Department created successfully!';
         }
@@ -126,15 +149,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $slug = $baseSlug . '-' . $counter++;
         }
         
+        $frontId = trim($_POST['front_template_id'] ?? '');
+        $backId  = trim($_POST['back_template_id']  ?? '');
+        $frontSafe = null; $backSafe = null;
+        if ($frontId !== '') {
+            $ok = $db->fetchOne("SELECT id FROM templates WHERE id = :id AND company_id = :cid", ['id' => $frontId, 'cid' => $companyId]);
+            if ($ok) $frontSafe = $frontId;
+        }
+        if ($backId !== '') {
+            $ok = $db->fetchOne("SELECT id FROM templates WHERE id = :id AND company_id = :cid", ['id' => $backId, 'cid' => $companyId]);
+            if ($ok) $backSafe = $backId;
+        }
+
         if (!empty($deptId) && !empty($name)) {
             $updateData = [
                 'name' => $name,
                 'description' => $description,
                 'portal_slug' => $slug,
                 'template_pair_id' => $templatePairId ?: null,
+                'front_template_id' => $frontSafe,
+                'back_template_id'  => $backSafe,
                 'access_code' => $portalPasscode ?: null
             ];
-            
+
             $db->update('departments', $updateData, 'id = :id AND company_id = :company_id', [
                 'id' => $deptId,
                 'company_id' => $companyId
@@ -182,13 +219,13 @@ foreach ($departments as $dept) {
 adminHeader(t('departments.page_title'), 'departments');
 ?>
 
-<div x-data="{ showModal: false, editMode: false, formData: { id: '', name: '', description: '', portal_slug: '', template_pair_id: '' } }">
+<div x-data="{ showModal: false, editMode: false, formData: { id: '', name: '', description: '', portal_slug: '', template_pair_id: '', front_template_id: '', back_template_id: '', access_code: '' } }">
     <!-- Page Header Actions -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
             <p class="text-gray-600"><?= htmlspecialchars(t('departments.count', ['n' => count($departments)])) ?></p>
         </div>
-        <button @click="showModal = true; editMode = false; formData = { id: '', name: '', description: '', portal_slug: '', template_pair_id: '', access_code: '' }" 
+        <button @click="showModal = true; editMode = false; formData = { id: '', name: '', description: '', portal_slug: '', template_pair_id: '', front_template_id: '', back_template_id: '', access_code: '' }"
                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2">
             <i class="fa-solid fa-plus"></i>
             <span><?= htmlspecialchars(t('departments.add_department')) ?></span>
@@ -214,7 +251,7 @@ adminHeader(t('departments.page_title'), 'departments');
                     </div>
                     <div class="flex items-center gap-1">
                         <button 
-                            @click="showModal = true; editMode = true; formData = { id: '<?php echo $dept['id']; ?>', name: '<?php echo addslashes($dept['name']); ?>', description: '<?php echo addslashes($dept['description'] ?? ''); ?>', portal_slug: '<?php echo addslashes($dept['portal_slug'] ?? ''); ?>', template_pair_id: '<?php echo $dept['template_pair_id'] ?? ''; ?>', access_code: '<?php echo addslashes($dept['access_code'] ?? ''); ?>' }"
+                            @click="showModal = true; editMode = true; formData = { id: '<?php echo $dept['id']; ?>', name: '<?php echo addslashes($dept['name']); ?>', description: '<?php echo addslashes($dept['description'] ?? ''); ?>', portal_slug: '<?php echo addslashes($dept['portal_slug'] ?? ''); ?>', template_pair_id: '<?php echo $dept['template_pair_id'] ?? ''; ?>', front_template_id: '<?php echo $dept['front_template_id'] ?? ''; ?>', back_template_id: '<?php echo $dept['back_template_id'] ?? ''; ?>', access_code: '<?php echo addslashes($dept['access_code'] ?? ''); ?>' }"
                             class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         >
                             <i class="fa-solid fa-pen-to-square"></i>
@@ -342,7 +379,31 @@ adminHeader(t('departments.page_title'), 'departments');
                         </select>
                         <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('departments.template_hint')) ?></p>
                     </div>
-                    
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1"><?= htmlspecialchars(t('departments.field_front_template')) ?></label>
+                            <select name="front_template_id" x-model="formData.front_template_id"
+                                    class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 text-sm focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                                <option value=""><?= htmlspecialchars(t('departments.use_company_default')) ?></option>
+                                <?php foreach ($frontTemplates as $tpl): ?>
+                                    <option value="<?= sanitize($tpl['id']) ?>"><?= sanitize($tpl['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1"><?= htmlspecialchars(t('departments.field_back_template')) ?></label>
+                            <select name="back_template_id" x-model="formData.back_template_id"
+                                    class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 text-sm focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                                <option value=""><?= htmlspecialchars(t('departments.use_company_default')) ?></option>
+                                <?php foreach ($backTemplates as $tpl): ?>
+                                    <option value="<?= sanitize($tpl['id']) ?>"><?= sanitize($tpl['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 -mt-2"><?= htmlspecialchars(t('departments.side_override_hint')) ?></p>
+
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('departments.field_description')) ?></label>
                         <textarea name="description" x-model="formData.description" rows="3"

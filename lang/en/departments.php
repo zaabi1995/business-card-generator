@@ -36,4 +36,7 @@ return [
     'cancel'               => 'Cancel',
     'save_changes'         => 'Save changes',
     'create_department'    => 'Create department',
+    'field_front_template' => 'Front template override',
+    'field_back_template'  => 'Back template override',
+    'side_override_hint'   => 'Overrides the pair above for one side if set. Leave blank to inherit.',
 ];
