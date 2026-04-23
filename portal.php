@@ -1333,53 +1333,74 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
             return;
         }
         
-        const scale = wrapperWidth / 1050;
-        
+        const intrinsic = arguments[1] || 1050;
+        const scale = wrapperWidth / intrinsic;
+
         // Apply transform scale to canvas container
         canvasContainer.style.transform = `scale(${scale})`;
         canvasContainer.style.transformOrigin = 'top left';
-        
-        console.log('Scaled', canvasId, '- width:', wrapperWidth, 'scale:', scale.toFixed(3));
     }
     
+    // Compute the template's intended pixel canvas so Fabric renders at the
+    // exact coordinate space the admin designer used. Field positions are
+    // stored as absolute px (settings.fields_format === 'px'), so if we use
+    // a different canvas size the whole layout drifts.
+    function getTemplateDimensions(template) {
+        const s = template && template.settings;
+        if (s && s.customWidth && s.customHeight && s.dpi) {
+            const toMm = { mm: 1, in: 25.4, cm: 10, pt: 25.4/72 };
+            const f = toMm[s.customUnit || 'mm'] || 1;
+            return {
+                width:  Math.round(s.customWidth  * f * s.dpi / 25.4),
+                height: Math.round(s.customHeight * f * s.dpi / 25.4)
+            };
+        }
+        return { width: 1050, height: 600 };
+    }
+
     // Initialize editors when DOM is ready
     document.addEventListener('DOMContentLoaded', async function() {
         // Wait a bit for Fabric.js to be ready
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         const frontCanvasEl = document.getElementById('previewFrontCanvas');
         const backCanvasEl = document.getElementById('previewBackCanvas');
-        
-        // Use standard 1050x600 canvas size (same as card generation)
+
+        const frontDims = getTemplateDimensions(frontTemplate);
+        const backDims  = getTemplateDimensions(backTemplate);
+
+        // Lock wrapper aspect-ratios so the canvas preview matches card shape.
+        const frontWrap = frontCanvasEl && frontCanvasEl.closest('.canvas-preview-wrapper');
+        if (frontWrap) frontWrap.style.aspectRatio = frontDims.width + ' / ' + frontDims.height;
+        const backWrap = backCanvasEl && backCanvasEl.closest('.canvas-preview-wrapper');
+        if (backWrap) backWrap.style.aspectRatio = backDims.width + ' / ' + backDims.height;
+
         if (frontCanvasEl && typeof CardEditor !== 'undefined') {
             frontEditor = new CardEditor('previewFrontCanvas', {
-                width: 1050,
-                height: 600,
+                width: frontDims.width,
+                height: frontDims.height,
                 backgroundColor: '#ffffff',
                 onReady: () => {
-                    console.log('Front editor ready');
-                    // Scale after a short delay to ensure DOM is ready
-                    setTimeout(() => scaleCanvasToFit('previewFrontCanvas'), 50);
+                    setTimeout(() => scaleCanvasToFit('previewFrontCanvas', frontDims.width), 50);
                 }
             });
         }
-        
+
         if (backCanvasEl && typeof CardEditor !== 'undefined') {
             backEditor = new CardEditor('previewBackCanvas', {
-                width: 1050,
-                height: 600,
+                width: backDims.width,
+                height: backDims.height,
                 backgroundColor: '#ffffff',
                 onReady: () => {
-                    console.log('Back editor ready');
-                    setTimeout(() => scaleCanvasToFit('previewBackCanvas'), 50);
+                    setTimeout(() => scaleCanvasToFit('previewBackCanvas', backDims.width), 50);
                 }
             });
         }
-        
+
         // Re-scale on window resize
         window.addEventListener('resize', () => {
-            scaleCanvasToFit('previewFrontCanvas');
-            scaleCanvasToFit('previewBackCanvas');
+            scaleCanvasToFit('previewFrontCanvas', frontDims.width);
+            scaleCanvasToFit('previewBackCanvas',  backDims.width);
         });
     });
     
@@ -1485,14 +1506,16 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
         editor.canvas.backgroundColor = '#ffffff';
         editor.fields = {};
         
-        // Load background image
+        // Load background image with the transform the admin saved (so stretch,
+        // offset, rotation all match the design exactly, not a naive fit).
         if (template && template.backgroundImage) {
-            const bgUrl = template.backgroundImage.startsWith('http') 
-                ? template.backgroundImage 
+            const bgUrl = template.backgroundImage.startsWith('http')
+                ? template.backgroundImage
                 : window.location.origin + (template.backgroundImage.startsWith('/') ? '' : '/') + template.backgroundImage;
-            
+            const bgTransform = (template.settings && template.settings.backgroundTransform) || null;
             try {
-                await editor.loadBackground(bgUrl);
+                await editor.loadBackground(bgUrl, bgTransform);
+                editor.setBackgroundLocked && editor.setBackgroundLocked(true);
             } catch (e) {
                 console.warn('Could not load background:', e);
             }
@@ -1567,10 +1590,10 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
             }
         }
         
-        // Add PREVIEW watermark (centered on 1050x600 canvas)
+        // Add PREVIEW watermark (centered on the actual template canvas size)
         const watermark = new fabric.Text('PREVIEW', {
-            left: 525,  // Center of 1050
-            top: 300,   // Center of 600
+            left: editor.canvas.width / 2,
+            top:  editor.canvas.height / 2,
             fontSize: 60,
             fontFamily: 'Arial',
             fontWeight: 'bold',
