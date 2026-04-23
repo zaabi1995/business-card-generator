@@ -138,9 +138,16 @@ try {
         error_log("CardAnalytics logView failed: " . $e->getMessage());
     }
 
-    // Helper to build a tracked CTA URL
+    // Pending-approval card_requests don't live in `employees`, so the
+    // /card_click.php tracker (employee-only) would 400 on every button.
+    // For those, skip the tracker and emit the destination URL directly.
+    $isPendingPreview = (($employee['status'] ?? '') === 'pending_approval');
+
+    // Helper to build a tracked CTA URL (falls back to the raw destination
+    // for pending previews so Call / WhatsApp / Email / Save Contact work).
     $__eid = $employee['id'];
-    $cardClickUrl = function ($cta, $dest) use ($__eid) {
+    $cardClickUrl = function ($cta, $dest) use ($__eid, $isPendingPreview) {
+        if ($isPendingPreview) return $dest;
         return '/card_click.php?eid=' . urlencode($__eid)
             . '&cta=' . urlencode($cta)
             . '&dest=' . urlencode($dest);
@@ -188,8 +195,15 @@ try {
         $backImage = $backRaw ? (strpos($backRaw, '/') === false ? $cardBasePath . $backRaw : $backRaw) : '';
     }
 
-    // Build VCF download URL — short format (?i=id) produces smaller QR codes
-    $vcfUrl = '/qr.php?i=' . urlencode($employee['id']);
+    // Build VCF download URL. For pending previews the `qr.php?i=` short
+    // format would 404 (employees-only lookup), so point at /vcf.php which
+    // has a card_requests fallback for the same company+email.
+    if ($isPendingPreview) {
+        $vcfUrl = '/vcf.php?company=' . urlencode($company['slug'])
+               . '&email=' . urlencode($employee['email']);
+    } else {
+        $vcfUrl = '/qr.php?i=' . urlencode($employee['id']);
+    }
 
     // ---- Locale resolution (sets cookie if ?lang= present) -------------
     $locale = CardSections::resolveLocale();
@@ -790,10 +804,18 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .appt-success-msg { font-size:13px; margin-top:4px; <?php echo $isDarkPage ? 'color:#aaa;' : 'color:#666;'; ?> }
     </style>
     <style>
-        .lang-switcher {
+        /* Corner controls: theme toggle + language switcher live in a shared
+           flex row so they never overlap regardless of locale width. */
+        .card-top-controls {
             position: absolute;
             top: 12px;
             <?php echo $isRtl ? 'left' : 'right'; ?>: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 50;
+        }
+        .lang-switcher {
             display: flex;
             gap: 4px;
             font-size: 12px;
@@ -802,7 +824,6 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             padding: 4px 6px;
             border-radius: 999px;
             backdrop-filter: blur(8px);
-            z-index: 50;
         }
         .lang-switcher a {
             text-decoration: none;
@@ -818,9 +839,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
 
         /* Visitor-facing theme toggle (sun/moon) — sits alongside the language switcher. */
         .theme-toggle {
-            position: absolute;
-            top: 12px;
-            <?php echo $isRtl ? 'left' : 'right'; ?>: 78px; /* nudge inside of lang switcher */
+            position: static;
             width: 32px;
             height: 32px;
             display: inline-flex;
@@ -900,23 +919,24 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     </style>
 </head>
 <body class="<?php echo $isDarkPage ? 'force-dark' : 'force-light'; ?>">
-    <!-- Language switcher -->
-    <nav class="lang-switcher" aria-label="Language">
-        <a href="<?php echo $switchEnUrl; ?>" class="<?php echo $locale === 'en' ? 'active' : ''; ?>" hreflang="en">EN</a>
-        <a href="<?php echo $switchArUrl; ?>" class="<?php echo $locale === 'ar' ? 'active' : ''; ?>" hreflang="ar">عربي</a>
-    </nav>
-    <?php if ($themeToggleEnabled): ?>
-    <!-- Theme toggle (visitor override — persisted via cookie, 7d) -->
-    <button type="button"
-            class="theme-toggle"
-            id="themeToggle"
-            aria-label="<?php echo $isDarkPage ? 'Switch to light mode' : 'Switch to dark mode'; ?>"
-            title="<?php echo htmlspecialchars($isDarkPage ? t('digitalcard.switch_light') : t('digitalcard.switch_dark')); ?>"
-            data-mode="<?php echo $defaultThemeMode; ?>">
-        <svg class="theme-icon theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-        <svg class="theme-icon theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-    </button>
-    <?php endif; ?>
+    <div class="card-top-controls">
+        <?php if ($themeToggleEnabled): ?>
+        <!-- Theme toggle (visitor override — persisted via cookie, 7d) -->
+        <button type="button"
+                class="theme-toggle"
+                id="themeToggle"
+                aria-label="<?php echo $isDarkPage ? 'Switch to light mode' : 'Switch to dark mode'; ?>"
+                title="<?php echo htmlspecialchars($isDarkPage ? t('digitalcard.switch_light') : t('digitalcard.switch_dark')); ?>"
+                data-mode="<?php echo $defaultThemeMode; ?>">
+            <svg class="theme-icon theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+            <svg class="theme-icon theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </button>
+        <?php endif; ?>
+        <nav class="lang-switcher" aria-label="Language">
+            <a href="<?php echo $switchEnUrl; ?>" class="<?php echo $locale === 'en' ? 'active' : ''; ?>" hreflang="en">EN</a>
+            <a href="<?php echo $switchArUrl; ?>" class="<?php echo $locale === 'ar' ? 'active' : ''; ?>" hreflang="ar">عربي</a>
+        </nav>
+    </div>
     <div class="page-container">
         <!-- Company Logo -->
         <?php if ($logoPath): ?>
@@ -1036,7 +1056,9 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <?php if ($email): ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('save_contact', $vcfUrl)); ?>" class="bottom-btn btn-save" download><?= htmlspecialchars(t('digitalcard.btn_save_contact')) ?></a>
             <?php endif; ?>
+            <?php if (!$isPendingPreview): // printed-card PDF only exists after approval ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('download_pdf', $pdfUrl)); ?>" class="bottom-btn btn-pdf" download><?= htmlspecialchars(t('digitalcard.btn_download_pdf')) ?></a>
+            <?php endif; ?>
             <button class="bottom-btn btn-share" onclick="shareCard()"><?= htmlspecialchars(t('digitalcard.btn_share')) ?></button>
         </div>
 
