@@ -79,4 +79,6 @@ return [
     // Paste-list parser
     'paste_parsed'        => ':n entries parsed',
     'paste_error'         => 'Some lines could not be parsed',
+    'csv_parsed_summary'  => ':n rows parsed from your CSV',
+    'csv_errors_summary'  => ':n rows need attention',
 ];

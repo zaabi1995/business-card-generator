@@ -70,4 +70,6 @@ return [
 
     'paste_parsed'        => 'تم تحليل :n مُدخَلاً',
     'paste_error'         => 'تعذّر تحليل بعض الأسطر',
+    'csv_parsed_summary'  => 'تم تحليل :n صفاً من ملف CSV',
+    'csv_errors_summary'  => ':n صفاً يحتاج إلى مراجعة',
 ];

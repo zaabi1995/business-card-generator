@@ -259,6 +259,18 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
             <input type="file" accept=".csv,text/csv" class="form-input"
                    @change="handleCsv($event)">
             <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('onboarding.csv_headers_hint')) ?></p>
+
+            <div x-show="csvReport.total > 0 || csvReport.errors.length"
+                 x-cloak
+                 class="mt-4 text-xs rounded-lg border p-3"
+                 :class="csvReport.errors.length ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-green-200 bg-green-50 text-green-800'">
+                <p x-text="csvReport.summary"></p>
+                <ul class="mt-1 list-disc ps-5" x-show="csvReport.errors.length">
+                    <template x-for="err in csvReport.errors.slice(0, 5)" :key="err.row + ':' + err.msg">
+                        <li x-text="err.row + ': ' + err.msg"></li>
+                    </template>
+                </ul>
+            </div>
         </div>
 
         <!-- Step 7: Order -->
@@ -351,6 +363,7 @@ function onboarding(init) {
             this.parsedPaste = this.parsePaste(this.data.invite_team.paste || '');
         },
         parsedPaste: { count: 0, errors: [] },
+        csvReport: { total: 0, errors: [], summary: '' },
         parsePaste(raw) {
             const out = { count: 0, errors: [] };
             if (!raw || !raw.trim()) return out;
@@ -399,7 +412,14 @@ function onboarding(init) {
             const f = ev.target.files && ev.target.files[0];
             if (!f) return;
             const reader = new FileReader();
-            reader.onload = () => { this.data.invite_team.csv = { filename: f.name, size: f.size, preview: reader.result.slice(0, 2000) }; };
+            reader.onload = () => {
+                this.data.invite_team.csv = {
+                    filename: f.name,
+                    size: f.size,
+                    content: reader.result,
+                    preview: reader.result.slice(0, 2000),
+                };
+            };
             reader.readAsText(f);
         },
         copyUrl() {
@@ -430,8 +450,26 @@ function onboarding(init) {
                         this.data.colors.primary = json.extracted_color;
                     }
                 }
+                if (json.csv && this.step === 6) {
+                    const tpl  = <?= json_encode(t('onboarding.csv_parsed_summary')) ?>;
+                    const etpl = <?= json_encode(t('onboarding.csv_errors_summary')) ?>;
+                    let summary = tpl.replace(':n', json.csv.total || 0);
+                    if (json.csv.errors && json.csv.errors.length) {
+                        summary += ' · ' + etpl.replace(':n', json.csv.errors.length);
+                    }
+                    this.csvReport = {
+                        total: json.csv.total || 0,
+                        errors: json.csv.errors || [],
+                        summary,
+                    };
+                }
                 if (this.step < this.totalSteps) { this.step++; window.scrollTo({top:0,behavior:'smooth'}); }
-                else { window.location.href = this.dashboardUrl + '?wizard=done'; }
+                else {
+                    const q = json.import && json.import.invites_sent > 0
+                        ? '?wizard=done&invites=' + json.import.invites_sent
+                        : '?wizard=done';
+                    window.location.href = this.dashboardUrl + q;
+                }
             } catch (e) {
                 alert(e.message);
             } finally { this.saving = false; }

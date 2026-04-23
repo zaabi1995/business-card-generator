@@ -10,6 +10,8 @@ require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/Onboarding.php';
 require_once INCLUDES_DIR . '/LogoLibrary.php';
+require_once INCLUDES_DIR . '/OnboardingImport.php';
+require_once INCLUDES_DIR . '/EmployeeEditToken.php';
 
 requireAdmin();
 $companyId = getCurrentCompanyId();
@@ -78,6 +80,22 @@ if ($step === 1 && !empty($payload['url']) && is_string($payload['url'])
     }
 }
 
+// Step 6 (invite team): parse CSV server-side if a full content blob
+// was uploaded, stash the parsed rows on the payload so the step-7
+// finish hook can bulk-commit + dispatch invites.
+$csvParsed = null;
+if ($step === 6 && !empty($payload['csv']['content']) && is_string($payload['csv']['content'])) {
+    $csvParsed = OnboardingImport::parseCsv($payload['csv']['content']);
+    $payload['csv']['parsed'] = [
+        'total'   => $csvParsed['total'],
+        'rows'    => $csvParsed['rows'],
+        'errors'  => $csvParsed['errors'],
+        'preview' => $csvParsed['preview'],
+    ];
+    // Drop the raw content once parsed; rows are what we need.
+    unset($payload['csv']['content']);
+}
+
 try {
     Onboarding::saveStep($companyId, $step, $payload);
 
@@ -97,7 +115,34 @@ try {
         }
     }
 
-    echo json_encode(['ok' => true, 'extracted_color' => $extractedColor]);
+    // Step 7 (order cards) is the final step. Commit parsed CSV rows
+    // saved at step 6 now, so invites go out atomically with wizard
+    // finish. Silent on failure, wizard close is the priority here.
+    $importResult = null;
+    if ($step === Onboarding::TOTAL_STEPS) {
+        $state = Onboarding::get($companyId);
+        $rows  = $state['data']['invite_team']['csv']['parsed']['rows'] ?? [];
+        if (!empty($rows) && is_array($rows)) {
+            try {
+                $importResult = OnboardingImport::commit($companyId, $rows);
+            } catch (Throwable $e) {
+                error_log('[onboarding] csv commit failed: ' . $e->getMessage());
+            }
+        }
+    }
+
+    $resp = ['ok' => true, 'extracted_color' => $extractedColor];
+    if ($csvParsed !== null) {
+        $resp['csv'] = [
+            'total'   => $csvParsed['total'],
+            'errors'  => $csvParsed['errors'],
+            'preview' => $csvParsed['preview'],
+        ];
+    }
+    if ($importResult !== null) {
+        $resp['import'] = $importResult;
+    }
+    echo json_encode($resp);
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode(['ok' => false, 'error' => 'save failed']);
