@@ -51,8 +51,61 @@ try {
         exit;
     }
 
-    // Look up employee scoped to company
-    $employee = findEmployeeById($employeeId, $company['id']);
+    // Look up employee scoped to company.
+    // The URL segment can be an employee_id OR an email (useful for QR codes
+    // baked onto a watermarked portal preview before the employee row exists).
+    $employee = null;
+    if (strpos($employeeId, '@') !== false) {
+        $employee = findEmployeeByEmail($employeeId, $company['id']);
+    } else {
+        $employee = findEmployeeById($employeeId, $company['id']);
+    }
+    // Fall back to the latest pending/approved card_request so a freshly
+    // submitted request still resolves to an E-Card page; the actual VCF
+    // download button below also honours this fallback.
+    if (!$employee) {
+        $db2 = Database::getInstance();
+        $req = null;
+        if (strpos($employeeId, '@') !== false) {
+            $req = $db2->fetchOne(
+                "SELECT * FROM card_requests
+                  WHERE company_id = :cid AND LOWER(email) = LOWER(:em)
+                    AND status IN ('pending','approved')
+                  ORDER BY submitted_at DESC LIMIT 1",
+                ['cid' => $company['id'], 'em' => $employeeId]
+            );
+        } else {
+            $req = $db2->fetchOne(
+                "SELECT * FROM card_requests WHERE id = :id AND company_id = :cid LIMIT 1",
+                ['id' => $employeeId, 'cid' => $company['id']]
+            );
+        }
+        if ($req) {
+            $employee = [
+                'id'           => $req['id'],
+                'email'        => $req['email'],
+                'name_en'      => $req['name_en']      ?? '',
+                'name_ar'      => $req['name_ar']      ?? '',
+                'position_en'  => $req['position_en']  ?? '',
+                'position_ar'  => $req['position_ar']  ?? '',
+                'phone'        => $req['phone']        ?? '',
+                'phone_ar'     => $req['phone_ar']     ?? '',
+                'mobile'       => $req['mobile']       ?? '',
+                'mobile_ar'    => $req['mobile_ar']    ?? '',
+                'website'      => $req['website']      ?? '',
+                'website_ar'   => $req['website_ar']   ?? '',
+                'address_en'   => $req['address_en']   ?? '',
+                'address_ar'   => $req['address_ar']   ?? '',
+                'address_2_en' => $req['address_2_en'] ?? '',
+                'address_2_ar' => $req['address_2_ar'] ?? '',
+                'company_en'   => $req['company_en']   ?? $company['name'] ?? '',
+                'company_ar'   => $req['company_ar']   ?? '',
+                'status'       => 'pending_approval',
+                'photo'        => $req['photo']        ?? null,
+                'department_id'=> $req['department_id']?? null,
+            ];
+        }
+    }
     if (!$employee) {
         // Try to load theme for branded 404
         $theme = loadCompanyTheme($company['id']);

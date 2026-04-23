@@ -1512,6 +1512,18 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
             alert(<?= json_encode(t('portal.enter_email_first')) ?>);
             return;
         }
+        // Client-side domain gate so users can't even preview with an
+        // outside email. Server-side check still runs on submit.
+        const requiredDomain = <?= json_encode($companyDomain ?: '') ?>;
+        if (requiredDomain) {
+            const atIdx = email.lastIndexOf('@');
+            const emailDomain = atIdx >= 0 ? email.slice(atIdx + 1).toLowerCase() : '';
+            if (emailDomain !== requiredDomain.toLowerCase()) {
+                alert(<?= json_encode(t('cardportal.email_domain_hint', ['domain' => ':domain'])) ?>
+                    .replace(':domain', requiredDomain));
+                return;
+            }
+        }
         if (!nameEn) {
             alert(<?= json_encode(t('portal.enter_name_first')) ?>);
             return;
@@ -1746,10 +1758,14 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
         editor.canvas.requestRenderAll();
     }
     
-    // Generate VCF tracking URL for QR code (same as VCF::getTrackingUrl in PHP)
-    // Format: /qr.php?c={company_slug}&e={email}
+    // Return the E-Card (digital card) URL for this employee. We point the
+    // QR at the branded E-Card page (which has its own VCF download button)
+    // instead of the raw .vcf file so scanning shows a rich web profile.
+    // Uses email in the path; digital_card.php accepts emails and falls back
+    // to the latest card_request when the employee row doesn't exist yet.
     function getVcfUrl(email) {
-        return window.location.origin + basePath + 'qr.php?c=' + encodeURIComponent(companySlug) + '&e=' + encodeURIComponent(email);
+        const host = window.location.origin;
+        return host + basePath + companySlug + '/card/' + encodeURIComponent(email);
     }
     
     // Edit form (go back to editing)
