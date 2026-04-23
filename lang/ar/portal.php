@@ -98,4 +98,12 @@ return [
     'nfc_step1'         => 'نزّل تطبيق كتابة NFC (iOS: "NFC Tools"؛ Android: "NFC TagWriter").',
     'nfc_step2'         => 'افتح التطبيق واختر "Write URL"، ثم الصق الرابط أعلاه (أو امسح رمز QR).',
     'nfc_step3'         => 'قرّب شريحة NFC من هاتفك. أي لمسة لاحقة على الشريحة ستفتح بطاقتك.',
+    'reprint_title'     => 'طلب إعادة طباعة',
+    'reprint_hint'      => 'اطلب من الإدارة طباعة دفعة جديدة من بطاقاتك الورقية.',
+    'reprint_cta'       => 'طلب إعادة طباعة',
+    'reprint_cancel'    => 'إلغاء',
+    'reprint_pending'   => 'بانتظار الإدارة',
+    'reprint_note_label'=> 'ملاحظة للإدارة (اختياري)',
+    'reprint_note_ph'   => 'مثال: نفدت البطاقات الأسبوع الماضي',
+    'reprint_submit'    => 'إرسال الطلب',
 ];

@@ -40,9 +40,9 @@ if (DemoData::shouldSeed($companyId)) {
 $company  = null;
 try {
     $db = Database::getInstance();
-    $company = $db->fetchOne("SELECT id, name, name_en, name_ar, slug FROM companies WHERE id = :id", ['id' => $companyId]);
+    $company = $db->fetchOne("SELECT id, name, slug FROM companies WHERE id = :id", ['id' => $companyId]);
 } catch (Throwable $e) { /* fall through to empty company */ }
-$companyName = $company['name'] ?? ($company['name_en'] ?? 'your company');
+$companyName = ($company['name'] ?? '') !== '' ? $company['name'] : 'your company';
 $companySlug = $company['slug'] ?? '';
 
 $initialStep = max(1, min(Onboarding::TOTAL_STEPS, (int)$state['step']));

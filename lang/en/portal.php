@@ -98,4 +98,12 @@ return [
     'nfc_step1'         => 'Download an NFC writer app (iOS: "NFC Tools"; Android: "NFC TagWriter").',
     'nfc_step2'         => 'Open the app, pick "Write URL", and paste the link above (or scan the QR).',
     'nfc_step3'         => 'Hold an NFC tag to your phone. Next tap on that tag opens your card.',
+    'reprint_title'     => 'Request a reprint',
+    'reprint_hint'      => 'Ask your admin to print a new batch of your physical cards.',
+    'reprint_cta'       => 'Request reprint',
+    'reprint_cancel'    => 'Cancel',
+    'reprint_pending'   => 'Pending admin',
+    'reprint_note_label'=> 'Note for admin (optional)',
+    'reprint_note_ph'   => 'e.g. cards ran out last week',
+    'reprint_submit'    => 'Submit request',
 ];
