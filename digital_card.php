@@ -622,12 +622,20 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             text-align: center;
             font-size: 14px;
             font-weight: 600;
+            /* <button> elements don't inherit body's font-family in most
+               browsers; they fall back to a UA-specific font. In Arabic this
+               showed the Share label in a different face than Save/Call/etc.
+               Forcing inherit keeps the whole row in Noto Sans Arabic. */
+            font-family: inherit;
             text-decoration: none;
             display: block;
             cursor: pointer;
             border: none;
             transition: opacity 0.2s;
         }
+        /* Same safeguard for any other <button> on the page (Share,
+           testimonial-toggle, appointment submit, lead form submit, etc.). */
+        button { font-family: inherit; }
         .bottom-btn:active { opacity: 0.8; }
         .btn-save {
             background: <?php echo htmlspecialchars($accentColor); ?>;
