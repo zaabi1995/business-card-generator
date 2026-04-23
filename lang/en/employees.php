@@ -35,4 +35,27 @@ return [
     'no_cards_generated'   => 'No cards generated',
     'no_print_orders'      => 'No print orders',
     'dark_mode_hint'       => 'Allow visitors to toggle theme',
+
+    // Import modal
+    'import_title'             => 'Import from CSV/Excel',
+    'import_need_template'     => 'Need a template?',
+    'import_template_sub'      => 'Download a sample CSV with the correct format',
+    'import_download'          => 'Download',
+    'import_select_file'       => 'Select File',
+    'import_skip_duplicates'   => 'Skip duplicates',
+    'import_skip_duplicates_hint' => "If an employee with the same email exists, skip (don't update)",
+    'import_auto_arabic'       => 'Auto-convert Arabic numerals',
+    'import_auto_arabic_hint'  => 'Automatically convert phone/mobile to Arabic numerals (٠١٢٣٤٥٦٧٨٩)',
+    'import_expected_cols'     => 'Expected Columns',
+    'import_expected_cols_hint'=> 'Your file should have these column headers:',
+    'import_cols_note'         => '<strong>Note:</strong> phone_ar and mobile_ar are optional, they will be auto-generated if enabled above.',
+    'import_cancel'            => 'Cancel',
+    'import_submit'            => 'Import',
+
+    // Detail modal stats
+    'stat_card_versions'   => 'Card Versions',
+    'stat_cards_printed'   => 'Cards Printed',
+    'stat_qr_scans'        => 'QR Scans',
+    'stat_print_orders'    => 'Print Orders',
+    'current_card'         => 'Current Business Card',
 ];

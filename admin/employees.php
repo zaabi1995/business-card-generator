@@ -1170,7 +1170,7 @@ adminHeader(t('employees.page_title'), 'employees');
         <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" @click="showImportModal = false"></div>
         <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg">
             <div class="p-6 border-b border-gray-100">
-                <h3 class="text-xl font-bold text-gray-900">Import from CSV/Excel</h3>
+                <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('employees.import_title')) ?></h3>
             </div>
             
             <form method="post" enctype="multipart/form-data" class="p-6">
@@ -1183,20 +1183,20 @@ adminHeader(t('employees.page_title'), 'employees');
                         <div>
                             <h4 class="text-blue-800 font-semibold flex items-center gap-2">
                                 <i class="fa-solid fa-file-csv"></i>
-                                Need a template?
+                                <?= htmlspecialchars(t('employees.import_need_template')) ?>
                             </h4>
-                            <p class="text-blue-600 text-sm mt-1">Download a sample CSV with the correct format</p>
+                            <p class="text-blue-600 text-sm mt-1"><?= htmlspecialchars(t('employees.import_template_sub')) ?></p>
                         </div>
                         <button type="button" onclick="downloadEmployeeTemplate()" 
                                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
                             <i class="fa-solid fa-download"></i>
-                            Download
+                            <?= htmlspecialchars(t('employees.import_download')) ?>
                         </button>
                     </div>
                 </div>
                 
                 <div class="mb-6">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Select File</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('employees.import_select_file')) ?></label>
                     <input type="file" name="excel_file" accept=".csv,.xlsx,.xls" required 
                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 file:font-medium hover:file:bg-blue-100">
                 </div>
@@ -1207,16 +1207,16 @@ adminHeader(t('employees.page_title'), 'employees');
                         <input type="checkbox" name="skip_duplicates" checked 
                                class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                         <div>
-                            <span class="text-sm font-medium text-gray-700">Skip duplicates</span>
-                            <p class="text-xs text-gray-500">If an employee with the same email exists, skip (don't update)</p>
+                            <span class="text-sm font-medium text-gray-700"><?= htmlspecialchars(t('employees.import_skip_duplicates')) ?></span>
+                            <p class="text-xs text-gray-500"><?= htmlspecialchars(t('employees.import_skip_duplicates_hint')) ?></p>
                         </div>
                     </label>
                     <label class="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" name="auto_convert_arabic" checked 
                                class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                         <div>
-                            <span class="text-sm font-medium text-gray-700">Auto-convert Arabic numerals</span>
-                            <p class="text-xs text-gray-500">Automatically convert phone/mobile to Arabic numerals (٠١٢٣٤٥٦٧٨٩)</p>
+                            <span class="text-sm font-medium text-gray-700"><?= htmlspecialchars(t('employees.import_auto_arabic')) ?></span>
+                            <p class="text-xs text-gray-500"><?= htmlspecialchars(t('employees.import_auto_arabic_hint')) ?></p>
                         </div>
                     </label>
                 </div>
@@ -1224,19 +1224,19 @@ adminHeader(t('employees.page_title'), 'employees');
                 <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 mb-6">
                     <h4 class="text-amber-800 font-semibold mb-2 flex items-center gap-2">
                         <i class="fa-solid fa-lightbulb"></i>
-                        Expected Columns
+                        <?= htmlspecialchars(t('employees.import_expected_cols')) ?>
                     </h4>
-                    <p class="text-amber-700 text-sm mb-2">Your file should have these column headers:</p>
+                    <p class="text-amber-700 text-sm mb-2"><?= htmlspecialchars(t('employees.import_expected_cols_hint')) ?></p>
                     <p class="text-amber-600 text-xs font-mono bg-amber-100 p-2 rounded break-all">email, name_en, name_ar, position_en, position_ar, phone, mobile, company_en, company_ar, website, address_en, address_ar, department</p>
-                    <p class="text-amber-600 text-xs mt-2"><strong>Note:</strong> phone_ar and mobile_ar are optional - they will be auto-generated if enabled above.</p>
+                    <p class="text-amber-600 text-xs mt-2"><?= t('employees.import_cols_note') ?></p>
                 </div>
                 
                 <div class="flex items-center justify-end gap-3">
                     <button type="button" @click="showImportModal = false" class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors">
-                        Cancel
+                        <?= htmlspecialchars(t('employees.import_cancel')) ?>
                     </button>
                     <button type="submit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
-                        <i class="fa-solid fa-file-import mr-2"></i>Import
+                        <i class="fa-solid fa-file-import mr-2"></i><?= htmlspecialchars(t('employees.import_submit')) ?>
                     </button>
                 </div>
             </form>
@@ -1268,19 +1268,19 @@ adminHeader(t('employees.page_title'), 'employees');
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div class="bg-blue-50 rounded-xl p-4 text-center">
                         <div class="text-2xl font-bold text-blue-600" x-text="detailData.cards?.length || 0"></div>
-                        <div class="text-xs text-blue-700 font-medium">Card Versions</div>
+                        <div class="text-xs text-blue-700 font-medium"><?= htmlspecialchars(t('employees.stat_card_versions')) ?></div>
                     </div>
                     <div class="bg-green-50 rounded-xl p-4 text-center">
                         <div class="text-2xl font-bold text-green-600" x-text="detailData.totalPrinted || 0"></div>
-                        <div class="text-xs text-green-700 font-medium">Cards Printed</div>
+                        <div class="text-xs text-green-700 font-medium"><?= htmlspecialchars(t('employees.stat_cards_printed')) ?></div>
                     </div>
                     <div class="bg-purple-50 rounded-xl p-4 text-center">
                         <div class="text-2xl font-bold text-purple-600" x-text="detailData.employee?.total_scans || 0"></div>
-                        <div class="text-xs text-purple-700 font-medium">QR Scans</div>
+                        <div class="text-xs text-purple-700 font-medium"><?= htmlspecialchars(t('employees.stat_qr_scans')) ?></div>
                     </div>
                     <div class="bg-amber-50 rounded-xl p-4 text-center">
                         <div class="text-2xl font-bold text-amber-600" x-text="detailData.printOrders?.length || 0"></div>
-                        <div class="text-xs text-amber-700 font-medium">Print Orders</div>
+                        <div class="text-xs text-amber-700 font-medium"><?= htmlspecialchars(t('employees.stat_print_orders')) ?></div>
                     </div>
                 </div>
                 
@@ -1291,7 +1291,7 @@ adminHeader(t('employees.page_title'), 'employees');
                         <div class="bg-gray-50 rounded-xl p-4">
                             <h4 class="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                                 <i class="fa-solid fa-id-card text-blue-500"></i>
-                                Current Business Card
+                                <?= htmlspecialchars(t('employees.current_card')) ?>
                             </h4>
                             <template x-if="detailData.latestCardUrl">
                                 <div class="flex gap-3">

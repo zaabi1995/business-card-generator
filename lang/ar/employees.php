@@ -32,4 +32,27 @@ return [
     'no_cards_generated'   => 'لم يتم إنشاء بطاقات',
     'no_print_orders'      => 'لا توجد طلبات طباعة',
     'dark_mode_hint'       => 'اسمح للزوّار بتبديل المظهر',
+
+    // نافذة الاستيراد
+    'import_title'             => 'استيراد من CSV/Excel',
+    'import_need_template'     => 'تحتاج قالباً؟',
+    'import_template_sub'      => 'حمّل ملف CSV نموذجياً بالصيغة الصحيحة',
+    'import_download'          => 'تحميل',
+    'import_select_file'       => 'اختر الملف',
+    'import_skip_duplicates'   => 'تخطّي المكرّرات',
+    'import_skip_duplicates_hint' => 'إذا وُجد موظف بنفس البريد، يتمّ تخطّيه (دون تحديث)',
+    'import_auto_arabic'       => 'تحويل الأرقام إلى العربية تلقائياً',
+    'import_auto_arabic_hint'  => 'تحويل الهاتف/الجوّال إلى الأرقام العربية تلقائياً (٠١٢٣٤٥٦٧٨٩)',
+    'import_expected_cols'     => 'الأعمدة المتوقّعة',
+    'import_expected_cols_hint'=> 'يجب أن يحتوي ملفك على هذه العناوين:',
+    'import_cols_note'         => '<strong>ملاحظة:</strong> phone_ar و mobile_ar اختياريان، يتمّ توليدهما تلقائياً إذا فُعّل الخيار أعلاه.',
+    'import_cancel'            => 'إلغاء',
+    'import_submit'            => 'استيراد',
+
+    // إحصائيات نافذة التفاصيل
+    'stat_card_versions'   => 'إصدارات البطاقة',
+    'stat_cards_printed'   => 'البطاقات المطبوعة',
+    'stat_qr_scans'        => 'قراءات QR',
+    'stat_print_orders'    => 'طلبات الطباعة',
+    'current_card'         => 'بطاقة العمل الحالية',
 ];
