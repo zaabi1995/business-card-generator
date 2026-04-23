@@ -100,7 +100,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sloganAr          = trim($_POST['slogan_ar'] ?? '');
     $ecardBilingual        = isset($_POST['ecard_bilingual'])        ? 1 : 0;
     $ecardThemeToggle      = isset($_POST['ecard_theme_toggle'])     ? 1 : 0;
-    $ecardShowViralFooter  = isset($_POST['ecard_show_viral_footer'])? 1 : 0;
+    // "Made with Cardify" footer is always on (viral growth). Not a setting.
+    $ecardShowViralFooter  = 1;
     $ecardDefaultTheme     = in_array($_POST['ecard_default_theme'] ?? 'auto', ['auto','light','dark'], true) ? $_POST['ecard_default_theme'] : 'auto';
 
     $db->query(
@@ -232,16 +233,6 @@ adminHeader('Branding & E-Card Settings', 'theme');
                 <span>
                     <span class="block font-medium text-gray-900 text-sm">Visitor theme toggle (sun / moon)</span>
                     <span class="block text-xs text-gray-500">Let visitors switch the E-Card between light and dark themes.</span>
-                </span>
-            </label>
-
-            <label class="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" name="ecard_show_viral_footer" value="1"
-                       <?php echo !isset($company['ecard_show_viral_footer']) || $company['ecard_show_viral_footer'] ? 'checked' : ''; ?>
-                       class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300">
-                <span>
-                    <span class="block font-medium text-gray-900 text-sm">Show "Made with Cardify" footer</span>
-                    <span class="block text-xs text-gray-500">Small attribution link at the bottom of every E-Card. Turn off on Pro.</span>
                 </span>
             </label>
 

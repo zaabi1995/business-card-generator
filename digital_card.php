@@ -182,7 +182,10 @@ try {
 
     // Company-level E-Card switches (admin > theme settings)
     $ecardBilingual       = !isset($company['ecard_bilingual']) || (int)$company['ecard_bilingual'] === 1;
-    $ecardShowViralFooter = !isset($company['ecard_show_viral_footer']) || (int)$company['ecard_show_viral_footer'] === 1;
+    // "Made with Cardify" footer is always shown, company-wide, no opt-out.
+    // Viral growth is a first-class product value; Pro tier's hide_cardify_branding
+    // flag is also ignored here intentionally.
+    $ecardShowViralFooter = true;
     $ecardDefaultTheme    = $company['ecard_default_theme'] ?? 'auto';
     if ($ecardDefaultTheme === 'dark')  $isDarkPage = true;
     if ($ecardDefaultTheme === 'light') $isDarkPage = false;
@@ -1596,7 +1599,8 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             } catch (Throwable $e) {
                 $__brandingPaid = false;
             }
-            $__showViralFooter = !($__hideBranding && $__brandingPaid) && $ecardShowViralFooter;
+            // Always show, ignore pro-tier hide_cardify_branding on purpose.
+            $__showViralFooter = true;
         ?>
         <?php if ($__showViralFooter): ?>
             <?php
