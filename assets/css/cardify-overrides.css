@@ -670,9 +670,18 @@ html[dir="rtl"] .pr-2 { padding-right: 0 !important; padding-left: 0.5rem  !impo
 html[dir="rtl"] .pr-3 { padding-right: 0 !important; padding-left: 0.75rem !important; }
 html[dir="rtl"] .pr-4 { padding-right: 0 !important; padding-left: 1rem    !important; }
 
-/* Form icons that sit on one side, flip positioning */
-html[dir="rtl"] .left-0,  html[dir="rtl"] .left-2,  html[dir="rtl"] .left-3,  html[dir="rtl"] .left-4  { right: 0; left: auto !important; }
-html[dir="rtl"] .right-0, html[dir="rtl"] .right-2, html[dir="rtl"] .right-3, html[dir="rtl"] .right-4 { left:  0; right: auto !important; }
+/* Form icons that sit on one side, flip positioning.
+   Scope to .absolute only: otherwise these rules hit elements with
+   `fixed top-0 left-0 right-0` (like the main navbar), stripping BOTH
+   inset values to auto and collapsing the nav to content-width. */
+html[dir="rtl"] .absolute.left-0,
+html[dir="rtl"] .absolute.left-2,
+html[dir="rtl"] .absolute.left-3,
+html[dir="rtl"] .absolute.left-4   { right: 0; left: auto !important; }
+html[dir="rtl"] .absolute.right-0,
+html[dir="rtl"] .absolute.right-2,
+html[dir="rtl"] .absolute.right-3,
+html[dir="rtl"] .absolute.right-4  { left:  0; right: auto !important; }
 
 /* FontAwesome icons that use rotation for direction, flip arrows */
 html[dir="rtl"] .fa-arrow-right::before { content: "\f060"; } /* left */

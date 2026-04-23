@@ -313,9 +313,7 @@ if (!function_exists('renderNavigation')) {
         ];
         
         $navLinks = $customLinks ?? $defaultLinks;
-        // bg-white/80 lets the hero's teal bleed through the header enough
-        // to look muddy in RTL. Using bg-white for a clean solid surface.
-        $bgClass = $transparent ? 'bg-transparent' : 'bg-white border-b border-gray-100';
+        $bgClass = $transparent ? 'bg-transparent' : 'bg-white/80 bg-blur border-b border-gray-100';
         $linkClass = $transparent ? 'text-white/90 hover:text-white' : 'text-gray-600 hover:text-blue-600';
         
         // Get user display name
