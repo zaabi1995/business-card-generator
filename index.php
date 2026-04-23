@@ -527,12 +527,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="max-w-2xl mx-auto text-center mb-16">
-                <p class="text-sm font-semibold uppercase tracking-wider text-green-600 mb-3">Quick setup</p>
+                <p class="text-sm font-semibold uppercase tracking-wider text-green-600 mb-3"><?= htmlspecialchars(t('landing.how_kicker')) ?></p>
                 <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4">
-                    Get started in three simple steps
+                    <?= htmlspecialchars(t('landing.how_headline')) ?>
                 </h2>
                 <p class="text-lg text-gray-600">
-                    From signup to sharing your first card in under 5 minutes.
+                    <?= htmlspecialchars(t('landing.how_subhead')) ?>
                 </p>
             </div>
 
@@ -543,9 +543,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="w-20 h-20 rounded-full bg-blue-600 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-600/30 group-hover:scale-110 transition-transform">
                         1
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Create Your Account</h3>
-                    <p class="text-gray-600">Sign up with your email and set up your company profile in just a few clicks.</p>
-                    
+                    <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.how_step1_title')) ?></h3>
+                    <p class="text-gray-600"><?= htmlspecialchars(t('landing.how_step1_body')) ?></p>
+
                     <!-- Arrow (hidden on mobile) -->
                     <div class="hidden md:block absolute top-10 left-full w-full h-0.5 bg-gray-200 -translate-x-1/2">
                         <i class="fa-solid fa-chevron-right absolute right-0 -top-2 text-gray-300"></i>
@@ -557,9 +557,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="w-20 h-20 rounded-full bg-amber-500 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-amber-500/30 group-hover:scale-110 transition-transform">
                         2
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Add Your Team</h3>
-                    <p class="text-gray-600">Import employees individually or in bulk. Customize their card details and design.</p>
-                    
+                    <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.how_step2_title')) ?></h3>
+                    <p class="text-gray-600"><?= htmlspecialchars(t('landing.how_step2_body')) ?></p>
+
                     <!-- Arrow (hidden on mobile) -->
                     <div class="hidden md:block absolute top-10 left-full w-full h-0.5 bg-gray-200 -translate-x-1/2">
                         <i class="fa-solid fa-chevron-right absolute right-0 -top-2 text-gray-300"></i>
@@ -571,15 +571,15 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="w-20 h-20 rounded-full bg-green-500 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-500/30 group-hover:scale-110 transition-transform">
                         3
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Print & Share</h3>
-                    <p class="text-gray-600">Order prints from local Omani shops or share digital cards via QR code and WhatsApp.</p>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.how_step3_title')) ?></h3>
+                    <p class="text-gray-600"><?= htmlspecialchars(t('landing.how_step3_body')) ?></p>
                 </div>
             </div>
 
             <!-- CTA -->
             <div class="text-center mt-16">
                 <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all text-lg">
-                    Get Started Now
+                    <?= htmlspecialchars(t('landing.how_cta')) ?>
                     <i class="fa-solid fa-arrow-right"></i>
                 </a>
             </div>

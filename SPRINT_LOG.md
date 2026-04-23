@@ -191,3 +191,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-23 23:10 | #583 | 57f356d | Migration 103 adds employees.preferred_contact_action ENUM (save_contact/whatsapp/call default save_contact). Portal edit selector + endpoint whitelist + enum validation. 5 portal.primary_tap* keys EN+AR. Digital_card CTA reorder split to 856.
 2026-04-23 23:25 | #584 | BLOCKED | Walkthrough GIF/screencast needs Ali to record + host. Marked [~], revisit when URL provided.
 2026-04-23 23:25 | #511 | b1ffe6f | index.php #features fully t()-wrapped: kicker + headline + subhead + 6 feature tiles + "New" pill. 18 landing.feat_* keys EN+AR.
+2026-04-23 23:45 | #512 | 441afe2 | index.php #how-it-works fully t()-wrapped: kicker/headline/subhead/3-step cards/CTA. 10 landing.how_* keys EN+AR.

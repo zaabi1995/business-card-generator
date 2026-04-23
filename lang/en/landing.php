@@ -59,4 +59,16 @@ return [
     'feat_qr_body'       => 'Every card carries a trackable QR. See when and where your cards are scanned with full analytics.',
     'feat_portal_title'  => 'Employee portal',
     'feat_portal_body'   => 'Staff edit their own details through a branded self-service portal. Admins stay in control.',
+
+    // How it works (action 512)
+    'how_kicker'         => 'Quick setup',
+    'how_headline'       => 'Get started in three simple steps',
+    'how_subhead'        => 'From signup to sharing your first card in under 5 minutes.',
+    'how_step1_title'    => 'Create your account',
+    'how_step1_body'     => 'Sign up with your email and set up your company profile in a few clicks.',
+    'how_step2_title'    => 'Add your team',
+    'how_step2_body'     => 'Import employees one by one or in bulk. Tweak details and pick a design.',
+    'how_step3_title'    => 'Print and share',
+    'how_step3_body'     => 'Order prints from trusted Omani shops or share digital cards via QR code and WhatsApp.',
+    'how_cta'            => 'Get started now',
 ];
