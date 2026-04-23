@@ -54,4 +54,8 @@ return [
     'select_template'     => 'Select a template to edit',
     'or_create_new'       => 'Or create a new one',
     'field_settings'      => 'Field settings',
+    'set_default_cta'     => 'Set as company default',
+    'set_default_confirm' => 'Set this template as the company default for all new employees?',
+    'set_default_success' => 'Template set as company default.',
+    'set_default_fail'    => 'Could not set as company default.',
 ];

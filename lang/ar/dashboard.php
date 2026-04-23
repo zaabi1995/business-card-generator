@@ -49,4 +49,8 @@ return [
     'select_template'     => 'اختر قالباً للتعديل',
     'or_create_new'       => 'أو أنشئ قالباً جديداً',
     'field_settings'      => 'إعدادات الحقول',
+    'set_default_cta'     => 'تعيين كافتراضي للشركة',
+    'set_default_confirm' => 'تعيين هذا القالب كافتراضي لجميع الموظفين الجدد؟',
+    'set_default_success' => 'تم تعيين القالب كافتراضي للشركة.',
+    'set_default_fail'    => 'تعذّر التعيين كافتراضي.',
 ];

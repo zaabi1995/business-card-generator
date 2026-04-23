@@ -1363,6 +1363,9 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                         <button @click="setActiveTemplate()" class="px-3 py-1.5 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium">
                             <i class="fa-solid fa-check mr-1"></i>Set Active
                         </button>
+                        <button @click="setAsCompanyDefault()" class="px-3 py-1.5 text-sm bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition-colors font-medium">
+                            <i class="fa-solid fa-building mr-1"></i><?= htmlspecialchars(t('dashboard.set_default_cta')) ?>
+                        </button>
                         <button @click="saveTemplate()" class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
                             <i class="fa-solid fa-floppy-disk mr-1"></i>Save
                         </button>
@@ -3191,9 +3194,34 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                     });
             },
             
+            setAsCompanyDefault: function() {
+                if (!this.selectedTemplate) {
+                    this.showStatus('Select a template first', 'error');
+                    return;
+                }
+                if (!confirm(<?= json_encode(t('dashboard.set_default_confirm')) ?>)) return;
+                var formData = this.newFormData('set_as_default');
+                formData.append('id', this.selectedTemplate.id);
+                formData.append('side', this.selectedTemplate.side);
+                var self = this;
+                fetch('save_template', { method: 'POST', body: formData })
+                    .then(function (r) { return r.json(); })
+                    .then(function (j) {
+                        if (j.success) {
+                            self.showStatus(<?= json_encode(t('dashboard.set_default_success')) ?>, 'success');
+                        } else {
+                            self.showStatus(j.error || <?= json_encode(t('dashboard.set_default_fail')) ?>, 'error');
+                        }
+                    })
+                    .catch(function (e) {
+                        console.error('set_as_default error', e);
+                        self.showStatus(<?= json_encode(t('dashboard.set_default_fail')) ?>, 'error');
+                    });
+            },
+
             deleteTemplate: function(id) {
                 if (!confirm('Are you sure you want to delete this template?')) return;
-                
+
                 var formData = this.newFormData('delete');
                 formData.append('id', id);
 

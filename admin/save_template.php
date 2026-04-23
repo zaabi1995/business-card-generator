@@ -37,6 +37,9 @@ try {
         case 'activate':
             $result = activateTemplate();
             break;
+        case 'set_as_default':
+            $result = setAsCompanyDefault();
+            break;
         default:
             throw new Exception('Invalid action');
     }
@@ -613,11 +616,60 @@ function activateTemplate() {
     } else {
         $config['activeBackId'] = $id;
     }
-    
+
     if (!saveTemplates($config, $companyId)) {
         throw new Exception('Failed to activate template');
     }
-    
+
     return ['success' => true];
+}
+
+/**
+ * Set the current template as the company-wide default for new employees.
+ * Writes to companies.default_front_template_id or default_back_template_id
+ * based on the supplied side. Template must belong to the current company.
+ */
+function setAsCompanyDefault() {
+    $id   = trim($_POST['id']   ?? '');
+    $side = $_POST['side'] ?? 'front';
+    if (empty($id)) {
+        throw new Exception('Template ID is required');
+    }
+    if (!in_array($side, ['front', 'back'], true)) {
+        throw new Exception('Invalid side');
+    }
+
+    $companyId = getCurrentCompanyId();
+    if (!$companyId) {
+        throw new Exception('Company context required');
+    }
+
+    // Verify template belongs to this company before writing the id to
+    // companies.default_*_template_id (cross-tenant guard).
+    $config = loadTemplates($companyId);
+    $found  = false;
+    foreach ($config['templates'] ?? [] as $t) {
+        if (($t['id'] ?? null) === $id) { $found = true; break; }
+    }
+    if (!$found) {
+        throw new Exception('Template not found');
+    }
+
+    $col = $side === 'front' ? 'default_front_template_id' : 'default_back_template_id';
+    try {
+        $db = Database::getInstance();
+        $db->update('companies', [$col => $id], 'id = :id', ['id' => $companyId]);
+    } catch (Throwable $e) {
+        throw new Exception('Failed to set company default: ' . $e->getMessage());
+    }
+
+    if (class_exists('AuditLog')) {
+        try {
+            AuditLog::log('template_set_as_default', 'company', $companyId, null,
+                ['side' => $side, 'template_id' => $id], $companyId);
+        } catch (Throwable $_) { /* best-effort */ }
+    }
+
+    return ['success' => true, 'side' => $side, 'template_id' => $id];
 }
 
