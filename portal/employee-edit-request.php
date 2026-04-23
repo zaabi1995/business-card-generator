@@ -43,7 +43,7 @@ if (!RateLimiter::check('emp_req:' . substr(hash('sha256', $token), 0, 16), $ip,
     exit;
 }
 
-$allowedFields = ['department', 'reprint'];
+$allowedFields = ['department', 'reprint', 'leave_company'];
 if (!in_array($field, $allowedFields, true)) {
     http_response_code(400);
     echo json_encode(['ok' => false, 'error' => 'field_not_requestable']);
@@ -52,7 +52,7 @@ if (!in_array($field, $allowedFields, true)) {
 
 $db = Database::getInstance();
 $label = null;
-if ($field === 'reprint') {
+if ($field === 'reprint' || $field === 'leave_company') {
     $label = trim((string) ($body['note'] ?? ''));
     if (strlen($label) > 255) $label = substr($label, 0, 255);
     $value = 'pending';

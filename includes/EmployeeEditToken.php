@@ -18,6 +18,23 @@ class EmployeeEditToken
     public const TTL_DAYS = 30;
     public const BYTES = 20; // 40 hex chars
 
+    /**
+     * Revoke every active token for an employee. Called from the
+     * leave-company approval flow so the departing employee can no
+     * longer edit their card after being deactivated.
+     */
+    public static function revokeAllForEmployee(string $employeeId): int
+    {
+        $db = Database::getInstance();
+        $db->update(
+            'employee_edit_tokens',
+            ['revoked_at' => date('Y-m-d H:i:s')],
+            'employee_id = :eid AND revoked_at IS NULL',
+            ['eid' => $employeeId]
+        );
+        return 1;
+    }
+
     public static function mint(string $employeeId, ?string $createdBy = null, ?string $ip = null): string
     {
         $db = Database::getInstance();

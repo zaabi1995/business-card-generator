@@ -25,6 +25,7 @@ $scanStats = ['periodScans' => 0, 'totalScans' => 0];
 $customFieldDefs = [];
 $customFieldValues = [];
 $pendingReprint = false;
+$pendingLeave   = false;
 if ($employee) {
     try {
         $db = Database::getInstance();
@@ -101,6 +102,12 @@ if ($employee) {
                 ['eid' => $employee['id']]
             );
             $pendingReprint = !empty($row);
+            $rowL = $db->fetchOne(
+                "SELECT id FROM employee_edit_requests
+                 WHERE employee_id = :eid AND field = 'leave_company' AND status = 'pending' LIMIT 1",
+                ['eid' => $employee['id']]
+            );
+            $pendingLeave = !empty($rowL);
         } catch (Throwable $e) { /* table may not exist in minimal envs */ }
     } catch (Throwable $e) { /* table may not exist in minimal envs */ }
 }
@@ -472,6 +479,36 @@ $pageTitle = t('portal.edit_my_details');
         </div>
         <?php endif; ?>
 
+        <div class="mt-5 bg-white rounded-2xl shadow-sm border border-red-100 p-4"
+             x-data='leaveCard(<?= htmlspecialchars(json_encode([
+                 'token' => $token,
+                 'csrf'  => $csrf,
+                 'pending' => $pendingLeave,
+             ]), ENT_QUOTES) ?>)'>
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex items-start gap-3">
+                    <i class="fa-solid fa-door-open text-2xl text-red-500 mt-0.5"></i>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-900"><?= htmlspecialchars(t('portal.leave_title')) ?></p>
+                        <p class="text-xs text-gray-500"><?= htmlspecialchars(t('portal.leave_hint')) ?></p>
+                    </div>
+                </div>
+                <button type="button" @click="toggle()" :disabled="pending"
+                        class="px-4 py-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-200 disabled:text-gray-400 text-white text-xs font-semibold rounded-lg whitespace-nowrap"
+                        x-text="pending ? <?= json_encode(t('portal.leave_pending')) ?> : (open ? <?= json_encode(t('portal.leave_cancel')) ?> : <?= json_encode(t('portal.leave_cta')) ?>)"></button>
+            </div>
+            <div x-show="open && !pending" x-cloak class="mt-3 pt-3 border-t border-red-100">
+                <label class="block text-xs text-gray-600 mb-1"><?= htmlspecialchars(t('portal.leave_note_label')) ?></label>
+                <textarea x-model="note" rows="2" maxlength="255" class="form-input text-sm"
+                          :placeholder="<?= htmlspecialchars(json_encode(t('portal.leave_note_ph')), ENT_QUOTES) ?>"></textarea>
+                <p class="text-xs text-red-600 mt-2"><i class="fa-solid fa-triangle-exclamation mr-1"></i><?= htmlspecialchars(t('portal.leave_warning')) ?></p>
+                <button type="button" @click="submit()"
+                        class="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg">
+                    <?= htmlspecialchars(t('portal.leave_submit')) ?>
+                </button>
+            </div>
+        </div>
+
         <p class="text-xs text-gray-400 text-center mt-5">
             <i class="fa-solid fa-shield-halved mr-1"></i>
             <?= $isAr
@@ -481,6 +518,36 @@ $pageTitle = t('portal.edit_my_details');
     </div>
 
     <script>
+    function leaveCard(init) {
+        return {
+            open: false,
+            note: '',
+            pending: !!init.pending,
+            token: init.token,
+            csrf: init.csrf,
+            toggle() { if (!this.pending) this.open = !this.open; },
+            async submit() {
+                if (!confirm(<?= json_encode(t('portal.leave_confirm')) ?>)) return;
+                try {
+                    const res = await fetch('/portal/employee-edit-request.php', {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/json','X-CSRF-Token': this.csrf},
+                        body: JSON.stringify({ token: this.token, field: 'leave_company', note: this.note })
+                    });
+                    const j = await res.json();
+                    if (j.ok) {
+                        this.pending = true;
+                        this.open = false;
+                        this.note = '';
+                    } else {
+                        alert(<?= json_encode(t('portal.request_failed')) ?>);
+                    }
+                } catch (e) {
+                    alert(<?= json_encode(t('portal.request_failed')) ?>);
+                }
+            }
+        };
+    }
     function reprintCard(init) {
         return {
             open: false,
