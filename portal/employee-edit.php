@@ -17,6 +17,9 @@ $employee = EmployeeEditToken::verify($token);
 
 $existingSocials = [];
 $publicCardUrl = '';
+$departments = [];
+$currentDepartmentName = '';
+$pendingDeptRequest = null;
 if ($employee) {
     try {
         $db = Database::getInstance();
@@ -35,6 +38,29 @@ if ($employee) {
         $host = defined('APP_HOST') ? APP_HOST : 'cardify.om';
         if ($companySlug && $empSlug) {
             $publicCardUrl = 'https://' . $host . '/' . $companySlug . '/' . $empSlug;
+        }
+
+        $departments = $db->fetchAll(
+            "SELECT id, name FROM departments WHERE company_id = :cid ORDER BY name ASC",
+            ['cid' => $employee['company_id']]
+        );
+        if (!empty($employee['department_id'])) {
+            foreach ($departments as $d) {
+                if ($d['id'] === $employee['department_id']) { $currentDepartmentName = $d['name']; break; }
+            }
+        }
+        $pending = $db->fetchOne(
+            "SELECT id, requested_value, requested_label FROM employee_edit_requests
+             WHERE employee_id = :eid AND field = 'department' AND status = 'pending'
+             ORDER BY created_at DESC LIMIT 1",
+            ['eid' => $employee['id']]
+        );
+        if ($pending) {
+            $pendingDeptRequest = [
+                'id'    => $pending['id'],
+                'value' => $pending['requested_value'],
+                'label' => $pending['requested_label'],
+            ];
         }
     } catch (Throwable $e) { /* table may not exist in minimal envs */ }
 }
@@ -101,6 +127,7 @@ $pageTitle = t('portal.edit_my_details');
               'photo' => $employee['photo'] ?? '',
           ],
           'socials' => $existingSocials,
+          'deptPending' => $pendingDeptRequest,
           'token' => $token,
           'csrf'  => $csrf,
           'saveUrl' => '/portal/employee-edit-save.php',
@@ -188,6 +215,33 @@ $pageTitle = t('portal.edit_my_details');
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.website')) ?></label>
                 <input type="url" x-model="data.website" @input.debounce.800ms="save()" class="form-input" dir="ltr" placeholder="https://">
             </div>
+
+            <?php if (!empty($departments)): ?>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.department')) ?></label>
+                <div class="flex items-center gap-2">
+                    <select x-model="deptRequestValue" class="form-input flex-1" dir="<?= htmlspecialchars($dir) ?>">
+                        <option value=""><?= htmlspecialchars(t('portal.department_current', ['name' => $currentDepartmentName ?: t('portal.department_none')])) ?></option>
+                        <?php foreach ($departments as $d): if ($d['id'] === ($employee['department_id'] ?? null)) continue; ?>
+                            <option value="<?= htmlspecialchars($d['id']) ?>"><?= htmlspecialchars($d['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="button"
+                            :disabled="!deptRequestValue || deptPending"
+                            @click="requestDepartment()"
+                            class="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-200 disabled:text-gray-400 text-white text-xs font-semibold rounded-lg whitespace-nowrap">
+                        <?= htmlspecialchars(t('portal.request_change')) ?>
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-1" x-show="!deptPendingLabel">
+                    <?= htmlspecialchars(t('portal.request_change_hint')) ?>
+                </p>
+                <p class="text-xs text-amber-700 mt-1" x-show="deptPendingLabel" x-cloak>
+                    <i class="fa-solid fa-hourglass-half mr-1"></i>
+                    <span x-text="<?= htmlspecialchars(json_encode(t('portal.request_pending_label', ['label' => ':pending'])), ENT_QUOTES) ?>.replace(':pending', deptPendingLabel)"></span>
+                </p>
+            </div>
+            <?php endif; ?>
 
             <div class="pt-4 border-t border-gray-100">
                 <div class="flex items-center justify-between mb-2">
@@ -349,6 +403,30 @@ $pageTitle = t('portal.edit_my_details');
 
             init() { /* noop */ },
 
+            deptRequestValue: '',
+            deptPending: init.deptPending || false,
+            get deptPendingLabel() {
+                return this.deptPending && this.deptPending.label ? this.deptPending.label : '';
+            },
+            async requestDepartment() {
+                if (!this.deptRequestValue) return;
+                try {
+                    const res = await fetch('/portal/employee-edit-request.php', {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/json','X-CSRF-Token': this.csrf},
+                        body: JSON.stringify({ token: this.token, field: 'department', value: this.deptRequestValue })
+                    });
+                    const j = await res.json();
+                    if (j.ok && j.request) {
+                        this.deptPending = { id: j.request.id, value: j.request.value || this.deptRequestValue, label: j.request.label || '' };
+                        this.deptRequestValue = '';
+                    } else {
+                        alert(<?= json_encode(t('portal.request_failed')) ?>);
+                    }
+                } catch (e) {
+                    alert(<?= json_encode(t('portal.request_failed')) ?>);
+                }
+            },
             addSocial() {
                 this.socials.push({ platform: 'linkedin', url: '' });
             },

@@ -80,4 +80,11 @@ return [
     'share_hint'        => 'تستخدم قائمة المشاركة في جهازك عند توفّرها.',
     'share_cta'         => 'مشاركة',
     'share_default_text'=> 'هذه بطاقتي، :name',
+    'department'        => 'القسم',
+    'department_current'=> 'الحالي: :name',
+    'department_none'   => 'لا يوجد',
+    'request_change'    => 'طلب تغيير',
+    'request_change_hint'=> 'تغييرات القسم تحتاج موافقة الإدارة قبل أن تظهر على بطاقتك.',
+    'request_pending_label'=> 'بانتظار موافقة الإدارة: :pending',
+    'request_failed'    => 'فشل الطلب، حاول مرة أخرى.',
 ];

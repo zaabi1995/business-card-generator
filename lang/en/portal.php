@@ -80,4 +80,11 @@ return [
     'share_hint'        => 'Uses your phone share sheet when available.',
     'share_cta'         => 'Share',
     'share_default_text'=> 'Here is my business card, :name',
+    'department'        => 'Department',
+    'department_current'=> 'Current: :name',
+    'department_none'   => 'none',
+    'request_change'    => 'Request change',
+    'request_change_hint'=> 'Department changes need admin approval before they update your card.',
+    'request_pending_label'=> 'Pending admin approval: :pending',
+    'request_failed'    => 'Request failed. Try again.',
 ];
