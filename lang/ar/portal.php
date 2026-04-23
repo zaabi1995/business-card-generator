@@ -89,4 +89,5 @@ return [
     'request_failed'    => 'فشل الطلب، حاول مرة أخرى.',
     'stats_month'       => 'تم مسح بطاقتك :n مرة هذا الشهر',
     'stats_total'       => ':n إجمالاً',
+    'custom_fields'     => 'حقول إضافية',
 ];

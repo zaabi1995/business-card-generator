@@ -22,6 +22,8 @@ $departments = [];
 $currentDepartmentName = '';
 $pendingDeptRequest = null;
 $scanStats = ['periodScans' => 0, 'totalScans' => 0];
+$customFieldDefs = [];
+$customFieldValues = [];
 if ($employee) {
     try {
         $db = Database::getInstance();
@@ -72,6 +74,24 @@ if ($employee) {
                 $scanStats['totalScans']  = (int) ($stats['totalScans']  ?? 0);
             }
         } catch (Throwable $e) { /* stats optional */ }
+
+        try {
+            $cRow = $db->fetchOne("SELECT custom_fields FROM companies WHERE id = :id", ['id' => $employee['company_id']]);
+            $defs = $cRow && !empty($cRow['custom_fields']) ? json_decode($cRow['custom_fields'], true) : [];
+            if (is_array($defs)) {
+                foreach ($defs as $d) {
+                    if (empty($d['key']) || empty($d['label'])) continue;
+                    $customFieldDefs[] = [
+                        'key'      => (string) $d['key'],
+                        'label'    => (string) $d['label'],
+                        'label_ar' => (string) ($d['label_ar'] ?? $d['label']),
+                        'type'     => in_array(($d['type'] ?? 'text'), ['text','email','url','tel'], true) ? $d['type'] : 'text',
+                    ];
+                }
+            }
+            $eVals = !empty($employee['custom_fields']) ? json_decode($employee['custom_fields'], true) : [];
+            if (is_array($eVals)) $customFieldValues = $eVals;
+        } catch (Throwable $e) { /* column may not exist in minimal envs */ }
     } catch (Throwable $e) { /* table may not exist in minimal envs */ }
 }
 
@@ -137,6 +157,7 @@ $pageTitle = t('portal.edit_my_details');
               'photo' => $employee['photo'] ?? '',
           ],
           'socials' => $existingSocials,
+          'customFields' => (object) $customFieldValues,
           'deptPending' => $pendingDeptRequest,
           'token' => $token,
           'csrf'  => $csrf,
@@ -235,6 +256,22 @@ $pageTitle = t('portal.edit_my_details');
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.website')) ?></label>
                 <input type="url" x-model="data.website" @input.debounce.800ms="save()" class="form-input" dir="ltr" placeholder="https://">
             </div>
+
+            <?php if (!empty($customFieldDefs)): ?>
+            <div class="pt-4 border-t border-gray-100 space-y-3">
+                <label class="block text-sm font-medium text-gray-700"><?= htmlspecialchars(t('portal.custom_fields')) ?></label>
+                <?php foreach ($customFieldDefs as $def): $fk = $def['key']; $flabel = $isAr ? $def['label_ar'] : $def['label']; ?>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1"><?= htmlspecialchars($flabel) ?></label>
+                        <input type="<?= htmlspecialchars($def['type']) ?>"
+                               x-model="customFields[<?= json_encode($fk) ?>]"
+                               @input.debounce.800ms="save()"
+                               class="form-input"
+                               <?= in_array($def['type'], ['email','url','tel'], true) ? 'dir="ltr"' : '' ?>>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
 
             <?php if (!empty($departments)): ?>
             <div>
@@ -401,6 +438,7 @@ $pageTitle = t('portal.edit_my_details');
         return {
             data: Object.assign({}, init.employee),
             socials: Array.isArray(init.socials) ? init.socials : [],
+            customFields: init.customFields && typeof init.customFields === 'object' ? init.customFields : {},
             token: init.token,
             csrf: init.csrf,
             saveUrl: init.saveUrl,
@@ -514,6 +552,7 @@ $pageTitle = t('portal.edit_my_details');
                             token: this.token,
                             fields: this.data,
                             socials: this.socials.filter(s => s && s.url && s.url.trim() !== ''),
+                            custom_fields: this.customFields,
                         })
                     });
                     const j = await res.json();

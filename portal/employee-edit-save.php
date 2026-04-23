@@ -59,7 +59,7 @@ foreach ($allowed as $k) {
     $update[$k] = $v;
 }
 
-if (empty($update) && !isset($body['socials'])) {
+if (empty($update) && !isset($body['socials']) && !isset($body['custom_fields'])) {
     echo json_encode(['ok' => true, 'noop' => true]);
     exit;
 }
@@ -113,6 +113,34 @@ try {
                 'ip'          => $ip,
             ]);
         } catch (Throwable $_) { /* best-effort */ }
+    }
+
+    // Custom fields: whitelist keys against the company's custom_fields
+    // definitions, drop the rest. Values are trimmed strings, capped 255.
+    if (isset($body['custom_fields']) && is_array($body['custom_fields'])) {
+        try {
+            $row = $db->fetchOne("SELECT custom_fields FROM companies WHERE id = :id", ['id' => $employee['company_id']]);
+            $defs = $row && !empty($row['custom_fields']) ? json_decode($row['custom_fields'], true) : [];
+            $allowedKeys = [];
+            if (is_array($defs)) {
+                foreach ($defs as $d) {
+                    if (!empty($d['key'])) $allowedKeys[] = (string) $d['key'];
+                }
+            }
+            $kept = [];
+            foreach ($body['custom_fields'] as $k => $v) {
+                if (!is_string($k) || !in_array($k, $allowedKeys, true)) continue;
+                if (!is_scalar($v) && $v !== null) continue;
+                $val = trim((string) ($v ?? ''));
+                if ($val === '') continue;
+                if (strlen($val) > 255) $val = substr($val, 0, 255);
+                $kept[$k] = $val;
+                if (count($kept) >= 20) break;
+            }
+            $db->update('employees', ['custom_fields' => json_encode($kept, JSON_UNESCAPED_UNICODE)], 'id = :id', ['id' => $employee['id']]);
+        } catch (Throwable $e) {
+            error_log('[employee-edit-save] custom_fields write failed: ' . $e->getMessage());
+        }
     }
 
     // Notify admin by email when company_settings.notify_on_employee_edit is

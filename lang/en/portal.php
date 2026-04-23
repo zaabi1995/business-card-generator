@@ -89,4 +89,5 @@ return [
     'request_failed'    => 'Request failed. Try again.',
     'stats_month'       => 'Scanned :n times this month',
     'stats_total'       => ':n total',
+    'custom_fields'     => 'Additional fields',
 ];
