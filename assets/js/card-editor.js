@@ -445,18 +445,24 @@ class CardEditor {
      */
     _constrainToBounds(obj) {
         if (!obj) return;
-        
+
         const objWidth = obj.getScaledWidth();
         const objHeight = obj.getScaledHeight();
-        
-        // Keep object within canvas
-        if (obj.left < 0) obj.set('left', 0);
-        if (obj.top < 0) obj.set('top', 0);
-        if (obj.left + objWidth > this.canvas.width) {
-            obj.set('left', this.canvas.width - objWidth);
+        const cw = this.canvas.width;
+        const ch = this.canvas.height;
+
+        // Skip axis-constraint when the object is bigger than the canvas in
+        // that axis: pinning to (canvas - obj) snaps it to a negative/fixed
+        // position and the user can't drag it left/right any more. Better to
+        // let long placeholder text (addresses, long names) overflow and stay
+        // draggable. See BHD chat Apr 23 2026.
+        if (objWidth < cw) {
+            if (obj.left < 0) obj.set('left', 0);
+            if (obj.left + objWidth > cw) obj.set('left', cw - objWidth);
         }
-        if (obj.top + objHeight > this.canvas.height) {
-            obj.set('top', this.canvas.height - objHeight);
+        if (objHeight < ch) {
+            if (obj.top < 0) obj.set('top', 0);
+            if (obj.top + objHeight > ch) obj.set('top', ch - objHeight);
         }
     }
     

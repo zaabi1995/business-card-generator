@@ -2791,7 +2791,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                     'mobile': 'Mobile (EN)', 'mobile_ar': 'الجوال (AR)',
                     'email': 'Email',
                     'website': 'Website (EN)', 'website_ar': 'الموقع (AR)',
-                    'address': 'Address', 'address_en': 'Address (EN)', 'address_ar': 'العنوان (AR)',
+                    'address': 'Address 01', 'address_en': 'Address 01 (EN)', 'address_ar': 'Address 02 (AR)',
                     'qr_code': 'QR Code'
                 };
                 return labels[key] || key;
