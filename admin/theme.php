@@ -90,14 +90,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $db->update('company_themes', $updateData, 'company_id = :id', ['id' => $companyId]);
     
-    // Update portal settings in companies table
-    $portalEnabled = isset($_POST['portal_enabled']) ? 1 : 0;
+    // Update portal + E-Card + bilingual settings in companies table
+    $portalEnabled     = isset($_POST['portal_enabled']) ? 1 : 0;
     $portalShowPreview = isset($_POST['portal_show_preview']) ? 1 : 0;
-    $portalPasscode = trim($_POST['portal_passcode'] ?? '');
-    
+    $portalPasscode    = trim($_POST['portal_passcode'] ?? '');
+    $companyNameEn     = trim($_POST['company_name_en'] ?? $company['name']);
+    $companyNameAr     = trim($_POST['company_name_ar'] ?? '');
+    $sloganEn          = trim($_POST['slogan_en'] ?? '');
+    $sloganAr          = trim($_POST['slogan_ar'] ?? '');
+    $ecardBilingual        = isset($_POST['ecard_bilingual'])        ? 1 : 0;
+    $ecardThemeToggle      = isset($_POST['ecard_theme_toggle'])     ? 1 : 0;
+    $ecardShowViralFooter  = isset($_POST['ecard_show_viral_footer'])? 1 : 0;
+    $ecardDefaultTheme     = in_array($_POST['ecard_default_theme'] ?? 'auto', ['auto','light','dark'], true) ? $_POST['ecard_default_theme'] : 'auto';
+
     $db->query(
-        "UPDATE companies SET portal_enabled = :enabled, portal_show_preview = :preview, portal_passcode = :passcode WHERE id = :id",
-        ['enabled' => $portalEnabled, 'preview' => $portalShowPreview, 'passcode' => $portalPasscode ?: null, 'id' => $companyId]
+        "UPDATE companies SET
+            name = :n, name_ar = :nar,
+            slogan_en = :sen, slogan_ar = :sar,
+            portal_enabled = :enabled,
+            portal_show_preview = :preview,
+            portal_passcode = :passcode,
+            ecard_bilingual = :eb,
+            ecard_theme_toggle_enabled = :ett,
+            ecard_show_viral_footer = :esvf,
+            ecard_default_theme = :edt
+         WHERE id = :id",
+        [
+            'n' => $companyNameEn ?: $company['name'],
+            'nar' => $companyNameAr ?: null,
+            'sen' => $sloganEn ?: null,
+            'sar' => $sloganAr ?: null,
+            'enabled' => $portalEnabled,
+            'preview' => $portalShowPreview,
+            'passcode' => $portalPasscode ?: null,
+            'eb' => $ecardBilingual,
+            'ett' => $ecardThemeToggle,
+            'esvf' => $ecardShowViralFooter,
+            'edt' => $ecardDefaultTheme,
+            'id' => $companyId,
+        ]
     );
     
     // Refresh company data
@@ -120,6 +151,105 @@ adminHeader('Theme & Branding', 'theme');
 
 <form method="post" enctype="multipart/form-data" class="space-y-6">
     <?php echo csrfField(); ?>
+
+    <!-- Company Identity (controls what the E-Card shows) -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                <i class="fa-solid fa-building text-blue-600"></i>
+                Company Identity
+            </h3>
+            <p class="text-xs text-gray-500 mt-1">Used on the E-Card, portal, vCard, and emails.</p>
+        </div>
+        <div class="p-6 grid md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Company Name (English)</label>
+                <input type="text" name="company_name_en" value="<?php echo sanitize($company['name'] ?? ''); ?>"
+                       class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Company Name (Arabic)</label>
+                <input type="text" name="company_name_ar" value="<?php echo sanitize($company['name_ar'] ?? ''); ?>"
+                       class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900" dir="rtl">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Tagline (English)</label>
+                <input type="text" name="slogan_en" value="<?php echo sanitize($company['slogan_en'] ?? ''); ?>"
+                       placeholder="e.g. Your trusted home financing partner"
+                       class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Tagline (Arabic)</label>
+                <input type="text" name="slogan_ar" value="<?php echo sanitize($company['slogan_ar'] ?? ''); ?>"
+                       placeholder="مثال: شريكك الموثوق في تمويل المنازل"
+                       class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900" dir="rtl">
+            </div>
+        </div>
+    </div>
+
+    <!-- E-Card Settings -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+            <div>
+                <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                    <i class="fa-solid fa-id-card text-blue-600"></i>
+                    E-Card Settings
+                </h3>
+                <p class="text-xs text-gray-500 mt-1">Controls the digital card each employee shares via QR.</p>
+            </div>
+            <a href="<?php echo getBasePath() . $companySlug; ?>/card/demo%40<?php echo sanitize($company['email_domain'] ?? 'example.com'); ?>"
+               target="_blank" rel="noopener"
+               class="text-xs inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700">
+                <i class="fa-solid fa-up-right-from-square"></i> Preview
+            </a>
+        </div>
+        <div class="p-6 space-y-4">
+            <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" name="ecard_bilingual" value="1"
+                       <?php echo !isset($company['ecard_bilingual']) || $company['ecard_bilingual'] ? 'checked' : ''; ?>
+                       class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300">
+                <span>
+                    <span class="block font-medium text-gray-900 text-sm">Bilingual card</span>
+                    <span class="block text-xs text-gray-500">Show the EN / عربي language switcher on the E-Card. Turn off to serve a single language.</span>
+                </span>
+            </label>
+
+            <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" name="ecard_theme_toggle" value="1"
+                       <?php echo !isset($company['ecard_theme_toggle_enabled']) || $company['ecard_theme_toggle_enabled'] ? 'checked' : ''; ?>
+                       class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300">
+                <span>
+                    <span class="block font-medium text-gray-900 text-sm">Visitor theme toggle (sun / moon)</span>
+                    <span class="block text-xs text-gray-500">Let visitors switch the E-Card between light and dark themes.</span>
+                </span>
+            </label>
+
+            <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" name="ecard_show_viral_footer" value="1"
+                       <?php echo !isset($company['ecard_show_viral_footer']) || $company['ecard_show_viral_footer'] ? 'checked' : ''; ?>
+                       class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300">
+                <span>
+                    <span class="block font-medium text-gray-900 text-sm">Show "Made with Cardify" footer</span>
+                    <span class="block text-xs text-gray-500">Small attribution link at the bottom of every E-Card. Turn off on Pro.</span>
+                </span>
+            </label>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Default theme</label>
+                <?php $__defTheme = $company['ecard_default_theme'] ?? 'auto'; ?>
+                <div class="flex gap-2">
+                    <?php foreach (['auto' => 'Auto', 'light' => 'Light', 'dark' => 'Dark'] as $__v => $__l): ?>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="ecard_default_theme" value="<?= $__v ?>" class="peer sr-only" <?= $__defTheme === $__v ? 'checked' : '' ?>>
+                        <span class="block text-center text-sm px-3 py-2 rounded-lg border border-gray-200 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700"><?= $__l ?></span>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Auto matches the visitor's OS setting. Override with a fixed theme if needed.</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Brand Colors -->
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div class="p-4 border-b border-gray-100">

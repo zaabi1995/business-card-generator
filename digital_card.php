@@ -171,10 +171,21 @@ try {
     $isDarkPage = ($themeMode === 'light'); // light card -> dark page
     $accentColor = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#d4af37';
 
-    // Visitor-facing dark mode toggle (migration 057). Default ON; owner can disable per card.
+    // Visitor-facing dark mode toggle (migration 057). Default ON; owner can
+    // disable per employee OR at the company level (admin > theme settings).
     $themeToggleEnabled = !isset($employee['card_dark_mode_toggle'])
         || $employee['card_dark_mode_toggle'] === null
         || (int)$employee['card_dark_mode_toggle'] === 1;
+    if (isset($company['ecard_theme_toggle_enabled']) && (int)$company['ecard_theme_toggle_enabled'] === 0) {
+        $themeToggleEnabled = false;
+    }
+
+    // Company-level E-Card switches (admin > theme settings)
+    $ecardBilingual       = !isset($company['ecard_bilingual']) || (int)$company['ecard_bilingual'] === 1;
+    $ecardShowViralFooter = !isset($company['ecard_show_viral_footer']) || (int)$company['ecard_show_viral_footer'] === 1;
+    $ecardDefaultTheme    = $company['ecard_default_theme'] ?? 'auto';
+    if ($ecardDefaultTheme === 'dark')  $isDarkPage = true;
+    if ($ecardDefaultTheme === 'light') $isDarkPage = false;
 
     // Cookie override (only when toggle is enabled) — keeps SSR theme in sync with visitor choice.
     $cookieTheme = $_COOKIE['cardify_card_theme'] ?? '';
@@ -932,10 +943,12 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <svg class="theme-icon theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
         </button>
         <?php endif; ?>
+        <?php if ($ecardBilingual): ?>
         <nav class="lang-switcher" aria-label="Language">
             <a href="<?php echo $switchEnUrl; ?>" class="<?php echo $locale === 'en' ? 'active' : ''; ?>" hreflang="en">EN</a>
             <a href="<?php echo $switchArUrl; ?>" class="<?php echo $locale === 'ar' ? 'active' : ''; ?>" hreflang="ar">عربي</a>
         </nav>
+        <?php endif; ?>
     </div>
     <div class="page-container">
         <!-- Company Logo -->
@@ -1583,7 +1596,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             } catch (Throwable $e) {
                 $__brandingPaid = false;
             }
-            $__showViralFooter = !($__hideBranding && $__brandingPaid);
+            $__showViralFooter = !($__hideBranding && $__brandingPaid) && $ecardShowViralFooter;
         ?>
         <?php if ($__showViralFooter): ?>
             <?php
