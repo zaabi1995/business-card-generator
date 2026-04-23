@@ -86,12 +86,24 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
 ?>
 <style>
     .wizard-step[x-cloak] { display: none !important; }
-    .wizard-progress-dot { width: 32px; height: 32px; border-radius: 9999px; display:flex; align-items:center; justify-content:center; font-weight:600; }
+    .wizard-progress-dot { width: 32px; height: 32px; border-radius: 9999px; display:flex; align-items:center; justify-content:center; font-weight:600; flex-shrink: 0; }
     .wizard-progress-dot.done { background: #16a34a; color:#fff; }
     .wizard-progress-dot.active { background: var(--cardify-primary, #009bc1); color:#fff; box-shadow: 0 0 0 4px rgba(0,155,193,0.2); }
     .wizard-progress-dot.pending { background: #e5e7eb; color:#6b7280; }
-    .wizard-progress-line { flex:1; height:3px; background: #e5e7eb; }
+    .wizard-progress-line { flex:1; height:3px; background: #e5e7eb; min-width: 8px; }
     .wizard-progress-line.done { background: #16a34a; }
+
+    /* Mobile QA: 375/414 viewport safeguards */
+    .wizard-shell { overflow-x: hidden; }
+    .wizard-nav-btn { min-height: 44px; }
+    .wizard-color-row { flex-wrap: wrap; }
+    @media (max-width: 480px) {
+        .wizard-progress-dot { width: 26px; height: 26px; font-size: 0.75rem; box-shadow: none !important; }
+        .wizard-progress-dot.active { box-shadow: 0 0 0 3px rgba(0,155,193,0.25) !important; }
+        .wizard-progress-line { min-width: 4px; height: 2px; }
+        .wizard-color-row input[type="color"] { width: 3rem; }
+        .wizard-color-row input[type="text"] { min-width: 0; }
+    }
 </style>
 
 <div class="max-w-3xl mx-auto"
@@ -132,7 +144,7 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
     </div>
 
     <!-- Steps -->
-    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 sm:p-8">
+    <div class="wizard-shell bg-white border border-gray-200 rounded-2xl shadow-sm p-4 sm:p-8">
 
         <!-- Step 1: Logo -->
         <div class="wizard-step" x-show="step === 1" x-cloak>
@@ -166,14 +178,14 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.primary_color')) ?></label>
-                    <div class="flex items-center gap-2">
+                    <div class="wizard-color-row flex items-center gap-2">
                         <input type="color" x-model="data.colors.primary" class="h-11 w-16 border border-gray-200 rounded-lg cursor-pointer">
                         <input type="text" x-model="data.colors.primary" class="form-input flex-1 font-mono" dir="ltr">
                     </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.accent_color')) ?></label>
-                    <div class="flex items-center gap-2">
+                    <div class="wizard-color-row flex items-center gap-2">
                         <input type="color" x-model="data.colors.accent" class="h-11 w-16 border border-gray-200 rounded-lg cursor-pointer">
                         <input type="text" x-model="data.colors.accent" class="form-input flex-1 font-mono" dir="ltr">
                     </div>
@@ -318,7 +330,7 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
     <!-- Nav -->
     <div class="flex items-center justify-between mt-6">
         <button type="button" @click="back()" x-show="step > 1"
-                class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium">
+                class="wizard-nav-btn px-4 py-2 text-gray-600 hover:text-gray-900 font-medium">
             <i class="fa-solid fa-arrow-left mr-1"></i>
             <?= htmlspecialchars(t('onboarding.nav_back')) ?>
         </button>
@@ -326,11 +338,11 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
 
         <div class="flex items-center gap-3">
             <span class="hidden sm:inline text-xs text-gray-400 mr-2"><?= htmlspecialchars(t('onboarding.kbd_hint')) ?></span>
-            <button type="button" @click="skipForNow()" class="text-sm text-gray-500 hover:text-gray-700">
+            <button type="button" @click="skipForNow()" class="wizard-nav-btn px-3 text-sm text-gray-500 hover:text-gray-700">
                 <?= htmlspecialchars(t('onboarding.skip_for_now')) ?>
             </button>
             <button type="button" @click="next()"
-                    class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
+                    class="wizard-nav-btn px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
                 <span x-show="saving"><i class="fa-solid fa-spinner fa-spin mr-1"></i><?= htmlspecialchars(t('onboarding.saving')) ?></span>
                 <span x-show="!saving">
                     <span x-text="step < totalSteps ? <?= htmlspecialchars(json_encode(t('onboarding.nav_next')), ENT_QUOTES) ?> : <?= htmlspecialchars(json_encode(t('onboarding.finish')), ENT_QUOTES) ?>"></span>
