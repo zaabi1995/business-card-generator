@@ -241,11 +241,11 @@ $extraHead = $homeJsonLd . '<style>
 // Enable dynamic navigation with auth awareness
 $showNavigation = true;
 $navLinks = [
-    ['href' => '#features', 'label' => 'Features'],
-    ['href' => '#pricing', 'label' => 'Pricing'],
-    ['href' => getBasePath() . 'tools', 'label' => 'Free Tools'],
-    ['href' => getBasePath() . 'oman-business-index', 'label' => 'Oman Business Index'],
-    ['href' => getBasePath() . 'blog', 'label' => 'Blog'],
+    ['href' => '#features',                             'label' => function_exists('t') ? t('footer.link_features')   : 'Features'],
+    ['href' => '#pricing',                              'label' => function_exists('t') ? t('footer.link_pricing')    : 'Pricing'],
+    ['href' => getBasePath() . 'tools',                 'label' => function_exists('t') ? t('footer.link_all_tools')  : 'Free Tools'],
+    ['href' => getBasePath() . 'oman-business-index',   'label' => function_exists('t') ? t('footer.link_oman_index') : 'Oman Business Index'],
+    ['href' => getBasePath() . 'blog',                  'label' => function_exists('t') ? t('footer.link_blog')       : 'Blog'],
 ];
 
 // Include Auth for navigation state
