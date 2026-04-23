@@ -707,6 +707,95 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 <?php endif; ?>
 <?php endif; ?>
 
+<?php
+// Public portal share card, one link per tenant, employees use it to request
+// their cards. Always visible to company admins so they can copy/share anytime.
+if ($currentRole !== 'super_admin' && !empty($companySlug)):
+    $portalShareUrl = rtrim($baseUrl, '/') . '/' . $companySlug . '/portal';
+    $portalWaMsg = "Hi team, our Cardify business card portal is ready. Request your card here:\n" . $portalShareUrl;
+    $portalWaHref = 'https://wa.me/?text=' . rawurlencode($portalWaMsg);
+?>
+<div class="mb-8 rounded-2xl overflow-hidden shadow-lg" id="portal-share-card">
+    <div class="p-6 sm:p-7 text-white" style="background:linear-gradient(135deg, var(--tbrand,#009bc1) 0%, var(--tbrand-2,#005f78) 100%);">
+        <div class="flex flex-col lg:flex-row lg:items-center gap-6">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-10 h-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-share-nodes text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg leading-tight">Your public portal link</h3>
+                        <p class="text-white/80 text-sm">Send this link to your team. They request a card, you approve and print.</p>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex flex-col sm:flex-row gap-2">
+                    <div class="flex-1 bg-white/15 backdrop-blur rounded-lg px-3 py-2.5 flex items-center gap-2 min-w-0">
+                        <i class="fa-solid fa-link text-white/70 text-xs flex-shrink-0"></i>
+                        <input type="text" readonly value="<?= htmlspecialchars($portalShareUrl) ?>" id="portal-share-url"
+                               class="flex-1 bg-transparent text-white text-sm font-mono tracking-tight outline-none min-w-0 truncate"
+                               onclick="this.select()">
+                    </div>
+                    <button type="button" onclick="portalCopyShare()" id="portal-copy-btn"
+                            class="bg-white font-semibold px-4 py-2.5 rounded-lg text-sm hover:bg-white/90 transition-all whitespace-nowrap flex items-center justify-center gap-2"
+                            style="color: var(--tbrand,#007a99);">
+                        <i class="fa-solid fa-copy text-xs"></i>
+                        <span id="portal-copy-label">Copy link</span>
+                    </button>
+                    <a href="<?= htmlspecialchars($portalWaHref) ?>" target="_blank" rel="noopener"
+                       class="bg-[#25D366] hover:bg-[#1ebe57] text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2">
+                        <i class="fa-brands fa-whatsapp"></i>
+                        Share on WhatsApp
+                    </a>
+                    <a href="<?= htmlspecialchars($portalShareUrl) ?>" target="_blank" rel="noopener"
+                       class="bg-white/10 hover:bg-white/20 text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-up-right-from-square text-xs"></i>
+                        Preview
+                    </a>
+                </div>
+                <p class="text-white/70 text-xs mt-3">
+                    <i class="fa-solid fa-lock-open"></i>
+                    Open access &middot;
+                    <a href="<?= getAdminBasePath() ?>settings<?= defined('COMPANY_ADMIN_BASE') ? '' : '.php' ?>" class="underline hover:text-white">Set a passcode</a>
+                    if you want to gate it.
+                </p>
+            </div>
+
+            <div class="lg:border-l lg:border-white/15 lg:pl-6 flex-shrink-0 flex items-center justify-center">
+                <div class="bg-white p-2 rounded-lg">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=<?= urlencode($portalShareUrl) ?>"
+                         alt="Portal QR code" width="140" height="140" loading="lazy"
+                         onerror="this.style.display='none'">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    window.portalCopyShare = function () {
+        var input = document.getElementById('portal-share-url');
+        var label = document.getElementById('portal-copy-label');
+        if (!input) return;
+        try {
+            input.select();
+            input.setSelectionRange(0, 99999);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(input.value);
+            } else {
+                document.execCommand('copy');
+            }
+            if (label) {
+                var prev = label.textContent;
+                label.textContent = 'Copied!';
+                setTimeout(function () { label.textContent = prev; }, 1600);
+            }
+        } catch (e) { /* ignore */ }
+    };
+})();
+</script>
+<?php endif; ?>
+
 <?php if (!$checklistAllDone && !$showWelcome && $currentRole !== 'super_admin'): ?>
 <!-- Getting Started Checklist -->
 <div class="mb-8 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden" id="getting-started-card">
