@@ -232,7 +232,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
         'website' => trim($_POST['website'] ?? ''),
         'website_ar' => trim($_POST['website_ar'] ?? ''),
         'address_en' => trim($_POST['address_en'] ?? ''),
+        'address_2_en' => trim($_POST['address_2_en'] ?? ''),
         'address_ar' => trim($_POST['address_ar'] ?? ''),
+        'address_2_ar' => trim($_POST['address_2_ar'] ?? ''),
         'company_en' => trim($_POST['company_en'] ?? '') ?: ($company['name_en'] ?? $companyName),
         'company_ar' => trim($_POST['company_ar'] ?? '') ?: ($company['name_ar'] ?? ''),
         'department_id' => $_POST['department_id'] ?? null,
@@ -339,7 +341,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                 'website' => $formData['website'],
                 'website_ar' => $formData['website_ar'],
                 'address_en' => $formData['address_en'],
+                'address_2_en' => $formData['address_2_en'] ?? '',
                 'address_ar' => $formData['address_ar'],
+                'address_2_ar' => $formData['address_2_ar'] ?? '',
                 'company_en' => $formData['company_en'],
                 'company_ar' => $formData['company_ar'],
                 'department_id' => $formData['department_id'] ?: null,
@@ -1063,21 +1067,31 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     </div>
                     <?php endif; ?>
                     
-                    <!-- Address English -->
-                    <?php if (!empty($enabledFields['address_en']) || !empty($enabledFields['address'])): ?>
+                    <!-- Address 01 English (template key address_en) -->
+                    <?php if (!empty($enabledFields['address_en'])): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.address_en')) ?></label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Address 01 (English)</label>
                         <textarea name="address_en" id="address_en" rows="2"
                                   placeholder="<?= htmlspecialchars(t('portal.address_ph_en')) ?>"
                                   class="form-input"><?php echo htmlspecialchars($formData['address_en'] ?? ''); ?></textarea>
                     </div>
                     <?php endif; ?>
-                    
-                    <!-- Address Arabic -->
+
+                    <!-- Address 02 English (template legacy key `address`) -->
+                    <?php if (!empty($enabledFields['address'])): ?>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Address 02 (English)</label>
+                        <textarea name="address_2_en" id="address_2_en" rows="2"
+                                  placeholder="Muscat, Sultanate of Oman"
+                                  class="form-input"><?php echo htmlspecialchars($formData['address_2_en'] ?? ''); ?></textarea>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Address 01 Arabic -->
                     <?php if (!empty($enabledFields['address_ar'])): ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <?= htmlspecialchars(t('portal.address_ar')) ?>
+                            Address 01 (Arabic)
                             <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('address_en', 'address_ar', 'address')">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
@@ -1085,6 +1099,21 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                         <textarea name="address_ar" id="address_ar" rows="2"
                                   placeholder="<?= htmlspecialchars(t('portal.address_ph_ar')) ?>"
                                   class="form-input rtl-input"><?php echo htmlspecialchars($formData['address_ar'] ?? ''); ?></textarea>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Address 02 Arabic (second address arabic version) -->
+                    <?php if (!empty($enabledFields['address_ar']) || !empty($enabledFields['address'])): ?>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Address 02 (Arabic)
+                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('address_2_en', 'address_2_ar', 'address')">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
+                            </button>
+                        </label>
+                        <textarea name="address_2_ar" id="address_2_ar" rows="2"
+                                  placeholder="مسقط، سلطنة عُمان"
+                                  class="form-input rtl-input"><?php echo htmlspecialchars($formData['address_2_ar'] ?? ''); ?></textarea>
                     </div>
                     <?php endif; ?>
                     
@@ -1373,7 +1402,9 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
             mobile: document.getElementById('mobile')?.value || '',
             website: document.getElementById('website')?.value || '',
             address_en: document.getElementById('address_en')?.value || '',
+            address_2_en: document.getElementById('address_2_en')?.value || '',
             address_ar: document.getElementById('address_ar')?.value || '',
+            address_2_ar: document.getElementById('address_2_ar')?.value || '',
             company_en: companyName
         };
         
@@ -1449,9 +1480,11 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
             'mobile': data.mobile,
             'email': data.email,
             'website': data.website,
-            'address': data.address_en,
+            'address': data.address_2_en || data.address_en,
             'address_en': data.address_en,
-            'address_ar': data.address_ar
+            'address_2_en': data.address_2_en,
+            'address_ar': data.address_ar,
+            'address_2_ar': data.address_2_ar
         };
         
         // Add text fields using CardEditor

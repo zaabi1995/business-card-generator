@@ -401,7 +401,9 @@ class DatabaseAdapter {
             'website' => trim($data['website'] ?? ''),
             'website_ar' => trim($data['website_ar'] ?? ''),
             'address_en' => trim($data['address_en'] ?? $data['address'] ?? ''),
+            'address_2_en' => trim($data['address_2_en'] ?? ''),
             'address_ar' => trim($data['address_ar'] ?? ''),
+            'address_2_ar' => trim($data['address_2_ar'] ?? ''),
             'qr_redirect_url' => self::sanitizeQrRedirectUrl($data['qr_redirect_url'] ?? null),
             'card_dark_mode_toggle' => self::normalizeBoolFlag($data['card_dark_mode_toggle'] ?? 1, 1),
             // Pro-tier only: hide "Made with Cardify" viral footer. Free plans
@@ -422,7 +424,7 @@ class DatabaseAdapter {
                 try {
                     require_once __DIR__ . '/EmployeeEditToken.php';
                     $company = self::$db->fetchOne(
-                        "SELECT id, name, name_en, brand_color, logo_path AS logo_url FROM companies WHERE id = :id",
+                        "SELECT id, name, brand_color, logo_path AS logo_url FROM companies WHERE id = :id",
                         ['id' => $companyId]
                     );
                     $channel = !empty($employee['phone']) || !empty($employee['mobile']) ? 'both' : 'email';
@@ -468,7 +470,9 @@ class DatabaseAdapter {
             'website' => trim($data['website'] ?? ''),
             'website_ar' => trim($data['website_ar'] ?? ''),
             'address_en' => trim($data['address_en'] ?? $data['address'] ?? ''),
+            'address_2_en' => trim($data['address_2_en'] ?? ''),
             'address_ar' => trim($data['address_ar'] ?? ''),
+            'address_2_ar' => trim($data['address_2_ar'] ?? ''),
             'qr_redirect_url' => self::sanitizeQrRedirectUrl($data['qr_redirect_url'] ?? null),
             'card_dark_mode_toggle' => self::normalizeBoolFlag($data['card_dark_mode_toggle'] ?? 1, 1),
             // Pro-tier only: hide "Made with Cardify" viral footer (see migration 065).
