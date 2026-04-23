@@ -95,7 +95,7 @@ if ($useDatabase) {
 
 // Handle create/update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die(htmlspecialchars(t('companiesmgmt.invalid_request'))); }
     $action = $_POST['action'] ?? '';
     
     if ($action === 'create') {
@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
                 
-                $message = 'Company created successfully!';
+                $message = t('companiesmgmt.created_ok');
                 // Refresh companies list
                 $companies = $db->fetchAll("
                     SELECT c.*,
@@ -135,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ORDER BY c.name
                 ");
             } else {
-                $message = $result['error'] ?? 'Failed to create company';
+                $message = $result['error'] ?? t('companiesmgmt.create_failed');
                 $messageType = 'error';
             }
         }
@@ -163,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($companyId) && !empty($updateData)) {
             $result = DatabaseAdapter::updateCompany($companyId, $updateData);
             if ($result['success']) {
-                $message = 'Company updated successfully!';
+                $message = t('companiesmgmt.updated_ok');
                 
                 // Audit log
                 if (class_exists('AuditLog') && $beforeData) {
@@ -181,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ORDER BY c.name
                 ");
             } else {
-                $message = $result['error'] ?? 'Failed to update company';
+                $message = $result['error'] ?? t('companiesmgmt.update_failed');
                 $messageType = 'error';
             }
         }
@@ -195,12 +195,12 @@ adminHeader(t('adminchrome.companies'), 'companies');
     <!-- Page Header Actions -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-            <p class="text-gray-600"><?php echo count($companies); ?> registered companies</p>
+            <p class="text-gray-600"><?= htmlspecialchars(str_replace(':n', (string) count($companies), t('companiesmgmt.registered_count'))) ?></p>
         </div>
-        <button @click="showModal = true; editMode = false; resetForm()" 
+        <button @click="showModal = true; editMode = false; resetForm()"
                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2">
             <i class="fa-solid fa-plus"></i>
-            <span>Add Company</span>
+            <span><?= htmlspecialchars(t('companiesmgmt.add_company')) ?></span>
         </button>
     </div>
 
@@ -218,13 +218,13 @@ adminHeader(t('adminchrome.companies'), 'companies');
             <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
-                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm">Company</th>
-                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm">Admin</th>
-                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm">Plan</th>
-                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm">Currency</th>
-                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm">Stats</th>
-                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm">Status</th>
-                        <th class="text-right px-6 py-4 text-gray-600 font-semibold text-sm">Actions</th>
+                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm"><?= htmlspecialchars(t('companiesmgmt.col_company')) ?></th>
+                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm"><?= htmlspecialchars(t('companiesmgmt.col_admin')) ?></th>
+                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm"><?= htmlspecialchars(t('companiesmgmt.col_plan')) ?></th>
+                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm"><?= htmlspecialchars(t('companiesmgmt.col_currency')) ?></th>
+                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm"><?= htmlspecialchars(t('companiesmgmt.col_stats')) ?></th>
+                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm"><?= htmlspecialchars(t('companiesmgmt.col_status')) ?></th>
+                        <th class="text-right px-6 py-4 text-gray-600 font-semibold text-sm"><?= htmlspecialchars(t('companiesmgmt.col_actions')) ?></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -232,7 +232,7 @@ adminHeader(t('adminchrome.companies'), 'companies');
                     <tr>
                         <td colspan="7" class="px-6 py-12 text-center text-gray-500">
                             <i class="fa-solid fa-building text-4xl mb-3 opacity-30"></i>
-                            <p>No companies found. Create your first company to get started.</p>
+                            <p><?= htmlspecialchars(t('companiesmgmt.empty_body')) ?></p>
                         </td>
                     </tr>
                     <?php endif; ?>
@@ -252,7 +252,7 @@ adminHeader(t('adminchrome.companies'), 'companies');
                         <td class="px-6 py-4">
                             <p class="text-gray-900 text-sm"><?php echo sanitize($company['admin_email']); ?></p>
                             <?php if (!empty($company['billing_email']) && $company['billing_email'] !== $company['admin_email']): ?>
-                            <p class="text-gray-500 text-xs">Billing: <?php echo sanitize($company['billing_email']); ?></p>
+                            <p class="text-gray-500 text-xs"><?= htmlspecialchars(t('companiesmgmt.billing_prefix')) ?> <?php echo sanitize($company['billing_email']); ?></p>
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4">
@@ -265,7 +265,11 @@ adminHeader(t('adminchrome.companies'), 'companies');
                                     default => 'bg-gray-100 text-gray-700'
                                 };
                                 ?>">
-                                <?php echo ucfirst($plan); ?>
+                                <?php
+                                $planKey = 'companiesmgmt.plan_' . $plan;
+                                $planLbl = t($planKey);
+                                echo htmlspecialchars($planLbl === $planKey ? ucfirst($plan) : $planLbl);
+                                ?>
                             </span>
                         </td>
                         <td class="px-6 py-4">
@@ -273,15 +277,15 @@ adminHeader(t('adminchrome.companies'), 'companies');
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-4 text-sm">
-                                <div class="flex items-center gap-1 text-gray-600" title="Employees">
+                                <div class="flex items-center gap-1 text-gray-600" title="<?= htmlspecialchars(t('companiesmgmt.tip_employees')) ?>">
                                     <i class="fa-solid fa-users text-xs"></i>
                                     <span><?php echo (int)($company['employee_count'] ?? 0); ?></span>
                                 </div>
-                                <div class="flex items-center gap-1 text-gray-600" title="Orders">
+                                <div class="flex items-center gap-1 text-gray-600" title="<?= htmlspecialchars(t('companiesmgmt.tip_orders')) ?>">
                                     <i class="fa-solid fa-shopping-cart text-xs"></i>
                                     <span><?php echo (int)($company['order_count'] ?? 0); ?></span>
                                 </div>
-                                <div class="flex items-center gap-1 text-green-600" title="Total Spend">
+                                <div class="flex items-center gap-1 text-green-600" title="<?= htmlspecialchars(t('companiesmgmt.tip_spend')) ?>">
                                     <span><?php echo Currency::formatHtml((float)($company['total_spend'] ?? 0), $company['currency'] ?? 'OMR', 'sm'); ?></span>
                                 </div>
                             </div>
@@ -298,20 +302,24 @@ adminHeader(t('adminchrome.companies'), 'companies');
                                 };
                                 ?>">
                                 <span class="w-1.5 h-1.5 rounded-full <?php echo $status === 'active' ? 'bg-green-500' : ($status === 'suspended' ? 'bg-red-500' : 'bg-amber-500'); ?>"></span>
-                                <?php echo ucfirst($status); ?>
+                                <?php
+                                $statusKey = 'companiesmgmt.status_' . $status;
+                                $statusLbl = t($statusKey);
+                                echo htmlspecialchars($statusLbl === $statusKey ? ucfirst($status) : $statusLbl);
+                                ?>
                             </span>
                         </td>
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-1">
                                 <a href="/<?php echo urlencode($company['slug']); ?>" target="_blank"
                                    class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                   title="View Portal">
+                                   title="<?= htmlspecialchars(t('companiesmgmt.tip_view_portal')) ?>">
                                     <i class="fa-solid fa-external-link"></i>
                                 </a>
                                 <button 
                                     @click='openEditModal(<?php echo json_encode($company); ?>)'
                                     class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                    title="Edit Company"
+                                    title="<?= htmlspecialchars(t('companiesmgmt.tip_edit')) ?>"
                                 >
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
@@ -329,7 +337,7 @@ adminHeader(t('adminchrome.companies'), 'companies');
         <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" @click="showModal = false"></div>
         <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b border-gray-100">
-                <h3 class="text-xl font-bold text-gray-900" x-text="editMode ? 'Edit Company' : 'Create Company'"></h3>
+                <h3 class="text-xl font-bold text-gray-900" x-text="editMode ? <?= json_encode(t('companiesmgmt.modal_edit_title'), JSON_UNESCAPED_UNICODE) ?> : <?= json_encode(t('companiesmgmt.modal_create_title'), JSON_UNESCAPED_UNICODE) ?>"></h3>
             </div>
             
             <form method="post" class="p-6">
@@ -339,48 +347,48 @@ adminHeader(t('adminchrome.companies'), 'companies');
                 
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Company Name <span class="text-red-500">*</span></label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('companiesmgmt.field_name')) ?> <span class="text-red-500">*</span></label>
                         <input type="text" name="name" x-model="formData.name" required 
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     </div>
                     
                     <div x-show="!editMode">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Company Slug</label>
-                        <input type="text" name="company_slug" x-model="formData.slug" 
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('companiesmgmt.field_slug')) ?></label>
+                        <input type="text" name="company_slug" x-model="formData.slug"
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                               placeholder="auto-generated if empty">
+                               placeholder="<?= htmlspecialchars(t('companiesmgmt.slug_auto_ph')) ?>">
                     </div>
                     
                     <div x-show="editMode">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Slug</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('companiesmgmt.field_slug_short')) ?></label>
                         <input type="text" name="slug" x-model="formData.slug"
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     </div>
                     
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Admin Email <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('companiesmgmt.field_admin_email')) ?> <span class="text-red-500">*</span></label>
                             <input type="email" name="email" x-model="formData.admin_email" :required="!editMode"
                                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Billing Email</label>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('companiesmgmt.field_billing_email')) ?></label>
                             <input type="email" name="billing_email" x-model="formData.billing_email"
                                    class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                                   placeholder="Same as admin if empty">
+                                   placeholder="<?= htmlspecialchars(t('companiesmgmt.billing_same_ph')) ?>">
                         </div>
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Password <span x-show="!editMode" class="text-red-500">*</span></label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('companiesmgmt.field_password')) ?> <span x-show="!editMode" class="text-red-500">*</span></label>
                         <input type="password" name="password" :required="!editMode"
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                               :placeholder="editMode ? 'Leave blank to keep current' : ''">
+                               :placeholder="editMode ? <?= json_encode(t('companiesmgmt.password_keep_ph'), JSON_UNESCAPED_UNICODE) ?> : ''">
                     </div>
                     
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Plan</label>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('companiesmgmt.field_plan')) ?></label>
                             <select name="plan" x-model="formData.plan" 
                                     class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                                 <?php foreach ($plans as $plan): ?>
@@ -390,7 +398,7 @@ adminHeader(t('adminchrome.companies'), 'companies');
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Currency</label>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('companiesmgmt.field_currency')) ?></label>
                             <select name="currency" x-model="formData.currency" 
                                     class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                                 <?php foreach ($currencies as $curr): ?>
@@ -400,21 +408,21 @@ adminHeader(t('adminchrome.companies'), 'companies');
                         </div>
                         
                         <div x-show="editMode">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
-                            <select name="status" x-model="formData.status" 
+                            <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('companiesmgmt.field_status')) ?></label>
+                            <select name="status" x-model="formData.status"
                                     class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                                <option value="active">Active</option>
-                                <option value="pending">Pending</option>
-                                <option value="suspended">Suspended</option>
+                                <option value="active"><?= htmlspecialchars(t('companiesmgmt.status_active')) ?></option>
+                                <option value="pending"><?= htmlspecialchars(t('companiesmgmt.status_pending')) ?></option>
+                                <option value="suspended"><?= htmlspecialchars(t('companiesmgmt.status_suspended')) ?></option>
                             </select>
                         </div>
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Parent Company</label>
-                        <select name="parent_company_id" x-model="formData.parent_company_id" 
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('companiesmgmt.field_parent')) ?></label>
+                        <select name="parent_company_id" x-model="formData.parent_company_id"
                                 class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                            <option value="">None (Standalone)</option>
+                            <option value=""><?= htmlspecialchars(t('companiesmgmt.parent_none')) ?></option>
                             <?php foreach ($parentCompanies as $parent): ?>
                             <option value="<?php echo $parent['id']; ?>"><?php echo sanitize($parent['name']); ?></option>
                             <?php endforeach; ?>
@@ -424,10 +432,10 @@ adminHeader(t('adminchrome.companies'), 'companies');
                 
                 <div class="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
                     <button type="button" @click="showModal = false" class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors">
-                        Cancel
+                        <?= htmlspecialchars(t('companiesmgmt.btn_cancel')) ?>
                     </button>
                     <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-                        <span x-text="editMode ? 'Save Changes' : 'Create Company'"></span>
+                        <span x-text="editMode ? <?= json_encode(t('companiesmgmt.btn_save_changes'), JSON_UNESCAPED_UNICODE) ?> : <?= json_encode(t('companiesmgmt.btn_create'), JSON_UNESCAPED_UNICODE) ?>"></span>
                     </button>
                 </div>
             </form>
