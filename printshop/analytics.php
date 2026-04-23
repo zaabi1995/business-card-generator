@@ -135,10 +135,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </a>
                 </div>
                 <div class="flex items-center gap-4 text-sm">
-                    <a href="dashboard.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-chart-pie mr-1"></i>Dashboard</a>
-                    <a href="orders.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-box mr-1"></i>Orders</a>
-                    <a href="analytics.php" class="text-blue-600 font-medium"><i class="fa-solid fa-chart-line mr-1"></i>Analytics</a>
-                    <a href="credit-accounts.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-building-columns mr-1"></i>Credit</a>
+                    <a href="dashboard.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-chart-pie mr-1"></i><?= htmlspecialchars(t('printshopanalytics.nav_dashboard')) ?></a>
+                    <a href="orders.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-box mr-1"></i><?= htmlspecialchars(t('printshopanalytics.nav_orders')) ?></a>
+                    <a href="analytics.php" class="text-blue-600 font-medium"><i class="fa-solid fa-chart-line mr-1"></i><?= htmlspecialchars(t('printshopanalytics.nav_analytics')) ?></a>
+                    <a href="credit-accounts.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-building-columns mr-1"></i><?= htmlspecialchars(t('printshopanalytics.nav_credit')) ?></a>
                     <a href="settings.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-cog"></i></a>
                     <a href="<?= getBasePath() ?>logout.php" class="text-gray-500 hover:text-red-600"><i class="fa-solid fa-sign-out-alt"></i></a>
                 </div>
@@ -152,12 +152,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t("printshoppages.h1_analytics")) ?></h1>
-                <p class="text-gray-500">Revenue and performance overview</p>
+                <p class="text-gray-500"><?= htmlspecialchars(t('printshopanalytics.page_sub')) ?></p>
             </div>
             <div class="flex items-center gap-2">
-                <?php foreach (['3m' => '3 Months', '6m' => '6 Months', '12m' => '12 Months', '24m' => '2 Years'] as $val => $label): ?>
+                <?php foreach (['3m' => 'period_3m', '6m' => 'period_6m', '12m' => 'period_12m', '24m' => 'period_24m'] as $val => $key): ?>
                 <a href="?period=<?= $val ?>" class="px-3 py-1.5 rounded-lg text-sm font-medium <?= $period === $val ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50' ?>">
-                    <?= $label ?>
+                    <?= htmlspecialchars(t('printshopanalytics.' . $key)) ?>
                 </a>
                 <?php endforeach; ?>
             </div>
@@ -167,12 +167,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
             <?php
             $kpiCards = [
-                ['label' => 'Total Revenue', 'value' => number_format($kpis['total_revenue'] ?? 0, 3) . ' ' . $currency, 'icon' => 'fa-coins', 'color' => 'blue'],
-                ['label' => 'Total Orders', 'value' => number_format($kpis['total_orders'] ?? 0), 'icon' => 'fa-box', 'color' => 'purple'],
-                ['label' => 'Completed', 'value' => number_format($kpis['completed'] ?? 0), 'icon' => 'fa-circle-check', 'color' => 'green'],
-                ['label' => 'Cancelled', 'value' => number_format($kpis['cancelled'] ?? 0), 'icon' => 'fa-circle-xmark', 'color' => 'red'],
-                ['label' => 'Avg Order Value', 'value' => number_format($kpis['avg_order_value'] ?? 0, 3) . ' ' . $currency, 'icon' => 'fa-chart-bar', 'color' => 'amber'],
-                ['label' => 'Cards Printed', 'value' => number_format($kpis['total_cards'] ?? 0), 'icon' => 'fa-id-card', 'color' => 'teal'],
+                ['label' => t('printshopanalytics.kpi_total_revenue'), 'value' => number_format($kpis['total_revenue'] ?? 0, 3) . ' ' . $currency, 'icon' => 'fa-coins', 'color' => 'blue'],
+                ['label' => t('printshopanalytics.kpi_total_orders'),  'value' => number_format($kpis['total_orders'] ?? 0), 'icon' => 'fa-box', 'color' => 'purple'],
+                ['label' => t('printshopanalytics.kpi_completed'),     'value' => number_format($kpis['completed'] ?? 0), 'icon' => 'fa-circle-check', 'color' => 'green'],
+                ['label' => t('printshopanalytics.kpi_cancelled'),     'value' => number_format($kpis['cancelled'] ?? 0), 'icon' => 'fa-circle-xmark', 'color' => 'red'],
+                ['label' => t('printshopanalytics.kpi_avg_order'),     'value' => number_format($kpis['avg_order_value'] ?? 0, 3) . ' ' . $currency, 'icon' => 'fa-chart-bar', 'color' => 'amber'],
+                ['label' => t('printshopanalytics.kpi_cards_printed'), 'value' => number_format($kpis['total_cards'] ?? 0), 'icon' => 'fa-id-card', 'color' => 'teal'],
             ];
             $colorMap = [
                 'blue'   => 'bg-blue-50 text-blue-600',
@@ -189,7 +189,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <i class="fa-solid <?= $card['icon'] ?>"></i>
                 </div>
                 <p class="text-xl font-bold text-gray-900 leading-tight"><?= $card['value'] ?></p>
-                <p class="text-xs text-gray-500 mt-1"><?= $card['label'] ?></p>
+                <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars($card['label']) ?></p>
             </div>
             <?php endforeach; ?>
         </div>
@@ -200,7 +200,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <h2 class="text-base font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t("printshoppages.revenue_over_time")) ?></h2>
                 <?php if (empty($monthlyData)): ?>
                 <div class="flex items-center justify-center h-48 text-gray-400">
-                    <div class="text-center"><i class="fa-solid fa-chart-line text-4xl mb-2"></i><p>No data yet</p></div>
+                    <div class="text-center"><i class="fa-solid fa-chart-line text-4xl mb-2"></i><p><?= htmlspecialchars(t('printshopanalytics.no_data_yet')) ?></p></div>
                 </div>
                 <?php else: ?>
                 <canvas id="revenueChart" height="120"></canvas>
@@ -211,7 +211,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
                 <h2 class="text-base font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t("printshoppages.order_status")) ?></h2>
                 <?php if (empty($statusBreakdown)): ?>
-                <div class="flex items-center justify-center h-48 text-gray-400 text-sm">No data</div>
+                <div class="flex items-center justify-center h-48 text-gray-400 text-sm"><?= htmlspecialchars(t('printshopanalytics.no_data')) ?></div>
                 <?php else: ?>
                 <canvas id="statusChart" height="200"></canvas>
                 <div class="mt-4 space-y-2">
@@ -231,7 +231,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="flex items-center justify-between text-sm">
                         <div class="flex items-center gap-2">
                             <span class="w-3 h-3 rounded-full" style="background:<?= $clr ?>"></span>
-                            <span class="text-gray-700"><?= ucfirst($row['status']) ?></span>
+                            <span class="text-gray-700"><?php $stk = 'printshopanalytics.status_' . $row['status']; $stl = t($stk); echo htmlspecialchars($stl === $stk ? ucfirst($row['status']) : $stl); ?></span>
                         </div>
                         <span class="font-medium text-gray-900"><?= number_format($row['cnt']) ?></span>
                     </div>
@@ -245,7 +245,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
             <h2 class="text-base font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t("printshoppages.order_volume_by_month")) ?></h2>
             <?php if (empty($monthlyData)): ?>
-            <div class="flex items-center justify-center h-32 text-gray-400 text-sm">No data</div>
+            <div class="flex items-center justify-center h-32 text-gray-400 text-sm"><?= htmlspecialchars(t('printshopanalytics.no_data')) ?></div>
             <?php else: ?>
             <canvas id="ordersChart" height="80"></canvas>
             <?php endif; ?>
@@ -260,14 +260,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <h2 class="text-base font-semibold text-gray-900"><?= htmlspecialchars(t("printshoppages.top_customers")) ?></h2>
                 </div>
                 <?php if (empty($topCustomers)): ?>
-                <div class="p-6 text-center text-gray-400 text-sm">No orders yet</div>
+                <div class="p-6 text-center text-gray-400 text-sm"><?= htmlspecialchars(t('printshopanalytics.no_orders_yet')) ?></div>
                 <?php else: ?>
                 <table class="w-full text-sm">
                     <thead class="bg-gray-50 text-xs font-semibold text-gray-500 uppercase">
                         <tr>
-                            <th class="px-6 py-3 text-left">Company</th>
-                            <th class="px-6 py-3 text-right">Orders</th>
-                            <th class="px-6 py-3 text-right">Revenue</th>
+                            <th class="px-6 py-3 text-left"><?= htmlspecialchars(t('printshopanalytics.col_company')) ?></th>
+                            <th class="px-6 py-3 text-right"><?= htmlspecialchars(t('printshopanalytics.col_orders')) ?></th>
+                            <th class="px-6 py-3 text-right"><?= htmlspecialchars(t('printshopanalytics.col_revenue')) ?></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -276,7 +276,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <td class="px-6 py-3">
                                 <div class="flex items-center gap-2">
                                     <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-bold flex items-center justify-center"><?= $i + 1 ?></span>
-                                    <span class="font-medium text-gray-900"><?= sanitize($cust['company_name'] ?? 'Unknown') ?></span>
+                                    <span class="font-medium text-gray-900"><?= sanitize($cust['company_name'] ?? t('printshopanalytics.unknown_company')) ?></span>
                                 </div>
                             </td>
                             <td class="px-6 py-3 text-right text-gray-700"><?= number_format($cust['order_count']) ?></td>
@@ -294,7 +294,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <h2 class="text-base font-semibold text-gray-900"><?= htmlspecialchars(t("printshoppages.paper_types")) ?></h2>
                 </div>
                 <?php if (empty($paperBreakdown)): ?>
-                <div class="p-6 text-center text-gray-400 text-sm">No orders yet</div>
+                <div class="p-6 text-center text-gray-400 text-sm"><?= htmlspecialchars(t('printshopanalytics.no_orders_yet')) ?></div>
                 <?php else: ?>
                 <div class="p-6 space-y-4">
                     <?php
@@ -306,8 +306,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     ?>
                     <div>
                         <div class="flex justify-between text-sm mb-1">
-                            <span class="font-medium text-gray-700"><?= ucfirst($paper['paper_type'] ?? 'Unknown') ?></span>
-                            <span class="text-gray-500"><?= number_format($paper['total_qty']) ?> cards &bull; <?= number_format($paper['cnt']) ?> orders</span>
+                            <span class="font-medium text-gray-700"><?= htmlspecialchars(ucfirst($paper['paper_type'] ?? t('printshopanalytics.unknown_paper'))) ?></span>
+                            <span class="text-gray-500"><?= htmlspecialchars(strtr(t('printshopanalytics.paper_meta'), [':n' => number_format($paper['total_qty']), ':orders' => number_format($paper['cnt'])])) ?></span>
                         </div>
                         <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
                             <div class="h-2 rounded-full" style="width:<?= $pct ?>%;background:<?= $clr ?>"></div>
@@ -334,7 +334,7 @@ new Chart(document.getElementById('revenueChart'), {
     data: {
         labels: months,
         datasets: [{
-            label: 'Revenue (<?= $currency ?>)',
+            label: <?= json_encode(str_replace(':cur', $currency, t('printshopanalytics.series_revenue')), JSON_UNESCAPED_UNICODE) ?>,
             data: revenueData,
             borderColor: '#3b82f6',
             backgroundColor: 'rgba(59,130,246,0.08)',
@@ -361,7 +361,7 @@ new Chart(document.getElementById('ordersChart'), {
     data: {
         labels: months,
         datasets: [{
-            label: 'Orders',
+            label: <?= json_encode(t('printshopanalytics.series_orders'), JSON_UNESCAPED_UNICODE) ?>,
             data: ordersData,
             backgroundColor: 'rgba(139,92,246,0.7)',
             borderRadius: 6,
@@ -379,19 +379,29 @@ new Chart(document.getElementById('ordersChart'), {
 <?php endif; ?>
 
 <?php if (!empty($statusBreakdown)): ?>
-const statusLabels = <?= json_encode(array_map(fn($r) => ucfirst($r['status']), $statusBreakdown)) ?>;
+<?php
+$labelArr = [];
+$colorArr = [];
+$colorByStatus = [
+    'pending' => '#6b7280', 'confirmed' => '#3b82f6', 'processing' => '#8b5cf6',
+    'printing' => '#f59e0b', 'shipped' => '#06b6d4', 'delivered' => '#10b981', 'cancelled' => '#ef4444',
+];
+foreach ($statusBreakdown as $r) {
+    $stk = 'printshopanalytics.status_' . $r['status']; $stl = t($stk);
+    $labelArr[] = $stl === $stk ? ucfirst($r['status']) : $stl;
+    $colorArr[] = $colorByStatus[$r['status']] ?? '#9ca3af';
+}
+?>
+const statusLabels = <?= json_encode($labelArr, JSON_UNESCAPED_UNICODE) ?>;
 const statusCounts = <?= json_encode(array_column($statusBreakdown, 'cnt')) ?>;
-const statusColorMap = {
-    'Pending':'#6b7280','Confirmed':'#3b82f6','Processing':'#8b5cf6',
-    'Printing':'#f59e0b','Shipped':'#06b6d4','Delivered':'#10b981','Cancelled':'#ef4444'
-};
+const statusBgColors = <?= json_encode($colorArr) ?>;
 new Chart(document.getElementById('statusChart'), {
     type: 'doughnut',
     data: {
         labels: statusLabels,
         datasets: [{
             data: statusCounts,
-            backgroundColor: statusLabels.map(l => statusColorMap[l] || '#9ca3af'),
+            backgroundColor: statusBgColors,
             borderWidth: 2,
             borderColor: '#fff'
         }]
