@@ -156,31 +156,31 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
 <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-4 mb-6">
     <a href="?quick=today" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow <?php echo $quickFilter === 'today' ? 'ring-2 ring-blue-500' : ''; ?>">
         <div class="text-2xl font-bold text-gray-900"><?php echo number_format($stats['today']); ?></div>
-        <div class="text-xs text-gray-500">Today</div>
+        <div class="text-xs text-gray-500"><?= htmlspecialchars(t('auditlogs.stat_today')) ?></div>
     </a>
     <a href="?" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow <?php echo empty($quickFilter) && empty($_GET['action']) ? 'ring-2 ring-blue-500' : ''; ?>">
         <div class="text-2xl font-bold text-gray-900"><?php echo number_format($stats['total']); ?></div>
-        <div class="text-xs text-gray-500">Total Logs</div>
+        <div class="text-xs text-gray-500"><?= htmlspecialchars(t('auditlogs.stat_total')) ?></div>
     </a>
     <a href="?quick=auth" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow <?php echo $quickFilter === 'auth' ? 'ring-2 ring-purple-500' : ''; ?>">
         <div class="text-2xl font-bold text-purple-600"><?php echo number_format($stats['logins'] + $stats['logouts']); ?></div>
-        <div class="text-xs text-gray-500">Auth Events</div>
+        <div class="text-xs text-gray-500"><?= htmlspecialchars(t('auditlogs.stat_auth')) ?></div>
     </a>
     <a href="?quick=logins" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow <?php echo $quickFilter === 'logins' ? 'ring-2 ring-green-500' : ''; ?>">
         <div class="text-2xl font-bold text-green-600"><?php echo number_format($stats['logins']); ?></div>
-        <div class="text-xs text-gray-500">Logins</div>
+        <div class="text-xs text-gray-500"><?= htmlspecialchars(t('auditlogs.stat_logins')) ?></div>
     </a>
     <a href="?quick=logouts" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow <?php echo $quickFilter === 'logouts' ? 'ring-2 ring-gray-500' : ''; ?>">
         <div class="text-2xl font-bold text-gray-600"><?php echo number_format($stats['logouts']); ?></div>
-        <div class="text-xs text-gray-500">Logouts</div>
+        <div class="text-xs text-gray-500"><?= htmlspecialchars(t('auditlogs.stat_logouts')) ?></div>
     </a>
     <a href="?quick=creates" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow <?php echo $quickFilter === 'creates' ? 'ring-2 ring-emerald-500' : ''; ?>">
         <div class="text-2xl font-bold text-emerald-600"><?php echo number_format($stats['creates']); ?></div>
-        <div class="text-xs text-gray-500">Creates</div>
+        <div class="text-xs text-gray-500"><?= htmlspecialchars(t('auditlogs.stat_creates')) ?></div>
     </a>
     <a href="?quick=updates" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow <?php echo $quickFilter === 'updates' ? 'ring-2 ring-blue-500' : ''; ?>">
         <div class="text-2xl font-bold text-blue-600"><?php echo number_format($stats['updates']); ?></div>
-        <div class="text-xs text-gray-500">Updates</div>
+        <div class="text-xs text-gray-500"><?= htmlspecialchars(t('auditlogs.stat_updates')) ?></div>
     </a>
 </div>
 
@@ -189,16 +189,16 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
     <form method="get" class="space-y-4">
         <div class="flex flex-wrap items-end gap-4">
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Search Actor</label>
-                <input type="text" name="actor" value="<?php echo sanitize($_GET['actor'] ?? ''); ?>" 
-                       placeholder="Email or name..."
+                <label class="block text-xs font-medium text-gray-600 mb-1"><?= htmlspecialchars(t('auditlogs.filter_actor')) ?></label>
+                <input type="text" name="actor" value="<?php echo sanitize($_GET['actor'] ?? ''); ?>"
+                       placeholder="<?= htmlspecialchars(t('auditlogs.filter_actor_ph')) ?>"
                        class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm w-48">
             </div>
             
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Company</label>
+                <label class="block text-xs font-medium text-gray-600 mb-1"><?= htmlspecialchars(t('auditlogs.filter_company')) ?></label>
                 <select name="company_id" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-                    <option value="">All Companies</option>
+                    <option value=""><?= htmlspecialchars(t('auditlogs.all_companies')) ?></option>
                     <?php foreach ($companies as $company): ?>
                     <option value="<?php echo $company['id']; ?>" <?php echo ($_GET['company_id'] ?? '') === $company['id'] ? 'selected' : ''; ?>>
                         <?php echo sanitize($company['name']); ?>
@@ -208,10 +208,10 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
             </div>
             
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Action</label>
+                <label class="block text-xs font-medium text-gray-600 mb-1"><?= htmlspecialchars(t('auditlogs.filter_action')) ?></label>
                 <select name="action" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-                    <option value="">All Actions</option>
-                    <option value="login,logout" <?php echo ($_GET['action'] ?? '') === 'login,logout' ? 'selected' : ''; ?>>Authentication (Login/Logout)</option>
+                    <option value=""><?= htmlspecialchars(t('auditlogs.all_actions')) ?></option>
+                    <option value="login,logout" <?php echo ($_GET['action'] ?? '') === 'login,logout' ? 'selected' : ''; ?>><?= htmlspecialchars(t('auditlogs.auth_option')) ?></option>
                     <?php foreach ($actions as $action): ?>
                     <option value="<?php echo sanitize($action); ?>" <?php echo ($_GET['action'] ?? '') === $action ? 'selected' : ''; ?>>
                         <?php echo sanitize($action); ?>
@@ -221,9 +221,9 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
             </div>
             
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Entity Type</label>
+                <label class="block text-xs font-medium text-gray-600 mb-1"><?= htmlspecialchars(t('auditlogs.filter_entity')) ?></label>
                 <select name="entity_type" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-                    <option value="">All Types</option>
+                    <option value=""><?= htmlspecialchars(t('auditlogs.all_types')) ?></option>
                     <?php foreach ($entityTypes as $type): ?>
                     <option value="<?php echo sanitize($type); ?>" <?php echo ($_GET['entity_type'] ?? '') === $type ? 'selected' : ''; ?>>
                         <?php echo sanitize($type); ?>
@@ -233,28 +233,28 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
             </div>
             
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">From Date</label>
+                <label class="block text-xs font-medium text-gray-600 mb-1"><?= htmlspecialchars(t('auditlogs.filter_from')) ?></label>
                 <input type="date" name="date_from" value="<?php echo htmlspecialchars($_GET['date_from'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                        class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
             </div>
 
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">To Date</label>
+                <label class="block text-xs font-medium text-gray-600 mb-1"><?= htmlspecialchars(t('auditlogs.filter_to')) ?></label>
                 <input type="date" name="date_to" value="<?php echo htmlspecialchars($_GET['date_to'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                        class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
             </div>
             
             <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
-                <i class="fa-solid fa-filter mr-1"></i> Filter
+                <i class="fa-solid fa-filter mr-1"></i> <?= htmlspecialchars(t('auditlogs.btn_filter')) ?>
             </button>
-            
+
             <a href="audit-logs.php" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">
-                Clear
+                <?= htmlspecialchars(t('auditlogs.btn_clear')) ?>
             </a>
-            
-            <a href="?<?php echo http_build_query(array_merge($_GET, ['export' => 'csv'])); ?>" 
+
+            <a href="?<?php echo http_build_query(array_merge($_GET, ['export' => 'csv'])); ?>"
                class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors ml-auto">
-                <i class="fa-solid fa-download mr-1"></i> Export CSV
+                <i class="fa-solid fa-download mr-1"></i> <?= htmlspecialchars(t('auditlogs.btn_export_csv')) ?>
             </a>
         </div>
     </form>
@@ -262,7 +262,7 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
 
 <!-- Stats -->
 <div class="mb-4 text-sm text-gray-600">
-    Showing <?php echo count($logs); ?> of <?php echo number_format($totalLogs); ?> logs
+    <?= htmlspecialchars(strtr(t('auditlogs.showing_of'), [':shown' => (string) count($logs), ':total' => number_format($totalLogs)])) ?>
 </div>
 
 <!-- Logs Table -->
@@ -271,12 +271,12 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
         <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
-                    <th class="text-left px-4 py-3 text-gray-600 font-semibold text-xs uppercase">Time</th>
-                    <th class="text-left px-4 py-3 text-gray-600 font-semibold text-xs uppercase">Actor</th>
-                    <th class="text-left px-4 py-3 text-gray-600 font-semibold text-xs uppercase">Action</th>
-                    <th class="text-left px-4 py-3 text-gray-600 font-semibold text-xs uppercase">Entity</th>
-                    <th class="text-left px-4 py-3 text-gray-600 font-semibold text-xs uppercase">Company</th>
-                    <th class="text-left px-4 py-3 text-gray-600 font-semibold text-xs uppercase">Details</th>
+                    <th class="text-left px-4 py-3 text-gray-600 font-semibold text-xs uppercase"><?= htmlspecialchars(t('auditlogs.col_time')) ?></th>
+                    <th class="text-left px-4 py-3 text-gray-600 font-semibold text-xs uppercase"><?= htmlspecialchars(t('auditlogs.col_actor')) ?></th>
+                    <th class="text-left px-4 py-3 text-gray-600 font-semibold text-xs uppercase"><?= htmlspecialchars(t('auditlogs.col_action')) ?></th>
+                    <th class="text-left px-4 py-3 text-gray-600 font-semibold text-xs uppercase"><?= htmlspecialchars(t('auditlogs.col_entity')) ?></th>
+                    <th class="text-left px-4 py-3 text-gray-600 font-semibold text-xs uppercase"><?= htmlspecialchars(t('auditlogs.col_company')) ?></th>
+                    <th class="text-left px-4 py-3 text-gray-600 font-semibold text-xs uppercase"><?= htmlspecialchars(t('auditlogs.col_details')) ?></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -284,7 +284,7 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
                 <tr>
                     <td colspan="6" class="px-4 py-12 text-center text-gray-500">
                         <i class="fa-solid fa-clipboard-list text-4xl mb-3 opacity-30"></i>
-                        <p>No audit logs found.</p>
+                        <p><?= htmlspecialchars(t('auditlogs.empty')) ?></p>
                     </td>
                 </tr>
                 <?php endif; ?>
@@ -296,7 +296,7 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
                     </td>
                     <td class="px-4 py-3">
                         <div class="text-sm">
-                            <p class="text-gray-900"><?php echo sanitize($log['actor_email'] ?? 'System'); ?></p>
+                            <p class="text-gray-900"><?php echo sanitize($log['actor_email'] ?? t('auditlogs.system_actor')); ?></p>
                             <p class="text-gray-500 text-xs"><?php echo sanitize($log['actor_role'] ?? '-'); ?></p>
                         </div>
                     </td>
@@ -330,7 +330,7 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
                             }
                             echo sanitize($companyName);
                         } else {
-                            echo '<span class="text-gray-400">Global</span>';
+                            echo '<span class="text-gray-400">' . htmlspecialchars(t('auditlogs.global_scope')) . '</span>';
                         }
                         ?>
                     </td>
@@ -338,7 +338,7 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
                         <?php if ($log['before_data'] || $log['after_data']): ?>
                         <button onclick="showLogDetails(<?php echo htmlspecialchars(json_encode($log), ENT_QUOTES); ?>)"
                                 class="text-blue-600 hover:text-blue-800 text-sm">
-                            View Changes
+                            <?= htmlspecialchars(t('auditlogs.view_changes')) ?>
                         </button>
                         <?php else: ?>
                         <span class="text-gray-400 text-sm">-</span>
@@ -353,20 +353,20 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
     <?php if ($totalPages > 1): ?>
     <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
         <div class="text-sm text-gray-600">
-            Page <?php echo $page; ?> of <?php echo $totalPages; ?>
+            <?= htmlspecialchars(strtr(t('auditlogs.page_n_of_m'), [':cur' => (string) $page, ':tot' => (string) $totalPages])) ?>
         </div>
         <div class="flex gap-2">
             <?php if ($page > 1): ?>
-            <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page - 1])); ?>" 
+            <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page - 1])); ?>"
                class="px-3 py-1 bg-white border border-gray-200 rounded text-sm hover:bg-gray-50">
-                Previous
+                <?= htmlspecialchars(t('auditlogs.prev')) ?>
             </a>
             <?php endif; ?>
-            
+
             <?php if ($page < $totalPages): ?>
-            <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page + 1])); ?>" 
+            <a href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page + 1])); ?>"
                class="px-3 py-1 bg-white border border-gray-200 rounded text-sm hover:bg-gray-50">
-                Next
+                <?= htmlspecialchars(t('auditlogs.next')) ?>
             </a>
             <?php endif; ?>
         </div>
@@ -379,7 +379,7 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
     <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onclick="closeLogModal()"></div>
     <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div class="p-6 border-b border-gray-100 flex items-center justify-between">
-            <h3 class="text-xl font-bold text-gray-900">Audit Log Details</h3>
+            <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('auditlogs.modal_title')) ?></h3>
             <button onclick="closeLogModal()" class="text-gray-400 hover:text-gray-600">
                 <i class="fa-solid fa-times"></i>
             </button>
@@ -387,17 +387,17 @@ adminHeader(t('adminchrome.audit_logs'), 'audit-logs');
         <div class="p-6">
             <div class="grid md:grid-cols-2 gap-6">
                 <div>
-                    <h4 class="font-semibold text-gray-700 mb-2">Before</h4>
+                    <h4 class="font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('auditlogs.before')) ?></h4>
                     <pre id="beforeData" class="bg-gray-50 p-4 rounded-lg text-xs overflow-x-auto max-h-80"></pre>
                 </div>
                 <div>
-                    <h4 class="font-semibold text-gray-700 mb-2">After</h4>
+                    <h4 class="font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('auditlogs.after')) ?></h4>
                     <pre id="afterData" class="bg-gray-50 p-4 rounded-lg text-xs overflow-x-auto max-h-80"></pre>
                 </div>
             </div>
             <div class="mt-4 text-sm text-gray-500">
-                <p><strong>IP:</strong> <span id="logIp">-</span></p>
-                <p><strong>User Agent:</strong> <span id="logUserAgent">-</span></p>
+                <p><strong><?= htmlspecialchars(t('auditlogs.ip_label')) ?></strong> <span id="logIp">-</span></p>
+                <p><strong><?= htmlspecialchars(t('auditlogs.ua_label')) ?></strong> <span id="logUserAgent">-</span></p>
             </div>
         </div>
     </div>
@@ -415,11 +415,11 @@ function showLogDetails(log) {
         const before = log.before_data ? JSON.parse(log.before_data) : null;
         const after = log.after_data ? JSON.parse(log.after_data) : null;
         
-        beforeData.textContent = before ? JSON.stringify(before, null, 2) : 'No data';
-        afterData.textContent = after ? JSON.stringify(after, null, 2) : 'No data';
+        beforeData.textContent = before ? JSON.stringify(before, null, 2) : <?= json_encode(t('auditlogs.no_data'), JSON_UNESCAPED_UNICODE) ?>;
+        afterData.textContent = after ? JSON.stringify(after, null, 2) : <?= json_encode(t('auditlogs.no_data'), JSON_UNESCAPED_UNICODE) ?>;
     } catch (e) {
-        beforeData.textContent = log.before_data || 'No data';
-        afterData.textContent = log.after_data || 'No data';
+        beforeData.textContent = log.before_data || <?= json_encode(t('auditlogs.no_data'), JSON_UNESCAPED_UNICODE) ?>;
+        afterData.textContent = log.after_data || <?= json_encode(t('auditlogs.no_data'), JSON_UNESCAPED_UNICODE) ?>;
     }
     
     logIp.textContent = log.ip_address || '-';
