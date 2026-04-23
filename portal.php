@@ -669,8 +669,8 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <a href="<?php echo getBasePath() . $companySlug; ?>/admin/login" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 font-medium">
-                            <i class="fa-solid fa-lock mr-1.5"></i>Admin
+                        <a href="<?php echo getBasePath() . $companySlug; ?>/admin/login" class="inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 font-medium">
+                            <i class="fa-solid fa-lock"></i><span>Admin</span>
                         </a>
                     </div>
                 </div>
