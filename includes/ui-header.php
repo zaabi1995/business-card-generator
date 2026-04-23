@@ -327,7 +327,7 @@ if (!function_exists('renderNavigation')) {
         ?>
         <nav class="fixed top-0 left-0 right-0 z-50 <?php echo $bgClass; ?> transition-all duration-300" id="navbar">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16 lg:h-20">
+                <div class="flex justify-between items-center gap-6 h-16 lg:h-20">
                     <!-- Logo -->
                     <a href="<?php echo getBasePath(); ?>" class="flex items-center gap-3">
                         <img src="<?php echo assetUrl('images/logo.svg'); ?>" alt="<?php echo $brandName; ?>" class="h-10 w-auto">
@@ -363,8 +363,8 @@ if (!function_exists('renderNavigation')) {
                             </a>
                         <?php endif; ?>
 
-                        <!-- Language Switcher -->
-                        <span class="hidden md:inline-flex">
+                        <!-- Language Switcher (always visible, including mobile) -->
+                        <span class="inline-flex">
                             <?php require INCLUDES_DIR . '/lang-switcher.php'; ?>
                         </span>
 
