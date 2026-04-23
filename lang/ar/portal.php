@@ -90,4 +90,12 @@ return [
     'stats_month'       => 'تم مسح بطاقتك :n مرة هذا الشهر',
     'stats_total'       => ':n إجمالاً',
     'custom_fields'     => 'حقول إضافية',
+    'nfc_title'         => 'اكتب على شريحة NFC',
+    'nfc_hint'          => 'حوّل أي ملصق أو قطعة NFC إلى بطاقتك.',
+    'nfc_cta'           => 'عرض دليل NFC',
+    'nfc_hide'          => 'إخفاء',
+    'nfc_copy_url'      => 'نسخ الرابط',
+    'nfc_step1'         => 'نزّل تطبيق كتابة NFC (iOS: "NFC Tools"؛ Android: "NFC TagWriter").',
+    'nfc_step2'         => 'افتح التطبيق واختر "Write URL"، ثم الصق الرابط أعلاه (أو امسح رمز QR).',
+    'nfc_step3'         => 'قرّب شريحة NFC من هاتفك. أي لمسة لاحقة على الشريحة ستفتح بطاقتك.',
 ];

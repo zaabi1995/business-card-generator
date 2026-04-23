@@ -326,6 +326,43 @@ $pageTitle = t('portal.edit_my_details');
             </div>
         </div>
 
+        <?php if ($publicCardUrl): ?>
+        <div class="mt-5 bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
+             x-data="{ open: false, copied: false,
+                       copyUrl() { navigator.clipboard.writeText(<?= json_encode($publicCardUrl) ?>).then(() => { this.copied = true; setTimeout(() => this.copied = false, 1500); }); } }">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-wifi rotate-90 text-2xl text-purple-500"></i>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-900"><?= htmlspecialchars(t('portal.nfc_title')) ?></p>
+                        <p class="text-xs text-gray-500"><?= htmlspecialchars(t('portal.nfc_hint')) ?></p>
+                    </div>
+                </div>
+                <button type="button" @click="open = !open"
+                        class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white text-xs font-semibold rounded-lg whitespace-nowrap">
+                    <span x-text="open ? <?= json_encode(t('portal.nfc_hide')) ?> : <?= json_encode(t('portal.nfc_cta')) ?>"></span>
+                </button>
+            </div>
+            <div x-show="open" x-cloak class="mt-4 pt-4 border-t border-gray-100 space-y-3">
+                <div class="flex flex-col items-center gap-2">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=2&data=<?= htmlspecialchars(urlencode($publicCardUrl)) ?>"
+                         alt="NFC QR"
+                         class="w-60 h-60 rounded-lg bg-white border border-gray-200 p-2">
+                    <code class="text-xs text-gray-700 break-all text-center" dir="ltr"><?= htmlspecialchars($publicCardUrl) ?></code>
+                    <button type="button" @click="copyUrl()"
+                            class="text-xs font-semibold text-[#009bc1] hover:text-[#007a99]">
+                        <span x-text="copied ? <?= json_encode(t('onboarding.copied')) ?> : <?= json_encode(t('portal.nfc_copy_url')) ?>"></span>
+                    </button>
+                </div>
+                <ol class="text-xs text-gray-600 list-decimal ps-5 space-y-1">
+                    <li><?= htmlspecialchars(t('portal.nfc_step1')) ?></li>
+                    <li><?= htmlspecialchars(t('portal.nfc_step2')) ?></li>
+                    <li><?= htmlspecialchars(t('portal.nfc_step3')) ?></li>
+                </ol>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <?php if (AppleWalletPass::isEnabled()): ?>
         <div class="mt-5 bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">

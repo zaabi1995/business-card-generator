@@ -90,4 +90,12 @@ return [
     'stats_month'       => 'Scanned :n times this month',
     'stats_total'       => ':n total',
     'custom_fields'     => 'Additional fields',
+    'nfc_title'         => 'Write to an NFC tag',
+    'nfc_hint'          => 'Turn any NFC sticker or wearable into your card.',
+    'nfc_cta'           => 'Show NFC guide',
+    'nfc_hide'          => 'Hide',
+    'nfc_copy_url'      => 'Copy URL',
+    'nfc_step1'         => 'Download an NFC writer app (iOS: "NFC Tools"; Android: "NFC TagWriter").',
+    'nfc_step2'         => 'Open the app, pick "Write URL", and paste the link above (or scan the QR).',
+    'nfc_step3'         => 'Hold an NFC tag to your phone. Next tap on that tag opens your card.',
 ];
