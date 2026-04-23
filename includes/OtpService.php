@@ -135,7 +135,15 @@ class OtpService
     {
         if (!class_exists('WhatsApp') || !WhatsApp::isEnabled()) return false;
         $body = self::renderTemplate('otp.whatsapp', $code);
-        return (bool) WhatsApp::sendMessage($phone, $body);
+        // OTPs are transactional, bypass Dardasha's anti-ban throttle so the
+        // user gets the code in ~500ms instead of 5-10s. EN auto-bypasses
+        // via keyword detection on Dardasha; AR text doesn't, hence explicit.
+        $res = WhatsApp::sendMessage($phone, $body, [
+            'bypassAntiBan' => true,
+            'transactional' => true,
+            'priority'      => 'high',
+        ]);
+        return is_array($res) ? !empty($res['success']) : (bool) $res;
     }
 
     private static function deliverEmail(string $email, string $code): bool
