@@ -73,4 +73,7 @@ return [
     'wallet_apple_title'=> 'Add card to Apple Wallet',
     'wallet_apple_hint' => 'Regenerated with your latest details when you tap the button.',
     'wallet_apple_cta'  => 'Add to Apple Wallet',
+    'download_pdf_title'=> 'Download my card as PDF',
+    'download_pdf_hint' => 'One-page A4 with your contact details plus a scannable QR code.',
+    'download_pdf_cta'  => 'Download PDF',
 ];

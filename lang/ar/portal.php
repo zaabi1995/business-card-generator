@@ -73,4 +73,7 @@ return [
     'wallet_apple_title'=> 'أضف البطاقة إلى Apple Wallet',
     'wallet_apple_hint' => 'تُجدَّد بأحدث بياناتك عند الضغط على الزر.',
     'wallet_apple_cta'  => 'الإضافة إلى Apple Wallet',
+    'download_pdf_title'=> 'تنزيل بطاقتي بصيغة PDF',
+    'download_pdf_hint' => 'ورقة A4 واحدة بها بياناتك مع رمز QR قابل للمسح.',
+    'download_pdf_cta'  => 'تنزيل PDF',
 ];

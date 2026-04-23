@@ -221,6 +221,21 @@ $pageTitle = t('portal.edit_my_details');
         </div>
         <?php endif; ?>
 
+        <div class="mt-3 bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-file-pdf text-2xl text-red-500"></i>
+                <div>
+                    <p class="text-sm font-semibold text-gray-900"><?= htmlspecialchars(t('portal.download_pdf_title')) ?></p>
+                    <p class="text-xs text-gray-500"><?= htmlspecialchars(t('portal.download_pdf_hint')) ?></p>
+                </div>
+            </div>
+            <a href="/card-pdf.php?i=<?= htmlspecialchars(urlencode($employee['id'])) ?>"
+               download
+               class="px-4 py-2 bg-[#009bc1] hover:bg-[#007a99] text-white text-xs font-semibold rounded-lg whitespace-nowrap">
+                <?= htmlspecialchars(t('portal.download_pdf_cta')) ?>
+            </a>
+        </div>
+
         <p class="text-xs text-gray-400 text-center mt-5">
             <i class="fa-solid fa-shield-halved mr-1"></i>
             <?= $isAr
