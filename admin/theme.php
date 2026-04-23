@@ -138,7 +138,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $theme = $db->fetchOne("SELECT * FROM company_themes WHERE company_id = :id", ['id' => $companyId]);
 }
 
-adminHeader('Theme & Branding', 'theme');
+// Pick a real E-Card URL for the Preview button: first employee with an email
+// (company-wide settings apply to every employee), falling back to the public
+// portal if no employees exist yet.
+$__firstEmployee = $db->fetchOne(
+    "SELECT id, email FROM employees WHERE company_id = :cid AND email <> '' ORDER BY created_at ASC LIMIT 1",
+    ['cid' => $companyId]
+);
+$previewCardUrl = $__firstEmployee
+    ? (getBasePath() . $companySlug . '/card/' . urlencode($__firstEmployee['email']))
+    : (getBasePath() . $companySlug . '/portal');
+
+adminHeader('Branding & E-Card Settings', 'theme');
 ?>
 
 <!-- Alert Message -->
@@ -197,10 +208,10 @@ adminHeader('Theme & Branding', 'theme');
                 </h3>
                 <p class="text-xs text-gray-500 mt-1">Controls the digital card each employee shares via QR.</p>
             </div>
-            <a href="<?php echo getBasePath() . $companySlug; ?>/card/demo%40<?php echo sanitize($company['email_domain'] ?? 'example.com'); ?>"
+            <a href="<?php echo htmlspecialchars($previewCardUrl); ?>"
                target="_blank" rel="noopener"
                class="text-xs inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700">
-                <i class="fa-solid fa-up-right-from-square"></i> Preview
+                <i class="fa-solid fa-up-right-from-square"></i> Preview live E-Card
             </a>
         </div>
         <div class="p-6 space-y-4">
