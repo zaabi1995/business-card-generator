@@ -40,6 +40,26 @@ try {
              WHERE e.id = :id AND e.status = 'active' LIMIT 1",
             ['id' => $employeeId]
         );
+        // Fallback: the same id may belong to a pending/approved card_requests
+        // row (E-Card for an un-approved request). Serve a VCF built from it
+        // so the Save Contact button works even before admin approval.
+        if (!$employee) {
+            $req = $db->fetchOne(
+                "SELECT r.*, c.id AS _cid, c.slug AS _cslug, c.name AS _cname, c.country AS _ccountry
+                   FROM card_requests r
+                   JOIN companies c ON c.id = r.company_id
+                  WHERE r.id = :id AND r.status IN ('pending','approved')
+                  LIMIT 1",
+                ['id' => $employeeId]
+            );
+            if ($req) {
+                $employee = $req;
+                $employee['company_id']   = $req['_cid'];
+                $employee['slug']         = $req['_cslug'];
+                $employee['company_name'] = $req['_cname'];
+                $employee['country']      = $req['_ccountry'] ?? '';
+            }
+        }
         $company = $employee ? [
             'id'      => $employee['company_id'],
             'slug'    => $employee['slug'],
