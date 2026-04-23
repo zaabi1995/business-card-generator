@@ -1351,11 +1351,16 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
         // Show loading state
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Generating...';
-        
-        // Switch to generated preview view
-        document.getElementById('templatePreview').style.display = 'none';
-        document.getElementById('generatedPreview').style.display = 'block';
-        document.getElementById('previewTitle').textContent = 'Your Card Preview';
+
+        // Switch to generated preview view (null-safe: template preview DOM
+        // isn't rendered when the tenant has no front/back templates wired
+        // up yet, so every lookup has to guard).
+        const _hide = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
+        const _show = (id, disp='block') => { const el = document.getElementById(id); if (el) el.style.display = disp; };
+        _hide('templatePreview');
+        _show('generatedPreview');
+        const _title = document.getElementById('previewTitle');
+        if (_title) _title.textContent = 'Your Card Preview';
         
         // Get form data - use main email field (no separate email_card)
         const formData = {
@@ -1377,17 +1382,17 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
             if (frontEditor && frontTemplate) {
                 await renderCardWithEditor(frontEditor, frontTemplate, formData, 'front');
             }
-            document.getElementById('frontLoading').style.display = 'none';
-            
+            _hide('frontLoading');
+
             // Render back card using CardEditor
             if (backEditor && backTemplate) {
                 await renderCardWithEditor(backEditor, backTemplate, formData, 'back');
             }
-            document.getElementById('backLoading').style.display = 'none';
-            
+            _hide('backLoading');
+
             // Show submit section
-            document.getElementById('generatePreviewSection').style.display = 'none';
-            document.getElementById('submitSection').style.display = 'block';
+            _hide('generatePreviewSection');
+            _show('submitSection');
             previewGenerated = true;
             
             // Scale canvases after browser has completed layout (double RAF + timeout for safety)
