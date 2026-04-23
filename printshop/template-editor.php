@@ -62,7 +62,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="flex justify-between h-16">
             <div class="flex items-center gap-3">
                 <a href="<?= getBasePath() ?>printshop/templates.php" class="text-gray-500 hover:text-gray-700 text-sm flex items-center gap-1">
-                    <i class="fa-solid fa-arrow-left"></i> Templates
+                    <i class="fa-solid fa-arrow-left"></i> <?= htmlspecialchars(t('printshoptpl.editor_back')) ?>
                 </a>
                 <span class="text-gray-300">/</span>
                 <span class="font-semibold text-gray-900 text-sm"><?= $pageTitle ?></span>
@@ -70,7 +70,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="flex items-center gap-3">
                 <button id="btn-save" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
                     <i class="fa-solid fa-floppy-disk"></i>
-                    Save Template
+                    <?= htmlspecialchars(t('printshoptpl.btn_save_template')) ?>
                 </button>
             </div>
         </div>
@@ -83,21 +83,21 @@ require_once INCLUDES_DIR . '/ui-header.php';
 <!-- Left: Canvas area -->
 <div class="flex-1 flex flex-col bg-gray-100 overflow-hidden">
     <div class="flex items-center gap-3 px-4 py-2 bg-white border-b border-gray-200">
-        <label class="text-sm font-medium text-gray-700">Background Image:</label>
+        <label class="text-sm font-medium text-gray-700"><?= htmlspecialchars(t('printshoptpl.bg_image_label')) ?></label>
         <label for="bg-upload" class="cursor-pointer text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition-colors">
             <i class="fa-solid fa-upload mr-1"></i>
-            <?= $template && $template['background_path'] ? 'Change Image' : 'Upload Image' ?>
+            <?= htmlspecialchars($template && $template['background_path'] ? t('printshoptpl.change_image') : t('printshoptpl.upload_image')) ?>
         </label>
         <input type="file" id="bg-upload" accept="image/*" class="hidden">
         <span class="text-xs text-gray-400" id="bg-filename">
-            <?= $template && $template['background_path'] ? basename($template['background_path']) : 'No file chosen' ?>
+            <?= htmlspecialchars($template && $template['background_path'] ? basename($template['background_path']) : t('printshoptpl.no_file_chosen')) ?>
         </span>
         <div class="ml-auto flex items-center gap-2">
-            <span class="text-xs text-gray-500">Canvas size:</span>
+            <span class="text-xs text-gray-500"><?= htmlspecialchars(t('printshoptpl.canvas_size_label')) ?></span>
             <select id="canvas-size" class="text-xs border border-gray-200 rounded px-2 py-1">
-                <option value="900,514">Business Card (Standard)</option>
-                <option value="1050,600">Business Card (Large)</option>
-                <option value="900,900">Square Card</option>
+                <option value="900,514"><?= htmlspecialchars(t('printshoptpl.size_std')) ?></option>
+                <option value="1050,600"><?= htmlspecialchars(t('printshoptpl.size_large')) ?></option>
+                <option value="900,900"><?= htmlspecialchars(t('printshoptpl.size_square')) ?></option>
             </select>
         </div>
     </div>
@@ -108,31 +108,31 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </div>
     <!-- Toolbar -->
     <div class="bg-white border-t border-gray-200 px-4 py-2 flex items-center gap-3 flex-wrap">
-        <span class="text-xs font-medium text-gray-600 mr-1">Add Field:</span>
+        <span class="text-xs font-medium text-gray-600 mr-1"><?= htmlspecialchars(t('printshoptpl.add_field_label')) ?></span>
         <?php
         $fieldOptions = [
-            ['key' => 'full_name',   'label' => 'Full Name',   'icon' => 'user'],
-            ['key' => 'job_title',   'label' => 'Job Title',   'icon' => 'briefcase'],
-            ['key' => 'company',     'label' => 'Company',     'icon' => 'building'],
-            ['key' => 'phone',       'label' => 'Phone',       'icon' => 'phone'],
-            ['key' => 'email',       'label' => 'Email',       'icon' => 'envelope'],
-            ['key' => 'website',     'label' => 'Website',     'icon' => 'globe'],
-            ['key' => 'address',     'label' => 'Address',     'icon' => 'location-dot'],
-            ['key' => 'custom',      'label' => 'Custom',      'icon' => 'font'],
+            ['key' => 'full_name',   'label' => t('printshoptpl.field_full_name'), 'icon' => 'user'],
+            ['key' => 'job_title',   'label' => t('printshoptpl.field_job_title'), 'icon' => 'briefcase'],
+            ['key' => 'company',     'label' => t('printshoptpl.field_company'),   'icon' => 'building'],
+            ['key' => 'phone',       'label' => t('printshoptpl.field_phone'),     'icon' => 'phone'],
+            ['key' => 'email',       'label' => t('printshoptpl.field_email'),     'icon' => 'envelope'],
+            ['key' => 'website',     'label' => t('printshoptpl.field_website'),   'icon' => 'globe'],
+            ['key' => 'address',     'label' => t('printshoptpl.field_address'),   'icon' => 'location-dot'],
+            ['key' => 'custom',      'label' => t('printshoptpl.field_custom'),    'icon' => 'font'],
         ];
         foreach ($fieldOptions as $fo): ?>
         <button class="add-field-btn text-xs bg-gray-100 hover:bg-blue-50 hover:text-blue-700 text-gray-600 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
-                data-key="<?= $fo['key'] ?>" data-label="<?= $fo['label'] ?>">
+                data-key="<?= $fo['key'] ?>" data-label="<?= htmlspecialchars($fo['label']) ?>">
             <i class="fa-solid fa-<?= $fo['icon'] ?> text-xs"></i>
-            <?= $fo['label'] ?>
+            <?= htmlspecialchars($fo['label']) ?>
         </button>
         <?php endforeach; ?>
         <div class="ml-auto flex items-center gap-2">
             <button id="btn-delete-selected" class="text-xs text-red-500 hover:text-red-700 px-2 py-1.5 rounded transition-colors hidden">
-                <i class="fa-solid fa-trash mr-1"></i>Remove
+                <i class="fa-solid fa-trash mr-1"></i><?= htmlspecialchars(t('printshoptpl.btn_remove')) ?>
             </button>
             <button id="btn-bring-front" class="text-xs text-gray-500 hover:text-gray-700 px-2 py-1.5 rounded transition-colors hidden">
-                <i class="fa-solid fa-layer-group mr-1"></i>Front
+                <i class="fa-solid fa-layer-group mr-1"></i><?= htmlspecialchars(t('printshoptpl.btn_front')) ?>
             </button>
         </div>
     </div>
@@ -141,22 +141,22 @@ require_once INCLUDES_DIR . '/ui-header.php';
 <!-- Right: Settings panel -->
 <div class="w-72 bg-white border-l border-gray-200 flex flex-col overflow-hidden">
     <div class="px-4 py-3 border-b border-gray-100">
-        <h2 class="font-semibold text-sm text-gray-900">Template Settings</h2>
+        <h2 class="font-semibold text-sm text-gray-900"><?= htmlspecialchars(t('printshoptpl.settings_h')) ?></h2>
     </div>
     <div id="fields-panel" class="flex-1 overflow-y-auto px-4 py-3 space-y-4">
 
         <!-- Template Name -->
         <div>
-            <label class="text-xs font-medium text-gray-700 block mb-1">Template Name *</label>
-            <input type="text" id="tmpl-name" placeholder="e.g. Classic Business Card"
+            <label class="text-xs font-medium text-gray-700 block mb-1"><?= htmlspecialchars(t('printshoptpl.field_name_label')) ?></label>
+            <input type="text" id="tmpl-name" placeholder="<?= htmlspecialchars(t('printshoptpl.field_name_ph')) ?>"
                    value="<?= sanitize($template['name'] ?? '') ?>"
                    class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
         </div>
 
         <!-- Description -->
         <div>
-            <label class="text-xs font-medium text-gray-700 block mb-1">Description</label>
-            <textarea id="tmpl-description" placeholder="Brief description..." rows="2"
+            <label class="text-xs font-medium text-gray-700 block mb-1"><?= htmlspecialchars(t('printshoptpl.field_desc_label')) ?></label>
+            <textarea id="tmpl-description" placeholder="<?= htmlspecialchars(t('printshoptpl.field_desc_ph')) ?>" rows="2"
                       class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"><?= sanitize($template['description'] ?? '') ?></textarea>
         </div>
 
@@ -166,28 +166,28 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div id="object-props" class="hidden">
             <h3 class="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-1">
                 <i class="fa-solid fa-sliders text-blue-500"></i>
-                Selected Field
+                <?= htmlspecialchars(t('printshoptpl.selected_field_h')) ?>
             </h3>
             <div class="space-y-3">
                 <div>
-                    <label class="text-xs text-gray-600 block mb-1">Placeholder Text</label>
-                    <input type="text" id="prop-placeholder" placeholder="e.g. John Smith"
+                    <label class="text-xs text-gray-600 block mb-1"><?= htmlspecialchars(t('printshoptpl.placeholder_label')) ?></label>
+                    <input type="text" id="prop-placeholder" placeholder="<?= htmlspecialchars(t('printshoptpl.placeholder_ph')) ?>"
                            class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-blue-500">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="text-xs text-gray-600 block mb-1">Font Size</label>
+                        <label class="text-xs text-gray-600 block mb-1"><?= htmlspecialchars(t('printshoptpl.font_size_label')) ?></label>
                         <input type="number" id="prop-fontsize" value="24" min="8" max="120"
                                class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label class="text-xs text-gray-600 block mb-1">Color</label>
+                        <label class="text-xs text-gray-600 block mb-1"><?= htmlspecialchars(t('printshoptpl.color_label')) ?></label>
                         <input type="color" id="prop-color" value="#000000"
                                class="w-full h-8 border border-gray-200 rounded cursor-pointer">
                     </div>
                 </div>
                 <div>
-                    <label class="text-xs text-gray-600 block mb-1">Font</label>
+                    <label class="text-xs text-gray-600 block mb-1"><?= htmlspecialchars(t('printshoptpl.font_label')) ?></label>
                     <select id="prop-font" class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-blue-500">
                         <option>Arial</option>
                         <option>Georgia</option>
@@ -199,17 +199,17 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </select>
                 </div>
                 <div class="flex gap-2">
-                    <button id="prop-bold" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 font-bold transition-colors" title="Bold">B</button>
-                    <button id="prop-italic" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 italic transition-colors" title="Italic">I</button>
-                    <button id="prop-left" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 transition-colors" title="Left align"><i class="fa-solid fa-align-left"></i></button>
-                    <button id="prop-center" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 transition-colors" title="Center"><i class="fa-solid fa-align-center"></i></button>
-                    <button id="prop-right" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 transition-colors" title="Right align"><i class="fa-solid fa-align-right"></i></button>
+                    <button id="prop-bold" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 font-bold transition-colors" title="<?= htmlspecialchars(t('printshoptpl.tip_bold')) ?>">B</button>
+                    <button id="prop-italic" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 italic transition-colors" title="<?= htmlspecialchars(t('printshoptpl.tip_italic')) ?>">I</button>
+                    <button id="prop-left" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 transition-colors" title="<?= htmlspecialchars(t('printshoptpl.tip_align_left')) ?>"><i class="fa-solid fa-align-left"></i></button>
+                    <button id="prop-center" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 transition-colors" title="<?= htmlspecialchars(t('printshoptpl.tip_align_center')) ?>"><i class="fa-solid fa-align-center"></i></button>
+                    <button id="prop-right" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 transition-colors" title="<?= htmlspecialchars(t('printshoptpl.tip_align_right')) ?>"><i class="fa-solid fa-align-right"></i></button>
                 </div>
                 <div>
-                    <label class="text-xs text-gray-600 block mb-1">Required field?</label>
+                    <label class="text-xs text-gray-600 block mb-1"><?= htmlspecialchars(t('printshoptpl.required_field_q')) ?></label>
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" id="prop-required" class="rounded border-gray-300 text-blue-600">
-                        <span class="text-xs text-gray-600">Customers must fill this</span>
+                        <span class="text-xs text-gray-600"><?= htmlspecialchars(t('printshoptpl.required_hint')) ?></span>
                     </label>
                 </div>
             </div>
@@ -219,10 +219,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div>
             <h3 class="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
                 <i class="fa-solid fa-list text-gray-400"></i>
-                Fields on Canvas
+                <?= htmlspecialchars(t('printshoptpl.fields_on_canvas')) ?>
             </h3>
             <div id="field-list" class="space-y-1 text-xs text-gray-500">
-                <p id="field-list-empty" class="italic">No fields added yet. Click a field type above.</p>
+                <p id="field-list-empty" class="italic"><?= htmlspecialchars(t('printshoptpl.no_fields_added')) ?></p>
             </div>
         </div>
 

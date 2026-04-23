@@ -35,7 +35,7 @@ $messageType = 'success';
 
 // Handle status update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) die('Invalid request');
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) die(htmlspecialchars(t('printshoptpl.invalid_request')));
     $action = $_POST['action'] ?? '';
 
     if ($action === 'update_status') {
@@ -46,7 +46,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $req = $db->fetchOne("SELECT * FROM shop_template_requests WHERE id = :id AND print_shop_id = :shop", ['id' => $requestId, 'shop' => $shopId]);
             if ($req) {
                 $db->update('shop_template_requests', ['status' => $newStatus], 'id = :id', ['id' => $requestId]);
-                $message = 'Status updated to ' . ucfirst($newStatus);
+                $stk = 'printshoptpl.status_' . $newStatus;
+                $stl = t($stk);
+                if ($stl === $stk) $stl = ucfirst($newStatus);
+                $message = str_replace(':status', $stl, t('printshoptpl.status_updated'));
             }
         }
     }
@@ -96,9 +99,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <span class="font-semibold text-gray-900"><?= sanitize($printShop['name']) ?></span>
             </div>
             <div class="flex items-center gap-4 text-sm">
-                <a href="dashboard.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-chart-pie mr-1"></i>Dashboard</a>
-                <a href="orders.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-box mr-1"></i>Orders</a>
-                <a href="templates.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-layer-group mr-1"></i>Templates</a>
+                <a href="dashboard.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-chart-pie mr-1"></i><?= htmlspecialchars(t('printshoptpl.nav_dashboard')) ?></a>
+                <a href="orders.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-box mr-1"></i><?= htmlspecialchars(t('printshoptpl.nav_orders')) ?></a>
+                <a href="templates.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-layer-group mr-1"></i><?= htmlspecialchars(t('printshoptpl.nav_templates')) ?></a>
                 <a href="settings.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-cog"></i></a>
             </div>
         </div>
@@ -116,10 +119,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <div class="flex items-center justify-between mb-5">
         <div>
             <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t("printshoppages.h1_template_requests")) ?></h1>
-            <p class="text-sm text-gray-500 mt-0.5">Customer card requests from your templates</p>
+            <p class="text-sm text-gray-500 mt-0.5"><?= htmlspecialchars(t('printshoptpl.page_sub')) ?></p>
         </div>
         <a href="templates.php" class="text-sm text-blue-600 hover:underline">
-            <i class="fa-solid fa-arrow-left mr-1"></i>Templates
+            <i class="fa-solid fa-arrow-left mr-1"></i><?= htmlspecialchars(t('printshoptpl.nav_templates')) ?>
         </a>
     </div>
 
@@ -127,19 +130,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <div class="flex gap-2 flex-wrap mb-5">
         <?php
         $tabs = [
-            '' => 'All (' . $total . ')',
-            'pending' => 'Pending (' . ($countMap['pending'] ?? 0) . ')',
-            'confirmed' => 'Confirmed (' . ($countMap['confirmed'] ?? 0) . ')',
-            'printing' => 'Printing (' . ($countMap['printing'] ?? 0) . ')',
-            'ready' => 'Ready (' . ($countMap['ready'] ?? 0) . ')',
-            'delivered' => 'Delivered (' . ($countMap['delivered'] ?? 0) . ')',
-            'cancelled' => 'Cancelled (' . ($countMap['cancelled'] ?? 0) . ')',
+            ''          => str_replace(':n', (string) $total, t('printshoptpl.tab_all')),
+            'pending'   => str_replace(':n', (string) ($countMap['pending'] ?? 0), t('printshoptpl.tab_pending')),
+            'confirmed' => str_replace(':n', (string) ($countMap['confirmed'] ?? 0), t('printshoptpl.tab_confirmed')),
+            'printing'  => str_replace(':n', (string) ($countMap['printing'] ?? 0), t('printshoptpl.tab_printing')),
+            'ready'     => str_replace(':n', (string) ($countMap['ready'] ?? 0), t('printshoptpl.tab_ready')),
+            'delivered' => str_replace(':n', (string) ($countMap['delivered'] ?? 0), t('printshoptpl.tab_delivered')),
+            'cancelled' => str_replace(':n', (string) ($countMap['cancelled'] ?? 0), t('printshoptpl.tab_cancelled')),
         ];
         foreach ($tabs as $val => $label):
         ?>
         <a href="?status=<?= $val ?>"
            class="text-xs px-3 py-1.5 rounded-full font-medium transition-colors <?= $statusFilter === $val ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50' ?>">
-            <?= $label ?>
+            <?= htmlspecialchars($label) ?>
         </a>
         <?php endforeach; ?>
     </div>
@@ -147,8 +150,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <?php if (empty($requests)): ?>
     <div class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-200">
         <i class="fa-solid fa-inbox text-3xl text-gray-300 mb-3 block"></i>
-        <h3 class="text-gray-500 font-medium">No requests yet</h3>
-        <p class="text-xs text-gray-400 mt-1">When customers submit orders from your templates, they'll appear here.</p>
+        <h3 class="text-gray-500 font-medium"><?= htmlspecialchars(t('printshoptpl.empty_h')) ?></h3>
+        <p class="text-xs text-gray-400 mt-1"><?= htmlspecialchars(t('printshoptpl.empty_body')) ?></p>
     </div>
     <?php else: ?>
 
@@ -157,13 +160,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <table class="w-full text-sm">
             <thead>
                 <tr class="border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wide">
-                    <th class="px-4 py-3 text-left">Customer</th>
-                    <th class="px-4 py-3 text-left">Template</th>
-                    <th class="px-4 py-3 text-left">Details</th>
-                    <th class="px-4 py-3 text-left">Qty</th>
-                    <th class="px-4 py-3 text-left">Status</th>
-                    <th class="px-4 py-3 text-left">Date</th>
-                    <th class="px-4 py-3 text-left">Actions</th>
+                    <th class="px-4 py-3 text-left"><?= htmlspecialchars(t('printshoptpl.col_customer')) ?></th>
+                    <th class="px-4 py-3 text-left"><?= htmlspecialchars(t('printshoptpl.col_template')) ?></th>
+                    <th class="px-4 py-3 text-left"><?= htmlspecialchars(t('printshoptpl.col_details')) ?></th>
+                    <th class="px-4 py-3 text-left"><?= htmlspecialchars(t('printshoptpl.col_qty')) ?></th>
+                    <th class="px-4 py-3 text-left"><?= htmlspecialchars(t('printshoptpl.col_status')) ?></th>
+                    <th class="px-4 py-3 text-left"><?= htmlspecialchars(t('printshoptpl.col_date')) ?></th>
+                    <th class="px-4 py-3 text-left"><?= htmlspecialchars(t('printshoptpl.col_actions')) ?></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
@@ -183,7 +186,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             ?>
             <tr class="hover:bg-gray-50">
                 <td class="px-4 py-3">
-                    <p class="font-medium text-gray-900"><?= sanitize($req['customer_name'] ?: 'Anonymous') ?></p>
+                    <p class="font-medium text-gray-900"><?= sanitize($req['customer_name'] ?: t('printshoptpl.anonymous')) ?></p>
                     <?php if ($req['customer_phone']): ?>
                     <a href="https://api.whatsapp.com/send?phone=<?= preg_replace('/\D/', '', $req['customer_phone']) ?>&text=Hi+<?= urlencode($req['customer_name'] ?? '') ?>%2C+your+business+card+from+BHD+Printing"
                        target="_blank"
@@ -201,7 +204,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <?php if ($thumbUrl): ?>
                         <img src="<?= sanitize($thumbUrl) ?>" class="w-12 h-7 object-cover rounded border border-gray-100 flex-shrink-0">
                         <?php endif; ?>
-                        <span class="text-sm text-gray-700"><?= sanitize($req['template_name'] ?? 'Unknown') ?></span>
+                        <span class="text-sm text-gray-700"><?= sanitize($req['template_name'] ?? t('printshoptpl.unknown_template')) ?></span>
                     </div>
                 </td>
                 <td class="px-4 py-3 max-w-xs">
@@ -220,7 +223,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </td>
                 <td class="px-4 py-3 text-gray-700"><?= (int)$req['quantity'] ?></td>
                 <td class="px-4 py-3">
-                    <span class="text-xs font-medium px-2 py-0.5 rounded-full <?= $sc ?>"><?= ucfirst($req['status']) ?></span>
+                    <span class="text-xs font-medium px-2 py-0.5 rounded-full <?= $sc ?>"><?php $stk = 'printshoptpl.status_' . $req['status']; $stl = t($stk); echo htmlspecialchars($stl === $stk ? ucfirst($req['status']) : $stl); ?></span>
                 </td>
                 <td class="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
                     <?= date('M j, Y', strtotime($req['created_at'])) ?><br>
@@ -233,14 +236,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <input type="hidden" name="request_id" value="<?= sanitize($req['id']) ?>">
                         <select name="status" class="text-xs border border-gray-200 rounded px-2 py-1 bg-white" onchange="this.form.submit()">
                             <?php foreach (['pending','confirmed','printing','ready','delivered','cancelled'] as $s): ?>
-                            <option value="<?= $s ?>" <?= $req['status'] === $s ? 'selected' : '' ?>><?= ucfirst($s) ?></option>
+                            <option value="<?= $s ?>" <?= $req['status'] === $s ? 'selected' : '' ?>><?= htmlspecialchars(t('printshoptpl.status_' . $s)) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </form>
                     <?php if ($req['preview_image_path']): ?>
                     <a href="<?= getBasePath() . ltrim($req['preview_image_path'], '/') ?>" target="_blank"
                        class="text-xs text-blue-500 hover:underline mt-1 block">
-                        <i class="fa-solid fa-image mr-0.5"></i>Preview
+                        <i class="fa-solid fa-image mr-0.5"></i><?= htmlspecialchars(t('printshoptpl.preview_link')) ?>
                     </a>
                     <?php endif; ?>
                 </td>
