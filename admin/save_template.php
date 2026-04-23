@@ -40,6 +40,9 @@ try {
         case 'set_as_default':
             $result = setAsCompanyDefault();
             break;
+        case 'revert_version':
+            $result = revertTemplateVersion();
+            break;
         default:
             throw new Exception('Invalid action');
     }
@@ -671,5 +674,87 @@ function setAsCompanyDefault() {
     }
 
     return ['success' => true, 'side' => $side, 'template_id' => $id];
+}
+
+/**
+ * Revert a template to a previous version stored in template_versions.
+ * Restores fields_json + settings_json + background_image_path onto the
+ * live templates row, bumps current_version + 1 (does NOT overwrite the
+ * historic row), records an AuditLog entry. Cross-tenant-guarded.
+ */
+function revertTemplateVersion() {
+    $id      = trim($_POST['id']      ?? '');
+    $version = (int) ($_POST['version'] ?? 0);
+    if ($id === '' || $version <= 0) {
+        throw new Exception('Template id and version are required');
+    }
+
+    $companyId = getCurrentCompanyId();
+    if (!$companyId) {
+        throw new Exception('Company context required');
+    }
+
+    $db = Database::getInstance();
+
+    // Cross-tenant guard: template must belong to this company.
+    $tpl = $db->fetchOne(
+        "SELECT id, company_id, current_version FROM templates WHERE id = :id",
+        ['id' => $id]
+    );
+    if (!$tpl || ($tpl['company_id'] ?? null) !== $companyId) {
+        throw new Exception('Template not found');
+    }
+
+    $snap = $db->fetchOne(
+        "SELECT fields_json, settings_json, background_image_path
+           FROM template_versions
+          WHERE template_id = :id AND version_number = :v LIMIT 1",
+        ['id' => $id, 'v' => $version]
+    );
+    if (!$snap) {
+        throw new Exception('Version not found');
+    }
+
+    $newVersion = ((int) ($tpl['current_version'] ?? 1)) + 1;
+
+    try {
+        // Snapshot the current live row into template_versions first so
+        // users can re-revert. Pull the live row then insert a new
+        // version row with the next sequential number BEFORE applying
+        // the restore (so current_version points at the historic copy).
+        $live = $db->fetchOne(
+            "SELECT fields_json, settings_json, background_image_path
+               FROM templates WHERE id = :id",
+            ['id' => $id]
+        );
+        $db->insert('template_versions', [
+            'template_id'            => $id,
+            'version_number'         => $newVersion,
+            'fields_json'            => $snap['fields_json'],
+            'settings_json'          => $snap['settings_json'],
+            'background_image_path'  => $snap['background_image_path'],
+            'created_by'             => $_SESSION['user_id'] ?? null,
+            'change_summary'         => 'Revert to version ' . $version,
+        ]);
+
+        $db->update('templates', [
+            'fields_json'           => $snap['fields_json'],
+            'settings_json'         => $snap['settings_json'],
+            'background_image_path' => $snap['background_image_path'],
+            'current_version'       => $newVersion,
+        ], 'id = :id', ['id' => $id]);
+    } catch (Throwable $e) {
+        throw new Exception('Revert failed: ' . $e->getMessage());
+    }
+
+    if (class_exists('AuditLog')) {
+        try {
+            AuditLog::log('template_reverted', 'template', $id, null,
+                ['restored_from_version' => $version, 'new_version' => $newVersion],
+                $companyId);
+        } catch (Throwable $_) { /* best-effort */ }
+    }
+
+    return ['success' => true, 'template_id' => $id, 'restored_from' => $version, 'new_version' => $newVersion];
 }
 
