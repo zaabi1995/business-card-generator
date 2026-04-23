@@ -551,6 +551,26 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 @keyframes pulseOnce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.01); } }
 .animate-pulse-once { animation: pulseOnce 1.5s ease-in-out 2; }
 </style>
+<script src="<?= getBasePath() ?>assets/js/canvas-confetti.min.js" defer></script>
+<script>
+// Wizard-done confetti: 3-second burst in 3 volleys from opposing edges,
+// honors prefers-reduced-motion. Fires once per page load; no loop.
+(function () {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    function start() {
+        if (typeof confetti !== 'function') return;
+        var end = Date.now() + 3000;
+        var colors = ['#009bc1', '#fb0', '#824598', '#45c0ba', '#16a34a'];
+        (function frame() {
+            confetti({ particleCount: 4, angle: 60,  spread: 55, origin: { x: 0,   y: 0.7 }, colors: colors, disableForReducedMotion: true });
+            confetti({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1,   y: 0.7 }, colors: colors, disableForReducedMotion: true });
+            if (Date.now() < end) requestAnimationFrame(frame);
+        })();
+    }
+    if (document.readyState === 'complete') start();
+    else window.addEventListener('load', start, { once: true });
+})();
+</script>
 <?php endif; ?>
 
 <?php if ($showResumeBanner): ?>
