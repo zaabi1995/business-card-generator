@@ -9,6 +9,7 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/Onboarding.php';
+require_once INCLUDES_DIR . '/LogoLibrary.php';
 
 requireAdmin();
 $companyId = getCurrentCompanyId();
@@ -64,10 +65,67 @@ if ($encoded === false || strlen($encoded) > 2 * 1024 * 1024) {
     exit;
 }
 
+// Step 1 (logo): attempt dominant-color extraction and prefill step 2
+// colors.primary if the user has not already picked one. Silent on
+// failure, saving still proceeds with the original payload.
+$extractedColor = null;
+if ($step === 1 && !empty($payload['url']) && is_string($payload['url'])
+    && strncmp($payload['url'], 'data:image/', 11) === 0
+    && class_exists('LogoLibrary')) {
+    $extractedColor = extract_logo_dominant_color($payload['url']);
+    if ($extractedColor) {
+        $payload['dominant_color'] = $extractedColor;
+    }
+}
+
 try {
     Onboarding::saveStep($companyId, $step, $payload);
-    echo json_encode(['ok' => true]);
+
+    // Merge dominant color into step 2 colors payload if not yet set.
+    if ($extractedColor) {
+        $state = Onboarding::get($companyId);
+        $existingColors = $state['data']['colors'] ?? [];
+        // Only prefill if user has not yet picked a primary (step 2 not saved
+        // yet, or they left it at the default Cardify teal #009bc1).
+        $currentPrimary = strtolower($existingColors['primary'] ?? '');
+        if ($currentPrimary === '' || $currentPrimary === '#009bc1') {
+            $existingColors['primary'] = $extractedColor;
+            if (empty($existingColors['accent'])) {
+                $existingColors['accent'] = '#824598';
+            }
+            Onboarding::saveStep($companyId, 2, $existingColors);
+        }
+    }
+
+    echo json_encode(['ok' => true, 'extracted_color' => $extractedColor]);
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode(['ok' => false, 'error' => 'save failed']);
+}
+
+/**
+ * Decode a data:image/... URL, write it to a temp file, and ask
+ * LogoLibrary::dominantColor() to inspect it. Returns '#RRGGBB' or null.
+ * Caller is responsible for any cleanup beyond the auto-unlink here.
+ */
+function extract_logo_dominant_color(string $dataUrl): ?string
+{
+    if (!preg_match('#^data:(image/(png|jpeg|jpg|webp));base64,(.+)$#i', $dataUrl, $m)) {
+        return null;
+    }
+    $bytes = base64_decode($m[3], true);
+    if ($bytes === false || strlen($bytes) === 0 || strlen($bytes) > 5 * 1024 * 1024) {
+        return null;
+    }
+    $ext = strtolower($m[2]);
+    if ($ext === 'jpg') $ext = 'jpeg';
+    $tmp = tempnam(sys_get_temp_dir(), 'cardify_logo_') . '.' . $ext;
+    if (@file_put_contents($tmp, $bytes) === false) return null;
+    try {
+        $color = LogoLibrary::dominantColor($tmp);
+    } catch (Throwable $e) {
+        $color = null;
+    }
+    @unlink($tmp);
+    return $color;
 }

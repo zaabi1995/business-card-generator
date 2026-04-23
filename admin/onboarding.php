@@ -386,6 +386,15 @@ function onboarding(init) {
                 });
                 const json = await res.json();
                 if (!json.ok) throw new Error(json.error || 'save failed');
+                // If the server extracted a dominant color from the logo
+                // on step 1, prefill step 2 primary (skip if user has
+                // already customized off the default Cardify teal).
+                if (json.extracted_color && this.step === 1) {
+                    const current = (this.data.colors.primary || '').toLowerCase();
+                    if (!current || current === '#009bc1') {
+                        this.data.colors.primary = json.extracted_color;
+                    }
+                }
                 if (this.step < this.totalSteps) { this.step++; window.scrollTo({top:0,behavior:'smooth'}); }
                 else { window.location.href = this.dashboardUrl + '?wizard=done'; }
             } catch (e) {
