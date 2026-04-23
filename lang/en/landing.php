@@ -41,4 +41,22 @@ return [
     'test2_author'   => 'BHD Group',
     'test2_role'     => 'Ten Omani brands, one card system',
     'test_join_cta'  => 'Want your quote here? Tell us on WhatsApp.',
+
+    // Features section (action 511)
+    'feat_kicker'        => 'Powerful features',
+    'feat_headline'      => 'Everything you need to manage cards at scale',
+    'feat_subhead'       => 'From design to print, Cardify gives your team everything it needs to ship professional business cards without the fuss.',
+    'feat_badge_new'     => 'New',
+    'feat_design_title'  => 'Design once, use forever',
+    'feat_design_body'   => 'Build one template with your brand. Auto-generate cards for every employee with their own details.',
+    'feat_print_title'   => 'Verified print shops',
+    'feat_print_body'    => 'Order professional prints straight from trusted Omani print shops, with delivery across the country.',
+    'feat_lang_title'    => 'Arabic and English',
+    'feat_lang_body'     => 'Full bilingual support with proper RTL layout. AI-assisted Arabic translation keeps copy consistent.',
+    'feat_team_title'    => 'Teams and departments',
+    'feat_team_body'     => 'Organise employees by department with a unique template each. Bulk import or let staff self-register.',
+    'feat_qr_title'      => 'Smart QR codes',
+    'feat_qr_body'       => 'Every card carries a trackable QR. See when and where your cards are scanned with full analytics.',
+    'feat_portal_title'  => 'Employee portal',
+    'feat_portal_body'   => 'Staff edit their own details through a branded self-service portal. Admins stay in control.',
 ];

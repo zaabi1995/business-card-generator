@@ -441,12 +441,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="mx-auto max-w-2xl text-center mb-16">
-                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-3">Powerful features</p>
+                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-3"><?= htmlspecialchars(t('landing.feat_kicker')) ?></p>
                 <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4">
-                    Everything you need to manage cards at scale
+                    <?= htmlspecialchars(t('landing.feat_headline')) ?>
                 </h2>
                 <p class="text-lg leading-relaxed text-gray-600">
-                    From design to print, Cardify provides all the tools your team needs to create professional business cards effortlessly.
+                    <?= htmlspecialchars(t('landing.feat_subhead')) ?>
                 </p>
             </div>
 
@@ -457,21 +457,21 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
                         <i class="fa-solid fa-wand-magic-sparkles text-2xl text-blue-600 group-hover:text-white transition-colors"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Design Once, Use Forever</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.feat_design_title')) ?></h3>
                     <p class="text-gray-600 leading-relaxed">
-                        Create a single template with your brand design. Automatically generate cards for all employees with their unique details.
+                        <?= htmlspecialchars(t('landing.feat_design_body')) ?>
                     </p>
                 </div>
 
                 <!-- Feature 2 - Print Integration -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
-                    <div class="absolute -top-3 -right-3 px-2 py-1 bg-green-500 text-white text-xs font-bold rounded-full">New</div>
+                    <div class="absolute -top-3 -right-3 px-2 py-1 bg-green-500 text-white text-xs font-bold rounded-full"><?= htmlspecialchars(t('landing.feat_badge_new')) ?></div>
                     <div class="w-14 h-14 rounded-xl bg-green-100 flex items-center justify-center mb-6 group-hover:bg-green-600 transition-colors">
                         <i class="fa-solid fa-print text-2xl text-green-600 group-hover:text-white transition-colors"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Verified Print Shops</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.feat_print_title')) ?></h3>
                     <p class="text-gray-600 leading-relaxed">
-                        Order professional prints directly from verified local print shops. One click ordering with delivery across Oman.
+                        <?= htmlspecialchars(t('landing.feat_print_body')) ?>
                     </p>
                 </div>
 
@@ -480,9 +480,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="w-14 h-14 rounded-xl bg-amber-100 flex items-center justify-center mb-6 group-hover:bg-amber-500 transition-colors">
                         <i class="fa-solid fa-language text-2xl text-amber-600 group-hover:text-white transition-colors"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Arabic & English</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.feat_lang_title')) ?></h3>
                     <p class="text-gray-600 leading-relaxed">
-                        Full bilingual support with proper RTL formatting. AI-powered Arabic translation makes it easy.
+                        <?= htmlspecialchars(t('landing.feat_lang_body')) ?>
                     </p>
                 </div>
 
@@ -491,9 +491,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="w-14 h-14 rounded-xl bg-purple-100 flex items-center justify-center mb-6 group-hover:bg-purple-600 transition-colors">
                         <i class="fa-solid fa-users text-2xl text-purple-600 group-hover:text-white transition-colors"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Team & Departments</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.feat_team_title')) ?></h3>
                     <p class="text-gray-600 leading-relaxed">
-                        Organize employees by department with unique templates for each. Bulk import or let employees self-register.
+                        <?= htmlspecialchars(t('landing.feat_team_body')) ?>
                     </p>
                 </div>
 
@@ -502,9 +502,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="w-14 h-14 rounded-xl bg-pink-100 flex items-center justify-center mb-6 group-hover:bg-pink-600 transition-colors">
                         <i class="fa-solid fa-qrcode text-2xl text-pink-600 group-hover:text-white transition-colors"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Smart QR Codes</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.feat_qr_title')) ?></h3>
                     <p class="text-gray-600 leading-relaxed">
-                        Every card includes a trackable QR code. Know when and where your cards are being scanned with detailed analytics.
+                        <?= htmlspecialchars(t('landing.feat_qr_body')) ?>
                     </p>
                 </div>
 
@@ -513,9 +513,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="w-14 h-14 rounded-xl bg-red-100 flex items-center justify-center mb-6 group-hover:bg-red-600 transition-colors">
                         <i class="fa-solid fa-door-open text-2xl text-red-600 group-hover:text-white transition-colors"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Employee Portal</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.feat_portal_title')) ?></h3>
                     <p class="text-gray-600 leading-relaxed">
-                        Employees can request their own cards through a branded self-service portal. Admins review and approve.
+                        <?= htmlspecialchars(t('landing.feat_portal_body')) ?>
                     </p>
                 </div>
             </div>
