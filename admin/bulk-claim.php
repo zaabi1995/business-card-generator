@@ -152,7 +152,7 @@ $sendReport   = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
         http_response_code(400);
-        exit('Invalid CSRF token');
+        exit(htmlspecialchars(t('bulkclaim.invalid_csrf')));
     }
 
     // ---------------- PREVIEW ----------------
@@ -170,10 +170,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $parsed = parseBulkClaimCsv($csvText);
         if (empty($parsed)) {
-            $message     = 'Could not parse any rows. Expected header row with: name, phone, company_name, title, email.';
+            $message     = t('bulkclaim.parse_failed');
             $messageType = 'error';
         } elseif (count($parsed) > BULK_CLAIM_MAX_PER_BATCH) {
-            $message     = 'Batch too large (' . count($parsed) . ' rows). Max ' . BULK_CLAIM_MAX_PER_BATCH . ' per batch — split the CSV.';
+            $message     = strtr(t('bulkclaim.batch_too_large'), [':n' => (string) count($parsed), ':max' => (string) BULK_CLAIM_MAX_PER_BATCH]);
             $messageType = 'error';
         } else {
             foreach ($parsed as $r) {
@@ -190,13 +190,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $parsed = parseBulkClaimCsv($csvText);
         if (empty($parsed) || count($parsed) > BULK_CLAIM_MAX_PER_BATCH) {
-            $message     = 'Invalid or oversized batch. Re-upload CSV and preview first.';
+            $message     = t('bulkclaim.invalid_batch');
             $messageType = 'error';
         } else {
             // Verify company exists
             $company = findCompanyById($companyId);
             if (!$company) {
-                $message     = 'Selected company not found.';
+                $message     = t('bulkclaim.company_not_found');
                 $messageType = 'error';
             } else {
                 $companySlug = $company['slug'];
@@ -356,7 +356,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     } catch (Throwable $ae) { /* non-fatal */ }
                 }
 
-                $message     = "Batch dispatched — created {$createdN}, sent {$sentN} WhatsApps, failed {$failedN}, skipped {$skippedN}.";
+                $message     = strtr(t('bulkclaim.dispatched_summary'), [':created' => (string) $createdN, ':sent' => (string) $sentN, ':failed' => (string) $failedN, ':skipped' => (string) $skippedN]);
                 $messageType = 'success';
             }
         }
@@ -391,8 +391,8 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
                 <i class="fa-solid fa-wand-magic-sparkles text-purple-600"></i>
             </div>
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Bulk Claim</h1>
-                <p class="text-gray-500 text-sm">Pre-build cards for cold leads and send magic-link claims via WhatsApp.</p>
+                <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('bulkclaim.page_h1')) ?></h1>
+                <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('bulkclaim.page_sub')) ?></p>
             </div>
         </div>
     </div>
@@ -410,19 +410,24 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
     <?php if ($sendReport !== null): ?>
     <div class="mb-6 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-            <div class="font-medium text-sm text-gray-700">Send Results</div>
-            <a href="?batch=<?= urlencode($sendReport['batch_id']) ?>" class="text-xs text-purple-600 font-medium hover:underline">View batch dashboard →</a>
+            <div class="font-medium text-sm text-gray-700"><?= htmlspecialchars(t('bulkclaim.send_results')) ?></div>
+            <a href="?batch=<?= urlencode($sendReport['batch_id']) ?>" class="text-xs text-purple-600 font-medium hover:underline"><?= htmlspecialchars(t('bulkclaim.view_dashboard')) ?></a>
         </div>
         <div class="max-h-72 overflow-y-auto divide-y divide-gray-50">
             <?php foreach ($sendReport['rows'] as $r): ?>
             <div class="px-5 py-2 flex items-center justify-between text-sm">
                 <span class="text-gray-700"><?= sanitize($r['name']) ?> &middot; <?= sanitize($r['phone']) ?></span>
+                <?php
+                $reasonKey = 'bulkclaim.reason_' . ($r['reason'] ?? '');
+                $reasonLbl = t($reasonKey);
+                if ($reasonLbl === $reasonKey) $reasonLbl = (string) ($r['reason'] ?? '');
+                ?>
                 <?php if ($r['status'] === 'sent'): ?>
-                    <span class="text-green-600 font-medium"><i class="fa-solid fa-check mr-1"></i>Sent</span>
+                    <span class="text-green-600 font-medium"><i class="fa-solid fa-check mr-1"></i><?= htmlspecialchars(t('bulkclaim.sent_label')) ?></span>
                 <?php elseif ($r['status'] === 'skipped'): ?>
-                    <span class="text-amber-600 font-medium"><i class="fa-solid fa-forward mr-1"></i>Skipped (<?= sanitize($r['reason']) ?>)</span>
+                    <span class="text-amber-600 font-medium"><i class="fa-solid fa-forward mr-1"></i><?= htmlspecialchars(str_replace(':reason', $reasonLbl, t('bulkclaim.skipped_label'))) ?></span>
                 <?php else: ?>
-                    <span class="text-red-600 font-medium"><i class="fa-solid fa-xmark mr-1"></i><?= sanitize($r['reason'] ?? 'Failed') ?></span>
+                    <span class="text-red-600 font-medium"><i class="fa-solid fa-xmark mr-1"></i><?= htmlspecialchars($reasonLbl ?: t('bulkclaim.failed_label')) ?></span>
                 <?php endif; ?>
             </div>
             <?php endforeach; ?>
@@ -434,8 +439,8 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
 
         <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm">
             <div class="px-5 py-4 border-b border-gray-100">
-                <h2 class="font-semibold text-gray-800">1. Paste or upload CSV</h2>
-                <p class="text-xs text-gray-500 mt-1">Columns: <code class="text-[11px] bg-gray-50 px-1 rounded">name, phone, company_name, title, email</code>. First row must be the header.</p>
+                <h2 class="font-semibold text-gray-800"><?= htmlspecialchars(t('bulkclaim.step_1')) ?></h2>
+                <p class="text-xs text-gray-500 mt-1"><?= t('bulkclaim.step_1_hint') ?></p>
             </div>
 
             <form method="POST" enctype="multipart/form-data" class="p-5 space-y-4">
@@ -443,15 +448,15 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
                 <input type="hidden" name="action" value="preview">
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Batch label (optional)</label>
+                    <label class="block text-xs font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('bulkclaim.field_batch_label')) ?></label>
                     <input type="text" name="admin_label" maxlength="255"
                         value="<?= sanitize($previewLabel) ?>"
-                        placeholder="e.g. Cardify expansion Apr 2026"
+                        placeholder="<?= htmlspecialchars(t('bulkclaim.batch_label_ph')) ?>"
                         class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-purple-400 focus:ring-purple-200">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Host company (card records will be created under this company)</label>
+                    <label class="block text-xs font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('bulkclaim.field_host_company')) ?></label>
                     <select name="company_id"
                         class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-purple-400 focus:ring-purple-200">
                         <?php foreach ($companiesForPicker as $c): ?>
@@ -463,22 +468,22 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Upload .csv</label>
+                    <label class="block text-xs font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('bulkclaim.field_upload')) ?></label>
                     <input type="file" name="csv_file" accept=".csv,text/csv"
                         class="w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-gray-100 file:text-gray-700">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">…or paste CSV</label>
+                    <label class="block text-xs font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('bulkclaim.field_paste')) ?></label>
                     <textarea name="csv_text" rows="8"
                         class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-mono focus:border-purple-400 focus:ring-purple-200"
                         placeholder="name,phone,company_name,title,email&#10;Ali Al-Zaabi,96899889100,BHD Group,CEO,ali@bhd.om"><?= sanitize($previewCsv) ?></textarea>
                 </div>
 
                 <div class="flex items-center justify-between">
-                    <p class="text-xs text-gray-500">Max <?= BULK_CLAIM_MAX_PER_BATCH ?> leads per batch.</p>
+                    <p class="text-xs text-gray-500"><?= htmlspecialchars(str_replace(':max', (string) BULK_CLAIM_MAX_PER_BATCH, t('bulkclaim.max_leads_note'))) ?></p>
                     <button type="submit" class="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700">
-                        <i class="fa-solid fa-magnifying-glass mr-1"></i>Preview
+                        <i class="fa-solid fa-magnifying-glass mr-1"></i><?= htmlspecialchars(t('bulkclaim.btn_preview')) ?>
                     </button>
                 </div>
             </form>
@@ -486,19 +491,19 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
 
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
             <div class="px-5 py-4 border-b border-gray-100">
-                <h2 class="font-semibold text-gray-800">Recent batches</h2>
+                <h2 class="font-semibold text-gray-800"><?= htmlspecialchars(t('bulkclaim.recent_batches')) ?></h2>
             </div>
             <div class="divide-y divide-gray-50">
                 <?php if (empty($recentBatches)): ?>
-                    <div class="px-5 py-6 text-sm text-gray-500">No batches yet.</div>
+                    <div class="px-5 py-6 text-sm text-gray-500"><?= htmlspecialchars(t('bulkclaim.no_batches')) ?></div>
                 <?php else: foreach ($recentBatches as $b): ?>
                     <a href="?batch=<?= urlencode($b['id']) ?>" class="block px-5 py-3 hover:bg-gray-50">
                         <div class="flex items-center justify-between text-sm">
-                            <span class="font-medium text-gray-800 truncate"><?= sanitize($b['admin_label'] ?? '(unnamed)') ?></span>
+                            <span class="font-medium text-gray-800 truncate"><?= sanitize($b['admin_label'] ?? t('bulkclaim.unnamed')) ?></span>
                             <span class="text-xs text-gray-500"><?= date('M j', strtotime($b['created_at'])) ?></span>
                         </div>
                         <div class="mt-1 text-xs text-gray-500">
-                            <?= (int)$b['sent'] ?>/<?= (int)$b['total'] ?> sent &middot; <?= (int)$b['claimed'] ?> claimed &middot; <?= (int)$b['active'] ?> active
+                            <?= htmlspecialchars(strtr(t('bulkclaim.batch_counts'), [':sent' => (string)(int)$b['sent'], ':total' => (string)(int)$b['total'], ':claimed' => (string)(int)$b['claimed'], ':active' => (string)(int)$b['active']])) ?>
                         </div>
                     </a>
                 <?php endforeach; endif; ?>
@@ -518,22 +523,22 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
     <div class="mt-8 bg-white rounded-xl border border-gray-200 shadow-sm">
         <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <div>
-                <h2 class="font-semibold text-gray-800">2. Preview (<?= count($previewRows) ?> rows)</h2>
+                <h2 class="font-semibold text-gray-800"><?= htmlspecialchars(str_replace(':n', (string) count($previewRows), t('bulkclaim.step_2'))) ?></h2>
                 <p class="text-xs text-gray-500 mt-1">
-                    <span class="text-green-600 font-medium"><?= $validCount ?> ready</span> &middot;
-                    <span class="text-amber-600 font-medium"><?= $dupCount ?> duplicate</span> &middot;
-                    <span class="text-red-600 font-medium"><?= $invalidCount ?> invalid</span>
+                    <span class="text-green-600 font-medium"><?= htmlspecialchars(str_replace(':n', (string) $validCount, t('bulkclaim.count_ready'))) ?></span> &middot;
+                    <span class="text-amber-600 font-medium"><?= htmlspecialchars(str_replace(':n', (string) $dupCount, t('bulkclaim.count_duplicate'))) ?></span> &middot;
+                    <span class="text-red-600 font-medium"><?= htmlspecialchars(str_replace(':n', (string) $invalidCount, t('bulkclaim.count_invalid'))) ?></span>
                 </p>
             </div>
             <?php if ($validCount > 0): ?>
-            <form method="POST" onsubmit="return confirm('Send <?= $validCount ?> WhatsApp magic-links now? Duplicates + invalids will be skipped automatically.');">
+            <form method="POST" onsubmit="return confirm(<?= json_encode(str_replace(':n', (string) $validCount, t('bulkclaim.confirm_send')), JSON_UNESCAPED_UNICODE) ?>);">
                 <input type="hidden" name="csrf_token" value="<?= sanitize($csrf) ?>">
                 <input type="hidden" name="action" value="send">
                 <input type="hidden" name="csv_text" value="<?= sanitize($previewCsv) ?>">
                 <input type="hidden" name="admin_label" value="<?= sanitize($previewLabel) ?>">
                 <input type="hidden" name="company_id" value="<?= sanitize($previewCompanyId) ?>">
                 <button type="submit" class="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700">
-                    <i class="fa-brands fa-whatsapp mr-1"></i>Send to <?= $validCount ?> lead<?= $validCount === 1 ? '' : 's' ?>
+                    <i class="fa-brands fa-whatsapp mr-1"></i><?= htmlspecialchars(str_replace(':n', (string) $validCount, t($validCount === 1 ? 'bulkclaim.btn_send_n' : 'bulkclaim.btn_send_n_plural'))) ?>
                 </button>
             </form>
             <?php endif; ?>
@@ -542,11 +547,11 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-gray-600">
                     <tr>
-                        <th class="text-left px-4 py-2 font-medium">Name</th>
-                        <th class="text-left px-4 py-2 font-medium">Phone</th>
-                        <th class="text-left px-4 py-2 font-medium">Company</th>
-                        <th class="text-left px-4 py-2 font-medium">Title</th>
-                        <th class="text-left px-4 py-2 font-medium">Status</th>
+                        <th class="text-left px-4 py-2 font-medium"><?= htmlspecialchars(t('bulkclaim.col_name')) ?></th>
+                        <th class="text-left px-4 py-2 font-medium"><?= htmlspecialchars(t('bulkclaim.col_phone')) ?></th>
+                        <th class="text-left px-4 py-2 font-medium"><?= htmlspecialchars(t('bulkclaim.col_company')) ?></th>
+                        <th class="text-left px-4 py-2 font-medium"><?= htmlspecialchars(t('bulkclaim.col_title')) ?></th>
+                        <th class="text-left px-4 py-2 font-medium"><?= htmlspecialchars(t('bulkclaim.col_status')) ?></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
@@ -559,19 +564,20 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
                         <td class="px-4 py-2">
                             <?php if ($pr['reason'] === null): ?>
                                 <span class="inline-flex items-center text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded-full">
-                                    <i class="fa-solid fa-check mr-1"></i>Ready
+                                    <i class="fa-solid fa-check mr-1"></i><?= htmlspecialchars(t('bulkclaim.status_ready')) ?>
                                 </span>
                             <?php elseif ($pr['reason'] === 'already_has_card'): ?>
                                 <span class="inline-flex items-center text-xs font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded-full">
-                                    <i class="fa-solid fa-id-card mr-1"></i>Already has a card
+                                    <i class="fa-solid fa-id-card mr-1"></i><?= htmlspecialchars(t('bulkclaim.status_already_card')) ?>
                                 </span>
                             <?php elseif ($pr['reason'] === 'already_in_leads'): ?>
                                 <span class="inline-flex items-center text-xs font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded-full">
-                                    <i class="fa-solid fa-clock-rotate-left mr-1"></i>Already contacted
+                                    <i class="fa-solid fa-clock-rotate-left mr-1"></i><?= htmlspecialchars(t('bulkclaim.status_already_lead')) ?>
                                 </span>
                             <?php else: ?>
+                                <?php $rk = 'bulkclaim.reason_' . $pr['reason']; $rl = t($rk); if ($rl === $rk) $rl = (string) $pr['reason']; ?>
                                 <span class="inline-flex items-center text-xs font-medium text-red-700 bg-red-50 px-2 py-1 rounded-full">
-                                    <i class="fa-solid fa-triangle-exclamation mr-1"></i><?= sanitize($pr['reason']) ?>
+                                    <i class="fa-solid fa-triangle-exclamation mr-1"></i><?= htmlspecialchars($rl) ?>
                                 </span>
                             <?php endif; ?>
                         </td>
@@ -596,23 +602,21 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
     ?>
     <div class="mt-8 bg-white rounded-xl border border-gray-200 shadow-sm">
         <div class="px-5 py-4 border-b border-gray-100">
-            <h2 class="font-semibold text-gray-800">Batch: <?= sanitize($batch['admin_label'] ?? $batch['id']) ?></h2>
+            <h2 class="font-semibold text-gray-800"><?= htmlspecialchars(str_replace(':label', (string) sanitize($batch['admin_label'] ?? $batch['id']), t('bulkclaim.batch_prefix'))) ?></h2>
             <p class="text-xs text-gray-500 mt-1">
-                Created <?= date('M j, Y H:i', strtotime($batch['created_at'])) ?> &middot;
-                <?= (int)$batch['sent'] ?>/<?= (int)$batch['total'] ?> sent &middot;
-                Status: <?= sanitize($batch['status']) ?>
+                <?= htmlspecialchars(strtr(t('bulkclaim.batch_meta'), [':date' => date('M j, Y H:i', strtotime($batch['created_at'])), ':sent' => (string)(int)$batch['sent'], ':total' => (string)(int)$batch['total'], ':status' => (string) sanitize($batch['status'])])) ?>
             </p>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-gray-600">
                     <tr>
-                        <th class="text-left px-4 py-2 font-medium">Name</th>
-                        <th class="text-left px-4 py-2 font-medium">Phone</th>
-                        <th class="text-left px-4 py-2 font-medium">WA</th>
-                        <th class="text-left px-4 py-2 font-medium">Opened</th>
-                        <th class="text-left px-4 py-2 font-medium">Claimed</th>
-                        <th class="text-left px-4 py-2 font-medium">Active</th>
+                        <th class="text-left px-4 py-2 font-medium"><?= htmlspecialchars(t('bulkclaim.col_name')) ?></th>
+                        <th class="text-left px-4 py-2 font-medium"><?= htmlspecialchars(t('bulkclaim.col_phone')) ?></th>
+                        <th class="text-left px-4 py-2 font-medium"><?= htmlspecialchars(t('bulkclaim.col_wa')) ?></th>
+                        <th class="text-left px-4 py-2 font-medium"><?= htmlspecialchars(t('bulkclaim.col_opened')) ?></th>
+                        <th class="text-left px-4 py-2 font-medium"><?= htmlspecialchars(t('bulkclaim.col_claimed')) ?></th>
+                        <th class="text-left px-4 py-2 font-medium"><?= htmlspecialchars(t('bulkclaim.col_active')) ?></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
@@ -621,7 +625,7 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
                         <td class="px-4 py-2 text-gray-800"><?= sanitize($l['name']) ?></td>
                         <td class="px-4 py-2 text-gray-500 font-mono text-xs"><?= sanitize($l['phone']) ?></td>
                         <td class="px-4 py-2 text-xs">
-                            <?= $l['wa_status'] === 'sent' ? '<span class="text-green-600">sent</span>' : ($l['wa_status'] === 'failed' ? '<span class="text-red-600" title="' . sanitize($l['wa_error'] ?? '') . '">failed</span>' : 'pending') ?>
+                            <?= $l['wa_status'] === 'sent' ? '<span class="text-green-600">' . htmlspecialchars(t('bulkclaim.wa_sent')) . '</span>' : ($l['wa_status'] === 'failed' ? '<span class="text-red-600" title="' . sanitize($l['wa_error'] ?? '') . '">' . htmlspecialchars(t('bulkclaim.wa_failed')) . '</span>' : htmlspecialchars(t('bulkclaim.wa_pending'))) ?>
                         </td>
                         <td class="px-4 py-2 text-xs text-gray-600"><?= $l['opened_at'] ? date('M j H:i', strtotime($l['opened_at'])) : '—' ?></td>
                         <td class="px-4 py-2 text-xs text-gray-600"><?= $l['claimed_at'] ? date('M j H:i', strtotime($l['claimed_at'])) : '—' ?></td>
