@@ -85,4 +85,68 @@ class EmployeeEditToken
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         return $scheme . '://' . $host . '/portal/employee-edit?token=' . $plain;
     }
+
+    /**
+     * Mint a token for an employee and dispatch the invite via WhatsApp
+     * and/or email. Returns ['token' => string, 'wa' => bool, 'email' => bool].
+     *
+     * Template context: $employeeName, $companyName, $editUrl,
+     * $expiresInDays, $brandColor, $logoUrl (last two nullable).
+     */
+    public static function sendInvite(array $employee, array $company, string $channel = 'both'): array
+    {
+        $plain = self::mint($employee['id'] ?? '', $employee['created_by'] ?? null, $_SERVER['REMOTE_ADDR'] ?? null);
+        $editUrl = self::buildUrl($plain);
+
+        $ctx = [
+            'employeeName'    => $employee['name_en'] ?? $employee['name_ar'] ?? $employee['email'] ?? '',
+            'companyName'    => $company['name'] ?? 'Cardify',
+            'editUrl'        => $editUrl,
+            'expiresInDays'  => self::TTL_DAYS,
+            'brandColor'     => $company['brand_color'] ?? null,
+            'logoUrl'        => $company['logo_url'] ?? null,
+        ];
+        $locale = function_exists('currentLocale') ? currentLocale() : 'en';
+
+        $waOk = false;
+        if (($channel === 'both' || $channel === 'whatsapp') && class_exists('WhatsApp') && WhatsApp::isEnabled()) {
+            $phone = $employee['mobile'] ?? $employee['phone'] ?? '';
+            if ($phone !== '') {
+                $body = self::renderTemplate('employee_invite.whatsapp', $locale, $ctx);
+                $waOk = (bool) WhatsApp::sendMessage($phone, $body);
+            }
+        }
+
+        $emailOk = false;
+        if (($channel === 'both' || $channel === 'email') && class_exists('Mailer')) {
+            $email = $employee['email'] ?? '';
+            if ($email !== '') {
+                [$subject, $body] = self::renderEmailTemplate('employee_invite.email', $locale, $ctx);
+                $emailOk = (bool) Mailer::send($email, $subject, $body);
+            }
+        }
+
+        return ['token' => $plain, 'wa' => $waOk, 'email' => $emailOk];
+    }
+
+    private static function renderTemplate(string $name, string $locale, array $ctx): string
+    {
+        $path = __DIR__ . "/notifications/templates/{$name}.{$locale}.php";
+        if (!is_file($path)) $path = __DIR__ . "/notifications/templates/{$name}.en.php";
+        extract($ctx, EXTR_SKIP);
+        $body = '';
+        require $path;
+        return $body;
+    }
+
+    private static function renderEmailTemplate(string $name, string $locale, array $ctx): array
+    {
+        $path = __DIR__ . "/notifications/templates/{$name}.{$locale}.php";
+        if (!is_file($path)) $path = __DIR__ . "/notifications/templates/{$name}.en.php";
+        extract($ctx, EXTR_SKIP);
+        $subject = '';
+        $body = '';
+        require $path;
+        return [$subject, $body];
+    }
 }
