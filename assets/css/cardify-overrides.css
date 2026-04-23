@@ -714,6 +714,22 @@ html[dir="rtl"] .border-r { border-right: 0 !important; border-left-width:  1px 
 .cardify-lang-switch svg { font-size: 0.8125rem; opacity: 0.7; }
 html[dir="rtl"] .cardify-lang-switch { font-family: "IBM Plex Sans Arabic", "Inter", sans-serif; }
 
+/* Currency pill, matches the lang switcher so the header CTAs read as a set. */
+.cardify-currency-pill {
+    color: #475569;
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    line-height: 1;
+    transition: all 150ms ease-out;
+}
+.cardify-currency-pill:hover {
+    color: #009bc1;
+    border-color: #009bc1;
+    background: rgba(0, 155, 193, 0.05);
+}
+html[dir="rtl"] .cardify-currency-pill { font-family: "IBM Plex Sans Arabic", "Inter", sans-serif; }
+
 /* OMR in Arabic uses the Arabic glyphs, not DM Mono */
 html[dir="rtl"] .omr,
 html[dir="rtl"] [data-currency="OMR"] {
