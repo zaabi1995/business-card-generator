@@ -151,6 +151,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             break;
             
+        case 'resend_edit_invite':
+            require_once INCLUDES_DIR . '/EmployeeEditToken.php';
+            $rid = trim($_POST['id'] ?? '');
+            $emp = $rid ? $db->fetchOne(
+                "SELECT e.*, c.id AS _cid, c.name AS _cname, c.brand_color, c.logo_path AS logo_url
+                   FROM employees e
+                   JOIN companies c ON c.id = e.company_id
+                  WHERE e.id = :id AND e.company_id = :cid LIMIT 1",
+                ['id' => $rid, 'cid' => $companyId]
+            ) : null;
+            if (!$emp) {
+                $message = 'Employee not found';
+                $messageType = 'error';
+                break;
+            }
+            $company = ['id' => $companyId, 'name' => $emp['_cname'] ?? 'Cardify',
+                        'brand_color' => $emp['brand_color'] ?? null,
+                        'logo_url' => $emp['logo_url'] ?? null];
+            $channel = (!empty($emp['phone']) || !empty($emp['mobile'])) ? 'both' : 'email';
+            $res = EmployeeEditToken::sendInvite($emp, $company, $channel);
+            $okWa = !empty($res['wa']);
+            $okEmail = !empty($res['email']);
+            if ($okWa || $okEmail) {
+                $parts = [];
+                if ($okWa) $parts[] = 'WhatsApp';
+                if ($okEmail) $parts[] = 'email';
+                $message = t('employees.edit_invite_sent', ['channels' => implode(' + ', $parts)]);
+            } else {
+                $message = t('employees.edit_invite_failed');
+                $messageType = 'error';
+            }
+            break;
+
         case 'delete':
             $result = deleteEmployee($_POST['id']);
             if ($result['success']) {
@@ -874,13 +907,23 @@ adminHeader(t('employees.page_title'), 'employees');
                                 <?php endif; ?>
                                 
                                 <!-- Edit -->
-                                <button 
+                                <button
                                     @click='openEditModal(<?php echo json_encode($emp); ?>)'
                                     class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                     title="Edit"
                                 >
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
+
+                                <!-- Re-send edit-link invite -->
+                                <form method="post" class="inline" onsubmit="return confirm(<?= htmlspecialchars(json_encode(t('employees.edit_invite_confirm')), ENT_QUOTES) ?>)">
+                                    <?php echo csrfField(); ?>
+                                    <input type="hidden" name="action" value="resend_edit_invite">
+                                    <input type="hidden" name="id" value="<?php echo sanitize($emp['id']); ?>">
+                                    <button type="submit" class="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" title="<?= htmlspecialchars(t('employees.edit_invite_title')) ?>">
+                                        <i class="fa-solid fa-paper-plane"></i>
+                                    </button>
+                                </form>
                                 
                                 <!-- Delete -->
                                 <form method="post" class="inline" onsubmit="return confirm('Are you sure you want to delete this employee and their cards?')">

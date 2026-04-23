@@ -58,4 +58,8 @@ return [
     'stat_qr_scans'        => 'QR Scans',
     'stat_print_orders'    => 'Print Orders',
     'current_card'         => 'Current Business Card',
+    'edit_invite_title'    => 'Re-send edit link',
+    'edit_invite_confirm'  => 'Send a fresh edit-link invite to this employee?',
+    'edit_invite_sent'     => 'Edit link sent via :channels.',
+    'edit_invite_failed'   => 'Could not send the edit link. Check WhatsApp and email settings.',
 ];
