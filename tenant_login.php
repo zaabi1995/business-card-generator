@@ -170,8 +170,11 @@ $logoUrl = null;
 $brandPrimary = '#009bc1';
 $brandSecondary = '#0f172a';
 if (!empty($tenant['id'])) {
-    $candidate = '/uploads/companies/' . $tenant['id'] . '/logo.png';
-    if (is_file(__DIR__ . $candidate)) $logoUrl = $candidate;
+    // Prefer SVG (sharp at every size) over PNG.
+    foreach (['logo.svg', 'logo.png', 'logo.jpg'] as $_f) {
+        $candidate = '/uploads/companies/' . $tenant['id'] . '/' . $_f;
+        if (is_file(__DIR__ . $candidate)) { $logoUrl = $candidate; break; }
+    }
     try {
         $theme = Database::getInstance()->fetchOne(
             'SELECT primary_color, secondary_color, logo_path FROM company_themes WHERE company_id = :id LIMIT 1',
