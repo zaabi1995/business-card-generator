@@ -143,8 +143,10 @@ $sampleProfiles = [
         'mobile' => '+968 9123 4567',
         'email' => 'ahmed.rashid@oig.om',
         'website' => 'www.oig.om',
-        'address_en' => 'Building 245, Way 3501, Al Khuwair, P.O. Box 123, PC 118, Muscat, Sultanate of Oman',
-        'address_ar' => 'مبنى ٢٤٥، طريق ٣٥٠١، الخوير، ص.ب ١٢٣، الرمز البريدي ١١٨، مسقط، سلطنة عُمان'
+        'address_en' => 'P.O. Box : 2555, P.C : 112, Ruwi',
+        'address_en_2' => 'Muscat, Sultanate of Oman',
+        'address_ar' => 'ص.ب: ٢٥٥٥، الرمز البريدي: ١١٢، روي',
+        'address_ar_2' => 'مسقط، سلطنة عُمان'
     ],
     [
         'name_en' => 'Sarah Johnson',
@@ -160,8 +162,10 @@ $sampleProfiles = [
         'mobile' => '+968 9876 5432',
         'email' => 'sarah.johnson@globalsolutions.com',
         'website' => 'www.globalsolutions.com',
-        'address_en' => 'Office 502, Qurum Business Center, Way 2987, Qurum, P.O. Box 456, PC 112, Muscat, Oman',
-        'address_ar' => 'مكتب ٥٠٢، مركز القرم للأعمال، طريق ٢٩٨٧، القرم، ص.ب ٤٥٦، الرمز البريدي ١١٢، مسقط، عُمان'
+        'address_en' => 'P.O. Box : 2555, P.C : 112, Ruwi',
+        'address_en_2' => 'Muscat, Sultanate of Oman',
+        'address_ar' => 'ص.ب: ٢٥٥٥، الرمز البريدي: ١١٢، روي',
+        'address_ar_2' => 'مسقط، سلطنة عُمان'
     ],
     [
         'name_en' => 'Mohammed bin Khalid Al-Busaidi',
@@ -177,8 +181,10 @@ $sampleProfiles = [
         'mobile' => '+968 9111 2222',
         'email' => 'mohammed.busaidi@ndc.om',
         'website' => 'www.ndc.om',
-        'address_en' => 'Tower A, Floor 15, Central Business District, Way 4520, P.O. Box 789, PC 100, Muscat, Sultanate of Oman',
-        'address_ar' => 'البرج أ، الطابق ١٥، المنطقة التجارية المركزية، طريق ٤٥٢٠، ص.ب ٧٨٩، الرمز البريدي ١٠٠، مسقط، سلطنة عُمان'
+        'address_en' => 'P.O. Box : 2555, P.C : 112, Ruwi',
+        'address_en_2' => 'Muscat, Sultanate of Oman',
+        'address_ar' => 'ص.ب: ٢٥٥٥، الرمز البريدي: ١١٢، روي',
+        'address_ar_2' => 'مسقط، سلطنة عُمان'
     ],
     [
         'name_en' => 'Li Wei',
@@ -194,8 +200,10 @@ $sampleProfiles = [
         'mobile' => '+968 9555 1234',
         'email' => 'li.wei@techstart.io',
         'website' => 'www.techstart.io',
-        'address_en' => 'Building 18, Knowledge Oasis Muscat, Rusayl, P.O. Box 321, PC 124, Muscat, Oman',
-        'address_ar' => 'مبنى ١٨، واحة المعرفة مسقط، الرسيل، ص.ب ٣٢١، الرمز البريدي ١٢٤، مسقط، عُمان'
+        'address_en' => 'P.O. Box : 2555, P.C : 112, Ruwi',
+        'address_en_2' => 'Muscat, Sultanate of Oman',
+        'address_ar' => 'ص.ب: ٢٥٥٥، الرمز البريدي: ١١٢، روي',
+        'address_ar_2' => 'مسقط، سلطنة عُمان'
     ],
     [
         'name_en' => 'Fatima Al-Harthi',
@@ -211,8 +219,10 @@ $sampleProfiles = [
         'mobile' => '+968 9234 5678',
         'email' => 'fatima.harthi@pdo.co.om',
         'website' => 'www.pdo.co.om',
-        'address_en' => 'PDO Head Office, Mina Al Fahal, P.O. Box 81, PC 116, Muscat, Sultanate of Oman',
-        'address_ar' => 'المقر الرئيسي لتنمية نفط عُمان، ميناء الفحل، ص.ب ٨١، الرمز البريدي ١١٦، مسقط، سلطنة عُمان'
+        'address_en' => 'P.O. Box : 2555, P.C : 112, Ruwi',
+        'address_en_2' => 'Muscat, Sultanate of Oman',
+        'address_ar' => 'ص.ب: ٢٥٥٥، الرمز البريدي: ١١٢، روي',
+        'address_ar_2' => 'مسقط، سلطنة عُمان'
     ]
 ];
 
@@ -230,7 +240,13 @@ if (!isset($sampleEmployee['website_ar'])) {
     $sampleEmployee['website_ar'] = $sampleEmployee['website'] ?? '';
 }
 if (!isset($sampleEmployee['address'])) {
-    $sampleEmployee['address'] = $sampleEmployee['address_en'] ?? '';
+    $sampleEmployee['address'] = $sampleEmployee['address_en_2'] ?? 'Muscat, Sultanate of Oman';
+}
+if (!isset($sampleEmployee['address_en_2'])) {
+    $sampleEmployee['address_en_2'] = 'Muscat, Sultanate of Oman';
+}
+if (!isset($sampleEmployee['address_ar_2'])) {
+    $sampleEmployee['address_ar_2'] = 'مسقط، سلطنة عُمان';
 }
 
 // Company slug for VCF URL
@@ -2691,9 +2707,11 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                     'email': this.sampleEmployee.email || 'email@company.com',
                     'website': this.sampleEmployee.website || 'www.company.com',
                     'website_ar': this.sampleEmployee.website_ar || 'www.company.com',
-                    'address': this.sampleEmployee.address_en || this.sampleEmployee.address || 'Address',
-                    'address_en': this.sampleEmployee.address_en || this.sampleEmployee.address || 'Address',
-                    'address_ar': this.sampleEmployee.address_ar || 'العنوان'
+                    'address': this.sampleEmployee.address_en_2 || this.sampleEmployee.address || 'Muscat, Sultanate of Oman',
+                    'address_en': this.sampleEmployee.address_en || 'P.O. Box : 2555, P.C : 112, Ruwi',
+                    'address_en_2': this.sampleEmployee.address_en_2 || 'Muscat, Sultanate of Oman',
+                    'address_ar': this.sampleEmployee.address_ar || 'ص.ب: ٢٥٥٥، الرمز البريدي: ١١٢، روي',
+                    'address_ar_2': this.sampleEmployee.address_ar_2 || 'مسقط، سلطنة عُمان'
                 };
                 return map[key] || key;
             },
@@ -2733,9 +2751,11 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                     email: profile.email,
                     website: profile.website,
                     website_ar: profile.website,
-                    address: profile.address_en,
+                    address: profile.address_en_2 || 'Muscat, Sultanate of Oman',
                     address_en: profile.address_en,
-                    address_ar: profile.address_ar
+                    address_en_2: profile.address_en_2 || 'Muscat, Sultanate of Oman',
+                    address_ar: profile.address_ar,
+                    address_ar_2: profile.address_ar_2 || 'مسقط، سلطنة عُمان'
                 };
                 
                 // Refresh canvas with new sample data
@@ -2791,7 +2811,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                     'mobile': 'Mobile (EN)', 'mobile_ar': 'الجوال (AR)',
                     'email': 'Email',
                     'website': 'Website (EN)', 'website_ar': 'الموقع (AR)',
-                    'address': 'Address 01', 'address_en': 'Address 01 (EN)', 'address_ar': 'Address 02 (AR)',
+                    'address': 'Address 02', 'address_en': 'Address 01 (EN)', 'address_en_2': 'Address 02 (EN)', 'address_ar': 'Address 01 (AR)', 'address_ar_2': 'Address 02 (AR)',
                     'qr_code': 'QR Code'
                 };
                 return labels[key] || key;
