@@ -28,4 +28,5 @@ return [
     'err_send_rate_limited_identifier' => 'Too many codes sent to that number, wait an hour and try again.',
     'err_send_rate_limited_ip' => 'Too many sign-up attempts from your network. Try again later.',
     'err_provision_failed'    => 'We could not provision your tenant. Contact support.',
+    'err_captcha_failed'      => 'We could not verify your request. Please reload and try again.',
 ];

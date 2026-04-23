@@ -15,6 +15,7 @@ require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/OtpService.php';
 require_once INCLUDES_DIR . '/Onboarding.php';
 require_once INCLUDES_DIR . '/I18n.php';
+require_once INCLUDES_DIR . '/Recaptcha.php';
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 
@@ -39,7 +40,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             $email       = trim($_POST['email'] ?? '');
             $phone       = trim($_POST['phone'] ?? '');
 
-            if ($companyName === '' || $email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $captchaToken = (string) ($_POST['recaptcha_token'] ?? '');
+            $captcha = Recaptcha::verify($captchaToken, 'signup');
+            if (empty($captcha['ok'])) {
+                $error = t('register_otp.err_captcha_failed');
+            } elseif ($companyName === '' || $email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $error = t('register_otp.err_missing_fields');
             } elseif (Auth::emailExists($email)['exists'] ?? false) {
                 $error = t('register_otp.err_email_taken');
@@ -160,9 +165,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <?php endif; ?>
 
         <?php if ($stage === 'request'): ?>
-            <form method="POST" class="space-y-4">
+            <form method="POST" class="space-y-4" id="otp-request-form">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                 <input type="hidden" name="action" value="request">
+                <input type="hidden" name="recaptcha_token" id="recaptcha_token" value="">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('register_otp.company_name')) ?></label>
                     <input type="text" name="company_name" required maxlength="150" value="<?= htmlspecialchars($companyName) ?>"
@@ -214,4 +220,24 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </div>
 </main>
 <?php @include __DIR__ . '/../views/partials/trust_logo_strip.php'; ?>
+<?php if (Recaptcha::isConfigured()): $siteKey = Recaptcha::siteKey(); ?>
+<script src="https://www.google.com/recaptcha/api.js?render=<?= htmlspecialchars($siteKey) ?>"></script>
+<script>
+(function(){
+    var form = document.getElementById('otp-request-form');
+    if (!form) return;
+    form.addEventListener('submit', function(e){
+        if (form.dataset.captchaDone === '1') return;
+        e.preventDefault();
+        grecaptcha.ready(function(){
+            grecaptcha.execute(<?= json_encode($siteKey) ?>, {action: 'signup'}).then(function(token){
+                document.getElementById('recaptcha_token').value = token;
+                form.dataset.captchaDone = '1';
+                form.submit();
+            });
+        });
+    });
+})();
+</script>
+<?php endif; ?>
 <?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>

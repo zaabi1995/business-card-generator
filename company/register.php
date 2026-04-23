@@ -150,7 +150,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Validation
-    if (empty($name)) {
+    require_once INCLUDES_DIR . '/Recaptcha.php';
+    $captcha = Recaptcha::verify((string) ($_POST['recaptcha_token'] ?? ''), 'signup');
+    if (empty($captcha['ok'])) {
+        $error = 'We could not verify your request. Please reload and try again.';
+    } elseif (empty($name)) {
         $error = 'Company name is required';
     } elseif (empty($email) || !isValidEmail($email)) {
         $error = 'Valid email address is required';
@@ -430,7 +434,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <?php endif; ?>
 
                 <!-- Registration Form -->
-                <form method="POST" class="mt-10 space-y-6" <?php echo $info ? 'style="display:none;"' : ''; ?>>
+                <form method="POST" id="register-form" class="mt-10 space-y-6" <?php echo $info ? 'style="display:none;"' : ''; ?>>
+                <input type="hidden" name="recaptcha_token" id="recaptcha_token" value="">
                     <?php echo csrfField(); ?>
                     <div>
                         <label for="admin_email" class="block text-sm font-medium text-gray-900">
@@ -686,4 +691,24 @@ require_once INCLUDES_DIR . '/ui-header.php';
 })();
 </script>
 <?php @include __DIR__ . '/../views/partials/trust_logo_strip.php'; ?>
+<?php require_once INCLUDES_DIR . '/Recaptcha.php'; if (Recaptcha::isConfigured()): $siteKey = Recaptcha::siteKey(); ?>
+<script src="https://www.google.com/recaptcha/api.js?render=<?= htmlspecialchars($siteKey) ?>"></script>
+<script>
+(function(){
+    var form = document.getElementById('register-form');
+    if (!form) return;
+    form.addEventListener('submit', function(e){
+        if (form.dataset.captchaDone === '1') return;
+        e.preventDefault();
+        grecaptcha.ready(function(){
+            grecaptcha.execute(<?= json_encode($siteKey) ?>, {action: 'signup'}).then(function(token){
+                document.getElementById('recaptcha_token').value = token;
+                form.dataset.captchaDone = '1';
+                form.submit();
+            });
+        });
+    });
+})();
+</script>
+<?php endif; ?>
 <?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>
