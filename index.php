@@ -765,96 +765,42 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="max-w-2xl mx-auto text-center mb-16">
-                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-3">Trusted in Oman</p>
+                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-3"><?= htmlspecialchars(t('testimonials.kicker')) ?></p>
                 <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4">
-                    Loved by Omani businesses
+                    <?= htmlspecialchars(t('testimonials.headline')) ?>
                 </h2>
                 <p class="text-lg text-gray-600">
-                    See what local companies have to say about Cardify.
+                    <?= htmlspecialchars(t('testimonials.subhead')) ?>
                 </p>
             </div>
 
             <!-- Testimonials Grid -->
             <div class="grid lg:grid-cols-2 gap-8">
-                <!-- Testimonial 1 -->
+                <?php foreach ([
+                    ['n' => 1, 'initials' => 'AA', 'grad' => 'from-blue-500 to-blue-600'],
+                    ['n' => 2, 'initials' => 'FA', 'grad' => 'from-amber-400 to-amber-500'],
+                    ['n' => 3, 'initials' => 'KH', 'grad' => 'from-purple-500 to-purple-600'],
+                    ['n' => 4, 'initials' => 'SA', 'grad' => 'from-green-500 to-green-600'],
+                ] as $t): $k = 't' . $t['n']; ?>
                 <figure class="bg-white rounded-2xl p-8 shadow-sm ring-1 ring-gray-200/70 hover:ring-blue-200 hover:shadow-lg transition-all">
                     <div class="mb-5 text-blue-500 text-2xl leading-none"><i class="fa-solid fa-quote-left"></i></div>
                     <blockquote class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">"Perfect for our growing team"</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t('testimonials.' . $k . '_title')) ?></h3>
                         <p class="text-gray-600 leading-relaxed">
-                            "We designed one template and now all 50 of our employees have professional cards. The Arabic support is excellent and the print ordering feature saved us so much time."
+                            <?= htmlspecialchars(t('testimonials.' . $k . '_quote')) ?>
                         </p>
                     </blockquote>
                     <figcaption class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold">
-                            AA
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br <?= htmlspecialchars($t['grad']) ?> flex items-center justify-center text-white font-bold">
+                            <?= htmlspecialchars($t['initials']) ?>
                         </div>
                         <div>
-                            <div class="font-semibold text-gray-900">Ahmed Al-Balushi</div>
-                            <div class="text-sm text-gray-500">Managing Director, Muscat Trading</div>
+                            <div class="font-semibold text-gray-900"><?= htmlspecialchars(t('testimonials.' . $k . '_author')) ?></div>
+                            <div class="text-sm text-gray-500"><?= htmlspecialchars(t('testimonials.' . $k . '_role')) ?></div>
                         </div>
                     </figcaption>
                 </figure>
-
-                <!-- Testimonial 2 -->
-                <figure class="bg-white rounded-2xl p-8 shadow-sm ring-1 ring-gray-200/70 hover:ring-blue-200 hover:shadow-lg transition-all">
-                    <div class="mb-5 text-blue-500 text-2xl leading-none"><i class="fa-solid fa-quote-left"></i></div>
-                    <blockquote class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">"Finally, cards that represent our brand"</h3>
-                        <p class="text-gray-600 leading-relaxed">
-                            "The visual editor is amazing. We created bilingual cards that perfectly match our brand guidelines. Our sales team loves the QR code tracking feature."
-                        </p>
-                    </blockquote>
-                    <figcaption class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-white font-bold">
-                            FA
-                        </div>
-                        <div>
-                            <div class="font-semibold text-gray-900">Fatima Al-Rashdi</div>
-                            <div class="text-sm text-gray-500">Marketing Manager, Gulf Solutions</div>
-                        </div>
-                    </figcaption>
-                </figure>
-
-                <!-- Testimonial 3 -->
-                <figure class="bg-white rounded-2xl p-8 shadow-sm ring-1 ring-gray-200/70 hover:ring-blue-200 hover:shadow-lg transition-all">
-                    <div class="mb-5 text-blue-500 text-2xl leading-none"><i class="fa-solid fa-quote-left"></i></div>
-                    <blockquote class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">"Free and feature-rich, unbelievable"</h3>
-                        <p class="text-gray-600 leading-relaxed">
-                            "I couldn't believe it was free! We've been using it for 6 months and only paid when we needed to print cards. The department feature helps us organize different teams perfectly."
-                        </p>
-                    </blockquote>
-                    <figcaption class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                            KH
-                        </div>
-                        <div>
-                            <div class="font-semibold text-gray-900">Khalid Al-Habsi</div>
-                            <div class="text-sm text-gray-500">HR Director, Oman Tech Services</div>
-                        </div>
-                    </figcaption>
-                </figure>
-
-                <!-- Testimonial 4 -->
-                <figure class="bg-white rounded-2xl p-8 shadow-sm ring-1 ring-gray-200/70 hover:ring-blue-200 hover:shadow-lg transition-all">
-                    <div class="mb-5 text-blue-500 text-2xl leading-none"><i class="fa-solid fa-quote-left"></i></div>
-                    <blockquote class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">"The employee portal is a game-changer"</h3>
-                        <p class="text-gray-600 leading-relaxed">
-                            "Our employees can now request their own cards through the portal. We just approve and print. It's reduced our admin work by 80%. Highly recommend for any Omani company."
-                        </p>
-                    </blockquote>
-                    <figcaption class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white font-bold">
-                            SA
-                        </div>
-                        <div>
-                            <div class="font-semibold text-gray-900">Sara Al-Kindi</div>
-                            <div class="text-sm text-gray-500">Operations Lead, Salalah Enterprises</div>
-                        </div>
-                    </figcaption>
-                </figure>
+                <?php endforeach; ?>
             </div>
         </div>
     </section>
