@@ -811,11 +811,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-end justify-between mb-10 flex-wrap gap-4">
                 <div>
-                    <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">From the Blog</h2>
-                    <p class="text-lg text-gray-600">Practical guides for Omani professionals and teams.</p>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2"><?= htmlspecialchars(t('landing.blog_heading')) ?></h2>
+                    <p class="text-lg text-gray-600"><?= htmlspecialchars(t('landing.blog_sub')) ?></p>
                 </div>
                 <a href="<?= getBasePath() ?>blog" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold">
-                    View all posts
+                    <?= htmlspecialchars(t('landing.blog_view_all')) ?>
                     <i class="fa-solid fa-arrow-right text-sm"></i>
                 </a>
             </div>

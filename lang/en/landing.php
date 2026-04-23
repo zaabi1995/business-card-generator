@@ -71,4 +71,9 @@ return [
     'how_step3_title'    => 'Print and share',
     'how_step3_body'     => 'Order prints from trusted Omani shops or share digital cards via QR code and WhatsApp.',
     'how_cta'            => 'Get started now',
+
+    // From the Blog (action 515)
+    'blog_heading'       => 'From the blog',
+    'blog_sub'           => 'Practical guides for Omani professionals and teams.',
+    'blog_view_all'      => 'View all posts',
 ];
