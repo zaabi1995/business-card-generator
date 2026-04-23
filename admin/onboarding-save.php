@@ -12,6 +12,7 @@ require_once INCLUDES_DIR . '/Onboarding.php';
 require_once INCLUDES_DIR . '/LogoLibrary.php';
 require_once INCLUDES_DIR . '/OnboardingImport.php';
 require_once INCLUDES_DIR . '/EmployeeEditToken.php';
+require_once INCLUDES_DIR . '/AuditLog.php';
 
 requireAdmin();
 $companyId = getCurrentCompanyId();

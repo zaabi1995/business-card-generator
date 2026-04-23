@@ -94,6 +94,30 @@ class Onboarding
                 ['cid' => $companyId]
             );
         }
+
+        // Funnel telemetry: emit one audit-log row per step save plus a
+        // separate `onboarding_completed` entry on the final step. Keeps
+        // the funnel visible on /admin/audit-logs without another table.
+        if (class_exists('AuditLog')) {
+            AuditLog::log(
+                'onboarding_step_saved',
+                'onboarding',
+                $companyId,
+                null,
+                ['step' => $step, 'step_key' => $stepKey],
+                $companyId
+            );
+            if ($completedAt) {
+                AuditLog::log(
+                    'onboarding_completed',
+                    'onboarding',
+                    $companyId,
+                    null,
+                    ['total_steps' => self::TOTAL_STEPS],
+                    $companyId
+                );
+            }
+        }
     }
 
     public static function markSkipped(string $companyId): void
@@ -112,6 +136,16 @@ class Onboarding
                 ['skipped_at' => date('Y-m-d H:i:s')],
                 'company_id = :cid',
                 ['cid' => $companyId]
+            );
+        }
+        if (class_exists('AuditLog')) {
+            AuditLog::log(
+                'onboarding_skipped',
+                'onboarding',
+                $companyId,
+                null,
+                ['last_step' => (int) $existing['step']],
+                $companyId
             );
         }
     }
