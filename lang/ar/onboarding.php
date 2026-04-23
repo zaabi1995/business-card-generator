@@ -35,6 +35,7 @@ return [
     'template_minimal'    => 'بسيط',
     'template_bold'       => 'جريء',
     'template_classic'    => 'كلاسيكي',
+    'template_preview_hint' => 'المعاينات تستخدم شعارك وألوانك الحالية. احفظ هذه الخطوة ثم عُد إليها لرؤية التحديثات.',
 
     'first_name'          => 'الاسم',
     'first_title'         => 'المسمّى الوظيفي',

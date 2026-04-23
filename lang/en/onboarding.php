@@ -37,6 +37,7 @@ return [
     'template_minimal'    => 'Minimal',
     'template_bold'       => 'Bold',
     'template_classic'    => 'Classic',
+    'template_preview_hint' => 'Previews use your current logo + brand colors. Save this step then return here to see the preview update after changes.',
 
     // Step 4 first employee
     'first_name'          => 'Name',

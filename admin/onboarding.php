@@ -11,6 +11,7 @@ require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/admin-layout.php';
 require_once INCLUDES_DIR . '/Onboarding.php';
+require_once INCLUDES_DIR . '/CardLayouts.php';
 
 requireAdmin();
 $companyId = getCurrentCompanyId();
@@ -36,6 +37,36 @@ $companySlug = $company['slug'] ?? '';
 
 $initialStep = max(1, min(Onboarding::TOTAL_STEPS, (int)$state['step']));
 $initialData = $state['data'] ?? [];
+
+// Pre-render Fabric.js-style card previews for step 3 template picker using
+// step-2 colors and step-4 employee data. The wizard's three options map to
+// CardLayouts methods: minimal -> modern, bold -> corporate, classic ->
+// classic. Previews use current state if present, or sensible placeholders
+// so new tenants see rendered cards on first visit.
+$colorsData = $initialData['colors'] ?? [];
+$employeeData = $initialData['first_employee'] ?? [];
+$logoData = $initialData['logo'] ?? [];
+$previewEmployee = [
+    'name_en'     => $employeeData['name']  ?: ('Sample ' . ($companyName !== 'your company' ? substr($companyName, 0, 20) : 'Employee')),
+    'position_en' => $employeeData['title'] ?: 'Your job title',
+    'phone'       => $employeeData['phone'] ?: '+968 9000 0000',
+    'email'       => $employeeData['email'] ?: 'name@example.com',
+];
+$previewTheme = [
+    'primary_color'   => $colorsData['primary'] ?? '#009bc1',
+    'secondary_color' => $colorsData['accent']  ?? '#824598',
+    'logo_path'       => !empty($logoData['url']) && strncmp($logoData['url'], 'data:', 5) === 0 ? $logoData['url'] : '',
+];
+$previewCompany = ['name' => $companyName];
+$previewLayoutMap = ['minimal' => 'modern', 'bold' => 'corporate', 'classic' => 'classic'];
+$previewRenders = [];
+foreach ($previewLayoutMap as $tplKey => $layoutId) {
+    try {
+        $previewRenders[$tplKey] = CardLayouts::renderFront($layoutId, $previewEmployee, $previewCompany, $previewTheme);
+    } catch (Throwable $e) {
+        $previewRenders[$tplKey] = '';
+    }
+}
 
 $csrf = generateCSRFToken();
 $saveUrl = getAdminBasePath() . 'onboarding-save' . ((defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php');
@@ -146,16 +177,20 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
             <p class="text-sm text-gray-500 mb-6"><?= htmlspecialchars(t('onboarding.step_template_help')) ?></p>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <template x-for="tpl in ['minimal','bold','classic']" :key="tpl">
-                    <button type="button" @click="data.template = tpl"
-                            :class="data.template === tpl ? 'ring-2 ring-blue-500 border-blue-300' : 'border-gray-200 hover:border-gray-300'"
-                            class="bg-white border rounded-xl p-4 text-left transition">
-                        <div class="aspect-[5/3] rounded-lg mb-3"
-                             :style="'background: linear-gradient(135deg,' + (data.colors.primary || '#009bc1') + ',' + (data.colors.accent || '#824598') + ')'"></div>
-                        <p class="font-semibold text-gray-900 text-sm" x-text="tplLabel(tpl)"></p>
-                    </button>
-                </template>
+                <?php foreach (['minimal','bold','classic'] as $tplKey): ?>
+                <button type="button" @click="data.template = <?= json_encode($tplKey) ?>"
+                        :class="data.template === <?= json_encode($tplKey) ?> ? 'ring-2 ring-blue-500 border-blue-300' : 'border-gray-200 hover:border-gray-300'"
+                        class="bg-white border rounded-xl p-4 text-left transition">
+                    <div class="aspect-[1050/600] rounded-lg mb-3 overflow-hidden bg-gray-100 relative">
+                        <div style="position:absolute;top:0;left:0;transform-origin:top left;transform:scale(0.22);pointer-events:none;">
+                            <?= $previewRenders[$tplKey] ?? '' ?>
+                        </div>
+                    </div>
+                    <p class="font-semibold text-gray-900 text-sm"><?= htmlspecialchars(t('onboarding.template_' . $tplKey)) ?></p>
+                </button>
+                <?php endforeach; ?>
             </div>
+            <p class="mt-3 text-xs text-gray-500"><?= htmlspecialchars(t('onboarding.template_preview_hint')) ?></p>
         </div>
 
         <!-- Step 4: First employee -->
