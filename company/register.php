@@ -332,6 +332,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Don't block signup on notification failure
                     }
 
+                    // Ops alert: ping Slack so the team sees new tenants
+                    // as they land. Fail-open, no-op when unconfigured.
+                    try {
+                        require_once INCLUDES_DIR . '/SlackAlert.php';
+                        SlackAlert::tenantSignup($name, $email, $phone, 'web-password');
+                    } catch (Throwable $e) {
+                        error_log('[register] Slack alert failed: ' . $e->getMessage());
+                    }
+
                     // Login the new user
                     Auth::unifiedLogin($email, $password);
 

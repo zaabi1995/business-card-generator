@@ -119,6 +119,18 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                             $user = $db->fetchOne("SELECT * FROM users WHERE id = :id", ['id' => $userRes['user_id']]);
                             if ($user) Auth::loginUser($user);
 
+                            try {
+                                require_once INCLUDES_DIR . '/SlackAlert.php';
+                                SlackAlert::tenantSignup(
+                                    $state['company_name'],
+                                    $state['email'],
+                                    $state['phone'] !== '' ? $state['phone'] : null,
+                                    'web-otp'
+                                );
+                            } catch (Throwable $e) {
+                                error_log('[register-otp] Slack alert failed: ' . $e->getMessage());
+                            }
+
                             unset($_SESSION['otp_signup']);
 
                             $slug = $company['slug'] ?? '';
