@@ -53,7 +53,7 @@ $company = $db->fetchOne("SELECT name, admin_email FROM companies WHERE id = :id
 
 // Handle POST — record payment
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die(htmlspecialchars(t('printshopcredit.invalid_request'))); }
     $action = $_POST['action'] ?? '';
 
     if ($action === 'record_payment') {
@@ -68,12 +68,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (isset($result['error'])) {
                 $error = $result['error'];
             } else {
-                $success = 'Payment of ' . formatPrice((float)$amount) . ' recorded'
-                    . ($result['proof_path'] ? ' (with proof)' : '');
+                $tpl = $result['proof_path'] ? 'printshopcredit.ledger_payment_ok_proof' : 'printshopcredit.ledger_payment_ok';
+                $success = str_replace(':amt', formatPrice((float)$amount), t($tpl));
                 $account = CreditManager::getAccountById($accountId);
             }
         } else {
-            $error = 'Amount must be greater than 0';
+            $error = t('printshopcredit.amount_gt_zero');
         }
     }
 }
@@ -111,9 +111,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <span class="font-semibold text-gray-900"><?= sanitize($printShop['name']) ?></span>
                 </div>
                 <div class="flex items-center gap-4 text-sm">
-                    <a href="dashboard.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-chart-pie mr-1"></i>Dashboard</a>
-                    <a href="orders.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-box mr-1"></i>Orders</a>
-                    <a href="credit-accounts.php" class="text-blue-600 font-medium"><i class="fa-solid fa-building-columns mr-1"></i>Credit</a>
+                    <a href="dashboard.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-chart-pie mr-1"></i><?= htmlspecialchars(t('printshopcredit.nav_dashboard')) ?></a>
+                    <a href="orders.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-box mr-1"></i><?= htmlspecialchars(t('printshopcredit.nav_orders')) ?></a>
+                    <a href="credit-accounts.php" class="text-blue-600 font-medium"><i class="fa-solid fa-building-columns mr-1"></i><?= htmlspecialchars(t('printshopcredit.nav_credit')) ?></a>
                     <a href="settings.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-cog"></i></a>
                 </div>
             </div>
@@ -123,7 +123,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <div class="pt-20 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
 
         <div class="mb-4">
-            <a href="credit-accounts.php" class="text-sm text-gray-500 hover:text-gray-700"><i class="fa-solid fa-arrow-left mr-1"></i> Back to Credit Accounts</a>
+            <a href="credit-accounts.php" class="text-sm text-gray-500 hover:text-gray-700"><i class="fa-solid fa-arrow-left mr-1"></i> <?= htmlspecialchars(t('printshopcredit.back_to_accounts')) ?></a>
         </div>
 
         <?php if ($error): ?>
@@ -139,19 +139,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <!-- Account Summary -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-white rounded-xl border p-4">
-                <p class="text-sm text-gray-500">Credit Limit</p>
+                <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshopcredit.ledger_stat_limit')) ?></p>
                 <p class="text-2xl font-bold"><?= htmlspecialchars(formatPrice((float)$account['credit_limit'])) ?></p>
             </div>
             <div class="bg-white rounded-xl border p-4">
-                <p class="text-sm text-gray-500">Balance Used</p>
+                <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshopcredit.ledger_stat_used')) ?></p>
                 <p class="text-2xl font-bold text-red-600"><?= htmlspecialchars(formatPrice((float)$account['balance_used'])) ?></p>
             </div>
             <div class="bg-white rounded-xl border p-4">
-                <p class="text-sm text-gray-500">Available</p>
+                <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshopcredit.ledger_stat_avail')) ?></p>
                 <p class="text-2xl font-bold text-green-600"><?= htmlspecialchars(formatPrice((float)$available)) ?></p>
             </div>
             <div class="bg-white rounded-xl border p-4">
-                <p class="text-sm text-gray-500">Terms</p>
+                <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshopcredit.ledger_stat_terms')) ?></p>
                 <p class="text-2xl font-bold text-blue-600"><?= strtoupper($account['payment_terms'] ?? 'NET30') ?></p>
             </div>
         </div>
@@ -159,18 +159,18 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Transactions -->
             <div class="lg:col-span-2 bg-white rounded-xl border">
-                <div class="px-6 py-4 border-b"><h2 class="font-semibold"><i class="fa-solid fa-list mr-2 text-gray-400"></i>Transactions</h2></div>
+                <div class="px-6 py-4 border-b"><h2 class="font-semibold"><i class="fa-solid fa-list mr-2 text-gray-400"></i><?= htmlspecialchars(t('printshopcredit.transactions_h')) ?></h2></div>
                 <?php if ($ledger): ?>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Balance</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes / Proof</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"><?= htmlspecialchars(t('printshopcredit.col_date')) ?></th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"><?= htmlspecialchars(t('printshopcredit.col_type')) ?></th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"><?= htmlspecialchars(t('printshopcredit.col_order')) ?></th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"><?= htmlspecialchars(t('printshopcredit.col_amount')) ?></th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"><?= htmlspecialchars(t('printshopcredit.col_balance')) ?></th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"><?= htmlspecialchars(t('printshopcredit.col_notes')) ?></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
@@ -180,7 +180,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                 <td class="px-6 py-3 text-sm">
                                     <span class="<?= $txColors[$tx['type']] ?? 'text-gray-600' ?> font-medium">
                                         <i class="fa-solid <?= $txIcons[$tx['type']] ?? 'fa-circle' ?> mr-1"></i>
-                                        <?= ucfirst($tx['type']) ?>
+                                        <?php $txk = 'printshopcredit.tx_' . $tx['type']; $txl = t($txk); echo htmlspecialchars($txl === $txk ? ucfirst($tx['type']) : $txl); ?>
                                     </span>
                                 </td>
                                 <td class="px-6 py-3 text-sm text-gray-500"><?= $tx['order_number'] ? htmlspecialchars($tx['order_number']) : '—' ?></td>
@@ -193,7 +193,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                     <?php if (!empty($tx['po_file_path'])): ?>
                                     <a href="<?= getBasePath() . htmlspecialchars($tx['po_file_path']) ?>" target="_blank"
                                        class="inline-flex items-center gap-1 ml-2 text-blue-600 hover:text-blue-800 text-xs">
-                                        <i class="fa-solid fa-file-invoice"></i> Proof
+                                        <i class="fa-solid fa-file-invoice"></i> <?= htmlspecialchars(t('printshopcredit.proof')) ?>
                                     </a>
                                     <?php endif; ?>
                                 </td>
@@ -203,36 +203,36 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </table>
                 </div>
                 <?php else: ?>
-                <p class="px-6 py-8 text-center text-gray-500">No transactions yet</p>
+                <p class="px-6 py-8 text-center text-gray-500"><?= htmlspecialchars(t('printshopcredit.no_tx')) ?></p>
                 <?php endif; ?>
             </div>
 
             <!-- Record Payment -->
             <div class="bg-white rounded-xl border h-fit">
-                <div class="px-6 py-4 border-b"><h2 class="font-semibold"><i class="fa-solid fa-money-bill-wave mr-2 text-green-500"></i>Record Payment</h2></div>
+                <div class="px-6 py-4 border-b"><h2 class="font-semibold"><i class="fa-solid fa-money-bill-wave mr-2 text-green-500"></i><?= htmlspecialchars(t('printshopcredit.record_payment_h')) ?></h2></div>
                 <form method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
                     <?= csrfField() ?>
                     <input type="hidden" name="action" value="record_payment">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Amount (OMR)</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('printshopcredit.field_amount')) ?></label>
                         <input type="number" name="amount" step="0.001" min="0.001" max="<?= $account['balance_used'] ?>" required
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                               placeholder="0.000">
-                        <p class="text-xs text-gray-400 mt-1">Outstanding: <?= htmlspecialchars(formatPrice((float)$account['balance_used'])) ?></p>
+                               placeholder="<?= htmlspecialchars(t('printshopcredit.amount_ph')) ?>">
+                        <p class="text-xs text-gray-400 mt-1"><?= htmlspecialchars(str_replace(':amt', formatPrice((float)$account['balance_used']), t('printshopcredit.outstanding_hint'))) ?></p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('printshopcredit.field_notes')) ?></label>
                         <textarea name="notes" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                                  placeholder="e.g. Bank transfer ref #123"></textarea>
+                                  placeholder="<?= htmlspecialchars(t('printshopcredit.notes_ph')) ?>"></textarea>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Payment Proof (optional)</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('printshopcredit.field_proof')) ?></label>
                         <input type="file" name="proof_file" accept=".pdf,.jpg,.jpeg,.png"
                                class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
-                        <p class="text-xs text-gray-400 mt-1">Bank receipt, cheque scan, etc. PDF/JPG/PNG, max 5MB</p>
+                        <p class="text-xs text-gray-400 mt-1"><?= htmlspecialchars(t('printshopcredit.proof_hint')) ?></p>
                     </div>
                     <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition text-sm font-medium">
-                        <i class="fa-solid fa-check mr-1"></i> Record Payment
+                        <i class="fa-solid fa-check mr-1"></i> <?= htmlspecialchars(t('printshopcredit.btn_record_payment')) ?>
                     </button>
                 </form>
             </div>
