@@ -15,7 +15,10 @@ require_once INCLUDES_DIR . '/LogoLibrary.php';
 
 $db   = Database::getInstance();
 $view = $_GET['view'] ?? 'hub';
-$lang = ($_GET['lang'] ?? '') === 'ar' ? 'ar' : 'en';
+// Respect the global locale cookie/session set by the header language pill,
+// while still honouring legacy ?lang=ar and /ar/logos URL paths.
+$lang = function_exists('currentLocale') ? currentLocale() : 'en';
+if (($_GET['lang'] ?? '') === 'ar') $lang = 'ar';
 $isAr = $lang === 'ar';
 
 // Bilingual sector labels, mirrors the $SECTORS map in companies.php.

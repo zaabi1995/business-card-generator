@@ -1431,7 +1431,11 @@ JS;
         'USD' => 'US Dollar',
         'AED' => 'UAE Dirham',
         'SAR' => 'Saudi Riyal',
+        'QAR' => 'Qatari Riyal',
+        'BHD' => 'Bahraini Dinar',
+        'KWD' => 'Kuwaiti Dinar',
         'EUR' => 'Euro',
+        'GBP' => 'British Pound',
     ];
 
     /** Cookie name for persistent user preference. */
@@ -1450,12 +1454,16 @@ JS;
      *   >= 1000  -> ceil up to nearest 100 (1,431.45 -> 1,500)
      */
     public static function marketingRound(float $amount, string $currency): float {
-        if (strtoupper($currency) === 'OMR') return $amount;
+        $cur = strtoupper($currency);
+        // OMR + BHD + KWD are low-unit precious currencies (5 OMR, 2 BHD,
+        // 2 KWD are already small whole-ish numbers); leave them exact so
+        // the real price shows and monthly/annual don't collapse.
+        if ($cur === 'OMR' || $cur === 'BHD' || $cur === 'KWD') return $amount;
         $a = abs($amount);
-        if ($a < 10)    return ceil($amount);
-        if ($a < 100)   return ceil($amount / 5)   * 5;
-        if ($a < 1000)  return ceil($amount / 10)  * 10;
-        return ceil($amount / 100) * 100;
+        if ($a < 20)    return ceil($amount);            // keep fine granularity (12 -> 12, 15 -> 15)
+        if ($a < 100)   return ceil($amount / 5)   * 5;  // 47.72 -> 50
+        if ($a < 1000)  return ceil($amount / 10)  * 10; // 143.15 -> 150
+        return ceil($amount / 100) * 100;                // 1,431.45 -> 1,500
     }
 
     /**
@@ -1500,10 +1508,16 @@ JS;
         // 3. Auto-detect from CF-IPCountry (Cloudflare sets this on every request)
         $country = $_SERVER['HTTP_CF_IPCOUNTRY'] ?? '';
         $countryMap = [
+            // GCC natives
             'OM' => 'OMR',
             'AE' => 'AED',
             'SA' => 'SAR',
-            'US' => 'USD', 'GB' => 'USD', 'CA' => 'USD', 'AU' => 'USD',
+            'QA' => 'QAR',
+            'BH' => 'BHD',
+            'KW' => 'KWD',
+            // Common non-GCC visitors
+            'US' => 'USD', 'CA' => 'USD', 'AU' => 'USD',
+            'GB' => 'GBP', 'IE' => 'EUR',
             'DE' => 'EUR', 'FR' => 'EUR', 'IT' => 'EUR', 'ES' => 'EUR', 'NL' => 'EUR',
         ];
         if (isset($countryMap[$country])) return $countryMap[$country];
