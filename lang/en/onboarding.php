@@ -84,4 +84,10 @@ return [
     'order_min_qty'       => 'Minimum 50 cards, step of 50',
     'order_tiers_title'   => 'Quantity breakpoints',
     'demo_cleared_toast'  => 'Cleared :n demo employees.',
+    'err_missing_logo'    => 'Upload a logo to continue.',
+    'err_invalid_hex'     => 'Use valid hex colors (e.g. #009bc1).',
+    'err_invalid_template'=> 'Pick a template to continue.',
+    'err_missing_name'    => 'Employee name is required.',
+    'err_invalid_email'   => 'Enter a valid email address.',
+    'err_qty_below_min'   => 'Minimum print quantity is 50 cards.',
 ];

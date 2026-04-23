@@ -57,6 +57,66 @@ class Onboarding
         return true;
     }
 
+    /**
+     * Validate a step payload. Returns empty array when OK, otherwise
+     * an array of {field, code} pairs describing missing/invalid fields.
+     * Lenient by design: intermediate "save progress" writes where the
+     * admin has not yet filled everything should NOT block — only the
+     * final saveStep on the last step triggers strict mode.
+     */
+    public static function validatePayload(int $step, array $payload, bool $strict = false): array
+    {
+        $errors = [];
+        switch ($step) {
+            case 1: // logo
+                if ($strict && empty($payload['url'])) {
+                    $errors[] = ['field' => 'logo', 'code' => 'missing_logo'];
+                }
+                break;
+            case 2: // colors
+                $primary = $payload['primary'] ?? '';
+                $accent  = $payload['accent']  ?? '';
+                if (!preg_match('/^#[0-9a-f]{6}$/i', (string) $primary)) {
+                    $errors[] = ['field' => 'colors.primary', 'code' => 'invalid_hex'];
+                }
+                if (!preg_match('/^#[0-9a-f]{6}$/i', (string) $accent)) {
+                    $errors[] = ['field' => 'colors.accent', 'code' => 'invalid_hex'];
+                }
+                break;
+            case 3: // template
+                $tpl = $payload['template'] ?? $payload ?? null;
+                if (is_string($payload)) $tpl = $payload;
+                if (is_array($tpl)) $tpl = $tpl['template'] ?? null;
+                $allowed = ['minimal', 'bold', 'classic'];
+                if (!in_array($tpl, $allowed, true)) {
+                    if ($strict) $errors[] = ['field' => 'template', 'code' => 'invalid_template'];
+                }
+                break;
+            case 4: // first_employee
+                $name  = trim((string) ($payload['name'] ?? ''));
+                $email = trim((string) ($payload['email'] ?? ''));
+                if ($name === '') $errors[] = ['field' => 'first_employee.name', 'code' => 'missing_name'];
+                if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $errors[] = ['field' => 'first_employee.email', 'code' => 'invalid_email'];
+                }
+                break;
+            case 5: // preview — read-only, no validation
+                break;
+            case 6: // invite_team — everything optional
+                if (!empty($payload['csv']['parsed']['errors']) && $strict) {
+                    // Non-fatal: expose parse errors but do not block save.
+                }
+                break;
+            case 7: // order_cards
+                $qty = (int) ($payload['per_person'] ?? 0);
+                if ($qty > 0 && $qty < 50) {
+                    $errors[] = ['field' => 'order_cards.per_person', 'code' => 'qty_below_min'];
+                }
+                break;
+        }
+        return $errors;
+    }
+
     public static function saveStep(string $companyId, int $step, array $payload): void
     {
         $db = Database::getInstance();

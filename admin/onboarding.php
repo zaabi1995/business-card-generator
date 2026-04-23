@@ -395,6 +395,7 @@ function onboarding(init) {
         },
         parsedPaste: { count: 0, errors: [] },
         csvReport: { total: 0, errors: [], summary: '' },
+        validationErrors: [],
         parsePaste(raw) {
             const out = { count: 0, errors: [] };
             if (!raw || !raw.trim()) return out;
@@ -484,7 +485,24 @@ function onboarding(init) {
                     body: JSON.stringify({ step: this.step, payload })
                 });
                 const json = await res.json();
-                if (!json.ok) throw new Error(json.error || 'save failed');
+                if (!json.ok) {
+                    if (res.status === 422 && Array.isArray(json.errors) && json.errors.length) {
+                        this.validationErrors = json.errors;
+                        const labels = <?= json_encode([
+                            'missing_logo'       => t('onboarding.err_missing_logo'),
+                            'invalid_hex'        => t('onboarding.err_invalid_hex'),
+                            'invalid_template'   => t('onboarding.err_invalid_template'),
+                            'missing_name'       => t('onboarding.err_missing_name'),
+                            'invalid_email'      => t('onboarding.err_invalid_email'),
+                            'qty_below_min'      => t('onboarding.err_qty_below_min'),
+                        ]) ?>;
+                        const msg = json.errors.map(e => labels[e.code] || e.code).join(' · ');
+                        alert(msg);
+                        return;
+                    }
+                    throw new Error(json.error || 'save failed');
+                }
+                this.validationErrors = [];
                 // If the server extracted a dominant color from the logo
                 // on step 1, prefill step 2 primary (skip if user has
                 // already customized off the default Cardify teal).

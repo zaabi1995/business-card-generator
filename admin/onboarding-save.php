@@ -59,6 +59,17 @@ if ($step < 1 || $step > Onboarding::TOTAL_STEPS) {
 
 $payload = is_array($body['payload']) ? $body['payload'] : [];
 
+// Validate the step payload. Enforce strictness for steps that must
+// have data to move the wizard forward (2=colors, 4=first employee,
+// 7=order qty if non-zero). Intermediate saves get lenient mode.
+$strict = in_array($step, [2, 4, 7], true);
+$validationErrors = Onboarding::validatePayload($step, $payload, $strict);
+if ($validationErrors) {
+    http_response_code(422);
+    echo json_encode(['ok' => false, 'error' => 'validation_failed', 'errors' => $validationErrors]);
+    exit;
+}
+
 // Strip anything absurdly large (e.g., gigantic logo data URL). 2 MB cap per
 // step payload keeps the JSON column well under max_allowed_packet.
 $encoded = json_encode($payload);

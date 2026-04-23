@@ -75,4 +75,10 @@ return [
     'order_min_qty'       => 'الحد الأدنى 50 بطاقة، بزيادة 50',
     'order_tiers_title'   => 'شرائح السعر حسب الكمية',
     'demo_cleared_toast'  => 'تمّ مسح :n موظفاً تجريبياً.',
+    'err_missing_logo'    => 'ارفع شعار شركتك للمتابعة.',
+    'err_invalid_hex'     => 'استخدم ألوان HEX صالحة (مثل #009bc1).',
+    'err_invalid_template'=> 'اختر قالباً للمتابعة.',
+    'err_missing_name'    => 'اسم الموظف مطلوب.',
+    'err_invalid_email'   => 'أدخل بريداً إلكترونياً صالحاً.',
+    'err_qty_below_min'   => 'الحد الأدنى لطباعة البطاقات 50.',
 ];
