@@ -561,7 +561,7 @@ adminHeader('Print Orders', 'print');
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Quantity per Employee</label>
-                        <input type="number" name="quantity" value="100" min="50" step="50" required 
+                        <input type="number" name="quantity" value="<?php echo max(50, (int)($_GET['qty'] ?? 100)); ?>" min="50" step="50" required
                                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <p class="text-xs text-gray-500 mt-1">Minimum 50 cards per employee</p>
                     </div>

@@ -72,4 +72,6 @@ return [
     'paste_error'         => 'تعذّر تحليل بعض الأسطر',
     'csv_parsed_summary'  => 'تم تحليل :n صفاً من ملف CSV',
     'csv_errors_summary'  => ':n صفاً يحتاج إلى مراجعة',
+    'order_min_qty'       => 'الحد الأدنى 50 بطاقة، بزيادة 50',
+    'order_tiers_title'   => 'شرائح السعر حسب الكمية',
 ];

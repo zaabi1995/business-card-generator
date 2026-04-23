@@ -81,4 +81,6 @@ return [
     'paste_error'         => 'Some lines could not be parsed',
     'csv_parsed_summary'  => ':n rows parsed from your CSV',
     'csv_errors_summary'  => ':n rows need attention',
+    'order_min_qty'       => 'Minimum 50 cards, step of 50',
+    'order_tiers_title'   => 'Quantity breakpoints',
 ];

@@ -12,6 +12,7 @@ require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/admin-layout.php';
 require_once INCLUDES_DIR . '/Onboarding.php';
 require_once INCLUDES_DIR . '/CardLayouts.php';
+require_once INCLUDES_DIR . '/CardPrintPricing.php';
 
 requireAdmin();
 $companyId = getCurrentCompanyId();
@@ -281,16 +282,25 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.order_qty_label')) ?></label>
-                    <input type="number" min="0" step="10" x-model.number="data.order_cards.per_person" class="form-input" dir="ltr">
+                    <input type="number" min="0" step="50" x-model.number="data.order_cards.per_person" class="form-input" dir="ltr">
+                    <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('onboarding.order_min_qty')) ?></p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.order_per_card')) ?></label>
-                    <input type="text" readonly value="OMR 0.120" class="form-input bg-gray-50 font-mono text-sm" dir="ltr">
+                    <input type="text" readonly :value="pricePerCardLabel()" class="form-input bg-gray-50 font-mono text-sm" dir="ltr">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.order_estimate')) ?></label>
                     <input type="text" readonly :value="estimateTotal()" class="form-input bg-gray-50 font-mono text-sm" dir="ltr">
                 </div>
+            </div>
+            <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600">
+                <p class="font-semibold mb-1"><?= htmlspecialchars(t('onboarding.order_tiers_title')) ?></p>
+                <ul class="space-y-0.5">
+                    <?php foreach (CardPrintPricing::TIERS as $minQty => $price): ?>
+                        <li dir="ltr"><?= (int) $minQty ?>+ cards, OMR <?= number_format((float) $price, 3) ?>/card</li>
+                    <?php endforeach; ?>
+                </ul>
             </div>
         </div>
 
@@ -395,9 +405,22 @@ function onboarding(init) {
             const slug = (this.data.first_employee.name || '').toLowerCase().replace(/[^a-z0-9]+/g,'-');
             return 'https://cardify.om/' + this.companySlug + '/' + (slug || 'preview');
         },
+        pricingTiers: <?= json_encode(CardPrintPricing::tiersForJs()) ?>,
+        pricePerCard() {
+            const q = Math.max(0, parseInt(this.data.order_cards.per_person || 0));
+            let price = this.pricingTiers[0].price;
+            for (const t of this.pricingTiers) {
+                if (q >= t.min) price = t.price;
+                else break;
+            }
+            return price;
+        },
+        pricePerCardLabel() {
+            return 'OMR ' + this.pricePerCard().toFixed(3);
+        },
         estimateTotal() {
             const q = Math.max(0, parseInt(this.data.order_cards.per_person || 0));
-            const total = q * 0.120;
+            const total = q * this.pricePerCard();
             return 'OMR ' + total.toFixed(3);
         },
 
@@ -465,6 +488,15 @@ function onboarding(init) {
                 }
                 if (this.step < this.totalSteps) { this.step++; window.scrollTo({top:0,behavior:'smooth'}); }
                 else {
+                    // If the admin picked a printed-card quantity at or
+                    // above the minimum order size, skip straight into
+                    // the real print-order form with qty pre-filled.
+                    const qty = Math.max(0, parseInt(this.data.order_cards.per_person || 0));
+                    if (qty >= <?= (int) CardPrintPricing::MIN_QTY ?>) {
+                        const base = this.dashboardUrl.replace(/index\.php.*$/, '') + 'print.php';
+                        window.location.href = base + '?tab=create&wizard=done&qty=' + qty;
+                        return;
+                    }
                     const q = json.import && json.import.invites_sent > 0
                         ? '?wizard=done&invites=' + json.import.invites_sent
                         : '?wizard=done';
