@@ -13,6 +13,7 @@ require_once INCLUDES_DIR . '/admin-layout.php';
 require_once INCLUDES_DIR . '/Onboarding.php';
 require_once INCLUDES_DIR . '/CardLayouts.php';
 require_once INCLUDES_DIR . '/CardPrintPricing.php';
+require_once INCLUDES_DIR . '/DemoData.php';
 
 requireAdmin();
 $companyId = getCurrentCompanyId();
@@ -26,6 +27,14 @@ if (!empty($state['completed_at'])) {
     // Already done, send to dashboard with a small toast.
     header('Location: ' . getAdminBasePath() . 'index.php?wizard=already_done');
     exit;
+}
+
+// First visit (no step data, no employees): seed 5 placeholder employees
+// so the admin has something to play with outside the wizard. The seeded
+// ids are stored on company_onboarding.data.demo_employee_ids so the
+// dashboard "Clear demo data" button knows exactly which rows to remove.
+if (DemoData::shouldSeed($companyId)) {
+    DemoData::seed($companyId);
 }
 
 $company  = null;

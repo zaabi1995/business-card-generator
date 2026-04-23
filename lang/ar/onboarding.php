@@ -74,4 +74,5 @@ return [
     'csv_errors_summary'  => ':n صفاً يحتاج إلى مراجعة',
     'order_min_qty'       => 'الحد الأدنى 50 بطاقة، بزيادة 50',
     'order_tiers_title'   => 'شرائح السعر حسب الكمية',
+    'demo_cleared_toast'  => 'تمّ مسح :n موظفاً تجريبياً.',
 ];

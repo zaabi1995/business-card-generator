@@ -503,9 +503,36 @@ if ($companyId) {
 }
 $showResumeBanner = $onboardState && !empty($onboardState['started_at']) && empty($onboardState['completed_at']) && (int)$onboardState['step'] > 0 && (int)$onboardState['step'] < Onboarding::TOTAL_STEPS;
 $showOrderNudge  = $onboardState && !empty($onboardState['completed_at']) && empty($onboardState['data']['order_cards']['per_person']);
+$demoSeededIds = !empty($onboardState['data']['demo_employee_ids']) && is_array($onboardState['data']['demo_employee_ids'])
+    ? $onboardState['data']['demo_employee_ids'] : [];
+$showDemoBanner = !empty($demoSeededIds);
 $adminBase = rtrim(getAdminBasePath(), '/');
 $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php';
 ?>
+
+<?php if (!empty($_GET['demo_cleared'])): ?>
+<div class="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-900"
+     x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)">
+    <i class="fa-solid fa-check-circle mr-1"></i>
+    <?= htmlspecialchars(t('onboarding.demo_cleared_toast', ['n' => (int) $_GET['demo_cleared']])) ?>
+</div>
+<?php endif; ?>
+
+<?php if ($showDemoBanner): ?>
+<div class="mb-4 rounded-xl bg-purple-50 border border-purple-200 p-4 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 text-purple-900">
+        <i class="fa-solid fa-flask text-purple-600"></i>
+        <span class="text-sm"><?= htmlspecialchars(t('onboarding.demo_banner')) ?></span>
+    </div>
+    <form method="POST" action="<?= $adminBase ?>/demo-clear<?= $ext ?>" class="m-0">
+        <?= csrfField() ?>
+        <button type="submit" class="px-3 py-1.5 text-xs font-semibold text-purple-700 hover:text-purple-900 hover:bg-purple-100 rounded-lg whitespace-nowrap">
+            <i class="fa-solid fa-broom mr-1"></i>
+            <?= htmlspecialchars(t('onboarding.demo_clear')) ?>
+        </button>
+    </form>
+</div>
+<?php endif; ?>
 
 <?php if (isset($_GET['wizard']) && $_GET['wizard'] === 'done'): ?>
 <div class="mb-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-4 flex items-center justify-between gap-4 animate-pulse-once"

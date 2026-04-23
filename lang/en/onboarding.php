@@ -83,4 +83,5 @@ return [
     'csv_errors_summary'  => ':n rows need attention',
     'order_min_qty'       => 'Minimum 50 cards, step of 50',
     'order_tiers_title'   => 'Quantity breakpoints',
+    'demo_cleared_toast'  => 'Cleared :n demo employees.',
 ];
