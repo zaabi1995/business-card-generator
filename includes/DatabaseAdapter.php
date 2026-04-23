@@ -768,13 +768,76 @@ class DatabaseAdapter {
                 'pdf_file_path' => $pdfFile,
                 'generated_at' => date('Y-m-d H:i:s')
             ];
-            
+
+            // Pin the template versions live at generation time so later
+            // template edits don't visually mutate already-issued cards.
+            // Reads from templates.current_version; falls through silently
+            // if the column does not exist in the environment.
+            try {
+                if ($frontTemplateId) {
+                    $row = self::$db->fetchOne(
+                        "SELECT current_version FROM templates WHERE id = :id",
+                        ['id' => $frontTemplateId]
+                    );
+                    if ($row && isset($row['current_version'])) {
+                        $entry['front_template_version'] = (int) $row['current_version'];
+                    }
+                }
+                if ($backTemplateId) {
+                    $row = self::$db->fetchOne(
+                        "SELECT current_version FROM templates WHERE id = :id",
+                        ['id' => $backTemplateId]
+                    );
+                    if ($row && isset($row['current_version'])) {
+                        $entry['back_template_version'] = (int) $row['current_version'];
+                    }
+                }
+            } catch (Throwable $e) { /* columns optional */ }
+
             self::$db->insert('generated_cards', $entry);
             return $entry;
         } catch (Exception $e) {
             error_log("Log generation error: " . $e->getMessage());
             return null;
         }
+    }
+
+    /**
+     * Load a generated card by id AND resolve the pinned template
+     * snapshots (front + back) from template_versions, falling back
+     * to the live templates row when the pin is missing.
+     */
+    public static function loadGeneratedCardWithTemplates(string $cardId, ?string $companyId = null): ?array
+    {
+        if (!self::useDatabase()) return null;
+        $companyId = $companyId ?: getCurrentCompanyId();
+        if (!$companyId) return null;
+
+        $card = self::$db->fetchOne(
+            "SELECT * FROM generated_cards WHERE id = :id AND company_id = :cid",
+            ['id' => $cardId, 'cid' => $companyId]
+        );
+        if (!$card) return null;
+
+        $resolve = function (?string $tplId, $pinned) {
+            if (!$tplId) return null;
+            $v = null;
+            if ($pinned !== null && $pinned !== '' && (int) $pinned > 0) {
+                $v = self::$db->fetchOne(
+                    "SELECT * FROM template_versions
+                     WHERE template_id = :id AND version_number = :v LIMIT 1",
+                    ['id' => $tplId, 'v' => (int) $pinned]
+                );
+            }
+            if (!$v) {
+                $v = self::$db->fetchOne("SELECT * FROM templates WHERE id = :id", ['id' => $tplId]);
+            }
+            return $v;
+        };
+
+        $card['front_template'] = $resolve($card['front_template_id'] ?? null, $card['front_template_version'] ?? null);
+        $card['back_template']  = $resolve($card['back_template_id']  ?? null, $card['back_template_version']  ?? null);
+        return $card;
     }
     
     public static function loadGeneratedLog($companyId = null) {
