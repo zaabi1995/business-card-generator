@@ -1214,26 +1214,30 @@ function getDefaultFieldSettings() {
  * @param int $canvasHeight Canvas height (default 600)
  * @return array Converted field settings
  */
-function convertLegacyFieldPositions($fields, $canvasWidth = 1050, $canvasHeight = 600) {
+function convertLegacyFieldPositions($fields, $canvasWidth = 1050, $canvasHeight = 600, $fieldsFormat = null) {
     if (empty($fields)) return $fields;
-    
+
+    // Modern templates carry an explicit format marker; never run the percentage
+    // heuristic on them. The heuristic cannot distinguish a real small-pixel
+    // coordinate from a legacy percentage (e.g. y=45px vs y=45%) and would
+    // multiply legitimate pixel positions by the canvas size on every reload.
+    $isLegacy = ($fieldsFormat !== 'px');
+
     $converted = [];
     foreach ($fields as $key => $field) {
         $converted[$key] = $field;
-        
-        // Check if positions look like percentages (0-100 range with typical values)
-        // Legacy format used percentages, new format uses pixels
-        $x = $field['x'] ?? 0;
-        $y = $field['y'] ?? 0;
-        
-        // If values are small (likely percentages), convert to pixels
-        if ($x <= 100 && $y <= 100 && ($x < 50 || $y < 50 || $x > 80 || $y > 80)) {
-            // Likely percentage values, convert to pixels
-            if ($x <= 100) {
-                $converted[$key]['x'] = round(($x / 100) * $canvasWidth);
-            }
-            if ($y <= 100) {
-                $converted[$key]['y'] = round(($y / 100) * $canvasHeight);
+
+        if ($isLegacy) {
+            $x = $field['x'] ?? 0;
+            $y = $field['y'] ?? 0;
+
+            if ($x <= 100 && $y <= 100 && ($x < 50 || $y < 50 || $x > 80 || $y > 80)) {
+                if ($x <= 100) {
+                    $converted[$key]['x'] = round(($x / 100) * $canvasWidth);
+                }
+                if ($y <= 100) {
+                    $converted[$key]['y'] = round(($y / 100) * $canvasHeight);
+                }
             }
         }
         

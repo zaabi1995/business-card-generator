@@ -149,6 +149,10 @@ function addTemplatePair() {
         $backImage = $generateColorBg($bgColor, $destination, 'bg-back');
     }
     
+    // Stamp coord format so loadTemplates skips the legacy % conversion.
+    $settings = is_array($settings) ? $settings : [];
+    $settings['fields_format'] = 'px';
+
     // Create front template
     $frontTemplate = [
         'id' => generateTemplateId($name . '-front'),
@@ -162,7 +166,7 @@ function addTemplatePair() {
         'created_at' => $createdAt
     ];
     $templates[] = $frontTemplate;
-    
+
     // Create back template with minimal fields for back of card
     $backFields = getBackFieldSettings();
     $backTemplate = [
@@ -455,7 +459,11 @@ function addNewTemplate() {
             $template['settings'] = $settings;
         }
     }
-    
+
+    // Stamp coord format so loadTemplates skips the legacy % conversion.
+    $template['settings'] = is_array($template['settings']) ? $template['settings'] : [];
+    $template['settings']['fields_format'] = 'px';
+
     // Save to config
     $config = loadTemplates($companyId);
     $config['templates'][] = $template;
@@ -505,7 +513,11 @@ function updateTemplate() {
                     $template['settings'] = $settings;
                 }
             }
-            
+
+            // Stamp coord format so loadTemplates skips the legacy % conversion.
+            $template['settings'] = is_array($template['settings'] ?? null) ? $template['settings'] : [];
+            $template['settings']['fields_format'] = 'px';
+
             // Handle new image upload if provided
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                 $destination = $companyId ? getCompanyTemplatesDir($companyId) : TEMPLATES_DIR;
