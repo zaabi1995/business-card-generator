@@ -212,7 +212,18 @@ $secondaryColor = $companyTheme['secondary_color'] ?? '#036e87';
 
 $success = false;
 $error = $error ?? null;
-$formData = [];
+
+// Prefill form with company-level defaults so staff only type what's personal
+// to them. OHB ships with Address 01 = "P.O. Box : 2555, P.C : 112, Ruwi" and
+// Address 02 = "Muscat, Sultanate of Oman" seeded on the companies row.
+$formData = [
+    'address_en'   => $company['default_address_en']   ?? '',
+    'address_2_en' => $company['default_address_2_en'] ?? '',
+    'address_ar'   => $company['default_address_ar']   ?? '',
+    'address_2_ar' => $company['default_address_2_ar'] ?? '',
+    'website'      => $company['default_website']      ?? '',
+    'fax'          => $company['default_fax']          ?? '',
+];
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) {
@@ -439,8 +450,16 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cairo:wght@300;400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Myriad Pro (matches admin designer so Fabric preview renders the same face) -->
+    <style>
+        @font-face { font-family: 'Myriad Pro'; font-weight: 300; src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-Light.otf') format('opentype'); font-display: swap; }
+        @font-face { font-family: 'Myriad Pro'; font-weight: 400; src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-Regular.otf') format('opentype'); font-display: swap; }
+        @font-face { font-family: 'Myriad Pro'; font-weight: 600; src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-SemiBold.otf') format('opentype'); font-display: swap; }
+        @font-face { font-family: 'Myriad Pro'; font-weight: 700; src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-Bold.otf') format('opentype'); font-display: swap; }
+    </style>
+
     <!-- Font Awesome (CDN) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     
@@ -1450,7 +1469,14 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
             console.error('Editor not ready');
             return;
         }
-        
+
+        // Wait for webfonts so Fabric measures text with the right face (matches
+        // what the admin designer sees). Without this, Cairo / Myriad Pro fall
+        // back to system fonts and positions shift.
+        if (document.fonts && document.fonts.ready) {
+            try { await document.fonts.ready; } catch (e) { /* best effort */ }
+        }
+
         // Clear existing content
         editor.canvas.clear();
         editor.canvas.backgroundColor = '#ffffff';
@@ -1480,7 +1506,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
             'mobile': data.mobile,
             'email': data.email,
             'website': data.website,
-            'address': data.address_2_en || data.address_en,
+            'address': data.address_2_en,
             'address_en': data.address_en,
             'address_2_en': data.address_2_en,
             'address_ar': data.address_ar,
