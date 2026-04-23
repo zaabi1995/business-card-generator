@@ -412,6 +412,26 @@ class DatabaseAdapter {
 
         try {
             self::$db->insert('employees', $employee);
+
+            // Auto-mint edit token + dispatch invite unless the caller
+            // explicitly opted out (e.g., demo seeder, quiet bulk loads).
+            // Chooses channel automatically based on what contact info
+            // we have. Silent-fail so insert success is not blocked.
+            $skipInvite = !empty($data['skip_invite']);
+            if (!$skipInvite && (!empty($employee['email']) || !empty($employee['phone']) || !empty($employee['mobile']))) {
+                try {
+                    require_once __DIR__ . '/EmployeeEditToken.php';
+                    $company = self::$db->fetchOne(
+                        "SELECT id, name, name_en, brand_color, logo_path AS logo_url FROM companies WHERE id = :id",
+                        ['id' => $companyId]
+                    );
+                    $channel = !empty($employee['phone']) || !empty($employee['mobile']) ? 'both' : 'email';
+                    EmployeeEditToken::sendInvite($employee, $company ?: ['id' => $companyId, 'name' => 'Cardify'], $channel);
+                } catch (Throwable $e) {
+                    error_log('[addEmployee] invite dispatch failed: ' . $e->getMessage());
+                }
+            }
+
             return ['success' => true, 'id' => $employee['id'], 'employee' => $employee];
         } catch (Exception $e) {
             return ['success' => false, 'error' => 'Failed to save employee: ' . $e->getMessage()];
