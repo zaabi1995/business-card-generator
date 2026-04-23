@@ -574,7 +574,7 @@
 - [x] 526. admin/custom-domains.php rewritten with plain-English DNS instructions + full i18n. ~40 strings, new `customdomains` namespace (36 keys EN+AR). DNS guidance now mentions provider names (GoDaddy/Cloudflare/Namecheap) + explicit 5-60 min wait + clear SSL email flow instead of developer-speak.
 - [x] 527. admin/analytics.php + admin/card-analytics.php full i18n: dropdown labels, KPI tile titles, chart titles, country/browser/device lists, recent scans table columns, CTA labels, empty states. ~55 strings appended to existing analytics namespace (45 new keys EN+AR).
 - [x] 528. admin/audit-logs.php full i18n: 7 stat tiles, 6 filter inputs/selects, 3 buttons, pagination counter, 6 table columns, empty state, modal (Before/After/IP/UA/"No data"). ~35 strings, new `auditlogs` namespace (38 keys EN+AR).
-- [ ] 529. admin/fx-rates.php rates table headers, last-updated banner, Reuters-source attribution, add-rate modal. Est. ~20 strings.
+- [x] 529. admin/fx-rates.php full i18n: header + reset button, intro paragraph, 4 flash messages, 4 table column headers, notes placeholder, Save button, reset-confirm dialog. ~15 strings, new `fxrates` namespace (17 keys EN+AR). No actual Reuters attribution exists in the file (feature/mention removed pre-sprint); add-rate modal does not exist (rates are edited inline).
 - [ ] 530. admin/appointments.php calendar grid, list view, booking modal (time/service/client/notes), status chips. Est. ~50 strings.
 - [ ] 531. admin/bhd-campaign.php campaign dashboard (targets, CTAs sent, responses), campaign-create form, per-campaign detail view. Est. ~70 strings.
 - [ ] 532. admin/growth.php growth metrics widgets (cohort, churn, expansion), experiment list, experiment-detail drawer. Est. ~60 strings.
