@@ -240,6 +240,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
         'phone_ar' => trim($_POST['phone_ar'] ?? ''),
         'mobile' => trim($_POST['mobile'] ?? ''),
         'mobile_ar' => trim($_POST['mobile_ar'] ?? ''),
+        'fax' => trim($_POST['fax'] ?? ''),
+        'fax_ar' => trim($_POST['fax_ar'] ?? ''),
         'website' => trim($_POST['website'] ?? ''),
         'website_ar' => trim($_POST['website_ar'] ?? ''),
         'address_en' => trim($_POST['address_en'] ?? ''),
@@ -440,7 +442,8 @@ $brandName = $companyName;
 $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepartment['name'] . ' - ' : '') . $companyName;
 ?>
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<?php $__portalLocale = function_exists('currentLocale') ? currentLocale() : 'en'; $__portalDir = function_exists('currentDir') ? currentDir() : ($__portalLocale === 'ar' ? 'rtl' : 'ltr'); ?>
+<html lang="<?= htmlspecialchars($__portalLocale) ?>" dir="<?= htmlspecialchars($__portalDir) ?>" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -684,16 +687,19 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                             <h1 class="text-lg font-bold text-gray-900"><?php echo htmlspecialchars($companyName); ?></h1>
                             <p class="text-xs text-gray-500">
                                 <?php if ($selectedDepartment): ?>
-                                    <?php echo htmlspecialchars($selectedDepartment['name']); ?> - Business Card Portal
+                                    <?php echo htmlspecialchars($selectedDepartment['name']); ?> - <?= htmlspecialchars(t('portal.business_card_portal')) ?>
                                 <?php else: ?>
-                                    Business Card Portal
+                                    <?= htmlspecialchars(t('portal.business_card_portal')) ?>
                                 <?php endif; ?>
                             </p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
+                        <?php if (function_exists('currentLocale') && file_exists(INCLUDES_DIR . '/lang-switcher.php')): ?>
+                            <?php require INCLUDES_DIR . '/lang-switcher.php'; ?>
+                        <?php endif; ?>
                         <a href="<?php echo getBasePath() . $companySlug; ?>/admin/login" class="inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 font-medium">
-                            <i class="fa-solid fa-lock"></i><span>Admin</span>
+                            <i class="fa-solid fa-lock"></i><span><?= htmlspecialchars(t('portal.admin_login')) ?></span>
                         </a>
                     </div>
                 </div>
@@ -1089,7 +1095,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     <!-- Address 01 English (template key address_en) -->
                     <?php if (!empty($enabledFields['address_en'])): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Address 01 (English)</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.address_01_en')) ?></label>
                         <textarea name="address_en" id="address_en" rows="2"
                                   placeholder="<?= htmlspecialchars(t('portal.address_ph_en')) ?>"
                                   class="form-input"><?php echo htmlspecialchars($formData['address_en'] ?? ''); ?></textarea>
@@ -1099,9 +1105,9 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     <!-- Address 02 English (template legacy key `address`) -->
                     <?php if (!empty($enabledFields['address'])): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Address 02 (English)</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.address_02_en')) ?></label>
                         <textarea name="address_2_en" id="address_2_en" rows="2"
-                                  placeholder="Muscat, Sultanate of Oman"
+                                  placeholder="<?= htmlspecialchars(t('portal.address_02_ph_en')) ?>"
                                   class="form-input"><?php echo htmlspecialchars($formData['address_2_en'] ?? ''); ?></textarea>
                     </div>
                     <?php endif; ?>
@@ -1110,7 +1116,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     <?php if (!empty($enabledFields['address_ar'])): ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Address 01 (Arabic)
+                            <?= htmlspecialchars(t('portal.address_01_ar')) ?>
                             <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('address_en', 'address_ar', 'address')">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
@@ -1128,17 +1134,106 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                     <?php if (!empty($enabledFields['address_2_ar'])): ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Address 02 (Arabic)
+                            <?= htmlspecialchars(t('portal.address_02_ar')) ?>
                             <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('address_2_en', 'address_2_ar', 'address')">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
                         </label>
                         <textarea name="address_2_ar" id="address_2_ar" rows="2"
-                                  placeholder="مسقط، سلطنة عُمان"
+                                  placeholder="<?= htmlspecialchars(t('portal.address_02_ph_ar')) ?>"
                                   class="form-input rtl-input"><?php echo htmlspecialchars($formData['address_2_ar'] ?? ''); ?></textarea>
                     </div>
                     <?php endif; ?>
-                    
+
+                    <!-- Fax (English) -->
+                    <?php if (!empty($enabledFields['fax'])): ?>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.fax_label')) ?></label>
+                        <input type="tel" name="fax" id="fax"
+                               value="<?php echo htmlspecialchars($formData['fax'] ?? ''); ?>"
+                               placeholder="+968 1234 5679"
+                               class="form-input">
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Phone (Arabic) -->
+                    <?php if (!empty($enabledFields['phone_ar'])): ?>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.phone_ar_label')) ?></label>
+                        <input type="text" name="phone_ar" id="phone_ar"
+                               value="<?php echo htmlspecialchars($formData['phone_ar'] ?? ''); ?>"
+                               placeholder="٩٦٨+ ١٢٣٤ ٥٦٧٨"
+                               class="form-input rtl-input">
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Mobile (Arabic) -->
+                    <?php if (!empty($enabledFields['mobile_ar'])): ?>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.mobile_ar_label')) ?></label>
+                        <input type="text" name="mobile_ar" id="mobile_ar"
+                               value="<?php echo htmlspecialchars($formData['mobile_ar'] ?? ''); ?>"
+                               placeholder="٩٦٨+ ٩٨٧٦ ٥٤٣٢"
+                               class="form-input rtl-input">
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Website (Arabic) -->
+                    <?php if (!empty($enabledFields['website_ar'])): ?>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.website_ar_label')) ?></label>
+                        <input type="text" name="website_ar" id="website_ar"
+                               value="<?php echo htmlspecialchars($formData['website_ar'] ?? ''); ?>"
+                               placeholder="www.company.com"
+                               class="form-input rtl-input">
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Company (English) -->
+                    <?php if (!empty($enabledFields['company_en'])): ?>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.company_en_label')) ?></label>
+                        <input type="text" name="company_en" id="company_en"
+                               value="<?php echo htmlspecialchars($formData['company_en'] ?? $companyName); ?>"
+                               class="form-input">
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Company (Arabic) -->
+                    <?php if (!empty($enabledFields['company_ar'])): ?>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.company_ar_label')) ?></label>
+                        <input type="text" name="company_ar" id="company_ar"
+                               value="<?php echo htmlspecialchars($formData['company_ar'] ?? ''); ?>"
+                               class="form-input rtl-input">
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Catch-all: render a text input for any OTHER enabled design
+                         field we haven't explicitly handled above (custom_*, fax_ar,
+                         department_en/_ar, etc). Keeps the portal in sync with the
+                         designer without needing a code change per new field. -->
+                    <?php
+                    $handledKeys = [
+                        'name_en','name_ar','position_en','position_ar',
+                        'phone','phone_ar','mobile','mobile_ar','fax','fax_ar',
+                        'email','website','website_ar',
+                        'address','address_en','address_ar','address_2_ar',
+                        'company_en','company_ar','department_id',
+                        'qr_code',
+                    ];
+                    foreach ($enabledFields as $__k => $__v):
+                        if (in_array($__k, $handledKeys, true)) continue;
+                        $__label = ucwords(str_replace('_', ' ', $__k));
+                    ?>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars($__label) ?></label>
+                        <input type="text" name="<?= htmlspecialchars($__k) ?>" id="<?= htmlspecialchars($__k) ?>"
+                               value="<?php echo htmlspecialchars($formData[$__k] ?? ''); ?>"
+                               class="form-input">
+                    </div>
+                    <?php endforeach; ?>
+
                     <!-- Step 1: Generate Preview Button -->
                     <div class="pt-4 border-t border-gray-200" id="generatePreviewSection">
                         <button type="button" id="generatePreviewBtn" onclick="generatePreview()"
@@ -1381,6 +1476,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                 height: frontDims.height,
                 backgroundColor: '#ffffff',
                 onReady: () => {
+                    if (frontEditor.canvas) frontEditor.canvas.selection = false;
                     setTimeout(() => scaleCanvasToFit('previewFrontCanvas', frontDims.width), 50);
                 }
             });
@@ -1392,6 +1488,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
                 height: backDims.height,
                 backgroundColor: '#ffffff',
                 onReady: () => {
+                    if (backEditor.canvas) backEditor.canvas.selection = false;
                     setTimeout(() => scaleCanvasToFit('previewBackCanvas', backDims.width), 50);
                 }
             });
@@ -1412,17 +1509,17 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
         
         // Validate required fields
         if (!email) {
-            alert('Please enter your email address');
+            alert(<?= json_encode(t('portal.enter_email_first')) ?>);
             return;
         }
         if (!nameEn) {
-            alert('Please enter your name');
+            alert(<?= json_encode(t('portal.enter_name_first')) ?>);
             return;
         }
         
         // Show loading state
         btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Generating...';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>' + <?= json_encode(t('portal.generating')) ?>;
 
         // Switch to generated preview view (null-safe: template preview DOM
         // isn't rendered when the tenant has no front/back templates wired
@@ -1432,7 +1529,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
         _hide('templatePreview');
         _show('generatedPreview');
         const _title = document.getElementById('previewTitle');
-        if (_title) _title.textContent = 'Your Card Preview';
+        if (_title) _title.textContent = <?= json_encode(t('portal.your_card_preview')) ?>;
         
         // Get form data - use main email field (no separate email_card)
         const formData = {
@@ -1448,8 +1545,19 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
             address_2_en: document.getElementById('address_2_en')?.value || '',
             address_ar: document.getElementById('address_ar')?.value || '',
             address_2_ar: document.getElementById('address_2_ar')?.value || '',
-            company_en: companyName
+            fax: document.getElementById('fax')?.value || '',
+            fax_ar: document.getElementById('fax_ar')?.value || '',
+            phone_ar: document.getElementById('phone_ar')?.value || '',
+            mobile_ar: document.getElementById('mobile_ar')?.value || '',
+            website_ar: document.getElementById('website_ar')?.value || '',
+            company_ar: document.getElementById('company_ar')?.value || '',
+            company_en: document.getElementById('company_en')?.value || companyName
         };
+        // Pick up any catch-all custom fields the designer added so they also
+        // flow into the preview. Reads every <input>/<textarea> inside the form.
+        document.querySelectorAll('#cardRequestForm input[name], #cardRequestForm textarea[name]').forEach(function (el) {
+            if (!(el.name in formData)) formData[el.name] = el.value || '';
+        });
         
         try {
             // Render front card using CardEditor
@@ -1481,7 +1589,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
             
         } catch (e) {
             console.error('Preview generation error:', e);
-            alert('Error generating preview. Please try again.');
+            alert(<?= json_encode(t('portal.preview_error')) ?>);
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-eye mr-2"></i>Generate Preview';
         }
@@ -1532,27 +1640,56 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
             'mobile': data.mobile,
             'email': data.email,
             'website': data.website,
+            'website_ar': data.website_ar,
+            'fax': data.fax,
+            'fax_ar': data.fax_ar,
+            'phone_ar': data.phone_ar,
+            'mobile_ar': data.mobile_ar,
+            'company_ar': data.company_ar,
             'address': data.address_2_en,
             'address_en': data.address_en,
             'address_2_en': data.address_2_en,
             'address_ar': data.address_ar,
             'address_2_ar': data.address_2_ar
         };
+        // Merge any additional custom fields the admin added to the design
+        // so the catch-all inputs also flow through to the Fabric preview.
+        Object.keys(data).forEach(function (k) {
+            if (!(k in fieldValues)) fieldValues[k] = data[k];
+        });
         
         // Add text fields using CardEditor
         if (template && template.fields) {
             for (const [key, field] of Object.entries(template.fields)) {
                 if (!field.enabled) continue;
                 
-                // Handle QR code separately - use tracking URL (same as original)
+                // Handle QR code separately — use the employee's own vCard URL
+                // so the QR is dynamic per person. Lock it against user movement
+                // on the portal preview (designer is the only place to reposition).
                 if (key === 'qr_code') {
                     const vcfUrl = getVcfUrl(data.email);
                     try {
-                        await editor.addQRCode(vcfUrl, {
+                        const qrObj = await editor.addQRCode(vcfUrl, {
                             x: field.x,
                             y: field.y,
                             size: field.size || 140
                         });
+                        if (qrObj) {
+                            qrObj.set({
+                                selectable: false,
+                                evented: false,
+                                hasControls: false,
+                                hasBorders: false,
+                                lockMovementX: true,
+                                lockMovementY: true,
+                                lockScalingX: true,
+                                lockScalingY: true,
+                                lockRotation: true,
+                                hoverCursor: 'default'
+                            });
+                            qrObj.setCoords();
+                            editor.canvas.requestRenderAll();
+                        }
                     } catch (e) {
                         console.warn('QR code generation failed:', e);
                     }
@@ -1831,7 +1968,7 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
         
         const sourceText = sourceEl.value.trim();
         if (!sourceText) {
-            showToast('Please fill in the English field first', 'warning');
+            showToast(<?= json_encode(t('portal.english_first')) ?>, 'warning');
             sourceEl.focus();
             return;
         }
