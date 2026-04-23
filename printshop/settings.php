@@ -38,7 +38,7 @@ $messageType = 'success';
 
 // Handle updates
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !validateCSRFToken($_POST['csrf_token'] ?? '')) {
-    die('Invalid request');
+    die(htmlspecialchars(t('printshopsettings.invalid_request')));
 }
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -46,17 +46,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'upload_logo') {
         if (isset($_FILES['logo']) && $_FILES['logo']['error'] !== UPLOAD_ERR_NO_FILE) {
             $result = PrintShop::uploadLogo($shopId, $_FILES['logo']);
-            $message = $result['success'] ? 'Logo uploaded successfully!' : 'Error: ' . ($result['error'] ?? 'Unknown');
+            $message = $result['success'] ? t('printshopsettings.logo_uploaded') : str_replace(':msg', (string)($result['error'] ?? t('printshopsettings.unknown_error')), t('printshopsettings.error_prefix'));
             $messageType = $result['success'] ? 'success' : 'error';
             $printShop = PrintShop::getById($shopId);
         } else {
-            $message = 'Please select a logo file to upload';
+            $message = t('printshopsettings.please_select_logo');
             $messageType = 'error';
         }
         
     } elseif ($action === 'delete_logo') {
         $result = PrintShop::deleteLogo($shopId);
-        $message = $result['success'] ? 'Logo removed successfully!' : 'Error: ' . ($result['error'] ?? 'Unknown');
+        $message = $result['success'] ? t('printshopsettings.logo_deleted') : str_replace(':msg', (string)($result['error'] ?? t('printshopsettings.unknown_error')), t('printshopsettings.error_prefix'));
         $messageType = $result['success'] ? 'success' : 'error';
         $printShop = PrintShop::getById($shopId);
         
@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'postal_code' => trim($_POST['postal_code'] ?? '')
         ]);
         
-        $message = $result['success'] ? 'Profile updated successfully!' : 'Error: ' . ($result['error'] ?? 'Unknown');
+        $message = $result['success'] ? t('printshopsettings.profile_updated') : str_replace(':msg', (string)($result['error'] ?? t('printshopsettings.unknown_error')), t('printshopsettings.error_prefix'));
         $messageType = $result['success'] ? 'success' : 'error';
         
         // Refresh data
@@ -114,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'express_fee' => (float)($_POST['express_fee'] ?? 0)
         ]);
         
-        $message = $result['success'] ? 'Pricing updated successfully!' : 'Error: ' . ($result['error'] ?? 'Unknown');
+        $message = $result['success'] ? t('printshopsettings.pricing_updated') : str_replace(':msg', (string)($result['error'] ?? t('printshopsettings.unknown_error')), t('printshopsettings.error_prefix'));
         $messageType = $result['success'] ? 'success' : 'error';
         
         $printShop = PrintShop::getById($shopId);
@@ -199,7 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'capacity_notes'   => trim($_POST['capacity_notes'] ?? ''),
             'accepting_orders' => isset($_POST['accepting_orders']) ? 1 : 0,
         ], 'id = :id', ['id' => $shopId]);
-        $message = 'Capacity settings updated!';
+        $message = t('printshopsettings.capacity_updated');
         $messageType = 'success';
         $printShop = PrintShop::getById($shopId);
     }
@@ -252,11 +252,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="flex items-center justify-between mb-8">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t("printshoppages.h1_shop_settings")) ?></h1>
-                <p class="text-gray-500">Manage your print shop details and pricing</p>
+                <p class="text-gray-500"><?= htmlspecialchars(t('printshopsettings.page_sub')) ?></p>
             </div>
             <a href="dashboard.php" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors">
                 <i class="fa-solid fa-arrow-left mr-2"></i>
-                Dashboard
+                <?= htmlspecialchars(t('printshopsettings.btn_back_dashboard')) ?>
             </a>
         </div>
         
@@ -274,7 +274,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="p-6 border-b border-gray-100">
                     <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
                         <i class="fa-solid fa-image text-purple-600"></i>
-                        Shop Logo
+                        <?= htmlspecialchars(t('printshopsettings.section_logo')) ?>
                     </h3>
                 </div>
                 <div class="p-6">
@@ -328,7 +328,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="p-6 border-b border-gray-100">
                     <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
                         <i class="fa-solid fa-store text-blue-600"></i>
-                        Shop Profile
+                        <?= htmlspecialchars(t('printshopsettings.section_basic_info')) ?>
                     </h3>
                 </div>
                 <div class="p-6 space-y-4">
@@ -407,7 +407,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </div>
                 <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
                     <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-                        Save Profile
+                        <?= htmlspecialchars(t('printshopsettings.btn_save_profile')) ?>
                     </button>
                 </div>
             </form>
@@ -419,7 +419,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="p-6 border-b border-gray-100">
                     <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
                         <i class="fa-solid fa-dollar-sign text-green-600"></i>
-                        Pricing & Delivery
+                        <?= htmlspecialchars(t('printshopsettings.section_pricing')) ?>
                     </h3>
                 </div>
                 <div class="p-6 space-y-4">
@@ -529,7 +529,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </div>
                 <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
                     <button type="submit" class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
-                        Save Pricing
+                        <?= htmlspecialchars(t('printshopsettings.btn_save_pricing')) ?>
                     </button>
                 </div>
             </form>
@@ -541,7 +541,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="p-6 border-b border-gray-100">
                     <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
                         <i class="fa-solid fa-list-check text-purple-600"></i>
-                        Available Services
+                        <?= htmlspecialchars(t('printshopsettings.section_paper_finish')) ?>
                     </h3>
                 </div>
                 <div class="p-6 space-y-6">
@@ -581,7 +581,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </div>
                 <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
                     <button type="submit" class="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors">
-                        Save Services
+                        <?= htmlspecialchars(t('printshopsettings.section_paper_finish')) ?>
                     </button>
                 </div>
             </form>
@@ -593,7 +593,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="p-6 border-b border-gray-100">
                     <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
                         <i class="fa-solid fa-file-invoice text-indigo-600"></i>
-                        Document & Billing Settings
+                        <?= htmlspecialchars(t('printshopsettings.section_workflow')) ?>
                     </h3>
                     <p class="text-sm text-gray-500 mt-1">Configure quotations, invoices, and payment terms</p>
                 </div>
@@ -677,7 +677,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </div>
                 <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
                     <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors">
-                        Save Document Settings
+                        <?= htmlspecialchars(t('printshopsettings.btn_save_workflow')) ?>
                     </button>
                 </div>
             </form>
@@ -699,7 +699,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <div>
                             <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
                                 <i class="fa-solid fa-plug text-orange-600"></i>
-                                ERP Integration
+                                <?= htmlspecialchars(t('printshopsettings.section_erp')) ?>
                             </h3>
                             <p class="text-sm text-gray-500 mt-1">Connect to Odoo or other ERP systems for automatic invoicing</p>
                         </div>
@@ -814,7 +814,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <i class="fa-solid fa-plug-circle-check mr-2"></i>Test Connection
                     </button>
                     <button type="submit" class="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors">
-                        Save ERP Settings
+                        <?= htmlspecialchars(t('printshopsettings.btn_save_erp')) ?>
                     </button>
                 </div>
                 
@@ -836,7 +836,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         ?>
         <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mt-8">
             <div class="px-6 py-5 border-b border-gray-100">
-                <h2 class="text-lg font-semibold text-gray-900"><i class="fa-solid fa-clock mr-2 text-teal-500"></i>Capacity &amp; Availability</h2>
+                <h2 class="text-lg font-semibold text-gray-900"><i class="fa-solid fa-clock mr-2 text-teal-500"></i><?= htmlspecialchars(t('printshopsettings.section_capacity')) ?></h2>
                 <p class="text-sm text-gray-500 mt-1">Set working hours, order limits, and toggle order acceptance</p>
             </div>
             <form method="post" class="p-6 space-y-6">
@@ -893,7 +893,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <div class="flex justify-end">
                     <button type="submit" class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors">
-                        Save Capacity Settings
+                        <?= htmlspecialchars(t('printshopsettings.btn_save_capacity')) ?>
                     </button>
                 </div>
             </form>
