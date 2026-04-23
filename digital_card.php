@@ -262,7 +262,7 @@ function renderBranded404($company, $theme) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Card Not Available<?php echo $companyName ? ' - ' . htmlspecialchars($companyName) : ''; ?></title>
+    <title><?= htmlspecialchars(t('digitalcard.unavailable_title')) ?><?php echo $companyName ? ' - ' . htmlspecialchars($companyName) : ''; ?></title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(to bottom, #141421, #1a1a2e); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #eee; padding: 24px; }
@@ -280,9 +280,9 @@ function renderBranded404($company, $theme) {
         <?php if ($logoPath): ?>
             <div class="logo"><img src="<?php echo htmlspecialchars($logoPath); ?>" alt="<?php echo htmlspecialchars($companyName); ?>"></div>
         <?php endif; ?>
-        <h1>This card is no longer available</h1>
-        <p>The business card you're looking for may have been removed or the link is invalid.</p>
-        <div class="footer">Powered by <a href="/">Cardify</a></div>
+        <h1><?= htmlspecialchars(t('digitalcard.unavailable_h1')) ?></h1>
+        <p><?= htmlspecialchars(t('digitalcard.unavailable_body')) ?></p>
+        <div class="footer"><?= htmlspecialchars(t('digitalcard.powered_by')) ?> <a href="/">Cardify</a></div>
     </div>
 </body>
 </html>
@@ -858,7 +858,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             class="theme-toggle"
             id="themeToggle"
             aria-label="<?php echo $isDarkPage ? 'Switch to light mode' : 'Switch to dark mode'; ?>"
-            title="<?php echo $isDarkPage ? 'Switch to light mode' : 'Switch to dark mode'; ?>"
+            title="<?php echo htmlspecialchars($isDarkPage ? t('digitalcard.switch_light') : t('digitalcard.switch_dark')); ?>"
             data-mode="<?php echo $defaultThemeMode; ?>">
         <svg class="theme-icon theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
         <svg class="theme-icon theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
@@ -877,16 +877,16 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         <div class="card-flip-container" id="cardFlip">
             <div class="card-flip-inner" id="cardInner">
                 <div class="card-face">
-                    <img src="<?php echo htmlspecialchars($frontImage); ?>" alt="Card Front" loading="lazy">
+                    <img src="<?php echo htmlspecialchars($frontImage); ?>" alt="<?= htmlspecialchars(t('digitalcard.alt_card_front')) ?>" loading="lazy">
                 </div>
                 <?php if ($backImage): ?>
                 <div class="card-face card-back-face">
-                    <img src="<?php echo htmlspecialchars($backImage); ?>" alt="Card Back" loading="lazy">
+                    <img src="<?php echo htmlspecialchars($backImage); ?>" alt="<?= htmlspecialchars(t('digitalcard.alt_card_back')) ?>" loading="lazy">
                 </div>
                 <?php endif; ?>
             </div>
             <?php if ($backImage): ?>
-            <div class="tap-hint" id="tapHint">Tap card to flip</div>
+            <div class="tap-hint" id="tapHint"><?= htmlspecialchars(t('digitalcard.tap_to_flip')) ?></div>
             <?php endif; ?>
         </div>
         <?php endif; ?>
@@ -909,15 +909,15 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         <!-- Action Buttons -->
         <div class="action-buttons">
             <?php if ($mobile || $phone): ?>
-            <a href="<?php echo htmlspecialchars($cardClickUrl($mobile ? 'click_mobile' : 'click_phone', 'tel:' . ($mobile ?: $phone))); ?>" class="action-btn btn-call">Call</a>
+            <a href="<?php echo htmlspecialchars($cardClickUrl($mobile ? 'click_mobile' : 'click_phone', 'tel:' . ($mobile ?: $phone))); ?>" class="action-btn btn-call"><?= htmlspecialchars(t('digitalcard.btn_call')) ?></a>
             <?php endif; ?>
 
             <?php if ($waPhone): ?>
-            <a href="<?php echo htmlspecialchars($cardClickUrl('click_whatsapp', 'https://api.whatsapp.com/send?phone=' . $waPhone)); ?>" class="action-btn btn-whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_whatsapp', 'https://api.whatsapp.com/send?phone=' . $waPhone)); ?>" class="action-btn btn-whatsapp" target="_blank" rel="noopener"><?= htmlspecialchars(t('digitalcard.btn_whatsapp')) ?></a>
             <?php endif; ?>
 
             <?php if ($email): ?>
-            <a href="<?php echo htmlspecialchars($cardClickUrl('click_email', 'mailto:' . $email)); ?>" class="action-btn btn-email">Email</a>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_email', 'mailto:' . $email)); ?>" class="action-btn btn-email"><?= htmlspecialchars(t('digitalcard.btn_email')) ?></a>
             <?php endif; ?>
         </div>
 
@@ -981,22 +981,22 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         <?php $pdfUrl = '/card-pdf.php?i=' . urlencode($employee['id']); ?>
         <div class="bottom-buttons">
             <?php if ($email): ?>
-            <a href="<?php echo htmlspecialchars($cardClickUrl('save_contact', $vcfUrl)); ?>" class="bottom-btn btn-save" download>Save Contact</a>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('save_contact', $vcfUrl)); ?>" class="bottom-btn btn-save" download><?= htmlspecialchars(t('digitalcard.btn_save_contact')) ?></a>
             <?php endif; ?>
-            <a href="<?php echo htmlspecialchars($cardClickUrl('download_pdf', $pdfUrl)); ?>" class="bottom-btn btn-pdf" download>Download PDF</a>
-            <button class="bottom-btn btn-share" onclick="shareCard()">Share</button>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('download_pdf', $pdfUrl)); ?>" class="bottom-btn btn-pdf" download><?= htmlspecialchars(t('digitalcard.btn_download_pdf')) ?></a>
+            <button class="bottom-btn btn-share" onclick="shareCard()"><?= htmlspecialchars(t('digitalcard.btn_share')) ?></button>
         </div>
 
         <!-- Public Card Sections -->
         <?php foreach ($sectionOrder as $__sec): ?>
             <?php if ($__sec === 'bio' && !empty($sectionMaster['bio_enabled']) && !empty($bioText)): ?>
                 <div class="card-section">
-                    <h3>About</h3>
+                    <h3><?= htmlspecialchars(t('digitalcard.section_about')) ?></h3>
                     <div class="section-bio"><?php echo CardSections::renderBioHtml($bioText); ?></div>
                 </div>
             <?php elseif ($__sec === 'services' && !empty($sectionMaster['services_enabled']) && !empty($sectionServices)): ?>
                 <div class="card-section">
-                    <h3>Services</h3>
+                    <h3><?= htmlspecialchars(t('digitalcard.section_services')) ?></h3>
                     <?php foreach ($sectionServices as $svc): ?>
                         <div class="service-row">
                             <div class="service-icon"><i class="<?php echo htmlspecialchars($svc['icon']); ?>"></i></div>
@@ -1011,7 +1011,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                 </div>
             <?php elseif ($__sec === 'gallery' && !empty($sectionMaster['gallery_enabled']) && !empty($sectionGallery)): ?>
                 <div class="card-section">
-                    <h3>Gallery</h3>
+                    <h3><?= htmlspecialchars(t('digitalcard.section_gallery')) ?></h3>
                     <div class="gallery-grid">
                         <?php foreach ($sectionGallery as $img): ?>
                             <img src="<?php echo htmlspecialchars(cardifyAssetUrl($img['file_path'])); ?>" alt="<?php echo htmlspecialchars($img['caption'] ?? ''); ?>" loading="lazy" onclick="window.open(this.src,'_blank')">
@@ -1020,7 +1020,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                 </div>
             <?php elseif ($__sec === 'testimonials' && !empty($sectionMaster['testimonials_enabled'])): ?>
                 <div class="card-section">
-                    <h3>Testimonials</h3>
+                    <h3><?= htmlspecialchars(t('digitalcard.section_testimonials')) ?></h3>
                     <?php if (!empty($sectionTestimonials)): ?>
                     <?php foreach ($sectionTestimonials as $t): ?>
                         <div class="testimonial-item">
@@ -1043,17 +1043,17 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                         </div>
                     <?php endforeach; ?>
                     <?php else: ?>
-                        <div style="font-size:13px; opacity:0.65; padding:8px 0 12px;">Be the first to leave a testimonial.</div>
+                        <div style="font-size:13px; opacity:0.65; padding:8px 0 12px;"><?= htmlspecialchars(t('digitalcard.test_empty')) ?></div>
                     <?php endif; ?>
 
-                    <button type="button" class="testimonial-toggle" id="testimonialToggle" onclick="(function(b){var f=document.getElementById('testimonialFormWrap');var open=f.style.display==='block';f.style.display=open?'none':'block';b.textContent=open?'Leave a testimonial':'Cancel';})(this);">Leave a testimonial</button>
+                    <button type="button" class="testimonial-toggle" id="testimonialToggle" data-label-open="<?= htmlspecialchars(t('digitalcard.test_leave'), ENT_QUOTES) ?>" data-label-close="<?= htmlspecialchars(t('digitalcard.test_cancel'), ENT_QUOTES) ?>" onclick="(function(b){var f=document.getElementById('testimonialFormWrap');var open=f.style.display==='block';f.style.display=open?'none':'block';b.textContent=open?b.dataset.labelOpen:b.dataset.labelClose;})(this);"><?= htmlspecialchars(t('digitalcard.test_leave')) ?></button>
                     <div id="testimonialFormWrap" style="display:none; margin-top:12px;">
                         <form id="testimonialForm" class="lead-form" enctype="multipart/form-data" autocomplete="off">
                             <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee['id']); ?>">
-                            <div class="hp" style="position:absolute;left:-10000px;"><label>Website<input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
+                            <div class="hp" style="position:absolute;left:-10000px;"><label><?= htmlspecialchars(t('digitalcard.hp_honeypot')) ?><input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
                             <div class="lead-error" id="testimonialError" style="display:none;"></div>
-                            <label>Your name<input type="text" name="name" required maxlength="255"></label>
-                            <label>Email (optional)<input type="email" name="email" maxlength="255"></label>
+                            <label><?= htmlspecialchars(t('digitalcard.test_field_name')) ?><input type="text" name="name" required maxlength="255"></label>
+                            <label><?= htmlspecialchars(t('digitalcard.test_field_email')) ?><input type="email" name="email" maxlength="255"></label>
                             <label>Rating
                                 <div class="star-picker" id="starPicker" role="radiogroup" aria-label="Rating">
                                     <input type="hidden" name="rating" id="ratingInput" value="">
@@ -1062,16 +1062,16 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                                     <?php endfor; ?>
                                 </div>
                             </label>
-                            <label>Your testimonial<textarea name="quote" required maxlength="2000"></textarea></label>
-                            <label>Photo (optional)<input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></label>
-                            <button type="submit" id="testimonialSubmit">Submit for review</button>
+                            <label><?= htmlspecialchars(t('digitalcard.test_field_quote')) ?><textarea name="quote" required maxlength="2000"></textarea></label>
+                            <label><?= htmlspecialchars(t('digitalcard.test_field_photo')) ?><input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></label>
+                            <button type="submit" id="testimonialSubmit"><?= htmlspecialchars(t('digitalcard.test_submit')) ?></button>
                         </form>
-                        <div class="lead-success" id="testimonialSuccess" style="display:none;">Thanks! Your testimonial is pending review.</div>
+                        <div class="lead-success" id="testimonialSuccess" style="display:none;"><?= htmlspecialchars(t('digitalcard.test_thanks')) ?></div>
                     </div>
                 </div>
             <?php elseif ($__sec === 'offers' && !empty($sectionMaster['offers_enabled']) && !empty($sectionOffers)): ?>
                 <div class="card-section">
-                    <h3>Offers</h3>
+                    <h3><?= htmlspecialchars(t('digitalcard.section_offers')) ?></h3>
                     <div class="offers-list">
                         <?php foreach ($sectionOffers as $offer): ?>
                             <div class="offer-card">
@@ -1323,18 +1323,18 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                 </div>
             <?php elseif ($__sec === 'lead_form' && !empty($sectionMaster['lead_form_enabled'])): ?>
                 <div class="card-section">
-                    <h3>Get in Touch</h3>
+                    <h3><?= htmlspecialchars(t('digitalcard.section_contact')) ?></h3>
                     <form class="lead-form" id="leadForm" autocomplete="off">
                         <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee['id']); ?>">
-                        <div class="hp"><label>Website<input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
+                        <div class="hp"><label><?= htmlspecialchars(t('digitalcard.hp_honeypot')) ?><input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
                         <div class="lead-error" id="leadError" style="display:none;"></div>
-                        <label>Your name<input type="text" name="name" required maxlength="255"></label>
-                        <label>Email<input type="email" name="email" maxlength="255"></label>
-                        <label>Phone<input type="tel" name="phone" maxlength="50"></label>
-                        <label>Message<textarea name="message" maxlength="4000"></textarea></label>
-                        <button type="submit" id="leadSubmit">Send</button>
+                        <label><?= htmlspecialchars(t('digitalcard.lead_field_name')) ?><input type="text" name="name" required maxlength="255"></label>
+                        <label><?= htmlspecialchars(t('digitalcard.lead_field_email')) ?><input type="email" name="email" maxlength="255"></label>
+                        <label><?= htmlspecialchars(t('digitalcard.lead_field_phone')) ?><input type="tel" name="phone" maxlength="50"></label>
+                        <label><?= htmlspecialchars(t('digitalcard.lead_field_message')) ?><textarea name="message" maxlength="4000"></textarea></label>
+                        <button type="submit" id="leadSubmit"><?= htmlspecialchars(t('digitalcard.lead_send')) ?></button>
                     </form>
-                    <div class="lead-success" id="leadSuccess" style="display:none;">Thanks! Your message has been sent.</div>
+                    <div class="lead-success" id="leadSuccess" style="display:none;"><?= htmlspecialchars(t('digitalcard.lead_thanks')) ?></div>
                 </div>
             <?php endif; ?>
         <?php endforeach; ?>
@@ -1342,32 +1342,32 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         <?php if ($apptEnabled): ?>
         <!-- Appointment Booking Widget -->
         <div class="card-section" id="apptSection">
-            <h3>Book a meeting</h3>
+            <h3><?= htmlspecialchars(t('digitalcard.section_book')) ?></h3>
             <div id="apptStep1">
-                <label class="appt-label">Choose a date</label>
+                <label class="appt-label"><?= htmlspecialchars(t('digitalcard.appt_choose_date')) ?></label>
                 <input type="date" id="apptDate" class="appt-input">
                 <div id="apptSlots" class="appt-slots"></div>
-                <div id="apptSlotsEmpty" class="appt-empty">No slots available on this day.</div>
+                <div id="apptSlotsEmpty" class="appt-empty"><?= htmlspecialchars(t('digitalcard.appt_no_slots')) ?></div>
             </div>
             <form id="apptForm" style="display:none;margin-top:12px;" autocomplete="off">
                 <div id="apptChosen" class="appt-chosen"></div>
                 <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee['id']); ?>">
                 <input type="hidden" name="slot_start" id="apptSlotStart">
-                <div class="hp" style="position:absolute;left:-9999px;"><label>Website<input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
+                <div class="hp" style="position:absolute;left:-9999px;"><label><?= htmlspecialchars(t('digitalcard.hp_honeypot')) ?><input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
                 <div id="apptError" style="display:none;color:#ef4444;font-size:13px;margin-bottom:8px;"></div>
-                <input type="text" name="name" placeholder="Your name" required maxlength="255" class="appt-input">
-                <input type="email" name="email" placeholder="Email" maxlength="255" class="appt-input">
-                <input type="tel" name="phone" placeholder="Phone" maxlength="50" class="appt-input">
-                <textarea name="notes" placeholder="Notes (optional)" maxlength="4000" rows="3" class="appt-textarea"></textarea>
+                <input type="text" name="name" placeholder="<?= htmlspecialchars(t('digitalcard.appt_ph_name')) ?>" required maxlength="255" class="appt-input">
+                <input type="email" name="email" placeholder="<?= htmlspecialchars(t('digitalcard.appt_ph_email')) ?>" maxlength="255" class="appt-input">
+                <input type="tel" name="phone" placeholder="<?= htmlspecialchars(t('digitalcard.appt_ph_phone')) ?>" maxlength="50" class="appt-input">
+                <textarea name="notes" placeholder="<?= htmlspecialchars(t('digitalcard.appt_ph_notes')) ?>" maxlength="4000" rows="3" class="appt-textarea"></textarea>
                 <div style="display:flex;gap:8px;">
-                    <button type="button" id="apptBack" class="appt-back-btn">Back</button>
-                    <button type="submit" id="apptSubmit" class="appt-submit-btn">Confirm booking</button>
+                    <button type="button" id="apptBack" class="appt-back-btn"><?= htmlspecialchars(t('digitalcard.appt_back')) ?></button>
+                    <button type="submit" id="apptSubmit" class="appt-submit-btn"><?= htmlspecialchars(t('digitalcard.appt_confirm')) ?></button>
                 </div>
             </form>
             <div id="apptSuccess" style="display:none;text-align:center;padding:18px;">
                 <div style="font-size:32px;margin-bottom:6px;color:<?php echo htmlspecialchars($accentColor); ?>;">&#10003;</div>
-                <div style="font-weight:600;">Request sent!</div>
-                <div class="appt-success-msg">You'll get a confirmation email shortly.</div>
+                <div style="font-weight:600;"><?= htmlspecialchars(t('digitalcard.appt_sent_h')) ?></div>
+                <div class="appt-success-msg"><?= htmlspecialchars(t('digitalcard.appt_sent_body')) ?></div>
             </div>
         </div>
         <script>
@@ -1394,7 +1394,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             dateInput.value = dateInput.min;
 
             function loadSlots() {
-                slotsEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;opacity:0.7;font-size:13px;padding:8px 0;">Loading...</div>';
+                slotsEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;opacity:0.7;font-size:13px;padding:8px 0;"><?= htmlspecialchars(t('digitalcard.appt_loading'), ENT_QUOTES) ?></div>';
                 emptyEl.style.display = 'none';
                 fetch('/api/appointment/slots.php?eid='+encodeURIComponent(EID)+'&date='+encodeURIComponent(dateInput.value))
                     .then(function(r){return r.json();})
