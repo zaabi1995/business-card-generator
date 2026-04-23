@@ -572,7 +572,7 @@
 - [x] 524. admin/billing.php full i18n: callbacks, current-plan, usage, premium banner, feature matrix, billing-cycle toggle, plans grid, unpaid orders, card credits, payment methods. 70+ strings, new `billing` namespace (75 keys EN+AR).
 - [x] 525. admin/credit-accounts.php full i18n: back link, page title, 3 stats, table columns, PO upload modal labels, pending/rejected row notes, empty state. ~30 strings, new `creditacc` namespace (30 keys EN+AR).
 - [x] 526. admin/custom-domains.php rewritten with plain-English DNS instructions + full i18n. ~40 strings, new `customdomains` namespace (36 keys EN+AR). DNS guidance now mentions provider names (GoDaddy/Cloudflare/Namecheap) + explicit 5-60 min wait + clear SSL email flow instead of developer-speak.
-- [ ] 527. admin/analytics.php + admin/card-analytics.php dropdown labels, KPI tile titles, chart axis titles, country list, device breakdown, empty states. Est. ~55 strings.
+- [x] 527. admin/analytics.php + admin/card-analytics.php full i18n: dropdown labels, KPI tile titles, chart titles, country/browser/device lists, recent scans table columns, CTA labels, empty states. ~55 strings appended to existing analytics namespace (45 new keys EN+AR).
 - [ ] 528. admin/audit-logs.php filters (actor/action/date), table column headers, row-level action descriptions, empty state. Est. ~30 strings.
 - [ ] 529. admin/fx-rates.php rates table headers, last-updated banner, Reuters-source attribution, add-rate modal. Est. ~20 strings.
 - [ ] 530. admin/appointments.php calendar grid, list view, booking modal (time/service/client/notes), status chips. Est. ~50 strings.

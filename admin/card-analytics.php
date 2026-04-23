@@ -61,18 +61,18 @@ function ca_flag($code)
     return $out;
 }
 
-function ca_cta_label($t)
+function ca_cta_label($type)
 {
     $map = [
-        'click_phone'    => 'Phone',
-        'click_mobile'   => 'Mobile',
-        'click_whatsapp' => 'WhatsApp',
-        'click_email'    => 'Email',
-        'click_website'  => 'Website',
-        'click_map'      => 'Map',
-        'click_social'   => 'Social',
+        'click_phone'    => t('analytics.ca_cta_phone'),
+        'click_mobile'   => t('analytics.ca_cta_mobile'),
+        'click_whatsapp' => t('analytics.ca_cta_whatsapp'),
+        'click_email'    => t('analytics.ca_cta_email'),
+        'click_website'  => t('analytics.ca_cta_website'),
+        'click_map'      => t('analytics.ca_cta_map'),
+        'click_social'   => t('analytics.ca_cta_social'),
     ];
-    return $map[$t] ?? ucfirst(str_replace('click_', '', $t));
+    return $map[$type] ?? ucfirst(str_replace('click_', '', $type));
 }
 
 adminHeader($pageTitle, 'analytics');
@@ -82,7 +82,7 @@ adminHeader($pageTitle, 'analytics');
     <!-- Header & filters -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-            <p class="text-gray-600">Per-card views, clicks, saves, and QR scans</p>
+            <p class="text-gray-600"><?= htmlspecialchars(t('analytics.ca_page_sub')) ?></p>
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
@@ -96,7 +96,7 @@ adminHeader($pageTitle, 'analytics');
 
             <select onchange="caFilterDays(this.value)" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
                 <?php foreach ([7, 14, 30, 60, 90] as $d): ?>
-                    <option value="<?php echo $d; ?>" <?php echo $days === $d ? 'selected' : ''; ?>>Last <?php echo $d; ?> days</option>
+                    <option value="<?php echo $d; ?>" <?php echo $days === $d ? 'selected' : ''; ?>><?= htmlspecialchars(str_replace(':n', (string) $d, t('analytics.last_days'))) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -104,7 +104,7 @@ adminHeader($pageTitle, 'analytics');
 
     <?php if (!$employee): ?>
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
-            <p class="text-gray-500">No employees found. Add an employee to see analytics.</p>
+            <p class="text-gray-500"><?= htmlspecialchars(t('analytics.ca_no_employees')) ?></p>
         </div>
     <?php else: ?>
 
@@ -112,18 +112,18 @@ adminHeader($pageTitle, 'analytics');
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         <?php
         $kpiCards = [
-            ['Views',           $stats['kpis']['views'],           'fa-eye',              'blue'],
-            ['Clicks',          $stats['kpis']['clicks'],          'fa-mouse-pointer',    'green'],
-            ['Unique Visitors', $stats['kpis']['unique_visitors'], 'fa-users',            'purple'],
-            ['QR Scans',        $stats['kpis']['qr_scans'],        'fa-qrcode',           'orange'],
-            ['Saves',           $stats['kpis']['saves'],           'fa-address-book',     'pink'],
+            [t('analytics.ca_kpi_views'),    $stats['kpis']['views'],           'fa-eye',              'blue'],
+            [t('analytics.ca_kpi_clicks'),   $stats['kpis']['clicks'],          'fa-mouse-pointer',    'green'],
+            [t('analytics.ca_kpi_unique'),   $stats['kpis']['unique_visitors'], 'fa-users',            'purple'],
+            [t('analytics.ca_kpi_qr_scans'), $stats['kpis']['qr_scans'],        'fa-qrcode',           'orange'],
+            [t('analytics.ca_kpi_saves'),    $stats['kpis']['saves'],           'fa-address-book',     'pink'],
         ];
         foreach ($kpiCards as [$label, $value, $icon, $color]):
         ?>
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs text-gray-500 uppercase tracking-wider"><?php echo $label; ?></p>
+                    <p class="text-xs text-gray-500 uppercase tracking-wider"><?php echo htmlspecialchars($label); ?></p>
                     <p class="text-2xl font-bold text-gray-900"><?php echo number_format((int) $value); ?></p>
                 </div>
                 <div class="w-10 h-10 bg-<?php echo $color; ?>-50 rounded-lg flex items-center justify-center">
@@ -137,11 +137,11 @@ adminHeader($pageTitle, 'analytics');
     <!-- Line + Bar -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Activity — last <?php echo (int) $days; ?> days</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4"><?= htmlspecialchars(str_replace(':n', (string)(int) $days, t('analytics.ca_activity_h3'))) ?></h3>
             <div class="h-64"><canvas id="caLineChart"></canvas></div>
         </div>
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">CTA breakdown</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t('analytics.ca_cta_h3')) ?></h3>
             <div class="h-64"><canvas id="caBarChart"></canvas></div>
         </div>
     </div>
@@ -149,12 +149,12 @@ adminHeader($pageTitle, 'analytics');
     <!-- Doughnut + Tables -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Device type</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t('analytics.ca_device_h3')) ?></h3>
             <div class="h-64"><canvas id="caDoughnut"></canvas></div>
         </div>
 
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Top referrers</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t('analytics.ca_referrers_h3')) ?></h3>
             <?php if (!empty($stats['referrers'])): ?>
             <div class="space-y-3">
                 <?php foreach ($stats['referrers'] as $r): ?>
@@ -167,26 +167,26 @@ adminHeader($pageTitle, 'analytics');
                 <?php endforeach; ?>
             </div>
             <?php else: ?>
-            <p class="text-gray-500 text-center py-8 text-sm">No referrer data yet</p>
+            <p class="text-gray-500 text-center py-8 text-sm"><?= htmlspecialchars(t('analytics.ca_no_referrers')) ?></p>
             <?php endif; ?>
         </div>
 
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Top countries</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t('analytics.top_countries')) ?></h3>
             <?php if (!empty($stats['countries'])): ?>
             <div class="space-y-3">
                 <?php foreach ($stats['countries'] as $c): ?>
                 <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-2 min-w-0">
                         <span class="text-lg"><?php echo ca_flag($c['country_code']); ?></span>
-                        <span class="text-gray-700 text-sm truncate"><?php echo sanitize($c['country_name'] ?: 'Unknown'); ?></span>
+                        <span class="text-gray-700 text-sm truncate"><?php echo sanitize($c['country_name'] ?: t('analytics.unknown')); ?></span>
                     </div>
                     <span class="text-gray-500 font-medium"><?php echo number_format((int) $c['c']); ?></span>
                 </div>
                 <?php endforeach; ?>
             </div>
             <?php else: ?>
-            <p class="text-gray-500 text-center py-8 text-sm">No location data yet</p>
+            <p class="text-gray-500 text-center py-8 text-sm"><?= htmlspecialchars(t('analytics.ca_no_countries')) ?></p>
             <?php endif; ?>
         </div>
     </div>
@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 labels,
                 datasets: [
                     {
-                        label: 'Views',
+                        label: <?= json_encode(t('analytics.ca_kpi_views'), JSON_UNESCAPED_UNICODE) ?>,
                         data: series.map(d => d.views),
                         borderColor: 'rgb(59,130,246)',
                         backgroundColor: 'rgba(59,130,246,0.1)',
@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         tension: 0.3
                     },
                     {
-                        label: 'Clicks',
+                        label: <?= json_encode(t('analytics.ca_kpi_clicks'), JSON_UNESCAPED_UNICODE) ?>,
                         data: series.map(d => d.clicks),
                         borderColor: 'rgb(16,185,129)',
                         backgroundColor: 'rgba(16,185,129,0.1)',
@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function () {
             data: {
                 labels: ctaLabels,
                 datasets: [{
-                    label: 'Clicks',
+                    label: <?= json_encode(t('analytics.ca_kpi_clicks'), JSON_UNESCAPED_UNICODE) ?>,
                     data: ctaData,
                     backgroundColor: 'rgba(16,185,129,0.8)'
                 }]

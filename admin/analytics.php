@@ -87,32 +87,30 @@ adminHeader($pageTitle, 'analytics');
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-            <p class="text-gray-600">Track who scans your QR codes</p>
+            <p class="text-gray-600"><?= htmlspecialchars(t('analytics.qr_page_sub')) ?></p>
         </div>
-        
+
         <div class="flex flex-wrap items-center gap-3">
             <!-- Employee Filter -->
             <select onchange="filterByEmployee(this.value)" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
-                <option value="">All Employees</option>
+                <option value=""><?= htmlspecialchars(t('analytics.all_employees')) ?></option>
                 <?php foreach ($employees as $emp): ?>
                 <option value="<?php echo sanitize($emp['id']); ?>" <?php echo $employeeId === $emp['id'] ? 'selected' : ''; ?>>
                     <?php echo sanitize($emp['name_en'] ?? $emp['email']); ?>
                 </option>
                 <?php endforeach; ?>
             </select>
-            
+
             <!-- Time Period Filter -->
             <select onchange="filterByDays(this.value)" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
-                <option value="7" <?php echo $days === 7 ? 'selected' : ''; ?>>Last 7 days</option>
-                <option value="14" <?php echo $days === 14 ? 'selected' : ''; ?>>Last 14 days</option>
-                <option value="30" <?php echo $days === 30 ? 'selected' : ''; ?>>Last 30 days</option>
-                <option value="60" <?php echo $days === 60 ? 'selected' : ''; ?>>Last 60 days</option>
-                <option value="90" <?php echo $days === 90 ? 'selected' : ''; ?>>Last 90 days</option>
+                <?php foreach ([7, 14, 30, 60, 90] as $d): ?>
+                <option value="<?= $d ?>" <?= $days === $d ? 'selected' : '' ?>><?= htmlspecialchars(str_replace(':n', (string) $d, t('analytics.last_days'))) ?></option>
+                <?php endforeach; ?>
             </select>
-            
+
             <!-- Export Button -->
             <button @click="exportData()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">
-                <i class="fa-solid fa-download mr-2"></i>Export
+                <i class="fa-solid fa-download mr-2"></i><?= htmlspecialchars(t('analytics.export_btn')) ?>
             </button>
         </div>
     </div>
@@ -122,7 +120,7 @@ adminHeader($pageTitle, 'analytics');
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm text-gray-500">Total Scans</p>
+                    <p class="text-sm text-gray-500"><?= htmlspecialchars(t('analytics.stat_total_scans')) ?></p>
                     <p class="text-3xl font-bold text-gray-900"><?php echo number_format($stats['total_scans']); ?></p>
                 </div>
                 <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
@@ -134,7 +132,7 @@ adminHeader($pageTitle, 'analytics');
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm text-gray-500">Period Scans (<?php echo $days; ?>d)</p>
+                    <p class="text-sm text-gray-500"><?= htmlspecialchars(str_replace(':n', (string) $days, t('analytics.stat_period_scans'))) ?></p>
                     <p class="text-3xl font-bold text-gray-900"><?php echo number_format($stats['period_scans']); ?></p>
                 </div>
                 <div class="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
@@ -146,7 +144,7 @@ adminHeader($pageTitle, 'analytics');
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm text-gray-500">Unique Visitors</p>
+                    <p class="text-sm text-gray-500"><?= htmlspecialchars(t('analytics.stat_unique_visitors')) ?></p>
                     <p class="text-3xl font-bold text-gray-900"><?php echo number_format($stats['unique_visitors']); ?></p>
                 </div>
                 <div class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
@@ -158,7 +156,7 @@ adminHeader($pageTitle, 'analytics');
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm text-gray-500">Daily Average</p>
+                    <p class="text-sm text-gray-500"><?= htmlspecialchars(t('analytics.stat_daily_avg')) ?></p>
                     <p class="text-3xl font-bold text-gray-900"><?php echo $days > 0 ? number_format($stats['period_scans'] / $days, 1) : 0; ?></p>
                 </div>
                 <div class="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center">
@@ -172,7 +170,7 @@ adminHeader($pageTitle, 'analytics');
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <!-- Daily Scans Chart -->
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Daily Scans</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t('analytics.chart_daily_scans')) ?></h3>
             <div class="h-64">
                 <canvas id="dailyChart"></canvas>
             </div>
@@ -180,7 +178,7 @@ adminHeader($pageTitle, 'analytics');
         
         <!-- Device Distribution -->
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Device Distribution</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t('analytics.chart_device_dist')) ?></h3>
             <div class="h-64 flex items-center justify-center">
                 <canvas id="deviceChart"></canvas>
             </div>
@@ -191,34 +189,34 @@ adminHeader($pageTitle, 'analytics');
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Top Countries -->
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Top Countries</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t('analytics.top_countries')) ?></h3>
             <?php if (!empty($stats['countries'])): ?>
             <div class="space-y-3">
                 <?php foreach ($stats['countries'] as $country): ?>
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="text-lg"><?php echo getCountryFlag($country['country_code']); ?></span>
-                        <span class="text-gray-700"><?php echo sanitize($country['country_name'] ?? 'Unknown'); ?></span>
+                        <span class="text-gray-700"><?php echo sanitize($country['country_name'] ?? t('analytics.unknown')); ?></span>
                     </div>
                     <span class="text-gray-500 font-medium"><?php echo number_format($country['count']); ?></span>
                 </div>
                 <?php endforeach; ?>
             </div>
             <?php else: ?>
-            <p class="text-gray-500 text-center py-8">No location data available</p>
+            <p class="text-gray-500 text-center py-8"><?= htmlspecialchars(t('analytics.no_location')) ?></p>
             <?php endif; ?>
         </div>
         
         <?php if (!$employeeId && !empty($stats['top_employees'])): ?>
         <!-- Top Employees -->
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Top Employees</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t('analytics.top_employees_h3')) ?></h3>
             <div class="space-y-3">
                 <?php foreach ($stats['top_employees'] as $emp): ?>
                 <a href="?employee=<?php echo urlencode($emp['employee_id']); ?>&days=<?php echo $days; ?>" 
                    class="flex items-center justify-between hover:bg-gray-50 -mx-2 px-2 py-1 rounded transition-colors">
                     <div>
-                        <p class="text-gray-700 font-medium"><?php echo sanitize($emp['name_en'] ?? 'Unknown'); ?></p>
+                        <p class="text-gray-700 font-medium"><?php echo sanitize($emp['name_en'] ?? t('analytics.unknown')); ?></p>
                         <p class="text-gray-400 text-sm"><?php echo sanitize($emp['email'] ?? ''); ?></p>
                     </div>
                     <span class="text-blue-600 font-medium"><?php echo number_format($emp['scan_count']); ?></span>
@@ -231,7 +229,7 @@ adminHeader($pageTitle, 'analytics');
         <!-- Browser Stats -->
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                <?php echo $employeeId ? 'Browsers' : 'Browser Distribution'; ?>
+                <?php echo htmlspecialchars($employeeId ? t('analytics.browsers_h3') : t('analytics.browser_dist_h3')); ?>
             </h3>
             <?php 
             $browserStats = $employeeId ? ($stats['browsers'] ?? []) : [];
@@ -255,14 +253,14 @@ adminHeader($pageTitle, 'analytics');
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <i class="fa-brands <?php echo getBrowserIcon($browser['browser']); ?> text-gray-400"></i>
-                        <span class="text-gray-700"><?php echo sanitize($browser['browser'] ?? 'Unknown'); ?></span>
+                        <span class="text-gray-700"><?php echo sanitize($browser['browser'] ?? t('analytics.unknown')); ?></span>
                     </div>
                     <span class="text-gray-500 font-medium"><?php echo number_format($browser['count']); ?></span>
                 </div>
                 <?php endforeach; ?>
             </div>
             <?php else: ?>
-            <p class="text-gray-500 text-center py-8">No browser data available</p>
+            <p class="text-gray-500 text-center py-8"><?= htmlspecialchars(t('analytics.no_browser')) ?></p>
             <?php endif; ?>
         </div>
     </div>
@@ -271,17 +269,17 @@ adminHeader($pageTitle, 'analytics');
     <!-- Recent Scans Table -->
     <div class="mt-8 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100">
-            <h3 class="text-lg font-semibold text-gray-900">Recent Scans</h3>
+            <h3 class="text-lg font-semibold text-gray-900"><?= htmlspecialchars(t('analytics.recent_scans_h3')) ?></h3>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Time</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Device</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Browser</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Location</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">IP Address</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?= htmlspecialchars(t('analytics.col_time')) ?></th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?= htmlspecialchars(t('analytics.col_device')) ?></th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?= htmlspecialchars(t('analytics.col_browser')) ?></th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?= htmlspecialchars(t('analytics.col_location')) ?></th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"><?= htmlspecialchars(t('analytics.col_ip')) ?></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -297,12 +295,12 @@ adminHeader($pageTitle, 'analytics');
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                            <?php echo sanitize(($scan['browser'] ?? 'Unknown') . ' / ' . ($scan['os'] ?? 'Unknown')); ?>
+                            <?php echo sanitize(($scan['browser'] ?? t('analytics.unknown')) . ' / ' . ($scan['os'] ?? t('analytics.unknown'))); ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                             <?php 
                             $location = array_filter([$scan['city'], $scan['country_name']]);
-                            echo sanitize(implode(', ', $location) ?: 'Unknown');
+                            echo sanitize(implode(', ', $location) ?: t('analytics.unknown'));
                             ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
@@ -375,7 +373,7 @@ function analyticsPage() {
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Scans',
+                        label: <?= json_encode(t('analytics.series_scans'), JSON_UNESCAPED_UNICODE) ?>,
                         data: data,
                         borderColor: 'rgb(59, 130, 246)',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
