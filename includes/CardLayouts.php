@@ -50,9 +50,14 @@ class CardLayouts {
     /**
      * Render front card HTML for a given layout + employee data
      * Returns self-contained HTML div (1050x600) suitable for html2canvas
+     *
+     * $options:
+     *   'arabic' => true  swap primary text fields to AR columns + RTL,
+     *                     so an "EN front / AR back" bilingual pair can
+     *                     be auto-mirrored without a separate template.
      */
-    public static function renderFront($layoutId, $employee, $company, $theme = null) {
-        $d = self::extractData($employee, $company, $theme);
+    public static function renderFront($layoutId, $employee, $company, $theme = null, array $options = []) {
+        $d = self::extractData($employee, $company, $theme, !empty($options['arabic']));
         $method = 'front' . ucfirst($layoutId);
         if (method_exists(self::class, $method)) {
             return self::$method($d);
@@ -62,9 +67,13 @@ class CardLayouts {
 
     /**
      * Render back card HTML
+     *
+     * Pass `$options = ['arabic' => true]` to mirror an EN front into an
+     * AR back (uses name_ar/position_ar/address_ar columns + RTL dir +
+     * IBM Plex Arabic fallback).
      */
-    public static function renderBack($layoutId, $employee, $company, $theme = null, $qrDataUrl = '') {
-        $d = self::extractData($employee, $company, $theme);
+    public static function renderBack($layoutId, $employee, $company, $theme = null, $qrDataUrl = '', array $options = []) {
+        $d = self::extractData($employee, $company, $theme, !empty($options['arabic']));
         $d['qrHtml'] = $qrDataUrl ? '<img src="' . $qrDataUrl . '" style="width:120px;height:120px;">' : '';
         $method = 'back' . ucfirst($layoutId);
         if (method_exists(self::class, $method)) {
@@ -73,7 +82,7 @@ class CardLayouts {
         return self::backClassic($d);
     }
 
-    private static function extractData($employee, $company, $theme) {
+    private static function extractData($employee, $company, $theme, bool $mirrorArabic = false) {
         $accent = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#1a56db';
         $secondary = ($theme && !empty($theme['secondary_color'])) ? $theme['secondary_color'] : '#0f3460';
         $logo = ($theme && !empty($theme['logo_path'])) ? $theme['logo_path'] : '';
@@ -88,33 +97,58 @@ class CardLayouts {
         $website = $e('website');
         $address = $e('address_en');
 
+        // When mirroring to Arabic, swap primary fields to *_ar columns
+        // (fall back to EN when the AR column is empty).
+        if ($mirrorArabic) {
+            $name      = $e('name_ar')       ?: $e('name_en');
+            $position  = $e('position_ar')   ?: $e('position_en');
+            $companyN  = $e('company_ar')    ?: ($e('company_en') ?: htmlspecialchars($company['name_ar'] ?? ($company['name'] ?? ''), ENT_QUOTES));
+            $addressN  = $e('address_ar')    ?: $address;
+            $phoneN    = $e('phone_ar')      ?: $phone;
+            $mobileN   = $e('mobile_ar')     ?: $mobile;
+            $secondaryLang = $e('name_en');
+            $secondaryLangDir = 'ltr';
+        } else {
+            $name      = $e('name_en');
+            $position  = $e('position_en');
+            $companyN  = $e('company_en') ?: htmlspecialchars($company['name'] ?? '', ENT_QUOTES);
+            $addressN  = $address;
+            $phoneN    = $phone;
+            $mobileN   = $mobile;
+            $secondaryLang = $e('name_ar');
+            $secondaryLangDir = 'rtl';
+        }
+
         $lines = [];
-        if ($phone) $lines[] = $phone;
-        if ($mobile && $mobile !== $phone) $lines[] = $mobile;
-        if ($email) $lines[] = $email;
+        if ($phoneN)  $lines[] = $phoneN;
+        if ($mobileN && $mobileN !== $phoneN) $lines[] = $mobileN;
+        if ($email)   $lines[] = $email;
         if ($website) $lines[] = $website;
-        if ($address) $lines[] = $address;
+        if ($addressN) $lines[] = $addressN;
         $contact = implode('<br>', $lines);
 
         return [
-            'name' => $e('name_en'),
-            'nameAr' => $e('name_ar'),
-            'position' => $e('position_en'),
-            'positionAr' => $e('position_ar'),
-            'company' => $e('company_en') ?: htmlspecialchars($company['name'] ?? '', ENT_QUOTES),
-            'companyAr' => $e('company_ar'),
-            'phone' => $phone,
-            'mobile' => $mobile,
+            'name' => $name,
+            'nameAr' => $mirrorArabic ? $e('name_en') : $e('name_ar'),
+            'position' => $position,
+            'positionAr' => $mirrorArabic ? $e('position_en') : $e('position_ar'),
+            'company' => $companyN,
+            'companyAr' => $mirrorArabic ? $e('company_en') : $e('company_ar'),
+            'phone' => $phoneN,
+            'mobile' => $mobileN,
             'email' => $email,
             'website' => $website,
-            'address' => $address,
-            'addressAr' => $e('address_ar'),
+            'address' => $addressN,
+            'addressAr' => $mirrorArabic ? $address : $e('address_ar'),
             'contact' => $contact,
             'accent' => $accent,
             'secondary' => $secondary,
             'logoHtml' => $logo ? '<img src="' . $logo . '" style="height:36px;max-width:160px;object-fit:contain;" crossorigin="anonymous">' : '',
             'logoHtmlLg' => $logo ? '<img src="' . $logo . '" style="height:56px;max-width:220px;object-fit:contain;" crossorigin="anonymous">' : '',
             'qrHtml' => '',
+            'arabic' => $mirrorArabic,
+            'dir' => $mirrorArabic ? 'rtl' : 'ltr',
+            'font' => $mirrorArabic ? '\'IBM Plex Sans Arabic\',\'Noto Kufi Arabic\',sans-serif' : '\'Inter\',sans-serif',
         ];
     }
 
