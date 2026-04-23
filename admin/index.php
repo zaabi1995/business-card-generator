@@ -623,7 +623,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 
 <?php if ($showWelcome): ?>
 <!-- Post-onboarding Welcome Banner -->
-<div class="mb-6 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 p-6 text-white shadow-lg flex items-center justify-between gap-4" id="bhd-welcome-banner">
+<div class="mb-6 rounded-2xl p-6 text-white shadow-lg flex items-center justify-between gap-4" id="bhd-welcome-banner" style="background:linear-gradient(to right,var(--tbrand,#2563eb),var(--tbrand-2,#06b6d4));">
     <div class="flex items-center gap-4">
         <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
             <i class="fa-solid fa-rocket text-white text-xl"></i>
@@ -664,7 +664,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 <?php $batchExt = defined('COMPANY_ADMIN_BASE') ? '' : '.php'; ?>
 <?php if (!$hasTemplate): ?>
 <!-- Has employees, no template — point to template editor first -->
-<div class="mb-6 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-500 p-5 text-white shadow-lg flex items-center justify-between gap-4" id="generate-cards-nudge">
+<div class="mb-6 rounded-2xl p-5 text-white shadow-lg flex items-center justify-between gap-4" id="generate-cards-nudge" style="background:linear-gradient(to right,#7c3aed,#6366f1);">
     <div class="flex items-center gap-4">
         <div class="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
             <i class="fa-solid fa-paintbrush text-white text-lg"></i>
@@ -685,7 +685,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 </div>
 <?php else: ?>
 <!-- Has employees + template but no cards generated — generate nudge -->
-<div class="mb-6 rounded-2xl bg-gradient-to-r from-green-600 to-emerald-500 p-5 text-white shadow-lg flex items-center justify-between gap-4" id="generate-cards-nudge">
+<div class="mb-6 rounded-2xl p-5 text-white shadow-lg flex items-center justify-between gap-4" id="generate-cards-nudge" style="background:linear-gradient(to right,#16a34a,#10b981);">
     <div class="flex items-center gap-4">
         <div class="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
             <i class="fa-solid fa-id-card text-white text-lg"></i>

@@ -369,6 +369,27 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
             pointer-events: none;
             animation: none;
         }
+        .page-loader-svg { overflow: visible; }
+        .page-loader-arc {
+            transform-origin: 60px 60px;
+            animation: pageLoaderSpin 1.2s linear infinite;
+        }
+        .page-loader-card {
+            transform-origin: 60px 58px;
+            animation: pageLoaderWobble 2.6s ease-in-out infinite;
+        }
+        .page-loader-dot { animation: pageLoaderDot 1.2s ease-in-out infinite; }
+        .page-loader-dot.dot-2, .page-loader-dot.dot-4 { animation-delay: 0.6s; }
+        .page-loader-dot.dot-3 { animation-delay: 0.4s; }
+        @keyframes pageLoaderSpin { to { transform: rotate(360deg); } }
+        @keyframes pageLoaderWobble {
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+        }
+        @keyframes pageLoaderDot {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
         .page-loader-text {
             margin-top: 24px;
             font-size: 14px;
@@ -434,24 +455,18 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     <div class="page-loader" id="pageLoader">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100" height="100" role="img" aria-label="Loading" class="page-loader-svg">
             <circle cx="60" cy="60" r="52" fill="none" stroke="#e2e8f0" stroke-width="6"/>
-            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--tbrand)" stroke-width="6" stroke-linecap="round" stroke-dasharray="60 120">
-                <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="1.2s" repeatCount="indefinite"/>
-            </circle>
-            <g>
-                <rect x="26" y="36" width="68" height="44" rx="10" fill="var(--tbrand)">
-                    <animateTransform attributeName="transform" type="rotate" values="-3 60 58; 3 60 58; -3 60 58" dur="2.6s" repeatCount="indefinite"/>
-                </rect>
-                <rect x="34" y="44" width="52" height="28" rx="6" fill="#ffffff">
-                    <animate attributeName="opacity" values="1;0.9;1" dur="1.8s" repeatCount="indefinite"/>
-                </rect>
+            <circle class="page-loader-arc" cx="60" cy="60" r="52" fill="none" stroke="var(--tbrand)" stroke-width="6" stroke-linecap="round" stroke-dasharray="60 266"/>
+            <g class="page-loader-card">
+                <rect x="26" y="36" width="68" height="44" rx="10" fill="var(--tbrand)"/>
+                <rect x="34" y="44" width="52" height="28" rx="6" fill="#ffffff"/>
                 <rect x="40" y="50" width="10" height="10" rx="5" fill="var(--tbrand)" opacity="0.85"/>
                 <rect x="54" y="50" width="24" height="4" rx="2" fill="var(--tbrand)"/>
                 <rect x="54" y="58" width="18" height="4" rx="2" fill="var(--tbrand)" opacity="0.4"/>
             </g>
-            <circle cx="60" cy="12" r="3" fill="var(--tbrand)"><animate attributeName="opacity" values="0;1;0" dur="1.2s" repeatCount="indefinite"/></circle>
-            <circle cx="108" cy="60" r="3" fill="var(--tbrand)"><animate attributeName="opacity" values="1;0;1" dur="1.2s" repeatCount="indefinite"/></circle>
-            <circle cx="60" cy="108" r="3" fill="var(--tbrand)"><animate attributeName="opacity" values="0;1;0" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle>
-            <circle cx="12" cy="60" r="3" fill="var(--tbrand)"><animate attributeName="opacity" values="1;0;1" dur="1.2s" begin="0.4s" repeatCount="indefinite"/></circle>
+            <circle class="page-loader-dot dot-1" cx="60" cy="12" r="3" fill="var(--tbrand)"/>
+            <circle class="page-loader-dot dot-2" cx="108" cy="60" r="3" fill="var(--tbrand)"/>
+            <circle class="page-loader-dot dot-3" cx="60" cy="108" r="3" fill="var(--tbrand)"/>
+            <circle class="page-loader-dot dot-4" cx="12" cy="60" r="3" fill="var(--tbrand)"/>
         </svg>
         <div class="page-loader-text">Loading...</div>
         <div class="page-loader-brand"><?php echo $brandName; ?></div>
