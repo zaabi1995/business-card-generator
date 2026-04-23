@@ -294,11 +294,11 @@ if (!function_exists('renderNavigation')) {
         // Default navigation links (used on all non-homepage pages)
         $basePath = function_exists('getBasePath') ? getBasePath() : '/';
         $defaultLinks = [
-            ['href' => $basePath . '#features', 'label' => 'Features'],
-            ['href' => $basePath . '#pricing', 'label' => 'Pricing'],
-            ['href' => $basePath . 'tools', 'label' => 'Free Tools'],
-            ['href' => $basePath . 'oman-business-index', 'label' => 'Oman Business Index'],
-            ['href' => $basePath . 'blog', 'label' => 'Blog'],
+            ['href' => $basePath . '#features', 'label' => function_exists('t') ? t('footer.link_features') : 'Features'],
+            ['href' => $basePath . '#pricing', 'label' => function_exists('t') ? t('footer.link_pricing') : 'Pricing'],
+            ['href' => $basePath . 'tools', 'label' => function_exists('t') ? t('footer.link_all_tools') : 'Free Tools'],
+            ['href' => $basePath . 'oman-business-index', 'label' => function_exists('t') ? t('footer.link_oman_index') : 'Oman Business Index'],
+            ['href' => $basePath . 'blog', 'label' => function_exists('t') ? t('footer.link_blog') : 'Blog'],
         ];
         
         $navLinks = $customLinks ?? $defaultLinks;
@@ -336,19 +336,19 @@ if (!function_exists('renderNavigation')) {
                             <!-- Logged In State -->
                             <span class="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-gray-700 font-medium">
                                 <i class="fa-solid fa-circle-user text-blue-600"></i>
-                                Hello, <?php echo htmlspecialchars($userName); ?>
+                                <?= function_exists('t') ? htmlspecialchars(t('header.hello_user', ['name' => $userName])) : 'Hello, ' . htmlspecialchars($userName) ?>
                             </span>
-                            <a href="<?php echo $dashboardUrl; ?>" class="inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl hover:shadow-blue-600/40">
-                                <i class="fa-solid fa-gauge-high mr-2"></i>
-                                Dashboard
+                            <a href="<?php echo $dashboardUrl; ?>" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl hover:shadow-blue-600/40">
+                                <i class="fa-solid fa-gauge-high"></i>
+                                <?= function_exists('t') ? htmlspecialchars(t('header.dashboard')) : 'Dashboard' ?>
                             </a>
                         <?php else: ?>
                             <!-- Logged Out State -->
                             <a href="<?php echo getBasePath(); ?>login.php" class="hidden sm:inline-flex items-center px-4 py-2 text-gray-700 hover:text-blue-600 font-medium transition-colors">
-                                Sign In
+                                <?= function_exists('t') ? htmlspecialchars(t('header.sign_in')) : 'Sign In' ?>
                             </a>
                             <a href="<?php echo getBasePath(); ?>company/register.php" class="hidden sm:inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition-all hover:shadow-xl hover:shadow-blue-600/40">
-                                Get Started Free
+                                <?= function_exists('t') ? htmlspecialchars(t('header.get_started_free')) : 'Get Started Free' ?>
                             </a>
                         <?php endif; ?>
 
@@ -375,19 +375,25 @@ if (!function_exists('renderNavigation')) {
                     <?php endforeach; ?>
                     <hr class="border-gray-200">
                     <?php if ($isLoggedIn): ?>
-                        <div class="py-2 text-gray-700 font-medium">
-                            <i class="fa-solid fa-circle-user text-blue-600 mr-2"></i>
-                            Hello, <?php echo htmlspecialchars($userName); ?>
+                        <div class="py-2 text-gray-700 font-medium flex items-center gap-2">
+                            <i class="fa-solid fa-circle-user text-blue-600"></i>
+                            <?= function_exists('t') ? htmlspecialchars(t('header.hello_user', ['name' => $userName])) : 'Hello, ' . htmlspecialchars($userName) ?>
                         </div>
                         <a href="<?php echo $dashboardUrl; ?>" class="block py-2 text-blue-600 hover:text-blue-700 font-medium">
-                            <i class="fa-solid fa-gauge-high mr-2"></i>Dashboard
+                            <i class="fa-solid fa-gauge-high"></i>
+                            <?= function_exists('t') ? htmlspecialchars(t('header.dashboard')) : 'Dashboard' ?>
                         </a>
                         <a href="<?php echo getBasePath(); ?>logout.php" class="block py-2 text-gray-600 hover:text-red-600 font-medium">
-                            <i class="fa-solid fa-right-from-bracket mr-2"></i>Sign Out
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <?= function_exists('t') ? htmlspecialchars(t('auth.sign_out')) : 'Sign Out' ?>
                         </a>
                     <?php else: ?>
-                        <a href="<?php echo getBasePath(); ?>login.php" class="block py-2 text-gray-600 hover:text-blue-600 font-medium">Sign In</a>
-                        <a href="<?php echo getBasePath(); ?>company/register.php" class="block py-2 text-blue-600 hover:text-blue-700 font-medium">Get Started Free</a>
+                        <a href="<?php echo getBasePath(); ?>login.php" class="block py-2 text-gray-600 hover:text-blue-600 font-medium">
+                            <?= function_exists('t') ? htmlspecialchars(t('header.sign_in')) : 'Sign In' ?>
+                        </a>
+                        <a href="<?php echo getBasePath(); ?>company/register.php" class="block py-2 text-blue-600 hover:text-blue-700 font-medium">
+                            <?= function_exists('t') ? htmlspecialchars(t('header.get_started_free')) : 'Get Started Free' ?>
+                        </a>
                     <?php endif; ?>
                 </div>
             </div>
