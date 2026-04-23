@@ -173,8 +173,12 @@ $bodyClass = 'bg-white';
 require_once INCLUDES_DIR . '/Currency.php';
 $homeCur     = Currency::getUserCurrency();
 $homeCurName = $homeCur;
+// Convert, then marketing-round (keeps OMR exact, rounds AED/USD/etc to
+// clean psychological numbers like 50 / 150 / 1,500 instead of 47.72).
 $fmt = function ($omr) use ($homeCur) {
-    return Currency::formatNumber(Currency::convert((float)$omr, $homeCur), $homeCur);
+    $converted = Currency::convert((float)$omr, $homeCur);
+    $rounded   = Currency::marketingRound($converted, $homeCur);
+    return Currency::formatNumber($rounded, $homeCur);
 };
 $priceProMo        = $fmt(5.000);
 $priceProAnnMo     = $fmt(4.167);

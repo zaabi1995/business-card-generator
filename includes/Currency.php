@@ -1441,6 +1441,24 @@ JS;
     private static $rateCache = null;
 
     /**
+     * Marketing-round a converted price to a clean "psychological" number.
+     * Applies ONLY to non-OMR currencies; OMR stays at its exact 3-decimal
+     * value so Omani customers see the real price.
+     *   < 10     -> ceil to whole
+     *   < 100    -> ceil up to nearest 5   (47.72 -> 50, 39.77 -> 40)
+     *   < 1000   -> ceil up to nearest 10  (143.15 -> 150, 119.29 -> 120)
+     *   >= 1000  -> ceil up to nearest 100 (1,431.45 -> 1,500)
+     */
+    public static function marketingRound(float $amount, string $currency): float {
+        if (strtoupper($currency) === 'OMR') return $amount;
+        $a = abs($amount);
+        if ($a < 10)    return ceil($amount);
+        if ($a < 100)   return ceil($amount / 5)   * 5;
+        if ($a < 1000)  return ceil($amount / 10)  * 10;
+        return ceil($amount / 100) * 100;
+    }
+
+    /**
      * Convert an OMR amount to another currency.
      * Returns the original amount unchanged if target is OMR, unknown, or rate missing.
      *
