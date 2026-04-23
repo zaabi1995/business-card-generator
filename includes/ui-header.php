@@ -173,7 +173,18 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
     <style>
+        /* Latin pages stay on Inter; Arabic pages render in IBM Plex Sans
+           Arabic end-to-end. Applying the Arabic face via [dir="rtl"] so
+           it wins over any tailwind or theme resets. */
         body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+        html[dir="rtl"], html[dir="rtl"] body,
+        html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3,
+        html[dir="rtl"] h4, html[dir="rtl"] h5, html[dir="rtl"] h6,
+        html[dir="rtl"] p,  html[dir="rtl"] a,  html[dir="rtl"] span,
+        html[dir="rtl"] button, html[dir="rtl"] input, html[dir="rtl"] select,
+        html[dir="rtl"] textarea, html[dir="rtl"] label, html[dir="rtl"] li {
+            font-family: 'IBM Plex Sans Arabic', 'Inter', ui-sans-serif, system-ui, sans-serif;
+        }
         [x-cloak] { display: none !important; }
         .bg-blur { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
         
