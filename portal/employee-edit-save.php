@@ -115,6 +115,49 @@ try {
         } catch (Throwable $_) { /* best-effort */ }
     }
 
+    // Notify admin by email when company_settings.notify_on_employee_edit is
+    // on (default 1). Silent-fail so slow mail transport never blocks save.
+    $changedFields = array_keys($update);
+    if (isset($body['socials'])) $changedFields[] = 'socials';
+    if ($changedFields) {
+        try {
+            $cs = $db->fetchOne(
+                "SELECT notify_on_employee_edit FROM company_settings WHERE company_id = :cid",
+                ['cid' => $employee['company_id']]
+            );
+            $optedIn = $cs === null ? true : ((int) ($cs['notify_on_employee_edit'] ?? 1) === 1);
+            // Coalesce notifications: one email per employee per 5 minutes so
+            // an autosave keystroke burst doesn't turn into 20 emails.
+            $gateKey = 'emp_edit_notify:' . $employee['id'];
+            $canSend = RateLimiter::check($gateKey, $ip, 1, 300);
+            if ($optedIn && $canSend) {
+                $company = $db->fetchOne(
+                    "SELECT id, name, name_en, slug, admin_email FROM companies WHERE id = :id",
+                    ['id' => $employee['company_id']]
+                );
+                $adminEmail = $company['admin_email'] ?? '';
+                if ($adminEmail) {
+                    require_once INCLUDES_DIR . '/Notifier.php';
+                    $host = defined('APP_HOST') ? APP_HOST : 'cardify.om';
+                    $empUrl = 'https://' . $host . '/' . ($company['slug'] ?? '') . '/admin/employees';
+                    Notifier::send('employee_self_edit',
+                        ['name' => $company['name'] ?? 'Admin', 'email' => $adminEmail, 'company_id' => $employee['company_id']],
+                        [
+                            'adminName'     => $company['name'] ?? 'Admin',
+                            'employeeName'  => $employee['name_en'] ?? 'An employee',
+                            'companyName'   => $company['name'] ?? ($company['name_en'] ?? 'your company'),
+                            'changedFields' => $changedFields,
+                            'employeeUrl'   => $empUrl,
+                        ],
+                        ['email']
+                    );
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('[employee-edit-save] admin notify failed: ' . $e->getMessage());
+        }
+    }
+
     echo json_encode(['ok' => true, 'updated' => array_keys($update)]);
 } catch (Throwable $e) {
     error_log('[employee-edit-save] ' . $e->getMessage());
