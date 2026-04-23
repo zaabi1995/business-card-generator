@@ -61,4 +61,13 @@ return [
     'social_links'      => 'Social links',
     'social_add'        => 'Add link',
     'social_hint'       => 'Add LinkedIn, Instagram, Twitter, TikTok, YouTube and more. Shown on your public card.',
+    'photo'             => 'Profile photo',
+    'photo_dropzone'    => 'Drag a photo here or tap to choose',
+    'photo_hint'        => 'PNG, JPG, or WebP. Square works best. Up to 5 MB.',
+    'photo_replace'     => 'Replace photo',
+    'photo_uploading'   => 'Uploading...',
+    'photo_uploaded'    => 'Photo updated',
+    'photo_err_type'    => 'Use a PNG, JPG, or WebP image.',
+    'photo_err_size'    => 'Image is too large (max 5 MB).',
+    'photo_err_generic' => 'Upload failed, try again.',
 ];

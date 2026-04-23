@@ -87,6 +87,7 @@ $pageTitle = t('portal.edit_my_details');
               'mobile' => $employee['mobile'],
               'email' => $employee['email'],
               'website' => $employee['website'],
+              'photo' => $employee['photo'] ?? '',
           ],
           'socials' => $existingSocials,
           'token' => $token,
@@ -124,6 +125,32 @@ $pageTitle = t('portal.edit_my_details');
 
         <!-- Form -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('portal.photo')) ?></label>
+                <label class="block border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition hover:border-[#009bc1]"
+                       :class="photoDragActive ? 'border-[#009bc1] bg-[#009bc1]/5' : 'border-gray-200'"
+                       @dragover.prevent="photoDragActive = true"
+                       @dragleave.prevent="photoDragActive = false"
+                       @drop.prevent="handlePhotoDrop($event)">
+                    <template x-if="data.photo">
+                        <div class="flex items-center gap-3">
+                            <img :src="data.photo" alt="" class="w-14 h-14 rounded-full object-cover border border-gray-200">
+                            <div class="flex-1 text-start">
+                                <p class="text-xs font-semibold text-gray-700"><?= htmlspecialchars(t('portal.photo_replace')) ?></p>
+                                <p class="text-xs text-gray-400" x-text="photoStatus"></p>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="!data.photo">
+                        <div class="py-3">
+                            <i class="fa-solid fa-camera text-2xl text-gray-300 mb-1"></i>
+                            <p class="text-sm text-gray-600"><?= htmlspecialchars(t('portal.photo_dropzone')) ?></p>
+                            <p class="text-xs text-gray-400 mt-1"><?= htmlspecialchars(t('portal.photo_hint')) ?></p>
+                        </div>
+                    </template>
+                    <input type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="handlePhotoInput($event)">
+                </label>
+            </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.first_name')) ?></label>
                 <input type="text" x-model="data.name_en" @input.debounce.800ms="save()" class="form-input">
@@ -218,6 +245,48 @@ $pageTitle = t('portal.edit_my_details');
             removeSocial(idx) {
                 this.socials.splice(idx, 1);
                 this.save();
+            },
+            photoDragActive: false,
+            photoStatus: '',
+            handlePhotoDrop(ev) {
+                this.photoDragActive = false;
+                const f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+                if (f) this.uploadPhoto(f);
+            },
+            handlePhotoInput(ev) {
+                const f = ev.target && ev.target.files && ev.target.files[0];
+                if (f) this.uploadPhoto(f);
+            },
+            async uploadPhoto(f) {
+                if (!/^image\/(png|jpe?g|webp)$/.test(f.type)) {
+                    this.photoStatus = <?= json_encode(t('portal.photo_err_type')) ?>;
+                    return;
+                }
+                if (f.size > 5 * 1024 * 1024) {
+                    this.photoStatus = <?= json_encode(t('portal.photo_err_size')) ?>;
+                    return;
+                }
+                this.photoStatus = <?= json_encode(t('portal.photo_uploading')) ?>;
+                const fd = new FormData();
+                fd.append('token', this.token);
+                fd.append('csrf_token', this.csrf);
+                fd.append('photo', f);
+                try {
+                    const res = await fetch('/portal/employee-photo-upload.php', {
+                        method: 'POST',
+                        headers: {'X-CSRF-Token': this.csrf},
+                        body: fd,
+                    });
+                    const j = await res.json();
+                    if (j.ok && j.photo) {
+                        this.data.photo = j.photo + '?v=' + Date.now();
+                        this.photoStatus = <?= json_encode(t('portal.photo_uploaded')) ?>;
+                    } else {
+                        this.photoStatus = <?= json_encode(t('portal.photo_err_generic')) ?>;
+                    }
+                } catch (e) {
+                    this.photoStatus = <?= json_encode(t('portal.photo_err_generic')) ?>;
+                }
             },
 
             statusText() {
