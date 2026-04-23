@@ -10,6 +10,7 @@
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/EmployeeEditToken.php';
+require_once INCLUDES_DIR . '/AppleWalletPass.php';
 
 $token = trim($_GET['token'] ?? '');
 $employee = EmployeeEditToken::verify($token);
@@ -203,6 +204,22 @@ $pageTitle = t('portal.edit_my_details');
                 </template>
             </div>
         </div>
+
+        <?php if (AppleWalletPass::isEnabled()): ?>
+        <div class="mt-5 bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <i class="fa-brands fa-apple text-2xl text-gray-900"></i>
+                <div>
+                    <p class="text-sm font-semibold text-gray-900"><?= htmlspecialchars(t('portal.wallet_apple_title')) ?></p>
+                    <p class="text-xs text-gray-500"><?= htmlspecialchars(t('portal.wallet_apple_hint')) ?></p>
+                </div>
+            </div>
+            <a href="/wallet_apple.php?i=<?= htmlspecialchars(urlencode($employee['id'])) ?>"
+               class="px-4 py-2 bg-gray-900 hover:bg-black text-white text-xs font-semibold rounded-lg whitespace-nowrap">
+                <?= htmlspecialchars(t('portal.wallet_apple_cta')) ?>
+            </a>
+        </div>
+        <?php endif; ?>
 
         <p class="text-xs text-gray-400 text-center mt-5">
             <i class="fa-solid fa-shield-halved mr-1"></i>

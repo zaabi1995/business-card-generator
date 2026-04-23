@@ -70,4 +70,7 @@ return [
     'photo_err_type'    => 'استخدم صيغة PNG أو JPG أو WebP.',
     'photo_err_size'    => 'الصورة كبيرة جداً (الحد 5 ميغابايت).',
     'photo_err_generic' => 'فشل الرفع، حاول مرة أخرى.',
+    'wallet_apple_title'=> 'أضف البطاقة إلى Apple Wallet',
+    'wallet_apple_hint' => 'تُجدَّد بأحدث بياناتك عند الضغط على الزر.',
+    'wallet_apple_cta'  => 'الإضافة إلى Apple Wallet',
 ];

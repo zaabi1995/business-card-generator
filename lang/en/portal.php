@@ -70,4 +70,7 @@ return [
     'photo_err_type'    => 'Use a PNG, JPG, or WebP image.',
     'photo_err_size'    => 'Image is too large (max 5 MB).',
     'photo_err_generic' => 'Upload failed, try again.',
+    'wallet_apple_title'=> 'Add card to Apple Wallet',
+    'wallet_apple_hint' => 'Regenerated with your latest details when you tap the button.',
+    'wallet_apple_cta'  => 'Add to Apple Wallet',
 ];
