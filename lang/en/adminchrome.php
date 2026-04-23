@@ -18,7 +18,7 @@ return [
     'appointments'          => 'Appointments',
     'bhd_campaign_manager'  => 'BHD campaign manager',
     'growth_dashboard'      => 'Growth dashboard',
-    'odoo_integration'      => 'Odoo integration',
+    'odoo_integration'      => 'ERP Settings',
 
     'companies'             => 'Companies',
     'my_dashboard'          => 'My dashboard',

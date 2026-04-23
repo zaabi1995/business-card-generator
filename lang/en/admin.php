@@ -18,7 +18,7 @@ return [
     'nav_credit'         => 'Credit accounts',
     'nav_growth'         => 'Growth',
     'nav_impersonate'    => 'Impersonate',
-    'nav_erp_settings'   => 'ERP settings',
+    'nav_erp_settings'   => 'ERP Settings',
     'nav_companies'      => 'Companies',
     'add_employee'       => 'Add employee',
     'add_department'     => 'Add department',

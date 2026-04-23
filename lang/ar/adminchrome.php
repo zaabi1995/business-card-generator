@@ -15,7 +15,7 @@ return [
     'appointments'          => 'المواعيد',
     'bhd_campaign_manager'  => 'مدير حملات BHD',
     'growth_dashboard'      => 'لوحة النمو',
-    'odoo_integration'      => 'تكامل Odoo',
+    'odoo_integration'      => 'إعدادات نظام الموارد',
 
     'companies'             => 'الشركات',
     'my_dashboard'          => 'لوحتي',
