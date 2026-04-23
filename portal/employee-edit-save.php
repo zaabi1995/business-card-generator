@@ -44,7 +44,7 @@ if (!RateLimiter::check('emp_edit:' . substr(hash('sha256', $token), 0, 16), $ip
 }
 
 // Whitelist editable fields. Server trusts no client-provided schema.
-$allowed = ['name_en','name_ar','position_en','position_ar','phone','mobile','email','website'];
+$allowed = ['name_en','name_ar','position_en','position_ar','phone','mobile','email','website','preferred_contact_action'];
 $update = [];
 foreach ($allowed as $k) {
     if (!array_key_exists($k, $fields)) continue;
@@ -55,6 +55,7 @@ foreach ($allowed as $k) {
     // Field-specific validation.
     if ($k === 'email' && $v !== '' && !filter_var($v, FILTER_VALIDATE_EMAIL)) continue;
     if ($k === 'website' && $v !== '' && !filter_var($v, FILTER_VALIDATE_URL)) continue;
+    if ($k === 'preferred_contact_action' && !in_array($v, ['save_contact','whatsapp','call'], true)) continue;
     if (strlen($v) > 255) $v = substr($v, 0, 255);
     $update[$k] = $v;
 }

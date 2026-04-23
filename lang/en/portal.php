@@ -116,4 +116,9 @@ return [
     'leave_warning'     => 'Once approved your card URL stops working and your edit link is revoked.',
     'leave_confirm'     => 'Submit leave-company request? This cannot be undone once your admin approves it.',
     'leave_submit'      => 'Submit request',
+    'primary_tap'       => 'Primary tap action',
+    'primary_tap_save'  => 'Save contact',
+    'primary_tap_whatsapp' => 'Open WhatsApp',
+    'primary_tap_call'  => 'Dial phone',
+    'primary_tap_hint'  => 'What the big button on your public card does.',
 ];

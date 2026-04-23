@@ -172,6 +172,7 @@ $pageTitle = t('portal.edit_my_details');
               'email' => $employee['email'],
               'website' => $employee['website'],
               'photo' => $employee['photo'] ?? '',
+              'preferred_contact_action' => $employee['preferred_contact_action'] ?? 'save_contact',
           ],
           'socials' => $existingSocials,
           'customFields' => (object) $customFieldValues,
@@ -272,6 +273,16 @@ $pageTitle = t('portal.edit_my_details');
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.website')) ?></label>
                 <input type="url" x-model="data.website" @input.debounce.800ms="save()" class="form-input" dir="ltr" placeholder="https://">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.primary_tap')) ?></label>
+                <select x-model="data.preferred_contact_action" @change="save()" class="form-input" dir="<?= htmlspecialchars($dir) ?>">
+                    <option value="save_contact"><?= htmlspecialchars(t('portal.primary_tap_save')) ?></option>
+                    <option value="whatsapp"><?= htmlspecialchars(t('portal.primary_tap_whatsapp')) ?></option>
+                    <option value="call"><?= htmlspecialchars(t('portal.primary_tap_call')) ?></option>
+                </select>
+                <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('portal.primary_tap_hint')) ?></p>
             </div>
 
             <?php if (!empty($customFieldDefs)): ?>
