@@ -195,3 +195,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-23 23:55 | #513 | 1aeb76b | index.php #pricing fully bilingual via pricing namespace. 44 new pricing.home_* keys EN+AR cover kicker/headline/subhead/toggles/4 tier cards with tagline/price/sub/features/CTA.
 2026-04-24 00:05 | #514 | 8f059fe | index.php #testimonials fully bilingual via new testimonials namespace (19 keys EN+AR, 3 headers + 4 blocks). 4 figures collapsed into a foreach loop.
 2026-04-24 00:20 | #515 | 8e8f550 | index.php From the Blog chrome bilingual: heading + sub + view-all CTA via 3 landing.blog_* keys EN+AR. Post titles untouched (authored locale).
+2026-04-24 00:35 | #516 | 39bfa7b | index.php #resources fully bilingual: section header + Free Tools card (4 tool links) + OBI card (8 sector/wilayat chips) + Solutions row header/CTA. 27 landing.res_* keys EN+AR. 12 solution category labels kept in English (authored-locale precedent).
