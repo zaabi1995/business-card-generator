@@ -100,10 +100,10 @@ adminHeader(t('adminchrome.batch_auto_generate'), 'employees');
     <div class="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
         <i class="fa-solid fa-check text-2xl text-green-600"></i>
     </div>
-    <h2 class="text-xl font-bold text-gray-900 mb-2">All Cards Generated</h2>
-    <p class="text-gray-500 text-sm mb-6">Every employee already has a business card.</p>
+    <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('batchgen.all_generated_h2')) ?></h2>
+    <p class="text-gray-500 text-sm mb-6"><?= htmlspecialchars(t('batchgen.all_generated_body')) ?></p>
     <a href="employees.php" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
-        <i class="fa-solid fa-arrow-left"></i> Back to Employees
+        <i class="fa-solid fa-arrow-left"></i> <?= htmlspecialchars(t('batchgen.back_to_employees')) ?>
     </a>
 </div>
 <?php else: ?>
@@ -113,7 +113,7 @@ adminHeader(t('adminchrome.batch_auto_generate'), 'employees');
     <?php if (!$hasTemplates): ?>
     <div x-show="!started" class="mb-6">
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-            <h3 class="font-semibold text-gray-900 mb-3">Choose Card Layout</h3>
+            <h3 class="font-semibold text-gray-900 mb-3"><?= htmlspecialchars(t('batchgen.choose_layout')) ?></h3>
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                 <?php foreach ($layouts as $lid => $layout): ?>
                 <a href="?layout=<?php echo $lid; ?>"
@@ -133,17 +133,17 @@ adminHeader(t('adminchrome.batch_auto_generate'), 'employees');
             <div class="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-4">
                 <i class="fa-solid fa-wand-magic-sparkles text-2xl text-blue-600"></i>
             </div>
-            <h2 class="text-xl font-bold text-gray-900 mb-2">Generate All Business Cards</h2>
+            <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('batchgen.generate_all_h2')) ?></h2>
             <p class="text-gray-500 text-sm mb-6">
-                <strong><?php echo count($employeesWithoutCards); ?></strong> employees need cards generated.
+                <?= htmlspecialchars(str_replace(':n', (string) count($employeesWithoutCards), t('batchgen.need_cards'))) ?>
                 <?php if ($hasTemplates): ?>
-                Using your configured template.
+                <?= htmlspecialchars(t('batchgen.using_template')) ?>
                 <?php else: ?>
-                Using <strong><?php echo htmlspecialchars($layouts[$selectedLayout]['name']); ?></strong> layout.
+                <?= htmlspecialchars(str_replace(':layout', $layouts[$selectedLayout]['name'], t('batchgen.using_layout'))) ?>
                 <?php endif; ?>
             </p>
             <button @click="start()" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors text-lg">
-                <i class="fa-solid fa-bolt mr-2"></i>Generate All Cards
+                <i class="fa-solid fa-bolt mr-2"></i><?= htmlspecialchars(t('batchgen.generate_all_btn')) ?>
             </button>
         </div>
 
@@ -154,7 +154,7 @@ adminHeader(t('adminchrome.batch_auto_generate'), 'employees');
                     <i class="fa-solid fa-wand-magic-sparkles text-xl text-blue-600 animate-pulse"></i>
                 </div>
                 <div class="flex-1">
-                    <h2 class="text-lg font-bold text-gray-900">Generating Cards...</h2>
+                    <h2 class="text-lg font-bold text-gray-900"><?= htmlspecialchars(t('batchgen.generating_h2')) ?></h2>
                     <p class="text-sm text-gray-500" x-text="currentName"></p>
                 </div>
                 <div class="text-right">
@@ -173,13 +173,13 @@ adminHeader(t('adminchrome.batch_auto_generate'), 'employees');
             <div class="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
                 <i class="fa-solid fa-check text-2xl text-green-600"></i>
             </div>
-            <h2 class="text-xl font-bold text-gray-900 mb-2">All Done!</h2>
+            <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('batchgen.all_done_h2')) ?></h2>
             <p class="text-gray-500 text-sm mb-2">
-                Generated <strong x-text="completed"></strong> cards successfully.
-                <span x-show="errors > 0" class="text-red-500" x-text="errors + ' failed.'"></span>
+                <span x-text="BATCHGEN_I18N.generated_success.replace(':n', completed)"></span>
+                <span x-show="errors > 0" class="text-red-500" x-text="BATCHGEN_I18N.failed_suffix.replace(':n', errors)"></span>
             </p>
             <a href="employees.php?generated=1" class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors mt-4">
-                <i class="fa-solid fa-arrow-left"></i> Back to Employees
+                <i class="fa-solid fa-arrow-left"></i> <?= htmlspecialchars(t('batchgen.back_to_employees')) ?>
             </a>
         </div>
     </div>
@@ -203,6 +203,15 @@ adminHeader(t('adminchrome.batch_auto_generate'), 'employees');
 <script>
 var batchEmployees = <?php echo json_encode($employeeCards, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
 var hasTemplates = <?php echo $hasTemplates ? 'true' : 'false'; ?>;
+var BATCHGEN_I18N = <?php echo json_encode([
+    'generating_card_x_of_y' => t('batchgen.js_generating_card_x_of_y'),
+    'no_front_html'          => t('batchgen.js_no_front_html'),
+    'save_front_failed'      => t('batchgen.js_save_front_failed'),
+    'save_back_failed'       => t('batchgen.js_save_back_failed'),
+    'log_failed'             => t('batchgen.js_log_failed'),
+    'generated_success'      => t('batchgen.generated_success'),
+    'failed_suffix'          => t('batchgen.failed_suffix'),
+], JSON_UNESCAPED_UNICODE); ?>;
 
 function batchGenerator() {
     return {
@@ -231,7 +240,7 @@ function batchGenerator() {
             for (var i = 0; i < batchEmployees.length; i++) {
                 var emp = batchEmployees[i];
                 this.currentName = emp.name;
-                this.statusMessage = 'Generating card ' + (i + 1) + ' of ' + this.total + '...';
+                this.statusMessage = BATCHGEN_I18N.generating_card_x_of_y.replace(':cur', i + 1).replace(':tot', this.total);
 
                 try {
                     await this.generateOne(emp);
@@ -254,7 +263,7 @@ function batchGenerator() {
             // Inject front HTML
             frontEl.innerHTML = emp.frontHtml;
             var frontTarget = frontEl.firstElementChild;
-            if (!frontTarget) throw new Error('No front card HTML');
+            if (!frontTarget) throw new Error(BATCHGEN_I18N.no_front_html);
 
             // Inject back HTML with QR code
             backEl.innerHTML = emp.backHtml;
@@ -300,7 +309,7 @@ function batchGenerator() {
             // Save front
             var frontBlob = await this.toBlob(frontCanvas);
             var frontResult = await this.save(frontBlob, 'front', emp.id);
-            if (!frontResult.success) throw new Error(frontResult.error || 'Failed to save front');
+            if (!frontResult.success) throw new Error(frontResult.error || BATCHGEN_I18N.save_front_failed);
 
             // Save back
             var backFile = null;

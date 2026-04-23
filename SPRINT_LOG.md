@@ -128,3 +128,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-23 06:50 | #520~ | 4d0dc5a | Cat B dashboard i18n: 10 strings (KPI + analytics + free-plan) wrapped + EN/AR, 13 keys added. Remaining 50 → action 844.
 2026-04-23 07:10 | #521~ | 02155ac | Cat B employees i18n: 15 strings (import modal + detail stats) wrapped + EN/AR, 19 keys added. Remaining 685 → action 845.
 2026-04-23 07:25 | #522 | e4eda2e | Cat B autogen JS i18n: AUTOGEN_I18N const + 13 statusMessage swaps in layoutGenerator+autoGenerator. 11 new keys EN+AR.
+2026-04-23 07:40 | #523~ | 1e648a3 | Cat B batch-auto-generate.php full i18n: 18 strings (empty state, layout picker, not-started, progress, done) + BATCHGEN_I18N inject for JS literals. New batchgen namespace, 20 keys EN+AR. Remaining batch_generate.php queued as 846.

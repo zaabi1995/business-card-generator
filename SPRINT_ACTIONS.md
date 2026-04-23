@@ -568,7 +568,7 @@
 - [~] 521. Partial: import-CSV modal (11 strings) + detail-stats row + current-card heading (4 strings). Remaining ~685 strings (add/edit modal, delete-confirm, regenerate-confirm, row meta, analytics panes) queued as 845.
 - [x] 522. Injected AUTOGEN_I18N const via json_encode + swapped 13 hardcoded statusMessage literals in layoutGenerator + autoGenerator. EN+AR parity verified.
 
-- [ ] 523. admin/batch_generate.php + admin/batch-auto-generate.php deep UI: stepper, employee-picker table, progress bar + per-row status, success summary, error list. Est. ~120 strings.
+- [~] 523. Partial: batch-auto-generate.php fully wrapped (18 strings + BATCHGEN_I18N inject) via new `batchgen` namespace (20 keys EN+AR). Remaining batch_generate.php (826L Fabric.js path) queued as action 846.
 - [ ] 524. admin/billing.php pricing tiers + feature matrix + subscription state + invoices-this-year table + change-plan/cancel modals. Est. ~80 strings.
 - [ ] 525. admin/credit-accounts.php account cards, limit + terms table, credit-request CTA copy, ledger mini-table. Est. ~35 strings.
 - [ ] 526. admin/custom-domains.php simplify + translate DNS instructions (currently developer-speak). Rewrite in plain English for the default locale as part of this action, then translate. Est. ~45 strings.
@@ -898,3 +898,4 @@
 - [ ] 843. Engage an Arabic business writer (Amna or equiv) for the ~2,500-word oman-business-index.php translation: Executive Summary + Methodology + Key Findings + Top-10 Flagship blurbs + About Cardify + FAQ + Cite block. Delivery in one PR, paste into lang/ar/oman_business_index.php namespace. Budget 1-2 days of writer time.
 - [ ] 844. admin/index.php remaining ~50 strings: quick-actions card, card-designs grid, getting-started checklist, upgrade-nag modal, referral card body, template-cycling sample button, align/distribute toolbar tooltips. Each chunk as its own commit.
 - [ ] 845. admin/employees.php remaining ~685 strings: add/edit employee modal (~250), delete-confirm + regenerate-confirm + bulk-regenerate modals (~60), row-level meta (dept chips, last-scan time, card-preview hover state) (~90), analytics panes (top-scanned, heatmap, device split) (~140), import-result toast + error list (~40), per-employee timeline (~105). Commit in 3-4 chunks to keep reviewable.
+- [ ] 846. admin/batch_generate.php (826L) Fabric.js template path: stepper header, employee-picker table columns + select-all + count meta, per-row progress indicator, success toast, error list, retry-failed button. Est. ~80-100 strings. Use batchgen namespace (add keys as needed for Fabric-specific flow).
