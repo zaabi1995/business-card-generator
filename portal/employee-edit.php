@@ -11,6 +11,7 @@ require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/EmployeeEditToken.php';
 require_once INCLUDES_DIR . '/AppleWalletPass.php';
+require_once INCLUDES_DIR . '/QRTracker.php';
 
 $token = trim($_GET['token'] ?? '');
 $employee = EmployeeEditToken::verify($token);
@@ -20,6 +21,7 @@ $publicCardUrl = '';
 $departments = [];
 $currentDepartmentName = '';
 $pendingDeptRequest = null;
+$scanStats = ['periodScans' => 0, 'totalScans' => 0];
 if ($employee) {
     try {
         $db = Database::getInstance();
@@ -62,6 +64,14 @@ if ($employee) {
                 'label' => $pending['requested_label'],
             ];
         }
+
+        try {
+            $stats = QRTracker::getEmployeeStats($employee['id'], 30);
+            if (is_array($stats)) {
+                $scanStats['periodScans'] = (int) ($stats['periodScans'] ?? 0);
+                $scanStats['totalScans']  = (int) ($stats['totalScans']  ?? 0);
+            }
+        } catch (Throwable $e) { /* stats optional */ }
     } catch (Throwable $e) { /* table may not exist in minimal envs */ }
 }
 
@@ -146,6 +156,16 @@ $pageTitle = t('portal.edit_my_details');
             <p class="text-xs text-gray-500 mt-1"
                :class="savingState === 'saved' ? 'text-green-600' : ''"
                x-text="statusText()"></p>
+            <?php if ($scanStats['periodScans'] > 0 || $scanStats['totalScans'] > 0): ?>
+                <div class="inline-flex items-center gap-2 mt-3 px-3 py-1.5 rounded-full bg-[#009bc1]/10 text-[#007a99] text-xs font-medium">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span><?= htmlspecialchars(t('portal.stats_month', ['n' => $scanStats['periodScans']])) ?></span>
+                    <?php if ($scanStats['totalScans'] > $scanStats['periodScans']): ?>
+                        <span class="text-gray-400">·</span>
+                        <span class="text-gray-500"><?= htmlspecialchars(t('portal.stats_total', ['n' => $scanStats['totalScans']])) ?></span>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         </div>
 
         <!-- Live card preview -->

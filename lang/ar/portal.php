@@ -87,4 +87,6 @@ return [
     'request_change_hint'=> 'تغييرات القسم تحتاج موافقة الإدارة قبل أن تظهر على بطاقتك.',
     'request_pending_label'=> 'بانتظار موافقة الإدارة: :pending',
     'request_failed'    => 'فشل الطلب، حاول مرة أخرى.',
+    'stats_month'       => 'تم مسح بطاقتك :n مرة هذا الشهر',
+    'stats_total'       => ':n إجمالاً',
 ];

@@ -87,4 +87,6 @@ return [
     'request_change_hint'=> 'Department changes need admin approval before they update your card.',
     'request_pending_label'=> 'Pending admin approval: :pending',
     'request_failed'    => 'Request failed. Try again.',
+    'stats_month'       => 'Scanned :n times this month',
+    'stats_total'       => ':n total',
 ];
