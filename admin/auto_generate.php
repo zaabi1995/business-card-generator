@@ -342,6 +342,23 @@ const layoutIds = <?php echo json_encode(array_keys($preDesignedLayouts)); ?>;
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/dist/qrcode.min.js"></script>
 
 <script>
+// i18n strings for JS runtime (see lang/{en,ar}/autogen.php)
+const AUTOGEN_I18N = <?php echo json_encode([
+    'initializing'       => t('autogen.js_initializing'),
+    'preparing_layout'   => t('autogen.js_preparing_layout'),
+    'generating_qr'      => t('autogen.js_generating_qr'),
+    'rendering_front'    => t('autogen.js_rendering_front'),
+    'rendering_back'     => t('autogen.js_rendering_back'),
+    'saving_front'       => t('autogen.js_saving_front'),
+    'saving_back'        => t('autogen.js_saving_back'),
+    'logging_gen'        => t('autogen.js_logging_gen'),
+    'init_editor'        => t('autogen.js_init_editor'),
+    'generating_front'   => t('autogen.js_generating_front'),
+    'generating_back'    => t('autogen.js_generating_back'),
+    'saving_cards'       => t('autogen.js_saving_cards'),
+    'generic_error'      => t('autogen.js_generic_error'),
+], JSON_UNESCAPED_UNICODE); ?>;
+
 // Inject layout previews
 document.addEventListener('DOMContentLoaded', function() {
     layoutIds.forEach(function(id) {
@@ -354,7 +371,7 @@ function layoutGenerator() {
     return {
         status: <?php echo ($isNew || $isRegenerate) ? "'generating'" : "'picking'"; ?>,
         selectedLayout: '<?php echo $selectedLayout; ?>',
-        statusMessage: 'Initializing...',
+        statusMessage: AUTOGEN_I18N.initializing,
         errorMessage: '',
         copied: false,
         countdown: 8,
@@ -397,7 +414,7 @@ function layoutGenerator() {
 
         async generate() {
             this.status = 'generating';
-            this.statusMessage = 'Preparing card layout...';
+            this.statusMessage = AUTOGEN_I18N.preparing_layout;
 
             try {
                 // Wait for html2canvas to be available
@@ -405,7 +422,7 @@ function layoutGenerator() {
 
                 // Generate QR code and inject into back card
                 if (this.vcfUrl && typeof qrcode !== 'undefined') {
-                    this.statusMessage = 'Generating QR code...';
+                    this.statusMessage = AUTOGEN_I18N.generating_qr;
                     var qr = qrcode(0, 'M');
                     qr.addData(this.vcfUrl);
                     qr.make();
@@ -432,7 +449,7 @@ function layoutGenerator() {
                 }
 
                 // Render front card
-                this.statusMessage = 'Rendering front card...';
+                this.statusMessage = AUTOGEN_I18N.rendering_front;
                 var frontEl = document.getElementById('layout-render-front');
                 var frontTarget = frontEl.firstElementChild;
                 if (!frontTarget) throw new Error('No front card to render');
@@ -448,7 +465,7 @@ function layoutGenerator() {
                 });
 
                 // Render back card
-                this.statusMessage = 'Rendering back card...';
+                this.statusMessage = AUTOGEN_I18N.rendering_back;
                 var backEl = document.getElementById('layout-render-back');
                 var backTarget = backEl.firstElementChild;
                 var backCanvas = null;
@@ -465,7 +482,7 @@ function layoutGenerator() {
                 }
 
                 // Save front
-                this.statusMessage = 'Saving front card...';
+                this.statusMessage = AUTOGEN_I18N.saving_front;
                 var frontBlob = await this.canvasToBlob(frontCanvas);
                 var frontResult = await this.saveCard(frontBlob, 'front');
                 if (!frontResult.success) throw new Error(frontResult.error || 'Failed to save front card');
@@ -473,7 +490,7 @@ function layoutGenerator() {
                 // Save back
                 var backFile = null;
                 if (backCanvas) {
-                    this.statusMessage = 'Saving back card...';
+                    this.statusMessage = AUTOGEN_I18N.saving_back;
                     var backBlob = await this.canvasToBlob(backCanvas);
                     var backResult = await this.saveCard(backBlob, 'back');
                     if (!backResult.success) throw new Error(backResult.error || 'Failed to save back card');
@@ -481,7 +498,7 @@ function layoutGenerator() {
                 }
 
                 // Log generation
-                this.statusMessage = 'Logging generation...';
+                this.statusMessage = AUTOGEN_I18N.logging_gen;
                 var logResp = await fetch(this.baseUrl + '/log_generation.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -656,8 +673,8 @@ function layoutGenerator() {
 function autoGenerator() {
     return {
         status: 'generating',
-        statusMessage: 'Initializing...',
-        errorMessage: 'An error occurred',
+        statusMessage: AUTOGEN_I18N.initializing,
+        errorMessage: AUTOGEN_I18N.generic_error,
         
         // Data from PHP
         employee: <?php echo json_encode($employee, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
@@ -791,7 +808,7 @@ function autoGenerator() {
                     throw new Error('No active templates configured. Please set up templates first.');
                 }
                 
-                this.statusMessage = 'Initializing card editor...';
+                this.statusMessage = AUTOGEN_I18N.init_editor;
                 
                 // Get canvas dimensions from template settings
                 const template = this.frontTemplate || this.backTemplate;
@@ -816,7 +833,7 @@ function autoGenerator() {
                 
                 // Generate front card
                 if (this.frontTemplate) {
-                    this.statusMessage = 'Generating front card...';
+                    this.statusMessage = AUTOGEN_I18N.generating_front;
                     
                     // Clear canvas
                     this.editor.clear();
@@ -856,7 +873,7 @@ function autoGenerator() {
                 
                 // Generate back card
                 if (this.backTemplate) {
-                    this.statusMessage = 'Generating back card...';
+                    this.statusMessage = AUTOGEN_I18N.generating_back;
                     
                     // Clear canvas
                     this.editor.clear();
@@ -894,7 +911,7 @@ function autoGenerator() {
                 }
                 
                 // Save the cards
-                this.statusMessage = 'Saving cards...';
+                this.statusMessage = AUTOGEN_I18N.saving_cards;
                 
                 if (!frontBlob && !backBlob) {
                     throw new Error('No cards were generated');
@@ -905,7 +922,7 @@ function autoGenerator() {
                 
                 // Save front card
                 if (frontBlob) {
-                    this.statusMessage = 'Saving front card...';
+                    this.statusMessage = AUTOGEN_I18N.saving_front;
                     const frontFormData = new FormData();
                     frontFormData.append('png', frontBlob, 'front.png');
                     frontFormData.append('side', 'front');
@@ -925,7 +942,7 @@ function autoGenerator() {
                 
                 // Save back card
                 if (backBlob) {
-                    this.statusMessage = 'Saving back card...';
+                    this.statusMessage = AUTOGEN_I18N.saving_back;
                     const backFormData = new FormData();
                     backFormData.append('png', backBlob, 'back.png');
                     backFormData.append('side', 'back');
@@ -944,7 +961,7 @@ function autoGenerator() {
                 }
                 
                 // Log the generation
-                this.statusMessage = 'Logging generation...';
+                this.statusMessage = AUTOGEN_I18N.logging_gen;
                 const logResponse = await fetch(this.baseUrl + '/log_generation.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
