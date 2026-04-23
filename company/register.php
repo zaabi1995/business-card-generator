@@ -246,6 +246,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
 
+                    // Pre-seed onboarding wizard state with admin's own
+                    // name/email/phone so step 4 (first_employee) pre-fills
+                    // + wizard header greets them by name on first visit.
+                    try {
+                        require_once INCLUDES_DIR . '/Onboarding.php';
+                        Onboarding::saveMeta($company['id'], [
+                            'admin_name'    => $userName ?: $name,
+                            'admin_email'   => $email,
+                            'admin_phone'   => $phone !== '' ? $phone : null,
+                            'company_name'  => $name,
+                            'first_employee' => [
+                                'name'  => $userName ?: $name,
+                                'email' => $email,
+                                'phone' => $phone !== '' ? $phone : '',
+                                'title' => '',
+                            ],
+                        ]);
+                    } catch (Throwable $e) {
+                        error_log('[register] Onboarding::saveMeta failed: ' . $e->getMessage());
+                    }
+
                     // BHD-234: give the new user a referral code and attribute them
                     // back to the referrer (if they came in via /r/<code>).
                     if (!empty($userResult['user_id'])) {

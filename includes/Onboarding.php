@@ -120,6 +120,37 @@ class Onboarding
         }
     }
 
+    /**
+     * Merge arbitrary key/value pairs into company_onboarding.data without
+     * advancing the step counter. Used by register.php to seed admin's
+     * own name/email/phone into the wizard state so step 4 (first_employee)
+     * pre-fills on first visit.
+     */
+    public static function saveMeta(string $companyId, array $meta): void
+    {
+        if (!$meta) return;
+        $db = Database::getInstance();
+        $existing = self::get($companyId);
+        $data = $existing['data'];
+        foreach ($meta as $k => $v) { $data[$k] = $v; }
+
+        $payload = json_encode($data, JSON_UNESCAPED_UNICODE);
+        if (empty($existing['started_at']) && $existing['step'] === 0) {
+            $db->insert('company_onboarding', [
+                'company_id' => $companyId,
+                'step'       => 0,
+                'data'       => $payload,
+            ]);
+        } else {
+            $db->update(
+                'company_onboarding',
+                ['data' => $payload],
+                'company_id = :cid',
+                ['cid' => $companyId]
+            );
+        }
+    }
+
     public static function markSkipped(string $companyId): void
     {
         $db = Database::getInstance();
