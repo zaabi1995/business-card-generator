@@ -981,35 +981,35 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white text-sm font-medium mb-6">
                 <span>🇴🇲</span>
-                <span>Proudly supporting Omani businesses</span>
+                <span><?= htmlspecialchars(t('landing.cta_supporting')) ?></span>
             </div>
-            
+
             <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-6">
-                Create Your First Card in Minutes
+                <?= htmlspecialchars(t('landing.cta_title')) ?>
             </h2>
             <p class="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
-                Join hundreds of Omani companies using Cardify. Start free, upgrade as you grow.
+                <?= htmlspecialchars(t('landing.cta_sub')) ?>
             </p>
 
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white hover:bg-gray-100 text-blue-600 font-bold rounded-xl shadow-xl transition-all hover:-translate-y-0.5 text-lg">
                     <i class="fa-solid fa-rocket"></i>
-                    Start Your Free Trial
+                    <?= htmlspecialchars(t('landing.cta_start_trial')) ?>
                 </a>
                 <a href="<?php echo getBasePath(); ?>intro" class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-blue-500/20 hover:bg-blue-500/30 text-white font-semibold rounded-xl border-2 border-white/30 transition-all text-lg">
                     <i class="fa-solid fa-play-circle"></i>
-                    See How It Works
+                    <?= htmlspecialchars(t('landing.cta_see_how')) ?>
                 </a>
             </div>
 
             <div class="mt-10 flex flex-wrap justify-center gap-6 text-white/70 text-sm">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-check-circle"></i>
-                    <span>Free Starter Plan</span>
+                    <span><?= htmlspecialchars(t('landing.cta_free_starter')) ?></span>
                 </div>
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-check-circle"></i>
-                    <span>14-Day Free Trial</span>
+                    <span><?= htmlspecialchars(t('landing.cta_free_trial')) ?></span>
                 </div>
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-check-circle"></i>
@@ -1041,50 +1041,50 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Product Links -->
                 <div>
-                    <h4 class="font-bold text-lg mb-6">Product</h4>
+                    <h4 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_product')) ?></h4>
                     <ul class="space-y-3">
-                        <li><a href="#features" class="text-gray-400 hover:text-white transition-colors">Features</a></li>
-                        <li><a href="#pricing" class="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
-                        <li><a href="#resources" class="text-gray-400 hover:text-white transition-colors">Free Tools</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>company/register.php" class="text-gray-400 hover:text-white transition-colors">Get Started</a></li>
+                        <li><a href="#features" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_features')) ?></a></li>
+                        <li><a href="#pricing" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_pricing')) ?></a></li>
+                        <li><a href="#resources" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_all_tools')) ?></a></li>
+                        <li><a href="<?php echo getBasePath(); ?>company/register.php" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('header.get_started_free')) ?></a></li>
                     </ul>
                 </div>
 
                 <!-- Free Tools -->
                 <div>
-                    <h4 class="font-bold text-lg mb-6">Free Tools</h4>
+                    <h4 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_free_tools')) ?></h4>
                     <ul class="space-y-3">
-                        <li><a href="<?php echo getBasePath(); ?>tools/vcard-qr-generator" class="text-gray-400 hover:text-white transition-colors">vCard QR Generator</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>tools/email-signature-generator" class="text-gray-400 hover:text-white transition-colors">Email Signature</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>tools/whatsapp-qr-generator" class="text-gray-400 hover:text-white transition-colors">WhatsApp QR</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>tools/nfc-business-card-guide" class="text-gray-400 hover:text-white transition-colors">NFC Card Guide</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>tools" class="text-gray-400 hover:text-white transition-colors">All Tools</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>tools/vcard-qr-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_vcard_qr')) ?></a></li>
+                        <li><a href="<?php echo getBasePath(); ?>tools/email-signature-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_email_sig')) ?></a></li>
+                        <li><a href="<?php echo getBasePath(); ?>tools/whatsapp-qr-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_whatsapp_qr')) ?></a></li>
+                        <li><a href="<?php echo getBasePath(); ?>tools/nfc-business-card-guide" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_nfc_guide')) ?></a></li>
+                        <li><a href="<?php echo getBasePath(); ?>tools" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_all_tools')) ?></a></li>
                     </ul>
                 </div>
 
                 <!-- Directory & Solutions -->
                 <div>
-                    <h4 class="font-bold text-lg mb-6">Directory &amp; Solutions</h4>
+                    <h4 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_directory')) ?></h4>
                     <ul class="space-y-3">
-                        <li><a href="<?php echo getBasePath(); ?>oman-business-index" class="text-gray-400 hover:text-white transition-colors">Oman Business Index</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>companies" class="text-gray-400 hover:text-white transition-colors">Browse 2,414 Companies</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>companies/sector/oil-gas" class="text-gray-400 hover:text-white transition-colors">Oil &amp; Gas</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>companies/sector/construction" class="text-gray-400 hover:text-white transition-colors">Construction</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>oman-business-index" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_oman_index')) ?></a></li>
+                        <li><a href="<?php echo getBasePath(); ?>companies" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_browse_companies')) ?></a></li>
+                        <li><a href="<?php echo getBasePath(); ?>companies/sector/oil-gas" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_oil')) ?></a></li>
+                        <li><a href="<?php echo getBasePath(); ?>companies/sector/construction" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_construction')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>companies/wilayat/muscat" class="text-gray-400 hover:text-white transition-colors">Muscat Companies</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>solutions" class="text-gray-400 hover:text-white transition-colors">All Solutions</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>solutions" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_solutions')) ?></a></li>
                     </ul>
                 </div>
 
                 <!-- Company + Legal -->
                 <div>
-                    <h4 class="font-bold text-lg mb-6">Company</h4>
+                    <h4 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_company')) ?></h4>
                     <ul class="space-y-3">
-                        <li><a href="<?php echo getBasePath(); ?>about" class="text-gray-400 hover:text-white transition-colors">About Us</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>blog" class="text-gray-400 hover:text-white transition-colors">Blog</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>careers" class="text-gray-400 hover:text-white transition-colors">Careers</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>privacy" class="text-gray-400 hover:text-white transition-colors">Privacy</a></li>
-                        <li><a href="<?php echo getBasePath(); ?>terms" class="text-gray-400 hover:text-white transition-colors">Terms</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>about" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_about')) ?></a></li>
+                        <li><a href="<?php echo getBasePath(); ?>blog" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_blog')) ?></a></li>
+                        <li><a href="<?php echo getBasePath(); ?>careers" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_careers')) ?></a></li>
+                        <li><a href="<?php echo getBasePath(); ?>contact" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_contact')) ?></a></li>
+                        <li><a href="<?php echo getBasePath(); ?>privacy" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_privacy')) ?></a></li>
+                        <li><a href="<?php echo getBasePath(); ?>terms" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_terms')) ?></a></li>
                     </ul>
                 </div>
             </div>
@@ -1092,12 +1092,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <!-- Bottom Bar -->
             <div class="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
                 <p class="text-gray-500 text-sm">
-                    &copy; <?php echo date('Y'); ?> <?php echo $brandName; ?>. All rights reserved.
+                    <?= htmlspecialchars(t('footer.copyright', ['year' => date('Y'), 'brand' => $brandName])) ?>
                 </p>
                 <div class="flex items-center gap-6 text-sm text-gray-500">
                     <span class="flex items-center gap-2">
                         <i class="fa-solid fa-globe"></i>
-                        English (US)
+                        <?= (function_exists('currentLocale') && currentLocale() === 'ar') ? 'العربية' : 'English (US)' ?>
                     </span>
                 </div>
             </div>

@@ -105,4 +105,13 @@ return [
     'res_obi_cta'        => 'Explore the full directory',
     'res_sol_heading'    => 'Solutions for your industry',
     'res_sol_cta'        => 'View all 20 solutions →',
+
+    // Final CTA block
+    'cta_supporting'     => 'Proudly supporting Omani businesses',
+    'cta_title'          => 'Create Your First Card in Minutes',
+    'cta_sub'            => 'Join hundreds of Omani companies using Cardify. Start free, upgrade as you grow.',
+    'cta_start_trial'    => 'Start Your Free Trial',
+    'cta_see_how'        => 'See How It Works',
+    'cta_free_starter'   => 'Free Starter Plan',
+    'cta_free_trial'     => '14-Day Free Trial',
 ];
