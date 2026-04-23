@@ -1,6 +1,6 @@
 <?php
 /**
- * Omani Logo Library — Sector view.
+ * Omani Logo Library, Sector view.
  * Same canonical Cardify chrome as hub.
  *
  * @var array  $data
@@ -12,14 +12,10 @@
  * @var bool   $isAr
  */
 
-// Title / description lean into the "Omani {sector} logo" long-tail — that's
+// Title / description lean into the "Omani {sector} logo" long-tail, that's
 // the query pattern for Google Image search on branded marks.
-$pageTitle = $isAr
-    ? "شعارات شركات {$sectorLabel} في عُمان — تنزيل SVG و PNG | Cardify"
-    : "Omani {$sectorLabel} Logos — Download SVG + PNG | Cardify";
-$pageDescription = $isAr
-    ? mb_substr("تصفّح {$data['total']} من شعارات شركات {$sectorLabel} العمانية. أرشيف عام مفهرس، قابل للبحث، متاح للتنزيل بصيغ SVG و PNG.", 0, 155)
-    : mb_substr("Browse {$data['total']} Omani {$sectorLabel} company logos. Free SVG + PNG downloads, indexed from public sources for identification and reference.", 0, 155);
+$pageTitle       = t('logos.sector_meta_title', ['sector' => $sectorLabel]);
+$pageDescription = mb_substr(t('logos.sector_meta_desc', ['sector' => $sectorLabel, 'count' => (string) $data['total']]), 0, 155);
 $canonicalUrl    = $canonical;
 $bodyClass       = 'bg-white';
 $showNavigation  = true;
@@ -97,7 +93,7 @@ $page = $data['page'];
         <nav class="flex items-center gap-1.5 text-sm text-gray-500 mb-6 flex-wrap">
             <a href="/" class="hover:text-blue-600">Cardify</a>
             <i class="fa-solid fa-chevron-<?= $isAr ? 'left' : 'right' ?> text-[10px] text-gray-300"></i>
-            <a href="/logos" class="hover:text-blue-600"><?= $isAr ? 'مكتبة الشعارات' : 'Logo Library' ?></a>
+            <a href="/logos" class="hover:text-blue-600"><?= logos_sector_esc(t('logos.breadcrumb_library')) ?></a>
             <i class="fa-solid fa-chevron-<?= $isAr ? 'left' : 'right' ?> text-[10px] text-gray-300"></i>
             <span class="text-gray-900 font-medium"><?= logos_sector_esc($sectorLabel) ?></span>
         </nav>
@@ -105,14 +101,14 @@ $page = $data['page'];
         <!-- Header -->
         <div class="mb-8">
             <span class="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-wide mb-3">
-                <?= $isAr ? 'قطاع' : 'Sector' ?>
+                <?= logos_sector_esc(t('logos.sector_badge')) ?>
             </span>
             <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">
-                <?= $isAr ? 'شعارات ' . logos_sector_esc($sectorLabel) : 'Omani ' . logos_sector_esc($sectorLabel) . ' Logos' ?>
+                <?= logos_sector_esc(t('logos.sector_h1', ['sector' => $sectorLabel])) ?>
             </h1>
             <p class="text-lg text-gray-600">
                 <?= number_format($data['total']) ?>
-                <?= $isAr ? 'شركة مفهرسة' : ($data['total'] === 1 ? 'brand indexed' : 'brands indexed') ?>
+                <?= logos_sector_esc($data['total'] === 1 ? t('logos.sector_brand_indexed_singular') : t('logos.sector_brand_indexed_plural')) ?>
             </p>
         </div>
 
@@ -122,14 +118,12 @@ $page = $data['page'];
                 <div class="w-14 h-14 mx-auto rounded-xl bg-gray-50 text-gray-400 flex items-center justify-center mb-4">
                     <i class="fa-solid fa-folder-open text-xl"></i>
                 </div>
-                <h3 class="font-bold text-gray-900 mb-1"><?= $isAr ? 'لا توجد شعارات بعد' : 'No logos in this sector yet' ?></h3>
+                <h3 class="font-bold text-gray-900 mb-1"><?= logos_sector_esc(t('logos.sector_empty_title')) ?></h3>
                 <p class="text-sm text-gray-500 max-w-md mx-auto mb-5">
-                    <?= $isAr
-                        ? 'نقوم بتوسيع المكتبة. إذا كنت تمثل شركة في هذا القطاع، يمكنك المطالبة بملفك وإضافة شعارك.'
-                        : 'We\'re still building this sector. If you represent a company here, claim your profile and add your logo.' ?>
+                    <?= logos_sector_esc(t('logos.sector_empty_body')) ?>
                 </p>
                 <a href="/logos" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition">
-                    <?= $isAr ? 'الرجوع للمكتبة' : 'Back to the library' ?>
+                    <?= logos_sector_esc(t('logos.sector_back_library')) ?>
                 </a>
             </div>
         <?php else: ?>
@@ -137,7 +131,7 @@ $page = $data['page'];
                 <?php foreach ($data['rows'] as $r):
                     $status = $r['logo_status'];
                     $badgeColor = $status === 'verified' ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-gray-50 text-gray-600 ring-gray-200';
-                    $badgeLabel = $status === 'verified' ? ($isAr ? 'موثّق' : 'Verified') : ($isAr ? 'مفهرس' : 'Indexed');
+                    $badgeLabel = $status === 'verified' ? t('logos.badge_verified') : t('logos.badge_indexed');
                     $src = $r['logo_webp_path'] ?: $r['logo_png_512_path'] ?: $r['logo_png_path'] ?: $r['logo_svg_path'];
                 ?>
                     <a href="/companies/<?= logos_sector_esc($r['slug']) ?>"
@@ -168,7 +162,7 @@ $page = $data['page'];
                 $totalPages = (int) ceil(max(1, $data['total']) / $data['per_page']);
                 if ($totalPages > 1):
             ?>
-                <nav class="mt-10 flex justify-center gap-1.5" aria-label="<?= $isAr ? 'الصفحات' : 'Pagination' ?>">
+                <nav class="mt-10 flex justify-center gap-1.5" aria-label="<?= logos_sector_esc(t('logos.aria_pagination')) ?>">
                     <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++):
                         $qs = $_GET; $qs['page'] = $p; ?>
                         <a href="?<?= http_build_query($qs) ?>"
@@ -184,9 +178,9 @@ $page = $data['page'];
 
         <!-- Cross-link -->
         <div class="mt-12 flex flex-wrap gap-2 justify-center text-sm text-gray-600">
-            <?= $isAr ? 'استكشف أيضاً:' : 'Explore also:' ?>
+            <?= logos_sector_esc(t('logos.sector_explore_also')) ?>
             <a href="/logos" class="text-blue-600 hover:text-blue-700 font-medium hover:underline">
-                <?= $isAr ? 'المكتبة كاملة' : 'the full library' ?>
+                <?= logos_sector_esc(t('logos.sector_full_library')) ?>
             </a>
             <span class="text-gray-300">·</span>
             <a href="/oman-business-index" class="text-blue-600 hover:text-blue-700 font-medium hover:underline">

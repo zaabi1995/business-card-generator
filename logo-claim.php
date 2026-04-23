@@ -18,7 +18,7 @@ $db = Database::getInstance();
 $companyId = (int) ($_GET['company'] ?? $_POST['company'] ?? 0);
 if ($companyId <= 0) {
     http_response_code(400);
-    die('Missing company');
+    die(t('logoclaim.missing_company'));
 }
 
 $company = $db->fetchOne(
@@ -27,7 +27,7 @@ $company = $db->fetchOne(
 );
 if (!$company) {
     http_response_code(404);
-    die('Company not found');
+    die(t('logoclaim.company_not_found'));
 }
 
 // Require login
@@ -43,17 +43,17 @@ $success = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-        $error = 'Invalid CSRF token';
+        $error = t('logoclaim.invalid_csrf');
     } else {
         $proofType = $_POST['proof_type'] ?? 'domain_email';
         if (!in_array($proofType, ['domain_email', 'cr_document', 'domain_dns', 'other'], true)) {
-            $error = 'Invalid proof type';
+            $error = t('logoclaim.invalid_proof');
         } else {
             $proofUrl = null;
 
             if ($proofType === 'cr_document') {
                 if (empty($_FILES['proof_file']['tmp_name'])) {
-                    $error = 'Please upload your CR document (PDF/JPG/PNG, ≤5MB)';
+                    $error = t('logoclaim.upload_cr');
                 } else {
                     $mimeToExt = [
                         'application/pdf' => 'pdf',
@@ -63,14 +63,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $finfo = new \finfo(FILEINFO_MIME_TYPE);
                     $mime  = $finfo->file($_FILES['proof_file']['tmp_name']);
                     if (!isset($mimeToExt[$mime]) || $_FILES['proof_file']['size'] > 5 * 1024 * 1024) {
-                        $error = 'Proof file must be PDF/JPG/PNG under 5MB';
+                        $error = t('logoclaim.bad_file');
                     } else {
                         $dir = __DIR__ . '/storage/logos/pending';
                         @mkdir($dir, 0755, true);
                         $ext = $mimeToExt[$mime];
                         $fn  = 'claim_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
                         if (!move_uploaded_file($_FILES['proof_file']['tmp_name'], "$dir/$fn")) {
-                            $error = 'Could not save proof file. Check back later.';
+                            $error = t('logoclaim.save_failed');
                         } else {
                             $proofUrl = "/storage/logos/pending/$fn";
                         }
@@ -103,8 +103,8 @@ $csrfToken = generateCSRFToken();
 
 function claim_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 
-$pageTitle       = 'Claim ' . $company['name_en'] . ' — Logo Library';
-$pageDescription = 'Verify ownership of ' . $company['name_en'] . ' to unlock logo downloads.';
+$pageTitle       = t('logoclaim.page_title', ['name' => $company['name_en']]);
+$pageDescription = t('logoclaim.page_description', ['name' => $company['name_en']]);
 $canonicalUrl    = 'https://cardify.om/logo-claim?company=' . $companyId;
 $bodyClass       = 'bg-white';
 $showNavigation  = true;
@@ -118,18 +118,18 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
         <a href="/companies/<?= claim_esc($company['slug']) ?>" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-600 mb-4">
             <i class="fa-solid fa-arrow-left text-xs"></i>
-            Back to <?= claim_esc($company['name_en']) ?>
+            <?= claim_esc(t('logoclaim.back_to_company', ['name' => $company['name_en']])) ?>
         </a>
 
         <div class="mb-8">
             <span class="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-wide mb-3">
-                Claim · Verify ownership
+                <?= claim_esc(t('logoclaim.badge')) ?>
             </span>
             <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">
-                Claim <?= claim_esc($company['name_en']) ?>
+                <?= claim_esc(t('logoclaim.h1', ['name' => $company['name_en']])) ?>
             </h1>
             <p class="text-lg text-gray-600">
-                Verify you represent this company to unlock logo downloads and profile management.
+                <?= claim_esc(t('logoclaim.subtitle')) ?>
             </p>
         </div>
 
@@ -141,16 +141,16 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <i class="fa-solid fa-check"></i>
                         </div>
                         <div class="flex-1">
-                            <h2 class="text-xl font-bold text-emerald-900">Verified instantly</h2>
-                            <p class="text-emerald-800 mt-1">Your company domain matched. The logo is now verified and downloadable.</p>
+                            <h2 class="text-xl font-bold text-emerald-900"><?= claim_esc(t('logoclaim.auto_h2')) ?></h2>
+                            <p class="text-emerald-800 mt-1"><?= claim_esc(t('logoclaim.auto_sub')) ?></p>
                             <div class="mt-5 flex flex-wrap gap-3">
                                 <a href="/companies/<?= claim_esc($company['slug']) ?>"
                                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold shadow shadow-emerald-700/30 transition">
-                                    Back to profile <i class="fa-solid fa-arrow-right text-xs"></i>
+                                    <?= claim_esc(t('logoclaim.auto_back_profile')) ?> <i class="fa-solid fa-arrow-right text-xs"></i>
                                 </a>
                                 <a href="/pricing"
                                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white border border-emerald-200 text-emerald-800 hover:border-emerald-400 text-sm font-semibold transition">
-                                    Order business cards for your team
+                                    <?= claim_esc(t('logoclaim.auto_order_cards')) ?>
                                 </a>
                             </div>
                         </div>
@@ -163,11 +163,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <i class="fa-solid fa-hourglass-half"></i>
                         </div>
                         <div class="flex-1">
-                            <h2 class="text-xl font-bold text-gray-900">Claim submitted</h2>
-                            <p class="text-gray-600 mt-1">Your claim is in our review queue. We'll respond within 48 hours.</p>
+                            <h2 class="text-xl font-bold text-gray-900"><?= claim_esc(t('logoclaim.queued_h2')) ?></h2>
+                            <p class="text-gray-600 mt-1"><?= claim_esc(t('logoclaim.queued_sub')) ?></p>
                             <a href="/companies/<?= claim_esc($company['slug']) ?>"
                                class="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow shadow-blue-600/20 transition">
-                                Back to profile <i class="fa-solid fa-arrow-right text-xs"></i>
+                                <?= claim_esc(t('logoclaim.queued_back')) ?> <i class="fa-solid fa-arrow-right text-xs"></i>
                             </a>
                         </div>
                     </div>
@@ -186,47 +186,47 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <input type="hidden" name="company" value="<?= (int) $companyId ?>">
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-900 mb-1.5">Proof type</label>
+                    <label class="block text-sm font-semibold text-gray-900 mb-1.5"><?= claim_esc(t('logoclaim.proof_type_label')) ?></label>
                     <select name="proof_type" id="proof_type"
                             class="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-                        <option value="domain_email">Company email (<?= claim_esc($user['email']) ?>) — fastest, auto-verifies if domain matches</option>
-                        <option value="cr_document">Upload CR document (PDF/image)</option>
-                        <option value="domain_dns">Add DNS TXT record (instructions via email)</option>
-                        <option value="other">Other (describe in note)</option>
+                        <option value="domain_email"><?= claim_esc(t('logoclaim.proof_email_option', ['email' => $user['email']])) ?></option>
+                        <option value="cr_document"><?= claim_esc(t('logoclaim.proof_cr_option')) ?></option>
+                        <option value="domain_dns"><?= claim_esc(t('logoclaim.proof_dns_option')) ?></option>
+                        <option value="other"><?= claim_esc(t('logoclaim.proof_other_option')) ?></option>
                     </select>
                 </div>
 
                 <div id="proof_file_wrap" style="display:none">
-                    <label class="block text-sm font-semibold text-gray-900 mb-1.5">Proof file (PDF/JPG/PNG, ≤5MB)</label>
+                    <label class="block text-sm font-semibold text-gray-900 mb-1.5"><?= claim_esc(t('logoclaim.proof_file_label')) ?></label>
                     <input type="file" name="proof_file" accept=".pdf,image/png,image/jpeg"
                            class="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-900 mb-1.5">Your role at the company</label>
+                    <label class="block text-sm font-semibold text-gray-900 mb-1.5"><?= claim_esc(t('logoclaim.role_label')) ?></label>
                     <select name="role_at_company"
                             class="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-                        <option value="">—</option>
-                        <option>Owner</option>
-                        <option>CEO / Managing Director</option>
-                        <option>Marketing</option>
-                        <option>Admin</option>
-                        <option>Legal</option>
-                        <option>Other</option>
+                        <option value=""><?= claim_esc(t('logoclaim.role_placeholder')) ?></option>
+                        <option><?= claim_esc(t('logoclaim.role_owner')) ?></option>
+                        <option><?= claim_esc(t('logoclaim.role_ceo')) ?></option>
+                        <option><?= claim_esc(t('logoclaim.role_marketing')) ?></option>
+                        <option><?= claim_esc(t('logoclaim.role_admin')) ?></option>
+                        <option><?= claim_esc(t('logoclaim.role_legal')) ?></option>
+                        <option><?= claim_esc(t('logoclaim.role_other')) ?></option>
                     </select>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-900 mb-1.5">Note (optional)</label>
+                    <label class="block text-sm font-semibold text-gray-900 mb-1.5"><?= claim_esc(t('logoclaim.note_label')) ?></label>
                     <textarea name="note" rows="3"
                               class="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-y"></textarea>
                 </div>
 
                 <div class="flex items-center gap-3 pt-2">
                     <button class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40 transition">
-                        Submit claim <i class="fa-solid fa-arrow-right text-xs"></i>
+                        <?= claim_esc(t('logoclaim.submit')) ?> <i class="fa-solid fa-arrow-right text-xs"></i>
                     </button>
-                    <a href="/companies/<?= claim_esc($company['slug']) ?>" class="text-sm text-gray-500 hover:text-blue-600">Cancel</a>
+                    <a href="/companies/<?= claim_esc($company['slug']) ?>" class="text-sm text-gray-500 hover:text-blue-600"><?= claim_esc(t('logoclaim.cancel')) ?></a>
                 </div>
             </form>
 

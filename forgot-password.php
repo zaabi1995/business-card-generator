@@ -7,7 +7,7 @@ require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Mailer.php';
 
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
-$pageTitle = 'Forgot Password';
+$pageTitle = t('forgot.page_title');
 $htmlClass = 'h-full bg-white';
 $bodyClass = 'h-full';
 
@@ -178,60 +178,82 @@ function sendNoAccountEmail($email) {
     $registerUrl = getBaseUrl() . 'company/register.php';
     $contactUrl = getBaseUrl() . 'contact.php';
     
-    $subject = "Password Reset Attempted - {$siteName}";
+    $subject = t('forgot.noacc_subject', ['site' => $siteName]);
+    $h2              = t('forgot.noacc_h2');
+    $hi              = t('forgot.noacc_hi');
+    $intro           = t('forgot.noacc_intro', ['email' => '<strong>' . htmlspecialchars($email) . '</strong>', 'site' => $siteName]);
+    $boxTitle        = t('forgot.noacc_box_title');
+    $boxBody         = t('forgot.noacc_box_body');
+    $couldMean       = t('forgot.noacc_could_mean');
+    $reason1         = t('forgot.noacc_reason_1');
+    $reason2         = t('forgot.noacc_reason_2');
+    $reason3         = t('forgot.noacc_reason_3');
+    $whatToDo        = t('forgot.noacc_what_to_do');
+    $ifAdmin         = t('forgot.noacc_if_admin');
+    $registerBtn     = t('forgot.noacc_register_btn');
+    $ifEmployee      = t('forgot.noacc_if_employee');
+    $employeeMsg     = t('forgot.noacc_employee_msg');
+    $needHelp        = t('forgot.noacc_need_help');
+    $contactLink     = '<a href="' . htmlspecialchars($contactUrl) . '" style="color: #009bc1;">' . t('forgot.noacc_contact_link') . '</a>';
+    $contactMsg      = t('forgot.noacc_contact_msg', ['contactlink' => $contactLink]);
+    $security        = t('forgot.noacc_security');
+    $securityMsg     = t('forgot.noacc_security_msg');
+    $signoff         = t('forgot.noacc_signoff');
+    $team            = t('forgot.noacc_team', ['site' => $siteName]);
+
     $body = <<<HTML
-<h2>Password Reset Attempted</h2>
-<p>Hi there,</p>
-<p>Someone (hopefully you) requested a password reset for <strong>{$email}</strong> on {$siteName}.</p>
+<h2>{$h2}</h2>
+<p>{$hi}</p>
+<p>{$intro}</p>
 
 <div class="warning-box" style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; margin: 15px 0; border-radius: 0 4px 4px 0;">
-    <strong>No account found</strong><br>
-    We couldn't find an account associated with this email address.
+    <strong>{$boxTitle}</strong><br>
+    {$boxBody}
 </div>
 
-<p>This could mean:</p>
+<p>{$couldMean}</p>
 <ul style="margin: 15px 0; padding-left: 20px;">
-    <li>You haven't registered yet</li>
-    <li>You registered with a different email address</li>
-    <li>Your account may have been created by your company administrator with a different email</li>
+    <li>{$reason1}</li>
+    <li>{$reason2}</li>
+    <li>{$reason3}</li>
 </ul>
 
-<h3>What you can do:</h3>
+<h3>{$whatToDo}</h3>
 
-<p><strong>If you're a company administrator:</strong></p>
+<p><strong>{$ifAdmin}</strong></p>
 <p style="text-align: center; margin: 20px 0;">
     <a href="{$registerUrl}" class="btn" style="display: inline-block; padding: 12px 24px; background: #009bc1; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
-        Register Your Company
+        {$registerBtn}
     </a>
 </p>
 
-<p><strong>If you're an employee:</strong></p>
-<p>Contact your company administrator to set up your account or check which email was used for your profile.</p>
+<p><strong>{$ifEmployee}</strong></p>
+<p>{$employeeMsg}</p>
 
-<p><strong>Need help?</strong></p>
-<p>If you believe this is an error, please <a href="{$contactUrl}" style="color: #009bc1;">contact us</a> and we'll help you sort it out.</p>
+<p><strong>{$needHelp}</strong></p>
+<p>{$contactMsg}</p>
 
 <div class="info-box" style="background: #e6f7fb; border-left: 4px solid #009bc1; padding: 15px; margin: 15px 0; border-radius: 0 4px 4px 0;">
-    <strong>Security Note:</strong><br>
-    If you didn't request this, you can safely ignore this email. No action is required.
+    <strong>{$security}</strong><br>
+    {$securityMsg}
 </div>
 
-<p>Best regards,<br>The {$siteName} Team</p>
+<p>{$signoff}<br>{$team}</p>
 HTML;
-    
+
     return Mailer::send($email, $subject, $body);
 }
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-        $message = 'Invalid request. Please try again.';
+        $message = t('forgot.invalid_csrf');
         $messageType = 'error';
     } else {
     $email = sanitizeEmail($_POST['email'] ?? '');
-    
+
     if (empty($email)) {
-        $message = 'Please enter your email address';
+        $message = t('forgot.enter_email');
         $messageType = 'error';
     } else {
         if (DatabaseAdapter::useDatabase()) {
@@ -271,15 +293,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // Always show same message for security (don't reveal if email exists)
                 $emailSent = true;
-                $message = 'We\'ve sent an email to that address with further instructions.';
-                
+                $message = t('forgot.sent_generic');
+
             } catch (Exception $e) {
                 error_log("Password reset error: " . $e->getMessage());
-                $message = 'An error occurred. Please try again later.';
+                $message = t('forgot.generic_error');
                 $messageType = 'error';
             }
         } else {
-            $message = 'Password reset is not available in file-based mode.';
+            $message = t('forgot.not_available');
             $messageType = 'error';
         }
     }
@@ -303,26 +325,26 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <i class="fa-solid fa-envelope-circle-check text-3xl text-green-600"></i>
                     </div>
                     <h2 class="mb-3 text-2xl font-bold text-gray-900">
-                        Check your email
+                        <?php echo htmlspecialchars(t('forgot.check_email_h1')); ?>
                     </h2>
                     <p class="text-gray-500 mb-6">
                         <?php echo htmlspecialchars($message); ?>
                     </p>
                     <p class="text-sm text-gray-400 mb-6">
-                        Didn't receive the email? Check your spam folder or try again.
+                        <?php echo htmlspecialchars(t('forgot.check_spam_hint')); ?>
                     </p>
                     <a href="<?php echo getBasePath(); ?>login.php" class="inline-flex items-center justify-center w-full px-5 py-3 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors">
                         <i class="fa-solid fa-arrow-left mr-2"></i>
-                        Back to sign in
+                        <?php echo htmlspecialchars(t('forgot.back_to_sign_in')); ?>
                     </a>
                 </div>
                 <?php else: ?>
                 <!-- Form State -->
                 <h2 class="mb-3 text-2xl font-bold text-gray-900">
-                    Forgot your password?
+                    <?php echo htmlspecialchars(t('forgot.form_h1')); ?>
                 </h2>
                 <p class="text-gray-500 mb-6">
-                    No worries! Enter your email address and we'll send you instructions to reset your password.
+                    <?php echo htmlspecialchars(t('forgot.form_sub')); ?>
                 </p>
                 
                 <?php if ($message && $messageType === 'error'): ?>
@@ -336,24 +358,24 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <?php echo csrfField(); ?>
                     <div>
                         <label for="email" class="block mb-2 text-sm font-medium text-gray-900">
-                            Email address
+                            <?php echo htmlspecialchars(t('forgot.email_label')); ?>
                         </label>
-                        <input type="email" name="email" id="email" 
+                        <input type="email" name="email" id="email"
                                value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
-                               class="form-input" 
-                               placeholder="name@company.com" required>
+                               class="form-input"
+                               placeholder="<?php echo htmlspecialchars(t('forgot.email_placeholder')); ?>" required>
                     </div>
-                    
+
                     <button type="submit" class="w-full px-5 py-3 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors">
-                        Send reset link
+                        <?php echo htmlspecialchars(t('forgot.submit_button')); ?>
                         <i class="fa-solid fa-paper-plane ml-2"></i>
                     </button>
                 </form>
-                
+
                 <p class="mt-6 text-center text-sm text-gray-500">
-                    Remember your password?
+                    <?php echo htmlspecialchars(t('forgot.remember_prompt')); ?>
                     <a href="<?php echo getBasePath(); ?>login.php" class="font-semibold text-blue-600 hover:text-blue-500">
-                        Sign in
+                        <?php echo htmlspecialchars(t('forgot.sign_in_link')); ?>
                     </a>
                 </p>
                 <?php endif; ?>
@@ -364,7 +386,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <p class="mt-8 text-center text-sm text-gray-500">
             <a href="<?php echo getBasePath(); ?>" class="font-medium text-gray-700 hover:text-gray-900">
                 <i class="fa-solid fa-arrow-left mr-1"></i>
-                Back to homepage
+                <?php echo htmlspecialchars(t('forgot.back_home')); ?>
             </a>
         </p>
     </div>

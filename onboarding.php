@@ -30,14 +30,14 @@ if (!$companyId) {
 $source = $_GET['source'] ?? 'general';
 $isBhd = ($source === 'bhd');
 
-$pageTitle = $isBhd ? 'Welcome — BHD Customer Setup' : 'Get Started with Cardify';
+$pageTitle = $isBhd ? t('onboarding_home.page_title_bhd') : t('onboarding_home.page_title_general');
 $showNavigation = false;
 
 // BHD template definitions (no background image - colored canvas)
 $bhdTemplates = [
     'bhd-classic' => [
-        'name' => 'BHD Classic',
-        'description' => 'Clean white with BHD blue accents',
+        'name' => t('onboarding_home.tpl_classic_name'),
+        'description' => t('onboarding_home.tpl_classic_desc'),
         'primary' => '#009bc1',
         'secondary' => '#0f3460',
         'bg' => '#ffffff',
@@ -48,8 +48,8 @@ $bhdTemplates = [
         'preview_accent' => '#009bc1',
     ],
     'bhd-navy' => [
-        'name' => 'BHD Navy',
-        'description' => 'Bold dark navy, professional look',
+        'name' => t('onboarding_home.tpl_navy_name'),
+        'description' => t('onboarding_home.tpl_navy_desc'),
         'primary' => '#009bc1',
         'secondary' => '#0f172a',
         'bg' => '#0f172a',
@@ -60,8 +60,8 @@ $bhdTemplates = [
         'preview_accent' => '#009bc1',
     ],
     'bhd-sky' => [
-        'name' => 'BHD Sky',
-        'description' => 'Fresh sky blue, modern & vibrant',
+        'name' => t('onboarding_home.tpl_sky_name'),
+        'description' => t('onboarding_home.tpl_sky_desc'),
         'primary' => '#ffffff',
         'secondary' => '#0f3460',
         'bg' => '#009bc1',
@@ -109,7 +109,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center">
                     <i class="fa-solid fa-print text-white" style="font-size: 8px;"></i>
                 </div>
-                <span class="font-medium text-blue-700">BHD Printing Partner</span>
+                <span class="font-medium text-blue-700"><?= htmlspecialchars(t('onboarding_home.bhd_partner_label')) ?></span>
             </div>
             <?php endif; ?>
         </div>
@@ -121,9 +121,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="flex items-center justify-center mb-10" id="progress-steps">
             <div class="flex items-center gap-0">
                 <?php $steps = [
-                    ['icon' => 'fa-building', 'label' => 'Company Info'],
-                    ['icon' => 'fa-image', 'label' => 'Logo'],
-                    ['icon' => 'fa-palette', 'label' => 'Template'],
+                    ['icon' => 'fa-building', 'label' => t('onboarding_home.step_company_info')],
+                    ['icon' => 'fa-image', 'label' => t('onboarding_home.step_logo')],
+                    ['icon' => 'fa-palette', 'label' => t('onboarding_home.step_template')],
                 ]; ?>
                 <?php foreach ($steps as $i => $step): ?>
                 <?php if ($i > 0): ?>
@@ -148,50 +148,50 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <i class="fa-solid fa-handshake text-white"></i>
                     </div>
                     <div>
-                        <p class="font-semibold text-blue-900 text-sm">Welcome, BHD Printing Customer!</p>
-                        <p class="text-xs text-blue-600">We'll set up your account with BHD-branded templates in 3 quick steps.</p>
+                        <p class="font-semibold text-blue-900 text-sm"><?= htmlspecialchars(t('onboarding_home.welcome_h1')) ?></p>
+                        <p class="text-xs text-blue-600"><?= htmlspecialchars(t('onboarding_home.welcome_sub')) ?></p>
                     </div>
                 </div>
                 <?php endif; ?>
 
-                <h1 class="text-2xl font-bold text-gray-900 mb-1">Tell us about your company</h1>
-                <p class="text-gray-500 text-sm mb-8">This information will appear on your business cards.</p>
+                <h1 class="text-2xl font-bold text-gray-900 mb-1"><?= htmlspecialchars(t('onboarding_home.step1_h1')) ?></h1>
+                <p class="text-gray-500 text-sm mb-8"><?= htmlspecialchars(t('onboarding_home.step1_sub')) ?></p>
 
                 <form id="step1-form" class="space-y-5">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Phone number <span class="text-gray-400 font-normal">(optional)</span>
+                            <?= htmlspecialchars(t('onboarding_home.field_phone')) ?> <span class="text-gray-400 font-normal"><?= htmlspecialchars(t('onboarding_home.optional_tag')) ?></span>
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <i class="fa-solid fa-phone text-gray-400 text-sm"></i>
                             </div>
                             <input type="tel" id="company_phone" name="company_phone"
-                                   placeholder="+968 9999 0000"
+                                   placeholder="<?= htmlspecialchars(t('onboarding_home.ph_phone')) ?>"
                                    class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all">
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Website <span class="text-gray-400 font-normal">(optional)</span>
+                            <?= htmlspecialchars(t('onboarding_home.field_website')) ?> <span class="text-gray-400 font-normal"><?= htmlspecialchars(t('onboarding_home.optional_tag')) ?></span>
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <i class="fa-solid fa-globe text-gray-400 text-sm"></i>
                             </div>
                             <input type="url" id="company_website" name="company_website"
-                                   placeholder="https://yourcompany.com"
+                                   placeholder="<?= htmlspecialchars(t('onboarding_home.ph_website')) ?>"
                                    class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all">
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Company tagline <span class="text-gray-400 font-normal">(optional)</span>
+                            <?= htmlspecialchars(t('onboarding_home.field_tagline')) ?> <span class="text-gray-400 font-normal"><?= htmlspecialchars(t('onboarding_home.optional_tag')) ?></span>
                         </label>
                         <input type="text" id="company_tagline" name="company_tagline"
-                               placeholder="e.g. Excellence in Every Detail"
+                               placeholder="<?= htmlspecialchars(t('onboarding_home.ph_tagline')) ?>"
                                maxlength="100"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all">
                     </div>
@@ -199,12 +199,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="pt-2">
                         <button type="button" onclick="goToStep(2)"
                                 class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2">
-                            Continue
+                            <?= htmlspecialchars(t('onboarding_home.continue')) ?>
                             <i class="fa-solid fa-arrow-right"></i>
                         </button>
                         <button type="button" onclick="skipOnboarding()"
                                 class="w-full mt-3 py-2.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
-                            Skip setup, go straight to dashboard
+                            <?= htmlspecialchars(t('onboarding_home.skip_dashboard')) ?>
                         </button>
                     </div>
                 </form>
@@ -214,8 +214,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <!-- Step 2: Logo Upload -->
         <div class="wizard-step" id="wizard-step-2">
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                <h1 class="text-2xl font-bold text-gray-900 mb-1">Upload your company logo</h1>
-                <p class="text-gray-500 text-sm mb-8">Your logo will appear on all business cards and the employee portal.</p>
+                <h1 class="text-2xl font-bold text-gray-900 mb-1"><?= htmlspecialchars(t('onboarding_home.step2_h1')) ?></h1>
+                <p class="text-gray-500 text-sm mb-8"><?= htmlspecialchars(t('onboarding_home.step2_sub')) ?></p>
 
                 <!-- Upload Zone -->
                 <div class="upload-zone border-2 border-dashed border-gray-200 rounded-2xl p-10 text-center mb-6 cursor-pointer"
@@ -229,9 +229,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <div class="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
                             <i class="fa-solid fa-cloud-arrow-up text-2xl text-blue-400"></i>
                         </div>
-                        <p class="text-gray-700 font-semibold mb-1">Drop your logo here</p>
-                        <p class="text-gray-400 text-sm">or click to browse</p>
-                        <p class="text-gray-300 text-xs mt-2">PNG, JPG, SVG — max 5MB</p>
+                        <p class="text-gray-700 font-semibold mb-1"><?= htmlspecialchars(t('onboarding_home.drop_logo')) ?></p>
+                        <p class="text-gray-400 text-sm"><?= htmlspecialchars(t('onboarding_home.or_click')) ?></p>
+                        <p class="text-gray-300 text-xs mt-2"><?= htmlspecialchars(t('onboarding_home.file_hint')) ?></p>
                     </div>
 
                     <div id="upload-preview" class="hidden">
@@ -239,11 +239,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
                              class="max-h-32 max-w-xs mx-auto rounded-lg shadow-sm mb-3">
                         <p class="text-sm text-green-600 font-medium">
                             <i class="fa-solid fa-circle-check mr-1"></i>
-                            <span id="logo-filename">Logo uploaded</span>
+                            <span id="logo-filename"><?= htmlspecialchars(t('onboarding_home.logo_uploaded')) ?></span>
                         </p>
                         <button type="button" onclick="event.stopPropagation(); resetLogo()"
                                 class="mt-2 text-xs text-gray-400 hover:text-gray-600 underline">
-                            Change logo
+                            <?= htmlspecialchars(t('onboarding_home.change_logo')) ?>
                         </button>
                     </div>
                 </div>
@@ -252,17 +252,17 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="flex gap-3">
                     <button type="button" onclick="goToStep(1)"
                             class="flex-1 py-3 border border-gray-200 text-gray-600 font-semibold rounded-xl hover:bg-gray-50 transition-all">
-                        <i class="fa-solid fa-arrow-left mr-1"></i> Back
+                        <i class="fa-solid fa-arrow-left mr-1"></i> <?= htmlspecialchars(t('onboarding_home.back')) ?>
                     </button>
                     <button type="button" onclick="goToStep(3)"
                             class="flex-2 flex-grow py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2">
-                        Continue
+                        <?= htmlspecialchars(t('onboarding_home.continue')) ?>
                         <i class="fa-solid fa-arrow-right"></i>
                     </button>
                 </div>
                 <button type="button" onclick="goToStep(3)"
                         class="w-full mt-3 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors">
-                    Skip for now
+                    <?= htmlspecialchars(t('onboarding_home.skip_for_now')) ?>
                 </button>
             </div>
         </div>
@@ -270,9 +270,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <!-- Step 3: Pick Template -->
         <div class="wizard-step" id="wizard-step-3">
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                <h1 class="text-2xl font-bold text-gray-900 mb-1">Choose your starter template</h1>
+                <h1 class="text-2xl font-bold text-gray-900 mb-1"><?= htmlspecialchars(t('onboarding_home.step3_h1')) ?></h1>
                 <p class="text-gray-500 text-sm mb-8">
-                    <?= $isBhd ? 'BHD-branded templates, ready to customize.' : 'Pick a style to get started. You can always change it later.' ?>
+                    <?= htmlspecialchars($isBhd ? t('onboarding_home.step3_sub_bhd') : t('onboarding_home.step3_sub_general')) ?>
                 </p>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8" id="template-grid">
@@ -311,13 +311,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="flex gap-3">
                     <button type="button" onclick="goToStep(2)"
                             class="flex-1 py-3 border border-gray-200 text-gray-600 font-semibold rounded-xl hover:bg-gray-50 transition-all">
-                        <i class="fa-solid fa-arrow-left mr-1"></i> Back
+                        <i class="fa-solid fa-arrow-left mr-1"></i> <?= htmlspecialchars(t('onboarding_home.back')) ?>
                     </button>
                     <button type="button" onclick="completeOnboarding()"
                             id="complete-btn"
                             class="flex-2 flex-grow py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2">
                         <i class="fa-solid fa-rocket"></i>
-                        Launch my account
+                        <?= htmlspecialchars(t('onboarding_home.launch_btn')) ?>
                     </button>
                 </div>
             </div>
@@ -329,8 +329,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="w-20 h-20 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-6">
                     <i class="fa-solid fa-circle-check text-4xl text-green-500"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-2">You're all set!</h2>
-                <p class="text-gray-500 mb-2">Setting up your account with BHD templates...</p>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('onboarding_home.complete_h2')) ?></h2>
+                <p class="text-gray-500 mb-2"><?= htmlspecialchars(t('onboarding_home.complete_sub')) ?></p>
                 <div class="flex justify-center">
                     <div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
@@ -436,7 +436,7 @@ function resetLogo() {
 function completeOnboarding() {
     var btn = document.getElementById('complete-btn');
     btn.disabled = true;
-    btn.innerHTML = '<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Setting up...';
+    btn.innerHTML = '<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> ' + <?= json_encode(t('onboarding_home.setting_up')) ?>;
 
     var formData = new FormData();
     formData.append('action', 'complete_onboarding');

@@ -1,6 +1,6 @@
 <?php
 /**
- * Cardify — Press & Media Kit
+ * Cardify, Press & Media Kit
  *
  * Backlink-worthy flagship asset. Journalists, researchers, analysts,
  * and other professionals cite this page when they need:
@@ -16,8 +16,8 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle       = 'Press & Media Kit — Cardify (Business-Identity Platform for the GCC)';
-$pageDescription = 'Official press and media kit for Cardify: company facts, brand assets, downloadable datasets (Oman Business Index, Omani Logo Library, GCC Business Index), citation format, and press contact.';
+$pageTitle       = t('press.page_title');
+$pageDescription = t('press.page_desc');
 $canonicalUrl    = 'https://cardify.om/press-kit';
 $showNavigation  = true;
 
@@ -73,7 +73,7 @@ $datasetsLd = [
         [
             '@type' => 'Dataset',
             'name'  => 'Omani Logo Library',
-            'description' => 'Verified logos of Omani companies, ministries, and sovereign entities — downloadable in SVG and PNG.',
+            'description' => 'Verified logos of Omani companies, ministries, and sovereign entities, downloadable in SVG and PNG.',
             'url'   => 'https://cardify.om/logos',
             'license' => 'Nominative fair-use per entry; see /logos/terms',
             'creator' => ['@type' => 'Organization', 'name' => 'Cardify'],
@@ -104,6 +104,7 @@ $extraHead = ''
     . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
 $asOfDate = date('F j, Y');
+$accessedDate = date('j M Y');
 
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
@@ -111,27 +112,27 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <section class="relative overflow-hidden bg-gradient-to-b from-blue-50 via-white to-white border-b border-gray-100 pt-28 pb-16">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <nav class="text-sm text-gray-500 mb-4" aria-label="Breadcrumb">
-                <a href="<?= getBasePath() ?>" class="hover:text-blue-600 transition">Home</a>
+                <a href="<?= getBasePath() ?>" class="hover:text-blue-600 transition"><?= htmlspecialchars(t('press.crumb_home')) ?></a>
                 <span class="mx-2">/</span>
-                <span class="text-gray-700">Press &amp; Media</span>
+                <span class="text-gray-700"><?= htmlspecialchars(t('press.crumb_press')) ?></span>
             </nav>
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-blue-200 text-blue-700 text-xs font-semibold tracking-wide uppercase shadow-sm mb-5">
-                <i class="fa-solid fa-newspaper text-[10px]"></i> Press &amp; Media Kit
+                <i class="fa-solid fa-newspaper text-[10px]"></i> <?= htmlspecialchars(t('press.badge')) ?>
             </div>
-            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-gray-900 mb-4">Cardify — business identity infrastructure for the GCC</h1>
-            <p class="text-gray-600 text-lg max-w-3xl leading-relaxed mb-7">Facts, assets, data, quotes, and a press contact — everything a journalist, researcher, or analyst needs to cover or cite Cardify accurately. Updated <?= $esc($asOfDate) ?>.</p>
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-gray-900 mb-4"><?= htmlspecialchars(t('press.h1')) ?></h1>
+            <p class="text-gray-600 text-lg max-w-3xl leading-relaxed mb-7"><?= htmlspecialchars(t('press.hero_sub', ['date' => $asOfDate])) ?></p>
             <div class="flex flex-wrap gap-3">
                 <a href="#facts" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white font-semibold shadow-sm hover:bg-blue-700 transition">
-                    <i class="fa-solid fa-circle-info text-xs"></i> Key facts
+                    <i class="fa-solid fa-circle-info text-xs"></i> <?= htmlspecialchars(t('press.nav_facts')) ?>
                 </a>
                 <a href="#datasets" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white border border-gray-200 text-gray-700 font-semibold shadow-sm hover:border-blue-300 hover:text-blue-700 transition">
-                    <i class="fa-solid fa-database text-xs"></i> Public datasets
+                    <i class="fa-solid fa-database text-xs"></i> <?= htmlspecialchars(t('press.nav_datasets')) ?>
                 </a>
                 <a href="#assets" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white border border-gray-200 text-gray-700 font-semibold shadow-sm hover:border-blue-300 hover:text-blue-700 transition">
-                    <i class="fa-solid fa-image text-xs"></i> Brand assets
+                    <i class="fa-solid fa-image text-xs"></i> <?= htmlspecialchars(t('press.nav_assets')) ?>
                 </a>
                 <a href="#contact" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white border border-gray-200 text-gray-700 font-semibold shadow-sm hover:border-blue-300 hover:text-blue-700 transition">
-                    <i class="fa-solid fa-envelope text-xs"></i> Press contact
+                    <i class="fa-solid fa-envelope text-xs"></i> <?= htmlspecialchars(t('press.nav_contact')) ?>
                 </a>
             </div>
         </div>
@@ -139,41 +140,41 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
     <section id="facts" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div class="mb-10">
-            <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider">Official description</span>
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-5">One-line, copy-paste ready</h2>
+            <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider"><?= htmlspecialchars(t('press.section_official')) ?></span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-5"><?= htmlspecialchars(t('press.h2_oneliner')) ?></h2>
             <blockquote class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-6 sm:p-8 text-gray-800 text-lg leading-relaxed shadow-sm">
                 <i class="fa-solid fa-quote-left text-blue-300 text-2xl mb-3 block"></i>
-                Cardify is a business-identity platform for the Gulf, built in Oman. It ships digital and printed business cards, a public library of verified Omani logos, and an open index of GCC companies — with expansion into Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait rolling out through 2026.
+                <?= htmlspecialchars(t('press.oneliner_body')) ?>
             </blockquote>
         </div>
 
         <div>
-            <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider">Key facts</span>
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-6">Numbers you can quote</h2>
+            <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider"><?= htmlspecialchars(t('press.section_keyfacts')) ?></span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-6"><?= htmlspecialchars(t('press.h2_numbers')) ?></h2>
             <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition">
                     <div class="text-3xl font-extrabold text-gray-900"><?= number_format($companiesCount) ?></div>
-                    <div class="text-sm text-gray-600 mt-1.5 leading-relaxed">Omani companies in the public index, sourced from MoCIIP.</div>
+                    <div class="text-sm text-gray-600 mt-1.5 leading-relaxed"><?= htmlspecialchars(t('press.stat_companies')) ?></div>
                 </div>
                 <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition">
                     <div class="text-3xl font-extrabold text-gray-900"><?= number_format($logosCount) ?><span class="text-blue-600">+</span></div>
-                    <div class="text-sm text-gray-600 mt-1.5 leading-relaxed">Verified Omani brand logos, free to download.</div>
+                    <div class="text-sm text-gray-600 mt-1.5 leading-relaxed"><?= htmlspecialchars(t('press.stat_logos')) ?></div>
                 </div>
                 <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition">
                     <div class="text-3xl font-extrabold text-gray-900">31</div>
-                    <div class="text-sm text-gray-600 mt-1.5 leading-relaxed">Sovereign / ministerial entities with curated bilingual profiles.</div>
+                    <div class="text-sm text-gray-600 mt-1.5 leading-relaxed"><?= htmlspecialchars(t('press.stat_sovereign')) ?></div>
                 </div>
                 <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition">
                     <div class="text-3xl font-extrabold text-gray-900">6</div>
-                    <div class="text-sm text-gray-600 mt-1.5 leading-relaxed">GCC countries covered by the GCC Business Index roadmap.</div>
+                    <div class="text-sm text-gray-600 mt-1.5 leading-relaxed"><?= htmlspecialchars(t('press.stat_gcc')) ?></div>
                 </div>
                 <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition">
                     <div class="text-3xl font-extrabold text-gray-900">EN<span class="text-gray-400 mx-1">+</span>AR</div>
-                    <div class="text-sm text-gray-600 mt-1.5 leading-relaxed">Bilingual platform — every card, page, and asset.</div>
+                    <div class="text-sm text-gray-600 mt-1.5 leading-relaxed"><?= htmlspecialchars(t('press.stat_bilingual')) ?></div>
                 </div>
                 <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition">
                     <div class="text-3xl font-extrabold text-gray-900">2024</div>
-                    <div class="text-sm text-gray-600 mt-1.5 leading-relaxed">Year Cardify launched, based in Muscat, Oman.</div>
+                    <div class="text-sm text-gray-600 mt-1.5 leading-relaxed"><?= htmlspecialchars(t('press.stat_year')) ?></div>
                 </div>
             </div>
         </div>
@@ -181,9 +182,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
     <section id="datasets" class="bg-gray-50 border-y border-gray-100 py-16">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider">Datasets</span>
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-3">Public datasets &amp; pages to cite</h2>
-            <p class="text-gray-600 mb-8 max-w-3xl">Everything below is public, free, and built to be referenced. CC-BY 4.0 where marked; nominative fair use for individual trademarks in the logo library.</p>
+            <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider"><?= htmlspecialchars(t('press.section_datasets')) ?></span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-3"><?= htmlspecialchars(t('press.h2_datasets')) ?></h2>
+            <p class="text-gray-600 mb-8 max-w-3xl"><?= htmlspecialchars(t('press.datasets_intro')) ?></p>
 
             <div class="space-y-5">
                 <article class="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 p-6 sm:p-7 transition">
@@ -193,17 +194,17 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                 <i class="fa-solid fa-building-columns text-lg"></i>
                             </div>
                             <div>
-                                <h3 class="text-xl font-bold text-gray-900">Oman Business Index</h3>
-                                <p class="text-gray-500 text-sm mt-0.5">2,414 companies, sector + wilayat + CR metadata. English + Arabic.</p>
+                                <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('press.ds_oman_title')) ?></h3>
+                                <p class="text-gray-500 text-sm mt-0.5"><?= htmlspecialchars(t('press.ds_oman_sub')) ?></p>
                             </div>
                         </div>
                         <span class="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-100 rounded-full px-3 py-1 text-xs font-semibold">
-                            <i class="fa-solid fa-circle-check text-[10px]"></i> CC-BY 4.0
+                            <i class="fa-solid fa-circle-check text-[10px]"></i> <?= htmlspecialchars(t('press.ds_cc')) ?>
                         </span>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <a href="<?= getBasePath() ?>oman-business-index" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm transition">View page <i class="fa-solid fa-arrow-right text-[10px]"></i></a>
-                        <a href="<?= getBasePath() ?>companies" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-700 text-sm font-semibold transition">Browse companies</a>
+                        <a href="<?= getBasePath() ?>oman-business-index" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm transition"><?= htmlspecialchars(t('press.btn_view_page')) ?> <i class="fa-solid fa-arrow-right text-[10px]"></i></a>
+                        <a href="<?= getBasePath() ?>companies" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-700 text-sm font-semibold transition"><?= htmlspecialchars(t('press.btn_browse_companies')) ?></a>
                     </div>
                 </article>
 
@@ -214,18 +215,18 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                 <i class="fa-solid fa-image text-lg"></i>
                             </div>
                             <div>
-                                <h3 class="text-xl font-bold text-gray-900">Omani Logo Library</h3>
-                                <p class="text-gray-500 text-sm mt-0.5">80+ Omani brand logos — ministries, sovereign bodies, corporates. SVG + PNG.</p>
+                                <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('press.ds_logos_title')) ?></h3>
+                                <p class="text-gray-500 text-sm mt-0.5"><?= htmlspecialchars(t('press.ds_logos_sub')) ?></p>
                             </div>
                         </div>
                         <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-100 rounded-full px-3 py-1 text-xs font-semibold">
-                            <i class="fa-solid fa-scale-balanced text-[10px]"></i> Fair use per entry
+                            <i class="fa-solid fa-scale-balanced text-[10px]"></i> <?= htmlspecialchars(t('press.ds_fairuse')) ?>
                         </span>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <a href="<?= getBasePath() ?>logos" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm transition">Browse library <i class="fa-solid fa-arrow-right text-[10px]"></i></a>
-                        <a href="<?= getBasePath() ?>logos/terms" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-700 text-sm font-semibold transition">Terms of use</a>
-                        <a href="<?= getBasePath() ?>api/logos" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-700 text-sm font-semibold transition"><i class="fa-solid fa-code text-[10px]"></i> JSON API</a>
+                        <a href="<?= getBasePath() ?>logos" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm transition"><?= htmlspecialchars(t('press.btn_browse_library')) ?> <i class="fa-solid fa-arrow-right text-[10px]"></i></a>
+                        <a href="<?= getBasePath() ?>logos/terms" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-700 text-sm font-semibold transition"><?= htmlspecialchars(t('press.btn_terms')) ?></a>
+                        <a href="<?= getBasePath() ?>api/logos" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-700 text-sm font-semibold transition"><i class="fa-solid fa-code text-[10px]"></i> <?= htmlspecialchars(t('press.btn_json')) ?></a>
                     </div>
                 </article>
 
@@ -236,16 +237,16 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                 <i class="fa-solid fa-globe text-lg"></i>
                             </div>
                             <div>
-                                <h3 class="text-xl font-bold text-gray-900">GCC Business Index</h3>
-                                <p class="text-gray-500 text-sm mt-0.5">Federated overview of business infrastructure across all six GCC states.</p>
+                                <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('press.ds_gcc_title')) ?></h3>
+                                <p class="text-gray-500 text-sm mt-0.5"><?= htmlspecialchars(t('press.ds_gcc_sub')) ?></p>
                             </div>
                         </div>
                         <span class="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-100 rounded-full px-3 py-1 text-xs font-semibold">
-                            <i class="fa-solid fa-circle-check text-[10px]"></i> CC-BY 4.0
+                            <i class="fa-solid fa-circle-check text-[10px]"></i> <?= htmlspecialchars(t('press.ds_cc')) ?>
                         </span>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <a href="<?= getBasePath() ?>gcc-business-index" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm transition">View flagship <i class="fa-solid fa-arrow-right text-[10px]"></i></a>
+                        <a href="<?= getBasePath() ?>gcc-business-index" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-sm transition"><?= htmlspecialchars(t('press.btn_view_flagship')) ?> <i class="fa-solid fa-arrow-right text-[10px]"></i></a>
                         <a href="<?= getBasePath() ?>gcc/oman" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-700 text-sm font-semibold transition">🇴🇲 Oman</a>
                         <a href="<?= getBasePath() ?>gcc/saudi-arabia" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-700 text-sm font-semibold transition">🇸🇦 Saudi</a>
                         <a href="<?= getBasePath() ?>gcc/uae" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-700 text-sm font-semibold transition">🇦🇪 UAE</a>
@@ -259,38 +260,38 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <section id="assets" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider">Brand assets</span>
-        <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-3">Cardify brand assets</h2>
-        <p class="text-gray-600 mb-8 max-w-3xl">For articles and reviews covering Cardify. Please don't alter the marks.</p>
+        <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider"><?= htmlspecialchars(t('press.section_assets')) ?></span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-3"><?= htmlspecialchars(t('press.h2_assets')) ?></h2>
+        <p class="text-gray-600 mb-8 max-w-3xl"><?= htmlspecialchars(t('press.assets_intro')) ?></p>
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-blue-200 transition flex flex-col items-center text-center">
                 <div class="h-24 flex items-center justify-center mb-4 bg-gray-50 w-full rounded-xl border border-gray-100">
-                    <img src="<?= getBasePath() ?>assets/images/logo.svg" alt="Cardify logo" class="max-h-12">
+                    <img src="<?= getBasePath() ?>assets/images/logo.svg" alt="<?= t('press.alt_primary_logo') ?>" class="max-h-12">
                 </div>
-                <div class="text-sm font-semibold text-gray-900 mb-1">Primary mark</div>
-                <div class="text-xs text-gray-500 mb-3">SVG · for light backgrounds</div>
+                <div class="text-sm font-semibold text-gray-900 mb-1"><?= htmlspecialchars(t('press.asset_primary')) ?></div>
+                <div class="text-xs text-gray-500 mb-3"><?= htmlspecialchars(t('press.asset_primary_sub')) ?></div>
                 <a href="<?= getBasePath() ?>assets/images/logo.svg" download class="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-700 hover:text-blue-800 transition">
-                    <i class="fa-solid fa-download text-xs"></i> Download .svg
+                    <i class="fa-solid fa-download text-xs"></i> <?= htmlspecialchars(t('press.download_svg')) ?>
                 </a>
             </div>
             <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-blue-200 transition flex flex-col items-center text-center">
                 <div class="h-24 flex items-center justify-center mb-4 bg-gray-900 w-full rounded-xl">
-                    <img src="<?= getBasePath() ?>assets/images/logo-light.svg" alt="Cardify logo (light)" class="max-h-12" onerror="this.src='<?= getBasePath() ?>assets/images/logo.svg';this.onerror=null;">
+                    <img src="<?= getBasePath() ?>assets/images/logo-light.svg" alt="<?= t('press.alt_light_logo') ?>" class="max-h-12" onerror="this.src='<?= getBasePath() ?>assets/images/logo.svg';this.onerror=null;">
                 </div>
-                <div class="text-sm font-semibold text-gray-900 mb-1">Light variant</div>
-                <div class="text-xs text-gray-500 mb-3">SVG · for dark backgrounds</div>
+                <div class="text-sm font-semibold text-gray-900 mb-1"><?= htmlspecialchars(t('press.asset_light')) ?></div>
+                <div class="text-xs text-gray-500 mb-3"><?= htmlspecialchars(t('press.asset_light_sub')) ?></div>
                 <a href="<?= getBasePath() ?>assets/images/logo-light.svg" download class="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-700 hover:text-blue-800 transition">
-                    <i class="fa-solid fa-download text-xs"></i> Download .svg
+                    <i class="fa-solid fa-download text-xs"></i> <?= htmlspecialchars(t('press.download_svg')) ?>
                 </a>
             </div>
             <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-blue-200 transition flex flex-col items-center text-center">
                 <div class="h-24 flex items-center justify-center mb-4 bg-gray-50 w-full rounded-xl border border-gray-100 overflow-hidden">
-                    <img src="<?= getBasePath() ?>assets/images/cardify-og.png" alt="Cardify Open Graph" class="max-h-24 object-cover">
+                    <img src="<?= getBasePath() ?>assets/images/cardify-og.png" alt="<?= t('press.alt_og') ?>" class="max-h-24 object-cover">
                 </div>
-                <div class="text-sm font-semibold text-gray-900 mb-1">OG image</div>
-                <div class="text-xs text-gray-500 mb-3">PNG · 1200×630</div>
+                <div class="text-sm font-semibold text-gray-900 mb-1"><?= htmlspecialchars(t('press.asset_og')) ?></div>
+                <div class="text-xs text-gray-500 mb-3"><?= htmlspecialchars(t('press.asset_og_sub')) ?></div>
                 <a href="<?= getBasePath() ?>assets/images/cardify-og.png" download class="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-700 hover:text-blue-800 transition">
-                    <i class="fa-solid fa-download text-xs"></i> Download .png
+                    <i class="fa-solid fa-download text-xs"></i> <?= htmlspecialchars(t('press.download_png')) ?>
                 </a>
             </div>
         </div>
@@ -298,26 +299,26 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
     <section class="bg-gray-50 border-y border-gray-100 py-16">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider">Citations</span>
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-8">Citation format</h2>
+            <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider"><?= htmlspecialchars(t('press.section_citations')) ?></span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-8"><?= htmlspecialchars(t('press.h2_citations')) ?></h2>
             <div class="grid md:grid-cols-2 gap-5">
                 <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
                     <div class="flex items-center gap-2 mb-3">
                         <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600">
                             <i class="fa-solid fa-book text-sm"></i>
                         </span>
-                        <h3 class="font-bold text-gray-900">MLA (9th edition)</h3>
+                        <h3 class="font-bold text-gray-900"><?= htmlspecialchars(t('press.cite_mla')) ?></h3>
                     </div>
-                    <p class="bg-gray-50 text-gray-800 text-sm p-4 rounded-xl leading-relaxed font-mono break-words">Cardify. "GCC Business Index 2026." <em>cardify.om</em>, <?= $esc($asOfDate) ?>, cardify.om/gcc-business-index. Accessed <?= $esc(date('j M Y')) ?>.</p>
+                    <p class="bg-gray-50 text-gray-800 text-sm p-4 rounded-xl leading-relaxed font-mono break-words"><?= htmlspecialchars(t('press.cite_mla_body', ['site' => 'cardify.om', 'updated' => $asOfDate, 'accessed' => $accessedDate])) ?></p>
                 </div>
                 <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
                     <div class="flex items-center gap-2 mb-3">
                         <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600">
                             <i class="fa-solid fa-graduation-cap text-sm"></i>
                         </span>
-                        <h3 class="font-bold text-gray-900">APA (7th edition)</h3>
+                        <h3 class="font-bold text-gray-900"><?= htmlspecialchars(t('press.cite_apa')) ?></h3>
                     </div>
-                    <p class="bg-gray-50 text-gray-800 text-sm p-4 rounded-xl leading-relaxed font-mono break-words">Cardify. (2026). <em>GCC Business Index 2026</em>. Retrieved <?= $esc(date('F j, Y')) ?>, from https://cardify.om/gcc-business-index</p>
+                    <p class="bg-gray-50 text-gray-800 text-sm p-4 rounded-xl leading-relaxed font-mono break-words"><?= htmlspecialchars(t('press.cite_apa_body', ['accessed' => $asOfDate])) ?></p>
                 </div>
             </div>
         </div>
@@ -326,19 +327,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <section id="contact" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-10 sm:p-14 text-center text-white shadow-xl">
             <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 rounded-full px-3 py-1 mb-4 text-xs font-semibold text-white uppercase tracking-wider">
-                <i class="fa-solid fa-envelope-open-text text-[10px]"></i> Press contact
+                <i class="fa-solid fa-envelope-open-text text-[10px]"></i> <?= htmlspecialchars(t('press.section_contact')) ?>
             </div>
-            <h2 class="text-3xl sm:text-4xl font-extrabold mb-3">Talk to our team</h2>
-            <p class="text-blue-100 mb-8 max-w-2xl mx-auto text-lg">For interviews, comment, or custom data queries, reach out. We try to respond within 24 hours for press.</p>
+            <h2 class="text-3xl sm:text-4xl font-extrabold mb-3"><?= htmlspecialchars(t('press.h2_contact')) ?></h2>
+            <p class="text-blue-100 mb-8 max-w-2xl mx-auto text-lg"><?= htmlspecialchars(t('press.contact_body')) ?></p>
             <div class="flex flex-col sm:flex-row gap-3 justify-center">
                 <a href="mailto:press@cardify.om?subject=Press%20inquiry" class="inline-flex items-center justify-center gap-2 bg-white text-blue-700 font-bold px-6 py-3 rounded-lg hover:bg-blue-50 shadow-sm transition">
-                    <i class="fa-solid fa-envelope"></i> press@cardify.om
+                    <i class="fa-solid fa-envelope"></i> <?= htmlspecialchars(t('press.contact_email_btn')) ?>
                 </a>
                 <a href="<?= getBasePath() ?>contact" class="inline-flex items-center justify-center gap-2 bg-white/10 border border-white/30 text-white font-semibold px-6 py-3 rounded-lg hover:bg-white/20 transition">
-                    General contact form
+                    <?= htmlspecialchars(t('press.contact_general')) ?>
                 </a>
             </div>
-            <p class="text-blue-200 text-sm mt-6">Based in Muscat, Oman · Operating hours GMT+4 · English + العربية</p>
+            <p class="text-blue-200 text-sm mt-6"><?= htmlspecialchars(t('press.contact_footer')) ?></p>
         </div>
     </section>
 </div>
