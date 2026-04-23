@@ -134,33 +134,48 @@ class OtpService
     private static function deliverWhatsApp(string $phone, string $code): bool
     {
         if (!class_exists('WhatsApp') || !WhatsApp::isEnabled()) return false;
-        $locale = function_exists('currentLocale') ? currentLocale() : 'en';
-        $msg = $locale === 'ar'
-            ? "رمز التحقق الخاص بك في كارديفاي: {$code}\nينتهي خلال 10 دقائق."
-            : "Your Cardify verification code: {$code}\nExpires in 10 minutes.";
-        return (bool) WhatsApp::sendMessage($phone, $msg);
+        $body = self::renderTemplate('otp.whatsapp', $code);
+        return (bool) WhatsApp::sendMessage($phone, $body);
     }
 
     private static function deliverEmail(string $email, string $code): bool
     {
         if (!class_exists('Mailer')) return false;
-        $locale = function_exists('currentLocale') ? currentLocale() : 'en';
-        $subject = $locale === 'ar' ? "رمز التحقق الخاص بك" : 'Your Cardify verification code';
-        $dir  = $locale === 'ar' ? 'rtl' : 'ltr';
-        $font = $locale === 'ar' ? "'IBM Plex Sans Arabic',system-ui,sans-serif" : 'system-ui,sans-serif';
-        $body = $locale === 'ar'
-            ? "<div dir=\"{$dir}\" style=\"font-family:{$font};max-width:560px;margin:0 auto;padding:24px;\">"
-              . "<h1 style=\"color:#1e40af\">رمز التحقق</h1>"
-              . "<p>رمزك لمرة واحدة:</p>"
-              . "<div style=\"font-size:32px;font-weight:700;letter-spacing:4px;background:#f1f5f9;padding:16px;text-align:center;border-radius:8px;\" dir=\"ltr\">{$code}</div>"
-              . "<p style=\"color:#6b7280;font-size:14px;\">ينتهي خلال 10 دقائق.</p>"
-              . "</div>"
-            : "<div dir=\"{$dir}\" style=\"font-family:{$font};max-width:560px;margin:0 auto;padding:24px;\">"
-              . "<h1 style=\"color:#1e40af\">Your verification code</h1>"
-              . "<p>Your one-time code:</p>"
-              . "<div style=\"font-size:32px;font-weight:700;letter-spacing:4px;background:#f1f5f9;padding:16px;text-align:center;border-radius:8px;\">{$code}</div>"
-              . "<p style=\"color:#6b7280;font-size:14px;\">Expires in 10 minutes.</p>"
-              . "</div>";
+        [$subject, $body] = self::renderEmailTemplate('otp.email', $code);
         return (bool) Mailer::send($email, $subject, $body);
+    }
+
+    /**
+     * Render a WhatsApp template (templates/{name}.{locale}.php) and return its
+     * $body. Falls back to English if the Arabic template is missing.
+     */
+    private static function renderTemplate(string $name, string $code): string
+    {
+        $locale = function_exists('currentLocale') ? currentLocale() : 'en';
+        $expiresInMinutes = (int) (self::TTL_SECONDS / 60);
+        $path = __DIR__ . "/notifications/templates/{$name}.{$locale}.php";
+        if (!is_file($path)) {
+            $path = __DIR__ . "/notifications/templates/{$name}.en.php";
+        }
+        $body = '';
+        require $path;
+        return $body;
+    }
+
+    /**
+     * Render an email template, returning [$subject, $body].
+     */
+    private static function renderEmailTemplate(string $name, string $code): array
+    {
+        $locale = function_exists('currentLocale') ? currentLocale() : 'en';
+        $expiresInMinutes = (int) (self::TTL_SECONDS / 60);
+        $path = __DIR__ . "/notifications/templates/{$name}.{$locale}.php";
+        if (!is_file($path)) {
+            $path = __DIR__ . "/notifications/templates/{$name}.en.php";
+        }
+        $subject = '';
+        $body = '';
+        require $path;
+        return [$subject, $body];
     }
 }
