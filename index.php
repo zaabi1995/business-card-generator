@@ -175,9 +175,14 @@ $homeCur     = Currency::getUserCurrency();
 $homeCurName = $homeCur;
 // Convert, then marketing-round (keeps OMR exact, rounds AED/USD/etc to
 // clean psychological numbers like 50 / 150 / 1,500 instead of 47.72).
+// BHD and KWD are rounded to the nearest whole number AND displayed with
+// no decimals (4 instead of 4.000) since Ali asked for the "closest total".
 $fmt = function ($omr) use ($homeCur) {
     $converted = Currency::convert((float)$omr, $homeCur);
     $rounded   = Currency::marketingRound($converted, $homeCur);
+    if (in_array($homeCur, ['BHD', 'KWD'], true) && floor($rounded) == $rounded) {
+        return number_format($rounded, 0);
+    }
     return Currency::formatNumber($rounded, $homeCur);
 };
 $priceProMo        = $fmt(5.000);

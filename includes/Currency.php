@@ -1455,10 +1455,13 @@ JS;
      */
     public static function marketingRound(float $amount, string $currency): float {
         $cur = strtoupper($currency);
-        // OMR + BHD + KWD are low-unit precious currencies (5 OMR, 2 BHD,
-        // 2 KWD are already small whole-ish numbers); leave them exact so
-        // the real price shows and monthly/annual don't collapse.
-        if ($cur === 'OMR' || $cur === 'BHD' || $cur === 'KWD') return $amount;
+        // OMR is the base currency; Omani visitors see the exact 3-decimal price.
+        if ($cur === 'OMR') return $amount;
+        // BHD and KWD are low-unit precious currencies (3-decimal, values are
+        // small). Round to the nearest whole so 4.079 -> 4 and 4.895 -> 5,
+        // keeping monthly/annual distinct but dropping the ugly decimals.
+        if ($cur === 'BHD' || $cur === 'KWD') return round($amount);
+        // Everything else: ceil up to a clean psychological tier.
         $a = abs($amount);
         if ($a < 20)    return ceil($amount);            // keep fine granularity (12 -> 12, 15 -> 15)
         if ($a < 100)   return ceil($amount / 5)   * 5;  // 47.72 -> 50
