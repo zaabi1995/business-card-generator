@@ -1572,7 +1572,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
                                                 </template>
                                                 <!-- No Results -->
                                                 <div x-show="Object.keys(filteredFonts(fontQuery)).length === 0" class="px-3 py-4 text-center text-xs text-gray-500">
-                                                    No fonts found
+                                                    <?= htmlspecialchars(t('emptystates.no_fonts_h')) ?>
                                                 </div>
                                             </div>
                                         </div>

@@ -187,8 +187,8 @@ adminHeader('Share Links', 'share');
                         <td colspan="5" class="px-6 py-16 text-center">
                             <div class="text-gray-400">
                                 <i class="fa-solid fa-share-nodes text-4xl mb-4 opacity-50"></i>
-                                <p class="text-gray-600 font-medium">No shareable links yet</p>
-                                <p class="text-sm mt-1">Create links to share your designs with others</p>
+                                <p class="text-gray-600 font-medium"><?= htmlspecialchars(t('emptystates.no_share_links_h')) ?></p>
+                                <p class="text-sm mt-1"><?= htmlspecialchars(t('emptystates.no_share_links_sub')) ?></p>
                             </div>
                         </td>
                     </tr>

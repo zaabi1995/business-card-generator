@@ -118,8 +118,8 @@ adminHeader('Payment History', 'payment-history');
         <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <i class="fa-solid fa-receipt text-gray-400 text-2xl"></i>
         </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-1">No transactions yet</h3>
-        <p class="text-gray-500 text-sm">Payments will appear here once you subscribe or place a print order.</p>
+        <h3 class="text-lg font-medium text-gray-900 mb-1"><?= htmlspecialchars(t('emptystates.no_transactions_h')) ?></h3>
+        <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('emptystates.no_transactions_sub')) ?></p>
     </div>
     <?php else: ?>
     <div class="overflow-x-auto">

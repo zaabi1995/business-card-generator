@@ -431,8 +431,8 @@ adminHeader('Short Links', 'short-links');
     <?php if (empty($links)): ?>
     <div class="p-12 text-center text-gray-500">
         <i class="fa-solid fa-link-slash text-4xl text-gray-300 mb-3"></i>
-        <p class="font-medium">No short links yet</p>
-        <p class="text-sm mt-1">Create your first one above.</p>
+        <p class="font-medium"><?= htmlspecialchars(t('emptystates.no_short_links_h')) ?></p>
+        <p class="text-sm mt-1"><?= htmlspecialchars(t('emptystates.no_short_links_sub')) ?></p>
     </div>
     <?php else: ?>
     <div class="overflow-x-auto">

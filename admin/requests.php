@@ -332,7 +332,7 @@ $adminBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() 
             <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="fa-solid fa-inbox text-gray-400 text-2xl"></i>
             </div>
-            <p class="text-gray-500">No <?php echo $statusFilter !== 'all' ? $statusFilter : ''; ?> requests found.</p>
+            <p class="text-gray-500"><?= htmlspecialchars($statusFilter !== 'all' ? str_replace(':filter', $statusFilter, t('emptystates.no_requests_h')) : t('emptystates.no_requests_all_h')) ?></p>
             <?php if ($companySlug): ?>
             <p class="text-sm text-gray-400 mt-2">Share the portal link with employees to receive requests.</p>
             <?php endif; ?>
