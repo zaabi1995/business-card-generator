@@ -14,6 +14,20 @@ require_once INCLUDES_DIR . '/EmployeeEditToken.php';
 $token = trim($_GET['token'] ?? '');
 $employee = EmployeeEditToken::verify($token);
 
+$existingSocials = [];
+if ($employee) {
+    try {
+        $db = Database::getInstance();
+        $rows = $db->fetchAll(
+            "SELECT platform, url FROM employee_socials WHERE employee_id = :eid ORDER BY position ASC, id ASC",
+            ['eid' => $employee['id']]
+        );
+        foreach ($rows as $r) {
+            $existingSocials[] = ['platform' => $r['platform'], 'url' => $r['url']];
+        }
+    } catch (Throwable $e) { /* table may not exist in minimal envs */ }
+}
+
 $locale = function_exists('currentLocale') ? currentLocale() : 'en';
 $dir    = function_exists('currentDir')    ? currentDir()    : 'ltr';
 $isAr   = ($locale === 'ar');
@@ -74,6 +88,7 @@ $pageTitle = t('portal.edit_my_details');
               'email' => $employee['email'],
               'website' => $employee['website'],
           ],
+          'socials' => $existingSocials,
           'token' => $token,
           'csrf'  => $csrf,
           'saveUrl' => '/portal/employee-edit-save.php',
@@ -135,6 +150,31 @@ $pageTitle = t('portal.edit_my_details');
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.website')) ?></label>
                 <input type="url" x-model="data.website" @input.debounce.800ms="save()" class="form-input" dir="ltr" placeholder="https://">
             </div>
+
+            <div class="pt-4 border-t border-gray-100">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-sm font-medium text-gray-700"><?= htmlspecialchars(t('portal.social_links')) ?></label>
+                    <button type="button" @click="addSocial()" class="text-xs font-semibold text-[#009bc1] hover:text-[#007a99]">
+                        <i class="fa-solid fa-plus mr-1"></i><?= htmlspecialchars(t('portal.social_add')) ?>
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mb-3"><?= htmlspecialchars(t('portal.social_hint')) ?></p>
+                <template x-for="(s, idx) in socials" :key="idx">
+                    <div class="flex items-center gap-2 mb-2">
+                        <select x-model="s.platform" @change="save()" class="form-input !w-36 !py-2 text-sm" dir="ltr">
+                            <template x-for="opt in platforms" :key="opt.key">
+                                <option :value="opt.key" x-text="opt.label"></option>
+                            </template>
+                        </select>
+                        <input type="url" x-model="s.url" @input.debounce.800ms="save()"
+                               class="form-input flex-1 text-sm" dir="ltr" placeholder="https://">
+                        <button type="button" @click="removeSocial(idx)"
+                                class="text-gray-400 hover:text-red-500 text-lg px-2" aria-label="Remove">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                </template>
+            </div>
         </div>
 
         <p class="text-xs text-gray-400 text-center mt-5">
@@ -149,14 +189,36 @@ $pageTitle = t('portal.edit_my_details');
     function employeeEdit(init) {
         return {
             data: Object.assign({}, init.employee),
+            socials: Array.isArray(init.socials) ? init.socials : [],
             token: init.token,
             csrf: init.csrf,
             saveUrl: init.saveUrl,
             locale: init.locale,
             savingState: 'idle',
             labels: { my_card: <?= json_encode(t('portal.my_card')) ?> },
+            platforms: [
+                { key: 'linkedin',  label: 'LinkedIn'  },
+                { key: 'instagram', label: 'Instagram' },
+                { key: 'twitter',   label: 'Twitter / X' },
+                { key: 'tiktok',    label: 'TikTok'    },
+                { key: 'youtube',   label: 'YouTube'   },
+                { key: 'facebook',  label: 'Facebook'  },
+                { key: 'snapchat',  label: 'Snapchat'  },
+                { key: 'whatsapp',  label: 'WhatsApp'  },
+                { key: 'telegram',  label: 'Telegram'  },
+                { key: 'github',    label: 'GitHub'    },
+                { key: 'other',     label: 'Other'     },
+            ],
 
             init() { /* noop */ },
+
+            addSocial() {
+                this.socials.push({ platform: 'linkedin', url: '' });
+            },
+            removeSocial(idx) {
+                this.socials.splice(idx, 1);
+                this.save();
+            },
 
             statusText() {
                 if (this.savingState === 'saving') return <?= json_encode(t('portal.saved_toast')) ?>.replace(/./, '') || '...';
@@ -171,7 +233,11 @@ $pageTitle = t('portal.edit_my_details');
                     const res = await fetch(this.saveUrl, {
                         method: 'POST',
                         headers: {'Content-Type':'application/json','X-CSRF-Token': this.csrf},
-                        body: JSON.stringify({ token: this.token, fields: this.data })
+                        body: JSON.stringify({
+                            token: this.token,
+                            fields: this.data,
+                            socials: this.socials.filter(s => s && s.url && s.url.trim() !== ''),
+                        })
                     });
                     const j = await res.json();
                     this.savingState = j.ok ? 'saved' : 'error';

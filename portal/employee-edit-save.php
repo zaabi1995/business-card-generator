@@ -59,14 +59,49 @@ foreach ($allowed as $k) {
     $update[$k] = $v;
 }
 
-if (empty($update)) {
+if (empty($update) && !isset($body['socials'])) {
     echo json_encode(['ok' => true, 'noop' => true]);
     exit;
 }
 
 try {
     $db = Database::getInstance();
-    $db->update('employees', $update, 'id = :id', ['id' => $employee['id']]);
+    if (!empty($update)) {
+        $db->update('employees', $update, 'id = :id', ['id' => $employee['id']]);
+    }
+
+    // Socials: client sends a full ordered list; we replace. Whitelist
+    // platform keys + validate URLs (allow empty-after-trim = drop).
+    if (isset($body['socials']) && is_array($body['socials'])) {
+        $allowedPlatforms = ['linkedin','instagram','twitter','tiktok','youtube','facebook','snapchat','whatsapp','telegram','github','other'];
+        $clean = [];
+        foreach ($body['socials'] as $s) {
+            if (!is_array($s)) continue;
+            $p = strtolower(trim((string) ($s['platform'] ?? '')));
+            $u = trim((string) ($s['url'] ?? ''));
+            if ($p === '' || !in_array($p, $allowedPlatforms, true)) continue;
+            if ($u === '') continue;
+            if (!filter_var($u, FILTER_VALIDATE_URL)) continue;
+            if (strlen($u) > 512) $u = substr($u, 0, 512);
+            $clean[] = ['platform' => $p, 'url' => $u];
+            if (count($clean) >= 20) break;
+        }
+        try {
+            $db->query("DELETE FROM employee_socials WHERE employee_id = :eid", ['eid' => $employee['id']]);
+            $pos = 0;
+            foreach ($clean as $s) {
+                $db->insert('employee_socials', [
+                    'employee_id' => $employee['id'],
+                    'company_id'  => $employee['company_id'],
+                    'platform'    => $s['platform'],
+                    'url'         => $s['url'],
+                    'position'    => $pos++,
+                ]);
+            }
+        } catch (Throwable $e) {
+            error_log('[employee-edit-save] socials write failed: ' . $e->getMessage());
+        }
+    }
 
     // Audit log, best-effort.
     if (class_exists('AuditLog')) {

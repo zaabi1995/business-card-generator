@@ -58,4 +58,7 @@ return [
     'btn_submit_request' => 'Submit Request',
     'btn_edit_details'  => 'Edit Details',
     'card_template'     => 'Card Template',
+    'social_links'      => 'Social links',
+    'social_add'        => 'Add link',
+    'social_hint'       => 'Add LinkedIn, Instagram, Twitter, TikTok, YouTube and more. Shown on your public card.',
 ];
