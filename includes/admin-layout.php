@@ -260,6 +260,17 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
             font-display: swap;
             src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-BoldIt.otf') format('opentype');
         }
+
+        /* Tahoma (self-hosted, Regular only for now). Browsers synthesise
+           bold/italic for weight/style requests that have no real cut. */
+        @font-face {
+            font-family: 'Tahoma';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: local('Tahoma'),
+                 url('<?php echo getBasePath(); ?>assets/fonts/tahoma/Tahoma-Regular.ttf') format('truetype');
+        }
     </style>
 
     <!-- Google Fonts for Card Editor (Arabic + English) -->
