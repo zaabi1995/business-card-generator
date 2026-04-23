@@ -166,6 +166,24 @@ $pageDescription = 'Bilingual Arabic/English digital and printed business cards 
 $canonicalUrl = 'https://cardify.om/';
 $bodyClass = 'bg-white';
 
+// Homepage pricing: compute display strings in the visitor's currency once,
+// so the currency pill in the header switches ALL shown prices. Source of
+// truth is OMR (rates live in Currency.php fx table); formatNumber respects
+// per-currency decimals and separators.
+require_once INCLUDES_DIR . '/Currency.php';
+$homeCur     = Currency::getUserCurrency();
+$homeCurName = $homeCur;
+$fmt = function ($omr) use ($homeCur) {
+    return Currency::formatNumber(Currency::convert((float)$omr, $homeCur), $homeCur);
+};
+$priceProMo        = $fmt(5.000);
+$priceProAnnMo     = $fmt(4.167);
+$priceProAnnYear   = $fmt(50.000);
+$priceBizMo        = $fmt(15.000);
+$priceBizAnnMo     = $fmt(12.500);
+$priceBizAnnYear   = $fmt(150.000);
+$priceStarterFrom  = $fmt(5.000);
+
 // Fetch subscription plans from database for pricing section
 $subscriptionPlans = [];
 try {
@@ -692,10 +710,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                     <div class="cardify-plan-price">
                         <div class="cardify-plan-price-row">
-                            <span class="cardify-plan-price-value cardify-plan-price-value--num" x-text="annual ? '4.167' : '5.000'">5.000</span>
-                            <span class="cardify-plan-price-unit"><?= htmlspecialchars(t('pricing.home_unit_month')) ?></span>
+                            <span class="cardify-plan-price-value cardify-plan-price-value--num" x-text="annual ? <?= json_encode($priceProAnnMo) ?> : <?= json_encode($priceProMo) ?>"><?= htmlspecialchars($priceProMo) ?></span>
+                            <span class="cardify-plan-price-unit"><?= htmlspecialchars(t('pricing.home_unit_month', ['currency' => $homeCurName])) ?></span>
                         </div>
-                        <p class="cardify-plan-price-sub" x-show="annual"><?= htmlspecialchars(t('pricing.home_billed_year', ['amount' => '50.000'])) ?></p>
+                        <p class="cardify-plan-price-sub" x-show="annual"><?= htmlspecialchars(t('pricing.home_billed_year', ['amount' => $priceProAnnYear, 'currency' => $homeCurName])) ?></p>
                         <p class="cardify-plan-price-sub" x-show="!annual"><?= htmlspecialchars(t('pricing.home_billed_month')) ?></p>
                     </div>
                     <ul class="cardify-plan-features">
@@ -717,10 +735,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                     <div class="cardify-plan-price">
                         <div class="cardify-plan-price-row">
-                            <span class="cardify-plan-price-value cardify-plan-price-value--num" x-text="annual ? '12.500' : '15.000'">15.000</span>
-                            <span class="cardify-plan-price-unit"><?= htmlspecialchars(t('pricing.home_unit_month')) ?></span>
+                            <span class="cardify-plan-price-value cardify-plan-price-value--num" x-text="annual ? <?= json_encode($priceBizAnnMo) ?> : <?= json_encode($priceBizMo) ?>"><?= htmlspecialchars($priceBizMo) ?></span>
+                            <span class="cardify-plan-price-unit"><?= htmlspecialchars(t('pricing.home_unit_month', ['currency' => $homeCurName])) ?></span>
                         </div>
-                        <p class="cardify-plan-price-sub" x-show="annual"><?= htmlspecialchars(t('pricing.home_billed_year', ['amount' => '150.000'])) ?></p>
+                        <p class="cardify-plan-price-sub" x-show="annual"><?= htmlspecialchars(t('pricing.home_billed_year', ['amount' => $priceBizAnnYear, 'currency' => $homeCurName])) ?></p>
                         <p class="cardify-plan-price-sub" x-show="!annual"><?= htmlspecialchars(t('pricing.home_billed_month')) ?></p>
                     </div>
                     <ul class="cardify-plan-features">
@@ -995,7 +1013,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </div>
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-check-circle"></i>
-                    <span>Plans from 5 OMR/mo</span>
+                    <span><?= htmlspecialchars(t('pricing.home_plans_from', ['amount' => $priceStarterFrom, 'currency' => $homeCurName])) ?></span>
                 </div>
             </div>
             </p>
