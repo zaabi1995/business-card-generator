@@ -171,7 +171,7 @@ function refreshOrderData($pdo, $orderId) {
 
 // Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !validateCSRFToken($_POST['csrf_token'] ?? '')) {
-    die('Invalid request');
+    die(htmlspecialchars(t('printshoporder.invalid_request')));
 }
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -187,10 +187,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($notes) {
                 $pdo->prepare("UPDATE print_orders SET notes = ? WHERE id = ?")->execute([$notes, $orderId]);
             }
-            $message = "Order updated to " . ucfirst($newStatus);
+            $stk = 'printshoporder.status_' . $newStatus;
+            $stl = t($stk);
+            if ($stl === $stk) $stl = ucfirst($newStatus);
+            $message = str_replace(':status', $stl, t('printshoporder.order_updated'));
             $order = refreshOrderData($pdo, $orderId);
         } else {
-            $message = "Error: " . ($result['error'] ?? 'Unknown');
+            $message = str_replace(':msg', (string) ($result['error'] ?? t('printshoporder.unknown_error')), t('printshoporder.update_error'));
             $messageType = 'error';
         }
         
@@ -496,13 +499,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="flex items-center justify-between mb-6">
             <div>
                 <a href="orders.php" class="text-sm text-blue-600 hover:text-blue-700 mb-1 inline-flex items-center gap-1">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Orders
+                    <i class="fa-solid fa-arrow-left"></i> <?= htmlspecialchars(t('printshoporder.back_to_orders')) ?>
                 </a>
                 <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t("printshoppages.h1_order_n", ["n" => $orderId])) ?></h1>
-                <p class="text-gray-500">Placed on <?php echo date('F j, Y \a\t g:i A', strtotime($order['created_at'])); ?></p>
+                <p class="text-gray-500"><?= htmlspecialchars(str_replace(':date', date('F j, Y \a\t g:i A', strtotime($order['created_at'])), t('printshoporder.placed_on'))) ?></p>
             </div>
             <span class="inline-flex px-4 py-2 rounded-lg text-sm font-semibold border <?php echo $statusColors[$order['status']] ?? 'bg-gray-100 text-gray-700'; ?>">
-                <?php echo ucfirst($order['status']); ?>
+                <?php $stk = 'printshoporder.status_' . $order['status']; $stl = t($stk); echo htmlspecialchars($stl === $stk ? ucfirst($order['status']) : $stl); ?>
             </span>
         </div>
         
@@ -571,9 +574,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="p-6 border-b border-gray-100">
                         <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
                             <i class="fa-solid fa-id-card text-blue-600"></i>
-                            Card Files for Printing
+                            <?= htmlspecialchars(t('printshoporder.card_files_h')) ?>
                         </h3>
-                        <p class="text-sm text-gray-500 mt-1">Download high-quality files for professional printing</p>
+                        <p class="text-sm text-gray-500 mt-1"><?= htmlspecialchars(t('printshoporder.card_files_sub')) ?></p>
                     </div>
                     
                     <!-- Quality Notice -->
@@ -581,7 +584,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <div class="flex items-start gap-3">
                             <i class="fa-solid fa-print text-green-600 text-lg mt-0.5"></i>
                             <div>
-                                <p class="font-medium text-green-800">Print Shop Quality Files</p>
+                                <p class="font-medium text-green-800"><?= htmlspecialchars(t('printshoporder.hq_notice')) ?></p>
                                 <p class="text-sm text-green-700 mt-1">
                                     <?php if ($hasFrontPdf || $hasBackPdf): ?>
                                     <i class="fa-solid fa-check-circle mr-1"></i>PDF files available (recommended for best print quality ~600 DPI)
@@ -600,7 +603,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <!-- Front Card -->
                             <div>
                                 <div class="flex items-center justify-between mb-2">
-                                    <p class="text-sm font-medium text-gray-700">Front Side</p>
+                                    <p class="text-sm font-medium text-gray-700"><?= htmlspecialchars(t('printshoporder.front_side')) ?></p>
                                     <?php if ($hasFrontHq || $hasFrontPdf): ?>
                                     <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
                                         <i class="fa-solid fa-star mr-1"></i>HQ Available
@@ -628,7 +631,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                 <?php else: ?>
                                 <div class="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center text-gray-400">
                                     <i class="fa-solid fa-image text-3xl mb-2"></i>
-                                    <p>No front card file</p>
+                                    <p><?= htmlspecialchars(t('printshoporder.no_front_file')) ?></p>
                                 </div>
                                 <?php endif; ?>
                             </div>
@@ -636,7 +639,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <!-- Back Card -->
                             <div>
                                 <div class="flex items-center justify-between mb-2">
-                                    <p class="text-sm font-medium text-gray-700">Back Side</p>
+                                    <p class="text-sm font-medium text-gray-700"><?= htmlspecialchars(t('printshoporder.back_side')) ?></p>
                                     <?php if ($hasBackHq || $hasBackPdf): ?>
                                     <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
                                         <i class="fa-solid fa-star mr-1"></i>HQ Available
@@ -664,7 +667,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                 <?php else: ?>
                                 <div class="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center text-gray-400">
                                     <i class="fa-solid fa-image text-3xl mb-2"></i>
-                                    <p>No back card file</p>
+                                    <p><?= htmlspecialchars(t('printshoporder.no_back_file')) ?></p>
                                 </div>
                                 <?php endif; ?>
                             </div>
@@ -698,32 +701,32 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="p-6 border-b border-gray-100">
                         <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
                             <i class="fa-solid fa-sliders text-purple-600"></i>
-                            Print Specifications
+                            <?= htmlspecialchars(t('printshoporder.specs_h')) ?>
                         </h3>
                     </div>
                     <div class="p-6">
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                             <div>
-                                <p class="text-sm text-gray-500">Quantity</p>
-                                <p class="text-xl font-bold text-gray-900"><?php echo $order['quantity']; ?> cards</p>
+                                <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshoporder.specs_quantity')) ?></p>
+                                <p class="text-xl font-bold text-gray-900"><?= htmlspecialchars(str_replace(':n', (string) $order['quantity'], t('printshoporder.specs_n_cards'))) ?></p>
                             </div>
                             <div>
-                                <p class="text-sm text-gray-500">Paper Type</p>
+                                <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshoporder.specs_paper')) ?></p>
                                 <p class="text-xl font-bold text-gray-900"><?php echo ucfirst($order['paper_type'] ?? 'Standard'); ?></p>
                             </div>
                             <div>
-                                <p class="text-sm text-gray-500">Finish</p>
+                                <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshoporder.specs_finish')) ?></p>
                                 <p class="text-xl font-bold text-gray-900"><?php echo ucfirst(str_replace('_', ' ', $order['finish'] ?? 'Standard')); ?></p>
                             </div>
                             <div>
-                                <p class="text-sm text-gray-500">Total Price</p>
+                                <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshoporder.specs_total')) ?></p>
                                 <p class="text-xl font-bold text-green-600"><?php echo Currency::formatHtml($order['total'] ?? 0, $currency, 'md'); ?></p>
                             </div>
                         </div>
                         
                         <?php if (!empty($order['notes'])): ?>
                         <div class="mt-6 pt-6 border-t border-gray-100">
-                            <p class="text-sm font-medium text-gray-700 mb-2">Special Instructions</p>
+                            <p class="text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('printshoporder.special_instr')) ?></p>
                             <p class="text-gray-600 bg-gray-50 rounded-lg p-4"><?php echo nl2br(sanitize($order['notes'])); ?></p>
                         </div>
                         <?php endif; ?>
@@ -735,20 +738,20 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="p-6 border-b border-gray-100">
                         <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
                             <i class="fa-solid fa-truck text-cyan-600"></i>
-                            Shipping Information
+                            <?= htmlspecialchars(t('printshoporder.shipping_h')) ?>
                         </h3>
                     </div>
                     <div class="p-6">
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
-                                <p class="text-sm text-gray-500 mb-1">Recipient</p>
-                                <p class="font-semibold text-gray-900"><?php echo sanitize($order['shipping_name'] ?? 'Not provided'); ?></p>
+                                <p class="text-sm text-gray-500 mb-1"><?= htmlspecialchars(t('printshoporder.recipient')) ?></p>
+                                <p class="font-semibold text-gray-900"><?php echo sanitize($order['shipping_name'] ?? t('printshoporder.not_provided')); ?></p>
                                 <?php if (!empty($order['shipping_phone'])): ?>
                                 <p class="text-gray-600"><?php echo sanitize($order['shipping_phone']); ?></p>
                                 <?php endif; ?>
                             </div>
                             <div>
-                                <p class="text-sm text-gray-500 mb-1">Address</p>
+                                <p class="text-sm text-gray-500 mb-1"><?= htmlspecialchars(t('printshoporder.address')) ?></p>
                                 <p class="text-gray-900">
                                     <?php echo sanitize($order['shipping_address'] ?? ''); ?><br>
                                     <?php echo sanitize($order['shipping_city'] ?? ''); ?><?php echo !empty($order['shipping_state']) ? ', ' . sanitize($order['shipping_state']) : ''; ?> <?php echo sanitize($order['shipping_postal'] ?? ''); ?><br>
@@ -759,7 +762,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         
                         <?php if (!empty($order['tracking_number'])): ?>
                         <div class="mt-6 pt-6 border-t border-gray-100">
-                            <p class="text-sm text-gray-500 mb-1">Tracking Number</p>
+                            <p class="text-sm text-gray-500 mb-1"><?= htmlspecialchars(t('printshoporder.tracking_number')) ?></p>
                             <p class="font-mono text-lg font-bold text-blue-600"><?php echo sanitize($order['tracking_number']); ?></p>
                         </div>
                         <?php endif; ?>
