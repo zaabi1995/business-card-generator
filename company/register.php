@@ -685,4 +685,5 @@ require_once INCLUDES_DIR . '/ui-header.php';
     }
 })();
 </script>
+<?php @include __DIR__ . '/../views/partials/trust_logo_strip.php'; ?>
 <?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>

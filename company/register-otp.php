@@ -213,4 +213,5 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <?php endif; ?>
     </div>
 </main>
+<?php @include __DIR__ . '/../views/partials/trust_logo_strip.php'; ?>
 <?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>

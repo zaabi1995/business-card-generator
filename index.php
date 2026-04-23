@@ -404,6 +404,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
     </section>
 
+    <!-- ========== TRUST SIGNALS ========== -->
+    <?php @include __DIR__ . '/views/partials/trust_logo_strip.php'; ?>
+
     <!-- ========== VALUE PROPOSITION BANNER ========== -->
     <section class="py-12 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
