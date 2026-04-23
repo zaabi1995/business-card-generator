@@ -16,6 +16,7 @@ $token = trim($_GET['token'] ?? '');
 $employee = EmployeeEditToken::verify($token);
 
 $existingSocials = [];
+$publicCardUrl = '';
 if ($employee) {
     try {
         $db = Database::getInstance();
@@ -25,6 +26,15 @@ if ($employee) {
         );
         foreach ($rows as $r) {
             $existingSocials[] = ['platform' => $r['platform'], 'url' => $r['url']];
+        }
+
+        $company = $db->fetchOne("SELECT slug FROM companies WHERE id = :id", ['id' => $employee['company_id']]);
+        $companySlug = $company['slug'] ?? '';
+        $empSlug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', (string) ($employee['name_en'] ?? 'card')));
+        $empSlug = trim($empSlug, '-');
+        $host = defined('APP_HOST') ? APP_HOST : 'cardify.om';
+        if ($companySlug && $empSlug) {
+            $publicCardUrl = 'https://' . $host . '/' . $companySlug . '/' . $empSlug;
         }
     } catch (Throwable $e) { /* table may not exist in minimal envs */ }
 }
@@ -236,6 +246,44 @@ $pageTitle = t('portal.edit_my_details');
             </a>
         </div>
 
+        <?php if ($publicCardUrl): ?>
+        <div class="mt-3 bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
+             x-data="shareCard(<?= htmlspecialchars(json_encode([
+                 'url'   => $publicCardUrl,
+                 'name'  => $employee['name_en'] ?? '',
+                 'text'  => t('portal.share_default_text', ['name' => $employee['name_en'] ?? '']),
+             ]), ENT_QUOTES) ?>)">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-share-nodes text-2xl text-[#009bc1]"></i>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-900"><?= htmlspecialchars(t('portal.share_title')) ?></p>
+                        <p class="text-xs text-gray-500"><?= htmlspecialchars(t('portal.share_hint')) ?></p>
+                    </div>
+                </div>
+                <button type="button" @click="share()"
+                        class="px-4 py-2 bg-[#009bc1] hover:bg-[#007a99] text-white text-xs font-semibold rounded-lg whitespace-nowrap">
+                    <?= htmlspecialchars(t('portal.share_cta')) ?>
+                </button>
+            </div>
+            <div x-show="showFallback" x-cloak class="mt-3 grid grid-cols-4 gap-2 text-center text-xs">
+                <a :href="waUrl" target="_blank" rel="noopener" class="py-2 rounded-lg border border-gray-200 hover:border-green-500 text-gray-700">
+                    <i class="fa-brands fa-whatsapp text-green-500 text-lg block"></i>WhatsApp
+                </a>
+                <a :href="smsUrl" class="py-2 rounded-lg border border-gray-200 hover:border-blue-500 text-gray-700">
+                    <i class="fa-solid fa-message text-blue-500 text-lg block"></i>SMS
+                </a>
+                <a :href="emailUrl" class="py-2 rounded-lg border border-gray-200 hover:border-purple-500 text-gray-700">
+                    <i class="fa-solid fa-envelope text-purple-500 text-lg block"></i>Email
+                </a>
+                <button type="button" @click="copyLink()" class="py-2 rounded-lg border border-gray-200 hover:border-gray-500 text-gray-700">
+                    <i class="fa-solid fa-copy text-gray-600 text-lg block"></i>
+                    <span x-text="copied ? <?= json_encode(t('onboarding.copied')) ?> : <?= json_encode(t('onboarding.copy')) ?>"></span>
+                </button>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <p class="text-xs text-gray-400 text-center mt-5">
             <i class="fa-solid fa-shield-halved mr-1"></i>
             <?= $isAr
@@ -245,6 +293,36 @@ $pageTitle = t('portal.edit_my_details');
     </div>
 
     <script>
+    function shareCard(init) {
+        const u = encodeURIComponent(init.url);
+        const t = encodeURIComponent((init.text || '') + '\n' + init.url);
+        return {
+            copied: false,
+            showFallback: false,
+            waUrl: 'https://wa.me/?text=' + t,
+            smsUrl: 'sms:?body=' + t,
+            emailUrl: 'mailto:?subject=' + encodeURIComponent(init.name || 'My card') + '&body=' + t,
+            async share() {
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            title: init.name || 'Cardify',
+                            text:  init.text || '',
+                            url:   init.url,
+                        });
+                        return;
+                    } catch (e) { /* user cancelled or unavailable, fall through */ }
+                }
+                this.showFallback = true;
+            },
+            copyLink() {
+                navigator.clipboard.writeText(init.url).then(() => {
+                    this.copied = true;
+                    setTimeout(() => this.copied = false, 1500);
+                });
+            }
+        };
+    }
     function employeeEdit(init) {
         return {
             data: Object.assign({}, init.employee),

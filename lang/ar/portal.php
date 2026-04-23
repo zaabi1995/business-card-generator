@@ -76,4 +76,8 @@ return [
     'download_pdf_title'=> 'تنزيل بطاقتي بصيغة PDF',
     'download_pdf_hint' => 'ورقة A4 واحدة بها بياناتك مع رمز QR قابل للمسح.',
     'download_pdf_cta'  => 'تنزيل PDF',
+    'share_title'       => 'شارك بطاقتي',
+    'share_hint'        => 'تستخدم قائمة المشاركة في جهازك عند توفّرها.',
+    'share_cta'         => 'مشاركة',
+    'share_default_text'=> 'هذه بطاقتي، :name',
 ];

@@ -76,4 +76,8 @@ return [
     'download_pdf_title'=> 'Download my card as PDF',
     'download_pdf_hint' => 'One-page A4 with your contact details plus a scannable QR code.',
     'download_pdf_cta'  => 'Download PDF',
+    'share_title'       => 'Share my card',
+    'share_hint'        => 'Uses your phone share sheet when available.',
+    'share_cta'         => 'Share',
+    'share_default_text'=> 'Here is my business card, :name',
 ];
