@@ -303,8 +303,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'site_name' => $siteName,
                         'admin_name' => $userName ?: $name,
                         'company_name' => $name,
-                        'admin_url' => getBaseUrl() . $companySlug . '/admin/',
-                        'portal_url' => getBaseUrl() . $companySlug . '/portal'
+                        'admin_url' => getTenantUrl($companySlug, '/admin/'),
+                        'portal_url' => getTenantUrl($companySlug, '/portal')
                     ];
                     Mailer::sendTemplate($email, 'welcome_company', $onboardingData);
 
@@ -324,9 +324,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'name'        => $userName ?: $name,
                             'companyName' => $name,
                             'loginUrl'    => $baseHost . getBasePath() . 'login.php',
-                            'dashboardUrl'=> (!empty($company['slug'])
-                                                ? 'https://' . $company['slug'] . '.' . (defined('APP_HOST') ? APP_HOST : 'cardify.om') . '/admin/'
-                                                : $baseHost . getBasePath() . 'admin/'),
+                            'dashboardUrl'=> !empty($company['slug'])
+                                                ? getTenantUrl($company['slug'], '/admin/')
+                                                : $baseHost . getBasePath() . 'admin/',
                             'companySlug' => $company['slug'] ?? '',
                         ]);
                     } catch (Throwable $e) {
@@ -355,9 +355,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         header('Location: ' . getBasePath() . 'onboarding.php?source=bhd');
                     } else {
                         $companySlugForRedirect = $company['slug'] ?? '';
-                        $apexHost = defined('APP_HOST') ? APP_HOST : 'cardify.om';
                         if ($companySlugForRedirect) {
-                            header('Location: https://' . $companySlugForRedirect . '.' . $apexHost . '/admin/onboarding');
+                            header('Location: ' . getTenantUrl($companySlugForRedirect, '/admin/onboarding'));
                         } else {
                             header('Location: ' . getBasePath() . 'admin/onboarding.php');
                         }

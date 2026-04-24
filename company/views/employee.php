@@ -26,7 +26,7 @@ if ($employeeId) {
 
 if (!$employee) {
     // User is logged in but not an employee of this company
-    header('Location: ' . getBasePath() . $companySlug . '/');
+    header('Location: ' . getTenantUrl($companySlug));
     exit;
 }
 

@@ -71,7 +71,7 @@ seedStarterTemplate($db, $companyId, $template);
 // 5. Mark onboarding as complete
 markOnboardingComplete($companyId);
 
-$redirect = getBasePath() . $companySlug . '/admin/?welcome=1';
+$redirect = getTenantUrl($companySlug, '/admin/?welcome=1');
 echo json_encode(['success' => true, 'redirect' => $redirect]);
 exit;
 

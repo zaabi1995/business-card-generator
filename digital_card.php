@@ -1877,7 +1877,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             ],
             'email' => $employee['email'] ?? '',
             'telephone' => $employee['phone'] ?? $employee['mobile'] ?? '',
-            'url' => 'https://cardify.om/' . ($company['slug'] ?? '') . '/card/' . ($employee['id'] ?? ''),
+            'url' => getTenantCardUrl($company['slug'] ?? null, 'card/' . ($employee['id'] ?? '')),
         ],
     ];
     if (!empty($sectionMaster['hours_enabled']) && !empty($businessHours)) {
@@ -1886,7 +1886,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             $__localBiz = [
                 '@type' => 'LocalBusiness',
                 'name' => $company['name_en'] ?? $company['name'] ?? '',
-                'url' => 'https://cardify.om/' . ($company['slug'] ?? '') . '/card/' . ($employee['id'] ?? ''),
+                'url' => getTenantCardUrl($company['slug'] ?? null, 'card/' . ($employee['id'] ?? '')),
                 'openingHours' => $__openingSpecs,
             ];
             if (!empty(trim((string)($sectionMaster['location_address'] ?? '')))) {

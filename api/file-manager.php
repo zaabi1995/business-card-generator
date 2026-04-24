@@ -38,7 +38,7 @@ if (!$db->isConnected()) {
 }
 
 function vcfUrl($slug, $email) {
-    return "https://cardify.om/{$slug}/" . urlencode($email) . ".vcf";
+    return getTenantCardUrl($slug, urlencode($email) . '.vcf');
 }
 
 switch ($action) {

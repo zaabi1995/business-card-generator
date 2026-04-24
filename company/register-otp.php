@@ -136,9 +136,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                             // Send straight to the tenant subdomain so the
                             // admin sees their branded host from minute one.
                             $slug = $company['slug'] ?? '';
-                            $host = defined('APP_HOST') ? APP_HOST : 'cardify.om';
                             $target = $slug
-                                ? 'https://' . $slug . '.' . $host . '/admin/onboarding'
+                                ? getTenantUrl($slug, '/admin/onboarding')
                                 : getBasePath() . 'admin/onboarding.php';
                             header('Location: ' . $target);
                             exit;

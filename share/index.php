@@ -127,7 +127,7 @@ if ($shareRow) {
     $empId = preg_match('~^[a-z0-9_-]{1,64}$~i', $shareRow['employee_id'] ?? '')
         ? $shareRow['employee_id'] : null;
     if ($slug && $empId) {
-        header('Location: /' . $slug . '/card/' . $empId, true, 302);
+        header('Location: ' . getTenantCardUrl($slug, 'card/' . $empId), true, 302);
         exit;
     }
     renderErrorPage('Link Invalid', 'This share link points to a record we could not resolve.', 410);
