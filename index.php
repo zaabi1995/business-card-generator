@@ -151,7 +151,7 @@ if (isset($_GET['company_slug'])) {
 // Brand name
 $brandName = 'Cardify';
 $tagline = 'Business Cards Made Simple';
-$pageTitle = 'Cardify — Digital & Printed Business Cards in Oman';
+$pageTitle = 'Cardify, Digital & Printed Business Cards in Oman';
 $pageDescription = 'Create, manage, and print professional business cards for your team in Oman. Digital cards with QR codes, NFC sharing, and online ordering. Free to start.';
 $canonicalUrl = 'https://cardify.om/';
 $bodyClass = 'bg-white';
@@ -253,8 +253,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                     <!-- Subheadline -->
                     <p class="text-lg lg:text-xl text-gray-600 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                        Stop coordinating card orders manually. Upload your team, generate a unique card for every employee, and order professional prints — delivered across Oman.
-                        <strong class="text-gray-900">From 6 OMR per design.</strong>
+                        Stop coordinating card orders manually. Upload your team, generate a unique card for every employee, and order professional prints delivered across Oman.
+                        <strong class="text-gray-900">Free to start, pay only when you print.</strong>
                     </p>
 
                     <!-- CTA Buttons -->
@@ -606,120 +606,152 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
     <!-- ========== PRICING SECTION ========== -->
     <section id="pricing" class="py-16 lg:py-24 bg-gradient-to-b from-gray-50 to-white px-4">
-        <div class="max-w-7xl mx-auto" x-data="{ annual: false }">
+        <div class="max-w-6xl mx-auto">
             <!-- Section Header -->
             <div class="text-center mb-12">
                 <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full uppercase tracking-wide">
+                    <i class="fa-solid fa-tag"></i>
                     Simple Pricing
                 </span>
-                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-3">Simple pricing</p>
-                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4">Plans for every team size</h2>
-                <p class="text-lg text-gray-600 max-w-2xl mx-auto">Start free, upgrade when you need more. All prices in Omani Rial.</p>
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4">Free platform, pay only for prints</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    No subscriptions. No hidden fees. Unlimited employees, unlimited templates, unlimited digital cards.
+                    You only pay when you decide to order physical prints.
+                </p>
+            </div>
 
-                <!-- Billing Toggle -->
-                <div class="mt-8 inline-flex items-center gap-3 bg-gray-100 rounded-full p-1">
-                    <button @click="annual = false" :class="!annual ? 'bg-white shadow text-gray-900' : 'text-gray-500'" class="px-5 py-2 rounded-full text-sm font-semibold transition-all">Monthly</button>
-                    <button @click="annual = true" :class="annual ? 'bg-white shadow text-gray-900' : 'text-gray-500'" class="px-5 py-2 rounded-full text-sm font-semibold transition-all">
-                        Annual <span class="text-green-600 text-xs font-bold ml-1">Save 17%</span>
-                    </button>
+            <!-- Two-card layout: Platform (free) + Print (pay-as-you-go) -->
+            <div class="grid md:grid-cols-2 gap-6 lg:gap-8">
+
+                <!-- Platform Access, FREE -->
+                <div class="relative bg-white rounded-3xl p-8 shadow-2xl border border-gray-100">
+                    <div class="absolute -top-3 left-8 px-4 py-1 bg-green-600 text-white text-xs font-bold rounded-full uppercase tracking-wide">
+                        Free Forever
+                    </div>
+                    <div class="text-center mb-8">
+                        <h3 class="text-xl font-bold text-gray-700 mb-3">Platform Access</h3>
+                        <div class="flex items-baseline justify-center gap-2">
+                            <span class="text-5xl font-black text-gray-900">OMR 0</span>
+                        </div>
+                        <p class="text-gray-500 mt-2">No credit card, no trial, no expiry.</p>
+                    </div>
+
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                            <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-check text-white text-sm"></i>
+                            </div>
+                            <span class="text-gray-700 font-medium">Unlimited employees</span>
+                            <span class="ml-auto text-green-600 font-bold text-sm">FREE</span>
+                        </li>
+                        <li class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                            <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-check text-white text-sm"></i>
+                            </div>
+                            <span class="text-gray-700 font-medium">Unlimited templates</span>
+                            <span class="ml-auto text-green-600 font-bold text-sm">FREE</span>
+                        </li>
+                        <li class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                            <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-check text-white text-sm"></i>
+                            </div>
+                            <span class="text-gray-700 font-medium">Digital cards + QR codes</span>
+                            <span class="ml-auto text-green-600 font-bold text-sm">FREE</span>
+                        </li>
+                        <li class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                            <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-check text-white text-sm"></i>
+                            </div>
+                            <span class="text-gray-700 font-medium">Analytics + scan tracking</span>
+                            <span class="ml-auto text-green-600 font-bold text-sm">FREE</span>
+                        </li>
+                        <li class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                            <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-check text-white text-sm"></i>
+                            </div>
+                            <span class="text-gray-700 font-medium">WhatsApp, email, LinkedIn share</span>
+                            <span class="ml-auto text-green-600 font-bold text-sm">FREE</span>
+                        </li>
+                        <li class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                            <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-check text-white text-sm"></i>
+                            </div>
+                            <span class="text-gray-700 font-medium">Arabic + English bilingual</span>
+                            <span class="ml-auto text-green-600 font-bold text-sm">FREE</span>
+                        </li>
+                    </ul>
+
+                    <a href="<?= getBasePath() ?>company/register.php" class="block w-full py-4 bg-blue-600 hover:bg-blue-700 text-white text-center font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5">
+                        Get Started Free
+                    </a>
+                </div>
+
+                <!-- Physical Print, pay per order -->
+                <div class="relative bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 shadow-2xl border-2 border-blue-200">
+                    <div class="absolute -top-3 left-8 px-4 py-1 bg-blue-600 text-white text-xs font-bold rounded-full uppercase tracking-wide">
+                        Pay Per Order
+                    </div>
+                    <div class="text-center mb-8">
+                        <h3 class="text-xl font-bold text-gray-700 mb-3">Physical Prints</h3>
+                        <div class="flex items-baseline justify-center gap-2">
+                            <span class="text-xl font-medium text-gray-500">from</span>
+                            <span class="text-5xl font-black text-gray-900">OMR 5.000</span>
+                        </div>
+                        <p class="text-gray-500 mt-2">per 100 cards, one employee, one order.</p>
+                    </div>
+
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm">
+                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-print text-blue-600 text-sm"></i>
+                            </div>
+                            <span class="text-gray-700 font-medium">Standard stock</span>
+                            <span class="ml-auto text-gray-900 font-bold text-sm">OMR 5.000</span>
+                        </li>
+                        <li class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm">
+                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-gem text-blue-600 text-sm"></i>
+                            </div>
+                            <span class="text-gray-700 font-medium">Premium stock</span>
+                            <span class="ml-auto text-gray-900 font-bold text-sm">OMR 8.000</span>
+                        </li>
+                        <li class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm">
+                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-store text-green-600 text-sm"></i>
+                            </div>
+                            <span class="text-gray-700 font-medium">Verified Omani print shops</span>
+                        </li>
+                        <li class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm">
+                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-truck-fast text-green-600 text-sm"></i>
+                            </div>
+                            <span class="text-gray-700 font-medium">Delivery across Oman</span>
+                        </li>
+                        <li class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm">
+                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-right-left text-green-600 text-sm"></i>
+                            </div>
+                            <span class="text-gray-700 font-medium">Auto-invoice to your ERP</span>
+                        </li>
+                        <li class="flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm">
+                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-file-invoice-dollar text-green-600 text-sm"></i>
+                            </div>
+                            <span class="text-gray-700 font-medium">Credit account for enterprise</span>
+                        </li>
+                    </ul>
+
+                    <a href="<?= getBasePath() ?>company/register.php" class="block w-full py-4 bg-white hover:bg-gray-50 text-gray-900 text-center font-bold rounded-xl border-2 border-gray-200 hover:border-blue-400 transition-all">
+                        Start Free, Order Prints Later
+                    </a>
                 </div>
             </div>
 
-            <!-- Pricing Grid -->
-            <div class="cardify-pricing-grid">
-                <!-- Starter -->
-                <div class="cardify-plan">
-                    <div class="cardify-plan-header">
-                        <h3 class="cardify-plan-name">Starter</h3>
-                        <p class="cardify-plan-tagline">For freelancers and solo professionals</p>
-                    </div>
-                    <div class="cardify-plan-price">
-                        <span class="cardify-plan-price-value">Free</span>
-                        <p class="cardify-plan-price-sub">No credit card required</p>
-                    </div>
-                    <ul class="cardify-plan-features">
-                        <li><i class="fa-solid fa-check cardify-tick"></i>Up to 3 team members</li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i>Digital cards with QR code</li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i>3 card templates</li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i>Email support</li>
-                    </ul>
-                    <a href="<?= getBasePath() ?>company/register.php" class="cardify-plan-cta cardify-plan-cta--ghost">Get Started Free</a>
-                </div>
-
-                <!-- Professional (Popular) -->
-                <div class="cardify-plan cardify-plan--featured">
-                    <span class="cardify-plan-badge">Most Popular</span>
-                    <div class="cardify-plan-header">
-                        <h3 class="cardify-plan-name">Professional</h3>
-                        <p class="cardify-plan-tagline">For growing teams</p>
-                    </div>
-                    <div class="cardify-plan-price">
-                        <div class="cardify-plan-price-row">
-                            <span class="cardify-plan-price-value cardify-plan-price-value--num" x-text="annual ? '4.167' : '5.000'">5.000</span>
-                            <span class="cardify-plan-price-unit">OMR/mo</span>
-                        </div>
-                        <p class="cardify-plan-price-sub" x-show="annual">Billed 50.000 OMR/year</p>
-                        <p class="cardify-plan-price-sub" x-show="!annual">Billed monthly</p>
-                    </div>
-                    <ul class="cardify-plan-features">
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>Up to 10 team members</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>Unlimited templates</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>Custom branding</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>CSV bulk import</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>Analytics dashboard</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i>Priority support</li>
-                    </ul>
-                    <a href="<?= getBasePath() ?>company/register.php?plan=professional" class="cardify-plan-cta cardify-plan-cta--primary">Start Free Trial</a>
-                </div>
-
-                <!-- Business -->
-                <div class="cardify-plan">
-                    <div class="cardify-plan-header">
-                        <h3 class="cardify-plan-name">Business</h3>
-                        <p class="cardify-plan-tagline">For scaling companies</p>
-                    </div>
-                    <div class="cardify-plan-price">
-                        <div class="cardify-plan-price-row">
-                            <span class="cardify-plan-price-value cardify-plan-price-value--num" x-text="annual ? '12.500' : '15.000'">15.000</span>
-                            <span class="cardify-plan-price-unit">OMR/mo</span>
-                        </div>
-                        <p class="cardify-plan-price-sub" x-show="annual">Billed 150.000 OMR/year</p>
-                        <p class="cardify-plan-price-sub" x-show="!annual">Billed monthly</p>
-                    </div>
-                    <ul class="cardify-plan-features">
-                        <li><i class="fa-solid fa-check cardify-tick"></i>Up to 50 team members</li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i>Everything in Professional</li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i>Print ordering integration</li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i>NFC card support</li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i>Dedicated account manager</li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i>API access</li>
-                    </ul>
-                    <a href="<?= getBasePath() ?>company/register.php?plan=business" class="cardify-plan-cta cardify-plan-cta--ghost">Start Free Trial</a>
-                </div>
-
-                <!-- Enterprise -->
-                <div class="cardify-plan cardify-plan--dark">
-                    <div class="cardify-plan-header">
-                        <h3 class="cardify-plan-name">Enterprise</h3>
-                        <p class="cardify-plan-tagline">For large organisations</p>
-                    </div>
-                    <div class="cardify-plan-price">
-                        <span class="cardify-plan-price-value">Custom</span>
-                        <p class="cardify-plan-price-sub">Tailored to your needs</p>
-                    </div>
-                    <ul class="cardify-plan-features">
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>Unlimited employees</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>Everything in Business</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>Custom integrations</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>SLA guarantee</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>White-label options</li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i>On-premise deployment</li>
-                    </ul>
-                    <a href="https://wa.me/96899899100?text=Hi%2C%20I%27m%20interested%20in%20Cardify%20Enterprise" target="_blank" rel="noopener" class="cardify-plan-cta cardify-plan-cta--on-dark">Contact Sales</a>
-                </div>
-            </div>
-
-            <p class="text-center text-sm text-gray-500 mt-8">All plans include a 14-day free trial. No credit card required to start.</p>
+            <p class="text-center text-sm text-gray-500 mt-10">
+                <i class="fa-solid fa-shield-halved text-green-600 mr-1"></i>
+                No subscription. No setup fee. No minimum order.
+                Print prices are set by each verified shop, shown before you confirm.
+            </p>
         </div>
     </section>
 
@@ -783,7 +815,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <figure class="bg-white rounded-2xl p-8 shadow-sm ring-1 ring-gray-200/70 hover:ring-blue-200 hover:shadow-lg transition-all">
                     <div class="mb-5 text-blue-500 text-2xl leading-none"><i class="fa-solid fa-quote-left"></i></div>
                     <blockquote class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">"Free and feature-rich — unbelievable"</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">"Free and feature-rich, unbelievable"</h3>
                         <p class="text-gray-600 leading-relaxed">
                             "I couldn't believe it was free! We've been using it for 6 months and only paid when we needed to print cards. The department feature helps us organize different teams perfectly."
                         </p>
@@ -891,7 +923,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         </div>
                         <h3 class="text-2xl font-bold text-gray-900">Free Tools</h3>
                     </div>
-                    <p class="text-gray-600 mb-6">Generate what you need in seconds — no sign-up required.</p>
+                    <p class="text-gray-600 mb-6">Generate what you need in seconds, no sign-up required.</p>
                     <ul class="space-y-3 mb-6">
                         <li>
                             <a href="/tools/vcard-qr-generator" class="flex items-start gap-3 p-3 rounded-lg hover:bg-white transition group">
@@ -1020,15 +1052,15 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="mt-10 flex flex-wrap justify-center gap-6 text-white/70 text-sm">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-check-circle"></i>
-                    <span>Free Starter Plan</span>
+                    <span>100% Free Platform</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-check-circle"></i>
-                    <span>14-Day Free Trial</span>
+                    <span>No Credit Card Required</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-check-circle"></i>
-                    <span>Plans from 5 OMR/mo</span>
+                    <span>Pay Only When You Print</span>
                 </div>
             </div>
             </p>
@@ -1180,42 +1212,27 @@ HTML;
   "offers": [
     {
       "@type": "Offer",
-      "name": "Starter",
+      "name": "Platform Access",
       "price": "0",
       "priceCurrency": "OMR",
-      "description": "Free forever — up to 3 employees, digital cards with QR vCard, bilingual EN+AR, basic analytics.",
+      "description": "Free forever. Unlimited employees, unlimited templates, digital cards with QR vCard, bilingual EN+AR, analytics, WhatsApp and email share, no credit card required.",
       "availability": "https://schema.org/InStock",
-      "url": "https://cardify.om/get-started"
+      "url": "https://cardify.om/company/register.php"
     },
     {
       "@type": "Offer",
-      "name": "Professional",
-      "price": "5",
+      "name": "Printed Business Cards",
+      "price": "5.000",
       "priceCurrency": "OMR",
       "priceSpecification": {
         "@type": "UnitPriceSpecification",
-        "price": "5",
+        "price": "5.000",
         "priceCurrency": "OMR",
-        "referenceQuantity": { "@type": "QuantitativeValue", "value": "1", "unitCode": "MON" }
+        "referenceQuantity": { "@type": "QuantitativeValue", "value": "100", "unitText": "cards" }
       },
-      "description": "For teams up to 10 employees — custom domain, team templates, printed card ordering, priority support.",
+      "description": "Pay-per-order physical prints from verified Omani print shops. From OMR 5.000 per 100 standard cards, OMR 8.000 premium. Delivery across Oman, auto-invoice to your ERP.",
       "availability": "https://schema.org/InStock",
-      "url": "https://cardify.om/get-started?plan=professional"
-    },
-    {
-      "@type": "Offer",
-      "name": "Business",
-      "price": "15",
-      "priceCurrency": "OMR",
-      "priceSpecification": {
-        "@type": "UnitPriceSpecification",
-        "price": "15",
-        "priceCurrency": "OMR",
-        "referenceQuantity": { "@type": "QuantitativeValue", "value": "1", "unitCode": "MON" }
-      },
-      "description": "For teams up to 50 employees — department management, SSO, advanced analytics, bulk printing discounts.",
-      "availability": "https://schema.org/InStock",
-      "url": "https://cardify.om/get-started?plan=business"
+      "url": "https://cardify.om/company/register.php"
     }
   ]
 }

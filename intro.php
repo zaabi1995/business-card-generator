@@ -7,7 +7,7 @@
 require_once __DIR__ . '/config.php';
 
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
-$pageTitle = 'How Cardify Works — Business Cards in Minutes';
+$pageTitle = 'How Cardify Works, Business Cards in Minutes';
 $pageDescription = 'See how easy it is to design, generate, and share professional business cards with Cardify. Free for all Omani businesses to get started.';
 $canonicalUrl = 'https://cardify.om/intro';
 $basePath = getBasePath();
@@ -275,13 +275,13 @@ $basePath = getBasePath();
                 <!-- Subheadline -->
                 <p class="reveal-up text-xl sm:text-2xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
                     Create a single template and generate professional business cards for your entire team. 
-                    <span class="font-semibold text-gray-900">Free to use</span> — only pay when you print.
+                    <span class="font-semibold text-gray-900">Free to use.</span> Only pay when you print.
                 </p>
                 
                 <!-- CTA Buttons -->
                 <div class="reveal-up flex flex-col sm:flex-row gap-4 justify-center mb-12">
                     <a href="<?php echo $basePath; ?>company/register.php" class="group inline-flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-2xl shadow-xl shadow-blue-500/30 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/40">
-                        <span>Start Creating — It's Free</span>
+                        <span>Start Creating, It's Free</span>
                         <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                     </a>
                     <a href="#journey" class="inline-flex items-center justify-center gap-3 px-8 py-4 bg-white hover:bg-gray-50 text-gray-900 text-lg font-semibold rounded-2xl border-2 border-gray-200 hover:border-blue-300 transition-all">
@@ -692,7 +692,7 @@ $basePath = getBasePath();
                         <span class="text-red-600">Omani SME Companies</span>
                     </h2>
                     <p class="text-xl text-gray-600 mb-8 leading-relaxed">
-                        We understand the unique needs of Omani businesses. That's why we've built a platform that's simple, affordable, and speaks your language — literally.
+                        We understand the unique needs of Omani businesses. That's why we've built a platform that's simple, affordable, and speaks your language, literally.
                     </p>
                     <ul class="space-y-4">
                         <li class="flex items-start gap-3">
@@ -825,6 +825,115 @@ $basePath = getBasePath();
         </div>
     </section>
 
+    <!-- Feature 4: Your card is everywhere -->
+    <section class="py-32 bg-white relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div class="reveal-left">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-full text-amber-600 font-medium text-sm mb-6">
+                        <i class="fa-solid fa-share-nodes"></i>
+                        <span>One Card, Every Channel</span>
+                    </div>
+                    <h2 class="text-4xl sm:text-5xl font-black text-gray-900 mb-6 leading-tight">
+                        Share Your Card<br>
+                        <span class="text-amber-600">Everywhere You Work</span>
+                    </h2>
+                    <p class="text-xl text-gray-600 mb-8 leading-relaxed">
+                        WhatsApp links, QR codes, email signatures, LinkedIn posts, calendar invites, vCard downloads.
+                        One template powers every channel your team uses, without extra work.
+                    </p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3">
+                            <div class="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                                <i class="fa-solid fa-check text-amber-600 text-xs"></i>
+                            </div>
+                            <span class="text-gray-700">WhatsApp share links with a personalised message</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <div class="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                                <i class="fa-solid fa-check text-amber-600 text-xs"></i>
+                            </div>
+                            <span class="text-gray-700">Drop the card into every Gmail and Outlook signature</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <div class="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                                <i class="fa-solid fa-check text-amber-600 text-xs"></i>
+                            </div>
+                            <span class="text-gray-700">Export team cards as a LinkedIn document post</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <div class="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                                <i class="fa-solid fa-check text-amber-600 text-xs"></i>
+                            </div>
+                            <span class="text-gray-700">Auto-sync paid print orders into your ERP as invoices</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="reveal-right">
+                    <div class="relative">
+                        <div class="bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 rounded-3xl p-8 shadow-xl border border-amber-100">
+                            <!-- Centre card with orbiting channel icons -->
+                            <div class="relative flex items-center justify-center" style="min-height: 360px;">
+                                <!-- The card -->
+                                <div class="demo-card bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 rounded-2xl p-5 shadow-2xl z-10" style="width: 240px; aspect-ratio: 3.5/2;">
+                                    <div class="h-full flex flex-col justify-between">
+                                        <div class="text-white/50 text-[10px] tracking-wider uppercase">Your Company</div>
+                                        <div>
+                                            <div class="text-white text-base font-bold">Ahmed Al-Balushi</div>
+                                            <div class="text-white/60 text-xs">Sales Manager</div>
+                                        </div>
+                                        <div class="flex gap-3 text-white/40 text-[10px]">
+                                            <span><i class="fa-solid fa-envelope mr-1"></i>ahmed@co.om</span>
+                                            <span><i class="fa-solid fa-phone mr-1"></i>+968</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Orbiting channel chips -->
+                                <div class="absolute top-0 left-4 bg-white rounded-2xl p-3 shadow-lg flex items-center gap-2 float">
+                                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                        <i class="fa-brands fa-whatsapp text-green-600"></i>
+                                    </div>
+                                    <span class="text-xs font-semibold text-gray-700">WhatsApp</span>
+                                </div>
+                                <div class="absolute top-0 right-4 bg-white rounded-2xl p-3 shadow-lg flex items-center gap-2 float-delayed">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                        <i class="fa-brands fa-linkedin-in text-blue-600"></i>
+                                    </div>
+                                    <span class="text-xs font-semibold text-gray-700">LinkedIn</span>
+                                </div>
+                                <div class="absolute bottom-0 left-0 bg-white rounded-2xl p-3 shadow-lg flex items-center gap-2 float-delayed">
+                                    <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                                        <i class="fa-solid fa-envelope text-red-600"></i>
+                                    </div>
+                                    <span class="text-xs font-semibold text-gray-700">Email Sig</span>
+                                </div>
+                                <div class="absolute bottom-0 right-0 bg-white rounded-2xl p-3 shadow-lg flex items-center gap-2 float">
+                                    <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                        <i class="fa-solid fa-qrcode text-purple-600"></i>
+                                    </div>
+                                    <span class="text-xs font-semibold text-gray-700">QR Code</span>
+                                </div>
+                                <div class="absolute top-1/2 -left-2 -translate-y-1/2 bg-white rounded-2xl p-3 shadow-lg flex items-center gap-2 float">
+                                    <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                        <i class="fa-solid fa-calendar-days text-indigo-600"></i>
+                                    </div>
+                                    <span class="text-xs font-semibold text-gray-700">Calendar</span>
+                                </div>
+                                <div class="absolute top-1/2 -right-2 -translate-y-1/2 bg-white rounded-2xl p-3 shadow-lg flex items-center gap-2 float-delayed">
+                                    <div class="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
+                                        <i class="fa-solid fa-right-left text-teal-600"></i>
+                                    </div>
+                                    <span class="text-xs font-semibold text-gray-700">ERP Sync</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- More Features Grid -->
     <section class="py-24 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -883,6 +992,46 @@ $basePath = getBasePath();
                     </div>
                     <h3 class="text-lg font-bold text-gray-900 mb-2">Analytics Dashboard</h3>
                     <p class="text-gray-600 text-sm">Track card usage, QR scans, and engagement with detailed analytics.</p>
+                </div>
+
+                <div class="reveal-up bg-white rounded-2xl p-6 border border-gray-100 hover:border-teal-200 hover:shadow-xl transition-all group cursor-pointer" style="transition-delay: 0.3s;">
+                    <div class="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-bezier-curve text-xl text-teal-600"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Omani Logo Library</h3>
+                    <p class="text-gray-600 text-sm">Download 2,400+ verified Omani company logos as SVG or PNG, free.</p>
+                </div>
+
+                <div class="reveal-up bg-white rounded-2xl p-6 border border-gray-100 hover:border-indigo-200 hover:shadow-xl transition-all group cursor-pointer" style="transition-delay: 0.35s;">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-globe text-xl text-indigo-600"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Custom Subdomain</h3>
+                    <p class="text-gray-600 text-sm">Host your team cards on yourcompany.cardify.om with your brand.</p>
+                </div>
+
+                <div class="reveal-up bg-white rounded-2xl p-6 border border-gray-100 hover:border-cyan-200 hover:shadow-xl transition-all group cursor-pointer" style="transition-delay: 0.4s;">
+                    <div class="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-right-left text-xl text-cyan-600"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">ERP Sync</h3>
+                    <p class="text-gray-600 text-sm">Paid print orders flow into your ERP as Quote, Invoice, Payment automatically.</p>
+                </div>
+
+                <div class="reveal-up bg-white rounded-2xl p-6 border border-gray-100 hover:border-green-200 hover:shadow-xl transition-all group cursor-pointer" style="transition-delay: 0.45s;">
+                    <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-brands fa-whatsapp text-xl text-green-600"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">WhatsApp Share</h3>
+                    <p class="text-gray-600 text-sm">One-tap share with a pre-written message. The number-one channel in Oman.</p>
+                </div>
+
+                <div class="reveal-up bg-white rounded-2xl p-6 border border-gray-100 hover:border-rose-200 hover:shadow-xl transition-all group cursor-pointer" style="transition-delay: 0.5s;">
+                    <div class="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-envelope-open-text text-xl text-rose-600"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Email Signature</h3>
+                    <p class="text-gray-600 text-sm">Embed a live card in every outgoing email with full contact and QR.</p>
                 </div>
             </div>
         </div>
