@@ -149,7 +149,7 @@ $white = imagecolorallocate($canvas, 255, 255, 255);
 $cream = imagecolorallocate($canvas, 240, 240, 245);
 $accent = imagecolorallocate($canvas, 96, 165, 250); // blue-400
 
-// Font lookup — use first TTF found on system (Inter/DejaVu/Arial fallback)
+// Font lookup, use first TTF found on system (Inter/DejaVu/Arial fallback)
 $fontCandidates = [
     __DIR__ . '/assets/fonts/Inter-Bold.ttf',
     __DIR__ . '/assets/fonts/Inter-SemiBold.ttf',
@@ -163,10 +163,10 @@ foreach ($fontCandidates as $f) {
 }
 
 if ($fontBold) {
-    // Eyebrow (small, accent color) — sector+wilayat / printshop city / blog date
+    // Eyebrow (small, accent color), sector+wilayat / printshop city / blog date
     imagettftext($canvas, 22, 0, 70, 150, $accent, $fontBold, $eyebrow ?: 'CARDIFY');
 
-    // Main company name — auto-shrink font + wrap to fit left 60% in max 2 lines
+    // Main company name, auto-shrink font + wrap to fit left 60% in max 2 lines
     $maxWidth = (int) ($W * 0.58);
     $words = explode(' ', $name);
 
@@ -223,7 +223,7 @@ if ($fontBold) {
     imagettftext($canvas, 20, 0, 70, $H - 60, $cream, $fontBold, 'cardify.om');
     imagettftext($canvas, 16, 0, 70, $H - 35, $cream, $fontBold, $brandLine);
 } else {
-    // No TTF available — fallback to built-in font (ugly but safe)
+    // No TTF available, fallback to built-in font (ugly but safe)
     imagestring($canvas, 5, 70, 200, $name, $white);
     imagestring($canvas, 3, 70, $H - 50, 'cardify.om', $cream);
 }

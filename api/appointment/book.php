@@ -92,7 +92,7 @@ try {
         exit;
     }
 
-    // Client IP via shared helper — honours Cloudflare / proxy headers so we
+    // Client IP via shared helper, honours Cloudflare / proxy headers so we
     // match what other endpoints log. (Codex round-2 Finding 3.)
     $ip = getClientIp();
 
@@ -160,7 +160,7 @@ try {
             } catch (Throwable $e) {
                 $dateLabel = $datePart; $timeLabel = $match['label'] ?? '';
             }
-            $subject = 'New appointment booked — ' . $name . ' on ' . $dateLabel . ' at ' . $timeLabel;
+            $subject = 'New appointment booked, ' . $name . ' on ' . $dateLabel . ' at ' . $timeLabel;
 
             $lines = [];
             $lines[] = '<p>Hi ' . htmlspecialchars($ownerName) . ',</p>';

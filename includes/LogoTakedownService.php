@@ -2,7 +2,7 @@
 require_once __DIR__ . '/LogoLibrary.php';
 
 /**
- * LogoTakedownService — takedown state machine.
+ * LogoTakedownService, takedown state machine.
  *
  * Public submit (rate-limited by IP). Admin decides to hide or reject.
  * Hiding flips om_companies.logo_status to 'takedown' (logo disappears
@@ -39,7 +39,7 @@ class LogoTakedownService {
         // needing an extra column.
         $claimBasis = $fields['claim_basis'];
         if (empty($companyId) && !empty($fields['company_hint'])) {
-            $claimBasis = '[UNMATCHED COMPANY — hint: ' . $fields['company_hint'] . "]\n\n" . $claimBasis;
+            $claimBasis = '[UNMATCHED COMPANY, hint: ' . $fields['company_hint'] . "]\n\n" . $claimBasis;
         }
 
         $pdo->prepare(
@@ -66,7 +66,7 @@ class LogoTakedownService {
         $t = $db->fetchOne("SELECT company_id FROM logo_takedowns WHERE id = :id", [':id' => $takedownId]);
         if (!$t) return ['ok' => false, 'error' => 'Not found'];
 
-        // Unmatched (company_id=0) takedowns can't be "hidden" directly — the target
+        // Unmatched (company_id=0) takedowns can't be "hidden" directly, the target
         // company needs to be resolved first. Refuse here so admins don't silently
         // close unresolved requests thinking they've hidden something.
         if ((int) $t['company_id'] <= 0) {

@@ -67,7 +67,7 @@ class SlackAlert
         self::post(':tada: New Cardify tenant', [
             'Company' => $companyName,
             'Admin'   => $adminEmail,
-            'Phone'   => $adminPhone ?: '—',
+            'Phone'   => $adminPhone ?: ',',
             'Source'  => $source ?: 'web',
         ]);
     }

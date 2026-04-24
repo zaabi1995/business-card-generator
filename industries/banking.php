@@ -1,6 +1,6 @@
 <?php
 /**
- * Cardify — Digital Business Cards for Banks & Finance in Oman / GCC
+ * Cardify, Digital Business Cards for Banks & Finance in Oman / GCC
  *
  * Industry landing page targeting "business cards for banks", "digital
  * cards for bankers", "banking team cards oman gcc" long-tail queries.
@@ -12,7 +12,7 @@
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle       = 'Business Cards for Banks & Finance in Oman + GCC — Cardify';
+$pageTitle       = 'Business Cards for Banks & Finance in Oman + GCC, Cardify';
 $pageDescription = 'Digital business cards for bankers, relationship managers, investment advisors, and finance teams across Oman and the GCC. Bilingual EN/AR, compliance-ready, works for every branch and every RM.';
 $canonicalUrl    = 'https://cardify.om/industries/banking';
 $ogType          = 'website';
@@ -30,22 +30,22 @@ $faq = [
     ],
     [
         'q' => 'Can banks embed their brand assets?',
-        'a' => 'Yes. Each bank gets a locked template — logo, colors, fonts, approved layouts — and RMs can only customize their personal details (name, title, direct line, email, LinkedIn). This keeps the brand intact across hundreds of RMs without central bottlenecks.',
+        'a' => 'Yes. Each bank gets a locked template, logo, colors, fonts, approved layouts, and RMs can only customize their personal details (name, title, direct line, email, LinkedIn). This keeps the brand intact across hundreds of RMs without central bottlenecks.',
     ],
     [
         'q' => 'What about client-sensitive data?',
-        'a' => 'Business cards are public by design — they carry only what an RM would hand out in person. No client records, no account numbers, no portfolio data. Cardify complies with CBO and equivalent GCC regulator guidance on public brand representation.',
+        'a' => 'Business cards are public by design, they carry only what an RM would hand out in person. No client records, no account numbers, no portfolio data. Cardify complies with CBO and equivalent GCC regulator guidance on public brand representation.',
     ],
     [
         'q' => 'How does this compare to a standard printed card for a banker?',
-        'a' => 'Printed cards are still relevant for face-to-face meetings — Cardify produces both. The advantage of the digital card is that when the RM changes branches (common in banking), the client never has an outdated number. Your digital card updates instantly; their printed card from 2019 is the one that gets trashed.',
+        'a' => 'Printed cards are still relevant for face-to-face meetings, Cardify produces both. The advantage of the digital card is that when the RM changes branches (common in banking), the client never has an outdated number. Your digital card updates instantly; their printed card from 2019 is the one that gets trashed.',
     ],
 ];
 
 $serviceLd = [
     '@context' => 'https://schema.org',
     '@type'    => 'Service',
-    'name'     => 'Cardify — Digital Business Cards for Banks & Finance',
+    'name'     => 'Cardify, Digital Business Cards for Banks & Finance',
     'description' => 'Bank-grade digital business cards for relationship managers, advisors, and finance teams in Oman and the GCC. Bilingual EN/AR, brand-locked templates, bulk provisioning.',
     'provider' => ['@type' => 'Organization', 'name' => 'Cardify', 'url' => 'https://cardify.om',
         'address' => ['@type' => 'PostalAddress', 'addressLocality' => 'Muscat', 'addressCountry' => 'OM']],
@@ -125,17 +125,17 @@ require_once INCLUDES_DIR . '/ui-header.php';
           A Cardify digital card updates centrally. When an RM moves from Muscat corporate to Sohar retail, HR updates the title and branch; every existing client who scanned the card gets the new info automatically.
         </p>
         <p>
-          For compliance teams, this also means every public touchpoint a bank employee gives out is on-brand — same logo treatment, same approved title, same approved disclosure footer. No rogue signatures from Outlook, no DIY cards printed at Instant Print.
+          For compliance teams, this also means every public touchpoint a bank employee gives out is on-brand, same logo treatment, same approved title, same approved disclosure footer. No rogue signatures from Outlook, no DIY cards printed at Instant Print.
         </p>
       </div>
     </div>
     <div class="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-6 space-y-3">
       <?php foreach ([
         ['fa-shield-halved',    'Brand-locked templates',  'RMs only edit personal fields; logo, colors, fonts stay under brand team control.'],
-        ['fa-arrows-rotate',    'Instant updates',         'Change a title, a branch, a phone — every client who scanned the card sees the update on their next view.'],
-        ['fa-whatsapp',         'WhatsApp-first for GCC',  'One tap on the card opens a pre-filled WhatsApp chat — the default channel for client comms region-wide.',                'fa-brands'],
+        ['fa-arrows-rotate',    'Instant updates',         'Change a title, a branch, a phone, every client who scanned the card sees the update on their next view.'],
+        ['fa-whatsapp',         'WhatsApp-first for GCC',  'One tap on the card opens a pre-filled WhatsApp chat, the default channel for client comms region-wide.',                'fa-brands'],
         ['fa-chart-line',       'Scan analytics',          'See how many clients viewed each RM card, when, and from where. Actionable for relationship managers.'],
-        ['fa-globe',            'Bilingual EN/AR',         'Every card ships in both languages. Arabic is proper RTL — no font fallback flicker.'],
+        ['fa-globe',            'Bilingual EN/AR',         'Every card ships in both languages. Arabic is proper RTL, no font fallback flicker.'],
         ['fa-users-gear',       'Bulk provisioning',       'Onboard 200 RMs from a spreadsheet. No IT ticket queue.'],
       ] as [$icon, $title, $body, $lib]):
           $lib = $lib ?? 'fa-solid';
@@ -168,7 +168,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         ['Corporate &amp; private banking', 'Corporate RMs visiting clients across Ruwi, Al Khuwair, and MBD hand over cards that update automatically when their desk moves. Private banking teams share cards at Oman Economic Forum and CFA Society Oman events.'],
         ['Investment banking roadshows', 'Teams from Oman Arab Capital, UGB, and Bank Muscat Capital issue event-specific cards with panel-by-panel WhatsApp group links pre-embedded. One QR scan = one introduction.'],
         ['Insurance &amp; brokerage',      'Dhofar Insurance, National Life agents, and licensed brokers on MSX need to share FSA license numbers alongside contact info. Cardify templates embed license display cleanly.'],
-        ['Fintech teams',                  'Startups in the CBO sandbox ship bilingual cards at launch — founder, head of product, head of compliance — all consistent and easy to version.'],
+        ['Fintech teams',                  'Startups in the CBO sandbox ship bilingual cards at launch, founder, head of product, head of compliance, all consistent and easy to version.'],
         ['Event networking',               'Roadshows at Oman Convention Centre or Grand Hyatt: attendees scan a QR at your booth and your card lands in their phone. No business-card stacks lost on the floor.'],
       ] as [$title, $body]): ?>
         <div class="bg-white rounded-xl border border-gray-200 p-5">
@@ -185,7 +185,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
   <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
     <div class="max-w-2xl">
       <span class="text-emerald-700 font-semibold text-sm uppercase tracking-wider">Finance logos library</span>
-      <h2 class="text-3xl font-extrabold text-gray-900 mt-2 mb-2">Omani bank &amp; finance logos — already indexed</h2>
+      <h2 class="text-3xl font-extrabold text-gray-900 mt-2 mb-2">Omani bank &amp; finance logos, already indexed</h2>
       <p class="text-gray-600">Central Bank of Oman Board, Bank Muscat, Oman Investment Authority, Tax Authority, and more. All in SVG / PNG. Free to download for identification use.</p>
     </div>
     <a href="/logos/finance" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold whitespace-nowrap">
@@ -244,7 +244,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
   <p class="text-gray-600 mb-7">Pilot a desk, scale across branches, or deploy group-wide. We'll help onboard your RMs and lock your brand guidelines into every card.</p>
   <div class="flex flex-wrap justify-center gap-3">
     <a href="/get-started" class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg shadow-emerald-600/30 transition">
-      Start free — add your team
+      Start free, add your team
       <i class="fa-solid fa-arrow-right text-xs"></i>
     </a>
     <a href="/tools/email-signature-generator" class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white border border-gray-300 text-gray-800 font-semibold hover:border-emerald-300 hover:text-emerald-700 transition">

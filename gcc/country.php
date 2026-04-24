@@ -1,6 +1,6 @@
 <?php
 /**
- * Cardify — GCC Country Landing Page (shared template)
+ * Cardify, GCC Country Landing Page (shared template)
  *
  * Rewrites:
  *   /gcc/saudi-arabia  → this file with ?country=saudi-arabia
@@ -33,19 +33,19 @@ $countries = [
         'registrar_url'  => 'https://mc.gov.sa',
         'registry_name'  => 'Saudi Business Center',
         'company_count_approx' => '1,200,000',
-        'hero_headline'  => 'Digital business cards for Saudi Arabia — from Riyadh to Jeddah',
-        'hero_sub'       => 'Cardify is building the first GCC-wide digital business card platform. Saudi launch is next — register your company for the Saudi Business Index and get early access to bilingual EN/AR cards tuned for KSA regulations, NFC-ready and Apple Wallet compatible.',
+        'hero_headline'  => 'Digital business cards for Saudi Arabia, from Riyadh to Jeddah',
+        'hero_sub'       => 'Cardify is building the first GCC-wide digital business card platform. Saudi launch is next, register your company for the Saudi Business Index and get early access to bilingual EN/AR cards tuned for KSA regulations, NFC-ready and Apple Wallet compatible.',
         'sectors'        => ['Oil & Gas', 'Banking (SAMA-licensed)', 'Real Estate', 'Retail', 'Technology', 'Healthcare', 'Construction', 'Hospitality'],
         'majors'         => ['Saudi Aramco', 'SABIC', 'Al Rajhi Bank', 'STC', 'SABB', 'Ma\'aden', 'NEOM', 'ROSHN'],
         'value_props'    => [
-            'Vision 2030-aligned — modern, digital-first, NFC and QR on every card',
+            'Vision 2030-aligned, modern, digital-first, NFC and QR on every card',
             'Bilingual Arabic/English, right-to-left layouts native to KSA',
             'Designed for SAMA-regulated bankers, Aramco vendors, NEOM partners',
             'Per-seat pricing in SAR with local invoice compliance',
         ],
         'faq' => [
             ['q' => 'When does Cardify launch in Saudi Arabia?', 'a' => 'We are actively onboarding pilot companies in Riyadh, Jeddah, and Dammam through 2026. Register your company (below) for early access and your logo/name to be added to the Saudi Business Index when it launches.'],
-            ['q' => 'Is Cardify compliant with SAMA and Saudi data residency rules?', 'a' => 'For personal and business contact data, yes — Cardify stores only what you choose to put on your card (public-by-design), which falls outside SAMA sensitive-data categories. We can provide Data Processing Agreements for regulated entities on request.'],
+            ['q' => 'Is Cardify compliant with SAMA and Saudi data residency rules?', 'a' => 'For personal and business contact data, yes, Cardify stores only what you choose to put on your card (public-by-design), which falls outside SAMA sensitive-data categories. We can provide Data Processing Agreements for regulated entities on request.'],
             ['q' => 'Can I get Arabic-first cards for my Saudi team?', 'a' => 'Yes. Every Cardify card renders bilingual EN/AR with correct RTL layout and typography. The Arabic side can be the primary, the English can be the primary, or both sides can mirror.'],
             ['q' => 'Do you integrate with Absher or other Saudi government services?', 'a' => 'Not currently, but our roadmap includes identity verification via Absher once we complete our KSA compliance review. For now, corporate identity verification is handled through CR-number validation against the Ministry of Commerce.'],
         ],
@@ -65,20 +65,20 @@ $countries = [
         'registrar_url'  => 'https://moec.gov.ae',
         'registry_name'  => 'UAE Ministry of Economy',
         'company_count_approx' => '700,000',
-        'hero_headline'  => 'Digital business cards for the UAE — built for Dubai, Abu Dhabi, and every free zone in between',
+        'hero_headline'  => 'Digital business cards for the UAE, built for Dubai, Abu Dhabi, and every free zone in between',
         'hero_sub'       => 'Cardify is expanding into the UAE with bilingual EN/AR digital cards, DIFC-ready Apple Wallet passes, and an Emirates Business Index seeded from MoE data. Perfect for hospitality, real estate, finance, and every free-zone entity.',
         'sectors'        => ['Real Estate', 'Hospitality & Tourism', 'Financial Services (DIFC/ADGM)', 'Trading', 'Logistics', 'Technology', 'Media', 'Oil & Gas (ADNOC ecosystem)'],
         'majors'         => ['Emirates Group', 'ADNOC', 'Emaar', 'DAMAC', 'Mashreq', 'ENBD', 'Etisalat', 'du'],
         'value_props'    => [
-            'Free-zone-friendly — DIFC, DMCC, JAFZA, ADGM all supported',
+            'Free-zone-friendly, DIFC, DMCC, JAFZA, ADGM all supported',
             'Arabic / English / French / Hindi languages on a single card',
             'Apple Wallet + Google Wallet compatible (no app needed)',
             'Per-seat AED pricing with VAT-compliant invoicing',
         ],
         'faq' => [
             ['q' => 'Does Cardify work for DIFC or ADGM regulated entities?', 'a' => 'Yes. Business cards are public-by-design and do not fall under DIFC or ADGM data-subject restrictions. We also provide an optional branded card template for licensed firms so every employee card is compliance-reviewed once.'],
-            ['q' => 'Can I use Cardify on Apple Wallet or Google Wallet in the UAE?', 'a' => 'Yes. Every Cardify card generates an Apple Wallet .pkpass and a Google Wallet pass. Customers scan a QR, tap "Add to Wallet", and the card is on the lock screen — no app install, no friction at a networking event.'],
-            ['q' => 'Is bulk provisioning available for Emirates Group, ADNOC, or similar large employers?', 'a' => 'Absolutely — enterprise pilots are how we prefer to launch in any new market. We ingest your HRIS (Workday, SuccessFactors, custom) and produce cards for 500 or 50,000 employees with brand-locked templates.'],
+            ['q' => 'Can I use Cardify on Apple Wallet or Google Wallet in the UAE?', 'a' => 'Yes. Every Cardify card generates an Apple Wallet .pkpass and a Google Wallet pass. Customers scan a QR, tap "Add to Wallet", and the card is on the lock screen, no app install, no friction at a networking event.'],
+            ['q' => 'Is bulk provisioning available for Emirates Group, ADNOC, or similar large employers?', 'a' => 'Absolutely, enterprise pilots are how we prefer to launch in any new market. We ingest your HRIS (Workday, SuccessFactors, custom) and produce cards for 500 or 50,000 employees with brand-locked templates.'],
             ['q' => 'What about Arabic calligraphy and premium fonts?', 'a' => 'Cardify ships with 40+ premium Arabic fonts including Diwani, Thuluth, and modern sans-serif cuts. We can license a corporate font on request for full brand consistency.'],
         ],
     ],
@@ -97,8 +97,8 @@ $countries = [
         'registrar_url'  => 'https://www.moci.gov.qa',
         'registry_name'  => 'Qatar Single Window',
         'company_count_approx' => '65,000',
-        'hero_headline'  => 'Digital business cards for Qatar — Doha-ready, bilingual, World-Cup-tested',
-        'hero_sub'       => 'Cardify is expanding into Qatar with bilingual EN/AR digital business cards designed for the Qatari business environment — QFC-compliant, QCB-aware, and tuned for the post-2022 global Qatar.',
+        'hero_headline'  => 'Digital business cards for Qatar, Doha-ready, bilingual, World-Cup-tested',
+        'hero_sub'       => 'Cardify is expanding into Qatar with bilingual EN/AR digital business cards designed for the Qatari business environment, QFC-compliant, QCB-aware, and tuned for the post-2022 global Qatar.',
         'sectors'        => ['Oil & Gas (QatarEnergy)', 'Finance (QFC)', 'Construction', 'Hospitality', 'Aviation', 'Government & Defense', 'Real Estate'],
         'majors'         => ['QatarEnergy', 'Qatar Airways', 'QNB', 'Ooredoo', 'Qatar Islamic Bank', 'Barwa Real Estate', 'Qatar Insurance'],
         'value_props'    => [
@@ -108,7 +108,7 @@ $countries = [
             'Per-seat QAR pricing, VAT-ready for 2027 introduction',
         ],
         'faq' => [
-            ['q' => 'Does Cardify work with Qatar Financial Centre firms?', 'a' => 'Yes. QFC firms use Cardify for their relationship managers and advisors — bilingual cards with QFC license numbers on the digital version, brand-locked templates reviewed once by compliance.'],
+            ['q' => 'Does Cardify work with Qatar Financial Centre firms?', 'a' => 'Yes. QFC firms use Cardify for their relationship managers and advisors, bilingual cards with QFC license numbers on the digital version, brand-locked templates reviewed once by compliance.'],
             ['q' => 'Can I print Cardify cards locally in Doha?', 'a' => 'Yes. Our network includes print partners in Doha for on-demand bulk printing. Same PDF goes to our Muscat, Dubai, or Doha partners.'],
         ],
     ],
@@ -127,7 +127,7 @@ $countries = [
         'registrar_url'  => 'https://www.moic.gov.bh',
         'registry_name'  => 'Sijilat',
         'company_count_approx' => '90,000',
-        'hero_headline'  => 'Digital business cards for Bahrain — Sijilat-aware, bilingual, built for the financial hub of the Gulf',
+        'hero_headline'  => 'Digital business cards for Bahrain, Sijilat-aware, bilingual, built for the financial hub of the Gulf',
         'hero_sub'       => 'Cardify is launching in Bahrain with bilingual EN/AR digital business cards, CBB-friendly compliance posture, and a Bahrain Business Index seeded from Sijilat. Perfect for the kingdom\'s finance, insurance, and tech sectors.',
         'sectors'        => ['Financial Services (CBB)', 'Insurance', 'Technology & ICT', 'Manufacturing (Alba)', 'Tourism', 'Real Estate', 'Logistics'],
         'majors'         => ['NBB', 'Ahli United Bank', 'BBK', 'Alba', 'Bapco', 'Batelco', 'GFH', 'Investcorp'],
@@ -138,7 +138,7 @@ $countries = [
             'Per-seat BHD pricing with VAT-compliant invoicing',
         ],
         'faq' => [
-            ['q' => 'Does Cardify support Sijilat CR lookup?', 'a' => 'On the Bahrain Business Index launch, yes — every company card can be cross-linked to its Sijilat CR number, so recipients can verify the company exists in one click.'],
+            ['q' => 'Does Cardify support Sijilat CR lookup?', 'a' => 'On the Bahrain Business Index launch, yes, every company card can be cross-linked to its Sijilat CR number, so recipients can verify the company exists in one click.'],
             ['q' => 'Is Cardify usable by CBB-licensed banks?', 'a' => 'Yes. The nature of a business card (public contact info) falls outside CBB\'s Personal Data Protection Law sensitive categories. We provide DPAs on request.'],
         ],
     ],
@@ -157,7 +157,7 @@ $countries = [
         'registrar_url'  => 'https://www.moci.gov.kw',
         'registry_name'  => 'Kuwait Business Center',
         'company_count_approx' => '180,000',
-        'hero_headline'  => 'Digital business cards for Kuwait — built for KD-priced teams from Ahmadi to Salmiya',
+        'hero_headline'  => 'Digital business cards for Kuwait, built for KD-priced teams from Ahmadi to Salmiya',
         'hero_sub'       => 'Cardify is expanding into Kuwait with bilingual EN/AR digital business cards designed for KPC\'s vendor network, the NBK and CBK-regulated banking sector, and Kuwait\'s diversified trading economy.',
         'sectors'        => ['Oil & Gas (KPC)', 'Banking (CBK-licensed)', 'Trading', 'Real Estate', 'Healthcare', 'Construction', 'Government'],
         'majors'         => ['KPC', 'Kuwait Petroleum', 'NBK', 'KFH', 'Zain', 'Agility', 'Alghanim Industries', 'Americana Group'],
@@ -187,12 +187,12 @@ $countries = [
         'registrar_url'  => 'https://business.gov.om',
         'registry_name'  => 'Oman Commercial Registry',
         'company_count_approx' => '2,414 indexed (full CR: ~260,000)',
-        'hero_headline'  => 'Digital business cards for Oman — live since 2024, powering 2,414 indexed companies',
-        'hero_sub'       => 'Cardify is based in Oman. The Omani Logo Library and Oman Business Index are both live with verified CR data. Start using bilingual EN/AR digital business cards today — used by teams from Muscat to Salalah to Sohar.',
+        'hero_headline'  => 'Digital business cards for Oman, live since 2024, powering 2,414 indexed companies',
+        'hero_sub'       => 'Cardify is based in Oman. The Omani Logo Library and Oman Business Index are both live with verified CR data. Start using bilingual EN/AR digital business cards today, used by teams from Muscat to Salalah to Sohar.',
         'sectors'        => ['Oil & Gas', 'Banking (CBO)', 'Finance & Insurance', 'Real Estate', 'Logistics', 'Tourism', 'Government & Defense', 'Construction'],
         'majors'         => ['PDO', 'OQ', 'Bank Muscat', 'Asyad', 'Ominvest', 'NBO', 'Sohar International', 'Orpic'],
         'value_props'    => [
-            '2,414 Omani companies already in the index — free data download',
+            '2,414 Omani companies already in the index, free data download',
             'Bilingual Arabic/English, tuned for CBO / MoCIIP compliance',
             'Used by bankers, oil & gas, government, and SMEs across all governorates',
             'Per-seat OMR pricing with Paymob integration for local payments',
@@ -246,7 +246,7 @@ $breadcrumbLd = [
 $serviceLd = [
     '@context' => 'https://schema.org',
     '@type'    => 'Service',
-    'name'     => 'Cardify — Digital Business Cards for ' . $c['name'],
+    'name'     => 'Cardify, Digital Business Cards for ' . $c['name'],
     'description' => 'Bilingual Arabic/English digital business card platform for companies and professionals in ' . $c['name'] . '. NFC, QR, Apple Wallet, Google Wallet compatible. Bulk provisioning for enterprises.',
     'provider' => ['@type' => 'Organization', 'name' => 'Cardify', 'url' => 'https://cardify.om'],
     'areaServed' => [

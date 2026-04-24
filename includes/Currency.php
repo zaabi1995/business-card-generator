@@ -1422,7 +1422,7 @@ JS;
     // amounts to any supported display currency via the fx_rates table and
     // resolve the user's preferred display currency.
     //
-    // All rates come from fx_rates — no hardcoded conversion constants.
+    // All rates come from fx_rates, no hardcoded conversion constants.
     // ========================================================================
 
     /** Supported currency whitelist for the display layer. Order matters for the header dropdown. */

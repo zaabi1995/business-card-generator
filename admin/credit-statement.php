@@ -142,7 +142,7 @@ $selfHref = $basePath . 'credit-statement' . $ext;
             <img src="<?= getBasePath() ?>assets/images/logo.svg" alt="Cardify" class="h-8 w-auto brightness-0 invert">
             <div class="<?= $isAr ? 'text-left' : 'text-right' ?>">
                 <p class="text-blue-200 text-xs uppercase tracking-wide"><?= htmlspecialchars(t('credit_statement.doc_title')) ?></p>
-                <p class="font-bold text-lg"><?= htmlspecialchars($account['print_shop_name'] ?? '—') ?></p>
+                <p class="font-bold text-lg"><?= htmlspecialchars($account['print_shop_name'] ?? ',') ?></p>
             </div>
         </div>
         <div class="flex items-end justify-between text-sm">
@@ -193,8 +193,8 @@ $selfHref = $basePath . 'credit-statement' . $ext;
                 <tr>
                     <td class="px-4 py-2.5 text-gray-700"><?= htmlspecialchars(I18n::formatDate(strtotime($t['created_at']))) ?></td>
                     <td class="px-4 py-2.5 text-gray-900 text-xs"><?= htmlspecialchars($desc) ?></td>
-                    <td class="px-4 py-2.5 text-<?= $isAr ? 'left' : 'right' ?> font-mono <?= $isCharge ? 'text-red-600' : 'text-gray-300' ?>"><?= $isCharge ? number_format((float) $t['amount'], 3) : '—' ?></td>
-                    <td class="px-4 py-2.5 text-<?= $isAr ? 'left' : 'right' ?> font-mono <?= $isPay ? 'text-green-700' : 'text-gray-300' ?>"><?= $isPay ? number_format((float) $t['amount'], 3) : '—' ?></td>
+                    <td class="px-4 py-2.5 text-<?= $isAr ? 'left' : 'right' ?> font-mono <?= $isCharge ? 'text-red-600' : 'text-gray-300' ?>"><?= $isCharge ? number_format((float) $t['amount'], 3) : ',' ?></td>
+                    <td class="px-4 py-2.5 text-<?= $isAr ? 'left' : 'right' ?> font-mono <?= $isPay ? 'text-green-700' : 'text-gray-300' ?>"><?= $isPay ? number_format((float) $t['amount'], 3) : ',' ?></td>
                     <td class="px-4 py-2.5 text-<?= $isAr ? 'left' : 'right' ?> font-mono text-gray-900"><?= number_format((float) $t['balance_after'], 3) ?></td>
                 </tr>
             <?php endforeach; ?>
@@ -315,8 +315,8 @@ $selfHref = $basePath . 'credit-statement' . $ext;
                         <tr>
                             <td class="px-4 py-2.5 text-gray-700"><?= htmlspecialchars(I18n::formatDate(strtotime($t['created_at']))) ?></td>
                             <td class="px-4 py-2.5 text-gray-900"><?= htmlspecialchars($desc) ?></td>
-                            <td class="px-4 py-2.5 text-right font-mono <?= $isCharge ? 'text-red-600' : 'text-gray-300' ?>"><?= $isCharge ? number_format((float) $t['amount'], 3) : '—' ?></td>
-                            <td class="px-4 py-2.5 text-right font-mono <?= $isPay ? 'text-green-700' : 'text-gray-300' ?>"><?= $isPay ? number_format((float) $t['amount'], 3) : '—' ?></td>
+                            <td class="px-4 py-2.5 text-right font-mono <?= $isCharge ? 'text-red-600' : 'text-gray-300' ?>"><?= $isCharge ? number_format((float) $t['amount'], 3) : ',' ?></td>
+                            <td class="px-4 py-2.5 text-right font-mono <?= $isPay ? 'text-green-700' : 'text-gray-300' ?>"><?= $isPay ? number_format((float) $t['amount'], 3) : ',' ?></td>
                             <td class="px-4 py-2.5 text-right font-mono text-gray-900"><?= number_format((float) $t['balance_after'], 3) ?></td>
                         </tr>
                     <?php endforeach; ?>

@@ -11,6 +11,6 @@ $body = <<<HTML
     <a href="{$loginUrl}" style="background:#1e40af;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;font-weight:600;">ابدأ تصميم بطاقتك الأولى</a>
   </p>
   <p style="color:#6b7280;font-size:14px;">إن كان لديك أي سؤال، ردّ على هذه الرسالة.</p>
-  <p style="color:#6b7280;font-size:14px;">— فريق كارديفاي</p>
+  <p style="color:#6b7280;font-size:14px;">, فريق كارديفاي</p>
 </div>
 HTML;

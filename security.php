@@ -6,7 +6,7 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle = 'Security — Cardify';
+$pageTitle = 'Security, Cardify';
 $pageDescription = 'Learn how Cardify keeps your business card data safe with enterprise-grade security measures and data protection practices.';
 $canonicalUrl = 'https://cardify.om/security';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';

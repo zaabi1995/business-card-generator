@@ -1,6 +1,6 @@
 <?php
 /**
- * GET /api/logos/stats — aggregated library stats (no PII).
+ * GET /api/logos/stats, aggregated library stats (no PII).
  */
 require_once __DIR__ . '/../../config.php';
 header('Content-Type: application/json');

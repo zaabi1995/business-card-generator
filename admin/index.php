@@ -85,7 +85,7 @@ if ($companyId && DatabaseAdapter::useDatabase()) {
 $primaryColor = $companyTheme['primary_color'] ?? '#2563eb';
 $secondaryColor = $companyTheme['secondary_color'] ?? '#0f3460';
 
-// Logout is handled by logout.php — GET logout removed for CSRF safety
+// Logout is handled by logout.php, GET logout removed for CSRF safety
 
 // Load templates
 $templatesConfig = loadTemplates();
@@ -267,7 +267,7 @@ if ($companyId && DatabaseAdapter::useDatabase()) {
         ) ?: [];
         $companyReferralSource = $companyRow['referral_source'] ?? null;
     } catch (Exception $e) {
-        // legacy installs without `phone` / `phone_backfill_skips` — fall back
+        // legacy installs without `phone` / `phone_backfill_skips`, fall back
         try {
             $companyRow = $db->fetchOne(
                 "SELECT referral_source, onboarding_completed, plan, subscription_status, phone FROM companies WHERE id = :id",
@@ -286,22 +286,22 @@ if ($companyId && DatabaseAdapter::useDatabase()) {
     }
 }
 
-// Phone-capture prompt — shown if admin has no phone on file.
+// Phone-capture prompt, shown if admin has no phone on file.
 // Dismissal: session-scoped suppression (don't re-pop on every page load) +
 // persistent counter on companies.phone_backfill_skips (BHD-224 spec:
-// "dismissible after 3 skips" — once we hit 3, we never show this banner
+// "dismissible after 3 skips", once we hit 3, we never show this banner
 // again for this company).
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'dismiss_phone_prompt') {
     if (validateCSRFToken($_POST['csrf_token'] ?? '')) {
         $_SESSION['phone_prompt_dismissed'] = true;
         if ($companyId) {
             try {
-                // LEAST(...,3) so the counter is bounded — used as a hard suppression cap.
+                // LEAST(...,3) so the counter is bounded, used as a hard suppression cap.
                 $db->getConnection()
                     ->prepare("UPDATE companies SET phone_backfill_skips = LEAST(IFNULL(phone_backfill_skips, 0) + 1, 3) WHERE id = :id")
                     ->execute([':id' => $companyId]);
             } catch (Exception $e) {
-                // Column missing on legacy install — counter just won't persist.
+                // Column missing on legacy install, counter just won't persist.
             }
         }
     }
@@ -368,7 +368,7 @@ if ($isFreePlan && $companyId && DatabaseAdapter::useDatabase()) {
 $showWelcome = ($_GET['welcome'] ?? '') === '1';
 $onboardingCompleted = (int)($companyRow['onboarding_completed'] ?? 0);
 
-// Card view analytics for dashboard widget (always available — proves value)
+// Card view analytics for dashboard widget (always available, proves value)
 $viewsAllTime = 0;
 $views30d = 0;
 $views7d = 0;
@@ -399,7 +399,7 @@ if ($companyId && DatabaseAdapter::useDatabase()) {
     } catch (Exception $e) {}
 }
 
-// Getting started checklist — only for company admins, hidden once all steps done
+// Getting started checklist, only for company admins, hidden once all steps done
 $hasLogo = !empty($companyTheme['logo_path']);
 $hasTemplate = count($frontTemplates) > 0;
 $hasEmployee = $employeeCount > 0;
@@ -434,7 +434,7 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
         if ($referralCode) {
             $referralShareUrl = Referral::shareUrl($referralCode);
             $referralStats = Referral::statsForUser($_SESSION['user_id']);
-            $waMsg = "👋 جربت Cardify مؤخراً — بطاقات أعمال رقمية احترافية في دقائق. جرّبها مجاناً:\n{$referralShareUrl}\n\nI've been using Cardify — digital business cards done right. Free to try:\n{$referralShareUrl}";
+            $waMsg = "👋 جربت Cardify مؤخراً, بطاقات أعمال رقمية احترافية في دقائق. جرّبها مجاناً:\n{$referralShareUrl}\n\nI've been using Cardify, digital business cards done right. Free to try:\n{$referralShareUrl}";
             $referralWhatsAppHref = 'https://wa.me/?text=' . rawurlencode($waMsg);
         }
     } catch (Throwable $e) {
@@ -478,7 +478,7 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
         <input type="hidden" name="action" value="dismiss_phone_prompt">
         <span class="text-[11px] text-blue-700/70">
             <?php if ($adminBackfillSkips > 0): ?>
-                Reminded <?= 3 - $adminBackfillSkips ?> more time<?= ($adminBackfillSkips === 2) ? '' : 's' ?> after this — then we'll stop.
+                Reminded <?= 3 - $adminBackfillSkips ?> more time<?= ($adminBackfillSkips === 2) ? '' : 's' ?> after this, then we'll stop.
             <?php endif; ?>
         </span>
         <button type="submit" class="text-xs text-blue-600 hover:text-blue-800 underline">
@@ -663,7 +663,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 <?php elseif ($hasEmployee && !$hasGeneratedCard && $onboardingCompleted && $currentRole !== 'super_admin'): ?>
 <?php $batchExt = defined('COMPANY_ADMIN_BASE') ? '' : '.php'; ?>
 <?php if (!$hasTemplate): ?>
-<!-- Has employees, no template — point to template editor first -->
+<!-- Has employees, no template, point to template editor first -->
 <div class="mb-6 rounded-2xl p-5 text-white shadow-lg flex items-center justify-between gap-4" id="generate-cards-nudge" style="background:linear-gradient(to right,#7c3aed,#6366f1);">
     <div class="flex items-center gap-4">
         <div class="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
@@ -684,7 +684,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
     </div>
 </div>
 <?php else: ?>
-<!-- Has employees + template but no cards generated — generate nudge -->
+<!-- Has employees + template but no cards generated, generate nudge -->
 <div class="mb-6 rounded-2xl p-5 text-white shadow-lg flex items-center justify-between gap-4" id="generate-cards-nudge" style="background:linear-gradient(to right,#16a34a,#10b981);">
     <div class="flex items-center gap-4">
         <div class="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
@@ -1188,7 +1188,7 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                 <!-- Quick Start: Background Color -->
                 <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fa-solid fa-palette mr-1"></i> Quick Start — Pick a Background Color
+                        <i class="fa-solid fa-palette mr-1"></i> Quick Start, Pick a Background Color
                         <span class="text-xs font-normal text-gray-500 ml-1">(generates a solid-color card instantly)</span>
                     </label>
                     <div class="flex items-center gap-3 flex-wrap">

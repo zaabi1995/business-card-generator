@@ -229,7 +229,7 @@ adminHeader('Super Admin Dashboard', 'dashboard');
             </div>
             <div>
                 <p class="font-semibold text-gray-900">LinkedIn Carousels</p>
-                <p class="text-sm text-gray-500">Generated daily — copy &amp; post manually</p>
+                <p class="text-sm text-gray-500">Generated daily, copy &amp; post manually</p>
             </div>
         </a>
         <a href="../whatsapp_settings.php" class="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50">

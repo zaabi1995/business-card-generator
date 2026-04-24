@@ -1,6 +1,6 @@
 <?php
 /**
- * GET /api/logos/list — public paginated list of indexed+verified logos.
+ * GET /api/logos/list, public paginated list of indexed+verified logos.
  *
  * Query params: page, per_page (max 100), sector, wilayat, verified (1)
  * Rate limit: 60 req/min/IP via rate_limits table.
@@ -14,7 +14,7 @@ header('X-Attribution: cardify.om/logos');
 $db  = Database::getInstance();
 $pdo = $db->getConnection();
 
-// Rate limit — use real client IP (handles Cloudflare / reverse proxies).
+// Rate limit, use real client IP (handles Cloudflare / reverse proxies).
 $ip     = getClientIp();
 $bucket = (int) floor(time() / 60);
 $pdo->prepare(

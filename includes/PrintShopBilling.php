@@ -181,7 +181,7 @@ class PrintShopBilling {
             return ['error' => 'File too large. Maximum 5MB'];
         }
 
-        // Real MIME detection — never trust $_FILES['type'] (client-controlled).
+        // Real MIME detection, never trust $_FILES['type'] (client-controlled).
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
         $realMime = $finfo->file($file['tmp_name'] ?? '');
         $mimeToExt = [

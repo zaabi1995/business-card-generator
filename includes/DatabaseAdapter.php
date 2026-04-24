@@ -329,11 +329,12 @@ class DatabaseAdapter {
     }
 
     /**
-     * Pro-tier gate for the "hide Made with Cardify footer" flag.
+     * Server-side gate for the "hide Made with Cardify footer" flag.
      *
-     * The checkbox is rendered only for paid plans, but do NOT trust the client —
-     * an attacker could flip the hidden field on a free plan. We validate the
-     * company's plan server-side via Billing::hasFeature(custom_branding).
+     * Retained from the tier model. Cardify's policy is that branding
+     * always renders, so this gate is a safety net and should normally
+     * return false for every company. Still validated server-side via
+     * Billing::hasFeature(custom_branding) to resist client tampering.
      *
      * Free plans always return 0 (footer stays on), regardless of input.
      */
@@ -407,7 +408,7 @@ class DatabaseAdapter {
             'qr_redirect_url' => self::sanitizeQrRedirectUrl($data['qr_redirect_url'] ?? null),
             'card_dark_mode_toggle' => self::normalizeBoolFlag($data['card_dark_mode_toggle'] ?? 1, 1),
             // Pro-tier only: hide "Made with Cardify" viral footer. Free plans
-            // always get 0 regardless of what the form posted — server-side gate.
+            // always get 0 regardless of what the form posted, server-side gate.
             'hide_cardify_branding' => self::resolveHideCardifyBranding($data['hide_cardify_branding'] ?? 0, $companyId),
             'created_at' => date('Y-m-d H:i:s')
         ];

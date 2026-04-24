@@ -9,7 +9,7 @@
  *   ['en' => '...', 'ar' => '...', 'type' => 'ministry' | 'authority' | 'sovereign' | 'soe']
  *
  * Content is factual and scoped to 70-130 words EN / 55-100 words AR.
- * No marketing fluff, no AI filler. Accuracy > embellishment — if a fact
+ * No marketing fluff, no AI filler. Accuracy > embellishment, if a fact
  * isn't certain, it's omitted.
  *
  * SEO intent: each summary targets "{entity} Oman", "{entity} mandate",
@@ -22,7 +22,7 @@ return [
 
     'Oman Investment Authority' => [
         'type' => 'sovereign',
-        'en' => "Oman Investment Authority (OIA) is the sovereign wealth fund of the Sultanate of Oman, established by Royal Decree in June 2020 through the merger of the State General Reserve Fund and the Oman Investment Fund. OIA manages the government's commercial assets at home and abroad — spanning energy (OQ), logistics (Asyad), telecommunications (Omantel), financial services, real estate, and emerging sectors. It operates under direct oversight of the Council of Ministers with a mandate to deliver risk-adjusted returns and support Oman Vision 2040. Headquartered in Muscat's Muscat Business District (MBD).",
+        'en' => "Oman Investment Authority (OIA) is the sovereign wealth fund of the Sultanate of Oman, established by Royal Decree in June 2020 through the merger of the State General Reserve Fund and the Oman Investment Fund. OIA manages the government's commercial assets at home and abroad, spanning energy (OQ), logistics (Asyad), telecommunications (Omantel), financial services, real estate, and emerging sectors. It operates under direct oversight of the Council of Ministers with a mandate to deliver risk-adjusted returns and support Oman Vision 2040. Headquartered in Muscat's Muscat Business District (MBD).",
         'ar' => "جهاز الاستثمار العُماني هو الصندوق السيادي لسلطنة عُمان، تأسس بموجب مرسوم سلطاني في يونيو 2020 بدمج صندوق الاحتياطي العام للدولة وصندوق عُمان الاستثماري. يدير الجهاز الأصول التجارية للحكومة محلياً ودولياً، وتشمل محفظته قطاعات الطاقة (OQ) والخدمات اللوجستية (أسياد) والاتصالات (عُمانتل) والخدمات المالية والعقارات والقطاعات الناشئة. مقره الرئيسي في منطقة الأعمال المركزية بمسقط ويرفع تقاريره لمجلس الوزراء.",
     ],
 
@@ -72,8 +72,8 @@ return [
 
     'Ministry of Agriculture, Fisheries and Water Resources' => [
         'type' => 'ministry',
-        'en' => "The Ministry of Agriculture, Fisheries and Water Resources oversees Oman's food security agenda, fisheries management, agricultural extension, veterinary services, and water-resource planning — including Oman's traditional aflaj irrigation system, aquifer management, and desalination coordination. It licenses commercial fishing, runs agricultural research stations, and supports the development of Oman's seafood export sector (notably shrimp, kingfish, and tuna). Headquartered in Muscat.",
-        'ar' => "وزارة الثروة الزراعية والسمكية وموارد المياه تُشرف على منظومة الأمن الغذائي، وإدارة الثروة السمكية، والإرشاد الزراعي، والخدمات البيطرية، وتخطيط الموارد المائية — بما فيها نظام الأفلاج التقليدي وإدارة طبقات المياه الجوفية. تُرخّص الصيد التجاري وتدير مراكز البحث الزراعي وتدعم قطاع الصادرات السمكية. مقرها الرئيسي في مسقط.",
+        'en' => "The Ministry of Agriculture, Fisheries and Water Resources oversees Oman's food security agenda, fisheries management, agricultural extension, veterinary services, and water-resource planning, including Oman's traditional aflaj irrigation system, aquifer management, and desalination coordination. It licenses commercial fishing, runs agricultural research stations, and supports the development of Oman's seafood export sector (notably shrimp, kingfish, and tuna). Headquartered in Muscat.",
+        'ar' => "وزارة الثروة الزراعية والسمكية وموارد المياه تُشرف على منظومة الأمن الغذائي، وإدارة الثروة السمكية، والإرشاد الزراعي، والخدمات البيطرية، وتخطيط الموارد المائية, بما فيها نظام الأفلاج التقليدي وإدارة طبقات المياه الجوفية. تُرخّص الصيد التجاري وتدير مراكز البحث الزراعي وتدعم قطاع الصادرات السمكية. مقرها الرئيسي في مسقط.",
     ],
 
     'Ministry of Commerce, Industry and Investment Promotion' => [
@@ -90,7 +90,7 @@ return [
 
     'Ministry of Defence' => [
         'type' => 'ministry',
-        'en' => "The Ministry of Defence administers the Sultan's Armed Forces — the Royal Army of Oman, Royal Navy of Oman, Royal Air Force of Oman, and Sultan's Special Force — handling procurement, logistics, personnel policy, strategic planning, and coordination with allied forces. It operates training academies including the Sultan Qaboos Military Academy and the Command and Staff College. Headquartered in Muscat.",
+        'en' => "The Ministry of Defence administers the Sultan's Armed Forces, the Royal Army of Oman, Royal Navy of Oman, Royal Air Force of Oman, and Sultan's Special Force, handling procurement, logistics, personnel policy, strategic planning, and coordination with allied forces. It operates training academies including the Sultan Qaboos Military Academy and the Command and Staff College. Headquartered in Muscat.",
         'ar' => "وزارة الدفاع تُشرف على قوات السلطان المسلحة (الجيش السلطاني العُماني، البحرية السلطانية العُمانية، سلاح الجو السلطاني العُماني، قوة السلطان الخاصة) وتتولى التموين واللوجستيات وسياسات الأفراد والتخطيط الاستراتيجي. تدير أكاديميات التدريب العسكرية. مقرها الرئيسي في مسقط.",
     ],
 
@@ -102,8 +102,8 @@ return [
 
     'Ministry of Education' => [
         'type' => 'ministry',
-        'en' => "The Ministry of Education oversees pre-primary, primary, and secondary education across Oman — including the public school system, curriculum development, teacher training, and the International Baccalaureate-aligned diploma track in select schools. It manages thousands of government schools in the 11 governorates and supervises private schools. Headquartered in Muscat.",
-        'ar' => "وزارة التربية والتعليم تُشرف على التعليم قبل المدرسي والأساسي والثانوي في سلطنة عُمان — نظام المدارس الحكومية وتطوير المناهج وتدريب المعلمين. تدير آلاف المدارس الحكومية في المحافظات الإحدى عشرة وتشرف على المدارس الخاصة. مقرها الرئيسي في مسقط.",
+        'en' => "The Ministry of Education oversees pre-primary, primary, and secondary education across Oman, including the public school system, curriculum development, teacher training, and the International Baccalaureate-aligned diploma track in select schools. It manages thousands of government schools in the 11 governorates and supervises private schools. Headquartered in Muscat.",
+        'ar' => "وزارة التربية والتعليم تُشرف على التعليم قبل المدرسي والأساسي والثانوي في سلطنة عُمان, نظام المدارس الحكومية وتطوير المناهج وتدريب المعلمين. تدير آلاف المدارس الحكومية في المحافظات الإحدى عشرة وتشرف على المدارس الخاصة. مقرها الرئيسي في مسقط.",
     ],
 
     'Ministry of Endowments and Religious Affairs' => [
@@ -120,8 +120,8 @@ return [
 
     'Ministry of Finance' => [
         'type' => 'ministry',
-        'en' => "The Ministry of Finance is responsible for Oman's public finances — preparing the annual state budget, managing public debt and sovereign borrowing, administering government accounts, and overseeing financial relations with multilateral institutions (IMF, World Bank, GCC Development Fund). It coordinates with the Central Bank of Oman on fiscal-monetary alignment and reports on quarterly revenue/expenditure performance. Headquartered in Muscat.",
-        'ar' => "وزارة المالية مسؤولة عن المالية العامة لسلطنة عُمان — إعداد الميزانية السنوية للدولة، وإدارة الدين العام والاقتراض السيادي، وإدارة الحسابات الحكومية، والإشراف على العلاقات المالية مع المؤسسات الدولية (صندوق النقد الدولي، البنك الدولي). مقرها الرئيسي في مسقط.",
+        'en' => "The Ministry of Finance is responsible for Oman's public finances, preparing the annual state budget, managing public debt and sovereign borrowing, administering government accounts, and overseeing financial relations with multilateral institutions (IMF, World Bank, GCC Development Fund). It coordinates with the Central Bank of Oman on fiscal-monetary alignment and reports on quarterly revenue/expenditure performance. Headquartered in Muscat.",
+        'ar' => "وزارة المالية مسؤولة عن المالية العامة لسلطنة عُمان, إعداد الميزانية السنوية للدولة، وإدارة الدين العام والاقتراض السيادي، وإدارة الحسابات الحكومية، والإشراف على العلاقات المالية مع المؤسسات الدولية (صندوق النقد الدولي، البنك الدولي). مقرها الرئيسي في مسقط.",
     ],
 
     'Ministry of Foreign Affairs' => [
@@ -132,8 +132,8 @@ return [
 
     'Ministry of Health' => [
         'type' => 'ministry',
-        'en' => "The Ministry of Health runs Oman's public healthcare system — hospitals, primary care centers, preventive health programs, disease surveillance, and pharmaceutical regulation. It operates major referral hospitals including the Royal Hospital, the Khoula Hospital, and regional tertiary facilities across the governorates. The Ministry handled Oman's COVID-19 response and vaccination rollout and runs national programs for maternal health, diabetes, and cardiovascular disease. Headquartered in Muscat.",
-        'ar' => "وزارة الصحة تُدير منظومة الرعاية الصحية الحكومية في سلطنة عُمان — المستشفيات ومراكز الرعاية الأولية وبرامج الصحة الوقائية ومراقبة الأمراض وتنظيم الأدوية. تُشغّل المستشفيات المرجعية الكبرى كالمستشفى السلطاني ومستشفى خولة والمستشفيات المرجعية في المحافظات. مقرها الرئيسي في مسقط.",
+        'en' => "The Ministry of Health runs Oman's public healthcare system, hospitals, primary care centers, preventive health programs, disease surveillance, and pharmaceutical regulation. It operates major referral hospitals including the Royal Hospital, the Khoula Hospital, and regional tertiary facilities across the governorates. The Ministry handled Oman's COVID-19 response and vaccination rollout and runs national programs for maternal health, diabetes, and cardiovascular disease. Headquartered in Muscat.",
+        'ar' => "وزارة الصحة تُدير منظومة الرعاية الصحية الحكومية في سلطنة عُمان, المستشفيات ومراكز الرعاية الأولية وبرامج الصحة الوقائية ومراقبة الأمراض وتنظيم الأدوية. تُشغّل المستشفيات المرجعية الكبرى كالمستشفى السلطاني ومستشفى خولة والمستشفيات المرجعية في المحافظات. مقرها الرئيسي في مسقط.",
     ],
 
     'Ministry of Heritage and Tourism' => [
@@ -144,8 +144,8 @@ return [
 
     'Ministry of Higher Education, Research and Innovation' => [
         'type' => 'ministry',
-        'en' => "The Ministry of Higher Education, Research and Innovation (MoHERI) supervises Oman's universities, colleges of technology, and research institutions — including Sultan Qaboos University, the University of Technology and Applied Sciences, and private universities. It administers the national scholarship program, manages research funding through The Research Council legacy portfolio, and sets innovation policy aligned with Oman Vision 2040. Headquartered in Muscat.",
-        'ar' => "وزارة التعليم العالي والبحث العلمي والابتكار تُشرف على الجامعات وكليات التقنية ومؤسسات البحث في سلطنة عُمان — بما فيها جامعة السلطان قابوس وجامعة التقنية والعلوم التطبيقية والجامعات الخاصة. تدير برنامج البعثات الوطني وتموّل البحث العلمي. مقرها الرئيسي في مسقط.",
+        'en' => "The Ministry of Higher Education, Research and Innovation (MoHERI) supervises Oman's universities, colleges of technology, and research institutions, including Sultan Qaboos University, the University of Technology and Applied Sciences, and private universities. It administers the national scholarship program, manages research funding through The Research Council legacy portfolio, and sets innovation policy aligned with Oman Vision 2040. Headquartered in Muscat.",
+        'ar' => "وزارة التعليم العالي والبحث العلمي والابتكار تُشرف على الجامعات وكليات التقنية ومؤسسات البحث في سلطنة عُمان, بما فيها جامعة السلطان قابوس وجامعة التقنية والعلوم التطبيقية والجامعات الخاصة. تدير برنامج البعثات الوطني وتموّل البحث العلمي. مقرها الرئيسي في مسقط.",
     ],
 
     'Ministry of Information' => [
@@ -156,8 +156,8 @@ return [
 
     'Ministry of Interior' => [
         'type' => 'ministry',
-        'en' => "The Ministry of Interior is responsible for Oman's civil administration at the governorate level — including coordinating with walis (governors) and their deputies, elections logistics for the Majlis Al-Shura and municipal councils, and tribal and community affairs. It works alongside but separate from the Royal Oman Police. Headquartered in Muscat.",
-        'ar' => "وزارة الداخلية مسؤولة عن الإدارة المدنية على مستوى المحافظات في سلطنة عُمان — التنسيق مع الولاة ونوابهم، وتنظيم انتخابات مجلس الشورى والمجالس البلدية، والشؤون القبلية والمجتمعية. مقرها الرئيسي في مسقط.",
+        'en' => "The Ministry of Interior is responsible for Oman's civil administration at the governorate level, including coordinating with walis (governors) and their deputies, elections logistics for the Majlis Al-Shura and municipal councils, and tribal and community affairs. It works alongside but separate from the Royal Oman Police. Headquartered in Muscat.",
+        'ar' => "وزارة الداخلية مسؤولة عن الإدارة المدنية على مستوى المحافظات في سلطنة عُمان, التنسيق مع الولاة ونوابهم، وتنظيم انتخابات مجلس الشورى والمجالس البلدية، والشؤون القبلية والمجتمعية. مقرها الرئيسي في مسقط.",
     ],
 
     'Ministry of Justice and Legal Affairs' => [
@@ -194,8 +194,8 @@ return [
 
     'ASYAD Group' => [
         'type' => 'soe',
-        'en' => "ASYAD Group is Oman's integrated logistics holding, wholly owned by the Oman Investment Authority. It consolidates the Sultanate's port, free-zone, shipping, dry-port, and freight operations — including Port of Sohar, Port of Duqm, Port of Salalah (through a partnership), Oman Shipping Company, Oman Dry Dock, and Asyad Shipping. Established in 2016 to create a single platform aligned with Oman's strategy to become a global logistics hub. Headquartered in Muscat Business District.",
-        'ar' => "مجموعة أسياد هي الشركة القابضة المتكاملة للخدمات اللوجستية في سلطنة عُمان، ومملوكة بالكامل لجهاز الاستثمار العُماني. تُوحّد محفظة الموانئ والمناطق الحرة والشحن والموانئ الجافة في السلطنة — تشمل ميناء صحار وميناء الدقم وميناء صلالة (بالشراكة) والشركة العُمانية للشحن البحري وحوض عُمان الجاف. تأسست عام 2016. مقرها الرئيسي في منطقة الأعمال المركزية بمسقط.",
+        'en' => "ASYAD Group is Oman's integrated logistics holding, wholly owned by the Oman Investment Authority. It consolidates the Sultanate's port, free-zone, shipping, dry-port, and freight operations, including Port of Sohar, Port of Duqm, Port of Salalah (through a partnership), Oman Shipping Company, Oman Dry Dock, and Asyad Shipping. Established in 2016 to create a single platform aligned with Oman's strategy to become a global logistics hub. Headquartered in Muscat Business District.",
+        'ar' => "مجموعة أسياد هي الشركة القابضة المتكاملة للخدمات اللوجستية في سلطنة عُمان، ومملوكة بالكامل لجهاز الاستثمار العُماني. تُوحّد محفظة الموانئ والمناطق الحرة والشحن والموانئ الجافة في السلطنة, تشمل ميناء صحار وميناء الدقم وميناء صلالة (بالشراكة) والشركة العُمانية للشحن البحري وحوض عُمان الجاف. تأسست عام 2016. مقرها الرئيسي في منطقة الأعمال المركزية بمسقط.",
     ],
 
     'Sohar Port and Freezone' => [

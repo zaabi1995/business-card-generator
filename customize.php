@@ -83,7 +83,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div id="canvas-wrap" class="flex justify-center">
                     <canvas id="fabric-canvas"></canvas>
                 </div>
-                <p class="text-xs text-gray-400 text-center mt-3">Preview only — actual print may vary slightly</p>
+                <p class="text-xs text-gray-400 text-center mt-3">Preview only, actual print may vary slightly</p>
             </div>
         </div>
 

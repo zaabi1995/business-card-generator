@@ -1,6 +1,6 @@
 <?php
 /**
- * GET /api/logos/sectors — sector index with counts.
+ * GET /api/logos/sectors, sector index with counts.
  */
 require_once __DIR__ . '/../../config.php';
 header('Content-Type: application/json');

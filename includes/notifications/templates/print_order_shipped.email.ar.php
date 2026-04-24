@@ -20,6 +20,6 @@ $body = <<<HTML
   <p>مرحباً {$name}،</p>
   <p>تمّ شحن طلبك <strong>{$orderNumber}</strong> مع {$carrier}.</p>
   {$trackingBlock}
-  <p style="color:#6b7280;font-size:14px;">— فريق كارديفاي</p>
+  <p style="color:#6b7280;font-size:14px;">, فريق كارديفاي</p>
 </div>
 HTML;

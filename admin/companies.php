@@ -42,7 +42,7 @@ if (empty($plans)) {
     ];
 }
 
-// Get currencies from plan_prices or use defaults (OMR first — Oman-first product)
+// Get currencies from plan_prices or use defaults (OMR first, Oman-first product)
 $currencies = ['OMR', 'USD', 'AED', 'SAR', 'EUR'];
 if ($useDatabase) {
     try {

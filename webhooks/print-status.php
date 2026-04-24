@@ -91,7 +91,7 @@ try {
             exit;
         }
     } else {
-        // No secret configured — reject unauthenticated webhooks
+        // No secret configured, reject unauthenticated webhooks
         error_log("Print Webhook: No webhook secret configured for order {$orderId} (print_shop_id: " . ($order['print_shop_id'] ?? 'null') . "). Rejecting.");
         http_response_code(401);
         echo json_encode(['error' => 'Webhook authentication not configured. Set a webhook secret in print shop settings or PRINT_WEBHOOK_SECRET in config.']);

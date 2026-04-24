@@ -16,6 +16,6 @@ $body = <<<HTML
     <div style="font-size:14px;color:#6b7280;margin-top:4px;">{$omrAmount}</div>
   </div>
   <p>We will confirm once payment clears.</p>
-  <p style="color:#6b7280;font-size:14px;">— The Cardify Team</p>
+  <p style="color:#6b7280;font-size:14px;">, The Cardify Team</p>
 </div>
 HTML;

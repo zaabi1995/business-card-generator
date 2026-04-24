@@ -1,6 +1,6 @@
 <?php
 /**
- * Super Admin — Logo Library analytics.
+ * Super Admin, Logo Library analytics.
  * Downloads/day chart, top 20 downloaded, claim funnel summary.
  */
 require_once __DIR__ . '/../../../config.php';

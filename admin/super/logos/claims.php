@@ -1,6 +1,6 @@
 <?php
 /**
- * Super Admin — Pending claim review queue.
+ * Super Admin, Pending claim review queue.
  */
 require_once __DIR__ . '/../../../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
@@ -48,7 +48,7 @@ function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
              class="font-semibold underline"><?= esc($r['company_name']) ?></a>
           <div class="text-sm text-gray-600 mt-1">
             Claimant: <?= esc($r['user_email']) ?> ·
-            Role: <?= esc($r['role_at_company'] ?: '—') ?> ·
+            Role: <?= esc($r['role_at_company'] ?: ',') ?> ·
             Proof: <?= esc($r['proof_type']) ?>
           </div>
           <?php if ($r['proof_url']): ?>

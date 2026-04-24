@@ -1,27 +1,27 @@
 <?php
 /**
- * Cardify — Digital Business Cards for Government & Public Sector in Oman / GCC
+ * Cardify, Digital Business Cards for Government & Public Sector in Oman / GCC
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle       = 'Business Cards for Government Teams in Oman + GCC — Cardify';
+$pageTitle       = 'Business Cards for Government Teams in Oman + GCC, Cardify';
 $pageDescription = 'Bilingual digital business cards for ministries, authorities, and public-sector teams in Oman and the GCC. Omanization-friendly, brand-compliant, built to regional standards.';
 $canonicalUrl    = 'https://cardify.om/industries/government';
 $brandName       = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 $showNavigation  = true;
 
 $faq = [
-    ['q' => 'Is this approved for government use?',         'a' => 'Cardify hosts public-facing identity only — name, title, official phone, work email, department. Nothing classified, nothing restricted. That keeps the tool compatible with every GCC government\'s public-representation guidelines.'],
+    ['q' => 'Is this approved for government use?',         'a' => 'Cardify hosts public-facing identity only, name, title, official phone, work email, department. Nothing classified, nothing restricted. That keeps the tool compatible with every GCC government\'s public-representation guidelines.'],
     ['q' => 'How do ministries control branding?',          'a' => 'Each entity uploads its approved logo, colors, and title list once. Employees can only customize their own name, title (from an approved list), and direct contact info. The sultanate emblem or equivalent stays untouched.'],
     ['q' => 'Can employees keep personal data private?',    'a' => 'Yes. All fields are optional per-employee. Direct phone is common, personal mobile is opt-in, social handles are opt-in.'],
     ['q' => 'Does it support Arabic-first presentation?',   'a' => 'Every card ships bilingual with a locale toggle. Ministries often default to Arabic-first with English as the secondary pane.'],
-    ['q' => 'Are our ministry logos in your library?',      'a' => 'Yes — all 19 Omani ministries plus OIA, CBO, Tax Authority, NCSI, and related sovereign bodies are indexed in the Omani Logo Library with curated bilingual summaries.'],
+    ['q' => 'Are our ministry logos in your library?',      'a' => 'Yes, all 19 Omani ministries plus OIA, CBO, Tax Authority, NCSI, and related sovereign bodies are indexed in the Omani Logo Library with curated bilingual summaries.'],
 ];
 
 $serviceLd = [
     '@context' => 'https://schema.org', '@type' => 'Service',
-    'name' => 'Cardify — Digital Business Cards for Government Teams',
+    'name' => 'Cardify, Digital Business Cards for Government Teams',
     'provider' => ['@type' => 'Organization', 'name' => 'Cardify', 'url' => 'https://cardify.om'],
     'areaServed' => [['@type' => 'Country', 'name' => 'Oman'], ['@type' => 'Country', 'name' => 'Saudi Arabia'], ['@type' => 'Country', 'name' => 'UAE'], ['@type' => 'Country', 'name' => 'Qatar'], ['@type' => 'Country', 'name' => 'Bahrain'], ['@type' => 'Country', 'name' => 'Kuwait']],
     'serviceType' => 'Digital Business Card Platform',
@@ -71,7 +71,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
       <span class="text-slate-700 font-semibold text-sm uppercase tracking-wider">Why government teams use this</span>
       <h2 class="text-3xl font-extrabold text-gray-900 mt-2 mb-5">Protocol-first identity, not marketing gimmick</h2>
       <div class="space-y-4 text-gray-700 leading-relaxed">
-        <p>Public-sector identity is different from commercial branding. The sultanate emblem on the card — the khanjar and crossed swords — is a constitutional symbol, not a logo. It needs to appear exactly right, in exactly the approved composition, every time.</p>
+        <p>Public-sector identity is different from commercial branding. The sultanate emblem on the card, the khanjar and crossed swords, is a constitutional symbol, not a logo. It needs to appear exactly right, in exactly the approved composition, every time.</p>
         <p>Cardify's government templates lock the visual identity of each ministry: the emblem, the bilingual name, the standard disclaimer footer. Employees edit their name, title (from the approved HR list), and contact info. The mark stays untouched.</p>
         <p>The result: a protocol-compliant card that still modernizes the citizen-facing experience. A visitor meeting with an authority leaves with the official a QR on their phone, not a crumpled card in a pocket.</p>
       </div>
@@ -79,11 +79,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <div class="bg-gradient-to-br from-slate-50 to-stone-50 rounded-2xl p-6 space-y-3">
       <?php foreach ([
         ['fa-landmark',       'Protocol-compliant',         'Sultanate emblem / national emblem locked in correct composition. No DIY variants.'],
-        ['fa-people-roof',    'Title hierarchy',            'Approved HR title list — employees can only pick from it, not invent roles.'],
+        ['fa-people-roof',    'Title hierarchy',            'Approved HR title list, employees can only pick from it, not invent roles.'],
         ['fa-language',       'Arabic-first',               'Default locale is Arabic; English is secondary. RTL rendering is proper, not an afterthought.'],
         ['fa-qrcode',         'Citizen touchpoint',         'A single QR replaces the paper card for citizens visiting authorities.'],
         ['fa-shield-halved',  'Public data only',           'No classified or restricted information stored. Card carries only what is already public.'],
-        ['fa-download',       'Standard exports',           'PDF, vCard, Apple/Google Wallet pass — every channel a ministry already uses.'],
+        ['fa-download',       'Standard exports',           'PDF, vCard, Apple/Google Wallet pass, every channel a ministry already uses.'],
       ] as [$icon, $title, $body]): ?>
         <div class="flex items-start gap-4 p-3 rounded-xl bg-white">
           <div class="w-10 h-10 rounded-lg bg-slate-200 flex items-center justify-center flex-shrink-0">
@@ -103,7 +103,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
   <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
     <div class="max-w-2xl">
       <span class="text-slate-700 font-semibold text-sm uppercase tracking-wider">Government &amp; defense library</span>
-      <h2 class="text-3xl font-extrabold text-gray-900 mt-2 mb-2">Omani ministry logos — curated</h2>
+      <h2 class="text-3xl font-extrabold text-gray-900 mt-2 mb-2">Omani ministry logos, curated</h2>
       <p class="text-gray-600">All 19 ministries + OIA, CBO, Tax Authority, NCSI, Oman Vision 2040 Unit. Each with curated bilingual summaries. PNG and SVG.</p>
     </div>
     <a href="/logos/government-defense" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-800 text-white font-semibold whitespace-nowrap">

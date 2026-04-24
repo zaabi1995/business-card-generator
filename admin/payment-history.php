@@ -1,6 +1,6 @@
 <?php
 /**
- * Payment History — All Paymob transactions for the company
+ * Payment History, All Paymob transactions for the company
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
@@ -155,7 +155,7 @@ adminHeader('Payment History', 'payment-history');
                         <?php echo htmlspecialchars(substr($pmt['special_reference'] ?? $pmt['id'], 0, 30)); ?>…
                     </td>
                     <td class="px-4 py-3 text-gray-600 capitalize">
-                        <?php echo htmlspecialchars($pmt['payment_method'] ?? '—'); ?>
+                        <?php echo htmlspecialchars($pmt['payment_method'] ?? ','); ?>
                     </td>
                     <td class="px-4 py-3 text-right font-semibold text-gray-900 whitespace-nowrap">
                         <?php echo number_format((float)$pmt['amount'], 3); ?>

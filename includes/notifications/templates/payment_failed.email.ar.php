@@ -12,6 +12,6 @@ $body = <<<HTML
     <a href="{$retryUrl}" style="background:#dc2626;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;font-weight:600;">حاول مرة أخرى</a>
   </p>
   <p style="color:#6b7280;font-size:14px;">إن استمرّت المشكلة، ردّ على هذه الرسالة وسنساعدك.</p>
-  <p style="color:#6b7280;font-size:14px;">— فريق كارديفاي</p>
+  <p style="color:#6b7280;font-size:14px;">, فريق كارديفاي</p>
 </div>
 HTML;

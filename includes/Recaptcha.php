@@ -3,8 +3,8 @@
  * Invisible reCAPTCHA v3 helper.
  *
  * Configuration via constants in config.php (both optional):
- *   RECAPTCHA_SITE_KEY   — public site key rendered in <script>
- *   RECAPTCHA_SECRET     — server-side secret for siteverify
+ *   RECAPTCHA_SITE_KEY  , public site key rendered in <script>
+ *   RECAPTCHA_SECRET    , server-side secret for siteverify
  *
  * Behaviour:
  *   - Fails OPEN when either constant is missing/empty so local dev

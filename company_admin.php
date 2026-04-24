@@ -66,7 +66,7 @@ try {
         session_start();
     }
     
-    // Store minimal routing hint only — don't set company_id until ownership is verified below
+    // Store minimal routing hint only, don't set company_id until ownership is verified below
     $_SESSION['current_company_slug'] = $companySlug;
     
     // Map pages to admin files
@@ -174,7 +174,7 @@ try {
         exit;
     }
 
-    // Ownership verified — now safe to set company context in session
+    // Ownership verified, now safe to set company context in session
     $_SESSION['company_slug'] = $companySlug;
     $_SESSION['company_id'] = $company['id'];
     $_SESSION['company_name'] = $company['name'] ?? $company['name_en'] ?? $companySlug;

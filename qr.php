@@ -4,7 +4,7 @@
  *
  * Serves VCF contact file with scan tracking.
  * Supports two URL formats:
- *   Short (preferred): /qr.php?i={employee_id}  — smallest QR code
+ *   Short (preferred): /qr.php?i={employee_id} , smallest QR code
  *   Legacy:            /qr.php?c={slug}&e={email}
  */
 

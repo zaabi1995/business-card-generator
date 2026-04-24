@@ -558,7 +558,7 @@ function batchGenerator() {
             });
             const logData = await logResp.json().catch(() => ({}));
             if (!logData.success && logData.limit_reached) {
-                throw new Error(logData.error || 'Monthly card limit reached. Upgrade your plan to generate more cards.');
+                throw new Error(logData.error || 'Card generation rate limit hit. Please wait a moment and try again.');
             }
 
             return { frontUrl, backUrl, frontPdf, backPdf };

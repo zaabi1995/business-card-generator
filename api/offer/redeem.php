@@ -6,7 +6,7 @@
  * (params may also be in POST body)
  *
  * Hardened Apr 2026 (Codex round-1):
- *  - POST ONLY. GET returns 405 — stops state-changing side effects being
+ *  - POST ONLY. GET returns 405, stops state-changing side effects being
  *    triggered by link prefetchers, image crawlers, and email scanners.
  *  - Rate limit: 10 redemptions / IP / hour / offer_id.
  *  - Tenant scoping: oid must belong to eid (CardSections::redeemOffer
@@ -15,13 +15,13 @@
  *    employee's public card page.
  *
  * Hardened Apr 2026 (Codex round-2):
- *  - CSRF — Origin/Referer MUST match cardify.om, a configured card custom
+ *  - CSRF, Origin/Referer MUST match cardify.om, a configured card custom
  *    domain, or the current HTTP_HOST. Blocks auto-POST from evil.com.
  *    (Finding 2)
  *  - Client IP now uses getClientIp() so the rate-limit check sees the same
  *    value that CardAnalytics::log() writes (HTTP_CF_CONNECTING_IP behind
  *    Cloudflare). (Finding 3)
- *  - Rate limit moved to atomic RateLimiter::check() — no more check-then-log
+ *  - Rate limit moved to atomic RateLimiter::check(), no more check-then-log
  *    race (Finding 3/4).
  */
 
@@ -59,7 +59,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 }
 
 // --------------------------------------------------------------------------
-// Origin / Referer check — replaces a CSRF token (there's no auth cookie to
+// Origin / Referer check, replaces a CSRF token (there's no auth cookie to
 // steal; the concern is auto-POST from evil.com to burn a coupon).
 //
 // A legitimate request comes from:
@@ -76,7 +76,7 @@ function offer_origin_is_trusted(): bool
     $origin  = $_SERVER['HTTP_ORIGIN']  ?? '';
     $referer = $_SERVER['HTTP_REFERER'] ?? '';
 
-    // Neither header present — reject. Modern browsers send at least one on
+    // Neither header present, reject. Modern browsers send at least one on
     // state-changing POST.
     if ($origin === '' && $referer === '') {
         return false;
@@ -101,7 +101,7 @@ function offer_origin_is_trusted(): bool
         $trusted[] = $httpHost;
     }
 
-    // 3. Any configured card custom domain (Pro-tier feature). Best-effort —
+    // 3. Any configured card custom domain (Pro-tier feature). Best-effort ,
     //    if the table doesn't exist, just skip.
     try {
         $db = Database::getInstance();
@@ -115,7 +115,7 @@ function offer_origin_is_trusted(): bool
             }
         }
     } catch (Throwable $e) {
-        // table missing / query error — ignore, fall back to cardify-only.
+        // table missing / query error, ignore, fall back to cardify-only.
     }
 
     return in_array($candidateHost, $trusted, true);
@@ -125,7 +125,7 @@ if (!offer_origin_is_trusted()) {
     offer_respond_error(403, 'Cross-origin request blocked.', $wantsJson);
 }
 
-// Honeypot — bots that auto-fill every field still get silently dropped.
+// Honeypot, bots that auto-fill every field still get silently dropped.
 if (!empty($_POST['website_url'])) {
     if ($wantsJson) {
         header('Content-Type: application/json');
@@ -162,13 +162,13 @@ try {
 }
 if (!$employee || empty($employee['company_id'])) {
     // Refund the rate-limit slot since the request never made it past input
-    // validation — keeps a misspelled eid from locking the user out.
+    // validation, keeps a misspelled eid from locking the user out.
     RateLimiter::refund('offer_redeem:' . $offerId, $ip, 3600);
     offer_respond_error(404, 'Card not found.', $wantsJson);
 }
 
 // CardSections::redeemOffer() already enforces tenant scoping via its WHERE
-// clause (employee_id = :eid) — cross-employee redemption is rejected.
+// clause (employee_id = :eid), cross-employee redemption is rejected.
 $offer = CardSections::redeemOffer($employeeId, $offerId);
 if (!$offer) {
     RateLimiter::refund('offer_redeem:' . $offerId, $ip, 3600);
@@ -213,5 +213,5 @@ $dest = '/';
 if ($companySlug !== '') {
     $dest = '/' . rawurlencode($companySlug) . '/card/' . rawurlencode($employeeId) . '?redeemed=' . rawurlencode($offerId);
 }
-header('Location: ' . $dest, true, 303); // 303 See Other — POST→GET
+header('Location: ' . $dest, true, 303); // 303 See Other, POST→GET
 exit;

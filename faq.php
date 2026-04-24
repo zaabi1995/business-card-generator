@@ -1,6 +1,6 @@
 <?php
 /**
- * Cardify — Frequently Asked Questions (Cat R action 437).
+ * Cardify, Frequently Asked Questions (Cat R action 437).
  *
  * 20 questions across 6 categories, fully bilingual via
  * lang/{en,ar}/faq.php. JSON-LD FAQPage schema emitted via
@@ -34,7 +34,7 @@ $categories = [
 
 require_once INCLUDES_DIR . '/ui-header.php';
 
-// JSON-LD via Seo helper — FAQPage across all 20 questions.
+// JSON-LD via Seo helper, FAQPage across all 20 questions.
 $faqPairs = [];
 foreach ($categories as $cat) {
     foreach ($cat['keys'] as $k) {

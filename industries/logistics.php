@@ -1,11 +1,11 @@
 <?php
 /**
- * Cardify — Digital Business Cards for Logistics & Shipping in Oman / GCC
+ * Cardify, Digital Business Cards for Logistics & Shipping in Oman / GCC
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle       = 'Business Cards for Logistics & Shipping in Oman + GCC — Cardify';
+$pageTitle       = 'Business Cards for Logistics & Shipping in Oman + GCC, Cardify';
 $pageDescription = 'Digital business cards for freight forwarders, port teams, shipping agents, and logistics operators across Oman and the GCC. Works at Sohar, Duqm, Salalah, and free zones.';
 $canonicalUrl    = 'https://cardify.om/industries/logistics';
 $brandName       = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
@@ -13,15 +13,15 @@ $showNavigation  = true;
 
 $faq = [
     ['q' => 'Who uses Cardify in logistics?',         'a' => 'Teams at Asyad, Sohar Port, Oman Dry Dock, freight forwarders, customs brokers, shipping agents, warehousing operators, and last-mile dispatch teams across Oman and the wider GCC.'],
-    ['q' => 'Does it work on-site at ports?',         'a' => 'Yes. Cards are a single QR a forwarder scans once from their phone camera — no app install, no typing. Works at Sohar, Duqm, Salalah, Jebel Ali, King Abdullah Port, and anywhere with basic mobile data.'],
+    ['q' => 'Does it work on-site at ports?',         'a' => 'Yes. Cards are a single QR a forwarder scans once from their phone camera, no app install, no typing. Works at Sohar, Duqm, Salalah, Jebel Ali, King Abdullah Port, and anywhere with basic mobile data.'],
     ['q' => 'Can we show IATA/FIATA credentials?',    'a' => 'Yes. Credential fields are part of the template; you can show IATA, FIATA, AEO, and bonded-warehouse numbers as trust signals on every team card.'],
-    ['q' => 'How do we handle bilingual vessel/port names?', 'a' => 'Every field supports Arabic + English. Templates ship bilingual by default — no two card versions to maintain.'],
+    ['q' => 'How do we handle bilingual vessel/port names?', 'a' => 'Every field supports Arabic + English. Templates ship bilingual by default, no two card versions to maintain.'],
     ['q' => 'Can we cross-reference port logos?',     'a' => 'Yes. The Omani Logo Library includes ASYAD Group, Sohar Port and Freezone, and related sovereign entities (MoT, Customs Authority). All downloadable in SVG + PNG.'],
 ];
 
 $serviceLd = [
     '@context' => 'https://schema.org', '@type' => 'Service',
-    'name' => 'Cardify — Digital Business Cards for Logistics & Shipping',
+    'name' => 'Cardify, Digital Business Cards for Logistics & Shipping',
     'provider' => ['@type' => 'Organization', 'name' => 'Cardify', 'url' => 'https://cardify.om'],
     'areaServed' => [['@type' => 'Country', 'name' => 'Oman'], ['@type' => 'Country', 'name' => 'Saudi Arabia'], ['@type' => 'Country', 'name' => 'UAE']],
     'serviceType' => 'Digital Business Card Platform',
@@ -72,18 +72,18 @@ require_once INCLUDES_DIR . '/ui-header.php';
       <h2 class="text-3xl font-extrabold text-gray-900 mt-2 mb-5">Logistics moves fast. Your contact info shouldn't lag.</h2>
       <div class="space-y-4 text-gray-700 leading-relaxed">
         <p>The freight-forwarder at Sohar this week is at Salalah next week. Customs brokers rotate between Ruwi, Port Sultan Qaboos, and Muscat Airport cargo. Between Jebel Ali, King Abdullah Port, and Hamad Port, a single shipper might deal with 10 agents across 4 countries.</p>
-        <p>A Cardify digital card keeps everyone current. When a port agent transfers from a Sohar desk to a Salalah one, the card updates — no reprinted stack, no client with an out-of-date number.</p>
+        <p>A Cardify digital card keeps everyone current. When a port agent transfers from a Sohar desk to a Salalah one, the card updates, no reprinted stack, no client with an out-of-date number.</p>
         <p>Add IATA/FIATA credentials, your HS-code specialty, languages spoken, and a scan QR that opens a WhatsApp chat with a pre-filled "RE: BL/<?= 'AWB' ?>" subject line. That's how logistics runs today.</p>
       </div>
     </div>
     <div class="bg-gradient-to-br from-sky-50 to-cyan-50 rounded-2xl p-6 space-y-3">
       <?php foreach ([
-        ['fa-container-storage', 'Port &amp; terminal-ready',    'Single QR scan works on any smartphone — no app install needed at the quayside.'],
+        ['fa-container-storage', 'Port &amp; terminal-ready',    'Single QR scan works on any smartphone, no app install needed at the quayside.'],
         ['fa-qrcode',            'Printed QR on lanyards',       'Print a card with QR + attach to a lanyard / hi-vis vest. Still on-brand when a surveyor taps it.'],
         ['fa-certificate',       'IATA / FIATA / AEO display',   'Credential fields are template-level, not afterthought. Trust signals stay visible.'],
         ['fa-language',          'Bilingual vessel / port names','Arabic + English rendered proper RTL with tabular numerals for BL numbers.'],
         ['fa-truck-fast',        'Last-mile dispatch',           'Driver cards embed dispatch WhatsApp + live tracking link. Customers hit one button, not "did the driver text you?"'],
-        ['fa-shield-halved',     'Single-source brand',          'Forwarders, port ops, and customs all on one template — so the Asyad standard looks the same everywhere.'],
+        ['fa-shield-halved',     'Single-source brand',          'Forwarders, port ops, and customs all on one template, so the Asyad standard looks the same everywhere.'],
       ] as [$icon, $title, $body]): ?>
         <div class="flex items-start gap-4 p-3 rounded-xl bg-white">
           <div class="w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center flex-shrink-0">
@@ -103,7 +103,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
   <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
     <div class="max-w-2xl">
       <span class="text-sky-700 font-semibold text-sm uppercase tracking-wider">Logistics logos library</span>
-      <h2 class="text-3xl font-extrabold text-gray-900 mt-2 mb-2">GCC port &amp; shipping logos — indexed</h2>
+      <h2 class="text-3xl font-extrabold text-gray-900 mt-2 mb-2">GCC port &amp; shipping logos, indexed</h2>
       <p class="text-gray-600">ASYAD Group, Sohar Port and Freezone, and related entities. SVG + PNG, free for identification use.</p>
     </div>
     <a href="/logos/logistics-shipping" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-semibold whitespace-nowrap">

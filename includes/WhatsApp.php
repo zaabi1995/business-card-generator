@@ -4,12 +4,12 @@
  * Sends messages via Dardasha REST API using config.php constants.
  *
  * Config in config.php:
- *   DARDASHA_API_URL — Dardasha send endpoint
- *   DARDASHA_TOKEN   — superadmin JWT for cardify.om's business_id
- *   DARDASHA_FROM    — BHD line number (96897707134 as of 2026-04-10)
+ *   DARDASHA_API_URL, Dardasha send endpoint
+ *   DARDASHA_TOKEN  , superadmin JWT for cardify.om's business_id
+ *   DARDASHA_FROM   , BHD line number (96897707134 as of 2026-04-10)
  *
  * Fallback: if constants aren't set, falls back to system_settings table
- * (legacy behavior — kept so existing setups don't break during migration).
+ * (legacy behavior, kept so existing setups don't break during migration).
  */
 class WhatsApp {
     private static $db = null;

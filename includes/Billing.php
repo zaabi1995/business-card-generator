@@ -46,10 +46,10 @@ class Billing {
                     : (float)$priceRow['price_monthly'];
             }
         } catch (\Throwable $e) {
-            // plan_prices may not exist — use subscription_plans fallback
+            // plan_prices may not exist, use subscription_plans fallback
         }
 
-        // Don't send $0 plans to Paymob — activate directly
+        // Don't send $0 plans to Paymob, activate directly
         if ($amount <= 0) {
             $interval = $billingCycle === 'yearly' ? '+1 year' : '+1 month';
             $db->update('companies', [
@@ -122,7 +122,7 @@ class Billing {
     }
 
     /**
-     * Paymob Unified Checkout — delegates to Payment.php
+     * Paymob Unified Checkout, delegates to Payment.php
      */
     private function createPaymobPaymentIntent($amount, $companyId, $planId, $billingCycle) {
         require_once __DIR__ . '/Payment.php';
@@ -229,7 +229,7 @@ class Billing {
     }
     
     /**
-     * Handle Paymob callback — delegates to Payment.php
+     * Handle Paymob callback, delegates to Payment.php
      * Falls back to legacy payment_transactions for old subscriptions
      */
     public function handlePaymobCallback($data, $hmac = null) {
@@ -258,7 +258,7 @@ class Billing {
      * Legacy Paymob callback handler for old payment_transactions records
      */
     public function handleLegacyPaymobCallback($data, $hmac = null) {
-        // Verify HMAC — required even for legacy records
+        // Verify HMAC, required even for legacy records
         $receivedHmac = $hmac ?? ($data['hmac'] ?? null);
         if (empty($receivedHmac)) {
             error_log("Legacy payment callback: Missing HMAC");
@@ -594,7 +594,7 @@ class Billing {
     public function checkLimit($companyId, $limitType) {
         $limits = $this->getPlanLimits($companyId);
         if (!$limits) {
-            return false; // Fail closed — deny if limits can't be verified
+            return false; // Fail closed, deny if limits can't be verified
         }
 
         // Map limit type to key
@@ -751,7 +751,7 @@ class Billing {
             error_log("Billing::hasFeature error: " . $e->getMessage());
         }
         
-        // Feature availability matrix — plan IDs must match subscription_plans.id in DB
+        // Feature availability matrix, plan IDs must match subscription_plans.id in DB
         $paidFeatures = [
             'high_quality' => true,
             'qr_tracking' => true,

@@ -77,7 +77,7 @@ if ($db->tableExists('blog_posts')) {
                 }
             }
         } else {
-            // Unknown slug — return proper 404 so Google doesn't index a fallback listing
+            // Unknown slug, return proper 404 so Google doesn't index a fallback listing
             http_response_code(404);
             header('Cache-Control: no-store');
             include __DIR__ . '/404.php';

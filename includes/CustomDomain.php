@@ -1,6 +1,6 @@
 <?php
 /**
- * CustomDomain — helper for Pro-tier custom domains feature.
+ * CustomDomain, helper for Pro-tier custom domains feature.
  *
  * Owners point a domain at cardify.om via CNAME; this class CRUDs the
  * employee_custom_domains table and verifies DNS.
@@ -32,7 +32,7 @@ class CustomDomain
         return rtrim($host, '.');
     }
 
-    /** Basic FQDN sanity. Not a full validator — RFC 1035-ish. */
+    /** Basic FQDN sanity. Not a full validator, RFC 1035-ish. */
     public static function isValidDomain(string $domain): bool
     {
         $domain = self::normalizeHost($domain);

@@ -1,6 +1,6 @@
 <?php
 /**
- * Growth Dashboard — per-company adoption & event telemetry
+ * Growth Dashboard, per-company adoption & event telemetry
  *
  * URL: /admin/growth.php
  *
@@ -359,7 +359,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const sectionTotal   = <?php echo (int) $sectionData['total_active']; ?>;
     const series        = <?php echo json_encode($timeSeries); ?>;
 
-    // Row 2: Horizontal bar — section adoption
+    // Row 2: Horizontal bar, section adoption
     const secEl = document.getElementById('gdSectionBar');
     if (secEl) {
         new Chart(secEl, {
@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Row 3: Line — event breakdown
+    // Row 3: Line, event breakdown
     const lineEl = document.getElementById('gdLineChart');
     if (lineEl) {
         const labels = series.map(d => {

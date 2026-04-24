@@ -4,7 +4,7 @@
  * Body: employee_id, name, email, phone, message
  *
  * Records a lead tied to an employee's public card and emails the card owner.
- * Public endpoint — rate-limited per IP.
+ * Public endpoint, rate-limited per IP.
  */
 
 require_once __DIR__ . '/../config.php';
@@ -73,7 +73,7 @@ try {
         exit;
     }
 
-    // Client IP via shared helper (Codex round-2 Finding 3 — match writes).
+    // Client IP via shared helper (Codex round-2 Finding 3, match writes).
     $ip = getClientIp();
     if (!CardSections::canSubmitLead($employeeId, $ip)) {
         http_response_code(429);
@@ -93,7 +93,7 @@ try {
         require_once INCLUDES_DIR . '/Mailer.php';
         $toEmail = !empty($master['lead_form_email']) ? $master['lead_form_email'] : ($employee['email'] ?? '');
         if ($toEmail) {
-            $subject = 'New lead from your Cardify card — ' . $name;
+            $subject = 'New lead from your Cardify card, ' . $name;
             $ownerName = $employee['name_en'] ?? ($employee['name'] ?? 'there');
             $lines = [];
             $lines[] = '<p>Hi ' . htmlspecialchars($ownerName) . ',</p>';

@@ -152,7 +152,7 @@ $statusPill = [
             <?php foreach ($rows as $r):
                 $typeLabel = $typeLabels[$r['type']] ?? $r['type'];
                 $paymentMethod = $r['payment_method']
-                    ?: ($r['paymob_transaction_id'] ? 'Paymob' : '—');
+                    ?: ($r['paymob_transaction_id'] ? 'Paymob' : ',');
                 $ref = $r['type'] === 'subscription'
                     ? strtoupper((string) ($r['billing_cycle'] ?? '')) . ' · ' . ($r['special_reference'] ?: $r['reference_id'])
                     : ($r['special_reference'] ?: $r['reference_id']);

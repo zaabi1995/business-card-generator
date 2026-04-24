@@ -20,7 +20,7 @@ try {
     require_once INCLUDES_DIR . '/CardAnalytics.php';
 
     /**
-     * Normalize asset path — ensure uploaded/theme assets resolve from site root, not
+     * Normalize asset path, ensure uploaded/theme assets resolve from site root, not
      * relative to the current /{slug}/card/{eid} URL. DB rows historically stored
      * paths in three shapes: "/uploads/..", "uploads/..", and bare "companies/..".
      */
@@ -30,7 +30,7 @@ try {
             if ($p === '') return '';
             if (preg_match('#^(https?:)?//#i', $p)) return $p; // absolute URL
             if ($p[0] === '/') return $p;                     // already site-root
-            // Bare relative — prepend /uploads/ for company theme uploads
+            // Bare relative, prepend /uploads/ for company theme uploads
             if (strpos($p, 'uploads/') === 0) return '/' . $p;
             return '/uploads/' . $p;
         }
@@ -146,7 +146,7 @@ try {
         error_log("QR tracking failed: " . $e->getMessage());
     }
 
-    // Log view / QR-scan event (non-fatal) — per-card analytics
+    // Log view / QR-scan event (non-fatal), per-card analytics
     try {
         CardAnalytics::logView($employee['id'], $company['id']);
     } catch (Throwable $e) {
@@ -205,14 +205,14 @@ try {
     if ($ecardDefaultTheme === 'dark')  $isDarkPage = true;
     if ($ecardDefaultTheme === 'light') $isDarkPage = false;
 
-    // Cookie override (only when toggle is enabled) — keeps SSR theme in sync with visitor choice.
+    // Cookie override (only when toggle is enabled), keeps SSR theme in sync with visitor choice.
     $cookieTheme = $_COOKIE['cardify_card_theme'] ?? '';
     if ($themeToggleEnabled && in_array($cookieTheme, ['light', 'dark'], true)) {
         $isDarkPage = ($cookieTheme === 'dark');
     }
     $defaultThemeMode = $isDarkPage ? 'dark' : 'light';
 
-    // Card image paths — DB stores filenames, construct full web path
+    // Card image paths, DB stores filenames, construct full web path
     $frontImage = '';
     $backImage = '';
     if ($card) {
@@ -238,7 +238,7 @@ try {
     $locale = CardSections::resolveLocale();
     $isRtl = CardSections::isRtl($locale);
 
-    // Employee contact data — localized with EN fallback
+    // Employee contact data, localized with EN fallback
     $name = CardSections::tColumn($employee, 'name', $locale);
     if (trim((string)$name) === '') $name = $employee['name'] ?? 'Employee';
     $position = CardSections::tColumn($employee, 'position', $locale);
@@ -317,7 +317,7 @@ try {
     $apptSettings = Appointments::loadSettings($employee['id'], $company['id']);
     $apptEnabled = !empty($apptSettings['enabled']);
 
-    // Wallet pass endpoints (feature-flagged — buttons render only when enabled)
+    // Wallet pass endpoints (feature-flagged, buttons render only when enabled)
     require_once INCLUDES_DIR . '/AppleWalletPass.php';
     require_once INCLUDES_DIR . '/GoogleWalletPass.php';
     $appleWalletEnabled  = AppleWalletPass::isEnabled();
@@ -418,7 +418,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { overflow-x: hidden; }
-        /* Honeypot anti-spam fields — visually hidden without causing document overflow (esp. in RTL) */
+        /* Honeypot anti-spam fields, visually hidden without causing document overflow (esp. in RTL) */
         .hp, .lead-form .hp { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); clip-path: inset(50%); white-space: nowrap; border: 0; left: auto !important; }
         body {
             min-height: 100vh;
@@ -820,7 +820,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .lead-form .hp { position: absolute; left: -9999px; }
         .lead-success { text-align: center; padding: 20px; font-size: 14px; color: <?php echo htmlspecialchars($accentColor); ?>; }
         .lead-error { color: #ef4444; font-size: 13px; margin-bottom: 8px; }
-        /* Appointment widget — inherits light/dark theme */
+        /* Appointment widget, inherits light/dark theme */
         .appt-label { display:block; font-size:12px; font-weight:600; margin-bottom:6px; <?php echo $isDarkPage ? 'color:#bbb;' : 'color:#555;'; ?> }
         .appt-input, .appt-textarea { width:100%; padding:10px 12px; border-radius:8px; font-size:14px; font-family:inherit; box-sizing:border-box; margin-bottom:8px;
             <?php if ($isDarkPage): ?>background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #eee;<?php else: ?>background: #f7f7f9; border: 1px solid #e5e7eb; color: #1a1a2e;<?php endif; ?>
@@ -874,7 +874,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             color: <?php echo $isDarkPage ? '#1a1a2e' : '#fff'; ?>;
         }
 
-        /* Visitor-facing theme toggle (sun/moon) — sits alongside the language switcher. */
+        /* Visitor-facing theme toggle (sun/moon), sits alongside the language switcher. */
         .theme-toggle {
             position: static;
             width: 32px;
@@ -900,7 +900,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         body.force-dark .theme-toggle .theme-icon-sun { display: block; }
         body.force-light .theme-toggle .theme-icon-moon { display: block; }
 
-        /* Viral "Made with Cardify" footer — appears on every public card so
+        /* Viral "Made with Cardify" footer, appears on every public card so
            each scan becomes a Cardify impression. Tasteful, small, always there
            (think "Designed in Figma"). Pro-tier users can hide via admin. */
         .cardify-viral-footer {
@@ -958,7 +958,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
 <body class="<?php echo $isDarkPage ? 'force-dark' : 'force-light'; ?>">
     <div class="card-top-controls">
         <?php if ($themeToggleEnabled): ?>
-        <!-- Theme toggle (visitor override — persisted via cookie, 7d) -->
+        <!-- Theme toggle (visitor override, persisted via cookie, 7d) -->
         <button type="button"
                 class="theme-toggle"
                 id="themeToggle"
@@ -1608,12 +1608,13 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         </script>
         <?php endif; ?>
 
-        <!-- Viral "Made with Cardify" footer — every public card scan becomes a
+        <!-- Viral "Made with Cardify" footer, every public card scan becomes a
              Cardify impression. Owner can hide via admin (Pro tier only).
              Links through /card_click.php so we measure conversion. -->
         <?php
-            // Pro-tier gate: only respect hide flag when company is on paid plan.
-            // Column may be absent pre-migration 065 — coalesce safely.
+            // Hide-branding flag (retained from the tier model); platform policy
+            // is that Cardify branding always renders, so this gate is informational.
+            // Column may be absent pre-migration 065, coalesce safely.
             $__hideBranding = (int)($employee['hide_cardify_branding'] ?? 0) === 1;
             $__brandingPaid = false;
             try {
@@ -1638,7 +1639,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <div class="cardify-viral-footer">
                 <a href="<?php echo htmlspecialchars($__claimHref, ENT_QUOTES); ?>"
                    class="viral-link"
-                   aria-label="<?php echo $isRtl ? 'أُنشئ بطاقتك مجاناً مع Cardify' : 'Made with Cardify — create yours free'; ?>"
+                   aria-label="<?php echo $isRtl ? 'أُنشئ بطاقتك مجاناً مع Cardify' : 'Made with Cardify, create yours free'; ?>"
                    rel="noopener">
                     <span class="viral-logo" aria-hidden="true">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"

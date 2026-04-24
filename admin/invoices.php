@@ -5,7 +5,7 @@
  * Shows every paid print order as an invoice row: order number, date,
  * ERP invoice number, amount (incl. VAT), VAT slice, download link.
  * Download opens the print-friendly bilingual receipt from
- * /admin/order-receipt.php — users "save as PDF" from the browser
+ * /admin/order-receipt.php, users "save as PDF" from the browser
  * print dialog, matching the existing receipt flow.
  */
 require_once __DIR__ . '/../config.php';
@@ -136,7 +136,7 @@ $ext = $isCompanyAdmin ? '' : '.php';
                     <td class="px-4 py-3 text-gray-700"><?= htmlspecialchars(I18n::formatDate(strtotime($o['paid_at']))) ?></td>
                     <td class="px-4 py-3 font-mono text-gray-900"><?= htmlspecialchars($o['order_number']) ?></td>
                     <td class="px-4 py-3 font-mono text-gray-700">
-                        <?= $o['erp_invoice_number'] ? htmlspecialchars($o['erp_invoice_number']) : '<span class="text-gray-400">—</span>' ?>
+                        <?= $o['erp_invoice_number'] ? htmlspecialchars($o['erp_invoice_number']) : '<span class="text-gray-400">,</span>' ?>
                     </td>
                     <td class="px-4 py-3 text-right font-mono text-gray-700"><?= number_format($b['subtotal'] ?? 0, 3) ?></td>
                     <td class="px-4 py-3 text-right font-mono text-gray-700"><?= number_format($b['tax'] ?? 0, 3) ?></td>

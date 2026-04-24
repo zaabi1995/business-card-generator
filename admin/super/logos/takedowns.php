@@ -1,6 +1,6 @@
 <?php
 /**
- * Super Admin — Takedown review queue.
+ * Super Admin, Takedown review queue.
  */
 require_once __DIR__ . '/../../../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
@@ -81,7 +81,7 @@ function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                class="font-semibold underline"><?= esc($r['company_name']) ?></a>
           <?php else: ?>
             <div class="font-semibold text-amber-700">
-              Unmatched company — attach a company_id before Hide
+              Unmatched company, attach a company_id before Hide
             </div>
             <form method="post" class="mt-2 flex gap-1 items-center">
               <input type="hidden" name="csrf_token" value="<?= esc($csrfToken) ?>">
@@ -95,7 +95,7 @@ function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
           <div class="text-sm text-gray-600 mt-1">
             From: <?= esc($r['requester_name']) ?>
             &lt;<?= esc($r['requester_email']) ?>&gt;
-            · Role: <?= esc($r['requester_role'] ?: '—') ?>
+            · Role: <?= esc($r['requester_role'] ?: ',') ?>
           </div>
           <div class="text-sm mt-2 whitespace-pre-wrap"><?= esc($r['claim_basis']) ?></div>
           <?php if ($r['related_urls']): ?>

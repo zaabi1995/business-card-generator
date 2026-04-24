@@ -1,6 +1,6 @@
 <?php
 /**
- * Print Shop — Credit Accounts Management
+ * Print Shop, Credit Accounts Management
  * Approve/reject/edit credit requests, set limits, exposure, terms, view PO docs
  */
 require_once __DIR__ . '/../config.php';

@@ -53,7 +53,7 @@ function validateResetToken($db, $token) {
     }
     
     try {
-        // Token is stored hashed — hash the incoming token to compare
+        // Token is stored hashed, hash the incoming token to compare
         $hashedToken = hash('sha256', $token);
         $tokenData = $db->fetchOne(
             "SELECT * FROM password_reset_tokens

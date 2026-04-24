@@ -105,7 +105,7 @@ try {
         'serialNumber'        => (string)$employee['id'],
         'teamIdentifier'      => APPLE_WALLET_TEAM_ID,
         'organizationName'    => defined('APPLE_WALLET_ORG_NAME') ? APPLE_WALLET_ORG_NAME : 'Cardify',
-        'description'         => $name . ' — ' . $companyNm,
+        'description'         => $name . ', ' . $companyNm,
         'foregroundColor'     => 'rgb(255, 255, 255)',
         'backgroundColor'     => $hexToRgb($primaryHex),
         'labelColor'          => $hexToRgb($secondaryHex),

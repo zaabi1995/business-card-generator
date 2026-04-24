@@ -5,8 +5,8 @@
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle = 'Business Cards for Construction & Engineering in Oman — Cardify';
-$pageDescription = 'Professional business cards for contractors, engineers, and construction companies in Oman. Manage team cards, share project details, and network on-site — free with Cardify.';
+$pageTitle = 'Business Cards for Construction & Engineering in Oman, Cardify';
+$pageDescription = 'Professional business cards for contractors, engineers, and construction companies in Oman. Manage team cards, share project details, and network on-site, free with Cardify.';
 $canonicalUrl = 'https://cardify.om/industries/construction';
 $ogType = 'website';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
@@ -18,7 +18,7 @@ $showNavigation = true;
 $extraHead = '<script type="application/ld+json">' . json_encode([
     '@context' => 'https://schema.org',
     '@type' => 'Service',
-    'name' => 'Cardify — Business Cards for Construction & Engineering',
+    'name' => 'Cardify, Business Cards for Construction & Engineering',
     'description' => 'Professional digital and printed business cards for construction companies, contractors, and engineers in Oman.',
     'provider' => [
         '@type' => 'Organization',
@@ -49,7 +49,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
             <h1 class="text-4xl font-bold text-gray-900 mb-3">Business Cards for Construction & Engineering in Oman</h1>
             <p class="text-gray-500 text-lg max-w-2xl mx-auto mb-6">
-                Equip your entire team — from site managers to project engineers — with professional digital business cards they can share on-site, at tenders, and at industry events.
+                Equip your entire team, from site managers to project engineers, with professional digital business cards they can share on-site, at tenders, and at industry events.
             </p>
             <a href="<?php echo getBasePath(); ?>company/register.php"
                class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-lg">
@@ -70,7 +70,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="grid lg:grid-cols-2 gap-12 items-center">
                 <div>
                     <p class="text-gray-600 leading-relaxed mb-4">
-                        Oman's construction sector is booming — from mega infrastructure projects to residential developments. With hundreds of contractors, subcontractors, and consultants working together, exchanging contact details needs to be fast and reliable.
+                        Oman's construction sector is booming, from mega infrastructure projects to residential developments. With hundreds of contractors, subcontractors, and consultants working together, exchanging contact details needs to be fast and reliable.
                     </p>
                     <p class="text-gray-600 leading-relaxed mb-4">
                         Paper cards get damaged on construction sites, lost in truck cabins, or buried in drawers. With <?php echo $brandName; ?>, your team's cards are always accessible, always up-to-date, and always professional.
@@ -87,7 +87,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </div>
                             <div>
                                 <h3 class="font-semibold text-gray-900">Site-Ready</h3>
-                                <p class="text-gray-600 text-sm">No paper to damage — your card lives on your phone, ready to share via NFC tap, QR scan, or WhatsApp.</p>
+                                <p class="text-gray-600 text-sm">No paper to damage, your card lives on your phone, ready to share via NFC tap, QR scan, or WhatsApp.</p>
                             </div>
                         </div>
                         <div class="flex items-start gap-4">
@@ -96,7 +96,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </div>
                             <div>
                                 <h3 class="font-semibold text-gray-900">Large Crew Management</h3>
-                                <p class="text-gray-600 text-sm">Generate cards for 50+ employees in bulk — upload a spreadsheet and you're done.</p>
+                                <p class="text-gray-600 text-sm">Generate cards for 50+ employees in bulk, upload a spreadsheet and you're done.</p>
                             </div>
                         </div>
                         <div class="flex items-start gap-4">
@@ -144,7 +144,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Role-Based Cards</h3>
                     <p class="text-gray-600">
-                        Different cards for different roles — project managers show project portfolios, safety officers show certifications, and sales teams show completed works.
+                        Different cards for different roles, project managers show project portfolios, safety officers show certifications, and sales teams show completed works.
                     </p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-8 text-center">
@@ -175,13 +175,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="bg-white rounded-xl shadow-sm p-8 border-l-4 border-yellow-500">
                     <h3 class="text-lg font-bold text-gray-900 mb-3">On-Site Networking</h3>
                     <p class="text-gray-600">
-                        When subcontractors, inspectors, or consultants visit your site, share cards instantly via NFC or QR — no need to walk back to the office for paper cards.
+                        When subcontractors, inspectors, or consultants visit your site, share cards instantly via NFC or QR, no need to walk back to the office for paper cards.
                     </p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-8 border-l-4 border-orange-500">
                     <h3 class="text-lg font-bold text-gray-900 mb-3">Industry Events & Exhibitions</h3>
                     <p class="text-gray-600">
-                        At Oman Construction Week, BIG 5, or local trade shows, your sales team can share unlimited digital cards — no running out of printed stock.
+                        At Oman Construction Week, BIG 5, or local trade shows, your sales team can share unlimited digital cards, no running out of printed stock.
                     </p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-8 border-l-4 border-green-500">
@@ -224,7 +224,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="bg-gradient-to-br from-yellow-600 to-orange-700 rounded-2xl p-8 lg:p-12 text-center text-white">
             <h2 class="text-3xl font-bold mb-4">Get Your Team's Cards in Minutes</h2>
             <p class="text-yellow-100 mb-8 max-w-2xl mx-auto">
-                From a 5-person contracting firm to a 500-employee construction company — <?php echo $brandName; ?> scales with your team.
+                From a 5-person contracting firm to a 500-employee construction company, <?php echo $brandName; ?> scales with your team.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="<?php echo getBasePath(); ?>company/register.php"

@@ -9,7 +9,7 @@
  * subscription is extended by 3 months and the referrer is WhatsApp-pinged
  * via Dardasha.
  *
- * Rewards are one-shot per referred_company — we never double-grant.
+ * Rewards are one-shot per referred_company, we never double-grant.
  */
 class Referral {
     const REWARD_MONTHS = 3;
@@ -65,7 +65,7 @@ class Referral {
                 $existing = $r->fetchColumn();
                 if ($existing) return (string)$existing;
             } catch (Throwable $e) {
-                // Unique collision — loop.
+                // Unique collision, loop.
             }
         }
         return null;
@@ -97,7 +97,7 @@ class Referral {
     }
 
     /**
-     * Capture the pending referral from the current request — sets cookie
+     * Capture the pending referral from the current request, sets cookie
      * and session. Does NOT persist to DB (that happens at signup).
      */
     public static function capturePending(string $code): void {
@@ -111,7 +111,7 @@ class Referral {
             'expires'  => $ttl,
             'path'     => '/',
             'secure'   => $secure,
-            'httponly' => false, // readable by JS is fine — it's not sensitive
+            'httponly' => false, // readable by JS is fine, it's not sensitive
             'samesite' => 'Lax',
         ]);
     }
@@ -229,7 +229,7 @@ class Referral {
             $refCompanyRow->execute([':id' => $referrerId]);
             $refCompany = $refCompanyRow->fetch(PDO::FETCH_ASSOC);
             if (!$refCompany || empty($refCompany['id'])) {
-                error_log("[referral] referrer $referrerId has no company — skipping reward");
+                error_log("[referral] referrer $referrerId has no company, skipping reward");
                 return;
             }
 
@@ -254,7 +254,7 @@ class Referral {
                     ")->fetchColumn();
                     if ($firstPaid) $newPlan = $firstPaid;
                 } catch (Throwable $e) {
-                    // subscription_plans/is_active may not exist — leave plan as-is.
+                    // subscription_plans/is_active may not exist, leave plan as-is.
                 }
             }
 
@@ -303,11 +303,11 @@ class Referral {
             $expiryDate = date('M j, Y', strtotime($newExpiry));
 
             $msg  = "🎉 مرحباً " . $firstName . "!\n\n";
-            $msg .= "صديقك " . $referredName . " انضم للتو إلى Cardify — لقد حصلت على 3 أشهر مجانية!\n";
+            $msg .= "صديقك " . $referredName . " انضم للتو إلى Cardify, لقد حصلت على 3 أشهر مجانية!\n";
             $msg .= "اشتراكك الآن ممتد حتى " . $expiryDate . "\n\n";
-            $msg .= "————————————\n\n";
+            $msg .= ",,,,,,,,,,,,\n\n";
             $msg .= "Hi " . $firstName . "!\n\n";
-            $msg .= "Your friend " . $referredName . " just joined Cardify — you got 3 months free!\n";
+            $msg .= "Your friend " . $referredName . " just joined Cardify, you got 3 months free!\n";
             $msg .= "Your subscription is now extended to " . $expiryDate . ".\n\n";
             $msg .= "Keep sharing: https://cardify.bhd.om";
 
@@ -318,7 +318,7 @@ class Referral {
     }
 
     /**
-     * Stats for a given user — signups + paid conversions they referred.
+     * Stats for a given user, signups + paid conversions they referred.
      * Used on the dashboard share card.
      */
     public static function statsForUser(string $userId): array {
@@ -339,7 +339,7 @@ class Referral {
     }
 
     /**
-     * Aggregated admin view — returns rows [{referrer_name, email, phone,
+     * Aggregated admin view, returns rows [{referrer_name, email, phone,
      * referral_code, signups, paid_conversions, last_activity}].
      */
     public static function adminStats(int $limit = 200): array {

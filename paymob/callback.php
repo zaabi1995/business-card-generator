@@ -45,7 +45,7 @@ if ($isPost) {
 }
 
 // GET redirect: route user to correct page based on payment type.
-// Never use $_SERVER['HTTP_HOST'] here — it is attacker-controlled and would
+// Never use $_SERVER['HTTP_HOST'] here, it is attacker-controlled and would
 // let a Host header injection rewrite the success URL to a third-party domain.
 $host = defined('APP_HOST') ? APP_HOST : 'cardify.om';
 $baseUrl = 'https://' . $host;

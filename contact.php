@@ -1,6 +1,6 @@
 <?php
 /**
- * Cardify — Contact page (Cat R action 438).
+ * Cardify, Contact page (Cat R action 438).
  *
  * Bilingual contact page with form + WhatsApp + email + embedded map.
  * Form submission routes to info@cardify.om via Mailer; CSRF guarded;
@@ -80,7 +80,7 @@ HTMLEMAIL;
                 $success = true;
             } catch (Throwable $e) {
                 $error = t('contact.err_generic');
-                // still persisted below — show the thank-you page.
+                // still persisted below, show the thank-you page.
                 $success = true;
             }
             try {

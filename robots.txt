@@ -28,7 +28,7 @@ Disallow: */admin/*
 # Crawlable so ecosystem tools + AI search engines can verify schema claims.
 Allow: /api/logos/
 
-# Logo storage (indexable — Google Image Search pulls from <image:loc> in sitemap-logos.xml)
+# Logo storage (indexable, Google Image Search pulls from <image:loc> in sitemap-logos.xml)
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/

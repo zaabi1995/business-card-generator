@@ -1,6 +1,6 @@
 <?php
 /**
- * Super Admin — Fuzzy-match review queue.
+ * Super Admin, Fuzzy-match review queue.
  * Shows rows where seed's fuzzy match landed in 0.75–0.89 band.
  */
 require_once __DIR__ . '/../../../config.php';
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
         // public logo at /storage/logos/indexed/ couldn't be clobbered on disk.
         //
         // Derived variants (png_512, png_2048) from the OLD logo must be cleared
-        // — otherwise public pages keep serving the old 512/2048 renders even
+        //, otherwise public pages keep serving the old 512/2048 renders even
         // after the canonical logo is replaced. Re-render via scripts/render-
         // logo-variants.php --only-missing after confirm.
         $root = dirname(__DIR__, 3);
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
             }
         }
         // Delete any EXISTING indexed files that are NOT part of the queued
-        // replacement — otherwise confirming a PNG replacement would reattach
+        // replacement, otherwise confirming a PNG replacement would reattach
         // a stale old SVG because is_file() returns true for it.
         foreach (['svg', 'png', 'webp', 'jpg', 'jpeg'] as $existingExt) {
             if (in_array($existingExt, $pendingExts, true)) continue;
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
     } elseif ($action === 'reject' && $id) {
         // Delete staged files under /storage/logos/pending/{id}.* that the
         // seeder wrote for this queued row. Public /storage/logos/indexed/
-        // files are not touched here — rejecting a queue entry must never
+        // files are not touched here, rejecting a queue entry must never
         // delete an already-public logo.
         $root = dirname(__DIR__, 3);
         foreach (['svg', 'png', 'webp', 'jpg', 'jpeg'] as $ext) {
@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
             if (is_file($abs)) @unlink($abs);
         }
         // Determine if row currently has a LIVE public logo. If so, reject is
-        // just "discard the queued replacement" — never touch the live asset.
+        // just "discard the queued replacement", never touch the live asset.
         // Only nuke paths + reset status when there's no existing public logo.
         $row = $db->fetchOne(
             "SELECT logo_status, logo_svg_path, logo_png_path, logo_webp_path
@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
                 "UPDATE om_companies SET logo_match_pending = 0, logo_updated_at = NOW() WHERE id = :id"
             )->execute([':id' => $id]);
         } else {
-            // No public logo to protect — safe to reset.
+            // No public logo to protect, safe to reset.
             $db->getConnection()->prepare(
                 "UPDATE om_companies SET
                     logo_status = 'none',

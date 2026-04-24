@@ -1,6 +1,6 @@
 <?php
 /**
- * Order Checkout — Pay for print orders (Paymob or Credit)
+ * Order Checkout, Pay for print orders (Paymob or Credit)
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';

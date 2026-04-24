@@ -15,7 +15,7 @@ return [
     'cat_billing'   => 'Billing & payment',
     'cat_tech'      => 'Technical',
 
-    // Getting started — 4
+    // Getting started, 4
     'gs1_q' => 'What is Cardify?',
     'gs1_a' => "Cardify is Oman's leading digital and printed business card platform. Professionals and companies design, create and share bilingual cards from one dashboard, digital or printed.",
     'gs2_q' => 'How do I sign up?',
@@ -25,7 +25,7 @@ return [
     'gs4_q' => 'Who is Cardify for?',
     'gs4_a' => 'Freelancers, SMEs and large employers across Oman. Whether you need one card or a department of 500, Cardify scales with you.',
 
-    // Digital cards — 4
+    // Digital cards, 4
     'dc1_q' => 'How do digital cards work?',
     'dc1_a' => 'Every employee gets a unique digital card with a shareable link and QR code. Scanning the QR or tapping the link opens a bilingual card with contact info, ready to save to the phone.',
     'dc2_q' => 'Can I share my card on WhatsApp?',
@@ -35,7 +35,7 @@ return [
     'dc4_q' => 'Can I update a card after sharing it?',
     'dc4_a' => 'Yes, and that is the big advantage over paper cards. Change your title, phone or photo anytime; everyone who already has your link sees the latest version immediately.',
 
-    // Printing — 4
+    // Printing, 4
     'pr1_q' => 'How do I order printed cards?',
     'pr1_a' => 'After designing in Cardify, order prints directly from the dashboard. Pick paper type, finish and quantity; a local print shop produces and delivers them.',
     'pr2_q' => 'Which print shops do you work with?',
@@ -45,7 +45,7 @@ return [
     'pr4_q' => 'How much does printing cost?',
     'pr4_a' => 'From 6 OMR per design on 300gsm matt stock. Premium 350gsm soft-touch from 9 OMR, luxury 450gsm with spot UV from 15 OMR, NFC-enabled cards from 25 OMR. Volume discounts at 100, 500 and 1,000 cards.',
 
-    // For teams — 3
+    // For teams, 3
     'tm1_q' => 'Can I manage cards for many employees?',
     'tm1_a' => "The company dashboard holds every employee's card in one place. Add people, assign a template, generate cards in bulk. Each person gets their own card under shared brand rules.",
     'tm2_q' => 'Can I bulk-generate from a CSV?',
@@ -53,19 +53,19 @@ return [
     'tm3_q' => 'How do you keep brand consistency?',
     'tm3_a' => 'Admins lock the brand template: logo, colours, fonts and layout. Employees can edit their own details but not the brand. Every card ships looking on-brand, no exceptions.',
 
-    // Billing — 3
+    // Billing, 3
     'bl1_q' => 'What payment methods do you accept?',
-    'bl1_a' => 'Visa, Mastercard, Apple Pay and OmanNet through Paymob. Business and Enterprise tiers can open a credit account with BHD and receive a monthly invoice instead.',
+    'bl1_a' => 'Visa, Mastercard, Apple Pay and OmanNet through Paymob. Business customers can open a credit account with BHD and receive a monthly invoice instead.',
     'bl2_q' => 'Do you offer credit accounts?',
-    'bl2_a' => 'Yes, for qualified Business and Enterprise customers. Orders go out immediately and invoices settle monthly. Contact sales to set one up.',
+    'bl2_a' => 'Yes, for qualified business customers. Orders go out immediately and invoices settle monthly. Contact sales to set one up.',
     'bl3_q' => 'Are all prices in OMR?',
     'bl3_a' => 'Yes. Every price is shown in Omani Rial with three decimals. Card statements settle in OMR too, no surprise currency conversion.',
 
-    // Technical — 2
+    // Technical, 2
     'tc1_q' => 'Which file formats can I download?',
     'tc1_a' => 'Cards export as high-resolution PNG or print-ready PDF. Digital cards also download as VCF (vCard) files that save directly to phone contacts.',
     'tc2_q' => 'Is there an API?',
-    'tc2_a' => 'Yes, a REST API for Enterprise customers who want to plug card generation into their HR, CRM or onboarding systems. Contact us for docs and access keys.',
+    'tc2_a' => 'Yes, a REST API for teams who want to plug card generation into their HR, CRM or onboarding systems. Contact us for docs and access keys.',
 
     // CTA
     'cta_h'         => 'Still have questions?',

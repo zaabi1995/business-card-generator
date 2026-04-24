@@ -1,6 +1,6 @@
 <?php
 /**
- * /claim — viral-footer landing page.
+ * /claim, viral-footer landing page.
  *
  * Lean high-conversion page linked from every public digital card's
  * "Made with Cardify" footer. Single CTA: drop a phone number, get a
@@ -9,14 +9,14 @@
  * - Tracks each visit as a `viral_footer_view` card_event (when utm_content
  *   carries the source employee_id so we can attribute the loop).
  * - Form POSTs back to the same page. On success, writes into
- *   `cardify_signup_leads` (migration 065) and — if possible — fires a
+ *   `cardify_signup_leads` (migration 065) and, if possible, fires a
  *   WhatsApp message via the existing WhatsApp helper. Falls back to a
  *   friendly "we'll WhatsApp you" confirmation if the gateway is silent.
  * - Rate-limited per-IP via the shared RateLimiter so bots can't flood
  *   the lead table.
  *
- * Design: mirrors the digital card's aesthetic — BHD blue, soft neutrals,
- * tasteful — NOT an ad. The viral footer is the leverage; this page is
+ * Design: mirrors the digital card's aesthetic, BHD blue, soft neutrals,
+ * tasteful, NOT an ad. The viral footer is the leverage; this page is
  * the quickest possible conversion.
  */
 
@@ -42,7 +42,7 @@ try {
 }
 
 // --------------------------------------------------------------------
-// Locale — reuse cardify_card_lang cookie so the footer→claim handoff
+// Locale, reuse cardify_card_lang cookie so the footer→claim handoff
 // keeps the visitor in their language.
 // --------------------------------------------------------------------
 $locale = 'en';
@@ -54,7 +54,7 @@ if (!empty($_GET['lang']) && in_array($_GET['lang'], ['en', 'ar'], true)) {
 $isRtl = $locale === 'ar';
 
 // --------------------------------------------------------------------
-// UTM / attribution — attribute the claim back to the source card when
+// UTM / attribution, attribute the claim back to the source card when
 // the viral footer carried an employee_id through utm_content.
 // --------------------------------------------------------------------
 $utmSource   = substr((string)($_GET['utm_source']   ?? ''), 0, 64);
@@ -78,13 +78,13 @@ if ($utmContent !== '' && $_SERVER['REQUEST_METHOD'] === 'GET') {
             );
         }
     } catch (Throwable $e) {
-        // silent — analytics never blocks the page
+        // silent, analytics never blocks the page
         error_log('claim.php view-log: ' . $e->getMessage());
     }
 }
 
 // --------------------------------------------------------------------
-// POST handler — capture phone/email lead.
+// POST handler, capture phone/email lead.
 // --------------------------------------------------------------------
 $formError   = '';
 $formSuccess = false;
@@ -97,7 +97,7 @@ $submittedEmail = '';
 $isE2ETest = !empty($_SERVER['HTTP_X_E2E_TEST']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Real client IP — CF takes precedence but we must NOT trust X-Forwarded-For
+    // Real client IP, CF takes precedence but we must NOT trust X-Forwarded-For
     // from arbitrary clients because it's the key for our rate limiter and
     // forging it lets an attacker bypass the per-IP cap. Only trust XFF when
     // we're behind a known proxy (CF or local reverse proxy on 127.0.0.1).
@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if (strpos($ip, ',') !== false) { $ip = trim(explode(',', $ip)[0]); }
 
-    // Honeypot anti-spam — a bot will fill this; a human never sees it.
+    // Honeypot anti-spam, a bot will fill this; a human never sees it.
     if (!empty($_POST['website_url'])) {
         $formSuccess = true; // silently swallow
     } else {
@@ -154,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     $db = Database::getInstance();
                     // Codex round-3 finding #1: NEVER send WhatsApp directly
-                    // from /claim — that would let any visitor use our Dardasha
+                    // from /claim, that would let any visitor use our Dardasha
                     // line as a spam cannon (rate limit bypassable via XFF).
                     //
                     // Capture the lead into cardify_signup_leads and let Ali
@@ -191,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ob_end_clean();
 
 // --------------------------------------------------------------------
-// Copy bundle — EN / AR.
+// Copy bundle, EN / AR.
 // --------------------------------------------------------------------
 $t = $isRtl
     ? [
@@ -210,7 +210,7 @@ $t = $isRtl
         'made_with'    => 'مصنوع بـ Cardify · أنشئ بطاقتك مجاناً',
     ]
     : [
-        'title'        => 'Your digital business card — Cardify',
+        'title'        => 'Your digital business card, Cardify',
         'headline'     => 'Your digital business card · 60 seconds',
         'subhead'      => 'NFC-ready · always up-to-date · free forever',
         'phone_label'  => 'Phone number',

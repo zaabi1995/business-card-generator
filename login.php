@@ -42,7 +42,7 @@ if (($_GET['error'] ?? '') === 'unauthorized' && Auth::isLoggedIn()) {
 // Redirect if already logged in
 if (Auth::isLoggedIn()) {
     if ($redirectUrl) {
-        // Use provided redirect — already validated above
+        // Use provided redirect, already validated above
         header('Location: ' . getBasePath() . ltrim($redirectUrl, '/'));
     } else {
         $role = Auth::getCurrentRole();

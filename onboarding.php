@@ -472,7 +472,7 @@ function completeOnboarding() {
     });
 }
 
-// Skip onboarding entirely — wait for API to mark complete before redirecting
+// Skip onboarding entirely, wait for API to mark complete before redirecting
 function skipOnboarding() {
     var formData = new FormData();
     formData.append('action', 'skip_onboarding');

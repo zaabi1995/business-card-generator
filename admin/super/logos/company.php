@@ -1,6 +1,6 @@
 <?php
 /**
- * Super Admin — Per-company logo tools.
+ * Super Admin, Per-company logo tools.
  * Upload/replace logo, force verify, revert, hide.
  */
 require_once __DIR__ . '/../../../config.php';
@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
             @mkdir($root . '/storage/logos/verified', 0755, true);
             $dest = "/storage/logos/verified/{$id}.{$ext}";
             if (!move_uploaded_file($_FILES['logo']['tmp_name'], $root . $dest)) {
-                // Abort the whole action — don't clear existing variant paths
+                // Abort the whole action, don't clear existing variant paths
                 // or point the row at a file we never wrote. Disk full, perms,
                 // or rejected move would otherwise nuke the live logo silently.
                 header("Location: /admin/super/logos/company.php?id=$id&upload_error=1");
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && validateCSRFToken($_POST['csrf_toke
 
             // Normalize JPEG → PNG so logo_png_path actually points at a PNG
             // (downstream: imagecreatefrompng, image/png MIME). If GD can't
-            // decode the JPEG, abort — we must never write a .jpg into a
+            // decode the JPEG, abort, we must never write a .jpg into a
             // column downstream code treats as PNG.
             if (in_array($ext, ['jpg', 'jpeg'], true)) {
                 $jpgImg = @imagecreatefromjpeg($root . $dest);
@@ -157,7 +157,7 @@ function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 <p class="text-sm text-gray-600">
   <a class="underline" href="/companies/<?= esc($company['slug']) ?>" target="_blank">View profile</a>
   · status: <strong><?= esc($company['logo_status']) ?></strong>
-  · source: <?= esc($company['logo_source'] ?: '—') ?>
+  · source: <?= esc($company['logo_source'] ?: ',') ?>
 </p>
 
 <?php if (isset($_GET['saved'])): ?>

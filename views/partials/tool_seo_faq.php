@@ -11,7 +11,7 @@ $_faq_esc = fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
     <span class="text-blue-700 font-semibold text-xs uppercase tracking-wider">FAQ</span>
     <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-2">Frequently asked</h2>
-    <p class="text-gray-600 mb-7 max-w-2xl">Everything people ask about this tool — privacy, compatibility, what works, what doesn't.</p>
+    <p class="text-gray-600 mb-7 max-w-2xl">Everything people ask about this tool, privacy, compatibility, what works, what doesn't.</p>
     <div class="space-y-3">
         <?php foreach ($faq as $i => $q): ?>
             <details class="group bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md hover:border-blue-300 transition overflow-hidden"<?= $i === 0 ? ' open' : '' ?>>

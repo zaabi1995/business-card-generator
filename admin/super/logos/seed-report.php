@@ -1,6 +1,6 @@
 <?php
 /**
- * Super Admin — Seed report viewer.
+ * Super Admin, Seed report viewer.
  * Shows most recent seed run + list of previous runs from /storage/logos/seed-reports/.
  */
 require_once __DIR__ . '/../../../config.php';

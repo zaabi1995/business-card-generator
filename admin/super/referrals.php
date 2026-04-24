@@ -1,9 +1,9 @@
 <?php
 /**
- * Referrals Dashboard (Super Admin) — BHD-234.
+ * Referrals Dashboard (Super Admin), BHD-234.
  *
  * Lists every user who has referred at least one signup, along with their
- * total signups, paid conversions, and last activity. Read-only — all the
+ * total signups, paid conversions, and last activity. Read-only, all the
  * crediting happens automatically on paid conversion.
  */
 require_once __DIR__ . '/../../config.php';
@@ -95,7 +95,7 @@ adminHeader('Referrals', 'referrals');
                     <?php if (empty($rows)): ?>
                     <tr>
                         <td colspan="5" class="px-4 py-10 text-center text-sm text-gray-500">
-                            No referrals yet — once users start sharing their link, they'll show up here.
+                            No referrals yet, once users start sharing their link, they'll show up here.
                         </td>
                     </tr>
                     <?php else: ?>
@@ -118,7 +118,7 @@ adminHeader('Referrals', 'referrals');
                             </span>
                         </td>
                         <td class="px-4 py-3 text-sm text-gray-500">
-                            <?= !empty($row['last_activity']) ? date('M j, Y H:i', strtotime($row['last_activity'])) : '—' ?>
+                            <?= !empty($row['last_activity']) ? date('M j, Y H:i', strtotime($row['last_activity'])) : ',' ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -177,7 +177,7 @@ adminHeader('Referrals', 'referrals');
                                     <span class="mr-2"><?= htmlspecialchars($k) ?>=<?= htmlspecialchars(is_scalar($v) ? (string)$v : json_encode($v)) ?></span>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                —
+                                ,
                             <?php endif; ?>
                         </td>
                     </tr>

@@ -3,9 +3,9 @@
  * Cardify legacy URL 301 router (Category R action 431).
  *
  * Two-layer approach:
- *   1. Nginx (preferred, zero PHP cost) — handled in the VPS rewrite file.
+ *   1. Nginx (preferred, zero PHP cost), handled in the VPS rewrite file.
  *      See /www/server/panel/vhost/rewrite/cardify.om.conf "Legacy URL 301s".
- *   2. This file — PHP fallback for dynamic/DB-backed redirects (renamed
+ *   2. This file, PHP fallback for dynamic/DB-backed redirects (renamed
  *      slugs, campaign aliases, anything the nginx layer can't statically
  *      match).
  *

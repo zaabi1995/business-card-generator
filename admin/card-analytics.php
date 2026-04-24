@@ -35,7 +35,7 @@ if ($employeeId === '' && !empty($employees)) {
 
 $employee = $employeeId ? findEmployeeById($employeeId, $companyId) : null;
 if (!$employee && $employeeId !== '') {
-    // Out-of-scope — silently drop and fall back to first employee
+    // Out-of-scope, silently drop and fall back to first employee
     $employee = !empty($employees) ? findEmployeeById($employees[0]['id'], $companyId) : null;
     $employeeId = $employee['id'] ?? '';
 }
@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const cta    = <?php echo json_encode($stats['cta'] ?? []); ?>;
     const dev    = <?php echo json_encode($stats['devices'] ?? []); ?>;
 
-    // Line — views + clicks per day
+    // Line, views + clicks per day
     const lineEl = document.getElementById('caLineChart');
     if (lineEl && series.length) {
         const labels = series.map(d => {
@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Bar — CTA breakdown
+    // Bar, CTA breakdown
     const barEl = document.getElementById('caBarChart');
     if (barEl) {
         const ctaLabels = <?php echo json_encode(array_map(fn($r) => ca_cta_label($r['event_type']), $stats['cta'] ?? [])); ?>;
@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Doughnut — device type
+    // Doughnut, device type
     const dEl = document.getElementById('caDoughnut');
     if (dEl) {
         new Chart(dEl, {

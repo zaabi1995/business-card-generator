@@ -609,7 +609,7 @@ class CardSections
      *   'on_break'     => bool,
      *   'today_key'    => 'mon'..'sun',
      *   'closes_at'    => 'HH:MM' | null,   (when open)
-     *   'opens_at'     => 'HH:MM' | null,   (when closed — same-day reopen or next open day)
+     *   'opens_at'     => 'HH:MM' | null,   (when closed, same-day reopen or next open day)
      *   'opens_day'    => 'mon'..'sun' | null,
      *   'same_day'     => bool,
      * ]
@@ -727,7 +727,7 @@ class CardSections
         if ($url === '') return null;
         if (!preg_match('#^https?://#i', $url)) return null;
 
-        // YouTube — youtu.be/ID, youtube.com/watch?v=ID, youtube.com/shorts/ID, /embed/ID
+        // YouTube, youtu.be/ID, youtube.com/watch?v=ID, youtube.com/shorts/ID, /embed/ID
         if (preg_match('#(?:youtube\.com/(?:watch\?(?:.*&)?v=|embed/|shorts/)|youtu\.be/)([A-Za-z0-9_-]{6,})#i', $url, $m)) {
             return [
                 'type'  => 'youtube',
@@ -736,7 +736,7 @@ class CardSections
             ];
         }
 
-        // Vimeo — vimeo.com/NUMERIC_ID (optionally /hash)
+        // Vimeo, vimeo.com/NUMERIC_ID (optionally /hash)
         if (preg_match('#vimeo\.com/(?:video/)?(\d{5,})#i', $url, $m)) {
             return [
                 'type'  => 'vimeo',
@@ -755,7 +755,7 @@ class CardSections
             ];
         }
 
-        // Anything else — render as external "Watch video" link
+        // Anything else, render as external "Watch video" link
         return [
             'type'  => 'link',
             'embed' => $url,
@@ -880,7 +880,7 @@ class CardSections
                 ->execute([$serviceId, $locale]);
             return true;
         }
-        if ($title === '') $title = '—';
+        if ($title === '') $title = ',';
         $stmt = $pdo->prepare(
             "INSERT INTO employee_card_services_i18n (service_id, locale, title, description)
              VALUES (:sid, :loc, :t, :d)
@@ -908,8 +908,8 @@ class CardSections
                 ->execute([$testimonialId, $locale]);
             return true;
         }
-        if ($name === '')  $name  = '—';
-        if ($quote === '') $quote = '—';
+        if ($name === '')  $name  = ',';
+        if ($quote === '') $quote = ',';
         $stmt = $pdo->prepare(
             "INSERT INTO employee_card_testimonials_i18n (testimonial_id, locale, name, quote)
              VALUES (:tid, :loc, :n, :q)
@@ -1157,7 +1157,7 @@ class CardSections
     }
 
     /**
-     * Rate-limit lead submissions — max 5 per IP per hour per employee.
+     * Rate-limit lead submissions, max 5 per IP per hour per employee.
      */
     public static function canSubmitLead($employeeId, $ip)
     {

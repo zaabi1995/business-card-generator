@@ -887,7 +887,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <!-- Capacity notes -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Capacity Notes <span class="text-gray-400 font-normal">(shown to customers)</span></label>
-                    <textarea name="capacity_notes" rows="2" placeholder="e.g. Peak season — expect 7 day turnaround"
+                    <textarea name="capacity_notes" rows="2" placeholder="e.g. Peak season, expect 7 day turnaround"
                               class="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"><?= htmlspecialchars($printShop['capacity_notes'] ?? '') ?></textarea>
                 </div>
 

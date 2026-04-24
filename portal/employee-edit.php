@@ -210,7 +210,7 @@ $pageTitle = t('portal.edit_my_details');
         <!-- Live card preview -->
         <div class="rounded-2xl p-5 mb-5 text-white bg-gradient-to-br from-[#009bc1] to-[#824598]">
             <div class="text-xs uppercase tracking-widest opacity-75" x-text="labels.my_card"></div>
-            <div class="text-xl font-bold mt-1" x-text="data.name_en || '—'"></div>
+            <div class="text-xl font-bold mt-1" x-text="data.name_en || ','"></div>
             <div class="text-sm opacity-90" x-text="data.position_en"></div>
             <div class="mt-4 text-xs opacity-85 space-y-1" dir="ltr">
                 <div x-show="data.email"><i class="fa-solid fa-envelope mr-2 opacity-70"></i><span x-text="data.email"></span></div>

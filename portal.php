@@ -1721,7 +1721,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             for (const [key, field] of Object.entries(template.fields)) {
                 if (!field.enabled) continue;
                 
-                // Handle QR code separately — use the employee's own vCard URL
+                // Handle QR code separately, use the employee's own vCard URL
                 // so the QR is dynamic per person. Lock it against user movement
                 // on the portal preview (designer is the only place to reposition).
                 if (key === 'qr_code') {

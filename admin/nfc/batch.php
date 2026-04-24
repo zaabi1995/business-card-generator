@@ -1,6 +1,6 @@
 <?php
 /**
- * NFC Batch — list employees, generate QR codes that point to the
+ * NFC Batch, list employees, generate QR codes that point to the
  * mobile writer page, and show programming progress per batch.
  */
 require_once __DIR__ . '/../../config.php';

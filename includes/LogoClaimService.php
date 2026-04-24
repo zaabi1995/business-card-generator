@@ -2,10 +2,10 @@
 require_once __DIR__ . '/LogoLibrary.php';
 
 /**
- * LogoClaimService — claim flow state machine.
+ * LogoClaimService, claim flow state machine.
  *
  * Encapsulates auto-verify logic + manual queue insertion + decide/unclaim.
- * Does NOT handle authentication or file uploads — those live in logo-claim.php.
+ * Does NOT handle authentication or file uploads, those live in logo-claim.php.
  */
 class LogoClaimService {
 
@@ -39,7 +39,7 @@ class LogoClaimService {
             [':u' => $userId]
         )['c'] ?? 0);
         if ($openCount >= 5) {
-            return ['ok' => false, 'error' => 'Max 5 pending claims — wait for decisions'];
+            return ['ok' => false, 'error' => 'Max 5 pending claims, wait for decisions'];
         }
 
         $companyClaimCount = (int) ($db->fetchOne(

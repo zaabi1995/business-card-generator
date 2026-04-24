@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userName = trim($_POST['user_name'] ?? '');
     // Phone capture: prefer the canonical E.164 string from intl-tel-input,
     // fall back to the raw `phone` field for non-JS clients. `phone_skipped=1`
-    // means the user explicitly hit "Skip for now" in the widget — honour it
+    // means the user explicitly hit "Skip for now" in the widget, honour it
     // and ship an empty string so signup never blocks (per BHD-224 spec:
     // required-with-skip).
     $phoneSkipped = ($_POST['phone_skipped'] ?? '') === '1';
@@ -240,13 +240,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     // Best-effort: attach phone to the user row so admin-side prompts
                     // and per-user notifications can target it. Column may not exist
-                    // on legacy installs — silently ignore.
+                    // on legacy installs, silently ignore.
                     if ($phone !== '' && !empty($userResult['user_id'])) {
                         try {
                             $db = Database::getInstance();
                             $db->update('users', ['phone' => $phone], 'id = :id', ['id' => $userResult['user_id']]);
                         } catch (Exception $e) {
-                            // column missing — migration 074 adds it
+                            // column missing, migration 074 adds it
                         }
                     }
 
@@ -675,8 +675,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
             skippedEl.value = '1';
             phoneEl.required = false;
             phoneEl.disabled = true;
-            phoneEl.placeholder = 'Skipped — add later from your dashboard';
-            if (requiredHint) { requiredHint.textContent = '(skipped — you can add it later)'; }
+            phoneEl.placeholder = 'Skipped, add later from your dashboard';
+            if (requiredHint) { requiredHint.textContent = '(skipped, you can add it later)'; }
             if (helpEl) { helpEl.textContent = "We'll prompt you again from your dashboard. No phone, no WA messages."; }
         });
     }
@@ -689,7 +689,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 if (iti.isValidNumber()) {
                     hiddenEl.value = iti.getNumber();
                 } else if (phoneEl.value.trim() !== '') {
-                    // Best effort — let server-side normalization decide.
+                    // Best effort, let server-side normalization decide.
                     hiddenEl.value = iti.getNumber() || phoneEl.value.trim();
                 } else {
                     hiddenEl.value = '';

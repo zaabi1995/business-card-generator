@@ -16,6 +16,6 @@ $body = <<<HTML
     <div style="font-size:14px;color:#6b7280;margin-top:4px;">{$omrAmount}</div>
   </div>
   <p>سنؤكّد بمجرد إتمام الدفع.</p>
-  <p style="color:#6b7280;font-size:14px;">— فريق كارديفاي</p>
+  <p style="color:#6b7280;font-size:14px;">, فريق كارديفاي</p>
 </div>
 HTML;

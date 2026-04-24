@@ -117,7 +117,7 @@ class MigrationRunner {
         // Strip php tags.
         $clean = preg_replace('/<\?php|<\?=|\?>/', '', $clean);
 
-        // Strip balanced function bodies. Regex balance is tricky — walk the
+        // Strip balanced function bodies. Regex balance is tricky, walk the
         // source manually tracking brace depth.
         $stripped = '';
         $len = strlen($clean);
@@ -231,7 +231,7 @@ class MigrationRunner {
         // once on call_user_func) and corrupt state.
         if (self::isHybridMigration($migration['path'], $prefix)) {
             $msg = sprintf(
-                'Refusing to run migration %s — file %s contains both a %s*() function and top-level executable code. Pick one pattern: either put ALL work in the function, or remove the function and keep only a top-level script.',
+                'Refusing to run migration %s, file %s contains both a %s*() function and top-level executable code. Pick one pattern: either put ALL work in the function, or remove the function and keep only a top-level script.',
                 $migrationNumber,
                 basename($migration['path']),
                 $prefix

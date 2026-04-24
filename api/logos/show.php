@@ -1,6 +1,6 @@
 <?php
 /**
- * GET /api/logos/show?slug=omantel — single company logo metadata.
+ * GET /api/logos/show?slug=omantel, single company logo metadata.
  */
 require_once __DIR__ . '/../../config.php';
 header('Content-Type: application/json');

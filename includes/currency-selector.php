@@ -2,7 +2,7 @@
 /**
  * Currency selector dropdown partial.
  * Include from ui-header.php to render the header currency picker.
- * Uses plain text + SVG chevron — no emojis, no flag images.
+ * Uses plain text + SVG chevron, no emojis, no flag images.
  */
 require_once __DIR__ . '/Currency.php';
 

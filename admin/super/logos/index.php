@@ -1,6 +1,6 @@
 <?php
 /**
- * Super Admin — Logo Library overview.
+ * Super Admin, Logo Library overview.
  * Stat cards, claim/takedown queue links, analytics link.
  */
 require_once __DIR__ . '/../../../config.php';
@@ -25,12 +25,12 @@ $openTakedowns  = (int) ($db->fetchOne("SELECT COUNT(*) c FROM logo_takedowns WH
 $downloadsToday = (int) ($db->fetchOne("SELECT COUNT(*) c FROM logo_downloads WHERE created_at > CURDATE()")['c'] ?? 0);
 $matchQueue     = (int) ($db->fetchOne("SELECT COUNT(*) c FROM om_companies WHERE logo_match_pending = 1")['c'] ?? 0);
 
-adminHeader('Logo Library — Admin');
+adminHeader('Logo Library, Admin');
 
 function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 ?>
 <div class="space-y-6">
-  <h1 class="text-2xl font-bold">Omani Logo Library — Admin</h1>
+  <h1 class="text-2xl font-bold">Omani Logo Library, Admin</h1>
 
   <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
     <?php foreach ([

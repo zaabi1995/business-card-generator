@@ -1467,7 +1467,7 @@ HTML
             'activation_reminder' => [
                 'subject' => 'Your {{company_name}} business cards are ready to create',
                 'body' => <<<HTML
-<h2>Your team is ready — just one step left!</h2>
+<h2>Your team is ready, just one step left!</h2>
 <p>Hi {{admin_name}},</p>
 <p>Your <strong>{{company_name}}</strong> account on Cardify has been set up and your employees have been added. The only thing missing is your card design template.</p>
 
@@ -1475,7 +1475,7 @@ HTML
     <strong>Here's where you stand:</strong>
     <table>
         <tr><td>Employees added</td><td><strong>{{employee_count}}</strong></td></tr>
-        <tr><td>Card templates</td><td><strong>0 — create yours now</strong></td></tr>
+        <tr><td>Card templates</td><td><strong>0, create yours now</strong></td></tr>
     </table>
 </div>
 

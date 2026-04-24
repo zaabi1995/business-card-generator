@@ -5,8 +5,8 @@
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle = 'Business Cards for Doctors & Healthcare in Oman — Cardify';
-$pageDescription = 'Create professional business cards for doctors, dentists, clinics, and hospitals in Oman. QR appointment booking, multi-location support, and digital sharing — free with Cardify.';
+$pageTitle = 'Business Cards for Doctors & Healthcare in Oman, Cardify';
+$pageDescription = 'Create professional business cards for doctors, dentists, clinics, and hospitals in Oman. QR appointment booking, multi-location support, and digital sharing, free with Cardify.';
 $canonicalUrl = 'https://cardify.om/industries/healthcare';
 $ogType = 'website';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
@@ -18,7 +18,7 @@ $showNavigation = true;
 $extraHead = '<script type="application/ld+json">' . json_encode([
     '@context' => 'https://schema.org',
     '@type' => 'Service',
-    'name' => 'Cardify — Business Cards for Doctors & Healthcare',
+    'name' => 'Cardify, Business Cards for Doctors & Healthcare',
     'description' => 'Professional digital and printed business cards for doctors, dentists, clinics, and hospitals in Oman.',
     'provider' => [
         '@type' => 'Organization',
@@ -49,7 +49,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
             <h1 class="text-4xl font-bold text-gray-900 mb-3">Business Cards for Doctors & Healthcare in Oman</h1>
             <p class="text-gray-500 text-lg max-w-2xl mx-auto mb-6">
-                Professional digital business cards for doctors, dentists, specialists, and clinics. Share your credentials, book appointments via QR, and manage multi-location practices — all from one platform.
+                Professional digital business cards for doctors, dentists, specialists, and clinics. Share your credentials, book appointments via QR, and manage multi-location practices, all from one platform.
             </p>
             <a href="<?php echo getBasePath(); ?>company/register.php"
                class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-lg">
@@ -73,7 +73,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         In healthcare, trust starts with professionalism. When a patient meets a new specialist or a doctor attends a medical conference, the business card is often the first tangible impression of their practice.
                     </p>
                     <p class="text-gray-600 leading-relaxed mb-4">
-                        With <?php echo $brandName; ?>, healthcare professionals in Oman can share their credentials, specializations, clinic locations, and appointment booking links — all from a single digital card that never goes out of date.
+                        With <?php echo $brandName; ?>, healthcare professionals in Oman can share their credentials, specializations, clinic locations, and appointment booking links, all from a single digital card that never goes out of date.
                     </p>
                     <p class="text-gray-600 leading-relaxed">
                         Patients can scan a QR code in your waiting room and instantly save your contact, see your qualifications, and book their next visit. It's modern, hygienic, and efficient.
@@ -96,7 +96,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </div>
                             <div>
                                 <h3 class="font-semibold text-gray-900">QR Appointment Booking</h3>
-                                <p class="text-gray-600 text-sm">Link your QR code to your booking system — patients scan and schedule in seconds.</p>
+                                <p class="text-gray-600 text-sm">Link your QR code to your booking system, patients scan and schedule in seconds.</p>
                             </div>
                         </div>
                         <div class="flex items-start gap-4">
@@ -114,7 +114,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </div>
                             <div>
                                 <h3 class="font-semibold text-gray-900">Contactless & Hygienic</h3>
-                                <p class="text-gray-600 text-sm">No physical exchange needed — share via NFC tap, QR scan, or digital link.</p>
+                                <p class="text-gray-600 text-sm">No physical exchange needed, share via NFC tap, QR scan, or digital link.</p>
                             </div>
                         </div>
                     </div>
@@ -135,7 +135,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Clinic & Hospital Cards</h3>
                     <p class="text-gray-600">
-                        Create cards for your entire medical team — doctors, nurses, receptionists, and admin staff — all with consistent clinic branding.
+                        Create cards for your entire medical team, doctors, nurses, receptionists, and admin staff, all with consistent clinic branding.
                     </p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-8 text-center">
@@ -175,13 +175,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="bg-white rounded-xl shadow-sm p-8 border-l-4 border-cyan-500">
                     <h3 class="text-lg font-bold text-gray-900 mb-3">Medical Conferences</h3>
                     <p class="text-gray-600">
-                        At OMSB events, health symposiums, or pharma meetups, share your card with a QR scan. No fumbling with paper cards — and your contact info is always current.
+                        At OMSB events, health symposiums, or pharma meetups, share your card with a QR scan. No fumbling with paper cards, and your contact info is always current.
                     </p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-8 border-l-4 border-blue-500">
                     <h3 class="text-lg font-bold text-gray-900 mb-3">Waiting Room QR Displays</h3>
                     <p class="text-gray-600">
-                        Place QR codes in your waiting area. Patients scan to save your contact, see your working hours, or book follow-up appointments — reducing reception workload.
+                        Place QR codes in your waiting area. Patients scan to save your contact, see your working hours, or book follow-up appointments, reducing reception workload.
                     </p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-8 border-l-4 border-green-500">

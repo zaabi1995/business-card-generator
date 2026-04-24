@@ -130,7 +130,7 @@ function createPasswordResetToken($db, $email, $userType, $userId) {
     $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
     
     try {
-        // Store hashed token in DB — send plain token to user via email
+        // Store hashed token in DB, send plain token to user via email
         $hashedToken = hash('sha256', $token);
         $db->insert('password_reset_tokens', [
             'email' => $email,
@@ -147,7 +147,7 @@ function createPasswordResetToken($db, $email, $userType, $userId) {
 }
 
 /**
- * Send password reset email (via Notifier — email-only, no WhatsApp)
+ * Send password reset email (via Notifier, email-only, no WhatsApp)
  */
 function sendPasswordResetEmail($email, $name, $token) {
     $resetUrl = getBaseUrl() . 'reset-password.php?token=' . urlencode($token);

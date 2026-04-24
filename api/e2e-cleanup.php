@@ -10,7 +10,7 @@
  *   - Must send BOTH X-E2E-Test: 1 AND X-E2E-Cleanup-Token matching
  *     the E2E_CLEANUP_TOKEN constant in config.php / env.
  *   - Only deletes rows where source = 'e2e_test' (double belt-and-braces).
- *   - No-op (204) when the token isn't configured — test never blocks.
+ *   - No-op (204) when the token isn't configured, test never blocks.
  */
 require_once __DIR__ . '/../config.php';
 
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // Opt-in: only active when the token is configured on the server.
 $expected = defined('E2E_CLEANUP_TOKEN') ? E2E_CLEANUP_TOKEN : (getenv('E2E_CLEANUP_TOKEN') ?: '');
 if ($expected === '') {
-    // Quietly disabled — don't leak that the feature exists.
+    // Quietly disabled, don't leak that the feature exists.
     http_response_code(204);
     exit;
 }

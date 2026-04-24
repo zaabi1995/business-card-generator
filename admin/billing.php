@@ -246,7 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         header('Location: ' . $result['payment_url']);
         exit;
     } elseif ($result['success'] && !empty($result['free'])) {
-        // Free plan activated directly — no payment needed
+        // Free plan activated directly, no payment needed
         header('Location: ' . getAdminBasePath() . 'billing' . ((defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php') . '?payment=success');
         exit;
     } elseif ($result['success'] && !empty($result['payment_data'])) {

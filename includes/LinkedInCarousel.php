@@ -60,7 +60,7 @@ class LinkedInCarousel {
                 self::log($logFile, "Company page post FAILED (personal still OK): " . $e->getMessage());
             }
         } else {
-            self::log($logFile, "Skip company post — org token not configured");
+            self::log($logFile, "Skip company post, org token not configured");
         }
 
         return [

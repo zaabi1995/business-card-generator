@@ -395,7 +395,7 @@ class CardAnalytics
 
         // Active cards = status='active' AND at least 1 card_event in last 30d.
         // NOTE: employees uses utf8mb4_unicode_ci, card_events uses
-        // utf8mb4_general_ci on some legacy installs — force the collation on
+        // utf8mb4_general_ci on some legacy installs, force the collation on
         // the join predicate so MySQL doesn't throw "Illegal mix of collations".
         $activeRow = self::$db->fetchOne(
             "SELECT COUNT(DISTINCT e.id) AS c
@@ -434,7 +434,7 @@ class CardAnalytics
             return ['total_active' => 0, 'sections' => $out];
         }
 
-        // Codex round-3 finding #6 — the previous query joined card_events
+        // Codex round-3 finding #6, the previous query joined card_events
         // then SUM()'d section_enabled per joined row, so every card counted
         // once per event (massive over-count). Do it in two steps instead:
         //

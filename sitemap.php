@@ -7,7 +7,7 @@
  *   - One of the child sitemaps at /sitemap-{part}.xml (via .htaccess rewrite → sitemap.php?part=X)
  *
  * Splitting by topic helps Google prioritise crawling (the whole 4,974-URL
- * flat list was sitting at "Discovered — not indexed" indefinitely).
+ * flat list was sitting at "Discovered, not indexed" indefinitely).
  */
 
 header('Content-Type: application/xml; charset=UTF-8');
@@ -174,11 +174,11 @@ if ($part === 'static') {
     }
 
 } elseif ($part === 'directory') {
-    // Flagship + directory hubs (indexes, sector hubs, wilayat hubs) — NOT individual companies.
+    // Flagship + directory hubs (indexes, sector hubs, wilayat hubs), NOT individual companies.
     smUrl("{$baseUrl}/oman-business-index",    $today, 'monthly', '0.9');
     smUrl("{$baseUrl}/ar/oman-business-index", $today, 'monthly', '0.8');
     smUrl("{$baseUrl}/gcc-business-index",     $today, 'weekly',  '0.95');
-    // /ar/gcc-business-index not yet published — English-only flagship for now.
+    // /ar/gcc-business-index not yet published, English-only flagship for now.
     smUrl("{$baseUrl}/companies",              $today, 'weekly',  '0.9');
     smUrl("{$baseUrl}/ar/companies",           $today, 'weekly',  '0.8');
 
@@ -278,7 +278,7 @@ if ($part === 'static') {
     }
 
 } elseif ($part === 'logos') {
-    // Omani Logo Library — hub + terms/press + 23 sector pages + image entries
+    // Omani Logo Library, hub + terms/press + 23 sector pages + image entries
     // for every indexed/verified logo (Google Images surfaces them from
     // <image:image> blocks, not just <img> tags on a page).
     smUrl("{$baseUrl}/logos",       $today, 'daily',   '0.9');
@@ -323,7 +323,7 @@ if ($part === 'static') {
                     ? date('Y-m-d', strtotime($l['logo_updated_at']))
                     : $today;
                 $caption = trim(($l['name_en'] ?? '') . ' logo');
-                $title   = trim(($l['name_en'] ?? '') . ' logo — Omani Logo Library');
+                $title   = trim(($l['name_en'] ?? '') . ' logo, Omani Logo Library');
                 echo "    <url>\n";
                 echo "        <loc>" . smX($pageUrl) . "</loc>\n";
                 echo "        <lastmod>{$lastmod}</lastmod>\n";
@@ -350,7 +350,7 @@ if ($part === 'static') {
     // detail URLs so Google doesn't crawl them as 404s.
 
 } else {
-    // Unknown part — empty urlset (Google will just see no URLs; still valid XML).
+    // Unknown part, empty urlset (Google will just see no URLs; still valid XML).
 }
 
 echo '</urlset>' . "\n";

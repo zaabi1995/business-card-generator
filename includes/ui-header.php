@@ -30,7 +30,7 @@ $canonicalUrl = $canonicalUrl ?? '';
 $enableThemeScript = $enableThemeScript ?? false;
 $extraHead = $extraHead ?? '';
 
-// Referral tracking — capture ?ref= parameter
+// Referral tracking, capture ?ref= parameter
 if (!empty($_GET['ref']) && empty($_SESSION['referral_source'])) {
     $_SESSION['referral_source'] = substr(preg_replace('/[^a-zA-Z0-9_-]/', '', $_GET['ref']), 0, 50);
     $_SESSION['referral_landing'] = $_SERVER['REQUEST_URI'] ?? '/';
@@ -162,7 +162,7 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
       }
     ?>
 
-    <!-- Font Awesome (CDN) — preloaded fonts, non-blocking CSS -->
+    <!-- Font Awesome (CDN), preloaded fonts, non-blocking CSS -->
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" onload="this.onload=null;this.rel='stylesheet'">
@@ -176,7 +176,7 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <?php $flowbiteCssVersion = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/flowbite/app.css') ?: time(); ?>
     <link rel="stylesheet" href="/assets/flowbite/app.css?v=<?php echo $flowbiteCssVersion; ?>">
 
-    <!-- Flag Icons CSS — only needed on forms with phone/country selectors; non-blocking -->
+    <!-- Flag Icons CSS, only needed on forms with phone/country selectors; non-blocking -->
     <link rel="preload" as="style" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css"></noscript>
     

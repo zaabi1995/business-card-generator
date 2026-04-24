@@ -1,6 +1,6 @@
 <?php
 /**
- * Order Payment Receipt — Printable/downloadable receipt for paid print orders
+ * Order Payment Receipt, Printable/downloadable receipt for paid print orders
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';

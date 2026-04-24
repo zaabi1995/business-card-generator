@@ -1,6 +1,6 @@
 <?php
 /**
- * Appointments — slot computation + booking helpers.
+ * Appointments, slot computation + booking helpers.
  * Mirrors the style of CardSections.php.
  */
 class Appointments {

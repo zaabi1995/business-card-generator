@@ -25,7 +25,7 @@ class Auth {
 
         $email = sanitizeEmail($email);
 
-        // Brute force protection — persistent per-IP counter in the DB so it
+        // Brute force protection, persistent per-IP counter in the DB so it
         // survives cookie clears and new browser sessions. 10 attempts per
         // 15-minute rolling bucket, fail-open if the limiter backend is down.
         require_once __DIR__ . '/RateLimiter.php';
@@ -81,7 +81,7 @@ class Auth {
             return ['success' => false, 'error' => 'Invalid email or password'];
         }
 
-        // Email not found — return same generic error to prevent user enumeration
+        // Email not found, return same generic error to prevent user enumeration
         return ['success' => false, 'error' => 'Invalid email or password'];
     }
     
@@ -376,7 +376,7 @@ class Auth {
         $userId = $_SESSION['user_id'] ?? null;
         $userRole = $_SESSION['user_role'] ?? null;
         
-        // Case 1: Employee — user_id holds the employee's ID
+        // Case 1: Employee, user_id holds the employee's ID
         if ($userRole === 'employee' && $userId) {
             $employee = self::$db->fetchOne(
                 "SELECT e.*, c.slug as company_slug, c.name as company_name 
@@ -399,7 +399,7 @@ class Auth {
             }
         }
         
-        // Case 2: Legacy company admin — user_id is "company_X"
+        // Case 2: Legacy company admin, user_id is "company_X"
         if ($userId && is_string($userId) && strpos($userId, 'company_') === 0) {
             $companyId = substr($userId, 8); // strip "company_" prefix
             $company = self::$db->fetchOne(

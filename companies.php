@@ -130,7 +130,7 @@ if ($view === 'company' && $slug) {
     );
     $totalCount = (int) $db->fetchOne("SELECT COUNT(*) AS c FROM om_companies WHERE wilayat = ?", [$slug])['c'];
 } else {
-    // Index view — search + paginated listing
+    // Index view, search + paginated listing
     $view = 'index';
     $q = trim((string) ($_GET['q'] ?? ''));
     $filterSector  = (string) ($_GET['sector']  ?? '');
@@ -209,7 +209,7 @@ if ($company) {
     // When a company has an indexed/verified logo, bend title + description to
     // target high-intent long-tail queries ("{Company} logo", "{Company} logo
     // download", "{Company} logo svg"). This is what pulls Google Image /
-    // organic traffic to the library — without this the pages compete with
+    // organic traffic to the library, without this the pages compete with
     // the OBI profile for generic keywords.
     $hasPublicLogo = !empty($company['logo_status'])
         && in_array($company['logo_status'], ['indexed', 'verified'], true)
@@ -386,7 +386,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
             </div>
 
             <?php
-                /* Logo Library hero — status badge, download / claim CTA, takedown link */
+                /* Logo Library hero, status badge, download / claim CTA, takedown link */
                 if (!empty($company['logo_status']) && $company['logo_status'] !== 'takedown') {
                     include __DIR__ . '/views/partials/company_logo_hero.php';
                 }
@@ -404,7 +404,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                 $displayName = $company['name_en'];
 
                 // Detect sovereign / ministerial / authority entities. They
-                // are state-sector bodies — none of them "roll out business
+                // are state-sector bodies, none of them "roll out business
                 // cards for their team" via Cardify, and commercial-banking
                 // sector boilerplate is wrong for them. We drop the upsell
                 // section entirely for sovereign entities and restrict the
@@ -439,7 +439,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                         if ($p !== '') $aboutParas[] = $p;
                     }
                 } elseif ($isSovereign) {
-                    // Sovereign entity with no curated summary yet — keep it
+                    // Sovereign entity with no curated summary yet, keep it
                     // factual and minimal. No commercial-sector boilerplate.
                     $aboutParas[] = sprintf(
                         '%s is a state-sector entity of the Sultanate of Oman, classified under %s in %s governorate.',
@@ -487,7 +487,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
             </section>
 
             <?php
-                /* "More logos from {sector}" strip — only for rows with a public logo. */
+                /* "More logos from {sector}" strip, only for rows with a public logo. */
                 include __DIR__ . '/views/partials/company_logo_related.php';
             ?>
 
@@ -620,7 +620,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
         </p>
 
         <?php
-            /* Logo strip — only on sector hubs. Shows indexed/verified logos
+            /* Logo strip, only on sector hubs. Shows indexed/verified logos
                scoped to this sector with a CTA to /logos/{sector}. */
             if ($hubSector) {
                 $hubLogoSample = [];

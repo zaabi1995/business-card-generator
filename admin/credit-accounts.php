@@ -1,6 +1,6 @@
 <?php
 /**
- * Company — Credit Accounts Overview
+ * Company, Credit Accounts Overview
  * View all credit accounts across print shops, upload PO documents
  */
 require_once __DIR__ . '/../config.php';
@@ -125,16 +125,16 @@ adminHeader(t('adminchrome.credit_accounts'), 'print');
                             </span>
                         </td>
                         <td class="px-6 py-4 text-sm text-right">
-                            <?= $acc['status'] === 'approved' ? number_format($acc['credit_limit'], 3) : '—' ?>
+                            <?= $acc['status'] === 'approved' ? number_format($acc['credit_limit'], 3) : ',' ?>
                         </td>
                         <td class="px-6 py-4 text-sm text-right <?= (float)$acc['balance_used'] > 0 ? 'text-red-600 font-medium' : '' ?>">
-                            <?= $acc['status'] === 'approved' ? number_format($acc['balance_used'], 3) : '—' ?>
+                            <?= $acc['status'] === 'approved' ? number_format($acc['balance_used'], 3) : ',' ?>
                         </td>
                         <td class="px-6 py-4 text-sm text-right text-green-600">
-                            <?= $acc['status'] === 'approved' ? number_format($avail, 3) : '—' ?>
+                            <?= $acc['status'] === 'approved' ? number_format($avail, 3) : ',' ?>
                         </td>
                         <td class="px-6 py-4 text-sm text-center">
-                            <?= $acc['payment_terms'] ? strtoupper($acc['payment_terms']) : '—' ?>
+                            <?= $acc['payment_terms'] ? strtoupper($acc['payment_terms']) : ',' ?>
                         </td>
                         <td class="px-6 py-4 text-sm text-center">
                             <?php if (!empty($acc['po_file_path'])): ?>

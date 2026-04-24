@@ -96,9 +96,9 @@ class Payment {
         // Paymob Oman merchant only accepts OMR. All amounts entering this
         // method are OMR-canonical (print_order.total_amount, card_order.total,
         // free-forever means no subscription path reaches this code). Coerce
-        // any non-OMR input to OMR with a warning — this is a bug in the caller.
+        // any non-OMR input to OMR with a warning, this is a bug in the caller.
         if (strtoupper($currency) !== 'OMR') {
-            error_log("[Payment] createIntent called with non-OMR currency '{$currency}' for {$type}/{$referenceId} — coercing to OMR. Caller should pass OMR.");
+            error_log("[Payment] createIntent called with non-OMR currency '{$currency}' for {$type}/{$referenceId}, coercing to OMR. Caller should pass OMR.");
             $currency = 'OMR';
         }
         $currency = 'OMR';
@@ -110,7 +110,7 @@ class Payment {
         // Build real billing data from company info, with overrides
         $companyName = $company['name'] ?? 'Customer';
         $nameParts = explode(' ', $companyName, 2);
-        // Paymob requires non-empty first_name, last_name, phone_number — coalesce empty strings too
+        // Paymob requires non-empty first_name, last_name, phone_number, coalesce empty strings too
         $coalesce = static function(...$vals) {
             foreach ($vals as $v) {
                 if ($v !== null && $v !== '') return $v;
@@ -346,7 +346,7 @@ class Payment {
         $amountCents = $data['amount_cents'] ?? null;
         $currency = $data['currency'] ?? 'OMR';
 
-        // Verify HMAC — required; reject any callback without a valid signature
+        // Verify HMAC, required; reject any callback without a valid signature
         $receivedHmac = $hmac ?? ($data['hmac'] ?? null);
         if (empty($receivedHmac)) {
             error_log("Payment callback: Missing HMAC for transaction {$transactionId}");
@@ -374,7 +374,7 @@ class Payment {
             }
         }
 
-        // If still not found, this might be an old subscription callback — delegate to legacy
+        // If still not found, this might be an old subscription callback, delegate to legacy
         if (!$payment) {
             error_log("Payment callback: Not found in payments table for {$merchantOrderId}, checking legacy");
             return ['success' => false, 'error' => 'Payment not found', 'legacy' => true, 'merchant_order_id' => $merchantOrderId];
@@ -431,7 +431,7 @@ class Payment {
             } elseif ($payment['type'] === 'card_order') {
                 self::confirmCardOrder($payment);
             }
-            // Cancel any open retry — a later successful payment closes the
+            // Cancel any open retry, a later successful payment closes the
             // dunning loop whether it came through the retry link or a fresh
             // checkout the user started themselves.
             try {
@@ -500,7 +500,7 @@ class Payment {
                 }
             }
         } else {
-            // Payment failed — enqueue a dunning retry (Cat S action 455).
+            // Payment failed, enqueue a dunning retry (Cat S action 455).
             try {
                 require_once INCLUDES_DIR . '/PaymentRetry.php';
                 $failReason = (string) ($data['data.message'] ?? $data['message'] ?? 'declined');
@@ -541,7 +541,7 @@ class Payment {
                 ]);
             } else {
                 // Retry URL points to the admin print page (company-facing print orders live there).
-                // company/orders.php does not exist — the old value was broken.
+                // company/orders.php does not exist, the old value was broken.
                 $retryUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://'
                           . ($_SERVER['HTTP_HOST'] ?? 'cardify.om')
                           . getBasePath() . 'admin/print.php?retry=' . urlencode($order['id'] ?? ($payment['reference_id'] ?? ''));
@@ -677,7 +677,7 @@ class Payment {
     }
 
     /**
-     * Confirm card order — add credits to company after payment
+     * Confirm card order, add credits to company after payment
      */
     private static function confirmCardOrder(array $payment): void {
         $db = Database::getInstance();
@@ -709,7 +709,7 @@ class Payment {
             return;
         }
 
-        // Atomic increment — no race condition
+        // Atomic increment, no race condition
         $conn = $db->getConnection();
         $stmt = $conn->prepare("UPDATE companies SET card_credits = card_credits + ? WHERE id = ?");
         $stmt->execute([$cardCount, $companyId]);

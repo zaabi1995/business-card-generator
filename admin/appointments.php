@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin — Appointments dashboard.
+ * Admin, Appointments dashboard.
  * Lists upcoming/past/all appointments for the current company's employees.
  * Owner can confirm/cancel.
  */

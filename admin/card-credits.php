@@ -168,11 +168,11 @@ adminHeader(t('card_credits.page_title'), 'billing');
                 </div>
                 <div>
                     <p class="text-xs text-gray-500 uppercase mb-1"><?= htmlspecialchars(t('card_credits.per_card')) ?></p>
-                    <p class="font-mono text-lg font-semibold text-gray-900" x-text="formatRate(pricePer())">—</p>
+                    <p class="font-mono text-lg font-semibold text-gray-900" x-text="formatRate(pricePer())">,</p>
                 </div>
                 <div>
                     <p class="text-xs text-gray-500 uppercase mb-1"><?= htmlspecialchars(t('card_credits.custom_total')) ?></p>
-                    <p class="font-mono text-xl font-bold text-gray-900" x-text="formatTotal(count * pricePer())">—</p>
+                    <p class="font-mono text-xl font-bold text-gray-900" x-text="formatTotal(count * pricePer())">,</p>
                     <p x-show="count * (0.500 - pricePer()) > 0" class="text-xs text-green-700 font-medium mt-1"
                        x-text="'<?= htmlspecialchars(t('card_credits.save_prefix')) ?> ' + formatTotal(count * (0.500 - pricePer()))"></p>
                 </div>

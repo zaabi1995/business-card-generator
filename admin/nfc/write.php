@@ -1,6 +1,6 @@
 <?php
 /**
- * NFC Tag Writer — print-tech mobile page (Chrome Android).
+ * NFC Tag Writer, print-tech mobile page (Chrome Android).
  * Loads one employee, exposes a "Tap to program" button which uses the
  * Web NFC API to write the card URL to a held tag.
  */
@@ -28,7 +28,7 @@ if (!$employee) {
     exit;
 }
 
-// Build card URL — match wallet pattern: {host}/{slug}/card/{employeeId}
+// Build card URL, match wallet pattern: {host}/{slug}/card/{employeeId}
 $company = null;
 if (DatabaseAdapter::useDatabase()) {
     $company = $db->fetchOne(
@@ -42,7 +42,7 @@ $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : '
 $host = $_SERVER['HTTP_HOST'] ?? 'cardify.om';
 $cardUrl = $scheme . '://' . $host . '/' . rawurlencode($slug) . '/card/' . rawurlencode($employee['id']);
 
-$pageTitle = 'NFC Writer — ' . ($employee['name'] ?? '');
+$pageTitle = 'NFC Writer, ' . ($employee['name'] ?? '');
 adminHeader($pageTitle, 'nfc-tags');
 ?>
 <style>
@@ -141,7 +141,7 @@ adminHeader($pageTitle, 'nfc-tags');
             await ndef.write({ records: [{ recordType: 'url', data: cardUrl }] });
             count++;
             countBadge.textContent = count;
-            status.textContent = 'Success — tag programmed.';
+            status.textContent = 'Success, tag programmed.';
             btn.classList.add('flash-ok');
             beep();
             setTimeout(() => btn.classList.remove('flash-ok'), 800);

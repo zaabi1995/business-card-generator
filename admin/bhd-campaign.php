@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
                 $status = $result['success'] ? 'sent' : 'failed';
                 $error  = $result['error'] ?? null;
             } elseif ($channel === 'email') {
-                // Email not implemented here — log as pending for manual send
+                // Email not implemented here, log as pending for manual send
                 $status = 'pending';
             }
 
@@ -114,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
 }
 
 // Default WhatsApp template
-$defaultWhatsapp = "Hello! BHD Printing now offers digital business cards through Cardify.\n\nDesign, share, and print professional cards for your team — in minutes.\n\nGet started FREE: https://cardify.om/bhd\n\nYour BHD Printing team";
+$defaultWhatsapp = "Hello! BHD Printing now offers digital business cards through Cardify.\n\nDesign, share, and print professional cards for your team, in minutes.\n\nGet started FREE: https://cardify.om/bhd\n\nYour BHD Printing team";
 
 adminHeader(t('adminchrome.bhd_campaign_manager'), 'reports');
 ?>
@@ -223,10 +223,10 @@ adminHeader(t('adminchrome.bhd_campaign_manager'), 'reports');
                 </div>
                 <div class="p-6">
                     <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 font-sans text-sm text-gray-800 space-y-3">
-                        <p><strong>Subject:</strong> Your business cards, upgraded — Free offer from BHD Printing</p>
+                        <p><strong>Subject:</strong> Your business cards, upgraded, Free offer from BHD Printing</p>
                         <hr class="border-gray-200">
                         <p>Hi [Name],</p>
-                        <p>We're excited to introduce <strong>Cardify</strong> — a digital business card platform exclusively available to BHD Printing customers.</p>
+                        <p>We're excited to introduce <strong>Cardify</strong>, a digital business card platform exclusively available to BHD Printing customers.</p>
                         <p>With Cardify, you can:</p>
                         <ul class="list-disc pl-5 space-y-1">
                             <li>Design professional business cards in minutes</li>

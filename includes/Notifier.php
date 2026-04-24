@@ -1,12 +1,12 @@
 <?php
 /**
- * Notifier — unified confirmation dispatcher across email + Dardasha WhatsApp.
+ * Notifier, unified confirmation dispatcher across email + Dardasha WhatsApp.
  *
  * Every confirmation event in Cardify goes through Notifier::send(). It renders
  * templates, dispatches to Mailer (email) and WhatsApp (Dardasha), logs the
  * attempt + result to notification_log, and returns per-channel success flags.
  *
- * Failures on one channel do NOT block the other — graceful degradation is
+ * Failures on one channel do NOT block the other, graceful degradation is
  * the design. Caller can re-dispatch individual channels later if needed.
  *
  * Templates live in includes/notifications/templates/<event>.<channel>.<lang>.php

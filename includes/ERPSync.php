@@ -1,6 +1,6 @@
 <?php
 /**
- * ERPSync — Pushes Cardify print order payments into BHD-ERP.
+ * ERPSync, Pushes Cardify print order payments into BHD-ERP.
  *
  * Calls POST /api/admin/cardify/record-payment on BHD-ERP, which:
  *   1. Creates a Quote for the client
@@ -92,7 +92,7 @@ class ERPSync {
         // CARDS-{first 8 of paymentId} is the ERP-side orderNumber and the
         // dedup key. Keeps the UUID out of user-facing invoice numbers.
         $shortRef    = 'CARDS-' . strtoupper(substr(str_replace('-', '', $paymentId), 0, 8));
-        $description = "Cardify card credits × {$cardCount} — {$shortRef}";
+        $description = "Cardify card credits × {$cardCount}, {$shortRef}";
 
         $payload = [
             'clientName'    => $clientName,
@@ -180,7 +180,7 @@ class ERPSync {
         $qty = (int)($order['quantity'] ?? 0);
         $paper = ucfirst($order['paper_type'] ?? 'standard');
         $finish = ucfirst(str_replace('_', ' ', $order['finish'] ?? 'standard'));
-        $description = "Business Cards × {$qty} ({$paper}, {$finish}) — Order {$order['order_number']}";
+        $description = "Business Cards × {$qty} ({$paper}, {$finish}), Order {$order['order_number']}";
 
         // Determine ERP client name: company override → settings default → company name
         $clientName = !empty($order['erp_client_name'])
@@ -234,7 +234,7 @@ class ERPSync {
         $data = json_decode($body, true);
 
         if ($httpCode === 409) {
-            // Already recorded — treat as success, store existing IDs if returned
+            // Already recorded, treat as success, store existing IDs if returned
             $erpData = $data ?? [];
             $db->exec("UPDATE print_orders SET
                 erp_sync_status = 'synced',
@@ -255,7 +255,7 @@ class ERPSync {
             return ['success' => false, 'message' => "ERP sync failed: $errMsg"];
         }
 
-        // Success — persist ERP IDs back into Cardify
+        // Success, persist ERP IDs back into Cardify
         $pdo = $db->getConnection();
         $stmt = $pdo->prepare("UPDATE print_orders SET
             erp_invoice_id            = :inv_id,
@@ -433,7 +433,7 @@ class ERPSync {
      */
     private static function alertFailure(int $orderId, string $error): void {
         // Recipient: Ali personal (+96871616161, per memory feedback_fencing_otp_tests_ali_only
-        // — same rule applies to error alerts; only Ali gets pinged until we wire
+        //, same rule applies to error alerts; only Ali gets pinged until we wire
         // opt-in per-admin notifications).
         $phone = '96871616161';
 

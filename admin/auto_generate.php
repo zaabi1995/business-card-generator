@@ -979,7 +979,7 @@ function autoGenerator() {
 
                 if (!logResult.success && logResult.limit_reached) {
                     this.status = 'error';
-                    this.errorMessage = logResult.error || 'Monthly card limit reached. Please upgrade your plan.';
+                    this.errorMessage = logResult.error || 'Card generation rate limit hit. Please wait a moment and try again.';
                     return;
                 }
 

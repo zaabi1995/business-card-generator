@@ -1,6 +1,6 @@
 <?php
 /**
- * Cardify — Industries Hub (landing page for all /industries/*)
+ * Cardify, Industries Hub (landing page for all /industries/*)
  *
  * SEO landing for "digital business cards by industry" that links out
  * to every /industries/* page. Also cross-links to the GCC Business
@@ -9,7 +9,7 @@
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle       = 'Digital Business Cards by Industry — Banking, Oil & Gas, Real Estate, Tourism | Cardify';
+$pageTitle       = 'Digital Business Cards by Industry, Banking, Oil & Gas, Real Estate, Tourism | Cardify';
 $pageDescription = 'Industry-specific digital business card solutions for teams in Oman and the GCC. Banking, logistics, oil & gas, government, construction, real estate, healthcare, tourism, restaurants.';
 $canonicalUrl    = 'https://cardify.om/industries';
 $showNavigation  = true;

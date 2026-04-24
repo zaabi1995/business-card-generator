@@ -1,11 +1,11 @@
 <?php
 /**
- * Cardify — Digital Business Cards for Oil & Gas in Oman / GCC
+ * Cardify, Digital Business Cards for Oil & Gas in Oman / GCC
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle       = 'Business Cards for Oil & Gas Teams in Oman + GCC — Cardify';
+$pageTitle       = 'Business Cards for Oil & Gas Teams in Oman + GCC, Cardify';
 $pageDescription = 'Digital business cards for upstream, midstream, and downstream oil & gas teams across Oman and the GCC. PDO, OQ, Shell Oman, service companies, and contractors.';
 $canonicalUrl    = 'https://cardify.om/industries/oil-gas';
 $brandName       = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
@@ -13,15 +13,15 @@ $showNavigation  = true;
 
 $faq = [
     ['q' => 'Which oil & gas teams use Cardify?',      'a' => 'Upstream crews (PDO, OQ Exploration), midstream (OQ Gas Networks, OLNG), downstream (OQ Refineries, Shell Oman retail), service companies (Schlumberger, Baker Hughes, Halliburton Oman), and hundreds of local contractors operating on Omani fields.'],
-    ['q' => 'Does it work at rig sites and fields?',   'a' => 'Yes. A single QR scan works with basic mobile data — no app install, no WiFi. Contractor teams often use it on-site in Block 6, Mukhaizna, Harweel, and Khazzan operations.'],
+    ['q' => 'Does it work at rig sites and fields?',   'a' => 'Yes. A single QR scan works with basic mobile data, no app install, no WiFi. Contractor teams often use it on-site in Block 6, Mukhaizna, Harweel, and Khazzan operations.'],
     ['q' => 'Can we embed HSE certifications?',        'a' => 'Yes. Display fields handle H2S, basic offshore survival (BOSIET), confined-space, and other certs as badges on the card.'],
     ['q' => 'What about bilingual Arabic fields?',     'a' => 'Full RTL Arabic, proper kerning, tabular numerals for well IDs and PO numbers.'],
-    ['q' => 'Are major Omani energy brands in the logo library?', 'a' => 'Yes — OQ, PDO, Energy & Minerals ministry, OLNG, and related sovereign entities are in the Omani Logo Library at /logos/oil-gas.'],
+    ['q' => 'Are major Omani energy brands in the logo library?', 'a' => 'Yes, OQ, PDO, Energy & Minerals ministry, OLNG, and related sovereign entities are in the Omani Logo Library at /logos/oil-gas.'],
 ];
 
 $serviceLd = [
     '@context' => 'https://schema.org', '@type' => 'Service',
-    'name' => 'Cardify — Digital Business Cards for Oil & Gas',
+    'name' => 'Cardify, Digital Business Cards for Oil & Gas',
     'provider' => ['@type' => 'Organization', 'name' => 'Cardify', 'url' => 'https://cardify.om'],
     'areaServed' => [['@type' => 'Country', 'name' => 'Oman'], ['@type' => 'Country', 'name' => 'Saudi Arabia'], ['@type' => 'Country', 'name' => 'UAE']],
     'serviceType' => 'Digital Business Card Platform',
@@ -81,7 +81,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         ['fa-hard-hat',      'Field-ready QR',          'Works on any site with mobile data. No app install for the person scanning.'],
         ['fa-id-card-clip',  'HSE credentials',         'BOSIET, H2S, confined-space, first-aid certs displayed as badges.'],
         ['fa-language',      'Bilingual by default',    'Arabic + English rendered proper RTL with tabular numerals.'],
-        ['fa-shuffle',       'Rotation-proof',          'Central updates — no stale printed cards after a transfer.'],
+        ['fa-shuffle',       'Rotation-proof',          'Central updates, no stale printed cards after a transfer.'],
         ['fa-people-group',  'Contractor directories',  'One team card per contractor company keeps tender contacts consistent.'],
         ['fa-shield-halved', 'Brand-locked',            'Safety-critical brands can lock template so no employee produces off-brand cards.'],
       ] as [$icon, $title, $body]): ?>
@@ -103,7 +103,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
   <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
     <div class="max-w-2xl">
       <span class="text-amber-800 font-semibold text-sm uppercase tracking-wider">Energy logos library</span>
-      <h2 class="text-3xl font-extrabold text-gray-900 mt-2 mb-2">Omani oil &amp; gas logos — indexed</h2>
+      <h2 class="text-3xl font-extrabold text-gray-900 mt-2 mb-2">Omani oil &amp; gas logos, indexed</h2>
       <p class="text-gray-600">PDO, OQ, Shell Oman, OLNG, Energy &amp; Minerals ministry. SVG + PNG.</p>
     </div>
     <a href="/logos/oil-gas" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold whitespace-nowrap">

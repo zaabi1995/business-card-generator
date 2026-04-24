@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             ];
             // Normalize phone to E.164 when provided; allow empty to clear it (opt-out).
             // intl-tel-input posts the canonical international number into
-            // `phone_e164` — prefer that over the visible field, which only
+            // `phone_e164`, prefer that over the visible field, which only
             // contains the national-format number when separateDialCode is on.
             if (isset($_POST['phone']) || isset($_POST['phone_e164'])) {
                 $rawPhone = trim($_POST['phone_e164'] ?? $_POST['phone'] ?? '');

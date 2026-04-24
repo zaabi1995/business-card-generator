@@ -34,15 +34,16 @@ try {
     $frontTemplateId = $config['activeFrontId'] ?? null;
     $backTemplateId = $config['activeBackId'] ?? null;
 
-    // Enforce monthly card generation limit (free/pro plans)
+    // Card generation is unlimited since the Apr 2026 pricing reset (platform
+    // is free forever, revenue is from per-order print products). The limit
+    // check is retained as a safety net for abuse detection only.
     require_once INCLUDES_DIR . '/Billing.php';
     $billing = new Billing();
     if (!$billing->checkLimit($companyId, 'max_cards')) {
-        $limits = $billing->getPlanLimits($companyId);
-        http_response_code(403);
+        http_response_code(429);
         echo json_encode([
             'success' => false,
-            'error'   => 'Monthly card limit reached (' . ($limits['max_cards'] ?? 10) . ' cards/month on your plan). Upgrade to generate more.',
+            'error'   => 'Card generation rate limit hit. Please wait a moment, or contact us if this keeps happening.',
             'limit_reached' => true,
         ]);
         exit;

@@ -246,7 +246,7 @@ function csrfField() {
  * vectors without breaking legitimate browser submissions.
  *
  * Returns true if the request is same-origin (or carries no Origin/Referer
- * at all — some browsers strip both for privacy, so we don't hard-fail).
+ * at all, some browsers strip both for privacy, so we don't hard-fail).
  */
 function isSameOriginRequest(): bool {
     $host = defined('APP_HOST') ? APP_HOST : ($_SERVER['HTTP_HOST'] ?? '');
@@ -261,7 +261,7 @@ function isSameOriginRequest(): bool {
         if ($parsedHost === '') continue;
         return in_array($parsedHost, $allowed, true);
     }
-    // No Origin AND no Referer — privacy mode or native client; allow through.
+    // No Origin AND no Referer, privacy mode or native client; allow through.
     return true;
 }
 
@@ -992,7 +992,7 @@ function isAdminLoggedIn() {
     return isset($_SESSION['admin_logged_in']) || isCompanyAdminLoggedIn();
 }
 
-// loginAdmin() removed — was a legacy function with hardcoded password.
+// loginAdmin() removed, was a legacy function with hardcoded password.
 // Use Auth::unifiedLogin() instead.
 
 // Initialize on include

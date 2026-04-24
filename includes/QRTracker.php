@@ -69,7 +69,7 @@ class QRTracker {
             if (!RateLimiter::check('qr_scan', $ipAddress, 100, 3600)) {
                 return ['success' => false, 'error' => 'rate_limited', 'visitor_id' => $visitorId];
             }
-        } catch (\Throwable $e) { /* ignore — don't block tracking on limiter bug */ }
+        } catch (\Throwable $e) { /* ignore, don't block tracking on limiter bug */ }
 
         try {
             // Insert scan record
@@ -347,24 +347,16 @@ class QRTracker {
     }
     
     /**
-     * Check if QR analytics is available for a company
-     * Free users can track scans but cannot view detailed analytics
-     * 
+     * Check if QR analytics is available for a company.
+     * Analytics is free for every company since the Apr 2026 pricing reset
+     * (platform is free, revenue is from per-order print products).
+     * Kept as a function so call sites stay stable.
+     *
      * @param string $companyId Company ID
-     * @return array ['available' => bool, 'reason' => string]
+     * @return array ['available' => bool, 'reason' => null]
      */
     public static function checkAnalyticsAccess($companyId) {
-        require_once INCLUDES_DIR . '/Billing.php';
-        
-        if (Billing::isQRTrackingEnabled($companyId)) {
-            return ['available' => true, 'reason' => null];
-        }
-        
-        return [
-            'available' => false,
-            'reason' => 'QR scan analytics is a premium feature. Upgrade your plan to access detailed scan statistics, geographic data, and device breakdowns.',
-            'upgrade_required' => true
-        ];
+        return ['available' => true, 'reason' => null];
     }
     
     /**

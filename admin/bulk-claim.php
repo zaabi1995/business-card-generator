@@ -1,15 +1,15 @@
 <?php
 /**
- * Bulk Claim — Super-admin growth tool
+ * Bulk Claim, Super-admin growth tool
  *
  * Paste a CSV of contacted-but-cold leads (Ali's 70+ from the Cardify
  * expansion campaign) → preview → one-click creates preliminary card
  * records + dispatches a WhatsApp magic-link for each.
  *
  * Flow:
- *   1. GET  /admin/bulk-claim.php           — upload/paste CSV
- *   2. POST action=preview                  — renders dedup preview table
- *   3. POST action=send                     — super-admin confirms; creates
+ *   1. GET  /admin/bulk-claim.php          , upload/paste CSV
+ *   2. POST action=preview                 , renders dedup preview table
+ *   3. POST action=send                    , super-admin confirms; creates
  *                                             employees + leads + dispatches
  *                                             WhatsApp, rate-limited to
  *                                             BULK_CLAIM_MAX_PER_BATCH rows
@@ -131,11 +131,11 @@ function bulkClaimMessageFor($leadName, $token, $ttlDays) {
     $firstName = trim(strtok(trim($leadName), ' ')) ?: 'there';
     $url = bulkClaimMagicUrl($token);
     return "Hi {$firstName} \u{1F44B}\n\n"
-         . "We prepared a free digital business card for you — all your contact info + QR code, sharable via link.\n\n"
+         . "We prepared a free digital business card for you, all your contact info + QR code, sharable via link.\n\n"
          . "Claim it in 60 seconds (expires in {$ttlDays} days):\n"
          . $url . "\n\n"
          . "Need help? Reply to this message.\n\n"
-         . "— BHD Printing & Designing";
+         . ", BHD Printing & Designing";
 }
 
 // -------------------------------------------------------------------
@@ -333,7 +333,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ];
                     }
 
-                    // Rate limit — don't hammer Dardasha
+                    // Rate limit, don't hammer Dardasha
                     usleep(BULK_CLAIM_WA_SLEEP_USEC);
                 }
 
@@ -628,9 +628,9 @@ adminHeader(t('adminchrome.bulk_claim'), 'reports');
                         <td class="px-4 py-2 text-xs">
                             <?= $l['wa_status'] === 'sent' ? '<span class="text-green-600">' . htmlspecialchars(t('bulkclaim.wa_sent')) . '</span>' : ($l['wa_status'] === 'failed' ? '<span class="text-red-600" title="' . sanitize($l['wa_error'] ?? '') . '">' . htmlspecialchars(t('bulkclaim.wa_failed')) . '</span>' : htmlspecialchars(t('bulkclaim.wa_pending'))) ?>
                         </td>
-                        <td class="px-4 py-2 text-xs text-gray-600"><?= $l['opened_at'] ? date('M j H:i', strtotime($l['opened_at'])) : '—' ?></td>
-                        <td class="px-4 py-2 text-xs text-gray-600"><?= $l['claimed_at'] ? date('M j H:i', strtotime($l['claimed_at'])) : '—' ?></td>
-                        <td class="px-4 py-2 text-xs text-gray-600"><?= $l['activated_at'] ? date('M j H:i', strtotime($l['activated_at'])) : '—' ?></td>
+                        <td class="px-4 py-2 text-xs text-gray-600"><?= $l['opened_at'] ? date('M j H:i', strtotime($l['opened_at'])) : ',' ?></td>
+                        <td class="px-4 py-2 text-xs text-gray-600"><?= $l['claimed_at'] ? date('M j H:i', strtotime($l['claimed_at'])) : ',' ?></td>
+                        <td class="px-4 py-2 text-xs text-gray-600"><?= $l['activated_at'] ? date('M j H:i', strtotime($l['activated_at'])) : ',' ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>

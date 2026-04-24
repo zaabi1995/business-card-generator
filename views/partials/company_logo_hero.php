@@ -80,7 +80,7 @@ $companyId = (int) ($company['id'] ?? 0);
                 </h2>
 
                 <?php if ($src): ?>
-                    <!-- Download buttons — available whether indexed or verified -->
+                    <!-- Download buttons, available whether indexed or verified -->
                     <?php if ($canDownload): ?>
                         <div class="cardify-logo-downloads mt-5 <?= $isAr ? 'is-rtl' : '' ?>">
                             <?php
@@ -143,10 +143,10 @@ $companyId = (int) ($company['id'] ?? 0);
                 if (!empty($company['logo_svg_path']))      $formats[] = 'SVG';
                 if (!empty($company['logo_png_path']))      $formats[] = 'PNG';
                 if (!empty($company['logo_webp_path']))     $formats[] = 'WebP';
-                $formatsStr = $formats ? implode(' · ', $formats) : '—';
+                $formatsStr = $formats ? implode(' · ', $formats) : ',';
                 $dimText = ($company['logo_width'] ?? 0) && ($company['logo_height'] ?? 0)
                     ? ((int) $company['logo_width']) . ' × ' . ((int) $company['logo_height']) . ' px'
-                    : '—';
+                    : ',';
                 $sourceRaw = (string) ($company['logo_source'] ?? '');
                 $sourceLabel = match ($sourceRaw) {
                     '2oman_net'    => $isAr ? '2oman.net (مفهرس)' : 'Indexed from 2oman.net',

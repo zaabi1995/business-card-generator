@@ -48,7 +48,7 @@ $csrfToken = generateCSRFToken();
 
 function takedown_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 
-$pageTitle       = 'Takedown request — Omani Logo Library';
+$pageTitle       = 'Takedown request, Omani Logo Library';
 $pageDescription = 'Brand owners and representatives can request removal of a logo from the Omani Logo Library.';
 $canonicalUrl    = 'https://cardify.om/logo-takedown' . ($companyId ? '?company=' . $companyId : '');
 $bodyClass       = 'bg-white';

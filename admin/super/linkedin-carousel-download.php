@@ -1,6 +1,6 @@
 <?php
 /**
- * Super Admin — Download a generated LinkedIn carousel PDF.
+ * Super Admin, Download a generated LinkedIn carousel PDF.
  * Auth-gated. Path traversal-safe.
  */
 require_once __DIR__ . '/../../config.php';
@@ -15,7 +15,7 @@ $db = Database::getInstance();
 $row = $db->fetchOne("SELECT slug, linkedin_carousel_pdf FROM blog_posts WHERE id = ?", [$id]);
 if (!$row || empty($row['linkedin_carousel_pdf'])) { http_response_code(404); die('not generated'); }
 
-// Resolve to absolute path inside BASE_DIR — block any traversal
+// Resolve to absolute path inside BASE_DIR, block any traversal
 $rel = $row['linkedin_carousel_pdf'];
 $abs = realpath(BASE_DIR . '/' . $rel);
 $expectedRoot = realpath(BASE_DIR . '/uploads/linkedin-carousels');

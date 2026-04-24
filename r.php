@@ -4,7 +4,7 @@
  *
  * /r/<code>  → sets cookie + session, redirects to signup with ?ref=<code>.
  *
- * If the code doesn't match any user we still redirect to signup — we never
+ * If the code doesn't match any user we still redirect to signup, we never
  * block the funnel on a bad code.
  */
 require_once __DIR__ . '/config.php';
@@ -17,7 +17,7 @@ if ($code !== '') {
     Referral::capturePending($code);
 }
 
-// If already logged in, send to dashboard — no point in showing signup.
+// If already logged in, send to dashboard, no point in showing signup.
 if (class_exists('Auth') && Auth::isLoggedIn()) {
     header('Location: ' . getBasePath() . 'admin/');
     exit;

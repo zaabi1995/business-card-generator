@@ -1,6 +1,6 @@
 <?php
 /**
- * Cardify — Oman Business Index 2026 (Landing Page)
+ * Cardify, Oman Business Index 2026 (Landing Page)
  *
  * Flagship press-ready landing page. Presents the 2,414 Omani enterprises
  * as a curated, research-grade index. Purpose: backlink magnet / press hook
@@ -197,7 +197,7 @@ $mediumFmt   = number_format($stats['medium_count']);
 $sectorFmt   = number_format($stats['sector_count']);
 $wilayatFmt  = number_format($stats['wilayat_count']);
 
-$ratioText = '—';
+$ratioText = ',';
 if ($stats['medium_count'] > 0) {
     $ratio = $stats['large_count'] / $stats['medium_count'];
     $ratioText = '1 : ' . number_format(1 / max($ratio, 0.0001), 2);
@@ -893,7 +893,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <!-- ============================================================
-         UPSTREAM — GCC Business Index (part of a larger federation)
+         UPSTREAM, GCC Business Index (part of a larger federation)
          ============================================================ -->
     <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div class="rounded-2xl p-6 md:p-8 bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex flex-col md:flex-row md:items-center md:justify-between gap-5">
@@ -912,7 +912,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <!-- ============================================================
-         COMPANION ARCHIVE — OMANI LOGO LIBRARY (visual gallery)
+         COMPANION ARCHIVE, OMANI LOGO LIBRARY (visual gallery)
          ============================================================ -->
     <section id="logo-library" class="bg-gray-50 border-y border-gray-100 scroll-mt-24">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">

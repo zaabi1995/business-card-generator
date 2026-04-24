@@ -1,6 +1,6 @@
 <?php
 /**
- * Cardify — Case Studies (Cat R action 435).
+ * Cardify, Case Studies (Cat R action 435).
  *
  * Three real Omani teams running on Cardify: BHD Printing & Designing,
  * CupsByAA and Alali Investment. Listing hub at /case-studies, per-
@@ -59,7 +59,7 @@ if ($slug) {
 // --- Page metadata ---
 $brandName       = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 $pageTitle       = $activeCase
-    ? t('case_studies.' . $activeCase['key_prefix'] . '_name') . ' — ' . t('case_studies.page_title')
+    ? t('case_studies.' . $activeCase['key_prefix'] . '_name') . ', ' . t('case_studies.page_title')
     : t('case_studies.page_title');
 $pageDescription = $activeCase
     ? t('case_studies.' . $activeCase['key_prefix'] . '_summary')
@@ -82,7 +82,7 @@ if ($activeCase) {
         [t('case_studies.' . $activeCase['key_prefix'] . '_name'), $canonicalUrl],
     ]);
     Seo::article(
-        t('case_studies.' . $activeCase['key_prefix'] . '_name') . ' — ' . t('case_studies.hero_heading'),
+        t('case_studies.' . $activeCase['key_prefix'] . '_name') . ', ' . t('case_studies.hero_heading'),
         t('case_studies.' . $activeCase['key_prefix'] . '_summary'),
         $canonicalUrl,
         $baseUrl . $activeCase['logo'],

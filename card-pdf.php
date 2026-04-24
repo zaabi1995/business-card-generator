@@ -54,7 +54,7 @@ try {
         'country' => $employee['_ccountry'] ?? '',
     ];
 
-    // Theme (for accent colour). Missing theme is fine — we fall back.
+    // Theme (for accent colour). Missing theme is fine, we fall back.
     // We deliberately query directly instead of relying on loadCompanyTheme(),
     // which is defined inside digital_card.php rather than includes/functions.php.
     $theme = null;
@@ -99,7 +99,7 @@ try {
     $safeAccent = htmlspecialchars($accent, ENT_QUOTES, 'UTF-8');
     $year       = date('Y');
 
-    // QR code generated locally with phpqrcode (LGPL) — no external API
+    // QR code generated locally with phpqrcode (LGPL), no external API
     // calls, survives PHP-FPM with no outbound network.
     $qrSrc = '';
     $qrTmp = '';
@@ -121,7 +121,7 @@ try {
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>{$safeName} — Business Card</title>
+<title>{$safeName}, Business Card</title>
 <style>
     @page { size: A4; margin: 25mm 20mm; }
     * { box-sizing: border-box; }
@@ -240,7 +240,7 @@ HTML;
             $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
             $pdf->SetCreator(SITE_NAME);
             $pdf->SetAuthor(SITE_NAME);
-            $pdf->SetTitle($name . ' — Business Card');
+            $pdf->SetTitle($name . ', Business Card');
             $pdf->setPrintHeader(false);
             $pdf->setPrintFooter(false);
             $pdf->SetMargins(20, 25, 20);

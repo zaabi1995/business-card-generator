@@ -1,6 +1,6 @@
 <?php
 /**
- * Cardify — Omani Logo Library.
+ * Cardify, Omani Logo Library.
  *
  * Routes (via nginx rewrite):
  *   /logos                   → view=hub
@@ -102,7 +102,7 @@ function sectorCounts(Database $db): array {
 
 // ---- terms ----
 if ($view === 'terms') {
-    $title = $isAr ? 'شروط استخدام مكتبة الشعارات' : 'Terms — Omani Logo Library';
+    $title = $isAr ? 'شروط استخدام مكتبة الشعارات' : 'Terms, Omani Logo Library';
     include __DIR__ . '/data/logo_library/terms_view.php';
     return;
 }

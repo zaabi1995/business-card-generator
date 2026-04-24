@@ -1,6 +1,6 @@
 <?php
 /**
- * Print Shop — Credit Ledger
+ * Print Shop, Credit Ledger
  * Transaction history per credit account, record manual payments
  */
 require_once __DIR__ . '/../config.php';
@@ -51,7 +51,7 @@ if (!$account || (int)$account['print_shop_id'] !== $shopId) {
 $db = Database::getInstance();
 $company = $db->fetchOne("SELECT name, admin_email FROM companies WHERE id = :id", ['id' => $account['company_id']]);
 
-// Handle POST — record payment
+// Handle POST, record payment
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die(htmlspecialchars(t('printshopcredit.invalid_request'))); }
     $action = $_POST['action'] ?? '';
@@ -183,7 +183,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                         <?php $txk = 'printshopcredit.tx_' . $tx['type']; $txl = t($txk); echo htmlspecialchars($txl === $txk ? ucfirst($tx['type']) : $txl); ?>
                                     </span>
                                 </td>
-                                <td class="px-6 py-3 text-sm text-gray-500"><?= $tx['order_number'] ? htmlspecialchars($tx['order_number']) : '—' ?></td>
+                                <td class="px-6 py-3 text-sm text-gray-500"><?= $tx['order_number'] ? htmlspecialchars($tx['order_number']) : ',' ?></td>
                                 <td class="px-6 py-3 text-sm text-right font-medium <?= $txColors[$tx['type']] ?? '' ?> whitespace-nowrap">
                                     <?= $tx['type'] === 'charge' ? '+' : '-' ?><?= number_format($tx['amount'], 3) ?>
                                 </td>

@@ -7,13 +7,13 @@
  * single "Claim & edit" button.
  *
  * Flow:
- *   GET  — validates token (not expired, not already used), logs
+ *   GET , validates token (not expired, not already used), logs
  *          opened_at on first visit, renders preview + claim CTA.
- *   POST — claims the card: sets employees.status='active', stamps
+ *   POST, claims the card: sets employees.status='active', stamps
  *          token_used_at + claimed_at, logs the user in as the
  *          employee (session), redirects to the card editor.
  *
- * Distinct from /claim.php (viral-footer lead capture) — do not merge.
+ * Distinct from /claim.php (viral-footer lead capture), do not merge.
  */
 
 ob_start();
@@ -36,7 +36,7 @@ try {
 $db = Database::getInstance();
 
 $token = trim((string)($_GET['token'] ?? $_POST['token'] ?? ''));
-// Token is 32 hex chars (16 bytes) — old generation used 16 bytes, so 32 hex.
+// Token is 32 hex chars (16 bytes), old generation used 16 bytes, so 32 hex.
 // Also accept 64 hex (32 bytes) for forward-compat with longer tokens.
 if ($token === '' || !preg_match('/^[a-f0-9]{32,64}$/i', $token)) {
     http_response_code(400);
@@ -49,7 +49,7 @@ if ($token === '' || !preg_match('/^[a-f0-9]{32,64}$/i', $token)) {
     exit;
 }
 
-// Look up by SHA-256 hash first (Codex round-3 finding #5 — magic tokens must
+// Look up by SHA-256 hash first (Codex round-3 finding #5, magic tokens must
 // not sit in the DB as plaintext). Fall back to legacy plaintext lookup during
 // the transition window so any link sent before migration 067 still works.
 $tokenHash = hash('sha256', $token);
@@ -136,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Atomically claim inside a transaction (Codex round-3 finding #4 —
+    // Atomically claim inside a transaction (Codex round-3 finding #4 ,
     // previously, a failure between burning token_used_at and flipping the
     // employee to active left the token permanently dead). Both updates now
     // commit together or roll back together.
@@ -185,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Bump batch counters (non-fatal — outside the claim txn by design).
+    // Bump batch counters (non-fatal, outside the claim txn by design).
     try {
         $pdo->prepare(
             "UPDATE bulk_claim_batches SET claimed = claimed + 1 WHERE id = :b"
@@ -205,7 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } catch (Throwable $e) { /* non-fatal, event_type may not be in ENUM yet */ }
 
-    // Bounce them to their public card — they can edit from there
+    // Bounce them to their public card, they can edit from there
     // (OTP / password setup is intentionally deferred to a future pass).
     $target = !empty($lead['card_url']) ? $lead['card_url'] : '/';
     header('Location: ' . $target . '?claimed=1');
@@ -323,7 +323,7 @@ $isAr   = ($locale === 'ar');
 <?php
 
 /**
- * Minimal inline error renderer — no dependency on admin-layout or ui-header
+ * Minimal inline error renderer, no dependency on admin-layout or ui-header
  * so the page is resilient even if the includes tree shifts.
  */
 function renderClaimError($titleEn, $detailEn, $titleAr = null, $detailAr = null) {

@@ -1,6 +1,6 @@
 <?php
 /**
- * GoogleWalletPass — Google Wallet Generic pass JWT builder.
+ * GoogleWalletPass, Google Wallet Generic pass JWT builder.
  *
  * Clean-room: uses only ext-openssl via includes/jwt.php.
  *

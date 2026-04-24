@@ -61,7 +61,7 @@ class Onboarding
      * Validate a step payload. Returns empty array when OK, otherwise
      * an array of {field, code} pairs describing missing/invalid fields.
      * Lenient by design: intermediate "save progress" writes where the
-     * admin has not yet filled everything should NOT block — only the
+     * admin has not yet filled everything should NOT block, only the
      * final saveStep on the last step triggers strict mode.
      */
     public static function validatePayload(int $step, array $payload, bool $strict = false): array
@@ -100,9 +100,9 @@ class Onboarding
                     $errors[] = ['field' => 'first_employee.email', 'code' => 'invalid_email'];
                 }
                 break;
-            case 5: // preview — read-only, no validation
+            case 5: // preview, read-only, no validation
                 break;
-            case 6: // invite_team — everything optional
+            case 6: // invite_team, everything optional
                 if (!empty($payload['csv']['parsed']['errors']) && $strict) {
                     // Non-fatal: expose parse errors but do not block save.
                 }

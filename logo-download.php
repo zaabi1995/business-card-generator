@@ -85,7 +85,7 @@ if ($format === 'zip') {
         }
     }
     $readme = "Logo bundle for {$company['name_en']}\n"
-            . "Indexed by Cardify — https://cardify.om/logos\n\n"
+            . "Indexed by Cardify, https://cardify.om/logos\n\n"
             . "All marks are property of their respective owners. This bundle\n"
             . "is published because the brand owner has verified their profile;\n"
             . "use is permitted for identification and reference only (nominative\n"
@@ -118,7 +118,7 @@ if ($format === 'zip') {
     readfile(__DIR__ . $path);
 }
 
-// Log (non-blocking — failure here shouldn't break the download)
+// Log (non-blocking, failure here shouldn't break the download)
 try {
     $db->getConnection()->prepare(
         "INSERT INTO logo_downloads (company_id, format, ip_hash, user_agent_hash, referrer)

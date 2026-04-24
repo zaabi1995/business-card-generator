@@ -1163,7 +1163,7 @@ adminHeader(t('employees.page_title'), 'employees');
                     <input type="hidden" name="card_dark_mode_toggle" :value="cardDarkModeToggle ? '1' : '0'">
                 </div>
 
-                <!-- Viral "Made with Cardify" footer — Pro-tier opt-out -->
+                <!-- Viral "Made with Cardify" footer, Pro-tier opt-out -->
                 <?php $__proUnlocked = !$isFreePlan; ?>
                 <div class="mt-4 p-4 rounded-xl bg-sky-50 border border-sky-100">
                     <div class="flex items-start justify-between gap-4">
@@ -1537,7 +1537,7 @@ function employeeManager() {
         cardDarkModeToggle: true,
         hideCardifyBranding: false,
 
-        // Tracker URL printed on the card — never changes post-print.
+        // Tracker URL printed on the card, never changes post-print.
         qrTrackerUrl() {
             if (!this.formData.id) return '';
             return window.location.origin + '/qr.php?i=' + encodeURIComponent(this.formData.id);

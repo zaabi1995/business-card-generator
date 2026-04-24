@@ -26,7 +26,7 @@ class CreditManager {
             if ($existing['status'] === 'approved') {
                 return ['error' => 'Credit account already active'];
             }
-            // Rejected/suspended — allow re-request
+            // Rejected/suspended, allow re-request
             $db->update('credit_accounts',
                 [
                     'status' => 'pending',

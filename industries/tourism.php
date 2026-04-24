@@ -5,8 +5,8 @@
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle = 'Business Cards for Hotels & Tourism in Oman — Cardify';
-$pageDescription = 'Create professional business cards for hotels, tour operators, and travel agencies in Oman. Multilingual cards, concierge sharing, and digital guest connections — free with Cardify.';
+$pageTitle = 'Business Cards for Hotels & Tourism in Oman, Cardify';
+$pageDescription = 'Create professional business cards for hotels, tour operators, and travel agencies in Oman. Multilingual cards, concierge sharing, and digital guest connections, free with Cardify.';
 $canonicalUrl = 'https://cardify.om/industries/tourism';
 $ogType = 'website';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
@@ -18,7 +18,7 @@ $showNavigation = true;
 $extraHead = '<script type="application/ld+json">' . json_encode([
     '@context' => 'https://schema.org',
     '@type' => 'Service',
-    'name' => 'Cardify — Business Cards for Hotels & Tourism',
+    'name' => 'Cardify, Business Cards for Hotels & Tourism',
     'description' => 'Professional digital and printed business cards for hotels, tour operators, and travel agencies in Oman.',
     'provider' => [
         '@type' => 'Organization',
@@ -73,7 +73,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         Oman's tourism sector is experiencing unprecedented growth. From luxury resorts in Musandam to desert camps in Wahiba Sands, the hospitality industry needs to connect with guests from around the world seamlessly.
                     </p>
                     <p class="text-gray-600 leading-relaxed mb-4">
-                        With <?php echo $brandName; ?>, your hotel concierge, tour guide, or travel consultant can share a digital card with guests in any language. The guest saves the contact instantly — no language barrier, no paper waste.
+                        With <?php echo $brandName; ?>, your hotel concierge, tour guide, or travel consultant can share a digital card with guests in any language. The guest saves the contact instantly, no language barrier, no paper waste.
                     </p>
                     <p class="text-gray-600 leading-relaxed">
                         Imagine a tourist visiting Oman for the first time. Your tour guide shares a digital card with the hotel's WhatsApp, emergency contacts, and tour booking links. That guest becomes a returning customer and a brand advocate.
@@ -87,7 +87,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </div>
                             <div>
                                 <h3 class="font-semibold text-gray-900">Multilingual Cards</h3>
-                                <p class="text-gray-600 text-sm">Arabic, English, and more — serve international guests in their preferred language.</p>
+                                <p class="text-gray-600 text-sm">Arabic, English, and more, serve international guests in their preferred language.</p>
                             </div>
                         </div>
                         <div class="flex items-start gap-4">
@@ -96,7 +96,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </div>
                             <div>
                                 <h3 class="font-semibold text-gray-900">Concierge Cards</h3>
-                                <p class="text-gray-600 text-sm">Hotel concierge shares their card with guests — instant access to recommendations, bookings, and support.</p>
+                                <p class="text-gray-600 text-sm">Hotel concierge shares their card with guests, instant access to recommendations, bookings, and support.</p>
                             </div>
                         </div>
                         <div class="flex items-start gap-4">
@@ -105,7 +105,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </div>
                             <div>
                                 <h3 class="font-semibold text-gray-900">Digital Guest Sharing</h3>
-                                <p class="text-gray-600 text-sm">Guests share your card with friends planning Oman trips — digital word of mouth.</p>
+                                <p class="text-gray-600 text-sm">Guests share your card with friends planning Oman trips, digital word of mouth.</p>
                             </div>
                         </div>
                         <div class="flex items-start gap-4">
@@ -114,7 +114,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </div>
                             <div>
                                 <h3 class="font-semibold text-gray-900">Review & Rating Links</h3>
-                                <p class="text-gray-600 text-sm">Include Google Reviews and TripAdvisor links — happy guests leave reviews before they leave.</p>
+                                <p class="text-gray-600 text-sm">Include Google Reviews and TripAdvisor links, happy guests leave reviews before they leave.</p>
                             </div>
                         </div>
                     </div>
@@ -135,7 +135,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Hotel Staff Cards</h3>
                     <p class="text-gray-600">
-                        From front desk to management — create branded cards for your entire hotel team. Guests save the right contact for their needs.
+                        From front desk to management, create branded cards for your entire hotel team. Guests save the right contact for their needs.
                     </p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-8 text-center">
@@ -153,7 +153,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Travel Agency Cards</h3>
                     <p class="text-gray-600">
-                        Travel consultants include links to holiday packages, visa services, and booking portals — turning every interaction into a potential booking.
+                        Travel consultants include links to holiday packages, visa services, and booking portals, turning every interaction into a potential booking.
                     </p>
                 </div>
             </div>
@@ -187,7 +187,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="bg-white rounded-xl shadow-sm p-8 border-l-4 border-blue-500">
                     <h3 class="text-lg font-bold text-gray-900 mb-3">Cruise Ship & Port Services</h3>
                     <p class="text-gray-600">
-                        Port service providers, shore excursion operators, and transport companies share cards with cruise passengers — a market that's growing rapidly in Oman.
+                        Port service providers, shore excursion operators, and transport companies share cards with cruise passengers, a market that's growing rapidly in Oman.
                     </p>
                 </div>
             </div>

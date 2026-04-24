@@ -170,7 +170,7 @@ $setupFee = $shopPricing['setup_fee'] ?? 0;
 $shippingFee = $shopPricing['shipping_base'] ?? 2;
 $rawTiers = $shopPricing['quantity_tiers'] ?? [];
 
-// Normalize tiers — support both old format (qty => per_card_price) and new format (qty => {price, per_card})
+// Normalize tiers, support both old format (qty => per_card_price) and new format (qty => {price, per_card})
 // New format: price = total per design, per_card = price/card
 // Old format: scalar = per_card price
 $quantityTiers = [];
@@ -611,7 +611,7 @@ function orderForm() {
                 this.shippingFee = parseFloat(pricing.shipping_base) || 2;
                 this.currency = shop.currency || 'OMR';
                 this.quantityTiers = tiers;
-                // Rebuild pricingByQty for the new shop — support both old (scalar) and new ({price,per_card}) formats
+                // Rebuild pricingByQty for the new shop, support both old (scalar) and new ({price,per_card}) formats
                 const rebuilt = {};
                 for (const [qty, val] of Object.entries(tiers)) {
                     rebuilt[parseInt(qty)] = typeof val === 'object' ? parseFloat(val.price) : parseFloat(val) * parseInt(qty);
