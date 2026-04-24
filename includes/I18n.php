@@ -59,10 +59,18 @@ class I18n
             && in_array($_SESSION['cardify_lang'], self::$supported, true)) {
             return $_SESSION['cardify_lang'];
         }
-        // 4. Accept-Language
+        // 4. Accept-Language, only honour the PRIMARY language. A visitor
+        // with Accept-Language: en-US,en;q=0.9,ar;q=0.5 wants English, not
+        // Arabic. Previous heuristic (any ',ar' substring) flipped too many
+        // bilingual visitors to AR by accident.
         $accept = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
-        if (stripos($accept, 'ar') === 0 || stripos($accept, ',ar') !== false) {
-            return 'ar';
+        if ($accept !== '') {
+            // Take the first language tag, strip any quality factor.
+            $primary = strtolower(trim(explode(',', $accept)[0]));
+            $primary = trim(explode(';', $primary)[0]);
+            if ($primary === 'ar' || strpos($primary, 'ar-') === 0) {
+                return 'ar';
+            }
         }
         return self::$default;
     }
