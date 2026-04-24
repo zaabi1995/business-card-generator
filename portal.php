@@ -440,6 +440,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
 
 $brandName = $companyName;
 $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepartment['name'] . ' - ' : '') . $companyName;
+
+require_once INCLUDES_DIR . '/OgImage.php';
+$__ogLocale = function_exists('currentLocale') ? currentLocale() : 'en';
+$__ogDept   = $selectedDepartment['slug'] ?? '';
+$__ogImage  = OgImage::url($company, [
+    'variant'    => 'portal',
+    'locale'     => $__ogLocale,
+    'department' => $__ogDept,
+]);
+$__ogDesc = ($__ogLocale === 'ar')
+    ? ('اطلب بطاقة عملك من ' . $companyName . ' عبر Cardify.')
+    : ('Request your business card from ' . $companyName . ' on Cardify.');
+$__ogScheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') ? APP_HOST : 'cardify.om')) . ($_SERVER['REQUEST_URI'] ?? '/');
 ?>
 <!DOCTYPE html>
 <?php $__portalLocale = function_exists('currentLocale') ? currentLocale() : 'en'; $__portalDir = function_exists('currentDir') ? currentDir() : ($__portalLocale === 'ar' ? 'rtl' : 'ltr'); ?>
@@ -449,6 +463,22 @@ $pageTitle = 'Request Business Card - ' . ($selectedDepartment ? $selectedDepart
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
     <link rel="icon" href="<?php echo getBasePath(); ?>favicon.svg" type="image/svg+xml">
+
+    <meta name="description" content="<?= htmlspecialchars($__ogDesc) ?>">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="<?= htmlspecialchars($pageTitle) ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($__ogDesc) ?>">
+    <meta property="og:url" content="<?= htmlspecialchars($__ogUrl) ?>">
+    <meta property="og:site_name" content="<?= htmlspecialchars($companyName) ?> · Cardify">
+    <meta property="og:image" content="<?= htmlspecialchars($__ogImage) ?>">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="<?= htmlspecialchars($companyName . ' business card portal') ?>">
+    <meta property="og:locale" content="<?= $__ogLocale === 'ar' ? 'ar_OM' : 'en_US' ?>">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?= htmlspecialchars($pageTitle) ?>">
+    <meta name="twitter:description" content="<?= htmlspecialchars($__ogDesc) ?>">
+    <meta name="twitter:image" content="<?= htmlspecialchars($__ogImage) ?>">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

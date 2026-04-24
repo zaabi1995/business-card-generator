@@ -14,6 +14,7 @@ require_once INCLUDES_DIR . '/WhatsApp.php';
 require_once INCLUDES_DIR . '/Mailer.php';
 require_once INCLUDES_DIR . '/OtpService.php';
 require_once INCLUDES_DIR . '/TenantHost.php';
+require_once INCLUDES_DIR . '/OgImage.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
@@ -214,8 +215,31 @@ $switchUrl   = '/login?lang=' . $otherLocale;
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= htmlspecialchars($companyName) ?> — Cardify</title>
+<title><?= htmlspecialchars($companyName) ?> · Cardify</title>
 <link rel="icon" href="/favicon.svg">
+<?php
+    $__ogImage = OgImage::url($tenant, ['variant' => 'login', 'locale' => $locale]);
+    $__ogDesc  = ($locale === 'ar')
+        ? ('سجّل الدخول إلى بوابة ' . $companyName . ' على Cardify.')
+        : ('Sign in to the ' . $companyName . ' portal on Cardify.');
+    $__ogScheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'cardify.om') . '/login';
+?>
+<meta name="description" content="<?= htmlspecialchars($__ogDesc) ?>">
+<meta property="og:type" content="website">
+<meta property="og:title" content="<?= htmlspecialchars($companyName . ' · Cardify') ?>">
+<meta property="og:description" content="<?= htmlspecialchars($__ogDesc) ?>">
+<meta property="og:url" content="<?= htmlspecialchars($__ogUrl) ?>">
+<meta property="og:site_name" content="<?= htmlspecialchars($companyName . ' · Cardify') ?>">
+<meta property="og:image" content="<?= htmlspecialchars($__ogImage) ?>">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="<?= htmlspecialchars($companyName . ' sign-in') ?>">
+<meta property="og:locale" content="<?= $locale === 'ar' ? 'ar_OM' : 'en_US' ?>">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<?= htmlspecialchars($companyName . ' · Cardify') ?>">
+<meta name="twitter:description" content="<?= htmlspecialchars($__ogDesc) ?>">
+<meta name="twitter:image" content="<?= htmlspecialchars($__ogImage) ?>">
 <?php $detectedPhone = $step === 'request' && $identifier !== '' && !filter_var($identifier, FILTER_VALIDATE_EMAIL); ?>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@24.6.0/build/css/intlTelInput.min.css">
 <style>
