@@ -18,8 +18,12 @@ $db = Database::getInstance();
 // summary, methodology, key findings) stays in its authored English for now;
 // a banner directs Arabic readers to /companies for the fully bilingual
 // searchable directory.
-$lang = function_exists('currentLocale') ? currentLocale() : 'en';
+// URL-driven locale (EN default; /ar/oman-business-index or ?lang=ar for AR).
+// Don't inherit cookie/Accept-Language here or this SEO landing ends up
+// showing Arabic to English browsers.
+$lang = ($_GET['lang'] ?? '') === 'ar' ? 'ar' : 'en';
 $isAr = ($lang === 'ar');
+if (class_exists('I18n')) { I18n::setLocale($lang); }
 
 // --- Canonical sector + wilayat labels (kept in sync with companies.php) ---
 $SECTORS = [

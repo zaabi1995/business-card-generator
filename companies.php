@@ -21,6 +21,10 @@ $view = $_GET['view'] ?? 'index';
 $slug = $_GET['slug'] ?? null;
 $lang = ($_GET['lang'] ?? '') === 'ar' ? 'ar' : 'en';
 $isAr = $lang === 'ar';
+// Public SEO pages are URL-driven (/companies = EN, /ar/companies = AR) and
+// must NOT inherit the cardify_lang cookie; the shared chrome (ui-header /
+// footer) reads currentLocale(), so force I18n to match $lang here.
+if (class_exists('I18n')) { I18n::setLocale($lang); }
 
 // Sector + wilayat content libraries (populated by content agents)
 $SECTOR_CONTENT  = is_file(__DIR__ . '/data/company_content/sectors.php')
