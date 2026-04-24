@@ -1658,18 +1658,29 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                                             <label class="text-xs text-gray-500 block mb-1">Color</label>
                                             <div class="flex items-center gap-1">
                                                 <input type="color"
-                                                       :value="field.fill || field.color || '#1f2937'"
+                                                       :value="field.fill || field.color || brandPrimary"
                                                        @input="updateFieldProperty(key, 'fill', $event.target.value)"
                                                        class="w-7 h-7 rounded cursor-pointer border border-gray-200 flex-shrink-0"
                                                        title="Pick color">
                                                 <input type="text"
-                                                       :value="field.fill || field.color || '#1f2937'"
+                                                       :value="field.fill || field.color || brandPrimary"
                                                        @input="onHexInput(key, $event.target.value)"
                                                        maxlength="7"
                                                        placeholder="#000000"
                                                        spellcheck="false"
                                                        class="w-[5.5rem] px-1.5 py-1 bg-white border border-gray-200 rounded text-xs font-mono uppercase tracking-tight text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                                        title="Hex color">
+                                                <!-- Brand-token swatches (action 593) -->
+                                                <button type="button" @click="updateFieldProperty(key, 'fill', brandPrimary)"
+                                                        class="w-5 h-5 rounded border border-gray-300 flex-shrink-0" :style="'background:' + brandPrimary"
+                                                        :title="'Brand primary ' + brandPrimary"></button>
+                                                <button type="button" @click="updateFieldProperty(key, 'fill', brandSecondary)"
+                                                        class="w-5 h-5 rounded border border-gray-300 flex-shrink-0" :style="'background:' + brandSecondary"
+                                                        :title="'Brand secondary ' + brandSecondary"></button>
+                                                <button type="button" @click="updateFieldProperty(key, 'fill', '#111827')"
+                                                        class="w-5 h-5 rounded border border-gray-300 flex-shrink-0 bg-gray-900" title="Near black"></button>
+                                                <button type="button" @click="updateFieldProperty(key, 'fill', '#ffffff')"
+                                                        class="w-5 h-5 rounded border border-gray-300 flex-shrink-0 bg-white" title="White"></button>
                                             </div>
                                         </div>
                                     </div>
@@ -1864,6 +1875,8 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
             companySlug: '<?php echo $companySlug; ?>',
             apexHost: '<?php echo cardifyApexHost(); ?>',
             baseUrl: '<?php echo $baseUrl; ?>',
+            brandPrimary: '<?php echo htmlspecialchars($primaryColor, ENT_QUOTES); ?>',
+            brandSecondary: '<?php echo htmlspecialchars($secondaryColor, ENT_QUOTES); ?>',
             fontsLoaded: false,
             initialized: false,
             
