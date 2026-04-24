@@ -96,10 +96,17 @@ class EmployeeEditToken
         return $row;
     }
 
-    public static function buildUrl(string $plain): string
+    /**
+     * Build the portal edit URL for a token. When a tenant slug is
+     * provided (or can be inferred from the current employee/company),
+     * the URL is rooted on the tenant subdomain so staff land on their
+     * branded host. Without a slug, falls back to the bare apex host.
+     */
+    public static function buildUrl(string $plain, ?string $tenantSlug = null): string
     {
-        $host = defined('APP_HOST') ? APP_HOST : ($_SERVER['HTTP_HOST'] ?? 'cardify.om');
+        $apex = defined('APP_HOST') ? APP_HOST : ($_SERVER['HTTP_HOST'] ?? 'cardify.om');
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $tenantSlug ? $tenantSlug . '.' . $apex : $apex;
         return $scheme . '://' . $host . '/portal/employee-edit?token=' . $plain;
     }
 
@@ -113,7 +120,7 @@ class EmployeeEditToken
     public static function sendInvite(array $employee, array $company, string $channel = 'both'): array
     {
         $plain = self::mint($employee['id'] ?? '', $employee['created_by'] ?? null, $_SERVER['REMOTE_ADDR'] ?? null);
-        $editUrl = self::buildUrl($plain);
+        $editUrl = self::buildUrl($plain, $company['slug'] ?? null);
 
         $ctx = [
             'employeeName'    => $employee['name_en'] ?? $employee['name_ar'] ?? $employee['email'] ?? '',

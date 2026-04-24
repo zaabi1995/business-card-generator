@@ -424,7 +424,7 @@ class DatabaseAdapter {
                 try {
                     require_once __DIR__ . '/EmployeeEditToken.php';
                     $company = self::$db->fetchOne(
-                        "SELECT id, name, brand_color, logo_path AS logo_url FROM companies WHERE id = :id",
+                        "SELECT id, name, slug, brand_color, logo_path AS logo_url FROM companies WHERE id = :id",
                         ['id' => $companyId]
                     );
                     $channel = !empty($employee['phone']) || !empty($employee['mobile']) ? 'both' : 'email';

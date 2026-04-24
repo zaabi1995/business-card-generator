@@ -108,7 +108,7 @@ class OnboardingImport
         $inserted = 0; $skipped = 0; $invitesSent = 0;
 
         $company = $db->fetchOne(
-            "SELECT id, name, brand_color, logo_path AS logo_url FROM companies WHERE id = :id",
+            "SELECT id, name, slug, brand_color, logo_path AS logo_url FROM companies WHERE id = :id",
             ['id' => $companyId]
         ) ?: ['id' => $companyId, 'name' => 'Cardify'];
 

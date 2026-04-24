@@ -324,7 +324,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'name'        => $userName ?: $name,
                             'companyName' => $name,
                             'loginUrl'    => $baseHost . getBasePath() . 'login.php',
-                            'dashboardUrl'=> $baseHost . getBasePath() . ($company['slug'] ?? '') . '/admin/',
+                            'dashboardUrl'=> (!empty($company['slug'])
+                                                ? 'https://' . $company['slug'] . '.' . (defined('APP_HOST') ? APP_HOST : 'cardify.om') . '/admin/'
+                                                : $baseHost . getBasePath() . 'admin/'),
                             'companySlug' => $company['slug'] ?? '',
                         ]);
                     } catch (Throwable $e) {
@@ -353,8 +355,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         header('Location: ' . getBasePath() . 'onboarding.php?source=bhd');
                     } else {
                         $companySlugForRedirect = $company['slug'] ?? '';
+                        $apexHost = defined('APP_HOST') ? APP_HOST : 'cardify.om';
                         if ($companySlugForRedirect) {
-                            header('Location: ' . getBasePath() . $companySlugForRedirect . '/admin/onboarding');
+                            header('Location: https://' . $companySlugForRedirect . '.' . $apexHost . '/admin/onboarding');
                         } else {
                             header('Location: ' . getBasePath() . 'admin/onboarding.php');
                         }

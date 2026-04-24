@@ -155,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             require_once INCLUDES_DIR . '/EmployeeEditToken.php';
             $rid = trim($_POST['id'] ?? '');
             $emp = $rid ? $db->fetchOne(
-                "SELECT e.*, c.id AS _cid, c.name AS _cname, c.brand_color, c.logo_path AS logo_url
+                "SELECT e.*, c.id AS _cid, c.name AS _cname, c.slug AS _cslug, c.brand_color, c.logo_path AS logo_url
                    FROM employees e
                    JOIN companies c ON c.id = e.company_id
                   WHERE e.id = :id AND e.company_id = :cid LIMIT 1",
@@ -167,6 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
             }
             $company = ['id' => $companyId, 'name' => $emp['_cname'] ?? 'Cardify',
+                        'slug' => $emp['_cslug'] ?? null,
                         'brand_color' => $emp['brand_color'] ?? null,
                         'logo_url' => $emp['logo_url'] ?? null];
             $channel = (!empty($emp['phone']) || !empty($emp['mobile'])) ? 'both' : 'email';

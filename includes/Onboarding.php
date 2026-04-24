@@ -212,9 +212,13 @@ class Onboarding
         $firstEmp    = $data['first_employee'] ?? [];
         $empSlug     = strtolower(preg_replace('/[^a-z0-9]+/i', '-', (string) ($firstEmp['name'] ?? 'card')));
         $host        = defined('APP_HOST') ? APP_HOST : 'cardify.om';
-        $base        = 'https://' . $host;
-        $cardUrl     = $base . '/' . ($slug ? ($slug . '/' . trim($empSlug, '-')) : 'card');
-        $dashboardUrl = $base . ($slug ? "/{$slug}/admin/" : '/admin/');
+        // Tenant subdomain is the canonical URL; bare host is a fallback
+        // only for unnamed tenants (should be impossible in practice).
+        $tenantBase  = $slug ? 'https://' . $slug . '.' . $host : 'https://' . $host;
+        $cardUrl     = $slug
+            ? $tenantBase . '/' . trim($empSlug, '-')
+            : ('https://' . $host . '/card');
+        $dashboardUrl = $tenantBase . '/admin/';
 
         $adminName  = $data['admin_name'] ?? ($firstEmp['name'] ?? $companyName);
         $adminEmail = $company['admin_email'] ?? ($firstEmp['email'] ?? '');
