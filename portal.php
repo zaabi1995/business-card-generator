@@ -8,10 +8,16 @@
  */
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Mailer.php';
+require_once INCLUDES_DIR . '/TenantHost.php';
 
-// Get company slug and optional department slug from URL
+// Get company slug and optional department slug from URL. When the
+// request lands on a tenant subdomain (ohb.cardify.om/portal), pull
+// the slug from TenantHost so nginx doesn't need to inject it.
 $companySlug = $_GET['company_slug'] ?? '';
 $companySlug = trim(strtolower($companySlug));
+if ($companySlug === '' && TenantHost::isTenantHost()) {
+    $companySlug = (string) TenantHost::slug();
+}
 $departmentSlug = $_GET['department_slug'] ?? '';
 $departmentSlug = trim(strtolower($departmentSlug));
 
