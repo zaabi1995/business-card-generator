@@ -35,6 +35,15 @@ if (!$company) {
     exit;
 }
 
+// Canonicalize to the subdomain: if we arrived via /{slug}/portal on
+// the apex host, 301 to https://{slug}.cardify.om/portal[/{dept}].
+$__h = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+if (in_array($__h, ['cardify.om', 'www.cardify.om'], true) && ($company['status'] ?? 'active') === 'active') {
+    $path = '/portal' . ($departmentSlug ? '/' . $departmentSlug : '');
+    header('Location: ' . getTenantUrl($companySlug, $path), true, 301);
+    exit;
+}
+
 // Check if portal is enabled for this company
 if (isset($company['portal_enabled']) && !$company['portal_enabled']) {
     $portalDisabled = true;

@@ -25,7 +25,15 @@ try {
     $companySlug = trim(urldecode($companySlug));
     $employeeEmail = trim(urldecode($employeeEmail));
     $employeeEmail = preg_replace('/\.vcf$/i', '', $employeeEmail);
-    
+
+    // On a tenant subdomain, slug comes from $host.
+    if ($companySlug === '') {
+        require_once INCLUDES_DIR . '/TenantHost.php';
+        if (TenantHost::isTenantHost()) {
+            $companySlug = (string) TenantHost::slug();
+        }
+    }
+
     if (empty($companySlug) || empty($employeeEmail)) {
         throw new Exception('Missing parameters');
     }

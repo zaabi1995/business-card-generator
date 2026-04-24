@@ -39,6 +39,14 @@ try {
     $companySlug = trim($_GET['company_slug'] ?? '');
     $employeeId = trim($_GET['employee_id'] ?? '');
 
+    // On a tenant subdomain the slug comes from the host, not the URL.
+    if ($companySlug === '') {
+        require_once INCLUDES_DIR . '/TenantHost.php';
+        if (TenantHost::isTenantHost()) {
+            $companySlug = (string) TenantHost::slug();
+        }
+    }
+
     if (empty($companySlug) || empty($employeeId)) {
         throw new Exception('Missing parameters');
     }
@@ -48,6 +56,13 @@ try {
     if (!$company) {
         http_response_code(404);
         renderBranded404(null, null);
+        exit;
+    }
+
+    // Canonicalize: /{slug}/card/{id} on apex -> {slug}.cardify.om/card/{id}
+    $__h = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+    if (in_array($__h, ['cardify.om', 'www.cardify.om'], true) && ($company['status'] ?? 'active') === 'active') {
+        header('Location: ' . getTenantUrl($companySlug, '/card/' . rawurlencode($employeeId)), true, 301);
         exit;
     }
 
