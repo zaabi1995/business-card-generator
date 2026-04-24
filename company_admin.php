@@ -41,7 +41,26 @@ try {
         http_response_code(404);
         die('Company not found: ' . htmlspecialchars($companySlug));
     }
-    
+
+    // Canonicalize to the subdomain: if the request lands on the bare
+    // host (cardify.om or www.cardify.om) but the tenant has a valid
+    // slug, 301 to {slug}.cardify.om preserving the path + query. Keep
+    // path-style URLs working on localhost + preview envs.
+    $host = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+    $isProdHost = in_array($host, ['cardify.om', 'www.cardify.om'], true);
+    if ($isProdHost && ($company['status'] ?? 'active') === 'active') {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $pathPart = $page !== 'index' ? '/admin/' . $page : '/admin/';
+        $qs = $_SERVER['QUERY_STRING'] ?? '';
+        // Strip the routing params we injected so they don't leak.
+        parse_str($qs, $params);
+        unset($params['company_slug'], $params['page']);
+        $qsOut = http_build_query($params);
+        $target = $scheme . '://' . $companySlug . '.cardify.om' . $pathPart . ($qsOut ? '?' . $qsOut : '');
+        header('Location: ' . $target, true, 301);
+        exit;
+    }
+
     // Start session if not started
     if (session_status() === PHP_SESSION_NONE) {
         session_start();

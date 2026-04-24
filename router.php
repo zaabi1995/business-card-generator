@@ -35,7 +35,27 @@ if (empty($companySlug) || in_array($companySlug, $knownPaths) || strpos($compan
 $company = findCompanyBySlug($companySlug);
 
 if ($company) {
-    // Include company page
+    // Canonicalize public company pages to {slug}.cardify.om too.
+    // Bare cardify.om/{slug}/anything -> 301 {slug}.cardify.om/anything,
+    // preserving any deeper path (employee slug, /portal, /card, etc).
+    $host = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+    if (in_array($host, ['cardify.om', 'www.cardify.om'], true) && ($company['status'] ?? 'active') === 'active') {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        // Strip the leading /{slug} from the path, keep the rest.
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        $stripped = preg_replace('#^/' . preg_quote($companySlug, '#') . '#', '', $path);
+        if ($stripped === '' || $stripped === false) $stripped = '/';
+        $qs = $_SERVER['QUERY_STRING'] ?? '';
+        parse_str($qs, $params);
+        unset($params['company_slug']);
+        $qsOut = http_build_query($params);
+        $target = $scheme . '://' . $companySlug . '.cardify.om' . $stripped . ($qsOut ? '?' . $qsOut : '');
+        header('Location: ' . $target, true, 301);
+        exit;
+    }
+
+    // Include company page (fires on localhost, dev envs, or when host
+    // is already the subdomain).
     $_GET['company_slug'] = $companySlug;
     require __DIR__ . '/company/index.php';
     exit;
