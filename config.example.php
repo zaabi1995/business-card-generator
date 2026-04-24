@@ -84,7 +84,9 @@ if (!$skipSession && session_status() === PHP_SESSION_NONE) {
 // language cookie, drop to no-cache so a stale Arabic copy clears
 // immediately after they (or we) switch back to English.
 if ($skipSession && $isPublicSeo && !headers_sent()) {
-    $hasLangCookie = isset($_COOKIE['cardify_lang']) || isset($_COOKIE['cardify_lang_v2']);
+    $hasLangCookie = isset($_COOKIE['cardify_lang'])
+        || isset($_COOKIE['cardify_lang_v2'])
+        || isset($_COOKIE['cardify_lang_v3']);
     if ($hasLangCookie) {
         header('Cache-Control: private, no-cache, no-store, must-revalidate');
         header('Pragma: no-cache');

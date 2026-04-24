@@ -53,6 +53,23 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+      // Defensively clear legacy language cookies on every page load so a
+      // browser-cached HTML body (which never re-hits the server-side
+      // Set-Cookie clearing path) cannot keep forcing Arabic. Runs in
+      // <head> before any other script so the next navigation is clean.
+      (function () {
+        try {
+          var legacy = ['cardify_lang', 'cardify_lang_v2'];
+          for (var i = 0; i < legacy.length; i++) {
+            var name = legacy[i];
+            if (document.cookie.indexOf(name + '=') !== -1) {
+              document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; samesite=Lax; secure';
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
     <title><?php echo htmlspecialchars($pageTitle); ?><?php echo (stripos($pageTitle, $brandName) === false) ? ' | ' . $brandName : ''; ?></title>
     <meta name="description" content="<?php echo htmlspecialchars($pageDescription); ?>">
     <link rel="alternate" type="application/rss+xml" title="Cardify Blog" href="<?= function_exists('getBasePath') ? getBasePath() : '/' ?>feed">

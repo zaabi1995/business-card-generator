@@ -22,28 +22,36 @@ class I18n
     private static array $rtlLocales = ['ar'];
     private static array $loaded = []; // [locale][ns] => array
     private static bool $booted = false;
-    // Cookie key, bumped to v2 on 2026-04-24 to invalidate any sticky
-    // cardify_lang=ar cookies left over from accidental switcher clicks.
-    // Default is English; Arabic is opt-in via the language pill.
-    private const COOKIE_KEY = 'cardify_lang_v2';
+    // Cookie key, bumped to v3 on 2026-04-25 to invalidate any sticky
+    // cardify_lang_v2=ar cookies left over from earlier sessions. Default
+    // is English; Arabic is opt-in via the language pill.
+    private const COOKIE_KEY = 'cardify_lang_v3';
+    // Legacy keys we proactively delete on every request so we never get
+    // stuck honouring an old preference even if the user reaches us via
+    // a cached HTML body (the Set-Cookie response header still fires).
+    private const LEGACY_COOKIE_KEYS = ['cardify_lang', 'cardify_lang_v2'];
 
     public static function boot(): void
     {
         if (self::$booted) return;
         self::$booted = true;
 
-        // One-time clear of the legacy v1 cookie so previously persisted
-        // Arabic preferences don't override the English default.
-        if (isset($_COOKIE['cardify_lang']) && !headers_sent()) {
+        // Clear legacy cookies so previously persisted Arabic preferences
+        // don't override the English default.
+        if (!headers_sent()) {
             $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
-            setcookie('cardify_lang', '', [
-                'expires'  => time() - 3600,
-                'path'     => '/',
-                'secure'   => $secure,
-                'httponly' => false,
-                'samesite' => 'Lax',
-            ]);
-            unset($_COOKIE['cardify_lang']);
+            foreach (self::LEGACY_COOKIE_KEYS as $legacy) {
+                if (isset($_COOKIE[$legacy])) {
+                    setcookie($legacy, '', [
+                        'expires'  => time() - 3600,
+                        'path'     => '/',
+                        'secure'   => $secure,
+                        'httponly' => false,
+                        'samesite' => 'Lax',
+                    ]);
+                    unset($_COOKIE[$legacy]);
+                }
+            }
         }
 
         // If the visitor has no v2 cookie and no explicit ?lang= override,
@@ -79,12 +87,12 @@ class I18n
         if (isset($_GET['lang']) && in_array($_GET['lang'], self::$supported, true)) {
             return $_GET['lang'];
         }
-        // 2. cookie (v2)
+        // 2. cookie (current version)
         if (isset($_COOKIE[self::COOKIE_KEY]) && in_array($_COOKIE[self::COOKIE_KEY], self::$supported, true)) {
             return $_COOKIE[self::COOKIE_KEY];
         }
-        // 3. session, only honoured when paired with the v2 cookie
-        // (boot() clears the session var when no v2 cookie is present so
+        // 3. session, only honoured when paired with the current cookie
+        // (boot() clears the session var when no current cookie is present so
         // we don't get stuck on Arabic from a long-dead switcher click).
         if (function_exists('session_status') && session_status() === PHP_SESSION_ACTIVE
             && isset($_SESSION['cardify_lang'])
