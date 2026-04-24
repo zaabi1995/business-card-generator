@@ -147,6 +147,12 @@ class OgImage
         ?string $logoPath,
         string $locale
     ): bool {
+        // Debug log lives inside the site so we can read it without root.
+        $log = dirname(__DIR__) . '/storage/og/og-debug.log';
+        $trace = function(string $msg) use ($log) {
+            @file_put_contents($log, '[' . date('c') . '] ' . $msg . "\n", FILE_APPEND);
+        };
+
         // Resolve rsvg-convert path. command -v can return empty under
         // restrictive shells, so fall back to common absolute paths.
         $rsvg = trim((string)@shell_exec('command -v rsvg-convert 2>/dev/null'));
@@ -156,9 +162,10 @@ class OgImage
             }
         }
         if ($rsvg === '' || !is_executable($rsvg)) {
-            error_log('OgImage: rsvg-convert not found');
+            $trace('rsvg-convert not found on PATH or absolute fallbacks');
             return false;
         }
+        $trace('rsvg resolved at ' . $rsvg);
 
         // If the logo is an SVG, rasterize it to a temp PNG first so we can
         // embed it as a data URL without depending on rsvg-convert's nested
@@ -176,9 +183,10 @@ class OgImage
         if (!is_dir($tmpDir)) @mkdir($tmpDir, 0755, true);
         $tmpSvg = $tmpDir . '/og-' . bin2hex(random_bytes(6)) . '.svg';
         if (@file_put_contents($tmpSvg, $svg) === false) {
-            error_log('OgImage: cannot write temp SVG to ' . $tmpSvg);
+            $trace('cannot write temp SVG to ' . $tmpSvg);
             return false;
         }
+        $trace('wrote svg ' . $tmpSvg . ' (' . strlen($svg) . ' bytes)');
 
         $cmd = sprintf(
             '%s --format=png --width=%d --height=%d --output=%s %s 2>&1',
@@ -192,9 +200,10 @@ class OgImage
         @exec($cmd, $out, $code);
         @unlink($tmpSvg);
         if ($code !== 0 || !is_file($outPath) || filesize($outPath) === 0) {
-            error_log('OgImage: rsvg failed code=' . $code . ' out=' . implode(' | ', $out));
+            $trace('rsvg failed code=' . $code . ' out=' . implode(' | ', $out));
             return false;
         }
+        $trace('rsvg ok ' . $outPath . ' size=' . filesize($outPath));
         return true;
     }
 
