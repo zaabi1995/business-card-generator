@@ -46,6 +46,18 @@ class I18n
             unset($_COOKIE['cardify_lang']);
         }
 
+        // If the visitor has no v2 cookie and no explicit ?lang= override,
+        // also clear any leftover $_SESSION['cardify_lang'] from a prior
+        // switcher click. Otherwise the session keeps forcing Arabic for
+        // the rest of its lifetime even though the user expected English.
+        if (!isset($_GET['lang'])
+            && !isset($_COOKIE[self::COOKIE_KEY])
+            && function_exists('session_status')
+            && session_status() === PHP_SESSION_ACTIVE
+            && isset($_SESSION['cardify_lang'])) {
+            unset($_SESSION['cardify_lang']);
+        }
+
         $locale = self::detect();
         self::$locale = $locale;
 
@@ -67,11 +79,13 @@ class I18n
         if (isset($_GET['lang']) && in_array($_GET['lang'], self::$supported, true)) {
             return $_GET['lang'];
         }
-        // 2. cookie
+        // 2. cookie (v2)
         if (isset($_COOKIE[self::COOKIE_KEY]) && in_array($_COOKIE[self::COOKIE_KEY], self::$supported, true)) {
             return $_COOKIE[self::COOKIE_KEY];
         }
-        // 3. session
+        // 3. session, only honoured when paired with the v2 cookie
+        // (boot() clears the session var when no v2 cookie is present so
+        // we don't get stuck on Arabic from a long-dead switcher click).
         if (function_exists('session_status') && session_status() === PHP_SESSION_ACTIVE
             && isset($_SESSION['cardify_lang'])
             && in_array($_SESSION['cardify_lang'], self::$supported, true)) {

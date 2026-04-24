@@ -79,9 +79,20 @@ if (!$skipSession && session_status() === PHP_SESSION_NONE) {
 }
 
 // Emit SEO-friendly cache headers on public pages that skipped session.
+// Vary on Cookie so users with a cardify_lang preference don't get served
+// a cached copy in the wrong language. When the visitor already has a
+// language cookie, drop to no-cache so a stale Arabic copy clears
+// immediately after they (or we) switch back to English.
 if ($skipSession && $isPublicSeo && !headers_sent()) {
-    header('Cache-Control: public, max-age=3600, s-maxage=3600');
-    header('Vary: Accept-Encoding');
+    $hasLangCookie = isset($_COOKIE['cardify_lang']) || isset($_COOKIE['cardify_lang_v2']);
+    if ($hasLangCookie) {
+        header('Cache-Control: private, no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+    } else {
+        header('Cache-Control: public, max-age=3600, s-maxage=3600');
+    }
+    header('Vary: Accept-Encoding, Cookie');
 }
 
 // Environment detection
