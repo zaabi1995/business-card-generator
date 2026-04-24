@@ -22,11 +22,29 @@ class I18n
     private static array $rtlLocales = ['ar'];
     private static array $loaded = []; // [locale][ns] => array
     private static bool $booted = false;
+    // Cookie key, bumped to v2 on 2026-04-24 to invalidate any sticky
+    // cardify_lang=ar cookies left over from accidental switcher clicks.
+    // Default is English; Arabic is opt-in via the language pill.
+    private const COOKIE_KEY = 'cardify_lang_v2';
 
     public static function boot(): void
     {
         if (self::$booted) return;
         self::$booted = true;
+
+        // One-time clear of the legacy v1 cookie so previously persisted
+        // Arabic preferences don't override the English default.
+        if (isset($_COOKIE['cardify_lang']) && !headers_sent()) {
+            $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+            setcookie('cardify_lang', '', [
+                'expires'  => time() - 3600,
+                'path'     => '/',
+                'secure'   => $secure,
+                'httponly' => false,
+                'samesite' => 'Lax',
+            ]);
+            unset($_COOKIE['cardify_lang']);
+        }
 
         $locale = self::detect();
         self::$locale = $locale;
@@ -34,8 +52,8 @@ class I18n
         // Persist if it came from a query param and wasn't already in the cookie.
         if (isset($_GET['lang']) && in_array($_GET['lang'], self::$supported, true)) {
             self::persistCookie($_GET['lang']);
-            if (!isset($_COOKIE['cardify_lang']) || $_COOKIE['cardify_lang'] !== $_GET['lang']) {
-                $_COOKIE['cardify_lang'] = $_GET['lang'];
+            if (!isset($_COOKIE[self::COOKIE_KEY]) || $_COOKIE[self::COOKIE_KEY] !== $_GET['lang']) {
+                $_COOKIE[self::COOKIE_KEY] = $_GET['lang'];
             }
             if (function_exists('session_status') && session_status() === PHP_SESSION_ACTIVE) {
                 $_SESSION['cardify_lang'] = $_GET['lang'];
@@ -50,8 +68,8 @@ class I18n
             return $_GET['lang'];
         }
         // 2. cookie
-        if (isset($_COOKIE['cardify_lang']) && in_array($_COOKIE['cardify_lang'], self::$supported, true)) {
-            return $_COOKIE['cardify_lang'];
+        if (isset($_COOKIE[self::COOKIE_KEY]) && in_array($_COOKIE[self::COOKIE_KEY], self::$supported, true)) {
+            return $_COOKIE[self::COOKIE_KEY];
         }
         // 3. session
         if (function_exists('session_status') && session_status() === PHP_SESSION_ACTIVE
@@ -60,9 +78,9 @@ class I18n
             return $_SESSION['cardify_lang'];
         }
         // 4. Always default to English. Accept-Language auto-detection is
-        // intentionally off: Ali wants every first-time visitor to see the
-        // English site regardless of browser/OS locale. Arabic is opt-in via
-        // the ?lang=ar query param or the header language pill.
+        // intentionally off: every first-time visitor sees English
+        // regardless of browser/OS locale. Arabic is opt-in via the
+        // ?lang=ar query param or the header language pill.
         return self::$default;
     }
 
@@ -70,7 +88,7 @@ class I18n
     {
         if (headers_sent()) return;
         $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
-        setcookie('cardify_lang', $locale, [
+        setcookie(self::COOKIE_KEY, $locale, [
             'expires'  => time() + 31536000, // 1 year
             'path'     => '/',
             'secure'   => $secure,
