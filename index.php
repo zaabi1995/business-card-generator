@@ -161,7 +161,7 @@ if (isset($_GET['company_slug'])) {
 // Brand name
 $brandName = 'Cardify';
 $tagline = 'Business Cards Made Simple';
-$pageTitle = 'Cardify — Digital & Printed Business Cards for the GCC';
+$pageTitle = 'Cardify, Digital & Printed Business Cards for the GCC';
 $pageDescription = 'Bilingual Arabic/English digital and printed business cards for teams across the Gulf: Oman (live), Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait (rolling out 2026). QR vCard save, Apple Wallet, NFC, bulk provisioning. Free to start.';
 $canonicalUrl = 'https://cardify.om/';
 $bodyClass = 'bg-white';
@@ -670,120 +670,84 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
     <!-- ========== PRICING SECTION ========== -->
     <section id="pricing" class="py-16 lg:py-24 bg-gradient-to-b from-gray-50 to-white px-4">
-        <div class="max-w-7xl mx-auto" x-data="{ annual: false }">
+        <div class="max-w-6xl mx-auto">
             <!-- Section Header -->
             <div class="text-center mb-12">
                 <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full uppercase tracking-wide">
+                    <i class="fa-solid fa-tag"></i>
                     <?= htmlspecialchars(t('pricing.home_kicker')) ?>
                 </span>
-                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-3"><?= htmlspecialchars(t('pricing.home_kicker')) ?></p>
                 <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4"><?= htmlspecialchars(t('pricing.home_headline')) ?></h2>
                 <p class="text-lg text-gray-600 max-w-2xl mx-auto"><?= htmlspecialchars(t('pricing.home_subhead')) ?></p>
-
-                <!-- Billing Toggle -->
-                <div class="mt-8 inline-flex items-center gap-3 bg-gray-100 rounded-full p-1">
-                    <button @click="annual = false" :class="!annual ? 'bg-white shadow text-gray-900' : 'text-gray-500'" class="px-5 py-2 rounded-full text-sm font-semibold transition-all"><?= htmlspecialchars(t('pricing.home_toggle_month')) ?></button>
-                    <button @click="annual = true" :class="annual ? 'bg-white shadow text-gray-900' : 'text-gray-500'" class="px-5 py-2 rounded-full text-sm font-semibold transition-all">
-                        <?= htmlspecialchars(t('pricing.home_toggle_annual')) ?> <span class="text-green-600 text-xs font-bold ml-1"><?= htmlspecialchars(t('pricing.home_toggle_save')) ?></span>
-                    </button>
-                </div>
             </div>
 
-            <!-- Pricing Grid -->
-            <div class="cardify-pricing-grid">
-                <!-- Starter -->
-                <div class="cardify-plan">
-                    <div class="cardify-plan-header">
-                        <h3 class="cardify-plan-name"><?= htmlspecialchars(t('pricing.starter_name')) ?></h3>
-                        <p class="cardify-plan-tagline"><?= htmlspecialchars(t('pricing.home_starter_tag')) ?></p>
-                    </div>
-                    <div class="cardify-plan-price">
-                        <span class="cardify-plan-price-value"><?= htmlspecialchars(t('pricing.home_starter_price')) ?></span>
-                        <p class="cardify-plan-price-sub"><?= htmlspecialchars(t('pricing.home_starter_sub')) ?></p>
-                    </div>
-                    <ul class="cardify-plan-features">
-                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_starter_f1')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_starter_f2')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_starter_f3')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_starter_f4')) ?></li>
-                    </ul>
-                    <a href="<?= getBasePath() ?>company/register.php" class="cardify-plan-cta cardify-plan-cta--ghost"><?= htmlspecialchars(t('pricing.home_starter_cta')) ?></a>
-                </div>
-
-                <!-- Professional (Popular) -->
-                <div class="cardify-plan cardify-plan--featured">
-                    <span class="cardify-plan-badge"><?= htmlspecialchars(t('pricing.home_badge_popular')) ?></span>
-                    <div class="cardify-plan-header">
-                        <h3 class="cardify-plan-name"><?= htmlspecialchars(t('pricing.pro_name')) ?></h3>
-                        <p class="cardify-plan-tagline"><?= htmlspecialchars(t('pricing.home_pro_tag')) ?></p>
-                    </div>
-                    <div class="cardify-plan-price">
-                        <div class="cardify-plan-price-row">
-                            <span class="cardify-plan-price-value cardify-plan-price-value--num" x-text="annual ? <?= json_encode($priceProAnnMo) ?> : <?= json_encode($priceProMo) ?>"><?= htmlspecialchars($priceProMo) ?></span>
-                            <span class="cardify-plan-price-unit"><?= htmlspecialchars(t('pricing.home_unit_month', ['currency' => $homeCurName])) ?></span>
+            <!-- Platform (free forever) card -->
+            <article class="relative bg-white rounded-3xl p-8 lg:p-10 ring-1 ring-gray-200/70 shadow-xl mb-10">
+                <span class="absolute -top-3 left-8 px-4 py-1 bg-green-600 text-white text-xs font-bold rounded-full uppercase tracking-wider">
+                    <?= htmlspecialchars(t('pricing.platform_badge')) ?>
+                </span>
+                <div class="grid lg:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-700 mb-2"><?= htmlspecialchars(t('pricing.platform_name')) ?></h3>
+                        <div class="flex items-baseline gap-2 mb-3">
+                            <span class="text-5xl lg:text-6xl font-extrabold text-gray-900"><?= htmlspecialchars(t('pricing.platform_price')) ?></span>
                         </div>
-                        <p class="cardify-plan-price-sub" x-show="annual"><?= htmlspecialchars(t('pricing.home_billed_year', ['amount' => $priceProAnnYear, 'currency' => $homeCurName])) ?></p>
-                        <p class="cardify-plan-price-sub" x-show="!annual"><?= htmlspecialchars(t('pricing.home_billed_month')) ?></p>
+                        <p class="text-gray-500 mb-6"><?= htmlspecialchars(t('pricing.platform_sub')) ?></p>
+                        <a href="<?= getBasePath() ?>company/register.php" class="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/30 transition hover:-translate-y-0.5">
+                            <?= htmlspecialchars(t('pricing.platform_cta')) ?>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </a>
                     </div>
-                    <ul class="cardify-plan-features">
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i><?= htmlspecialchars(t('pricing.home_pro_f1')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i><?= htmlspecialchars(t('pricing.home_pro_f2')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i><?= htmlspecialchars(t('pricing.home_pro_f3')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i><?= htmlspecialchars(t('pricing.home_pro_f4')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i><?= htmlspecialchars(t('pricing.home_pro_f5')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--accent"></i><?= htmlspecialchars(t('pricing.home_pro_f6')) ?></li>
+                    <ul class="grid sm:grid-cols-2 gap-x-4 gap-y-1">
+                        <?php for ($i = 1; $i <= 8; $i++): ?>
+                            <li class="flex items-start gap-2 py-1.5 text-gray-700">
+                                <i class="fa-solid fa-check text-green-600 mt-1 flex-shrink-0"></i>
+                                <span><?= htmlspecialchars(t('pricing.platform_f' . $i)) ?></span>
+                            </li>
+                        <?php endfor; ?>
                     </ul>
-                    <a href="<?= getBasePath() ?>company/register.php?plan=professional" class="cardify-plan-cta cardify-plan-cta--primary"><?= htmlspecialchars(t('pricing.home_pro_cta')) ?></a>
                 </div>
+            </article>
 
-                <!-- Business -->
-                <div class="cardify-plan">
-                    <div class="cardify-plan-header">
-                        <h3 class="cardify-plan-name"><?= htmlspecialchars(t('pricing.biz_name')) ?></h3>
-                        <p class="cardify-plan-tagline"><?= htmlspecialchars(t('pricing.home_biz_tag')) ?></p>
-                    </div>
-                    <div class="cardify-plan-price">
-                        <div class="cardify-plan-price-row">
-                            <span class="cardify-plan-price-value cardify-plan-price-value--num" x-text="annual ? <?= json_encode($priceBizAnnMo) ?> : <?= json_encode($priceBizMo) ?>"><?= htmlspecialchars($priceBizMo) ?></span>
-                            <span class="cardify-plan-price-unit"><?= htmlspecialchars(t('pricing.home_unit_month', ['currency' => $homeCurName])) ?></span>
-                        </div>
-                        <p class="cardify-plan-price-sub" x-show="annual"><?= htmlspecialchars(t('pricing.home_billed_year', ['amount' => $priceBizAnnYear, 'currency' => $homeCurName])) ?></p>
-                        <p class="cardify-plan-price-sub" x-show="!annual"><?= htmlspecialchars(t('pricing.home_billed_month')) ?></p>
-                    </div>
-                    <ul class="cardify-plan-features">
-                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_biz_f1')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_biz_f2')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_biz_f3')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_biz_f4')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_biz_f5')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick"></i><?= htmlspecialchars(t('pricing.home_biz_f6')) ?></li>
-                    </ul>
-                    <a href="<?= getBasePath() ?>company/register.php?plan=business" class="cardify-plan-cta cardify-plan-cta--ghost"><?= htmlspecialchars(t('pricing.home_biz_cta')) ?></a>
-                </div>
-
-                <!-- Enterprise -->
-                <div class="cardify-plan cardify-plan--dark">
-                    <div class="cardify-plan-header">
-                        <h3 class="cardify-plan-name"><?= htmlspecialchars(t('pricing.ent_name')) ?></h3>
-                        <p class="cardify-plan-tagline"><?= htmlspecialchars(t('pricing.home_ent_tag')) ?></p>
-                    </div>
-                    <div class="cardify-plan-price">
-                        <span class="cardify-plan-price-value"><?= htmlspecialchars(t('pricing.home_ent_price')) ?></span>
-                        <p class="cardify-plan-price-sub"><?= htmlspecialchars(t('pricing.home_ent_sub')) ?></p>
-                    </div>
-                    <ul class="cardify-plan-features">
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i><?= htmlspecialchars(t('pricing.home_ent_f1')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i><?= htmlspecialchars(t('pricing.home_ent_f2')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i><?= htmlspecialchars(t('pricing.home_ent_f3')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i><?= htmlspecialchars(t('pricing.home_ent_f4')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i><?= htmlspecialchars(t('pricing.home_ent_f5')) ?></li>
-                        <li><i class="fa-solid fa-check cardify-tick cardify-tick--gold"></i><?= htmlspecialchars(t('pricing.home_ent_f6')) ?></li>
-                    </ul>
-                    <a href="https://wa.me/96899899100?text=Hi%2C%20I%27m%20interested%20in%20Cardify%20Enterprise" target="_blank" rel="noopener" class="cardify-plan-cta cardify-plan-cta--on-dark"><?= htmlspecialchars(t('pricing.home_ent_cta')) ?></a>
-                </div>
+            <!-- Printed product catalogue -->
+            <div class="text-center mb-8">
+                <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-2"><?= htmlspecialchars(t('pricing.products_eyebrow')) ?></p>
+                <h3 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('pricing.products_h')) ?></h3>
+                <p class="text-base text-gray-600 max-w-2xl mx-auto"><?= htmlspecialchars(t('pricing.products_b')) ?></p>
             </div>
 
-            <p class="text-center text-sm text-gray-500 mt-8"><?= htmlspecialchars(t('pricing.home_footnote')) ?></p>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <?php
+                $homeProducts = [
+                    'standard' => ['accent' => 'blue',    'icon' => 'fa-id-card'],
+                    'premium'  => ['accent' => 'purple',  'icon' => 'fa-gem'],
+                    'luxury'   => ['accent' => 'amber',   'icon' => 'fa-award'],
+                    'nfc'      => ['accent' => 'emerald', 'icon' => 'fa-wifi'],
+                ];
+                foreach ($homeProducts as $key => $meta):
+                ?>
+                    <article class="flex flex-col bg-white rounded-2xl p-6 ring-1 ring-gray-200/70 hover:-translate-y-1 hover:shadow-xl transition-all">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-<?= $meta['accent'] ?>-100">
+                            <i class="fa-solid <?= $meta['icon'] ?> text-xl text-<?= $meta['accent'] ?>-600"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-900 mb-1"><?= htmlspecialchars(t('pricing.product_' . $key . '_name')) ?></h4>
+                        <p class="text-sm text-gray-500 mb-4 leading-relaxed flex-1"><?= htmlspecialchars(t('pricing.product_' . $key . '_spec')) ?></p>
+                        <div class="mb-4">
+                            <span class="text-2xl font-extrabold text-gray-900"><?= htmlspecialchars(t('pricing.product_' . $key . '_price')) ?></span>
+                            <p class="text-xs text-gray-500 mt-0.5"><?= htmlspecialchars(t('pricing.product_' . $key . '_unit')) ?></p>
+                        </div>
+                        <a href="<?= getBasePath() ?>company/register.php" class="text-blue-600 hover:text-blue-700 font-semibold text-sm inline-flex items-center gap-1">
+                            <?= htmlspecialchars(t('pricing.product_cta')) ?>
+                            <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </a>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+
+            <p class="text-center text-sm text-gray-500 mt-10">
+                <i class="fa-solid fa-shield-halved text-green-600 mr-1"></i>
+                <?= htmlspecialchars(t('pricing.home_footnote')) ?>
+            </p>
         </div>
     </section>
 
@@ -1204,42 +1168,72 @@ HTML;
   "offers": [
     {
       "@type": "Offer",
-      "name": "Starter",
+      "name": "Platform Access",
       "price": "0",
       "priceCurrency": "OMR",
-      "description": "Free forever — up to 3 employees, digital cards with QR vCard, bilingual EN+AR, basic analytics.",
+      "description": "Free forever. Unlimited employees, unlimited templates, digital cards with QR vCard, bilingual EN+AR, analytics, WhatsApp and email share, no credit card required.",
       "availability": "https://schema.org/InStock",
-      "url": "https://cardify.om/get-started"
+      "url": "https://cardify.om/company/register.php"
     },
     {
       "@type": "Offer",
-      "name": "Professional",
-      "price": "5",
+      "name": "Standard Printed Cards",
+      "price": "6.000",
       "priceCurrency": "OMR",
       "priceSpecification": {
         "@type": "UnitPriceSpecification",
-        "price": "5",
+        "price": "6.000",
         "priceCurrency": "OMR",
-        "referenceQuantity": { "@type": "QuantitativeValue", "value": "1", "unitCode": "MON" }
+        "referenceQuantity": { "@type": "QuantitativeValue", "value": "100", "unitText": "cards" }
       },
-      "description": "For teams up to 10 employees — custom domain, team templates, printed card ordering, priority support.",
+      "description": "300gsm matt, full colour both sides. From OMR 6.000 per 100 cards, printed by verified Omani shops.",
       "availability": "https://schema.org/InStock",
-      "url": "https://cardify.om/get-started?plan=professional"
+      "url": "https://cardify.om/pricing"
     },
     {
       "@type": "Offer",
-      "name": "Business",
-      "price": "15",
+      "name": "Premium Printed Cards",
+      "price": "8.000",
       "priceCurrency": "OMR",
       "priceSpecification": {
         "@type": "UnitPriceSpecification",
-        "price": "15",
+        "price": "8.000",
         "priceCurrency": "OMR",
-        "referenceQuantity": { "@type": "QuantitativeValue", "value": "1", "unitCode": "MON" }
+        "referenceQuantity": { "@type": "QuantitativeValue", "value": "100", "unitText": "cards" }
       },
-      "description": "For teams up to 50 employees — department management, SSO, advanced analytics, bulk printing discounts.",
+      "description": "350gsm soft-touch, full colour both sides. From OMR 8.000 per 100 cards.",
       "availability": "https://schema.org/InStock",
-      "url": "https://cardify.om/get-started?plan=business"
+      "url": "https://cardify.om/pricing"
+    },
+    {
+      "@type": "Offer",
+      "name": "Luxury Printed Cards",
+      "price": "15.000",
+      "priceCurrency": "OMR",
+      "priceSpecification": {
+        "@type": "UnitPriceSpecification",
+        "price": "15.000",
+        "priceCurrency": "OMR",
+        "referenceQuantity": { "@type": "QuantitativeValue", "value": "100", "unitText": "cards" }
+      },
+      "description": "450gsm with spot UV or foil accents. From OMR 15.000 per 100 cards.",
+      "availability": "https://schema.org/InStock",
+      "url": "https://cardify.om/pricing"
+    },
+    {
+      "@type": "Offer",
+      "name": "NFC Tap Cards",
+      "price": "25.000",
+      "priceCurrency": "OMR",
+      "priceSpecification": {
+        "@type": "UnitPriceSpecification",
+        "price": "25.000",
+        "priceCurrency": "OMR",
+        "referenceQuantity": { "@type": "QuantitativeValue", "value": "1", "unitText": "card" }
+      },
+      "description": "Re-programmable NFC chip plus QR. Tap-to-share on any phone. OMR 25.000 per card.",
+      "availability": "https://schema.org/InStock",
+      "url": "https://cardify.om/pricing"
     }
   ]
 }
@@ -1256,8 +1250,8 @@ HTML;
     "@type": "AggregateOffer",
     "priceCurrency": "OMR",
     "lowPrice": "0",
-    "highPrice": "15",
-    "offerCount": "3",
+    "highPrice": "25",
+    "offerCount": "5",
     "availability": "https://schema.org/InStock"
   }
 }
