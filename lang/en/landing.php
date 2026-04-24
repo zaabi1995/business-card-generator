@@ -109,9 +109,9 @@ return [
     // Final CTA block
     'cta_supporting'     => 'Proudly supporting Omani businesses',
     'cta_title'          => 'Create Your First Card in Minutes',
-    'cta_sub'            => 'Join hundreds of Omani companies using Cardify. Start free, upgrade as you grow.',
-    'cta_start_trial'    => 'Start Your Free Trial',
+    'cta_sub'            => 'Join hundreds of Omani companies using Cardify. Free platform, pay only when you print.',
+    'cta_start_trial'    => 'Get Started Free',
     'cta_see_how'        => 'See How It Works',
-    'cta_free_starter'   => 'Free Starter Plan',
-    'cta_free_trial'     => '14-Day Free Trial',
+    'cta_free_starter'   => '100% Free Platform',
+    'cta_free_trial'     => 'Pay Only When You Print',
 ];

@@ -185,35 +185,8 @@ $fmt = function ($omr) use ($homeCur) {
     }
     return Currency::formatNumber($rounded, $homeCur);
 };
-$priceProMo        = $fmt(5.000);
-$priceProAnnMo     = $fmt(4.167);
-$priceProAnnYear   = $fmt(50.000);
-$priceBizMo        = $fmt(15.000);
-$priceBizAnnMo     = $fmt(12.500);
-$priceBizAnnYear   = $fmt(150.000);
-$priceStarterFrom  = $fmt(5.000);
-
-// Fetch subscription plans from database for pricing section
-$subscriptionPlans = [];
-try {
-    if (isset($db) && $db->isConnected() && $db->tableExists('subscription_plans')) {
-        $subscriptionPlans = $db->fetchAll(
-            "SELECT p.*, 
-                    pp_omr.price_monthly as omr_monthly, 
-                    pp_omr.price_yearly as omr_yearly,
-                    pp_usd.price_monthly as usd_monthly,
-                    pp_usd.price_yearly as usd_yearly
-             FROM subscription_plans p 
-             LEFT JOIN plan_prices pp_omr ON p.id = pp_omr.plan_id AND pp_omr.currency = 'OMR'
-             LEFT JOIN plan_prices pp_usd ON p.id = pp_usd.plan_id AND pp_usd.currency = 'USD'
-             WHERE p.is_active = 1 
-             ORDER BY p.sort_order, p.id"
-        );
-    }
-} catch (Exception $e) {
-    // Plans table might not exist yet, will use default display
-    $subscriptionPlans = [];
-}
+// Tier-based subscription pricing was removed Apr 2026. Platform is free forever,
+// revenue comes from per-order print products (see lang/en/pricing.php and /pricing).
 
 // Latest blog posts for homepage SEO (internal links + freshness signal)
 $latestPosts = [];
