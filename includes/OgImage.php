@@ -147,8 +147,16 @@ class OgImage
         ?string $logoPath,
         string $locale
     ): bool {
+        // Resolve rsvg-convert path. command -v can return empty under
+        // restrictive shells, so fall back to common absolute paths.
         $rsvg = trim((string)@shell_exec('command -v rsvg-convert 2>/dev/null'));
         if ($rsvg === '' || !is_executable($rsvg)) {
+            foreach (['/usr/bin/rsvg-convert', '/usr/local/bin/rsvg-convert', '/opt/homebrew/bin/rsvg-convert'] as $try) {
+                if (is_executable($try)) { $rsvg = $try; break; }
+            }
+        }
+        if ($rsvg === '' || !is_executable($rsvg)) {
+            error_log('OgImage: rsvg-convert not found');
             return false;
         }
 
@@ -162,8 +170,15 @@ class OgImage
 
         $svg = self::buildSvg($name, $dept, $headline, $brandPrimary, $brandSecondary, $logoDataUri, $locale);
 
-        $tmpSvg = tempnam(sys_get_temp_dir(), 'og_') . '.svg';
-        file_put_contents($tmpSvg, $svg);
+        // Write the SVG inside the site tree so open_basedir never blocks
+        // rsvg-convert from reading it.
+        $tmpDir = dirname($outPath) . '/tmp';
+        if (!is_dir($tmpDir)) @mkdir($tmpDir, 0755, true);
+        $tmpSvg = $tmpDir . '/og-' . bin2hex(random_bytes(6)) . '.svg';
+        if (@file_put_contents($tmpSvg, $svg) === false) {
+            error_log('OgImage: cannot write temp SVG to ' . $tmpSvg);
+            return false;
+        }
 
         $cmd = sprintf(
             '%s --format=png --width=%d --height=%d --output=%s %s 2>&1',
@@ -172,9 +187,15 @@ class OgImage
             escapeshellarg($outPath),
             escapeshellarg($tmpSvg)
         );
-        @exec($cmd, $_out, $code);
+        $out = [];
+        $code = -1;
+        @exec($cmd, $out, $code);
         @unlink($tmpSvg);
-        return $code === 0 && is_file($outPath) && filesize($outPath) > 0;
+        if ($code !== 0 || !is_file($outPath) || filesize($outPath) === 0) {
+            error_log('OgImage: rsvg failed code=' . $code . ' out=' . implode(' | ', $out));
+            return false;
+        }
+        return true;
     }
 
     private static function logoAsPngDataUri(string $logoPath, string $rsvg): ?string
@@ -187,7 +208,9 @@ class OgImage
             return 'data:' . $mime . ';base64,' . base64_encode($data);
         }
         if ($ext === 'svg') {
-            $tmpPng = tempnam(sys_get_temp_dir(), 'oglogo_') . '.png';
+            $tmpDir = dirname(dirname($logoPath)) . '/og-tmp';
+            if (!is_dir($tmpDir)) $tmpDir = sys_get_temp_dir();
+            $tmpPng = $tmpDir . '/oglogo-' . bin2hex(random_bytes(6)) . '.png';
             $cmd = sprintf(
                 '%s --format=png --height=480 --output=%s %s 2>&1',
                 escapeshellcmd($rsvg),
