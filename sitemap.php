@@ -345,19 +345,9 @@ if ($part === 'static') {
     // public profile URLs yet; adding the listing hub + per-shop
     // slug pages whenever they ship is tracked in action 788.
     smUrlBilingual('/print-shops', $today, 'weekly', '0.8');
-    if ($db) {
-        try {
-            $shops = $db->fetchAll(
-                "SELECT slug, updated_at FROM print_shops
-                  WHERE status = 'active' AND slug IS NOT NULL AND slug != ''
-                  ORDER BY updated_at DESC"
-            );
-            foreach ($shops as $s) {
-                $lastmod = !empty($s['updated_at']) ? date('Y-m-d', strtotime($s['updated_at'])) : $today;
-                smUrl("{$baseUrl}/print-shops/" . $s['slug'], $lastmod, 'weekly', '0.6');
-            }
-        } catch (Throwable $e) { /* slug column may not exist yet */ }
-    }
+    // Per-shop detail URLs (/print-shops/{slug}) are not yet built; the
+    // /print-shops index page is the only public surface. Skip emitting
+    // detail URLs so Google doesn't crawl them as 404s.
 
 } else {
     // Unknown part — empty urlset (Google will just see no URLs; still valid XML).
