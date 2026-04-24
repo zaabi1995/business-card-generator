@@ -106,10 +106,11 @@ function analyzeBulkClaimRow($row, $db) {
     );
     if ($dupLead) return ['row' => $row, 'normalized_phone' => $phone, 'reason' => 'already_in_leads'];
 
-    // Already has an employee card (by phone or mobile)
+    // Already has an employee card (by phone or mobile). PDO emulated
+    // prepares are OFF, so :p cannot appear twice in one query (HY093).
     $dupEmp = $db->fetchOne(
-        "SELECT id FROM employees WHERE (phone = :p OR mobile = :p) LIMIT 1",
-        ['p' => $phone]
+        "SELECT id FROM employees WHERE (phone = :phone OR mobile = :mobile) LIMIT 1",
+        ['phone' => $phone, 'mobile' => $phone]
     );
     if ($dupEmp) return ['row' => $row, 'normalized_phone' => $phone, 'reason' => 'already_has_card'];
 

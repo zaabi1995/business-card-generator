@@ -45,10 +45,12 @@ if (is_string($postSlug) && !preg_match('~^[a-z0-9_-]{1,120}$~i', $postSlug)) {
 
 if ($db->tableExists('blog_posts')) {
     if ($postSlug) {
-        // Single post view. Accept either the EN or AR slug.
+        // Single post view. Accept either the EN or AR slug. PDO has emulated
+        // prepares OFF in this project, so the same placeholder cannot appear
+        // twice in one query (HY093). Bind the slug under two distinct names.
         $singlePost = $db->fetchOne(
-            "SELECT * FROM blog_posts WHERE (slug = :s OR slug_ar = :s) AND status = 'published' LIMIT 1",
-            ['s' => $postSlug]
+            "SELECT * FROM blog_posts WHERE (slug = :slug_en OR slug_ar = :slug_ar) AND status = 'published' LIMIT 1",
+            ['slug_en' => $postSlug, 'slug_ar' => $postSlug]
         );
         if ($singlePost) {
             $displayTitle   = $L($singlePost, 'title');

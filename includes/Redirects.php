@@ -83,11 +83,13 @@ class Redirects
     public static function add(string $source, string $target): void
     {
         $db = Database::getInstance();
+        // PDO emulated prepares are OFF, so :t cannot appear twice in one
+        // query (HY093). Bind the target under two distinct names.
         $db->exec(
             "INSERT INTO url_redirects (source, target, active, created_at)
-             VALUES (:s, :t, 1, NOW())
-             ON DUPLICATE KEY UPDATE target = :t, active = 1, updated_at = NOW()",
-            ['s' => $source, 't' => $target]
+             VALUES (:s, :t_ins, 1, NOW())
+             ON DUPLICATE KEY UPDATE target = :t_upd, active = 1, updated_at = NOW()",
+            ['s' => $source, 't_ins' => $target, 't_upd' => $target]
         );
     }
 }
