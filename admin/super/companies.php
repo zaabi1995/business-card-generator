@@ -266,7 +266,7 @@ adminHeader('Companies Management', 'companies');
                                class="text-green-600 hover:text-green-800" title="View Employees">
                                 <i class="fa-solid fa-users"></i>
                             </a>
-                            <a href="<?php echo getBasePath() . $company['slug']; ?>/" target="_blank"
+                            <a href="<?php echo htmlspecialchars(getTenantUrl($company['slug'])); ?>" target="_blank"
                                class="text-purple-600 hover:text-purple-800" title="Visit Portal">
                                 <i class="fa-solid fa-external-link"></i>
                             </a>

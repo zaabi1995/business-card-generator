@@ -127,14 +127,14 @@ try {
     
     // Handle login page specially (no auth required)
     if ($page === 'login') {
-        $_GET['redirect'] = getBasePath() . $companySlug . '/admin/';
+        $_GET['redirect'] = getTenantUrl($companySlug, '/admin/');
         include __DIR__ . '/login.php';
         exit;
     }
-    
+
     // Check if user is logged in
     if (!Auth::isLoggedIn()) {
-        header('Location: ' . getBasePath() . $companySlug . '/admin/login');
+        header('Location: ' . getTenantUrl($companySlug, '/admin/login'));
         exit;
     }
     
@@ -150,7 +150,7 @@ try {
         if ($userRole === 'print_shop') {
             header('Location: ' . getBasePath() . 'printshop/dashboard.php');
         } elseif ($userRole === 'employee' && !empty($_SESSION['company_slug'])) {
-            header('Location: ' . getBasePath() . $_SESSION['company_slug'] . '/');
+            header('Location: ' . getTenantUrl($_SESSION['company_slug']));
         } else {
             header('Location: ' . getBasePath() . 'login.php?error=unauthorized');
         }
@@ -186,7 +186,7 @@ try {
     }
     
     // Set base path for admin pages to use company-specific URLs
-    define('COMPANY_ADMIN_BASE', getBasePath() . $companySlug . '/admin/');
+    define('COMPANY_ADMIN_BASE', getTenantUrl($companySlug, '/admin/'));
     
     // Include the admin page. Buffered so that if a Throwable fires
     // mid-render we discard the partially-emitted markup instead of

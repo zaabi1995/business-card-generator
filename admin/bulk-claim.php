@@ -272,7 +272,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // look up by hash; the plaintext column is the legacy path
                     // we'll drop once all outstanding links expire.
                     $tokenHash = hash('sha256', $token);
-                    $cardUrl = 'https://cardify.om/' . $companySlug . '/card/' . $employeeId;
+                    $cardUrl = getTenantCardUrl($companySlug, 'card/' . $employeeId);
 
                     try {
                         $db->insert('bulk_claim_leads', [

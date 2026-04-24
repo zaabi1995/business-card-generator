@@ -43,7 +43,7 @@ if ($employee) {
         $empSlug = trim($empSlug, '-');
         $host = defined('APP_HOST') ? APP_HOST : 'cardify.om';
         if ($companySlug && $empSlug) {
-            $publicCardUrl = 'https://' . $host . '/' . $companySlug . '/' . $empSlug;
+            $publicCardUrl = getTenantCardUrl($companySlug, $empSlug);
         }
 
         $departments = $db->fetchAll(

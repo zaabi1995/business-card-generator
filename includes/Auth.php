@@ -132,7 +132,7 @@ class Auth {
         return [
             'success' => true,
             'user' => $employee,
-            'redirect' => getBasePath() . $employee['company_slug'] . '/'
+            'redirect' => getTenantUrl($employee['company_slug'] ?? null)
         ];
     }
     
@@ -257,7 +257,7 @@ class Auth {
         return [
             'success' => true,
             'company' => $company,
-            'redirect' => getBasePath() . $company['slug'] . '/admin/'
+            'redirect' => getTenantUrl($company['slug'] ?? null, '/admin/')
         ];
     }
     
@@ -276,15 +276,13 @@ class Auth {
             case 'company_admin':
             case 'admin':
             case 'company':
-                // Redirect company admins to their admin panel
                 if ($companySlug) {
-                    return getBasePath() . $companySlug . '/admin/';
+                    return getTenantUrl($companySlug, '/admin/');
                 }
                 return getBasePath() . 'admin/';
             case 'employee':
-                // Redirect employees to their company portal
                 if ($companySlug) {
-                    return getBasePath() . $companySlug . '/';
+                    return getTenantUrl($companySlug);
                 }
                 return getBasePath();
             default:

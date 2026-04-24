@@ -40,6 +40,37 @@ if (!function_exists('isRtl')) {
 }
 
 /**
+ * Tenant URL helpers, canonicalize every tenant link to
+ * https://{slug}.cardify.om{path}. Use these EVERYWHERE instead of
+ * stringing `getBasePath() . $slug . '/...'` together. The old path
+ * style is 301'd by router.php for compatibility, but every link we
+ * emit should already be on the subdomain.
+ */
+function cardifyApexHost(): string {
+    return defined('APP_HOST') ? APP_HOST : 'cardify.om';
+}
+
+function getTenantUrl(?string $slug, string $path = '/'): string {
+    $slug = trim((string) $slug);
+    if ($slug === '') {
+        // Without a slug we fall back to the bare apex; callers should
+        // avoid this, but the apex URL is still a valid landing page.
+        return 'https://' . cardifyApexHost() . $path;
+    }
+    if ($path === '' || $path[0] !== '/') $path = '/' . $path;
+    return 'https://' . $slug . '.' . cardifyApexHost() . $path;
+}
+
+/**
+ * Canonical public card URL for an employee. Accepts either the
+ * email (legacy `/card/{email}` pattern supported by digital_card
+ * resolver) or a pre-slugified name; returns the subdomain form.
+ */
+function getTenantCardUrl(?string $slug, string $empKey): string {
+    return getTenantUrl($slug, '/' . ltrim($empKey, '/'));
+}
+
+/**
  * Get base URL (protocol + domain + base path)
  * @return string Full base URL (e.g., 'https://cardify.om/')
  */
@@ -590,15 +621,9 @@ function redirectToCompanyAdmin() {
     }
     
     if ($companySlug) {
-        // Get current page name
         $currentPage = basename($_SERVER['SCRIPT_NAME'], '.php');
-        $redirectUrl = getBasePath() . $companySlug . '/admin/';
-        
-        if ($currentPage !== 'index') {
-            $redirectUrl .= $currentPage;
-        }
-        
-        header('Location: ' . $redirectUrl);
+        $path = '/admin/' . ($currentPage !== 'index' ? $currentPage : '');
+        header('Location: ' . getTenantUrl($companySlug, $path));
         exit;
     }
 }

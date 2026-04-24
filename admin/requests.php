@@ -271,7 +271,7 @@ $adminBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() 
                 <p class="text-sm text-blue-700 mt-1">Share this link with employees to let them submit their card requests:</p>
                 <div class="mt-2 flex items-center gap-2">
                     <code class="bg-blue-100 px-3 py-1.5 rounded text-sm text-blue-800 font-mono">
-                        <?php echo getBaseUrl() . $companySlug . '/portal'; ?>
+                        <?php echo getTenantUrl($companySlug, '/portal'); ?>
                     </code>
                     <button onclick="copyPortalLink()" class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                         <i class="fa-solid fa-copy mr-1"></i>Copy
@@ -614,7 +614,7 @@ $adminBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() 
 
 <script>
 function copyPortalLink() {
-    const link = '<?php echo getBaseUrl() . $companySlug . '/portal'; ?>';
+    const link = '<?php echo getTenantUrl($companySlug, '/portal'); ?>';
     navigator.clipboard.writeText(link).then(() => {
         alert('Portal link copied to clipboard!');
     });

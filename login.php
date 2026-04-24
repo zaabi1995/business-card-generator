@@ -53,7 +53,7 @@ if (Auth::isLoggedIn()) {
         } elseif ($role === 'print_shop') {
             header('Location: ' . getBasePath() . 'printshop/dashboard.php');
         } elseif ($companySlug) {
-            header('Location: ' . getBasePath() . $companySlug . '/admin/');
+            header('Location: ' . getTenantUrl($companySlug, '/admin/'));
         } else {
             header('Location: ' . getBasePath() . 'admin/');
         }

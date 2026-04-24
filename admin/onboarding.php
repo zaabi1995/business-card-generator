@@ -424,8 +424,9 @@ function onboarding(init) {
         },
         tplLabel(t) { return this.tplLabels[t] || t; },
         previewUrl() {
-            const slug = (this.data.first_employee.name || '').toLowerCase().replace(/[^a-z0-9]+/g,'-');
-            return 'https://cardify.om/' + this.companySlug + '/' + (slug || 'preview');
+            const empSlug = (this.data.first_employee.name || '').toLowerCase().replace(/[^a-z0-9]+/g,'-') || 'preview';
+            const apex = <?= json_encode(cardifyApexHost()) ?>;
+            return 'https://' + this.companySlug + '.' + apex + '/' + empSlug;
         },
         pricingTiers: <?= json_encode(CardPrintPricing::tiersForJs()) ?>,
         pricePerCard() {

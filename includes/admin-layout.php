@@ -17,15 +17,22 @@ if (!class_exists('Impersonation')) {
  */
 function getAdminBasePath() {
     // Check if we're in company admin context
+    // On the tenant subdomain (ohb.cardify.om) `/admin/` is the natural
+    // root; no slug prefix needed. COMPANY_ADMIN_BASE was minted with a
+    // full subdomain URL in company_admin.php, which is also valid for
+    // cross-host links so we still honor it when defined.
+    if (class_exists('TenantHost') && TenantHost::isTenantHost()) {
+        return '/admin/';
+    }
+
     if (defined('COMPANY_ADMIN_BASE')) {
         return COMPANY_ADMIN_BASE;
     }
-    
-    // Check session for company slug
+
     if (!empty($_SESSION['company_slug'])) {
-        return getBasePath() . $_SESSION['company_slug'] . '/admin/';
+        return getTenantUrl($_SESSION['company_slug'], '/admin/');
     }
-    
+
     // Default to global admin
     return getBasePath() . 'admin/';
 }

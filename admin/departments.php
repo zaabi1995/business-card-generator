@@ -272,8 +272,8 @@ adminHeader(t('departments.page_title'), 'departments');
                 <?php if (!empty($dept['portal_slug']) && !empty($companySlug)): ?>
                 <div class="flex items-center gap-1.5 text-xs text-blue-600 mb-2">
                     <i class="fa-solid fa-link"></i>
-                    <code class="bg-blue-50 px-1.5 py-0.5 rounded">/<?php echo $companySlug; ?>/portal/<?php echo $dept['portal_slug']; ?></code>
-                    <button type="button" onclick="copyToClipboard('<?php echo getBaseUrl() . $companySlug . '/portal/' . $dept['portal_slug']; ?>')" 
+                    <code class="bg-blue-50 px-1.5 py-0.5 rounded"><?php echo htmlspecialchars(getTenantUrl($companySlug, '/portal/' . $dept['portal_slug'])); ?></code>
+                    <button type="button" onclick="copyToClipboard('<?php echo getTenantUrl($companySlug, '/portal/' . $dept['portal_slug']); ?>')"
                             class="text-gray-400 hover:text-blue-600 transition-colors" title="<?= htmlspecialchars(t('departments.copy_link')) ?>">
                         <i class="fa-solid fa-copy"></i>
                     </button>

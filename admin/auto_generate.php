@@ -380,13 +380,14 @@ function layoutGenerator() {
         companySlug: <?php echo json_encode($companySlug); ?>,
         employeeId: <?php echo json_encode($employeeId); ?>,
         baseUrl: <?php echo json_encode(rtrim($baseUrl, '/')); ?>,
+        apexHost: <?php echo json_encode(cardifyApexHost()); ?>,
         basePath: <?php echo json_encode(rtrim($basePath, '/')); ?>,
         returnTo: <?php echo json_encode($returnTo); ?>,
         vcfUrl: <?php echo json_encode($vcfUrl); ?>,
         isNew: <?php echo $isNew ? 'true' : 'false'; ?>,
 
         get cardShareUrl() {
-            return this.baseUrl + '/' + this.companySlug + '/card/' + this.employeeId;
+            return 'https://' + this.companySlug + '.' + this.apexHost + '/card/' + this.employeeId;
         },
         get waShareUrl() {
             return 'https://wa.me/?text=' + encodeURIComponent('Here is my digital business card: ' + this.cardShareUrl);
@@ -684,6 +685,7 @@ function autoGenerator() {
         companySlug: <?php echo json_encode($companySlug); ?>,
         basePath: <?php echo json_encode(rtrim($basePath, '/')); ?>,
         baseUrl: <?php echo json_encode(rtrim($baseUrl, '/')); ?>,
+        apexHost: <?php echo json_encode(cardifyApexHost()); ?>,
         vcfUrl: <?php echo json_encode($vcfUrl); ?>,
         returnTo: <?php echo json_encode($returnTo); ?>,
         isRegenerate: <?php echo $isRegenerate ? 'true' : 'false'; ?>,
@@ -697,7 +699,7 @@ function autoGenerator() {
         redirectTimer: null,
         countdownTimer: null,
         get cardShareUrl() {
-            return this.baseUrl + '/' + this.companySlug + '/card/' + this.employee.id;
+            return 'https://' + this.companySlug + '.' + this.apexHost + '/card/' + this.employee.id;
         },
         get waShareUrl() {
             const msg = encodeURIComponent('Here is my digital business card: ' + this.cardShareUrl);

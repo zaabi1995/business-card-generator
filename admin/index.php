@@ -711,7 +711,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 // Public portal share card, one link per tenant, employees use it to request
 // their cards. Always visible to company admins so they can copy/share anytime.
 if ($currentRole !== 'super_admin' && !empty($companySlug)):
-    $portalShareUrl = rtrim($baseUrl, '/') . '/' . $companySlug . '/portal';
+    $portalShareUrl = getTenantUrl($companySlug, '/portal');
     $portalWaMsg = "Hi team, our Cardify business card portal is ready. Request your card here:\n" . $portalShareUrl;
     $portalWaHref = 'https://wa.me/?text=' . rawurlencode($portalWaMsg);
 ?>
@@ -1862,6 +1862,7 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
             sampleProfiles: <?php echo json_encode($sampleProfiles, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
             currentProfileIndex: 0,
             companySlug: '<?php echo $companySlug; ?>',
+            apexHost: '<?php echo cardifyApexHost(); ?>',
             baseUrl: '<?php echo $baseUrl; ?>',
             fontsLoaded: false,
             initialized: false,
@@ -2768,7 +2769,7 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                 // Add QR code if enabled
                 if (template.fields.qr_code && template.fields.qr_code.enabled) {
                     chain = chain.then(function() {
-                        var vcfUrl = self.baseUrl + self.companySlug + '/' + encodeURIComponent(self.sampleEmployee.email || 'demo@example.com') + '.vcf';
+                        var vcfUrl = 'https://' + self.companySlug + '.' + self.apexHost + '/' + encodeURIComponent(self.sampleEmployee.email || 'demo@example.com') + '.vcf';
                         return self.cardEditor.addQRCode(vcfUrl, {
                             x: template.fields.qr_code.x,
                             y: template.fields.qr_code.y,
@@ -2918,7 +2919,7 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                     if (key === 'qr_code') {
                         if (enabled) {
                             var field = this.selectedTemplate.fields.qr_code;
-                            var vcfUrl = this.baseUrl + this.companySlug + '/' + encodeURIComponent(this.sampleEmployee.email || 'demo@example.com') + '.vcf';
+                            var vcfUrl = 'https://' + this.companySlug + '.' + this.apexHost + '/' + encodeURIComponent(this.sampleEmployee.email || 'demo@example.com') + '.vcf';
                             // Use sensible defaults if position is missing or invalid
                             var dims = this.getCanvasDimensions();
                             var x = (field.x > 0 && field.x < dims.width) ? field.x : dims.width - 180;

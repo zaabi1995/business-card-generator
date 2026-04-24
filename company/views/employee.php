@@ -626,7 +626,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <p class="text-sm text-gray-500">Appears below your contact buttons when someone scans your QR.</p>
                 </div>
                 <?php if (!empty($company['slug']) && !empty($employee['id'])): ?>
-                <a href="<?php echo getBasePath() . sanitize($company['slug']) . '/card/' . sanitize($employee['id']); ?>" target="_blank" class="text-sm text-blue-600 hover:underline">Preview &rarr;</a>
+                <a href="<?php echo htmlspecialchars(getTenantUrl($company['slug'], '/card/' . $employee['id'])); ?>" target="_blank" class="text-sm text-blue-600 hover:underline">Preview &rarr;</a>
                 <?php endif; ?>
             </div>
 

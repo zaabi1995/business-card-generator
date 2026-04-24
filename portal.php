@@ -410,7 +410,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                     }
                 }
                 
-                $adminUrl = getBaseUrl() . $companySlug . '/admin/requests';
+                $adminUrl = getTenantUrl($companySlug, '/admin/requests');
                 
                 Mailer::sendTemplate($adminEmail, 'admin_new_request', [
                     'employee_name' => $employeeName,
@@ -898,7 +898,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     </ul>
                 </div>
                 <p class="mt-6">
-                    <a href="<?php echo getBasePath() . $companySlug . '/portal'; ?>" class="text-blue-600 hover:text-blue-700 font-medium">
+                    <a href="<?php echo getTenantUrl($companySlug, '/portal'); ?>" class="text-blue-600 hover:text-blue-700 font-medium">
                         <i class="fa-solid fa-arrow-left mr-1"></i> <?= htmlspecialchars(t('cardportal.submit_another')) ?>
                     </a>
                 </p>
@@ -1427,6 +1427,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     const basePath = '<?php echo getBasePath(); ?>';
     const companyName = '<?php echo addslashes($companyName); ?>';
     const companySlug = '<?php echo addslashes($companySlug); ?>';
+    const apexHost = '<?php echo addslashes(cardifyApexHost()); ?>';
     const frontTemplate = <?php echo json_encode($activeFrontTemplate); ?>;
     const backTemplate = <?php echo json_encode($activeBackTemplate); ?>;
     
@@ -1794,8 +1795,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     // Uses email in the path; digital_card.php accepts emails and falls back
     // to the latest card_request when the employee row doesn't exist yet.
     function getVcfUrl(email) {
-        const host = window.location.origin;
-        return host + basePath + companySlug + '/card/' + encodeURIComponent(email);
+        return 'https://' + companySlug + '.' + apexHost + '/card/' + encodeURIComponent(email);
     }
     
     // Edit form (go back to editing)

@@ -60,6 +60,14 @@ class SecurityHeaders
                 'httponly' => true,
                 'samesite' => 'Lax',
             ];
+            // Scope the cookie to the apex so `ohb.cardify.om` + bare
+            // `cardify.om` share the same session. Skips when the host
+            // is an IP, localhost, or doesn't match the expected apex.
+            $apex = defined('APP_HOST') ? APP_HOST : 'cardify.om';
+            $host = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+            if ($apex !== '' && ($host === $apex || str_ends_with($host, '.' . $apex))) {
+                $params['domain'] = '.' . $apex;
+            }
             // PHP 7.3+ array form.
             @session_set_cookie_params($params);
         }

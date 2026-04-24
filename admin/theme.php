@@ -147,8 +147,8 @@ $__firstEmployee = $db->fetchOne(
     ['cid' => $companyId]
 );
 $previewCardUrl = $__firstEmployee
-    ? (getBasePath() . $companySlug . '/card/' . urlencode($__firstEmployee['email']))
-    : (getBasePath() . $companySlug . '/portal');
+    ? getTenantCardUrl($companySlug, 'card/' . urlencode($__firstEmployee['email']))
+    : getTenantUrl($companySlug, '/portal');
 
 adminHeader('Branding & E-Card Settings', 'theme');
 ?>
@@ -376,7 +376,7 @@ adminHeader('Branding & E-Card Settings', 'theme');
             <div class="p-4 bg-blue-50 rounded-xl border border-blue-200">
                 <label class="block text-sm font-semibold text-blue-800 mb-2">Portal Link</label>
                 <div class="flex items-center gap-2">
-                    <input type="text" value="<?php echo getBaseUrl() . $companySlug . '/portal'; ?>" readonly
+                    <input type="text" value="<?php echo getTenantUrl($companySlug, '/portal'); ?>" readonly
                            class="flex-1 px-4 py-2.5 bg-white border border-blue-200 rounded-lg text-gray-900 font-mono text-sm">
                     <button type="button" onclick="copyPortalLink()" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                         <i class="fa-solid fa-copy"></i>

@@ -283,7 +283,7 @@ adminHeader('Super Admin Dashboard', 'dashboard');
                             <a href="employees.php?company_id=<?php echo $company['id']; ?>" class="text-blue-600 hover:text-blue-800 mr-2" title="View Employees">
                                 <i class="fa-solid fa-users"></i>
                             </a>
-                            <a href="<?php echo getBasePath() . $company['slug']; ?>/" target="_blank" class="text-green-600 hover:text-green-800" title="Visit Portal">
+                            <a href="<?php echo htmlspecialchars(getTenantUrl($company['slug'])); ?>" target="_blank" class="text-green-600 hover:text-green-800" title="Visit Portal">
                                 <i class="fa-solid fa-external-link"></i>
                             </a>
                         </td>
