@@ -203,3 +203,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-24 01:50 | #588 | d7cc2a6 | New revert_version action in admin/save_template.php: cross-tenant guard, bumps current_version, inserts new template_versions row (preserving historic snapshot), AuditLog template_reverted. Editor UI split to 857.
 2026-04-24 02:05 | #590 | 6763f46 | CardLayouts::renderFront/Back now accept $options['arabic']=true which swaps primary fields to *_ar columns with EN fallback; emits dir/font/arabic metadata so layouts can render RTL + Arabic font. Per-layout adoption split to 858. Also marked 589 BLOCKED (needs Fabric upgrade 607).
 2026-04-24 02:20 | #591 | 1bded00 | ColorContrast helper (luminance/readableOn/ratio) + CardLayouts data bag: textOnPrimary + textOnSecondary auto-computed from theme. Per-layout adoption split to 859.
+2026-04-24 02:35 | #592 | 08ffa48 | GoogleFonts::getCuratedFonts() 20-font shortlist + getFontsGrouped() 8-bucket full list. UI wiring split to 860.
