@@ -1,4 +1,4 @@
-// Cardify load test — 100 concurrent virtual users (Cat T action 469).
+// Cardify load test, 100 concurrent virtual users (Cat T action 469).
 //
 // Usage (from the repo root on any box with k6 installed):
 //   k6 run ops/k6-load-test.js
@@ -111,7 +111,7 @@ export function handleSummary(data) {
   const fail = (data.metrics.http_req_failed?.values?.rate * 100).toFixed(2);
   const total = data.metrics.http_reqs?.values?.count;
   const summary = [
-    'Cardify load test — 100 VUs',
+    'Cardify load test, 100 VUs',
     `Target: ${TARGET}`,
     `Requests: ${total}`,
     `Avg duration: ${avg}ms`,

@@ -4,7 +4,7 @@
  * No-op unless window.__SENTRY_DSN__ is present (emitted by
  * Sentry::browserBootstrap() when SENTRY_DSN_PUBLIC is defined in
  * config.php). We avoid the @sentry/browser npm package to keep the
- * page weight down — the Store endpoint is a plain POST, so we send
+ * page weight down, the Store endpoint is a plain POST, so we send
  * a minimal event.
  */
 (function () {
@@ -28,7 +28,7 @@
         try {
             var payload = JSON.stringify(event);
             if (navigator.sendBeacon) {
-                // sendBeacon ignores custom headers, so skip auth — Sentry accepts
+                // sendBeacon ignores custom headers, so skip auth, Sentry accepts
                 // the X-Sentry-Auth on the URL as a fallback.
                 var beaconUrl = url + '?sentry_version=7&sentry_key=' + encodeURIComponent(parsed[2]);
                 navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' }));
