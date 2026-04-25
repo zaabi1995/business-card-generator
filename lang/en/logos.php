@@ -1,8 +1,8 @@
 <?php
 return [
     // Hub meta
-    'hub_desc_prefix'     => 'A public archive of ',
-    'hub_desc_suffix'     => ' Omani brand marks. Free to browse, owners can claim.',
+    'hub_desc_prefix'     => 'Download official logos of ',
+    'hub_desc_suffix'     => '+ Omani companies as SVG, PNG or WebP. Curated, owner-verifiable, free for editorial, design and presentation use.',
 
     // Hub hero
     'hero_badge'          => 'Public archive · Omani brands',

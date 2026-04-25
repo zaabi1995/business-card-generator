@@ -80,6 +80,40 @@ $jsonLdBlocks[] = [
     ],
 ];
 
+// ItemList of the first page of verified logos. Surfaces as image rich-results in Google.
+$itemListItems = [];
+$position = 1;
+foreach (($data['rows'] ?? []) as $row) {
+    if ($position > 20) break;
+    $slug = $row['slug'] ?? '';
+    if ($slug === '') continue;
+    $name = $isAr && !empty($row['name_ar']) ? $row['name_ar'] : ($row['name_en'] ?? $row['name'] ?? $slug);
+    $itemUrl  = 'https://cardify.om' . ($isAr ? '/ar' : '') . '/companies/' . $slug;
+    $imagePath = $row['logo_webp_path'] ?? $row['logo_png_path'] ?? $row['logo_png_512_path'] ?? null;
+    $itemListItems[] = [
+        "@type"    => "ListItem",
+        "position" => $position,
+        "item"     => array_filter([
+            "@type" => "Brand",
+            "name"  => $name,
+            "url"   => $itemUrl,
+            "logo"  => $imagePath ? 'https://cardify.om' . $imagePath : null,
+        ]),
+    ];
+    $position++;
+}
+if (!empty($itemListItems)) {
+    $jsonLdBlocks[] = [
+        "@context"        => "https://schema.org",
+        "@type"           => "ItemList",
+        "name"            => $title,
+        "url"             => $canonical,
+        "numberOfItems"   => count($itemListItems),
+        "itemListOrder"   => "https://schema.org/ItemListOrderAscending",
+        "itemListElement" => $itemListItems,
+    ];
+}
+
 $extraHead = '';
 foreach ($jsonLdBlocks as $block) {
     $extraHead .= '<script type="application/ld+json">'
