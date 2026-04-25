@@ -22,7 +22,8 @@ if (!$companyId) {
 $company = findCompanyById($companyId);
 $planInfo = Billing::getCompanyPlanInfo($companyId);
 $plan = $planInfo['plan'] ?? 'free';
-$isPro = ($plan !== 'free');
+// Custom domains are free for every team since the Apr 2026 pricing reset.
+$isPro = true;
 
 $message = null;
 $messageType = 'success';

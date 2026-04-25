@@ -10,11 +10,11 @@ require_once INCLUDES_DIR . '/Billing.php';
 
 $companyId = getCurrentCompanyId();
 
-// Get company plan info for quality settings
+// HD card generation is free for every team since the Apr 2026 pricing reset.
 $planInfo = Billing::getCompanyPlanInfo($companyId);
-$qualityMultiplier = $planInfo['quality_multiplier'];
-$isFreePlan = $planInfo['plan'] === 'free' || empty($planInfo['plan']);
-$hasHighQuality = $planInfo['features']['high_quality'] ?? false;
+$qualityMultiplier = max(4, $planInfo['quality_multiplier'] ?? 4); // force HD
+$isFreePlan = false; // hides the legacy upgrade-for-HD nag
+$hasHighQuality = true;
 $employeeId = $_GET['employee_id'] ?? null;
 $returnTo = $_GET['return'] ?? 'employees';
 $isNew = isset($_GET['new']);

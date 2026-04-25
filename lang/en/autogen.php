@@ -2,11 +2,11 @@
 return [
     'page_title'           => 'Generating card',
 
-    // Free-plan quality notice
-    'quality_h4'           => 'Preview quality',
-    'quality_body'         => "You're on the Free plan. Card previews are generated at lower resolution. When ordering prints, cards will be produced at full print quality by the print shop.",
-    'upgrade_cta'          => 'Upgrade for HD quality',
-    'view_plans'           => 'View plans',
+    // Quality notice (HD always free since the Apr 2026 pricing reset).
+    'quality_h4'           => 'HD card preview',
+    'quality_body'         => 'Card previews render at full HD resolution. Printed cards from verified print shops are produced at full print quality.',
+    'upgrade_cta'          => 'HD quality enabled',
+    'view_plans'           => 'See print pricing',
 
     // Layout picker
     'choose_layout'        => 'Choose a card layout',

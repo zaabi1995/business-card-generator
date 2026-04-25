@@ -353,7 +353,9 @@ $showPhonePrompt = (
     && $adminBackfillSkips < 3                // honour the persistent skip cap
 );
 $companyPlan = $companyRow['plan'] ?? 'free';
-$isFreePlan = ($companyPlan === 'free' && ($companyRow['subscription_status'] ?? '') !== 'active');
+// Apr 2026 pricing reset: every team is on the free, fully-unlocked platform.
+// Card-counting code below is retained as no-op telemetry only.
+$isFreePlan = false;
 // Cards generated this month (for free plan limit indicator)
 $cardsThisMonth = 0;
 if ($isFreePlan && $companyId && DatabaseAdapter::useDatabase()) {

@@ -363,8 +363,26 @@ adminHeader(t('adminchrome.billing'), 'billing');
     </div>
 </div>
 
-<!-- Feature Comparison Banner -->
-<?php 
+<!-- Free-Forever Platform Callout (replaces the old SaaS upsell + plan comparison) -->
+<div class="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-6 lg:p-8 mb-8 shadow-xl">
+    <div class="flex items-start gap-4">
+        <div class="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-gift text-2xl"></i>
+        </div>
+        <div class="flex-1">
+            <h3 class="text-xl font-bold mb-1">Cardify is free for your team. Forever.</h3>
+            <p class="text-blue-100 mb-4">Unlimited employees, unlimited templates, unlimited digital cards and analytics. You only pay when you order printed products.</p>
+            <a href="<?= getBasePath() ?>pricing" class="inline-flex items-center gap-2 bg-white text-blue-700 hover:bg-blue-50 font-semibold px-5 py-2.5 rounded-xl transition">
+                See print pricing
+                <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Legacy SaaS plan-comparison + upgrade UI, hidden Apr 2026. -->
+<?php if (false): ?>
+<?php
 $planInfo = Billing::getCompanyPlanInfo($companyId);
 $isFreePlan = ($planInfo['plan'] ?? 'free') === 'free';
 ?>
@@ -615,6 +633,7 @@ function setBillingCycle(cycle) {
     <?php endforeach; ?>
 </div>
 <?php endif; ?>
+<?php endif; // legacy SaaS UI block ?>
 
 <!-- Unpaid Print Orders -->
 <?php if (!empty($unpaidOrders)): ?>

@@ -28,7 +28,7 @@ return [
     'employee_not_found'  => 'Employee not found.',
     'order_not_found'     => 'Order not found.',
     'cannot_delete_self'  => 'You cannot delete your own account.',
-    'subscription_expired'=> 'Your subscription expired. Renew to continue.',
+    'subscription_expired'=> 'Your session expired. Sign in again to continue.',
     'slug_taken'          => 'That name is already taken. Pick another.',
     'page_404_title'      => 'Page not found',
     'page_404_body'       => 'Looks like you followed a bad link. If you think this is a problem on our end, please let us know.',

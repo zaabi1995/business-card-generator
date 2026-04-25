@@ -1,16 +1,16 @@
 /* =====================================================
-   BHD Design Language v1.0 — Structural Tokens
+   BHD Design Language v1.0, Structural Tokens
    Shared across all BHD Group products.
    Do NOT override :root tokens per-product.
    Only override the 4 accent tokens via [data-product].
    ===================================================== */
 
-/* Google Fonts — load in HTML <head> or via @import in entry CSS:
+/* Google Fonts, load in HTML <head> or via @import in entry CSS:
    Inter 400,500,600,700,800
    IBM Plex Sans Arabic 400,500,600,700
    DM Sans 400,500,600
    DM Mono 400
-   Instrument Serif (italic) — arabian.ceo / bhd.om only
+   Instrument Serif (italic), arabian.ceo / bhd.om only
 */
 
 :root {
@@ -44,7 +44,7 @@
   --font-mono: 'DM Mono', 'Courier New', monospace;
   --font-serif: 'Instrument Serif', Georgia, serif;
 
-  /* ── Neutrals — Light Mode ── */
+  /* ── Neutrals, Light Mode ── */
   --ink-900:       #111827;  /* primary text */
   --ink-700:       #374151;  /* secondary text */
   --ink-500:       #6b7280;  /* muted / captions */
@@ -53,7 +53,7 @@
   --surface-50:    #f9fafb;  /* page bg */
   --surface-white: #ffffff;  /* card bg */
 
-  /* ── Neutrals — Dark Mode ── */
+  /* ── Neutrals, Dark Mode ── */
   --dark-950:    #0d0d0d;                    /* page bg */
   --dark-900:    #1a1a1a;                    /* card bg */
   --dark-800:    #262626;                    /* hover */
@@ -63,10 +63,10 @@
   --text-dark-2: rgba(255, 255, 255, 0.55);  /* secondary text */
   --text-dark-3: rgba(255, 255, 255, 0.35);  /* muted text */
 
-  /* ── Responsive Breakpoints (reference — use in media queries, not as var()) ──
+  /* ── Responsive Breakpoints (reference, use in media queries, not as var()) ──
      xs: 375px  sm: 640px  md: 768px  lg: 1024px  xl: 1280px  */
 
-  /* ── Semantic Status — Light Mode ── */
+  /* ── Semantic Status, Light Mode ── */
   --color-success:  #16a34a;
   --color-warning:  #d97706;
   --color-danger:   #dc2626;
@@ -154,7 +154,7 @@
   --color-accent-copper-hover:  #8f4e1e;
 }
 
-/* Intentionally pinned to BHD teal — does not track :root default changes */
+/* Intentionally pinned to BHD teal, does not track :root default changes */
 [data-product="cardify"] {
   --color-accent:        #009bc1;
   --color-accent-hover:  #007fa0;
@@ -162,7 +162,7 @@
   --color-accent-border: rgba(0, 155, 193, 0.25);
 }
 
-/* Intentionally pinned to BHD teal — does not track :root default changes */
+/* Intentionally pinned to BHD teal, does not track :root default changes */
 [data-product="reachscreens"] {
   --color-accent:        #009bc1;
   --color-accent-hover:  #007fa0;

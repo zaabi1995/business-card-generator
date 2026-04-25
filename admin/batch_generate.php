@@ -16,11 +16,11 @@ if (!Auth::isLoggedIn()) {
 
 $companyId = getCurrentCompanyId();
 
-// Get company plan info for quality settings
+// HD batch generation is free for every team since the Apr 2026 pricing reset.
 $planInfo = Billing::getCompanyPlanInfo($companyId);
-$qualityMultiplier = $planInfo['quality_multiplier'];
-$isFreePlan = $planInfo['plan'] === 'free' || empty($planInfo['plan']);
-$hasHighQuality = $planInfo['features']['high_quality'] ?? false;
+$qualityMultiplier = max(4, $planInfo['quality_multiplier'] ?? 4);
+$isFreePlan = false; // hides the legacy upgrade-for-HD nag
+$hasHighQuality = true;
 
 // Check for pre-selected employee (from card request approval)
 $preSelectedEmployeeId = $_GET['employee_id'] ?? null;

@@ -2,7 +2,7 @@
 return [
     'page_title'           => 'الموظفون',
     'free_plan_notice'     => 'معاينة البطاقات بجودة مخفّضة. البطاقات المطبوعة ستكون بجودة عالية.',
-    'upgrade_for_hd'       => 'ترقية لجودة HD',
+    'upgrade_for_hd'       => 'إنشاء بطاقة HD',
     'team_members_count'   => ':n عضو في الفريق',
 
     'generate_all'         => 'أنشئ للجميع (:n)',

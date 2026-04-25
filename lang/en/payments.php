@@ -1,10 +1,10 @@
 <?php
 return [
     'page_title'       => 'Payment history',
-    'page_sub'         => 'Every subscription, card-credit top-up and print-order payment in one place. Filter by type, status or year.',
+    'page_sub'         => 'Every print-order and card-credit payment in one place. Filter by type, status or year.',
 
     'type_all'         => 'All types',
-    'type_subscription'=> 'Subscription',
+    'type_subscription'=> 'Legacy subscription',
     'type_print_order' => 'Print order',
     'type_card_order'  => 'Card credits',
 

@@ -469,7 +469,7 @@
 .cardify-plan-cta--on-dark:hover { background: #f3f4f6; }
 
 /* ================================================================
-   LOGO LIBRARY — download buttons + meta actions (BHD design language)
+   LOGO LIBRARY, download buttons + meta actions (BHD design language)
    Teal accent #009bc1 across all primary CTAs. Neutrals for secondary.
    ================================================================ */
 .cardify-logo-downloads {
@@ -562,7 +562,7 @@
 .cardify-logo-meta-sep { color: #d1d5db; user-select: none; }
 
 /* =====================================================
-   BHD brand palette — global override
+   BHD brand palette, global override
    Maps the generic blue utility classes rendered site-wide onto the
    BHD teal system (#009bc1). One source of truth for brand accents.
    Pages that need the old indigo/blue should use explicit hex values.
@@ -610,7 +610,7 @@
 .focus\:border-blue-600:focus { border-color: var(--bhd-teal-500) !important; }
 .focus-visible\:outline-blue-600:focus-visible { outline-color: var(--bhd-teal-500) !important; }
 
-/* Gradient stops — used in hero CTAs (from-blue-600 to-indigo-700 etc) */
+/* Gradient stops, used in hero CTAs (from-blue-600 to-indigo-700 etc) */
 .from-blue-600  { --tw-gradient-from: var(--bhd-teal-500) var(--tw-gradient-from-position) !important; }
 .from-blue-700  { --tw-gradient-from: var(--bhd-teal-600) var(--tw-gradient-from-position) !important; }
 .from-blue-800  { --tw-gradient-from: var(--bhd-teal-700) var(--tw-gradient-from-position) !important; }
@@ -631,7 +631,7 @@
 .shadow-blue-600\/30 { --tw-shadow-color: rgba(0, 155, 193, 0.30) !important; --tw-shadow: var(--tw-shadow-colored); }
 .shadow-blue-600\/40 { --tw-shadow-color: rgba(0, 155, 193, 0.40) !important; --tw-shadow: var(--tw-shadow-colored); }
 
-/* OMR currency — DM Mono per BHD design language */
+/* OMR currency, DM Mono per BHD design language */
 .omr, [data-currency="OMR"] {
     font-family: 'DM Mono', 'Courier New', monospace;
     font-feature-settings: 'tnum' 1;

@@ -1,9 +1,9 @@
 <?php
 return [
     // Callback messages
-    'pay_success'          => 'Payment completed successfully! Your subscription has been activated.',
+    'pay_success'          => 'Payment completed successfully.',
     'pay_error_default'    => 'Payment processing failed. Please try again.',
-    'subscribe_failed'     => 'Failed to create subscription',
+    'subscribe_failed'     => 'Could not start the payment',
     'buy_cards_failed'     => 'Could not initiate card purchase',
 
     // Current plan card
@@ -21,13 +21,13 @@ return [
     'unlimited'            => 'Unlimited',
     'gb_suffix'            => ':n GB',
 
-    // Premium banner (free plan)
-    'unlock_premium_h3'    => 'Unlock Premium Features',
-    'unlock_premium_body'  => 'Get high-quality card generation, QR analytics, and more with a paid plan.',
+    // Premium banner (kept for the legacy hidden block; rewritten neutral).
+    'unlock_premium_h3'    => 'Free Forever Platform',
+    'unlock_premium_body'  => 'HD card generation, QR analytics, bulk generation, all included at no charge.',
     'feat_hd_quality'      => 'HD Quality Cards (300+ DPI)',
     'feat_qr_analytics'    => 'QR Scan Analytics',
     'feat_bulk_gen'        => 'Bulk Card Generation',
-    'view_plans_btn'       => 'View Plans',
+    'view_plans_btn'       => 'See Print Pricing',
 
     // Feature matrix
     'feature_matrix_h3'    => 'Plan Feature Comparison',
@@ -75,17 +75,17 @@ return [
     'total_outstanding'    => 'Total outstanding:',
     'view_all_orders'      => 'View all orders',
 
-    // Card credits
-    'card_credits_h3'      => 'Card Credits',
-    'card_credits_sub'     => 'Pay per card generated, no subscription needed',
+    // Card generation, free + unlimited since Apr 2026 pricing reset.
+    'card_credits_h3'      => 'Card Generation',
+    'card_credits_sub'     => 'Free for every team, unlimited cards',
     'credits_available'    => 'Credits Available',
     'generated_this_month' => 'Generated This Month',
-    'monthly_limit_plan'   => 'Monthly Limit (Plan)',
+    'monthly_limit_plan'   => 'Monthly Limit',
     'buy_credits_lead'     => '<strong>Buy card credits</strong>, each credit lets you generate one business card. Price: <strong>:price :cur</strong> per card.',
     'number_of_cards'      => 'Number of Cards',
     'cards_option'         => ':qty cards, :total :cur',
     'buy_credits_btn'      => 'Buy Credits via Paymob',
-    'card_included'        => 'Card generation is included in your subscription plan with no per-card charge.',
+    'card_included'        => 'Card generation is free and unlimited for every team. No per-card charge.',
 
     // Payment methods
     'payment_methods_h3'   => 'Payment Methods',

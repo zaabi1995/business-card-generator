@@ -12,13 +12,13 @@ return [
     // Header
     'page_h1'              => 'Custom Domains',
     'page_sub'             => "Point your own domain at any employee's digital card.",
-    'pro_enabled'          => 'Pro feature enabled',
-    'pro_required'         => 'Pro feature, upgrade required',
+    'pro_enabled'          => 'Custom domains enabled',
+    'pro_required'         => 'Custom domains available',
 
-    // Upgrade gate
-    'gate_h2'              => 'Custom Domains is a Pro feature',
-    'gate_body'            => 'Upgrade to Pro so your team can serve their digital cards from their own domain, for example <code>ceo.acme.com</code>.',
-    'gate_cta'             => 'Upgrade plan',
+    // Legacy upgrade gate (HD/custom domains are free for every team since the Apr 2026 reset).
+    'gate_h2'              => 'Custom Domains',
+    'gate_body'            => 'Serve your team\'s digital cards from your own domain, for example <code>ceo.acme.com</code>. Free for every Cardify team.',
+    'gate_cta'             => 'Add a domain',
 
     // Add form
     'add_h2'               => 'Add a custom domain',

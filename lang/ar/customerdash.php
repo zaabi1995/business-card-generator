@@ -100,5 +100,5 @@ return [
     'acct_currency'     => 'العملة',
     'acct_slug'         => 'معرّف الشركة',
     'acct_since'        => 'عضو منذ',
-    'manage_subscription'=> 'إدارة الاشتراك',
+    'manage_subscription'=> 'الباقة والفوترة',
 ];

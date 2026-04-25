@@ -52,11 +52,11 @@ return [
             [
                 'h' => 'Payment terms',
                 'list' => [
-                    'Subscription fees are billed in Omani Rial (OMR) in advance, monthly or yearly.',
-                    'Print orders are charged per order based on the marketplace price you see at checkout.',
-                    'Fees are non-refundable except where required by law or stated in writing.',
-                    'We may change pricing on 30 days notice; changes do not apply retroactively to already-paid periods.',
-                    'Unpaid balances may result in service suspension until settled.',
+                    'The Cardify platform is provided free of charge for unlimited employees, templates and digital cards.',
+                    'Print orders are charged per order in Omani Rial (OMR) based on the price you see at checkout, set by the verified print shop you select.',
+                    'Print fees are non-refundable once the order has been sent to production, except where required by law or stated in writing.',
+                    'We may change print pricing or product specifications on 30 days notice; changes do not apply to orders already paid.',
+                    'Unpaid balances on credit accounts (where granted) may result in suspension of new print orders until settled.',
                 ],
             ],
             [

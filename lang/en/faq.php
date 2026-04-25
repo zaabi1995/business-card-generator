@@ -21,7 +21,7 @@ return [
     'gs2_q' => 'How do I sign up?',
     'gs2_a' => 'Visit the get-started page, enter your company details, and create your account in under two minutes. No credit card needed, you can design your first card free.',
     'gs3_q' => 'Is Cardify free to use?',
-    'gs3_a' => 'Yes. The free Starter tier lets you design and share digital business cards at no cost. Paid tiers start at 5 OMR per month for teams that need bulk card generation, custom branding or NFC.',
+    'gs3_a' => 'Yes, the platform is free forever. Unlimited employees, unlimited templates, digital cards, QR sharing, analytics, all at no cost. You only pay when you order printed cards (from OMR 6.000 per 100 cards) or NFC tap cards (OMR 25.000 per card).',
     'gs4_q' => 'Who is Cardify for?',
     'gs4_a' => 'Freelancers, SMEs and large employers across Oman. Whether you need one card or a department of 500, Cardify scales with you.',
 

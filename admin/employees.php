@@ -12,10 +12,10 @@ require_once INCLUDES_DIR . '/Billing.php';
 $db = Database::getInstance();
 $companyId = getCurrentCompanyId();
 
-// Get plan info for quality indicator
+// HD card generation is free for every team since the Apr 2026 pricing reset.
 $planInfo = Billing::getCompanyPlanInfo($companyId);
-$isFreePlan = ($planInfo['plan'] ?? 'free') === 'free';
-$hasHighQuality = $planInfo['features']['high_quality'] ?? false;
+$isFreePlan = false; // hides the legacy upgrade-for-HD nag
+$hasHighQuality = true;
 
 // Get departments for dropdown
 $departments = [];
@@ -1163,8 +1163,8 @@ adminHeader(t('employees.page_title'), 'employees');
                     <input type="hidden" name="card_dark_mode_toggle" :value="cardDarkModeToggle ? '1' : '0'">
                 </div>
 
-                <!-- Viral "Made with Cardify" footer, Pro-tier opt-out -->
-                <?php $__proUnlocked = !$isFreePlan; ?>
+                <!-- Viral "Made with Cardify" footer; Cardify branding always renders per company policy. -->
+                <?php $__proUnlocked = true; ?>
                 <div class="mt-4 p-4 rounded-xl bg-sky-50 border border-sky-100">
                     <div class="flex items-start justify-between gap-4">
                         <div>

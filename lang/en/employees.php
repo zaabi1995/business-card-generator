@@ -2,7 +2,7 @@
 return [
     'page_title'           => 'Employees',
     'free_plan_notice'     => 'Card previews shown in preview quality. Printed cards will be high quality.',
-    'upgrade_for_hd'       => 'Upgrade for HD',
+    'upgrade_for_hd'       => 'HD card generation',
     'team_members_count'   => ':n team members',
 
     'generate_all'         => 'Generate all (:n)',

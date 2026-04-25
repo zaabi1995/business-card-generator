@@ -100,5 +100,5 @@ return [
     'acct_currency'     => 'Currency',
     'acct_slug'         => 'Company Slug',
     'acct_since'        => 'Member Since',
-    'manage_subscription'=> 'Manage subscription',
+    'manage_subscription'=> 'Plan & billing',
 ];

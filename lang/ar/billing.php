@@ -1,9 +1,9 @@
 <?php
 return [
     // رسائل نتيجة الدفع
-    'pay_success'          => 'تمّت عملية الدفع بنجاح! تمّ تفعيل اشتراكك.',
+    'pay_success'          => 'تمّت عملية الدفع بنجاح.',
     'pay_error_default'    => 'فشل معالجة الدفع. يُرجى المحاولة مرّة أخرى.',
-    'subscribe_failed'     => 'فشل إنشاء الاشتراك',
+    'subscribe_failed'     => 'تعذّر بدء عملية الدفع',
     'buy_cards_failed'     => 'تعذّر بدء عملية شراء البطاقات',
 
     // الباقة الحالية
@@ -22,12 +22,12 @@ return [
     'gb_suffix'            => ':n غيغابايت',
 
     // لافتة الترقية
-    'unlock_premium_h3'    => 'افتح ميزات بريميوم',
-    'unlock_premium_body'  => 'احصل على إنشاء بطاقات بجودة عالية، تحليلات QR، والمزيد مع الباقات المدفوعة.',
+    'unlock_premium_h3'    => 'منصة مجانية للأبد',
+    'unlock_premium_body'  => 'إنشاء بطاقات HD، تحليلات QR، إنشاء بالجملة، الكل مشمول مجاناً.',
     'feat_hd_quality'      => 'بطاقات بجودة HD (أكثر من 300 DPI)',
     'feat_qr_analytics'    => 'تحليلات قراءات QR',
     'feat_bulk_gen'        => 'إنشاء البطاقات بالجملة',
-    'view_plans_btn'       => 'عرض الباقات',
+    'view_plans_btn'       => 'عرض أسعار الطباعة',
 
     // جدول مقارنة الميزات
     'feature_matrix_h3'    => 'مقارنة ميزات الباقات',
@@ -76,16 +76,16 @@ return [
     'view_all_orders'      => 'عرض جميع الطلبات',
 
     // رصيد البطاقات
-    'card_credits_h3'      => 'رصيد البطاقات',
-    'card_credits_sub'     => 'ادفع لكل بطاقة مُنشأة، دون اشتراك',
+    'card_credits_h3'      => 'إنشاء البطاقات',
+    'card_credits_sub'     => 'مجاني لجميع الفرق، بطاقات بلا حدود',
     'credits_available'    => 'الرصيد المتاح',
     'generated_this_month' => 'المُنشأة هذا الشهر',
-    'monthly_limit_plan'   => 'حد الباقة الشهري',
+    'monthly_limit_plan'   => 'الحد الشهري',
     'buy_credits_lead'     => '<strong>اشترِ رصيد بطاقات</strong>، كل رصيد يسمح بإنشاء بطاقة عمل واحدة. السعر: <strong>:price :cur</strong> للبطاقة.',
     'number_of_cards'      => 'عدد البطاقات',
     'cards_option'         => ':qty بطاقة, :total :cur',
     'buy_credits_btn'      => 'اشتر الرصيد عبر Paymob',
-    'card_included'        => 'إنشاء البطاقات مضمّن في باقتك دون رسوم إضافية.',
+    'card_included'        => 'إنشاء البطاقات مجاني وغير محدود لجميع الفرق. لا توجد رسوم لكل بطاقة.',
 
     // طرق الدفع
     'payment_methods_h3'   => 'طرق الدفع',
