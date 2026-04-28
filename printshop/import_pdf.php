@@ -185,15 +185,18 @@ function cardify_translate_fields(array $page): array {
         return $base;
     };
 
+    // Field keys that on a single brand's card almost always represent
+    // shared brand decoration rather than per-employee data: tagline
+    // ornaments, the company social handle ("@otech"), unclassified spans
+    // ("An Omantel Company"). Treat them as static so the editor and
+    // portal render the detected text verbatim (designer can flip them
+    // back to a typed field manually if a per-employee value is wanted).
+    $staticBaseKeys = ['custom', 'social', 'company_tagline'];
+
     $staticIdx = 0;
     foreach (($page['fields'] ?? []) as $f) {
         $base = $f['field_key'] ?? 'custom';
-        // Treat unclassified spans as decorative static text. The parser only
-        // labels something `custom` when no typed pattern matched, which on a
-        // business card almost always means brand/tagline ornament (e.g.
-        // "An Omantel Company"). Rendering verbatim keeps the design faithful
-        // to the source PDF.
-        $isStatic = !empty($f['is_static']) || $base === 'custom';
+        $isStatic = !empty($f['is_static']) || in_array($base, $staticBaseKeys, true);
         if ($isStatic) {
             $staticIdx++;
             $key = 'static_' . $staticIdx;

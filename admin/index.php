@@ -2761,20 +2761,44 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                         if (key === 'qr_code') continue;
                         var field = template.fields[key];
                         if (!field.enabled) continue;
-                        
+
+                        // Pick the text the field should display in the
+                        // sample preview:
+                        //   1. is_static fields (brand decoration like
+                        //      "An Omantel Company", "@otech") render
+                        //      their detected_text verbatim.
+                        //   2. typed fields (name_en, mobile, ...) use
+                        //      the sample employee profile.
+                        //   3. fields the editor has no sample for fall
+                        //      back to the field's detected_text if the
+                        //      template was imported from a PDF, otherwise
+                        //      they are skipped (no more "social" /
+                        //      "static_2" key names rendered as text).
+                        var textToRender;
+                        if (field.is_static) {
+                            textToRender = (field.detected_text || '').trim();
+                        } else {
+                            var sampleMap = self.getSampleText(key);
+                            // getSampleText returns the key itself for
+                            // unknown fields; treat that as no sample.
+                            textToRender = (sampleMap && sampleMap !== key)
+                                ? sampleMap
+                                : (field.detected_text || '').trim();
+                        }
+                        if (!textToRender) continue;
+
                         // Determine text alignment - use stored value or default based on field type
                         var textAlign = field.textAlign || (key.endsWith('_ar') ? 'right' : 'left');
                         var originX = field.originX || (textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'right' : 'left'));
-                        
-                        var sampleText = self.getSampleText(key);
+
                         self.cardEditor.addTextField(key, {
-                            text: sampleText,
+                            text: textToRender,
                             x: field.x,
                             y: field.y,
                             fontSize: field.fontSize,
                             fontFamily: field.fontFamily,
                             fontWeight: field.fontWeight || 'normal',
-                            fontStyle: field.fontStyle || 'normal',
+                            fontStyle: field.fontStyle || (field.italic ? 'italic' : 'normal'),
                             fill: field.fill || field.color || '#333333',
                             textAlign: textAlign,
                             originX: originX
