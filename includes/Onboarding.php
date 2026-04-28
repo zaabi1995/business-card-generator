@@ -16,7 +16,7 @@
 class Onboarding
 {
     public const TOTAL_STEPS = 3;
-    public const STEP_KEYS = ['logo','colors','template','first_employee','preview','invite_team','order_cards'];
+    public const STEP_KEYS = ['brand','card_design','launch'];
 
     public static function get(string $companyId): array
     {
