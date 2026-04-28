@@ -47,7 +47,8 @@ if (Auth::isLoggedIn()) {
 function tl_normalize_phone(string $raw): string {
     $digits = preg_replace('/\D+/', '', $raw);
     if ($digits === '') return '';
-    if (strlen($digits) === 8 && $digits[0] === '9') {
+    // 8-digit Omani mobiles start with 7, 8, or 9. Prepend country code 968.
+    if (strlen($digits) === 8 && in_array($digits[0], ['7', '8', '9'], true)) {
         $digits = '968' . $digits;
     }
     return $digits;
@@ -96,11 +97,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
             $error = t('auth.tenant_err_phone_invalid');
         } else {
             $user = tl_lookup_user($identifier, $companyId);
+            // Rate limit: max 1 OTP per 60s and max 5 OTPs per hour per identifier.
+            // Prevents both accidental refresh loops and abuse.
+            $rateBucket = '/tmp/cardify-otp-rate-' . hash('sha256', $deliveryId);
+            $now = time();
+            $rateData = is_file($rateBucket) ? @json_decode((string)@file_get_contents($rateBucket), true) : null;
+            if (!is_array($rateData)) $rateData = ['last' => 0, 'window_start' => $now, 'count' => 0];
+            if ($now - $rateData['window_start'] > 3600) {
+                $rateData = ['last' => 0, 'window_start' => $now, 'count' => 0];
+            }
+            $cooldown = 60 - ($now - (int)$rateData['last']);
+            if ($cooldown > 0) {
+                $error = 'Please wait ' . $cooldown . 's before requesting another code.';
+                $user = false; // skip the send branch
+            } elseif ((int)$rateData['count'] >= 5) {
+                $secs = 3600 - ($now - $rateData['window_start']);
+                $error = 'Hourly OTP limit reached. Try again in ' . max(60, $secs) . 's, or contact support@cardify.om.';
+                $user = false;
+            }
             if (!$user) {
-                $error = t('auth.tenant_err_no_account', [
-                    'kind' => t($isEmail ? 'auth.tenant_kind_email' : 'auth.tenant_kind_phone'),
-                ]);
+                if (empty($error)) {
+                    $error = t('auth.tenant_err_no_account', [
+                        'kind' => t($isEmail ? 'auth.tenant_kind_email' : 'auth.tenant_kind_phone'),
+                    ]);
+                }
             } else {
+                // Mark this OTP attempt in the bucket BEFORE we send
+                $rateData['last'] = $now;
+                $rateData['count'] = (int)$rateData['count'] + 1;
+                @file_put_contents($rateBucket, json_encode($rateData), LOCK_EX);
+
                 $purpose = 'tlogin:' . substr(hash('sha1', $companyId), 0, 12);
                 // Optimistic UX: stash session, issue the 302 immediately,
                 // then call OtpService::send AFTER the response is flushed.
