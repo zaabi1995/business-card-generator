@@ -2928,6 +2928,14 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
             },
             
             getFieldLabel: function(key) {
+                // Imported PDF designs may attach a friendly label per field
+                // (e.g., "Decoration: An Omantel Company") so the static_N
+                // keys are readable in the editor's field list.
+                if (this.selectedTemplate && this.selectedTemplate.fields
+                    && this.selectedTemplate.fields[key]
+                    && this.selectedTemplate.fields[key].label) {
+                    return this.selectedTemplate.fields[key].label;
+                }
                 var labels = {
                     'name_en': 'Name (EN)', 'name_ar': 'الاسم (AR)',
                     'position_en': 'Position (EN)', 'position_ar': 'المنصب (AR)',

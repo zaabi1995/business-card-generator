@@ -208,9 +208,22 @@ function cardify_translate_fields(array $page): array {
             $usedKeys[$key] = 1;
         }
 
+        // Friendly editor label. Static fields show their detected text
+        // so the designer can tell which decoration is which without
+        // having to read static_1 / static_2.
+        $label = null;
+        if ($isStatic) {
+            $sample = trim((string)($f['detected_text'] ?? ''));
+            if ($sample !== '') {
+                $short = mb_strimwidth($sample, 0, 22, '…');
+                $label = 'Decoration: ' . $short;
+            }
+        }
+
         $out[$key] = [
             'enabled'       => true,
             'is_static'     => $isStatic,
+            'label'         => $label,
             'detected_text' => $f['detected_text'] ?? '',
             'x'             => (int)($f['x_px'] ?? 0),
             'y'             => (int)($f['y_px'] ?? 0),
@@ -228,15 +241,39 @@ function cardify_translate_fields(array $page): array {
         ];
     }
 
+    // QR code field: always inject one per page so the user can place it
+    // on either side. When the parser detected a white placeholder square,
+    // centre the QR inside it at 90% of the square's smaller dimension
+    // (5% margin on each side, the user's preferred breathing room).
+    // When no square was detected, drop a sensibly-sized QR in the bottom-
+    // right corner so the user has something to drag.
+    $scale = 300.0 / 72.0;
     if (!empty($page['qr_area'])) {
         $qa = $page['qr_area'];
-        $scale = 300.0 / 72.0;
-        $size = (int)round(min((float)$qa['w_pt'], (float)$qa['h_pt']) * $scale);
+        $qWpx = (float)$qa['w_pt'] * $scale;
+        $qHpx = (float)$qa['h_pt'] * $scale;
+        $qXpx = (float)$qa['x_pt'] * $scale;
+        $qYpx = (float)$qa['y_pt'] * $scale;
+        $qrSize = (int)round(min($qWpx, $qHpx) * 0.90);
         $out['qr_code'] = [
             'enabled' => true,
-            'x'       => (int)round((float)$qa['x_pt'] * $scale),
-            'y'       => (int)round((float)$qa['y_pt'] * $scale),
-            'size'    => $size > 0 ? $size : 140,
+            'x'       => (int)round($qXpx + ($qWpx - $qrSize) / 2),
+            'y'       => (int)round($qYpx + ($qHpx - $qrSize) / 2),
+            'size'    => $qrSize > 0 ? $qrSize : 140,
+        ];
+    } else {
+        // Default: bottom-right corner, ~18mm square.
+        $defaultMm = 18;
+        $defaultPx = (int)round($defaultMm / 25.4 * 300);
+        $pageWpx = (int)round((float)($page['width_pt'] ?? 255) * $scale);
+        $pageHpx = (int)round((float)($page['height_pt'] ?? 165) * $scale);
+        $marginPx = (int)round(6 / 25.4 * 300); // 6mm margin
+        $out['qr_code'] = [
+            'enabled' => false, // off by default on sides where the designer
+                                // didn't carve out a placeholder square
+            'x'       => max(0, $pageWpx - $defaultPx - $marginPx),
+            'y'       => max(0, $pageHpx - $defaultPx - $marginPx),
+            'size'    => $defaultPx,
         ];
     }
 
@@ -267,16 +304,24 @@ if ($companyId && in_array($user['role'] ?? '', ['admin', 'company_admin', 'comp
                 }
             }
 
-            // The portal computes canvas dims from settings.customWidth +
-            // dpi. Store the page size in pt at 300 DPI so the canvas
-            // exactly matches the field coordinates the parser emitted.
+            // The editor only understands customUnit='mm' or 'in', and
+            // its getCanvasDimensions falls back to inches when the unit
+            // is unrecognised, so storing 'pt' makes the canvas blow up
+            // to 262 inches and visually clip everything. Convert pt to
+            // mm here so the editor renders at the real card size.
+            $widthPt    = (float)($page['width_pt']  ?? 255);
+            $heightPt   = (float)($page['height_pt'] ?? 165);
+            $widthMm    = round($widthPt  * 25.4 / 72, 2);
+            $heightMm   = round($heightPt * 25.4 / 72, 2);
+
             $settings = [
-                'customWidth'   => $page['width_pt'] ?? null,
-                'customHeight'  => $page['height_pt'] ?? null,
-                'customUnit'    => 'pt',
+                'cardSize'      => 'custom',
+                'customWidth'   => $widthMm,
+                'customHeight'  => $heightMm,
+                'customUnit'    => 'mm',
                 'dpi'           => 300,
-                'width_pt'      => $page['width_pt'] ?? null,
-                'height_pt'     => $page['height_pt'] ?? null,
+                'width_pt'      => $widthPt,
+                'height_pt'     => $heightPt,
                 'qr_area'       => $page['qr_area'] ?? null,
                 'fonts_used'    => array_keys($fontFamilies),
                 'imported_from' => 'pdf',
