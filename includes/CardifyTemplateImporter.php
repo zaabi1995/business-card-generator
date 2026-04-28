@@ -75,6 +75,14 @@ class CardifyTemplateImporter
                 }
             }
 
+            // Keep the numeric weight Fabric accepts so Lato-Medium (500),
+            // Sora-Regular (400), Inter-Bold (700) etc each pick the right
+            // font face. Mapping everything to 'normal' / 'bold' strings
+            // collapses Medium / SemiBold / Light into Regular and the
+            // rendered text reads lighter or heavier than the source PDF.
+            $weight = isset($f['font_weight']) ? (int)$f['font_weight'] : 400;
+            if ($weight < 100 || $weight > 900) $weight = 400;
+
             $out[$key] = [
                 'enabled'       => true,
                 'is_static'     => $isStatic,
@@ -86,8 +94,9 @@ class CardifyTemplateImporter
                 'height'        => (int)($f['h_px'] ?? 0),
                 'fontSize'      => (int)($f['font_size_px'] ?? 14),
                 'fontFamily'    => $f['font_family'] ?? 'Inter',
-                'fontWeight'    => isset($f['font_weight']) && (int)$f['font_weight'] >= 600 ? 'bold' : 'normal',
+                'fontWeight'    => $weight,
                 'italic'        => !empty($f['italic']),
+                'fontStyle'     => !empty($f['italic']) ? 'italic' : 'normal',
                 'fill'          => $f['color'] ?? '#222222',
                 'color'         => $f['color'] ?? '#222222',
                 'textAlign'     => $f['align'] ?? 'left',

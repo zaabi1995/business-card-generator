@@ -530,7 +530,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     if (!empty($loadFams)) {
         $loadFams = array_values(array_unique($loadFams));
         $famParts = array_map(function($f){
-            return 'family=' . str_replace(' ', '+', $f) . ':wght@300;400;500;600;700';
+            // Request the full static-weight ladder so any weight the
+            // source PDF used (Light 300, Regular 400, Medium 500,
+            // SemiBold 600, Bold 700, ExtraBold 800, Black 900) is
+            // available. Browser falls back to nearest if a particular
+            // weight isn't published for that family.
+            return 'family=' . str_replace(' ', '+', $f) . ':ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,700';
         }, $loadFams);
         echo '<link href="https://fonts.googleapis.com/css2?' . implode('&', $famParts) . '&display=swap" rel="stylesheet">' . "\n";
     }
