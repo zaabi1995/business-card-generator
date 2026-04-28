@@ -1,0 +1,275 @@
+<?php
+/**
+ * Cardify PDF template importer.
+ *
+ * Splits the work in two:
+ *  1. parser-stage output (run by /printshop/import_pdf.php)
+ *  2. user-confirmed persistence (run by /printshop/persist_template.php)
+ *
+ * The parser auto-detects text spans and emits a flat array of blocks with
+ * detected text + bbox + font + colour + a *suggested* field binding. The
+ * onboarding UI then lets the user accept or override each suggestion (e.g.
+ * keep "An Omantel Company" as static decoration but bind the detected
+ * "M +968 ..." span to Mobile EN). Only after the user confirms do we
+ * write the templates rows.
+ *
+ * This file is the single source of truth for both:
+ *   - the "blocks-for-review" shape returned to the wizard
+ *   - the "fields_json" + "settings_json" shape that the editor + portal read
+ */
+
+class CardifyTemplateImporter
+{
+    /**
+     * Translate a parser page (array of detected text spans + qr_area) into
+     * the dict-shaped fields_json the editor + portal expect, given a set
+     * of user-confirmed bindings.
+     *
+     * @param array $page    one entry from parser output['pages'][]
+     * @param array $bindings  ['<block_id>' => 'static' | 'skip' | '<typed_key>']
+     *                         where typed_key ∈ {name_en, name_ar, position_en,
+     *                         position_ar, company_en, company_ar, mobile,
+     *                         mobile_ar, phone, phone_ar, fax, email,
+     *                         website, website_ar, address, address_en,
+     *                         address_2_en, address_ar, address_2_ar, social}.
+     *                         A missing binding for a block defaults to
+     *                         'static' (preserved verbatim).
+     * @return array  fields_dict ready for json_encode into fields_json
+     */
+    public static function translatePage(array $page, array $bindings = []): array
+    {
+        $out = [];
+        $usedKeys = [];
+        $staticIdx = 0;
+
+        foreach (($page['fields'] ?? []) as $idx => $f) {
+            $blockId = 'block_' . $idx;
+            $binding = $bindings[$blockId] ?? 'static';
+
+            if ($binding === 'skip') {
+                continue;
+            }
+
+            $isStatic = ($binding === 'static');
+            if ($isStatic) {
+                $staticIdx++;
+                $key = 'static_' . $staticIdx;
+            } else {
+                $key = $binding;
+            }
+
+            // Disambiguate duplicate typed keys (two M-phones, two emails).
+            if (isset($usedKeys[$key])) {
+                $usedKeys[$key]++;
+                $key = $key . '_' . $usedKeys[$key];
+            } else {
+                $usedKeys[$key] = 1;
+            }
+
+            $label = null;
+            if ($isStatic) {
+                $sample = trim((string)($f['detected_text'] ?? ''));
+                if ($sample !== '') {
+                    $short = mb_strimwidth($sample, 0, 22, '…');
+                    $label = 'Decoration: ' . $short;
+                }
+            }
+
+            $out[$key] = [
+                'enabled'       => true,
+                'is_static'     => $isStatic,
+                'label'         => $label,
+                'detected_text' => $f['detected_text'] ?? '',
+                'x'             => (int)($f['x_px'] ?? 0),
+                'y'             => (int)($f['y_px'] ?? 0),
+                'width'         => (int)($f['w_px'] ?? 0),
+                'height'        => (int)($f['h_px'] ?? 0),
+                'fontSize'      => (int)($f['font_size_px'] ?? 14),
+                'fontFamily'    => $f['font_family'] ?? 'Inter',
+                'fontWeight'    => isset($f['font_weight']) && (int)$f['font_weight'] >= 600 ? 'bold' : 'normal',
+                'italic'        => !empty($f['italic']),
+                'fill'          => $f['color'] ?? '#222222',
+                'color'         => $f['color'] ?? '#222222',
+                'textAlign'     => $f['align'] ?? 'left',
+                'originX'       => 'left',
+                'originY'       => 'top',
+            ];
+        }
+
+        // QR field: always inject one, centred + 90% inside any detected
+        // white square, otherwise dropped in the bottom-right corner
+        // disabled by default.
+        $scale = 300.0 / 72.0;
+        if (!empty($page['qr_area'])) {
+            $qa = $page['qr_area'];
+            $qWpx = (float)$qa['w_pt'] * $scale;
+            $qHpx = (float)$qa['h_pt'] * $scale;
+            $qXpx = (float)$qa['x_pt'] * $scale;
+            $qYpx = (float)$qa['y_pt'] * $scale;
+            $qrSize = (int)round(min($qWpx, $qHpx) * 0.90);
+            $out['qr_code'] = [
+                'enabled' => true,
+                'x'       => (int)round($qXpx + ($qWpx - $qrSize) / 2),
+                'y'       => (int)round($qYpx + ($qHpx - $qrSize) / 2),
+                'size'    => $qrSize > 0 ? $qrSize : 140,
+            ];
+        } else {
+            $defaultPx = (int)round(18 / 25.4 * 300);
+            $pageWpx = (int)round((float)($page['width_pt'] ?? 255) * $scale);
+            $pageHpx = (int)round((float)($page['height_pt'] ?? 165) * $scale);
+            $marginPx = (int)round(6 / 25.4 * 300);
+            $out['qr_code'] = [
+                'enabled' => false,
+                'x'       => max(0, $pageWpx - $defaultPx - $marginPx),
+                'y'       => max(0, $pageHpx - $defaultPx - $marginPx),
+                'size'    => $defaultPx,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Build the settings_json for a parser page. Always uses customUnit=mm
+     * + cardSize=custom + dpi=300 so the editor renders the canvas at the
+     * card's real physical size (parser coordinates are in 300 DPI px).
+     */
+    public static function buildSettings(array $page, string $token, array $fontFamilies): array
+    {
+        $widthPt    = (float)($page['width_pt']  ?? 255);
+        $heightPt   = (float)($page['height_pt'] ?? 165);
+        $widthMm    = round($widthPt  * 25.4 / 72, 2);
+        $heightMm   = round($heightPt * 25.4 / 72, 2);
+
+        return [
+            'cardSize'      => 'custom',
+            'customWidth'   => $widthMm,
+            'customHeight'  => $heightMm,
+            'customUnit'    => 'mm',
+            'dpi'           => 300,
+            'width_pt'      => $widthPt,
+            'height_pt'     => $heightPt,
+            'qr_area'       => $page['qr_area'] ?? null,
+            'fonts_used'    => array_values($fontFamilies),
+            'imported_from' => 'pdf',
+            'import_token'  => $token,
+        ];
+    }
+
+    /**
+     * Suggest the most likely binding for each detected block so the
+     * review UI can pre-fill its dropdowns (user accepts or overrides).
+     *
+     * Suggestions are heuristic, rules of thumb based on the parser's
+     * field_key classification + detected text shape:
+     *   - "M +968 ..."  → mobile      (M prefix from PDF designer convention)
+     *   - "T +968 ..."  → phone
+     *   - "F +968 ..."  → fax
+     *   - "E foo@..."   → email
+     *   - "+968 ..."    → mobile
+     *   - "foo@bar.x"   → email
+     *   - "https?://..", "www.."  → website
+     *   - largest text in upper half (multi-word, no digits)  → name_en
+     *   - text containing a position keyword                  → position_en
+     *   - "@otech"-style social handles, "An Omantel Company"
+     *     style brand taglines, anything inside the QR square → static
+     *
+     * If the parser's classification matches a typed key, suggest that
+     * key, otherwise default to 'static'.
+     */
+    public static function suggestBinding(array $f): string
+    {
+        if (!empty($f['is_static'])) return 'static';
+        $base = $f['field_key'] ?? 'custom';
+        $t = ltrim((string)($f['detected_text'] ?? ''));
+
+        if ($base === 'mobile' && strlen($t) >= 2) {
+            $first = strtoupper(substr($t, 0, 1));
+            if ($first === 'T') return 'phone';
+            if ($first === 'F') return 'fax';
+            return 'mobile';
+        }
+
+        $typed = ['name_en','position_en','mobile','email','website','address'];
+        if (in_array($base, $typed, true)) {
+            return $base;
+        }
+        return 'static';
+    }
+
+    /**
+     * Write or replace the templates rows for a company's import_token.
+     * Returns ['front' => $tplId, 'back' => $tplId, 'pair_id' => $pairId].
+     *
+     * Drops any previous templates rows attached to this token first so
+     * re-running the importer is idempotent (the user can edit bindings
+     * in the review UI and re-confirm without leaving stale rows).
+     */
+    public static function persist(
+        Database $db,
+        string $companyId,
+        string $token,
+        string $outRel,
+        string $origName,
+        array $pages,
+        array $bindingsByPage
+    ): array {
+        // Drop any previous templates that point at this token's source PDF.
+        $sourcePath = $outRel . '/source.pdf';
+        $existing = $db->fetchAll(
+            "SELECT id FROM templates WHERE company_id = :cid AND original_pdf_path = :p",
+            ['cid' => $companyId, 'p' => $sourcePath]
+        );
+        foreach ($existing as $row) {
+            $db->delete('templates', 'id = :id', ['id' => $row['id']]);
+        }
+
+        $pairId = function_exists('generateUUID') ? generateUUID() : bin2hex(random_bytes(16));
+        $createdTemplateIds = [];
+
+        foreach ($pages as $page) {
+            $tplId = function_exists('generateUUID') ? generateUUID() : bin2hex(random_bytes(16));
+            $pageNum = (int)($page['page_number'] ?? 1);
+            $side = $pageNum === 1 ? 'front' : 'back';
+            $bgPath = !empty($page['background_url']) ? $page['background_url'] : null;
+
+            $bindings = $bindingsByPage[$pageNum] ?? [];
+            $fieldsDict = self::translatePage($page, $bindings);
+
+            $fontFamilies = [];
+            foreach ($fieldsDict as $f) {
+                if (!empty($f['fontFamily'])) {
+                    $fontFamilies[$f['fontFamily']] = true;
+                }
+            }
+
+            $settings = self::buildSettings($page, $token, array_keys($fontFamilies));
+
+            $db->insert('templates', [
+                'id'                    => $tplId,
+                'company_id'            => $companyId,
+                'pair_id'               => $pairId,
+                'name'                  => trim('Imported ' . preg_replace('/\.pdf$/i', '', $origName)) ?: 'Imported design',
+                'side'                  => $side,
+                'background_image_path' => $bgPath,
+                'original_pdf_path'     => $sourcePath,
+                'original_pdf_page'     => $pageNum,
+                'fields_json'           => json_encode($fieldsDict, JSON_UNESCAPED_UNICODE),
+                'settings_json'         => json_encode($settings, JSON_UNESCAPED_UNICODE),
+                'is_active'             => 1,
+                'description'           => 'Auto-imported from ' . $origName,
+            ]);
+            $createdTemplateIds[$side] = $tplId;
+        }
+
+        if (isset($createdTemplateIds['front'], $createdTemplateIds['back'])) {
+            $db->update('templates', ['paired_template_id' => $createdTemplateIds['back']],  'id = :id', ['id' => $createdTemplateIds['front']]);
+            $db->update('templates', ['paired_template_id' => $createdTemplateIds['front']], 'id = :id', ['id' => $createdTemplateIds['back']]);
+        }
+
+        return [
+            'pair_id'      => $pairId,
+            'template_ids' => $createdTemplateIds,
+        ];
+    }
+}

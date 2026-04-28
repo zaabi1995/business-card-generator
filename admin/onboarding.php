@@ -178,35 +178,130 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
 
         <!-- Step 2: Card design (PDF) -->
         <div class="wizard-step" x-show="step === 2" x-cloak>
-            <h2 class="text-xl font-bold text-gray-900 mb-1">Upload your card design (PDF)</h2>
-            <p class="text-sm text-gray-500 mb-2">Cardify reads the layout, fonts and QR area automatically. Skip if you don't have one yet, your team can use a default until you do.</p>
-            <a href="<?= htmlspecialchars(getBasePath() . 'uploads/docs/Cardify-PDF-Design-Guide.pdf') ?>" target="_blank" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold mb-5">
-                <i class="fa-solid fa-circle-info text-xs"></i> How to prepare your PDF
-            </a>
+            <!-- 2a: dropzone (no review yet) -->
+            <div x-show="!cardPdfReview">
+                <h2 class="text-xl font-bold text-gray-900 mb-1">Upload your card design (PDF)</h2>
+                <p class="text-sm text-gray-500 mb-2">Cardify reads the layout, fonts and QR area automatically, then asks you to confirm what each text block represents. Skip if you don't have one yet.</p>
+                <a href="<?= htmlspecialchars(getBasePath() . 'uploads/docs/Cardify-PDF-Design-Guide.pdf') ?>" target="_blank" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold mb-5">
+                    <i class="fa-solid fa-circle-info text-xs"></i> How to prepare your PDF
+                </a>
 
-            <div id="card-pdf-error" class="hidden bg-red-50 border-l-4 border-red-500 px-4 py-2 rounded mb-4 text-sm text-red-700"></div>
+                <div id="card-pdf-error" class="hidden bg-red-50 border-l-4 border-red-500 px-4 py-2 rounded mb-4 text-sm text-red-700"></div>
 
-            <label for="card-pdf-input" id="card-pdf-zone"
-                tabindex="0" role="button"
-                class="block border-2 border-dashed border-gray-200 hover:border-blue-400 focus-within:border-blue-500 rounded-2xl p-8 text-center cursor-pointer transition">
-                <div id="card-pdf-empty">
-                    <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-3">
-                        <i class="fa-solid fa-file-pdf text-lg text-blue-600"></i>
+                <label for="card-pdf-input" id="card-pdf-zone"
+                    tabindex="0" role="button"
+                    class="block border-2 border-dashed border-gray-200 hover:border-blue-400 focus-within:border-blue-500 rounded-2xl p-8 text-center cursor-pointer transition">
+                    <div id="card-pdf-empty">
+                        <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-3">
+                            <i class="fa-solid fa-file-pdf text-lg text-blue-600"></i>
+                        </div>
+                        <p class="text-gray-700 font-semibold text-sm">Drop your business card PDF</p>
+                        <p class="text-gray-400 text-xs mt-1">2 pages preferred (front + back) · 25 MB max</p>
                     </div>
-                    <p class="text-gray-700 font-semibold text-sm">Drop your business card PDF</p>
-                    <p class="text-gray-400 text-xs mt-1">2 pages preferred (front + back) · 25 MB max</p>
-                </div>
-                <div id="card-pdf-loaded" class="hidden">
-                    <p id="card-pdf-status" class="text-sm" role="status"></p>
-                    <div id="card-pdf-summary" class="text-xs text-gray-500 mt-2"></div>
-                </div>
-            </label>
-            <input type="file" id="card-pdf-input" accept="application/pdf,.pdf" class="hidden">
+                    <div id="card-pdf-loaded" class="hidden">
+                        <p id="card-pdf-status" class="text-sm" role="status"></p>
+                        <div id="card-pdf-summary" class="text-xs text-gray-500 mt-2"></div>
+                    </div>
+                </label>
+                <input type="file" id="card-pdf-input" accept="application/pdf,.pdf" class="hidden">
 
-            <p class="text-xs text-gray-400 mt-4">
-                <i class="fa-solid fa-shield-halved mr-1 text-green-600"></i>
-                Skip is fine, you can upload a PDF later from the template editor.
-            </p>
+                <p class="text-xs text-gray-400 mt-4">
+                    <i class="fa-solid fa-shield-halved mr-1 text-green-600"></i>
+                    Skip is fine, you can upload a PDF later from the template editor.
+                </p>
+            </div>
+
+            <!-- 2b: review (parser ran, user confirms each text block) -->
+            <div x-show="cardPdfReview" x-cloak>
+                <div class="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900 mb-1">Match each text block to a Cardify field</h2>
+                        <p class="text-sm text-gray-500">Click a block on the design (or use the list) and tell us what it represents. Anything left as <span class="font-semibold text-gray-700">Decoration</span> stays exactly as it is on every card.</p>
+                    </div>
+                    <button type="button" @click="resetCardPdf()" class="text-xs text-gray-500 hover:text-red-600 underline whitespace-nowrap">
+                        <i class="fa-solid fa-rotate-left mr-1"></i> Upload different PDF
+                    </button>
+                </div>
+
+                <template x-for="page in cardPdfReview.pages" :key="page.page_number">
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-xs uppercase tracking-wider font-semibold text-gray-500">
+                                <span x-text="page.side === 'front' ? 'Front' : 'Back'"></span>
+                                <span class="text-gray-300 ml-2">page <span x-text="page.page_number"></span></span>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                <span x-text="page.blocks.length"></span> text block<span x-show="page.blocks.length !== 1">s</span>
+                            </div>
+                        </div>
+
+                        <!-- Card preview with clickable block overlays. -->
+                        <div class="card-preview-wrap relative bg-gray-100 rounded-xl overflow-hidden border border-gray-200"
+                             :style="'aspect-ratio: ' + page.width_px + ' / ' + page.height_px">
+                            <img :src="page.background_with_text_url"
+                                 alt="Imported card"
+                                 class="absolute inset-0 w-full h-full object-contain">
+                            <template x-for="b in page.blocks" :key="b.id">
+                                <button type="button"
+                                        @click="focusBlock(page.page_number, b.id)"
+                                        :class="[
+                                            'absolute border-2 rounded-md transition cursor-pointer text-[10px] font-semibold leading-none flex items-end justify-start px-1 pb-0.5',
+                                            isFocused(page.page_number, b.id) ? 'border-blue-500 ring-2 ring-blue-200 z-10' :
+                                                bindingFor(page.page_number, b.id) === 'static' ? 'border-amber-400/80 bg-amber-100/30 hover:border-amber-500' :
+                                                bindingFor(page.page_number, b.id) === 'skip'   ? 'border-red-300/80 bg-red-100/30 line-through opacity-50 hover:border-red-500' :
+                                                                                                  'border-blue-400/80 bg-blue-100/30 hover:border-blue-600'
+                                        ]"
+                                        :style="
+                                            'left:'   + (b.x      * 100 / page.width_px)  + '%;' +
+                                            'top:'    + (b.y      * 100 / page.height_px) + '%;' +
+                                            'width:'  + (b.width  * 100 / page.width_px)  + '%;' +
+                                            'height:' + (b.height * 100 / page.height_px) + '%;'
+                                        ">
+                                    <span class="bg-white/90 text-gray-700 px-1 rounded shadow-sm whitespace-nowrap"
+                                          x-text="bindingLabelShort(bindingFor(page.page_number, b.id))"></span>
+                                </button>
+                            </template>
+                        </div>
+
+                        <!-- List of every block with bind dropdown. Sticky list mirrors overlays so the user can
+                             change a binding even when the overlay is tiny. -->
+                        <div class="mt-3 divide-y divide-gray-100 border border-gray-100 rounded-lg overflow-hidden">
+                            <template x-for="b in page.blocks" :key="'list-' + b.id">
+                                <div class="flex items-center gap-3 px-3 py-2 transition"
+                                     :class="isFocused(page.page_number, b.id) ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'"
+                                     @click="focusBlock(page.page_number, b.id)">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm text-gray-800 truncate" x-text="b.detected_text" dir="auto"></div>
+                                        <div class="text-[11px] text-gray-400">
+                                            <span x-text="b.font_family"></span>
+                                            <span x-show="b.font_size_pt"> · <span x-text="(b.font_size_pt || 0).toFixed(1)"></span>pt</span>
+                                            <span class="inline-block w-3 h-3 rounded ml-2 align-middle border border-gray-300" :style="'background:' + b.color"></span>
+                                        </div>
+                                    </div>
+                                    <select class="form-input text-xs py-1 px-2 w-44"
+                                            :value="bindingFor(page.page_number, b.id)"
+                                            @change="setBinding(page.page_number, b.id, $event.target.value)">
+                                        <template x-for="opt in bindingOptions" :key="opt.value">
+                                            <option :value="opt.value" x-text="opt.label" :selected="bindingFor(page.page_number, b.id) === opt.value"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                            </template>
+                            <div x-show="page.blocks.length === 0" class="px-3 py-4 text-xs text-gray-400 text-center">
+                                No text blocks detected on this page. The background image will still be used.
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <div class="text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+                    <i class="fa-solid fa-circle-info text-blue-500 mr-1"></i>
+                    Anything you leave as <strong>Decoration</strong> stays fixed on every card (e.g. brand taglines, social handles).
+                    Anything you bind to a Cardify field becomes a per-employee placeholder.
+                </div>
+
+                <div id="card-pdf-persist-error" class="hidden bg-red-50 border-l-4 border-red-500 px-4 py-2 rounded mt-3 text-sm text-red-700"></div>
+            </div>
         </div>
 
         <!-- Step 3: Preview / Launch -->
@@ -288,6 +383,79 @@ function onboarding(init) {
 
         stepLabels: { 1: 'Brand', 2: 'Card design', 3: 'Launch' },
         cardPdfReady: false,
+
+        // Review state set after a successful import_pdf parse:
+        //   cardPdfReview = { token, original_filename, pages: [...], missing_fonts: [...] }
+        //   cardPdfBindings = { 1: { block_0: 'name_en', block_1: 'static', ... }, 2: {...} }
+        //   focusedBlock    = { page: 1, id: 'block_0' } | null
+        cardPdfReview: null,
+        cardPdfBindings: {},
+        focusedBlock: null,
+        cardPdfPersisting: false,
+
+        bindingOptions: [
+            { value: 'static',       label: 'Decoration (keep fixed)' },
+            { value: 'skip',         label: 'Skip / delete' },
+            { value: 'name_en',      label: 'Name (EN)' },
+            { value: 'name_ar',      label: 'Name (AR)' },
+            { value: 'position_en',  label: 'Position (EN)' },
+            { value: 'position_ar',  label: 'Position (AR)' },
+            { value: 'company_en',   label: 'Company (EN)' },
+            { value: 'company_ar',   label: 'Company (AR)' },
+            { value: 'mobile',       label: 'Mobile' },
+            { value: 'mobile_ar',    label: 'Mobile (AR)' },
+            { value: 'phone',        label: 'Phone' },
+            { value: 'phone_ar',     label: 'Phone (AR)' },
+            { value: 'fax',          label: 'Fax' },
+            { value: 'email',        label: 'Email' },
+            { value: 'website',      label: 'Website' },
+            { value: 'website_ar',   label: 'Website (AR)' },
+            { value: 'address',      label: 'Address line' },
+            { value: 'address_en',   label: 'Address 01 (EN)' },
+            { value: 'address_2_en', label: 'Address 02 (EN)' },
+            { value: 'address_ar',   label: 'Address 01 (AR)' },
+            { value: 'address_2_ar', label: 'Address 02 (AR)' },
+            { value: 'social',       label: 'Social handle' },
+        ],
+        bindingShort: {
+            static: 'Decoration', skip: 'Skip',
+            name_en: 'Name', name_ar: 'Name AR',
+            position_en: 'Position', position_ar: 'Position AR',
+            company_en: 'Company', company_ar: 'Company AR',
+            mobile: 'Mobile', mobile_ar: 'Mobile AR',
+            phone: 'Phone', phone_ar: 'Phone AR', fax: 'Fax',
+            email: 'Email', website: 'Website', website_ar: 'Website AR',
+            address: 'Address', address_en: 'Addr 1', address_2_en: 'Addr 2',
+            address_ar: 'Addr 1 AR', address_2_ar: 'Addr 2 AR',
+            social: 'Social',
+        },
+        bindingLabelShort(v) { return this.bindingShort[v] || v; },
+        bindingFor(pageNum, blockId) {
+            const p = this.cardPdfBindings[pageNum] || {};
+            return p[blockId] || 'static';
+        },
+        setBinding(pageNum, blockId, value) {
+            if (!this.cardPdfBindings[pageNum]) this.cardPdfBindings[pageNum] = {};
+            this.cardPdfBindings[pageNum][blockId] = value;
+        },
+        focusBlock(pageNum, blockId) { this.focusedBlock = { page: pageNum, id: blockId }; },
+        isFocused(pageNum, blockId) {
+            return this.focusedBlock && this.focusedBlock.page === pageNum && this.focusedBlock.id === blockId;
+        },
+        resetCardPdf() {
+            this.cardPdfReview = null;
+            this.cardPdfBindings = {};
+            this.focusedBlock = null;
+            this.cardPdfReady = false;
+            this.data.card_design = {};
+            // Reset the dropzone visual.
+            const empty = document.getElementById('card-pdf-empty');
+            const loaded = document.getElementById('card-pdf-loaded');
+            if (empty)  empty.classList.remove('hidden');
+            if (loaded) loaded.classList.add('hidden');
+            const input = document.getElementById('card-pdf-input');
+            if (input) input.value = '';
+        },
         bindCardPdf() {
             const zone = document.getElementById('card-pdf-zone');
             const input = document.getElementById('card-pdf-input');
@@ -321,23 +489,33 @@ function onboarding(init) {
                             status.innerHTML = '<span class="text-red-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Import failed.</span>';
                             return;
                         }
-                        const fields = data.pages.reduce((n,p)=>n+p.fields.length,0);
-                        const qrCount = data.pages.filter(p=>p.qr_area).length;
-                        status.innerHTML = '<span class="text-green-600"><i class="fa-solid fa-circle-check mr-1"></i>Card design analysed.</span>';
-                        summary.textContent = data.pages.length + ' pages · ' + fields + ' fields · ' + (qrCount > 0 ? 'QR area found' : 'no QR placeholder') + ' · ' + data.missing_fonts.length + ' missing font' + (data.missing_fonts.length === 1 ? '' : 's');
-                        // Persist PDF metadata into the onboarding state so the
-                        // dashboard checklist + Onboarding::get() know it was uploaded.
+                        const blockTotal = data.pages.reduce((n,p)=>n+(p.blocks||[]).length,0);
+                        // Switch the wizard from upload-mode to review-mode.
+                        // Pre-populate every block with the parser's
+                        // suggested binding (user can override per-block).
+                        const bindings = {};
+                        data.pages.forEach(p => {
+                            bindings[p.page_number] = {};
+                            (p.blocks || []).forEach(b => {
+                                bindings[p.page_number][b.id] = b.suggested_binding || 'static';
+                            });
+                        });
+                        this.cardPdfReview   = data;
+                        this.cardPdfBindings = bindings;
+                        this.focusedBlock    = null;
+                        this.cardPdfReady    = true;
+                        // Stash a draft card_design payload so saveStep
+                        // can persist the upload metadata on Next.
                         this.data.card_design = {
                             imported: true,
                             import_token: data.import_token,
                             pages: data.pages.length,
-                            fields_total: fields,
-                            qr_found: qrCount > 0,
-                            missing_fonts: data.missing_fonts,
+                            blocks_total: blockTotal,
+                            qr_found: data.pages.some(p => p.qr_area),
+                            missing_fonts: data.missing_fonts || [],
                             uploaded_at: new Date().toISOString(),
                             original_filename: data.original_filename || file.name,
                         };
-                        this.cardPdfReady = true;
                     })
                     .catch(err => showErr('Network error: ' + err.message));
             };
@@ -445,6 +623,43 @@ function onboarding(init) {
 
         async next() {
             if (this.saving) return;
+
+            // Step 2 with a pending review must persist bindings first.
+            // We only advance after the templates rows are written so the
+            // dashboard / portal don't show a half-imported card.
+            if (this.step === 2 && this.cardPdfReview && !this.cardPdfPersisting) {
+                this.cardPdfPersisting = true;
+                const errBox = document.getElementById('card-pdf-persist-error');
+                if (errBox) errBox.classList.add('hidden');
+                try {
+                    const res = await fetch('<?= getBasePath() ?>printshop/persist_template.php', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {'Content-Type': 'application/json', 'X-CSRF-Token': this.csrf},
+                        body: JSON.stringify({
+                            import_token: this.cardPdfReview.import_token,
+                            bindings: this.cardPdfBindings,
+                        })
+                    });
+                    const j = await res.json();
+                    if (!res.ok || !j.ok) {
+                        const msg = (j && (j.message || j.error)) || ('persist_failed (' + res.status + ')');
+                        if (errBox) { errBox.textContent = msg; errBox.classList.remove('hidden'); }
+                        return;
+                    }
+                    // Success: stamp the pair_id so the dashboard
+                    // checklist can verify the design without rerunning
+                    // the parser.
+                    this.data.card_design.template_pair_id = j.pair_id;
+                    this.data.card_design.confirmed_at = new Date().toISOString();
+                } catch (e) {
+                    if (errBox) { errBox.textContent = e.message; errBox.classList.remove('hidden'); }
+                    return;
+                } finally {
+                    this.cardPdfPersisting = false;
+                }
+            }
+
             this.saving = true;
             const payload = this.stepPayload();
             try {
