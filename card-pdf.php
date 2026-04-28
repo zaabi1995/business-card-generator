@@ -72,10 +72,11 @@ try {
         $accent = '#d4af37';
     }
 
-    // Canonical URL of the public card page (used in QR).
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host   = $_SERVER['HTTP_HOST'] ?? 'cardify.om';
-    $cardUrl = $scheme . '://' . $host . '/' . rawurlencode($company['slug']) . '/card/' . rawurlencode($employee['id']);
+    // Canonical URL of the public card page (used in QR). Always points at
+    // the tenant subdomain regardless of which host invoked this script,
+    // so the QR is identical whether generated from cardify.om or from
+    // <slug>.cardify.om.
+    $cardUrl = getTenantUrl($company['slug'], '/' . rawurlencode($employee['id']));
 
     $name       = trim((string)($employee['name_en'] ?? $employee['name'] ?? ''));
     if ($name === '') { $name = 'Employee'; }

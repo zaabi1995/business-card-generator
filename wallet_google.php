@@ -63,10 +63,10 @@ try {
     $emailAddr = $employee['email'] ?? '';
     $website   = $company['website'] ?? '';
 
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host   = $_SERVER['HTTP_HOST'] ?? 'cardify.om';
     $slug   = $company['slug'] ?? $companySlug;
-    $cardUrl = $scheme . '://' . $host . '/' . rawurlencode($slug) . '/card/' . rawurlencode($employee['id']);
+
+    // Tenant subdomain canonical URL (no double-slug regardless of host).
+    $cardUrl = getTenantUrl($slug, '/' . rawurlencode($employee['id']));
 
     $hexBg = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#1a1a1a';
     if (strlen($hexBg) === 4) { // #rgb → #rrggbb

@@ -38,9 +38,8 @@ if (DatabaseAdapter::useDatabase()) {
 }
 $slug = $company['slug'] ?? ($_SESSION['company_slug'] ?? '');
 
-$scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'] ?? 'cardify.om';
-$cardUrl = $scheme . '://' . $host . '/' . rawurlencode($slug) . '/card/' . rawurlencode($employee['id']);
+// Tenant subdomain canonical URL (no double-slug regardless of host).
+$cardUrl = getTenantUrl($slug, '/' . rawurlencode($employee['id']));
 
 $pageTitle = 'NFC Writer, ' . ($employee['name'] ?? '');
 adminHeader($pageTitle, 'nfc-tags');
