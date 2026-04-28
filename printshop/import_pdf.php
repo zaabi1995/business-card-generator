@@ -151,4 +151,53 @@ $result['import_path']  = $outRel;
 $result['source_pdf']   = $outRel . '/source.pdf';
 $result['original_filename'] = $origName;
 
+// Persist the parsed pages as `templates` rows so the import shows up in
+// the company's Card Designs panel and the portal can render the design.
+// Only do this when the upload has a company context (i.e. company admins
+// onboarding their tenant; print-shop uploads stay separate).
+$companyId = function_exists('getCurrentCompanyId') ? getCurrentCompanyId() : null;
+if ($companyId && in_array($user['role'] ?? '', ['admin', 'company_admin', 'company'], true)) {
+    try {
+        $db = Database::getInstance();
+        $pairId = function_exists('generateUUID') ? generateUUID() : bin2hex(random_bytes(16));
+        $createdTemplateIds = [];
+        foreach ($result['pages'] as $page) {
+            $tplId = function_exists('generateUUID') ? generateUUID() : bin2hex(random_bytes(16));
+            $side = ($page['page_number'] ?? 1) === 1 ? 'front' : 'back';
+            $bgPath = !empty($page['background_url']) ? $page['background_url'] : null;
+            $db->insert('templates', [
+                'id'                    => $tplId,
+                'company_id'            => $companyId,
+                'pair_id'               => $pairId,
+                'name'                  => trim('Imported ' . preg_replace('/\.pdf$/i', '', $origName)) ?: 'Imported design',
+                'side'                  => $side,
+                'background_image_path' => $bgPath,
+                'original_pdf_path'     => $outRel . '/source.pdf',
+                'original_pdf_page'     => (int)($page['page_number'] ?? 1),
+                'fields_json'           => json_encode($page['fields'] ?? [], JSON_UNESCAPED_UNICODE),
+                'settings_json'         => json_encode([
+                    'width_pt' => $page['width_pt'] ?? null,
+                    'height_pt' => $page['height_pt'] ?? null,
+                    'qr_area' => $page['qr_area'] ?? null,
+                ], JSON_UNESCAPED_UNICODE),
+                'is_active'             => 1,
+                'description'           => 'Auto-imported from ' . $origName,
+            ]);
+            $createdTemplateIds[$side] = $tplId;
+        }
+
+        // Link front<->back via paired_template_id when both sides exist.
+        if (isset($createdTemplateIds['front'], $createdTemplateIds['back'])) {
+            $db->update('templates', ['paired_template_id' => $createdTemplateIds['back']], 'id = :id', ['id' => $createdTemplateIds['front']]);
+            $db->update('templates', ['paired_template_id' => $createdTemplateIds['front']], 'id = :id', ['id' => $createdTemplateIds['back']]);
+        }
+
+        $result['template_pair_id'] = $pairId;
+        $result['template_ids']     = $createdTemplateIds;
+    } catch (Throwable $e) {
+        error_log('[import_pdf] template persist failed: ' . $e->getMessage());
+        $result['template_persist_error'] = $e->getMessage();
+    }
+}
+
 echo json_encode($result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
