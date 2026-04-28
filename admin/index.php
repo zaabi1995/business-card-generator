@@ -3072,7 +3072,10 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                                     ? sm
                                     : (field.detected_text || '').trim();
                             }
-                            if (!fieldText) continue;
+                            // No text to render means an unmapped field.
+                            // Bail out before touching the canvas; this is
+                            // a function body, not a loop, so we return.
+                            if (!fieldText) return;
 
                             this.cardEditor.addTextField(key, {
                                 text: fieldText,
