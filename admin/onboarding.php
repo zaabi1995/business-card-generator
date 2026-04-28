@@ -1,4 +1,8 @@
 <?php
+// Always serve fresh, the wizard's JS evolves quickly during onboarding.
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
 /**
  * 7-step onboarding wizard. First-login redirect brings a fresh tenant
  * here; admins can also land on /admin/onboarding manually to pick up
