@@ -89,6 +89,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <?= htmlspecialchars($template && $template['background_path'] ? t('printshoptpl.change_image') : t('printshoptpl.upload_image')) ?>
         </label>
         <input type="file" id="bg-upload" accept="image/*" class="hidden">
+        <label for="pdf-import-upload" class="cursor-pointer text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors" title="Upload a 1-2 page PDF business card. Cardify auto-detects fields, fonts, colors and the QR area.">
+            <i class="fa-solid fa-file-pdf mr-1"></i>Import from PDF
+        </label>
+        <input type="file" id="pdf-import-upload" accept="application/pdf,.pdf" class="hidden">
+        <span id="pdf-import-status" class="text-xs text-blue-600 hidden"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Analysing PDF...</span>
         <span class="text-xs text-gray-400" id="bg-filename">
             <?= htmlspecialchars($template && $template['background_path'] ? basename($template['background_path']) : t('printshoptpl.no_file_chosen')) ?>
         </span>
@@ -333,6 +338,181 @@ require_once INCLUDES_DIR . '/ui-header.php';
         };
         reader.readAsDataURL(file);
     });
+
+    // ── PDF Import (auto-detect fields from a PDF business card) ──
+    document.getElementById('pdf-import-upload').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const status = document.getElementById('pdf-import-status');
+        status.classList.remove('hidden');
+        status.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Analysing PDF...';
+
+        const fd = new FormData();
+        fd.append('pdf', file);
+        try {
+            const res = await fetch(basePath + 'printshop/import_pdf.php', { method: 'POST', body: fd, credentials: 'same-origin' });
+            const data = await res.json();
+            if (!res.ok || data.error) {
+                status.innerHTML = '<span class="text-red-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Import failed: ' + (data.error || res.status) + '</span>';
+                if (data.parser_output) console.error(data.parser_output);
+                return;
+            }
+            applyImportedTemplate(data);
+            status.innerHTML = '<span class="text-green-600"><i class="fa-solid fa-check mr-1"></i>Imported ' + data.pages.length + ' pages, ' +
+                data.pages.reduce((n,p)=>n+p.fields.length,0) + ' fields detected.</span>';
+            setTimeout(() => status.classList.add('hidden'), 8000);
+        } catch (err) {
+            status.innerHTML = '<span class="text-red-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i>' + err.message + '</span>';
+        }
+    });
+
+    // Apply parsed template to the Fabric canvas. For multi-page (front + back),
+    // we currently load page 2 (back) by default since that's where fields live;
+    // a future tweak is a side-toggle button.
+    let importedPages = null;
+    let activePageIndex = 0;
+    function applyImportedTemplate(data) {
+        importedPages = data.pages;
+        // Pick the page with the most fields (usually the back)
+        let bestIdx = 0;
+        data.pages.forEach((p, i) => { if (p.fields.length > (data.pages[bestIdx].fields.length||0)) bestIdx = i; });
+        activePageIndex = bestIdx;
+        const page = data.pages[bestIdx];
+        loadPageOntoCanvas(page);
+        renderSideSwitcher(data.pages);
+        renderMissingFontsBanner(data.missing_fonts || []);
+    }
+
+    function loadPageOntoCanvas(page) {
+        // Resize canvas to PDF aspect ratio (constrained to a workable width)
+        const targetW = 1100;
+        const ratio = page.width_px / page.height_px;
+        canvasWidth = targetW;
+        canvasHeight = Math.round(targetW / ratio);
+        canvas.setWidth(canvasWidth);
+        canvas.setHeight(canvasHeight);
+
+        // Clear existing
+        canvas.getObjects().slice().forEach(o => canvas.remove(o));
+
+        const scaleX = canvasWidth / page.width_px;
+        const scaleY = canvasHeight / page.height_px;
+
+        fabric.Image.fromURL(basePath + page.background_url.replace(/^\//, ''), function(img) {
+            img.scaleToWidth(canvasWidth);
+            img.scaleToHeight(canvasHeight);
+            img.set({ selectable: false, evented: false, name: '_background' });
+            canvas.add(img);
+            canvas.sendToBack(img);
+
+            // Place each detected field as a Fabric.IText at the matching x/y/font/size/color
+            page.fields.forEach(f => {
+                const labelMap = {
+                    'name_en': 'Full Name', 'position_en': 'Job Title',
+                    'mobile': 'Phone', 'email': 'Email', 'website': 'Website',
+                    'address': 'Address', 'social': 'Social', 'company_tagline': 'Tagline (static)',
+                    'qr_code': 'QR Code', 'custom': null,
+                };
+                const placeholder = (f.is_static || f.field_key === 'custom')
+                    ? f.detected_text
+                    : '[' + (labelMap[f.field_key] || f.field_key) + ']';
+
+                const txt = new fabric.IText(placeholder, {
+                    left: f.x_px * scaleX,
+                    top:  f.y_px * scaleY,
+                    fontSize: f.font_size_px * scaleY,
+                    fontFamily: f.font_family,
+                    fontWeight: f.font_weight >= 600 ? 'bold' : 'normal',
+                    fontStyle: f.italic ? 'italic' : 'normal',
+                    fill: f.color,
+                    name: 'field_' + f.field_key,
+                    fieldKey: f.field_key,
+                    fieldLabel: labelMap[f.field_key] || f.field_key,
+                    editable: true,
+                    fixed: f.is_static,
+                });
+                canvas.add(txt);
+            });
+
+            // QR placeholder rectangle
+            if (page.qr_area) {
+                const rect = new fabric.Rect({
+                    left: page.qr_area.x_pt * (canvasWidth / page.width_pt),
+                    top:  page.qr_area.y_pt * (canvasHeight / page.height_pt),
+                    width:  page.qr_area.w_pt * (canvasWidth / page.width_pt),
+                    height: page.qr_area.h_pt * (canvasHeight / page.height_pt),
+                    fill: 'rgba(255,255,255,0.95)',
+                    stroke: '#2d13ea',
+                    strokeDashArray: [6, 4],
+                    strokeWidth: 2,
+                    name: 'field_qr_code',
+                    fieldKey: 'qr_code',
+                    fieldLabel: 'QR Code',
+                });
+                rect.toObject = (function(o){return function(p){return Object.assign(o.call(this,p),{fieldKey:this.fieldKey,fieldLabel:this.fieldLabel,name:this.name});};})(rect.toObject);
+                canvas.add(rect);
+            }
+
+            scaleCanvas();
+            canvas.renderAll();
+            if (typeof updateFieldList === 'function') updateFieldList();
+        });
+    }
+
+    function renderSideSwitcher(pages) {
+        let bar = document.getElementById('pdf-side-switcher');
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = 'pdf-side-switcher';
+            bar.className = 'flex items-center gap-2 px-4 py-1.5 bg-blue-50 border-b border-blue-100 text-xs';
+            const tools = document.querySelector('#bg-upload').closest('.flex').parentNode;
+            tools.parentNode.insertBefore(bar, tools.nextSibling);
+        }
+        bar.innerHTML = '<span class="font-semibold text-blue-900">PDF imported:</span> ' +
+            pages.map((p, i) =>
+                `<button data-side="${i}" class="pdf-side-btn px-2 py-1 rounded ${i===activePageIndex?'bg-blue-600 text-white':'bg-white text-blue-700 hover:bg-blue-100'}">${p.side} (page ${p.page_number}, ${p.fields.length} fields)</button>`
+            ).join(' ');
+        bar.querySelectorAll('.pdf-side-btn').forEach(b => {
+            b.addEventListener('click', () => {
+                activePageIndex = parseInt(b.dataset.side, 10);
+                loadPageOntoCanvas(importedPages[activePageIndex]);
+                renderSideSwitcher(importedPages);
+            });
+        });
+    }
+
+    function renderMissingFontsBanner(missing) {
+        let bar = document.getElementById('missing-fonts-banner');
+        if (missing.length === 0) {
+            if (bar) bar.remove();
+            return;
+        }
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = 'missing-fonts-banner';
+            bar.className = 'flex items-center gap-3 px-4 py-2 bg-amber-50 border-b border-amber-200 text-xs';
+            const switcher = document.getElementById('pdf-side-switcher');
+            (switcher || document.querySelector('#bg-upload').closest('.flex').parentNode).after(bar);
+        }
+        bar.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-600"></i>' +
+            '<span class="font-semibold text-amber-900">Missing fonts:</span>' +
+            missing.map(f => `<span class="px-2 py-0.5 bg-amber-200 text-amber-900 rounded font-mono">${f.family}</span>`).join('') +
+            '<label class="ml-auto cursor-pointer bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded">' +
+            '<i class="fa-solid fa-upload mr-1"></i>Upload .ttf / .otf' +
+            '<input type="file" id="font-upload-input" accept=".ttf,.otf,.woff,.woff2" multiple class="hidden">' +
+            '</label>';
+        bar.querySelector('#font-upload-input').addEventListener('change', async function(e) {
+            const fd = new FormData();
+            for (const f of e.target.files) fd.append('fonts[]', f);
+            const res = await fetch(basePath + 'printshop/upload_fonts.php', { method: 'POST', body: fd, credentials: 'same-origin' });
+            const data = await res.json();
+            if (data.uploaded) {
+                bar.innerHTML = '<i class="fa-solid fa-check text-green-600"></i><span class="text-green-900">' + data.uploaded.length + ' font(s) uploaded. Reload to apply.</span>';
+            } else {
+                bar.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-red-600"></i>' + (data.error || 'Upload failed');
+            }
+        });
+    }
 
     // ── Field tracking ──
     let fieldCounter = {};

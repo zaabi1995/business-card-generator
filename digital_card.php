@@ -409,7 +409,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     <?php if ($frontImage): ?>
     <meta property="og:image" content="<?php echo htmlspecialchars($frontImage); ?>">
     <?php endif; ?>
-    <link rel="icon" href="<?php echo $logoPath ? htmlspecialchars($logoPath) : '/favicon.svg'; ?>">
+    <link rel="icon" type="image/png" href="<?php echo (!empty($theme['favicon_path'])) ? htmlspecialchars(cardifyAssetUrl($theme['favicon_path'])) : ($logoPath ? htmlspecialchars($logoPath) : '/favicon.svg'); ?>">
     <?php if ($isRtl): ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
