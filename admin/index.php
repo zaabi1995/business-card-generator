@@ -2692,15 +2692,31 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
             
             selectTemplate: function(template, options) {
                 if (!template) return Promise.resolve();
-                
-                // Ensure fields exist with defaults
+
+                // Ensure fields exist with defaults. Templates imported from
+                // a PDF have already gone through the click-to-bind review,
+                // so anything the user didn't explicitly map should NOT be
+                // rendered on the canvas. We still merge the default field
+                // shapes (font size, alignment, etc.) so the field-settings
+                // UI can expose them, but every injected default lands
+                // disabled so the editor's auto-render skips them.
                 var defaultFields = <?php echo json_encode(getDefaultFieldSettings(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+                var isImported = template.settings && template.settings.imported_from === 'pdf';
                 if (!template.fields) {
                     template.fields = JSON.parse(JSON.stringify(defaultFields));
+                    if (isImported) {
+                        for (var dk in template.fields) {
+                            if (Object.prototype.hasOwnProperty.call(template.fields, dk)) {
+                                template.fields[dk].enabled = false;
+                            }
+                        }
+                    }
                 } else {
                     for (var key in defaultFields) {
                         if (!template.fields[key]) {
-                            template.fields[key] = JSON.parse(JSON.stringify(defaultFields[key]));
+                            var clone = JSON.parse(JSON.stringify(defaultFields[key]));
+                            if (isImported) clone.enabled = false;
+                            template.fields[key] = clone;
                         }
                     }
                 }
