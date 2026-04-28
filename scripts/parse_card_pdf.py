@@ -315,6 +315,22 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
         # ── 3. Detect QR placeholder area ──
         qr_area = detect_qr_area(page, text_bboxes_for_redaction)
 
+        # Mark fields whose centre is inside the QR placeholder as static.
+        # These are decorative captions like "QR Code, to save the contact"
+        # that the designer dropped on top of the QR square; they must not be
+        # rendered as employee-data placeholders on the portal.
+        if qr_area:
+            qx0 = qr_area['x_pt']
+            qy0 = qr_area['y_pt']
+            qx1 = qx0 + qr_area['w_pt']
+            qy1 = qy0 + qr_area['h_pt']
+            for f in fields:
+                cx = f['x_pt'] + f['w_pt'] / 2.0
+                cy = f['y_pt'] + f['h_pt'] / 2.0
+                if qx0 <= cx <= qx1 and qy0 <= cy <= qy1:
+                    f['is_static'] = True
+                    f['field_key'] = 'company_tagline'
+
         # ── 4. Render background WITHOUT the detected text ──
         # Strategy: render full page at 300 DPI, then mask out text bboxes.
         # PyMuPDF redaction would alter the PDF; simpler: render full, then

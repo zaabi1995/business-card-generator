@@ -156,6 +156,93 @@ $result['original_filename'] = $origName;
 // Only do this when the upload has a company context (i.e. company admins
 // onboarding their tenant; print-shop uploads stay separate).
 $companyId = function_exists('getCurrentCompanyId') ? getCurrentCompanyId() : null;
+
+/**
+ * Translate parser output (array of fields, px at 300 DPI, raw font names)
+ * into the dict-shaped fields_json the editor + portal expect:
+ *   { "name_en": { enabled, x, y, width, fontSize, fontFamily, fill, ... },
+ *     "email":   { ... }, "qr_code": { x, y, size }, "static_1": { is_static, text, ... } }
+ *
+ * Disambiguates duplicate typed keys (two M-phones, two custom blocks) by
+ * suffixing _2, _3, ... so nothing is silently dropped.
+ *
+ * Static spans (decorative captions like "QR Code, to save the contact",
+ * "Follow us") become static_N so the portal renders their detected_text
+ * verbatim instead of looking up employee data.
+ */
+function cardify_translate_fields(array $page): array {
+    $out = [];
+    $usedKeys = [];
+
+    $deriveKey = function ($base, $detected) {
+        $t = ltrim((string)$detected);
+        if ($base === 'mobile' && strlen($t) >= 2) {
+            $first = strtoupper(substr($t, 0, 1));
+            if ($first === 'T') return 'phone';
+            if ($first === 'F') return 'fax';
+            return 'mobile';
+        }
+        return $base;
+    };
+
+    $staticIdx = 0;
+    foreach (($page['fields'] ?? []) as $f) {
+        $base = $f['field_key'] ?? 'custom';
+        // Treat unclassified spans as decorative static text. The parser only
+        // labels something `custom` when no typed pattern matched, which on a
+        // business card almost always means brand/tagline ornament (e.g.
+        // "An Omantel Company"). Rendering verbatim keeps the design faithful
+        // to the source PDF.
+        $isStatic = !empty($f['is_static']) || $base === 'custom';
+        if ($isStatic) {
+            $staticIdx++;
+            $key = 'static_' . $staticIdx;
+        } else {
+            $key = $deriveKey($base, $f['detected_text'] ?? '');
+        }
+
+        if (isset($usedKeys[$key])) {
+            $usedKeys[$key]++;
+            $key = $key . '_' . $usedKeys[$key];
+        } else {
+            $usedKeys[$key] = 1;
+        }
+
+        $out[$key] = [
+            'enabled'       => true,
+            'is_static'     => $isStatic,
+            'detected_text' => $f['detected_text'] ?? '',
+            'x'             => (int)($f['x_px'] ?? 0),
+            'y'             => (int)($f['y_px'] ?? 0),
+            'width'         => (int)($f['w_px'] ?? 0),
+            'height'        => (int)($f['h_px'] ?? 0),
+            'fontSize'      => (int)($f['font_size_px'] ?? 14),
+            'fontFamily'    => $f['font_family'] ?? 'Inter',
+            'fontWeight'    => isset($f['font_weight']) && (int)$f['font_weight'] >= 600 ? 'bold' : 'normal',
+            'italic'        => !empty($f['italic']),
+            'fill'          => $f['color'] ?? '#222222',
+            'color'         => $f['color'] ?? '#222222',
+            'textAlign'     => $f['align'] ?? 'left',
+            'originX'       => 'left',
+            'originY'       => 'top',
+        ];
+    }
+
+    if (!empty($page['qr_area'])) {
+        $qa = $page['qr_area'];
+        $scale = 300.0 / 72.0;
+        $size = (int)round(min((float)$qa['w_pt'], (float)$qa['h_pt']) * $scale);
+        $out['qr_code'] = [
+            'enabled' => true,
+            'x'       => (int)round((float)$qa['x_pt'] * $scale),
+            'y'       => (int)round((float)$qa['y_pt'] * $scale),
+            'size'    => $size > 0 ? $size : 140,
+        ];
+    }
+
+    return $out;
+}
+
 if ($companyId && in_array($user['role'] ?? '', ['admin', 'company_admin', 'company'], true)) {
     try {
         $db = Database::getInstance();
@@ -165,6 +252,37 @@ if ($companyId && in_array($user['role'] ?? '', ['admin', 'company_admin', 'comp
             $tplId = function_exists('generateUUID') ? generateUUID() : bin2hex(random_bytes(16));
             $side = ($page['page_number'] ?? 1) === 1 ? 'front' : 'back';
             $bgPath = !empty($page['background_url']) ? $page['background_url'] : null;
+
+            // Field schema translation: parser array -> portal dict, with
+            // disambiguated keys, qr_code synthesized from qr_area, and
+            // numeric coordinates stored at the parser's render DPI (300).
+            $fieldsDict = cardify_translate_fields($page);
+
+            // Collect unique font families so the portal can preload them
+            // via Google Fonts rather than falling back to Arial.
+            $fontFamilies = [];
+            foreach ($fieldsDict as $f) {
+                if (!empty($f['fontFamily'])) {
+                    $fontFamilies[$f['fontFamily']] = true;
+                }
+            }
+
+            // The portal computes canvas dims from settings.customWidth +
+            // dpi. Store the page size in pt at 300 DPI so the canvas
+            // exactly matches the field coordinates the parser emitted.
+            $settings = [
+                'customWidth'   => $page['width_pt'] ?? null,
+                'customHeight'  => $page['height_pt'] ?? null,
+                'customUnit'    => 'pt',
+                'dpi'           => 300,
+                'width_pt'      => $page['width_pt'] ?? null,
+                'height_pt'     => $page['height_pt'] ?? null,
+                'qr_area'       => $page['qr_area'] ?? null,
+                'fonts_used'    => array_keys($fontFamilies),
+                'imported_from' => 'pdf',
+                'import_token'  => $token,
+            ];
+
             $db->insert('templates', [
                 'id'                    => $tplId,
                 'company_id'            => $companyId,
@@ -174,12 +292,8 @@ if ($companyId && in_array($user['role'] ?? '', ['admin', 'company_admin', 'comp
                 'background_image_path' => $bgPath,
                 'original_pdf_path'     => $outRel . '/source.pdf',
                 'original_pdf_page'     => (int)($page['page_number'] ?? 1),
-                'fields_json'           => json_encode($page['fields'] ?? [], JSON_UNESCAPED_UNICODE),
-                'settings_json'         => json_encode([
-                    'width_pt' => $page['width_pt'] ?? null,
-                    'height_pt' => $page['height_pt'] ?? null,
-                    'qr_area' => $page['qr_area'] ?? null,
-                ], JSON_UNESCAPED_UNICODE),
+                'fields_json'           => json_encode($fieldsDict, JSON_UNESCAPED_UNICODE),
+                'settings_json'         => json_encode($settings, JSON_UNESCAPED_UNICODE),
                 'is_active'             => 1,
                 'description'           => 'Auto-imported from ' . $origName,
             ]);

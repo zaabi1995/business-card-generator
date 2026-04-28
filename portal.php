@@ -500,6 +500,42 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cairo:wght@300;400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
 
+    <?php
+    // Imported PDF templates can reference any number of font families
+    // (Sora, Lato, Work Sans, etc). Without these loaded the Fabric preview
+    // falls back to Arial and the design looks completely wrong.
+    $importedFonts = [];
+    foreach ([$activeFrontTemplate, $activeBackTemplate] as $tpl) {
+        if ($tpl && !empty($tpl['settings']['fonts_used'])) {
+            foreach ($tpl['settings']['fonts_used'] as $fam) {
+                $fam = trim((string)$fam);
+                if ($fam !== '') $importedFonts[$fam] = true;
+            }
+        }
+    }
+    // Whitelist Google-Fonts-hosted families (anything else likely needs a
+    // commercial license, so we only auto-load these).
+    $googleFontWhitelist = [
+        'Sora', 'Lato', 'Work Sans', 'Inter', 'Roboto', 'Open Sans', 'Montserrat',
+        'Poppins', 'Raleway', 'Oswald', 'Merriweather', 'Playfair Display',
+        'Noto Sans', 'Noto Serif', 'Noto Sans Arabic', 'Noto Kufi Arabic',
+        'Cairo', 'Tajawal', 'Amiri', 'Reem Kufi', 'Changa', 'IBM Plex Sans',
+    ];
+    $loadFams = [];
+    foreach ($importedFonts as $fam => $_) {
+        foreach ($googleFontWhitelist as $g) {
+            if (strcasecmp($fam, $g) === 0) { $loadFams[] = $g; break; }
+        }
+    }
+    if (!empty($loadFams)) {
+        $loadFams = array_values(array_unique($loadFams));
+        $famParts = array_map(function($f){
+            return 'family=' . str_replace(' ', '+', $f) . ':wght@300;400;500;600;700';
+        }, $loadFams);
+        echo '<link href="https://fonts.googleapis.com/css2?' . implode('&', $famParts) . '&display=swap" rel="stylesheet">' . "\n";
+    }
+    ?>
+
     <!-- Myriad Pro (matches admin designer so Fabric preview renders the same face) -->
     <style>
         @font-face { font-family: 'Myriad Pro'; font-weight: 300; src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-Light.otf') format('opentype'); font-display: swap; }
@@ -1720,7 +1756,36 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         if (template && template.fields) {
             for (const [key, field] of Object.entries(template.fields)) {
                 if (!field.enabled) continue;
-                
+
+                // Static / decorative spans imported from a PDF (e.g.,
+                // "QR Code, to save the contact", "Follow us") are
+                // rendered verbatim from detected_text, not looked up
+                // against employee data. They keep their original
+                // position, font, weight, size, and colour.
+                if (field.is_static) {
+                    const txt = (field.detected_text || '').trim();
+                    if (!txt) continue;
+                    const t = new fabric.Text(txt, {
+                        left: field.x || 0,
+                        top: field.y || 0,
+                        fontSize: field.fontSize || 14,
+                        fontFamily: field.fontFamily || 'Inter',
+                        fontWeight: field.fontWeight || 'normal',
+                        fontStyle: field.italic ? 'italic' : 'normal',
+                        fill: field.fill || field.color || '#222',
+                        textAlign: field.textAlign || 'left',
+                        originX: field.originX || 'left',
+                        originY: field.originY || 'top',
+                        selectable: false,
+                        evented: false,
+                        hasControls: false,
+                        hasBorders: false,
+                        hoverCursor: 'default',
+                    });
+                    editor.canvas.add(t);
+                    continue;
+                }
+
                 // Handle QR code separately, use the employee's own vCard URL
                 // so the QR is dynamic per person. Lock it against user movement
                 // on the portal preview (designer is the only place to reposition).
