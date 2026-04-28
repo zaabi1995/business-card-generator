@@ -21,7 +21,11 @@ header('Content-Type: application/json');
 
 Auth::requireLogin();
 $user = Auth::getCurrentUser();
-if ($user['role'] !== 'print_shop' && $user['role'] !== 'super_admin') {
+// Allow print shops, super admins, and any company admin onboarding
+// their tenant. Each upload is namespaced by the random token below
+// so company A can't read company B's import directory.
+$allowedRoles = ['print_shop', 'super_admin', 'admin', 'company_admin', 'company'];
+if (!in_array($user['role'], $allowedRoles, true)) {
     http_response_code(403);
     echo json_encode(['error' => 'forbidden']);
     exit;
