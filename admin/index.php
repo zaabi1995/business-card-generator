@@ -2911,23 +2911,37 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                 this.refreshPreviewText();
             },
             
-            // Refresh preview text on canvas with current sample data
+            // Refresh preview text on canvas with current sample data.
+            // Static fields (brand decoration imported from a PDF) keep
+            // their detected_text on every profile cycle so the design
+            // never drifts when the user previews different employees.
             refreshPreviewText: function() {
                 if (!this.cardEditor || !this.selectedTemplate) return;
-                
-                var self = this;
+
                 var fields = this.cardEditor.getFields();
-                
+                var tplFields = (this.selectedTemplate && this.selectedTemplate.fields) || {};
+
                 for (var key in fields) {
                     var fieldObj = fields[key];
-                    if (fieldObj && fieldObj.fieldType === 'text') {
-                        var newText = this.getSampleText(key);
-                        fieldObj.set('text', newText);
-                        fieldObj.set('dirty', true);
-                        fieldObj.setCoords();
+                    if (!fieldObj || fieldObj.fieldType !== 'text') continue;
+                    var tplField = tplFields[key];
+
+                    var newText;
+                    if (tplField && tplField.is_static) {
+                        newText = (tplField.detected_text || '').trim();
+                    } else {
+                        var sample = this.getSampleText(key);
+                        newText = (sample && sample !== key)
+                            ? sample
+                            : (tplField && (tplField.detected_text || '').trim()) || '';
                     }
+                    if (!newText) continue;
+
+                    fieldObj.set('text', newText);
+                    fieldObj.set('dirty', true);
+                    fieldObj.setCoords();
                 }
-                
+
                 this.cardEditor.canvas.requestRenderAll();
             },
             
@@ -3047,14 +3061,27 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                             var fontFamily = field.fontFamily || (key.endsWith('_ar') ? 'Cairo' : 'Inter');
                             var fill = field.fill || field.color || '#333333';
                             
+                            // Static / decoration fields keep their detected text
+                            // verbatim across every employee preview.
+                            var fieldText;
+                            if (field.is_static) {
+                                fieldText = (field.detected_text || '').trim();
+                            } else {
+                                var sm = this.getSampleText(key);
+                                fieldText = (sm && sm !== key)
+                                    ? sm
+                                    : (field.detected_text || '').trim();
+                            }
+                            if (!fieldText) continue;
+
                             this.cardEditor.addTextField(key, {
-                                text: this.getSampleText(key),
+                                text: fieldText,
                                 x: x,
                                 y: y,
                                 fontSize: fontSize,
                                 fontFamily: fontFamily,
                                 fontWeight: field.fontWeight || 'normal',
-                                fontStyle: field.fontStyle || 'normal',
+                                fontStyle: field.fontStyle || (field.italic ? 'italic' : 'normal'),
                                 fill: fill,
                                 textAlign: textAlign,
                                 originX: originX
