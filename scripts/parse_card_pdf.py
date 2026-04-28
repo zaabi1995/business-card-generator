@@ -241,11 +241,21 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
                 continue
             for line in block['lines']:
                 for span in line['spans']:
-                    text = span['text'].strip()
-                    if not text:
+                    raw = span['text']
+                    if not raw or raw.strip() == '':
                         continue
+                    # Keep the original whitespace from PyMuPDF. The bbox
+                    # PyMuPDF returns covers the full visual extent of the
+                    # span including any trailing space. If we strip the
+                    # text but keep the bbox, the rendered word ends short
+                    # of the bbox edge, and adjacent same-line words like
+                    # "An ", "Omantel ", "Company" end up visually touching
+                    # because each renders only the stripped text starting
+                    # at its bbox.left, with no trailing space to push the
+                    # next word away. Preserving whitespace fixes the
+                    # spacing without needing colour-aware merging.
                     spans.append({
-                        'text': text,
+                        'text': raw,
                         'bbox': span['bbox'],          # (x0, y0, x1, y1) in pt
                         'font': span['font'],
                         'size': span['size'],
