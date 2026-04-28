@@ -415,12 +415,13 @@ if ($companyId && DatabaseAdapter::useDatabase()) {
 }
 $_inCompanyCtx = defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug']);
 $_ext = $_inCompanyCtx ? '' : '.php';
+// Aligned to the 3-step onboarding (Brand -> Card design -> Launch).
+// Once all three are checked the whole checklist auto-hides via $checklistAllDone.
+$hasCardDesign = !empty($companyTheme['card_design_path']) || $hasTemplate;
 $checklistSteps = [
-    ['done' => true,             'label' => 'Create your account',          'url' => null],
-    ['done' => $hasTemplate, 'label' => 'Upload logo & pick a template', 'url' => $onboardingCompleted ? '#template-editor' : getBasePath() . 'onboarding.php'],
+    ['done' => $hasLogo,         'label' => 'Upload your logo',              'url' => getBasePath() . 'onboarding.php'],
+    ['done' => $hasCardDesign,   'label' => 'Upload your card design',       'url' => getBasePath() . 'onboarding.php'],
     ['done' => $hasEmployee,     'label' => 'Add your first employee',       'url' => getAdminBasePath() . 'employees' . $_ext],
-    ['done' => $hasGeneratedCard,'label' => 'Generate your first card',      'url' => getAdminBasePath() . 'batch_generate' . $_ext],
-    ['done' => $hasPrintOrder,   'label' => 'Order physical business cards', 'url' => getAdminBasePath() . 'print' . $_ext],
 ];
 $checklistAllDone = array_reduce($checklistSteps, fn($carry, $s) => $carry && $s['done'], true);
 $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
@@ -655,7 +656,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
         </div>
         <div>
             <p class="font-semibold text-amber-900 text-sm"><?= htmlspecialchars(t('dashboard.complete_setup')) ?></p>
-            <p class="text-amber-700 text-xs mt-0.5">Upload your logo and pick a card template to get started in 2 minutes.</p>
+            <p class="text-amber-700 text-xs mt-0.5">Upload your logo and (optionally) your card design PDF, three quick steps.</p>
         </div>
     </div>
     <a href="<?= getBasePath() ?>onboarding.php" class="flex-shrink-0 bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-all whitespace-nowrap">

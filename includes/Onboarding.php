@@ -2,7 +2,7 @@
 /**
  * Onboarding state helper, thin wrapper around `company_onboarding` table.
  *
- * Records a company's progress through the 7-step setup wizard:
+ * Records a company's progress through the 3-step setup wizard:
  *   1. logo
  *   2. colors
  *   3. template
