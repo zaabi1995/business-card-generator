@@ -85,6 +85,11 @@ if (!move_uploaded_file($tmp, $logoPath)) {
 // Extract palette
 $palette = LogoPalette::extract($logoPath);
 
+// Generate a square favicon from the same logo so the browser tab + share
+// previews use a clean square brand mark instead of the rectangular logo.
+$faviconAbs = LogoPalette::generateFavicon($logoPath, $companyDir);
+$faviconRel = $faviconAbs ? '/uploads/companies/' . $companyId . '/favicon.png' : null;
+
 // Persist into company_themes (upsert)
 $db = Database::getInstance();
 $existing = $db->fetchOne("SELECT id FROM company_themes WHERE company_id = :id LIMIT 1", ['id' => $companyId]);
@@ -95,6 +100,9 @@ $themeData = [
     'logo_path'       => '/uploads/companies/' . $companyId . '/logo.' . $ext,
     'updated_at'      => date('Y-m-d H:i:s'),
 ];
+if ($faviconRel) {
+    $themeData['favicon_path'] = $faviconRel;
+}
 
 if ($existing) {
     $db->update('company_themes', $themeData, 'id = :id', ['id' => $existing['id']]);
@@ -111,10 +119,14 @@ $slug = $company['slug'] ?? '';
 $tenantUrl = $slug !== '' && function_exists('getTenantUrl') ? getTenantUrl($slug) : null;
 
 echo json_encode([
-    'ok'         => true,
-    'logo_url'   => $themeData['logo_path'],
-    'primary'    => $palette['primary'],
-    'secondary'  => $palette['secondary'],
-    'accent'     => $palette['accent'],
-    'tenant_url' => $tenantUrl,
+    'ok'           => true,
+    'logo_url'     => $themeData['logo_path'],
+    'favicon_url'  => $faviconRel,
+    'primary'      => $palette['primary'],
+    'secondary'    => $palette['secondary'],
+    'accent'       => $palette['accent'],
+    'tenant_url'   => $tenantUrl,
+    'portal_url'   => $tenantUrl ? rtrim($tenantUrl, '/') . '/' : null,
+    'login_url'    => $tenantUrl ? rtrim($tenantUrl, '/') . '/login' : null,
+    'company_name' => $db->fetchOne('SELECT name FROM companies WHERE id = :id', ['id' => $companyId])['name'] ?? '',
 ], JSON_UNESCAPED_SLASHES);

@@ -259,4 +259,77 @@ class LogoPalette
             (int) round($b * 255),
         ];
     }
+
+    /**
+     * Build a square favicon (PNG, 256x256) from an existing logo file.
+     * If the logo has whitespace around it, we crop to non-transparent
+     * pixels first, then center-pad onto a square canvas. Result is suitable
+     * for /favicon.png and OS tab rendering at 16, 32, 48px.
+     *
+     * Returns the absolute path written, or null on failure.
+     */
+    public static function generateFavicon(string $logoPath, string $outDir): ?string
+    {
+        if (!is_file($logoPath)) return null;
+        @mkdir($outDir, 0755, true);
+
+        $img = self::loadAsGd($logoPath);
+        if (!$img) return null;
+
+        $w = imagesx($img); $h = imagesy($img);
+
+        // Crop to non-transparent bounding box so a logo with margins
+        // becomes a tighter square. This keeps the favicon legible at 16px.
+        $minX = $w; $minY = $h; $maxX = 0; $maxY = 0;
+        for ($y = 0; $y < $h; $y++) {
+            for ($x = 0; $x < $w; $x++) {
+                $rgba = imagecolorat($img, $x, $y);
+                $a = ($rgba >> 24) & 0x7F;
+                if ($a < 100) {  // not fully transparent
+                    if ($x < $minX) $minX = $x;
+                    if ($y < $minY) $minY = $y;
+                    if ($x > $maxX) $maxX = $x;
+                    if ($y > $maxY) $maxY = $y;
+                }
+            }
+        }
+        if ($minX >= $maxX || $minY >= $maxY) {
+            $minX = 0; $minY = 0; $maxX = $w - 1; $maxY = $h - 1;
+        }
+        $cropW = $maxX - $minX + 1;
+        $cropH = $maxY - $minY + 1;
+
+        $size = 256;
+        // Square canvas larger of the two with 8% padding inside.
+        $longSide = max($cropW, $cropH);
+        $padded = (int) round($longSide * 1.16);
+
+        $canvas = imagecreatetruecolor($padded, $padded);
+        imagealphablending($canvas, false);
+        imagesavealpha($canvas, true);
+        $transparent = imagecolorallocatealpha($canvas, 255, 255, 255, 127);
+        imagefill($canvas, 0, 0, $transparent);
+
+        $offX = (int) round(($padded - $cropW) / 2);
+        $offY = (int) round(($padded - $cropH) / 2);
+        imagecopyresampled(
+            $canvas, $img,
+            $offX, $offY, $minX, $minY,
+            $cropW, $cropH, $cropW, $cropH
+        );
+        imagedestroy($img);
+
+        $final = imagecreatetruecolor($size, $size);
+        imagealphablending($final, false);
+        imagesavealpha($final, true);
+        imagefill($final, 0, 0, imagecolorallocatealpha($final, 255, 255, 255, 127));
+        imagecopyresampled($final, $canvas, 0, 0, 0, 0, $size, $size, $padded, $padded);
+        imagedestroy($canvas);
+
+        $faviconPath = rtrim($outDir, '/') . '/favicon.png';
+        $ok = imagepng($final, $faviconPath, 9);
+        imagedestroy($final);
+        return $ok ? $faviconPath : null;
+    }
+
 }
