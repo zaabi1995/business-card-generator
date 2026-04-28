@@ -81,6 +81,7 @@ foreach ($previewLayoutMap as $tplKey => $layoutId) {
 $csrf = generateCSRFToken();
 $saveUrl = getAdminBasePath() . 'onboarding-save' . ((defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php');
 $dashboardUrl = getAdminBasePath() . 'index' . ((defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php');
+$printUrl     = getAdminBasePath() . 'print' . ((defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php');
 
 adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding');
 ?>
@@ -114,6 +115,7 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
          "csrf" => $csrf,
          "saveUrl" => $saveUrl,
          "dashboardUrl" => $dashboardUrl,
+         "printUrl" => $printUrl,
          "companyName" => $companyName,
          "companySlug" => $companySlug,
      ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)'
@@ -261,6 +263,7 @@ function onboarding(init) {
         csrf: init.csrf,
         saveUrl: init.saveUrl,
         dashboardUrl: init.dashboardUrl,
+        printUrl: init.printUrl,
         companyName: init.companyName,
         companySlug: init.companySlug,
         saving: false,
@@ -470,8 +473,7 @@ function onboarding(init) {
                     // the real print-order form with qty pre-filled.
                     const qty = Math.max(0, parseInt(this.data.order_cards.per_person || 0));
                     if (qty >= <?= (int) CardPrintPricing::MIN_QTY ?>) {
-                        const base = this.dashboardUrl.replace(/index\.php.*$/, '') + 'print.php';
-                        window.location.href = base + '?tab=create&wizard=done&qty=' + qty;
+                        window.location.href = this.printUrl + '?tab=create&wizard=done&qty=' + qty;
                         return;
                     }
                     const q = json.import && json.import.invites_sent > 0
