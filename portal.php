@@ -743,7 +743,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         <?php if (function_exists('currentLocale') && file_exists(INCLUDES_DIR . '/lang-switcher.php')): ?>
                             <?php require INCLUDES_DIR . '/lang-switcher.php'; ?>
                         <?php endif; ?>
-                        <a href="<?php echo getBasePath() . $companySlug; ?>/admin/login" class="inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 font-medium">
+                        <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/admin/login'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 font-medium">
                             <i class="fa-solid fa-lock"></i><span><?= htmlspecialchars(t('portal.admin_login')) ?></span>
                         </a>
                     </div>
@@ -762,7 +762,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('cardportal.portal_disabled_h2')) ?></h2>
                 <p class="text-gray-600"><?= htmlspecialchars(t('cardportal.portal_disabled_body')) ?></p>
                 <p class="mt-4">
-                    <a href="<?php echo getBasePath() . $companySlug; ?>" class="text-blue-600 hover:text-blue-700 font-medium">
+                    <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/'), ENT_QUOTES, 'UTF-8') ?>" class="text-blue-600 hover:text-blue-700 font-medium">
                         <i class="fa-solid fa-arrow-left mr-1"></i> <?= htmlspecialchars(t('cardportal.back_to_company')) ?>
                     </a>
                 </p>
@@ -821,7 +821,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 </form>
                 
                 <div class="px-6 pb-6 text-center">
-                    <a href="<?php echo getBasePath() . $companySlug; ?>" class="text-sm text-gray-500 hover:text-gray-700">
+                    <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/'), ENT_QUOTES, 'UTF-8') ?>" class="text-sm text-gray-500 hover:text-gray-700">
                         <i class="fa-solid fa-arrow-left mr-1"></i> <?= htmlspecialchars(t('cardportal.back_to_company')) ?>
                     </a>
                 </div>
@@ -1417,8 +1417,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         </p>
                     </div>
                     <div class="flex items-center gap-6 text-sm text-gray-500">
-                        <a href="<?php echo getBasePath() . $companySlug; ?>" class="hover:text-gray-700">Home</a>
-                        <a href="<?php echo getBasePath() . $companySlug; ?>/admin/login" class="hover:text-gray-700">Admin Login</a>
+                        <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/'), ENT_QUOTES, 'UTF-8') ?>" class="hover:text-gray-700">Home</a>
+                        <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/admin/login'), ENT_QUOTES, 'UTF-8') ?>" class="hover:text-gray-700">Admin Login</a>
                         <span class="text-gray-300">|</span>
                         <span>Powered by <a href="<?php echo getBasePath(); ?>" class="text-blue-600 hover:underline">Cardify</a></span>
                     </div>

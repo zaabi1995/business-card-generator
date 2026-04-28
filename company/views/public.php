@@ -143,7 +143,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <a href="<?php echo getBasePath() . $companySlug; ?>/admin/login" 
+                    <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/admin/login'), ENT_QUOTES, 'UTF-8') ?>" 
                        class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 font-medium">
                         <i class="fa-solid fa-lock mr-1.5"></i>Admin
                     </a>
@@ -174,7 +174,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </p>
                     
                     <div class="flex flex-col sm:flex-row gap-4 mb-8">
-                        <a href="<?php echo getBasePath() . $companySlug; ?>/portal" 
+                        <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/portal'), ENT_QUOTES, 'UTF-8') ?>" 
                            class="px-8 py-4 btn-primary rounded-xl font-semibold text-lg text-center shadow-lg">
                             <i class="fa-solid fa-plus mr-2"></i>Request My Card
                         </a>
@@ -339,7 +339,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <p class="text-blue-100 mb-8 max-w-lg mx-auto">
                             Join your colleagues at <?php echo $companyName; ?> with a professional business card that represents your role.
                         </p>
-                        <a href="<?php echo getBasePath() . $companySlug; ?>/portal" 
+                        <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/portal'), ENT_QUOTES, 'UTF-8') ?>" 
                            class="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 rounded-xl font-semibold text-lg hover:bg-blue-50 transition-colors shadow-lg">
                             <i class="fa-solid fa-arrow-right"></i>
                             Request My Business Card
@@ -359,8 +359,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 Powered by <a href="<?php echo getBasePath(); ?>" class="text-blue-600 hover:underline">Cardify</a>
             </p>
             <div class="flex items-center gap-5">
-                <a href="<?php echo getBasePath() . $companySlug; ?>/portal" class="hover:text-gray-700">Request Card</a>
-                <a href="<?php echo getBasePath() . $companySlug; ?>/admin/login" class="hover:text-gray-700">Admin</a>
+                <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/portal'), ENT_QUOTES, 'UTF-8') ?>" class="hover:text-gray-700">Request Card</a>
+                <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/admin/login'), ENT_QUOTES, 'UTF-8') ?>" class="hover:text-gray-700">Admin</a>
                 <a href="<?php echo getBasePath(); ?>privacy" class="hover:text-gray-700">Privacy</a>
             </div>
         </div>

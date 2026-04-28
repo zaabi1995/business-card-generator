@@ -460,15 +460,15 @@ function completeOnboarding() {
             // Show success screen then redirect
             goToStep('complete');
             setTimeout(function() {
-                window.location.href = data.redirect || '<?= getBasePath() ?><?= htmlspecialchars($companySlug) ?>/admin/';
+                window.location.href = data.redirect || '<?= htmlspecialchars(getTenantUrl($companySlug, '/admin/'), ENT_QUOTES, 'UTF-8') ?>';
             }, 1500);
         } else {
             // Even on error, redirect to admin
-            window.location.href = '<?= getBasePath() ?><?= htmlspecialchars($companySlug) ?>/admin/';
+            window.location.href = '<?= htmlspecialchars(getTenantUrl($companySlug, '/admin/'), ENT_QUOTES, 'UTF-8') ?>';
         }
     })
     .catch(function() {
-        window.location.href = '<?= getBasePath() ?><?= htmlspecialchars($companySlug) ?>/admin/';
+        window.location.href = '<?= htmlspecialchars(getTenantUrl($companySlug, '/admin/'), ENT_QUOTES, 'UTF-8') ?>';
     });
 }
 
@@ -477,7 +477,7 @@ function skipOnboarding() {
     var formData = new FormData();
     formData.append('action', 'skip_onboarding');
     formData.append('csrf_token', '<?= generateCSRFToken() ?>');
-    var adminUrl = '<?= getBasePath() ?><?= htmlspecialchars($companySlug) ?>/admin/';
+    var adminUrl = '<?= htmlspecialchars(getTenantUrl($companySlug, '/admin/'), ENT_QUOTES, 'UTF-8') ?>';
     fetch('<?= getBasePath() ?>api/onboarding.php', { method: 'POST', body: formData })
         .finally(function() { window.location.href = adminUrl; });
 }
