@@ -170,53 +170,8 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
             </label>
         </div>
 
-        <!-- Step 2: Colors -->
+        <!-- Step 2: First employee -->
         <div class="wizard-step" x-show="step === 2" x-cloak>
-            <h2 class="text-xl font-bold text-gray-900 mb-1"><?= htmlspecialchars(t('onboarding.step_colors')) ?></h2>
-            <p class="text-sm text-gray-500 mb-6"><?= htmlspecialchars(t('onboarding.step_colors_help')) ?></p>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.primary_color')) ?></label>
-                    <div class="wizard-color-row flex items-center gap-2">
-                        <input type="color" x-model="data.colors.primary" class="h-11 w-16 border border-gray-200 rounded-lg cursor-pointer">
-                        <input type="text" x-model="data.colors.primary" class="form-input flex-1 font-mono" dir="ltr">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.accent_color')) ?></label>
-                    <div class="wizard-color-row flex items-center gap-2">
-                        <input type="color" x-model="data.colors.accent" class="h-11 w-16 border border-gray-200 rounded-lg cursor-pointer">
-                        <input type="text" x-model="data.colors.accent" class="form-input flex-1 font-mono" dir="ltr">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Step 3: Template -->
-        <div class="wizard-step" x-show="step === 3" x-cloak>
-            <h2 class="text-xl font-bold text-gray-900 mb-1"><?= htmlspecialchars(t('onboarding.step_template')) ?></h2>
-            <p class="text-sm text-gray-500 mb-6"><?= htmlspecialchars(t('onboarding.step_template_help')) ?></p>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <?php foreach (['minimal','bold','classic'] as $tplKey): ?>
-                <button type="button" @click="data.template = <?= json_encode($tplKey) ?>"
-                        :class="data.template === <?= json_encode($tplKey) ?> ? 'ring-2 ring-blue-500 border-blue-300' : 'border-gray-200 hover:border-gray-300'"
-                        class="bg-white border rounded-xl p-4 text-left transition">
-                    <div class="aspect-[1050/600] rounded-lg mb-3 overflow-hidden bg-gray-100 relative">
-                        <div style="position:absolute;top:0;left:0;transform-origin:top left;transform:scale(0.22);pointer-events:none;">
-                            <?= $previewRenders[$tplKey] ?? '' ?>
-                        </div>
-                    </div>
-                    <p class="font-semibold text-gray-900 text-sm"><?= htmlspecialchars(t('onboarding.template_' . $tplKey)) ?></p>
-                </button>
-                <?php endforeach; ?>
-            </div>
-            <p class="mt-3 text-xs text-gray-500"><?= htmlspecialchars(t('onboarding.template_preview_hint')) ?></p>
-        </div>
-
-        <!-- Step 4: First employee -->
-        <div class="wizard-step" x-show="step === 4" x-cloak>
             <h2 class="text-xl font-bold text-gray-900 mb-1"><?= htmlspecialchars(t('onboarding.step_first_employee')) ?></h2>
             <p class="text-sm text-gray-500 mb-6"><?= htmlspecialchars(t('onboarding.step_first_employee_help')) ?></p>
 
@@ -240,8 +195,8 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
             </div>
         </div>
 
-        <!-- Step 5: Preview -->
-        <div class="wizard-step" x-show="step === 5" x-cloak>
+        <!-- Step 3: Preview / Launch -->
+        <div class="wizard-step" x-show="step === 3" x-cloak>
             <h2 class="text-xl font-bold text-gray-900 mb-1"><?= htmlspecialchars(t('onboarding.step_preview')) ?></h2>
             <p class="text-sm text-gray-500 mb-6"><?= htmlspecialchars(t('onboarding.step_preview_help')) ?></p>
 
@@ -264,70 +219,7 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
             </div>
         </div>
 
-        <!-- Step 6: Invite team -->
-        <div class="wizard-step" x-show="step === 6" x-cloak>
-            <h2 class="text-xl font-bold text-gray-900 mb-1"><?= htmlspecialchars(t('onboarding.step_invite_team')) ?></h2>
-            <p class="text-sm text-gray-500 mb-6"><?= htmlspecialchars(t('onboarding.step_invite_team_help')) ?></p>
-
-            <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.paste_list_label')) ?></label>
-            <textarea x-model="data.invite_team.paste" rows="6" class="form-input font-mono text-sm"
-                      :placeholder="<?= htmlspecialchars(json_encode(t('onboarding.paste_list_ph')), ENT_QUOTES) ?>"></textarea>
-            <p class="mt-1 text-xs"
-               :class="parsedPaste.errors.length ? 'text-amber-600' : 'text-green-600'"
-               x-show="parsedPaste.count || parsedPaste.errors.length"
-               x-text="pasteStatus()"></p>
-
-            <label class="block text-sm font-medium text-gray-700 mt-4 mb-2"><?= htmlspecialchars(t('onboarding.upload_csv_label')) ?></label>
-            <input type="file" accept=".csv,text/csv" class="form-input"
-                   @change="handleCsv($event)">
-            <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('onboarding.csv_headers_hint')) ?></p>
-
-            <div x-show="csvReport.total > 0 || csvReport.errors.length"
-                 x-cloak
-                 class="mt-4 text-xs rounded-lg border p-3"
-                 :class="csvReport.errors.length ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-green-200 bg-green-50 text-green-800'">
-                <p x-text="csvReport.summary"></p>
-                <ul class="mt-1 list-disc ps-5" x-show="csvReport.errors.length">
-                    <template x-for="err in csvReport.errors.slice(0, 5)" :key="err.row + ':' + err.msg">
-                        <li x-text="err.row + ': ' + err.msg"></li>
-                    </template>
-                </ul>
-            </div>
-        </div>
-
-        <!-- Step 7: Order -->
-        <div class="wizard-step" x-show="step === 7" x-cloak>
-            <h2 class="text-xl font-bold text-gray-900 mb-1"><?= htmlspecialchars(t('onboarding.step_order_cards')) ?></h2>
-            <p class="text-sm text-gray-500 mb-6"><?= htmlspecialchars(t('onboarding.step_order_cards_help')) ?></p>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.order_qty_label')) ?></label>
-                    <input type="number" min="0" step="50" x-model.number="data.order_cards.per_person" class="form-input" dir="ltr">
-                    <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('onboarding.order_min_qty')) ?></p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.order_per_card')) ?></label>
-                    <input type="text" readonly :value="pricePerCardLabel()" class="form-input bg-gray-50 font-mono text-sm" dir="ltr">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.order_estimate')) ?></label>
-                    <input type="text" readonly :value="estimateTotal()" class="form-input bg-gray-50 font-mono text-sm" dir="ltr">
-                </div>
-            </div>
-            <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600">
-                <p class="font-semibold mb-1"><?= htmlspecialchars(t('onboarding.order_tiers_title')) ?></p>
-                <ul class="space-y-0.5">
-                    <?php foreach (CardPrintPricing::TIERS as $minQty => $price): ?>
-                        <li dir="ltr"><?= (int) $minQty ?>+ cards, OMR <?= number_format((float) $price, 3) ?>/card</li>
-                    <?php endforeach; ?>
-                </ul>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- Nav -->
+        <!-- Nav -->
     <div class="flex items-center justify-between mt-6">
         <button type="button" @click="back()" x-show="step > 1"
                 class="wizard-nav-btn px-4 py-2 text-gray-600 hover:text-gray-900 font-medium">
@@ -513,19 +405,7 @@ function onboarding(init) {
                         this.data.colors.primary = json.extracted_color;
                     }
                 }
-                if (json.csv && this.step === 6) {
-                    const tpl  = <?= json_encode(t('onboarding.csv_parsed_summary')) ?>;
-                    const etpl = <?= json_encode(t('onboarding.csv_errors_summary')) ?>;
-                    let summary = tpl.replace(':n', json.csv.total || 0);
-                    if (json.csv.errors && json.csv.errors.length) {
-                        summary += ' · ' + etpl.replace(':n', json.csv.errors.length);
-                    }
-                    this.csvReport = {
-                        total: json.csv.total || 0,
-                        errors: json.csv.errors || [],
-                        summary,
-                    };
-                }
+
                 if (this.step < this.totalSteps) { this.step++; window.scrollTo({top:0,behavior:'smooth'}); }
                 else {
                     // If the admin picked a printed-card quantity at or
