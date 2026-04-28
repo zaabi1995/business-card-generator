@@ -623,6 +623,13 @@ function redirectToCompanyAdmin() {
     if ($companySlug) {
         $currentPage = basename($_SERVER['SCRIPT_NAME'], '.php');
         $path = '/admin/' . ($currentPage !== 'index' ? $currentPage : '');
+        // Don't loop: if we're already on the tenant subdomain, the URL is
+        // canonical, just continue rendering. Only redirect from the apex.
+        $currentHost = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+        $tenantHost  = strtolower($companySlug . '.' . cardifyApexHost());
+        if ($currentHost === $tenantHost) {
+            return;
+        }
         header('Location: ' . getTenantUrl($companySlug, $path));
         exit;
     }
