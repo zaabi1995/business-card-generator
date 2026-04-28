@@ -39,6 +39,18 @@ if (empty($_FILES['pdf']) || $_FILES['pdf']['error'] !== UPLOAD_ERR_OK) {
     exit;
 }
 
+// Hard limit: 25 MB. Stops abuse and matches typical card-art ceiling.
+$MAX_BYTES = 25 * 1024 * 1024;
+if ((int)$_FILES['pdf']['size'] > $MAX_BYTES) {
+    http_response_code(413);
+    echo json_encode([
+        'error' => 'pdf_too_large',
+        'max_mb' => $MAX_BYTES / (1024 * 1024),
+        'received_mb' => round((int)$_FILES['pdf']['size'] / (1024 * 1024), 2),
+    ]);
+    exit;
+}
+
 $tmp = $_FILES['pdf']['tmp_name'];
 $origName = $_FILES['pdf']['name'];
 

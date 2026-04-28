@@ -93,6 +93,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <i class="fa-solid fa-file-pdf mr-1"></i>Import from PDF
         </label>
         <input type="file" id="pdf-import-upload" accept="application/pdf,.pdf" class="hidden">
+        <a href="<?= htmlspecialchars(getBasePath() . 'uploads/docs/Cardify-PDF-Design-Guide.pdf') ?>" target="_blank" class="text-xs text-blue-700 hover:text-blue-900 underline" title="How to prepare a PDF so the import detects every field correctly">
+            <i class="fa-solid fa-circle-info mr-1"></i>How to prepare your PDF
+        </a>
         <span id="pdf-import-status" class="text-xs text-blue-600 hidden"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Analysing PDF...</span>
         <span class="text-xs text-gray-400" id="bg-filename">
             <?= htmlspecialchars($template && $template['background_path'] ? basename($template['background_path']) : t('printshoptpl.no_file_chosen')) ?>

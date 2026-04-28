@@ -208,6 +208,19 @@ def collect_fonts(installed_fonts_path):
 def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
     os.makedirs(output_dir, exist_ok=True)
     doc = fitz.open(pdf_path)
+
+    # Hard limit: business cards are 1-2 sided. Anything beyond 4 pages is
+    # almost certainly the wrong file (a brochure, a catalog) and would only
+    # consume CPU + disk for no useful template.
+    MAX_PAGES = 4
+    if len(doc) > MAX_PAGES:
+        print(json.dumps({
+            'error': 'too_many_pages',
+            'page_count': len(doc),
+            'max_pages': MAX_PAGES,
+        }))
+        sys.exit(0)
+
     DPI = 300
     SCALE = DPI / 72.0
 
@@ -359,14 +372,30 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
 
 def main():
     if len(sys.argv) < 3:
-        print('Usage: parse_card_pdf.py <pdf_path> <output_dir> [installed_fonts.txt]', file=sys.stderr)
+        print(json.dumps({'error': 'usage', 'message': 'parse_card_pdf.py <pdf_path> <output_dir> [installed_fonts.txt]'}))
         sys.exit(2)
     pdf_path = sys.argv[1]
     output_dir = sys.argv[2]
     installed_fonts_path = sys.argv[3] if len(sys.argv) > 3 else None
 
-    result = parse_pdf(pdf_path, output_dir, installed_fonts_path)
-    print(json.dumps(result, indent=2))
+    try:
+        result = parse_pdf(pdf_path, output_dir, installed_fonts_path)
+        print(json.dumps(result, indent=2))
+    except fitz.FileDataError:
+        print(json.dumps({'error': 'pdf_corrupt', 'message': 'Could not open PDF, file is corrupt or not a real PDF.'}))
+        sys.exit(0)
+    except FileNotFoundError as e:
+        print(json.dumps({'error': 'file_not_found', 'message': str(e)}))
+        sys.exit(0)
+    except Exception as e:
+        import traceback
+        print(json.dumps({
+            'error': 'parser_exception',
+            'message': str(e),
+            'type': type(e).__name__,
+            'traceback': traceback.format_exc()[-2000:],
+        }))
+        sys.exit(0)
 
 
 if __name__ == '__main__':
