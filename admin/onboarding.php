@@ -170,29 +170,37 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
             </label>
         </div>
 
-        <!-- Step 2: First employee -->
+        <!-- Step 2: Card design (PDF) -->
         <div class="wizard-step" x-show="step === 2" x-cloak>
-            <h2 class="text-xl font-bold text-gray-900 mb-1"><?= htmlspecialchars(t('onboarding.step_first_employee')) ?></h2>
-            <p class="text-sm text-gray-500 mb-6"><?= htmlspecialchars(t('onboarding.step_first_employee_help')) ?></p>
+            <h2 class="text-xl font-bold text-gray-900 mb-1">Upload your card design (PDF)</h2>
+            <p class="text-sm text-gray-500 mb-2">Cardify reads the layout, fonts and QR area automatically. Skip if you don't have one yet, your team can use a default until you do.</p>
+            <a href="<?= htmlspecialchars(getBasePath() . 'uploads/docs/Cardify-PDF-Design-Guide.pdf') ?>" target="_blank" class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-semibold mb-5">
+                <i class="fa-solid fa-circle-info text-xs"></i> How to prepare your PDF
+            </a>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.first_name')) ?></label>
-                    <input type="text" x-model="data.first_employee.name" class="form-input" required>
+            <div id="card-pdf-error" class="hidden bg-red-50 border-l-4 border-red-500 px-4 py-2 rounded mb-4 text-sm text-red-700"></div>
+
+            <label for="card-pdf-input" id="card-pdf-zone"
+                tabindex="0" role="button"
+                class="block border-2 border-dashed border-gray-200 hover:border-blue-400 focus-within:border-blue-500 rounded-2xl p-8 text-center cursor-pointer transition">
+                <div id="card-pdf-empty">
+                    <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-3">
+                        <i class="fa-solid fa-file-pdf text-lg text-blue-600"></i>
+                    </div>
+                    <p class="text-gray-700 font-semibold text-sm">Drop your business card PDF</p>
+                    <p class="text-gray-400 text-xs mt-1">2 pages preferred (front + back) · 25 MB max</p>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.first_title')) ?></label>
-                    <input type="text" x-model="data.first_employee.title" class="form-input">
+                <div id="card-pdf-loaded" class="hidden">
+                    <p id="card-pdf-status" class="text-sm" role="status"></p>
+                    <div id="card-pdf-summary" class="text-xs text-gray-500 mt-2"></div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.first_email')) ?></label>
-                    <input type="email" x-model="data.first_employee.email" class="form-input" dir="ltr">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('onboarding.first_phone')) ?></label>
-                    <input type="tel" x-model="data.first_employee.phone" class="form-input" dir="ltr">
-                </div>
-            </div>
+            </label>
+            <input type="file" id="card-pdf-input" accept="application/pdf,.pdf" class="hidden">
+
+            <p class="text-xs text-gray-400 mt-4">
+                <i class="fa-solid fa-shield-halved mr-1 text-green-600"></i>
+                Skip is fine, you can upload a PDF later from the template editor.
+            </p>
         </div>
 
         <!-- Step 3: Preview / Launch -->
@@ -271,10 +279,59 @@ function onboarding(init) {
             order_cards: Object.assign({per_person: 100}, init.data.order_cards || {}),
         },
 
-        stepLabels: { 1: <?= json_encode(t('onboarding.step_logo')) ?>, 2: <?= json_encode(t('onboarding.step_colors')) ?>, 3: <?= json_encode(t('onboarding.step_template')) ?>, 4: <?= json_encode(t('onboarding.step_first_employee')) ?>, 5: <?= json_encode(t('onboarding.step_preview')) ?>, 6: <?= json_encode(t('onboarding.step_invite_team')) ?>, 7: <?= json_encode(t('onboarding.step_order_cards')) ?> },
+        stepLabels: { 1: 'Brand', 2: 'Card design', 3: 'Launch' },
+        cardPdfReady: false,
+        bindCardPdf() {
+            const zone = document.getElementById('card-pdf-zone');
+            const input = document.getElementById('card-pdf-input');
+            const empty = document.getElementById('card-pdf-empty');
+            const loaded = document.getElementById('card-pdf-loaded');
+            const status = document.getElementById('card-pdf-status');
+            const summary = document.getElementById('card-pdf-summary');
+            const errBox = document.getElementById('card-pdf-error');
+            if (!zone || !input || zone.dataset.bound === '1') return;
+            zone.dataset.bound = '1';
+
+            const showErr = msg => { errBox.textContent = msg; errBox.classList.remove('hidden'); };
+            const clearErr = () => errBox.classList.add('hidden');
+
+            const accept = file => {
+                clearErr();
+                if (!file) return;
+                if (file.type !== 'application/pdf') { showErr('Please upload a PDF file.'); return; }
+                if (file.size > 25 * 1024 * 1024) { showErr('PDF is too large. Max 25 MB.'); return; }
+                empty.classList.add('hidden');
+                loaded.classList.remove('hidden');
+                status.innerHTML = '<span class="text-blue-600"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Analysing card design...</span>';
+                summary.textContent = '';
+
+                const fd = new FormData(); fd.append('pdf', file);
+                fetch('<?= getBasePath() ?>printshop/import_pdf.php', { method: 'POST', credentials: 'same-origin', body: fd })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.error) {
+                            showErr(data.error);
+                            status.innerHTML = '<span class="text-red-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Import failed.</span>';
+                            return;
+                        }
+                        const fields = data.pages.reduce((n,p)=>n+p.fields.length,0);
+                        const qrCount = data.pages.filter(p=>p.qr_area).length;
+                        status.innerHTML = '<span class="text-green-600"><i class="fa-solid fa-circle-check mr-1"></i>Card design analysed.</span>';
+                        summary.textContent = data.pages.length + ' pages · ' + fields + ' fields · ' + (qrCount > 0 ? 'QR area found' : 'no QR placeholder') + ' · ' + data.missing_fonts.length + ' missing font' + (data.missing_fonts.length === 1 ? '' : 's');
+                        this.cardPdfReady = true;
+                    })
+                    .catch(err => showErr('Network error: ' + err.message));
+            };
+
+            input.addEventListener('change', e => accept(e.target.files[0]));
+            zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+            zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+            zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); accept(e.dataTransfer.files[0]); });
+            zone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); }});
+        },
         tplLabels: { minimal: <?= json_encode(t('onboarding.template_minimal')) ?>, bold: <?= json_encode(t('onboarding.template_bold')) ?>, classic: <?= json_encode(t('onboarding.template_classic')) ?> },
 
-        init() {
+        init() { this.bindCardPdf();
             // Keyboard nav: Enter = next, Esc = save and close.
             // Skip when the user is typing in a text field.
             window.addEventListener('keydown', (e) => {
