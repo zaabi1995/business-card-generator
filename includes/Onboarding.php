@@ -73,15 +73,7 @@ class Onboarding
                     $errors[] = ['field' => 'logo', 'code' => 'missing_logo'];
                 }
                 break;
-            case 2: // first_employee (optional team invites bundled here)
-                $name  = trim((string) ($payload['name'] ?? ''));
-                $email = trim((string) ($payload['email'] ?? ''));
-                if ($strict) {
-                    if ($name === '') $errors[] = ['field' => 'first_employee.name', 'code' => 'missing_name'];
-                    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                        $errors[] = ['field' => 'first_employee.email', 'code' => 'invalid_email'];
-                    }
-                }
+            case 2: // card_design (PDF), optional, skipping is fine
                 break;
             case 3: // preview/launch, read-only
                 break;
