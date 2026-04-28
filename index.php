@@ -37,12 +37,23 @@ if (!file_exists($configFile)) {
 
 require_once $configFile;
 
-// Tenant subdomain check (e.g. ohb.cardify.om). If the host is a tenant
-// subdomain, route the root + /login here to the OTP login page.
+// Tenant subdomain check (e.g. ohb.cardify.om).
+// Convention across all tenants:
+//   <slug>.cardify.om/        -> portal.php  (employee Self-Service request form)
+//   <slug>.cardify.om/login   -> tenant_login.php (admin OTP sign-in)
+//   <slug>.cardify.om/admin/  -> admin dashboard (post-login)
+//   <slug>.cardify.om/<email-localpart>  -> digital_card.php (printed card target)
+//   <slug>.cardify.om/card/<id>          -> digital_card.php (legacy URL pattern)
 if (file_exists(__DIR__ . '/includes/TenantHost.php')) {
     require_once __DIR__ . '/includes/TenantHost.php';
     if (TenantHost::isTenantHost()) {
-        require __DIR__ . '/tenant_login.php';
+        $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        if ($reqPath === '/login' || $reqPath === '/login/') {
+            require __DIR__ . '/tenant_login.php';
+        } else {
+            // Default: employee request portal
+            require __DIR__ . '/portal.php';
+        }
         exit;
     }
 }

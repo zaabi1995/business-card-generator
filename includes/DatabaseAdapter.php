@@ -384,8 +384,16 @@ class DatabaseAdapter {
             return ['success' => false, 'error' => 'Email already exists'];
         }
         
+        require_once __DIR__ . '/CardifyConvention.php';
+        $emailLc = trim(strtolower($data['email'] ?? ''));
+        // Convention: employee id is the email local-part (e.g. ali.alzaabi@x.om -> ali.alzaabi).
+        // Falls back to UUID if there's no email at all.
+        $employeeId = $emailLc !== ''
+            ? CardifyConvention::employeeIdFromEmail($emailLc, $companyId, self::$db)
+            : generateUUID();
+
         $employee = [
-            'id' => generateUUID(),
+            'id' => $employeeId,
             'company_id' => $companyId,
             'department_id' => !empty($data['department_id']) ? $data['department_id'] : null,
             'email' => trim(strtolower($data['email'] ?? '')),

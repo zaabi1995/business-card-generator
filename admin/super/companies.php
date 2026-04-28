@@ -59,31 +59,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageType = 'success';
         }
     } elseif ($action === 'create_company') {
-        $slug = sanitize($_POST['slug']);
-        
-        // Check if slug exists
-        $existing = $db->fetchOne("SELECT id FROM companies WHERE slug = :slug", ['slug' => $slug]);
-        if ($existing) {
-            $message = 'Company slug already exists';
+        require_once INCLUDES_DIR . '/CardifyConvention.php';
+
+        $adminEmail = sanitizeEmail($_POST['admin_email']);
+        $rawSlug    = sanitize($_POST['slug'] ?? '');
+
+        // Convention: if admin leaves slug blank, derive from email domain.
+        // E.g. admin@alali.om -> "alali"; collisions get -2, -3, ... appended.
+        if ($rawSlug === '' && $adminEmail !== '') {
+            $slug = CardifyConvention::companySlugFromEmail($adminEmail, $db);
+        } else {
+            $slug = strtolower($rawSlug);
+        }
+
+        // Validate the slug isn't reserved or already in use.
+        $reserved = CardifyConvention::reservedSlugs();
+        if (in_array($slug, $reserved, true)) {
+            $message = "Slug '{$slug}' is reserved, please choose another";
+            $messageType = 'error';
+        } elseif ($slug === '' || !preg_match('/^[a-z0-9][a-z0-9-]{1,62}$/', $slug)) {
+            $message = 'Slug must be 2-63 chars, lowercase letters, digits and hyphens only';
             $messageType = 'error';
         } else {
-            $newCompany = [
-                'id' => generateUUID(),
-                'name' => sanitize($_POST['name']),
-                'slug' => $slug,
-                'admin_email' => sanitizeEmail($_POST['admin_email']),
-                'password_hash' => password_hash($_POST['password'], PASSWORD_BCRYPT),
-                'status' => sanitize($_POST['status']),
-                'plan' => sanitize($_POST['plan']),
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ];
-            
-            $companyId = $db->insert('companies', $newCompany);
-            AuditLog::logCompany('create', $companyId, null, $newCompany);
-            
-            $message = 'Company created successfully';
-            $messageType = 'success';
+            $existing = $db->fetchOne("SELECT id FROM companies WHERE slug = :slug", ['slug' => $slug]);
+            if ($existing) {
+                $message = 'Company slug already exists';
+                $messageType = 'error';
+            } else {
+                $emailDomain = sanitize($_POST['email_domain'] ?? '');
+                if ($emailDomain === '' && strpos($adminEmail, '@') !== false) {
+                    $emailDomain = strtolower(substr($adminEmail, strpos($adminEmail, '@') + 1));
+                }
+
+                $newCompany = [
+                    'id' => generateUUID(),
+                    'name' => sanitize($_POST['name']),
+                    'slug' => $slug,
+                    'admin_email' => $adminEmail,
+                    'email_domain' => $emailDomain,
+                    'password_hash' => password_hash($_POST['password'], PASSWORD_BCRYPT),
+                    'status' => sanitize($_POST['status']),
+                    'plan' => sanitize($_POST['plan']),
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s')
+                ];
+
+                $companyId = $db->insert('companies', $newCompany);
+                AuditLog::logCompany('create', $companyId, null, $newCompany);
+
+                $message = "Company '{$slug}' created. Tenant URL: " . CardifyConvention::tenantUrl($slug);
+                $messageType = 'success';
+            }
         }
     }
 }

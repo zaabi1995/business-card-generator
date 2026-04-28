@@ -123,7 +123,11 @@ class OnboardingImport
             );
             if ($existing) { $skipped++; continue; }
 
-            $eid = generateUUID();
+            require_once __DIR__ . '/CardifyConvention.php';
+            // Convention: derive id from email local-part for clean URLs.
+            $eid = $email !== ''
+                ? CardifyConvention::employeeIdFromEmail($email, $companyId, $db)
+                : generateUUID();
             try {
                 $db->insert('employees', [
                     'id'          => $eid,
