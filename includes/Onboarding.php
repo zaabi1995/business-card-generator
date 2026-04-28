@@ -119,6 +119,22 @@ class Onboarding
             );
         }
 
+        // Sync the legacy `companies.onboarding_completed` flag (used by the
+        // dashboard's amber Finish Setup banner) with our new completion
+        // timestamp so the two onboarding state stores agree.
+        if ($completedAt) {
+            try {
+                $db->update(
+                    'companies',
+                    ['onboarding_completed' => 1],
+                    'id = :cid',
+                    ['cid' => $companyId]
+                );
+            } catch (Throwable $e) {
+                error_log('[Onboarding] failed to sync companies.onboarding_completed: ' . $e->getMessage());
+            }
+        }
+
         // Funnel telemetry: emit one audit-log row per step save plus a
         // separate `onboarding_completed` entry on the final step. Keeps
         // the funnel visible on /admin/audit-logs without another table.
