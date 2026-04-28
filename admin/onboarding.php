@@ -325,6 +325,18 @@ function onboarding(init) {
                         const qrCount = data.pages.filter(p=>p.qr_area).length;
                         status.innerHTML = '<span class="text-green-600"><i class="fa-solid fa-circle-check mr-1"></i>Card design analysed.</span>';
                         summary.textContent = data.pages.length + ' pages · ' + fields + ' fields · ' + (qrCount > 0 ? 'QR area found' : 'no QR placeholder') + ' · ' + data.missing_fonts.length + ' missing font' + (data.missing_fonts.length === 1 ? '' : 's');
+                        // Persist PDF metadata into the onboarding state so the
+                        // dashboard checklist + Onboarding::get() know it was uploaded.
+                        this.data.card_design = {
+                            imported: true,
+                            import_token: data.import_token,
+                            pages: data.pages.length,
+                            fields_total: fields,
+                            qr_found: qrCount > 0,
+                            missing_fonts: data.missing_fonts,
+                            uploaded_at: new Date().toISOString(),
+                            original_filename: data.original_filename || file.name,
+                        };
                         this.cardPdfReady = true;
                     })
                     .catch(err => showErr('Network error: ' + err.message));

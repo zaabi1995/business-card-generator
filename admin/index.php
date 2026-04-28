@@ -417,7 +417,23 @@ $_inCompanyCtx = defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug
 $_ext = $_inCompanyCtx ? '' : '.php';
 // Aligned to the 3-step onboarding (Brand -> Card design -> Launch).
 // Once all three are checked the whole checklist auto-hides via $checklistAllDone.
-$hasCardDesign = !empty($companyTheme['card_design_path']) || $hasTemplate;
+//
+// Card design is "done" when EITHER:
+//   - the user uploaded a PDF in the wizard (Onboarding state has
+//     data.card_design.imported = true), OR
+//   - they have a fabric.js template authored in the editor
+//     (count($frontTemplates) > 0)
+// We accept either path so power users who skip the wizard still
+// progress the checklist by creating a template directly.
+$cardDesignImported = false;
+if ($companyId && class_exists('Onboarding')) {
+    try {
+        $obState = Onboarding::get($companyId);
+        $cd = $obState['data']['card_design'] ?? [];
+        $cardDesignImported = !empty($cd['imported']) || !empty($cd['import_token']);
+    } catch (Throwable $e) {}
+}
+$hasCardDesign = $cardDesignImported || $hasTemplate;
 $checklistSteps = [
     ['done' => $hasLogo,         'label' => 'Upload your logo',              'url' => getBasePath() . 'onboarding.php'],
     ['done' => $hasCardDesign,   'label' => 'Upload your card design',       'url' => getBasePath() . 'onboarding.php'],
