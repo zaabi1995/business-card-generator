@@ -45,14 +45,36 @@ def render(template_path: str, employee_path: str, out_path: str) -> int:
     with open(employee_path) as fh:
         employee = json.load(fh)
 
-    out_doc = fitz.open()  # empty
+    import_dir = template['import_dir']
+    out_doc = fitz.open()
+
     for page_spec in template['pages']:
         page = out_doc.new_page(
             width=page_spec['width_pt'],
             height=page_spec['height_pt'],
         )
-        # Stub: bg + fields wired in Task 4 + 5
-        _ = page_spec, page
+        svg_rel = page_spec.get('background_svg_path')
+        if svg_rel:
+            svg_path = os.path.join(import_dir, svg_rel)
+            if os.path.isfile(svg_path):
+                with open(svg_path, 'rb') as fh:
+                    svg_bytes = fh.read()
+                # PyMuPDF 1.27 opens SVG natively via fitz.open(stream, filetype='svg'),
+                # but show_pdf_page requires a PDF source. We convert the SVG doc to PDF
+                # in-memory via convert_to_pdf(), then open the PDF bytes and use
+                # show_pdf_page to copy all vector paths onto our card page as a vector
+                # underlay, preserving full fidelity without rasterising.
+                svg_doc = fitz.open(stream=svg_bytes, filetype='svg')
+                pdf_bytes = svg_doc.convert_to_pdf()
+                svg_doc.close()
+                pdf_doc = fitz.open(stream=pdf_bytes, filetype='pdf')
+                page.show_pdf_page(
+                    page.rect,
+                    pdf_doc,
+                    pno=0,
+                    keep_proportion=False,
+                )
+                pdf_doc.close()
 
     out_doc.save(out_path, garbage=4, deflate=True)
     out_doc.close()
