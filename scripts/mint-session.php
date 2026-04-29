@@ -34,7 +34,13 @@ if (!is_array($user)) {
 // PHP-FPM uses /tmp on this VPS (verified, files like /tmp/sess_*).
 session_save_path('/tmp');
 
-// Bind a fresh session id (the CLI doesn't get one automatically).
+// config.php already calls session_start() on its own session ID, close it
+// before binding a new one (session_id() is a no-op while a session is open).
+if (session_status() === PHP_SESSION_ACTIVE) {
+    session_write_close();
+}
+
+// Bind a fresh session id under our control.
 $sid = bin2hex(random_bytes(16));
 session_id($sid);
 session_start();
