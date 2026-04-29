@@ -56,19 +56,22 @@ class ConvexEvents
             return;
         }
 
-        $payload = array_merge(
-            [
-                'companyMysqlId' => (string) $companyMysqlId,
-                'companySlug'    => (string) $companySlug,
-                'companyNameEn'  => (string) $companyNameEn,
-                'employeeId'     => (string) $employeeId,
-                'type'           => (string) $eventType,
-            ],
-            $extras
-        );
+        $payload = [
+            'companyMysqlId' => (string) $companyMysqlId,
+            'companySlug'    => (string) $companySlug,
+            'companyNameEn'  => (string) $companyNameEn,
+            'employeeId'     => (string) $employeeId,
+            'type'           => (string) $eventType,
+        ];
 
         if ($companyNameAr !== null && $companyNameAr !== '') {
             $payload['companyNameAr'] = (string) $companyNameAr;
+        }
+
+        // Strip null/empty optional fields (Convex `v.optional(v.string())` rejects null).
+        foreach ($extras as $k => $v) {
+            if ($v === null || $v === '') continue;
+            $payload[(string) $k] = (string) $v;
         }
 
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE);
