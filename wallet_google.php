@@ -19,6 +19,7 @@ set_error_handler(function ($severity, $message, $file, $line) {
 try {
     require_once __DIR__ . '/config.php';
     require_once INCLUDES_DIR . '/GoogleWalletPass.php';
+    require_once INCLUDES_DIR . '/CardRenderer.php';
 
     $employeeId  = trim($_GET['i'] ?? $_GET['employee_id'] ?? '');
     $companySlug = trim($_GET['c'] ?? $_GET['company_slug'] ?? '');
@@ -73,9 +74,28 @@ try {
         $hexBg = '#' . $hexBg[1] . $hexBg[1] . $hexBg[2] . $hexBg[2] . $hexBg[3] . $hexBg[3];
     }
 
+    // Public origin Google Wallet uses to fetch hero/logo images. APP_HOST
+    // is the canonical project host (CLAUDE.md, "URLs + security").
+    $publicOrigin = 'https://' . (defined('APP_HOST') ? APP_HOST : 'cardify.om');
+
     $logoUri = null;
     if ($theme && !empty($theme['logo_path'])) {
-        $logoUri = $scheme . '://' . $host . '/' . ltrim($theme['logo_path'], '/');
+        $logoUri = $publicOrigin . '/' . ltrim($theme['logo_path'], '/');
+    }
+
+    // Hero image, the canonical card design. Same PNG that /muhammed.ali shows,
+    // wallet_apple.php embeds as strip.png, card-pdf.php prints. Source of
+    // truth is CardRenderer::forEmployee. When absent the pass still saves
+    // with logo only, audit-card-surfaces.php flags the gap.
+    $heroUri = null;
+    try {
+        $ctx = CardRenderer::forEmployee((string)$employee['id']);
+        if ($ctx && !empty($ctx['front_url'])) {
+            $u = $ctx['front_url'];
+            $heroUri = (preg_match('#^https?://#', $u) === 1) ? $u : ($publicOrigin . '/' . ltrim($u, '/'));
+        }
+    } catch (Throwable $e) {
+        error_log('wallet_google hero image: ' . $e->getMessage());
     }
 
     $textModules = [];
@@ -120,6 +140,12 @@ try {
         $object['logo'] = [
             'sourceUri'         => ['uri' => $logoUri],
             'contentDescription' => ['defaultValue' => ['language' => 'en', 'value' => $companyNm . ' logo']],
+        ];
+    }
+    if ($heroUri) {
+        $object['heroImage'] = [
+            'sourceUri'         => ['uri' => $heroUri],
+            'contentDescription' => ['defaultValue' => ['language' => 'en', 'value' => $name . ' business card']],
         ];
     }
 

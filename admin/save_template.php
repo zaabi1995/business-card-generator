@@ -46,9 +46,26 @@ try {
         default:
             throw new Exception('Invalid action');
     }
-    
+
+    // Single-source-of-truth invalidation: any successful template mutation
+    // bumps every employee's cached front/back PNG so digital_card.php,
+    // card-pdf.php, wallet_apple/google.php, and the print-shop preview all
+    // pick up the new design on next view. Re-render itself runs in the
+    // browser via the Fabric.js editor + save_card_*.php (rasterization is
+    // client-side); this just clears the cache and lets the regen sweep
+    // drive employees back to fresh.
+    $writeActions = ['add', 'add_pair', 'update', 'update_background', 'delete', 'delete_pair', 'activate', 'set_as_default', 'revert_version'];
+    if (!empty($result['success']) && in_array($action, $writeActions, true)) {
+        require_once INCLUDES_DIR . '/CardRenderer.php';
+        $cid = function_exists('getCurrentCompanyId') ? getCurrentCompanyId() : null;
+        if ($cid) {
+            try { CardRenderer::invalidateForCompany((string)$cid, 'template-' . $action); }
+            catch (Throwable $e) { error_log('save_template invalidate: ' . $e->getMessage()); }
+        }
+    }
+
     echo json_encode($result);
-    
+
 } catch (Exception $e) {
     error_log("save_template: " . $e->getMessage());
     http_response_code(400);

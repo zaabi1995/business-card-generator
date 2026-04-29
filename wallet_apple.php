@@ -20,6 +20,7 @@ set_error_handler(function ($severity, $message, $file, $line) {
 try {
     require_once __DIR__ . '/config.php';
     require_once INCLUDES_DIR . '/AppleWalletPass.php';
+    require_once INCLUDES_DIR . '/CardRenderer.php';
 
     $employeeId  = trim($_GET['i'] ?? $_GET['employee_id'] ?? '');
     $companySlug = trim($_GET['c'] ?? $_GET['company_slug'] ?? '');
@@ -152,6 +153,27 @@ try {
     $passObj->addAsset('icon@2x.png', $logoBytes);
     $passObj->addAsset('logo.png',    $logoBytes);
     $passObj->addAsset('logo@2x.png', $logoBytes);
+
+    // Strip image, the canonical card design from CardRenderer. Same PNG that
+    // /muhammed.ali serves, that wallet_google.php embeds, that card-pdf.php
+    // prints. Source of truth is templates.fields_json + admin upload, exported
+    // by the Fabric.js editor via save_card_*.php. When the canonical PNG is
+    // missing the pass still builds (icon/logo only) so the user gets a usable
+    // wallet card, audit-card-surfaces.php will flag the missing render.
+    try {
+        $ctx = CardRenderer::forEmployee((string)$employee['id']);
+        if ($ctx && !empty($ctx['front_fs']) && is_readable($ctx['front_fs'])) {
+            $stripBytes = @file_get_contents($ctx['front_fs']);
+            if ($stripBytes !== false && $stripBytes !== '') {
+                $passObj->addAsset('strip.png',    $stripBytes);
+                $passObj->addAsset('strip@2x.png', $stripBytes);
+                $passObj->addAsset('thumbnail.png',    $stripBytes);
+                $passObj->addAsset('thumbnail@2x.png', $stripBytes);
+            }
+        }
+    } catch (Throwable $e) {
+        error_log('wallet_apple strip image: ' . $e->getMessage());
+    }
 
     $bytes = $passObj->build();
 

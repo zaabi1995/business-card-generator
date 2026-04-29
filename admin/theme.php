@@ -89,7 +89,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($faviconPath !== ($theme['favicon_path'] ?? null)) $updateData['favicon_path'] = $faviconPath;
     
     $db->update('company_themes', $updateData, 'company_id = :id', ['id' => $companyId]);
-    
+
+    // Brand metadata (color/logo/favicon/header/footer/custom-css) just changed.
+    // Every employee's cached card PNG is now stale relative to the canonical
+    // template + theme source. Clear the cache so digital_card.php, card-pdf.php,
+    // wallet passes, and the print-shop preview all pick up the new brand
+    // on next view.
+    require_once INCLUDES_DIR . '/CardRenderer.php';
+    try { CardRenderer::invalidateForCompany((string)$companyId, 'theme-update'); }
+    catch (Throwable $e) { error_log('theme.php invalidate: ' . $e->getMessage()); }
+
     // Update portal + E-Card + bilingual settings in companies table
     $portalEnabled     = isset($_POST['portal_enabled']) ? 1 : 0;
     $portalShowPreview = isset($_POST['portal_show_preview']) ? 1 : 0;

@@ -113,6 +113,14 @@ if ($existing) {
     $db->insert('company_themes', $themeData);
 }
 
+// Brand color/logo just changed, every employee's cached card PNG no longer
+// matches the design source. Clear the cache so digital_card.php, card-pdf.php,
+// wallet passes, and the print-shop preview all pick up the new brand on next
+// view (re-render itself runs in the browser via the editor + save_card_*.php).
+require_once INCLUDES_DIR . '/CardRenderer.php';
+try { CardRenderer::invalidateForCompany((string)$companyId, 'theme-applied'); }
+catch (Throwable $e) { error_log('apply_theme invalidate: ' . $e->getMessage()); }
+
 // Pull the company slug for the success URL
 $company = $db->fetchOne("SELECT slug FROM companies WHERE id = :id LIMIT 1", ['id' => $companyId]);
 $slug = $company['slug'] ?? '';

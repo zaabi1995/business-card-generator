@@ -3,16 +3,13 @@
  * Public "Download Card as PDF" endpoint.
  *
  * URL:    /card-pdf.php?i=<employee_id>
- * Output: A4 PDF with employee contact details on page 1 and a QR code
- *         pointing to the public card URL on page 2.
+ * Output: A4 PDF, page 1 = canonical front of card, page 2 = canonical back.
+ *         Falls back to a text/QR layout only when the canonical PNGs are
+ *         missing (audit-card-surfaces.php will flag those employees).
  *
- * Implementation notes:
- *   - Uses the `wkhtmltopdf` binary (already installed on the VPS).
- *     No composer additions required.
- *   - QR image is generated via chart.googleapis.com, mirroring the
- *     pattern already used by includes/VCF.php::getQRCodeUrl().
- *   - Caches rendered PDFs under BASE_DIR/tmp/pdf-cards/ for 1 hour to
- *     keep response time < 2s on repeat downloads.
+ * Source of truth: generated_cards.{front,back}_file_path, populated by the
+ * admin Fabric.js editor. Same PNG that digital_card.php, wallet passes,
+ * og:image, and the print-shop preview render. See includes/CardRenderer.php.
  */
 
 ob_start();
@@ -23,7 +20,7 @@ set_error_handler(function ($severity, $message, $file, $line) {
 
 try {
     require_once __DIR__ . '/config.php';
-    require_once INCLUDES_DIR . '/VCF.php';
+    require_once INCLUDES_DIR . '/CardRenderer.php';
     require_once INCLUDES_DIR . '/QRTracker.php';
 
     $employeeId = trim($_GET['i'] ?? '');
@@ -31,195 +28,56 @@ try {
         throw new Exception('Missing employee id');
     }
 
-    $db = Database::getInstance();
-    $employee = $db->fetchOne(
-        "SELECT e.*, c.id AS _cid, c.slug AS _cslug, c.name AS _cname, c.country AS _ccountry
-           FROM employees e
-           JOIN companies c ON c.id = e.company_id
-          WHERE e.id = :id AND e.status = 'active'
-          LIMIT 1",
-        ['id' => $employeeId]
-    );
-    if (!$employee) {
+    $ctx = CardRenderer::forEmployee($employeeId);
+    if (!$ctx || ($ctx['employee']['status'] ?? 'active') !== 'active') {
         http_response_code(404);
         header('Content-Type: text/plain; charset=utf-8');
         echo 'Card not found';
         exit;
     }
 
-    $company = [
-        'id'      => $employee['_cid'],
-        'slug'    => $employee['_cslug'],
-        'name'    => $employee['_cname'],
-        'country' => $employee['_ccountry'] ?? '',
-    ];
+    $employee = $ctx['employee'];
+    $company  = $ctx['company'];
+    $theme    = $ctx['theme'];
+    $frontFs  = $ctx['front_fs'];
+    $backFs   = $ctx['back_fs'];
 
-    // Theme (for accent colour). Missing theme is fine, we fall back.
-    // We deliberately query directly instead of relying on loadCompanyTheme(),
-    // which is defined inside digital_card.php rather than includes/functions.php.
-    $theme = null;
-    try {
-        $theme = $db->fetchOne(
-            "SELECT * FROM company_themes WHERE company_id = :cid",
-            ['cid' => $company['id']]
-        );
-    } catch (Throwable $e) {
-        error_log('card-pdf theme lookup: ' . $e->getMessage());
-    }
     $accent = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#d4af37';
-    // Sanity-clamp to CSS-safe hex; anything else falls back.
     if (!preg_match('/^#[0-9a-fA-F]{3,8}$/', $accent)) {
         $accent = '#d4af37';
     }
 
-    // Canonical URL of the public card page (used in QR). Always points at
-    // the tenant subdomain regardless of which host invoked this script,
-    // so the QR is identical whether generated from cardify.om or from
-    // <slug>.cardify.om.
     $cardUrl = getTenantUrl($company['slug'], '/' . rawurlencode($employee['id']));
 
-    $name       = trim((string)($employee['name_en'] ?? $employee['name'] ?? ''));
-    if ($name === '') { $name = 'Employee'; }
-    $position   = trim((string)($employee['position'] ?? $employee['job_title'] ?? ''));
-    $companyNm  = trim((string)$company['name']);
-    $phone      = trim((string)($employee['phone'] ?? ''));
-    $mobile     = trim((string)($employee['mobile'] ?? ''));
-    $email      = trim((string)($employee['email'] ?? ''));
-    $website    = trim((string)($employee['website'] ?? ''));
-    $address    = trim((string)($company['address'] ?? ''));
+    $name      = trim((string)($employee['name_en'] ?? $employee['name'] ?? '')) ?: 'Employee';
+    $companyNm = trim((string)$company['name']);
+    $year      = date('Y');
 
-    $safeName   = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
-    $safePos    = htmlspecialchars($position, ENT_QUOTES, 'UTF-8');
-    $safeCoName = htmlspecialchars($companyNm, ENT_QUOTES, 'UTF-8');
-    $safePhone  = htmlspecialchars($phone, ENT_QUOTES, 'UTF-8');
-    $safeMobile = htmlspecialchars($mobile, ENT_QUOTES, 'UTF-8');
-    $safeEmail  = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
-    $safeWeb    = htmlspecialchars($website, ENT_QUOTES, 'UTF-8');
-    $safeAddr   = htmlspecialchars($address, ENT_QUOTES, 'UTF-8');
-    $safeUrl    = htmlspecialchars($cardUrl, ENT_QUOTES, 'UTF-8');
-    $safeAccent = htmlspecialchars($accent, ENT_QUOTES, 'UTF-8');
-    $year       = date('Y');
+    $hasCanonical = $frontFs !== null && $backFs !== null;
 
-    // QR code generated locally with phpqrcode (LGPL), no external API
-    // calls, survives PHP-FPM with no outbound network.
-    $qrSrc = '';
-    $qrTmp = '';
-    try {
-        require_once INCLUDES_DIR . '/phpqrcode.php';
-        $qrTmp = tempnam(sys_get_temp_dir(), 'card-qr-') . '.png';
-        // QR_ECLEVEL_M = ~15% recovery, size 8, margin 2 → ~500x500
-        QRcode::png($cardUrl, $qrTmp, 'M', 8, 2);
-        if (is_file($qrTmp) && filesize($qrTmp) > 0) {
-            $qrSrc = 'file://' . $qrTmp;
-        }
-    } catch (Throwable $e) {
-        error_log('card-pdf QR gen: ' . $e->getMessage());
+    if ($hasCanonical) {
+        $html = card_pdf_render_canonical($frontFs, $backFs, $cardUrl, $name, $companyNm, $accent, $year);
+    } else {
+        error_log(sprintf(
+            'card-pdf: canonical PNG missing for employee=%s company=%s, falling back to text layout',
+            $employee['id'], $company['id']
+        ));
+        $html = card_pdf_render_fallback($employee, $company, $cardUrl, $accent);
     }
 
-    // -------- Build printable HTML ----------------------------------------
-    $html = <<<HTML
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>{$safeName}, Business Card</title>
-<style>
-    @page { size: A4; margin: 25mm 20mm; }
-    * { box-sizing: border-box; }
-    body {
-        font-family: "Helvetica", "Arial", sans-serif;
-        color: #1f2937;
-        margin: 0;
-        font-size: 12pt;
-        line-height: 1.55;
-    }
-    .accent-bar {
-        height: 6px;
-        background: {$safeAccent};
-        margin-bottom: 28px;
-        border-radius: 3px;
-    }
-    h1 {
-        font-size: 28pt;
-        margin: 0 0 6px 0;
-        letter-spacing: -0.5px;
-        color: #111827;
-    }
-    .position { font-size: 13pt; color: #4b5563; margin: 0 0 4px 0; }
-    .company  { font-size: 13pt; color: {$safeAccent}; font-weight: 600; margin: 0 0 24px 0; }
-    .divider  { border: 0; border-top: 1px solid #e5e7eb; margin: 24px 0; }
-    .label    { display: inline-block; width: 85px; color: #6b7280; font-size: 10pt; text-transform: uppercase; letter-spacing: 0.06em; }
-    .row      { margin: 8px 0; font-size: 12pt; }
-    .row a    { color: #1f2937; text-decoration: none; }
-    .qr-page  { page-break-before: always; text-align: center; padding-top: 40mm; }
-    .qr-page img { width: 70mm; height: 70mm; }
-    .qr-page .hint   { color: #4b5563; font-size: 11pt; margin-top: 18px; }
-    .qr-page .url    { color: #374151; font-size: 10pt; margin-top: 4px; word-break: break-all; }
-    .footer {
-        position: fixed;
-        bottom: 10mm;
-        left: 20mm;
-        right: 20mm;
-        text-align: center;
-        font-size: 9pt;
-        color: #9ca3af;
-        border-top: 1px solid #e5e7eb;
-        padding-top: 6px;
-    }
-</style>
-</head>
-<body>
-
-<div class="accent-bar"></div>
-
-<h1>{$safeName}</h1>
-HTML;
-
-    if ($safePos !== '')    { $html .= "<p class=\"position\">{$safePos}</p>"; }
-    if ($safeCoName !== '') { $html .= "<p class=\"company\">{$safeCoName}</p>"; }
-
-    $html .= '<hr class="divider">';
-
-    if ($safeMobile !== '') {
-        $html .= "<div class=\"row\"><span class=\"label\">Mobile</span>{$safeMobile}</div>";
-    }
-    if ($safePhone !== '' && $safePhone !== $safeMobile) {
-        $html .= "<div class=\"row\"><span class=\"label\">Phone</span>{$safePhone}</div>";
-    }
-    if ($safeEmail !== '') {
-        $html .= "<div class=\"row\"><span class=\"label\">Email</span><a href=\"mailto:{$safeEmail}\">{$safeEmail}</a></div>";
-    }
-    if ($safeWeb !== '') {
-        $html .= "<div class=\"row\"><span class=\"label\">Web</span><a href=\"{$safeWeb}\">{$safeWeb}</a></div>";
-    }
-    if ($safeAddr !== '') {
-        $html .= "<div class=\"row\"><span class=\"label\">Address</span>{$safeAddr}</div>";
-    }
-
-    $html .= '<div class="qr-page">';
-    if ($qrSrc !== '') {
-        $html .= '<img src="' . htmlspecialchars($qrSrc, ENT_QUOTES, 'UTF-8') . '" alt="QR code">';
-    }
-    $html .= <<<HTML
-    <div class="hint">Scan to view live digital card</div>
-    <div class="url">{$safeUrl}</div>
-</div>
-
-<div class="footer">
-    Generated by Cardify &middot; cardify.om &middot; &copy; {$year} BHD Printing &amp; Designing
-</div>
-
-</body>
-</html>
-HTML;
-
-    // -------- Render via wkhtmltopdf --------------------------------------
-    // Small filesystem cache to keep repeat downloads fast.
     $cacheDir = BASE_DIR . '/tmp/pdf-cards';
     if (!is_dir($cacheDir)) {
         @mkdir($cacheDir, 0775, true);
     }
-    $cacheKey  = sha1($employee['id'] . '|' . ($employee['updated_at'] ?? '') . '|' . $cardUrl);
+
+    // Cache key includes CardRenderer signature so a template/theme/employee
+    // change invalidates the cached PDF too. Mode is keyed separately so
+    // flipping back to a real card busts the cache.
+    $cacheKey = sha1(
+        $employee['id']
+        . '|sig=' . $ctx['signature']
+        . '|mode=' . ($hasCanonical ? 'canonical' : 'fallback')
+    );
     $cachePath = $cacheDir . '/' . $cacheKey . '.pdf';
     $cacheTtl  = 3600;
 
@@ -228,11 +86,8 @@ HTML;
         || filesize($cachePath) < 1024;
 
     if ($needsRender) {
-        // `command -v` returns the path even when open_basedir hides it from PHP stat.
-        // We trust exec() (which bypasses open_basedir) rather than is_file() here.
         $bin = trim((string)@shell_exec('command -v wkhtmltopdf 2>/dev/null'));
         if ($bin === '') {
-            // Fallback to TCPDF if composer is available locally.
             $tcpdf = BASE_DIR . '/vendor/tecnickcom/tcpdf/tcpdf.php';
             if (!is_file($tcpdf)) {
                 throw new Exception('wkhtmltopdf not available on server');
@@ -244,8 +99,8 @@ HTML;
             $pdf->SetTitle($name . ', Business Card');
             $pdf->setPrintHeader(false);
             $pdf->setPrintFooter(false);
-            $pdf->SetMargins(20, 25, 20);
-            $pdf->SetAutoPageBreak(true, 20);
+            $pdf->SetMargins(15, 15, 15);
+            $pdf->SetAutoPageBreak(true, 15);
             $pdf->AddPage();
             $pdf->writeHTML($html, true, false, true, false, '');
             $pdf->Output($cachePath, 'F');
@@ -256,41 +111,32 @@ HTML;
             $cmd = escapeshellcmd($bin)
                  . ' --quiet --encoding utf-8 --enable-local-file-access'
                  . ' --load-error-handling ignore --load-media-error-handling ignore'
-                 . ' --page-size A4 --margin-top 25mm --margin-bottom 25mm'
-                 . ' --margin-left 20mm --margin-right 20mm'
+                 . ' --page-size A4 --margin-top 15mm --margin-bottom 15mm'
+                 . ' --margin-left 15mm --margin-right 15mm'
                  . ' --disable-smart-shrinking'
                  . ' ' . escapeshellarg($tmpHtml)
                  . ' ' . escapeshellarg($cachePath)
                  . ' 2>&1';
 
-            // 15s timeout guardrail via `timeout` wrapper when available.
             if (trim((string)@shell_exec('command -v timeout 2>/dev/null')) !== '') {
                 $cmd = 'timeout 15 ' . $cmd;
             }
 
-            $rc = 0;
-            $out = [];
+            $rc = 0; $out = [];
             exec($cmd, $out, $rc);
             @unlink($tmpHtml);
-            if ($qrTmp !== '') { @unlink($qrTmp); }
 
             if ($rc !== 0 || !is_file($cachePath) || filesize($cachePath) < 1024) {
                 error_log('card-pdf wkhtmltopdf failed (rc=' . $rc . '): ' . implode("\n", $out));
                 throw new Exception('PDF render failed');
             }
         }
-    } else {
-        if ($qrTmp !== '' && is_file($qrTmp)) { @unlink($qrTmp); }
     }
 
-    // Track this download as a card scan event (non-fatal).
-    try {
-        QRTracker::logScan($employee['id'], $company['id']);
-    } catch (Throwable $e) {
+    try { QRTracker::logScan($employee['id'], $company['id']); } catch (Throwable $e) {
         error_log('card-pdf QRTracker: ' . $e->getMessage());
     }
 
-    // Stream the PDF.
     while (ob_get_level()) { ob_end_clean(); }
 
     $downloadName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $name) . '.pdf';
@@ -311,4 +157,135 @@ HTML;
     header('Content-Type: text/plain; charset=utf-8');
     echo 'Unable to generate PDF. Please try again later.';
     exit;
+}
+
+// ---- Helpers (file-scoped, prefixed to avoid global collisions) ------------
+
+function card_pdf_render_canonical(string $frontFs, string $backFs, string $cardUrl, string $name, string $companyNm, string $accent, string $year): string
+{
+    $sn = htmlspecialchars($name,      ENT_QUOTES, 'UTF-8');
+    $sc = htmlspecialchars($companyNm, ENT_QUOTES, 'UTF-8');
+    $su = htmlspecialchars($cardUrl,   ENT_QUOTES, 'UTF-8');
+    $sa = htmlspecialchars($accent,    ENT_QUOTES, 'UTF-8');
+    $front = 'file://' . $frontFs;
+    $back  = 'file://' . $backFs;
+
+    return <<<HTML
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{$sn}, Business Card</title>
+<style>
+@page { size: A4; margin: 15mm; }
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;font-family:"Helvetica","Arial",sans-serif;color:#1f2937}
+.page{width:100%;page-break-after:always;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:90vh}
+.page:last-of-type{page-break-after:auto}
+.label{align-self:flex-start;font-size:9pt;letter-spacing:.12em;text-transform:uppercase;color:#6b7280;margin-bottom:8mm}
+.label .accent{color:{$sa};font-weight:600}
+.card-wrap{width:100%;max-width:170mm;display:flex;align-items:center;justify-content:center}
+.card-wrap img{width:100%;height:auto;display:block;border-radius:4mm;box-shadow:0 1mm 3mm rgba(0,0,0,.08)}
+.meta{margin-top:10mm;text-align:center;font-size:10pt;color:#4b5563}
+.meta strong{color:#111827;font-size:12pt}
+.meta .url{color:#374151;word-break:break-all;margin-top:2mm}
+.footer{position:fixed;bottom:6mm;left:15mm;right:15mm;text-align:center;font-size:8.5pt;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:3mm}
+</style>
+</head>
+<body>
+
+<div class="page">
+    <div class="label">Front <span class="accent">/ {$sc}</span></div>
+    <div class="card-wrap"><img src="{$front}" alt="Front of card"></div>
+    <div class="meta">
+        <strong>{$sn}</strong><br>
+        <span class="url">{$su}</span>
+    </div>
+</div>
+
+<div class="page">
+    <div class="label">Back <span class="accent">/ {$sc}</span></div>
+    <div class="card-wrap"><img src="{$back}" alt="Back of card"></div>
+</div>
+
+<div class="footer">
+    Generated by Cardify &middot; cardify.om &middot; &copy; {$year} BHD Printing &amp; Designing
+</div>
+
+</body>
+</html>
+HTML;
+}
+
+function card_pdf_render_fallback(array $employee, array $company, string $cardUrl, string $accent): string
+{
+    $name      = trim((string)($employee['name_en'] ?? $employee['name'] ?? '')) ?: 'Employee';
+    $position  = trim((string)($employee['position'] ?? $employee['job_title'] ?? ''));
+    $companyNm = trim((string)$company['name']);
+    $phone     = trim((string)($employee['phone']  ?? ''));
+    $mobile    = trim((string)($employee['mobile'] ?? ''));
+    $email     = trim((string)($employee['email']  ?? ''));
+    $website   = trim((string)($employee['website']?? ''));
+    $address   = trim((string)($company['address'] ?? ''));
+    $year      = date('Y');
+
+    $sn = htmlspecialchars($name,      ENT_QUOTES, 'UTF-8');
+    $sp = htmlspecialchars($position,  ENT_QUOTES, 'UTF-8');
+    $sc = htmlspecialchars($companyNm, ENT_QUOTES, 'UTF-8');
+    $sa = htmlspecialchars($accent,    ENT_QUOTES, 'UTF-8');
+    $su = htmlspecialchars($cardUrl,   ENT_QUOTES, 'UTF-8');
+    $sm = htmlspecialchars($mobile,    ENT_QUOTES, 'UTF-8');
+    $sph= htmlspecialchars($phone,     ENT_QUOTES, 'UTF-8');
+    $se = htmlspecialchars($email,     ENT_QUOTES, 'UTF-8');
+    $sw = htmlspecialchars($website,   ENT_QUOTES, 'UTF-8');
+    $sad= htmlspecialchars($address,   ENT_QUOTES, 'UTF-8');
+
+    $qrSrc = '';
+    try {
+        require_once INCLUDES_DIR . '/phpqrcode.php';
+        $qrTmp = tempnam(sys_get_temp_dir(), 'card-qr-') . '.png';
+        QRcode::png($cardUrl, $qrTmp, 'M', 8, 2);
+        if (is_file($qrTmp) && filesize($qrTmp) > 0) {
+            $qrSrc = 'file://' . $qrTmp;
+        }
+    } catch (Throwable $e) { /* QR optional */ }
+
+    $rows = '';
+    if ($sm  !== '') $rows .= "<div class=\"row\"><span class=\"label\">Mobile</span>{$sm}</div>";
+    if ($sph !== '' && $sph !== $sm) $rows .= "<div class=\"row\"><span class=\"label\">Phone</span>{$sph}</div>";
+    if ($se  !== '') $rows .= "<div class=\"row\"><span class=\"label\">Email</span>{$se}</div>";
+    if ($sw  !== '') $rows .= "<div class=\"row\"><span class=\"label\">Web</span>{$sw}</div>";
+    if ($sad !== '') $rows .= "<div class=\"row\"><span class=\"label\">Address</span>{$sad}</div>";
+
+    $qrTag = $qrSrc !== '' ? '<img src="' . htmlspecialchars($qrSrc, ENT_QUOTES, 'UTF-8') . '" alt="QR">' : '';
+
+    $head = <<<HTML
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>{$sn}, Business Card</title>
+<style>
+@page { size: A4; margin: 25mm 20mm; }
+*{box-sizing:border-box}body{font-family:"Helvetica","Arial",sans-serif;color:#1f2937;margin:0;font-size:12pt;line-height:1.55}
+.accent-bar{height:6px;background:{$sa};margin-bottom:28px;border-radius:3px}
+h1{font-size:28pt;margin:0 0 6px 0;letter-spacing:-0.5px;color:#111827}
+.position{font-size:13pt;color:#4b5563;margin:0 0 4px 0}
+.company{font-size:13pt;color:{$sa};font-weight:600;margin:0 0 24px 0}
+.divider{border:0;border-top:1px solid #e5e7eb;margin:24px 0}
+.label{display:inline-block;width:85px;color:#6b7280;font-size:10pt;text-transform:uppercase;letter-spacing:.06em}
+.row{margin:8px 0;font-size:12pt}
+.qr-page{page-break-before:always;text-align:center;padding-top:40mm}
+.qr-page img{width:70mm;height:70mm}
+.qr-page .url{color:#374151;font-size:10pt;margin-top:4px;word-break:break-all}
+.footer{position:fixed;bottom:10mm;left:20mm;right:20mm;text-align:center;font-size:9pt;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:6px}
+</style></head><body>
+<div class="accent-bar"></div>
+<h1>{$sn}</h1>
+HTML;
+
+    return $head
+        . ($sp !== '' ? "<p class=\"position\">{$sp}</p>" : '')
+        . ($sc !== '' ? "<p class=\"company\">{$sc}</p>" : '')
+        . '<hr class="divider">' . $rows
+        . '<div class="qr-page">' . $qrTag
+        . '<div class="url">' . $su . '</div></div>'
+        . '<div class="footer">Generated by Cardify &middot; cardify.om &middot; &copy; ' . $year . ' BHD Printing &amp; Designing</div>'
+        . '</body></html>';
 }
