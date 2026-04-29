@@ -46,6 +46,9 @@ $bodyClass = 'bg-gray-50';
 
 // Extra head for Fabric.js
 $extraHead = '
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Sora:wght@100;200;300;400;500;600;700;800&family=Cairo:wght@200;300;400;500;600;700;800;900&family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
 <style>
     #canvas-wrap { position: relative; }
     #fabric-canvas { border: 1px solid #e5e7eb; border-radius: 8px; display: block; }
@@ -261,6 +264,42 @@ require_once INCLUDES_DIR . '/ui-header.php';
     const shopId = <?= json_encode($shopId) ?>;
     const existingTemplate = <?= json_encode($template) ?>;
 
+    // Force browser to fetch the .woff2 files for the (family, weight, style) tuples
+    // before Fabric draws into <canvas>. CSS @font-face is declared lazily, so without
+    // this Fabric paints a serif/system fallback on cold cache. See memory note
+    // feedback_fabric_canvas_font_preload.md.
+    async function preloadFonts(specs) {
+        if (!document.fonts || !specs || !specs.length) return;
+        const seen = new Set();
+        const promises = [];
+        for (const s of specs) {
+            const family = s.family || 'sans-serif';
+            const weight = s.weight || 400;
+            const style = s.style || 'normal';
+            const key = style + ' ' + weight + ' "' + family + '"';
+            if (seen.has(key)) continue;
+            seen.add(key);
+            try { promises.push(document.fonts.load(style + ' ' + weight + ' 16px "' + family + '"')); }
+            catch (e) {}
+        }
+        try { await Promise.all(promises); } catch (e) {}
+        try { await document.fonts.ready; } catch (e) {}
+    }
+
+    // Inject a Google Fonts <link> for any imported family the static stylesheet
+    // doesn't already cover. Idempotent.
+    function ensureGoogleFontLink(family) {
+        if (!family) return;
+        const id = 'gf-' + family.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+        if (document.getElementById(id)) return;
+        const link = document.createElement('link');
+        link.id = id;
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(family) +
+            ':ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap';
+        document.head.appendChild(link);
+    }
+
     // ── Canvas setup ──
     let canvasWidth = 900, canvasHeight = 514;
     const canvas = new fabric.Canvas('fabric-canvas', {
@@ -296,11 +335,21 @@ require_once INCLUDES_DIR . '/ui-header.php';
         try {
             const data = JSON.parse(existingTemplate.canvas_json);
             if (data.width) { canvasWidth = data.width; canvasHeight = data.height; }
-            canvas.loadFromJSON(existingTemplate.canvas_json, function() {
-                canvas.setWidth(canvasWidth); canvas.setHeight(canvasHeight);
-                scaleCanvas();
-                canvas.renderAll();
-                updateFieldList();
+            // Collect fonts referenced in saved canvas so we can preload them before draw
+            const savedSpecs = [];
+            (data.objects || []).forEach(o => {
+                if (o.fontFamily) {
+                    ensureGoogleFontLink(o.fontFamily);
+                    savedSpecs.push({ family: o.fontFamily, weight: o.fontWeight || 400, style: o.fontStyle || 'normal' });
+                }
+            });
+            preloadFonts(savedSpecs).then(() => {
+                canvas.loadFromJSON(existingTemplate.canvas_json, function() {
+                    canvas.setWidth(canvasWidth); canvas.setHeight(canvasHeight);
+                    scaleCanvas();
+                    canvas.renderAll();
+                    updateFieldList();
+                });
             });
         } catch(e) { scaleCanvas(); }
     } else if (existingTemplate && existingTemplate.background_path) {
@@ -401,12 +450,27 @@ require_once INCLUDES_DIR . '/ui-header.php';
         const scaleX = canvasWidth / page.width_px;
         const scaleY = canvasHeight / page.height_px;
 
-        fabric.Image.fromURL(basePath + page.background_url.replace(/^\//, ''), function(img) {
+        fabric.Image.fromURL(basePath + page.background_url.replace(/^\//, ''), async function(img) {
             img.scaleToWidth(canvasWidth);
             img.scaleToHeight(canvasHeight);
             img.set({ selectable: false, evented: false, name: '_background' });
             canvas.add(img);
             canvas.sendToBack(img);
+
+            // Preload every (family, weight, style) the imported page references so Fabric
+            // doesn't draw with serif fallback on cold cache.
+            const detectedFamilies = new Set();
+            const fontSpecs = page.fields.map(f => {
+                if (f.font_family) detectedFamilies.add(f.font_family);
+                ensureGoogleFontLink(f.font_family);
+                return {
+                    family: f.font_family || 'sans-serif',
+                    weight: f.font_weight || 400,
+                    style: f.italic ? 'italic' : 'normal',
+                };
+            });
+            await preloadFonts(fontSpecs);
+            populateFontDropdown(detectedFamilies);
 
             // Place each detected field as a Fabric.IText at the matching x/y/font/size/color
             page.fields.forEach(f => {
@@ -416,16 +480,21 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     'address': 'Address', 'social': 'Social', 'company_tagline': 'Tagline (static)',
                     'qr_code': 'QR Code', 'custom': null,
                 };
+                // Preserve detected_text exactly (whitespace included). Fabric needs the raw
+                // string for static layout segments to keep their positioning intent.
+                const rawDetected = (f.detected_text != null) ? String(f.detected_text) : '';
                 const placeholder = (f.is_static || f.field_key === 'custom')
-                    ? f.detected_text
+                    ? rawDetected
                     : '[' + (labelMap[f.field_key] || f.field_key) + ']';
+                if ((f.is_static || f.field_key === 'custom') && !placeholder.replace(/\s+/g, '')) return;
 
                 const txt = new fabric.IText(placeholder, {
                     left: f.x_px * scaleX,
                     top:  f.y_px * scaleY,
                     fontSize: f.font_size_px * scaleY,
                     fontFamily: f.font_family,
-                    fontWeight: f.font_weight >= 600 ? 'bold' : 'normal',
+                    // Use numeric weight directly so Lato-Medium (500) doesn't collapse to 'normal'
+                    fontWeight: f.font_weight || 400,
                     fontStyle: f.italic ? 'italic' : 'normal',
                     fill: f.color,
                     name: 'field_' + f.field_key,
@@ -460,6 +529,24 @@ require_once INCLUDES_DIR . '/ui-header.php';
             canvas.renderAll();
             if (typeof updateFieldList === 'function') updateFieldList();
         });
+    }
+
+    // Add detected font families to the prop-font dropdown so the printshop can
+    // pick the actual imported fonts (Lato/Sora/Cairo/etc), not just system stock.
+    function populateFontDropdown(families) {
+        const sel = document.getElementById('prop-font');
+        if (!sel || !families) return;
+        const existing = new Set(Array.from(sel.options).map(o => o.value));
+        let added = false;
+        families.forEach(fam => {
+            if (!fam || existing.has(fam)) return;
+            const opt = document.createElement('option');
+            opt.value = fam;
+            opt.textContent = fam + ' (imported)';
+            sel.insertBefore(opt, sel.firstChild);
+            added = true;
+        });
+        if (added) sel.selectedIndex = 0;
     }
 
     function renderSideSwitcher(pages) {
