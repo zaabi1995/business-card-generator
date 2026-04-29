@@ -42,7 +42,11 @@ class CardPDFRenderer
 
         $db = Database::getInstance();
         $employee = $db->fetchOne(
-            'SELECT * FROM employees WHERE id = :id LIMIT 1',
+            'SELECT id, name_en, name_ar, position_en, position_ar,
+                    mobile, phone, email, website,
+                    address_en, address_ar,
+                    company_id, updated_at
+               FROM employees WHERE id = :id LIMIT 1',
             ['id' => $employeeId]
         );
         if (!is_array($employee)) {

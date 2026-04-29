@@ -55,6 +55,7 @@ try {
         header('Content-Length: ' . filesize($vector['path']));
         header('Cache-Control: private, max-age=300');
         header('X-Content-Type-Options: nosniff');
+        header('X-Cardify-Pdf-Mode: vector');
         readfile($vector['path']);
         exit;
     }
@@ -169,6 +170,7 @@ try {
     header('Content-Length: ' . filesize($cachePath));
     header('Cache-Control: private, max-age=300');
     header('X-Content-Type-Options: nosniff');
+    header('X-Cardify-Pdf-Mode: raster-fallback');
     readfile($cachePath);
     exit;
 

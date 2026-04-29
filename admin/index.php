@@ -3022,7 +3022,15 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                 // looked like HTML fragments; belt-and-braces reject here.
                 if (raw.indexOf('<') !== -1 || raw.indexOf('>') !== -1) return '';
                 if (!/^[\/A-Za-z0-9][\w\-\.\/:]*$/.test(raw.replace(/^\//, ''))) return '';
-                var path = raw.replace(/^\//, '');
+                // Prefer SVG background when the template was imported with a vector source.
+                var path = raw;
+                if (template.has_vector_source && template.backgroundSvg) {
+                    path = String(template.backgroundSvg);
+                } else if (template.has_vector_source && raw) {
+                    // Derive sibling .svg (importer always emits one next to the .png).
+                    path = raw.replace(/\.png$/i, '.svg');
+                }
+                path = path.replace(/^\//, '');
                 return this.basePath + path;
             },
             

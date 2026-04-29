@@ -547,12 +547,21 @@ class DatabaseAdapter {
         $templateList = [];
         
         foreach ($templates as $tpl) {
+            // Derive the SVG sibling path when it exists alongside the PNG.
+            $bgImage = $tpl['background_image_path'];
+            $bgSvg   = $tpl['background_svg_path'] ?? null;
+            if (!$bgSvg && !empty($bgImage)) {
+                // Importer always emits a .svg next to the .png; derive it.
+                $bgSvg = preg_replace('/\.png$/i', '.svg', $bgImage);
+            }
             $template = [
                 'id' => $tpl['id'],
                 'pair_id' => $tpl['pair_id'] ?? null,
                 'name' => $tpl['name'],
                 'side' => $tpl['side'],
-                'backgroundImage' => $tpl['background_image_path'],
+                'backgroundImage' => $bgImage,
+                'backgroundSvg' => $bgSvg,
+                'has_vector_source' => (int)($tpl['has_vector_source'] ?? 0),
                 'originalPdf' => $tpl['original_pdf_path'] ?? null,
                 'fields' => json_decode($tpl['fields_json'], true) ?: getDefaultFieldSettings(),
                 'settings' => isset($tpl['settings_json']) ? json_decode($tpl['settings_json'], true) : null,

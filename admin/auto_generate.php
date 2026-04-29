@@ -310,6 +310,10 @@ const AUTOGEN_I18N = <?php echo json_encode([
             <a :href="waShareUrl" target="_blank" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition-colors">
                 <i class="fa-brands fa-whatsapp"></i> <?= htmlspecialchars(t('autogen.share_whatsapp')) ?>
             </a>
+            <a :href="cardPdfUrl" target="_blank" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium transition-colors">
+                <i class="fa-solid fa-file-pdf"></i>
+                Download print PDF
+            </a>
             <a :href="continueUrl" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors">
                 <i class="fa-solid fa-arrow-right"></i> <?= htmlspecialchars(t('autogen.continue')) ?>
             </a>
@@ -404,6 +408,9 @@ function layoutGenerator() {
         get continueUrl() {
             var p = this.isNew ? 'generated' : 'regenerated';
             return this.returnTo + '.php?' + p + '=1';
+        },
+        get cardPdfUrl() {
+            return this.baseUrl + '/card-pdf.php?i=' + encodeURIComponent(this.employeeId || '');
         },
 
         selectLayout(id) {
@@ -649,6 +656,11 @@ function layoutGenerator() {
                 <i class="fa-brands fa-whatsapp"></i>
                 <?= htmlspecialchars(t('autogen.share_whatsapp')) ?>
             </a>
+            <a :href="cardPdfUrl" target="_blank"
+               class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium transition-colors">
+                <i class="fa-solid fa-file-pdf"></i>
+                Download print PDF
+            </a>
             <a :href="continueUrl"
                class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors">
                 <i class="fa-solid fa-arrow-right"></i>
@@ -720,6 +732,9 @@ function autoGenerator() {
             const param = this.isRegenerate ? 'regenerated' : 'generated';
             return this.returnTo + '.php?' + param + '=1';
         },
+        get cardPdfUrl() {
+            return this.baseUrl + '/card-pdf.php?i=' + encodeURIComponent(this.employeeId || (this.employee && this.employee.id) || '');
+        },
         copyCardUrl() {
             navigator.clipboard.writeText(this.cardShareUrl).then(() => {
                 this.copied = true;
@@ -758,12 +773,16 @@ function autoGenerator() {
         
         getBackgroundUrl(template) {
             if (!template || !template.backgroundImage) return '';
-            // Remove leading slash from path
-            const path = template.backgroundImage.replace(/^\//, '');
-            // Cache-bust with the template version so CDNs (Cloudflare)
-            // don't serve a stale bg after a re-import. Stable per version,
-            // no per-request thrash.
             const v = template.current_version || 1;
+            // Prefer SVG background when the template was imported with a vector source.
+            let raw = template.backgroundImage;
+            if (template.has_vector_source && template.backgroundSvg) {
+                raw = template.backgroundSvg;
+            } else if (template.has_vector_source && raw) {
+                // Derive sibling .svg (importer always emits one next to the .png).
+                raw = raw.replace(/\.png$/i, '.svg');
+            }
+            const path = raw.replace(/^\//, '');
             const sep = path.indexOf('?') === -1 ? '?' : '&';
             return this.baseUrl + '/' + path + sep + 'v=' + v;
         },
