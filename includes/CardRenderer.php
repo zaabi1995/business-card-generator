@@ -35,34 +35,38 @@ class CardRenderer
 
         $db = Database::getInstance();
 
+        // Database::fetchOne returns false (PDO default) when no row is found,
+        // not null. Normalize to null/array so the strict type hints below hold.
         $employee = $db->fetchOne(
             'SELECT * FROM employees WHERE id = :id LIMIT 1',
             ['id' => $employeeId]
         );
-        if (!$employee) return null;
+        if (!is_array($employee)) return null;
 
         $company = $db->fetchOne(
             'SELECT * FROM companies WHERE id = :id LIMIT 1',
             ['id' => $employee['company_id']]
         );
-        if (!$company) return null;
+        if (!is_array($company)) return null;
 
         $theme = null;
         try {
-            $theme = $db->fetchOne(
+            $row = $db->fetchOne(
                 'SELECT * FROM company_themes WHERE company_id = :cid LIMIT 1',
                 ['cid' => $company['id']]
             );
+            $theme = is_array($row) ? $row : null;
         } catch (Throwable $e) {
             error_log('CardRenderer theme lookup: ' . $e->getMessage());
         }
 
-        $card = $db->fetchOne(
+        $cardRow = $db->fetchOne(
             'SELECT * FROM generated_cards
               WHERE employee_id = :eid AND company_id = :cid
               ORDER BY generated_at DESC LIMIT 1',
             ['eid' => $employee['id'], 'cid' => $company['id']]
         );
+        $card = is_array($cardRow) ? $cardRow : null;
 
         $frontStored = $card['front_web_path'] ?? null;
         if (!$frontStored) $frontStored = $card['front_file_path'] ?? null;
@@ -246,7 +250,7 @@ class CardRenderer
                        ORDER BY created_at DESC LIMIT 1) AS bv",
                 ['cf' => $companyId, 'cb' => $companyId]
             );
-            if ($row) {
+            if (is_array($row)) {
                 $front = isset($row['fv']) ? (int)$row['fv'] : null;
                 $back  = isset($row['bv']) ? (int)$row['bv'] : null;
             }
