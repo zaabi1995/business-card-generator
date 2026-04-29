@@ -1717,11 +1717,30 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             return;
         }
 
-        // Wait for webfonts so Fabric measures text with the right face (matches
-        // what the admin designer sees). Without this, Cairo / Myriad Pro fall
-        // back to system fonts and positions shift.
-        if (document.fonts && document.fonts.ready) {
-            try { await document.fonts.ready; } catch (e) { /* best effort */ }
+        // Force every (family, weight) the template references to actually
+        // download before Fabric draws. document.fonts.ready alone is not
+        // enough: the <link rel="stylesheet"> only declares @font-face, the
+        // .woff2 isn't fetched until something REFERENCES that face. On a
+        // cold cache Fabric draws first and the canvas falls back to a
+        // generic serif (italic-looking), so Lato/Sora text on the card
+        // appears as Times-italic until the page is reloaded with a warm
+        // cache.
+        if (document.fonts && document.fonts.load) {
+            const needed = new Set();
+            if (template && template.fields) {
+                for (const f of Object.values(template.fields)) {
+                    if (!f || f.enabled === false) continue;
+                    const fam = (f.fontFamily || '').trim();
+                    if (!fam) continue;
+                    const w = f.fontWeight || 400;
+                    const style = (f.italic === true || f.fontStyle === 'italic') ? 'italic' : 'normal';
+                    needed.add(`${style} ${w} 16px "${fam}"`);
+                }
+            }
+            try {
+                await Promise.all(Array.from(needed).map(spec => document.fonts.load(spec)));
+                await document.fonts.ready;
+            } catch (e) { /* best effort */ }
         }
 
         // Clear existing content
