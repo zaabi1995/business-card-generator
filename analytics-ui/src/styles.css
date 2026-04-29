@@ -1,0 +1,245 @@
+/* Cardify Live Analytics, scoped under .cardify-live to coexist with admin layout. */
+
+.cardify-live {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #1f2937;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 22px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.cardify-live h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+.cardify-live h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+.cardify-live .muted {
+  color: #6b7280;
+  font-size: 13px;
+  margin: 0;
+}
+
+.cardify-live__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.cardify-live__range {
+  display: flex;
+  gap: 6px;
+}
+.cardify-live .pill {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+.cardify-live .pill--active {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+
+.cardify-live__kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.kpi {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.kpi__value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.1;
+}
+.kpi__label {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-top: 4px;
+  letter-spacing: 0.05em;
+}
+
+.cardify-live__tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 14px;
+}
+.cardify-live .tab {
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+  border-bottom: 2px solid transparent;
+}
+.cardify-live .tab--active {
+  color: #111827;
+  border-bottom-color: #111827;
+}
+
+.cardify-live__panel {
+  min-height: 200px;
+}
+
+.presence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #f3f4f6;
+  border-radius: 999px;
+  font-weight: 600;
+  color: #4b5563;
+}
+.presence-badge .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #9ca3af;
+}
+.presence-badge--live {
+  background: #dcfce7;
+  color: #166534;
+}
+.presence-badge--live .dot {
+  background: #22c55e;
+  animation: pulse 1.4s infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.6; }
+}
+
+.activity {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.activity__row {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+.activity__row:last-child {
+  border-bottom: 0;
+}
+.activity__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #9ca3af;
+  margin-left: 4px;
+}
+.activity__dot--view { background: #3b82f6; }
+.activity__dot--qr_scan { background: #6366f1; }
+.activity__dot--save_contact { background: #22c55e; }
+.activity__dot--wallet_add { background: #f59e0b; }
+
+.activity__line { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.activity__where { color: #6b7280; font-size: 13px; }
+.activity__device { color: #9ca3af; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+.activity__ts { color: #6b7280; font-size: 12px; white-space: nowrap; }
+
+.geo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.geo-table th, .geo-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #f3f4f6;
+}
+.geo-table th {
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.geo-table__flag { font-size: 18px; width: 32px; }
+.geo-table__num { text-align: right; width: 64px; font-variant-numeric: tabular-nums; }
+.geo-table__bar { width: 35%; }
+.geo-table__bar-fill {
+  height: 6px;
+  background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%);
+  border-radius: 999px;
+}
+
+.timeline {
+  padding: 6px 0;
+}
+.timeline__legend {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 10px;
+}
+.timeline__legend i {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.legend-views { background: #3b82f6; }
+.legend-scans { background: #6366f1; }
+.legend-clicks { background: #22c55e; }
+
+.timeline__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 160px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.timeline__bar {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+.timeline__bar-stack {
+  width: 100%;
+  display: flex;
+  flex-direction: column-reverse;
+  border-radius: 3px 3px 0 0;
+  overflow: hidden;
+}
+.timeline__seg { min-height: 0; }
+.timeline__seg--views { background: #3b82f6; }
+.timeline__seg--scans { background: #6366f1; }
+.timeline__seg--clicks { background: #22c55e; }
+
+.cardify-live__presence hr {
+  border: none;
+  border-top: 1px solid #f3f4f6;
+  margin: 14px 0;
+}

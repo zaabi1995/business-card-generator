@@ -91,10 +91,81 @@ class CardAnalytics
                 'country_name' => $geo['country_name'] ?? null,
                 'referrer'     => $referrer,
             ]);
+
+            // Best-effort: mirror to Convex for the live admin analytics surface.
+            // Hard-capped 200ms timeout, silent on failure. MySQL above is canonical.
+            self::mirrorToConvex(
+                $employeeId,
+                $companyId,
+                $eventType,
+                $ctaTarget,
+                $visitorId,
+                $ip,
+                $ua,
+                $device,
+                $geo,
+                $referrer
+            );
+
             return true;
         } catch (Exception $e) {
             error_log('CardAnalytics::log failed: ' . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Mirror the just-logged event into Convex (live analytics).
+     * No-op when FEATURE_LIVE_ANALYTICS is off or the URL/secret are missing.
+     */
+    private static function mirrorToConvex(
+        $employeeId,
+        $companyId,
+        $eventType,
+        $ctaTarget,
+        $visitorId,
+        $ip,
+        $ua,
+        array $device,
+        array $geo,
+        $referrer
+    ) {
+        if (!defined('FEATURE_LIVE_ANALYTICS') || !FEATURE_LIVE_ANALYTICS) {
+            return;
+        }
+        try {
+            require_once __DIR__ . '/ConvexEvents.php';
+
+            $company = function_exists('findCompanyById')
+                ? findCompanyById($companyId)
+                : null;
+
+            $companySlug   = $company['slug']    ?? (string) $companyId;
+            $companyNameEn = $company['name_en'] ?? $company['name'] ?? $companySlug;
+            $companyNameAr = $company['name_ar'] ?? null;
+
+            ConvexEvents::send(
+                $employeeId,
+                $companyId,
+                $companySlug,
+                $companyNameEn,
+                $companyNameAr,
+                $eventType,
+                [
+                    'ctaTarget'   => $ctaTarget ? substr($ctaTarget, 0, 512) : null,
+                    'visitorId'   => $visitorId,
+                    'ip'          => $ip,
+                    'countryCode' => $geo['country_code'] ?? null,
+                    'countryName' => $geo['country_name'] ?? null,
+                    'city'        => $geo['city'] ?? null,
+                    'device'      => $device['device_type'] ?? null,
+                    'browser'     => $device['browser'] ?? null,
+                    'os'          => $device['os'] ?? null,
+                    'referrer'    => $referrer ? substr($referrer, 0, 512) : null,
+                ]
+            );
+        } catch (Throwable $e) {
+            @error_log('CardAnalytics::mirrorToConvex failed: ' . $e->getMessage());
         }
     }
 

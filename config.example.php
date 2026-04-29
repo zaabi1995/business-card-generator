@@ -224,6 +224,16 @@ if (!defined('GOOGLE_WALLET_SERVICE_ACCOUNT_JSON')) define('GOOGLE_WALLET_SERVIC
 if (!defined('GOOGLE_WALLET_ISSUER_ID'))            define('GOOGLE_WALLET_ISSUER_ID', '');            // 10-16 digit issuer ID
 if (!defined('GOOGLE_WALLET_CLASS_ID'))             define('GOOGLE_WALLET_CLASS_ID', 'cardify_business_card_v1'); // arbitrary class suffix
 
+// Live Analytics (Convex sidecar)
+// Hybrid event store, MySQL stays system of record. PHP additionally fires each
+// card event to Convex over a 200ms-capped HTTP call so /admin/live-analytics.php
+// can show reactive KPIs. Setup: docs/CONVEX_DEPLOY.md.
+if (!defined('FEATURE_LIVE_ANALYTICS')) define('FEATURE_LIVE_ANALYTICS', false);
+if (!defined('CONVEX_INGEST_URL'))      define('CONVEX_INGEST_URL', '');         // e.g. https://cardify.om/_convex/http/ingest
+if (!defined('CONVEX_INGEST_SECRET'))   define('CONVEX_INGEST_SECRET', '');      // shared with Convex .env.convex
+if (!defined('CONVEX_BROWSER_URL'))     define('CONVEX_BROWSER_URL', '');        // e.g. https://cardify.om/_convex/api
+if (!defined('CONVEX_AUTH_SECRET'))     define('CONVEX_AUTH_SECRET', '');        // HS256 secret for admin JWT bridge
+
 // Include required files
 require_once INCLUDES_DIR . '/Database.php';
 require_once INCLUDES_DIR . '/functions.php';
