@@ -1,0 +1,55 @@
+<?php
+/**
+ * One-shot CLI helper, mint a PHP session as a target user.
+ *
+ * Usage:
+ *   /www/server/php/83/bin/php scripts/mint-session.php <user-email>
+ *
+ * Output: a single line with the PHPSESSID cookie value. Use it to drive
+ * authenticated requests from Playwright / curl without typing a password.
+ *
+ * Use with care, this bypasses login. Only run on the VPS as root. Sessions
+ * created here have the same permissions as a normal login, scoped to the
+ * matched user's company + role.
+ */
+
+if (PHP_SAPI !== 'cli') { http_response_code(403); exit; }
+
+require_once __DIR__ . '/../config.php';
+
+$email = $argv[1] ?? '';
+if ($email === '') {
+    fwrite(STDERR, "Usage: php scripts/mint-session.php <user-email>\n");
+    exit(2);
+}
+
+$db = Database::getInstance();
+$user = $db->fetchOne('SELECT * FROM users WHERE email = :e LIMIT 1', ['e' => $email]);
+if (!is_array($user)) {
+    fwrite(STDERR, "User not found: $email\n");
+    exit(2);
+}
+
+// Bind a fresh session id (the CLI doesn't get one automatically).
+$sid = bin2hex(random_bytes(16));
+session_id($sid);
+session_start();
+
+$_SESSION['user_id']         = $user['id'];
+$_SESSION['user_email']      = $user['email'];
+$_SESSION['user_name']       = $user['name'];
+$_SESSION['user_role']       = $user['role'];
+$_SESSION['user_company_id'] = $user['company_id'] ?? null;
+
+if (!empty($user['company_id'])) {
+    $_SESSION['company_id'] = $user['company_id'];
+    $company = $db->fetchOne('SELECT slug, name FROM companies WHERE id = :i', ['i' => $user['company_id']]);
+    if ($company) {
+        $_SESSION['company_slug'] = $company['slug'];
+        $_SESSION['company_name'] = $company['name'];
+    }
+}
+
+session_write_close();
+
+echo $sid . "\n";
