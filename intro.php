@@ -139,7 +139,7 @@ $basePath = getBasePath();
             transform: rotateY(10deg) rotateX(5deg);
         }
         
-        /* Reveal animations — visible by default, GSAP animates entrance */
+        /* Reveal animations, visible by default, GSAP animates entrance */
         /* No opacity:0 here so content is visible even if JS/GSAP fails */
         
         /* Interactive cursor */
@@ -617,13 +617,23 @@ $basePath = getBasePath();
                                 <div class="grid grid-cols-2 gap-3 text-sm">
                                     <div class="bg-gray-50 rounded-lg p-3">
                                         <div class="text-gray-500">Standard</div>
-                                        <div class="font-bold text-gray-900">OMR 5.00</div>
+                                        <div class="font-bold text-gray-900">OMR 6.000</div>
                                         <div class="text-xs text-gray-500">per 100 cards</div>
                                     </div>
                                     <div class="bg-gray-50 rounded-lg p-3">
                                         <div class="text-gray-500">Premium</div>
-                                        <div class="font-bold text-gray-900">OMR 8.00</div>
+                                        <div class="font-bold text-gray-900">OMR 8.000</div>
                                         <div class="text-xs text-gray-500">per 100 cards</div>
+                                    </div>
+                                    <div class="bg-gray-50 rounded-lg p-3">
+                                        <div class="text-gray-500">Luxury</div>
+                                        <div class="font-bold text-gray-900">OMR 15.000</div>
+                                        <div class="text-xs text-gray-500">per 100 cards</div>
+                                    </div>
+                                    <div class="bg-gray-50 rounded-lg p-3">
+                                        <div class="text-gray-500">NFC Tap</div>
+                                        <div class="font-bold text-gray-900">OMR 25.000</div>
+                                        <div class="text-xs text-gray-500">per card</div>
                                     </div>
                                 </div>
                             </div>
@@ -735,7 +745,7 @@ $basePath = getBasePath();
                         <span class="text-blue-600">Pay Only for Printing</span>
                     </h2>
                     <p class="text-xl text-gray-600 mb-8 leading-relaxed">
-                        No subscriptions. No hidden fees. Create unlimited cards, add unlimited employees, design unlimited templates — all for free. 
+                        No subscriptions. No hidden fees. Create unlimited cards, add unlimited employees, design unlimited templates, all for free. 
                         You only pay when you decide to print physical cards.
                     </p>
                     
@@ -872,9 +882,7 @@ $basePath = getBasePath();
                 <div class="reveal-right">
                     <div class="relative">
                         <div class="bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 rounded-3xl p-8 shadow-xl border border-amber-100">
-                            <!-- Centre card with orbiting channel icons -->
                             <div class="relative flex items-center justify-center" style="min-height: 360px;">
-                                <!-- The card -->
                                 <div class="demo-card bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 rounded-2xl p-5 shadow-2xl z-10" style="width: 240px; aspect-ratio: 3.5/2;">
                                     <div class="h-full flex flex-col justify-between">
                                         <div class="text-white/50 text-[10px] tracking-wider uppercase">Your Company</div>
@@ -888,8 +896,6 @@ $basePath = getBasePath();
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- Orbiting channel chips -->
                                 <div class="absolute top-0 left-4 bg-white rounded-2xl p-3 shadow-lg flex items-center gap-2 float">
                                     <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                                         <i class="fa-brands fa-whatsapp text-green-600"></i>
@@ -951,7 +957,7 @@ $basePath = getBasePath();
                         <i class="fa-solid fa-layer-group text-xl text-blue-600"></i>
                     </div>
                     <h3 class="text-lg font-bold text-gray-900 mb-2">Multi-Department</h3>
-                    <p class="text-gray-600 text-sm">Different templates for different departments. Sales, Marketing, Engineering — each with unique branding.</p>
+                    <p class="text-gray-600 text-sm">Different templates for different departments. Sales, Marketing, Engineering, each with unique branding.</p>
                 </div>
                 
                 <div class="reveal-up bg-white rounded-2xl p-6 border border-gray-100 hover:border-purple-200 hover:shadow-xl transition-all group cursor-pointer" style="transition-delay: 0.05s;">
@@ -1046,7 +1052,7 @@ $basePath = getBasePath();
                     <span>From Our Users</span>
                 </div>
                 <blockquote class="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 leading-relaxed">
-                    "We use Cardify for all BHD employees — it's simple, fast, and keeps our branding consistent across the team."
+                    "We use Cardify for all BHD employees. It's simple, fast, and keeps our branding consistent across the team."
                 </blockquote>
                 <div class="flex items-center justify-center gap-4">
                     <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">A</div>
@@ -1074,12 +1080,12 @@ $basePath = getBasePath();
                 </h2>
                 <p class="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
                     Omani companies trust Cardify for their business cards.
-                    It's completely free to start — no credit card required.
+                    It's completely free to start, no credit card required.
                 </p>
                 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
                     <a href="<?php echo $basePath; ?>company/register.php" class="group inline-flex items-center justify-center gap-3 px-10 py-5 bg-white hover:bg-gray-100 text-gray-900 text-lg font-bold rounded-2xl shadow-xl transition-all hover:-translate-y-1">
-                        <span>Start Free — No Credit Card</span>
+                        <span>Start Free, No Credit Card</span>
                         <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                     </a>
                 </div>
@@ -1168,7 +1174,7 @@ $basePath = getBasePath();
             }
         });
         
-        // Reveal animations — use gsap.from() so content is visible if GSAP fails
+        // Reveal animations, use gsap.from() so content is visible if GSAP fails
         document.querySelectorAll('.reveal-up').forEach((el, i) => {
             gsap.from(el, {
                 opacity: 0,

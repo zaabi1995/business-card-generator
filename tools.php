@@ -1,6 +1,6 @@
 <?php
 /**
- * Cardify Free Tools — SEO hub page
+ * Cardify Free Tools, SEO hub page
  *
  * Lists the free client-side tools Cardify offers: vCard QR, email
  * signature, WhatsApp QR, NFC guide. Each tool is a standalone SEO
@@ -9,8 +9,8 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle = 'Free Business Card Tools — Cardify';
-$pageDescription = 'Free tools from Cardify: vCard QR generator, email signature builder, WhatsApp QR, NFC card setup guide. No signup required.';
+$pageTitle = t('tools.page_title');
+$pageDescription = t('tools.page_desc');
 $canonicalUrl = 'https://cardify.om/tools';
 $showNavigation = true;
 $bodyClass = 'bg-white';
@@ -18,36 +18,36 @@ $bodyClass = 'bg-white';
 $tools = [
     [
         'slug' => 'vcard-qr-generator',
-        'title' => 'vCard QR Code Generator',
-        'desc' => 'Create a downloadable QR code that saves your contact straight to any phone. Works on iPhone + Android, no app required.',
+        'title_key' => 'tools.tool_vcard_title',
+        'desc_key'  => 'tools.tool_vcard_desc',
         'icon' => 'fa-qrcode',
         'color' => 'blue',
-        'badge' => 'Most popular',
+        'badge_key' => 'tools.badge_most_popular',
     ],
     [
         'slug' => 'email-signature-generator',
-        'title' => 'Email Signature Generator',
-        'desc' => 'Build a Gmail + Outlook-compatible HTML signature in 30 seconds. Bilingual EN/AR option for Oman professionals.',
+        'title_key' => 'tools.tool_email_title',
+        'desc_key'  => 'tools.tool_email_desc',
         'icon' => 'fa-envelope',
         'color' => 'indigo',
-        'badge' => null,
+        'badge_key' => null,
     ],
     [
         'slug' => 'whatsapp-qr-generator',
-        'title' => 'WhatsApp QR Generator',
-        'desc' => 'Generate a QR that opens a WhatsApp chat with your number and a pre-filled message — perfect for shopfronts and trade shows.',
+        'title_key' => 'tools.tool_whatsapp_title',
+        'desc_key'  => 'tools.tool_whatsapp_desc',
         'icon' => 'fa-whatsapp',
         'color' => 'emerald',
         'brand' => 'fa-brands',
-        'badge' => null,
+        'badge_key' => null,
     ],
     [
         'slug' => 'nfc-business-card-guide',
-        'title' => 'NFC Business Cards Guide',
-        'desc' => 'Everything about NFC-enabled business cards in Oman: how they work, iPhone vs Android, setup, and where to buy.',
+        'title_key' => 'tools.tool_nfc_title',
+        'desc_key'  => 'tools.tool_nfc_desc',
         'icon' => 'fa-wifi',
         'color' => 'purple',
-        'badge' => 'Guide',
+        'badge_key' => 'tools.badge_guide',
     ],
 ];
 
@@ -71,18 +71,18 @@ $itemListLd = [
     '@context' => 'https://schema.org',
     '@type' => 'ItemList',
     'name' => 'Cardify Free Tools',
-    'itemListElement' => array_map(function ($i, $t) {
+    'itemListElement' => array_map(function ($i, $tItem) {
         return [
             '@type' => 'ListItem',
             'position' => $i + 1,
-            'url' => 'https://cardify.om/tools/' . $t['slug'],
-            'name' => $t['title'],
+            'url' => 'https://cardify.om/tools/' . $tItem['slug'],
+            'name' => t($tItem['title_key']),
         ];
     }, array_keys($tools), $tools),
 ];
-$extraHead = '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES) . '</script>'
-           . '<script type="application/ld+json">' . json_encode($crumbLd, JSON_UNESCAPED_SLASHES) . '</script>'
-           . '<script type="application/ld+json">' . json_encode($itemListLd, JSON_UNESCAPED_SLASHES) . '</script>';
+$extraHead = '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+           . '<script type="application/ld+json">' . json_encode($crumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
+           . '<script type="application/ld+json">' . json_encode($itemListLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
@@ -90,38 +90,38 @@ require_once INCLUDES_DIR . '/ui-header.php';
 <div class="bg-gradient-to-b from-gray-50 to-white pt-28 pb-16">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
-            <span class="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-wide mb-4">Free · No signup</span>
-            <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-4">Free Business Card Tools</h1>
+            <span class="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-wide mb-4"><?= htmlspecialchars(t('tools.badge_free_nosignup')) ?></span>
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-4"><?= htmlspecialchars(t('tools.h1')) ?></h1>
             <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                Quick utilities from the Cardify team. Generate QR codes, signatures, and WhatsApp links in seconds — no account, no paywall.
+                <?= htmlspecialchars(t('tools.hero_sub')) ?>
             </p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <?php foreach ($tools as $t):
+            <?php foreach ($tools as $tItem):
                 $colorClass = [
                     'blue' => 'from-blue-500 to-blue-600 text-blue-700 bg-blue-50',
                     'indigo' => 'from-indigo-500 to-indigo-600 text-indigo-700 bg-indigo-50',
                     'emerald' => 'from-emerald-500 to-emerald-600 text-emerald-700 bg-emerald-50',
                     'purple' => 'from-purple-500 to-purple-600 text-purple-700 bg-purple-50',
-                ][$t['color']] ?? 'from-gray-500 to-gray-600 text-gray-700 bg-gray-50';
+                ][$tItem['color']] ?? 'from-gray-500 to-gray-600 text-gray-700 bg-gray-50';
                 $parts = explode(' ', $colorClass);
                 $gradient = $parts[0] . ' ' . $parts[1];
                 $textColor = $parts[2];
                 $bgColor = $parts[3];
-                $iconLib = $t['brand'] ?? 'fa-solid';
+                $iconLib = $tItem['brand'] ?? 'fa-solid';
             ?>
-            <a href="/tools/<?= htmlspecialchars($t['slug']) ?>" class="group relative bg-white rounded-2xl border border-gray-200 p-6 hover:border-blue-300 hover:shadow-lg transition-all">
-                <?php if ($t['badge']): ?>
-                    <span class="absolute top-4 right-4 px-2.5 py-1 rounded-full bg-gray-900 text-white text-[11px] font-semibold"><?= htmlspecialchars($t['badge']) ?></span>
+            <a href="/tools/<?= htmlspecialchars($tItem['slug']) ?>" class="group relative bg-white rounded-2xl border border-gray-200 p-6 hover:border-blue-300 hover:shadow-lg transition-all">
+                <?php if (!empty($tItem['badge_key'])): ?>
+                    <span class="absolute top-4 right-4 px-2.5 py-1 rounded-full bg-gray-900 text-white text-[11px] font-semibold"><?= htmlspecialchars(t($tItem['badge_key'])) ?></span>
                 <?php endif; ?>
                 <div class="w-12 h-12 rounded-xl bg-gradient-to-br <?= $gradient ?> flex items-center justify-center text-white text-lg mb-5">
-                    <i class="<?= $iconLib ?> <?= htmlspecialchars($t['icon']) ?>"></i>
+                    <i class="<?= $iconLib ?> <?= htmlspecialchars($tItem['icon']) ?>"></i>
                 </div>
-                <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars($t['title']) ?></h2>
-                <p class="text-gray-600 leading-relaxed text-sm"><?= htmlspecialchars($t['desc']) ?></p>
+                <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t($tItem['title_key'])) ?></h2>
+                <p class="text-gray-600 leading-relaxed text-sm"><?= htmlspecialchars(t($tItem['desc_key'])) ?></p>
                 <div class="mt-5 inline-flex items-center gap-2 text-sm font-semibold <?= $textColor ?> group-hover:gap-3 transition-all">
-                    Open tool
+                    <?= htmlspecialchars(t('tools.open_tool')) ?>
                     <i class="fa-solid fa-arrow-right text-xs"></i>
                 </div>
             </a>
@@ -129,12 +129,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
 
         <div class="mt-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-8 lg:p-10 text-center text-white">
-            <h2 class="text-2xl sm:text-3xl font-bold mb-3">Running a team in Oman?</h2>
+            <h2 class="text-2xl sm:text-3xl font-bold mb-3"><?= htmlspecialchars(t('tools.cta_h2')) ?></h2>
             <p class="text-blue-100 max-w-2xl mx-auto mb-6">
-                Free tools are great for individuals. For team-wide digital cards with central branding, analytics, and ordering printed cards — use Cardify.
+                <?= htmlspecialchars(t('tools.cta_body')) ?>
             </p>
             <a href="/get-started" class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white text-blue-700 font-semibold hover:bg-blue-50 transition">
-                Start free with Cardify
+                <?= htmlspecialchars(t('tools.cta_button')) ?>
                 <i class="fa-solid fa-arrow-right text-sm"></i>
             </a>
         </div>

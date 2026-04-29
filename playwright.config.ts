@@ -28,5 +28,18 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      // Cat U action 487 — Safari iOS latest. Playwright's webkit engine
+      // tracks current Safari, so running this project exercises the
+      // same rendering + JS pipeline iPhone users see.
+      // Opt-in: `npx playwright test --project="Safari iOS"`.
+      name: 'Safari iOS',
+      use: { ...devices['iPhone 14'] },
+    },
+    {
+      // Cat U action 488 — Chrome Android. Pixel 7 UA + 412×915 vp.
+      name: 'Chrome Android',
+      use: { ...devices['Pixel 7'] },
+    },
   ],
 });

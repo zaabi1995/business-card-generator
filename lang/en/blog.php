@@ -1,0 +1,20 @@
+<?php
+return [
+    'page_title'         => 'Cardify Blog, Business Card Tips & Trends in Oman',
+    'page_desc'          => 'Expert tips on business card design, networking, and professional branding for Omani businesses and entrepreneurs.',
+    'single_page_title'  => ':title, Cardify Blog',
+    'h1'                 => 'Blog',
+    'hero_sub'           => 'Insights, tips, and updates from the :brand team.',
+    'back_to_blog'       => 'Back to blog',
+    'back_home'          => 'Back to home',
+    'by_author'          => 'By :name',
+    'min_read'           => ':n min read',
+    'share_article'      => 'Share this article:',
+    'cta_h3'             => 'Ready to create your business cards?',
+    'cta_body'           => 'Join 500+ Omani companies using Cardify. Free to start.',
+    'cta_button'         => 'Get started free',
+    'related_articles'   => 'Related articles',
+    'coming_soon_h2'     => 'Blog coming soon',
+    'coming_soon_body'   => "We're working on valuable content about digital networking, productivity tips, and industry insights. Check back soon.",
+    'read_more'          => 'Read more',
+];

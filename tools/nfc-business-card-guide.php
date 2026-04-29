@@ -1,12 +1,12 @@
 <?php
 /**
- * Cardify — NFC Business Cards Guide (content page, no JS tool)
+ * Cardify, NFC Business Cards Guide (content page, no JS tool)
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
 $pageTitle = 'NFC Business Cards Guide: How They Work and Setup in Oman';
-$pageDescription = 'Complete guide to NFC business cards in Oman — how they work, iPhone vs Android compatibility, setup steps, NFC vs QR vs traditional cards, and where to buy.';
+$pageDescription = 'Complete guide to NFC business cards in Oman, how they work, iPhone vs Android compatibility, setup steps, NFC vs QR vs traditional cards, and where to buy.';
 $canonicalUrl = 'https://cardify.om/tools/nfc-business-card-guide';
 
 $howToLd = [
@@ -25,7 +25,7 @@ $howToLd = [
             '@type' => 'HowToStep',
             'position' => 1,
             'name' => 'Choose your destination URL',
-            'text' => 'Decide what the card should open when tapped — your Cardify digital card, your LinkedIn profile, your website, or a vCard download link. A public URL is the most reliable option.',
+            'text' => 'Decide what the card should open when tapped, your Cardify digital card, your LinkedIn profile, your website, or a vCard download link. A public URL is the most reliable option.',
         ],
         [
             '@type' => 'HowToStep',
@@ -63,7 +63,7 @@ $faqLd = [
             'name' => 'Do I need an app to use an NFC business card?',
             'acceptedAnswer' => [
                 '@type' => 'Answer',
-                'text' => 'No. Both iPhone (7 and newer, running iOS 14+) and nearly all Android phones (5.0+) read NFC URLs natively. The recipient just taps the card against their phone — no app install required.',
+                'text' => 'No. Both iPhone (7 and newer, running iOS 14+) and nearly all Android phones (5.0+) read NFC URLs natively. The recipient just taps the card against their phone, no app install required.',
             ],
         ],
         [
@@ -79,7 +79,7 @@ $faqLd = [
             'name' => 'How is NFC different from a QR code?',
             'acceptedAnswer' => [
                 '@type' => 'Answer',
-                'text' => 'A QR code is scanned by the phone camera — the user must open the camera app, point at the code, and tap a notification. NFC requires physical contact (under 4cm) but needs zero user action beyond touching the card to the phone. NFC feels faster and more magical; QR is cheaper to print and works on older phones.',
+                'text' => 'A QR code is scanned by the phone camera, the user must open the camera app, point at the code, and tap a notification. NFC requires physical contact (under 4cm) but needs zero user action beyond touching the card to the phone. NFC feels faster and more magical; QR is cheaper to print and works on older phones.',
             ],
         ],
         [
@@ -119,7 +119,7 @@ $faqLd = [
             'name' => 'Can I combine NFC and QR on the same card?',
             'acceptedAnswer' => [
                 '@type' => 'Answer',
-                'text' => 'Yes — and most professionals do. NFC handles the modern, elegant "tap" for people with new phones, while the QR code acts as a universal fallback for older devices or situations where tapping is awkward. Both can point to the same URL.',
+                'text' => 'Yes, and most professionals do. NFC handles the modern, elegant "tap" for people with new phones, while the QR code acts as a universal fallback for older devices or situations where tapping is awkward. Both can point to the same URL.',
             ],
         ],
     ],
@@ -154,7 +154,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <span class="text-gray-700">NFC Business Cards Guide</span>
             </nav>
             <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">NFC Business Cards Guide: How They Work and Setup in Oman</h1>
-            <p class="text-gray-600 text-lg">A practical guide to NFC business cards — what the technology is, which phones support it, how to program a card, how it compares to QR codes and paper cards, and where to actually buy them in Oman.</p>
+            <p class="text-gray-600 text-lg">A practical guide to NFC business cards, what the technology is, which phones support it, how to program a card, how it compares to QR codes and paper cards, and where to actually buy them in Oman.</p>
         </div>
     </div>
 
@@ -177,19 +177,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
         <article class="bg-white rounded-xl shadow-sm p-6 sm:p-10 guide-content">
             <h2 class="mt-0">What is an NFC business card?</h2>
-            <p>An NFC business card looks, to the eye, exactly like a normal paper or plastic business card. What makes it different is a small antenna and a microchip — usually less than half the thickness of a credit card — embedded inside. When someone holds a modern smartphone near the card, the phone powers the chip via electromagnetic induction, reads whatever data is stored on it, and acts on that data. Most commonly, the chip holds a web URL that opens a digital profile page with your contact details, social links, calendar booking widget, and whatever else you want.</p>
-            <p>NFC stands for Near-Field Communication. It is the same short-range wireless technology that powers Apple Pay, Google Wallet, contactless metro cards, and modern hotel key cards. Range is intentionally tiny — roughly 2 to 4 centimetres — which is what makes it secure enough for payments. You have to deliberately tap the card against the phone; there is no passive broadcast or tracking.</p>
+            <p>An NFC business card looks, to the eye, exactly like a normal paper or plastic business card. What makes it different is a small antenna and a microchip, usually less than half the thickness of a credit card, embedded inside. When someone holds a modern smartphone near the card, the phone powers the chip via electromagnetic induction, reads whatever data is stored on it, and acts on that data. Most commonly, the chip holds a web URL that opens a digital profile page with your contact details, social links, calendar booking widget, and whatever else you want.</p>
+            <p>NFC stands for Near-Field Communication. It is the same short-range wireless technology that powers Apple Pay, Google Wallet, contactless metro cards, and modern hotel key cards. Range is intentionally tiny, roughly 2 to 4 centimetres, which is what makes it secure enough for payments. You have to deliberately tap the card against the phone; there is no passive broadcast or tracking.</p>
 
             <h2>How NFC actually works</h2>
-            <p>Inside the card is a passive chip (almost always an NTAG213, NTAG215, or NTAG216 in business-card form factor). "Passive" means it has no battery. Instead, when a phone's NFC reader is close enough, the phone's magnetic field induces a tiny current in the card's copper antenna, which briefly powers the chip. The chip then modulates the phone's field in response, transmitting the stored data — often as a URL in the NFC Data Exchange Format (NDEF).</p>
-            <p>The data capacity is small: NTAG213 holds 144 bytes, NTAG215 holds 504 bytes, and NTAG216 holds 888 bytes. That is plenty for a URL or a compact vCard, but not for an image or a PDF. Almost every professional NFC business card in use today stores a URL that points to a hosted profile, which is a much better approach than writing a static vCard directly to the chip — more on that below.</p>
+            <p>Inside the card is a passive chip (almost always an NTAG213, NTAG215, or NTAG216 in business-card form factor). "Passive" means it has no battery. Instead, when a phone's NFC reader is close enough, the phone's magnetic field induces a tiny current in the card's copper antenna, which briefly powers the chip. The chip then modulates the phone's field in response, transmitting the stored data, often as a URL in the NFC Data Exchange Format (NDEF).</p>
+            <p>The data capacity is small: NTAG213 holds 144 bytes, NTAG215 holds 504 bytes, and NTAG216 holds 888 bytes. That is plenty for a URL or a compact vCard, but not for an image or a PDF. Almost every professional NFC business card in use today stores a URL that points to a hosted profile, which is a much better approach than writing a static vCard directly to the chip, more on that below.</p>
 
             <h2>iPhone vs Android compatibility</h2>
             <p>Compatibility is no longer a meaningful concern in 2026, but it is the question everyone asks first, so here is the full picture.</p>
 
             <h3>iPhone</h3>
             <ul>
-                <li><strong>iPhone XS, XR, 11, 12, 13, 14, 15, 16 and newer</strong> (any iPhone from 2018 onward): NFC tag reading is permanently on in the background whenever the phone is unlocked and the screen is on. Tap the card to the top of the phone and a notification banner appears — tap it to open the URL. Zero setup, zero app install.</li>
+                <li><strong>iPhone XS, XR, 11, 12, 13, 14, 15, 16 and newer</strong> (any iPhone from 2018 onward): NFC tag reading is permanently on in the background whenever the phone is unlocked and the screen is on. Tap the card to the top of the phone and a notification banner appears, tap it to open the URL. Zero setup, zero app install.</li>
                 <li><strong>iPhone 7, 8, X</strong>: NFC reading works but is not always on. The user must open Control Center, tap the NFC reader button (you may need to add it in Settings first), and then hold the card to the phone.</li>
                 <li><strong>iPhone 6 and earlier</strong>: No NFC reading. These users need a QR fallback.</li>
             </ul>
@@ -201,13 +201,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </ul>
 
             <blockquote>
-                <strong>Rule of thumb:</strong> If someone has bought a phone in the last five years, their NFC works. Always design for the 1-2% of users who cannot tap by printing a QR code on the same card — ideally pointing to the same URL.
+                <strong>Rule of thumb:</strong> If someone has bought a phone in the last five years, their NFC works. Always design for the 1-2% of users who cannot tap by printing a QR code on the same card, ideally pointing to the same URL.
             </blockquote>
 
             <h2>How to set up your NFC business card</h2>
             <p>The five steps below apply whether you bought a blank card online or a custom-printed batch from a supplier.</p>
             <ol>
-                <li><strong>Decide what the tap should do.</strong> The strongest choice is a public URL that you control — a Cardify profile, a LinkedIn page, a dedicated page on your own website. Avoid writing a raw vCard directly to the chip: vCards are rigid, cannot be updated once written, and render inconsistently across iOS and Android.</li>
+                <li><strong>Decide what the tap should do.</strong> The strongest choice is a public URL that you control, a Cardify profile, a LinkedIn page, a dedicated page on your own website. Avoid writing a raw vCard directly to the chip: vCards are rigid, cannot be updated once written, and render inconsistently across iOS and Android.</li>
                 <li><strong>Install an NFC writer app.</strong> <em>NFC Tools</em> by wakdev is free on both iOS and Android and has the cleanest interface. <em>NXP TagWriter</em> is the official manufacturer tool and slightly more powerful. Either works.</li>
                 <li><strong>Write the URL.</strong> In the app, choose "Write" &rarr; "URL/URI", paste your destination link, and hold the blank card flat against the back of your phone (or the top, for iPhone). The write takes about two seconds. You will hear a confirmation tone or see a green checkmark.</li>
                 <li><strong>Lock the tag.</strong> This is optional but strongly recommended for a business card that leaves your hands. In the writer app, choose "Other features" &rarr; "Lock tag". Once locked, the tag is permanently read-only. A malicious person who picks up your card cannot rewrite it to point to a phishing site.</li>
@@ -245,7 +245,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </tr>
                     <tr>
                         <td>Update info after printing</td>
-                        <td>No — reprint</td>
+                        <td>No, reprint</td>
                         <td>Yes (if QR points to short URL)</td>
                         <td>Yes (if chip is unlocked and URL-based)</td>
                     </tr>
@@ -270,29 +270,29 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </tbody>
             </table>
 
-            <p>The practical answer for most Oman-based businesses in 2026: <strong>print a beautiful paper or PVC card with both a QR and an NFC chip, all pointing to the same hosted profile.</strong> You pay a few hundred baisa more per card, and you cover every scenario — the CEO who loves the tap, the auditor with an old phone who needs the QR, and the traditionalist who still wants to write the number on their rolodex.</p>
+            <p>The practical answer for most Oman-based businesses in 2026: <strong>print a beautiful paper or PVC card with both a QR and an NFC chip, all pointing to the same hosted profile.</strong> You pay a few hundred baisa more per card, and you cover every scenario, the CEO who loves the tap, the auditor with an old phone who needs the QR, and the traditionalist who still wants to write the number on their rolodex.</p>
 
             <h2>Where to buy NFC business cards in Oman</h2>
-            <p>The local print-shop market is still catching up. As of 2026, very few shops in Muscat or Salalah stock NFC cards as a standard product — you will almost always be placing a custom order. Your realistic options:</p>
+            <p>The local print-shop market is still catching up. As of 2026, very few shops in Muscat or Salalah stock NFC cards as a standard product, you will almost always be placing a custom order. Your realistic options:</p>
             <ul>
                 <li><strong>Regional UAE suppliers.</strong> Dubai-based companies like TapNTag, Popl, and V1CE ship to Oman within 3-5 business days via DHL or Aramex. Prices range from 3-8 OMR per custom-printed card in small batches, with steep bulk discounts above 100 pieces.</li>
                 <li><strong>Direct import from AliExpress / Alibaba.</strong> If you just need blank NFC PVC cards to write yourself, bulk orders from Chinese suppliers come in at 0.200-0.500 OMR per card, 1-3 week delivery. Good for experimentation or in-house company use.</li>
                 <li><strong>Amazon UAE.</strong> Same-week delivery, slightly higher prices than AliExpress, better return policy.</li>
-                <li><strong>Local agencies that can source + program.</strong> A full-service print and branding partner (such as BHD Printing &amp; Designing) can handle the entire flow — design the card, order NFC stock from a trusted supplier, program each card with a per-employee URL, and deliver a finished product to your office. This is the right choice if you want the whole team on the same system and do not want to touch an NFC writer app yourself.</li>
+                <li><strong>Local agencies that can source + program.</strong> A full-service print and branding partner (such as BHD Printing &amp; Designing) can handle the entire flow, design the card, order NFC stock from a trusted supplier, program each card with a per-employee URL, and deliver a finished product to your office. This is the right choice if you want the whole team on the same system and do not want to touch an NFC writer app yourself.</li>
             </ul>
 
             <h2>A note on privacy and security</h2>
-            <p>NFC business cards are a one-way read — the card broadcasts a URL, the phone opens it. The card cannot "steal" anything from the recipient's phone; there is no channel for that. The only real risk is that if you leave the card unlocked, someone with physical access (for example, a card you handed to a stranger at a conference who then sits next to you) could technically reprogram it to point at a phishing URL before giving it back. Locking the tag after the initial write eliminates that risk completely, and takes ten seconds.</p>
+            <p>NFC business cards are a one-way read, the card broadcasts a URL, the phone opens it. The card cannot "steal" anything from the recipient's phone; there is no channel for that. The only real risk is that if you leave the card unlocked, someone with physical access (for example, a card you handed to a stranger at a conference who then sits next to you) could technically reprogram it to point at a phishing URL before giving it back. Locking the tag after the initial write eliminates that risk completely, and takes ten seconds.</p>
 
             <h2>FAQ</h2>
             <h3>Do I need an app to use an NFC business card?</h3>
-            <p>No. Both iPhone (7 and newer, running iOS 14+) and nearly all Android phones (5.0+) read NFC URLs natively. The recipient just taps the card against their phone — no app install required.</p>
+            <p>No. Both iPhone (7 and newer, running iOS 14+) and nearly all Android phones (5.0+) read NFC URLs natively. The recipient just taps the card against their phone, no app install required.</p>
 
             <h3>Does NFC work on iPhone?</h3>
             <p>Yes. Since iPhone XS (iOS 13+), NFC tag reading is always on in the background whenever the screen is unlocked. iPhone 7 and 8 users need to be on iOS 14+ and open the Control Center NFC reader manually. On all modern iPhones, tapping an NFC business card pops up a notification banner that opens the URL when tapped.</p>
 
             <h3>How is NFC different from a QR code?</h3>
-            <p>A QR code is scanned by the phone camera — the user must open the camera app, point at the code, and tap a notification. NFC requires physical contact (under 4cm) but needs zero user action beyond touching the card to the phone. NFC feels faster and more magical; QR is cheaper to print and works on older phones.</p>
+            <p>A QR code is scanned by the phone camera, the user must open the camera app, point at the code, and tap a notification. NFC requires physical contact (under 4cm) but needs zero user action beyond touching the card to the phone. NFC feels faster and more magical; QR is cheaper to print and works on older phones.</p>
 
             <h3>Can I change what my NFC card links to after I print it?</h3>
             <p>Only if the card is unlocked. If you point the NFC card at a short URL like <code>cardify.om/ali</code>, you can update the profile behind that URL any time without rewriting the card. If you write a raw vCard or a hard-coded URL directly to the chip, changing it requires either rewriting (if unlocked) or reprinting.</p>
@@ -304,7 +304,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <p>No. Passive NFC chips have no battery and no moving parts. They are rated for 100,000+ write cycles and will read reliably for 10+ years under normal use. They can fail if physically cracked, bent sharply, or exposed to strong magnetic fields.</p>
 
             <h3>Can I combine NFC and QR on the same card?</h3>
-            <p>Yes — and most professionals do. NFC handles the modern, elegant "tap" for people with new phones, while the QR code acts as a universal fallback for older devices or situations where tapping is awkward. Both can point to the same URL.</p>
+            <p>Yes, and most professionals do. NFC handles the modern, elegant "tap" for people with new phones, while the QR code acts as a universal fallback for older devices or situations where tapping is awkward. Both can point to the same URL.</p>
 
             <div class="mt-10 pt-6 border-t border-gray-100 text-sm text-gray-500">
                 Building a digital card profile your NFC and QR should point to? <a href="<?= getBasePath() ?>intro" class="text-blue-600 font-medium hover:text-blue-700">Try Cardify &rarr;</a>

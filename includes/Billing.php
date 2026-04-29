@@ -46,10 +46,10 @@ class Billing {
                     : (float)$priceRow['price_monthly'];
             }
         } catch (\Throwable $e) {
-            // plan_prices may not exist — use subscription_plans fallback
+            // plan_prices may not exist, use subscription_plans fallback
         }
 
-        // Don't send $0 plans to Paymob — activate directly
+        // Don't send $0 plans to Paymob, activate directly
         if ($amount <= 0) {
             $interval = $billingCycle === 'yearly' ? '+1 year' : '+1 month';
             $db->update('companies', [
@@ -122,7 +122,7 @@ class Billing {
     }
 
     /**
-     * Paymob Unified Checkout — delegates to Payment.php
+     * Paymob Unified Checkout, delegates to Payment.php
      */
     private function createPaymobPaymentIntent($amount, $companyId, $planId, $billingCycle) {
         require_once __DIR__ . '/Payment.php';
@@ -229,7 +229,7 @@ class Billing {
     }
     
     /**
-     * Handle Paymob callback — delegates to Payment.php
+     * Handle Paymob callback, delegates to Payment.php
      * Falls back to legacy payment_transactions for old subscriptions
      */
     public function handlePaymobCallback($data, $hmac = null) {
@@ -258,7 +258,7 @@ class Billing {
      * Legacy Paymob callback handler for old payment_transactions records
      */
     public function handleLegacyPaymobCallback($data, $hmac = null) {
-        // Verify HMAC — required even for legacy records
+        // Verify HMAC, required even for legacy records
         $receivedHmac = $hmac ?? ($data['hmac'] ?? null);
         if (empty($receivedHmac)) {
             error_log("Legacy payment callback: Missing HMAC");
@@ -321,6 +321,14 @@ class Billing {
                 'id = :id', ['id' => $transaction['company_id']]
             );
             unset($_SESSION['paymob_payment_' . $merchantOrderId]);
+
+            // BHD-234: referral reward on first paid conversion.
+            try {
+                require_once INCLUDES_DIR . '/Referral.php';
+                Referral::onPaidConversion((string)$transaction['company_id'], (float)($transaction['amount'] ?? 0));
+            } catch (Throwable $e) {
+                error_log('[referral] paid hook failed (paymob legacy): ' . $e->getMessage());
+            }
         }
 
         return ['success' => true, 'status' => $transactionStatus, 'transaction_id' => $transaction['id']];
@@ -443,7 +451,7 @@ class Billing {
         // If payment successful, update company subscription
         if ($transactionStatus === 'completed') {
             $expiresAt = date('Y-m-d H:i:s', strtotime('+1 ' . ($transaction['payment_method'] === 'yearly' ? 'year' : 'month')));
-            
+
             $db->update('companies',
                 [
                     'plan' => $transaction['plan_id'],
@@ -454,9 +462,17 @@ class Billing {
                 'id = :id',
                 ['id' => $transaction['company_id']]
             );
-            
+
             // Clear session
             unset($_SESSION['amwal_payment_' . $orderId]);
+
+            // BHD-234: referral reward on first paid conversion.
+            try {
+                require_once INCLUDES_DIR . '/Referral.php';
+                Referral::onPaidConversion((string)$transaction['company_id'], (float)($transaction['amount'] ?? 0));
+            } catch (Throwable $e) {
+                error_log('[referral] paid hook failed (amwal): ' . $e->getMessage());
+            }
         }
         
         return [
@@ -578,7 +594,7 @@ class Billing {
     public function checkLimit($companyId, $limitType) {
         $limits = $this->getPlanLimits($companyId);
         if (!$limits) {
-            return false; // Fail closed — deny if limits can't be verified
+            return false; // Fail closed, deny if limits can't be verified
         }
 
         // Map limit type to key
@@ -719,61 +735,11 @@ class Billing {
      * @return bool Whether the feature is available
      */
     public static function hasFeature($companyId, $feature) {
-        $billing = new self();
-        $isPaid = $billing->hasActiveSubscription($companyId);
-        
-        // Check plan type
-        $db = Database::getInstance();
-        $plan = 'free';
-        try {
-            $company = $db->fetchOne(
-                "SELECT plan FROM companies WHERE id = :id",
-                ['id' => $companyId]
-            );
-            $plan = $company['plan'] ?? 'free';
-        } catch (Throwable $e) {
-            error_log("Billing::hasFeature error: " . $e->getMessage());
-        }
-        
-        // Feature availability matrix — plan IDs must match subscription_plans.id in DB
-        $paidFeatures = [
-            'high_quality' => true,
-            'qr_tracking' => true,
-            'bulk_generation' => true,
-            'api_access' => true,
-            'custom_branding' => true,
-            'proof_sheets' => true,
-            'basic_generation' => true,
-            'portal_access' => true
-        ];
-        $features = [
-            'free' => [
-                'high_quality' => false,
-                'qr_tracking' => false,
-                'bulk_generation' => false,
-                'api_access' => false,
-                'custom_branding' => false,
-                'proof_sheets' => true, // Allow proof sheets for all
-                'basic_generation' => true,
-                'portal_access' => true
-            ],
-            // 'pro' is the actual DB plan ID for the mid-tier paid plan
-            'pro'          => $paidFeatures,
-            // Legacy aliases kept for backward compatibility
-            'starter'      => $paidFeatures,
-            'professional' => $paidFeatures,
-            'enterprise'   => $paidFeatures,
-        ];
-        
-        // Default to free plan features if plan not found
-        $planFeatures = $features[$plan] ?? $features['free'];
-        
-        // If paid subscription active, grant all features
-        if ($isPaid) {
-            return true;
-        }
-        
-        return $planFeatures[$feature] ?? false;
+        // Every feature is free for every team since the Apr 2026 pricing reset.
+        // Platform-side capabilities (HD, QR analytics, bulk gen, API, custom
+        // branding, proof sheets, portal) are unlimited. Revenue is per-order
+        // print products, not feature gates.
+        return true;
     }
     
     /**
@@ -783,51 +749,46 @@ class Billing {
      * @return array Plan info with features
      */
     public static function getCompanyPlanInfo($companyId) {
-        $billing = new self();
-        $db = Database::getInstance();
-        
+        // All companies have unlimited access to every platform feature since
+        // the Apr 2026 pricing reset. The 'plan' string is kept for legacy
+        // reporting and UI compatibility but no longer gates anything.
         $info = [
             'plan' => 'free',
             'plan_name' => 'Free',
-            'is_paid' => false,
+            'is_paid' => true, // hides legacy "upgrade your plan" UI nags
             'subscription_status' => null,
             'expires_at' => null,
-            'quality_multiplier' => 1,
-            'features' => []
+            'quality_multiplier' => 4, // HD always
+            'features' => [
+                'high_quality'    => true,
+                'qr_tracking'     => true,
+                'bulk_generation' => true,
+                'api_access'      => true,
+                'custom_branding' => true,
+                'proof_sheets'    => true,
+            ],
         ];
-        
+
         try {
+            $db = Database::getInstance();
             $company = $db->fetchOne(
                 "SELECT plan, subscription_status, subscription_expires_at FROM companies WHERE id = :id",
                 ['id' => $companyId]
             );
-            
             if ($company) {
                 $info['plan'] = $company['plan'] ?? 'free';
                 $info['subscription_status'] = $company['subscription_status'];
                 $info['expires_at'] = $company['subscription_expires_at'];
-                
-                // Get plan name
                 $planDetails = $db->fetchOne(
                     "SELECT name FROM subscription_plans WHERE id = :id",
                     ['id' => $info['plan']]
                 );
                 $info['plan_name'] = $planDetails['name'] ?? ucfirst($info['plan']);
             }
-            
-            $info['is_paid'] = $billing->hasActiveSubscription($companyId);
-            $info['quality_multiplier'] = self::getQualityMultiplier($companyId);
-            
-            // Add feature flags
-            $featureList = ['high_quality', 'qr_tracking', 'bulk_generation', 'api_access', 'custom_branding', 'proof_sheets'];
-            foreach ($featureList as $feature) {
-                $info['features'][$feature] = self::hasFeature($companyId, $feature);
-            }
-            
         } catch (Throwable $e) {
             error_log("Billing::getCompanyPlanInfo error: " . $e->getMessage());
         }
-        
+
         return $info;
     }
 }

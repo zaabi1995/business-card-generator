@@ -26,7 +26,7 @@ if ($employeeId) {
 
 if (!$employee) {
     // User is logged in but not an employee of this company
-    header('Location: ' . getBasePath() . $companySlug . '/');
+    header('Location: ' . getTenantUrl($companySlug));
     exit;
 }
 
@@ -626,7 +626,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <p class="text-sm text-gray-500">Appears below your contact buttons when someone scans your QR.</p>
                 </div>
                 <?php if (!empty($company['slug']) && !empty($employee['id'])): ?>
-                <a href="<?php echo getBasePath() . sanitize($company['slug']) . '/card/' . sanitize($employee['id']); ?>" target="_blank" class="text-sm text-blue-600 hover:underline">Preview &rarr;</a>
+                <a href="<?php echo htmlspecialchars(getTenantUrl($company['slug'], '/card/' . $employee['id'])); ?>" target="_blank" class="text-sm text-blue-600 hover:underline">Preview &rarr;</a>
                 <?php endif; ?>
             </div>
 
@@ -691,7 +691,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <p class="text-xs text-gray-500 mt-1">Supports YouTube, Vimeo, or direct mp4/webm/mov.</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Video title <span class="text-xs text-gray-400">— optional</span></label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Video title <span class="text-xs text-gray-400">, optional</span></label>
                         <input type="text" name="video_title" maxlength="200"
                                value="<?php echo sanitize($sectionMaster['video_title'] ?? ''); ?>"
                                placeholder="Watch our intro"
@@ -703,13 +703,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fa-solid fa-location-dot mr-1 text-gray-500"></i> Business address</label>
                         <input type="text" name="location_address" maxlength="512"
-                               placeholder="e.g. Way 4509, Al Khuwair, Muscat — or paste a Google Maps link"
+                               placeholder="e.g. Way 4509, Al Khuwair, Muscat, or paste a Google Maps link"
                                value="<?php echo sanitize($sectionMaster['location_address'] ?? ''); ?>"
                                class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         <p class="text-xs text-gray-500 mt-1">Shown as an embedded map with a "Get Directions" button. No API key required.</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Location label <span class="text-xs text-gray-400">— optional</span></label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Location label <span class="text-xs text-gray-400">, optional</span></label>
                         <input type="text" name="location_label" maxlength="120"
                                placeholder="e.g. Head Office"
                                value="<?php echo sanitize($sectionMaster['location_label'] ?? ''); ?>"
@@ -719,12 +719,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <div class="grid md:grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Bio (English) <span class="text-xs text-gray-400">— primary</span></label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Bio (English) <span class="text-xs text-gray-400">, primary</span></label>
                         <textarea name="bio_text" rows="4" placeholder="A short paragraph about you. Use **text** for bold."
                                   class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"><?php echo sanitize($sectionMaster['bio_text'] ?? ''); ?></textarea>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">السيرة (العربية) <span class="text-xs text-gray-400">— optional</span></label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">السيرة (العربية) <span class="text-xs text-gray-400">, optional</span></label>
                         <textarea name="bio_text_ar" rows="4" dir="rtl" placeholder="نبذة قصيرة عنك."
                                   class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"><?php echo sanitize($sectionMaster['bio_text_ar'] ?? ''); ?></textarea>
                     </div>
@@ -1089,7 +1089,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                   class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"></textarea>
                     </div>
                     <div class="grid gap-2 pt-2 border-t border-dashed border-gray-200" dir="rtl">
-                        <div class="text-xs text-gray-500 self-center" dir="ltr">Arabic (optional — falls back to English)</div>
+                        <div class="text-xs text-gray-500 self-center" dir="ltr">Arabic (optional, falls back to English)</div>
                         <input type="text" name="faq_question_ar" dir="rtl" placeholder="السؤال" maxlength="500"
                                class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
                         <textarea name="faq_answer_ar" dir="rtl" placeholder="الإجابة" rows="3"
@@ -1104,7 +1104,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="mt-8 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div class="p-4 border-b border-gray-100">
                 <h2 class="font-semibold text-gray-900"><i class="fa-solid fa-share-nodes mr-1 text-gray-500"></i> Social Links</h2>
-                <p class="text-sm text-gray-500">Add as many social profiles as you want — drag to reorder. Each one renders as a circular icon on your public card.</p>
+                <p class="text-sm text-gray-500">Add as many social profiles as you want, drag to reorder. Each one renders as a circular icon on your public card.</p>
             </div>
             <form method="post" class="p-6 space-y-4"
                   x-data="socialLinksEditor(<?php echo htmlspecialchars(json_encode(array_map(function($s){ return ['platform'=>$s['platform'],'url'=>$s['url']]; }, $socialLinks)), ENT_QUOTES, 'UTF-8'); ?>)"

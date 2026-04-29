@@ -55,14 +55,20 @@ try {
     // Convert URL to file path for attachments
     $basePath = BASE_DIR;
     
-    // Helper to convert URL to file path
-    $urlToPath = function($url) use ($basePath) {
-        if (empty($url)) return null;
-        // Remove base URL and leading slash
+    // Helper to convert URL to file path. Uses realpath() to collapse ".."
+    // segments and verifies the resolved file is still under BASE_DIR, so a
+    // POSTed URL like "../../etc/passwd" can't turn into an email attachment.
+    $baseReal = realpath($basePath);
+    $urlToPath = function($url) use ($basePath, $baseReal) {
+        if (empty($url) || !is_string($url)) return null;
         $relativePath = preg_replace('#^https?://[^/]+/#', '', $url);
         $relativePath = ltrim($relativePath, '/');
         $fullPath = $basePath . '/' . $relativePath;
-        return file_exists($fullPath) ? $fullPath : null;
+        $real = realpath($fullPath);
+        if (!$real || !$baseReal || strpos($real, $baseReal . DIRECTORY_SEPARATOR) !== 0) {
+            return null;
+        }
+        return is_file($real) ? $real : null;
     };
     
     // Get file paths

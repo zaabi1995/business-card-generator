@@ -25,30 +25,13 @@ class Auth {
 
         $email = sanitizeEmail($email);
 
-        // Brute force protection: rate limit login attempts per IP
+        // Brute force protection, persistent per-IP counter in the DB so it
+        // survives cookie clears and new browser sessions. 10 attempts per
+        // 15-minute rolling bucket, fail-open if the limiter backend is down.
+        require_once __DIR__ . '/RateLimiter.php';
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-        $rateLimitKey = 'login_attempts_' . md5($ip);
-        $maxAttempts = 10;
-        $lockoutMinutes = 15;
-
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            if (!isset($_SESSION[$rateLimitKey])) {
-                $_SESSION[$rateLimitKey] = ['count' => 0, 'first_attempt' => time()];
-            }
-
-            $attempts = &$_SESSION[$rateLimitKey];
-
-            // Reset counter if lockout period has passed
-            if ((time() - $attempts['first_attempt']) > ($lockoutMinutes * 60)) {
-                $attempts = ['count' => 0, 'first_attempt' => time()];
-            }
-
-            if ($attempts['count'] >= $maxAttempts) {
-                $remainingMinutes = ceil(($lockoutMinutes * 60 - (time() - $attempts['first_attempt'])) / 60);
-                return ['success' => false, 'error' => "Too many login attempts. Please try again in {$remainingMinutes} minutes."];
-            }
-
-            $attempts['count']++;
+        if (!RateLimiter::check('login_attempt', $ip, 10, 900)) {
+            return ['success' => false, 'error' => 'Too many login attempts. Please try again in 15 minutes.'];
         }
         
         // Step 1: Check users table (super_admin, admin, company roles)
@@ -98,7 +81,7 @@ class Auth {
             return ['success' => false, 'error' => 'Invalid email or password'];
         }
 
-        // Email not found — return same generic error to prevent user enumeration
+        // Email not found, return same generic error to prevent user enumeration
         return ['success' => false, 'error' => 'Invalid email or password'];
     }
     
@@ -149,7 +132,7 @@ class Auth {
         return [
             'success' => true,
             'user' => $employee,
-            'redirect' => getBasePath() . $employee['company_slug'] . '/'
+            'redirect' => getTenantUrl($employee['company_slug'] ?? null)
         ];
     }
     
@@ -274,7 +257,7 @@ class Auth {
         return [
             'success' => true,
             'company' => $company,
-            'redirect' => getBasePath() . $company['slug'] . '/admin/'
+            'redirect' => getTenantUrl($company['slug'] ?? null, '/admin/')
         ];
     }
     
@@ -293,15 +276,13 @@ class Auth {
             case 'company_admin':
             case 'admin':
             case 'company':
-                // Redirect company admins to their admin panel
                 if ($companySlug) {
-                    return getBasePath() . $companySlug . '/admin/';
+                    return getTenantUrl($companySlug, '/admin/');
                 }
                 return getBasePath() . 'admin/';
             case 'employee':
-                // Redirect employees to their company portal
                 if ($companySlug) {
-                    return getBasePath() . $companySlug . '/';
+                    return getTenantUrl($companySlug);
                 }
                 return getBasePath();
             default:
@@ -395,7 +376,7 @@ class Auth {
         $userId = $_SESSION['user_id'] ?? null;
         $userRole = $_SESSION['user_role'] ?? null;
         
-        // Case 1: Employee — user_id holds the employee's ID
+        // Case 1: Employee, user_id holds the employee's ID
         if ($userRole === 'employee' && $userId) {
             $employee = self::$db->fetchOne(
                 "SELECT e.*, c.slug as company_slug, c.name as company_name 
@@ -418,7 +399,7 @@ class Auth {
             }
         }
         
-        // Case 2: Legacy company admin — user_id is "company_X"
+        // Case 2: Legacy company admin, user_id is "company_X"
         if ($userId && is_string($userId) && strpos($userId, 'company_') === 0) {
             $companyId = substr($userId, 8); // strip "company_" prefix
             $company = self::$db->fetchOne(

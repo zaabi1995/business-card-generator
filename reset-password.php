@@ -7,7 +7,7 @@ require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Mailer.php';
 
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
-$pageTitle = 'Reset Password';
+$pageTitle = t('reset.page_title');
 $htmlClass = 'h-full bg-white';
 $bodyClass = 'h-full';
 
@@ -35,8 +35,8 @@ $extraHead = <<<HTML
             transition: all 0.15s ease;
         }
         .form-input:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            border-color: #009bc1;
+            box-shadow: 0 0 0 3px rgba(0, 155, 193, 0.12);
         }
         .form-input::placeholder {
             color: #9ca3af;
@@ -53,7 +53,7 @@ function validateResetToken($db, $token) {
     }
     
     try {
-        // Token is stored hashed — hash the incoming token to compare
+        // Token is stored hashed, hash the incoming token to compare
         $hashedToken = hash('sha256', $token);
         $tokenData = $db->fetchOne(
             "SELECT * FROM password_reset_tokens
@@ -241,37 +241,48 @@ function sendPasswordChangedEmail($email, $name) {
     $siteName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
     $loginUrl = getBaseUrl() . 'login.php';
     
-    $subject = "Your Password Has Been Changed - {$siteName}";
+    $subject      = t('reset.confirm_subject', ['site' => $siteName]);
+    $h2           = t('reset.confirm_h2');
+    $hi           = t('reset.confirm_hi', ['name' => htmlspecialchars($name)]);
+    $intro        = t('reset.confirm_intro', ['email' => '<strong>' . htmlspecialchars($email) . '</strong>']);
+    $boxTitle     = t('reset.confirm_box_title');
+    $boxBody      = t('reset.confirm_box_body');
+    $btnLabel     = t('reset.confirm_btn');
+    $warnTitle    = t('reset.confirm_warn_title');
+    $warnBody     = t('reset.confirm_warn_body');
+    $signoff      = t('reset.confirm_signoff');
+    $team         = t('reset.confirm_team', ['site' => $siteName]);
+
     $body = <<<HTML
-<h2>Password Changed Successfully</h2>
-<p>Hi {$name},</p>
-<p>This is a confirmation that the password for your account (<strong>{$email}</strong>) has been changed.</p>
+<h2>{$h2}</h2>
+<p>{$hi}</p>
+<p>{$intro}</p>
 
 <div class="success-box" style="background: #f0fdf4; border-left: 4px solid #22c55e; padding: 15px; margin: 15px 0; border-radius: 0 4px 4px 0;">
-    <strong>✓ Your password has been updated</strong><br>
-    You can now sign in with your new password.
+    <strong>✓ {$boxTitle}</strong><br>
+    {$boxBody}
 </div>
 
 <p style="text-align: center; margin: 30px 0;">
-    <a href="{$loginUrl}" class="btn" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
-        Sign In
+    <a href="{$loginUrl}" class="btn" style="display: inline-block; padding: 12px 24px; background: #009bc1; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+        {$btnLabel}
     </a>
 </p>
 
 <div class="warning-box" style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; margin: 15px 0; border-radius: 0 4px 4px 0;">
-    <strong>Didn't change your password?</strong><br>
-    If you didn't make this change, please contact us immediately. Someone may have accessed your account.
+    <strong>{$warnTitle}</strong><br>
+    {$warnBody}
 </div>
 
-<p>Best regards,<br>The {$siteName} Team</p>
+<p>{$signoff}<br>{$team}</p>
 HTML;
-    
+
     return Mailer::send($email, $subject, $body);
 }
 
 // Check database availability
 if (!DatabaseAdapter::useDatabase()) {
-    $message = 'Password reset is not available.';
+    $message = t('reset.not_available');
     $messageType = 'error';
 } else {
     $db = Database::getInstance();
@@ -285,20 +296,20 @@ if (!DatabaseAdapter::useDatabase()) {
     // Handle form submission
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tokenValid) {
         if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-            $message = 'Invalid request. Please try again.';
+            $message = t('reset.invalid_csrf');
             $messageType = 'error';
         } else {
         $password = $_POST['password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
-        
+
         if (empty($password) || empty($confirmPassword)) {
-            $message = 'Please fill in all fields';
+            $message = t('reset.fill_all_fields');
             $messageType = 'error';
         } elseif (strlen($password) < 8) {
-            $message = 'Password must be at least 8 characters';
+            $message = t('reset.min_length');
             $messageType = 'error';
         } elseif ($password !== $confirmPassword) {
-            $message = 'Passwords do not match';
+            $message = t('reset.no_match');
             $messageType = 'error';
         } else {
             // Update password
@@ -309,38 +320,38 @@ if (!DatabaseAdapter::useDatabase()) {
             
             if ($updated) {
                 $resetComplete = true;
-                $message = 'Your password has been reset successfully!';
-                
+                $message = t('reset.reset_success');
+
                 // Get user name for email
-                $userName = 'User';
+                $userName = t('reset.default_user');
                 try {
                     switch ($tokenData['user_type']) {
                         case 'user':
                             $user = $db->fetchOne("SELECT name FROM users WHERE id = :id", ['id' => $tokenData['user_id']]);
-                            $userName = $user['name'] ?? 'User';
+                            $userName = $user['name'] ?? t('reset.default_user');
                             break;
                         case 'print_shop':
                             // Try to get name from print_shops table by email
                             $printShop = $db->fetchOne("SELECT name FROM print_shops WHERE email = :email", ['email' => $tokenData['email']]);
-                            $userName = $printShop['name'] ?? 'Print Shop';
+                            $userName = $printShop['name'] ?? t('reset.default_print_shop');
                             break;
                         case 'company':
                             $company = $db->fetchOne("SELECT name FROM companies WHERE id = :id", ['id' => $tokenData['user_id']]);
-                            $userName = $company['name'] ?? 'Admin';
+                            $userName = $company['name'] ?? t('reset.default_admin');
                             break;
                         case 'employee':
                             $employee = $db->fetchOne("SELECT name_en FROM employees WHERE id = :id", ['id' => $tokenData['user_id']]);
-                            $userName = $employee['name_en'] ?? 'Employee';
+                            $userName = $employee['name_en'] ?? t('reset.default_employee');
                             break;
                     }
                 } catch (Exception $e) {
                     // Use default name
                 }
-                
+
                 // Send confirmation email
                 sendPasswordChangedEmail($tokenData['email'], $userName);
             } else {
-                $message = 'Failed to reset password. Please try again.';
+                $message = t('reset.reset_failed');
                 $messageType = 'error';
                 // Log debug info server-side only
                 if (!empty($debugInfo)) {
@@ -369,13 +380,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <i class="fa-solid fa-circle-check text-3xl text-green-600"></i>
                     </div>
                     <h2 class="mb-3 text-2xl font-bold text-gray-900">
-                        Password reset complete
+                        <?php echo htmlspecialchars(t('reset.success_h1')); ?>
                     </h2>
                     <p class="text-gray-500 mb-6">
-                        <?php echo htmlspecialchars($message); ?> You can now sign in with your new password.
+                        <?php echo htmlspecialchars($message); ?> <?php echo htmlspecialchars(t('reset.success_sub')); ?>
                     </p>
                     <a href="<?php echo getBasePath(); ?>login.php" class="inline-flex items-center justify-center w-full px-5 py-3 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors">
-                        Sign in
+                        <?php echo htmlspecialchars(t('reset.sign_in')); ?>
                         <i class="fa-solid fa-arrow-right ml-2"></i>
                     </a>
                 </div>
@@ -386,23 +397,23 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <i class="fa-solid fa-link-slash text-3xl text-red-600"></i>
                     </div>
                     <h2 class="mb-3 text-2xl font-bold text-gray-900">
-                        Invalid or expired link
+                        <?php echo htmlspecialchars(t('reset.invalid_h1')); ?>
                     </h2>
                     <p class="text-gray-500 mb-6">
-                        This password reset link is invalid or has expired. Reset links are valid for 1 hour. Please request a new one.
+                        <?php echo htmlspecialchars(t('reset.invalid_sub')); ?>
                     </p>
                     <a href="<?php echo getBasePath(); ?>forgot-password.php" class="inline-flex items-center justify-center w-full px-5 py-3 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors">
-                        Request new link
+                        <?php echo htmlspecialchars(t('reset.request_new')); ?>
                         <i class="fa-solid fa-arrow-right ml-2"></i>
                     </a>
                 </div>
                 <?php else: ?>
                 <!-- Form State -->
                 <h2 class="mb-3 text-2xl font-bold text-gray-900">
-                    Reset your password
+                    <?php echo htmlspecialchars(t('reset.form_h1')); ?>
                 </h2>
                 <p class="text-gray-500 mb-6">
-                    Enter your new password below. Make sure it's at least 8 characters.
+                    <?php echo htmlspecialchars(t('reset.form_sub')); ?>
                 </p>
                 
                 <?php if ($message && $messageType === 'error'): ?>
@@ -420,35 +431,35 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     
                     <div>
                         <label for="password" class="block mb-2 text-sm font-medium text-gray-900">
-                            New password
+                            <?php echo htmlspecialchars(t('reset.new_password')); ?>
                         </label>
-                        <input type="password" name="password" id="password" 
-                               class="form-input" 
-                               placeholder="••••••••" required minlength="8"
+                        <input type="password" name="password" id="password"
+                               class="form-input"
+                               placeholder="<?php echo htmlspecialchars(t('reset.password_placeholder')); ?>" required minlength="8"
                                autocomplete="new-password">
-                        <p class="mt-1.5 text-xs text-gray-500">Minimum 8 characters</p>
+                        <p class="mt-1.5 text-xs text-gray-500"><?php echo htmlspecialchars(t('reset.min_hint')); ?></p>
                     </div>
-                    
+
                     <div>
                         <label for="confirm_password" class="block mb-2 text-sm font-medium text-gray-900">
-                            Confirm new password
+                            <?php echo htmlspecialchars(t('reset.confirm_password')); ?>
                         </label>
-                        <input type="password" name="confirm_password" id="confirm_password" 
-                               class="form-input" 
-                               placeholder="••••••••" required minlength="8"
+                        <input type="password" name="confirm_password" id="confirm_password"
+                               class="form-input"
+                               placeholder="<?php echo htmlspecialchars(t('reset.password_placeholder')); ?>" required minlength="8"
                                autocomplete="new-password">
                     </div>
-                    
+
                     <button type="submit" class="w-full px-5 py-3 text-base font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors">
-                        Reset password
+                        <?php echo htmlspecialchars(t('reset.submit_button')); ?>
                         <i class="fa-solid fa-check ml-2"></i>
                     </button>
                 </form>
-                
+
                 <p class="mt-6 text-center text-sm text-gray-500">
-                    Remember your password?
+                    <?php echo htmlspecialchars(t('reset.remember_prompt')); ?>
                     <a href="<?php echo getBasePath(); ?>login.php" class="font-semibold text-blue-600 hover:text-blue-500">
-                        Sign in
+                        <?php echo htmlspecialchars(t('reset.sign_in_link')); ?>
                     </a>
                 </p>
                 <?php endif; ?>
@@ -459,7 +470,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <p class="mt-8 text-center text-sm text-gray-500">
             <a href="<?php echo getBasePath(); ?>" class="font-medium text-gray-700 hover:text-gray-900">
                 <i class="fa-solid fa-arrow-left mr-1"></i>
-                Back to homepage
+                <?php echo htmlspecialchars(t('reset.back_home')); ?>
             </a>
         </p>
     </div>

@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin — Branded Link Shortener
+ * Admin, Branded Link Shortener
  *
  * Company admins create/edit/delete short links pointing to destination URLs.
  * Each link lives at cardify.om/s/<slug> and increments a click counter.
@@ -28,7 +28,7 @@ if (!$companyId) {
     exit;
 }
 
-// Slugs that collide with existing public/admin routes — cannot be used.
+// Slugs that collide with existing public/admin routes, cannot be used.
 $RESERVED_SLUGS = [
     'admin','api','login','logout','install','share','company','webhooks',
     'amwalpay','assets','uploads','data','printshop','industries','intro',
@@ -84,7 +84,7 @@ $validateDestination = function (string $url) {
             return 'Destination cannot point back to cardify.om.';
         }
     }
-    // Block free/abused TLDs — common in phishing kits.
+    // Block free/abused TLDs, common in phishing kits.
     if (hasUnsafeTld($host)) {
         $tld = substr(strrchr($host, '.') ?: '', 1);
         return 'That destination TLD (.' . $tld . ') is not allowed. Please use your own domain.';
@@ -198,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($autoApproved) {
                         $message = 'Short link created: /s/' . $slug;
                     } else {
-                        $message = 'Short link /s/' . $slug . ' created — awaiting super-admin approval before it will redirect.';
+                        $message = 'Short link /s/' . $slug . ' created, awaiting super-admin approval before it will redirect.';
                     }
                 } catch (Exception $e) {
                     $message = 'Create failed: ' . $e->getMessage();
@@ -303,7 +303,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ':c'  => $companyId,
                         ]);
                         if ($destChanged) {
-                            $message = 'Short link updated — destination changed, awaiting super-admin re-approval.';
+                            $message = 'Short link updated, destination changed, awaiting super-admin re-approval.';
                         } else {
                             $message = 'Short link updated.';
                         }
@@ -431,8 +431,8 @@ adminHeader('Short Links', 'short-links');
     <?php if (empty($links)): ?>
     <div class="p-12 text-center text-gray-500">
         <i class="fa-solid fa-link-slash text-4xl text-gray-300 mb-3"></i>
-        <p class="font-medium">No short links yet</p>
-        <p class="text-sm mt-1">Create your first one above.</p>
+        <p class="font-medium"><?= htmlspecialchars(t('emptystates.no_short_links_h')) ?></p>
+        <p class="text-sm mt-1"><?= htmlspecialchars(t('emptystates.no_short_links_sub')) ?></p>
     </div>
     <?php else: ?>
     <div class="overflow-x-auto">
@@ -465,7 +465,7 @@ adminHeader('Short Links', 'short-links');
                                 <i class="fa-regular fa-copy"></i>
                             </button>
                             <?php if (!$approved): ?>
-                                <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-semibold uppercase tracking-wide" title="Waiting for super-admin approval — will return 404 until approved">Pending</span>
+                                <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-semibold uppercase tracking-wide" title="Waiting for super-admin approval, will return 404 until approved">Pending</span>
                             <?php endif; ?>
                         </div>
                     </td>
@@ -473,7 +473,7 @@ adminHeader('Short Links', 'short-links');
                         <a href="<?= sanitize($l['destination']); ?>" target="_blank" rel="noopener"
                            class="text-gray-700 hover:underline text-xs break-all line-clamp-2"><?= sanitize($l['destination']); ?></a>
                     </td>
-                    <td class="px-4 py-3 text-gray-600"><?= sanitize($l['title'] ?? '') ?: '<span class="text-gray-300">—</span>'; ?></td>
+                    <td class="px-4 py-3 text-gray-600"><?= sanitize($l['title'] ?? '') ?: '<span class="text-gray-300">,</span>'; ?></td>
                     <td class="px-4 py-3 text-right font-semibold text-gray-900"><?= number_format((int)$l['click_count']); ?></td>
                     <td class="px-4 py-3 text-gray-500 text-xs">
                         <?php if ($l['expires_at']): ?>

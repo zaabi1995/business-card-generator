@@ -1,98 +1,81 @@
 <?php
 /**
- * Billing Diagnostic Tool (super admin only)
+ * Billing Diagnostic Tool (super admin only).
+ *
+ * Dumps schema and migration state, so it MUST be restricted. Without auth,
+ * this endpoint leaked table existence and row counts to the public internet.
  */
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
+require_once __DIR__ . '/../config.php';
+require_once INCLUDES_DIR . '/Auth.php';
+
+Auth::requireRole('super_admin');
+
 echo "<h2>Billing Page Diagnostic</h2>";
 
-// Step 1: Check config
-echo "<h3>1. Loading config.php...</h3>";
-try {
-    require_once __DIR__ . '/../config.php';
-    echo "✅ config.php loaded successfully<br>";
-} catch (Throwable $e) {
-    die("❌ Error loading config.php: " . $e->getMessage());
-}
+// Step 1: config
+echo "<h3>1. config.php</h3>✅ loaded<br>";
 
-// Step 2: Check database connection
-echo "<h3>2. Checking database connection...</h3>";
+// Step 2: DB
+echo "<h3>2. Database</h3>";
 try {
     $db = Database::getInstance();
-    if ($db && $db->isConnected()) {
-        echo "✅ Database connected<br>";
-    } else {
-        die("❌ Database not connected");
-    }
+    if (!($db && $db->isConnected())) { die("❌ Database not connected"); }
+    echo "✅ connected<br>";
 } catch (Throwable $e) {
-    die("❌ Database error: " . $e->getMessage());
+    die("❌ " . htmlspecialchars($e->getMessage()));
 }
 
-// Step 3: Check if subscription_plans table exists
-echo "<h3>3. Checking subscription_plans table...</h3>";
+// Step 3: subscription_plans table
+echo "<h3>3. subscription_plans table</h3>";
 try {
     $result = $db->fetchAll("SHOW TABLES LIKE 'subscription_plans'");
     if ($result && count($result) > 0) {
-        echo "✅ subscription_plans table exists<br>";
-        
-        // Check for data
         $plans = $db->fetchAll("SELECT * FROM subscription_plans");
-        echo "   Found " . count($plans) . " plans<br>";
+        echo "✅ exists, " . count($plans) . " plans<br>";
     } else {
-        echo "❌ subscription_plans table does NOT exist<br>";
-        echo "<strong>You need to run Migration #5 from Admin → Updates</strong><br>";
+        echo "❌ table missing. Run Migration #5 via Admin → Updates<br>";
     }
 } catch (Throwable $e) {
-    echo "❌ Error checking table: " . $e->getMessage() . "<br>";
+    echo "❌ " . htmlspecialchars($e->getMessage()) . "<br>";
 }
 
-// Step 4: Check migrations table
-echo "<h3>4. Checking migrations status...</h3>";
+// Step 4: migrations
+echo "<h3>4. migrations status</h3>";
 try {
     $result = $db->fetchAll("SHOW TABLES LIKE 'migrations'");
     if ($result && count($result) > 0) {
         $migrations = $db->fetchAll("SELECT * FROM migrations ORDER BY id");
-        echo "✅ migrations table exists<br>";
-        echo "   Executed migrations:<br>";
+        echo "✅ " . count($migrations) . " recorded migrations<br>";
         foreach ($migrations as $m) {
-            echo "   - " . ($m['migration'] ?? $m['name'] ?? 'Unknown') . " (executed: " . ($m['executed_at'] ?? 'N/A') . ")<br>";
+            echo "   - " . htmlspecialchars($m['migration'] ?? $m['name'] ?? 'Unknown')
+                . " (" . htmlspecialchars($m['executed_at'] ?? 'N/A') . ")<br>";
         }
     } else {
-        echo "⚠️ migrations table does not exist - no migrations have been run<br>";
+        echo "⚠️ migrations table missing<br>";
     }
 } catch (Throwable $e) {
-    echo "⚠️ Error checking migrations: " . $e->getMessage() . "<br>";
+    echo "⚠️ " . htmlspecialchars($e->getMessage()) . "<br>";
 }
 
-// Step 5: Check Billing class
-echo "<h3>5. Loading Billing class...</h3>";
+// Step 5: Billing class
+echo "<h3>5. Billing class</h3>";
 try {
     require_once INCLUDES_DIR . '/Billing.php';
-    echo "✅ Billing.php loaded<br>";
-    
-    $billing = new Billing('amwal', []);
-    echo "✅ Billing class instantiated<br>";
+    new Billing('amwal', []);
+    echo "✅ loaded + instantiated<br>";
 } catch (Throwable $e) {
-    echo "❌ Error with Billing class: " . $e->getMessage() . "<br>";
-    echo "   File: " . $e->getFile() . "<br>";
-    echo "   Line: " . $e->getLine() . "<br>";
+    echo "❌ " . htmlspecialchars($e->getMessage()) . " ("
+        . htmlspecialchars($e->getFile()) . ":" . (int)$e->getLine() . ")<br>";
 }
 
-// Step 6: Check auth
-echo "<h3>6. Checking authentication...</h3>";
-try {
-    if (function_exists('isLoggedIn')) {
-        echo "Logged in: " . (isLoggedIn() ? 'Yes' : 'No') . "<br>";
-    }
-    if (function_exists('getCurrentCompanyId')) {
-        $companyId = getCurrentCompanyId();
-        echo "Company ID: " . ($companyId ?: 'None') . "<br>";
-    }
-} catch (Throwable $e) {
-    echo "⚠️ Auth check error: " . $e->getMessage() . "<br>";
-}
+// Step 6: session
+echo "<h3>6. Session</h3>";
+echo "Logged in: " . (Auth::isLoggedIn() ? 'Yes' : 'No') . "<br>";
+$companyId = function_exists('getCurrentCompanyId') ? getCurrentCompanyId() : null;
+echo "Company ID: " . htmlspecialchars((string)($companyId ?: 'None')) . "<br>";
 
-echo "<h3>7. Summary</h3>";
-echo "<p>If subscription_plans table doesn't exist, go to <a href='/admin/updates.php'>Admin → Updates</a> and run Migration #5.</p>";
+echo "<h3>7. Summary</h3><p>Diagnostic only. Restrict to super admin.</p>";

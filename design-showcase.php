@@ -1,6 +1,6 @@
 <?php
 /**
- * Cardify — Design Showcase
+ * Cardify, Design Showcase
  *
  * Single-page design-system catalog. Shows the real Tailwind / Flowbite
  * tokens, colors, components and patterns Cardify uses across the site,
@@ -13,7 +13,7 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle = 'Design System — Cardify';
+$pageTitle = 'Design System, Cardify';
 $pageDescription = 'The Cardify design language: colors, typography, components, and patterns used across cardify.om.';
 $canonicalUrl = 'https://cardify.om/design-showcase';
 $showNavigation = true;
@@ -118,11 +118,11 @@ $icons = [
     ['i' => 'fa-solid fa-bell',           'n' => 'bell'],
 ];
 
-// Sample employees (digital cards) — Cardify-idiomatic, not invoices
+// Sample employees (digital cards), Cardify-idiomatic, not invoices
 $sampleEmployees = [
     ['name' => 'Ahmed Al-Balushi', 'title' => 'CEO',              'dept' => 'Leadership', 'status' => 'published', 'views' => '1,248'],
     ['name' => 'Fatima Al-Harthy', 'title' => 'Head of Sales',    'dept' => 'Sales',      'status' => 'published', 'views' => '892'],
-    ['name' => 'Salim Al-Rashdi',  'title' => 'Project Manager',  'dept' => 'Delivery',   'status' => 'draft',     'views' => '—'],
+    ['name' => 'Salim Al-Rashdi',  'title' => 'Project Manager',  'dept' => 'Delivery',   'status' => 'draft',     'views' => ','],
     ['name' => 'Layla Al-Kindi',   'title' => 'Marketing Lead',   'dept' => 'Marketing',  'status' => 'review',    'views' => '32'],
 ];
 
@@ -201,7 +201,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     return {
       copied: '',
       tab: 'overview',
-      // Single source of truth — at most one overlay is visible at a time.
+      // Single source of truth, at most one overlay is visible at a time.
       overlay: null,
       _lastTrigger: null,
       get modalOpen()  { return this.overlay === 'modal'; },
@@ -279,7 +279,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         The visual language behind <span class="text-blue-600">Cardify</span>
       </h1>
       <p class="mt-4 text-lg text-gray-600">
-        Every color, component, and pattern Cardify uses across the site — live and click-to-copy.
+        Every color, component, and pattern Cardify uses across the site, live and click-to-copy.
         Built on Tailwind 3 + Flowbite + Font Awesome 6. Inter for body, system for numbers.
       </p>
       <div class="mt-5 flex flex-wrap items-center gap-3">
@@ -443,11 +443,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
             <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
               <span class="text-[10px] font-mono text-gray-500">Body · Inter · 400–600</span>
-              <p class="mt-3 text-lg text-gray-900">Body lg — section leads, intros</p>
-              <p class="mt-2 text-base text-gray-700">Body base — the default for running copy. High legibility at all sizes.</p>
-              <p class="mt-2 text-sm text-gray-500">Body sm — secondary info, helper text, captions.</p>
-              <p class="mt-2 text-xs text-gray-500">Body xs — metadata, timestamps, table footnotes.</p>
-              <p class="mt-3 text-xs font-bold uppercase tracking-widest text-blue-600">Overline — eyebrows</p>
+              <p class="mt-3 text-lg text-gray-900">Body lg, section leads, intros</p>
+              <p class="mt-2 text-base text-gray-700">Body base, the default for running copy. High legibility at all sizes.</p>
+              <p class="mt-2 text-sm text-gray-500">Body sm, secondary info, helper text, captions.</p>
+              <p class="mt-2 text-xs text-gray-500">Body xs, metadata, timestamps, table footnotes.</p>
+              <p class="mt-3 text-xs font-bold uppercase tracking-widest text-blue-600">Overline, eyebrows</p>
               <p class="mt-3"><code class="font-mono text-xs bg-gray-100 text-gray-900 px-2 py-1 rounded">code inline</code></p>
             </div>
           </div>
@@ -782,7 +782,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
           </header>
           <div class="space-y-4">
             <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-              <h3 class="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Tabs — pill</h3>
+              <h3 class="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Tabs, pill</h3>
               <div class="inline-flex p-1 bg-gray-100 rounded-xl gap-1">
                 <?php foreach (['overview', 'cards', 'analytics', 'orders'] as $t): ?>
                   <button type="button" @click="tab = '<?= $t ?>'"
@@ -792,7 +792,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
               </div>
             </div>
             <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-              <h3 class="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Tabs — underline</h3>
+              <h3 class="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Tabs, underline</h3>
               <div class="border-b border-gray-200 flex gap-6">
                 <?php foreach (['Profile', 'Socials', 'Analytics'] as $i => $t): ?>
                   <button type="button" class="py-2 text-sm font-semibold transition <?= $i === 0 ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-900' ?>"><?= $t ?></button>
@@ -824,7 +824,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
               </div>
             </div>
             <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-              <h3 class="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Stepper — card onboarding</h3>
+              <h3 class="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Stepper, card onboarding</h3>
               <ol class="flex items-center gap-2 flex-wrap">
                 <?php foreach ([
                   ['n' => 1, 't' => 'Create account', 'done' => true],
@@ -899,7 +899,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
             <!-- Timeline: card activity -->
             <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-              <h3 class="text-xs font-bold uppercase tracking-wide text-gray-500 mb-4">Activity timeline — card scans</h3>
+              <h3 class="text-xs font-bold uppercase tracking-wide text-gray-500 mb-4">Activity timeline, card scans</h3>
               <ol class="relative border-l-2 border-gray-200 ml-3 space-y-6 pl-6">
                 <?php foreach ([
                   ['t' => 'Card created', 'd' => 'Ahmed Al-Balushi · /acme/ahmed', 'when' => '02 Apr 2026', 'done' => true],
@@ -907,7 +907,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                   ['t' => 'vCard saved',   'd' => '+968 9123 ••• 67 via WhatsApp QR', 'when' => '05 Apr 2026', 'done' => true],
                   ['t' => 'NFC tap',       'd' => 'Card handed to a client at trade show', 'when' => '09 Apr 2026', 'done' => true],
                   ['t' => 'Print order',   'd' => '100 × NFC-enabled cards · Matte finish', 'when' => '11 Apr 2026', 'current' => true],
-                  ['t' => 'Delivery',      'd' => 'Scheduled with Al Noor Print Oman', 'when' => '—', 'future' => true],
+                  ['t' => 'Delivery',      'd' => 'Scheduled with Al Noor Print Oman', 'when' => ',', 'future' => true],
                 ] as $s):
                   $done = !empty($s['done']); $cur = !empty($s['current']);
                   $dot = $done ? 'bg-blue-600' : ($cur ? 'bg-amber-500' : 'bg-gray-300');
@@ -928,7 +928,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
             <!-- Description list -->
             <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-              <h3 class="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Description list — company profile</h3>
+              <h3 class="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Description list, company profile</h3>
               <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
                 <?php foreach ([
                   ['Company', 'Acme Trading LLC'],
@@ -1035,7 +1035,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                   <li class="flex items-start gap-2 text-gray-700"><i class="fa-solid fa-check text-green-600 text-xs mt-1"></i><span><?= $f ?></span></li>
                 <?php endforeach; ?>
               </ul>
-              <button type="button" class="mt-5 w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition">Start 14-day trial</button>
+              <button type="button" class="mt-5 w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition">Get Started Free</button>
             </div>
             <!-- QR share tile -->
             <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-white shadow-xl">
@@ -1127,7 +1127,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
               <h3 class="text-lg font-bold text-green-700 inline-flex items-center gap-2"><i class="fa-solid fa-circle-check"></i> Do</h3>
               <ul class="mt-3 space-y-2 text-sm text-gray-700 list-disc pl-5">
                 <li>Use <code class="font-mono text-xs">bg-blue-600</code> for primary CTAs.</li>
-                <li>Display OMR amounts with 3 decimal places — <code class="font-mono text-xs">OMR 125.000</code>.</li>
+                <li>Display OMR amounts with 3 decimal places, <code class="font-mono text-xs">OMR 125.000</code>.</li>
                 <li>Use <code class="font-mono text-xs">rounded-2xl</code> for cards and <code class="font-mono text-xs">rounded-lg</code> for buttons.</li>
                 <li>Use Font Awesome Brands for social icons (WhatsApp, LinkedIn).</li>
                 <li>Prefix Oman phones with <code class="font-mono text-xs">+968</code>.</li>
@@ -1138,9 +1138,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
               <ul class="mt-3 space-y-2 text-sm text-gray-700 list-disc pl-5">
                 <li>Don't mix <code class="font-mono text-xs">#2563eb</code> with other blues (no teal, no cyan).</li>
                 <li>Don't use sharp <code class="font-mono text-xs">rounded</code> or fully square corners on interactive surfaces.</li>
-                <li>Don't fabricate phone numbers or prices in mocks — use the real sample data in this showcase.</li>
+                <li>Don't fabricate phone numbers or prices in mocks, use the real sample data in this showcase.</li>
                 <li>Don't ship emoji in UI copy. Use Font Awesome icons instead.</li>
-                <li>Don't place plain email addresses on public pages — always use <code class="font-mono text-xs">mailto:</code> with neutral text.</li>
+                <li>Don't place plain email addresses on public pages, always use <code class="font-mono text-xs">mailto:</code> with neutral text.</li>
               </ul>
             </div>
           </div>

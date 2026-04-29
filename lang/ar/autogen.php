@@ -1,0 +1,50 @@
+<?php
+return [
+    'page_title'           => 'إنشاء البطاقة',
+
+    'quality_h4'           => 'معاينة البطاقة بجودة HD',
+    'quality_body'         => 'تُنشأ معاينات البطاقات بدقّة HD كاملة. البطاقات المطبوعة من المطابع المعتمدة تُنتَج بجودة طباعة كاملة.',
+    'upgrade_cta'          => 'جودة HD مفعّلة',
+    'view_plans'           => 'عرض أسعار الطباعة',
+
+    'choose_layout'        => 'اختر قالب البطاقة',
+    'for_employee'         => 'للموظف :name',
+    'generate_card'        => 'أنشئ البطاقة',
+
+    'generating_card'      => 'جاري إنشاء بطاقة العمل',
+    'regenerating_card'    => 'جاري إعادة إنشاء بطاقة العمل',
+    'creating_for'         => 'إنشاء بطاقة لـ :name',
+
+    'card_generated'       => 'تم إنشاء البطاقة',
+    'live_and_ready'       => 'بطاقتك الرقمية جاهزة للمشاركة.',
+    'digital_link_label'   => 'رابط بطاقتك الرقمية',
+    'copy'                 => 'نسخ',
+    'copied'               => 'تم النسخ',
+    'view_card'            => 'عرض البطاقة',
+    'share_whatsapp'       => 'شارك عبر واتساب',
+    'continue'             => 'متابعة',
+    'redirecting_in'       => 'تحويل خلال :sec ث',
+    'redirecting_auto'     => 'تحويل تلقائي خلال :sec ث',
+    'stay_here'            => 'البقاء هنا',
+
+    'generation_failed'    => 'فشل الإنشاء',
+    'try_again'            => 'حاول مرة أخرى',
+    'back_to_employees'    => 'العودة إلى الموظفين',
+
+    'js_initializing'      => 'جاري التحضير...',
+    'js_rendering'         => 'جاري رسم البطاقة...',
+    'js_uploading'         => 'جاري الرفع إلى الخادم...',
+    'js_done'              => 'تم!',
+    'js_generic_error'     => 'حدث خطأ',
+    'js_preparing_layout'  => 'جاري تحضير قالب البطاقة...',
+    'js_generating_qr'     => 'جاري إنشاء رمز QR...',
+    'js_rendering_front'   => 'جاري رسم وجه البطاقة...',
+    'js_rendering_back'    => 'جاري رسم خلفية البطاقة...',
+    'js_saving_front'      => 'جاري حفظ الوجه...',
+    'js_saving_back'       => 'جاري حفظ الخلفية...',
+    'js_logging_gen'       => 'جاري تسجيل الإنشاء...',
+    'js_init_editor'       => 'جاري تهيئة المحرّر...',
+    'js_generating_front'  => 'جاري إنشاء الوجه...',
+    'js_generating_back'   => 'جاري إنشاء الخلفية...',
+    'js_saving_cards'      => 'جاري حفظ البطاقات...',
+];

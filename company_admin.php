@@ -41,13 +41,32 @@ try {
         http_response_code(404);
         die('Company not found: ' . htmlspecialchars($companySlug));
     }
-    
+
+    // Canonicalize to the subdomain: if the request lands on the bare
+    // host (cardify.om or www.cardify.om) but the tenant has a valid
+    // slug, 301 to {slug}.cardify.om preserving the path + query. Keep
+    // path-style URLs working on localhost + preview envs.
+    $host = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+    $isProdHost = in_array($host, ['cardify.om', 'www.cardify.om'], true);
+    if ($isProdHost && ($company['status'] ?? 'active') === 'active') {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $pathPart = $page !== 'index' ? '/admin/' . $page : '/admin/';
+        $qs = $_SERVER['QUERY_STRING'] ?? '';
+        // Strip the routing params we injected so they don't leak.
+        parse_str($qs, $params);
+        unset($params['company_slug'], $params['page']);
+        $qsOut = http_build_query($params);
+        $target = $scheme . '://' . $companySlug . '.cardify.om' . $pathPart . ($qsOut ? '?' . $qsOut : '');
+        header('Location: ' . $target, true, 301);
+        exit;
+    }
+
     // Start session if not started
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
     
-    // Store minimal routing hint only — don't set company_id until ownership is verified below
+    // Store minimal routing hint only, don't set company_id until ownership is verified below
     $_SESSION['current_company_slug'] = $companySlug;
     
     // Map pages to admin files
@@ -67,6 +86,11 @@ try {
         'audit-logs' => 'admin/audit-logs.php',
         'theme' => 'admin/theme.php',
         'billing' => 'admin/billing.php',
+        'billing-info' => 'admin/billing-info.php',
+        'invoices' => 'admin/invoices.php',
+        'payments-history' => 'admin/payments-history.php',
+        'credit-statement' => 'admin/credit-statement.php',
+        'card-credits' => 'admin/card-credits.php',
         'print' => 'admin/print.php',
         'print_orders' => 'admin/print_orders.php',
         'print_settings' => 'admin/print_settings.php',
@@ -89,18 +113,28 @@ try {
         'payment-history'    => 'admin/payment-history.php',
         'batch-auto-generate' => 'admin/batch-auto-generate.php',
         'short-links'         => 'admin/short-links.php',
+        'appointments'        => 'admin/appointments.php',
+        'bulk-claim'          => 'admin/bulk-claim.php',
+        'card-analytics'      => 'admin/card-analytics.php',
+        'custom-domains'      => 'admin/custom-domains.php',
+        'fx-rates'            => 'admin/fx-rates.php',
+        'growth'              => 'admin/growth.php',
+        'impersonate'         => 'admin/impersonate.php',
+        'onboarding'          => 'admin/onboarding.php',
+        'onboarding-save'     => 'admin/onboarding-save.php',
+        'demo-clear'          => 'admin/demo-clear.php',
     ];
     
     // Handle login page specially (no auth required)
     if ($page === 'login') {
-        $_GET['redirect'] = getBasePath() . $companySlug . '/admin/';
+        $_GET['redirect'] = getTenantUrl($companySlug, '/admin/');
         include __DIR__ . '/login.php';
         exit;
     }
-    
+
     // Check if user is logged in
     if (!Auth::isLoggedIn()) {
-        header('Location: ' . getBasePath() . $companySlug . '/admin/login');
+        header('Location: ' . getTenantUrl($companySlug, '/admin/login'));
         exit;
     }
     
@@ -116,7 +150,7 @@ try {
         if ($userRole === 'print_shop') {
             header('Location: ' . getBasePath() . 'printshop/dashboard.php');
         } elseif ($userRole === 'employee' && !empty($_SESSION['company_slug'])) {
-            header('Location: ' . getBasePath() . $_SESSION['company_slug'] . '/');
+            header('Location: ' . getTenantUrl($_SESSION['company_slug']));
         } else {
             header('Location: ' . getBasePath() . 'login.php?error=unauthorized');
         }
@@ -140,7 +174,7 @@ try {
         exit;
     }
 
-    // Ownership verified — now safe to set company context in session
+    // Ownership verified, now safe to set company context in session
     $_SESSION['company_slug'] = $companySlug;
     $_SESSION['company_id'] = $company['id'];
     $_SESSION['company_name'] = $company['name'] ?? $company['name_en'] ?? $companySlug;
@@ -152,19 +186,28 @@ try {
     }
     
     // Set base path for admin pages to use company-specific URLs
-    define('COMPANY_ADMIN_BASE', getBasePath() . $companySlug . '/admin/');
+    define('COMPANY_ADMIN_BASE', getTenantUrl($companySlug, '/admin/'));
     
-    // Include the admin page
+    // Include the admin page. Buffered so that if a Throwable fires
+    // mid-render we discard the partially-emitted markup instead of
+    // splicing the error <div> into the middle of a script/style/attr
+    // (previously produced <script src="<div class=" 404s).
     $adminFile = __DIR__ . '/' . $pageMap[$page];
     if (file_exists($adminFile)) {
-        include $adminFile;
+        ob_start();
+        try {
+            include $adminFile;
+            echo ob_get_clean();
+        } catch (Throwable $e) {
+            ob_end_clean();
+            throw $e;
+        }
     } else {
         http_response_code(404);
         die('Admin file not found: ' . $pageMap[$page]);
     }
-    
+
 } catch (Throwable $e) {
-    // Only set response code if headers haven't been sent yet
     if (!headers_sent()) {
         http_response_code(500);
     }

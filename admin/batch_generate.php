@@ -16,11 +16,11 @@ if (!Auth::isLoggedIn()) {
 
 $companyId = getCurrentCompanyId();
 
-// Get company plan info for quality settings
+// HD batch generation is free for every team since the Apr 2026 pricing reset.
 $planInfo = Billing::getCompanyPlanInfo($companyId);
-$qualityMultiplier = $planInfo['quality_multiplier'];
-$isFreePlan = $planInfo['plan'] === 'free' || empty($planInfo['plan']);
-$hasHighQuality = $planInfo['features']['high_quality'] ?? false;
+$qualityMultiplier = max(4, $planInfo['quality_multiplier'] ?? 4);
+$isFreePlan = false; // hides the legacy upgrade-for-HD nag
+$hasHighQuality = true;
 
 // Check for pre-selected employee (from card request approval)
 $preSelectedEmployeeId = $_GET['employee_id'] ?? null;
@@ -114,7 +114,7 @@ $hasTemplates = $frontTemplate || $backTemplate;
 $companySlug = getCurrentCompanySlug() ?? '';
 $baseUrl = getBaseUrl();
 
-adminHeader('Batch Generate', 'generated');
+adminHeader(t('adminchrome.batch_generate'), 'generated');
 ?>
 
 <?php if ($isFreePlan): ?>
@@ -558,7 +558,7 @@ function batchGenerator() {
             });
             const logData = await logResp.json().catch(() => ({}));
             if (!logData.success && logData.limit_reached) {
-                throw new Error(logData.error || 'Monthly card limit reached. Upgrade your plan to generate more cards.');
+                throw new Error(logData.error || 'Card generation rate limit hit. Please wait a moment and try again.');
             }
 
             return { frontUrl, backUrl, frontPdf, backPdf };

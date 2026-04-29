@@ -23,10 +23,10 @@ require_once INCLUDES_DIR . '/admin-layout.php';
 
 // Check if Billing class exists
 if (!file_exists(INCLUDES_DIR . '/Billing.php')) {
-    adminHeader('Billing', 'billing');
+    adminHeader(t('adminchrome.billing'), 'billing');
     echo '<div class="bg-amber-50 border border-amber-200 rounded-xl p-6 text-amber-700">';
     echo '<i class="fa-solid fa-exclamation-triangle mr-2"></i>';
-    echo 'Billing module is not configured. Please contact your administrator.';
+    echo htmlspecialchars(t('billing.err_billing_missing'));
     echo '</div>';
     adminFooter();
     exit;
@@ -36,9 +36,9 @@ try {
     require_once INCLUDES_DIR . '/Billing.php';
 } catch (Throwable $e) {
     error_log("Billing.php load error: " . $e->getMessage());
-    adminHeader('Billing', 'billing');
+    adminHeader(t('adminchrome.billing'), 'billing');
     echo '<div class="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700">';
-    echo 'Error loading billing module: ' . htmlspecialchars($e->getMessage());
+    echo htmlspecialchars(t('billing.err_billing_load')) . ' ' . htmlspecialchars($e->getMessage());
     echo '</div>';
     adminFooter();
     exit;
@@ -72,10 +72,10 @@ try {
     $billing = new Billing($gateway, $billingConfig);
 } catch (Throwable $e) {
     error_log("Billing init error: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine());
-    adminHeader('Billing', 'billing');
+    adminHeader(t('adminchrome.billing'), 'billing');
     echo '<div class="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700">';
     echo '<i class="fa-solid fa-exclamation-circle mr-2"></i>';
-    echo 'Error initializing billing system: ' . htmlspecialchars($e->getMessage());
+    echo htmlspecialchars(t('billing.err_billing_init')) . ' ' . htmlspecialchars($e->getMessage());
     echo '</div>';
     adminFooter();
     exit;
@@ -94,9 +94,9 @@ $messageType = 'success';
 // Handle payment callback messages
 if (isset($_GET['payment'])) {
     if ($_GET['payment'] === 'success') {
-        $message = 'Payment completed successfully! Your subscription has been activated.';
+        $message = t('billing.pay_success');
     } elseif ($_GET['payment'] === 'error') {
-        $message = $_GET['message'] ?? 'Payment processing failed. Please try again.';
+        $message = $_GET['message'] ?? t('billing.pay_error_default');
         $messageType = 'error';
     }
 }
@@ -235,7 +235,7 @@ if ($db && $db->isConnected() && $companyId) {
 
 // Handle subscription upgrade
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'subscribe') {
-    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die(htmlspecialchars(t('billing.invalid_request'))); }
     $planId = $_POST['plan_id'] ?? '';
     $billingCycle = $_POST['billing_cycle'] ?? 'monthly';
     
@@ -246,7 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         header('Location: ' . $result['payment_url']);
         exit;
     } elseif ($result['success'] && !empty($result['free'])) {
-        // Free plan activated directly — no payment needed
+        // Free plan activated directly, no payment needed
         header('Location: ' . getAdminBasePath() . 'billing' . ((defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php') . '?payment=success');
         exit;
     } elseif ($result['success'] && !empty($result['payment_data'])) {
@@ -254,14 +254,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         header('Location: ' . getBasePath() . 'amwalpay/process.php?order_id=' . urlencode($result['transaction_id']));
         exit;
     } else {
-        $message = $result['error'] ?? 'Failed to create subscription';
+        $message = $result['error'] ?? t('billing.subscribe_failed');
         $messageType = 'error';
     }
 }
 
 // Handle buy card credits
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'buy_cards') {
-    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die(htmlspecialchars(t('billing.invalid_request'))); }
     require_once INCLUDES_DIR . '/Payment.php';
     $cardCount = max(1, min(100, (int)($_POST['card_count'] ?? 10)));
     $result = Payment::createCardOrderIntent($companyId, $cardCount, $pricePerCard, $companyCurrency);
@@ -269,7 +269,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         header('Location: ' . $result['checkout_url']);
         exit;
     }
-    $message = $result['error'] ?? 'Could not initiate card purchase';
+    $message = $result['error'] ?? t('billing.buy_cards_failed');
     $messageType = 'error';
 }
 
@@ -289,7 +289,7 @@ try {
     // templates table might not exist
 }
 
-adminHeader('Billing', 'billing');
+adminHeader(t('adminchrome.billing'), 'billing');
 ?>
 
 <!-- Alert Message -->
@@ -305,28 +305,28 @@ adminHeader('Billing', 'billing');
     <div class="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <p class="text-sm text-gray-600 mb-1">Current Plan</p>
-                <h2 class="text-3xl font-bold text-gray-900"><?php echo sanitize($currentPlan['name'] ?? 'Free'); ?></h2>
-                <p class="text-gray-600 mt-1"><?php echo sanitize($currentPlan['description'] ?? 'Basic features for small teams'); ?></p>
+                <p class="text-sm text-gray-600 mb-1"><?= htmlspecialchars(t('billing.current_plan')) ?></p>
+                <h2 class="text-3xl font-bold text-gray-900"><?php echo sanitize($currentPlan['name'] ?? t('billing.col_free')); ?></h2>
+                <p class="text-gray-600 mt-1"><?php echo sanitize($currentPlan['description'] ?? t('billing.plan_default_desc')); ?></p>
             </div>
             <div class="text-left md:text-right">
-                <p class="text-sm text-gray-600 mb-1">Monthly Price</p>
+                <p class="text-sm text-gray-600 mb-1"><?= htmlspecialchars(t('billing.monthly_price')) ?></p>
                 <p class="text-3xl font-bold text-gray-900">
                     <?php echo Currency::formatHtml($currentPlan['price_monthly'] ?? 0, $companyCurrency, 'lg'); ?>
-                    <span class="text-lg font-normal text-gray-500">/mo</span>
+                    <span class="text-lg font-normal text-gray-500"><?= htmlspecialchars(t('billing.per_month_short')) ?></span>
                 </p>
-                <p class="text-xs text-gray-500 mt-1">Currency: <?php echo $companyCurrency; ?></p>
+                <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('billing.currency_label')) ?> <?php echo $companyCurrency; ?></p>
             </div>
         </div>
     </div>
     
     <!-- Usage Stats -->
     <div class="p-6">
-        <h3 class="font-semibold text-gray-900 mb-4">Usage</h3>
+        <h3 class="font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t('billing.usage_h3')) ?></h3>
         <div class="grid md:grid-cols-3 gap-6">
             <div>
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm text-gray-600">Employees</span>
+                    <span class="text-sm text-gray-600"><?= htmlspecialchars(t('billing.usage_employees')) ?></span>
                     <span class="text-sm font-medium text-gray-900">
                         <?php echo $employeeCount; ?> / <?php echo $planLimits['employees'] === -1 ? '∞' : $planLimits['employees']; ?>
                     </span>
@@ -338,7 +338,7 @@ adminHeader('Billing', 'billing');
             
             <div>
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm text-gray-600">Templates</span>
+                    <span class="text-sm text-gray-600"><?= htmlspecialchars(t('billing.usage_templates')) ?></span>
                     <span class="text-sm font-medium text-gray-900">
                         <?php echo $templateCount; ?> / <?php echo $planLimits['templates'] === -1 ? '∞' : $planLimits['templates']; ?>
                     </span>
@@ -350,9 +350,9 @@ adminHeader('Billing', 'billing');
             
             <div>
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm text-gray-600">Storage</span>
+                    <span class="text-sm text-gray-600"><?= htmlspecialchars(t('billing.usage_storage')) ?></span>
                     <span class="text-sm font-medium text-gray-900">
-                        <?php echo $planLimits['storage'] === -1 ? 'Unlimited' : $planLimits['storage'] . ' GB'; ?>
+                        <?php echo $planLimits['storage'] === -1 ? htmlspecialchars(t('billing.unlimited')) : htmlspecialchars(str_replace(':n', (string) $planLimits['storage'], t('billing.gb_suffix'))); ?>
                     </span>
                 </div>
                 <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -363,8 +363,26 @@ adminHeader('Billing', 'billing');
     </div>
 </div>
 
-<!-- Feature Comparison Banner -->
-<?php 
+<!-- Free-Forever Platform Callout (replaces the old SaaS upsell + plan comparison) -->
+<div class="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-6 lg:p-8 mb-8 shadow-xl">
+    <div class="flex items-start gap-4">
+        <div class="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-gift text-2xl"></i>
+        </div>
+        <div class="flex-1">
+            <h3 class="text-xl font-bold mb-1">Cardify is free for your team. Forever.</h3>
+            <p class="text-blue-100 mb-4">Unlimited employees, unlimited templates, unlimited digital cards and analytics. You only pay when you order printed products.</p>
+            <a href="<?= getBasePath() ?>pricing" class="inline-flex items-center gap-2 bg-white text-blue-700 hover:bg-blue-50 font-semibold px-5 py-2.5 rounded-xl transition">
+                See print pricing
+                <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Legacy SaaS plan-comparison + upgrade UI, hidden Apr 2026. -->
+<?php if (false): ?>
+<?php
 $planInfo = Billing::getCompanyPlanInfo($companyId);
 $isFreePlan = ($planInfo['plan'] ?? 'free') === 'free';
 ?>
@@ -374,28 +392,28 @@ $isFreePlan = ($planInfo['plan'] ?? 'free') === 'free';
         <div>
             <h3 class="text-xl font-bold flex items-center gap-2">
                 <i class="fa-solid fa-crown"></i>
-                Unlock Premium Features
+                <?= htmlspecialchars(t('billing.unlock_premium_h3')) ?>
             </h3>
-            <p class="mt-2 text-blue-100">Get high-quality card generation, QR analytics, and more with a paid plan.</p>
+            <p class="mt-2 text-blue-100"><?= htmlspecialchars(t('billing.unlock_premium_body')) ?></p>
             <div class="mt-4 flex flex-wrap gap-4">
                 <div class="flex items-center gap-2 text-sm">
                     <i class="fa-solid fa-check-circle text-green-300"></i>
-                    <span>HD Quality Cards (300+ DPI)</span>
+                    <span><?= htmlspecialchars(t('billing.feat_hd_quality')) ?></span>
                 </div>
                 <div class="flex items-center gap-2 text-sm">
                     <i class="fa-solid fa-check-circle text-green-300"></i>
-                    <span>QR Scan Analytics</span>
+                    <span><?= htmlspecialchars(t('billing.feat_qr_analytics')) ?></span>
                 </div>
                 <div class="flex items-center gap-2 text-sm">
                     <i class="fa-solid fa-check-circle text-green-300"></i>
-                    <span>Bulk Card Generation</span>
+                    <span><?= htmlspecialchars(t('billing.feat_bulk_gen')) ?></span>
                 </div>
             </div>
         </div>
         <div class="flex-shrink-0">
             <a href="#plans" class="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors">
                 <i class="fa-solid fa-rocket"></i>
-                View Plans
+                <?= htmlspecialchars(t('billing.view_plans_btn')) ?>
             </a>
         </div>
     </div>
@@ -405,69 +423,69 @@ $isFreePlan = ($planInfo['plan'] ?? 'free') === 'free';
 <!-- Feature Matrix -->
 <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-8">
     <div class="p-4 border-b border-gray-100">
-        <h3 class="font-semibold text-gray-900">Plan Feature Comparison</h3>
+        <h3 class="font-semibold text-gray-900"><?= htmlspecialchars(t('billing.feature_matrix_h3')) ?></h3>
     </div>
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-4 py-3 text-left font-medium text-gray-600">Feature</th>
-                    <th class="px-4 py-3 text-center font-medium text-gray-600">Free</th>
-                    <th class="px-4 py-3 text-center font-medium text-blue-700">Pro</th>
-                    <th class="px-4 py-3 text-center font-medium text-gray-600">Enterprise</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-600"><?= htmlspecialchars(t('billing.col_feature')) ?></th>
+                    <th class="px-4 py-3 text-center font-medium text-gray-600"><?= htmlspecialchars(t('billing.col_free')) ?></th>
+                    <th class="px-4 py-3 text-center font-medium text-blue-700"><?= htmlspecialchars(t('billing.col_pro')) ?></th>
+                    <th class="px-4 py-3 text-center font-medium text-gray-600"><?= htmlspecialchars(t('billing.col_enterprise')) ?></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
                 <tr>
-                    <td class="px-4 py-3 text-gray-900">Employees</td>
-                    <td class="px-4 py-3 text-center text-sm text-gray-600">Up to 5</td>
-                    <td class="px-4 py-3 text-center text-sm text-blue-700 font-medium">Up to 50</td>
-                    <td class="px-4 py-3 text-center text-sm text-gray-600">Unlimited</td>
+                    <td class="px-4 py-3 text-gray-900"><?= htmlspecialchars(t('billing.fm_employees')) ?></td>
+                    <td class="px-4 py-3 text-center text-sm text-gray-600"><?= htmlspecialchars(str_replace(':n', '5', t('billing.limit_up_to'))) ?></td>
+                    <td class="px-4 py-3 text-center text-sm text-blue-700 font-medium"><?= htmlspecialchars(str_replace(':n', '50', t('billing.limit_up_to'))) ?></td>
+                    <td class="px-4 py-3 text-center text-sm text-gray-600"><?= htmlspecialchars(t('billing.unlimited')) ?></td>
                 </tr>
                 <tr>
-                    <td class="px-4 py-3 text-gray-900">Cards / Month</td>
+                    <td class="px-4 py-3 text-gray-900"><?= htmlspecialchars(t('billing.fm_cards_month')) ?></td>
                     <td class="px-4 py-3 text-center text-sm text-gray-600">10</td>
                     <td class="px-4 py-3 text-center text-sm text-blue-700 font-medium">500</td>
-                    <td class="px-4 py-3 text-center text-sm text-gray-600">Unlimited</td>
+                    <td class="px-4 py-3 text-center text-sm text-gray-600"><?= htmlspecialchars(t('billing.unlimited')) ?></td>
                 </tr>
                 <tr>
-                    <td class="px-4 py-3 text-gray-900">Card Preview Quality</td>
-                    <td class="px-4 py-3 text-center"><span class="text-amber-600 text-sm">Low (~100 DPI)</span></td>
-                    <td class="px-4 py-3 text-center"><span class="text-green-600 text-sm font-medium">High (~300 DPI)</span></td>
-                    <td class="px-4 py-3 text-center"><span class="text-green-600 text-sm">High (~300 DPI)</span></td>
+                    <td class="px-4 py-3 text-gray-900"><?= htmlspecialchars(t('billing.fm_preview_quality')) ?></td>
+                    <td class="px-4 py-3 text-center"><span class="text-amber-600 text-sm"><?= htmlspecialchars(t('billing.quality_low')) ?></span></td>
+                    <td class="px-4 py-3 text-center"><span class="text-green-600 text-sm font-medium"><?= htmlspecialchars(t('billing.quality_high')) ?></span></td>
+                    <td class="px-4 py-3 text-center"><span class="text-green-600 text-sm"><?= htmlspecialchars(t('billing.quality_high')) ?></span></td>
                 </tr>
                 <tr>
-                    <td class="px-4 py-3 text-gray-900">Print Quality</td>
+                    <td class="px-4 py-3 text-gray-900"><?= htmlspecialchars(t('billing.fm_print_quality')) ?></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                 </tr>
                 <tr>
-                    <td class="px-4 py-3 text-gray-900">QR Scan Analytics</td>
+                    <td class="px-4 py-3 text-gray-900"><?= htmlspecialchars(t('billing.fm_qr_analytics')) ?></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-300"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                 </tr>
                 <tr>
-                    <td class="px-4 py-3 text-gray-900">Bulk Card Generation</td>
+                    <td class="px-4 py-3 text-gray-900"><?= htmlspecialchars(t('billing.fm_bulk_gen')) ?></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-300"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                 </tr>
                 <tr>
-                    <td class="px-4 py-3 text-gray-900">API Access</td>
+                    <td class="px-4 py-3 text-gray-900"><?= htmlspecialchars(t('billing.fm_api_access')) ?></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-300"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                 </tr>
                 <tr>
-                    <td class="px-4 py-3 text-gray-900">Custom Branding</td>
+                    <td class="px-4 py-3 text-gray-900"><?= htmlspecialchars(t('billing.fm_custom_brand')) ?></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-300"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                 </tr>
                 <tr>
-                    <td class="px-4 py-3 text-gray-900">Priority Support</td>
+                    <td class="px-4 py-3 text-gray-900"><?= htmlspecialchars(t('billing.fm_priority_support')) ?></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-times text-gray-300"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
                     <td class="px-4 py-3 text-center"><i class="fa-solid fa-check text-green-600"></i></td>
@@ -478,21 +496,20 @@ $isFreePlan = ($planInfo['plan'] ?? 'free') === 'free';
     <div class="p-4 bg-blue-50 border-t border-blue-100">
         <p class="text-sm text-blue-700">
             <i class="fa-solid fa-info-circle mr-1"></i>
-            <strong>Note:</strong> All plans include full print quality when ordering physical cards from print shops. 
-            Preview quality affects only the digital card images displayed in the dashboard.
+            <?= t('billing.matrix_note') ?>
         </p>
     </div>
 </div>
 
 <!-- Billing Cycle Toggle -->
 <div class="flex items-center justify-between mb-6">
-    <h2 id="plans" class="text-xl font-bold text-gray-900">Upgrade Your Plan</h2>
+    <h2 id="plans" class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('billing.upgrade_your_plan')) ?></h2>
     <div class="flex items-center gap-2 bg-gray-100 p-1 rounded-xl" id="billingToggle">
         <button type="button" onclick="setBillingCycle('monthly')" id="btn-monthly"
-                class="px-4 py-2 text-sm font-medium rounded-lg bg-white shadow text-gray-900 transition-all">Monthly</button>
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-white shadow text-gray-900 transition-all"><?= htmlspecialchars(t('billing.cycle_monthly')) ?></button>
         <button type="button" onclick="setBillingCycle('yearly')" id="btn-yearly"
                 class="px-4 py-2 text-sm font-medium rounded-lg text-gray-500 hover:text-gray-700 transition-all">
-            Yearly <span class="ml-1 text-xs text-green-600 font-semibold">Save 20%</span>
+            <?= htmlspecialchars(t('billing.cycle_yearly')) ?> <span class="ml-1 text-xs text-green-600 font-semibold"><?= htmlspecialchars(t('billing.save_20')) ?></span>
         </button>
     </div>
 </div>
@@ -516,8 +533,8 @@ function setBillingCycle(cycle) {
     <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
         <i class="fa-solid fa-credit-card text-gray-400 text-2xl"></i>
     </div>
-    <h3 class="text-lg font-medium text-gray-900 mb-2">No Subscription Plans Available</h3>
-    <p class="text-gray-500">Subscription plans have not been configured yet. Contact your administrator.</p>
+    <h3 class="text-lg font-medium text-gray-900 mb-2"><?= htmlspecialchars(t('billing.no_plans_h3')) ?></h3>
+    <p class="text-gray-500"><?= htmlspecialchars(t('billing.no_plans_body')) ?></p>
 </div>
 <?php else: ?>
 <div class="grid md:grid-cols-3 gap-6 mb-8">
@@ -526,7 +543,7 @@ function setBillingCycle(cycle) {
     <div class="bg-white rounded-xl border-2 <?php echo $plan['id'] === 'pro' ? 'border-blue-500 shadow-lg shadow-blue-500/10' : 'border-gray-200'; ?> overflow-hidden relative">
         <?php if ($plan['id'] === 'pro'): ?>
         <div class="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-            Popular
+            <?= htmlspecialchars(t('billing.popular_badge')) ?>
         </div>
         <?php endif; ?>
         
@@ -537,20 +554,20 @@ function setBillingCycle(cycle) {
             <div class="mt-4">
                 <div class="price-monthly">
                     <span class="text-4xl font-bold text-gray-900"><?php echo Currency::formatHtml($plan['price_monthly'], $companyCurrency, 'xl'); ?></span>
-                    <span class="text-gray-500">/month</span>
+                    <span class="text-gray-500"><?= htmlspecialchars(t('billing.per_month')) ?></span>
                 </div>
                 <?php if ($plan['price_yearly'] > 0): ?>
                 <div class="price-yearly hidden">
                     <span class="text-4xl font-bold text-gray-900"><?php echo Currency::formatHtml($plan['price_yearly'], $companyCurrency, 'xl'); ?></span>
-                    <span class="text-gray-500">/year</span>
+                    <span class="text-gray-500"><?= htmlspecialchars(t('billing.per_year')) ?></span>
                     <span class="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
-                        Save <?php $monthlyBase = (float)$plan['price_monthly'] * 12; echo $monthlyBase > 0 ? round((1 - ((float)$plan['price_yearly'] / $monthlyBase)) * 100) : 0; ?>%
+                        <?php $monthlyBase = (float)$plan['price_monthly'] * 12; $pct = $monthlyBase > 0 ? round((1 - ((float)$plan['price_yearly'] / $monthlyBase)) * 100) : 0; echo htmlspecialchars(str_replace(':n', (string) $pct, t('billing.save_pct'))); ?>
                     </span>
                 </div>
                 <?php else: ?>
                 <div class="price-yearly hidden">
                     <span class="text-4xl font-bold text-gray-900"><?php echo Currency::formatHtml($plan['price_monthly'] * 12, $companyCurrency, 'xl'); ?></span>
-                    <span class="text-gray-500">/year</span>
+                    <span class="text-gray-500"><?= htmlspecialchars(t('billing.per_year')) ?></span>
                 </div>
                 <?php endif; ?>
             </div>
@@ -574,15 +591,15 @@ function setBillingCycle(cycle) {
                 ?>
                 <li class="flex items-center gap-2 text-sm text-gray-600">
                     <i class="fa-solid fa-check text-green-600"></i>
-                    <?php echo $maxEmployees === -1 ? 'Unlimited' : $maxEmployees; ?> employees
+                    <?php echo $maxEmployees === -1 ? htmlspecialchars(t('billing.unlimited')) : (int) $maxEmployees; ?> <?= htmlspecialchars(t('billing.employees_suffix')) ?>
                 </li>
                 <li class="flex items-center gap-2 text-sm text-gray-600">
                     <i class="fa-solid fa-check text-green-600"></i>
-                    <?php echo $maxTemplates === -1 ? 'Unlimited' : $maxTemplates; ?> templates
+                    <?php echo $maxTemplates === -1 ? htmlspecialchars(t('billing.unlimited')) : (int) $maxTemplates; ?> <?= htmlspecialchars(t('billing.templates_suffix')) ?>
                 </li>
                 <li class="flex items-center gap-2 text-sm text-gray-600">
                     <i class="fa-solid fa-check text-green-600"></i>
-                    <?php echo $maxStorage === -1 ? 'Unlimited' : $maxStorage . 'GB'; ?> storage
+                    <?php echo $maxStorage === -1 ? htmlspecialchars(t('billing.unlimited')) : htmlspecialchars(str_replace(':n', (string) $maxStorage, t('billing.gb_suffix'))); ?> <?= htmlspecialchars(t('billing.storage_suffix')) ?>
                 </li>
                 <?php if (!empty($features) && is_array($features)): ?>
                 <?php foreach ($features as $feature): ?>
@@ -597,7 +614,7 @@ function setBillingCycle(cycle) {
             <div class="mt-6">
                 <?php if ($isCurrent): ?>
                 <button disabled class="w-full py-3 bg-gray-100 text-gray-500 rounded-lg font-medium cursor-not-allowed">
-                    Current Plan
+                    <?= htmlspecialchars(t('billing.current_plan_btn')) ?>
                 </button>
                 <?php else: ?>
                 <form method="post">
@@ -606,7 +623,7 @@ function setBillingCycle(cycle) {
                     <input type="hidden" name="plan_id" value="<?php echo $plan['id']; ?>">
                     <input type="hidden" name="billing_cycle" value="monthly">
                     <button type="submit" class="w-full py-3 <?php echo $plan['id'] === 'pro' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-900 hover:bg-gray-800'; ?> text-white rounded-lg font-medium transition-colors">
-                        Upgrade to <?php echo sanitize($plan['name']); ?>
+                        <?= htmlspecialchars(str_replace(':name', sanitize($plan['name']), t('billing.upgrade_to'))) ?>
                     </button>
                 </form>
                 <?php endif; ?>
@@ -616,6 +633,7 @@ function setBillingCycle(cycle) {
     <?php endforeach; ?>
 </div>
 <?php endif; ?>
+<?php endif; // legacy SaaS UI block ?>
 
 <!-- Unpaid Print Orders -->
 <?php if (!empty($unpaidOrders)): ?>
@@ -623,10 +641,10 @@ function setBillingCycle(cycle) {
     <div class="p-4 border-b border-orange-100 flex items-center justify-between bg-orange-50">
         <h3 class="font-semibold text-orange-800 flex items-center gap-2">
             <i class="fa-solid fa-print text-orange-500"></i>
-            Pending Print Payments
+            <?= htmlspecialchars(t('billing.pending_payments')) ?>
         </h3>
         <span class="text-xs font-semibold bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full">
-            <?= count($unpaidOrders) ?> unpaid
+            <?= htmlspecialchars(str_replace(':n', (string) count($unpaidOrders), t('billing.n_unpaid'))) ?>
         </span>
     </div>
     <div class="divide-y divide-gray-100">
@@ -638,13 +656,13 @@ function setBillingCycle(cycle) {
         <div class="p-4 flex items-center justify-between gap-4 flex-wrap">
             <div class="flex-1 min-w-0">
                 <p class="font-medium text-gray-900 text-sm">
-                    Order #<?= htmlspecialchars($uOrder['order_number'] ?? $uOrder['id']) ?>
+                    <?= htmlspecialchars(str_replace(':num', (string)($uOrder['order_number'] ?? $uOrder['id']), t('billing.order_num'))) ?>
                     <?php if (!empty($uOrder['shop_name'])): ?>
                     <span class="text-gray-400 font-normal">· <?= htmlspecialchars($uOrder['shop_name']) ?></span>
                     <?php endif; ?>
                 </p>
                 <p class="text-xs text-gray-500 mt-0.5">
-                    <?= (int)($uOrder['quantity'] ?? 0) ?> cards ·
+                    <?= htmlspecialchars(str_replace(':n', (string)(int)($uOrder['quantity'] ?? 0), t('billing.n_cards'))) ?> ·
                     <?= ucfirst($uOrder['paper_type'] ?? 'standard') ?> ·
                     <?= ucfirst($uOrder['finish'] ?? 'matte') ?> ·
                     <?= date('d M Y', strtotime($uOrder['created_at'])) ?>
@@ -661,7 +679,7 @@ function setBillingCycle(cycle) {
                 </span>
                 <a href="<?= $basePath ?>order-checkout<?= $ext ?>?order=<?= (int)$uOrder['id'] ?>"
                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-lock text-xs"></i> Pay Now
+                    <i class="fa-solid fa-lock text-xs"></i> <?= htmlspecialchars(t('billing.pay_now')) ?>
                 </a>
             </div>
         </div>
@@ -669,14 +687,14 @@ function setBillingCycle(cycle) {
     </div>
     <div class="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
         <p class="text-xs text-gray-500">
-            Total outstanding:
+            <?= htmlspecialchars(t('billing.total_outstanding')) ?>
             <strong class="text-gray-900">
                 <?= number_format(array_sum(array_column($unpaidOrders, 'total')), 3) ?> <?= $companyCurrency ?>
             </strong>
         </p>
         <?php $basePath2 = getAdminBasePath(); $ext2 = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php'; ?>
         <a href="<?= $basePath2 ?>print<?= $ext2 ?>" class="text-xs text-blue-600 hover:underline">
-            View all orders <i class="fa-solid fa-arrow-right ml-1"></i>
+            <?= htmlspecialchars(t('billing.view_all_orders')) ?> <i class="fa-solid fa-arrow-right ml-1"></i>
         </a>
     </div>
 </div>
@@ -687,56 +705,59 @@ function setBillingCycle(cycle) {
     <div class="p-4 border-b border-gray-100 flex items-center justify-between">
         <h3 class="font-semibold text-gray-900 flex items-center gap-2">
             <i class="fa-solid fa-id-card text-purple-500"></i>
-            Card Credits
+            <?= htmlspecialchars(t('billing.card_credits_h3')) ?>
         </h3>
-        <span class="text-xs text-gray-400">Pay per card generated, no subscription needed</span>
+        <span class="text-xs text-gray-400"><?= htmlspecialchars(t('billing.card_credits_sub')) ?></span>
     </div>
     <div class="p-6">
         <div class="grid md:grid-cols-3 gap-6 mb-6">
             <div class="text-center p-4 bg-purple-50 rounded-xl">
                 <p class="text-3xl font-bold text-purple-700"><?php echo $cardCredits; ?></p>
-                <p class="text-sm text-gray-500 mt-1">Credits Available</p>
+                <p class="text-sm text-gray-500 mt-1"><?= htmlspecialchars(t('billing.credits_available')) ?></p>
             </div>
             <div class="text-center p-4 bg-gray-50 rounded-xl">
                 <p class="text-3xl font-bold text-gray-700"><?php echo $cardsUsedThisMonth; ?></p>
-                <p class="text-sm text-gray-500 mt-1">Generated This Month</p>
+                <p class="text-sm text-gray-500 mt-1"><?= htmlspecialchars(t('billing.generated_this_month')) ?></p>
             </div>
             <div class="text-center p-4 bg-blue-50 rounded-xl">
                 <p class="text-3xl font-bold text-blue-700">
                     <?php echo $maxCardsPerMonth === -1 ? '∞' : number_format($maxCardsPerMonth); ?>
                 </p>
-                <p class="text-sm text-gray-500 mt-1">Monthly Limit (Plan)</p>
+                <p class="text-sm text-gray-500 mt-1"><?= htmlspecialchars(t('billing.monthly_limit_plan')) ?></p>
             </div>
         </div>
 
         <?php if ($pricePerCard > 0): ?>
         <div class="border border-purple-100 rounded-xl p-5 bg-purple-50">
             <p class="text-sm text-gray-700 mb-3">
-                <strong>Buy card credits</strong> — each credit lets you generate one business card.
-                Price: <strong><?php echo number_format($pricePerCard, 3); ?> <?php echo $companyCurrency; ?></strong> per card.
+                <?php echo str_replace([':price', ':cur'], [number_format($pricePerCard, 3), htmlspecialchars($companyCurrency)], t('billing.buy_credits_lead')); ?>
             </p>
             <form method="POST" class="flex items-end gap-3 flex-wrap">
                 <?= csrfField() ?>
                 <input type="hidden" name="action" value="buy_cards">
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Number of Cards</label>
+                    <label class="block text-xs font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('billing.number_of_cards')) ?></label>
                     <select name="card_count" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500">
                         <?php foreach ([5, 10, 25, 50, 100] as $qty): ?>
                         <option value="<?= $qty ?>" <?= $qty === 10 ? 'selected' : '' ?>>
-                            <?= $qty ?> cards — <?php echo number_format($pricePerCard * $qty, 3); ?> <?= $companyCurrency ?>
+                            <?= htmlspecialchars(strtr(t('billing.cards_option'), [
+                                ':qty'   => (string) $qty,
+                                ':total' => number_format($pricePerCard * $qty, 3),
+                                ':cur'   => $companyCurrency,
+                            ])) ?>
                         </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition">
-                    <i class="fa-solid fa-lock mr-1"></i> Buy Credits via Paymob
+                    <i class="fa-solid fa-lock mr-1"></i> <?= htmlspecialchars(t('billing.buy_credits_btn')) ?>
                 </button>
             </form>
         </div>
         <?php else: ?>
         <div class="text-sm text-gray-500 bg-gray-50 rounded-xl p-4">
             <i class="fa-solid fa-info-circle mr-1 text-blue-400"></i>
-            Card generation is included in your subscription plan with no per-card charge.
+            <?= htmlspecialchars(t('billing.card_included')) ?>
         </div>
         <?php endif; ?>
     </div>
@@ -747,11 +768,11 @@ function setBillingCycle(cycle) {
     <div class="p-4 border-b border-gray-100">
         <h3 class="font-semibold text-gray-900 flex items-center gap-2">
             <i class="fa-solid fa-credit-card text-blue-600"></i>
-            Payment Methods
+            <?= htmlspecialchars(t('billing.payment_methods_h3')) ?>
         </h3>
     </div>
     <div class="p-6">
-        <p class="text-gray-600 text-sm mb-4">We accept the following payment methods:</p>
+        <p class="text-gray-600 text-sm mb-4"><?= htmlspecialchars(t('billing.payment_methods_lead')) ?></p>
         <div class="flex flex-wrap items-center gap-4">
             <div class="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-2">
                 <i class="fa-brands fa-cc-visa text-2xl text-blue-600"></i>
@@ -764,11 +785,11 @@ function setBillingCycle(cycle) {
             </div>
             <div class="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-2">
                 <i class="fa-brands fa-apple text-2xl text-gray-900"></i>
-                <span class="text-sm font-medium text-gray-700">Apple Pay</span>
+                <span class="text-sm font-medium text-gray-700"><?= htmlspecialchars(t('billing.apple_pay')) ?></span>
             </div>
             <div class="px-4 py-2 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-2">
                 <i class="fa-solid fa-building-columns text-2xl text-green-600"></i>
-                <span class="text-sm font-medium text-gray-700">Omannet</span>
+                <span class="text-sm font-medium text-gray-700"><?= htmlspecialchars(t('billing.omannet')) ?></span>
             </div>
         </div>
     </div>

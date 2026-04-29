@@ -1,5 +1,5 @@
 <?php
-// LinkedIn OAuth callback — saves access token to system_settings
+// LinkedIn OAuth callback, saves access token to system_settings
 require_once __DIR__ . '/../../config.php';
 
 $client_id = defined('LINKEDIN_CLIENT_ID') ? LINKEDIN_CLIENT_ID : '';

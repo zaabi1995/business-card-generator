@@ -368,5 +368,88 @@ class GoogleFonts {
     public static function getPopularFonts() {
         return array_keys(self::$popularFonts);
     }
+
+    /**
+     * Curated 20-font shortlist surfaced in the template-editor font
+     * picker. Mixes the most-used Latin sans + serif + display with
+     * Arabic shapes employees actually read. Ordered for the dropdown.
+     */
+    private static $curatedFonts = [
+        // Latin sans (most common on business cards)
+        'Inter',
+        'Plus Jakarta Sans',
+        'DM Sans',
+        'Manrope',
+        'Poppins',
+        'Montserrat',
+        'Work Sans',
+        // Latin serif (elegant)
+        'Playfair Display',
+        'Merriweather',
+        'Lora',
+        'EB Garamond',
+        // Display (logos + splashes)
+        'Oswald',
+        'Bebas Neue',
+        // Arabic modern
+        'IBM Plex Sans Arabic',
+        'Cairo',
+        'Tajawal',
+        'Readex Pro',
+        // Arabic decorative + traditional
+        'Reem Kufi',
+        'El Messiri',
+        'Amiri',
+    ];
+
+    /**
+     * Return the 20 curated picks for the default font dropdown.
+     */
+    public static function getCuratedFonts() {
+        return self::$curatedFonts;
+    }
+
+    /**
+     * Return the full list (~50 fonts) for the "more" expansion,
+     * partitioned into bucket arrays so the UI can render section
+     * headers without hardcoding ranges. Buckets are: sans_modern,
+     * sans_classic, serif, display, arabic_modern, arabic_decorative,
+     * arabic_traditional, arabic_calligraphic.
+     */
+    public static function getFontsGrouped() {
+        return [
+            'sans_modern' => [
+                'Plus Jakarta Sans', 'Inter', 'DM Sans', 'Outfit', 'Manrope',
+                'Space Grotesk', 'Sora', 'Urbanist', 'Work Sans', 'Figtree',
+                'Albert Sans', 'Rubik',
+            ],
+            'sans_classic' => [
+                'Montserrat', 'Roboto', 'Open Sans', 'Lato', 'Poppins',
+                'Raleway', 'Nunito', 'Quicksand', 'Karla', 'Source Sans 3',
+                'Source Sans Pro',
+            ],
+            'serif' => [
+                'Playfair Display', 'Merriweather', 'Lora', 'Crimson Pro',
+                'Cormorant Garamond', 'Libre Baskerville', 'EB Garamond',
+            ],
+            'display' => ['Oswald', 'Bebas Neue', 'Anton', 'Abril Fatface'],
+            'arabic_modern' => [
+                'Noto Sans Arabic', 'Cairo', 'Tajawal', 'Almarai',
+                'IBM Plex Sans Arabic', 'Readex Pro', 'Mada', 'Changa',
+            ],
+            'arabic_decorative' => [
+                'El Messiri', 'Reem Kufi', 'Noto Kufi Arabic',
+                'Baloo Bhaijaan 2', 'Lalezar',
+            ],
+            'arabic_traditional' => [
+                'Amiri', 'Scheherazade New', 'Lateef', 'Harmattan',
+                'Noto Naskh Arabic',
+            ],
+            'arabic_calligraphic' => [
+                'Aref Ruqaa', 'Markazi Text', 'Mirza', 'Rakkas', 'Gulzar',
+                'Lemonada', 'Noto Nastaliq Urdu',
+            ],
+        ];
+    }
 }
 

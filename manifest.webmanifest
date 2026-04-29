@@ -1,0 +1,25 @@
+{
+  "name": "Cardify",
+  "short_name": "Cardify",
+  "description": "Cardify business card workspace",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#2d13ea",
+  "background_color": "#f5f3ff",
+  "icons": [
+    {
+      "src": "/assets/images/cardify-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/images/cardify-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

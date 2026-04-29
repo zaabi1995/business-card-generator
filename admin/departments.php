@@ -52,6 +52,17 @@ $legacyTemplates = $db->fetchAll(
     ['id' => $companyId]
 );
 
+// Per-side templates list for the per-side overrides (action 586).
+// `side` may be 'front' or 'back' on the legacy templates table.
+$frontTemplates = $db->fetchAll(
+    "SELECT id, name FROM templates WHERE company_id = :id AND side = 'front' ORDER BY name",
+    ['id' => $companyId]
+);
+$backTemplates = $db->fetchAll(
+    "SELECT id, name FROM templates WHERE company_id = :id AND side = 'back' ORDER BY name",
+    ['id' => $companyId]
+);
+
 // Handle create/update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
@@ -97,7 +108,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!empty($templatePairId)) {
                 $insertData['template_pair_id'] = $templatePairId;
             }
-            
+
+            // Per-side overrides (action 586), scope ids to this company
+            $frontId = trim($_POST['front_template_id'] ?? '');
+            $backId  = trim($_POST['back_template_id']  ?? '');
+            if ($frontId !== '') {
+                $ok = $db->fetchOne("SELECT id FROM templates WHERE id = :id AND company_id = :cid", ['id' => $frontId, 'cid' => $companyId]);
+                if ($ok) $insertData['front_template_id'] = $frontId;
+            }
+            if ($backId !== '') {
+                $ok = $db->fetchOne("SELECT id FROM templates WHERE id = :id AND company_id = :cid", ['id' => $backId, 'cid' => $companyId]);
+                if ($ok) $insertData['back_template_id'] = $backId;
+            }
+
             $db->insert('departments', $insertData);
             $message = 'Department created successfully!';
         }
@@ -126,15 +149,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $slug = $baseSlug . '-' . $counter++;
         }
         
+        $frontId = trim($_POST['front_template_id'] ?? '');
+        $backId  = trim($_POST['back_template_id']  ?? '');
+        $frontSafe = null; $backSafe = null;
+        if ($frontId !== '') {
+            $ok = $db->fetchOne("SELECT id FROM templates WHERE id = :id AND company_id = :cid", ['id' => $frontId, 'cid' => $companyId]);
+            if ($ok) $frontSafe = $frontId;
+        }
+        if ($backId !== '') {
+            $ok = $db->fetchOne("SELECT id FROM templates WHERE id = :id AND company_id = :cid", ['id' => $backId, 'cid' => $companyId]);
+            if ($ok) $backSafe = $backId;
+        }
+
         if (!empty($deptId) && !empty($name)) {
             $updateData = [
                 'name' => $name,
                 'description' => $description,
                 'portal_slug' => $slug,
                 'template_pair_id' => $templatePairId ?: null,
+                'front_template_id' => $frontSafe,
+                'back_template_id'  => $backSafe,
                 'access_code' => $portalPasscode ?: null
             ];
-            
+
             $db->update('departments', $updateData, 'id = :id AND company_id = :company_id', [
                 'id' => $deptId,
                 'company_id' => $companyId
@@ -179,19 +216,19 @@ foreach ($departments as $dept) {
     $deptCounts[$dept['id']] = $count['count'] ?? 0;
 }
 
-adminHeader('Departments', 'departments');
+adminHeader(t('departments.page_title'), 'departments');
 ?>
 
-<div x-data="{ showModal: false, editMode: false, formData: { id: '', name: '', description: '', portal_slug: '', template_pair_id: '' } }">
+<div x-data="{ showModal: false, editMode: false, formData: { id: '', name: '', description: '', portal_slug: '', template_pair_id: '', front_template_id: '', back_template_id: '', access_code: '' } }">
     <!-- Page Header Actions -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-            <p class="text-gray-600"><?php echo count($departments); ?> departments</p>
+            <p class="text-gray-600"><?= htmlspecialchars(t('departments.count', ['n' => count($departments)])) ?></p>
         </div>
-        <button @click="showModal = true; editMode = false; formData = { id: '', name: '', description: '', portal_slug: '', template_pair_id: '', access_code: '' }" 
+        <button @click="showModal = true; editMode = false; formData = { id: '', name: '', description: '', portal_slug: '', template_pair_id: '', front_template_id: '', back_template_id: '', access_code: '' }"
                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2">
             <i class="fa-solid fa-plus"></i>
-            <span>Add Department</span>
+            <span><?= htmlspecialchars(t('departments.add_department')) ?></span>
         </button>
     </div>
 
@@ -214,12 +251,12 @@ adminHeader('Departments', 'departments');
                     </div>
                     <div class="flex items-center gap-1">
                         <button 
-                            @click="showModal = true; editMode = true; formData = { id: '<?php echo $dept['id']; ?>', name: '<?php echo addslashes($dept['name']); ?>', description: '<?php echo addslashes($dept['description'] ?? ''); ?>', portal_slug: '<?php echo addslashes($dept['portal_slug'] ?? ''); ?>', template_pair_id: '<?php echo $dept['template_pair_id'] ?? ''; ?>', access_code: '<?php echo addslashes($dept['access_code'] ?? ''); ?>' }"
+                            @click="showModal = true; editMode = true; formData = { id: '<?php echo $dept['id']; ?>', name: '<?php echo addslashes($dept['name']); ?>', description: '<?php echo addslashes($dept['description'] ?? ''); ?>', portal_slug: '<?php echo addslashes($dept['portal_slug'] ?? ''); ?>', template_pair_id: '<?php echo $dept['template_pair_id'] ?? ''; ?>', front_template_id: '<?php echo $dept['front_template_id'] ?? ''; ?>', back_template_id: '<?php echo $dept['back_template_id'] ?? ''; ?>', access_code: '<?php echo addslashes($dept['access_code'] ?? ''); ?>' }"
                             class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         >
                             <i class="fa-solid fa-pen-to-square"></i>
                         </button>
-                        <form method="post" class="inline" onsubmit="return confirm('Delete this department?')">
+                        <form method="post" class="inline" onsubmit="return confirm(<?= json_encode(t('departments.delete_confirm')) ?>)">
                             <?php echo csrfField(); ?>
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="department_id" value="<?php echo $dept['id']; ?>">
@@ -235,14 +272,14 @@ adminHeader('Departments', 'departments');
                 <?php if (!empty($dept['portal_slug']) && !empty($companySlug)): ?>
                 <div class="flex items-center gap-1.5 text-xs text-blue-600 mb-2">
                     <i class="fa-solid fa-link"></i>
-                    <code class="bg-blue-50 px-1.5 py-0.5 rounded">/<?php echo $companySlug; ?>/portal/<?php echo $dept['portal_slug']; ?></code>
-                    <button type="button" onclick="copyToClipboard('<?php echo getBaseUrl() . $companySlug . '/portal/' . $dept['portal_slug']; ?>')" 
-                            class="text-gray-400 hover:text-blue-600 transition-colors" title="Copy link">
+                    <code class="bg-blue-50 px-1.5 py-0.5 rounded"><?php echo htmlspecialchars(getTenantUrl($companySlug, '/portal/' . $dept['portal_slug'])); ?></code>
+                    <button type="button" onclick="copyToClipboard('<?php echo getTenantUrl($companySlug, '/portal/' . $dept['portal_slug']); ?>')"
+                            class="text-gray-400 hover:text-blue-600 transition-colors" title="<?= htmlspecialchars(t('departments.copy_link')) ?>">
                         <i class="fa-solid fa-copy"></i>
                     </button>
                     <?php if (!empty($dept['access_code'])): ?>
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-medium ml-1" title="Access code: <?php echo $dept['access_code']; ?>">
-                        <i class="fa-solid fa-lock mr-0.5"></i>Protected
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-medium ml-1" title="<?= htmlspecialchars(t('departments.access_code_title', ['code' => $dept['access_code']])) ?>">
+                        <i class="fa-solid fa-lock mr-0.5"></i><?= htmlspecialchars(t('departments.protected')) ?>
                     </span>
                     <?php endif; ?>
                 </div>
@@ -255,7 +292,7 @@ adminHeader('Departments', 'departments');
                 <div class="flex items-center justify-between pt-4 border-t border-gray-100">
                     <div class="flex items-center gap-2 text-sm text-gray-500">
                         <i class="fa-solid fa-users"></i>
-                        <span><?php echo $deptCounts[$dept['id']] ?? 0; ?> employees</span>
+                        <span><?= htmlspecialchars(t('departments.employees_count', ['n' => $deptCounts[$dept['id']] ?? 0])) ?></span>
                     </div>
                     
                     <?php 
@@ -267,7 +304,7 @@ adminHeader('Departments', 'departments');
                         <?php echo sanitize($templateName); ?>
                     </span>
                     <?php else: ?>
-                    <span class="text-xs text-gray-400">Company default</span>
+                    <span class="text-xs text-gray-400"><?= htmlspecialchars(t('departments.company_default')) ?></span>
                     <?php endif; ?>
                 </div>
             </div>
@@ -278,10 +315,10 @@ adminHeader('Departments', 'departments');
         <div class="md:col-span-2 lg:col-span-3 bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div class="text-gray-400">
                 <i class="fa-solid fa-sitemap text-4xl mb-4 opacity-50"></i>
-                <p class="text-gray-600 font-medium">No departments yet</p>
-                <p class="text-sm mt-1">Create departments to organize your employees</p>
+                <p class="text-gray-600 font-medium"><?= htmlspecialchars(t('departments.no_departments')) ?></p>
+                <p class="text-sm mt-1"><?= htmlspecialchars(t('departments.no_departments_body')) ?></p>
                 <button @click="showModal = true; editMode = false" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
-                    <i class="fa-solid fa-plus mr-2"></i>Create First Department
+                    <i class="fa-solid fa-plus mr-2"></i><?= htmlspecialchars(t('departments.create_first')) ?>
                 </button>
             </div>
         </div>
@@ -293,7 +330,7 @@ adminHeader('Departments', 'departments');
         <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" @click="showModal = false"></div>
         <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md">
             <div class="p-6 border-b border-gray-100">
-                <h3 class="text-xl font-bold text-gray-900" x-text="editMode ? 'Edit Department' : 'Create Department'"></h3>
+                <h3 class="text-xl font-bold text-gray-900" x-text="editMode ? <?= json_encode(t('departments.modal_edit_title')) ?> : <?= json_encode(t('departments.modal_create_title')) ?>"></h3>
             </div>
             
             <form method="post" class="p-6">
@@ -303,72 +340,96 @@ adminHeader('Departments', 'departments');
                 
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Department Name <span class="text-red-500">*</span></label>
-                        <input type="text" name="name" x-model="formData.name" required 
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('departments.field_name')) ?> <span class="text-red-500" aria-label="<?= htmlspecialchars(t('departments.required')) ?>">*</span></label>
+                        <input type="text" name="name" x-model="formData.name" required
                                @input="if(!editMode) formData.portal_slug = $event.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')"
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                               placeholder="e.g., Marketing">
+                               placeholder="<?= htmlspecialchars(t('departments.name_placeholder')) ?>">
                     </div>
                     
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Portal Slug
-                            <span class="text-xs font-normal text-gray-500">(URL identifier)</span>
+                            <?= htmlspecialchars(t('departments.field_slug')) ?>
+                            <span class="text-xs font-normal text-gray-500"><?= htmlspecialchars(t('departments.slug_note')) ?></span>
                         </label>
                         <div class="flex items-center gap-2">
-                            <span class="text-gray-500 text-sm whitespace-nowrap">/<?php echo $companySlug; ?>/portal/</span>
-                            <input type="text" name="slug" x-model="formData.portal_slug" 
+                            <span class="text-gray-500 text-sm whitespace-nowrap" dir="ltr">/<?php echo $companySlug; ?>/portal/</span>
+                            <input type="text" name="slug" x-model="formData.portal_slug"
                                    class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-mono text-sm"
-                                   placeholder="marketing" pattern="[a-z0-9-]+">
+                                   placeholder="<?= htmlspecialchars(t('departments.slug_placeholder')) ?>" pattern="[a-z0-9-]+">
                         </div>
-                        <p class="text-xs text-gray-500 mt-1">Lowercase letters, numbers and dashes only. Auto-generated from name.</p>
+                        <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('departments.slug_hint')) ?></p>
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Card Design Template</label>
-                        <select name="template_pair_id" x-model="formData.template_pair_id" 
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('departments.field_template')) ?></label>
+                        <select name="template_pair_id" x-model="formData.template_pair_id"
                                 class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                            <option value="">Use company default</option>
+                            <option value=""><?= htmlspecialchars(t('departments.use_company_default')) ?></option>
                             <?php foreach ($templatePairs as $pair): ?>
                             <option value="<?php echo sanitize($pair['pair_id']); ?>"><?php echo sanitize($pair['name']); ?></option>
                             <?php endforeach; ?>
                             <?php if (!empty($legacyTemplates)): ?>
-                            <optgroup label="Legacy Templates">
+                            <optgroup label="<?= htmlspecialchars(t('departments.legacy_templates')) ?>">
                             <?php foreach ($legacyTemplates as $template): ?>
                             <option value="legacy_<?php echo sanitize($template['id']); ?>"><?php echo sanitize($template['name']); ?> (<?php echo $template['side']; ?>)</option>
                             <?php endforeach; ?>
                             </optgroup>
                             <?php endif; ?>
                         </select>
-                        <p class="text-xs text-gray-500 mt-1">Employees in this department will use this card design instead of company default</p>
+                        <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('departments.template_hint')) ?></p>
                     </div>
-                    
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1"><?= htmlspecialchars(t('departments.field_front_template')) ?></label>
+                            <select name="front_template_id" x-model="formData.front_template_id"
+                                    class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 text-sm focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                                <option value=""><?= htmlspecialchars(t('departments.use_company_default')) ?></option>
+                                <?php foreach ($frontTemplates as $tpl): ?>
+                                    <option value="<?= sanitize($tpl['id']) ?>"><?= sanitize($tpl['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1"><?= htmlspecialchars(t('departments.field_back_template')) ?></label>
+                            <select name="back_template_id" x-model="formData.back_template_id"
+                                    class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 text-sm focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                                <option value=""><?= htmlspecialchars(t('departments.use_company_default')) ?></option>
+                                <?php foreach ($backTemplates as $tpl): ?>
+                                    <option value="<?= sanitize($tpl['id']) ?>"><?= sanitize($tpl['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 -mt-2"><?= htmlspecialchars(t('departments.side_override_hint')) ?></p>
+
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
-                        <textarea name="description" x-model="formData.description" rows="3" 
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('departments.field_description')) ?></label>
+                        <textarea name="description" x-model="formData.description" rows="3"
                                   class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                                  placeholder="Brief description of this department"></textarea>
+                                  placeholder="<?= htmlspecialchars(t('departments.description_placeholder')) ?>"></textarea>
                     </div>
                     
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Portal Access Code
-                            <span class="text-xs font-normal text-gray-500">(optional)</span>
+                            <?= htmlspecialchars(t('departments.field_access_code')) ?>
+                            <span class="text-xs font-normal text-gray-500"><?= htmlspecialchars(t('departments.optional')) ?></span>
                         </label>
-                        <input type="text" name="portal_passcode" x-model="formData.access_code" 
+                        <input type="text" name="portal_passcode" x-model="formData.access_code"
                                maxlength="4" pattern="[0-9]*" inputmode="numeric"
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-mono text-lg tracking-widest"
-                               placeholder="e.g., 1234">
-                        <p class="text-xs text-gray-500 mt-1">4-digit code to protect department portal. Leave empty for no restriction.</p>
+                               placeholder="<?= htmlspecialchars(t('departments.access_code_placeholder')) ?>">
+                        <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('departments.access_code_hint')) ?></p>
                     </div>
                 </div>
                 
                 <div class="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
                     <button type="button" @click="showModal = false" class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors">
-                        Cancel
+                        <?= htmlspecialchars(t('departments.cancel')) ?>
                     </button>
                     <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-                        <span x-text="editMode ? 'Save Changes' : 'Create Department'"></span>
+                        <span x-text="editMode ? <?= json_encode(t('departments.save_changes')) ?> : <?= json_encode(t('departments.create_department')) ?>"></span>
                     </button>
                 </div>
             </form>

@@ -5,8 +5,8 @@
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle = 'Business Cards for Restaurants & Cafés in Oman — Cardify';
-$pageDescription = 'Create professional business cards for your restaurant, café, or F&B business in Oman. QR menu integration, digital cards for staff, and instant sharing — all free with Cardify.';
+$pageTitle = 'Business Cards for Restaurants & Cafés in Oman, Cardify';
+$pageDescription = 'Create professional business cards for your restaurant, café, or F&B business in Oman. QR menu integration, digital cards for staff, and instant sharing, all free with Cardify.';
 $canonicalUrl = 'https://cardify.om/industries/restaurants';
 $ogType = 'website';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
@@ -18,7 +18,7 @@ $showNavigation = true;
 $extraHead = '<script type="application/ld+json">' . json_encode([
     '@context' => 'https://schema.org',
     '@type' => 'Service',
-    'name' => 'Cardify — Business Cards for Restaurants & Cafés',
+    'name' => 'Cardify, Business Cards for Restaurants & Cafés',
     'description' => 'Professional digital and printed business cards for restaurants, cafés, and F&B businesses in Oman.',
     'provider' => [
         '@type' => 'Organization',
@@ -49,7 +49,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
             <h1 class="text-4xl font-bold text-gray-900 mb-3">Business Cards for Restaurants & Cafés in Oman</h1>
             <p class="text-gray-500 text-lg max-w-2xl mx-auto mb-6">
-                Give your restaurant a professional edge. Create stunning digital business cards with QR menus, contact details, and social links — all shareable in seconds.
+                Give your restaurant a professional edge. Create stunning digital business cards with QR menus, contact details, and social links, all shareable in seconds.
             </p>
             <a href="<?php echo getBasePath(); ?>company/register.php"
                class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-lg">
@@ -73,7 +73,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         In Oman's competitive F&B scene, first impressions matter. Whether you're a fine dining restaurant in Muscat, a specialty café in Salalah, or a popular shawarma spot in Sohar, a professional business card sets you apart.
                     </p>
                     <p class="text-gray-600 leading-relaxed mb-4">
-                        Traditional paper cards get stained, lost, or thrown away. Digital business cards from <?php echo $brandName; ?> stay with your customers forever — accessible on their phone with a single tap or scan.
+                        Traditional paper cards get stained, lost, or thrown away. Digital business cards from <?php echo $brandName; ?> stay with your customers forever, accessible on their phone with a single tap or scan.
                     </p>
                     <p class="text-gray-600 leading-relaxed">
                         Imagine a guest scanning your manager's card and instantly seeing your menu, location on Google Maps, Instagram page, and reservation link. That's the power of a <?php echo $brandName; ?> digital card.
@@ -87,7 +87,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </div>
                             <div>
                                 <h3 class="font-semibold text-gray-900">QR Code to Your Menu</h3>
-                                <p class="text-gray-600 text-sm">Link directly to your digital menu — guests scan and browse instantly.</p>
+                                <p class="text-gray-600 text-sm">Link directly to your digital menu, guests scan and browse instantly.</p>
                             </div>
                         </div>
                         <div class="flex items-start gap-4">
@@ -105,7 +105,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </div>
                             <div>
                                 <h3 class="font-semibold text-gray-900">Social Media Links</h3>
-                                <p class="text-gray-600 text-sm">Instagram, TikTok, WhatsApp — all your channels in one card.</p>
+                                <p class="text-gray-600 text-sm">Instagram, TikTok, WhatsApp, all your channels in one card.</p>
                             </div>
                         </div>
                         <div class="flex items-start gap-4">
@@ -135,7 +135,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Cards for Every Role</h3>
                     <p class="text-gray-600">
-                        Create unique cards for your manager, chef, head waiter, and delivery team — each with their own contact details and role-specific links.
+                        Create unique cards for your manager, chef, head waiter, and delivery team, each with their own contact details and role-specific links.
                     </p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-8 text-center">
@@ -153,7 +153,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Instant Updates</h3>
                     <p class="text-gray-600">
-                        Changed your menu? New branch opening? Update your card once and everyone who has it sees the latest info — no reprinting needed.
+                        Changed your menu? New branch opening? Update your card once and everyone who has it sees the latest info, no reprinting needed.
                     </p>
                 </div>
             </div>
@@ -169,7 +169,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="bg-white rounded-xl shadow-sm p-8 border-l-4 border-orange-500">
                     <h3 class="text-lg font-bold text-gray-900 mb-3">Networking at Food Festivals</h3>
                     <p class="text-gray-600">
-                        At events like the Muscat Food Festival or Salalah Tourism Festival, your team can share digital cards with suppliers, bloggers, and potential partners instantly — no stack of paper cards needed.
+                        At events like the Muscat Food Festival or Salalah Tourism Festival, your team can share digital cards with suppliers, bloggers, and potential partners instantly, no stack of paper cards needed.
                     </p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-8 border-l-4 border-red-500">
@@ -187,7 +187,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="bg-white rounded-xl shadow-sm p-8 border-l-4 border-green-500">
                     <h3 class="text-lg font-bold text-gray-900 mb-3">Multi-Branch Management</h3>
                     <p class="text-gray-600">
-                        Run multiple locations? Manage all your branches' cards from one dashboard. Each branch gets its own address, phone, and team — all under one company account.
+                        Run multiple locations? Manage all your branches' cards from one dashboard. Each branch gets its own address, phone, and team, all under one company account.
                     </p>
                 </div>
             </div>

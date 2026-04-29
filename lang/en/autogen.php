@@ -1,0 +1,56 @@
+<?php
+return [
+    'page_title'           => 'Generating card',
+
+    // Quality notice (HD always free since the Apr 2026 pricing reset).
+    'quality_h4'           => 'HD card preview',
+    'quality_body'         => 'Card previews render at full HD resolution. Printed cards from verified print shops are produced at full print quality.',
+    'upgrade_cta'          => 'HD quality enabled',
+    'view_plans'           => 'See print pricing',
+
+    // Layout picker
+    'choose_layout'        => 'Choose a card layout',
+    'for_employee'         => 'for :name',
+    'generate_card'        => 'Generate card',
+
+    // Generating
+    'generating_card'      => 'Generating business card',
+    'regenerating_card'    => 'Regenerating business card',
+    'creating_for'         => 'Creating card for :name',
+
+    // Success
+    'card_generated'       => 'Card generated',
+    'live_and_ready'       => 'Your digital business card is live and ready to share.',
+    'digital_link_label'   => 'Your digital card link',
+    'copy'                 => 'Copy',
+    'copied'               => 'Copied',
+    'view_card'            => 'View card',
+    'share_whatsapp'       => 'Share on WhatsApp',
+    'continue'             => 'Continue',
+    'redirecting_in'       => 'Redirecting in :sec s',
+    'redirecting_auto'     => 'Redirecting automatically in :sec s',
+    'stay_here'            => 'Stay here',
+
+    // Error
+    'generation_failed'    => 'Generation failed',
+    'try_again'            => 'Try again',
+    'back_to_employees'    => 'Back to employees',
+
+    // JS runtime messages
+    'js_initializing'      => 'Initializing...',
+    'js_rendering'         => 'Rendering card...',
+    'js_uploading'         => 'Uploading to server...',
+    'js_done'              => 'Done!',
+    'js_generic_error'     => 'An error occurred',
+    'js_preparing_layout'  => 'Preparing card layout...',
+    'js_generating_qr'     => 'Generating QR code...',
+    'js_rendering_front'   => 'Rendering front card...',
+    'js_rendering_back'    => 'Rendering back card...',
+    'js_saving_front'      => 'Saving front card...',
+    'js_saving_back'       => 'Saving back card...',
+    'js_logging_gen'       => 'Logging generation...',
+    'js_init_editor'       => 'Initializing card editor...',
+    'js_generating_front'  => 'Generating front card...',
+    'js_generating_back'   => 'Generating back card...',
+    'js_saving_cards'      => 'Saving cards...',
+];

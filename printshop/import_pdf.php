@@ -1,0 +1,198 @@
+<?php
+/**
+ * Print Shop: Import a Business Card PDF (parse stage).
+ *
+ * Accepts a multipart upload of a 1-2 page PDF business card, runs the
+ * Python parser (parse_card_pdf.py), and returns a review-friendly JSON
+ * payload describing every detected text block plus a suggested binding.
+ *
+ * The actual templates rows are NOT created here. The wizard collects the
+ * user's confirmed bindings (each block bound to a Cardify field, kept as
+ * static decoration, or skipped) and POSTs them to /printshop/persist_template.php
+ * which writes the rows. Splitting parse from persist lets the user
+ * fix detection mistakes before they end up in the editor + portal.
+ *
+ * Route: POST /printshop/import_pdf.php  (multipart/form-data, field: pdf)
+ * Auth:  Login required, role print_shop, super_admin, admin, company_admin, company.
+ */
+require_once __DIR__ . '/../config.php';
+require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/CardifyTemplateImporter.php';
+
+header('Content-Type: application/json');
+
+Auth::requireLogin();
+$user = Auth::getCurrentUser();
+$allowedRoles = ['print_shop', 'super_admin', 'admin', 'company_admin', 'company'];
+if (!in_array($user['role'], $allowedRoles, true)) {
+    http_response_code(403);
+    echo json_encode(['error' => 'forbidden']);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['error' => 'method_not_allowed']);
+    exit;
+}
+
+if (empty($_FILES['pdf']) || $_FILES['pdf']['error'] !== UPLOAD_ERR_OK) {
+    http_response_code(400);
+    echo json_encode(['error' => 'no_pdf_uploaded']);
+    exit;
+}
+
+$MAX_BYTES = 25 * 1024 * 1024;
+if ((int)$_FILES['pdf']['size'] > $MAX_BYTES) {
+    http_response_code(413);
+    echo json_encode([
+        'error' => 'pdf_too_large',
+        'max_mb' => $MAX_BYTES / (1024 * 1024),
+        'received_mb' => round((int)$_FILES['pdf']['size'] / (1024 * 1024), 2),
+    ]);
+    exit;
+}
+
+$tmp = $_FILES['pdf']['tmp_name'];
+$origName = $_FILES['pdf']['name'];
+
+$fh = @fopen($tmp, 'rb');
+if (!$fh) {
+    http_response_code(400);
+    echo json_encode(['error' => 'cannot_read_upload']);
+    exit;
+}
+$magic = fread($fh, 5);
+fclose($fh);
+if (substr($magic, 0, 4) !== '%PDF') {
+    http_response_code(400);
+    echo json_encode(['error' => 'not_a_pdf']);
+    exit;
+}
+
+$token = bin2hex(random_bytes(8));
+$outRel = '/uploads/templates/imports/' . $token;
+$outAbs = realpath(__DIR__ . '/..') . $outRel;
+if (!@mkdir($outAbs, 0755, true) && !is_dir($outAbs)) {
+    http_response_code(500);
+    echo json_encode(['error' => 'cannot_create_output_dir']);
+    exit;
+}
+
+$srcPdf = $outAbs . '/source.pdf';
+if (!move_uploaded_file($tmp, $srcPdf)) {
+    http_response_code(500);
+    echo json_encode(['error' => 'cannot_save_pdf']);
+    exit;
+}
+
+$installedFontsFile = __DIR__ . '/../uploads/fonts/installed.txt';
+if (!file_exists($installedFontsFile)) {
+    $defaultFonts = [
+        'arial', 'helvetica', 'helvetica neue', 'georgia', 'times', 'times new roman',
+        'courier', 'courier new', 'verdana', 'tahoma', 'trebuchet ms',
+        'inter', 'roboto', 'open sans', 'lato', 'montserrat', 'poppins', 'raleway',
+        'oswald', 'merriweather', 'playfair display', 'sora', 'work sans',
+        'noto sans', 'noto serif', 'noto sans arabic', 'noto kufi arabic',
+        'cairo', 'tajawal', 'amiri', 'reem kufi', 'changa',
+    ];
+    @mkdir(dirname($installedFontsFile), 0755, true);
+    file_put_contents($installedFontsFile, implode("\n", $defaultFonts) . "\n");
+}
+
+$cmd = sprintf(
+    'python3 %s %s %s %s 2>&1',
+    escapeshellarg(__DIR__ . '/../scripts/parse_card_pdf.py'),
+    escapeshellarg($srcPdf),
+    escapeshellarg($outAbs),
+    escapeshellarg($installedFontsFile)
+);
+$out = shell_exec($cmd);
+if (!$out) {
+    http_response_code(500);
+    echo json_encode(['error' => 'parser_no_output', 'cmd' => $cmd]);
+    exit;
+}
+
+$parsed = json_decode($out, true);
+if ($parsed === null) {
+    http_response_code(500);
+    echo json_encode([
+        'error' => 'parser_failed',
+        'parser_output' => substr($out, 0, 4000),
+    ]);
+    exit;
+}
+
+// Stamp web-friendly URLs onto each page
+foreach ($parsed['pages'] as &$page) {
+    if (!empty($page['background_path'])) {
+        $page['background_url'] = $outRel . '/' . $page['background_path'];
+    }
+    if (!empty($page['background_with_text_path'])) {
+        $page['background_with_text_url'] = $outRel . '/' . $page['background_with_text_path'];
+    }
+}
+unset($page);
+
+// Persist the raw parser output so persist_template.php can re-read it
+// later without rerunning the parser. We also remember which company
+// owns this token so the persist endpoint can authorise the call.
+$companyId = function_exists('getCurrentCompanyId') ? getCurrentCompanyId() : null;
+$envelope = [
+    'token'             => $token,
+    'company_id'        => $companyId,
+    'user_id'           => $user['id'] ?? null,
+    'original_filename' => $origName,
+    'created_at'        => date('c'),
+    'pages'             => $parsed['pages'],
+    'fonts_used'        => $parsed['fonts_used']    ?? [],
+    'missing_fonts'     => $parsed['missing_fonts'] ?? [],
+];
+file_put_contents($outAbs . '/parse.json', json_encode($envelope, JSON_UNESCAPED_UNICODE));
+
+// Build the review-friendly payload: each detected span becomes a "block"
+// with display-friendly coordinates (300 DPI px, the same space the canvas
+// uses), the parser's suggested binding, and the detected text. The wizard
+// renders these as clickable overlays on top of the redacted background.
+$reviewPages = [];
+foreach ($parsed['pages'] as $page) {
+    $blocks = [];
+    foreach (($page['fields'] ?? []) as $idx => $f) {
+        $blocks[] = [
+            'id'             => 'block_' . $idx,
+            'detected_text'  => $f['detected_text'] ?? '',
+            'is_static_hint' => !empty($f['is_static']),
+            'x'              => (int)($f['x_px'] ?? 0),
+            'y'              => (int)($f['y_px'] ?? 0),
+            'width'          => (int)($f['w_px'] ?? 0),
+            'height'         => (int)($f['h_px'] ?? 0),
+            'font_family'    => $f['font_family'] ?? null,
+            'font_size_pt'   => $f['font_size_pt'] ?? null,
+            'color'          => $f['color'] ?? null,
+            'suggested_binding' => CardifyTemplateImporter::suggestBinding($f),
+        ];
+    }
+    $reviewPages[] = [
+        'page_number'  => $page['page_number'],
+        'side'         => $page['side'],
+        'width_pt'     => $page['width_pt'],
+        'height_pt'    => $page['height_pt'],
+        'width_px'     => $page['width_px'],
+        'height_px'    => $page['height_px'],
+        'background_url'           => $page['background_url'] ?? null,
+        'background_with_text_url' => $page['background_with_text_url'] ?? null,
+        'qr_area'      => $page['qr_area'] ?? null,
+        'blocks'       => $blocks,
+    ];
+}
+
+echo json_encode([
+    'import_token'      => $token,
+    'import_path'       => $outRel,
+    'source_pdf'        => $outRel . '/source.pdf',
+    'original_filename' => $origName,
+    'pages'             => $reviewPages,
+    'fonts_used'        => $parsed['fonts_used']    ?? [],
+    'missing_fonts'     => $parsed['missing_fonts'] ?? [],
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);

@@ -66,7 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'website' => $request['website'],
                         'website_ar' => $request['website_ar'],
                         'address_en' => $request['address_en'],
+                        'address_2_en' => $request['address_2_en'] ?? '',
                         'address_ar' => $request['address_ar'],
+                        'address_2_ar' => $request['address_2_ar'] ?? '',
                         'company_en' => $request['company_en'] ?: ($company['name_en'] ?? $companyName),
                         'company_ar' => $request['company_ar'] ?: ($company['name_ar'] ?? ''),
                         'department_id' => $request['department_id'],
@@ -269,7 +271,7 @@ $adminBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() 
                 <p class="text-sm text-blue-700 mt-1">Share this link with employees to let them submit their card requests:</p>
                 <div class="mt-2 flex items-center gap-2">
                     <code class="bg-blue-100 px-3 py-1.5 rounded text-sm text-blue-800 font-mono">
-                        <?php echo getBaseUrl() . $companySlug . '/portal'; ?>
+                        <?php echo getTenantUrl($companySlug, '/portal'); ?>
                     </code>
                     <button onclick="copyPortalLink()" class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
                         <i class="fa-solid fa-copy mr-1"></i>Copy
@@ -332,7 +334,7 @@ $adminBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() 
             <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="fa-solid fa-inbox text-gray-400 text-2xl"></i>
             </div>
-            <p class="text-gray-500">No <?php echo $statusFilter !== 'all' ? $statusFilter : ''; ?> requests found.</p>
+            <p class="text-gray-500"><?= htmlspecialchars($statusFilter !== 'all' ? str_replace(':filter', $statusFilter, t('emptystates.no_requests_h')) : t('emptystates.no_requests_all_h')) ?></p>
             <?php if ($companySlug): ?>
             <p class="text-sm text-gray-400 mt-2">Share the portal link with employees to receive requests.</p>
             <?php endif; ?>
@@ -612,7 +614,7 @@ $adminBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() 
 
 <script>
 function copyPortalLink() {
-    const link = '<?php echo getBaseUrl() . $companySlug . '/portal'; ?>';
+    const link = '<?php echo getTenantUrl($companySlug, '/portal'); ?>';
     navigator.clipboard.writeText(link).then(() => {
         alert('Portal link copied to clipboard!');
     });

@@ -229,7 +229,7 @@ adminHeader('Super Admin Dashboard', 'dashboard');
             </div>
             <div>
                 <p class="font-semibold text-gray-900">LinkedIn Carousels</p>
-                <p class="text-sm text-gray-500">Generated daily — copy &amp; post manually</p>
+                <p class="text-sm text-gray-500">Generated daily, copy &amp; post manually</p>
             </div>
         </a>
         <a href="../whatsapp_settings.php" class="flex items-start gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
@@ -283,7 +283,7 @@ adminHeader('Super Admin Dashboard', 'dashboard');
                             <a href="employees.php?company_id=<?php echo $company['id']; ?>" class="text-blue-600 hover:text-blue-800 mr-2" title="View Employees">
                                 <i class="fa-solid fa-users"></i>
                             </a>
-                            <a href="<?php echo getBasePath() . $company['slug']; ?>/" target="_blank" class="text-green-600 hover:text-green-800" title="Visit Portal">
+                            <a href="<?php echo htmlspecialchars(getTenantUrl($company['slug'])); ?>" target="_blank" class="text-green-600 hover:text-green-800" title="Visit Portal">
                                 <i class="fa-solid fa-external-link"></i>
                             </a>
                         </td>

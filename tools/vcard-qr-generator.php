@@ -1,6 +1,6 @@
 <?php
 /**
- * Cardify — Free vCard QR Code Generator
+ * Cardify, Free vCard QR Code Generator
  *
  * Pure client-side tool that builds a vCard 3.0 payload from form inputs
  * and encodes it into a QR code using qrcode.js. No server-side processing,
@@ -51,8 +51,46 @@ $breadcrumbLd = [
     ],
 ];
 
+$faq = [
+    ['q' => 'Is this vCard QR generator really free, with no sign-up?', 'a' => 'Yes. No account, no watermark, no email capture. The QR code you download is yours to use on printed cards, email signatures, office signage, or anything else, commercial use included.'],
+    ['q' => 'Does the QR code work on both iPhone and Android?', 'a' => 'Yes. iOS 11 and later and Android 9 and later both scan vCard QR codes natively from the camera app. No third-party scanner required. Older devices may need a free QR scanner app.'],
+    ['q' => 'Does any of my contact data get uploaded to Cardify?', 'a' => 'No. Everything runs entirely inside your browser. Your name, phone, email, and address never leave your device, we cannot see them even if we wanted to.'],
+    ['q' => 'What format is the downloaded QR code?', 'a' => 'A 1024×1024 PNG with a transparent-free white background. That resolution stays crisp on a business card, a flyer, or an A3 office poster. Use the Copy button if you need the raw .vcf text instead.'],
+    ['q' => 'Does it support Arabic names and addresses?', 'a' => 'Yes. vCard 3.0 is UTF-8, so Arabic names, company names, and addresses encode correctly. Most scanners save them exactly as typed.'],
+    ['q' => 'Can I print this QR on my business cards with Cardify?', 'a' => 'Absolutely, that is the core use case. Design your Cardify card, drop the QR on the back, and every scan adds you to the recipient\'s phone in one tap.'],
+];
+
+$howToLd = [
+    '@context' => 'https://schema.org',
+    '@type' => 'HowTo',
+    'name' => 'How to create a vCard QR code for your business card',
+    'description' => 'Generate a scannable vCard QR code from your contact details and download it as a high-resolution PNG for print.',
+    'totalTime' => 'PT2M',
+    'tool' => [
+        ['@type' => 'HowToTool', 'name' => 'Cardify vCard QR Code Generator'],
+    ],
+    'step' => [
+        ['@type' => 'HowToStep', 'position' => 1, 'name' => 'Enter your name and phone', 'text' => 'Type your full name and a reachable phone number, these are the only required fields.'],
+        ['@type' => 'HowToStep', 'position' => 2, 'name' => 'Add optional contact details', 'text' => 'Fill in job title, company, email, website, and address as needed. The QR preview updates live.'],
+        ['@type' => 'HowToStep', 'position' => 3, 'name' => 'Download the PNG', 'text' => 'Click Download PNG to get a 1024×1024 image ready to drop on a business card, flyer, or signature.'],
+        ['@type' => 'HowToStep', 'position' => 4, 'name' => 'Test the scan', 'text' => 'Open your phone camera and scan the QR. The Save Contact prompt should appear with all details pre-filled.'],
+    ],
+];
+
+$faqLd = [
+    '@context' => 'https://schema.org',
+    '@type' => 'FAQPage',
+    'mainEntity' => array_map(fn($q) => [
+        '@type' => 'Question',
+        'name' => $q['q'],
+        'acceptedAnswer' => ['@type' => 'Answer', 'text' => $q['a']],
+    ], $faq),
+];
+
 $extraHead = '<script type="application/ld+json">' . json_encode($softwareLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
            . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+           . '<script type="application/ld+json">' . json_encode($howToLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+           . '<script type="application/ld+json">' . json_encode($faqLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
            . '<script defer src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>';
 
 $showNavigation = true;
@@ -135,19 +173,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <i class="fa-regular fa-copy mr-1"></i> Copy vCard text
                     </button>
                 </div>
-                <p class="text-xs text-gray-400 mt-3 text-center">PNG exported at 1024×1024. Nothing is uploaded — this all runs locally in your browser.</p>
+                <p class="text-xs text-gray-400 mt-3 text-center">PNG exported at 1024×1024. Nothing is uploaded, this all runs locally in your browser.</p>
             </div>
         </div>
 
         <!-- Content -->
         <article class="bg-white rounded-xl shadow-sm p-6 sm:p-8 mt-10 prose prose-blue max-w-none">
             <h2 class="text-2xl font-bold text-gray-900 mt-0">What is a vCard QR code?</h2>
-            <p>A vCard is the universal file format for digital contact cards — the same standard Apple, Google, Microsoft, and every major address book app have used since 1996. When you encode a vCard inside a QR code, anyone who scans it with their phone camera gets a "Save contact" prompt with your name, phone, email, company, and address already filled in. No typing, no photos of a paper card that get lost in the camera roll, no risk of a misspelled email.</p>
+            <p>A vCard is the universal file format for digital contact cards, the same standard Apple, Google, Microsoft, and every major address book app have used since 1996. When you encode a vCard inside a QR code, anyone who scans it with their phone camera gets a "Save contact" prompt with your name, phone, email, company, and address already filled in. No typing, no photos of a paper card that get lost in the camera roll, no risk of a misspelled email.</p>
 
             <h2 class="text-2xl font-bold text-gray-900">Why businesses in Oman are adding QR codes to their cards</h2>
-            <p>Printed business cards still dominate networking in Muscat, Salalah, Sohar, and Nizwa — but the follow-up is broken. Roughly half the cards exchanged at a conference end up in a drawer and never make it into the recipient's phone. A QR code fixes that in two seconds:</p>
+            <p>Printed business cards still dominate networking in Muscat, Salalah, Sohar, and Nizwa, but the follow-up is broken. Roughly half the cards exchanged at a conference end up in a drawer and never make it into the recipient's phone. A QR code fixes that in two seconds:</p>
             <ul>
-                <li><strong>Instant save.</strong> iPhone (iOS 11+) and Android (9+) both scan QR natively from the camera app — no third-party scanner required.</li>
+                <li><strong>Instant save.</strong> iPhone (iOS 11+) and Android (9+) both scan QR natively from the camera app, no third-party scanner required.</li>
                 <li><strong>Zero errors.</strong> The contact is saved exactly as you typed it. No autocorrect mangling your name.</li>
                 <li><strong>Bilingual friendly.</strong> vCard 3.0 is UTF-8, so Arabic names and addresses save correctly alongside the English version.</li>
                 <li><strong>Update-proof for the physical card.</strong> Pair the QR with a short link (like cardify.om/yourname) and you can change your phone or title without reprinting cards.</li>
@@ -155,7 +193,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
             <h2 class="text-2xl font-bold text-gray-900">How to use this free tool</h2>
             <ol>
-                <li>Type your name and phone number — those are the only required fields.</li>
+                <li>Type your name and phone number, those are the only required fields.</li>
                 <li>Add title, company, email, website, and address if you want a richer contact card.</li>
                 <li>Watch the QR code update in real time as you type.</li>
                 <li>Click <em>Download PNG</em> to get a 1024×1024 pixel image, large enough to print crisp on any business card, flyer, or office door sign.</li>
@@ -163,10 +201,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </ol>
 
             <h2 class="text-2xl font-bold text-gray-900">Where to use your vCard QR code</h2>
-            <p>Back of your business card. Bottom of your email signature. Your office door. Your office WhatsApp status. Your conference lanyard. Your trade show booth banner. Your exhibition giveaway. Anywhere a stranger might want to save your contact — and in a country where most business happens through WhatsApp introductions, that is nearly everywhere.</p>
+            <p>Back of your business card. Bottom of your email signature. Your office door. Your office WhatsApp status. Your conference lanyard. Your trade show booth banner. Your exhibition giveaway. Anywhere a stranger might want to save your contact, and in a country where most business happens through WhatsApp introductions, that is nearly everywhere.</p>
 
             <h2 class="text-2xl font-bold text-gray-900">Is this tool really free?</h2>
-            <p>Yes. No watermark, no account, no email capture, no "upgrade to remove the logo." The QR image is yours to use commercially. We built this as a free gift to Oman's professional community — and if you like it enough to want business cards for your whole team, we hope you'll consider Cardify below.</p>
+            <p>Yes. No watermark, no account, no email capture, no "upgrade to remove the logo." The QR image is yours to use commercially. We built this as a free gift to Oman's professional community, and if you like it enough to want business cards for your whole team, we hope you'll consider Cardify below.</p>
 
             <div class="mt-8 pt-6 border-t border-gray-100 text-sm text-gray-500">
                 Need business cards for your whole team? <a href="<?= getBasePath() ?>intro" class="text-blue-600 font-medium hover:text-blue-700">Try Cardify &rarr;</a>
@@ -288,5 +326,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     }, 100);
 })();
 </script>
+
+<?php include __DIR__ . '/../views/partials/tool_seo_faq.php'; ?>
 
 <?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>

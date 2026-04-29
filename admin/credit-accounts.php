@@ -1,6 +1,6 @@
 <?php
 /**
- * Company — Credit Accounts Overview
+ * Company, Credit Accounts Overview
  * View all credit accounts across print shops, upload PO documents
  */
 require_once __DIR__ . '/../config.php';
@@ -22,7 +22,7 @@ $success = '';
 
 // Handle PO upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die(htmlspecialchars(t('creditacc.invalid_request'))); }
     $accountId = trim($_POST['account_id'] ?? '');
 
     // Verify this account belongs to this company
@@ -31,13 +31,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $poNumber = trim($_POST['po_number'] ?? '');
         if (isset($_FILES['po_file']) && $_FILES['po_file']['error'] === UPLOAD_ERR_OK) {
             $result = CreditManager::uploadPO($accountId, $_FILES['po_file'], $poNumber ?: null);
-            $success = isset($result['error']) ? '' : 'PO document uploaded';
+            $success = isset($result['error']) ? '' : t('creditacc.po_uploaded');
             if (isset($result['error'])) $error = $result['error'];
         } else {
-            $error = 'Please select a file to upload';
+            $error = t('creditacc.please_select_file');
         }
     } else {
-        $error = 'Account not found';
+        $error = t('creditacc.account_not_found');
     }
 }
 
@@ -61,15 +61,15 @@ foreach ($accounts as $acc) {
     }
 }
 
-adminHeader('Credit Accounts', 'print');
+adminHeader(t('adminchrome.credit_accounts'), 'print');
 ?>
 
 <div class="max-w-5xl mx-auto">
     <div class="mb-6">
         <a href="<?= getAdminBasePath() ?>print<?= (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php' ?>" class="text-sm text-gray-500 hover:text-gray-700">
-            <i class="fa-solid fa-arrow-left mr-1"></i> Back to Print Orders
+            <i class="fa-solid fa-arrow-left mr-1"></i> <?= htmlspecialchars(t('creditacc.back_to_print')) ?>
         </a>
-        <h1 class="text-2xl font-bold mt-2"><i class="fa-solid fa-building-columns mr-2 text-gray-400"></i>My Credit Accounts</h1>
+        <h1 class="text-2xl font-bold mt-2"><i class="fa-solid fa-building-columns mr-2 text-gray-400"></i><?= htmlspecialchars(t('creditacc.page_h1')) ?></h1>
     </div>
 
     <?php if ($error): ?>
@@ -82,34 +82,34 @@ adminHeader('Credit Accounts', 'print');
     <!-- Stats -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div class="bg-white rounded-xl shadow-sm border p-4">
-            <p class="text-sm text-gray-500">Active Accounts</p>
+            <p class="text-sm text-gray-500"><?= htmlspecialchars(t('creditacc.stat_active')) ?></p>
             <p class="text-2xl font-bold text-green-600"><?= $activeCount ?></p>
         </div>
         <div class="bg-white rounded-xl shadow-sm border p-4">
-            <p class="text-sm text-gray-500">Total Outstanding</p>
-            <p class="text-2xl font-bold text-red-600"><?= number_format($totalUsed, 3) ?> <span class="text-sm text-gray-400">OMR</span></p>
+            <p class="text-sm text-gray-500"><?= htmlspecialchars(t('creditacc.stat_outstanding')) ?></p>
+            <p class="text-2xl font-bold text-red-600"><?= number_format($totalUsed, 3) ?> <span class="text-sm text-gray-400"><?= htmlspecialchars(t('creditacc.omr')) ?></span></p>
         </div>
         <div class="bg-white rounded-xl shadow-sm border p-4">
-            <p class="text-sm text-gray-500">Total Available</p>
-            <p class="text-2xl font-bold text-blue-600"><?= number_format($totalAvailable, 3) ?> <span class="text-sm text-gray-400">OMR</span></p>
+            <p class="text-sm text-gray-500"><?= htmlspecialchars(t('creditacc.stat_available')) ?></p>
+            <p class="text-2xl font-bold text-blue-600"><?= number_format($totalAvailable, 3) ?> <span class="text-sm text-gray-400"><?= htmlspecialchars(t('creditacc.omr')) ?></span></p>
         </div>
     </div>
 
     <!-- Accounts List -->
     <div class="bg-white rounded-xl shadow-sm border">
-        <div class="px-6 py-4 border-b"><h2 class="font-semibold">Credit Accounts</h2></div>
+        <div class="px-6 py-4 border-b"><h2 class="font-semibold"><?= htmlspecialchars(t('creditacc.section_h2')) ?></h2></div>
         <?php if ($accounts): ?>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Print Shop</th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Limit</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Used</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Available</th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Terms</th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">PO Document</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"><?= htmlspecialchars(t('creditacc.col_shop')) ?></th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase"><?= htmlspecialchars(t('creditacc.col_status')) ?></th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"><?= htmlspecialchars(t('creditacc.col_limit')) ?></th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"><?= htmlspecialchars(t('creditacc.col_used')) ?></th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"><?= htmlspecialchars(t('creditacc.col_available')) ?></th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase"><?= htmlspecialchars(t('creditacc.col_terms')) ?></th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase"><?= htmlspecialchars(t('creditacc.col_po')) ?></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -125,23 +125,23 @@ adminHeader('Credit Accounts', 'print');
                             </span>
                         </td>
                         <td class="px-6 py-4 text-sm text-right">
-                            <?= $acc['status'] === 'approved' ? number_format($acc['credit_limit'], 3) : '—' ?>
+                            <?= $acc['status'] === 'approved' ? number_format($acc['credit_limit'], 3) : ',' ?>
                         </td>
                         <td class="px-6 py-4 text-sm text-right <?= (float)$acc['balance_used'] > 0 ? 'text-red-600 font-medium' : '' ?>">
-                            <?= $acc['status'] === 'approved' ? number_format($acc['balance_used'], 3) : '—' ?>
+                            <?= $acc['status'] === 'approved' ? number_format($acc['balance_used'], 3) : ',' ?>
                         </td>
                         <td class="px-6 py-4 text-sm text-right text-green-600">
-                            <?= $acc['status'] === 'approved' ? number_format($avail, 3) : '—' ?>
+                            <?= $acc['status'] === 'approved' ? number_format($avail, 3) : ',' ?>
                         </td>
                         <td class="px-6 py-4 text-sm text-center">
-                            <?= $acc['payment_terms'] ? strtoupper($acc['payment_terms']) : '—' ?>
+                            <?= $acc['payment_terms'] ? strtoupper($acc['payment_terms']) : ',' ?>
                         </td>
                         <td class="px-6 py-4 text-sm text-center">
                             <?php if (!empty($acc['po_file_path'])): ?>
                                 <a href="<?= getBasePath() . htmlspecialchars($acc['po_file_path']) ?>" target="_blank"
                                    class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-medium">
                                     <i class="fa-solid fa-file-invoice"></i>
-                                    <?= htmlspecialchars($acc['po_number'] ?? 'View PO') ?>
+                                    <?= htmlspecialchars($acc['po_number'] ?? t('creditacc.view_po')) ?>
                                 </a>
                                 <button onclick="document.getElementById('po-form-<?= $acc['id'] ?>').classList.toggle('hidden')"
                                         class="ml-2 text-xs text-gray-400 hover:text-gray-600">
@@ -150,7 +150,7 @@ adminHeader('Credit Accounts', 'print');
                             <?php else: ?>
                                 <button onclick="document.getElementById('po-form-<?= $acc['id'] ?>').classList.toggle('hidden')"
                                         class="text-xs text-blue-600 hover:text-blue-800 font-medium">
-                                    <i class="fa-solid fa-upload mr-1"></i>Upload PO
+                                    <i class="fa-solid fa-upload mr-1"></i><?= htmlspecialchars(t('creditacc.upload_po')) ?>
                                 </button>
                             <?php endif; ?>
                             <!-- PO Upload Form -->
@@ -159,19 +159,19 @@ adminHeader('Credit Accounts', 'print');
                                     <?= csrfField() ?>
                                     <input type="hidden" name="account_id" value="<?= htmlspecialchars($acc['id']) ?>">
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 mb-1">PO Number (optional)</label>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1"><?= htmlspecialchars(t('creditacc.po_number')) ?></label>
                                         <input type="text" name="po_number" value="<?= htmlspecialchars($acc['po_number'] ?? '') ?>"
                                                class="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500"
-                                               placeholder="e.g. PO-2024-001">
+                                               placeholder="<?= htmlspecialchars(t('creditacc.po_number_ph')) ?>">
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-600 mb-1">Document</label>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1"><?= htmlspecialchars(t('creditacc.document')) ?></label>
                                         <input type="file" name="po_file" accept=".pdf,.jpg,.jpeg,.png" required
                                                class="w-full text-xs border border-gray-300 rounded px-2 py-1">
-                                        <p class="text-xs text-gray-400 mt-0.5">PDF/JPG/PNG, max 5MB</p>
+                                        <p class="text-xs text-gray-400 mt-0.5"><?= htmlspecialchars(t('creditacc.file_hint')) ?></p>
                                     </div>
                                     <button type="submit" class="w-full bg-blue-600 text-white text-xs py-1.5 rounded hover:bg-blue-700">
-                                        <i class="fa-solid fa-upload mr-1"></i>Upload
+                                        <i class="fa-solid fa-upload mr-1"></i><?= htmlspecialchars(t('creditacc.upload')) ?>
                                     </button>
                                 </form>
                             </div>
@@ -181,7 +181,7 @@ adminHeader('Credit Accounts', 'print');
                     <tr>
                         <td colspan="6" class="px-6 py-2 bg-yellow-50 text-sm text-yellow-700">
                             <i class="fa-solid fa-clock mr-1"></i>
-                            Requested <?= number_format($acc['requested_limit'], 3) ?> OMR — awaiting print shop approval
+                            <?= htmlspecialchars(str_replace(':amt', number_format($acc['requested_limit'], 3), t('creditacc.pending_note'))) ?>
                             <?php if ($acc['request_notes']): ?>
                                 <span class="text-yellow-600 ml-2">(<?= htmlspecialchars($acc['request_notes']) ?>)</span>
                             <?php endif; ?>
@@ -192,7 +192,7 @@ adminHeader('Credit Accounts', 'print');
                     <tr>
                         <td colspan="6" class="px-6 py-2 bg-gray-50 text-sm text-gray-500">
                             <i class="fa-solid fa-info-circle mr-1"></i>
-                            Reason: <?= htmlspecialchars($acc['rejected_reason']) ?>
+                            <?= htmlspecialchars(str_replace(':reason', $acc['rejected_reason'], t('creditacc.rejected_reason'))) ?>
                         </td>
                     </tr>
                     <?php endif; ?>
@@ -205,8 +205,8 @@ adminHeader('Credit Accounts', 'print');
             <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="fa-solid fa-building-columns text-2xl text-gray-400"></i>
             </div>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">No credit accounts</h3>
-            <p class="text-gray-500">You can request a credit account when checking out a print order.</p>
+            <h3 class="text-lg font-medium text-gray-900 mb-2"><?= htmlspecialchars(t('creditacc.empty_h3')) ?></h3>
+            <p class="text-gray-500"><?= htmlspecialchars(t('creditacc.empty_body')) ?></p>
         </div>
         <?php endif; ?>
     </div>

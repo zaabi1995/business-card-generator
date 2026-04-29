@@ -165,16 +165,17 @@ class CardEditor {
         this.canvas.on('object:moving', (e) => {
             const obj = e.target;
             if (!obj) return;
-            
-            // Apply snapping if enabled
+
+            // Background can move freely (no snap, no bounds) so the user
+            // can position artwork that intentionally overflows the card.
+            if (obj.isBackground) return;
+
             if (this.snapEnabled) {
                 this._snapToGuides(obj);
             }
-            
-            // Keep within bounds
+
             this._constrainToBounds(obj);
-            
-            // Callback
+
             if (obj.fieldKey && this.options.onFieldMove) {
                 this.options.onFieldMove(obj.fieldKey, {
                     x: obj.left,
@@ -182,19 +183,31 @@ class CardEditor {
                 });
             }
         });
-        
+
         // Object modified (after move/scale)
         this.canvas.on('object:modified', (e) => {
             this._clearAlignmentLines();
             const obj = e.target;
-            if (obj) {
-                this._constrainToBounds(obj);
-                if (obj.fieldKey && this.options.onFieldMove) {
-                    this.options.onFieldMove(obj.fieldKey, {
-                        x: obj.left,
-                        y: obj.top
-                    });
+            if (!obj) return;
+
+            if (obj.isBackground) {
+                // Keep background at the bottom of the stack even after
+                // drag/resize and push the change up so it can be saved.
+                if (this.canvas.sendObjectToBack) {
+                    this.canvas.sendObjectToBack(obj);
                 }
+                if (this.options.onBackgroundTransform) {
+                    this.options.onBackgroundTransform(this.getBackgroundTransform());
+                }
+                return;
+            }
+
+            this._constrainToBounds(obj);
+            if (obj.fieldKey && this.options.onFieldMove) {
+                this.options.onFieldMove(obj.fieldKey, {
+                    x: obj.left,
+                    y: obj.top
+                });
             }
         });
         
@@ -432,74 +445,250 @@ class CardEditor {
      */
     _constrainToBounds(obj) {
         if (!obj) return;
-        
+
         const objWidth = obj.getScaledWidth();
         const objHeight = obj.getScaledHeight();
-        
-        // Keep object within canvas
-        if (obj.left < 0) obj.set('left', 0);
-        if (obj.top < 0) obj.set('top', 0);
-        if (obj.left + objWidth > this.canvas.width) {
-            obj.set('left', this.canvas.width - objWidth);
+        const cw = this.canvas.width;
+        const ch = this.canvas.height;
+
+        // Skip axis-constraint when the object is bigger than the canvas in
+        // that axis: pinning to (canvas - obj) snaps it to a negative/fixed
+        // position and the user can't drag it left/right any more. Better to
+        // let long placeholder text (addresses, long names) overflow and stay
+        // draggable. See BHD chat Apr 23 2026.
+        if (objWidth < cw) {
+            if (obj.left < 0) obj.set('left', 0);
+            if (obj.left + objWidth > cw) obj.set('left', cw - objWidth);
         }
-        if (obj.top + objHeight > this.canvas.height) {
-            obj.set('top', this.canvas.height - objHeight);
+        if (objHeight < ch) {
+            if (obj.top < 0) obj.set('top', 0);
+            if (obj.top + objHeight > ch) obj.set('top', ch - objHeight);
         }
     }
     
     /**
      * Load background image - Fabric.js 7.x (fromURL returns Promise)
      */
-    async loadBackground(imageUrl) {
+    async loadBackground(imageUrl, transform) {
         if (!this.canvas || !imageUrl) return;
-        
+
         try {
-            // Fabric.js 7.x: Image class can be FabricImage or Image
-            const ImageClass = this.fabricRef.FabricImage || 
-                               this.fabricRef.Image || 
+            const ImageClass = this.fabricRef.FabricImage ||
+                               this.fabricRef.Image ||
                                (typeof fabric !== 'undefined' ? (fabric.FabricImage || fabric.Image) : null);
-            
+
             if (!ImageClass) {
                 throw new Error('Fabric Image class not found');
             }
-            
-            // Fabric.js 7.x: Image.fromURL returns a Promise
-            const img = await ImageClass.fromURL(imageUrl, {
-                crossOrigin: 'anonymous'
-            });
-            
-            // Scale to fit canvas
-            const scaleX = this.canvas.width / img.width;
-            const scaleY = this.canvas.height / img.height;
-            const scale = Math.max(scaleX, scaleY);
-            
+
+            // SVGs: browser-rasterise at canvas size so gradients, clipPaths,
+            // patterns and filters all render faithfully (Fabric's own SVG
+            // parser drops a lot of those). Raster formats take the standard
+            // Image.fromURL path.
+            const isSvg = /\.svg(\?|$)/i.test(imageUrl);
+            let img;
+            if (isSvg) {
+                img = await this._loadSvgAsRaster(imageUrl, ImageClass);
+            } else {
+                img = await ImageClass.fromURL(imageUrl, {
+                    crossOrigin: 'anonymous'
+                });
+            }
+
+            // Default transform: stretch artwork to exactly fill the canvas.
+            // Matching aspects render pixel-perfect; mismatched aspects
+            // stretch rather than crop. If a saved transform is supplied
+            // (user previously moved/resized the background), restore it.
+            //
+            // Prefer the SVG's parsed viewBox width/height when we have one
+            // (set by _loadSvgAsImage) over the Group's recomputed bbox,
+            // because groupSVGElements can round/change width when children
+            // sit inside the viewBox with padding.
+            const naturalW = (img._svgWidth && img._svgWidth > 0) ? img._svgWidth
+                : (img.width && img.width > 0 ? img.width : this.canvas.width);
+            const naturalH = (img._svgHeight && img._svgHeight > 0) ? img._svgHeight
+                : (img.height && img.height > 0 ? img.height : this.canvas.height);
+
+            let t = transform;
+            if (!t || typeof t !== 'object') {
+                t = {
+                    left: 0,
+                    top: 0,
+                    scaleX: this.canvas.width / naturalW,
+                    scaleY: this.canvas.height / naturalH,
+                    angle: 0
+                };
+            }
+
             img.set({
-                scaleX: scale,
-                scaleY: scale,
-                // Fabric.js 7.x: explicitly set origin
+                left: t.left || 0,
+                top: t.top || 0,
+                scaleX: typeof t.scaleX === 'number' ? t.scaleX : (this.canvas.width / img.width),
+                scaleY: typeof t.scaleY === 'number' ? t.scaleY : (this.canvas.height / img.height),
+                angle: t.angle || 0,
                 originX: 'left',
                 originY: 'top',
-                left: 0,
-                top: 0,
-                selectable: false,
-                evented: false,
+                selectable: true,
+                evented: true,
+                hasControls: true,
+                hasBorders: true,
+                lockRotation: false,
                 excludeFromExport: false
             });
-            
-            // Remove old background
+
+            // Tag so snapping, bounds-constraint, and selection logic can
+            // skip the background without special-casing by id.
+            img.isBackground = true;
+
             if (this.backgroundImage) {
                 this.canvas.remove(this.backgroundImage);
             }
-            
+
             this.backgroundImage = img;
             this.canvas.add(img);
             this.canvas.sendObjectToBack(img);
             this.canvas.requestRenderAll();
-            
+
             return img;
         } catch (e) {
             console.error('Background load error:', e);
             throw e;
+        }
+    }
+
+    getBackgroundTransform() {
+        const img = this.backgroundImage;
+        if (!img) return null;
+        return {
+            left: img.left || 0,
+            top: img.top || 0,
+            scaleX: typeof img.scaleX === 'number' ? img.scaleX : 1,
+            scaleY: typeof img.scaleY === 'number' ? img.scaleY : 1,
+            angle: img.angle || 0
+        };
+    }
+
+    async _loadSvgAsRaster(imageUrl, ImageClass) {
+        // Step 1: load the raw SVG as an HTMLImageElement. We'll read its
+        // intrinsic aspect from viewBox or explicit dimensions.
+        const imgEl = await new Promise((resolve, reject) => {
+            const el = new Image();
+            el.crossOrigin = 'anonymous';
+            el.onload = () => resolve(el);
+            el.onerror = (e) => reject(new Error('SVG failed to load: ' + imageUrl));
+            el.src = imageUrl;
+        });
+
+        // Step 2: pick a target size that matches the canvas backstore at
+        // native resolution. Browsers rasterise SVG smoothly at any size.
+        // If the SVG's intrinsic aspect differs from the canvas, letterbox
+        // it (fit) rather than distort - the user can unlock and reposition
+        // afterwards.
+        const cw = this.canvas.width;
+        const ch = this.canvas.height;
+        const iw = imgEl.naturalWidth || imgEl.width || cw;
+        const ih = imgEl.naturalHeight || imgEl.height || ch;
+        const fit = Math.min(cw / iw, ch / ih);
+        const drawW = Math.max(1, Math.round(iw * fit));
+        const drawH = Math.max(1, Math.round(ih * fit));
+
+        // Step 3: draw to an offscreen canvas at native canvas size with
+        // the SVG centred. Fabric gets a pre-sized bitmap with no further
+        // scaling needed, which also means no zoom/crop surprises.
+        const offscreen = document.createElement('canvas');
+        offscreen.width = cw;
+        offscreen.height = ch;
+        const ctx = offscreen.getContext('2d');
+        ctx.clearRect(0, 0, cw, ch);
+        ctx.drawImage(
+            imgEl,
+            Math.round((cw - drawW) / 2),
+            Math.round((ch - drawH) / 2),
+            drawW,
+            drawH
+        );
+
+        // Step 4: construct a Fabric Image directly from the canvas
+        // element. Fabric's Image constructor accepts any drawable source.
+        const img = new ImageClass(offscreen);
+        return img;
+    }
+
+    setBackgroundLocked(locked) {
+        const img = this.backgroundImage;
+        if (!img || !this.canvas) return;
+        img.set({
+            selectable: !locked,
+            evented: !locked,
+            hasControls: !locked,
+            hasBorders: !locked,
+            lockMovementX: !!locked,
+            lockMovementY: !!locked,
+            lockScalingX: !!locked,
+            lockScalingY: !!locked,
+            lockRotation: !!locked,
+            hoverCursor: locked ? 'default' : 'move'
+        });
+        if (locked && this.canvas.getActiveObject() === img) {
+            this.canvas.discardActiveObject();
+        }
+        img.setCoords();
+        this.canvas.requestRenderAll();
+    }
+
+    centerBackground() {
+        const img = this.backgroundImage;
+        if (!img || !this.canvas) return;
+        const w = img.getScaledWidth ? img.getScaledWidth() : img.width * (img.scaleX || 1);
+        const h = img.getScaledHeight ? img.getScaledHeight() : img.height * (img.scaleY || 1);
+        img.set({
+            left: Math.round((this.canvas.width - w) / 2),
+            top: Math.round((this.canvas.height - h) / 2)
+        });
+        img.setCoords();
+        this.canvas.sendObjectToBack(img);
+        this.canvas.requestRenderAll();
+        if (this.options.onBackgroundTransform) {
+            this.options.onBackgroundTransform(this.getBackgroundTransform());
+        }
+    }
+
+    nudgeSelected(dx, dy) {
+        if (!this.canvas) return;
+        const active = this.canvas.getActiveObjects();
+        if (!active || active.length === 0) return;
+        active.forEach((obj) => {
+            obj.set({
+                left: (obj.left || 0) + dx,
+                top: (obj.top || 0) + dy
+            });
+            obj.setCoords();
+            if (!obj.isBackground) this._constrainToBounds(obj);
+            if (obj.fieldKey && this.options.onFieldMove) {
+                this.options.onFieldMove(obj.fieldKey, { x: obj.left, y: obj.top });
+            }
+            if (obj.isBackground && this.options.onBackgroundTransform) {
+                this.options.onBackgroundTransform(this.getBackgroundTransform());
+            }
+        });
+        this.canvas.requestRenderAll();
+    }
+
+    resetBackgroundTransform() {
+        const img = this.backgroundImage;
+        if (!img || !this.canvas) return;
+        img.set({
+            left: 0,
+            top: 0,
+            scaleX: this.canvas.width / img.width,
+            scaleY: this.canvas.height / img.height,
+            angle: 0
+        });
+        img.setCoords();
+        this.canvas.sendObjectToBack(img);
+        this.canvas.requestRenderAll();
+        if (this.options.onBackgroundTransform) {
+            this.options.onBackgroundTransform(this.getBackgroundTransform());
         }
     }
     
@@ -534,6 +723,7 @@ class CardEditor {
             fontSize: options.fontSize || 16,
             fontFamily: fontFamily,
             fontWeight: options.fontWeight || 'normal',
+            fontStyle: options.fontStyle || 'normal',
             fill: options.fill || options.color || '#333333',
             // Text alignment
             textAlign: textAlign,
@@ -726,15 +916,16 @@ class CardEditor {
         if (!field) return;
         
         field.set(properties);
-        
-        // When font changes, we need to update coords and trigger proper re-render
-        if (properties.fontFamily) {
-            // Fabric.js needs setCoords() when text dimensions change
+
+        // Any property that changes glyph metrics (font, weight, style,
+        // size) needs setCoords + a dirty flag, otherwise the bounding
+        // box and selection handles stay stuck on the old geometry.
+        if (properties.fontFamily || properties.fontWeight ||
+            properties.fontStyle || properties.fontSize) {
             field.setCoords();
-            // Force a dirty state to ensure re-render
             field.set('dirty', true);
         }
-        
+
         this.canvas.requestRenderAll();
     }
     
@@ -1089,14 +1280,27 @@ class CardEditor {
     /**
      * Resize canvas - Fabric.js 7.x uses setDimensions
      */
-    setDimensions(width, height) {
+    setDimensions(width, height, displayWidth, displayHeight) {
         if (!this.canvas) return;
-        
+
         this.options.width = width;
         this.options.height = height;
-        
-        // Fabric.js 7.x: use setDimensions instead of setWidth/setHeight
-        this.canvas.setDimensions({ width, height });
+
+        // Fabric resets both the backstore (internal resolution, which we
+        // keep at 300 DPI for export) and the CSS size together. That was
+        // making the canvas CSS width ~1087px while its wrapper is only
+        // 480px wide with overflow-hidden, visually cropping the right
+        // third of every uploaded design. Set them independently so the
+        // canvas renders full-resolution internally but displays fitted.
+        this.canvas.setDimensions({ width: width, height: height }, { backstoreOnly: true });
+
+        if (typeof displayWidth === 'number' && typeof displayHeight === 'number') {
+            this.canvas.setDimensions(
+                { width: displayWidth + 'px', height: displayHeight + 'px' },
+                { cssOnly: true }
+            );
+        }
+
         this.canvas.requestRenderAll();
     }
     

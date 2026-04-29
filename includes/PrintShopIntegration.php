@@ -454,7 +454,7 @@ class PrintShopIntegration {
             
         } catch (Exception $e) {
             error_log("Failed to send print shop notification for order #$orderId: " . $e->getMessage());
-            // Do not fallback to raw mail() — it's insecure (header injection via HTTP_HOST)
+            // Do not fallback to raw mail(), it's insecure (header injection via HTTP_HOST)
         }
     }
     
@@ -610,7 +610,7 @@ class PrintShopIntegration {
                         $context['carrier']     = $_POST['carrier'] ?? ($order['carrier'] ?? 'the carrier');
                     }
                     if ($newStatus === 'delivered') {
-                        // Order creation lives at admin/print.php — company/new-order.php does not exist.
+                        // Order creation lives at admin/print.php, company/new-order.php does not exist.
                         $context['reorderUrl'] = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://'
                             . ($_SERVER['HTTP_HOST'] ?? 'cardify.om') . getBasePath() . 'admin/print.php';
                     }

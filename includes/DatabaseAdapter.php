@@ -329,11 +329,12 @@ class DatabaseAdapter {
     }
 
     /**
-     * Pro-tier gate for the "hide Made with Cardify footer" flag.
+     * Server-side gate for the "hide Made with Cardify footer" flag.
      *
-     * The checkbox is rendered only for paid plans, but do NOT trust the client —
-     * an attacker could flip the hidden field on a free plan. We validate the
-     * company's plan server-side via Billing::hasFeature(custom_branding).
+     * Retained from the tier model. Cardify's policy is that branding
+     * always renders, so this gate is a safety net and should normally
+     * return false for every company. Still validated server-side via
+     * Billing::hasFeature(custom_branding) to resist client tampering.
      *
      * Free plans always return 0 (footer stays on), regardless of input.
      */
@@ -383,8 +384,16 @@ class DatabaseAdapter {
             return ['success' => false, 'error' => 'Email already exists'];
         }
         
+        require_once __DIR__ . '/CardifyConvention.php';
+        $emailLc = trim(strtolower($data['email'] ?? ''));
+        // Convention: employee id is the email local-part (e.g. ali.alzaabi@x.om -> ali.alzaabi).
+        // Falls back to UUID if there's no email at all.
+        $employeeId = $emailLc !== ''
+            ? CardifyConvention::employeeIdFromEmail($emailLc, $companyId, self::$db)
+            : generateUUID();
+
         $employee = [
-            'id' => generateUUID(),
+            'id' => $employeeId,
             'company_id' => $companyId,
             'department_id' => !empty($data['department_id']) ? $data['department_id'] : null,
             'email' => trim(strtolower($data['email'] ?? '')),
@@ -401,17 +410,39 @@ class DatabaseAdapter {
             'website' => trim($data['website'] ?? ''),
             'website_ar' => trim($data['website_ar'] ?? ''),
             'address_en' => trim($data['address_en'] ?? $data['address'] ?? ''),
+            'address_2_en' => trim($data['address_2_en'] ?? ''),
             'address_ar' => trim($data['address_ar'] ?? ''),
+            'address_2_ar' => trim($data['address_2_ar'] ?? ''),
             'qr_redirect_url' => self::sanitizeQrRedirectUrl($data['qr_redirect_url'] ?? null),
             'card_dark_mode_toggle' => self::normalizeBoolFlag($data['card_dark_mode_toggle'] ?? 1, 1),
             // Pro-tier only: hide "Made with Cardify" viral footer. Free plans
-            // always get 0 regardless of what the form posted — server-side gate.
+            // always get 0 regardless of what the form posted, server-side gate.
             'hide_cardify_branding' => self::resolveHideCardifyBranding($data['hide_cardify_branding'] ?? 0, $companyId),
             'created_at' => date('Y-m-d H:i:s')
         ];
 
         try {
             self::$db->insert('employees', $employee);
+
+            // Auto-mint edit token + dispatch invite unless the caller
+            // explicitly opted out (e.g., demo seeder, quiet bulk loads).
+            // Chooses channel automatically based on what contact info
+            // we have. Silent-fail so insert success is not blocked.
+            $skipInvite = !empty($data['skip_invite']);
+            if (!$skipInvite && (!empty($employee['email']) || !empty($employee['phone']) || !empty($employee['mobile']))) {
+                try {
+                    require_once __DIR__ . '/EmployeeEditToken.php';
+                    $company = self::$db->fetchOne(
+                        "SELECT id, name, slug, brand_color, logo_path AS logo_url FROM companies WHERE id = :id",
+                        ['id' => $companyId]
+                    );
+                    $channel = !empty($employee['phone']) || !empty($employee['mobile']) ? 'both' : 'email';
+                    EmployeeEditToken::sendInvite($employee, $company ?: ['id' => $companyId, 'name' => 'Cardify'], $channel);
+                } catch (Throwable $e) {
+                    error_log('[addEmployee] invite dispatch failed: ' . $e->getMessage());
+                }
+            }
+
             return ['success' => true, 'id' => $employee['id'], 'employee' => $employee];
         } catch (Exception $e) {
             return ['success' => false, 'error' => 'Failed to save employee: ' . $e->getMessage()];
@@ -448,7 +479,9 @@ class DatabaseAdapter {
             'website' => trim($data['website'] ?? ''),
             'website_ar' => trim($data['website_ar'] ?? ''),
             'address_en' => trim($data['address_en'] ?? $data['address'] ?? ''),
+            'address_2_en' => trim($data['address_2_en'] ?? ''),
             'address_ar' => trim($data['address_ar'] ?? ''),
+            'address_2_ar' => trim($data['address_2_ar'] ?? ''),
             'qr_redirect_url' => self::sanitizeQrRedirectUrl($data['qr_redirect_url'] ?? null),
             'card_dark_mode_toggle' => self::normalizeBoolFlag($data['card_dark_mode_toggle'] ?? 1, 1),
             // Pro-tier only: hide "Made with Cardify" viral footer (see migration 065).
@@ -744,13 +777,76 @@ class DatabaseAdapter {
                 'pdf_file_path' => $pdfFile,
                 'generated_at' => date('Y-m-d H:i:s')
             ];
-            
+
+            // Pin the template versions live at generation time so later
+            // template edits don't visually mutate already-issued cards.
+            // Reads from templates.current_version; falls through silently
+            // if the column does not exist in the environment.
+            try {
+                if ($frontTemplateId) {
+                    $row = self::$db->fetchOne(
+                        "SELECT current_version FROM templates WHERE id = :id",
+                        ['id' => $frontTemplateId]
+                    );
+                    if ($row && isset($row['current_version'])) {
+                        $entry['front_template_version'] = (int) $row['current_version'];
+                    }
+                }
+                if ($backTemplateId) {
+                    $row = self::$db->fetchOne(
+                        "SELECT current_version FROM templates WHERE id = :id",
+                        ['id' => $backTemplateId]
+                    );
+                    if ($row && isset($row['current_version'])) {
+                        $entry['back_template_version'] = (int) $row['current_version'];
+                    }
+                }
+            } catch (Throwable $e) { /* columns optional */ }
+
             self::$db->insert('generated_cards', $entry);
             return $entry;
         } catch (Exception $e) {
             error_log("Log generation error: " . $e->getMessage());
             return null;
         }
+    }
+
+    /**
+     * Load a generated card by id AND resolve the pinned template
+     * snapshots (front + back) from template_versions, falling back
+     * to the live templates row when the pin is missing.
+     */
+    public static function loadGeneratedCardWithTemplates(string $cardId, ?string $companyId = null): ?array
+    {
+        if (!self::useDatabase()) return null;
+        $companyId = $companyId ?: getCurrentCompanyId();
+        if (!$companyId) return null;
+
+        $card = self::$db->fetchOne(
+            "SELECT * FROM generated_cards WHERE id = :id AND company_id = :cid",
+            ['id' => $cardId, 'cid' => $companyId]
+        );
+        if (!$card) return null;
+
+        $resolve = function (?string $tplId, $pinned) {
+            if (!$tplId) return null;
+            $v = null;
+            if ($pinned !== null && $pinned !== '' && (int) $pinned > 0) {
+                $v = self::$db->fetchOne(
+                    "SELECT * FROM template_versions
+                     WHERE template_id = :id AND version_number = :v LIMIT 1",
+                    ['id' => $tplId, 'v' => (int) $pinned]
+                );
+            }
+            if (!$v) {
+                $v = self::$db->fetchOne("SELECT * FROM templates WHERE id = :id", ['id' => $tplId]);
+            }
+            return $v;
+        };
+
+        $card['front_template'] = $resolve($card['front_template_id'] ?? null, $card['front_template_version'] ?? null);
+        $card['back_template']  = $resolve($card['back_template_id']  ?? null, $card['back_template_version']  ?? null);
+        return $card;
     }
     
     public static function loadGeneratedLog($companyId = null) {

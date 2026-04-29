@@ -1,6 +1,6 @@
 <?php
 /**
- * Branded Link Shortener — redirect handler.
+ * Branded Link Shortener, redirect handler.
  *
  * Route: /s/<slug>  →  302 to destination (with atomic click counter + event log).
  *
@@ -20,7 +20,7 @@ require_once INCLUDES_DIR . '/CardAnalytics.php';
 
 $slug = isset($_GET['slug']) ? trim((string) $_GET['slug']) : '';
 
-// Basic validation — slug charset mirrors the admin-side regex.
+// Basic validation, slug charset mirrors the admin-side regex.
 if ($slug === '' || !preg_match('/^[A-Za-z0-9_-]{1,20}$/', $slug)) {
     http_response_code(404);
     include __DIR__ . '/404.php';
@@ -62,7 +62,7 @@ try {
         exit;
     }
 
-    // Atomic click increment — no read-modify-write race.
+    // Atomic click increment, no read-modify-write race.
     $upd = $pdo->prepare(
         "UPDATE short_links SET click_count = click_count + 1 WHERE id = :id"
     );
@@ -71,7 +71,7 @@ try {
     // Best-effort analytics log (never blocks the redirect).
     try {
         CardAnalytics::log(
-            $slug,                // employee_id column — we reuse it as slug bucket
+            $slug,                // employee_id column, we reuse it as slug bucket
             $link['company_id'],
             'short_link_click',
             substr($link['destination'], 0, 512)

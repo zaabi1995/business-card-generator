@@ -1,6 +1,6 @@
 <?php
 /**
- * AppleWalletPass — pure-PHP PKPass generator.
+ * AppleWalletPass, pure-PHP PKPass generator.
  *
  * Clean-room implementation using only ext-openssl + ext-zip (both standard).
  * No composer dependency.
@@ -8,7 +8,7 @@
  * Required config constants (see docs/superpowers/plans/2026-04-16-wallet-passes.md):
  *   APPLE_WALLET_ENABLED          bool
  *   APPLE_WALLET_CERT_PATH        path to PEM (unencrypted combined cert+key is ok;
- *                                 or encrypted — use APPLE_WALLET_CERT_PASSWORD)
+ *                                 or encrypted, use APPLE_WALLET_CERT_PASSWORD)
  *   APPLE_WALLET_CERT_PASSWORD    string (empty if PEM is unencrypted)
  *   APPLE_WALLET_WWDR_PATH        path to Apple WWDR intermediate PEM
  *   APPLE_WALLET_PASS_TYPE_ID     e.g. pass.om.cardify.businesscard

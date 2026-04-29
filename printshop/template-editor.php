@@ -41,7 +41,7 @@ if ($templateId) {
     );
 }
 
-$pageTitle = $template ? 'Edit Template' : 'New Template';
+$pageTitle = $template ? t('printshoppages.title_template_edit') : t('printshoppages.title_template_new');
 $bodyClass = 'bg-gray-50';
 
 // Extra head for Fabric.js
@@ -62,7 +62,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="flex justify-between h-16">
             <div class="flex items-center gap-3">
                 <a href="<?= getBasePath() ?>printshop/templates.php" class="text-gray-500 hover:text-gray-700 text-sm flex items-center gap-1">
-                    <i class="fa-solid fa-arrow-left"></i> Templates
+                    <i class="fa-solid fa-arrow-left"></i> <?= htmlspecialchars(t('printshoptpl.editor_back')) ?>
                 </a>
                 <span class="text-gray-300">/</span>
                 <span class="font-semibold text-gray-900 text-sm"><?= $pageTitle ?></span>
@@ -70,7 +70,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="flex items-center gap-3">
                 <button id="btn-save" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
                     <i class="fa-solid fa-floppy-disk"></i>
-                    Save Template
+                    <?= htmlspecialchars(t('printshoptpl.btn_save_template')) ?>
                 </button>
             </div>
         </div>
@@ -83,21 +83,29 @@ require_once INCLUDES_DIR . '/ui-header.php';
 <!-- Left: Canvas area -->
 <div class="flex-1 flex flex-col bg-gray-100 overflow-hidden">
     <div class="flex items-center gap-3 px-4 py-2 bg-white border-b border-gray-200">
-        <label class="text-sm font-medium text-gray-700">Background Image:</label>
+        <label class="text-sm font-medium text-gray-700"><?= htmlspecialchars(t('printshoptpl.bg_image_label')) ?></label>
         <label for="bg-upload" class="cursor-pointer text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition-colors">
             <i class="fa-solid fa-upload mr-1"></i>
-            <?= $template && $template['background_path'] ? 'Change Image' : 'Upload Image' ?>
+            <?= htmlspecialchars($template && $template['background_path'] ? t('printshoptpl.change_image') : t('printshoptpl.upload_image')) ?>
         </label>
         <input type="file" id="bg-upload" accept="image/*" class="hidden">
+        <label for="pdf-import-upload" class="cursor-pointer text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors" title="Upload a 1-2 page PDF business card. Cardify auto-detects fields, fonts, colors and the QR area.">
+            <i class="fa-solid fa-file-pdf mr-1"></i>Import from PDF
+        </label>
+        <input type="file" id="pdf-import-upload" accept="application/pdf,.pdf" class="hidden">
+        <a href="<?= htmlspecialchars(getBasePath() . 'uploads/docs/Cardify-PDF-Design-Guide.pdf') ?>" target="_blank" class="text-xs text-blue-700 hover:text-blue-900 underline" title="How to prepare a PDF so the import detects every field correctly">
+            <i class="fa-solid fa-circle-info mr-1"></i>How to prepare your PDF
+        </a>
+        <span id="pdf-import-status" class="text-xs text-blue-600 hidden"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Analysing PDF...</span>
         <span class="text-xs text-gray-400" id="bg-filename">
-            <?= $template && $template['background_path'] ? basename($template['background_path']) : 'No file chosen' ?>
+            <?= htmlspecialchars($template && $template['background_path'] ? basename($template['background_path']) : t('printshoptpl.no_file_chosen')) ?>
         </span>
         <div class="ml-auto flex items-center gap-2">
-            <span class="text-xs text-gray-500">Canvas size:</span>
+            <span class="text-xs text-gray-500"><?= htmlspecialchars(t('printshoptpl.canvas_size_label')) ?></span>
             <select id="canvas-size" class="text-xs border border-gray-200 rounded px-2 py-1">
-                <option value="900,514">Business Card (Standard)</option>
-                <option value="1050,600">Business Card (Large)</option>
-                <option value="900,900">Square Card</option>
+                <option value="900,514"><?= htmlspecialchars(t('printshoptpl.size_std')) ?></option>
+                <option value="1050,600"><?= htmlspecialchars(t('printshoptpl.size_large')) ?></option>
+                <option value="900,900"><?= htmlspecialchars(t('printshoptpl.size_square')) ?></option>
             </select>
         </div>
     </div>
@@ -108,31 +116,31 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </div>
     <!-- Toolbar -->
     <div class="bg-white border-t border-gray-200 px-4 py-2 flex items-center gap-3 flex-wrap">
-        <span class="text-xs font-medium text-gray-600 mr-1">Add Field:</span>
+        <span class="text-xs font-medium text-gray-600 mr-1"><?= htmlspecialchars(t('printshoptpl.add_field_label')) ?></span>
         <?php
         $fieldOptions = [
-            ['key' => 'full_name',   'label' => 'Full Name',   'icon' => 'user'],
-            ['key' => 'job_title',   'label' => 'Job Title',   'icon' => 'briefcase'],
-            ['key' => 'company',     'label' => 'Company',     'icon' => 'building'],
-            ['key' => 'phone',       'label' => 'Phone',       'icon' => 'phone'],
-            ['key' => 'email',       'label' => 'Email',       'icon' => 'envelope'],
-            ['key' => 'website',     'label' => 'Website',     'icon' => 'globe'],
-            ['key' => 'address',     'label' => 'Address',     'icon' => 'location-dot'],
-            ['key' => 'custom',      'label' => 'Custom',      'icon' => 'font'],
+            ['key' => 'full_name',   'label' => t('printshoptpl.field_full_name'), 'icon' => 'user'],
+            ['key' => 'job_title',   'label' => t('printshoptpl.field_job_title'), 'icon' => 'briefcase'],
+            ['key' => 'company',     'label' => t('printshoptpl.field_company'),   'icon' => 'building'],
+            ['key' => 'phone',       'label' => t('printshoptpl.field_phone'),     'icon' => 'phone'],
+            ['key' => 'email',       'label' => t('printshoptpl.field_email'),     'icon' => 'envelope'],
+            ['key' => 'website',     'label' => t('printshoptpl.field_website'),   'icon' => 'globe'],
+            ['key' => 'address',     'label' => t('printshoptpl.field_address'),   'icon' => 'location-dot'],
+            ['key' => 'custom',      'label' => t('printshoptpl.field_custom'),    'icon' => 'font'],
         ];
         foreach ($fieldOptions as $fo): ?>
         <button class="add-field-btn text-xs bg-gray-100 hover:bg-blue-50 hover:text-blue-700 text-gray-600 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
-                data-key="<?= $fo['key'] ?>" data-label="<?= $fo['label'] ?>">
+                data-key="<?= $fo['key'] ?>" data-label="<?= htmlspecialchars($fo['label']) ?>">
             <i class="fa-solid fa-<?= $fo['icon'] ?> text-xs"></i>
-            <?= $fo['label'] ?>
+            <?= htmlspecialchars($fo['label']) ?>
         </button>
         <?php endforeach; ?>
         <div class="ml-auto flex items-center gap-2">
             <button id="btn-delete-selected" class="text-xs text-red-500 hover:text-red-700 px-2 py-1.5 rounded transition-colors hidden">
-                <i class="fa-solid fa-trash mr-1"></i>Remove
+                <i class="fa-solid fa-trash mr-1"></i><?= htmlspecialchars(t('printshoptpl.btn_remove')) ?>
             </button>
             <button id="btn-bring-front" class="text-xs text-gray-500 hover:text-gray-700 px-2 py-1.5 rounded transition-colors hidden">
-                <i class="fa-solid fa-layer-group mr-1"></i>Front
+                <i class="fa-solid fa-layer-group mr-1"></i><?= htmlspecialchars(t('printshoptpl.btn_front')) ?>
             </button>
         </div>
     </div>
@@ -141,22 +149,22 @@ require_once INCLUDES_DIR . '/ui-header.php';
 <!-- Right: Settings panel -->
 <div class="w-72 bg-white border-l border-gray-200 flex flex-col overflow-hidden">
     <div class="px-4 py-3 border-b border-gray-100">
-        <h2 class="font-semibold text-sm text-gray-900">Template Settings</h2>
+        <h2 class="font-semibold text-sm text-gray-900"><?= htmlspecialchars(t('printshoptpl.settings_h')) ?></h2>
     </div>
     <div id="fields-panel" class="flex-1 overflow-y-auto px-4 py-3 space-y-4">
 
         <!-- Template Name -->
         <div>
-            <label class="text-xs font-medium text-gray-700 block mb-1">Template Name *</label>
-            <input type="text" id="tmpl-name" placeholder="e.g. Classic Business Card"
+            <label class="text-xs font-medium text-gray-700 block mb-1"><?= htmlspecialchars(t('printshoptpl.field_name_label')) ?></label>
+            <input type="text" id="tmpl-name" placeholder="<?= htmlspecialchars(t('printshoptpl.field_name_ph')) ?>"
                    value="<?= sanitize($template['name'] ?? '') ?>"
                    class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
         </div>
 
         <!-- Description -->
         <div>
-            <label class="text-xs font-medium text-gray-700 block mb-1">Description</label>
-            <textarea id="tmpl-description" placeholder="Brief description..." rows="2"
+            <label class="text-xs font-medium text-gray-700 block mb-1"><?= htmlspecialchars(t('printshoptpl.field_desc_label')) ?></label>
+            <textarea id="tmpl-description" placeholder="<?= htmlspecialchars(t('printshoptpl.field_desc_ph')) ?>" rows="2"
                       class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"><?= sanitize($template['description'] ?? '') ?></textarea>
         </div>
 
@@ -166,28 +174,28 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div id="object-props" class="hidden">
             <h3 class="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-1">
                 <i class="fa-solid fa-sliders text-blue-500"></i>
-                Selected Field
+                <?= htmlspecialchars(t('printshoptpl.selected_field_h')) ?>
             </h3>
             <div class="space-y-3">
                 <div>
-                    <label class="text-xs text-gray-600 block mb-1">Placeholder Text</label>
-                    <input type="text" id="prop-placeholder" placeholder="e.g. John Smith"
+                    <label class="text-xs text-gray-600 block mb-1"><?= htmlspecialchars(t('printshoptpl.placeholder_label')) ?></label>
+                    <input type="text" id="prop-placeholder" placeholder="<?= htmlspecialchars(t('printshoptpl.placeholder_ph')) ?>"
                            class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-blue-500">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="text-xs text-gray-600 block mb-1">Font Size</label>
+                        <label class="text-xs text-gray-600 block mb-1"><?= htmlspecialchars(t('printshoptpl.font_size_label')) ?></label>
                         <input type="number" id="prop-fontsize" value="24" min="8" max="120"
                                class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label class="text-xs text-gray-600 block mb-1">Color</label>
+                        <label class="text-xs text-gray-600 block mb-1"><?= htmlspecialchars(t('printshoptpl.color_label')) ?></label>
                         <input type="color" id="prop-color" value="#000000"
                                class="w-full h-8 border border-gray-200 rounded cursor-pointer">
                     </div>
                 </div>
                 <div>
-                    <label class="text-xs text-gray-600 block mb-1">Font</label>
+                    <label class="text-xs text-gray-600 block mb-1"><?= htmlspecialchars(t('printshoptpl.font_label')) ?></label>
                     <select id="prop-font" class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 focus:ring-1 focus:ring-blue-500">
                         <option>Arial</option>
                         <option>Georgia</option>
@@ -199,17 +207,17 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </select>
                 </div>
                 <div class="flex gap-2">
-                    <button id="prop-bold" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 font-bold transition-colors" title="Bold">B</button>
-                    <button id="prop-italic" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 italic transition-colors" title="Italic">I</button>
-                    <button id="prop-left" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 transition-colors" title="Left align"><i class="fa-solid fa-align-left"></i></button>
-                    <button id="prop-center" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 transition-colors" title="Center"><i class="fa-solid fa-align-center"></i></button>
-                    <button id="prop-right" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 transition-colors" title="Right align"><i class="fa-solid fa-align-right"></i></button>
+                    <button id="prop-bold" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 font-bold transition-colors" title="<?= htmlspecialchars(t('printshoptpl.tip_bold')) ?>">B</button>
+                    <button id="prop-italic" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 italic transition-colors" title="<?= htmlspecialchars(t('printshoptpl.tip_italic')) ?>">I</button>
+                    <button id="prop-left" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 transition-colors" title="<?= htmlspecialchars(t('printshoptpl.tip_align_left')) ?>"><i class="fa-solid fa-align-left"></i></button>
+                    <button id="prop-center" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 transition-colors" title="<?= htmlspecialchars(t('printshoptpl.tip_align_center')) ?>"><i class="fa-solid fa-align-center"></i></button>
+                    <button id="prop-right" class="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50 transition-colors" title="<?= htmlspecialchars(t('printshoptpl.tip_align_right')) ?>"><i class="fa-solid fa-align-right"></i></button>
                 </div>
                 <div>
-                    <label class="text-xs text-gray-600 block mb-1">Required field?</label>
+                    <label class="text-xs text-gray-600 block mb-1"><?= htmlspecialchars(t('printshoptpl.required_field_q')) ?></label>
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" id="prop-required" class="rounded border-gray-300 text-blue-600">
-                        <span class="text-xs text-gray-600">Customers must fill this</span>
+                        <span class="text-xs text-gray-600"><?= htmlspecialchars(t('printshoptpl.required_hint')) ?></span>
                     </label>
                 </div>
             </div>
@@ -219,10 +227,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div>
             <h3 class="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
                 <i class="fa-solid fa-list text-gray-400"></i>
-                Fields on Canvas
+                <?= htmlspecialchars(t('printshoptpl.fields_on_canvas')) ?>
             </h3>
             <div id="field-list" class="space-y-1 text-xs text-gray-500">
-                <p id="field-list-empty" class="italic">No fields added yet. Click a field type above.</p>
+                <p id="field-list-empty" class="italic"><?= htmlspecialchars(t('printshoptpl.no_fields_added')) ?></p>
             </div>
         </div>
 
@@ -333,6 +341,181 @@ require_once INCLUDES_DIR . '/ui-header.php';
         };
         reader.readAsDataURL(file);
     });
+
+    // ── PDF Import (auto-detect fields from a PDF business card) ──
+    document.getElementById('pdf-import-upload').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const status = document.getElementById('pdf-import-status');
+        status.classList.remove('hidden');
+        status.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Analysing PDF...';
+
+        const fd = new FormData();
+        fd.append('pdf', file);
+        try {
+            const res = await fetch(basePath + 'printshop/import_pdf.php', { method: 'POST', body: fd, credentials: 'same-origin' });
+            const data = await res.json();
+            if (!res.ok || data.error) {
+                status.innerHTML = '<span class="text-red-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Import failed: ' + (data.error || res.status) + '</span>';
+                if (data.parser_output) console.error(data.parser_output);
+                return;
+            }
+            applyImportedTemplate(data);
+            status.innerHTML = '<span class="text-green-600"><i class="fa-solid fa-check mr-1"></i>Imported ' + data.pages.length + ' pages, ' +
+                data.pages.reduce((n,p)=>n+p.fields.length,0) + ' fields detected.</span>';
+            setTimeout(() => status.classList.add('hidden'), 8000);
+        } catch (err) {
+            status.innerHTML = '<span class="text-red-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i>' + err.message + '</span>';
+        }
+    });
+
+    // Apply parsed template to the Fabric canvas. For multi-page (front + back),
+    // we currently load page 2 (back) by default since that's where fields live;
+    // a future tweak is a side-toggle button.
+    let importedPages = null;
+    let activePageIndex = 0;
+    function applyImportedTemplate(data) {
+        importedPages = data.pages;
+        // Pick the page with the most fields (usually the back)
+        let bestIdx = 0;
+        data.pages.forEach((p, i) => { if (p.fields.length > (data.pages[bestIdx].fields.length||0)) bestIdx = i; });
+        activePageIndex = bestIdx;
+        const page = data.pages[bestIdx];
+        loadPageOntoCanvas(page);
+        renderSideSwitcher(data.pages);
+        renderMissingFontsBanner(data.missing_fonts || []);
+    }
+
+    function loadPageOntoCanvas(page) {
+        // Resize canvas to PDF aspect ratio (constrained to a workable width)
+        const targetW = 1100;
+        const ratio = page.width_px / page.height_px;
+        canvasWidth = targetW;
+        canvasHeight = Math.round(targetW / ratio);
+        canvas.setWidth(canvasWidth);
+        canvas.setHeight(canvasHeight);
+
+        // Clear existing
+        canvas.getObjects().slice().forEach(o => canvas.remove(o));
+
+        const scaleX = canvasWidth / page.width_px;
+        const scaleY = canvasHeight / page.height_px;
+
+        fabric.Image.fromURL(basePath + page.background_url.replace(/^\//, ''), function(img) {
+            img.scaleToWidth(canvasWidth);
+            img.scaleToHeight(canvasHeight);
+            img.set({ selectable: false, evented: false, name: '_background' });
+            canvas.add(img);
+            canvas.sendToBack(img);
+
+            // Place each detected field as a Fabric.IText at the matching x/y/font/size/color
+            page.fields.forEach(f => {
+                const labelMap = {
+                    'name_en': 'Full Name', 'position_en': 'Job Title',
+                    'mobile': 'Phone', 'email': 'Email', 'website': 'Website',
+                    'address': 'Address', 'social': 'Social', 'company_tagline': 'Tagline (static)',
+                    'qr_code': 'QR Code', 'custom': null,
+                };
+                const placeholder = (f.is_static || f.field_key === 'custom')
+                    ? f.detected_text
+                    : '[' + (labelMap[f.field_key] || f.field_key) + ']';
+
+                const txt = new fabric.IText(placeholder, {
+                    left: f.x_px * scaleX,
+                    top:  f.y_px * scaleY,
+                    fontSize: f.font_size_px * scaleY,
+                    fontFamily: f.font_family,
+                    fontWeight: f.font_weight >= 600 ? 'bold' : 'normal',
+                    fontStyle: f.italic ? 'italic' : 'normal',
+                    fill: f.color,
+                    name: 'field_' + f.field_key,
+                    fieldKey: f.field_key,
+                    fieldLabel: labelMap[f.field_key] || f.field_key,
+                    editable: true,
+                    fixed: f.is_static,
+                });
+                canvas.add(txt);
+            });
+
+            // QR placeholder rectangle
+            if (page.qr_area) {
+                const rect = new fabric.Rect({
+                    left: page.qr_area.x_pt * (canvasWidth / page.width_pt),
+                    top:  page.qr_area.y_pt * (canvasHeight / page.height_pt),
+                    width:  page.qr_area.w_pt * (canvasWidth / page.width_pt),
+                    height: page.qr_area.h_pt * (canvasHeight / page.height_pt),
+                    fill: 'rgba(255,255,255,0.95)',
+                    stroke: '#2d13ea',
+                    strokeDashArray: [6, 4],
+                    strokeWidth: 2,
+                    name: 'field_qr_code',
+                    fieldKey: 'qr_code',
+                    fieldLabel: 'QR Code',
+                });
+                rect.toObject = (function(o){return function(p){return Object.assign(o.call(this,p),{fieldKey:this.fieldKey,fieldLabel:this.fieldLabel,name:this.name});};})(rect.toObject);
+                canvas.add(rect);
+            }
+
+            scaleCanvas();
+            canvas.renderAll();
+            if (typeof updateFieldList === 'function') updateFieldList();
+        });
+    }
+
+    function renderSideSwitcher(pages) {
+        let bar = document.getElementById('pdf-side-switcher');
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = 'pdf-side-switcher';
+            bar.className = 'flex items-center gap-2 px-4 py-1.5 bg-blue-50 border-b border-blue-100 text-xs';
+            const tools = document.querySelector('#bg-upload').closest('.flex').parentNode;
+            tools.parentNode.insertBefore(bar, tools.nextSibling);
+        }
+        bar.innerHTML = '<span class="font-semibold text-blue-900">PDF imported:</span> ' +
+            pages.map((p, i) =>
+                `<button data-side="${i}" class="pdf-side-btn px-2 py-1 rounded ${i===activePageIndex?'bg-blue-600 text-white':'bg-white text-blue-700 hover:bg-blue-100'}">${p.side} (page ${p.page_number}, ${p.fields.length} fields)</button>`
+            ).join(' ');
+        bar.querySelectorAll('.pdf-side-btn').forEach(b => {
+            b.addEventListener('click', () => {
+                activePageIndex = parseInt(b.dataset.side, 10);
+                loadPageOntoCanvas(importedPages[activePageIndex]);
+                renderSideSwitcher(importedPages);
+            });
+        });
+    }
+
+    function renderMissingFontsBanner(missing) {
+        let bar = document.getElementById('missing-fonts-banner');
+        if (missing.length === 0) {
+            if (bar) bar.remove();
+            return;
+        }
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = 'missing-fonts-banner';
+            bar.className = 'flex items-center gap-3 px-4 py-2 bg-amber-50 border-b border-amber-200 text-xs';
+            const switcher = document.getElementById('pdf-side-switcher');
+            (switcher || document.querySelector('#bg-upload').closest('.flex').parentNode).after(bar);
+        }
+        bar.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-600"></i>' +
+            '<span class="font-semibold text-amber-900">Missing fonts:</span>' +
+            missing.map(f => `<span class="px-2 py-0.5 bg-amber-200 text-amber-900 rounded font-mono">${f.family}</span>`).join('') +
+            '<label class="ml-auto cursor-pointer bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded">' +
+            '<i class="fa-solid fa-upload mr-1"></i>Upload .ttf / .otf' +
+            '<input type="file" id="font-upload-input" accept=".ttf,.otf,.woff,.woff2" multiple class="hidden">' +
+            '</label>';
+        bar.querySelector('#font-upload-input').addEventListener('change', async function(e) {
+            const fd = new FormData();
+            for (const f of e.target.files) fd.append('fonts[]', f);
+            const res = await fetch(basePath + 'printshop/upload_fonts.php', { method: 'POST', body: fd, credentials: 'same-origin' });
+            const data = await res.json();
+            if (data.uploaded) {
+                bar.innerHTML = '<i class="fa-solid fa-check text-green-600"></i><span class="text-green-900">' + data.uploaded.length + ' font(s) uploaded. Reload to apply.</span>';
+            } else {
+                bar.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-red-600"></i>' + (data.error || 'Upload failed');
+            }
+        });
+    }
 
     // ── Field tracking ──
     let fieldCounter = {};

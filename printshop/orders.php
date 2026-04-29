@@ -102,7 +102,7 @@ $statusColors = [
     'cancelled'  => 'bg-red-100 text-red-700',
 ];
 
-$pageTitle = 'Orders - ' . $printShop['name'];
+$pageTitle = t('printshoppages.title_orders', ['shop' => $printShop['name']]);
 $bodyClass = 'bg-gray-50';
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
@@ -138,7 +138,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Orders</h1>
+                <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t("printshoppages.h1_orders")) ?></h1>
                 <p class="text-gray-500">Manage incoming print orders</p>
             </div>
             <a href="analytics.php" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm">

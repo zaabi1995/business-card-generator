@@ -20,7 +20,7 @@ try {
     require_once INCLUDES_DIR . '/CardAnalytics.php';
 
     /**
-     * Normalize asset path — ensure uploaded/theme assets resolve from site root, not
+     * Normalize asset path, ensure uploaded/theme assets resolve from site root, not
      * relative to the current /{slug}/card/{eid} URL. DB rows historically stored
      * paths in three shapes: "/uploads/..", "uploads/..", and bare "companies/..".
      */
@@ -30,7 +30,7 @@ try {
             if ($p === '') return '';
             if (preg_match('#^(https?:)?//#i', $p)) return $p; // absolute URL
             if ($p[0] === '/') return $p;                     // already site-root
-            // Bare relative — prepend /uploads/ for company theme uploads
+            // Bare relative, prepend /uploads/ for company theme uploads
             if (strpos($p, 'uploads/') === 0) return '/' . $p;
             return '/uploads/' . $p;
         }
@@ -38,6 +38,14 @@ try {
 
     $companySlug = trim($_GET['company_slug'] ?? '');
     $employeeId = trim($_GET['employee_id'] ?? '');
+
+    // On a tenant subdomain the slug comes from the host, not the URL.
+    if ($companySlug === '') {
+        require_once INCLUDES_DIR . '/TenantHost.php';
+        if (TenantHost::isTenantHost()) {
+            $companySlug = (string) TenantHost::slug();
+        }
+    }
 
     if (empty($companySlug) || empty($employeeId)) {
         throw new Exception('Missing parameters');
@@ -51,8 +59,68 @@ try {
         exit;
     }
 
-    // Look up employee scoped to company
-    $employee = findEmployeeById($employeeId, $company['id']);
+    // Canonicalize: /{slug}/card/{id} on apex -> {slug}.cardify.om/card/{id}
+    $__h = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+    if (in_array($__h, ['cardify.om', 'www.cardify.om'], true) && ($company['status'] ?? 'active') === 'active') {
+        header('Location: ' . getTenantUrl($companySlug, '/card/' . rawurlencode($employeeId)), true, 301);
+        exit;
+    }
+
+    // Look up employee scoped to company.
+    // The URL segment can be an employee_id OR an email (useful for QR codes
+    // baked onto a watermarked portal preview before the employee row exists).
+    $employee = null;
+    if (strpos($employeeId, '@') !== false) {
+        $employee = findEmployeeByEmail($employeeId, $company['id']);
+    } else {
+        $employee = findEmployeeById($employeeId, $company['id']);
+    }
+    // Fall back to the latest pending/approved card_request so a freshly
+    // submitted request still resolves to an E-Card page; the actual VCF
+    // download button below also honours this fallback.
+    if (!$employee) {
+        $db2 = Database::getInstance();
+        $req = null;
+        if (strpos($employeeId, '@') !== false) {
+            $req = $db2->fetchOne(
+                "SELECT * FROM card_requests
+                  WHERE company_id = :cid AND LOWER(email) = LOWER(:em)
+                    AND status IN ('pending','approved')
+                  ORDER BY submitted_at DESC LIMIT 1",
+                ['cid' => $company['id'], 'em' => $employeeId]
+            );
+        } else {
+            $req = $db2->fetchOne(
+                "SELECT * FROM card_requests WHERE id = :id AND company_id = :cid LIMIT 1",
+                ['id' => $employeeId, 'cid' => $company['id']]
+            );
+        }
+        if ($req) {
+            $employee = [
+                'id'           => $req['id'],
+                'email'        => $req['email'],
+                'name_en'      => $req['name_en']      ?? '',
+                'name_ar'      => $req['name_ar']      ?? '',
+                'position_en'  => $req['position_en']  ?? '',
+                'position_ar'  => $req['position_ar']  ?? '',
+                'phone'        => $req['phone']        ?? '',
+                'phone_ar'     => $req['phone_ar']     ?? '',
+                'mobile'       => $req['mobile']       ?? '',
+                'mobile_ar'    => $req['mobile_ar']    ?? '',
+                'website'      => $req['website']      ?? '',
+                'website_ar'   => $req['website_ar']   ?? '',
+                'address_en'   => $req['address_en']   ?? '',
+                'address_ar'   => $req['address_ar']   ?? '',
+                'address_2_en' => $req['address_2_en'] ?? '',
+                'address_2_ar' => $req['address_2_ar'] ?? '',
+                'company_en'   => $req['company_en']   ?? $company['name'] ?? '',
+                'company_ar'   => $req['company_ar']   ?? '',
+                'status'       => 'pending_approval',
+                'photo'        => $req['photo']        ?? null,
+                'department_id'=> $req['department_id']?? null,
+            ];
+        }
+    }
     if (!$employee) {
         // Try to load theme for branded 404
         $theme = loadCompanyTheme($company['id']);
@@ -78,16 +146,23 @@ try {
         error_log("QR tracking failed: " . $e->getMessage());
     }
 
-    // Log view / QR-scan event (non-fatal) — per-card analytics
+    // Log view / QR-scan event (non-fatal), per-card analytics
     try {
         CardAnalytics::logView($employee['id'], $company['id']);
     } catch (Throwable $e) {
         error_log("CardAnalytics logView failed: " . $e->getMessage());
     }
 
-    // Helper to build a tracked CTA URL
+    // Pending-approval card_requests don't live in `employees`, so the
+    // /card_click.php tracker (employee-only) would 400 on every button.
+    // For those, skip the tracker and emit the destination URL directly.
+    $isPendingPreview = (($employee['status'] ?? '') === 'pending_approval');
+
+    // Helper to build a tracked CTA URL (falls back to the raw destination
+    // for pending previews so Call / WhatsApp / Email / Save Contact work).
     $__eid = $employee['id'];
-    $cardClickUrl = function ($cta, $dest) use ($__eid) {
+    $cardClickUrl = function ($cta, $dest) use ($__eid, $isPendingPreview) {
+        if ($isPendingPreview) return $dest;
         return '/card_click.php?eid=' . urlencode($__eid)
             . '&cta=' . urlencode($cta)
             . '&dest=' . urlencode($dest);
@@ -111,19 +186,33 @@ try {
     $isDarkPage = ($themeMode === 'light'); // light card -> dark page
     $accentColor = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#d4af37';
 
-    // Visitor-facing dark mode toggle (migration 057). Default ON; owner can disable per card.
+    // Visitor-facing dark mode toggle (migration 057). Default ON; owner can
+    // disable per employee OR at the company level (admin > theme settings).
     $themeToggleEnabled = !isset($employee['card_dark_mode_toggle'])
         || $employee['card_dark_mode_toggle'] === null
         || (int)$employee['card_dark_mode_toggle'] === 1;
+    if (isset($company['ecard_theme_toggle_enabled']) && (int)$company['ecard_theme_toggle_enabled'] === 0) {
+        $themeToggleEnabled = false;
+    }
 
-    // Cookie override (only when toggle is enabled) — keeps SSR theme in sync with visitor choice.
+    // Company-level E-Card switches (admin > theme settings)
+    $ecardBilingual       = !isset($company['ecard_bilingual']) || (int)$company['ecard_bilingual'] === 1;
+    // "Made with Cardify" footer is always shown, company-wide, no opt-out.
+    // Viral growth is a first-class product value; Pro tier's hide_cardify_branding
+    // flag is also ignored here intentionally.
+    $ecardShowViralFooter = true;
+    $ecardDefaultTheme    = $company['ecard_default_theme'] ?? 'auto';
+    if ($ecardDefaultTheme === 'dark')  $isDarkPage = true;
+    if ($ecardDefaultTheme === 'light') $isDarkPage = false;
+
+    // Cookie override (only when toggle is enabled), keeps SSR theme in sync with visitor choice.
     $cookieTheme = $_COOKIE['cardify_card_theme'] ?? '';
     if ($themeToggleEnabled && in_array($cookieTheme, ['light', 'dark'], true)) {
         $isDarkPage = ($cookieTheme === 'dark');
     }
     $defaultThemeMode = $isDarkPage ? 'dark' : 'light';
 
-    // Card image paths — DB stores filenames, construct full web path
+    // Card image paths, DB stores filenames, construct full web path
     $frontImage = '';
     $backImage = '';
     if ($card) {
@@ -135,14 +224,21 @@ try {
         $backImage = $backRaw ? (strpos($backRaw, '/') === false ? $cardBasePath . $backRaw : $backRaw) : '';
     }
 
-    // Build VCF download URL — short format (?i=id) produces smaller QR codes
-    $vcfUrl = '/qr.php?i=' . urlencode($employee['id']);
+    // Build VCF download URL. For pending previews the `qr.php?i=` short
+    // format would 404 (employees-only lookup), so point at /vcf.php which
+    // has a card_requests fallback for the same company+email.
+    if ($isPendingPreview) {
+        $vcfUrl = '/vcf.php?company=' . urlencode($company['slug'])
+               . '&email=' . urlencode($employee['email']);
+    } else {
+        $vcfUrl = '/qr.php?i=' . urlencode($employee['id']);
+    }
 
     // ---- Locale resolution (sets cookie if ?lang= present) -------------
     $locale = CardSections::resolveLocale();
     $isRtl = CardSections::isRtl($locale);
 
-    // Employee contact data — localized with EN fallback
+    // Employee contact data, localized with EN fallback
     $name = CardSections::tColumn($employee, 'name', $locale);
     if (trim((string)$name) === '') $name = $employee['name'] ?? 'Employee';
     $position = CardSections::tColumn($employee, 'position', $locale);
@@ -221,7 +317,7 @@ try {
     $apptSettings = Appointments::loadSettings($employee['id'], $company['id']);
     $apptEnabled = !empty($apptSettings['enabled']);
 
-    // Wallet pass endpoints (feature-flagged — buttons render only when enabled)
+    // Wallet pass endpoints (feature-flagged, buttons render only when enabled)
     require_once INCLUDES_DIR . '/AppleWalletPass.php';
     require_once INCLUDES_DIR . '/GoogleWalletPass.php';
     $appleWalletEnabled  = AppleWalletPass::isEnabled();
@@ -262,7 +358,7 @@ function renderBranded404($company, $theme) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Card Not Available<?php echo $companyName ? ' - ' . htmlspecialchars($companyName) : ''; ?></title>
+    <title><?= htmlspecialchars(t('digitalcard.unavailable_title')) ?><?php echo $companyName ? ' - ' . htmlspecialchars($companyName) : ''; ?></title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(to bottom, #141421, #1a1a2e); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #eee; padding: 24px; }
@@ -280,9 +376,9 @@ function renderBranded404($company, $theme) {
         <?php if ($logoPath): ?>
             <div class="logo"><img src="<?php echo htmlspecialchars($logoPath); ?>" alt="<?php echo htmlspecialchars($companyName); ?>"></div>
         <?php endif; ?>
-        <h1>This card is no longer available</h1>
-        <p>The business card you're looking for may have been removed or the link is invalid.</p>
-        <div class="footer">Powered by <a href="/">Cardify</a></div>
+        <h1><?= htmlspecialchars(t('digitalcard.unavailable_h1')) ?></h1>
+        <p><?= htmlspecialchars(t('digitalcard.unavailable_body')) ?></p>
+        <div class="footer"><?= htmlspecialchars(t('digitalcard.powered_by')) ?> <a href="/">Cardify</a></div>
     </div>
 </body>
 </html>
@@ -313,7 +409,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     <?php if ($frontImage): ?>
     <meta property="og:image" content="<?php echo htmlspecialchars($frontImage); ?>">
     <?php endif; ?>
-    <link rel="icon" href="<?php echo $logoPath ? htmlspecialchars($logoPath) : '/favicon.svg'; ?>">
+    <link rel="icon" type="image/png" href="<?php echo (!empty($theme['favicon_path'])) ? htmlspecialchars(cardifyAssetUrl($theme['favicon_path'])) : ($logoPath ? htmlspecialchars($logoPath) : '/favicon.svg'); ?>">
     <?php if ($isRtl): ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -322,7 +418,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { overflow-x: hidden; }
-        /* Honeypot anti-spam fields — visually hidden without causing document overflow (esp. in RTL) */
+        /* Honeypot anti-spam fields, visually hidden without causing document overflow (esp. in RTL) */
         .hp, .lead-form .hp { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); clip-path: inset(50%); white-space: nowrap; border: 0; left: auto !important; }
         body {
             min-height: 100vh;
@@ -541,12 +637,20 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             text-align: center;
             font-size: 14px;
             font-weight: 600;
+            /* <button> elements don't inherit body's font-family in most
+               browsers; they fall back to a UA-specific font. In Arabic this
+               showed the Share label in a different face than Save/Call/etc.
+               Forcing inherit keeps the whole row in Noto Sans Arabic. */
+            font-family: inherit;
             text-decoration: none;
             display: block;
             cursor: pointer;
             border: none;
             transition: opacity 0.2s;
         }
+        /* Same safeguard for any other <button> on the page (Share,
+           testimonial-toggle, appointment submit, lead form submit, etc.). */
+        button { font-family: inherit; }
         .bottom-btn:active { opacity: 0.8; }
         .btn-save {
             background: <?php echo htmlspecialchars($accentColor); ?>;
@@ -716,7 +820,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .lead-form .hp { position: absolute; left: -9999px; }
         .lead-success { text-align: center; padding: 20px; font-size: 14px; color: <?php echo htmlspecialchars($accentColor); ?>; }
         .lead-error { color: #ef4444; font-size: 13px; margin-bottom: 8px; }
-        /* Appointment widget — inherits light/dark theme */
+        /* Appointment widget, inherits light/dark theme */
         .appt-label { display:block; font-size:12px; font-weight:600; margin-bottom:6px; <?php echo $isDarkPage ? 'color:#bbb;' : 'color:#555;'; ?> }
         .appt-input, .appt-textarea { width:100%; padding:10px 12px; border-radius:8px; font-size:14px; font-family:inherit; box-sizing:border-box; margin-bottom:8px;
             <?php if ($isDarkPage): ?>background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #eee;<?php else: ?>background: #f7f7f9; border: 1px solid #e5e7eb; color: #1a1a2e;<?php endif; ?>
@@ -737,10 +841,18 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .appt-success-msg { font-size:13px; margin-top:4px; <?php echo $isDarkPage ? 'color:#aaa;' : 'color:#666;'; ?> }
     </style>
     <style>
-        .lang-switcher {
+        /* Corner controls: theme toggle + language switcher live in a shared
+           flex row so they never overlap regardless of locale width. */
+        .card-top-controls {
             position: absolute;
             top: 12px;
             <?php echo $isRtl ? 'left' : 'right'; ?>: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 50;
+        }
+        .lang-switcher {
             display: flex;
             gap: 4px;
             font-size: 12px;
@@ -749,7 +861,6 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             padding: 4px 6px;
             border-radius: 999px;
             backdrop-filter: blur(8px);
-            z-index: 50;
         }
         .lang-switcher a {
             text-decoration: none;
@@ -763,11 +874,9 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             color: <?php echo $isDarkPage ? '#1a1a2e' : '#fff'; ?>;
         }
 
-        /* Visitor-facing theme toggle (sun/moon) — sits alongside the language switcher. */
+        /* Visitor-facing theme toggle (sun/moon), sits alongside the language switcher. */
         .theme-toggle {
-            position: absolute;
-            top: 12px;
-            <?php echo $isRtl ? 'left' : 'right'; ?>: 78px; /* nudge inside of lang switcher */
+            position: static;
             width: 32px;
             height: 32px;
             display: inline-flex;
@@ -791,7 +900,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         body.force-dark .theme-toggle .theme-icon-sun { display: block; }
         body.force-light .theme-toggle .theme-icon-moon { display: block; }
 
-        /* Viral "Made with Cardify" footer — appears on every public card so
+        /* Viral "Made with Cardify" footer, appears on every public card so
            each scan becomes a Cardify impression. Tasteful, small, always there
            (think "Designed in Figma"). Pro-tier users can hide via admin. */
         .cardify-viral-footer {
@@ -847,23 +956,26 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     </style>
 </head>
 <body class="<?php echo $isDarkPage ? 'force-dark' : 'force-light'; ?>">
-    <!-- Language switcher -->
-    <nav class="lang-switcher" aria-label="Language">
-        <a href="<?php echo $switchEnUrl; ?>" class="<?php echo $locale === 'en' ? 'active' : ''; ?>" hreflang="en">EN</a>
-        <a href="<?php echo $switchArUrl; ?>" class="<?php echo $locale === 'ar' ? 'active' : ''; ?>" hreflang="ar">عربي</a>
-    </nav>
-    <?php if ($themeToggleEnabled): ?>
-    <!-- Theme toggle (visitor override — persisted via cookie, 7d) -->
-    <button type="button"
-            class="theme-toggle"
-            id="themeToggle"
-            aria-label="<?php echo $isDarkPage ? 'Switch to light mode' : 'Switch to dark mode'; ?>"
-            title="<?php echo $isDarkPage ? 'Switch to light mode' : 'Switch to dark mode'; ?>"
-            data-mode="<?php echo $defaultThemeMode; ?>">
-        <svg class="theme-icon theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-        <svg class="theme-icon theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-    </button>
-    <?php endif; ?>
+    <div class="card-top-controls">
+        <?php if ($themeToggleEnabled): ?>
+        <!-- Theme toggle (visitor override, persisted via cookie, 7d) -->
+        <button type="button"
+                class="theme-toggle"
+                id="themeToggle"
+                aria-label="<?php echo $isDarkPage ? 'Switch to light mode' : 'Switch to dark mode'; ?>"
+                title="<?php echo htmlspecialchars($isDarkPage ? t('digitalcard.switch_light') : t('digitalcard.switch_dark')); ?>"
+                data-mode="<?php echo $defaultThemeMode; ?>">
+            <svg class="theme-icon theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+            <svg class="theme-icon theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </button>
+        <?php endif; ?>
+        <?php if ($ecardBilingual): ?>
+        <nav class="lang-switcher" aria-label="Language">
+            <a href="<?php echo $switchEnUrl; ?>" class="<?php echo $locale === 'en' ? 'active' : ''; ?>" hreflang="en">EN</a>
+            <a href="<?php echo $switchArUrl; ?>" class="<?php echo $locale === 'ar' ? 'active' : ''; ?>" hreflang="ar">عربي</a>
+        </nav>
+        <?php endif; ?>
+    </div>
     <div class="page-container">
         <!-- Company Logo -->
         <?php if ($logoPath): ?>
@@ -877,16 +989,16 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         <div class="card-flip-container" id="cardFlip">
             <div class="card-flip-inner" id="cardInner">
                 <div class="card-face">
-                    <img src="<?php echo htmlspecialchars($frontImage); ?>" alt="Card Front" loading="lazy">
+                    <img src="<?php echo htmlspecialchars($frontImage); ?>" alt="<?= htmlspecialchars(t('digitalcard.alt_card_front')) ?>" loading="lazy">
                 </div>
                 <?php if ($backImage): ?>
                 <div class="card-face card-back-face">
-                    <img src="<?php echo htmlspecialchars($backImage); ?>" alt="Card Back" loading="lazy">
+                    <img src="<?php echo htmlspecialchars($backImage); ?>" alt="<?= htmlspecialchars(t('digitalcard.alt_card_back')) ?>" loading="lazy">
                 </div>
                 <?php endif; ?>
             </div>
             <?php if ($backImage): ?>
-            <div class="tap-hint" id="tapHint">Tap card to flip</div>
+            <div class="tap-hint" id="tapHint"><?= htmlspecialchars(t('digitalcard.tap_to_flip')) ?></div>
             <?php endif; ?>
         </div>
         <?php endif; ?>
@@ -909,15 +1021,15 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         <!-- Action Buttons -->
         <div class="action-buttons">
             <?php if ($mobile || $phone): ?>
-            <a href="<?php echo htmlspecialchars($cardClickUrl($mobile ? 'click_mobile' : 'click_phone', 'tel:' . ($mobile ?: $phone))); ?>" class="action-btn btn-call">Call</a>
+            <a href="<?php echo htmlspecialchars($cardClickUrl($mobile ? 'click_mobile' : 'click_phone', 'tel:' . ($mobile ?: $phone))); ?>" class="action-btn btn-call"><?= htmlspecialchars(t('digitalcard.btn_call')) ?></a>
             <?php endif; ?>
 
             <?php if ($waPhone): ?>
-            <a href="<?php echo htmlspecialchars($cardClickUrl('click_whatsapp', 'https://api.whatsapp.com/send?phone=' . $waPhone)); ?>" class="action-btn btn-whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_whatsapp', 'https://api.whatsapp.com/send?phone=' . $waPhone)); ?>" class="action-btn btn-whatsapp" target="_blank" rel="noopener"><?= htmlspecialchars(t('digitalcard.btn_whatsapp')) ?></a>
             <?php endif; ?>
 
             <?php if ($email): ?>
-            <a href="<?php echo htmlspecialchars($cardClickUrl('click_email', 'mailto:' . $email)); ?>" class="action-btn btn-email">Email</a>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_email', 'mailto:' . $email)); ?>" class="action-btn btn-email"><?= htmlspecialchars(t('digitalcard.btn_email')) ?></a>
             <?php endif; ?>
         </div>
 
@@ -981,22 +1093,24 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         <?php $pdfUrl = '/card-pdf.php?i=' . urlencode($employee['id']); ?>
         <div class="bottom-buttons">
             <?php if ($email): ?>
-            <a href="<?php echo htmlspecialchars($cardClickUrl('save_contact', $vcfUrl)); ?>" class="bottom-btn btn-save" download>Save Contact</a>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('save_contact', $vcfUrl)); ?>" class="bottom-btn btn-save" download><?= htmlspecialchars(t('digitalcard.btn_save_contact')) ?></a>
             <?php endif; ?>
-            <a href="<?php echo htmlspecialchars($cardClickUrl('download_pdf', $pdfUrl)); ?>" class="bottom-btn btn-pdf" download>Download PDF</a>
-            <button class="bottom-btn btn-share" onclick="shareCard()">Share</button>
+            <?php if (!$isPendingPreview): // printed-card PDF only exists after approval ?>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('download_pdf', $pdfUrl)); ?>" class="bottom-btn btn-pdf" download><?= htmlspecialchars(t('digitalcard.btn_download_pdf')) ?></a>
+            <?php endif; ?>
+            <button class="bottom-btn btn-share" onclick="shareCard()"><?= htmlspecialchars(t('digitalcard.btn_share')) ?></button>
         </div>
 
         <!-- Public Card Sections -->
         <?php foreach ($sectionOrder as $__sec): ?>
             <?php if ($__sec === 'bio' && !empty($sectionMaster['bio_enabled']) && !empty($bioText)): ?>
                 <div class="card-section">
-                    <h3>About</h3>
+                    <h3><?= htmlspecialchars(t('digitalcard.section_about')) ?></h3>
                     <div class="section-bio"><?php echo CardSections::renderBioHtml($bioText); ?></div>
                 </div>
             <?php elseif ($__sec === 'services' && !empty($sectionMaster['services_enabled']) && !empty($sectionServices)): ?>
                 <div class="card-section">
-                    <h3>Services</h3>
+                    <h3><?= htmlspecialchars(t('digitalcard.section_services')) ?></h3>
                     <?php foreach ($sectionServices as $svc): ?>
                         <div class="service-row">
                             <div class="service-icon"><i class="<?php echo htmlspecialchars($svc['icon']); ?>"></i></div>
@@ -1011,7 +1125,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                 </div>
             <?php elseif ($__sec === 'gallery' && !empty($sectionMaster['gallery_enabled']) && !empty($sectionGallery)): ?>
                 <div class="card-section">
-                    <h3>Gallery</h3>
+                    <h3><?= htmlspecialchars(t('digitalcard.section_gallery')) ?></h3>
                     <div class="gallery-grid">
                         <?php foreach ($sectionGallery as $img): ?>
                             <img src="<?php echo htmlspecialchars(cardifyAssetUrl($img['file_path'])); ?>" alt="<?php echo htmlspecialchars($img['caption'] ?? ''); ?>" loading="lazy" onclick="window.open(this.src,'_blank')">
@@ -1020,7 +1134,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                 </div>
             <?php elseif ($__sec === 'testimonials' && !empty($sectionMaster['testimonials_enabled'])): ?>
                 <div class="card-section">
-                    <h3>Testimonials</h3>
+                    <h3><?= htmlspecialchars(t('digitalcard.section_testimonials')) ?></h3>
                     <?php if (!empty($sectionTestimonials)): ?>
                     <?php foreach ($sectionTestimonials as $t): ?>
                         <div class="testimonial-item">
@@ -1043,17 +1157,17 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                         </div>
                     <?php endforeach; ?>
                     <?php else: ?>
-                        <div style="font-size:13px; opacity:0.65; padding:8px 0 12px;">Be the first to leave a testimonial.</div>
+                        <div style="font-size:13px; opacity:0.65; padding:8px 0 12px;"><?= htmlspecialchars(t('digitalcard.test_empty')) ?></div>
                     <?php endif; ?>
 
-                    <button type="button" class="testimonial-toggle" id="testimonialToggle" onclick="(function(b){var f=document.getElementById('testimonialFormWrap');var open=f.style.display==='block';f.style.display=open?'none':'block';b.textContent=open?'Leave a testimonial':'Cancel';})(this);">Leave a testimonial</button>
+                    <button type="button" class="testimonial-toggle" id="testimonialToggle" data-label-open="<?= htmlspecialchars(t('digitalcard.test_leave'), ENT_QUOTES) ?>" data-label-close="<?= htmlspecialchars(t('digitalcard.test_cancel'), ENT_QUOTES) ?>" onclick="(function(b){var f=document.getElementById('testimonialFormWrap');var open=f.style.display==='block';f.style.display=open?'none':'block';b.textContent=open?b.dataset.labelOpen:b.dataset.labelClose;})(this);"><?= htmlspecialchars(t('digitalcard.test_leave')) ?></button>
                     <div id="testimonialFormWrap" style="display:none; margin-top:12px;">
                         <form id="testimonialForm" class="lead-form" enctype="multipart/form-data" autocomplete="off">
                             <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee['id']); ?>">
-                            <div class="hp" style="position:absolute;left:-10000px;"><label>Website<input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
+                            <div class="hp" style="position:absolute;left:-10000px;"><label><?= htmlspecialchars(t('digitalcard.hp_honeypot')) ?><input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
                             <div class="lead-error" id="testimonialError" style="display:none;"></div>
-                            <label>Your name<input type="text" name="name" required maxlength="255"></label>
-                            <label>Email (optional)<input type="email" name="email" maxlength="255"></label>
+                            <label><?= htmlspecialchars(t('digitalcard.test_field_name')) ?><input type="text" name="name" required maxlength="255"></label>
+                            <label><?= htmlspecialchars(t('digitalcard.test_field_email')) ?><input type="email" name="email" maxlength="255"></label>
                             <label>Rating
                                 <div class="star-picker" id="starPicker" role="radiogroup" aria-label="Rating">
                                     <input type="hidden" name="rating" id="ratingInput" value="">
@@ -1062,16 +1176,16 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                                     <?php endfor; ?>
                                 </div>
                             </label>
-                            <label>Your testimonial<textarea name="quote" required maxlength="2000"></textarea></label>
-                            <label>Photo (optional)<input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></label>
-                            <button type="submit" id="testimonialSubmit">Submit for review</button>
+                            <label><?= htmlspecialchars(t('digitalcard.test_field_quote')) ?><textarea name="quote" required maxlength="2000"></textarea></label>
+                            <label><?= htmlspecialchars(t('digitalcard.test_field_photo')) ?><input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></label>
+                            <button type="submit" id="testimonialSubmit"><?= htmlspecialchars(t('digitalcard.test_submit')) ?></button>
                         </form>
-                        <div class="lead-success" id="testimonialSuccess" style="display:none;">Thanks! Your testimonial is pending review.</div>
+                        <div class="lead-success" id="testimonialSuccess" style="display:none;"><?= htmlspecialchars(t('digitalcard.test_thanks')) ?></div>
                     </div>
                 </div>
             <?php elseif ($__sec === 'offers' && !empty($sectionMaster['offers_enabled']) && !empty($sectionOffers)): ?>
                 <div class="card-section">
-                    <h3>Offers</h3>
+                    <h3><?= htmlspecialchars(t('digitalcard.section_offers')) ?></h3>
                     <div class="offers-list">
                         <?php foreach ($sectionOffers as $offer): ?>
                             <div class="offer-card">
@@ -1323,18 +1437,18 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
                 </div>
             <?php elseif ($__sec === 'lead_form' && !empty($sectionMaster['lead_form_enabled'])): ?>
                 <div class="card-section">
-                    <h3>Get in Touch</h3>
+                    <h3><?= htmlspecialchars(t('digitalcard.section_contact')) ?></h3>
                     <form class="lead-form" id="leadForm" autocomplete="off">
                         <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee['id']); ?>">
-                        <div class="hp"><label>Website<input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
+                        <div class="hp"><label><?= htmlspecialchars(t('digitalcard.hp_honeypot')) ?><input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
                         <div class="lead-error" id="leadError" style="display:none;"></div>
-                        <label>Your name<input type="text" name="name" required maxlength="255"></label>
-                        <label>Email<input type="email" name="email" maxlength="255"></label>
-                        <label>Phone<input type="tel" name="phone" maxlength="50"></label>
-                        <label>Message<textarea name="message" maxlength="4000"></textarea></label>
-                        <button type="submit" id="leadSubmit">Send</button>
+                        <label><?= htmlspecialchars(t('digitalcard.lead_field_name')) ?><input type="text" name="name" required maxlength="255"></label>
+                        <label><?= htmlspecialchars(t('digitalcard.lead_field_email')) ?><input type="email" name="email" maxlength="255"></label>
+                        <label><?= htmlspecialchars(t('digitalcard.lead_field_phone')) ?><input type="tel" name="phone" maxlength="50"></label>
+                        <label><?= htmlspecialchars(t('digitalcard.lead_field_message')) ?><textarea name="message" maxlength="4000"></textarea></label>
+                        <button type="submit" id="leadSubmit"><?= htmlspecialchars(t('digitalcard.lead_send')) ?></button>
                     </form>
-                    <div class="lead-success" id="leadSuccess" style="display:none;">Thanks! Your message has been sent.</div>
+                    <div class="lead-success" id="leadSuccess" style="display:none;"><?= htmlspecialchars(t('digitalcard.lead_thanks')) ?></div>
                 </div>
             <?php endif; ?>
         <?php endforeach; ?>
@@ -1342,32 +1456,32 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         <?php if ($apptEnabled): ?>
         <!-- Appointment Booking Widget -->
         <div class="card-section" id="apptSection">
-            <h3>Book a meeting</h3>
+            <h3><?= htmlspecialchars(t('digitalcard.section_book')) ?></h3>
             <div id="apptStep1">
-                <label class="appt-label">Choose a date</label>
+                <label class="appt-label"><?= htmlspecialchars(t('digitalcard.appt_choose_date')) ?></label>
                 <input type="date" id="apptDate" class="appt-input">
                 <div id="apptSlots" class="appt-slots"></div>
-                <div id="apptSlotsEmpty" class="appt-empty">No slots available on this day.</div>
+                <div id="apptSlotsEmpty" class="appt-empty"><?= htmlspecialchars(t('digitalcard.appt_no_slots')) ?></div>
             </div>
             <form id="apptForm" style="display:none;margin-top:12px;" autocomplete="off">
                 <div id="apptChosen" class="appt-chosen"></div>
                 <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee['id']); ?>">
                 <input type="hidden" name="slot_start" id="apptSlotStart">
-                <div class="hp" style="position:absolute;left:-9999px;"><label>Website<input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
+                <div class="hp" style="position:absolute;left:-9999px;"><label><?= htmlspecialchars(t('digitalcard.hp_honeypot')) ?><input type="text" name="website_url" tabindex="-1" autocomplete="off"></label></div>
                 <div id="apptError" style="display:none;color:#ef4444;font-size:13px;margin-bottom:8px;"></div>
-                <input type="text" name="name" placeholder="Your name" required maxlength="255" class="appt-input">
-                <input type="email" name="email" placeholder="Email" maxlength="255" class="appt-input">
-                <input type="tel" name="phone" placeholder="Phone" maxlength="50" class="appt-input">
-                <textarea name="notes" placeholder="Notes (optional)" maxlength="4000" rows="3" class="appt-textarea"></textarea>
+                <input type="text" name="name" placeholder="<?= htmlspecialchars(t('digitalcard.appt_ph_name')) ?>" required maxlength="255" class="appt-input">
+                <input type="email" name="email" placeholder="<?= htmlspecialchars(t('digitalcard.appt_ph_email')) ?>" maxlength="255" class="appt-input">
+                <input type="tel" name="phone" placeholder="<?= htmlspecialchars(t('digitalcard.appt_ph_phone')) ?>" maxlength="50" class="appt-input">
+                <textarea name="notes" placeholder="<?= htmlspecialchars(t('digitalcard.appt_ph_notes')) ?>" maxlength="4000" rows="3" class="appt-textarea"></textarea>
                 <div style="display:flex;gap:8px;">
-                    <button type="button" id="apptBack" class="appt-back-btn">Back</button>
-                    <button type="submit" id="apptSubmit" class="appt-submit-btn">Confirm booking</button>
+                    <button type="button" id="apptBack" class="appt-back-btn"><?= htmlspecialchars(t('digitalcard.appt_back')) ?></button>
+                    <button type="submit" id="apptSubmit" class="appt-submit-btn"><?= htmlspecialchars(t('digitalcard.appt_confirm')) ?></button>
                 </div>
             </form>
             <div id="apptSuccess" style="display:none;text-align:center;padding:18px;">
                 <div style="font-size:32px;margin-bottom:6px;color:<?php echo htmlspecialchars($accentColor); ?>;">&#10003;</div>
-                <div style="font-weight:600;">Request sent!</div>
-                <div class="appt-success-msg">You'll get a confirmation email shortly.</div>
+                <div style="font-weight:600;"><?= htmlspecialchars(t('digitalcard.appt_sent_h')) ?></div>
+                <div class="appt-success-msg"><?= htmlspecialchars(t('digitalcard.appt_sent_body')) ?></div>
             </div>
         </div>
         <script>
@@ -1394,7 +1508,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             dateInput.value = dateInput.min;
 
             function loadSlots() {
-                slotsEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;opacity:0.7;font-size:13px;padding:8px 0;">Loading...</div>';
+                slotsEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;opacity:0.7;font-size:13px;padding:8px 0;"><?= htmlspecialchars(t('digitalcard.appt_loading'), ENT_QUOTES) ?></div>';
                 emptyEl.style.display = 'none';
                 fetch('/api/appointment/slots.php?eid='+encodeURIComponent(EID)+'&date='+encodeURIComponent(dateInput.value))
                     .then(function(r){return r.json();})
@@ -1494,12 +1608,13 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         </script>
         <?php endif; ?>
 
-        <!-- Viral "Made with Cardify" footer — every public card scan becomes a
+        <!-- Viral "Made with Cardify" footer, every public card scan becomes a
              Cardify impression. Owner can hide via admin (Pro tier only).
              Links through /card_click.php so we measure conversion. -->
         <?php
-            // Pro-tier gate: only respect hide flag when company is on paid plan.
-            // Column may be absent pre-migration 065 — coalesce safely.
+            // Hide-branding flag (retained from the tier model); platform policy
+            // is that Cardify branding always renders, so this gate is informational.
+            // Column may be absent pre-migration 065, coalesce safely.
             $__hideBranding = (int)($employee['hide_cardify_branding'] ?? 0) === 1;
             $__brandingPaid = false;
             try {
@@ -1508,7 +1623,8 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             } catch (Throwable $e) {
                 $__brandingPaid = false;
             }
-            $__showViralFooter = !($__hideBranding && $__brandingPaid);
+            // Always show, ignore pro-tier hide_cardify_branding on purpose.
+            $__showViralFooter = true;
         ?>
         <?php if ($__showViralFooter): ?>
             <?php
@@ -1523,7 +1639,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <div class="cardify-viral-footer">
                 <a href="<?php echo htmlspecialchars($__claimHref, ENT_QUOTES); ?>"
                    class="viral-link"
-                   aria-label="<?php echo $isRtl ? 'أُنشئ بطاقتك مجاناً مع Cardify' : 'Made with Cardify — create yours free'; ?>"
+                   aria-label="<?php echo $isRtl ? 'أُنشئ بطاقتك مجاناً مع Cardify' : 'Made with Cardify, create yours free'; ?>"
                    rel="noopener">
                     <span class="viral-logo" aria-hidden="true">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -1762,7 +1878,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             ],
             'email' => $employee['email'] ?? '',
             'telephone' => $employee['phone'] ?? $employee['mobile'] ?? '',
-            'url' => 'https://cardify.om/' . ($company['slug'] ?? '') . '/card/' . ($employee['id'] ?? ''),
+            'url' => getTenantCardUrl($company['slug'] ?? null, 'card/' . ($employee['id'] ?? '')),
         ],
     ];
     if (!empty($sectionMaster['hours_enabled']) && !empty($businessHours)) {
@@ -1771,7 +1887,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             $__localBiz = [
                 '@type' => 'LocalBusiness',
                 'name' => $company['name_en'] ?? $company['name'] ?? '',
-                'url' => 'https://cardify.om/' . ($company['slug'] ?? '') . '/card/' . ($employee['id'] ?? ''),
+                'url' => getTenantCardUrl($company['slug'] ?? null, 'card/' . ($employee['id'] ?? '')),
                 'openingHours' => $__openingSpecs,
             ];
             if (!empty(trim((string)($sectionMaster['location_address'] ?? '')))) {

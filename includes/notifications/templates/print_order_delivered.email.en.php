@@ -18,6 +18,6 @@ $body = <<<HTML
   <p>Hi {$name},</p>
   <p>Your order <strong>{$orderNumber}</strong> has been delivered. Thanks for choosing Cardify.</p>
   {$reorderBlock}
-  <p style="color:#6b7280;font-size:14px;">— The Cardify Team</p>
+  <p style="color:#6b7280;font-size:14px;">, The Cardify Team</p>
 </div>
 HTML;

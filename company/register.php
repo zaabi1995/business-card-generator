@@ -9,6 +9,7 @@
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/Mailer.php';
+require_once INCLUDES_DIR . '/Referral.php';
 
 // Redirect if already logged in
 if (Auth::isLoggedIn()) {
@@ -31,6 +32,14 @@ if ($refSource) {
 }
 $pendingReferral = $_SESSION['pending_referral'] ?? null;
 
+// BHD-234: user-level referral code (distinct from `ref=` source tag). Accept
+// both ?ref_code= and the r.php-captured session/cookie.
+$incomingRefCode = $_GET['ref_code'] ?? null;
+if ($incomingRefCode) {
+    Referral::capturePending((string)$incomingRefCode);
+}
+$pendingRefCode = Referral::readPending();
+
 // Check if prefilled email has business domain
 if (!empty($prefillEmail) && isValidEmail($prefillEmail)) {
     $isBusinessDomain = isBusinessEmailDomain($prefillEmail);
@@ -43,10 +52,11 @@ if (!empty($prefillEmail) && isValidEmail($prefillEmail)) {
 }
 
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
-$pageTitle = 'Create Account';
+$pageTitle = t('register.page_title');
 $htmlClass = 'h-full bg-white';
 $bodyClass = 'h-full';
 $extraHead = <<<HTML
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/css/intlTelInput.css">
     <style>
         .form-input {
             display: block;
@@ -61,8 +71,8 @@ $extraHead = <<<HTML
             transition: all 0.15s ease;
         }
         .form-input:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            border-color: #009bc1;
+            box-shadow: 0 0 0 3px rgba(0, 155, 193, 0.12);
         }
         .form-input::placeholder {
             color: #9ca3af;
@@ -72,6 +82,8 @@ $extraHead = <<<HTML
             color: #6b7280;
             cursor: not-allowed;
         }
+        .iti { width: 100%; display: block; }
+        .iti__tel-input.form-input { padding-left: 3.5rem; }
     </style>
     <script>
         function checkEmailDomain() {
@@ -120,9 +132,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
     $customSlug = trim($_POST['company_slug'] ?? '');
     $userName = trim($_POST['user_name'] ?? '');
+    // Phone capture: prefer the canonical E.164 string from intl-tel-input,
+    // fall back to the raw `phone` field for non-JS clients. `phone_skipped=1`
+    // means the user explicitly hit "Skip for now" in the widget, honour it
+    // and ship an empty string so signup never blocks (per BHD-224 spec:
+    // required-with-skip).
+    $phoneSkipped = ($_POST['phone_skipped'] ?? '') === '1';
+    $phoneRaw = $phoneSkipped ? '' : trim($_POST['phone_e164'] ?? $_POST['phone'] ?? '');
+    $phone = '';
+    if ($phoneRaw !== '') {
+        require_once INCLUDES_DIR . '/WhatsApp.php';
+        $digits = WhatsApp::normalizePhone($phoneRaw);
+        // Require at least 8 digits (Oman local) after normalization.
+        if (strlen($digits) >= 8) {
+            $phone = '+' . $digits;
+        }
+    }
 
     // Validation
-    if (empty($name)) {
+    require_once INCLUDES_DIR . '/Recaptcha.php';
+    $captcha = Recaptcha::verify((string) ($_POST['recaptcha_token'] ?? ''), 'signup');
+    if (empty($captcha['ok'])) {
+        $error = 'We could not verify your request. Please reload and try again.';
+    } elseif (empty($name)) {
         $error = 'Company name is required';
     } elseif (empty($email) || !isValidEmail($email)) {
         $error = 'Valid email address is required';
@@ -159,6 +191,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'created_at' => date('Y-m-d H:i:s')
                     ];
                     
+                    if ($phone !== '') {
+                        $employeeData['phone'] = $phone;
+                    }
                     $empResult = addEmployee($employeeData, $existingCompany['id']);
                     if ($empResult['success'] ?? false) {
                         $info = 'Your request to join ' . htmlspecialchars($existingCompany['name']) . ' has been submitted. You will be notified once approved.';
@@ -189,6 +224,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             if ($pendingReferral) {
                                 $updates['referral_source'] = $pendingReferral;
                             }
+                            if ($phone !== '') {
+                                $updates['phone'] = $phone;
+                            }
                             if (!empty($updates)) {
                                 $db->update('companies', $updates, 'id = :id', ['id' => $company['id']]);
                             }
@@ -200,6 +238,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Create user record for the admin
                     $userResult = Auth::createUser($email, $password, $userName ?: $name, 'company', $company['id']);
 
+                    // Best-effort: attach phone to the user row so admin-side prompts
+                    // and per-user notifications can target it. Column may not exist
+                    // on legacy installs, silently ignore.
+                    if ($phone !== '' && !empty($userResult['user_id'])) {
+                        try {
+                            $db = Database::getInstance();
+                            $db->update('users', ['phone' => $phone], 'id = :id', ['id' => $userResult['user_id']]);
+                        } catch (Exception $e) {
+                            // column missing, migration 074 adds it
+                        }
+                    }
+
+                    // Pre-seed onboarding wizard state with admin's own
+                    // name/email/phone so step 4 (first_employee) pre-fills
+                    // + wizard header greets them by name on first visit.
+                    try {
+                        require_once INCLUDES_DIR . '/Onboarding.php';
+                        Onboarding::saveMeta($company['id'], [
+                            'admin_name'    => $userName ?: $name,
+                            'admin_email'   => $email,
+                            'admin_phone'   => $phone !== '' ? $phone : null,
+                            'company_name'  => $name,
+                            'first_employee' => [
+                                'name'  => $userName ?: $name,
+                                'email' => $email,
+                                'phone' => $phone !== '' ? $phone : '',
+                                'title' => '',
+                            ],
+                        ]);
+                    } catch (Throwable $e) {
+                        error_log('[register] Onboarding::saveMeta failed: ' . $e->getMessage());
+                    }
+
+                    // BHD-234: give the new user a referral code and attribute them
+                    // back to the referrer (if they came in via /r/<code>).
+                    if (!empty($userResult['user_id'])) {
+                        try {
+                            Referral::ensureCodeForUser($userResult['user_id']);
+                            if ($pendingRefCode) {
+                                Referral::attributeSignup($userResult['user_id'], $pendingRefCode);
+                                Referral::clearPending();
+                            }
+                        } catch (Throwable $e) {
+                            error_log('[register] referral wiring failed: ' . $e->getMessage());
+                        }
+                    }
+
+                    // BHD-244: seed a starter template immediately so every new
+                    // signup lands on a dashboard with a usable template. The
+                    // function is idempotent (no-op if templates already exist),
+                    // so the onboarding wizard's own seedStarterTemplate() call
+                    // with the user's chosen variant still short-circuits safely.
+                    try {
+                        seedStarterTemplate(Database::getInstance(), $company['id'], 'bhd-classic');
+                    } catch (Throwable $e) {
+                        error_log('[register] seedStarterTemplate failed: ' . $e->getMessage());
+                    }
+
                     // Send welcome email
                     $siteName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                     $companySlug = $company['slug'] ?? '';
@@ -207,8 +303,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'site_name' => $siteName,
                         'admin_name' => $userName ?: $name,
                         'company_name' => $name,
-                        'admin_url' => getBaseUrl() . $companySlug . '/admin/',
-                        'portal_url' => getBaseUrl() . $companySlug . '/portal'
+                        'admin_url' => getTenantUrl($companySlug, '/admin/'),
+                        'portal_url' => getTenantUrl($companySlug, '/portal')
                     ];
                     Mailer::sendTemplate($email, 'welcome_company', $onboardingData);
 
@@ -222,13 +318,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         Notifier::send('signup', [
                             'name'       => $userName ?: $name,
                             'email'      => $email,
-                            'phone'      => trim($_POST['phone'] ?? ''),
+                            'phone'      => $phone, // normalized E.164, empty string if user skipped
                             'company_id' => $company['id'] ?? null,
                         ], [
                             'name'        => $userName ?: $name,
                             'companyName' => $name,
                             'loginUrl'    => $baseHost . getBasePath() . 'login.php',
-                            'dashboardUrl'=> $baseHost . getBasePath() . ($company['slug'] ?? '') . '/admin/',
+                            'dashboardUrl'=> !empty($company['slug'])
+                                                ? getTenantUrl($company['slug'], '/admin/')
+                                                : $baseHost . getBasePath() . 'admin/',
                             'companySlug' => $company['slug'] ?? '',
                         ]);
                     } catch (Throwable $e) {
@@ -236,16 +334,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Don't block signup on notification failure
                     }
 
+                    // Ops alert: ping Slack so the team sees new tenants
+                    // as they land. Fail-open, no-op when unconfigured.
+                    try {
+                        require_once INCLUDES_DIR . '/SlackAlert.php';
+                        SlackAlert::tenantSignup($name, $email, $phone, 'web-password');
+                    } catch (Throwable $e) {
+                        error_log('[register] Slack alert failed: ' . $e->getMessage());
+                    }
+
                     // Login the new user
                     Auth::unifiedLogin($email, $password);
 
-                    // Redirect all new signups to onboarding wizard
-                    $source = 'general';
+                    // Redirect all new signups to the onboarding wizard.
+                    // BHD-referral cohort keeps the legacy onboarding.php flow
+                    // (tailored content, drip emails); everyone else goes to
+                    // the v2.0 wizard at /{slug}/admin/onboarding.
                     if ($pendingReferral === 'bhd') {
                         unset($_SESSION['pending_referral']);
-                        $source = 'bhd';
+                        header('Location: ' . getBasePath() . 'onboarding.php?source=bhd');
+                    } else {
+                        $companySlugForRedirect = $company['slug'] ?? '';
+                        if ($companySlugForRedirect) {
+                            header('Location: ' . getTenantUrl($companySlugForRedirect, '/admin/onboarding'));
+                        } else {
+                            header('Location: ' . getBasePath() . 'admin/onboarding.php');
+                        }
                     }
-                    header('Location: ' . getBasePath() . 'onboarding.php?source=' . $source);
                     exit;
                 }
                 $error = $result['error'] ?? 'Failed to create company';
@@ -280,20 +395,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <i class="fa-solid fa-print text-white text-xs"></i>
                         </div>
                         <div>
-                            <p class="text-sm font-semibold text-blue-900">Exclusive for BHD Printing customers</p>
-                            <p class="text-xs text-blue-600">Get BHD-branded templates pre-loaded for you</p>
+                            <p class="text-sm font-semibold text-blue-900"><?= htmlspecialchars(t('register.bhd_badge_title')) ?></p>
+                            <p class="text-xs text-blue-600"><?= htmlspecialchars(t('register.bhd_badge_body')) ?></p>
                         </div>
                     </div>
                     <?php endif; ?>
                     <h2 class="mt-8 text-2xl font-bold tracking-tight text-gray-900">
-                        <?php echo $pendingReferral === 'bhd' ? 'Create your free account' : 'Get started for free'; ?>
+                        <?= htmlspecialchars(t($pendingReferral === 'bhd' ? 'register.headline_bhd' : 'register.headline_default')) ?>
                     </h2>
                     <p class="mt-2 text-sm text-gray-600">
-                        Already registered?
+                        <?= htmlspecialchars(t('register.already_registered')) ?>
                         <a href="<?php echo getBasePath(); ?>login.php" class="font-semibold text-blue-600 hover:text-blue-500">
-                            Sign in
+                            <?= htmlspecialchars(t('register.sign_in_to_account')) ?>
                         </a>
-                        to your account.
                     </p>
                 </div>
 
@@ -312,7 +426,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div>
                         <span><?php echo htmlspecialchars($info); ?></span>
                         <p class="mt-2">
-                            <a href="<?php echo getBasePath(); ?>login.php" class="font-semibold underline">Go to Sign In</a>
+                            <a href="<?php echo getBasePath(); ?>login.php" class="font-semibold underline"><?= htmlspecialchars(t('register.info_go_signin')) ?></a>
                         </p>
                     </div>
                 </div>
@@ -323,96 +437,120 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="mt-6 flex items-start gap-3 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-800">
                     <i class="fa-solid fa-building flex-shrink-0 mt-0.5"></i>
                     <div>
-                        <strong><?php echo htmlspecialchars($existingCompany['name']); ?></strong> already exists with this domain.
-                        <p class="mt-1">You can request to join as an employee.</p>
+                        <strong><?php echo htmlspecialchars($existingCompany['name']); ?></strong>
+                        <?= htmlspecialchars(str_replace(':name', '', t('register.existing_company', ['name' => '']))) ?>
+                        <p class="mt-1"><?= htmlspecialchars(t('register.existing_company_join')) ?></p>
                     </div>
                 </div>
                 <?php endif; ?>
 
                 <!-- Registration Form -->
-                <form method="POST" class="mt-10 space-y-6" <?php echo $info ? 'style="display:none;"' : ''; ?>>
+                <form method="POST" id="register-form" class="mt-10 space-y-6" <?php echo $info ? 'style="display:none;"' : ''; ?>>
+                <input type="hidden" name="recaptcha_token" id="recaptcha_token" value="">
                     <?php echo csrfField(); ?>
                     <div>
                         <label for="admin_email" class="block text-sm font-medium text-gray-900">
-                            Your email address
+                            <?= htmlspecialchars(t('register.your_email')) ?>
                         </label>
                         <div class="mt-2">
-                            <input type="email" name="admin_email" id="admin_email" 
+                            <input type="email" name="admin_email" id="admin_email"
                                    value="<?php echo htmlspecialchars($_POST['admin_email'] ?? $prefillEmail); ?>"
-                                   class="form-input" 
-                                   placeholder="you@company.com" required
+                                   class="form-input"
+                                   placeholder="<?= htmlspecialchars(t('register.placeholder_email')) ?>" required
                                    onchange="checkEmailDomain()" onkeyup="checkEmailDomain()">
                         </div>
                     </div>
 
                     <div>
                         <label for="user_name" class="block text-sm font-medium text-gray-900">
-                            Your name
+                            <?= htmlspecialchars(t('register.your_name')) ?>
                         </label>
                         <div class="mt-2">
-                            <input type="text" name="user_name" id="user_name" 
+                            <input type="text" name="user_name" id="user_name"
                                    value="<?php echo htmlspecialchars($_POST['user_name'] ?? $prefillName); ?>"
-                                   class="form-input" 
-                                   placeholder="John Smith" required>
+                                   class="form-input"
+                                   placeholder="<?= htmlspecialchars(t('register.placeholder_name')) ?>" required>
                         </div>
                     </div>
 
                     <div>
                         <label for="company_name" class="block text-sm font-medium text-gray-900">
-                            Company name
+                            <?= htmlspecialchars(t('register.company_name')) ?>
                         </label>
                         <div class="mt-2">
-                            <input type="text" name="company_name" id="company_name" 
+                            <input type="text" name="company_name" id="company_name"
                                    value="<?php echo htmlspecialchars($_POST['company_name'] ?? ''); ?>"
-                                   class="form-input" 
-                                   placeholder="Acme Corporation" required>
+                                   class="form-input"
+                                   placeholder="<?= htmlspecialchars(t('register.placeholder_company')) ?>" required>
                         </div>
                     </div>
 
                     <div id="slug-wrapper">
                         <label for="company_slug" class="block text-sm font-medium text-gray-900">
-                            Company URL
+                            <?= htmlspecialchars(t('register.company_url')) ?>
                         </label>
                         <div class="mt-2 flex items-center">
-                            <span class="text-sm text-gray-500 mr-1"><?php echo $_SERVER['HTTP_HOST'] ?? 'cardify.om'; ?>/</span>
-                            <input type="text" name="company_slug" id="company_slug" 
+                            <span class="text-sm text-gray-500 mr-1"><?php echo defined('APP_HOST') ? APP_HOST : 'cardify.om'; ?>/</span>
+                            <input type="text" name="company_slug" id="company_slug"
                                    value="<?php echo htmlspecialchars($_POST['company_slug'] ?? $suggestedSlug); ?>"
-                                   class="form-input flex-1" 
-                                   placeholder="<?php echo $suggestedSlug ?: 'your-company'; ?>"
-                                   <?php echo ($isBusinessDomain && $suggestedSlug) ? '' : ''; ?>>
+                                   class="form-input flex-1"
+                                   placeholder="<?php echo htmlspecialchars($suggestedSlug ?: t('register.placeholder_slug')); ?>">
                         </div>
                         <p id="domain-info" class="mt-1.5 text-xs text-gray-500">
                             <?php if ($isBusinessDomain): ?>
-                            <i class="fa-solid fa-building text-green-500 mr-1"></i>Business domain detected. URL auto-set from your domain.
+                            <i class="fa-solid fa-building text-green-500 mr-1"></i><?= htmlspecialchars(t('register.domain_detected')) ?>
                             <?php else: ?>
-                            Choose a unique URL for your company
+                            <?= htmlspecialchars(t('register.slug_hint')) ?>
                             <?php endif; ?>
                         </p>
                     </div>
 
-                    <div>
+                    <div id="phone-field-wrapper">
                         <label for="phone" class="block text-sm font-medium text-gray-900">
-                            WhatsApp number <span class="text-gray-400 font-normal">(optional)</span>
+                            <?= htmlspecialchars(t('register.whatsapp_number')) ?>
+                            <span class="text-gray-400 font-normal" id="phone-required-hint"><?= htmlspecialchars(t('register.whatsapp_required_hint')) ?></span>
                         </label>
                         <div class="mt-2">
                             <input type="tel" name="phone" id="phone"
                                    value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
                                    class="form-input"
-                                   placeholder="+968 9XXX XXXX">
+                                   autocomplete="tel"
+                                   inputmode="tel"
+                                   placeholder="<?= htmlspecialchars(t('register.phone_placeholder')) ?>"
+                                   required>
+                            <input type="hidden" name="phone_e164" id="phone_e164" value="">
+                            <input type="hidden" name="phone_skipped" id="phone_skipped" value="0">
                         </div>
-                        <p class="mt-1.5 text-xs text-gray-500">We'll send you a welcome message on WhatsApp</p>
+                        <p class="mt-1.5 text-xs text-gray-500" id="phone-help">
+                            <?= htmlspecialchars(t('register.phone_help')) ?>
+                            <a href="#" id="phone-skip-link" class="ml-1 font-medium text-gray-700 hover:text-gray-900"><?= htmlspecialchars(t('register.phone_skip')) ?></a>
+                        </p>
                     </div>
 
                     <div>
                         <label for="password" class="block text-sm font-medium text-gray-900">
-                            Password
+                            <?= htmlspecialchars(t('register.password')) ?>
                         </label>
                         <div class="mt-2">
-                            <input type="password" name="password" id="password" 
-                                   class="form-input" 
-                                   placeholder="••••••••" required minlength="8">
+                            <input type="password" name="password" id="password"
+                                   class="form-input"
+                                   placeholder="<?= htmlspecialchars(t('register.placeholder_password')) ?>" required minlength="8">
                         </div>
-                        <p class="mt-1.5 text-xs text-gray-500">Minimum 8 characters</p>
+                        <p class="mt-1.5 text-xs text-gray-500"><?= htmlspecialchars(t('register.password_hint')) ?></p>
+                    </div>
+
+                    <div>
+                        <label for="referral_code" class="block text-sm font-medium text-gray-900">
+                            <?= htmlspecialchars(t('register.referral_code')) ?>
+                            <span class="text-gray-400 text-xs font-normal"><?= htmlspecialchars(t('register.referral_optional')) ?></span>
+                        </label>
+                        <div class="mt-2">
+                            <input type="text" name="referral_code" id="referral_code"
+                                   value="<?php echo htmlspecialchars($_POST['referral_code'] ?? $_GET['ref'] ?? ''); ?>"
+                                   class="form-input"
+                                   placeholder="<?= htmlspecialchars(t('register.referral_placeholder')) ?>"
+                                   maxlength="32">
+                        </div>
                     </div>
 
                     <div class="flex items-start gap-3">
@@ -421,16 +559,21 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600">
                         </div>
                         <label for="terms" class="text-sm text-gray-600">
-                            I accept the
-                            <a href="<?php echo getBasePath(); ?>terms.php" target="_blank" class="font-semibold text-blue-600 hover:text-blue-500">Terms and Conditions</a>
-                            and
-                            <a href="<?php echo getBasePath(); ?>privacy.php" target="_blank" class="font-semibold text-blue-600 hover:text-blue-500">Privacy Policy</a>
+                            <?= htmlspecialchars(t('register.accept_terms')) ?>
+                            <a href="<?php echo getBasePath(); ?>terms.php" target="_blank" class="font-semibold text-blue-600 hover:text-blue-500"><?= htmlspecialchars(t('register.terms')) ?></a>
+                            <?= htmlspecialchars(t('register.and')) ?>
+                            <a href="<?php echo getBasePath(); ?>privacy.php" target="_blank" class="font-semibold text-blue-600 hover:text-blue-500"><?= htmlspecialchars(t('register.privacy')) ?></a>
                         </label>
                     </div>
 
+                    <p class="text-xs text-gray-500 flex items-start gap-2">
+                        <i class="fa-solid fa-shield-halved mt-0.5 text-emerald-600"></i>
+                        <span><?= htmlspecialchars(t('register.pdpl_notice')) ?></span>
+                    </p>
+
                     <div>
                         <button type="submit" class="flex w-full justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors">
-                            Create account
+                            <?= htmlspecialchars(t('register.submit')) ?>
                             <i class="fa-solid fa-arrow-right ml-2"></i>
                         </button>
                     </div>
@@ -443,7 +586,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <div class="w-full border-t border-gray-200"></div>
                         </div>
                         <div class="relative flex justify-center text-sm font-medium">
-                            <span class="bg-white px-6 text-gray-500">What you'll get</span>
+                            <span class="bg-white px-6 text-gray-500"><?= htmlspecialchars(t('register.what_you_get')) ?></span>
                         </div>
                     </div>
 
@@ -451,19 +594,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <ul class="mt-6 space-y-3 text-sm text-gray-600">
                         <li class="flex items-center gap-3">
                             <i class="fa-solid fa-circle-check text-green-500"></i>
-                            <span>Unlimited digital business cards</span>
+                            <span><?= htmlspecialchars(t('register.feat_unlimited')) ?></span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fa-solid fa-circle-check text-green-500"></i>
-                            <span>Custom branding & templates</span>
+                            <span><?= htmlspecialchars(t('register.feat_branding')) ?></span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fa-solid fa-circle-check text-green-500"></i>
-                            <span>Team management dashboard</span>
+                            <span><?= htmlspecialchars(t('register.feat_team')) ?></span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="fa-solid fa-circle-check text-green-500"></i>
-                            <span>Free forever, no credit card required</span>
+                            <span><?= htmlspecialchars(t('register.feat_free')) ?></span>
                         </li>
                     </ul>
                 </div>
@@ -472,7 +615,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <p class="mt-10 text-center text-sm text-gray-500">
                     <a href="<?php echo getBasePath(); ?>" class="font-medium text-gray-700 hover:text-gray-900">
                         <i class="fa-solid fa-arrow-left mr-1"></i>
-                        Back to homepage
+                        <?= htmlspecialchars(t('register.back_home')) ?>
                     </a>
                 </p>
             </div>
@@ -490,19 +633,93 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="absolute inset-0 flex flex-col justify-end p-12 text-white">
                 <div class="max-w-lg">
                     <blockquote class="text-xl font-medium leading-relaxed">
-                        "Cardify transformed how we manage business cards across our organization. Setup took minutes and our team loves it."
+                        &ldquo;<?= htmlspecialchars(t('register.testimonial_quote')) ?>&rdquo;
                     </blockquote>
                     <div class="mt-6 flex items-center gap-4">
-                        <img class="h-12 w-12 rounded-full object-cover ring-2 ring-white/30" 
-                             src="<?php echo assetUrl('images/users/bonnie-green.png'); ?>" 
+                        <img class="h-12 w-12 rounded-full object-cover ring-2 ring-white/30"
+                             src="<?php echo assetUrl('images/users/bonnie-green.png'); ?>"
                              alt="">
                         <div>
-                            <p class="font-semibold">Sarah Johnson</p>
-                            <p class="text-sm text-blue-200">Head of Marketing, TechCorp</p>
+                            <p class="font-semibold"><?= htmlspecialchars(t('register.testimonial_author')) ?></p>
+                            <p class="text-sm text-blue-200"><?= htmlspecialchars(t('register.testimonial_role')) ?></p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js"></script>
+<script>
+(function () {
+    var phoneEl = document.getElementById('phone');
+    var hiddenEl = document.getElementById('phone_e164');
+    var skippedEl = document.getElementById('phone_skipped');
+    var skipLink = document.getElementById('phone-skip-link');
+    var helpEl = document.getElementById('phone-help');
+    var requiredHint = document.getElementById('phone-required-hint');
+    if (!phoneEl || !window.intlTelInput) return;
+
+    var iti = window.intlTelInput(phoneEl, {
+        initialCountry: 'om',
+        preferredCountries: ['om', 'ae', 'sa', 'qa', 'bh', 'kw'],
+        separateDialCode: true,
+        autoPlaceholder: 'aggressive',
+        utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/utils.js'
+    });
+
+    if (skipLink) {
+        skipLink.addEventListener('click', function (e) {
+            e.preventDefault();
+            phoneEl.value = '';
+            hiddenEl.value = '';
+            skippedEl.value = '1';
+            phoneEl.required = false;
+            phoneEl.disabled = true;
+            phoneEl.placeholder = 'Skipped, add later from your dashboard';
+            if (requiredHint) { requiredHint.textContent = '(skipped, you can add it later)'; }
+            if (helpEl) { helpEl.textContent = "We'll prompt you again from your dashboard. No phone, no WA messages."; }
+        });
+    }
+
+    var form = phoneEl.closest('form');
+    if (form) {
+        form.addEventListener('submit', function () {
+            if (skippedEl.value === '1') { hiddenEl.value = ''; return; }
+            try {
+                if (iti.isValidNumber()) {
+                    hiddenEl.value = iti.getNumber();
+                } else if (phoneEl.value.trim() !== '') {
+                    // Best effort, let server-side normalization decide.
+                    hiddenEl.value = iti.getNumber() || phoneEl.value.trim();
+                } else {
+                    hiddenEl.value = '';
+                }
+            } catch (err) {
+                hiddenEl.value = phoneEl.value.trim();
+            }
+        });
+    }
+})();
+</script>
+<?php @include __DIR__ . '/../views/partials/trust_logo_strip.php'; ?>
+<?php require_once INCLUDES_DIR . '/Recaptcha.php'; if (Recaptcha::isConfigured()): $siteKey = Recaptcha::siteKey(); ?>
+<script src="https://www.google.com/recaptcha/api.js?render=<?= htmlspecialchars($siteKey) ?>"></script>
+<script>
+(function(){
+    var form = document.getElementById('register-form');
+    if (!form) return;
+    form.addEventListener('submit', function(e){
+        if (form.dataset.captchaDone === '1') return;
+        e.preventDefault();
+        grecaptcha.ready(function(){
+            grecaptcha.execute(<?= json_encode($siteKey) ?>, {action: 'signup'}).then(function(token){
+                document.getElementById('recaptcha_token').value = token;
+                form.dataset.captchaDone = '1';
+                form.submit();
+            });
+        });
+    });
+})();
+</script>
+<?php endif; ?>
 <?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>

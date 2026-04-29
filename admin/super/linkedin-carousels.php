@@ -1,6 +1,6 @@
 <?php
 /**
- * Super Admin — LinkedIn Carousels
+ * Super Admin, LinkedIn Carousels
  * Generate, copy, and post the daily LinkedIn carousels.
  * Cron auto-generates the next due post at 9 AM Oman time.
  * This UI gives Ali the commentary + PDF + mark-posted tracking for the

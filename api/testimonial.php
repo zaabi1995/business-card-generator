@@ -19,6 +19,11 @@ try {
         echo json_encode(['success' => false, 'error' => 'Method not allowed']);
         exit;
     }
+    if (!isSameOriginRequest()) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Cross-origin POST blocked']);
+        exit;
+    }
 
     $employeeId = trim($_POST['employee_id'] ?? '');
     $name = trim($_POST['name'] ?? '');
@@ -66,15 +71,15 @@ try {
         exit;
     }
 
-    // Client IP via shared helper (Codex round-2 Finding 3 — match writes).
+    // Client IP via shared helper (Codex round-2 Finding 3, match writes).
     $ip = getClientIp();
-    if (!CardSections::canSubmitTestimonial($ip)) {
+    if (!CardSections::canSubmitTestimonial($ip, $employeeId)) {
         http_response_code(429);
         echo json_encode(['success' => false, 'error' => 'Too many submissions, try again later']);
         exit;
     }
 
-    // Optional photo upload — reuses CardSections::handleImageUpload (DRY)
+    // Optional photo upload, reuses CardSections::handleImageUpload (DRY)
     $photoPath = null;
     if (!empty($_FILES['photo']) && !empty($_FILES['photo']['name'])) {
         $err = null;
@@ -112,7 +117,7 @@ try {
         $toEmail = $employee['email'] ?? '';
         if ($toEmail) {
             $ownerName = $employee['name_en'] ?? ($employee['name'] ?? 'there');
-            $subject = 'New testimonial pending review — ' . $name;
+            $subject = 'New testimonial pending review, ' . $name;
             $stars = $rating ? str_repeat('★', $rating) . str_repeat('☆', 5 - $rating) : '(no rating)';
             $lines = [];
             $lines[] = '<p>Hi ' . htmlspecialchars($ownerName) . ',</p>';

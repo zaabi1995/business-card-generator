@@ -25,7 +25,15 @@ try {
     $companySlug = trim(urldecode($companySlug));
     $employeeEmail = trim(urldecode($employeeEmail));
     $employeeEmail = preg_replace('/\.vcf$/i', '', $employeeEmail);
-    
+
+    // On a tenant subdomain, slug comes from $host.
+    if ($companySlug === '') {
+        require_once INCLUDES_DIR . '/TenantHost.php';
+        if (TenantHost::isTenantHost()) {
+            $companySlug = (string) TenantHost::slug();
+        }
+    }
+
     if (empty($companySlug) || empty($employeeEmail)) {
         throw new Exception('Missing parameters');
     }
@@ -36,8 +44,42 @@ try {
         throw new Exception('Company not found: ' . $companySlug);
     }
     
-    // Find employee
+    // Find employee; fall back to the latest card_request for this email so
+    // the QR on a watermarked preview resolves to a real vCard even before
+    // the admin approves the request.
     $employee = findEmployeeByEmail($employeeEmail, $company['id']);
+    if (!$employee) {
+        $db = Database::getInstance();
+        $req = $db->fetchOne(
+            "SELECT * FROM card_requests
+              WHERE company_id = :cid AND LOWER(email) = LOWER(:em)
+                AND status IN ('pending','approved')
+              ORDER BY submitted_at DESC LIMIT 1",
+            ['cid' => $company['id'], 'em' => $employeeEmail]
+        );
+        if ($req) {
+            $employee = [
+                'id'          => $req['id'],
+                'email'       => $req['email'],
+                'name_en'     => $req['name_en']     ?? '',
+                'name_ar'     => $req['name_ar']     ?? '',
+                'position_en' => $req['position_en'] ?? '',
+                'position_ar' => $req['position_ar'] ?? '',
+                'phone'       => $req['phone']       ?? '',
+                'phone_ar'    => $req['phone_ar']    ?? '',
+                'mobile'      => $req['mobile']      ?? '',
+                'mobile_ar'   => $req['mobile_ar']   ?? '',
+                'website'     => $req['website']     ?? '',
+                'website_ar'  => $req['website_ar']  ?? '',
+                'address_en'  => $req['address_en']  ?? '',
+                'address_ar'  => $req['address_ar']  ?? '',
+                'address_2_en'=> $req['address_2_en']?? '',
+                'address_2_ar'=> $req['address_2_ar']?? '',
+                'company_en'  => $req['company_en']  ?? $company['name'] ?? '',
+                'company_ar'  => $req['company_ar']  ?? '',
+            ];
+        }
+    }
     if (!$employee) {
         throw new Exception('Employee not found: ' . $employeeEmail);
     }

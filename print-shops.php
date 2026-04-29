@@ -38,8 +38,8 @@ try {
     $countries = $stmt->fetchAll(PDO::FETCH_COLUMN);
 } catch (PDOException $e) {}
 
-$pageTitle = 'Print Shops — Order Business Cards from Local Omani Print Shops';
-$pageDescription = 'Browse verified print shops across Oman to order professional business cards. Compare prices, delivery times, and paper options. Order directly from Cardify.';
+$pageTitle = t('printshops.page_title');
+$pageDescription = t('printshops.page_desc');
 $canonicalUrl = 'https://cardify.om/print-shops';
 $bodyClass = 'bg-gray-50';
 $showNavigation = true;
@@ -48,15 +48,15 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
 <div class="pt-24 pb-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         <!-- Header -->
         <div class="text-center mb-12">
-            <h1 class="text-4xl font-bold text-gray-900 mb-4">Print Shop Marketplace</h1>
+            <h1 class="text-4xl font-bold text-gray-900 mb-4"><?= htmlspecialchars(t('printshops.h1')) ?></h1>
             <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-                Find trusted print shops for your business cards. Compare pricing, turnaround times, and services.
+                <?= htmlspecialchars(t('printshops.hero_sub')) ?>
             </p>
         </div>
-        
+
         <!-- Search & Filters -->
         <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
             <form method="get" class="flex flex-wrap items-center gap-4">
@@ -65,46 +65,46 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
                         <input type="text" name="q" value="<?php echo sanitize($search); ?>"
                                class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                               placeholder="Search print shops...">
+                               placeholder="<?= htmlspecialchars(t('printshops.search_placeholder')) ?>">
                     </div>
                 </div>
-                
+
                 <select name="country" class="w-full sm:w-auto px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 bg-white">
-                    <option value="">All Countries</option>
+                    <option value=""><?= htmlspecialchars(t('printshops.all_countries')) ?></option>
                     <?php foreach ($countries as $c): ?>
                     <option value="<?php echo sanitize($c); ?>" <?php echo $country === $c ? 'selected' : ''; ?>>
                         <?php echo sanitize($c); ?>
                     </option>
                     <?php endforeach; ?>
                 </select>
-                
+
                 <label class="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
                     <input type="checkbox" name="express" <?php echo $expressOnly ? 'checked' : ''; ?> class="rounded text-blue-600">
-                    <span class="text-sm text-gray-700">Express Available</span>
+                    <span class="text-sm text-gray-700"><?= htmlspecialchars(t('printshops.express_available')) ?></span>
                 </label>
-                
+
                 <label class="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
                     <input type="checkbox" name="verified" <?php echo $verifiedOnly ? 'checked' : ''; ?> class="rounded text-blue-600">
-                    <span class="text-sm text-gray-700">Verified Only</span>
+                    <span class="text-sm text-gray-700"><?= htmlspecialchars(t('printshops.verified_only')) ?></span>
                 </label>
-                
+
                 <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
-                    Search
+                    <?= htmlspecialchars(t('printshops.search_btn')) ?>
                 </button>
             </form>
         </div>
-        
+
         <!-- Featured Shops -->
         <?php if (!empty($featuredShops) && empty($search)): ?>
         <div class="mb-12">
             <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <i class="fa-solid fa-star text-amber-500"></i>
-                Featured Print Shops
+                <?= htmlspecialchars(t('printshops.featured_h2')) ?>
             </h2>
             <div class="grid md:grid-cols-3 gap-6">
                 <?php foreach ($featuredShops as $shop): ?>
-                <?php 
-                $pricing = json_decode($shop['pricing'], true); 
+                <?php
+                $pricing = json_decode($shop['pricing'], true);
                 $shopCurrency = $shop['currency'] ?? 'USD';
                 ?>
                 <div class="bg-white rounded-2xl border-2 border-amber-200 shadow-lg overflow-hidden hover:shadow-xl transition-all">
@@ -127,25 +127,25 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                 <p class="text-gray-500"><?php echo sanitize($shop['city']); ?>, <?php echo sanitize($shop['country']); ?></p>
                             </div>
                         </div>
-                        
+
                         <?php if ($shop['description']): ?>
                         <p class="text-gray-600 text-sm mb-4 line-clamp-2"><?php echo sanitize($shop['description']); ?></p>
                         <?php endif; ?>
-                        
+
                         <div class="flex items-center justify-between text-sm">
                             <span class="text-gray-500">
                                 <i class="fa-solid fa-clock mr-1"></i>
-                                <?php echo $shop['turnaround_days']; ?> days
+                                <?= htmlspecialchars(t('printshops.days', ['n' => (string)$shop['turnaround_days']])) ?>
                             </span>
                             <span class="font-bold text-amber-600">
-                                From <?php echo Currency::formatHtml($pricing['per_card'] ?? 0.10, $shopCurrency, 'sm'); ?>/card
+                                <?= htmlspecialchars(t('printshops.from_per_card', ['price' => strip_tags(Currency::formatHtml($pricing['per_card'] ?? 0.10, $shopCurrency, 'sm'))])) ?>
                             </span>
                         </div>
                     </div>
                     <div class="px-6 py-4 bg-amber-50 border-t border-amber-100">
-                        <a href="<?php echo getBasePath(); ?>admin/order_print.php?shop=<?php echo $shop['id']; ?>" 
+                        <a href="<?php echo getBasePath(); ?>admin/order_print.php?shop=<?php echo $shop['id']; ?>"
                            class="block w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-center rounded-lg font-medium transition-colors">
-                            Order Now
+                            <?= htmlspecialchars(t('printshops.order_now')) ?>
                         </a>
                     </div>
                 </div>
@@ -153,30 +153,30 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
         </div>
         <?php endif; ?>
-        
+
         <!-- All Shops -->
         <div>
             <h2 class="text-2xl font-bold text-gray-900 mb-6">
-                <?php echo $search ? 'Search Results' : 'All Print Shops'; ?>
-                <span class="text-lg font-normal text-gray-500">(<?php echo count($shops); ?>)</span>
+                <?= htmlspecialchars($search ? t('printshops.results_title') : t('printshops.all_title')) ?>
+                <span class="text-lg font-normal text-gray-500"><?= htmlspecialchars(t('printshops.count_label', ['n' => (string)count($shops)])) ?></span>
             </h2>
-            
+
             <?php if (empty($shops)): ?>
             <div class="bg-white rounded-2xl p-12 text-center">
                 <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fa-solid fa-store text-gray-400 text-3xl"></i>
                 </div>
-                <h3 class="text-xl font-medium text-gray-900 mb-2">No Print Shops Found</h3>
-                <p class="text-gray-500 mb-6">Try adjusting your search filters</p>
+                <h3 class="text-xl font-medium text-gray-900 mb-2"><?= htmlspecialchars(t('printshops.none_h3')) ?></h3>
+                <p class="text-gray-500 mb-6"><?= htmlspecialchars(t('printshops.none_body')) ?></p>
                 <a href="print-shops.php" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-                    Clear Filters
+                    <?= htmlspecialchars(t('printshops.clear_filters')) ?>
                 </a>
             </div>
             <?php else: ?>
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <?php foreach ($shops as $shop): ?>
-                <?php 
-                $pricing = json_decode($shop['pricing'], true); 
+                <?php
+                $pricing = json_decode($shop['pricing'], true);
                 $shopCurrency = $shop['currency'] ?? 'USD';
                 ?>
                 <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all">
@@ -199,45 +199,45 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                 <p class="text-sm text-gray-500"><?php echo sanitize($shop['city']); ?>, <?php echo sanitize($shop['country']); ?></p>
                             </div>
                         </div>
-                        
+
                         <div class="space-y-2 text-sm mb-4">
                             <div class="flex items-center justify-between">
-                                <span class="text-gray-500">Base Price</span>
-                                <span class="font-semibold text-gray-900"><?php echo Currency::formatHtml($pricing['per_card'] ?? 0.10, $shopCurrency, 'sm'); ?>/card</span>
+                                <span class="text-gray-500"><?= htmlspecialchars(t('printshops.base_price')) ?></span>
+                                <span class="font-semibold text-gray-900"><?= htmlspecialchars(t('printshops.per_card', ['price' => strip_tags(Currency::formatHtml($pricing['per_card'] ?? 0.10, $shopCurrency, 'sm'))])) ?></span>
                             </div>
                             <div class="flex items-center justify-between">
-                                <span class="text-gray-500">Turnaround</span>
-                                <span class="font-semibold text-gray-900"><?php echo $shop['turnaround_days']; ?> days</span>
+                                <span class="text-gray-500"><?= htmlspecialchars(t('printshops.turnaround')) ?></span>
+                                <span class="font-semibold text-gray-900"><?= htmlspecialchars(t('printshops.days', ['n' => (string)$shop['turnaround_days']])) ?></span>
                             </div>
                             <div class="flex items-center justify-between">
-                                <span class="text-gray-500">Min Order</span>
-                                <span class="font-semibold text-gray-900"><?php echo $shop['min_order_quantity']; ?> cards</span>
+                                <span class="text-gray-500"><?= htmlspecialchars(t('printshops.min_order')) ?></span>
+                                <span class="font-semibold text-gray-900"><?= htmlspecialchars(t('printshops.cards_count', ['n' => (string)$shop['min_order_quantity']])) ?></span>
                             </div>
                         </div>
-                        
+
                         <div class="flex flex-wrap gap-2 mb-4">
                             <?php if ($shop['express_available']): ?>
                             <span class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                                <i class="fa-solid fa-bolt"></i> Express
+                                <i class="fa-solid fa-bolt"></i> <?= htmlspecialchars(t('printshops.badge_express')) ?>
                             </span>
                             <?php endif; ?>
-                            <?php 
+                            <?php
                             $paperTypes = json_decode($shop['paper_types'], true) ?? [];
-                            foreach (array_slice($paperTypes, 0, 3) as $paper): 
+                            foreach (array_slice($paperTypes, 0, 3) as $paper):
                             ?>
                             <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"><?php echo ucfirst($paper); ?></span>
                             <?php endforeach; ?>
                         </div>
                     </div>
-                    
+
                     <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center gap-3">
-                        <a href="<?php echo getBasePath(); ?>admin/order_print.php?shop=<?php echo $shop['id']; ?>" 
+                        <a href="<?php echo getBasePath(); ?>admin/order_print.php?shop=<?php echo $shop['id']; ?>"
                            class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-center rounded-lg font-medium transition-colors">
-                            Select Shop
+                            <?= htmlspecialchars(t('printshops.select_shop')) ?>
                         </a>
                         <?php if ($shop['website']): ?>
-                        <a href="<?php echo sanitize($shop['website']); ?>" target="_blank" 
-                           class="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition-colors" title="Visit website">
+                        <a href="<?php echo sanitize($shop['website']); ?>" target="_blank"
+                           class="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition-colors" title="<?= t('printshops.visit_website') ?>">
                             <i class="fa-solid fa-external-link"></i>
                         </a>
                         <?php endif; ?>
@@ -247,17 +247,17 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
             <?php endif; ?>
         </div>
-        
+
         <!-- CTA -->
         <div class="mt-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 md:p-12 text-center text-white">
-            <h2 class="text-3xl font-bold mb-4">Are You a Print Shop?</h2>
+            <h2 class="text-3xl font-bold mb-4"><?= htmlspecialchars(t('printshops.cta_h2')) ?></h2>
             <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-                Join our marketplace and receive business card orders from companies using Cardify.
+                <?= htmlspecialchars(t('printshops.cta_body')) ?>
             </p>
-            <a href="<?php echo getBasePath(); ?>printshop/register.php" 
+            <a href="<?php echo getBasePath(); ?>printshop/register.php"
                class="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 rounded-xl font-semibold hover:bg-blue-50 transition-colors">
                 <i class="fa-solid fa-store"></i>
-                Register Your Print Shop
+                <?= htmlspecialchars(t('printshops.cta_btn')) ?>
             </a>
         </div>
     </div>

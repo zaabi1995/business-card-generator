@@ -6,7 +6,7 @@
  * `employee_custom_domains`, serve that employee's digital card.
  * Otherwise return false so the normal routing continues unchanged.
  *
- * This file MUST be safe to include unconditionally — it never affects
+ * This file MUST be safe to include unconditionally, it never affects
  * traffic on cardify.om itself.
  */
 
@@ -21,7 +21,7 @@ require_once __DIR__ . '/includes/CustomDomain.php';
 
     $host = CustomDomain::normalizeHost($host);
 
-    // Bail for primary hosts — never match.
+    // Bail for primary hosts, never match.
     if (in_array($host, CustomDomain::primaryHosts(), true)) return;
 
     // Only run if DB is available

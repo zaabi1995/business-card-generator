@@ -467,3 +467,311 @@
   color: #111827;
 }
 .cardify-plan-cta--on-dark:hover { background: #f3f4f6; }
+
+/* ================================================================
+   LOGO LIBRARY, download buttons + meta actions (BHD design language)
+   Teal accent #009bc1 across all primary CTAs. Neutrals for secondary.
+   ================================================================ */
+.cardify-logo-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+@media (min-width: 768px) {
+  .cardify-logo-downloads { justify-content: flex-start; }
+  .cardify-logo-downloads.is-rtl { justify-content: flex-end; }
+}
+
+.cardify-dl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  transition: border-color .15s ease, color .15s ease, background .15s ease, box-shadow .15s ease, transform .1s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.cardify-dl-btn i {
+  font-size: 11px;
+  color: #9ca3af;
+  transition: color .15s ease;
+}
+.cardify-dl-btn:hover {
+  border-color: #009bc1;
+  color: #007fa0;
+  background: #f0fafd;
+}
+.cardify-dl-btn:hover i { color: #009bc1; }
+.cardify-dl-btn:active { transform: translateY(1px); }
+.cardify-dl-btn:focus-visible {
+  outline: none;
+  border-color: #009bc1;
+  box-shadow: 0 0 0 3px rgba(0, 155, 193, 0.2);
+}
+
+.cardify-dl-btn--primary {
+  background: #009bc1;
+  color: #ffffff;
+  border-color: #009bc1;
+  box-shadow: 0 4px 12px rgba(0, 155, 193, 0.28);
+}
+.cardify-dl-btn--primary i { color: rgba(255, 255, 255, 0.85); }
+.cardify-dl-btn--primary:hover {
+  background: #007fa0;
+  border-color: #007fa0;
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(0, 155, 193, 0.38);
+}
+.cardify-dl-btn--primary:hover i { color: #ffffff; }
+
+/* Secondary meta row: "Claim it" + "Report / takedown" */
+.cardify-logo-meta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+@media (min-width: 768px) {
+  .cardify-logo-meta-actions { justify-content: flex-start; }
+  .cardify-logo-meta-actions.is-rtl { justify-content: flex-end; }
+}
+.cardify-logo-meta-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color .15s ease;
+}
+.cardify-logo-meta-link i { font-size: 10px; opacity: .75; }
+.cardify-logo-meta-link:hover { color: #009bc1; }
+.cardify-logo-meta-link--flag { color: #9ca3af; }
+.cardify-logo-meta-link--flag:hover { color: #e11d48; }
+.cardify-logo-meta-sep { color: #d1d5db; user-select: none; }
+
+/* =====================================================
+   BHD brand palette, global override
+   Maps the generic blue utility classes rendered site-wide onto the
+   BHD teal system (#009bc1). One source of truth for brand accents.
+   Pages that need the old indigo/blue should use explicit hex values.
+   ===================================================== */
+
+:root {
+    --bhd-teal-50:  #e6f7fb;
+    --bhd-teal-100: #b8e7f1;
+    --bhd-teal-200: #8ad6e7;
+    --bhd-teal-300: #5cc5dc;
+    --bhd-teal-400: #2eb4d2;
+    --bhd-teal-500: #009bc1;  /* brand */
+    --bhd-teal-600: #0284a1;
+    --bhd-teal-700: #036e87;
+    --bhd-teal-800: #04586c;
+    --bhd-teal-900: #063f4e;
+}
+
+/* Solid backgrounds (brand CTAs) */
+.bg-blue-600 { background-color: var(--bhd-teal-500) !important; }
+.bg-blue-700 { background-color: var(--bhd-teal-600) !important; }
+.bg-blue-500 { background-color: var(--bhd-teal-400) !important; }
+.bg-indigo-600, .bg-indigo-700 { background-color: var(--bhd-teal-600) !important; }
+.hover\:bg-blue-700:hover { background-color: var(--bhd-teal-600) !important; }
+.hover\:bg-blue-600:hover { background-color: var(--bhd-teal-500) !important; }
+.hover\:bg-blue-500:hover { background-color: var(--bhd-teal-400) !important; }
+.hover\:bg-blue-50:hover { background-color: var(--bhd-teal-50) !important; }
+
+/* Tints (badges, soft pills) */
+.bg-blue-50  { background-color: var(--bhd-teal-50)  !important; }
+.bg-blue-100 { background-color: var(--bhd-teal-100) !important; }
+
+/* Text accents */
+.text-blue-600, .text-blue-700 { color: var(--bhd-teal-500) !important; }
+.text-blue-500 { color: var(--bhd-teal-400) !important; }
+.text-indigo-600, .text-indigo-700 { color: var(--bhd-teal-600) !important; }
+.hover\:text-blue-600:hover, .hover\:text-blue-700:hover { color: var(--bhd-teal-500) !important; }
+.hover\:text-blue-500:hover { color: var(--bhd-teal-400) !important; }
+
+/* Borders + focus rings */
+.border-blue-600, .border-blue-500 { border-color: var(--bhd-teal-500) !important; }
+.border-blue-100, .border-blue-200 { border-color: var(--bhd-teal-100) !important; }
+.ring-blue-600, .ring-blue-500 { --tw-ring-color: var(--bhd-teal-500) !important; }
+.focus\:ring-blue-600:focus { --tw-ring-color: var(--bhd-teal-500) !important; }
+.focus\:border-blue-600:focus { border-color: var(--bhd-teal-500) !important; }
+.focus-visible\:outline-blue-600:focus-visible { outline-color: var(--bhd-teal-500) !important; }
+
+/* Gradient stops, used in hero CTAs (from-blue-600 to-indigo-700 etc) */
+.from-blue-600  { --tw-gradient-from: var(--bhd-teal-500) var(--tw-gradient-from-position) !important; }
+.from-blue-700  { --tw-gradient-from: var(--bhd-teal-600) var(--tw-gradient-from-position) !important; }
+.from-blue-800  { --tw-gradient-from: var(--bhd-teal-700) var(--tw-gradient-from-position) !important; }
+.from-blue-900  { --tw-gradient-from: var(--bhd-teal-800) var(--tw-gradient-from-position) !important; }
+.from-indigo-600 { --tw-gradient-from: var(--bhd-teal-600) var(--tw-gradient-from-position) !important; }
+.from-indigo-700 { --tw-gradient-from: var(--bhd-teal-700) var(--tw-gradient-from-position) !important; }
+.to-blue-600    { --tw-gradient-to:   var(--bhd-teal-500) var(--tw-gradient-to-position)   !important; }
+.to-blue-700    { --tw-gradient-to:   var(--bhd-teal-600) var(--tw-gradient-to-position)   !important; }
+.to-blue-800    { --tw-gradient-to:   var(--bhd-teal-700) var(--tw-gradient-to-position)   !important; }
+.to-blue-900    { --tw-gradient-to:   var(--bhd-teal-800) var(--tw-gradient-to-position)   !important; }
+.to-indigo-600  { --tw-gradient-to:   var(--bhd-teal-600) var(--tw-gradient-to-position)   !important; }
+.to-indigo-700  { --tw-gradient-to:   var(--bhd-teal-700) var(--tw-gradient-to-position)   !important; }
+.via-blue-700   { --tw-gradient-via:  var(--bhd-teal-600) var(--tw-gradient-via-position,50%)  !important; }
+.via-blue-800   { --tw-gradient-via:  var(--bhd-teal-700) var(--tw-gradient-via-position,50%)  !important; }
+.via-indigo-600 { --tw-gradient-via:  var(--bhd-teal-600) var(--tw-gradient-via-position,50%)  !important; }
+
+/* Shadow tints */
+.shadow-blue-600\/30 { --tw-shadow-color: rgba(0, 155, 193, 0.30) !important; --tw-shadow: var(--tw-shadow-colored); }
+.shadow-blue-600\/40 { --tw-shadow-color: rgba(0, 155, 193, 0.40) !important; --tw-shadow: var(--tw-shadow-colored); }
+
+/* OMR currency, DM Mono per BHD design language */
+.omr, [data-currency="OMR"] {
+    font-family: 'DM Mono', 'Courier New', monospace;
+    font-feature-settings: 'tnum' 1;
+}
+
+/* ------------------------------------------------------------------
+   RTL / Arabic support
+   Applied via html[dir="rtl"] set by I18n layer.
+   Uses logical properties where possible to avoid per-selector flips.
+-------------------------------------------------------------------*/
+html[dir="rtl"] {
+    font-family: "IBM Plex Sans Arabic", "Inter", "Segoe UI", Tahoma, sans-serif;
+}
+html[dir="rtl"] body {
+    letter-spacing: 0;
+}
+html[dir="rtl"] .text-left  { text-align: right !important; }
+html[dir="rtl"] .text-right { text-align: left  !important; }
+
+/* Tailwind margin/padding flips for common utility names.
+   Only pairs we actually use elsewhere in the codebase. */
+html[dir="rtl"] .ml-1 { margin-left: 0 !important; margin-right: 0.25rem !important; }
+html[dir="rtl"] .ml-2 { margin-left: 0 !important; margin-right: 0.5rem  !important; }
+html[dir="rtl"] .ml-3 { margin-left: 0 !important; margin-right: 0.75rem !important; }
+html[dir="rtl"] .ml-4 { margin-left: 0 !important; margin-right: 1rem    !important; }
+html[dir="rtl"] .ml-6 { margin-left: 0 !important; margin-right: 1.5rem  !important; }
+html[dir="rtl"] .mr-1 { margin-right: 0 !important; margin-left: 0.25rem !important; }
+html[dir="rtl"] .mr-2 { margin-right: 0 !important; margin-left: 0.5rem  !important; }
+html[dir="rtl"] .mr-3 { margin-right: 0 !important; margin-left: 0.75rem !important; }
+html[dir="rtl"] .mr-4 { margin-right: 0 !important; margin-left: 1rem    !important; }
+html[dir="rtl"] .mr-6 { margin-right: 0 !important; margin-left: 1.5rem  !important; }
+html[dir="rtl"] .pl-2 { padding-left: 0 !important; padding-right: 0.5rem  !important; }
+html[dir="rtl"] .pl-3 { padding-left: 0 !important; padding-right: 0.75rem !important; }
+html[dir="rtl"] .pl-4 { padding-left: 0 !important; padding-right: 1rem    !important; }
+html[dir="rtl"] .pr-2 { padding-right: 0 !important; padding-left: 0.5rem  !important; }
+html[dir="rtl"] .pr-3 { padding-right: 0 !important; padding-left: 0.75rem !important; }
+html[dir="rtl"] .pr-4 { padding-right: 0 !important; padding-left: 1rem    !important; }
+
+/* Form icons that sit on one side, flip positioning.
+   Scope to .absolute only: otherwise these rules hit elements with
+   `fixed top-0 left-0 right-0` (like the main navbar), stripping BOTH
+   inset values to auto and collapsing the nav to content-width. */
+html[dir="rtl"] .absolute.left-0,
+html[dir="rtl"] .absolute.left-2,
+html[dir="rtl"] .absolute.left-3,
+html[dir="rtl"] .absolute.left-4   { right: 0; left: auto !important; }
+html[dir="rtl"] .absolute.right-0,
+html[dir="rtl"] .absolute.right-2,
+html[dir="rtl"] .absolute.right-3,
+html[dir="rtl"] .absolute.right-4  { left:  0; right: auto !important; }
+
+/* FontAwesome icons that use rotation for direction, flip arrows */
+html[dir="rtl"] .fa-arrow-right::before { content: "\f060"; } /* left */
+html[dir="rtl"] .fa-arrow-left::before  { content: "\f061"; } /* right */
+html[dir="rtl"] .fa-chevron-right::before { content: "\f053"; }
+html[dir="rtl"] .fa-chevron-left::before  { content: "\f054"; }
+html[dir="rtl"] .fa-angle-right::before { content: "\f104"; }
+html[dir="rtl"] .fa-angle-left::before  { content: "\f105"; }
+
+/* Borders commonly used on left/right */
+html[dir="rtl"] .border-l { border-left: 0 !important; border-right-width: 1px !important; }
+html[dir="rtl"] .border-r { border-right: 0 !important; border-left-width:  1px !important; }
+
+/* ------------------------------------------------------------------
+   Language switcher component
+   <a class="cardify-lang-switch" href="?lang=ar">العربية</a>
+-------------------------------------------------------------------*/
+.cardify-lang-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #475569;
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    text-decoration: none;
+    transition: all 150ms ease-out;
+    line-height: 1;
+}
+.cardify-lang-switch:hover {
+    color: #009bc1;
+    border-color: #009bc1;
+    background: rgba(0, 155, 193, 0.05);
+}
+.cardify-lang-switch i,
+.cardify-lang-switch svg { font-size: 0.8125rem; opacity: 0.7; }
+html[dir="rtl"] .cardify-lang-switch { font-family: "IBM Plex Sans Arabic", "Inter", sans-serif; }
+
+/* Currency pill, matches the lang switcher so the header CTAs read as a set. */
+.cardify-currency-pill {
+    color: #475569;
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    line-height: 1;
+    transition: all 150ms ease-out;
+}
+.cardify-currency-pill:hover {
+    color: #009bc1;
+    border-color: #009bc1;
+    background: rgba(0, 155, 193, 0.05);
+}
+html[dir="rtl"] .cardify-currency-pill { font-family: "IBM Plex Sans Arabic", "Inter", sans-serif; }
+
+/* OMR in Arabic uses the Arabic glyphs, not DM Mono */
+html[dir="rtl"] .omr,
+html[dir="rtl"] [data-currency="OMR"] {
+    font-family: "IBM Plex Sans Arabic", "Inter", sans-serif;
+}
+
+/* Extended RTL utility flips, covers patterns spotted during audit */
+html[dir="rtl"] .justify-start { justify-content: flex-end !important; }
+html[dir="rtl"] .justify-end   { justify-content: flex-start !important; }
+html[dir="rtl"] .items-start   { align-items: flex-start; } /* vertical, no flip */
+html[dir="rtl"] .float-left    { float: right !important; }
+html[dir="rtl"] .float-right   { float: left  !important; }
+
+/* space-x-N, Tailwind emits margin-left on children; flip to margin-right */
+html[dir="rtl"] .space-x-1 > :not([hidden]) ~ :not([hidden]) { margin-right: 0.25rem !important; margin-left: 0 !important; }
+html[dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]) { margin-right: 0.5rem  !important; margin-left: 0 !important; }
+html[dir="rtl"] .space-x-3 > :not([hidden]) ~ :not([hidden]) { margin-right: 0.75rem !important; margin-left: 0 !important; }
+html[dir="rtl"] .space-x-4 > :not([hidden]) ~ :not([hidden]) { margin-right: 1rem    !important; margin-left: 0 !important; }
+html[dir="rtl"] .space-x-6 > :not([hidden]) ~ :not([hidden]) { margin-right: 1.5rem  !important; margin-left: 0 !important; }
+
+/* Positional utilities for dropdowns and menus */
+html[dir="rtl"] .origin-top-right { transform-origin: top left !important; }
+html[dir="rtl"] .origin-top-left  { transform-origin: top right !important; }
+
+/* Rounded corners, flip left/right pairs */
+html[dir="rtl"] .rounded-l-lg { border-top-right-radius: 0.5rem !important; border-bottom-right-radius: 0.5rem !important; border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; }
+html[dir="rtl"] .rounded-r-lg { border-top-left-radius:  0.5rem !important; border-bottom-left-radius:  0.5rem !important; border-top-right-radius:0 !important; border-bottom-right-radius:0 !important; }
+html[dir="rtl"] .rounded-l-md { border-top-right-radius: 0.375rem !important; border-bottom-right-radius: 0.375rem !important; border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; }
+html[dir="rtl"] .rounded-r-md { border-top-left-radius:  0.375rem !important; border-bottom-left-radius:  0.375rem !important; border-top-right-radius:0 !important; border-bottom-right-radius:0 !important; }
+
+/* Tables, flip text alignment of numeric cells only when authored as text-right */
+html[dir="rtl"] td.text-right, html[dir="rtl"] th.text-right { text-align: left !important; }
+html[dir="rtl"] td.text-left,  html[dir="rtl"] th.text-left  { text-align: right !important; }
+
+/* Breadcrumbs and separators that use chevrons, swap direction */
+html[dir="rtl"] .fa-chevron-right.breadcrumb-sep { transform: scaleX(-1); }

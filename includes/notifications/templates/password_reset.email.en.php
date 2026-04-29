@@ -12,6 +12,6 @@ $body = <<<HTML
     <a href="{$resetUrl}" style="background:#1e40af;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;font-weight:600;">Reset password</a>
   </p>
   <p style="color:#6b7280;font-size:14px;">If you did not request this, you can safely ignore this email.</p>
-  <p style="color:#6b7280;font-size:14px;">— The Cardify Team</p>
+  <p style="color:#6b7280;font-size:14px;">, The Cardify Team</p>
 </div>
 HTML;

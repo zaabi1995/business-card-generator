@@ -17,15 +17,22 @@ if (!class_exists('Impersonation')) {
  */
 function getAdminBasePath() {
     // Check if we're in company admin context
+    // On the tenant subdomain (ohb.cardify.om) `/admin/` is the natural
+    // root; no slug prefix needed. COMPANY_ADMIN_BASE was minted with a
+    // full subdomain URL in company_admin.php, which is also valid for
+    // cross-host links so we still honor it when defined.
+    if (class_exists('TenantHost') && TenantHost::isTenantHost()) {
+        return '/admin/';
+    }
+
     if (defined('COMPANY_ADMIN_BASE')) {
         return COMPANY_ADMIN_BASE;
     }
-    
-    // Check session for company slug
+
     if (!empty($_SESSION['company_slug'])) {
-        return getBasePath() . $_SESSION['company_slug'] . '/admin/';
+        return getTenantUrl($_SESSION['company_slug'], '/admin/');
     }
-    
+
     // Default to global admin
     return getBasePath() . 'admin/';
 }
@@ -75,6 +82,7 @@ function getAdminNavItems() {
             ['name' => 'LinkedIn Carousels', 'icon' => 'fa-brands fa-linkedin', 'url' => $superBasePath . 'linkedin-carousels.php', 'key' => 'linkedin-carousels'],
             ['name' => 'Plans', 'icon' => 'fa-solid fa-tags', 'url' => $basePath . 'plans' . $ext, 'key' => 'plans'],
             ['name' => 'Subscriptions', 'icon' => 'fa-solid fa-credit-card', 'url' => $superBasePath . 'subscriptions.php', 'key' => 'subscriptions'],
+            ['name' => 'Referrals', 'icon' => 'fa-solid fa-share-nodes', 'url' => $superBasePath . 'referrals.php', 'key' => 'referrals'],
             ['name' => 'Audit Logs', 'icon' => 'fa-solid fa-clipboard-list', 'url' => $basePath . 'audit-logs' . $ext, 'key' => 'audit-logs'],
             ['name' => 'Email Logs', 'icon' => 'fa-solid fa-envelope', 'url' => $superBasePath . 'email_logs.php', 'key' => 'email-logs']
         ]);
@@ -84,7 +92,7 @@ function getAdminNavItems() {
         $settingsItems[] = ['name' => 'Print Orders', 'icon' => 'fa-solid fa-box', 'url' => $basePath . 'print_orders' . $ext, 'key' => 'print_orders'];
         $settingsItems[] = ['name' => 'WhatsApp API', 'icon' => 'fa-brands fa-whatsapp', 'url' => $basePath . 'whatsapp_settings' . $ext, 'key' => 'whatsapp'];
         $settingsItems[] = ['name' => 'Bulk Claim', 'icon' => 'fa-solid fa-wand-magic-sparkles', 'url' => $basePath . 'bulk-claim' . $ext, 'key' => 'bulk-claim'];
-        $settingsItems[] = ['name' => 'Odoo ERP', 'icon' => 'fa-solid fa-plug', 'url' => $basePath . 'odoo_settings' . $ext, 'key' => 'odoo'];
+        $settingsItems[] = ['name' => t('admin.nav_erp_settings'), 'icon' => 'fa-solid fa-plug', 'url' => $basePath . 'odoo_settings' . $ext, 'key' => 'odoo'];
         $settingsItems[] = ['name' => 'Updates', 'icon' => 'fa-solid fa-download', 'url' => $basePath . 'updates' . $ext, 'key' => 'updates'];
     } else {
         // Billing is only for company admins, not super admin
@@ -137,22 +145,69 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     $userName = $currentUser['name'] ?? $currentUser['email'] ?? 'Admin';
     $userEmail = $currentUser['email'] ?? '';
     $userInitials = strtoupper(substr($userName, 0, 2));
+    $adminLocale = function_exists('currentLocale') ? currentLocale() : 'en';
+    $adminDir    = function_exists('currentDir')    ? currentDir()    : 'ltr';
+
+    // Tenant theme: look up primary/secondary from company_themes so every
+    // admin page gets the tenant's brand colors (buttons, focus rings, nav
+    // accents, page-loader gradient). Cardify default when no row exists.
+    $tBrand    = '#2563eb';
+    $tBrand2   = '#1d4ed8';
+    $tBrandInk = '#ffffff';
+    $tBrandRing= 'rgba(37,99,235,.35)';
+    try {
+        $_cid = $_SESSION['company_id'] ?? null;
+        if ($_cid && class_exists('Database') && class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+            $_theme = Database::getInstance()->fetchOne(
+                'SELECT primary_color, secondary_color FROM company_themes WHERE company_id = :id LIMIT 1',
+                ['id' => $_cid]
+            );
+            if ($_theme) {
+                if (preg_match('/^#[0-9a-fA-F]{6}$/', $_theme['primary_color'] ?? '')) {
+                    $tBrand = $_theme['primary_color'];
+                }
+                if (preg_match('/^#[0-9a-fA-F]{6}$/', $_theme['secondary_color'] ?? '')) {
+                    $tBrand2 = $_theme['secondary_color'];
+                }
+            }
+        }
+    } catch (Throwable $_) { /* legacy installs without company_themes */ }
+    // Pick legible ink (sRGB luminance threshold 0.6): dark text on light brand, white on dark.
+    $_hex2 = ltrim($tBrand, '#');
+    $_lum = (0.2126 * hexdec(substr($_hex2, 0, 2)) + 0.7152 * hexdec(substr($_hex2, 2, 2)) + 0.0722 * hexdec(substr($_hex2, 4, 2))) / 255;
+    $tBrandInk = $_lum > 0.6 ? '#0f172a' : '#ffffff';
+    $tBrandRing = $tBrand . '59'; // ~35% alpha
 ?>
 <!DOCTYPE html>
-<html lang="en" data-product="cardify">
+<html lang="<?= htmlspecialchars($adminLocale) ?>" dir="<?= htmlspecialchars($adminDir) ?>" data-product="cardify">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($pageTitle); ?> - <?php echo $brandName; ?></title>
     <link rel="icon" href="<?php echo $basePath; ?>favicon.svg" type="image/svg+xml">
 
+    <!-- PWA manifest + theme color (action 287) -->
+    <link rel="manifest" href="<?php echo $basePath; ?>manifest.webmanifest">
+    <meta name="theme-color" content="<?= htmlspecialchars($tBrand) ?>">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
     <!-- BHD Design Language Tokens -->
     <link rel="stylesheet" href="<?php echo $basePath; ?>assets/css/bhd-tokens.css">
 
-    <!-- Fonts -->
+    <!-- Cardify Design System: tokens + components + toast (Category K actions 296-320) -->
+    <link rel="stylesheet" href="<?php echo $basePath; ?>assets/css/cardify-tokens.css">
+    <link rel="stylesheet" href="<?php echo $basePath; ?>assets/css/cardify-components.css">
+    <link rel="stylesheet" href="<?php echo $basePath; ?>assets/css/cardify-toast.css">
+
+    <!-- Fonts, Inter + (when rtl) IBM Plex Sans Arabic -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <?php if ($adminDir === 'rtl'): ?>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <?php else: ?>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <?php endif; ?>
 
     <!-- Font Awesome (CDN) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -168,13 +223,73 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     <!-- Flag Icons CSS for country/phone dropdowns -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css">
     
+    <!-- Myriad Pro (licensed, self-hosted OTF). Weight mapping:
+         300 = Light, 400 = Regular, 600 = SemiBold, 700 = Bold. -->
+    <style>
+        @font-face {
+            font-family: 'Myriad Pro';
+            font-style: normal;
+            font-weight: 300;
+            font-display: swap;
+            src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-Light.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'Myriad Pro';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-Regular.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'Myriad Pro';
+            font-style: normal;
+            font-weight: 600;
+            font-display: swap;
+            src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-SemiBold.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'Myriad Pro';
+            font-style: italic;
+            font-weight: 600;
+            font-display: swap;
+            src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-SemiBoldIt.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'Myriad Pro';
+            font-style: normal;
+            font-weight: 700;
+            font-display: swap;
+            src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-Bold.otf') format('opentype');
+        }
+        @font-face {
+            font-family: 'Myriad Pro';
+            font-style: italic;
+            font-weight: 700;
+            font-display: swap;
+            src: url('<?php echo getBasePath(); ?>assets/fonts/myriad-pro/MyriadPro-BoldIt.otf') format('opentype');
+        }
+
+        /* Tahoma (self-hosted, Regular only for now). Browsers synthesise
+           bold/italic for weight/style requests that have no real cut. */
+        @font-face {
+            font-family: 'Tahoma';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: local('Tahoma'),
+                 url('<?php echo getBasePath(); ?>assets/fonts/tahoma/Tahoma-Regular.ttf') format('truetype');
+        }
+    </style>
+
     <!-- Google Fonts for Card Editor (Arabic + English) -->
     <!-- Arabic Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Tajawal:wght@200;300;400;500;700;800;900&family=Almarai:wght@300;400;700;800&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@100;200;300;400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@200;300;400;500;600;700&family=El+Messiri:wght@400;500;600;700&family=Changa:wght@200;300;400;500;600;700;800&family=Reem+Kufi:wght@400;500;600;700&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;500;600;700&family=Mada:wght@200;300;400;500;600;700;800;900&family=Lalezar&family=Lemonada:wght@300;400;500;600;700&family=Aref+Ruqaa:wght@400;700&family=Mirza:wght@400;500;600;700&family=Rakkas&family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Lateef:wght@200;300;400;500;600;700;800&family=Harmattan:wght@400;500;600;700&family=Markazi+Text:wght@400;500;600;700&family=Gulzar&display=swap" rel="stylesheet">
-    <!-- English Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Poppins:wght@400;500;600;700&family=Open+Sans:wght@400;600;700&family=Lato:wght@400;700&family=Nunito:wght@400;600;700&family=Raleway:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&family=Outfit:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Urbanist:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&family=Sora:wght@400;500;600;700&family=Rubik:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&family=Ubuntu:wght@400;500;700&family=Barlow:wght@400;500;600;700&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- English Sans-Serif (with Light 300, ExtraBold 800, and italics) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Lato:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Raleway:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Work+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Outfit:wght@300;400;500;600;700;800&family=Manrope:wght@300;400;500;600;700;800&family=Urbanist:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Lexend:wght@300;400;500;600;700;800&family=Sora:wght@300;400;500;600;700;800&family=Rubik:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Quicksand:wght@300;400;500;600;700&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Jost:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+    <!-- Extra Sans/Serif/Display/Script/Mono families (Myriad-Pro-style alternatives + more) -->
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Hind:wght@300;400;500;600;700&family=Nunito+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Mulish:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Cabin:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Assistant:wght@300;400;500;600;700;800&family=Karla:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Figtree:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Red+Hat+Display:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Red+Hat+Text:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Archivo:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Onest:wght@300;400;500;600;700;800&family=Geist:wght@300;400;500;600;700;800&family=Source+Serif+4:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Alegreya:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Roboto+Serif:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Abril+Fatface&family=Bungee&family=Comfortaa:wght@300;400;500;600;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Alfa+Slab+One&family=Chivo:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Russo+One&family=Unbounded:wght@300;400;500;600;700;800&family=Satisfy&family=Shadows+Into+Light&family=Homemade+Apple&family=Amatic+SC:wght@400;700&family=Parisienne&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Inconsolata:wght@300;400;500;600;700;800&family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Serif, Display, Handwriting, Monospace -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Lora:wght@400;500;600;700&family=PT+Serif:wght@400;700&family=Libre+Baskerville:wght@400;700&family=EB+Garamond:wght@400;500;600;700&family=Cormorant+Garamond:wght@400;500;600;700&family=Spectral:wght@400;500;600;700&family=Noto+Serif:wght@400;700&family=Vollkorn:wght@400;500;600;700&family=Bodoni+Moda:wght@400;500;600;700&family=Bebas+Neue&family=Oswald:wght@400;500;600;700&family=Anton&family=Archivo+Black&family=Righteous&family=Teko:wght@400;500;600;700&family=Big+Shoulders+Display:wght@400;500;600;700;800&family=Fredoka:wght@400;500;600;700&family=Dancing+Script:wght@400;500;600;700&family=Pacifico&family=Great+Vibes&family=Sacramento&family=Allura&family=Lobster&family=Caveat:wght@400;500;600;700&family=Kaushan+Script&family=Roboto+Mono:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Fira+Code:wght@400;500;600;700&family=Source+Code+Pro:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Vollkorn:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&family=Bodoni+Moda:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&family=Bebas+Neue&family=Oswald:wght@300;400;500;600;700&family=Anton&family=Archivo+Black&family=Righteous&family=Teko:wght@300;400;500;600;700&family=Big+Shoulders+Display:wght@300;400;500;600;700;800&family=Fredoka:wght@300;400;500;600;700&family=Dancing+Script:wght@400;500;600;700&family=Pacifico&family=Great+Vibes&family=Sacramento&family=Allura&family=Lobster&family=Caveat:wght@400;500;600;700&family=Kaushan+Script&family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Fira+Code:wght@300;400;500;600;700&family=Source+Code+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
     
     <!-- WebFontLoader -->
     <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
@@ -262,6 +377,27 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
             pointer-events: none;
             animation: none;
         }
+        .page-loader-svg { overflow: visible; }
+        .page-loader-arc {
+            transform-origin: 60px 60px;
+            animation: pageLoaderSpin 1.2s linear infinite;
+        }
+        .page-loader-card {
+            transform-origin: 60px 58px;
+            animation: pageLoaderWobble 2.6s ease-in-out infinite;
+        }
+        .page-loader-dot { animation: pageLoaderDot 1.2s ease-in-out infinite; }
+        .page-loader-dot.dot-2, .page-loader-dot.dot-4 { animation-delay: 0.6s; }
+        .page-loader-dot.dot-3 { animation-delay: 0.4s; }
+        @keyframes pageLoaderSpin { to { transform: rotate(360deg); } }
+        @keyframes pageLoaderWobble {
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+        }
+        @keyframes pageLoaderDot {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
         .page-loader-text {
             margin-top: 24px;
             font-size: 14px;
@@ -291,12 +427,55 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
             animation: none;
         }
     </style>
+
+    <!-- Tenant brand override: maps common Tailwind blue utilities to the
+         tenant's primary color so every admin page (Dashboard, Employees,
+         Theme, etc.) picks up the brand without touching each template. -->
+    <style>
+      :root{
+        --tbrand: <?= htmlspecialchars($tBrand) ?>;
+        --tbrand-2: <?= htmlspecialchars($tBrand2) ?>;
+        --tbrand-ink: <?= htmlspecialchars($tBrandInk) ?>;
+        --tbrand-ring: <?= htmlspecialchars($tBrandRing) ?>;
+      }
+      .bg-blue-500,.bg-blue-600{background-color:var(--tbrand)!important;color:var(--tbrand-ink)!important}
+      .bg-blue-700,.hover\:bg-blue-700:hover,.hover\:bg-blue-600:hover,.hover\:bg-blue-500:hover{background-color:var(--tbrand-2)!important;color:var(--tbrand-ink)!important}
+      .bg-blue-50{background-color:color-mix(in srgb, var(--tbrand) 8%, white)!important}
+      .bg-blue-100{background-color:color-mix(in srgb, var(--tbrand) 18%, white)!important}
+      .text-blue-500,.text-blue-600,.text-blue-700,.text-blue-800,
+      .hover\:text-blue-600:hover,.hover\:text-blue-700:hover{color:var(--tbrand)!important}
+      .border-blue-400,.border-blue-500,.border-blue-600{border-color:var(--tbrand)!important}
+      .ring-blue-500,.ring-blue-600{--tw-ring-color:var(--tbrand-ring)!important}
+      .focus\:ring-blue-500:focus,.focus\:ring-blue-500\/20:focus{box-shadow:0 0 0 3px var(--tbrand-ring)!important}
+      .focus\:border-blue-500:focus{border-color:var(--tbrand)!important}
+      /* gradients from blue-* utilities */
+      .from-blue-500,.from-blue-600{--tw-gradient-from:var(--tbrand) var(--tw-gradient-from-position)!important;--tw-gradient-to:transparent var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)!important}
+      .to-blue-600,.to-blue-700{--tw-gradient-to:var(--tbrand-2) var(--tw-gradient-to-position)!important}
+      /* Page-loader brand gradient (line 293 fallback) uses hardcoded blue -
+         swap to brand primary→secondary. */
+      .page-loader-brand{background:none!important;color:var(--tbrand)!important;-webkit-text-fill-color:var(--tbrand)!important}
+    </style>
 </head>
 <body class="bg-gray-50"<?php echo Impersonation::isActive() ? ' data-impersonating="true"' : ''; ?>>
     <?php Impersonation::renderBanner(); ?>
-    <!-- Page Loader (auto-hides via CSS after 1s even without JS) -->
+    <!-- Page Loader (auto-hides via CSS after 1s even without JS).
+         SVG inlined so the tenant brand colors apply via CSS variables. -->
     <div class="page-loader" id="pageLoader">
-        <img src="<?php echo $basePath; ?>assets/images/cardify-loader.svg" alt="Loading" width="100" height="100" onerror="this.style.display='none'">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100" height="100" role="img" aria-label="Loading" class="page-loader-svg">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="#e2e8f0" stroke-width="6"/>
+            <circle class="page-loader-arc" cx="60" cy="60" r="52" fill="none" stroke="var(--tbrand)" stroke-width="6" stroke-linecap="round" stroke-dasharray="60 266"/>
+            <g class="page-loader-card">
+                <rect x="26" y="36" width="68" height="44" rx="10" fill="var(--tbrand)"/>
+                <rect x="34" y="44" width="52" height="28" rx="6" fill="#ffffff"/>
+                <rect x="40" y="50" width="10" height="10" rx="5" fill="var(--tbrand)" opacity="0.85"/>
+                <rect x="54" y="50" width="24" height="4" rx="2" fill="var(--tbrand)"/>
+                <rect x="54" y="58" width="18" height="4" rx="2" fill="var(--tbrand)" opacity="0.4"/>
+            </g>
+            <circle class="page-loader-dot dot-1" cx="60" cy="12" r="3" fill="var(--tbrand)"/>
+            <circle class="page-loader-dot dot-2" cx="108" cy="60" r="3" fill="var(--tbrand)"/>
+            <circle class="page-loader-dot dot-3" cx="60" cy="108" r="3" fill="var(--tbrand)"/>
+            <circle class="page-loader-dot dot-4" cx="12" cy="60" r="3" fill="var(--tbrand)"/>
+        </svg>
         <div class="page-loader-text">Loading...</div>
         <div class="page-loader-brand"><?php echo $brandName; ?></div>
     </div>
@@ -337,6 +516,11 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
                         <span class="sr-only">View notifications</span>
                         <i class="fa-solid fa-bell w-5 h-5"></i>
                     </button>
+
+                    <!-- Language Switcher -->
+                    <span class="hidden sm:inline-flex mr-2">
+                        <?php require INCLUDES_DIR . '/lang-switcher.php'; ?>
+                    </span>
 
                     <!-- User dropdown -->
                     <div class="flex items-center ml-1" x-data="{ open: false }">
@@ -400,10 +584,10 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
                     <ul class="pb-2 space-y-1">
                         <?php foreach ($nav['main'] as $item): ?>
                         <li>
-                            <a href="<?php echo $item['url']; ?>"
+                            <a href="<?php echo htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8'); ?>"
                                class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg group transition-colors <?php echo $currentPage === $item['key'] ? 'text-blue-700 bg-blue-50 ring-1 ring-blue-100' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'; ?>">
-                                <i class="<?php echo $item['icon']; ?> w-5 h-5 transition-colors flex-shrink-0 <?php echo $currentPage === $item['key'] ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'; ?>"></i>
-                                <span class="ml-3 flex-1"><?php echo $item['name']; ?></span>
+                                <i class="<?php echo htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8'); ?> w-5 h-5 transition-colors flex-shrink-0 <?php echo $currentPage === $item['key'] ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'; ?>"></i>
+                                <span class="ml-3 flex-1"><?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?></span>
                                 <?php if ($item['key'] === 'requests' && $pendingRequestsCount > 0): ?>
                                 <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-[11px] font-semibold text-white bg-red-500 rounded-full"><?php echo $pendingRequestsCount > 99 ? '99+' : $pendingRequestsCount; ?></span>
                                 <?php elseif (!empty($item['badge'])): ?>
@@ -425,9 +609,9 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
                             <ul x-show="settingsOpen" x-cloak class="py-1 space-y-1">
                                 <?php foreach ($nav['settings'] as $item): ?>
                                 <li>
-                                    <a href="<?php echo $item['url']; ?>"
+                                    <a href="<?php echo htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8'); ?>"
                                        class="flex items-center px-3 py-2 pl-11 text-sm font-medium rounded-lg transition-colors <?php echo $currentPage === $item['key'] ? 'text-blue-700 bg-blue-50' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'; ?>">
-                                        <?php echo $item['name']; ?>
+                                        <?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?>
                                     </a>
                                 </li>
                                 <?php endforeach; ?>
@@ -480,7 +664,7 @@ function adminFooter() {
     
     <!-- Flowbite JS (Local) -->
     <?php $flowbiteJsVersion = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/flowbite/app.bundle.js') ?: time(); ?>
-    <script src="/assets/flowbite/app.bundle.js?v=<?php echo $flowbiteJsVersion; ?>"></script>
+    <script defer src="/assets/flowbite/app.bundle.js?v=<?php echo $flowbiteJsVersion; ?>"></script>
     
     <!-- Card Editor JS -->
     <script src="<?php echo getBasePath(); ?>assets/js/font-loader.js"></script>
@@ -553,6 +737,20 @@ function adminFooter() {
                 sidebar.classList.add('hidden');
             }
         });
+    </script>
+
+    <!-- Shared toast + form helpers + service-worker + web-vitals beacon (Cardify v2.0 Cat J/M/N) -->
+    <?php $__base = function_exists('getBasePath') ? getBasePath() : '/'; ?>
+    <script src="<?php echo $__base; ?>assets/js/cardify-toast.js" defer></script>
+    <script src="<?php echo $__base; ?>assets/js/cardify-forms.js" defer></script>
+    <script src="<?php echo $__base; ?>assets/js/cardify-webvitals.js" defer></script>
+    <script>
+    if ('serviceWorker' in navigator && location.protocol === 'https:') {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('<?php echo $__base; ?>sw.js', { scope: '<?php echo $__base; ?>' })
+                .catch(() => { /* non-fatal */ });
+        });
+    }
     </script>
 </body>
 </html>

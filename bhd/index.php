@@ -14,7 +14,7 @@ if (empty($_SESSION['referral_source'])) {
     $_SESSION['referral_time'] = date('Y-m-d H:i:s');
 }
 
-$pageTitle = 'Free Digital Card + 10% Off Printing — BHD Printing Customers';
+$pageTitle = 'Free Digital Card + 10% Off Printing, BHD Printing Customers';
 $pageDescription = 'Exclusive BHD offer: get your digital business card FREE when you print with BHD, plus 10% off every print order. 100 cards from just 5.400 OMR.';
 $canonicalUrl = 'https://cardify.om/bhd';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
@@ -92,7 +92,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <a href="<?= $registerUrl ?>" class="inline-flex items-center justify-center gap-2 bg-white hover:bg-blue-50 text-blue-700 font-bold px-7 py-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 text-lg">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    Start Free — No Card Required
+                    Start Free, No Card Required
                 </a>
                 <a href="#how-it-works" class="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold px-7 py-4 rounded-xl border border-white/20 transition-all text-lg">
                     See How It Works
@@ -171,7 +171,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <div class="max-w-6xl mx-auto">
         <div class="text-center mb-12">
             <h2 class="text-3xl font-bold text-gray-900 mb-3">Everything You Need, All in One Place</h2>
-            <p class="text-gray-500 text-lg max-w-xl mx-auto">BHD Printing customers get the full Cardify experience — design, digital sharing, and physical prints from your trusted printer.</p>
+            <p class="text-gray-500 text-lg max-w-xl mx-auto">BHD Printing customers get the full Cardify experience, design, digital sharing, and physical prints from your trusted printer.</p>
         </div>
 
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -193,13 +193,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>',
                     'color' => 'green',
                     'title' => 'Digital Card & QR Code',
-                    'desc' => 'Share your card digitally via link or QR code. Recipients tap to save your contact — no app needed.',
+                    'desc' => 'Share your card digitally via link or QR code. Recipients tap to save your contact, no app needed.',
                 ],
                 [
                     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>',
                     'color' => 'amber',
                     'title' => 'Order Prints from BHD',
-                    'desc' => 'When you\'re ready, order high-quality physical cards straight from BHD Printing — delivered to your door.',
+                    'desc' => 'When you\'re ready, order high-quality physical cards straight from BHD Printing, delivered to your door.',
                 ],
                 [
                     'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>',
@@ -246,7 +246,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <div class="max-w-4xl mx-auto">
         <div class="text-center mb-12">
             <h2 class="text-3xl font-bold text-gray-900 mb-3">Ready in 3 Steps</h2>
-            <p class="text-gray-500">From signup to printed cards in your hands — faster than you think.</p>
+            <p class="text-gray-500">From signup to printed cards in your hands, faster than you think.</p>
         </div>
 
         <div class="space-y-6">
@@ -254,7 +254,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             $steps = [
                 ['num' => '1', 'title' => 'Create your free account', 'desc' => 'Sign up in 30 seconds. No credit card, no commitment.', 'color' => 'blue'],
                 ['num' => '2', 'title' => 'Design your card', 'desc' => 'Pick a template, add your logo and details, and generate cards for your whole team.', 'color' => 'violet'],
-                ['num' => '3', 'title' => 'Order prints from BHD Printing', 'desc' => 'Click "Order Prints" and your cards are sent straight to BHD Printing — your trusted printer handles the rest.', 'color' => 'green'],
+                ['num' => '3', 'title' => 'Order prints from BHD Printing', 'desc' => 'Click "Order Prints" and your cards are sent straight to BHD Printing, your trusted printer handles the rest.', 'color' => 'green'],
             ];
             $stepColors = [
                 'blue'   => ['badge' => 'bg-blue-600',   'border' => 'border-blue-200'],
@@ -318,7 +318,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
         <div class="text-center">
             <a href="<?= $registerUrl ?>" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-xl shadow-lg shadow-blue-600/25 transition-all hover:-translate-y-0.5 text-lg">
-                Design Your Card — It's Free
+                Design Your Card, It's Free
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
             </a>
             <p class="text-gray-400 text-sm mt-3">Free for up to 5 employees · No credit card required</p>
@@ -349,7 +349,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <span class="text-3xl font-extrabold text-gray-900">0 OMR</span>
                     <span class="text-gray-400 line-through text-lg">3 OMR</span>
                 </div>
-                <p class="text-gray-500 text-sm leading-relaxed mb-4">A shareable digital business card for every employee — with QR code, tap-to-save, and analytics. Free forever when you print with BHD.</p>
+                <p class="text-gray-500 text-sm leading-relaxed mb-4">A shareable digital business card for every employee, with QR code, tap-to-save, and analytics. Free forever when you print with BHD.</p>
                 <ul class="space-y-1.5 text-sm text-gray-600">
                     <li class="flex items-center gap-2"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Unlimited employees</li>
                     <li class="flex items-center gap-2"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Custom branding &amp; templates</li>
@@ -379,7 +379,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
         <div class="text-center">
             <a href="<?= $registerUrl ?>" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-xl shadow-lg shadow-blue-600/25 transition-all hover:-translate-y-0.5 text-lg">
-                Claim Your Offer — It's Free to Start
+                Claim Your Offer, It's Free to Start
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
             </a>
             <p class="text-gray-400 text-sm mt-3">No credit card required · Discount applied automatically at checkout</p>
@@ -396,7 +396,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             Claim Your Free Offer
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
         </a>
-        <p class="text-blue-300 text-sm mt-4">Partnered with BHD Printing — Oman's trusted print shop</p>
+        <p class="text-blue-300 text-sm mt-4">Partnered with BHD Printing, Oman's trusted print shop</p>
     </div>
 </section>
 

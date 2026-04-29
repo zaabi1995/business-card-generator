@@ -65,7 +65,7 @@ adminHeader('Dashboard - ' . $company['name'], 'dashboard');
             <p class="text-sm text-gray-500"><?php echo sanitize($company['slug']); ?> &middot; <?php echo ucfirst($company['plan'] ?? 'free'); ?> Plan</p>
         </div>
     </div>
-    <a href="<?php echo getBasePath() . $companySlug; ?>/" target="_blank" class="text-sm text-blue-600 hover:text-blue-800">
+    <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/'), ENT_QUOTES, 'UTF-8') ?>" target="_blank" class="text-sm text-blue-600 hover:text-blue-800">
         <i class="fa-solid fa-external-link mr-1"></i> View Portal
     </a>
 </div>

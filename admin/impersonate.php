@@ -2,8 +2,8 @@
 /**
  * Admin "Login as" impersonation handler.
  *
- * POST ?action=start&company_id={id}  — super admin starts impersonating a company admin
- * POST ?action=stop                    — return to admin session
+ * POST ?action=start&company_id={id} , super admin starts impersonating a company admin
+ * POST ?action=stop                   , return to admin session
  *
  * Security: super_admin role + CSRF required. All actions audit-logged.
  */
@@ -23,7 +23,7 @@ function impersonate_fail(string $msg, int $code = 400): void
     exit;
 }
 
-// Only POST — impersonation is a state-changing action.
+// Only POST, impersonation is a state-changing action.
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     impersonate_fail('Method not allowed', 405);
 }
@@ -39,7 +39,7 @@ $action = $_GET['action'] ?? $_POST['action'] ?? '';
 if ($action === 'start') {
     // Must be super_admin at the moment of start (not while already impersonating).
     if (Impersonation::isActive()) {
-        impersonate_fail('Already impersonating — exit first', 409);
+        impersonate_fail('Already impersonating, exit first', 409);
     }
     if (!Auth::isLoggedIn() || Auth::getCurrentRole() !== 'super_admin') {
         impersonate_fail('Only super admins can impersonate', 403);
@@ -59,7 +59,7 @@ if ($action === 'start') {
 }
 
 if ($action === 'stop') {
-    // Stop is allowed for whoever holds the stash — they're the admin.
+    // Stop is allowed for whoever holds the stash, they're the admin.
     $result = Impersonation::stop();
     header('Location: ' . ($result['redirect'] ?? getBasePath() . 'admin/super/companies.php'));
     exit;

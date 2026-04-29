@@ -244,7 +244,7 @@ adminHeader('Blog Management', 'content');
                                 </span>
                                 <?php elseif ($post['status'] === 'published' || ($post['status'] === 'draft' && !empty($post['published_at']) && strtotime($post['published_at']) <= time())): ?>
                                 <span class="mx-2">•</span>
-                                <span class="text-amber-600 text-xs" title="Queued for LinkedIn — will post next 9am">
+                                <span class="text-amber-600 text-xs" title="Queued for LinkedIn, will post next 9am">
                                     <i class="fa-brands fa-linkedin mr-0.5"></i>Queued
                                 </span>
                                 <?php endif; ?>

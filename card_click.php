@@ -10,7 +10,7 @@
  *  - `cta` MUST be in the click-event allow-list (subset of CardAnalytics::EVENT_TYPES).
  *  - `dest` MUST be tel:, mailto:, sms:, whatsapp:, a same-origin path, OR an
  *    https:// URL whose host is on the cardify whitelist (no arbitrary externals).
- *  - URL shorteners (goo.gl, bit.ly, t.co, …) are REJECTED even if listed — they
+ *  - URL shorteners (goo.gl, bit.ly, t.co, …) are REJECTED even if listed, they
  *    are checked via the shared UNSAFE_SHORTENERS constant in includes/UrlSafety.php
  *    so additions stay in sync with admin/short-links.php. (Round-2 Finding 1.)
  *  - Trailing-dot hosts (`cardify.om.`) are canonicalised before matching,
@@ -30,10 +30,10 @@ $allowedCta = [
     'click_phone', 'click_mobile', 'click_whatsapp', 'click_email',
     'click_website', 'click_map', 'click_social', 'save_contact', 'wallet_add',
     'product_order_click',
-    // PDF download CTA — emitted from the public card's bottom bar. Dest
+    // PDF download CTA, emitted from the public card's bottom bar. Dest
     // points at same-origin /card-pdf.php so redirect-host check is harmless.
     'download_pdf',
-    // Viral "Made with Cardify" footer on every public card — routes visitors
+    // Viral "Made with Cardify" footer on every public card, routes visitors
     // to the /claim landing page. Tracked so we can measure conversion from
     // card view → claim-page click (the whole point of the viral loop).
     'viral_footer_click',
@@ -82,7 +82,7 @@ if ($safeDest === null) {
     exit;
 }
 
-// 4. Employee ID must exist in DB — prevents using cardify.om as a generic
+// 4. Employee ID must exist in DB, prevents using cardify.om as a generic
 //    phishing redirector (the attacker needs a real employee slug/id).
 try {
     $employee = findEmployeeById($employeeId);

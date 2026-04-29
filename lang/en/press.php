@@ -1,0 +1,80 @@
+<?php
+return [
+    'page_title'          => 'Press & Media Kit, Cardify (Business-Identity Platform for the GCC)',
+    'page_desc'           => 'Official press and media kit for Cardify: company facts, brand assets, downloadable datasets (Oman Business Index, Omani Logo Library, GCC Business Index), citation format, and press contact.',
+
+    'crumb_home'          => 'Home',
+    'crumb_press'         => 'Press & Media',
+
+    'badge'               => 'Press & Media Kit',
+    'h1'                  => 'Cardify, business identity infrastructure for the GCC',
+    'hero_sub'            => 'Facts, assets, data, quotes, and a press contact, everything a journalist, researcher, or analyst needs to cover or cite Cardify accurately. Updated :date.',
+
+    'nav_facts'           => 'Key facts',
+    'nav_datasets'        => 'Public datasets',
+    'nav_assets'          => 'Brand assets',
+    'nav_contact'         => 'Press contact',
+
+    'section_official'    => 'Official description',
+    'h2_oneliner'         => 'One-line, copy-paste ready',
+    'oneliner_body'       => 'Cardify is a business-identity platform for the Gulf, built in Oman. It ships digital and printed business cards, a public library of verified Omani logos, and an open index of GCC companies, with expansion into Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait rolling out through 2026.',
+
+    'section_keyfacts'    => 'Key facts',
+    'h2_numbers'          => 'Numbers you can quote',
+    'stat_companies'      => 'Omani companies in the public index, sourced from MoCIIP.',
+    'stat_logos'          => 'Verified Omani brand logos, free to download.',
+    'stat_sovereign'      => 'Sovereign / ministerial entities with curated bilingual profiles.',
+    'stat_gcc'            => 'GCC countries covered by the GCC Business Index roadmap.',
+    'stat_bilingual'      => 'Bilingual platform, every card, page, and asset.',
+    'stat_year'           => 'Year Cardify launched, based in Muscat, Oman.',
+
+    'section_datasets'    => 'Datasets',
+    'h2_datasets'         => 'Public datasets and pages to cite',
+    'datasets_intro'      => "Everything below is public, free, and built to be referenced. CC-BY 4.0 where marked; nominative fair use for individual trademarks in the logo library.",
+
+    'ds_oman_title'       => 'Oman Business Index',
+    'ds_oman_sub'         => '2,414 companies, sector + wilayat + CR metadata. English and Arabic.',
+    'ds_cc'               => 'CC-BY 4.0',
+    'ds_fairuse'          => 'Fair use per entry',
+    'btn_view_page'       => 'View page',
+    'btn_browse_companies'=> 'Browse companies',
+
+    'ds_logos_title'      => 'Omani Logo Library',
+    'ds_logos_sub'        => '80+ Omani brand logos, ministries, sovereign bodies, corporates. SVG and PNG.',
+    'btn_browse_library'  => 'Browse library',
+    'btn_terms'           => 'Terms of use',
+    'btn_json'            => 'JSON API',
+
+    'ds_gcc_title'        => 'GCC Business Index',
+    'ds_gcc_sub'          => 'Federated overview of business infrastructure across all six GCC states.',
+    'btn_view_flagship'   => 'View flagship',
+
+    'section_assets'      => 'Brand assets',
+    'h2_assets'           => 'Cardify brand assets',
+    'assets_intro'        => "For articles and reviews covering Cardify. Please don't alter the marks.",
+    'asset_primary'       => 'Primary mark',
+    'asset_primary_sub'   => 'SVG, for light backgrounds',
+    'asset_light'         => 'Light variant',
+    'asset_light_sub'     => 'SVG, for dark backgrounds',
+    'asset_og'            => 'OG image',
+    'asset_og_sub'        => 'PNG, 1200x630',
+    'download_svg'        => 'Download .svg',
+    'download_png'        => 'Download .png',
+    'alt_primary_logo'    => 'Cardify logo',
+    'alt_light_logo'      => 'Cardify logo (light)',
+    'alt_og'              => 'Cardify Open Graph',
+
+    'section_citations'   => 'Citations',
+    'h2_citations'        => 'Citation format',
+    'cite_mla'            => 'MLA (9th edition)',
+    'cite_apa'            => 'APA (7th edition)',
+    'cite_mla_body'       => 'Cardify. "GCC Business Index 2026." :site, :updated, cardify.om/gcc-business-index. Accessed :accessed.',
+    'cite_apa_body'       => 'Cardify. (2026). GCC Business Index 2026. Retrieved :accessed, from https://cardify.om/gcc-business-index',
+
+    'section_contact'     => 'Press contact',
+    'h2_contact'          => 'Talk to our team',
+    'contact_body'        => 'For interviews, comment, or custom data queries, reach out. We try to respond within 24 hours for press.',
+    'contact_email_btn'   => 'press@cardify.om',
+    'contact_general'     => 'General contact form',
+    'contact_footer'      => 'Based in Muscat, Oman, Operating hours GMT+4, English and العربية',
+];

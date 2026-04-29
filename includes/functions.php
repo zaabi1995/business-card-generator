@@ -3,6 +3,73 @@
  * Cardify Helper Functions
  */
 
+// I18n bootstrap, loaded for every request via config.php -> functions.php chain.
+if (!class_exists('I18n')) {
+    require_once __DIR__ . '/I18n.php';
+}
+I18n::boot();
+
+// Sentry bootstrap (Cat T action 456). No-op unless SENTRY_DSN is
+// defined in config.php. Installs set_exception_handler +
+// register_shutdown_function so uncaught / fatal errors get reported.
+if (!class_exists('Sentry')) {
+    require_once __DIR__ . '/Sentry.php';
+}
+Sentry::init();
+
+/**
+ * Global translation helper. Alias for I18n::t().
+ * t('common.save') / t('auth.welcome', ['name' => $name])
+ */
+if (!function_exists('t')) {
+    function t(string $key, array $params = [], ?string $locale = null): string {
+        return I18n::t($key, $params, $locale);
+    }
+}
+
+if (!function_exists('currentLocale')) {
+    function currentLocale(): string { return I18n::getLocale(); }
+}
+
+if (!function_exists('currentDir')) {
+    function currentDir(): string { return I18n::getDir(); }
+}
+
+if (!function_exists('isRtl')) {
+    function isRtl(): bool { return I18n::isRtl(); }
+}
+
+/**
+ * Tenant URL helpers, canonicalize every tenant link to
+ * https://{slug}.cardify.om{path}. Use these EVERYWHERE instead of
+ * stringing `getBasePath() . $slug . '/...'` together. The old path
+ * style is 301'd by router.php for compatibility, but every link we
+ * emit should already be on the subdomain.
+ */
+function cardifyApexHost(): string {
+    return defined('APP_HOST') ? APP_HOST : 'cardify.om';
+}
+
+function getTenantUrl(?string $slug, string $path = '/'): string {
+    $slug = trim((string) $slug);
+    if ($slug === '') {
+        // Without a slug we fall back to the bare apex; callers should
+        // avoid this, but the apex URL is still a valid landing page.
+        return 'https://' . cardifyApexHost() . $path;
+    }
+    if ($path === '' || $path[0] !== '/') $path = '/' . $path;
+    return 'https://' . $slug . '.' . cardifyApexHost() . $path;
+}
+
+/**
+ * Canonical public card URL for an employee. Accepts either the
+ * email (legacy `/card/{email}` pattern supported by digital_card
+ * resolver) or a pre-slugified name; returns the subdomain form.
+ */
+function getTenantCardUrl(?string $slug, string $empKey): string {
+    return getTenantUrl($slug, '/' . ltrim($empKey, '/'));
+}
+
 /**
  * Get base URL (protocol + domain + base path)
  * @return string Full base URL (e.g., 'https://cardify.om/')
@@ -38,7 +105,7 @@ if (!function_exists('getBasePath')) {
             $scriptDir = dirname($scriptPath);
             
             // Known subdirectories that are part of the app
-            $appDirs = ['admin', 'includes', 'company', 'amwalpay', 'paymob', 'webhooks', 'super', 'install', 'share', 'printshop', 'api', 'database', 'bhd', 'tools'];
+            $appDirs = ['admin', 'includes', 'company', 'amwalpay', 'paymob', 'webhooks', 'super', 'install', 'share', 'printshop', 'api', 'database', 'bhd', 'tools', 'industries', 'gcc'];
             
             // Navigate up through app directories to find the root
             while (in_array(basename($scriptDir), $appDirs) && $scriptDir !== '/' && $scriptDir !== '.') {
@@ -167,6 +234,35 @@ function validateCSRFToken($token) {
  */
 function csrfField() {
     return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars(generateCSRFToken()) . '">';
+}
+
+/**
+ * Same-origin guard for anonymous POST endpoints.
+ *
+ * Public forms (testimonials, appointment booking, lead capture) have no
+ * server-issued CSRF token because the submitter has no session. Instead we
+ * reject POSTs whose Origin / Referer header doesn't belong to this host,
+ * which together with SameSite=Lax session cookies defeats the standard CSRF
+ * vectors without breaking legitimate browser submissions.
+ *
+ * Returns true if the request is same-origin (or carries no Origin/Referer
+ * at all, some browsers strip both for privacy, so we don't hard-fail).
+ */
+function isSameOriginRequest(): bool {
+    $host = defined('APP_HOST') ? APP_HOST : ($_SERVER['HTTP_HOST'] ?? '');
+    $allowed = array_filter([$host, 'cardify.om', 'www.cardify.om']);
+
+    $origin  = $_SERVER['HTTP_ORIGIN']  ?? '';
+    $referer = $_SERVER['HTTP_REFERER'] ?? '';
+
+    foreach ([$origin, $referer] as $h) {
+        if ($h === '') continue;
+        $parsedHost = strtolower(parse_url($h, PHP_URL_HOST) ?: '');
+        if ($parsedHost === '') continue;
+        return in_array($parsedHost, $allowed, true);
+    }
+    // No Origin AND no Referer, privacy mode or native client; allow through.
+    return true;
 }
 
 /**
@@ -525,15 +621,16 @@ function redirectToCompanyAdmin() {
     }
     
     if ($companySlug) {
-        // Get current page name
         $currentPage = basename($_SERVER['SCRIPT_NAME'], '.php');
-        $redirectUrl = getBasePath() . $companySlug . '/admin/';
-        
-        if ($currentPage !== 'index') {
-            $redirectUrl .= $currentPage;
+        $path = '/admin/' . ($currentPage !== 'index' ? $currentPage : '');
+        // Don't loop: if we're already on the tenant subdomain, the URL is
+        // canonical, just continue rendering. Only redirect from the apex.
+        $currentHost = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+        $tenantHost  = strtolower($companySlug . '.' . cardifyApexHost());
+        if ($currentHost === $tenantHost) {
+            return;
         }
-        
-        header('Location: ' . $redirectUrl);
+        header('Location: ' . getTenantUrl($companySlug, $path));
         exit;
     }
 }
@@ -902,7 +999,7 @@ function isAdminLoggedIn() {
     return isset($_SESSION['admin_logged_in']) || isCompanyAdminLoggedIn();
 }
 
-// loginAdmin() removed — was a legacy function with hardcoded password.
+// loginAdmin() removed, was a legacy function with hardcoded password.
 // Use Auth::unifiedLogin() instead.
 
 // Initialize on include
@@ -1236,7 +1333,17 @@ function handleFileUpload($file, $destination, $allowedTypes = null, $maxSize = 
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $file['tmp_name']);
     finfo_close($finfo);
-    
+
+    // finfo often misreports SVG as text/xml, application/xml, text/html, or text/plain.
+    // If the file extension is .svg and the content looks like SVG, normalize to image/svg+xml.
+    $clientExt = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if ($clientExt === 'svg' && in_array($mimeType, ['text/xml', 'application/xml', 'text/html', 'text/plain', 'image/svg+xml'], true)) {
+        $head = @file_get_contents($file['tmp_name'], false, null, 0, 2048);
+        if ($head !== false && preg_match('/<svg[\s>]/i', $head)) {
+            $mimeType = 'image/svg+xml';
+        }
+    }
+
     if (!in_array($mimeType, $allowedTypes)) {
         return ['success' => false, 'error' => 'File type not allowed: ' . $mimeType];
     }
@@ -1258,6 +1365,7 @@ function handleFileUpload($file, $destination, $allowedTypes = null, $maxSize = 
             'image/gif' => 'gif',
             'image/webp' => 'webp',
             'application/pdf' => 'pdf',
+            'image/svg+xml' => 'svg',
         ];
         $extension = $mimeExtensions[$mimeType] ?? 'bin';
     }
@@ -1424,5 +1532,168 @@ if (!function_exists('formatPrice')) {
         $cur = Currency::getUserCurrency();
         $amt = Currency::convert($omrAmount, $cur);
         return Currency::format($amt, $cur);
+    }
+}
+
+/**
+ * Seed a starter template pair (front + back) for a company.
+ * Idempotent: no-op if the company already has any templates.
+ * Shared between api/onboarding.php and company/register.php so
+ * every new signup lands on a dashboard with a usable template.
+ */
+if (!function_exists('seedStarterTemplate')) {
+    function seedStarterTemplate($db, $companyId, $templateKey = 'bhd-classic') {
+        try {
+            $existing = $db->fetchOne(
+                "SELECT COUNT(*) as cnt FROM templates WHERE company_id = :id",
+                ['id' => $companyId]
+            );
+            if (($existing['cnt'] ?? 0) > 0) return;
+
+            $templates = getBhdTemplateDefinitions();
+            if (!isset($templates[$templateKey])) {
+                $templateKey = 'bhd-classic';
+            }
+
+            $def = $templates[$templateKey];
+            $pairId = generateUUID();
+            $now = date('Y-m-d H:i:s');
+
+            $db->insert('templates', [
+                'id'                    => generateUUID(),
+                'company_id'            => $companyId,
+                'pair_id'               => $pairId,
+                'name'                  => $def['name'] . ' (Front)',
+                'side'                  => 'front',
+                'background_image_path' => '',
+                'fields_json'           => json_encode($def['front_fields']),
+                'settings_json'         => json_encode($def['settings']),
+                'is_active'             => 1,
+                'is_shared'             => 0,
+                'created_at'            => $now,
+                'updated_at'            => $now,
+            ]);
+
+            $db->insert('templates', [
+                'id'                    => generateUUID(),
+                'company_id'            => $companyId,
+                'pair_id'               => $pairId,
+                'name'                  => $def['name'] . ' (Back)',
+                'side'                  => 'back',
+                'background_image_path' => '',
+                'fields_json'           => json_encode($def['back_fields']),
+                'settings_json'         => json_encode($def['settings']),
+                'is_active'             => 1,
+                'is_shared'             => 0,
+                'created_at'            => $now,
+                'updated_at'            => $now,
+            ]);
+        } catch (Exception $e) {
+            error_log('[seedStarterTemplate] failed for company ' . $companyId . ': ' . $e->getMessage());
+        }
+    }
+}
+
+if (!function_exists('getBhdTemplateDefinitions')) {
+    function getBhdTemplateDefinitions() {
+        $standardSettings = [
+            'cardSize'        => 'standard',
+            'cardOrientation' => 'landscape',
+            'dpi'             => 300,
+            'bleedEnabled'    => false,
+            'bleedSize'       => 3,
+            'bleedUnit'       => 'mm',
+        ];
+
+        $classicFront = [
+            'name_en' => [
+                'enabled' => true, 'x' => 60, 'y' => 70,
+                'fontSize' => 26, 'fontFamily' => 'Inter', 'fontWeight' => 'bold',
+                'fill' => '#1f2937', 'textAlign' => 'left', 'originX' => 'left', 'originY' => 'top'
+            ],
+            'position_en' => [
+                'enabled' => true, 'x' => 60, 'y' => 108,
+                'fontSize' => 14, 'fontFamily' => 'Inter', 'fontWeight' => 'normal',
+                'fill' => '#009bc1', 'textAlign' => 'left', 'originX' => 'left', 'originY' => 'top'
+            ],
+            'company_en' => [
+                'enabled' => true, 'x' => 60, 'y' => 135,
+                'fontSize' => 12, 'fontFamily' => 'Inter', 'fontWeight' => 'normal',
+                'fill' => '#6b7280', 'textAlign' => 'left', 'originX' => 'left', 'originY' => 'top'
+            ],
+            'phone' => [
+                'enabled' => true, 'x' => 60, 'y' => 175,
+                'fontSize' => 12, 'fontFamily' => 'Inter', 'fontWeight' => 'normal',
+                'fill' => '#374151', 'textAlign' => 'left', 'originX' => 'left', 'originY' => 'top'
+            ],
+            'email' => [
+                'enabled' => true, 'x' => 60, 'y' => 198,
+                'fontSize' => 12, 'fontFamily' => 'Inter', 'fontWeight' => 'normal',
+                'fill' => '#374151', 'textAlign' => 'left', 'originX' => 'left', 'originY' => 'top'
+            ],
+            'website' => [
+                'enabled' => true, 'x' => 60, 'y' => 221,
+                'fontSize' => 12, 'fontFamily' => 'Inter', 'fontWeight' => 'normal',
+                'fill' => '#009bc1', 'textAlign' => 'left', 'originX' => 'left', 'originY' => 'top'
+            ],
+        ];
+
+        $classicBack = [
+            'company_en' => [
+                'enabled' => true, 'x' => 500, 'y' => 130,
+                'fontSize' => 22, 'fontFamily' => 'Inter', 'fontWeight' => 'bold',
+                'fill' => '#1f2937', 'textAlign' => 'center', 'originX' => 'center', 'originY' => 'top'
+            ],
+            'website' => [
+                'enabled' => true, 'x' => 500, 'y' => 165,
+                'fontSize' => 12, 'fontFamily' => 'Inter', 'fontWeight' => 'normal',
+                'fill' => '#009bc1', 'textAlign' => 'center', 'originX' => 'center', 'originY' => 'top'
+            ],
+        ];
+
+        $navyFront = array_merge($classicFront, [
+            'name_en' => array_merge($classicFront['name_en'], ['fill' => '#ffffff']),
+            'position_en' => array_merge($classicFront['position_en'], ['fill' => '#009bc1']),
+            'company_en' => array_merge($classicFront['company_en'], ['fill' => '#94a3b8']),
+            'phone' => array_merge($classicFront['phone'], ['fill' => '#cbd5e1']),
+            'email' => array_merge($classicFront['email'], ['fill' => '#cbd5e1']),
+            'website' => array_merge($classicFront['website'], ['fill' => '#38bdf8']),
+        ]);
+
+        $skyFront = array_merge($classicFront, [
+            'name_en' => array_merge($classicFront['name_en'], ['fill' => '#ffffff']),
+            'position_en' => array_merge($classicFront['position_en'], ['fill' => '#e0f7ff']),
+            'company_en' => array_merge($classicFront['company_en'], ['fill' => '#cceeff']),
+            'phone' => array_merge($classicFront['phone'], ['fill' => '#ffffff']),
+            'email' => array_merge($classicFront['email'], ['fill' => '#ffffff']),
+            'website' => array_merge($classicFront['website'], ['fill' => '#ffffff']),
+        ]);
+
+        return [
+            'bhd-classic' => [
+                'name'         => 'BHD Classic',
+                'front_fields' => $classicFront,
+                'back_fields'  => $classicBack,
+                'settings'     => array_merge($standardSettings, ['backgroundColor' => '#ffffff']),
+            ],
+            'bhd-navy' => [
+                'name'         => 'BHD Navy',
+                'front_fields' => $navyFront,
+                'back_fields'  => array_merge($classicBack, [
+                    'company_en' => array_merge($classicBack['company_en'], ['fill' => '#ffffff']),
+                    'website' => array_merge($classicBack['website'], ['fill' => '#38bdf8']),
+                ]),
+                'settings'     => array_merge($standardSettings, ['backgroundColor' => '#0f172a']),
+            ],
+            'bhd-sky' => [
+                'name'         => 'BHD Sky',
+                'front_fields' => $skyFront,
+                'back_fields'  => array_merge($classicBack, [
+                    'company_en' => array_merge($classicBack['company_en'], ['fill' => '#ffffff']),
+                    'website' => array_merge($classicBack['website'], ['fill' => '#ffffff']),
+                ]),
+                'settings'     => array_merge($standardSettings, ['backgroundColor' => '#009bc1']),
+            ],
+        ];
     }
 }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Growth Dashboard — per-company adoption & event telemetry
+ * Growth Dashboard, per-company adoption & event telemetry
  *
  * URL: /admin/growth.php
  *
@@ -71,21 +71,21 @@ $topCards       = CardAnalytics::getTopCards($companyId, $kpiDays, 20);
 $funnel         = CardAnalytics::getFunnelSummary($companyId, $kpiDays);
 $featureHealth  = CardAnalytics::getFeatureHealth();
 
-$pageTitle = 'Growth Dashboard';
+$pageTitle = t('adminchrome.growth_dashboard');
 
 // Section labels for the bar chart
 $sectionLabels = [
-    'bio'          => 'Bio',
-    'services'     => 'Services',
-    'gallery'      => 'Gallery',
-    'testimonials' => 'Testimonials',
-    'lead_form'    => 'Lead Form',
-    'video'        => 'Video',
-    'location'     => 'Location',
-    'offers'       => 'Offers',
-    'faq'          => 'FAQ',
-    'hours'        => 'Hours',
-    'products'     => 'Products',
+    'bio'          => t('growth.sec_bio'),
+    'services'     => t('growth.sec_services'),
+    'gallery'      => t('growth.sec_gallery'),
+    'testimonials' => t('growth.sec_testimonials'),
+    'lead_form'    => t('growth.sec_lead_form'),
+    'video'        => t('growth.sec_video'),
+    'location'     => t('growth.sec_location'),
+    'offers'       => t('growth.sec_offers'),
+    'faq'          => t('growth.sec_faq'),
+    'hours'        => t('growth.sec_hours'),
+    'products'     => t('growth.sec_products'),
 ];
 
 function gd_pct($n, $d)
@@ -118,14 +118,14 @@ adminHeader($pageTitle, 'growth');
     <!-- Header + company filter -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-            <p class="text-gray-600 text-sm">What's actually being used — last <?php echo (int) $kpiDays; ?> days unless noted.</p>
+            <p class="text-gray-600 text-sm"><?= htmlspecialchars(str_replace(':n', (string)(int)$kpiDays, t('growth.page_sub'))) ?></p>
         </div>
         <?php if ($isSuper): ?>
         <form method="GET" class="flex items-center gap-2">
-            <label for="company_id" class="text-xs font-medium text-gray-500 uppercase tracking-wider">Company</label>
+            <label for="company_id" class="text-xs font-medium text-gray-500 uppercase tracking-wider"><?= htmlspecialchars(t('growth.filter_company')) ?></label>
             <select id="company_id" name="company_id" onchange="this.form.submit()"
                     class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option value="">All companies</option>
+                <option value=""><?= htmlspecialchars(t('growth.all_companies')) ?></option>
                 <?php foreach ($allCompanies as $c): ?>
                 <option value="<?php echo sanitize($c['id']); ?>"
                         <?php echo ($companyId === $c['id']) ? 'selected' : ''; ?>>
@@ -142,13 +142,13 @@ adminHeader($pageTitle, 'growth');
         <!-- Active cards -->
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div class="flex items-center justify-between mb-2">
-                <p class="text-xs text-gray-500 uppercase tracking-wider">Active cards</p>
+                <p class="text-xs text-gray-500 uppercase tracking-wider"><?= htmlspecialchars(t('growth.kpi_active_cards')) ?></p>
                 <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
                     <i class="fa-solid fa-id-card text-blue-600 text-sm"></i>
                 </div>
             </div>
             <p class="text-2xl font-bold text-gray-900"><?php echo number_format($activeCards); ?></p>
-            <p class="text-xs text-gray-500 mt-1">Viewed in last 30d</p>
+            <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('growth.kpi_active_cards_sub')) ?></p>
         </div>
 
         <!-- Events 7d vs prev -->
@@ -160,7 +160,7 @@ adminHeader($pageTitle, 'growth');
         ?>
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div class="flex items-center justify-between mb-2">
-                <p class="text-xs text-gray-500 uppercase tracking-wider">Events 7d</p>
+                <p class="text-xs text-gray-500 uppercase tracking-wider"><?= htmlspecialchars(t('growth.kpi_events_7d')) ?></p>
                 <div class="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center">
                     <i class="fa-solid fa-bolt text-green-600 text-sm"></i>
                 </div>
@@ -168,45 +168,45 @@ adminHeader($pageTitle, 'growth');
             <p class="text-2xl font-bold text-gray-900"><?php echo number_format($eventTotals['current']); ?></p>
             <p class="text-xs <?php echo $deltaColor; ?> mt-1 flex items-center gap-1">
                 <i class="fa-solid <?php echo $deltaIcon; ?>"></i>
-                <?php echo $deltaSign . number_format($d, 1); ?>% vs prev 7d
+                <?php echo htmlspecialchars(strtr(t('growth.kpi_events_delta'), [':sign' => $deltaSign, ':pct' => number_format($d, 1)])); ?>
             </p>
         </div>
 
         <!-- New leads -->
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div class="flex items-center justify-between mb-2">
-                <p class="text-xs text-gray-500 uppercase tracking-wider">New leads</p>
+                <p class="text-xs text-gray-500 uppercase tracking-wider"><?= htmlspecialchars(t('growth.kpi_new_leads')) ?></p>
                 <div class="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
                     <i class="fa-solid fa-user-plus text-purple-600 text-sm"></i>
                 </div>
             </div>
             <p class="text-2xl font-bold text-gray-900"><?php echo number_format($newLeads); ?></p>
-            <p class="text-xs text-gray-500 mt-1">cardify_signup_leads (7d)</p>
+            <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('growth.kpi_new_leads_sub')) ?></p>
         </div>
 
         <!-- Viral clicks -->
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div class="flex items-center justify-between mb-2">
-                <p class="text-xs text-gray-500 uppercase tracking-wider">Viral footer</p>
+                <p class="text-xs text-gray-500 uppercase tracking-wider"><?= htmlspecialchars(t('growth.kpi_viral_footer')) ?></p>
                 <div class="w-8 h-8 bg-pink-50 rounded-lg flex items-center justify-center">
                     <i class="fa-solid fa-share-nodes text-pink-600 text-sm"></i>
                 </div>
             </div>
             <p class="text-2xl font-bold text-gray-900"><?php echo number_format($viralClicks); ?></p>
-            <p class="text-xs text-gray-500 mt-1">Clicks (7d)</p>
+            <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('growth.kpi_viral_clicks_sub')) ?></p>
         </div>
 
         <!-- Scan -> Save -->
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div class="flex items-center justify-between mb-2">
-                <p class="text-xs text-gray-500 uppercase tracking-wider">Scan &rarr; Save</p>
+                <p class="text-xs text-gray-500 uppercase tracking-wider"><?= htmlspecialchars(t('growth.kpi_scan_save')) ?></p>
                 <div class="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center">
                     <i class="fa-solid fa-address-book text-orange-600 text-sm"></i>
                 </div>
             </div>
             <p class="text-2xl font-bold text-gray-900"><?php echo number_format($scanToSave['rate'], 1); ?>%</p>
             <p class="text-xs text-gray-500 mt-1">
-                <?php echo number_format($scanToSave['saves']); ?> saves / <?php echo number_format($scanToSave['views']); ?> visitors
+                <?php echo htmlspecialchars(strtr(t('growth.kpi_scan_save_sub'), [':saves' => number_format($scanToSave['saves']), ':views' => number_format($scanToSave['views'])])); ?>
             </p>
         </div>
     </div>
@@ -215,9 +215,9 @@ adminHeader($pageTitle, 'growth');
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
             <div>
-                <h3 class="text-lg font-semibold text-gray-900">Section adoption</h3>
+                <h3 class="text-lg font-semibold text-gray-900"><?= htmlspecialchars(t('growth.sections_h3')) ?></h3>
                 <p class="text-xs text-gray-500 mt-1">
-                    Of <?php echo number_format($sectionData['total_active']); ?> active cards, % with each section enabled.
+                    <?= htmlspecialchars(str_replace(':total', number_format($sectionData['total_active']), t('growth.sections_sub'))) ?>
                 </p>
             </div>
         </div>
@@ -228,8 +228,8 @@ adminHeader($pageTitle, 'growth');
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
             <div>
-                <h3 class="text-lg font-semibold text-gray-900">Event breakdown — last <?php echo (int) $chartDays; ?> days</h3>
-                <p class="text-xs text-gray-500 mt-1">Views, CTA clicks, saves and viral footer clicks per day.</p>
+                <h3 class="text-lg font-semibold text-gray-900"><?= htmlspecialchars(str_replace(':n', (string)(int)$chartDays, t('growth.events_h3'))) ?></h3>
+                <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('growth.events_sub')) ?></p>
             </div>
         </div>
         <div class="h-80"><canvas id="gdLineChart"></canvas></div>
@@ -238,24 +238,24 @@ adminHeader($pageTitle, 'growth');
     <!-- Row 4: Top performing cards -->
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Top performing cards — last <?php echo (int) $kpiDays; ?>d</h3>
-            <span class="text-xs text-gray-500"><?php echo count($topCards); ?> cards with activity</span>
+            <h3 class="text-lg font-semibold text-gray-900"><?= htmlspecialchars(str_replace(':n', (string)(int)$kpiDays, t('growth.top_h3'))) ?></h3>
+            <span class="text-xs text-gray-500"><?= htmlspecialchars(str_replace(':n', (string) count($topCards), t('growth.top_count'))) ?></span>
         </div>
         <div class="overflow-x-auto">
             <table id="gdTopTable" class="w-full text-sm">
                 <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
                     <tr>
-                        <th class="px-4 py-3 text-left cursor-pointer select-none" onclick="gdSort(0,'str')">Employee <i class="fa-solid fa-sort text-gray-300"></i></th>
-                        <th class="px-4 py-3 text-right cursor-pointer select-none" onclick="gdSort(1,'num')">Views <i class="fa-solid fa-sort text-gray-300"></i></th>
-                        <th class="px-4 py-3 text-right cursor-pointer select-none" onclick="gdSort(2,'num')">Clicks <i class="fa-solid fa-sort text-gray-300"></i></th>
-                        <th class="px-4 py-3 text-right cursor-pointer select-none" onclick="gdSort(3,'num')">Viral <i class="fa-solid fa-sort text-gray-300"></i></th>
-                        <th class="px-4 py-3 text-right cursor-pointer select-none" onclick="gdSort(4,'num')">Saves <i class="fa-solid fa-sort text-gray-300"></i></th>
-                        <th class="px-4 py-3 text-right cursor-pointer select-none" onclick="gdSort(5,'num')">Conv % <i class="fa-solid fa-sort text-gray-300"></i></th>
+                        <th class="px-4 py-3 text-left cursor-pointer select-none" onclick="gdSort(0,'str')"><?= htmlspecialchars(t('growth.col_employee')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
+                        <th class="px-4 py-3 text-right cursor-pointer select-none" onclick="gdSort(1,'num')"><?= htmlspecialchars(t('growth.col_views')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
+                        <th class="px-4 py-3 text-right cursor-pointer select-none" onclick="gdSort(2,'num')"><?= htmlspecialchars(t('growth.col_clicks')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
+                        <th class="px-4 py-3 text-right cursor-pointer select-none" onclick="gdSort(3,'num')"><?= htmlspecialchars(t('growth.col_viral')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
+                        <th class="px-4 py-3 text-right cursor-pointer select-none" onclick="gdSort(4,'num')"><?= htmlspecialchars(t('growth.col_saves')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
+                        <th class="px-4 py-3 text-right cursor-pointer select-none" onclick="gdSort(5,'num')"><?= htmlspecialchars(t('growth.col_conv')) ?> <i class="fa-solid fa-sort text-gray-300"></i></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     <?php if (empty($topCards)): ?>
-                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">No card activity yet in the last <?php echo (int) $kpiDays; ?> days.</td></tr>
+                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500"><?= htmlspecialchars(str_replace(':n', (string)(int)$kpiDays, t('growth.top_empty'))) ?></td></tr>
                     <?php else: foreach ($topCards as $c):
                         $cardUrl = getBasePath() . 'admin/card-analytics.php?employee=' . urlencode($c['employee_id']);
                     ?>
@@ -280,17 +280,17 @@ adminHeader($pageTitle, 'growth');
     <!-- Row 5: Funnel -->
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Funnel — last <?php echo (int) $kpiDays; ?>d</h3>
-            <p class="text-xs text-gray-500">Views &rarr; QR scans &rarr; CTA clicks &rarr; Saves &rarr; Viral clicks</p>
+            <h3 class="text-lg font-semibold text-gray-900"><?= htmlspecialchars(str_replace(':n', (string)(int)$kpiDays, t('growth.funnel_h3'))) ?></h3>
+            <p class="text-xs text-gray-500"><?= htmlspecialchars(t('growth.funnel_sub')) ?></p>
         </div>
         <?php
         $max = max(1, $funnel['views'], $funnel['qr_scans'], $funnel['cta_clicks'], $funnel['saves'], $funnel['viral_clicks']);
         $stages = [
-            ['Views',         $funnel['views'],        'bg-blue-500'],
-            ['QR scans',      $funnel['qr_scans'],     'bg-indigo-500'],
-            ['CTA clicks',    $funnel['cta_clicks'],   'bg-green-500'],
-            ['Saves',         $funnel['saves'],        'bg-orange-500'],
-            ['Viral clicks',  $funnel['viral_clicks'], 'bg-pink-500'],
+            [t('growth.funnel_views'),        $funnel['views'],        'bg-blue-500'],
+            [t('growth.funnel_qr_scans'),     $funnel['qr_scans'],     'bg-indigo-500'],
+            [t('growth.funnel_cta_clicks'),   $funnel['cta_clicks'],   'bg-green-500'],
+            [t('growth.funnel_saves'),        $funnel['saves'],        'bg-orange-500'],
+            [t('growth.funnel_viral_clicks'), $funnel['viral_clicks'], 'bg-pink-500'],
         ];
         ?>
         <div class="space-y-3">
@@ -305,11 +305,11 @@ adminHeader($pageTitle, 'growth');
             ?>
             <div>
                 <div class="flex items-center justify-between text-sm mb-1">
-                    <span class="font-medium text-gray-700"><?php echo $label; ?></span>
+                    <span class="font-medium text-gray-700"><?php echo htmlspecialchars($label); ?></span>
                     <span class="text-gray-600">
                         <?php echo number_format($value); ?>
                         <?php if ($dropoff !== null): ?>
-                            <span class="text-xs text-red-500 ml-2"><i class="fa-solid fa-caret-down"></i> <?php echo number_format($dropoff, 1); ?>% drop</span>
+                            <span class="text-xs text-red-500 ml-2"><i class="fa-solid fa-caret-down"></i> <?php echo htmlspecialchars(str_replace(':pct', number_format($dropoff, 1), t('growth.funnel_drop'))); ?></span>
                         <?php endif; ?>
                     </span>
                 </div>
@@ -324,16 +324,16 @@ adminHeader($pageTitle, 'growth');
     <!-- Row 6: Feature / migration health -->
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Feature health</h3>
-            <p class="text-xs text-gray-500">Feature-backing tables and row counts</p>
+            <h3 class="text-lg font-semibold text-gray-900"><?= htmlspecialchars(t('growth.fh_h3')) ?></h3>
+            <p class="text-xs text-gray-500"><?= htmlspecialchars(t('growth.fh_sub')) ?></p>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
                     <tr>
-                        <th class="px-4 py-3 text-left">Table</th>
-                        <th class="px-4 py-3 text-right">Rows</th>
-                        <th class="px-4 py-3 text-center">Status</th>
+                        <th class="px-4 py-3 text-left"><?= htmlspecialchars(t('growth.fh_col_table')) ?></th>
+                        <th class="px-4 py-3 text-right"><?= htmlspecialchars(t('growth.fh_col_rows')) ?></th>
+                        <th class="px-4 py-3 text-center"><?= htmlspecialchars(t('growth.fh_col_status')) ?></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -359,7 +359,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const sectionTotal   = <?php echo (int) $sectionData['total_active']; ?>;
     const series        = <?php echo json_encode($timeSeries); ?>;
 
-    // Row 2: Horizontal bar — section adoption
+    // Row 2: Horizontal bar, section adoption
     const secEl = document.getElementById('gdSectionBar');
     if (secEl) {
         new Chart(secEl, {
@@ -367,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function () {
             data: {
                 labels: sectionLabels,
                 datasets: [{
-                    label: '% of active cards',
+                    label: <?= json_encode(t('growth.sec_pct_label'), JSON_UNESCAPED_UNICODE) ?>,
                     data: sectionData,
                     backgroundColor: 'rgba(59,130,246,0.75)',
                     borderColor: 'rgb(59,130,246)',
@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Row 3: Line — event breakdown
+    // Row 3: Line, event breakdown
     const lineEl = document.getElementById('gdLineChart');
     if (lineEl) {
         const labels = series.map(d => {
@@ -421,12 +421,12 @@ document.addEventListener('DOMContentLoaded', function () {
             data: {
                 labels,
                 datasets: [
-                    mk('Views',        'views',        'rgb(59,130,246)'),
-                    mk('Phone',        'c_phone',      'rgb(234,179,8)'),
-                    mk('WhatsApp',     'c_whatsapp',   'rgb(34,197,94)'),
-                    mk('Email',        'c_email',      'rgb(99,102,241)'),
-                    mk('Save contact', 'saves',        'rgb(249,115,22)'),
-                    mk('Viral click',  'viral_clicks', 'rgb(236,72,153)'),
+                    mk(<?= json_encode(t('growth.series_views'),        JSON_UNESCAPED_UNICODE) ?>, 'views',        'rgb(59,130,246)'),
+                    mk(<?= json_encode(t('growth.series_phone'),        JSON_UNESCAPED_UNICODE) ?>, 'c_phone',      'rgb(234,179,8)'),
+                    mk(<?= json_encode(t('growth.series_whatsapp'),     JSON_UNESCAPED_UNICODE) ?>, 'c_whatsapp',   'rgb(34,197,94)'),
+                    mk(<?= json_encode(t('growth.series_email'),        JSON_UNESCAPED_UNICODE) ?>, 'c_email',      'rgb(99,102,241)'),
+                    mk(<?= json_encode(t('growth.series_save_contact'), JSON_UNESCAPED_UNICODE) ?>, 'saves',        'rgb(249,115,22)'),
+                    mk(<?= json_encode(t('growth.series_viral_click'),  JSON_UNESCAPED_UNICODE) ?>, 'viral_clicks', 'rgb(236,72,153)'),
                 ]
             },
             options: {

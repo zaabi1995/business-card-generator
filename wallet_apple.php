@@ -68,10 +68,10 @@ try {
     $website   = $company['website'] ?? '';
 
     // Digital card URL for QR
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host   = $_SERVER['HTTP_HOST'] ?? 'cardify.om';
     $slug   = $company['slug'] ?? $companySlug;
-    $cardUrl = $scheme . '://' . $host . '/' . rawurlencode($slug) . '/card/' . rawurlencode($employee['id']);
+
+    // Tenant subdomain canonical URL (no double-slug regardless of host).
+    $cardUrl = getTenantUrl($slug, '/' . rawurlencode($employee['id']));
 
     // Colors (hex → "rgb(r,g,b)" per PKPass spec)
     $primaryHex   = ($theme && !empty($theme['primary_color']))   ? $theme['primary_color']   : '#1a1a1a';
@@ -105,7 +105,7 @@ try {
         'serialNumber'        => (string)$employee['id'],
         'teamIdentifier'      => APPLE_WALLET_TEAM_ID,
         'organizationName'    => defined('APPLE_WALLET_ORG_NAME') ? APPLE_WALLET_ORG_NAME : 'Cardify',
-        'description'         => $name . ' — ' . $companyNm,
+        'description'         => $name . ', ' . $companyNm,
         'foregroundColor'     => 'rgb(255, 255, 255)',
         'backgroundColor'     => $hexToRgb($primaryHex),
         'labelColor'          => $hexToRgb($secondaryHex),

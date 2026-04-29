@@ -1422,7 +1422,7 @@ JS;
     // amounts to any supported display currency via the fx_rates table and
     // resolve the user's preferred display currency.
     //
-    // All rates come from fx_rates — no hardcoded conversion constants.
+    // All rates come from fx_rates, no hardcoded conversion constants.
     // ========================================================================
 
     /** Supported currency whitelist for the display layer. Order matters for the header dropdown. */
@@ -1431,7 +1431,11 @@ JS;
         'USD' => 'US Dollar',
         'AED' => 'UAE Dirham',
         'SAR' => 'Saudi Riyal',
+        'QAR' => 'Qatari Riyal',
+        'BHD' => 'Bahraini Dinar',
+        'KWD' => 'Kuwaiti Dinar',
         'EUR' => 'Euro',
+        'GBP' => 'British Pound',
     ];
 
     /** Cookie name for persistent user preference. */
@@ -1439,6 +1443,31 @@ JS;
 
     /** In-process cache so we don't hit fx_rates on every convert() call in a request. */
     private static $rateCache = null;
+
+    /**
+     * Marketing-round a converted price to a clean "psychological" number.
+     * Applies ONLY to non-OMR currencies; OMR stays at its exact 3-decimal
+     * value so Omani customers see the real price.
+     *   < 10     -> ceil to whole
+     *   < 100    -> ceil up to nearest 5   (47.72 -> 50, 39.77 -> 40)
+     *   < 1000   -> ceil up to nearest 10  (143.15 -> 150, 119.29 -> 120)
+     *   >= 1000  -> ceil up to nearest 100 (1,431.45 -> 1,500)
+     */
+    public static function marketingRound(float $amount, string $currency): float {
+        $cur = strtoupper($currency);
+        // OMR is the base currency; Omani visitors see the exact 3-decimal price.
+        if ($cur === 'OMR') return $amount;
+        // BHD and KWD are low-unit precious currencies (3-decimal, values are
+        // small). Round to the nearest whole so 4.079 -> 4 and 4.895 -> 5,
+        // keeping monthly/annual distinct but dropping the ugly decimals.
+        if ($cur === 'BHD' || $cur === 'KWD') return round($amount);
+        // Everything else: ceil up to a clean psychological tier.
+        $a = abs($amount);
+        if ($a < 20)    return ceil($amount);            // keep fine granularity (12 -> 12, 15 -> 15)
+        if ($a < 100)   return ceil($amount / 5)   * 5;  // 47.72 -> 50
+        if ($a < 1000)  return ceil($amount / 10)  * 10; // 143.15 -> 150
+        return ceil($amount / 100) * 100;                // 1,431.45 -> 1,500
+    }
 
     /**
      * Convert an OMR amount to another currency.
@@ -1482,10 +1511,16 @@ JS;
         // 3. Auto-detect from CF-IPCountry (Cloudflare sets this on every request)
         $country = $_SERVER['HTTP_CF_IPCOUNTRY'] ?? '';
         $countryMap = [
+            // GCC natives
             'OM' => 'OMR',
             'AE' => 'AED',
             'SA' => 'SAR',
-            'US' => 'USD', 'GB' => 'USD', 'CA' => 'USD', 'AU' => 'USD',
+            'QA' => 'QAR',
+            'BH' => 'BHD',
+            'KW' => 'KWD',
+            // Common non-GCC visitors
+            'US' => 'USD', 'CA' => 'USD', 'AU' => 'USD',
+            'GB' => 'GBP', 'IE' => 'EUR',
             'DE' => 'EUR', 'FR' => 'EUR', 'IT' => 'EUR', 'ES' => 'EUR', 'NL' => 'EUR',
         ];
         if (isset($countryMap[$country])) return $countryMap[$country];

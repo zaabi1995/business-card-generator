@@ -1,6 +1,6 @@
 <?php
 /**
- * BHD Printing — Public Template Browser
+ * BHD Printing, Public Template Browser
  * Customers can browse card templates and customize them
  */
 require_once __DIR__ . '/../config.php';
@@ -21,7 +21,7 @@ foreach ($templates as &$t) {
     $t['field_definitions'] = json_decode($t['field_definitions'] ?? '[]', true) ?: [];
 }
 
-$pageTitle = 'Choose Your Card Design — BHD Printing';
+$pageTitle = 'Choose Your Card Design, BHD Printing';
 $pageDescription = 'Browse professional business card templates from BHD Printing. Pick a design, add your details, and order.';
 $bodyClass = 'bg-gray-50';
 

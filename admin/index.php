@@ -16,6 +16,7 @@ if (function_exists('isProduction') && !isProduction()) {
 }
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/admin-layout.php';
+require_once INCLUDES_DIR . '/Referral.php';
 
 // Check authentication and role
 if (!Auth::isLoggedIn()) {
@@ -58,6 +59,18 @@ $userRole = Auth::getCurrentRole();
 
 $companyId = getCurrentCompanyId();
 
+// First-login redirect, send admins who have never touched the wizard to it.
+// Acknowledged-and-suppressed tenants (skipped within the last 24h, or any
+// tenant with completed_at) are handled inside Onboarding::shouldShowWizard().
+if ($companyId && !isset($_GET['wizard']) && !isset($_GET['no_onboard'])) {
+    require_once INCLUDES_DIR . '/Onboarding.php';
+    if (Onboarding::shouldShowWizard($companyId)) {
+        $onboardUrl = getAdminBasePath() . 'onboarding' . ((defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php');
+        header('Location: ' . $onboardUrl);
+        exit;
+    }
+}
+
 // Get company theme for styling
 $companyTheme = null;
 if ($companyId && DatabaseAdapter::useDatabase()) {
@@ -72,13 +85,33 @@ if ($companyId && DatabaseAdapter::useDatabase()) {
 $primaryColor = $companyTheme['primary_color'] ?? '#2563eb';
 $secondaryColor = $companyTheme['secondary_color'] ?? '#0f3460';
 
-// Logout is handled by logout.php — GET logout removed for CSRF safety
+// Logout is handled by logout.php, GET logout removed for CSRF safety
 
 // Load templates
 $templatesConfig = loadTemplates();
 $templates = $templatesConfig['templates'] ?? [];
 $activeFrontId = $templatesConfig['activeFrontId'] ?? null;
 $activeBackId = $templatesConfig['activeBackId'] ?? null;
+
+// Cardify font registry: emit @font-face declarations for every
+// family any of this company's templates references so Fabric draws
+// imported PDF designs in the actual face (Lato-Medium, Sora-Regular,
+// etc.) instead of the browser's nearest-weight fallback.
+require_once INCLUDES_DIR . '/CompanyFonts.php';
+$editorFamilies = [];
+foreach ($templates as $tpl) {
+    $settings = isset($tpl['settings_json'])
+        ? (is_array($tpl['settings_json']) ? $tpl['settings_json'] : json_decode($tpl['settings_json'], true))
+        : ($tpl['settings'] ?? []);
+    if (is_array($settings) && !empty($settings['fonts_used'])) {
+        foreach ($settings['fonts_used'] as $fam) {
+            if ($fam) $editorFamilies[$fam] = true;
+        }
+    }
+}
+$editorFontFaceCss = !empty($editorFamilies)
+    ? CompanyFonts::fontFaceCss(realpath(__DIR__ . '/..'), $companyId, array_keys($editorFamilies))
+    : '';
 
 // Convert legacy field positions for existing templates.
 // Modern saves stamp settings.fields_format = 'px' so the legacy
@@ -130,8 +163,10 @@ $sampleProfiles = [
         'mobile' => '+968 9123 4567',
         'email' => 'ahmed.rashid@oig.om',
         'website' => 'www.oig.om',
-        'address_en' => 'Building 245, Way 3501, Al Khuwair, P.O. Box 123, PC 118, Muscat, Sultanate of Oman',
-        'address_ar' => 'مبنى ٢٤٥، طريق ٣٥٠١، الخوير، ص.ب ١٢٣، الرمز البريدي ١١٨، مسقط، سلطنة عُمان'
+        'address_en' => 'P.O. Box : 2555, P.C : 112, Ruwi',
+        'address_en_2' => 'Muscat, Sultanate of Oman',
+        'address_ar' => 'ص.ب: ٢٥٥٥، الرمز البريدي: ١١٢، روي',
+        'address_ar_2' => 'مسقط، سلطنة عُمان'
     ],
     [
         'name_en' => 'Sarah Johnson',
@@ -147,8 +182,10 @@ $sampleProfiles = [
         'mobile' => '+968 9876 5432',
         'email' => 'sarah.johnson@globalsolutions.com',
         'website' => 'www.globalsolutions.com',
-        'address_en' => 'Office 502, Qurum Business Center, Way 2987, Qurum, P.O. Box 456, PC 112, Muscat, Oman',
-        'address_ar' => 'مكتب ٥٠٢، مركز القرم للأعمال، طريق ٢٩٨٧، القرم، ص.ب ٤٥٦، الرمز البريدي ١١٢، مسقط، عُمان'
+        'address_en' => 'P.O. Box : 2555, P.C : 112, Ruwi',
+        'address_en_2' => 'Muscat, Sultanate of Oman',
+        'address_ar' => 'ص.ب: ٢٥٥٥، الرمز البريدي: ١١٢، روي',
+        'address_ar_2' => 'مسقط، سلطنة عُمان'
     ],
     [
         'name_en' => 'Mohammed bin Khalid Al-Busaidi',
@@ -164,8 +201,10 @@ $sampleProfiles = [
         'mobile' => '+968 9111 2222',
         'email' => 'mohammed.busaidi@ndc.om',
         'website' => 'www.ndc.om',
-        'address_en' => 'Tower A, Floor 15, Central Business District, Way 4520, P.O. Box 789, PC 100, Muscat, Sultanate of Oman',
-        'address_ar' => 'البرج أ، الطابق ١٥، المنطقة التجارية المركزية، طريق ٤٥٢٠، ص.ب ٧٨٩، الرمز البريدي ١٠٠، مسقط، سلطنة عُمان'
+        'address_en' => 'P.O. Box : 2555, P.C : 112, Ruwi',
+        'address_en_2' => 'Muscat, Sultanate of Oman',
+        'address_ar' => 'ص.ب: ٢٥٥٥، الرمز البريدي: ١١٢، روي',
+        'address_ar_2' => 'مسقط، سلطنة عُمان'
     ],
     [
         'name_en' => 'Li Wei',
@@ -181,8 +220,10 @@ $sampleProfiles = [
         'mobile' => '+968 9555 1234',
         'email' => 'li.wei@techstart.io',
         'website' => 'www.techstart.io',
-        'address_en' => 'Building 18, Knowledge Oasis Muscat, Rusayl, P.O. Box 321, PC 124, Muscat, Oman',
-        'address_ar' => 'مبنى ١٨، واحة المعرفة مسقط، الرسيل، ص.ب ٣٢١، الرمز البريدي ١٢٤، مسقط، عُمان'
+        'address_en' => 'P.O. Box : 2555, P.C : 112, Ruwi',
+        'address_en_2' => 'Muscat, Sultanate of Oman',
+        'address_ar' => 'ص.ب: ٢٥٥٥، الرمز البريدي: ١١٢، روي',
+        'address_ar_2' => 'مسقط، سلطنة عُمان'
     ],
     [
         'name_en' => 'Fatima Al-Harthi',
@@ -198,8 +239,10 @@ $sampleProfiles = [
         'mobile' => '+968 9234 5678',
         'email' => 'fatima.harthi@pdo.co.om',
         'website' => 'www.pdo.co.om',
-        'address_en' => 'PDO Head Office, Mina Al Fahal, P.O. Box 81, PC 116, Muscat, Sultanate of Oman',
-        'address_ar' => 'المقر الرئيسي لتنمية نفط عُمان، ميناء الفحل، ص.ب ٨١، الرمز البريدي ١١٦، مسقط، سلطنة عُمان'
+        'address_en' => 'P.O. Box : 2555, P.C : 112, Ruwi',
+        'address_en_2' => 'Muscat, Sultanate of Oman',
+        'address_ar' => 'ص.ب: ٢٥٥٥، الرمز البريدي: ١١٢، روي',
+        'address_ar_2' => 'مسقط، سلطنة عُمان'
     ]
 ];
 
@@ -217,7 +260,13 @@ if (!isset($sampleEmployee['website_ar'])) {
     $sampleEmployee['website_ar'] = $sampleEmployee['website'] ?? '';
 }
 if (!isset($sampleEmployee['address'])) {
-    $sampleEmployee['address'] = $sampleEmployee['address_en'] ?? '';
+    $sampleEmployee['address'] = $sampleEmployee['address_en_2'] ?? 'Muscat, Sultanate of Oman';
+}
+if (!isset($sampleEmployee['address_en_2'])) {
+    $sampleEmployee['address_en_2'] = 'Muscat, Sultanate of Oman';
+}
+if (!isset($sampleEmployee['address_ar_2'])) {
+    $sampleEmployee['address_ar_2'] = 'مسقط، سلطنة عُمان';
 }
 
 // Company slug for VCF URL
@@ -225,7 +274,7 @@ $companySlug = getCurrentCompanySlug() ?? 'demo';
 $baseUrl = getBaseUrl();
 
 // Start admin layout
-adminHeader('Dashboard', 'dashboard');
+adminHeader(t('dashboard.page_title'), 'dashboard');
 
 // Get company referral source, plan info for welcome banner + usage indicator
 $companyReferralSource = null;
@@ -233,14 +282,100 @@ $companyRow = [];
 if ($companyId && DatabaseAdapter::useDatabase()) {
     try {
         $companyRow = $db->fetchOne(
-            "SELECT referral_source, onboarding_completed, plan, subscription_status FROM companies WHERE id = :id",
+            "SELECT referral_source, onboarding_completed, plan, subscription_status, phone, phone_backfill_skips FROM companies WHERE id = :id",
             ['id' => $companyId]
         ) ?: [];
         $companyReferralSource = $companyRow['referral_source'] ?? null;
-    } catch (Exception $e) {}
+    } catch (Exception $e) {
+        // legacy installs without `phone` / `phone_backfill_skips`, fall back
+        try {
+            $companyRow = $db->fetchOne(
+                "SELECT referral_source, onboarding_completed, plan, subscription_status, phone FROM companies WHERE id = :id",
+                ['id' => $companyId]
+            ) ?: [];
+            $companyReferralSource = $companyRow['referral_source'] ?? null;
+        } catch (Exception $e2) {
+            try {
+                $companyRow = $db->fetchOne(
+                    "SELECT referral_source, onboarding_completed, plan, subscription_status FROM companies WHERE id = :id",
+                    ['id' => $companyId]
+                ) ?: [];
+                $companyReferralSource = $companyRow['referral_source'] ?? null;
+            } catch (Exception $e3) {}
+        }
+    }
 }
+
+// Phone-capture prompt, shown if admin has no phone on file.
+// Dismissal: session-scoped suppression (don't re-pop on every page load) +
+// persistent counter on companies.phone_backfill_skips (BHD-224 spec:
+// "dismissible after 3 skips", once we hit 3, we never show this banner
+// again for this company).
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'dismiss_phone_prompt') {
+    if (validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        $_SESSION['phone_prompt_dismissed'] = true;
+        if ($companyId) {
+            try {
+                // LEAST(...,3) so the counter is bounded, used as a hard suppression cap.
+                $db->getConnection()
+                    ->prepare("UPDATE companies SET phone_backfill_skips = LEAST(IFNULL(phone_backfill_skips, 0) + 1, 3) WHERE id = :id")
+                    ->execute([':id' => $companyId]);
+            } catch (Exception $e) {
+                // Column missing on legacy install, counter just won't persist.
+            }
+        }
+    }
+    header('Location: ' . $_SERVER['REQUEST_URI']);
+    exit;
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_phone_prompt') {
+    if (validateCSRFToken($_POST['csrf_token'] ?? '') && $companyId) {
+        // Prefer the canonical E.164 string from intl-tel-input over the
+        // visible national-format field.
+        $rawPhone = trim($_POST['phone_e164'] ?? $_POST['phone'] ?? '');
+        if ($rawPhone !== '') {
+            require_once INCLUDES_DIR . '/WhatsApp.php';
+            $digits = WhatsApp::normalizePhone($rawPhone);
+            $normalized = strlen($digits) >= 8 ? '+' . $digits : $rawPhone;
+            try {
+                $db->update('companies', ['phone' => $normalized], 'id = :id', ['id' => $companyId]);
+                if (!empty($_SESSION['user_id'])) {
+                    try {
+                        $db->update('users', ['phone' => $normalized], 'id = :id', ['id' => $_SESSION['user_id']]);
+                    } catch (Exception $e) { /* users.phone may not exist yet */ }
+                }
+                $_SESSION['phone_prompt_dismissed'] = true;
+            } catch (Exception $e) {
+                error_log('[phone-prompt] save failed: ' . $e->getMessage());
+            }
+        }
+    }
+    header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?'));
+    exit;
+}
+$adminHasPhone = !empty(trim($companyRow['phone'] ?? ''));
+// Tenant OTP-login users land here with users.phone already set (BHD-style
+// passwordless flow). Don't pester them to "add WhatsApp" again.
+if (!$adminHasPhone && !empty($_SESSION['user_id'])) {
+    try {
+        $userPhone = $db->fetchOne('SELECT phone FROM users WHERE id = :id LIMIT 1', ['id' => $_SESSION['user_id']]);
+        if (!empty(trim($userPhone['phone'] ?? ''))) {
+            $adminHasPhone = true;
+        }
+    } catch (Throwable $_) { /* users.phone column may not exist yet */ }
+}
+$adminBackfillSkips = (int) ($companyRow['phone_backfill_skips'] ?? 0);
+$showPhonePrompt = (
+    !$adminHasPhone
+    && $currentRole !== 'super_admin'
+    && empty($_SESSION['phone_prompt_dismissed'])
+    && array_key_exists('phone', $companyRow) // column must exist (post-migration)
+    && $adminBackfillSkips < 3                // honour the persistent skip cap
+);
 $companyPlan = $companyRow['plan'] ?? 'free';
-$isFreePlan = ($companyPlan === 'free' && ($companyRow['subscription_status'] ?? '') !== 'active');
+// Apr 2026 pricing reset: every team is on the free, fully-unlocked platform.
+// Card-counting code below is retained as no-op telemetry only.
+$isFreePlan = false;
 // Cards generated this month (for free plan limit indicator)
 $cardsThisMonth = 0;
 if ($isFreePlan && $companyId && DatabaseAdapter::useDatabase()) {
@@ -255,7 +390,7 @@ if ($isFreePlan && $companyId && DatabaseAdapter::useDatabase()) {
 $showWelcome = ($_GET['welcome'] ?? '') === '1';
 $onboardingCompleted = (int)($companyRow['onboarding_completed'] ?? 0);
 
-// Card view analytics for dashboard widget (always available — proves value)
+// Card view analytics for dashboard widget (always available, proves value)
 $viewsAllTime = 0;
 $views30d = 0;
 $views7d = 0;
@@ -286,7 +421,7 @@ if ($companyId && DatabaseAdapter::useDatabase()) {
     } catch (Exception $e) {}
 }
 
-// Getting started checklist — only for company admins, hidden once all steps done
+// Getting started checklist, only for company admins, hidden once all steps done
 $hasLogo = !empty($companyTheme['logo_path']);
 $hasTemplate = count($frontTemplates) > 0;
 $hasEmployee = $employeeCount > 0;
@@ -300,27 +435,246 @@ if ($companyId && DatabaseAdapter::useDatabase()) {
 }
 $_inCompanyCtx = defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug']);
 $_ext = $_inCompanyCtx ? '' : '.php';
+// Aligned to the 3-step onboarding (Brand -> Card design -> Launch).
+// Once all three are checked the whole checklist auto-hides via $checklistAllDone.
+//
+// Card design is "done" when EITHER:
+//   - the user uploaded a PDF in the wizard (Onboarding state has
+//     data.card_design.imported = true), OR
+//   - they have a fabric.js template authored in the editor
+//     (count($frontTemplates) > 0)
+// We accept either path so power users who skip the wizard still
+// progress the checklist by creating a template directly.
+$cardDesignImported = false;
+if ($companyId && class_exists('Onboarding')) {
+    try {
+        $obState = Onboarding::get($companyId);
+        $cd = $obState['data']['card_design'] ?? [];
+        $cardDesignImported = !empty($cd['imported']) || !empty($cd['import_token']);
+    } catch (Throwable $e) {}
+}
+$hasCardDesign = $cardDesignImported || $hasTemplate;
 $checklistSteps = [
-    ['done' => true,             'label' => 'Create your account',          'url' => null],
-    ['done' => $hasTemplate, 'label' => 'Upload logo & pick a template', 'url' => $onboardingCompleted ? '#template-editor' : getBasePath() . 'onboarding.php'],
+    ['done' => $hasLogo,         'label' => 'Upload your logo',              'url' => getBasePath() . 'onboarding.php'],
+    ['done' => $hasCardDesign,   'label' => 'Upload your card design',       'url' => getBasePath() . 'onboarding.php'],
     ['done' => $hasEmployee,     'label' => 'Add your first employee',       'url' => getAdminBasePath() . 'employees' . $_ext],
-    ['done' => $hasGeneratedCard,'label' => 'Generate your first card',      'url' => getAdminBasePath() . 'batch_generate' . $_ext],
-    ['done' => $hasPrintOrder,   'label' => 'Order physical business cards', 'url' => getAdminBasePath() . 'print' . $_ext],
 ];
 $checklistAllDone = array_reduce($checklistSteps, fn($carry, $s) => $carry && $s['done'], true);
 $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
+
+// BHD-234: referral share card (every logged-in company admin gets one).
+$referralCode = null;
+$referralShareUrl = null;
+$referralStats = ['signups' => 0, 'paid' => 0];
+$referralWhatsAppHref = null;
+if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
+    try {
+        $referralCode = Referral::ensureCodeForUser($_SESSION['user_id']);
+        if ($referralCode) {
+            $referralShareUrl = Referral::shareUrl($referralCode);
+            $referralStats = Referral::statsForUser($_SESSION['user_id']);
+            $waMsg = "👋 جربت Cardify مؤخراً, بطاقات أعمال رقمية احترافية في دقائق. جرّبها مجاناً:\n{$referralShareUrl}\n\nI've been using Cardify, digital business cards done right. Free to try:\n{$referralShareUrl}";
+            $referralWhatsAppHref = 'https://wa.me/?text=' . rawurlencode($waMsg);
+        }
+    } catch (Throwable $e) {
+        error_log('[dashboard] referral card failed: ' . $e->getMessage());
+    }
+}
 ?>
+
+<?php if ($showPhonePrompt): ?>
+<!-- Phone Backfill Prompt (BHD-224) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/css/intlTelInput.css">
+<style>
+    #bhd224-banner-phone + .iti, .iti:has(#bhd224-banner-phone) { width: 12rem; display: inline-block; }
+    #bhd224-banner-phone.iti__tel-input { padding-left: 3.5rem !important; }
+</style>
+<?php if ($editorFontFaceCss): ?>
+<style id="cardify-editor-font-registry">
+<?= $editorFontFaceCss ?>
+</style>
+<?php endif; ?>
+<div class="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4" id="phone-prompt-banner">
+    <form method="post" class="flex flex-col sm:flex-row sm:items-center gap-3">
+        <?= csrfField(); ?>
+        <input type="hidden" name="action" value="save_phone_prompt">
+        <div class="flex items-start gap-3 flex-1">
+            <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <i class="fa-brands fa-whatsapp text-blue-600"></i>
+            </div>
+            <div>
+                <p class="font-semibold text-blue-900 text-sm"><?= htmlspecialchars(t('dashboard.add_wa_title')) ?></p>
+                <p class="text-blue-700 text-xs mt-0.5">We'll message you on WhatsApp for order status and onboarding tips. Leave blank to opt out.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+            <input type="tel" id="bhd224-banner-phone" name="phone" autocomplete="tel" inputmode="tel" required
+                   placeholder="9XXX XXXX"
+                   class="px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm w-48 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+            <input type="hidden" name="phone_e164" id="bhd224-banner-phone-e164" value="">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm whitespace-nowrap">
+                Save
+            </button>
+        </div>
+    </form>
+    <form method="post" class="flex justify-between items-center mt-2">
+        <?= csrfField(); ?>
+        <input type="hidden" name="action" value="dismiss_phone_prompt">
+        <span class="text-[11px] text-blue-700/70">
+            <?php if ($adminBackfillSkips > 0): ?>
+                Reminded <?= 3 - $adminBackfillSkips ?> more time<?= ($adminBackfillSkips === 2) ? '' : 's' ?> after this, then we'll stop.
+            <?php endif; ?>
+        </span>
+        <button type="submit" class="text-xs text-blue-600 hover:text-blue-800 underline">
+            <?= $adminBackfillSkips >= 2 ? 'Stop reminding me' : 'Not now' ?>
+        </button>
+    </form>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/intlTelInput.min.js"></script>
+<script>
+(function () {
+    var phoneEl = document.getElementById('bhd224-banner-phone');
+    var hiddenEl = document.getElementById('bhd224-banner-phone-e164');
+    if (!phoneEl || !window.intlTelInput) return;
+    var iti = window.intlTelInput(phoneEl, {
+        initialCountry: 'om',
+        preferredCountries: ['om', 'ae', 'sa', 'qa', 'bh', 'kw'],
+        separateDialCode: true,
+        autoPlaceholder: 'aggressive',
+        utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.8.2/build/js/utils.js'
+    });
+    var form = phoneEl.closest('form');
+    if (form) {
+        form.addEventListener('submit', function () {
+            try {
+                if (phoneEl.value.trim() === '') { hiddenEl.value = ''; return; }
+                hiddenEl.value = iti.isValidNumber() ? iti.getNumber() : (iti.getNumber() || phoneEl.value.trim());
+            } catch (err) {
+                hiddenEl.value = phoneEl.value.trim();
+            }
+        });
+    }
+})();
+</script>
+<?php endif; ?>
+
+<?php
+// Onboarding resume + order-nudge banners (Cardify v2.0 sprint, actions 099 + 110).
+$onboardState = null;
+if ($companyId) {
+    require_once INCLUDES_DIR . '/Onboarding.php';
+    $onboardState = Onboarding::get($companyId);
+}
+$showResumeBanner = $onboardState && !empty($onboardState['started_at']) && empty($onboardState['completed_at']) && (int)$onboardState['step'] > 0 && (int)$onboardState['step'] < Onboarding::TOTAL_STEPS;
+$showOrderNudge  = $onboardState && !empty($onboardState['completed_at']) && empty($onboardState['data']['order_cards']['per_person']);
+$demoSeededIds = !empty($onboardState['data']['demo_employee_ids']) && is_array($onboardState['data']['demo_employee_ids'])
+    ? $onboardState['data']['demo_employee_ids'] : [];
+$showDemoBanner = !empty($demoSeededIds);
+$adminBase = rtrim(getAdminBasePath(), '/');
+$ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php';
+?>
+
+<?php if (!empty($_GET['demo_cleared'])): ?>
+<div class="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-900"
+     x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)">
+    <i class="fa-solid fa-check-circle mr-1"></i>
+    <?= htmlspecialchars(t('onboarding.demo_cleared_toast', ['n' => (int) $_GET['demo_cleared']])) ?>
+</div>
+<?php endif; ?>
+
+<?php if ($showDemoBanner): ?>
+<div class="mb-4 rounded-xl bg-purple-50 border border-purple-200 p-4 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 text-purple-900">
+        <i class="fa-solid fa-flask text-purple-600"></i>
+        <span class="text-sm"><?= htmlspecialchars(t('onboarding.demo_banner')) ?></span>
+    </div>
+    <form method="POST" action="<?= $adminBase ?>/demo-clear<?= $ext ?>" class="m-0">
+        <?= csrfField() ?>
+        <button type="submit" class="px-3 py-1.5 text-xs font-semibold text-purple-700 hover:text-purple-900 hover:bg-purple-100 rounded-lg whitespace-nowrap">
+            <i class="fa-solid fa-broom mr-1"></i>
+            <?= htmlspecialchars(t('onboarding.demo_clear')) ?>
+        </button>
+    </form>
+</div>
+<?php endif; ?>
+
+<?php if (isset($_GET['wizard']) && $_GET['wizard'] === 'done'): ?>
+<div class="mb-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-4 flex items-center justify-between gap-4 animate-pulse-once"
+     x-data="{ show: true }" x-show="show"
+     x-init="setTimeout(() => { show = false }, 8000)">
+    <div class="flex items-center gap-3">
+        <i class="fa-solid fa-party-horn text-2xl"></i>
+        <div>
+            <p class="font-bold text-lg"><?= htmlspecialchars(t('onboarding.congrats')) ?></p>
+            <p class="text-sm text-emerald-100"><?= htmlspecialchars(t('onboarding.congrats_subtitle')) ?></p>
+        </div>
+    </div>
+    <button @click="show = false" class="text-white/80 hover:text-white text-lg"><i class="fa-solid fa-times"></i></button>
+</div>
+<style>
+@keyframes pulseOnce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.01); } }
+.animate-pulse-once { animation: pulseOnce 1.5s ease-in-out 2; }
+</style>
+<script src="<?= getBasePath() ?>assets/js/canvas-confetti.min.js" defer></script>
+<script>
+// Wizard-done confetti: 3-second burst in 3 volleys from opposing edges,
+// honors prefers-reduced-motion. Fires once per page load; no loop.
+(function () {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    function start() {
+        if (typeof confetti !== 'function') return;
+        var end = Date.now() + 3000;
+        var colors = ['#009bc1', '#fb0', '#824598', '#45c0ba', '#16a34a'];
+        (function frame() {
+            confetti({ particleCount: 4, angle: 60,  spread: 55, origin: { x: 0,   y: 0.7 }, colors: colors, disableForReducedMotion: true });
+            confetti({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1,   y: 0.7 }, colors: colors, disableForReducedMotion: true });
+            if (Date.now() < end) requestAnimationFrame(frame);
+        })();
+    }
+    if (document.readyState === 'complete') start();
+    else window.addEventListener('load', start, { once: true });
+})();
+</script>
+<?php endif; ?>
+
+<?php if ($showResumeBanner): ?>
+<div class="mb-4 rounded-xl bg-blue-50 border border-blue-200 p-4 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 text-blue-900">
+        <i class="fa-solid fa-list-check text-blue-600"></i>
+        <span class="text-sm font-medium">
+            <?= htmlspecialchars(t('onboarding.dashboard_resume', ['done' => (int)$onboardState['step'], 'total' => Onboarding::TOTAL_STEPS])) ?>
+        </span>
+    </div>
+    <a href="<?= $adminBase ?>/onboarding<?= $ext ?>" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg whitespace-nowrap">
+        <?= htmlspecialchars(t('onboarding.dashboard_resume_cta')) ?>
+        <i class="fa-solid fa-arrow-right ml-1"></i>
+    </a>
+</div>
+<?php endif; ?>
+
+<?php if ($showOrderNudge): ?>
+<div class="mb-4 rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 text-amber-900">
+        <i class="fa-solid fa-truck-fast text-amber-600"></i>
+        <span class="text-sm font-medium"><?= htmlspecialchars(t('onboarding.dashboard_order_nudge')) ?></span>
+    </div>
+    <a href="<?= $adminBase ?>/print<?= $ext ?>" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg whitespace-nowrap">
+        <?= htmlspecialchars(t('onboarding.dashboard_order_cta')) ?>
+        <i class="fa-solid fa-arrow-right ml-1"></i>
+    </a>
+</div>
+<?php endif; ?>
 
 <?php if ($showWelcome): ?>
 <!-- Post-onboarding Welcome Banner -->
-<div class="mb-6 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 p-6 text-white shadow-lg flex items-center justify-between gap-4" id="bhd-welcome-banner">
+<div class="mb-6 rounded-2xl p-6 text-white shadow-lg flex items-center justify-between gap-4" id="bhd-welcome-banner" style="background:linear-gradient(to right,var(--tbrand,#2563eb),var(--tbrand-2,#06b6d4));">
     <div class="flex items-center gap-4">
         <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
             <i class="fa-solid fa-rocket text-white text-xl"></i>
         </div>
         <div>
-            <h3 class="font-bold text-lg">You're all set! Welcome to Cardify.</h3>
-            <p class="text-blue-100 text-sm mt-0.5">Create your first digital business card — add yourself and generate your card in 60 seconds.</p>
+            <h3 class="font-bold text-lg"><?= htmlspecialchars(t('dashboard.all_set_title')) ?></h3>
+            <p class="text-blue-100 text-sm mt-0.5"><?= htmlspecialchars(t('dashboard.all_set_body')) ?></p>
         </div>
     </div>
     <div class="flex items-center gap-3 flex-shrink-0">
@@ -342,8 +696,8 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
             <i class="fa-solid fa-circle-exclamation text-amber-500"></i>
         </div>
         <div>
-            <p class="font-semibold text-amber-900 text-sm">Complete your account setup</p>
-            <p class="text-amber-700 text-xs mt-0.5">Upload your logo and pick a card template to get started in 2 minutes.</p>
+            <p class="font-semibold text-amber-900 text-sm"><?= htmlspecialchars(t('dashboard.complete_setup')) ?></p>
+            <p class="text-amber-700 text-xs mt-0.5">Upload your logo and (optionally) your card design PDF, three quick steps.</p>
         </div>
     </div>
     <a href="<?= getBasePath() ?>onboarding.php" class="flex-shrink-0 bg-amber-500 hover:bg-amber-600 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-all whitespace-nowrap">
@@ -353,14 +707,14 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
 <?php elseif ($hasEmployee && !$hasGeneratedCard && $onboardingCompleted && $currentRole !== 'super_admin'): ?>
 <?php $batchExt = defined('COMPANY_ADMIN_BASE') ? '' : '.php'; ?>
 <?php if (!$hasTemplate): ?>
-<!-- Has employees, no template — point to template editor first -->
-<div class="mb-6 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-500 p-5 text-white shadow-lg flex items-center justify-between gap-4" id="generate-cards-nudge">
+<!-- Has employees, no template, point to template editor first -->
+<div class="mb-6 rounded-2xl p-5 text-white shadow-lg flex items-center justify-between gap-4" id="generate-cards-nudge" style="background:linear-gradient(to right,#7c3aed,#6366f1);">
     <div class="flex items-center gap-4">
         <div class="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
             <i class="fa-solid fa-paintbrush text-white text-lg"></i>
         </div>
         <div>
-            <h3 class="font-bold">One step left — design your card template</h3>
+            <h3 class="font-bold"><?= htmlspecialchars(t('dashboard.design_template_h3')) ?></h3>
             <p class="text-purple-100 text-sm mt-0.5">You have <?= $employeeCount ?> employee<?= $employeeCount !== 1 ? 's' : '' ?> ready. Set up a card template and generate all cards in seconds.</p>
         </div>
     </div>
@@ -374,14 +728,14 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
     </div>
 </div>
 <?php else: ?>
-<!-- Has employees + template but no cards generated — generate nudge -->
-<div class="mb-6 rounded-2xl bg-gradient-to-r from-green-600 to-emerald-500 p-5 text-white shadow-lg flex items-center justify-between gap-4" id="generate-cards-nudge">
+<!-- Has employees + template but no cards generated, generate nudge -->
+<div class="mb-6 rounded-2xl p-5 text-white shadow-lg flex items-center justify-between gap-4" id="generate-cards-nudge" style="background:linear-gradient(to right,#16a34a,#10b981);">
     <div class="flex items-center gap-4">
         <div class="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
             <i class="fa-solid fa-id-card text-white text-lg"></i>
         </div>
         <div>
-            <h3 class="font-bold">Your team is ready — generate their cards now</h3>
+            <h3 class="font-bold"><?= htmlspecialchars(t('dashboard.team_ready_h3')) ?></h3>
             <p class="text-green-100 text-sm mt-0.5">You have <?= $employeeCount ?> employee<?= $employeeCount !== 1 ? 's' : '' ?> set up. Generate all cards in one click.</p>
         </div>
     </div>
@@ -397,6 +751,95 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
 <?php endif; ?>
 <?php endif; ?>
 
+<?php
+// Public portal share card, one link per tenant, employees use it to request
+// their cards. Always visible to company admins so they can copy/share anytime.
+if ($currentRole !== 'super_admin' && !empty($companySlug)):
+    $portalShareUrl = getTenantUrl($companySlug, '/portal');
+    $portalWaMsg = "Hi team, our Cardify business card portal is ready. Request your card here:\n" . $portalShareUrl;
+    $portalWaHref = 'https://wa.me/?text=' . rawurlencode($portalWaMsg);
+?>
+<div class="mb-8 rounded-2xl overflow-hidden shadow-lg" id="portal-share-card">
+    <div class="p-6 sm:p-7 text-white" style="background:linear-gradient(135deg, var(--tbrand,#009bc1) 0%, var(--tbrand-2,#005f78) 100%);">
+        <div class="flex flex-col lg:flex-row lg:items-center gap-6">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-10 h-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-share-nodes text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg leading-tight">Your public portal link</h3>
+                        <p class="text-white/80 text-sm">Send this link to your team. They request a card, you approve and print.</p>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex flex-col sm:flex-row gap-2">
+                    <div class="flex-1 bg-white/15 backdrop-blur rounded-lg px-3 py-2.5 flex items-center gap-2 min-w-0">
+                        <i class="fa-solid fa-link text-white/70 text-xs flex-shrink-0"></i>
+                        <input type="text" readonly value="<?= htmlspecialchars($portalShareUrl) ?>" id="portal-share-url"
+                               class="flex-1 bg-transparent text-white text-sm font-mono tracking-tight outline-none min-w-0 truncate"
+                               onclick="this.select()">
+                    </div>
+                    <button type="button" onclick="portalCopyShare()" id="portal-copy-btn"
+                            class="bg-white font-semibold px-4 py-2.5 rounded-lg text-sm hover:bg-white/90 transition-all whitespace-nowrap flex items-center justify-center gap-2"
+                            style="color: var(--tbrand,#007a99);">
+                        <i class="fa-solid fa-copy text-xs"></i>
+                        <span id="portal-copy-label">Copy link</span>
+                    </button>
+                    <a href="<?= htmlspecialchars($portalWaHref) ?>" target="_blank" rel="noopener"
+                       class="bg-[#25D366] hover:bg-[#1ebe57] text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2">
+                        <i class="fa-brands fa-whatsapp"></i>
+                        Share on WhatsApp
+                    </a>
+                    <a href="<?= htmlspecialchars($portalShareUrl) ?>" target="_blank" rel="noopener"
+                       class="bg-white/10 hover:bg-white/20 text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-up-right-from-square text-xs"></i>
+                        Preview
+                    </a>
+                </div>
+                <p class="text-white/70 text-xs mt-3">
+                    <i class="fa-solid fa-lock-open"></i>
+                    Open access &middot;
+                    <a href="<?= getAdminBasePath() ?>settings<?= defined('COMPANY_ADMIN_BASE') ? '' : '.php' ?>" class="underline hover:text-white">Set a passcode</a>
+                    if you want to gate it.
+                </p>
+            </div>
+
+            <div class="lg:border-l lg:border-white/15 lg:pl-6 flex-shrink-0 flex items-center justify-center">
+                <div class="bg-white p-2 rounded-lg">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=<?= urlencode($portalShareUrl) ?>"
+                         alt="Portal QR code" width="140" height="140" loading="lazy"
+                         onerror="this.style.display='none'">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    window.portalCopyShare = function () {
+        var input = document.getElementById('portal-share-url');
+        var label = document.getElementById('portal-copy-label');
+        if (!input) return;
+        try {
+            input.select();
+            input.setSelectionRange(0, 99999);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(input.value);
+            } else {
+                document.execCommand('copy');
+            }
+            if (label) {
+                var prev = label.textContent;
+                label.textContent = 'Copied!';
+                setTimeout(function () { label.textContent = prev; }, 1600);
+            }
+        } catch (e) { /* ignore */ }
+    };
+})();
+</script>
+<?php endif; ?>
+
 <?php if (!$checklistAllDone && !$showWelcome && $currentRole !== 'super_admin'): ?>
 <!-- Getting Started Checklist -->
 <div class="mb-8 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden" id="getting-started-card">
@@ -406,7 +849,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                 <i class="fa-solid fa-list-check text-blue-600 text-sm"></i>
             </div>
             <div>
-                <h3 class="font-semibold text-gray-900 text-sm">Getting Started</h3>
+                <h3 class="font-semibold text-gray-900 text-sm"><?= htmlspecialchars(t('dashboard.getting_started')) ?></h3>
                 <p class="text-xs text-gray-500"><?= $checklistDoneCount ?>/<?= count($checklistSteps) ?> steps complete</p>
             </div>
         </div>
@@ -442,6 +885,81 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
 </div>
 <?php endif; ?>
 
+<?php if ($referralCode && $referralShareUrl): ?>
+<!-- Referral Share Card (BHD-234) -->
+<div class="mb-8 rounded-2xl overflow-hidden shadow-lg relative" id="referral-share-card">
+    <div class="p-6 sm:p-7 text-white" style="background: linear-gradient(135deg, #009bc1 0%, #007a99 60%, #005f78 100%);">
+        <div class="flex flex-col lg:flex-row lg:items-center gap-6">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-10 h-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-gift text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg leading-tight"><?= htmlspecialchars(t('dashboard.refer_h3')) ?></h3>
+                        <p class="text-white/80 text-sm">Send your link to a friend. When they upgrade to paid, you get 3 months on us.</p>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex flex-col sm:flex-row gap-2">
+                    <div class="flex-1 bg-white/15 backdrop-blur rounded-lg px-3 py-2.5 flex items-center gap-2 min-w-0">
+                        <i class="fa-solid fa-link text-white/70 text-xs flex-shrink-0"></i>
+                        <input type="text" readonly value="<?= htmlspecialchars($referralShareUrl) ?>" id="bhd234-ref-url"
+                               class="flex-1 bg-transparent text-white text-sm font-mono tracking-tight outline-none min-w-0 truncate"
+                               onclick="this.select()">
+                    </div>
+                    <button type="button" onclick="bhd234CopyRef()" id="bhd234-copy-btn"
+                            class="bg-white font-semibold px-4 py-2.5 rounded-lg text-sm hover:bg-white/90 transition-all whitespace-nowrap flex items-center justify-center gap-2"
+                            style="color: #007a99;">
+                        <i class="fa-solid fa-copy text-xs"></i>
+                        <span id="bhd234-copy-label">Copy link</span>
+                    </button>
+                    <a href="<?= htmlspecialchars($referralWhatsAppHref) ?>" target="_blank" rel="noopener"
+                       class="bg-[#25D366] hover:bg-[#1ebe57] text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2">
+                        <i class="fa-brands fa-whatsapp"></i>
+                        Share on WhatsApp
+                    </a>
+                </div>
+            </div>
+
+            <div class="lg:border-l lg:border-white/15 lg:pl-6 flex lg:flex-col gap-6 lg:gap-3 justify-start lg:justify-center flex-shrink-0">
+                <div class="text-center lg:text-left">
+                    <p class="text-3xl font-bold leading-none"><?= (int)$referralStats['signups'] ?></p>
+                    <p class="text-white/80 text-xs mt-1">signed up</p>
+                </div>
+                <div class="text-center lg:text-left">
+                    <p class="text-3xl font-bold leading-none"><?= (int)$referralStats['paid'] ?></p>
+                    <p class="text-white/80 text-xs mt-1">went paid</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    window.bhd234CopyRef = function () {
+        var input = document.getElementById('bhd234-ref-url');
+        var label = document.getElementById('bhd234-copy-label');
+        if (!input) return;
+        try {
+            input.select();
+            input.setSelectionRange(0, 99999);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(input.value);
+            } else {
+                document.execCommand('copy');
+            }
+            if (label) {
+                var prev = label.textContent;
+                label.textContent = 'Copied!';
+                setTimeout(function () { label.textContent = prev; }, 1600);
+            }
+        } catch (e) { /* ignore */ }
+    };
+})();
+</script>
+<?php endif; ?>
+
 <!-- Stats Cards -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
@@ -451,7 +969,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
             </div>
             <div>
                 <p class="text-3xl font-bold text-gray-900"><?php echo count($frontTemplates); ?></p>
-                <p class="text-gray-500 text-sm">Front Templates</p>
+                <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('dashboard.kpi_front_templates')) ?></p>
             </div>
         </div>
     </div>
@@ -463,7 +981,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
             </div>
             <div>
                 <p class="text-3xl font-bold text-gray-900"><?php echo count($backTemplates); ?></p>
-                <p class="text-gray-500 text-sm">Back Templates</p>
+                <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('dashboard.kpi_back_templates')) ?></p>
             </div>
         </div>
     </div>
@@ -475,7 +993,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
             </div>
             <div>
                 <p class="text-3xl font-bold text-gray-900"><?php echo $employeeCount; ?></p>
-                <p class="text-gray-500 text-sm">Employees</p>
+                <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('dashboard.kpi_employees')) ?></p>
             </div>
         </div>
     </div>
@@ -487,7 +1005,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
             </div>
             <div>
                 <p class="text-3xl font-bold text-gray-900"><?php echo $generatedCount; ?></p>
-                <p class="text-gray-500 text-sm">Generated Cards</p>
+                <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('dashboard.kpi_generated_cards')) ?></p>
             </div>
         </div>
     </div>
@@ -506,27 +1024,27 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                 <i class="fa-solid fa-chart-line text-cyan-600 text-lg"></i>
             </div>
             <div>
-                <h3 class="font-semibold text-gray-900 text-sm">Card Views</h3>
-                <p class="text-xs text-gray-500">How often your digital cards are viewed</p>
+                <h3 class="font-semibold text-gray-900 text-sm"><?= htmlspecialchars(t('dashboard.card_views')) ?></h3>
+                <p class="text-xs text-gray-500"><?= htmlspecialchars(t('dashboard.views_help')) ?></p>
             </div>
         </div>
         <a href="<?= htmlspecialchars($_analyticsUrl) ?>" class="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
-            Full Analytics <i class="fa-solid fa-arrow-right text-xs"></i>
+            <?= htmlspecialchars(t('dashboard.full_analytics')) ?> <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
         </a>
     </div>
     <!-- Period stats -->
     <div class="grid grid-cols-3 gap-4 mb-5">
         <div class="text-center p-3 rounded-lg bg-gray-50">
             <p class="text-2xl font-bold text-gray-900"><?= number_format($views7d) ?></p>
-            <p class="text-xs text-gray-500 mt-0.5">Last 7 days</p>
+            <p class="text-xs text-gray-500 mt-0.5"><?= htmlspecialchars(t('dashboard.period_7d')) ?></p>
         </div>
         <div class="text-center p-3 rounded-lg bg-gray-50">
             <p class="text-2xl font-bold text-gray-900"><?= number_format($views30d) ?></p>
-            <p class="text-xs text-gray-500 mt-0.5">Last 30 days</p>
+            <p class="text-xs text-gray-500 mt-0.5"><?= htmlspecialchars(t('dashboard.period_30d')) ?></p>
         </div>
         <div class="text-center p-3 rounded-lg bg-gray-50">
             <p class="text-2xl font-bold text-gray-900"><?= number_format($viewsAllTime) ?></p>
-            <p class="text-xs text-gray-500 mt-0.5">All time</p>
+            <p class="text-xs text-gray-500 mt-0.5"><?= htmlspecialchars(t('dashboard.period_all')) ?></p>
         </div>
     </div>
     <!-- 7-day bar chart -->
@@ -541,7 +1059,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
         <?php endforeach; ?>
     </div>
     <?php if ($viewsAllTime === 0): ?>
-    <p class="text-center text-sm text-gray-400 mt-3">No views yet. Share your digital cards to start tracking.</p>
+    <p class="text-center text-sm text-gray-400 mt-3"><?= htmlspecialchars(t('dashboard.views_empty')) ?></p>
     <?php endif; ?>
 </div>
 <?php endif; ?>
@@ -556,16 +1074,16 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
 <div class="bg-white rounded-xl border <?= $nearLimit ? 'border-amber-300' : 'border-gray-100' ?> shadow-sm p-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-4">
     <div class="flex-1 min-w-0">
         <p class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-            <i class="fa-solid fa-gauge-simple text-gray-400"></i>
-            Free Plan Usage
+            <i class="fa-solid fa-gauge-simple text-gray-400" aria-hidden="true"></i>
+            <?= htmlspecialchars(t('dashboard.free_plan_usage')) ?>
             <?php if ($nearLimit): ?>
-            <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Near limit</span>
+            <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium"><?= htmlspecialchars(t('dashboard.near_limit')) ?></span>
             <?php endif; ?>
         </p>
         <div class="flex flex-col sm:flex-row gap-4">
             <div class="flex-1">
                 <div class="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>Employees</span>
+                    <span><?= htmlspecialchars(t('dashboard.kpi_employees')) ?></span>
                     <span class="font-medium <?= $employeeCount >= 5 ? 'text-red-600' : ($employeeCount >= 4 ? 'text-amber-600' : 'text-gray-600') ?>"><?= $employeeCount ?>/5</span>
                 </div>
                 <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -574,7 +1092,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
             </div>
             <div class="flex-1">
                 <div class="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>Cards this month</span>
+                    <span><?= htmlspecialchars(t('dashboard.cards_this_month')) ?></span>
                     <span class="font-medium <?= $cardsThisMonth >= 10 ? 'text-red-600' : ($cardsThisMonth >= 8 ? 'text-amber-600' : 'text-gray-600') ?>"><?= $cardsThisMonth ?>/10</span>
                 </div>
                 <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -597,8 +1115,8 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                 <i class="fa-solid fa-user-plus text-blue-600 text-xl"></i>
             </div>
             <div>
-                <p class="font-semibold text-gray-900">Add Employee</p>
-                <p class="text-gray-500 text-sm">Create a new team member</p>
+                <p class="font-semibold text-gray-900"><?= htmlspecialchars(t('dashboard.qa_add_employee')) ?></p>
+                <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('dashboard.qa_add_employee_sub')) ?></p>
             </div>
         </div>
     </a>
@@ -609,8 +1127,8 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                 <i class="fa-solid fa-wand-magic-sparkles text-green-600 text-xl"></i>
             </div>
             <div>
-                <p class="font-semibold text-gray-900">Generate Cards</p>
-                <p class="text-gray-500 text-sm">Batch generate business cards</p>
+                <p class="font-semibold text-gray-900"><?= htmlspecialchars(t('dashboard.qa_batch_title')) ?></p>
+                <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('dashboard.qa_batch_sub')) ?></p>
             </div>
         </div>
     </a>
@@ -621,8 +1139,8 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                 <i class="fa-solid fa-share-nodes text-purple-600 text-xl"></i>
             </div>
             <div>
-                <p class="font-semibold text-gray-900">Share Links</p>
-                <p class="text-gray-500 text-sm">Manage sharing options</p>
+                <p class="font-semibold text-gray-900"><?= htmlspecialchars(t('dashboard.qa_share_title')) ?></p>
+                <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('dashboard.qa_share_sub')) ?></p>
             </div>
         </div>
     </a>
@@ -649,7 +1167,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
         
         <!-- Add Card Design Form -->
         <div x-show="showAddModal" x-cloak class="p-6 border-b border-gray-100 bg-gray-50">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Create New Card Design</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4"><?= htmlspecialchars(t('dashboard.create_new_design')) ?></h3>
             <p class="text-sm text-gray-600 mb-4">This will create both front and back templates for your card. You can upload background designs for each side.</p>
             <form @submit.prevent="addTemplatePair()">
                 <div class="grid md:grid-cols-3 gap-4">
@@ -714,7 +1232,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                 <!-- Quick Start: Background Color -->
                 <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fa-solid fa-palette mr-1"></i> Quick Start — Pick a Background Color
+                        <i class="fa-solid fa-palette mr-1"></i> Quick Start, Pick a Background Color
                         <span class="text-xs font-normal text-gray-500 ml-1">(generates a solid-color card instantly)</span>
                     </label>
                     <div class="flex items-center gap-3 flex-wrap">
@@ -773,7 +1291,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
         <!-- Card Designs List -->
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
             <div class="p-4 border-b border-gray-100">
-                <h3 class="font-semibold text-gray-900">Card Designs</h3>
+                <h3 class="font-semibold text-gray-900"><?= htmlspecialchars(t('dashboard.card_designs')) ?></h3>
             </div>
             
             <div class="p-4 space-y-3" x-show="getCardDesigns().length > 0">
@@ -836,8 +1354,8 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
             
             <div x-show="getCardDesigns().length === 0" class="p-12 text-center text-gray-500">
                 <i class="fa-solid fa-palette text-4xl mb-4 opacity-30"></i>
-                <p class="font-medium text-gray-700">No card designs yet</p>
-                <p class="text-sm mt-1 mb-5">Create your first card template to get started</p>
+                <p class="font-medium text-gray-700"><?= htmlspecialchars(t('dashboard.no_designs')) ?></p>
+                <p class="text-sm mt-1 mb-5"><?= htmlspecialchars(t('dashboard.no_designs_cta')) ?></p>
                 <button @click="showAddModal = true; $nextTick(() => document.getElementById('template-editor').scrollIntoView({behavior:'smooth'}))"
                     class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm transition-colors">
                     <i class="fa-solid fa-plus"></i>
@@ -852,7 +1370,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
             <div class="p-4 border-b border-gray-100">
                 <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center gap-3">
-                        <h3 class="font-semibold text-gray-900" x-text="selectedTemplate ? selectedTemplate.name : 'Edit Template'"></h3>
+                        <h3 class="font-semibold text-gray-900" x-text="selectedTemplate ? selectedTemplate.name : <?= htmlspecialchars(json_encode(t('dashboard.edit_template')), ENT_QUOTES) ?>"></h3>
                         <!-- Front/Back Toggle -->
                         <div class="flex items-center bg-gray-100 rounded-lg p-1">
                             <button 
@@ -889,6 +1407,9 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                         <button @click="setActiveTemplate()" class="px-3 py-1.5 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium">
                             <i class="fa-solid fa-check mr-1"></i>Set Active
                         </button>
+                        <button @click="setAsCompanyDefault()" class="px-3 py-1.5 text-sm bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition-colors font-medium">
+                            <i class="fa-solid fa-building mr-1"></i><?= htmlspecialchars(t('dashboard.set_default_cta')) ?>
+                        </button>
                         <button @click="saveTemplate()" class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
                             <i class="fa-solid fa-floppy-disk mr-1"></i>Save
                         </button>
@@ -910,7 +1431,29 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                                 <i class="fa-solid fa-exclamation-circle text-amber-500 mr-1"></i>No image
                             </span>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <button type="button"
+                                    x-show="selectedTemplate && selectedTemplate.backgroundImage"
+                                    @click="toggleBackgroundLock()"
+                                    class="px-2.5 py-1.5 text-xs rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                                    :title="backgroundLocked ? 'Unlock to drag/resize the background' : 'Lock so clicks go to text, not the background'">
+                                <i class="fa-solid" :class="backgroundLocked ? 'fa-lock' : 'fa-lock-open'"></i>
+                                <span class="ml-1" x-text="backgroundLocked ? 'Locked' : 'Unlocked'"></span>
+                            </button>
+                            <button type="button"
+                                    x-show="selectedTemplate && selectedTemplate.backgroundImage"
+                                    @click="centerBackground()"
+                                    class="px-2.5 py-1.5 text-xs rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                                    title="Center the background on the card">
+                                <i class="fa-solid fa-crosshairs"></i>
+                            </button>
+                            <button type="button"
+                                    x-show="selectedTemplate && selectedTemplate.backgroundImage"
+                                    @click="resetBackgroundFit()"
+                                    class="px-2.5 py-1.5 text-xs rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                                    title="Snap the background back to fill the card">
+                                <i class="fa-solid fa-expand mr-1"></i>Fit
+                            </button>
                             <label class="px-3 py-1.5 text-sm rounded-lg font-medium cursor-pointer transition-colors"
                                    :class="activeTab === 'front' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'">
                                 <i class="fa-solid fa-upload mr-1"></i>
@@ -1125,7 +1668,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                 
                 <!-- Field Controls -->
                 <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                    <h4 class="font-medium text-gray-900 mb-3">Field Settings</h4>
+                    <h4 class="font-medium text-gray-900 mb-3"><?= htmlspecialchars(t('dashboard.field_settings')) ?></h4>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
                         <template x-for="(field, key) in (selectedTemplate && selectedTemplate.fields ? selectedTemplate.fields : {})" :key="key">
                             <div class="bg-white rounded-lg p-3 border border-gray-200">
@@ -1140,21 +1683,49 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                                 </div>
                                 
                                 <div x-show="field.enabled && key !== 'qr_code'" class="space-y-2 mt-2">
-                                    <div class="flex gap-2">
+                                    <div class="flex gap-2 items-end">
                                         <div class="flex-1">
-                                            <label class="text-xs text-gray-500 block mb-1">Size</label>
-                                            <input type="number" 
-                                                   :value="field.fontSize" 
-                                                   @change="updateFieldProperty(key, 'fontSize', parseInt($event.target.value))" 
-                                                   min="8" max="72" 
-                                                   class="w-full px-2 py-1 bg-white border border-gray-200 rounded text-xs text-gray-900">
+                                            <label class="text-xs text-gray-500 block mb-1 flex items-center gap-1">
+                                                <span>Size</span>
+                                                <span class="text-[10px] text-gray-400 font-normal">pt (print)</span>
+                                            </label>
+                                            <div class="relative">
+                                                <input type="number"
+                                                       :value="pxToPt(field.fontSize)"
+                                                       @input="updateFieldProperty(key, 'fontSize', ptToPx(parseFloat($event.target.value) || 0))"
+                                                       min="1" max="999" step="0.5"
+                                                       class="w-full pl-2 pr-7 py-1 bg-white border border-gray-200 rounded text-xs text-gray-900 [appearance:textfield] [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:m-0">
+                                                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 pointer-events-none">pt</span>
+                                            </div>
                                         </div>
-                                        <div class="w-12">
+                                        <div class="flex-shrink-0">
                                             <label class="text-xs text-gray-500 block mb-1">Color</label>
-                                            <input type="color" 
-                                                   :value="field.fill || field.color || '#1f2937'" 
-                                                   @change="updateFieldProperty(key, 'fill', $event.target.value)" 
-                                                   class="w-full h-7 rounded cursor-pointer border border-gray-200">
+                                            <div class="flex items-center gap-1">
+                                                <input type="color"
+                                                       :value="field.fill || field.color || brandPrimary"
+                                                       @input="updateFieldProperty(key, 'fill', $event.target.value)"
+                                                       class="w-7 h-7 rounded cursor-pointer border border-gray-200 flex-shrink-0"
+                                                       title="Pick color">
+                                                <input type="text"
+                                                       :value="field.fill || field.color || brandPrimary"
+                                                       @input="onHexInput(key, $event.target.value)"
+                                                       maxlength="7"
+                                                       placeholder="#000000"
+                                                       spellcheck="false"
+                                                       class="w-[5.5rem] px-1.5 py-1 bg-white border border-gray-200 rounded text-xs font-mono uppercase tracking-tight text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                                       title="Hex color">
+                                                <!-- Brand-token swatches (action 593) -->
+                                                <button type="button" @click="updateFieldProperty(key, 'fill', brandPrimary)"
+                                                        class="w-5 h-5 rounded border border-gray-300 flex-shrink-0" :style="'background:' + brandPrimary"
+                                                        :title="'Brand primary ' + brandPrimary"></button>
+                                                <button type="button" @click="updateFieldProperty(key, 'fill', brandSecondary)"
+                                                        class="w-5 h-5 rounded border border-gray-300 flex-shrink-0" :style="'background:' + brandSecondary"
+                                                        :title="'Brand secondary ' + brandSecondary"></button>
+                                                <button type="button" @click="updateFieldProperty(key, 'fill', '#111827')"
+                                                        class="w-5 h-5 rounded border border-gray-300 flex-shrink-0 bg-gray-900" title="Near black"></button>
+                                                <button type="button" @click="updateFieldProperty(key, 'fill', '#ffffff')"
+                                                        class="w-5 h-5 rounded border border-gray-300 flex-shrink-0 bg-white" title="White"></button>
+                                            </div>
                                         </div>
                                     </div>
                                     <div x-data="{ fontOpen: false, fontQuery: '' }" @click.outside="fontOpen = false" class="relative">
@@ -1215,9 +1786,34 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                                                 </template>
                                                 <!-- No Results -->
                                                 <div x-show="Object.keys(filteredFonts(fontQuery)).length === 0" class="px-3 py-4 text-center text-xs text-gray-500">
-                                                    No fonts found
+                                                    <?= htmlspecialchars(t('emptystates.no_fonts_h')) ?>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-2 mt-2">
+                                        <div class="col-span-2">
+                                            <label class="text-xs text-gray-500 block mb-1">Weight</label>
+                                            <select
+                                                :value="normalizedWeight(field)"
+                                                @change="updateFieldProperty(key, 'fontWeight', $event.target.value === 'normal' ? 'normal' : parseInt($event.target.value))"
+                                                @input="updateFieldProperty(key, 'fontWeight', $event.target.value === 'normal' ? 'normal' : parseInt($event.target.value))"
+                                                class="w-full px-2 py-1 bg-white border border-gray-200 rounded text-xs text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                                                <option value="300">Light</option>
+                                                <option value="normal">Regular</option>
+                                                <option value="500">Medium</option>
+                                                <option value="600">SemiBold</option>
+                                                <option value="700">Bold</option>
+                                                <option value="800">ExtraBold</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs text-gray-500 block mb-1">Style</label>
+                                            <button type="button"
+                                                    @click="updateFieldProperty(key, 'fontStyle', (field.fontStyle === 'italic') ? 'normal' : 'italic')"
+                                                    :class="field.fontStyle === 'italic' ? 'bg-blue-50 border-blue-400 text-blue-700' : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'"
+                                                    class="w-full px-2 py-1 border rounded text-xs italic font-serif transition-colors"
+                                                    title="Toggle italic">I</button>
                                         </div>
                                     </div>
                                     <div>
@@ -1279,8 +1875,8 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
         <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm flex items-center justify-center p-12" x-show="!selectedTemplate">
             <div class="text-center text-gray-400">
                 <i class="fa-solid fa-mouse-pointer text-4xl mb-4 opacity-50"></i>
-                <p class="text-gray-600">Select a template to edit</p>
-                <p class="text-sm mt-1">Or create a new one</p>
+                <p class="text-gray-600"><?= htmlspecialchars(t('dashboard.select_template')) ?></p>
+                <p class="text-sm mt-1"><?= htmlspecialchars(t('dashboard.or_create_new')) ?></p>
             </div>
         </div>
     </div>
@@ -1321,7 +1917,10 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
             sampleProfiles: <?php echo json_encode($sampleProfiles, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
             currentProfileIndex: 0,
             companySlug: '<?php echo $companySlug; ?>',
+            apexHost: '<?php echo cardifyApexHost(); ?>',
             baseUrl: '<?php echo $baseUrl; ?>',
+            brandPrimary: '<?php echo htmlspecialchars($primaryColor, ENT_QUOTES); ?>',
+            brandSecondary: '<?php echo htmlspecialchars($secondaryColor, ENT_QUOTES); ?>',
             fontsLoaded: false,
             initialized: false,
             
@@ -1377,16 +1976,92 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
             customHeight: 2,
             customUnit: 'in', // 'in' or 'mm'
             
-            // Font categories for the font selector
+            // Font categories for the font selector.
+            // Myriad Pro isn't available on Google Fonts (Adobe licensed).
+            // Source Sans 3 is its closest free cousin (same designer at
+            // Adobe) and Hind is another near-twin. Add an Adobe Fonts
+            // kit later for Myriad Pro if the license is acquired.
             fontCategories: {
-                'Sans-Serif': ['Inter', 'Plus Jakarta Sans', 'Montserrat', 'Roboto', 'Poppins', 'Open Sans', 'Lato', 'Nunito', 'Raleway', 'Work Sans', 'DM Sans', 'Outfit', 'Manrope', 'Urbanist', 'Lexend', 'Sora', 'Rubik', 'Quicksand', 'Ubuntu', 'Barlow', 'Jost'],
-                'Serif': ['Playfair Display', 'Merriweather', 'Lora', 'PT Serif', 'Libre Baskerville', 'EB Garamond', 'Cormorant Garamond', 'Spectral', 'Noto Serif', 'Vollkorn', 'Bodoni Moda'],
-                'Display': ['Bebas Neue', 'Oswald', 'Anton', 'Archivo Black', 'Righteous', 'Teko', 'Big Shoulders Display', 'Fredoka'],
-                'Script': ['Dancing Script', 'Pacifico', 'Great Vibes', 'Sacramento', 'Allura', 'Lobster', 'Caveat', 'Kaushan Script'],
-                'Arabic العربية': ['Cairo', 'Tajawal', 'Almarai', 'Noto Kufi Arabic', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Readex Pro', 'El Messiri', 'Changa', 'Reem Kufi', 'Amiri', 'Scheherazade New', 'Mada', 'Lalezar', 'Lemonada', 'Aref Ruqaa', 'Mirza', 'Rakkas', 'Baloo Bhaijaan 2', 'Noto Naskh Arabic', 'Noto Nastaliq Urdu', 'Lateef', 'Harmattan', 'Markazi Text', 'Gulzar'],
-                'Monospace': ['Roboto Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'Space Mono']
+                'Sans-Serif': ['Myriad Pro', 'Tahoma', 'Inter', 'Plus Jakarta Sans', 'Montserrat', 'Roboto', 'Poppins', 'Open Sans', 'Lato', 'Nunito', 'Nunito Sans', 'Raleway', 'Work Sans', 'DM Sans', 'Outfit', 'Manrope', 'Urbanist', 'Lexend', 'Sora', 'Rubik', 'Quicksand', 'Ubuntu', 'Barlow', 'Jost', 'Source Sans 3', 'Hind', 'Mulish', 'PT Sans', 'Cabin', 'Assistant', 'Karla', 'Figtree', 'Red Hat Display', 'Red Hat Text', 'Public Sans', 'Archivo', 'IBM Plex Sans', 'Onest', 'Geist'],
+                'Serif': ['Playfair Display', 'Merriweather', 'Lora', 'PT Serif', 'Libre Baskerville', 'EB Garamond', 'Cormorant Garamond', 'Spectral', 'Noto Serif', 'Vollkorn', 'Bodoni Moda', 'Source Serif 4', 'Fraunces', 'Crimson Pro', 'Alegreya', 'Libre Caslon Text', 'Newsreader', 'Roboto Serif'],
+                'Display': ['Bebas Neue', 'Oswald', 'Anton', 'Archivo Black', 'Righteous', 'Teko', 'Big Shoulders Display', 'Fredoka', 'Abril Fatface', 'Bungee', 'Comfortaa', 'Josefin Sans', 'Alfa Slab One', 'Chivo', 'Russo One', 'Unbounded'],
+                'Script': ['Dancing Script', 'Pacifico', 'Great Vibes', 'Sacramento', 'Allura', 'Lobster', 'Caveat', 'Kaushan Script', 'Satisfy', 'Shadows Into Light', 'Homemade Apple', 'Amatic SC', 'Parisienne'],
+                'Arabic العربية': ['Cairo', 'Tajawal', 'Almarai', 'Noto Kufi Arabic', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Readex Pro', 'El Messiri', 'Changa', 'Reem Kufi', 'Amiri', 'Scheherazade New', 'Mada', 'Lalezar', 'Lemonada', 'Aref Ruqaa', 'Mirza', 'Rakkas', 'Baloo Bhaijaan 2', 'Noto Naskh Arabic', 'Noto Nastaliq Urdu', 'Lateef', 'Harmattan', 'Markazi Text', 'Gulzar', 'Vazirmatn', 'Noto Sans Arabic Kufi'],
+                'Monospace': ['Roboto Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'Space Mono', 'IBM Plex Mono', 'Courier Prime', 'Inconsolata']
             },
-            
+
+            // Font size is stored in canvas backstore pixels so the PDF/
+            // PNG exports stay print-accurate at any card size. The UI
+            // works in points (pt), the real print unit Illustrator uses:
+            //   1pt = 1/72 inch, so at 300 DPI → 4.1667 px/pt.
+            // These helpers convert between the two; if the card DPI
+            // changes, point values stay stable across sizes.
+            // Normalise any stored fontWeight (legacy strings, empty, or
+            // numeric) to the set of values the Weight <select> shows, so
+            // the dropdown reflects the true state instead of silently
+            // falling back to its first option.
+            normalizedWeight: function(field) {
+                var w = field && field.fontWeight;
+                if (w === undefined || w === null || w === '') return 'normal';
+                if (w === 'bold' || w === 'bolder') return '700';
+                if (w === 'lighter') return '300';
+                if (w === 'normal') return 'normal';
+                var n = parseInt(w, 10);
+                if (isNaN(n)) return 'normal';
+                // Snap to the nearest picker value so 450 shows as Regular
+                // rather than nothing.
+                var values = [300, 400, 500, 600, 700, 800];
+                var nearest = values.reduce(function(a, b) {
+                    return Math.abs(b - n) < Math.abs(a - n) ? b : a;
+                }, 400);
+                return nearest === 400 ? 'normal' : String(nearest);
+            },
+
+            // Accept hex colour input live. Supports #rgb, #rgba, #rrggbb,
+            // #rrggbbaa with or without the leading '#'. Only commits once
+            // the entry is a valid colour so typing intermediate values
+            // like 'ff' or 'ff00' doesn't flash the preview to black.
+            onHexInput: function(key, raw) {
+                var v = (raw || '').toString().trim().replace(/^#+/, '');
+                if (!/^[0-9a-fA-F]+$/.test(v)) return;
+                var hex;
+                if (v.length === 3) {
+                    hex = '#' + v[0] + v[0] + v[1] + v[1] + v[2] + v[2];
+                } else if (v.length === 6) {
+                    hex = '#' + v;
+                } else if (v.length === 4) {
+                    hex = '#' + v[0] + v[0] + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
+                } else if (v.length === 8) {
+                    hex = '#' + v;
+                } else {
+                    return; // wait for more typing
+                }
+                this.updateFieldProperty(key, 'fill', hex.toLowerCase());
+            },
+
+            pxToPt: function(px) {
+                var dpi = this.dpi || 300;
+                if (!px && px !== 0) return '';
+                return Math.round((px * 72 / dpi) * 10) / 10;
+            },
+            ptToPx: function(pt) {
+                var dpi = this.dpi || 300;
+                return Math.max(1, Math.round(pt * dpi / 72));
+            },
+
+            // Font weights for the Weight picker. Values that are integers
+            // map straight through to Fabric's fontWeight. 'normal' stays
+            // as the legacy default so existing designs don't shift.
+            fontWeights: [
+                { value: 300, label: 'Light' },
+                { value: 'normal', label: 'Regular' },
+                { value: 500, label: 'Medium' },
+                { value: 600, label: 'SemiBold' },
+                { value: 700, label: 'Bold' },
+                { value: 800, label: 'ExtraBold' }
+            ],
+
+
             maxDisplayWidth: 480, // Maximum width to display in editor
             showSizeModal: false, // For custom size modal
             
@@ -1428,6 +2103,11 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                     }
                     return null;
                 });
+
+                // Arrow-key nudge for whatever is selected on the canvas.
+                document.addEventListener('keydown', function(e) {
+                    self.handleCanvasKeydown(e);
+                });
             },
             
             initCanvas: function() {
@@ -1457,6 +2137,13 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                     },
                     onFieldSelect: function(key) {
                         // Could highlight field in controls
+                    },
+                    onBackgroundTransform: function(t) {
+                        if (!self.selectedTemplate) return;
+                        self.selectedTemplate.backgroundTransform = t;
+                        if (!self.selectedTemplate.settings) self.selectedTemplate.settings = {};
+                        self.selectedTemplate.settings.backgroundTransform = t;
+                        self.persistSettingsDebounced();
                     }
                 });
 
@@ -1469,6 +2156,11 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                             clearInterval(timer);
                             if (!self.cardEditor.isReady) {
                                 console.error('CardEditor failed to initialize');
+                            } else {
+                                // Set the display (CSS) size so the canvas
+                                // fits the wrapper; internal backstore stays
+                                // at full 300 DPI for export quality.
+                                self.resizeCanvas();
                             }
                             resolve();
                         }
@@ -1611,7 +2303,76 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
             },
 
             // Collect size/orientation settings for persistence
+            // Lightweight "settings only" save (no field-position rescan)
+            // used to persist background transform after a drag/resize.
+            // Debounced so a continuous drag doesn't spam the server.
+            _persistTimer: null,
+            persistSettingsDebounced: function() {
+                var self = this;
+                if (this._persistTimer) clearTimeout(this._persistTimer);
+                this._persistTimer = setTimeout(function() {
+                    if (!self.selectedTemplate) return;
+                    var formData = self.newFormData('update');
+                    formData.append('id', self.selectedTemplate.id);
+                    formData.append('name', self.selectedTemplate.name);
+                    formData.append('fields', JSON.stringify(self.selectedTemplate.fields || {}));
+                    formData.append('settings', JSON.stringify(self.getTemplateSettings()));
+                    fetch('save_template', { method: 'POST', body: formData })
+                        .catch(function(e) { console.warn('Auto-save error:', e); });
+                }, 600);
+            },
+
+            // Reset the uploaded background's position/scale so it fills the
+            // canvas again. Handy after the user moves/resizes by mistake.
+            resetBackgroundFit: function() {
+                if (this.cardEditor && typeof this.cardEditor.resetBackgroundTransform === 'function') {
+                    this.cardEditor.resetBackgroundTransform();
+                }
+            },
+
+            centerBackground: function() {
+                if (this.cardEditor && typeof this.cardEditor.centerBackground === 'function') {
+                    this.cardEditor.centerBackground();
+                }
+            },
+
+            backgroundLocked: true,
+            toggleBackgroundLock: function() {
+                this.backgroundLocked = !this.backgroundLocked;
+                if (this.cardEditor && typeof this.cardEditor.setBackgroundLocked === 'function') {
+                    this.cardEditor.setBackgroundLocked(this.backgroundLocked);
+                }
+                this.showStatus(this.backgroundLocked ? 'Background locked, click fields to edit' : 'Background unlocked, drag to reposition', 'success');
+            },
+
+            // Arrow-key nudge for whatever is selected on the canvas.
+            // Shift = 10px, plain arrow = 1px. Ignored while the user is
+            // typing in an input so the editor stays keyboard-friendly.
+            handleCanvasKeydown: function(event) {
+                var tag = (event.target && event.target.tagName) || '';
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || event.target.isContentEditable) return;
+                if (!this.cardEditor || !this.cardEditor.canvas) return;
+                var step = event.shiftKey ? 10 : 1;
+                var dx = 0, dy = 0;
+                switch (event.key) {
+                    case 'ArrowLeft': dx = -step; break;
+                    case 'ArrowRight': dx = step; break;
+                    case 'ArrowUp': dy = -step; break;
+                    case 'ArrowDown': dy = step; break;
+                    default: return;
+                }
+                event.preventDefault();
+                this.cardEditor.nudgeSelected(dx, dy);
+            },
+
             getTemplateSettings: function() {
+                var bgT = null;
+                if (this.cardEditor && typeof this.cardEditor.getBackgroundTransform === 'function') {
+                    bgT = this.cardEditor.getBackgroundTransform();
+                }
+                if (!bgT && this.selectedTemplate && this.selectedTemplate.backgroundTransform) {
+                    bgT = this.selectedTemplate.backgroundTransform;
+                }
                 return {
                     cardSize: this.cardSize,
                     cardOrientation: this.cardOrientation,
@@ -1621,7 +2382,8 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                     bleedUnit: this.bleedUnit,
                     customWidth: this.customWidth,
                     customHeight: this.customHeight,
-                    customUnit: this.customUnit
+                    customUnit: this.customUnit,
+                    backgroundTransform: bgT
                 };
             },
 
@@ -1639,15 +2401,26 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                 if (typeof settings.customWidth !== 'undefined') this.customWidth = settings.customWidth;
                 if (typeof settings.customHeight !== 'undefined') this.customHeight = settings.customHeight;
                 if (settings.customUnit) this.customUnit = settings.customUnit;
+                if (settings.backgroundTransform) template.backgroundTransform = settings.backgroundTransform;
             },
 
-            // Resize the canvas to current settings
+            // Resize the canvas to current settings. Internal dimensions
+            // stay at 300 DPI for export quality; the CSS size is the
+            // scaled-down display size so the wrapper never clips the
+            // uploaded artwork.
             resizeCanvas: function() {
                 if (!this.cardEditor || !this.cardEditor.canvas) return Promise.resolve();
                 var dims = this.getCanvasDimensions();
-                this.cardEditor.canvas.setDimensions({ width: dims.width, height: dims.height });
-                this.cardEditor.options.width = dims.width;
-                this.cardEditor.options.height = dims.height;
+                var scale = Math.min(this.maxDisplayWidth / dims.width, 320 / dims.height);
+                var displayWidth = Math.round(dims.width * scale);
+                var displayHeight = Math.round(dims.height * scale);
+                if (typeof this.cardEditor.setDimensions === 'function') {
+                    this.cardEditor.setDimensions(dims.width, dims.height, displayWidth, displayHeight);
+                } else {
+                    this.cardEditor.canvas.setDimensions({ width: dims.width, height: dims.height });
+                    this.cardEditor.options.width = dims.width;
+                    this.cardEditor.options.height = dims.height;
+                }
                 this.cardEditor.canvas.renderAll();
                 return Promise.resolve();
             },
@@ -1842,12 +2615,19 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                             self.selectedTemplate.backgroundImage = result.backgroundImage;
                             // Update originalPdf if returned (for vector PDF export)
                             self.selectedTemplate.originalPdf = result.originalPdf || null;
-                            
+                            // A fresh upload resets any previous crop/position
+                            // so the new artwork fits the canvas cleanly.
+                            self.selectedTemplate.backgroundTransform = null;
+                            if (self.selectedTemplate.settings) {
+                                self.selectedTemplate.settings.backgroundTransform = null;
+                            }
+
                             // Update in templates array
                             for (var i = 0; i < self.templates.length; i++) {
                                 if (self.templates[i].id === self.selectedTemplate.id) {
                                     self.templates[i].backgroundImage = result.backgroundImage;
                                     self.templates[i].originalPdf = result.originalPdf || null;
+                                    self.templates[i].backgroundTransform = null;
                                     break;
                                 }
                             }
@@ -1937,15 +2717,31 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
             
             selectTemplate: function(template, options) {
                 if (!template) return Promise.resolve();
-                
-                // Ensure fields exist with defaults
+
+                // Ensure fields exist with defaults. Templates imported from
+                // a PDF have already gone through the click-to-bind review,
+                // so anything the user didn't explicitly map should NOT be
+                // rendered on the canvas. We still merge the default field
+                // shapes (font size, alignment, etc.) so the field-settings
+                // UI can expose them, but every injected default lands
+                // disabled so the editor's auto-render skips them.
                 var defaultFields = <?php echo json_encode(getDefaultFieldSettings(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+                var isImported = template.settings && template.settings.imported_from === 'pdf';
                 if (!template.fields) {
                     template.fields = JSON.parse(JSON.stringify(defaultFields));
+                    if (isImported) {
+                        for (var dk in template.fields) {
+                            if (Object.prototype.hasOwnProperty.call(template.fields, dk)) {
+                                template.fields[dk].enabled = false;
+                            }
+                        }
+                    }
                 } else {
                     for (var key in defaultFields) {
                         if (!template.fields[key]) {
-                            template.fields[key] = JSON.parse(JSON.stringify(defaultFields[key]));
+                            var clone = JSON.parse(JSON.stringify(defaultFields[key]));
+                            if (isImported) clone.enabled = false;
+                            template.fields[key] = clone;
                         }
                     }
                 }
@@ -1971,11 +2767,21 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                     chain = chain.then(function() { return self.resizeCanvas(); });
                 }
                 
-                // Load background
+                // Load background, restoring any saved transform (position,
+                // scale, rotation) the user applied previously.
                 var bgUrl = this.getBackgroundUrl(template);
                 if (bgUrl) {
+                    var savedTransform = template.backgroundTransform
+                        || (template.settings && template.settings.backgroundTransform)
+                        || null;
                     chain = chain.then(function() {
-                        return self.cardEditor.loadBackground(bgUrl);
+                        return self.cardEditor.loadBackground(bgUrl, savedTransform);
+                    }).then(function() {
+                        // Default to locked so clicks go straight to the
+                        // text fields; user opts-in via the Lock toggle.
+                        if (typeof self.cardEditor.setBackgroundLocked === 'function') {
+                            self.cardEditor.setBackgroundLocked(self.backgroundLocked);
+                        }
                     }).catch(function(e) {
                         console.warn('Background load error:', e);
                     });
@@ -1996,19 +2802,44 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                         if (key === 'qr_code') continue;
                         var field = template.fields[key];
                         if (!field.enabled) continue;
-                        
+
+                        // Pick the text the field should display in the
+                        // sample preview:
+                        //   1. is_static fields (brand decoration like
+                        //      "An Omantel Company", "@otech") render
+                        //      their detected_text verbatim.
+                        //   2. typed fields (name_en, mobile, ...) use
+                        //      the sample employee profile.
+                        //   3. fields the editor has no sample for fall
+                        //      back to the field's detected_text if the
+                        //      template was imported from a PDF, otherwise
+                        //      they are skipped (no more "social" /
+                        //      "static_2" key names rendered as text).
+                        var textToRender;
+                        if (field.is_static) {
+                            textToRender = (field.detected_text || '').trim();
+                        } else {
+                            var sampleMap = self.getSampleText(key);
+                            // getSampleText returns the key itself for
+                            // unknown fields; treat that as no sample.
+                            textToRender = (sampleMap && sampleMap !== key)
+                                ? sampleMap
+                                : (field.detected_text || '').trim();
+                        }
+                        if (!textToRender) continue;
+
                         // Determine text alignment - use stored value or default based on field type
                         var textAlign = field.textAlign || (key.endsWith('_ar') ? 'right' : 'left');
                         var originX = field.originX || (textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'right' : 'left'));
-                        
-                        var sampleText = self.getSampleText(key);
+
                         self.cardEditor.addTextField(key, {
-                            text: sampleText,
+                            text: textToRender,
                             x: field.x,
                             y: field.y,
                             fontSize: field.fontSize,
                             fontFamily: field.fontFamily,
                             fontWeight: field.fontWeight || 'normal',
+                            fontStyle: field.fontStyle || (field.italic ? 'italic' : 'normal'),
                             fill: field.fill || field.color || '#333333',
                             textAlign: textAlign,
                             originX: originX
@@ -2035,7 +2866,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                 // Add QR code if enabled
                 if (template.fields.qr_code && template.fields.qr_code.enabled) {
                     chain = chain.then(function() {
-                        var vcfUrl = self.baseUrl + self.companySlug + '/' + encodeURIComponent(self.sampleEmployee.email || 'demo@example.com') + '.vcf';
+                        var vcfUrl = 'https://' + self.companySlug + '.' + self.apexHost + '/' + encodeURIComponent(self.sampleEmployee.email || 'demo@example.com') + '.vcf';
                         return self.cardEditor.addQRCode(vcfUrl, {
                             x: template.fields.qr_code.x,
                             y: template.fields.qr_code.y,
@@ -2066,9 +2897,11 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                     'email': this.sampleEmployee.email || 'email@company.com',
                     'website': this.sampleEmployee.website || 'www.company.com',
                     'website_ar': this.sampleEmployee.website_ar || 'www.company.com',
-                    'address': this.sampleEmployee.address_en || this.sampleEmployee.address || 'Address',
-                    'address_en': this.sampleEmployee.address_en || this.sampleEmployee.address || 'Address',
-                    'address_ar': this.sampleEmployee.address_ar || 'العنوان'
+                    'address': this.sampleEmployee.address_en_2 || this.sampleEmployee.address || 'Muscat, Sultanate of Oman',
+                    'address_en': this.sampleEmployee.address_en || 'P.O. Box : 2555, P.C : 112, Ruwi',
+                    'address_en_2': this.sampleEmployee.address_en_2 || 'Muscat, Sultanate of Oman',
+                    'address_ar': this.sampleEmployee.address_ar || 'ص.ب: ٢٥٥٥، الرمز البريدي: ١١٢، روي',
+                    'address_ar_2': this.sampleEmployee.address_ar_2 || 'مسقط، سلطنة عُمان'
                 };
                 return map[key] || key;
             },
@@ -2108,38 +2941,60 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                     email: profile.email,
                     website: profile.website,
                     website_ar: profile.website,
-                    address: profile.address_en,
+                    address: profile.address_en_2 || 'Muscat, Sultanate of Oman',
                     address_en: profile.address_en,
-                    address_ar: profile.address_ar
+                    address_en_2: profile.address_en_2 || 'Muscat, Sultanate of Oman',
+                    address_ar: profile.address_ar,
+                    address_ar_2: profile.address_ar_2 || 'مسقط، سلطنة عُمان'
                 };
                 
                 // Refresh canvas with new sample data
                 this.refreshPreviewText();
             },
             
-            // Refresh preview text on canvas with current sample data
+            // Refresh preview text on canvas with current sample data.
+            // Static fields (brand decoration imported from a PDF) keep
+            // their detected_text on every profile cycle so the design
+            // never drifts when the user previews different employees.
             refreshPreviewText: function() {
                 if (!this.cardEditor || !this.selectedTemplate) return;
-                
-                var self = this;
+
                 var fields = this.cardEditor.getFields();
-                
+                var tplFields = (this.selectedTemplate && this.selectedTemplate.fields) || {};
+
                 for (var key in fields) {
                     var fieldObj = fields[key];
-                    if (fieldObj && fieldObj.fieldType === 'text') {
-                        var newText = this.getSampleText(key);
-                        fieldObj.set('text', newText);
-                        fieldObj.set('dirty', true);
-                        fieldObj.setCoords();
+                    if (!fieldObj || fieldObj.fieldType !== 'text') continue;
+                    var tplField = tplFields[key];
+
+                    var newText;
+                    if (tplField && tplField.is_static) {
+                        newText = (tplField.detected_text || '').trim();
+                    } else {
+                        var sample = this.getSampleText(key);
+                        newText = (sample && sample !== key)
+                            ? sample
+                            : (tplField && (tplField.detected_text || '').trim()) || '';
                     }
+                    if (!newText) continue;
+
+                    fieldObj.set('text', newText);
+                    fieldObj.set('dirty', true);
+                    fieldObj.setCoords();
                 }
-                
+
                 this.cardEditor.canvas.requestRenderAll();
             },
             
             getBackgroundUrl: function(template) {
                 if (!template || !template.backgroundImage) return '';
-                var path = template.backgroundImage.replace(/^\//, '');
+                var raw = String(template.backgroundImage);
+                // Guard against stray HTML/expressions landing in the field.
+                // A render-timing race was producing stray 404s on URLs that
+                // looked like HTML fragments; belt-and-braces reject here.
+                if (raw.indexOf('<') !== -1 || raw.indexOf('>') !== -1) return '';
+                if (!/^[\/A-Za-z0-9][\w\-\.\/:]*$/.test(raw.replace(/^\//, ''))) return '';
+                var path = raw.replace(/^\//, '');
                 return this.basePath + path;
             },
             
@@ -2152,6 +3007,14 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
             },
             
             getFieldLabel: function(key) {
+                // Imported PDF designs may attach a friendly label per field
+                // (e.g., "Decoration: An Omantel Company") so the static_N
+                // keys are readable in the editor's field list.
+                if (this.selectedTemplate && this.selectedTemplate.fields
+                    && this.selectedTemplate.fields[key]
+                    && this.selectedTemplate.fields[key].label) {
+                    return this.selectedTemplate.fields[key].label;
+                }
                 var labels = {
                     'name_en': 'Name (EN)', 'name_ar': 'الاسم (AR)',
                     'position_en': 'Position (EN)', 'position_ar': 'المنصب (AR)',
@@ -2160,7 +3023,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                     'mobile': 'Mobile (EN)', 'mobile_ar': 'الجوال (AR)',
                     'email': 'Email',
                     'website': 'Website (EN)', 'website_ar': 'الموقع (AR)',
-                    'address': 'Address', 'address_en': 'Address (EN)', 'address_ar': 'العنوان (AR)',
+                    'address': 'Address 02', 'address_en': 'Address 01 (EN)', 'address_en_2': 'Address 02 (EN)', 'address_ar': 'Address 01 (AR)', 'address_ar_2': 'Address 02 (AR)',
                     'qr_code': 'QR Code'
                 };
                 return labels[key] || key;
@@ -2175,7 +3038,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                     if (key === 'qr_code') {
                         if (enabled) {
                             var field = this.selectedTemplate.fields.qr_code;
-                            var vcfUrl = this.baseUrl + this.companySlug + '/' + encodeURIComponent(this.sampleEmployee.email || 'demo@example.com') + '.vcf';
+                            var vcfUrl = 'https://' + this.companySlug + '.' + this.apexHost + '/' + encodeURIComponent(this.sampleEmployee.email || 'demo@example.com') + '.vcf';
                             // Use sensible defaults if position is missing or invalid
                             var dims = this.getCanvasDimensions();
                             var x = (field.x > 0 && field.x < dims.width) ? field.x : dims.width - 180;
@@ -2195,23 +3058,74 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                         if (enabled) {
                             var field = this.selectedTemplate.fields[key];
                             var dims = this.getCanvasDimensions();
-                            // Use sensible defaults if position is missing or would be off-screen
-                            var x = (field.x > 0 && field.x < dims.width - 50) ? field.x : dims.width / 2;
-                            var y = (field.y > 0 && field.y < dims.height - 20) ? field.y : dims.height / 2;
-                            var fontSize = field.fontSize || 16;
-                            var fontFamily = field.fontFamily || 'Inter';
-                            var fill = field.fill || field.color || '#333333';
-                            // Determine text alignment - default based on field type (Arabic = right, English = left)
+
+                            // Alignment/origin first so we can pick a sane
+                            // default X relative to the *current* canvas.
                             var textAlign = field.textAlign || (key.endsWith('_ar') ? 'right' : 'left');
                             var originX = field.originX || (textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'right' : 'left'));
+
+                            // Role-based vertical slot so name/position/company
+                            // each land in their own lane when first enabled.
+                            var verticalSlot = {
+                                name_en: 60,      name_ar: 60,
+                                position_en: 110, position_ar: 110,
+                                department_en: 155, department_ar: 155,
+                                company_en: 195,  company_ar: 195,
+                                phone: 245,       phone_ar: 245,
+                                mobile: 285,      mobile_ar: 285,
+                                fax: 325,         fax_ar: 325,
+                                email: 365,
+                                website: 405,     website_ar: 405,
+                                address: 445,     address_en: 445, address_ar: 445
+                            };
+                            var defaultY = verticalSlot[key] || 60;
+
+                            // Default X depends on alignment so right-aligned
+                            // Arabic text actually hugs the right edge of the
+                            // current card, not a hard-coded 1000px.
+                            var insetX = 60;
+                            var defaultX;
+                            if (originX === 'right') defaultX = dims.width - insetX;
+                            else if (originX === 'center') defaultX = dims.width / 2;
+                            else defaultX = insetX;
+
+                            // Trust stored coords only if they fall inside
+                            // the current canvas and make sense for this
+                            // origin (right-origin needs x > 0, left-origin
+                            // needs x < canvas.width).
+                            var xValid = typeof field.x === 'number' && field.x > 10 && field.x < dims.width - 10;
+                            var yValid = typeof field.y === 'number' && field.y > 0 && field.y < dims.height - 10;
+                            var x = xValid ? field.x : defaultX;
+                            var y = yValid ? field.y : defaultY;
+
+                            var fontSize = field.fontSize || 16;
+                            var fontFamily = field.fontFamily || (key.endsWith('_ar') ? 'Cairo' : 'Inter');
+                            var fill = field.fill || field.color || '#333333';
                             
+                            // Static / decoration fields keep their detected text
+                            // verbatim across every employee preview.
+                            var fieldText;
+                            if (field.is_static) {
+                                fieldText = (field.detected_text || '').trim();
+                            } else {
+                                var sm = this.getSampleText(key);
+                                fieldText = (sm && sm !== key)
+                                    ? sm
+                                    : (field.detected_text || '').trim();
+                            }
+                            // No text to render means an unmapped field.
+                            // Bail out before touching the canvas; this is
+                            // a function body, not a loop, so we return.
+                            if (!fieldText) return;
+
                             this.cardEditor.addTextField(key, {
-                                text: this.getSampleText(key),
+                                text: fieldText,
                                 x: x,
                                 y: y,
                                 fontSize: fontSize,
                                 fontFamily: fontFamily,
                                 fontWeight: field.fontWeight || 'normal',
+                                fontStyle: field.fontStyle || (field.italic ? 'italic' : 'normal'),
                                 fill: fill,
                                 textAlign: textAlign,
                                 originX: originX
@@ -2416,9 +3330,34 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                     });
             },
             
+            setAsCompanyDefault: function() {
+                if (!this.selectedTemplate) {
+                    this.showStatus('Select a template first', 'error');
+                    return;
+                }
+                if (!confirm(<?= json_encode(t('dashboard.set_default_confirm')) ?>)) return;
+                var formData = this.newFormData('set_as_default');
+                formData.append('id', this.selectedTemplate.id);
+                formData.append('side', this.selectedTemplate.side);
+                var self = this;
+                fetch('save_template', { method: 'POST', body: formData })
+                    .then(function (r) { return r.json(); })
+                    .then(function (j) {
+                        if (j.success) {
+                            self.showStatus(<?= json_encode(t('dashboard.set_default_success')) ?>, 'success');
+                        } else {
+                            self.showStatus(j.error || <?= json_encode(t('dashboard.set_default_fail')) ?>, 'error');
+                        }
+                    })
+                    .catch(function (e) {
+                        console.error('set_as_default error', e);
+                        self.showStatus(<?= json_encode(t('dashboard.set_default_fail')) ?>, 'error');
+                    });
+            },
+
             deleteTemplate: function(id) {
                 if (!confirm('Are you sure you want to delete this template?')) return;
-                
+
                 var formData = this.newFormData('delete');
                 formData.append('id', id);
 
@@ -2526,7 +3465,7 @@ $checklistDoneCount = array_sum(array_column($checklistSteps, 'done'));
                 console.log('Active objects:', activeObjects.length);
                 
                 if (activeObjects.length === 0) {
-                    this.showStatus('Select elements to align', 'error');
+                    this.showStatus('Click a field on the card first, then press the align button', 'error');
                     return;
                 }
                 

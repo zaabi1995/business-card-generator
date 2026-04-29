@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin — Appointments dashboard.
+ * Admin, Appointments dashboard.
  * Lists upcoming/past/all appointments for the current company's employees.
  * Owner can confirm/cancel.
  */
@@ -25,7 +25,7 @@ $messageType = 'success';
 // Handle status update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-        $message = 'Invalid request token. Please refresh and try again.';
+        $message = t('appointments.invalid_token');
         $messageType = 'error';
     } else {
         $apptId = trim($_POST['appointment_id'] ?? '');
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $reason = trim($_POST['cancellation_reason'] ?? '');
         $allowed = ['pending','confirmed','cancelled','completed'];
         if (!in_array($newStatus, $allowed, true)) {
-            $message = 'Invalid status'; $messageType = 'error';
+            $message = t('appointments.invalid_status'); $messageType = 'error';
         } else {
             // Tenant scope
             $where = 'id = :id';
@@ -44,16 +44,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             }
             $appt = $db->fetchOne("SELECT * FROM appointments WHERE $where", $params);
             if (!$appt) {
-                $message = 'Appointment not found'; $messageType = 'error';
+                $message = t('appointments.not_found'); $messageType = 'error';
             } else {
                 $update = ['status' => $newStatus];
                 if ($newStatus === 'confirmed') $update['confirmed_at'] = date('Y-m-d H:i:s');
                 if ($newStatus === 'cancelled' && $reason !== '') $update['cancellation_reason'] = substr($reason, 0, 500);
                 try {
                     $db->update('appointments', $update, 'id = :id', ['id' => $apptId]);
-                    $message = 'Appointment updated.';
+                    $message = t('appointments.updated');
                 } catch (Exception $e) {
-                    $message = 'Update failed: ' . $e->getMessage();
+                    $message = str_replace(':msg', $e->getMessage(), t('appointments.update_failed'));
                     $messageType = 'error';
                 }
             }
@@ -123,7 +123,7 @@ try {
 } catch (Exception $e) {}
 
 $basePath = getAdminBasePath();
-adminHeader('Appointments', 'appointments');
+adminHeader(t('adminchrome.appointments'), 'appointments');
 ?>
 
 <?php if ($message): ?>
@@ -135,13 +135,13 @@ adminHeader('Appointments', 'appointments');
 
 <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-        <h1 class="text-2xl font-bold text-gray-900"><i class="fa-solid fa-calendar-check text-blue-600 mr-2"></i>Appointments</h1>
-        <p class="text-sm text-gray-500 mt-0.5">Bookings made through your team's digital cards.</p>
+        <h1 class="text-2xl font-bold text-gray-900"><i class="fa-solid fa-calendar-check text-blue-600 mr-2"></i><?= htmlspecialchars(t('appointments.page_h1')) ?></h1>
+        <p class="text-sm text-gray-500 mt-0.5"><?= htmlspecialchars(t('appointments.page_sub')) ?></p>
     </div>
     <form method="get" class="flex items-center gap-2">
         <input type="hidden" name="filter" value="<?= sanitize($filter); ?>">
         <select name="employee_id" onchange="this.form.submit()" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
-            <option value="">All employees</option>
+            <option value=""><?= htmlspecialchars(t('appointments.all_employees')) ?></option>
             <?php foreach ($employees as $emp): ?>
             <option value="<?= sanitize($emp['id']); ?>" <?= $employeeFilter === $emp['id'] ? 'selected' : ''; ?>><?= sanitize($emp['name']); ?></option>
             <?php endforeach; ?>
@@ -153,17 +153,17 @@ adminHeader('Appointments', 'appointments');
     <nav class="-mb-px flex gap-6 overflow-x-auto">
         <?php
         $filters = [
-            'upcoming' => ['label' => 'Upcoming', 'icon' => 'fa-solid fa-calendar-day'],
-            'pending'  => ['label' => 'Pending',  'icon' => 'fa-solid fa-clock'],
-            'past'     => ['label' => 'Past',     'icon' => 'fa-solid fa-clock-rotate-left'],
-            'all'      => ['label' => 'All',      'icon' => 'fa-solid fa-list'],
+            'upcoming' => ['label' => t('appointments.tab_upcoming'), 'icon' => 'fa-solid fa-calendar-day'],
+            'pending'  => ['label' => t('appointments.tab_pending'),  'icon' => 'fa-solid fa-clock'],
+            'past'     => ['label' => t('appointments.tab_past'),     'icon' => 'fa-solid fa-clock-rotate-left'],
+            'all'      => ['label' => t('appointments.tab_all'),      'icon' => 'fa-solid fa-list'],
         ];
         foreach ($filters as $k => $f):
             $active = $filter === $k;
             $qs = http_build_query(['filter' => $k, 'employee_id' => $employeeFilter]);
         ?>
         <a href="?<?= $qs; ?>" class="whitespace-nowrap pb-3 px-1 text-sm font-medium flex items-center gap-1.5 border-b-2 transition-colors <?= $active ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'; ?>">
-            <i class="<?= $f['icon']; ?>"></i> <?= $f['label']; ?>
+            <i class="<?= $f['icon']; ?>"></i> <?= htmlspecialchars($f['label']); ?>
             <span class="text-xs <?= $active ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'; ?> px-2 py-0.5 rounded-full"><?= $counts[$k]; ?></span>
         </a>
         <?php endforeach; ?>
@@ -174,20 +174,20 @@ adminHeader('Appointments', 'appointments');
     <?php if (empty($appointments)): ?>
     <div class="p-12 text-center text-gray-500">
         <i class="fa-solid fa-calendar-xmark text-4xl text-gray-300 mb-3"></i>
-        <p class="font-medium">No appointments to show</p>
-        <p class="text-sm mt-1">Bookings made through digital cards will appear here.</p>
+        <p class="font-medium"><?= htmlspecialchars(t('appointments.empty_h')) ?></p>
+        <p class="text-sm mt-1"><?= htmlspecialchars(t('appointments.empty_body')) ?></p>
     </div>
     <?php else: ?>
     <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
             <thead class="bg-gray-50 text-xs uppercase text-gray-500 tracking-wide">
                 <tr>
-                    <th class="px-4 py-3 text-left">When</th>
-                    <th class="px-4 py-3 text-left">Visitor</th>
-                    <th class="px-4 py-3 text-left">Contact</th>
-                    <th class="px-4 py-3 text-left">With</th>
-                    <th class="px-4 py-3 text-left">Status</th>
-                    <th class="px-4 py-3 text-right">Actions</th>
+                    <th class="px-4 py-3 text-left"><?= htmlspecialchars(t('appointments.col_when')) ?></th>
+                    <th class="px-4 py-3 text-left"><?= htmlspecialchars(t('appointments.col_visitor')) ?></th>
+                    <th class="px-4 py-3 text-left"><?= htmlspecialchars(t('appointments.col_contact')) ?></th>
+                    <th class="px-4 py-3 text-left"><?= htmlspecialchars(t('appointments.col_with')) ?></th>
+                    <th class="px-4 py-3 text-left"><?= htmlspecialchars(t('appointments.col_status')) ?></th>
+                    <th class="px-4 py-3 text-right"><?= htmlspecialchars(t('appointments.col_actions')) ?></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -209,7 +209,8 @@ adminHeader('Appointments', 'appointments');
                             <?php
                             try {
                                 $s = new DateTime($a['slot_start']); $e = new DateTime($a['slot_end']);
-                                echo (int)round(($e->getTimestamp() - $s->getTimestamp())/60) . ' min';
+                                $mins = (int)round(($e->getTimestamp() - $s->getTimestamp())/60);
+                                echo htmlspecialchars(str_replace(':n', (string)$mins, t('appointments.n_min')));
                             } catch (Throwable $ex) {}
                             ?>
                         </div>
@@ -224,7 +225,7 @@ adminHeader('Appointments', 'appointments');
                         <?php if (!empty($a['visitor_phone'])): ?><div class="text-xs text-gray-500"><?= sanitize($a['visitor_phone']); ?></div><?php endif; ?>
                     </td>
                     <td class="px-4 py-3 text-gray-700"><?= sanitize($a['employee_name']); ?></td>
-                    <td class="px-4 py-3"><span class="inline-block px-2 py-1 rounded-full text-xs font-medium <?= $badge; ?>"><?= ucfirst($st); ?></span></td>
+                    <td class="px-4 py-3"><span class="inline-block px-2 py-1 rounded-full text-xs font-medium <?= $badge; ?>"><?= htmlspecialchars(t('appointments.status_' . $st)); ?></span></td>
                     <td class="px-4 py-3 text-right whitespace-nowrap">
                         <?php if ($st === 'pending' || $st === 'confirmed'): ?>
                         <?php if ($st === 'pending'): ?>
@@ -233,15 +234,15 @@ adminHeader('Appointments', 'appointments');
                             <input type="hidden" name="action" value="update_status">
                             <input type="hidden" name="appointment_id" value="<?= sanitize($a['id']); ?>">
                             <input type="hidden" name="status" value="confirmed">
-                            <button class="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"><i class="fa-solid fa-check"></i> Confirm</button>
+                            <button class="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700"><i class="fa-solid fa-check"></i> <?= htmlspecialchars(t('appointments.btn_confirm')) ?></button>
                         </form>
                         <?php endif; ?>
-                        <form method="post" class="inline" onsubmit="return confirm('Cancel this appointment?');">
+                        <form method="post" class="inline" onsubmit="return confirm(<?= json_encode(t('appointments.confirm_cancel'), JSON_UNESCAPED_UNICODE) ?>);">
                             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? ''; ?>">
                             <input type="hidden" name="action" value="update_status">
                             <input type="hidden" name="appointment_id" value="<?= sanitize($a['id']); ?>">
                             <input type="hidden" name="status" value="cancelled">
-                            <button class="text-xs px-2 py-1 bg-red-50 text-red-600 border border-red-200 rounded hover:bg-red-100"><i class="fa-solid fa-xmark"></i> Cancel</button>
+                            <button class="text-xs px-2 py-1 bg-red-50 text-red-600 border border-red-200 rounded hover:bg-red-100"><i class="fa-solid fa-xmark"></i> <?= htmlspecialchars(t('appointments.btn_cancel')) ?></button>
                         </form>
                         <?php elseif ($st === 'confirmed'): ?>
                         <form method="post" class="inline">
@@ -249,7 +250,7 @@ adminHeader('Appointments', 'appointments');
                             <input type="hidden" name="action" value="update_status">
                             <input type="hidden" name="appointment_id" value="<?= sanitize($a['id']); ?>">
                             <input type="hidden" name="status" value="completed">
-                            <button class="text-xs px-2 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded hover:bg-blue-100">Mark complete</button>
+                            <button class="text-xs px-2 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded hover:bg-blue-100"><?= htmlspecialchars(t('appointments.btn_complete')) ?></button>
                         </form>
                         <?php endif; ?>
                     </td>

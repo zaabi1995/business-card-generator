@@ -1,6 +1,6 @@
 <?php
 /**
- * Cardify — Oman Business Index 2026 (Landing Page)
+ * Cardify, Oman Business Index 2026 (Landing Page)
  *
  * Flagship press-ready landing page. Presents the 2,414 Omani enterprises
  * as a curated, research-grade index. Purpose: backlink magnet / press hook
@@ -13,6 +13,17 @@ require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
 $db = Database::getInstance();
+
+// Locale detection for OBI chrome. Deep analytical prose below (executive
+// summary, methodology, key findings) stays in its authored English for now;
+// a banner directs Arabic readers to /companies for the fully bilingual
+// searchable directory.
+// URL-driven locale (EN default; /ar/oman-business-index or ?lang=ar for AR).
+// Don't inherit cookie/Accept-Language here or this SEO landing ends up
+// showing Arabic to English browsers.
+$lang = ($_GET['lang'] ?? '') === 'ar' ? 'ar' : 'en';
+$isAr = ($lang === 'ar');
+if (class_exists('I18n')) { I18n::setLocale($lang); }
 
 // --- Canonical sector + wilayat labels (kept in sync with companies.php) ---
 $SECTORS = [
@@ -153,6 +164,32 @@ try {
     foreach ($rows as $r) $wilayatCounts[$r['wilayat']] = (int) $r['c'];
 } catch (Throwable $e) { /* noop */ }
 
+// --- Logo Library sample (for the visual gallery section) ---
+// Pull a curated sample across as many sectors as possible, preferring
+// verified > indexed and recent updates. Cap at ~30 so the page stays fast.
+$logoSample = [];
+try {
+    $logoSample = $db->fetchAll(
+        "SELECT c.id, c.slug, c.name_en, c.name_ar, c.sector,
+                c.logo_svg_path, c.logo_png_path, c.logo_webp_path,
+                c.logo_png_512_path, c.logo_dominant_color, c.logo_status
+           FROM om_companies c
+          WHERE c.logo_status IN ('indexed','verified')
+            AND (c.logo_svg_path IS NOT NULL
+                 OR c.logo_png_path IS NOT NULL
+                 OR c.logo_webp_path IS NOT NULL)
+          ORDER BY FIELD(c.logo_status,'verified','indexed'),
+                   c.logo_updated_at DESC
+          LIMIT 30"
+    );
+} catch (Throwable $e) { $logoSample = []; }
+$logoTotal = 0;
+try {
+    $logoTotal = (int) ($db->fetchOne(
+        "SELECT COUNT(*) c FROM om_companies WHERE logo_status IN ('indexed','verified')"
+    )['c'] ?? 0);
+} catch (Throwable $e) {}
+
 // --- Derived helpers ---
 $totalFmt    = number_format($stats['total']);
 $largeFmt    = number_format($stats['large_count']);
@@ -160,7 +197,7 @@ $mediumFmt   = number_format($stats['medium_count']);
 $sectorFmt   = number_format($stats['sector_count']);
 $wilayatFmt  = number_format($stats['wilayat_count']);
 
-$ratioText = '—';
+$ratioText = ',';
 if ($stats['medium_count'] > 0) {
     $ratio = $stats['large_count'] / $stats['medium_count'];
     $ratioText = '1 : ' . number_format(1 / max($ratio, 0.0001), 2);
@@ -180,8 +217,8 @@ $lastUpdatedIso   = date('c', $lastUpdatedTs);
 
 // --- Page metadata ---
 $baseUrl         = 'https://cardify.om';
-$pageTitle       = 'Oman Business Index 2026: 2,414 Largest Enterprises | Cardify';
-$pageDescription = 'Free public directory of the ' . $totalFmt . ' largest & medium enterprises in Oman — classified by sector and governorate, sourced from MoCIIP.';
+$pageTitle       = t('obi.page_title');
+$pageDescription = t('obi.page_desc', ['count' => $totalFmt]);
 // Ensure under 155 chars; trim if needed.
 if (strlen($pageDescription) > 155) {
     $pageDescription = substr($pageDescription, 0, 152) . '...';
@@ -248,38 +285,15 @@ $datasetLd = [
 ];
 
 $faq = [
-    [
-        'q' => 'How was the Oman Business Index compiled?',
-        'a' => 'The index is built from the public register of the Ministry of Commerce, Industry and Investment Promotion (MoCIIP) of the Sultanate of Oman. Cardify extracted registered enterprises classified as "large" or "medium" in the official scale bands, then enriched each record with a sector label (one of ' . $stats['sector_count'] . ' canonical categories) and a governorate detected from the registered address. All names are preserved in their original Arabic and English forms.',
-    ],
-    [
-        'q' => 'Is my company listed?',
-        'a' => 'If your enterprise is registered in Oman and classified as large or medium on the MoCIIP scale, it is almost certainly in the index. Use the search at /companies to find your company by English or Arabic name. If it is missing and you believe it should be listed, please contact us.',
-    ],
-    [
-        'q' => 'How do I request an edit or removal?',
-        'a' => 'Each company profile has a "Request edit / takedown" link in the footer. You can also email us at info@cardify.om with supporting documentation (commercial registration number, authorized signatory confirmation). We review and act on takedown requests within five working days.',
-    ],
-    [
-        'q' => 'Is this an official government publication?',
-        'a' => 'No. The Oman Business Index is an independent research product published by Cardify. It uses public register data factually and is not endorsed by, affiliated with, or produced in cooperation with MoCIIP or any Omani government entity. The data is presented for research, journalism, and professional networking use.',
-    ],
-    [
-        'q' => 'Can I cite this index in articles or reports?',
-        'a' => 'Yes — citations are welcome and encouraged. See the "Cite This Index" section above for the suggested citation format. The dataset is published under a Creative Commons BY 4.0 license; you may reuse aggregate figures with attribution to "Cardify Oman Business Index 2026".',
-    ],
-    [
-        'q' => 'Is there an Arabic version?',
-        'a' => 'Every company profile already includes the Arabic legal name alongside the English name. A fully Arabic-localised version of the index landing page is in active development and will be published at /ar/oman-business-index.',
-    ],
-    [
-        'q' => 'When will the index be updated?',
-        'a' => 'The index refreshes on a rolling quarterly cadence against the live MoCIIP public register. The "Last updated" date at the top of this page reflects the most recent verification pass. Material changes (newly licensed enterprises, re-classifications, dissolutions) are reconciled between updates.',
-    ],
-    [
-        'q' => 'Why did Cardify publish this?',
-        'a' => 'Cardify is a business-card platform built in Oman, for Oman. We rely on accurate public company data every day to help professionals network. Publishing the index back to the community — bilingual, free, and search-engine indexable — strengthens the digital backbone of Oman\'s private sector and directly supports Vision 2040\'s economic diversification and digital transformation priorities.',
-    ],
+    ['q' => t('obi.faq1_q'), 'a' => t('obi.faq1_a', ['sectors' => $stats['sector_count']])],
+    ['q' => t('obi.faq2_q'), 'a' => t('obi.faq2_a')],
+    ['q' => t('obi.faq3_q'), 'a' => t('obi.faq3_a')],
+    ['q' => t('obi.faq4_q'), 'a' => t('obi.faq4_a')],
+    ['q' => t('obi.faq5_q'), 'a' => t('obi.faq5_a')],
+    ['q' => t('obi.faq6_q'), 'a' => t('obi.faq6_a')],
+    ['q' => t('obi.faq7_q'), 'a' => t('obi.faq7_a')],
+    ['q' => t('obi.faq8_q'), 'a' => t('obi.faq8_a')],
+    ['q' => t('obi.faq9_q'), 'a' => t('obi.faq9_a')],
 ];
 
 $faqLd = [
@@ -332,7 +346,7 @@ $extraHead =
     . '<link rel="alternate" hreflang="x-default" href="' . $baseUrl . '/oman-business-index">'
     . '<meta name="article:published_time" content="2026-04-01">'
     . '<meta name="article:modified_time" content="' . obiEscq($lastUpdatedIso) . '">';
-
+$suppressDefaultHreflang = true;
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
 
@@ -348,21 +362,21 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16 sm:pt-32 sm:pb-20">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-blue-200 text-blue-700 text-xs font-semibold tracking-wide uppercase shadow-sm">
                 <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-                Research Report &middot; Edition 2026
+                <?= t('obi.hero_badge') ?>
             </div>
             <h1 class="mt-5 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 leading-[1.08]">
-                Oman Business Index 2026:<br class="hidden sm:block">
-                <span class="text-blue-700">The <?= obiEscq($totalFmt) ?> Largest Enterprises</span> in the Sultanate
+                <?= htmlspecialchars(t('obi.hero_h1_line1')) ?><br class="hidden sm:block">
+                <span class="text-blue-700"><?= htmlspecialchars(t('obi.hero_h1_line2', ['count' => $totalFmt])) ?></span> <?= htmlspecialchars(t('obi.hero_h1_suffix')) ?>
             </h1>
             <p class="mt-6 text-lg sm:text-xl text-gray-600 max-w-3xl leading-relaxed">
-                A free, bilingual, public directory of large and medium-sized enterprises registered in Oman —
-                sourced from the MoCIIP public register and classified by sector, governorate, and scale.
+                <?= htmlspecialchars(t('obi.hero_sub')) ?>
             </p>
 
             <div class="mt-6 flex flex-wrap items-center gap-3 text-sm text-gray-500">
                 <span class="inline-flex items-center gap-1.5">
                     <i class="fa-regular fa-calendar text-gray-400"></i>
-                    Last updated <time datetime="<?= obiEscq($lastUpdatedIso) ?>"><?= obiEscq($lastUpdatedHuman) ?></time>
+                    <?= htmlspecialchars(t('obi.hero_last_upd')) ?>
+                    <time datetime="<?= obiEscq($lastUpdatedIso) ?>"><?= obiEscq($isAr ? I18n::formatDate($lastUpdatedTs, 'ar') : $lastUpdatedHuman) ?></time>
                 </span>
                 <span class="text-gray-300">&middot;</span>
                 <span class="inline-flex items-center gap-1.5">
@@ -372,46 +386,54 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <span class="text-gray-300">&middot;</span>
                 <span class="inline-flex items-center gap-1.5">
                     <i class="fa-solid fa-language text-gray-400"></i>
-                    EN &middot; AR
+                    <?= t('obi.hero_langs') ?>
                 </span>
             </div>
 
             <div class="mt-8 flex flex-wrap gap-3">
                 <a href="/companies" class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-blue-600 text-white font-semibold shadow-sm hover:bg-blue-700 transition">
                     <i class="fa-solid fa-magnifying-glass text-sm"></i>
-                    Search the full index
+                    <?= htmlspecialchars(t('obi.hero_cta_search')) ?>
                 </a>
                 <a href="#cite" class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-white text-gray-800 font-semibold border border-gray-200 hover:border-blue-300 hover:text-blue-700 transition">
                     <i class="fa-solid fa-quote-right text-sm"></i>
-                    Cite this index
+                    <?= htmlspecialchars(t('obi.hero_cta_cite')) ?>
                 </a>
                 <a href="#methodology" class="inline-flex items-center gap-2 px-5 py-3 rounded-lg text-gray-700 font-semibold hover:text-blue-700 transition">
-                    Methodology &rarr;
+                    <?= t('obi.hero_cta_methodology') ?>
                 </a>
             </div>
+
+            <?php if ($isAr): ?>
+            <div class="mt-8 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm p-4">
+                <i class="fa-solid fa-circle-info mr-1.5"></i>
+                <?= htmlspecialchars(t('obi.ar_banner')) ?>,
+                <a href="/companies" class="font-semibold underline"><?= htmlspecialchars(t('obi.ar_banner_link')) ?></a>.
+            </div>
+            <?php endif; ?>
 
             <!-- Key stats grid -->
             <dl class="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-5">
                 <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
-                    <dt class="text-xs uppercase tracking-wide text-gray-500">Total enterprises</dt>
+                    <dt class="text-xs uppercase tracking-wide text-gray-500"><?= htmlspecialchars(t('obi.stat_total')) ?></dt>
                     <dd class="mt-2 text-3xl font-bold text-gray-900 tabular-nums"><?= obiEscq($totalFmt) ?></dd>
                 </div>
                 <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
-                    <dt class="text-xs uppercase tracking-wide text-gray-500">Large enterprises</dt>
+                    <dt class="text-xs uppercase tracking-wide text-gray-500"><?= htmlspecialchars(t('obi.stat_large')) ?></dt>
                     <dd class="mt-2 text-3xl font-bold text-gray-900 tabular-nums"><?= obiEscq($largeFmt) ?></dd>
-                    <div class="text-xs text-gray-500 mt-1"><?= obiEscq($largePctOfTotal) ?>% of total</div>
+                    <div class="text-xs text-gray-500 mt-1"><?= obiEscq($largePctOfTotal) ?>% <?= htmlspecialchars(t('obi.stat_of_total')) ?></div>
                 </div>
                 <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
-                    <dt class="text-xs uppercase tracking-wide text-gray-500">Medium enterprises</dt>
+                    <dt class="text-xs uppercase tracking-wide text-gray-500"><?= htmlspecialchars(t('obi.stat_medium')) ?></dt>
                     <dd class="mt-2 text-3xl font-bold text-gray-900 tabular-nums"><?= obiEscq($mediumFmt) ?></dd>
-                    <div class="text-xs text-gray-500 mt-1"><?= obiEscq($mediumPctOfTotal) ?>% of total</div>
+                    <div class="text-xs text-gray-500 mt-1"><?= obiEscq($mediumPctOfTotal) ?>% <?= htmlspecialchars(t('obi.stat_of_total')) ?></div>
                 </div>
                 <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
-                    <dt class="text-xs uppercase tracking-wide text-gray-500">Sectors</dt>
+                    <dt class="text-xs uppercase tracking-wide text-gray-500"><?= htmlspecialchars(t('obi.stat_sectors')) ?></dt>
                     <dd class="mt-2 text-3xl font-bold text-gray-900 tabular-nums"><?= obiEscq($sectorFmt) ?></dd>
                 </div>
                 <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm col-span-2 sm:col-span-1">
-                    <dt class="text-xs uppercase tracking-wide text-gray-500">Governorates</dt>
+                    <dt class="text-xs uppercase tracking-wide text-gray-500"><?= htmlspecialchars(t('obi.stat_governorates')) ?></dt>
                     <dd class="mt-2 text-3xl font-bold text-gray-900 tabular-nums"><?= obiEscq($wilayatFmt) ?></dd>
                 </div>
             </dl>
@@ -426,34 +448,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
                 <i class="fa-solid fa-chart-line"></i>
             </div>
-            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700">Section 01</span>
+            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700"><?= htmlspecialchars(t('obi.section')) ?> 01</span>
         </div>
-        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Executive Summary</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= htmlspecialchars(t('obi.exec_summary')) ?></h2>
         <div class="mt-6 space-y-5 text-lg text-gray-700 leading-relaxed">
-            <p>
-                The Sultanate of Oman is in the middle of the most consequential economic transformation of its modern history.
-                Oman Vision 2040 has set a national target to raise the private sector's contribution to GDP, diversify away
-                from hydrocarbons, and build a globally-competitive, knowledge-based economy. Private enterprise — not
-                government — is the engine that must deliver this outcome. Yet the country has never had a free, public,
-                machine-readable list of the enterprises that are actually doing the work.
-            </p>
-            <p>
-                The <strong>Oman Business Index 2026</strong> is an attempt to close that gap. It catalogues
-                <strong><?= obiEscq($totalFmt) ?></strong> Omani enterprises — the <strong><?= obiEscq($largeFmt) ?></strong>
-                businesses registered at the "large" scale band on the MoCIIP public register plus
-                <strong><?= obiEscq($mediumFmt) ?></strong> at the "medium" scale band — and organises them into
-                <?= obiEscq($sectorFmt) ?> canonical sectors across all <?= obiEscq($wilayatFmt) ?> governorates of the
-                Sultanate. Every record carries the company's Arabic and English legal names, its sector classification,
-                its registered governorate, and its scale band.
-            </p>
-            <p>
-                The index is not a ranking. It makes no claim about revenue, employment, or market share — the MoCIIP
-                register does not publish those figures. Instead, it is a <em>structural map</em>: a
-                plain-language answer to the question "which substantial companies operate in Oman, and where?". That
-                map is the foundation on which journalists, analysts, policy researchers, investors, and the companies
-                themselves can build sharper conclusions. Publishing it openly — bilingually, permanently crawlable,
-                and free — is Cardify's contribution to the digital backbone of Oman's private-sector ecosystem.
-            </p>
+            <p><?= t('obi.exec_p1') ?></p>
+            <p><?= t('obi.exec_p2', ['total' => $totalFmt, 'large' => $largeFmt, 'medium' => $mediumFmt, 'sectors' => $sectorFmt, 'wilayats' => $wilayatFmt]) ?></p>
+            <p><?= t('obi.exec_p3') ?></p>
         </div>
     </section>
 
@@ -467,43 +468,15 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
                 <i class="fa-solid fa-flask"></i>
             </div>
-            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700">Section 02</span>
+            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700"><?= htmlspecialchars(t('obi.section')) ?> 02</span>
         </div>
-        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Methodology</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= htmlspecialchars(t('obi.methodology')) ?></h2>
 
         <div class="mt-6 space-y-5 text-lg text-gray-700 leading-relaxed">
-            <p>
-                <strong>Data source.</strong> The base list is the public enterprise register maintained by the
-                Ministry of Commerce, Industry and Investment Promotion (MoCIIP) of the Sultanate of Oman. The register
-                groups registered enterprises into four scale bands — micro, small, medium, large — using the official
-                Omani thresholds on registered capital and declared headcount. The Oman Business Index includes only
-                the "large" and "medium" bands; micro and small are excluded for signal-to-noise reasons.
-            </p>
-            <p>
-                <strong>Enrichment.</strong> Two classification layers are added on top of the raw register. First,
-                every record is mapped to one of <?= obiEscq($sectorFmt) ?> canonical sectors
-                (Oil &amp; Gas, Construction, Finance &amp; Banking, Manufacturing, and so on). Sector assignment
-                uses a rules-based classifier over the company's registered commercial activity, validated by hand
-                on the largest 100 records. Second, every record is mapped to one of
-                <?= obiEscq($wilayatFmt) ?> Omani governorates based on the primary registered address. Both the
-                sector taxonomy and the governorate list are published on the dataset page and are stable between
-                index updates.
-            </p>
-            <p>
-                <strong>Update cadence.</strong> The index refreshes on a rolling quarterly basis against the live
-                MoCIIP register. New registrations, band re-classifications, dissolutions, and English name
-                normalisations are reconciled at each refresh. The timestamp at the top of this page reflects the
-                most recent verification pass.
-            </p>
-            <p>
-                <strong>Disclaimers.</strong> This index is independent research published by Cardify. It is
-                <em>not</em> endorsed by, affiliated with, or produced in cooperation with MoCIIP or any Omani
-                government entity. The underlying data is public-record information used factually. Classifications
-                (sector, governorate, scale) reflect the state of the register at the verification date; companies
-                reorganise, rename, and re-register continuously. Cardify operates a takedown and correction policy:
-                any listed enterprise may request an edit or removal via the contact form, and we act on verified
-                requests within five working days.
-            </p>
+            <p><?= t('obi.meth_p1') ?></p>
+            <p><?= t('obi.meth_p2', ['sectors' => $sectorFmt, 'wilayats' => $wilayatFmt]) ?></p>
+            <p><?= t('obi.meth_p3') ?></p>
+            <p><?= t('obi.meth_p4') ?></p>
         </div>
     </section>
 
@@ -518,12 +491,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
                     <i class="fa-solid fa-lightbulb"></i>
                 </div>
-                <span class="text-xs font-semibold uppercase tracking-widest text-blue-700">Section 03</span>
+                <span class="text-xs font-semibold uppercase tracking-widest text-blue-700"><?= htmlspecialchars(t('obi.section')) ?> 03</span>
             </div>
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Key Findings</h2>
+            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= htmlspecialchars(t('obi.key_findings')) ?></h2>
             <p class="mt-4 text-lg text-gray-600 max-w-3xl">
-                All figures below are computed live against the <?= obiEscq($totalFmt) ?>-record dataset at the time this page is served.
-                They are not pre-rendered; they reflect the current state of the index.
+                <?= htmlspecialchars(t('obi.key_findings_sub', ['total' => $totalFmt])) ?>
             </p>
 
             <div class="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -532,8 +504,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="flex items-center gap-3 mb-4">
                         <span class="text-xs font-bold text-gray-400 tracking-widest">FINDING 01</span>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900">Five sectors hold most of the registered mass</h3>
-                    <p class="mt-2 text-gray-600">The top five sectors by enterprise count concentrate the majority of Oman's large and medium businesses.</p>
+                    <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('obi.finding01_title')) ?></h3>
+                    <p class="mt-2 text-gray-600"><?= htmlspecialchars(t('obi.finding01_body')) ?></p>
                     <?php if (!empty($topSectors)): ?>
                         <ol class="mt-5 space-y-3">
                             <?php
@@ -564,7 +536,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <?php endforeach; ?>
                         </ol>
                     <?php else: ?>
-                        <p class="mt-4 text-sm text-gray-500">Sector breakdown temporarily unavailable.</p>
+                        <p class="mt-4 text-sm text-gray-500"><?= htmlspecialchars(t('obi.finding01_unavail')) ?></p>
                     <?php endif; ?>
                 </div>
 
@@ -573,8 +545,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="flex items-center gap-3 mb-4">
                         <span class="text-xs font-bold text-gray-400 tracking-widest">FINDING 02</span>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900">Muscat remains the overwhelming centre of gravity</h3>
-                    <p class="mt-2 text-gray-600">Enterprise registrations concentrate heavily in the capital governorate, with regional centres trailing well behind.</p>
+                    <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('obi.finding02_title')) ?></h3>
+                    <p class="mt-2 text-gray-600"><?= htmlspecialchars(t('obi.finding02_body')) ?></p>
                     <?php if (!empty($topWilayats)): ?>
                         <ol class="mt-5 space-y-3">
                             <?php
@@ -605,7 +577,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <?php endforeach; ?>
                         </ol>
                     <?php else: ?>
-                        <p class="mt-4 text-sm text-gray-500">Governorate breakdown temporarily unavailable.</p>
+                        <p class="mt-4 text-sm text-gray-500"><?= htmlspecialchars(t('obi.finding02_unavail')) ?></p>
                     <?php endif; ?>
                 </div>
 
@@ -614,21 +586,17 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="flex items-center gap-3 mb-4">
                         <span class="text-xs font-bold text-gray-400 tracking-widest">FINDING 03</span>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900">Medium enterprises outnumber large — by a wide margin</h3>
+                    <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('obi.finding03_title')) ?></h3>
                     <p class="mt-2 text-gray-600">
-                        Of the <?= obiEscq($totalFmt) ?> indexed enterprises,
-                        <strong><?= obiEscq($largeFmt) ?> (<?= obiEscq($largePctOfTotal) ?>%)</strong> fall in the "large" band and
-                        <strong><?= obiEscq($mediumFmt) ?> (<?= obiEscq($mediumPctOfTotal) ?>%)</strong> in the "medium" band. Medium-scale
-                        employers dominate — a pattern consistent with Oman's stated Vision 2040 emphasis on SME growth
-                        as a diversification lever.
+                        <?= t('obi.finding03_body', ['total' => $totalFmt, 'large' => $largeFmt, 'largePct' => $largePctOfTotal, 'medium' => $mediumFmt, 'mediumPct' => $mediumPctOfTotal]) ?>
                     </p>
                     <div class="mt-5 flex h-3 rounded-full overflow-hidden bg-gray-100">
                         <div class="bg-blue-600" style="width: <?= obiEscq($largePctOfTotal) ?>%"></div>
                         <div class="bg-indigo-300" style="width: <?= obiEscq($mediumPctOfTotal) ?>%"></div>
                     </div>
                     <div class="mt-3 flex items-center gap-4 text-xs text-gray-600">
-                        <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-600"></span>Large</span>
-                        <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-indigo-300"></span>Medium</span>
+                        <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-600"></span><?= htmlspecialchars(t('obi.finding03_large')) ?></span>
+                        <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-indigo-300"></span><?= htmlspecialchars(t('obi.finding03_medium')) ?></span>
                     </div>
                 </div>
 
@@ -637,23 +605,22 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="flex items-center gap-3 mb-4">
                         <span class="text-xs font-bold text-gray-400 tracking-widest">FINDING 04</span>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900">The thinnest sector signals the diversification frontier</h3>
+                    <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('obi.finding04_title')) ?></h3>
                     <?php if ($smallestSector): ?>
-                        <?php $sLabel = obiLabelOf($smallestSector['sector'], $SECTORS); $sCount = (int) $smallestSector['c']; ?>
+                        <?php
+                            $sSlug = $smallestSector['sector'];
+                            $sLabel = $SECTORS[$sSlug][$isAr ? 'ar' : 'en'] ?? obiLabelOf($sSlug, $SECTORS);
+                            $sCount = (int) $smallestSector['c'];
+                        ?>
                         <p class="mt-2 text-gray-600">
-                            <strong><?= obiEscq($sLabel) ?></strong> is the smallest non-"other" sector in the index
-                            with just <strong><?= obiEscq(number_format($sCount)) ?></strong>
-                            registered large-or-medium enterprise<?= $sCount === 1 ? '' : 's' ?>. That thinness is less a
-                            judgment and more a hint: it marks segments of the Omani economy where the private-sector
-                            footprint is still forming, and where Vision 2040's diversification mandate has the most
-                            white space to work with.
+                            <?= t('obi.finding04_body', ['sector' => htmlspecialchars($sLabel), 'count' => number_format($sCount), 'plural' => ($sCount === 1 ? '' : 's')]) ?>
                         </p>
-                        <a href="/companies/sector/<?= obiEscq($smallestSector['sector']) ?>" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-800">
-                            Browse <?= obiEscq($sLabel) ?> enterprises
+                        <a href="/companies/sector/<?= obiEscq($sSlug) ?>" class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-800">
+                            <?= htmlspecialchars(t('obi.finding04_browse', ['sector' => $sLabel])) ?>
                             <i class="fa-solid fa-arrow-right text-xs"></i>
                         </a>
                     <?php else: ?>
-                        <p class="mt-2 text-gray-600">Sector size distribution temporarily unavailable.</p>
+                        <p class="mt-2 text-gray-600"><?= htmlspecialchars(t('obi.finding04_unavail')) ?></p>
                     <?php endif; ?>
                 </div>
 
@@ -662,13 +629,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div class="flex items-center gap-3 mb-4">
                         <span class="text-xs font-bold text-gray-400 tracking-widest">FINDING 05</span>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900">Nationwide coverage — every governorate is represented</h3>
+                    <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('obi.finding05_title')) ?></h3>
                     <p class="mt-2 text-gray-600">
-                        The index carries registered enterprises in all <?= obiEscq($wilayatFmt) ?> governorates of the
-                        Sultanate. From the Musandam peninsula in the far north to Dhofar's frankincense coast in the
-                        south and the empty quarter of Al Wusta in between, the index is a full-country map of where
-                        substantive commercial activity is licensed. This is the first time, to our knowledge, that a
-                        dataset of this shape has been published freely.
+                        <?= htmlspecialchars(t('obi.finding05_body', ['wilayats' => $wilayatFmt])) ?>
                     </p>
                 </div>
             </div>
@@ -683,12 +646,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
                 <i class="fa-solid fa-trophy"></i>
             </div>
-            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700">Section 04</span>
+            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700"><?= htmlspecialchars(t('obi.section')) ?> 04</span>
         </div>
-        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Top 10 Flagship Enterprises</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= htmlspecialchars(t('obi.top10_heading')) ?></h2>
         <p class="mt-4 text-lg text-gray-600 max-w-3xl">
-            A curated shortlist of ten flagship Omani enterprises — organisations that anchor the country's
-            hydrocarbon, industrial, and financial backbone. Order is editorial and does not imply revenue ranking.
+            <?= htmlspecialchars(t('obi.top10_sub')) ?>
         </p>
 
         <?php if (!empty($top10)): ?>
@@ -714,7 +676,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                         <?= obiEscq(obiLabelOf($c['wilayat'], $WILAYATS)) ?>
                                     </span>
                                     <span class="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold uppercase tracking-wide text-[10px]">
-                                        <?= $c['size_bucket'] === 'large' ? 'Large' : 'Medium' ?>
+                                        <?= $c['size_bucket'] === 'large' ? htmlspecialchars(t('obi.finding03_large')) : htmlspecialchars(t('obi.finding03_medium')) ?>
                                     </span>
                                 </div>
                             </div>
@@ -724,12 +686,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <?php endforeach; ?>
             </ol>
             <p class="mt-6 text-sm text-gray-500">
-                See the full ranked list at
-                <a href="/companies" class="font-semibold text-blue-700 hover:text-blue-800">/companies</a>
-                — searchable by name, sector, and governorate.
+                <?= htmlspecialchars(t('obi.top10_fulllist')) ?>
+                <a href="/companies" class="font-semibold text-blue-700 hover:text-blue-800">/companies</a><?= htmlspecialchars(t('obi.top10_fulllist_suffix')) ?>
             </p>
         <?php else: ?>
-            <p class="mt-6 text-gray-500">Flagship list temporarily unavailable. See <a href="/companies" class="text-blue-700 font-semibold">/companies</a>.</p>
+            <p class="mt-6 text-gray-500"><?= htmlspecialchars(t('obi.top10_unavail')) ?> <a href="/companies" class="text-blue-700 font-semibold">/companies</a>.</p>
         <?php endif; ?>
     </section>
 
@@ -743,12 +704,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
                 <i class="fa-solid fa-layer-group"></i>
             </div>
-            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700">Section 05</span>
+            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700"><?= htmlspecialchars(t('obi.section')) ?> 05</span>
         </div>
-        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Explore by Sector</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= htmlspecialchars(t('obi.by_sector')) ?></h2>
         <p class="mt-4 text-lg text-gray-600 max-w-3xl">
-            Every enterprise in the index is assigned a canonical sector. Click any sector to view the full list of
-            registered large and medium enterprises operating in that space.
+            <?= htmlspecialchars(t('obi.by_sector_sub')) ?>
         </p>
 
         <div class="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -756,12 +716,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <?php $count = $sectorCounts[$slug] ?? 0; ?>
                 <a href="/companies/sector/<?= obiEscq($slug) ?>" class="group flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm transition">
                     <div class="min-w-0">
-                        <div class="font-semibold text-gray-900 group-hover:text-blue-700 truncate"><?= obiEscq($labels['en']) ?></div>
-                        <div class="text-xs text-gray-500 font-arabic truncate" dir="rtl"><?= obiEscq($labels['ar']) ?></div>
+                        <div class="font-semibold text-gray-900 group-hover:text-blue-700 truncate"><?= obiEscq($isAr ? $labels['ar'] : $labels['en']) ?></div>
+                        <div class="text-xs text-gray-500 <?= $isAr ? '' : 'font-arabic' ?> truncate" <?= $isAr ? 'dir="ltr"' : 'dir="rtl"' ?>><?= obiEscq($isAr ? $labels['en'] : $labels['ar']) ?></div>
                     </div>
                     <div class="flex-shrink-0 text-right">
                         <div class="text-lg font-bold text-gray-900 tabular-nums"><?= obiEscq(number_format($count)) ?></div>
-                        <div class="text-[10px] uppercase tracking-wide text-gray-400">companies</div>
+                        <div class="text-[10px] uppercase tracking-wide text-gray-400"><?= htmlspecialchars(t('obi.sector_count_suffix')) ?></div>
                     </div>
                 </a>
             <?php endforeach; ?>
@@ -778,12 +738,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
                 <i class="fa-solid fa-map-location-dot"></i>
             </div>
-            <span class="text-xs font-semibold uppercase tracking-widest text-emerald-700">Section 06</span>
+            <span class="text-xs font-semibold uppercase tracking-widest text-emerald-700"><?= htmlspecialchars(t('obi.section')) ?> 06</span>
         </div>
-        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Explore by Governorate</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= htmlspecialchars(t('obi.by_gov')) ?></h2>
         <p class="mt-4 text-lg text-gray-600 max-w-3xl">
-            Every enterprise is mapped to one of the <?= obiEscq($wilayatFmt) ?> governorates of the Sultanate based on
-            its registered primary address. Click any governorate to open the regional listing.
+            <?= htmlspecialchars(t('obi.by_gov_sub', ['count' => $wilayatFmt])) ?>
         </p>
 
         <div class="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -791,8 +750,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <?php $count = $wilayatCounts[$slug] ?? 0; ?>
                 <a href="/companies/wilayat/<?= obiEscq($slug) ?>" class="group flex items-center justify-between gap-3 p-4 rounded-xl border border-gray-200 bg-white hover:border-emerald-400 hover:shadow-sm transition">
                     <div class="min-w-0">
-                        <div class="font-semibold text-gray-900 group-hover:text-emerald-700 truncate"><?= obiEscq($labels['en']) ?></div>
-                        <div class="text-xs text-gray-500 font-arabic truncate" dir="rtl"><?= obiEscq($labels['ar']) ?></div>
+                        <div class="font-semibold text-gray-900 group-hover:text-emerald-700 truncate"><?= obiEscq($isAr ? $labels['ar'] : $labels['en']) ?></div>
+                        <div class="text-xs text-gray-500 <?= $isAr ? '' : 'font-arabic' ?> truncate" <?= $isAr ? 'dir="ltr"' : 'dir="rtl"' ?>><?= obiEscq($isAr ? $labels['en'] : $labels['ar']) ?></div>
                     </div>
                     <div class="flex-shrink-0 text-right">
                         <div class="text-lg font-bold text-gray-900 tabular-nums"><?= obiEscq(number_format($count)) ?></div>
@@ -808,23 +767,22 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <section id="search" class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white scroll-mt-24">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur border border-white/20 text-xs font-semibold uppercase tracking-widest">
-                Section 07
+                <?= htmlspecialchars(t('obi.section')) ?> 07
             </div>
-            <h2 class="mt-5 text-3xl sm:text-5xl font-bold tracking-tight">Search the Full Index</h2>
+            <h2 class="mt-5 text-3xl sm:text-5xl font-bold tracking-tight"><?= htmlspecialchars(t('obi.search_heading')) ?></h2>
             <p class="mt-4 text-lg text-blue-100 max-w-2xl mx-auto">
-                All <?= obiEscq($totalFmt) ?> enterprises are fully searchable — in English and Arabic — with filters
-                by sector and governorate, and paginated listings. Every company has its own permanent URL.
+                <?= htmlspecialchars(t('obi.search_sub', ['total' => $totalFmt])) ?>
             </p>
             <a href="/companies" class="mt-8 inline-flex items-center gap-2 px-7 py-4 rounded-xl bg-white text-blue-700 font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                Open the directory
+                <?= htmlspecialchars(t('obi.search_cta')) ?>
                 <i class="fa-solid fa-arrow-right text-sm"></i>
             </a>
             <div class="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-blue-200">
-                <span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Bilingual EN/AR</span>
-                <span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Sector filter</span>
-                <span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Governorate filter</span>
-                <span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> Permalink per company</span>
+                <span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> <?= htmlspecialchars(t('obi.search_chk_bilingual')) ?></span>
+                <span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> <?= htmlspecialchars(t('obi.search_chk_sector')) ?></span>
+                <span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> <?= htmlspecialchars(t('obi.search_chk_gov')) ?></span>
+                <span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> <?= htmlspecialchars(t('obi.search_chk_permalink')) ?></span>
             </div>
         </div>
     </section>
@@ -837,36 +795,34 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
                 <i class="fa-solid fa-quote-right"></i>
             </div>
-            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700">Section 08</span>
+            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700"><?= htmlspecialchars(t('obi.section')) ?> 08</span>
         </div>
-        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Cite This Index</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= htmlspecialchars(t('obi.cite_heading')) ?></h2>
         <p class="mt-4 text-lg text-gray-600 max-w-3xl">
-            Journalists, analysts, and researchers are welcome — and encouraged — to cite the Oman Business Index.
-            The dataset is published under a Creative Commons Attribution 4.0 International licence: reuse aggregate
-            figures freely, with attribution.
+            <?= htmlspecialchars(t('obi.cite_sub')) ?>
         </p>
 
         <div class="mt-8 space-y-6">
             <div>
-                <div class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2">Short citation</div>
+                <div class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2"><?= htmlspecialchars(t('obi.cite_short_label')) ?></div>
                 <div class="relative bg-gray-900 text-gray-100 rounded-xl p-5 font-mono text-sm leading-relaxed overflow-x-auto">
                     <code id="cite-short">Cardify Oman Business Index 2026, accessed <?= obiEscq(date('F j, Y')) ?>. https://cardify.om/oman-business-index</code>
                     <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('cite-short').textContent)" class="absolute top-3 right-3 px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition">
-                        Copy
+                        <?= htmlspecialchars(t('obi.cite_copy')) ?>
                     </button>
                 </div>
             </div>
             <div>
-                <div class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2">APA style</div>
+                <div class="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-2"><?= htmlspecialchars(t('obi.cite_apa_label')) ?></div>
                 <div class="relative bg-gray-900 text-gray-100 rounded-xl p-5 font-mono text-sm leading-relaxed overflow-x-auto">
                     <code id="cite-apa">Cardify. (2026). <em>Oman Business Index 2026: The <?= obiEscq($totalFmt) ?> largest enterprises in the Sultanate</em>. Retrieved <?= obiEscq(date('F j, Y')) ?>, from https://cardify.om/oman-business-index</code>
                     <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('cite-apa').textContent)" class="absolute top-3 right-3 px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition">
-                        Copy
+                        <?= htmlspecialchars(t('obi.cite_copy')) ?>
                     </button>
                 </div>
             </div>
             <div class="text-sm text-gray-500">
-                For data-licensing queries, bulk data access, or press enquiries, contact
+                <?= htmlspecialchars(t('obi.cite_contact')) ?>
                 <a href="mailto:info@cardify.om" class="font-semibold text-blue-700 hover:text-blue-800">info@cardify.om</a>.
             </div>
         </div>
@@ -882,24 +838,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
                 <i class="fa-solid fa-id-card"></i>
             </div>
-            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700">Section 09</span>
+            <span class="text-xs font-semibold uppercase tracking-widest text-blue-700"><?= htmlspecialchars(t('obi.section')) ?> 09</span>
         </div>
-        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">About Cardify</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= htmlspecialchars(t('obi.about_cardify')) ?></h2>
         <p class="mt-6 text-lg text-gray-700 leading-relaxed">
-            <strong>Cardify</strong> is the Sultanate's digital business-card platform — built in Oman, for Oman.
-            We help companies issue beautiful, on-brand digital cards to every employee, and print physical cards on
-            demand through a nationwide print-shop network. We publish the Oman Business Index as a public good:
-            accurate company data is oxygen for professional networking, and a thriving networking ecosystem is one
-            of the quiet compounding forces behind Vision 2040's private-sector ambition. If the index is useful to
-            you, the product is likely useful to your team.
+            <?= t('obi.about_cardify_body') ?>
         </p>
         <div class="mt-8 flex flex-wrap gap-3">
             <a href="/get-started" class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-blue-600 text-white font-semibold shadow-sm hover:bg-blue-700 transition">
                 <i class="fa-solid fa-arrow-right-to-bracket"></i>
-                Create a free card
+                <?= htmlspecialchars(t('obi.about_cta_create')) ?>
             </a>
             <a href="/about" class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-white text-gray-800 font-semibold border border-gray-200 hover:border-blue-300 hover:text-blue-700 transition">
-                More about Cardify
+                <?= htmlspecialchars(t('obi.about_cta_more')) ?>
             </a>
         </div>
     </section>
@@ -913,9 +864,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
                     <i class="fa-solid fa-circle-question"></i>
                 </div>
-                <span class="text-xs font-semibold uppercase tracking-widest text-blue-700">Section 10</span>
+                <span class="text-xs font-semibold uppercase tracking-widest text-blue-700"><?= htmlspecialchars(t('obi.section')) ?> 10</span>
             </div>
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Frequently Asked Questions</h2>
+            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight"><?= htmlspecialchars(t('obi.faq_heading')) ?></h2>
 
             <div class="mt-10 space-y-3">
                 <?php foreach ($faq as $i => $item): ?>
@@ -935,9 +886,125 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
 
             <p class="mt-10 text-sm text-gray-500 text-center">
-                Still have questions? Email
+                <?= htmlspecialchars(t('obi.faq_footer')) ?>
                 <a href="mailto:info@cardify.om" class="font-semibold text-blue-700 hover:text-blue-800">info@cardify.om</a>.
             </p>
+        </div>
+    </section>
+
+    <!-- ============================================================
+         UPSTREAM, GCC Business Index (part of a larger federation)
+         ============================================================ -->
+    <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="rounded-2xl p-6 md:p-8 bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div class="max-w-xl">
+                <p class="text-xs uppercase tracking-wider text-blue-200 font-semibold mb-2"><?= htmlspecialchars(t('obi.gcc_eyebrow')) ?></p>
+                <h2 class="text-2xl sm:text-3xl font-extrabold mb-2"><?= htmlspecialchars(t('obi.gcc_heading')) ?></h2>
+                <p class="text-blue-100">
+                    <?= htmlspecialchars(t('obi.gcc_body')) ?>
+                </p>
+            </div>
+            <a href="/gcc-business-index" class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white text-blue-700 font-semibold hover:bg-blue-50 transition self-start md:self-center whitespace-nowrap">
+                <?= htmlspecialchars(t('obi.gcc_cta')) ?>
+                <i class="fa-solid fa-arrow-right text-xs"></i>
+            </a>
+        </div>
+    </section>
+
+    <!-- ============================================================
+         COMPANION ARCHIVE, OMANI LOGO LIBRARY (visual gallery)
+         ============================================================ -->
+    <section id="logo-library" class="bg-gray-50 border-y border-gray-100 scroll-mt-24">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
+                <div class="max-w-2xl">
+                    <p class="text-xs uppercase tracking-wider text-blue-700 font-semibold mb-3"><?= htmlspecialchars(t('obi.lib_eyebrow')) ?></p>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900"><?= htmlspecialchars(t('obi.lib_heading')) ?></h2>
+                    <p class="mt-3 text-lg text-gray-600">
+                        <?= htmlspecialchars(t('obi.lib_body', ['count' => number_format($logoTotal)])) ?>
+                    </p>
+                </div>
+                <a href="/logos"
+                   class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg shadow-blue-600/20 whitespace-nowrap self-start md:self-end">
+                    <?= htmlspecialchars(t('obi.lib_cta')) ?>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
+            </div>
+
+            <?php if ($logoSample): ?>
+                <div class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-10 gap-2.5">
+                    <?php foreach ($logoSample as $l):
+                        $src = $l['logo_webp_path']
+                            ?: $l['logo_png_512_path']
+                            ?: $l['logo_png_path']
+                            ?: $l['logo_svg_path'];
+                        if (!$src) continue;
+                    ?>
+                        <a href="/companies/<?= obiEscq($l['slug']) ?>"
+                           class="group bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition p-3 aspect-square flex items-center justify-center"
+                           title="<?= obiEscq($l['name_en']) ?> logo">
+                            <img src="<?= obiEscq($src) ?>"
+                                 alt="<?= obiEscq($l['name_en']) ?> logo"
+                                 loading="lazy"
+                                 class="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform">
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- Sector shortcuts -->
+            <div class="mt-8">
+                <p class="text-sm font-semibold text-gray-600 mb-3"><?= htmlspecialchars(t('obi.lib_browse')) ?></p>
+                <div class="flex flex-wrap gap-2">
+                    <?php
+                        $sectorLinks = [
+                            ['slug' => 'government-defense',    'key' => 'obi.sc_government'],
+                            ['slug' => 'finance',               'key' => 'obi.sc_finance'],
+                            ['slug' => 'logistics-shipping',    'key' => 'obi.sc_logistics'],
+                            ['slug' => 'oil-gas',               'key' => 'obi.sc_oil_gas'],
+                            ['slug' => 'healthcare',            'key' => 'obi.sc_healthcare'],
+                            ['slug' => 'education',             'key' => 'obi.sc_education'],
+                            ['slug' => 'telecom',               'key' => 'obi.sc_telecom'],
+                            ['slug' => 'food-beverage',         'key' => 'obi.sc_food_bev'],
+                            ['slug' => 'hospitality-tourism',   'key' => 'obi.sc_hospitality'],
+                            ['slug' => 'retail',                'key' => 'obi.sc_retail'],
+                            ['slug' => 'manufacturing',         'key' => 'obi.sc_manufacturing'],
+                            ['slug' => 'real-estate',           'key' => 'obi.sc_real_estate'],
+                        ];
+                        foreach ($sectorLinks as $s): ?>
+                        <a href="/logos/<?= obiEscq($s['slug']) ?>"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-sm text-gray-700 hover:border-blue-300 hover:text-blue-600 transition">
+                            <?= obiEscq(t($s['key'])) ?>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-gray-400"></i>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <!-- Micro-FAQ for search engines + users -->
+            <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div class="bg-white rounded-xl border border-gray-200 p-5">
+                    <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-1"><?= htmlspecialchars(t('obi.lib_why_title')) ?></h3>
+                    <p class="text-sm text-gray-600 leading-relaxed"><?= htmlspecialchars(t('obi.lib_why_body')) ?></p>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-200 p-5">
+                    <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-1"><?= htmlspecialchars(t('obi.lib_free_title')) ?></h3>
+                    <p class="text-sm text-gray-600 leading-relaxed"><?= htmlspecialchars(t('obi.lib_free_body')) ?></p>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-200 p-5">
+                    <div class="w-9 h-9 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center mb-3">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-1"><?= htmlspecialchars(t('obi.lib_td_title')) ?></h3>
+                    <p class="text-sm text-gray-600 leading-relaxed"><?= htmlspecialchars(t('obi.lib_td_body_prefix')) ?> <a href="/logo-takedown" class="text-blue-600 hover:underline font-medium"><?= htmlspecialchars(t('obi.lib_td_request')) ?></a><?= htmlspecialchars(t('obi.lib_td_body_suffix')) ?></p>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -948,12 +1015,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <p>
             <span class="inline-flex items-center gap-1.5">
                 <i class="fa-regular fa-calendar"></i>
-                Last verified <time datetime="<?= obiEscq($lastUpdatedIso) ?>"><?= obiEscq($lastUpdatedHuman) ?></time>
+                <?= htmlspecialchars(t('obi.last_verified')) ?> <time datetime="<?= obiEscq($lastUpdatedIso) ?>"><?= obiEscq($lastUpdatedHuman) ?></time>
             </span>
             <span class="mx-3 text-gray-300">&middot;</span>
-            <span>Source: MoCIIP public register</span>
+            <span><?= htmlspecialchars(t('obi.source_label')) ?></span>
             <span class="mx-3 text-gray-300">&middot;</span>
-            <a href="/contact" class="hover:text-gray-700 underline underline-offset-2">Request edit / takedown</a>
+            <a href="/contact" class="hover:text-gray-700 underline underline-offset-2"><?= htmlspecialchars(t('obi.request_edit')) ?></a>
         </p>
     </section>
 </main>

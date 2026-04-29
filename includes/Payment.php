@@ -96,9 +96,9 @@ class Payment {
         // Paymob Oman merchant only accepts OMR. All amounts entering this
         // method are OMR-canonical (print_order.total_amount, card_order.total,
         // free-forever means no subscription path reaches this code). Coerce
-        // any non-OMR input to OMR with a warning — this is a bug in the caller.
+        // any non-OMR input to OMR with a warning, this is a bug in the caller.
         if (strtoupper($currency) !== 'OMR') {
-            error_log("[Payment] createIntent called with non-OMR currency '{$currency}' for {$type}/{$referenceId} — coercing to OMR. Caller should pass OMR.");
+            error_log("[Payment] createIntent called with non-OMR currency '{$currency}' for {$type}/{$referenceId}, coercing to OMR. Caller should pass OMR.");
             $currency = 'OMR';
         }
         $currency = 'OMR';
@@ -110,11 +110,21 @@ class Payment {
         // Build real billing data from company info, with overrides
         $companyName = $company['name'] ?? 'Customer';
         $nameParts = explode(' ', $companyName, 2);
+        // Paymob requires non-empty first_name, last_name, phone_number, coalesce empty strings too
+        $coalesce = static function(...$vals) {
+            foreach ($vals as $v) {
+                if ($v !== null && $v !== '') return $v;
+            }
+            return '';
+        };
         $paymobBilling = [
-            'first_name' => $billingData['first_name'] ?? $nameParts[0],
-            'last_name' => $billingData['last_name'] ?? ($nameParts[1] ?? $nameParts[0]),
-            'phone_number' => $billingData['phone_number'] ?? $billingData['phone'] ?? ($company['phone'] ?? '+96800000000'),
-            'email' => $billingData['email'] ?? ($company['billing_email'] ?? $company['admin_email'] ?? (
+            'first_name' => $coalesce($billingData['first_name'] ?? null, $nameParts[0], 'Customer'),
+            'last_name' => $coalesce($billingData['last_name'] ?? null, $nameParts[1] ?? null, $nameParts[0], 'N/A'),
+            'phone_number' => $coalesce($billingData['phone_number'] ?? null, $billingData['phone'] ?? null, $company['phone'] ?? null, '+96800000000'),
+            'email' => $coalesce(
+                $billingData['email'] ?? null,
+                $company['billing_email'] ?? null,
+                $company['admin_email'] ?? null,
                 // Paymob risk rules flag repeated emails. Fall back to a unique
                 // per-company pseudo-email derived from company name + id.
                 (function() use ($company, $companyId) {
@@ -122,7 +132,7 @@ class Payment {
                     if ($slug === '') $slug = 'company' . $companyId;
                     return substr($slug, 0, 40) . '@cardify.om';
                 })()
-            )),
+            ),
             'apartment' => 'N/A',
             'floor' => 'N/A',
             'street' => $billingData['street'] ?? ($company['address'] ?? 'N/A'),
@@ -165,7 +175,22 @@ class Payment {
             'expiration' => 3600,
             'notification_url' => $callbackUrl,
             'redirection_url' => $callbackUrl,
-            'items' => []
+            'items' => [],
+            // Ask Paymob to return a reusable card_token on success so
+            // repeat customers can one-click pay and MOTO agents can run
+            // phone orders. Paymob only tokenises when BOTH `save_card`
+            // and `recurring_payment_data.agreement` are present (the
+            // lone `save_card_token` field is not a real Paymob field).
+            // PCI scope stays at Paymob, we only get a token + last4.
+            'save_card' => true,
+            'recurring_payment_data' => [
+                'agreement' => [
+                    'id' => "CARDIFY-{$type}-{$specialReference}",
+                    'variable_amount' => false,
+                    'recurring_payment' => true,
+                    'expiry' => null,
+                ],
+            ],
         ];
 
         // Add item description based on type
@@ -281,6 +306,32 @@ class Payment {
                 $data['source_data_sub_type'] = $obj['source_data']['sub_type'] ?? '';
                 $data['source_data_type'] = $obj['source_data']['type'] ?? '';
             }
+            // Paymob returns the reusable card_token on the obj root
+            // when save_card+recurring_payment_data were on the intent.
+            // Shape varies a bit across Paymob flavours, pick the first
+            // one present.
+            $data['card_token'] = $obj['token']
+                ?? ($obj['card_token'] ?? '')
+                ?: ($obj['source_data']['card_token'] ?? '');
+
+            // Card detail fields. Per Paymob Oman webhook spec the
+            // holder/expiry/bin/issuer/country live on obj.data, while
+            // brand + last4 + payment method live on obj.source_data.
+            $objData = isset($obj['data']) && is_array($obj['data']) ? $obj['data'] : [];
+            $srcData = isset($obj['source_data']) && is_array($obj['source_data']) ? $obj['source_data'] : [];
+
+            $data['card_brand']         = $srcData['sub_type'] ?? ($srcData['brand'] ?? '');
+            $data['card_last4']         = $srcData['pan'] ?? '';
+            $data['card_payment_method']= $srcData['type'] ?? '';
+            $data['card_masked']        = $objData['card_num'] ?? '';
+            $data['card_type']          = $objData['card_type'] ?? '';
+            $data['card_holder']        = $objData['card_holder_name'] ?? ($objData['name_on_card'] ?? '');
+            $data['card_exp_m']         = $objData['expiry_month'] ?? null;
+            $data['card_exp_y']         = $objData['expiry_year'] ?? null;
+            $data['card_bin']           = $objData['bin'] ?? '';
+            $data['card_issuer']        = $objData['issuer'] ?? '';
+            $data['card_country']       = $objData['country'] ?? ($objData['card_country'] ?? '');
+            $data['card_integration_id']= $obj['integration_id'] ?? null;
         }
 
         // Merge GET params if available
@@ -295,7 +346,7 @@ class Payment {
         $amountCents = $data['amount_cents'] ?? null;
         $currency = $data['currency'] ?? 'OMR';
 
-        // Verify HMAC — required; reject any callback without a valid signature
+        // Verify HMAC, required; reject any callback without a valid signature
         $receivedHmac = $hmac ?? ($data['hmac'] ?? null);
         if (empty($receivedHmac)) {
             error_log("Payment callback: Missing HMAC for transaction {$transactionId}");
@@ -323,7 +374,7 @@ class Payment {
             }
         }
 
-        // If still not found, this might be an old subscription callback — delegate to legacy
+        // If still not found, this might be an old subscription callback, delegate to legacy
         if (!$payment) {
             error_log("Payment callback: Not found in payments table for {$merchantOrderId}, checking legacy");
             return ['success' => false, 'error' => 'Payment not found', 'legacy' => true, 'merchant_order_id' => $merchantOrderId];
@@ -380,6 +431,82 @@ class Payment {
             } elseif ($payment['type'] === 'card_order') {
                 self::confirmCardOrder($payment);
             }
+            // Cancel any open retry, a later successful payment closes the
+            // dunning loop whether it came through the retry link or a fresh
+            // checkout the user started themselves.
+            try {
+                require_once INCLUDES_DIR . '/PaymentRetry.php';
+                PaymentRetry::markSucceeded((string) $payment['id']);
+            } catch (Throwable $_) {}
+
+            // Persist the reusable Paymob card_token so repeat charges
+            // (MOTO phone orders, subscription renewals, one-click
+            // top-ups) can pay without the customer present. PCI scope
+            // stays at Paymob, we only store last4 + masked PAN + brand
+            // for display + routing metadata (BIN, issuer, country).
+            //
+            // Upsert key is (company_id, last_four), same physical card
+            // re-saved overwrites the row (fresh token + timestamps),
+            // new card appends.
+            if (!empty($data['card_token']) && !empty($payment['company_id'])) {
+                $last4 = substr((string) ($data['card_last4'] ?? ''), -4);
+                if ($last4 !== '') {
+                    try {
+                        $db->exec(
+                            "INSERT INTO saved_cards
+                                (company_id, paymob_token, last_four, masked_number, brand,
+                                 card_type, payment_method, holder_name,
+                                 expiry_month, expiry_year, bin, issuer, country,
+                                 integration_id, last_used_at)
+                             VALUES
+                                (:c, :t, :l4, :mask, :b,
+                                 :ctype, :pmethod, :h,
+                                 :em, :ey, :bin, :iss, :cty,
+                                 :iid, NOW())
+                             ON DUPLICATE KEY UPDATE
+                                paymob_token = VALUES(paymob_token),
+                                masked_number = VALUES(masked_number),
+                                brand = VALUES(brand),
+                                card_type = VALUES(card_type),
+                                payment_method = VALUES(payment_method),
+                                holder_name = VALUES(holder_name),
+                                expiry_month = VALUES(expiry_month),
+                                expiry_year = VALUES(expiry_year),
+                                bin = VALUES(bin),
+                                issuer = VALUES(issuer),
+                                country = VALUES(country),
+                                integration_id = VALUES(integration_id),
+                                last_used_at = NOW()",
+                            [
+                                'c'       => $payment['company_id'],
+                                't'       => $data['card_token'],
+                                'l4'      => $last4,
+                                'mask'    => substr((string) ($data['card_masked'] ?? ''), 0, 32),
+                                'b'       => substr((string) ($data['card_brand'] ?? ''), 0, 24),
+                                'ctype'   => substr((string) ($data['card_type'] ?? ''), 0, 16),
+                                'pmethod' => substr((string) ($data['card_payment_method'] ?? ''), 0, 32),
+                                'h'       => substr((string) ($data['card_holder'] ?? ''), 0, 120),
+                                'em'      => is_numeric($data['card_exp_m'] ?? null) ? (int) $data['card_exp_m'] : null,
+                                'ey'      => is_numeric($data['card_exp_y'] ?? null) ? (int) $data['card_exp_y'] : null,
+                                'bin'     => substr((string) ($data['card_bin'] ?? ''), 0, 8),
+                                'iss'     => substr((string) ($data['card_issuer'] ?? ''), 0, 128),
+                                'cty'     => substr((string) ($data['card_country'] ?? ''), 0, 8),
+                                'iid'     => is_numeric($data['card_integration_id'] ?? null) ? (int) $data['card_integration_id'] : null,
+                            ]
+                        );
+                    } catch (Throwable $e) {
+                        error_log('saved_cards upsert failed: ' . $e->getMessage());
+                    }
+                }
+            }
+        } else {
+            // Payment failed, enqueue a dunning retry (Cat S action 455).
+            try {
+                require_once INCLUDES_DIR . '/PaymentRetry.php';
+                $failReason = (string) ($data['data.message'] ?? $data['message'] ?? 'declined');
+                $freshPayment = array_merge($payment, ['status' => 'failed']);
+                PaymentRetry::enqueueFromFailed($freshPayment, $failReason);
+            } catch (Throwable $_) {}
         }
 
         // Fire payment_success / payment_failed notifications via Notifier
@@ -414,7 +541,7 @@ class Payment {
                 ]);
             } else {
                 // Retry URL points to the admin print page (company-facing print orders live there).
-                // company/orders.php does not exist — the old value was broken.
+                // company/orders.php does not exist, the old value was broken.
                 $retryUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://'
                           . ($_SERVER['HTTP_HOST'] ?? 'cardify.om')
                           . getBasePath() . 'admin/print.php?retry=' . urlencode($order['id'] ?? ($payment['reference_id'] ?? ''));
@@ -483,6 +610,14 @@ class Payment {
         );
 
         error_log("Subscription activated: company={$companyId} plan={$planId} cycle={$billingCycle} expires={$expiresAt}");
+
+        // BHD-234: referral reward on first paid conversion.
+        try {
+            require_once INCLUDES_DIR . '/Referral.php';
+            Referral::onPaidConversion((string)$companyId, (float)($payment['amount'] ?? 0));
+        } catch (Throwable $e) {
+            error_log('[referral] paid hook failed: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -542,7 +677,7 @@ class Payment {
     }
 
     /**
-     * Confirm card order — add credits to company after payment
+     * Confirm card order, add credits to company after payment
      */
     private static function confirmCardOrder(array $payment): void {
         $db = Database::getInstance();
@@ -574,12 +709,36 @@ class Payment {
             return;
         }
 
-        // Atomic increment — no race condition
+        // Atomic increment, no race condition
         $conn = $db->getConnection();
         $stmt = $conn->prepare("UPDATE companies SET card_credits = card_credits + ? WHERE id = ?");
         $stmt->execute([$cardCount, $companyId]);
 
+        // Mirror into card_credit_ledger so /admin/card-credits and the
+        // statement page see the top-up (Cat S action 451).
+        try {
+            $newBalance = (int) ($db->fetchOne("SELECT card_credits FROM companies WHERE id = :id", ['id' => $companyId])['card_credits'] ?? 0);
+            $db->exec(
+                "INSERT INTO card_credit_ledger
+                    (company_id, employee_id, delta, balance_after, reason, ref_id, notes)
+                 VALUES (:c, NULL, :d, :b, 'purchase', :ref, NULL)",
+                ['c' => $companyId, 'd' => $cardCount, 'b' => $newBalance, 'ref' => $refId]
+            );
+        } catch (Throwable $_) { /* ledger table may not exist pre-091 */ }
+
         error_log("Card credits added: company={$companyId} cards={$cardCount}");
+
+        // Push the sale into BHD-ERP so the client ledger shows it
+        // (Cat S action 453). Non-fatal; failures only log.
+        try {
+            require_once INCLUDES_DIR . '/ERPSync.php';
+            $sync = ERPSync::recordCardCreditPurchase($payment['id']);
+            if (empty($sync['success'])) {
+                error_log("confirmCardOrder: ERP sync non-fatal failure: " . ($sync['message'] ?? 'unknown'));
+            }
+        } catch (Throwable $e) {
+            error_log("confirmCardOrder: ERP sync threw: " . $e->getMessage());
+        }
     }
 
     // --- Query methods ---

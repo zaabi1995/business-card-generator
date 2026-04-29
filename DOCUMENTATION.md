@@ -1,8 +1,14 @@
-# Business Card Generator - Complete Documentation
+# Cardify.om — Complete Documentation
 
-**Version:** 2.0  
-**Last Updated:** December 2024  
-**Status:** Production Ready (90%)
+**Version:** 2.0 (shipped April 2026)
+**Last Updated:** 2026-04-23
+**Status:** Production, live at https://cardify.om
+
+> **See also:** [`RELEASE_NOTES_v2.0.md`](RELEASE_NOTES_v2.0.md) for the
+> sprint summary, [`CHANGELOG.md`](CHANGELOG.md) for the engineering
+> log, and the customer-facing timeline at https://cardify.om/changelog.
+>
+> For incident response, start with [`ops/runbook.md`](ops/runbook.md).
 
 ---
 
@@ -1106,10 +1112,105 @@ php database/migrate_json_to_db.php
 
 ---
 
-**Documentation Version:** 2.0  
-**Last Updated:** December 2024  
-**Maintained By:** Development Team
+# What shipped in v2.0 (April 2026 sprint)
+
+This section supersedes everything above for anything marked "planned"
+or "roadmap" — the April 2026 sprint landed the features, not the
+intent. `RELEASE_NOTES_v2.0.md` has the full narrative; this block
+catalogues the documentation-facing surface so engineers can find it.
+
+## New includes (`includes/*.php`)
+
+| Class                   | Purpose |
+|-------------------------|---------|
+| `I18n`                  | Locale detection + `t('ns.key')` + CLDR plural + `formatDate` + `formatCurrency`; bootstrapped from `includes/functions.php` on every request. |
+| `Onboarding`            | 7-step wizard state: `get/saveStep/markSkipped/markCompleted`. |
+| `OtpService`            | 6-digit OTP send/verify, SHA-256 at rest, WhatsApp + email delivery, 3/h + 10/day rate limits. |
+| `EmployeeEditToken`     | Passwordless magic-link minting + verification, 30-day TTL + idle timeout. |
+| `Cache`                 | File-based namespace-sharded cache: `get/put/remember/forget/flush/gc`. |
+| `NotificationCenter`    | `push/unreadCount/recent/markRead/prefs/logDispatch/activeBanner`. |
+| `SecurityHeaders`       | Nonce-based CSP + HSTS + X-Frame-Options + cookie hardening. Call `SecurityHeaders::send()` before output. |
+| `Seo`                   | JSON-LD emitters: `organization/breadcrumbs/faqPage/article/product` + `hreflang()`. |
+| `Redirects`             | Curated legacy-alias map + DB-backed dynamic aliases (`url_redirects`). |
+| `Tax`                   | Oman VAT 5%: `breakdown/breakdownFromOrder/persistOnOrder`. |
+| `CardCredits`           | `chargeForGenerate` idempotent per (company, employee), `getBalance`. |
+| `PaymentRetry`          | 3-attempt dunning ladder `[48h, 72h, 48h]`, `enqueueFromFailed/markSucceeded/runQueue`. |
+| `Sentry`                | Opt-in PHP client (no Composer dep): `init/captureException/captureMessage/browserBootstrap`. |
+| `ERPSync`               | Cardify→BHD-ERP sync: `recordPayment/recordCardCreditPurchase/runQueue/enqueueRetry`, alertFailure + WhatsApp. |
+
+## New migrations (077-094)
+
+Run in order from `/database/migrations/`. Full list in
+`RELEASE_NOTES_v2.0.md § Migrations applied on prod`.
+
+## New public URLs
+
+- `/pricing` + `/ar/pricing` — 4 OMR tiers with Alpine monthly/yearly toggle.
+- `/status` + `/ar/status` — live 5-component probe + 30-day incident log.
+- `/changelog` + `/ar/changelog` — timeline from `data/changelog.php`.
+- `/case-studies` + per-slug detail — 3 real BHD-family customers.
+- `/faq` + `/ar/faq` — 20 questions across 6 categories, FAQPage JSON-LD.
+- `/contact` + `/ar/contact` — CSRF form + Google Maps embed + WhatsApp.
+- `/terms` + `/privacy` in both locales — Oman-specific with PDPL alignment.
+- `/api/health` — JSON app+db+storage liveness (Uptime Robot consumes this).
+- `/api/erp-health` — JSON ERP-sync link liveness.
+- `/sitemap-printshops.xml` — new child sitemap; index now lists 9 children.
+
+## New admin pages (in `company_admin.php` pageMap)
+
+- `onboarding` → `/admin/onboarding` (wizard)
+- `billing-info` → `/admin/billing-info` (CR + tax ID + billing address)
+- `invoices` → `/admin/invoices` (paid-order invoice list with download)
+- `payments-history` → `/admin/payments-history` (subs + print + card-credit activity)
+- `credit-statement` → `/admin/credit-statement` (ledger with print-ready PDF)
+- `card-credits` → `/admin/card-credits` (Paymob top-up)
+- `nfc/batch`, `nfc/write` → NFC tag programming flow.
+
+## Ops surface
+
+- `/usr/local/bin/deploy-cardify.sh` — pre-flight `php -l` + chmod/chown
+  sweep + FPM reload + 5-URL post-flight smoke + auto-rollback on fail.
+  Mirror: `ops/deploy-cardify.sh`.
+- `/usr/local/bin/rollback-cardify.sh` — manual rollback with
+  `--status/--list` helpers. Mirror: `ops/rollback-cardify.sh`.
+- `scripts/backup-db.sh` (nightly 02:25), `scripts/backup-storage.sh`
+  (nightly 02:35), `scripts/backup-restore-test.sh` (weekly Sun 03:45).
+- `scripts/erp-retry.php` (every minute), `scripts/erp-reconcile.php`
+  (2nd of month 06:30 email), `scripts/payment-retry.php` (hourly).
+- `scripts/disk-alert.sh` (every 30 min, 80% threshold, 6h cooldown
+  WhatsApp to Ali), `scripts/slow-query-report.sh` (Mon 07:15 email).
+- `ops/logrotate-cardify` installed at `/etc/logrotate.d/cardify`
+  — covers `/var/log/cardify-*.log` + PHP-FPM logs.
+- `ops/uptime-monitors.json` — version-controlled monitor definitions
+  for Uptime Robot / StatusCake.
+- `ops/runbook.md` — 10-section incident playbook.
+- `ops/qa-nfc-manual.md`, `ops/qa-wallet-manual.md`,
+  `ops/qa-screen-reader-manual.md` — hardware-dependent QA procedures.
+
+## E2E test suite (`tests/e2e/*.spec.ts`)
+
+16 Playwright specs, 100+ tests. Default run on chromium; opt-in
+`--project="Safari iOS"` and `--project="Chrome Android"` for cross-
+browser. Most tests are read-only against prod; full-auth happy paths
+queued for the stage environment once DNS + TEST_OTP bypass land
+(actions 822 + 825).
+
+## Arabic / i18n invariants
+
+- Every new user-facing string lands in `lang/en/*.php` AND
+  `lang/ar/*.php` in the same commit.
+- `scripts/i18n-audit.php` + `tests/e2e/i18n-leak.spec.ts` guard
+  bidirectional parity. CI should fail on drift.
+- Never use em-dashes ("—") in output: use "-" or ",". Style rule
+  from `~/.claude/CLAUDE.md`.
 
 ---
 
-*This documentation consolidates all previous documentation files into one comprehensive guide. For specific details, refer to the relevant sections above.*
+**Documentation Version:** 2.0 (April 2026 refresh)
+**Last Updated:** 2026-04-23
+**Maintained By:** Ali + Cardify engineering
+
+---
+
+*Legacy sections above describe v1 intent. Trust the shipped surface
+described here and in `RELEASE_NOTES_v2.0.md` when they disagree.*

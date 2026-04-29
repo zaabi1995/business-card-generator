@@ -1,6 +1,6 @@
 <?php
 /**
- * ERPSync — Pushes Cardify print order payments into BHD-ERP.
+ * ERPSync, Pushes Cardify print order payments into BHD-ERP.
  *
  * Calls POST /api/admin/cardify/record-payment on BHD-ERP, which:
  *   1. Creates a Quote for the client
@@ -46,6 +46,114 @@ class ERPSync {
      * @param string $recordedByUserId  User ID (for audit)
      * @return array ['success'=>bool, 'message'=>string, 'data'=>array|null]
      */
+    /**
+     * Record a card-credit top-up against BHD-ERP (Cat S action 453).
+     *
+     * Card credits are digital-only; they don't flow through
+     * print_orders, so they used to skip the ERP sync entirely and
+     * show up only in Cardify's `payments` table. This pushes them
+     * into BHD-ERP as a Quote → Invoice → Payment chain with a
+     * synthetic CARDS-{paymentId-short} reference so accountants can
+     * reconcile Paymob payouts against the ERP client ledger.
+     *
+     * Returns ['success' => bool, 'message' => string, 'data' => ?array].
+     * Non-fatal on failure; caller logs + moves on. Idempotent via the
+     * 409-already-recorded path in BHD-ERP.
+     */
+    public static function recordCardCreditPurchase(string $paymentId): array {
+        if (!self::isEnabled()) return ['success' => true, 'message' => 'ERP sync disabled'];
+        $settings = self::getSettings();
+
+        $db = Database::getInstance();
+        $pay = $db->fetchOne(
+            "SELECT p.*, c.name AS company_name, c.erp_client_name
+               FROM payments p
+          LEFT JOIN companies c ON p.company_id = c.id
+              WHERE p.id = :id AND p.type = 'card_order' AND p.status = 'paid'",
+            ['id' => $paymentId]
+        );
+        if (!$pay) {
+            return ['success' => false, 'message' => "Card-credit payment $paymentId not found or not paid"];
+        }
+
+        $credit = $db->fetchOne(
+            "SELECT * FROM card_order_credits WHERE id = :id",
+            ['id' => $pay['reference_id']]
+        );
+        $cardCount = (int) ($credit['card_count'] ?? 0);
+
+        $clientName = !empty($pay['erp_client_name'])
+            ? $pay['erp_client_name']
+            : (!empty($settings['erp_client_name']) ? $settings['erp_client_name'] : $pay['company_name']);
+        if (empty($clientName)) {
+            return ['success' => false, 'message' => 'Cannot sync: no ERP client name configured'];
+        }
+
+        // CARDS-{first 8 of paymentId} is the ERP-side orderNumber and the
+        // dedup key. Keeps the UUID out of user-facing invoice numbers.
+        $shortRef    = 'CARDS-' . strtoupper(substr(str_replace('-', '', $paymentId), 0, 8));
+        $description = "Cardify card credits × {$cardCount}, {$shortRef}";
+
+        $payload = [
+            'clientName'    => $clientName,
+            'orderNumber'   => $shortRef,
+            'amount'        => (float) $pay['amount'],
+            'description'   => $description,
+            'paymentMethod' => 'bank_transfer', // Paymob card/apple-pay settle as bank transfer on our ERP side
+            'paymentRef'    => $pay['paymob_transaction_id'] ?: $shortRef,
+            'paymentDate'   => date('c', strtotime($pay['updated_at'] ?? $pay['created_at'])),
+            'notes'         => "Card-credit top-up via Paymob · company={$pay['company_id']}",
+        ];
+
+        $apiUrl = rtrim($settings['erp_api_url'], '/') . '/api/admin/cardify/record-payment';
+        $ch     = curl_init($apiUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload),
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $settings['erp_api_token'],
+            ],
+            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+        $body     = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlErr) {
+            error_log("ERPSync::recordCardCreditPurchase cURL error: $curlErr");
+            return ['success' => false, 'message' => $curlErr];
+        }
+        $data = json_decode($body, true) ?: [];
+
+        // 409 = idempotent re-record; 200 or 201 = fresh sync; else fail.
+        if ($httpCode === 409 || $httpCode === 200 || $httpCode === 201) {
+            // Persist the ERP IDs back onto payments so the admin can see them.
+            try {
+                $db->exec(
+                    "UPDATE payments SET
+                       callback_data = JSON_SET(COALESCE(callback_data, '{}'),
+                           '$.erp_invoice_number', :inv, '$.erp_invoice_id', :invid, '$.erp_short_ref', :ref)
+                     WHERE id = :id",
+                    [
+                        'inv'   => $data['invoiceNumber'] ?? null,
+                        'invid' => $data['invoiceId']     ?? null,
+                        'ref'   => $shortRef,
+                        'id'    => $paymentId,
+                    ]
+                );
+            } catch (Throwable $_) { /* JSON_SET may not be available on older MySQL */ }
+            return ['success' => true, 'message' => 'Card-credit purchase synced to ERP', 'data' => $data];
+        }
+
+        $errMsg = $data['message'] ?? "HTTP $httpCode";
+        error_log("ERPSync::recordCardCreditPurchase failed ($errMsg)");
+        return ['success' => false, 'message' => $errMsg];
+    }
+
     public static function recordPayment(
         int $orderId,
         string $paymentMethod,
@@ -72,7 +180,7 @@ class ERPSync {
         $qty = (int)($order['quantity'] ?? 0);
         $paper = ucfirst($order['paper_type'] ?? 'standard');
         $finish = ucfirst(str_replace('_', ' ', $order['finish'] ?? 'standard'));
-        $description = "Business Cards × {$qty} ({$paper}, {$finish}) — Order {$order['order_number']}";
+        $description = "Business Cards × {$qty} ({$paper}, {$finish}), Order {$order['order_number']}";
 
         // Determine ERP client name: company override → settings default → company name
         $clientName = !empty($order['erp_client_name'])
@@ -119,13 +227,14 @@ class ERPSync {
 
         if ($curlErr) {
             self::markSyncError($orderId, "cURL error: $curlErr");
+            self::enqueueRetry($orderId, $paymentMethod, $paymentRef, $paymentNotes, $recordedByUserId, "cURL error: $curlErr");
             return ['success' => false, 'message' => "ERP connection failed: $curlErr"];
         }
 
         $data = json_decode($body, true);
 
         if ($httpCode === 409) {
-            // Already recorded — treat as success, store existing IDs if returned
+            // Already recorded, treat as success, store existing IDs if returned
             $erpData = $data ?? [];
             $db->exec("UPDATE print_orders SET
                 erp_sync_status = 'synced',
@@ -135,16 +244,18 @@ class ERPSync {
                 " . (isset($erpData['invoiceNumber']) ? ", erp_invoice_number = " . $db->getConnection()->quote($erpData['invoiceNumber']) : '') . "
                 WHERE id = $orderId"
             );
+            self::markRetrySucceeded($orderId);
             return ['success' => true, 'message' => 'Already recorded in ERP', 'data' => $erpData];
         }
 
         if ($httpCode !== 200 || empty($data['success'])) {
             $errMsg = $data['message'] ?? "HTTP $httpCode";
             self::markSyncError($orderId, $errMsg);
+            self::enqueueRetry($orderId, $paymentMethod, $paymentRef, $paymentNotes, $recordedByUserId, $errMsg);
             return ['success' => false, 'message' => "ERP sync failed: $errMsg"];
         }
 
-        // Success — persist ERP IDs back into Cardify
+        // Success, persist ERP IDs back into Cardify
         $pdo = $db->getConnection();
         $stmt = $pdo->prepare("UPDATE print_orders SET
             erp_invoice_id            = :inv_id,
@@ -174,11 +285,129 @@ class ERPSync {
             'id'      => $orderId,
         ]);
 
+        self::markRetrySucceeded($orderId);
         return ['success' => true, 'message' => 'Payment synced to ERP', 'data' => $data];
     }
 
     /**
+     * Retry backoff ladder in minutes, max attempts = count(). After
+     * the final slot the retry row is marked 'exhausted' and manual
+     * intervention is required.
+     */
+    private const RETRY_MINUTES = [2, 5, 15, 60, 180, 720, 1440];
+
+    /**
+     * Enqueue or update a retry for a failing ERP sync. Persists the
+     * full recordPayment() argument set so the worker can replay it
+     * offline; uses exponential backoff. Safe to call repeatedly with
+     * the same order + new error.
+     */
+    public static function enqueueRetry(
+        int $orderId,
+        string $paymentMethod,
+        string $paymentRef,
+        string $paymentNotes,
+        string $recordedByUserId,
+        string $error
+    ): void {
+        try {
+            $db  = Database::getInstance();
+            $row = $db->fetchOne(
+                "SELECT id, attempts FROM erp_sync_retries WHERE order_id = :id AND status = 'pending' LIMIT 1",
+                ['id' => $orderId]
+            );
+            $attempts = (int) ($row['attempts'] ?? 0) + 1;
+            $slot     = min($attempts - 1, count(self::RETRY_MINUTES) - 1);
+            $delay    = self::RETRY_MINUTES[$slot];
+            $next     = (new DateTime('now'))->modify("+{$delay} minutes")->format('Y-m-d H:i:s');
+            $status   = $attempts >= count(self::RETRY_MINUTES) ? 'exhausted' : 'pending';
+
+            if ($row) {
+                $db->exec(
+                    "UPDATE erp_sync_retries SET
+                        attempts = :a, last_error = :e, last_tried_at = NOW(),
+                        next_retry_at = :n, status = :s
+                     WHERE id = :id",
+                    ['a' => $attempts, 'e' => mb_substr($error, 0, 2000), 'n' => $next, 's' => $status, 'id' => $row['id']]
+                );
+            } else {
+                $db->exec(
+                    "INSERT INTO erp_sync_retries
+                        (order_id, payment_method, payment_ref, payment_notes, recorded_by,
+                         attempts, last_error, last_tried_at, next_retry_at, status)
+                     VALUES (:oid, :m, :r, :n, :by, :a, :e, NOW(), :next, :s)",
+                    [
+                        'oid' => $orderId, 'm' => $paymentMethod, 'r' => $paymentRef,
+                        'n' => $paymentNotes, 'by' => $recordedByUserId,
+                        'a' => 1, 'e' => mb_substr($error, 0, 2000),
+                        'next' => $next, 's' => 'pending',
+                    ]
+                );
+            }
+        } catch (Throwable $_) { /* queue errors must never break the order flow */ }
+    }
+
+    /**
+     * Mark any pending retry for this order as succeeded. Called from
+     * recordPayment() on a successful sync (including the 409 idempotent
+     * case).
+     */
+    public static function markRetrySucceeded(int $orderId): void {
+        try {
+            $db = Database::getInstance();
+            $db->exec(
+                "UPDATE erp_sync_retries SET status = 'succeeded', updated_at = NOW()
+                 WHERE order_id = :id AND status = 'pending'",
+                ['id' => $orderId]
+            );
+        } catch (Throwable $_) { /* best effort */ }
+    }
+
+    /**
+     * Process due retries. Meant to be run by a cron every minute. Picks
+     * rows where status = 'pending' AND next_retry_at <= NOW(), replays
+     * recordPayment(), and updates the queue row based on the outcome.
+     *
+     * @param int $limit Max rows to process per tick (default 20).
+     * @return array {processed:int, succeeded:int, failed:int}
+     */
+    public static function runQueue(int $limit = 20): array {
+        $out = ['processed' => 0, 'succeeded' => 0, 'failed' => 0];
+        try {
+            $db   = Database::getInstance();
+            $rows = $db->fetchAll(
+                "SELECT * FROM erp_sync_retries
+                 WHERE status = 'pending' AND next_retry_at <= NOW()
+                 ORDER BY next_retry_at ASC
+                 LIMIT " . (int) $limit
+            );
+            foreach ($rows as $r) {
+                $out['processed']++;
+                $res = self::recordPayment(
+                    (int) $r['order_id'],
+                    (string) $r['payment_method'],
+                    (string) $r['payment_ref'],
+                    (string) ($r['payment_notes'] ?? ''),
+                    (string) $r['recorded_by']
+                );
+                if (!empty($res['success'])) {
+                    // recordPayment() already calls markRetrySucceeded() on
+                    // success; we just tally here for the runner log.
+                    $out['succeeded']++;
+                } else {
+                    $out['failed']++;
+                }
+            }
+        } catch (Throwable $e) {
+            // Surface to the runner stdout but don't re-throw.
+            error_log('ERPSync::runQueue error: ' . $e->getMessage());
+        }
+        return $out;
+    }
+
+    /**
      * Mark an order's ERP sync as failed with an error message.
+     * Also fires a WhatsApp alert to Ali (throttled, see alertFailure()).
      */
     private static function markSyncError(int $orderId, string $error): void {
         $db = Database::getInstance();
@@ -189,5 +418,64 @@ class ERPSync {
             erp_last_sync   = NOW()
             WHERE id = :id
         ")->execute(['err' => $error, 'id' => $orderId]);
+
+        try { self::alertFailure($orderId, $error); } catch (Throwable $_) { /* alerts are never allowed to crash the order flow */ }
+    }
+
+    /**
+     * WhatsApp the failure to Ali (ERP owner), throttled (Cat S action
+     * 442). At most one alert per order per 30 minutes, and at most 5
+     * alerts globally per hour, so a broken token cannot flood.
+     *
+     * Storage is file-backed under /data/cache/erp-alerts/ to stay
+     * independent of MySQL health (the exact outage we are alerting on
+     * could be DB-side). File is ignored if the dir is not writable.
+     */
+    private static function alertFailure(int $orderId, string $error): void {
+        // Recipient: Ali personal (+96871616161, per memory feedback_fencing_otp_tests_ali_only
+        //, same rule applies to error alerts; only Ali gets pinged until we wire
+        // opt-in per-admin notifications).
+        $phone = '96871616161';
+
+        $cacheDir = (defined('BASE_DIR') ? BASE_DIR : dirname(__DIR__)) . '/data/cache/erp-alerts';
+        if (!is_dir($cacheDir)) @mkdir($cacheDir, 0775, true);
+
+        $perOrderKey  = $cacheDir . '/order-' . $orderId . '.ts';
+        $globalLogKey = $cacheDir . '/global.log';
+        $now          = time();
+
+        // Per-order throttle: 30 min between alerts for the same order.
+        if (is_file($perOrderKey) && ($now - (int) @file_get_contents($perOrderKey)) < 1800) return;
+
+        // Global hourly cap: 5 alerts in the last 3600 seconds.
+        $recent = [];
+        if (is_file($globalLogKey)) {
+            foreach (array_filter(explode("\n", (string) @file_get_contents($globalLogKey))) as $line) {
+                $t = (int) $line;
+                if ($now - $t < 3600) $recent[] = $t;
+            }
+            if (count($recent) >= 5) return;
+        }
+        $recent[] = $now;
+        @file_put_contents($globalLogKey, implode("\n", $recent));
+        @file_put_contents($perOrderKey, (string) $now);
+
+        $host    = defined('APP_HOST') ? APP_HOST : 'cardify.om';
+        $short   = mb_substr($error, 0, 280);
+        $msg     = "*Cardify ERP sync failed*\n"
+                 . "Order: CRDFY-{$orderId}\n"
+                 . "Error: {$short}\n"
+                 . "Time: " . date('Y-m-d H:i') . " (GMT+4)\n"
+                 . "Order URL: https://{$host}/admin/print-order.php?id={$orderId}\n"
+                 . "Health: https://{$host}/api/erp-health";
+
+        if (class_exists('WhatsApp')) {
+            try { WhatsApp::sendMessage($phone, $msg); } catch (Throwable $_) { /* swallow */ }
+        }
+
+        // Also record to audit_logs for the internal ops timeline.
+        if (class_exists('AuditLog')) {
+            try { AuditLog::log('erp_sync_failed', 'print_order', (string) $orderId, ['error' => $short]); } catch (Throwable $_) {}
+        }
     }
 }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Cardify — Free Email Signature Generator
+ * Cardify, Free Email Signature Generator
  *
  * Builds a clean, table-based HTML email signature (Gmail + Outlook compatible)
  * from form inputs and lets the user copy either rich HTML or plain text.
@@ -51,8 +51,46 @@ $breadcrumbLd = [
     ],
 ];
 
+$faq = [
+    ['q' => 'Is the email signature generator really free?', 'a' => 'Yes. No account, no watermark, no ad inserted into your signature, no "upgrade to remove logo" trick. The HTML you copy is yours.'],
+    ['q' => 'Does the signature render correctly in Gmail and Outlook?', 'a' => 'Yes. We output table-based HTML with inline styles, which is the only format that survives Gmail, Outlook (desktop and web), Apple Mail, and mobile clients consistently. No flexbox, no CSS grid, those break in Outlook.'],
+    ['q' => 'How do I install the signature in Gmail?', 'a' => 'Copy the HTML with the Rich Copy button, open Gmail → Settings → See all settings → General → Signature, paste into the signature editor, and save. Send a test email to yourself to verify.'],
+    ['q' => 'Can I include both Arabic and English text?', 'a' => 'Yes. Paste Arabic into any field and the signature renders bilingual with correct right-to-left alignment where appropriate. Arabic names, titles, and addresses are supported.'],
+    ['q' => 'Will my data be saved on your servers?', 'a' => 'No. The whole generator is a single HTML page, nothing is posted anywhere. Refresh the page and all your inputs are gone. If you need to edit the signature later, bookmark the URL and type your details again.'],
+    ['q' => 'What if my logo URL stops working?', 'a' => 'Email clients need the logo hosted somewhere public. Use your company website\'s logo URL, a CDN, or a Cardify digital card asset. If the URL breaks, recipients see the alt text instead.'],
+];
+
+$howToLd = [
+    '@context' => 'https://schema.org',
+    '@type' => 'HowTo',
+    'name' => 'How to create a professional email signature for free',
+    'description' => 'Generate a clean, Gmail and Outlook compatible HTML email signature from your contact details in under a minute.',
+    'totalTime' => 'PT3M',
+    'tool' => [
+        ['@type' => 'HowToTool', 'name' => 'Cardify Email Signature Generator'],
+    ],
+    'step' => [
+        ['@type' => 'HowToStep', 'position' => 1, 'name' => 'Enter your details', 'text' => 'Type your name, title, company, phone, email, and website. The live preview updates as you type.'],
+        ['@type' => 'HowToStep', 'position' => 2, 'name' => 'Add a logo URL (optional)', 'text' => 'Paste a public URL to your company logo. Keep it under 400px wide for Gmail and Outlook compatibility.'],
+        ['@type' => 'HowToStep', 'position' => 3, 'name' => 'Copy the signature', 'text' => 'Click Copy HTML for rich clients like Gmail and Outlook, or Copy plain text for clients that strip HTML.'],
+        ['@type' => 'HowToStep', 'position' => 4, 'name' => 'Install in your email client', 'text' => 'Paste into Gmail Settings → Signature, Outlook File → Options → Mail → Signatures, or Apple Mail → Settings → Signatures. Send a test to verify rendering.'],
+    ],
+];
+
+$faqLd = [
+    '@context' => 'https://schema.org',
+    '@type' => 'FAQPage',
+    'mainEntity' => array_map(fn($q) => [
+        '@type' => 'Question',
+        'name' => $q['q'],
+        'acceptedAnswer' => ['@type' => 'Answer', 'text' => $q['a']],
+    ], $faq),
+];
+
 $extraHead = '<script type="application/ld+json">' . json_encode($softwareLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
-           . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+           . '<script type="application/ld+json">' . json_encode($breadcrumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+           . '<script type="application/ld+json">' . json_encode($howToLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n"
+           . '<script type="application/ld+json">' . json_encode($faqLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
 $showNavigation = true;
 require_once INCLUDES_DIR . '/ui-header.php';
@@ -154,21 +192,21 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <!-- Content -->
         <article class="bg-white rounded-xl shadow-sm p-6 sm:p-8 mt-10 prose prose-blue max-w-none">
             <h2 class="text-2xl font-bold text-gray-900 mt-0">Why your email signature matters more than you think</h2>
-            <p>The average professional sends about 40 business emails a day. That's 10,000+ signed messages a year — every one of them a micro-branding opportunity that most people waste with either nothing at all or a cluttered wall of social icons, legal disclaimers, and mismatched fonts. A clean signature costs you nothing and gives every email a last, credible impression of who you are and how to reach you.</p>
+            <p>The average professional sends about 40 business emails a day. That's 10,000+ signed messages a year, every one of them a micro-branding opportunity that most people waste with either nothing at all or a cluttered wall of social icons, legal disclaimers, and mismatched fonts. A clean signature costs you nothing and gives every email a last, credible impression of who you are and how to reach you.</p>
 
             <h2 class="text-2xl font-bold text-gray-900">What makes a great email signature</h2>
             <ul>
                 <li><strong>Keep it short.</strong> Name, title, company, one phone number, one link. If a recruiter can read it in two seconds, you're done.</li>
-                <li><strong>Use a table, not a div.</strong> Outlook's rendering engine is still Word-based — divs, flexbox, and modern CSS collapse. Tables with inline styles are the only reliable layout.</li>
+                <li><strong>Use a table, not a div.</strong> Outlook's rendering engine is still Word-based, divs, flexbox, and modern CSS collapse. Tables with inline styles are the only reliable layout.</li>
                 <li><strong>Web-safe fonts only.</strong> Arial, Helvetica, Georgia, Verdana. Custom fonts fall back to Times New Roman on 40% of clients.</li>
-                <li><strong>One accent colour.</strong> Your company brand colour for name and link — everything else in neutral grey. More than one accent reads as visual noise.</li>
+                <li><strong>One accent colour.</strong> Your company brand colour for name and link, everything else in neutral grey. More than one accent reads as visual noise.</li>
                 <li><strong>Logo max 60px tall.</strong> Larger logos break the email's vertical rhythm, inflate the message size, and get flagged by spam filters on Outlook.</li>
                 <li><strong>No background images.</strong> Most corporate email clients block them by default. If your design depends on them, it breaks.</li>
                 <li><strong>Mobile test.</strong> Over 60% of emails in Oman are read on mobile first. Check that your signature wraps cleanly at 320px wide.</li>
             </ul>
 
-            <h2 class="text-2xl font-bold text-gray-900">Bilingual Arabic/English signatures — Oman tip</h2>
-            <p>Half of professional correspondence in Oman is bilingual. The cleanest approach is <em>not</em> to stack Arabic and English vertically — that doubles the signature height and looks cluttered. Instead, use a two-column table: English on the left, Arabic on the right, with the Arabic block set to <code>dir="rtl"</code> and styled with the same web-safe font (e.g. Tahoma, which ships with both Latin and Arabic glyphs on every version of Windows and macOS). Keep name, title, company, and phone on both sides; drop social icons from the Arabic side if space is tight. This is what most Ministry and corporate signatures in Muscat look like — and it's what sets a polished bilingual signature apart from one that was clearly an afterthought.</p>
+            <h2 class="text-2xl font-bold text-gray-900">Bilingual Arabic/English signatures, Oman tip</h2>
+            <p>Half of professional correspondence in Oman is bilingual. The cleanest approach is <em>not</em> to stack Arabic and English vertically, that doubles the signature height and looks cluttered. Instead, use a two-column table: English on the left, Arabic on the right, with the Arabic block set to <code>dir="rtl"</code> and styled with the same web-safe font (e.g. Tahoma, which ships with both Latin and Arabic glyphs on every version of Windows and macOS). Keep name, title, company, and phone on both sides; drop social icons from the Arabic side if space is tight. This is what most Ministry and corporate signatures in Muscat look like, and it's what sets a polished bilingual signature apart from one that was clearly an afterthought.</p>
 
             <h2 class="text-2xl font-bold text-gray-900">How to install your new signature</h2>
             <h3>Gmail</h3>
@@ -287,7 +325,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             }
             btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Copied!';
         } catch (e) {
-            btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> Copy failed — use raw HTML';
+            btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> Copy failed, use raw HTML';
         }
         setTimeout(() => { btn.innerHTML = orig; }, 2000);
     });
@@ -308,5 +346,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     render();
 })();
 </script>
+
+<?php include __DIR__ . '/../views/partials/tool_seo_faq.php'; ?>
 
 <?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>

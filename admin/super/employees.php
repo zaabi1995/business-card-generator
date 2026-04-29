@@ -286,7 +286,7 @@ adminHeader('Employees Management' . ($selectedCompanyName ? " - {$selectedCompa
                                 <i class="fa-solid fa-key"></i>
                             </button>
                             <?php if ($emp['company_slug']): ?>
-                            <a href="<?php echo getBasePath() . $emp['company_slug']; ?>/employee/<?php echo $emp['id']; ?>" target="_blank"
+                            <a href="<?php echo htmlspecialchars(getTenantUrl($emp['company_slug'], '/employee/' . $emp['id'])); ?>" target="_blank"
                                class="text-green-600 hover:text-green-800" title="View Card">
                                 <i class="fa-solid fa-id-card"></i>
                             </a>

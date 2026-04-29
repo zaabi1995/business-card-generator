@@ -9,12 +9,12 @@
  * You can also manually configure it using this template.
  */
 
-// Start session — public SEO pages skip session unless tracking params are present
+// Start session, public SEO pages skip session unless tracking params are present
 // (session_start() forces no-cache headers which hurts Google indexing).
 $scriptName = basename($_SERVER['SCRIPT_NAME'] ?? '');
 $requestUri = $_SERVER['REQUEST_URI'] ?? '';
 
-// Authenticated/admin routes — never apply public-SEO caching to these,
+// Authenticated/admin routes, never apply public-SEO caching to these,
 // otherwise browsers cache redirects and users get redirect loops after role changes
 $adminPathPrefixes = ['/admin/', '/admin', '/printshop/', '/printshop', '/api/'];
 $isAdminPath = false;
@@ -79,9 +79,22 @@ if (!$skipSession && session_status() === PHP_SESSION_NONE) {
 }
 
 // Emit SEO-friendly cache headers on public pages that skipped session.
+// Vary on Cookie so users with a cardify_lang preference don't get served
+// a cached copy in the wrong language. When the visitor already has a
+// language cookie, drop to no-cache so a stale Arabic copy clears
+// immediately after they (or we) switch back to English.
 if ($skipSession && $isPublicSeo && !headers_sent()) {
-    header('Cache-Control: public, max-age=3600, s-maxage=3600');
-    header('Vary: Accept-Encoding');
+    $hasLangCookie = isset($_COOKIE['cardify_lang'])
+        || isset($_COOKIE['cardify_lang_v2'])
+        || isset($_COOKIE['cardify_lang_v3']);
+    if ($hasLangCookie) {
+        header('Cache-Control: private, no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+    } else {
+        header('Cache-Control: public, max-age=3600, s-maxage=3600');
+    }
+    header('Vary: Accept-Encoding, Cookie');
 }
 
 // Environment detection
@@ -146,7 +159,7 @@ if (!defined('PAYMOB_INTEGRATION_IDS')) define('PAYMOB_INTEGRATION_IDS', '63364,
 if (!defined('PAYMOB_MOTO_INTEGRATION_ID')) define('PAYMOB_MOTO_INTEGRATION_ID', '63365');     // MOTO Int'l (card-on-file/subscriptions)
 if (!defined('PAYMOB_MOTO_OMANNET_INTEGRATION_ID')) define('PAYMOB_MOTO_OMANNET_INTEGRATION_ID', '65554'); // MOTO OmanNet
 
-// Legacy Amwal Pay Configuration (deprecated — kept for reference)
+// Legacy Amwal Pay Configuration (deprecated, kept for reference)
 // if (!defined('AMWAL_MERCHANT_ID')) define('AMWAL_MERCHANT_ID', '');
 // if (!defined('AMWAL_TERMINAL_ID')) define('AMWAL_TERMINAL_ID', '');
 // if (!defined('AMWAL_SECURE_KEY')) define('AMWAL_SECURE_KEY', '');
@@ -237,7 +250,7 @@ if (defined('DB_HOST') && !empty(DB_HOST) && !empty(DB_NAME)) {
     DatabaseAdapter::init();
 }
 
-// Security headers (production) — skip entirely on CLI (migrations/scripts)
+// Security headers (production), skip entirely on CLI (migrations/scripts)
 if ($isProduction && php_sapi_name() !== 'cli') {
     // Force HTTPS in production (browser requests only)
     if (!isset($_SERVER['HTTPS']) && $_SERVER['HTTP_HOST'] !== 'localhost') {

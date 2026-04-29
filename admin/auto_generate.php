@@ -10,11 +10,11 @@ require_once INCLUDES_DIR . '/Billing.php';
 
 $companyId = getCurrentCompanyId();
 
-// Get company plan info for quality settings
+// HD card generation is free for every team since the Apr 2026 pricing reset.
 $planInfo = Billing::getCompanyPlanInfo($companyId);
-$qualityMultiplier = $planInfo['quality_multiplier'];
-$isFreePlan = $planInfo['plan'] === 'free' || empty($planInfo['plan']);
-$hasHighQuality = $planInfo['features']['high_quality'] ?? false;
+$qualityMultiplier = max(4, $planInfo['quality_multiplier'] ?? 4); // force HD
+$isFreePlan = false; // hides the legacy upgrade-for-HD nag
+$hasHighQuality = true;
 $employeeId = $_GET['employee_id'] ?? null;
 $returnTo = $_GET['return'] ?? 'employees';
 $isNew = isset($_GET['new']);
@@ -185,7 +185,7 @@ if ($usePreDesigned) {
     $layoutBackHtml = CardLayouts::renderBack($selectedLayout, $employee, $company, $companyTheme);
 }
 
-adminHeader('Generating Card', 'employees');
+adminHeader(t('autogen.page_title'), 'employees');
 ?>
 
 <?php if ($isFreePlan): ?>
@@ -195,18 +195,17 @@ adminHeader('Generating Card', 'employees');
         <div class="flex items-start gap-3">
             <i class="fa-solid fa-info-circle text-amber-500 text-xl mt-0.5"></i>
             <div class="flex-1">
-                <h4 class="font-semibold text-amber-800">Preview Quality</h4>
+                <h4 class="font-semibold text-amber-800"><?= htmlspecialchars(t('autogen.quality_h4')) ?></h4>
                 <p class="text-sm text-amber-700 mt-1">
-                    You're on the <strong>Free Plan</strong>. Card previews are generated at lower resolution. 
-                    When ordering prints, cards will be produced at full print quality by the print shop.
+                    <?= htmlspecialchars(t('autogen.quality_body')) ?>
                 </p>
                 <div class="mt-3 flex flex-wrap gap-2">
                     <a href="billing.php" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium transition-colors">
                         <i class="fa-solid fa-crown"></i>
-                        Upgrade for HD Quality
+                        <?= htmlspecialchars(t('autogen.upgrade_cta')) ?>
                     </a>
                     <a href="billing.php" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-amber-700 hover:text-amber-800 text-sm font-medium">
-                        View Plans <i class="fa-solid fa-arrow-right"></i>
+                        <?= htmlspecialchars(t('autogen.view_plans')) ?> <i class="fa-solid fa-arrow-right"></i>
                     </a>
                 </div>
             </div>
@@ -221,8 +220,8 @@ adminHeader('Generating Card', 'employees');
     <!-- Layout Picker (shown first, auto-generates with default) -->
     <div x-show="status === 'picking'" x-cloak class="space-y-6">
         <div class="text-center mb-2">
-            <h2 class="text-xl font-bold text-gray-900">Choose a Card Layout</h2>
-            <p class="text-gray-500 text-sm mt-1">for <strong><?php echo sanitize($employee['name_en'] ?? $employee['email']); ?></strong></p>
+            <h2 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('autogen.choose_layout')) ?></h2>
+            <p class="text-gray-500 text-sm mt-1"><?= htmlspecialchars(t('autogen.for_employee', ['name' => sanitize($employee['name_en'] ?? $employee['email'])])) ?></p>
         </div>
         <!-- Layout Options -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -242,7 +241,7 @@ adminHeader('Generating Card', 'employees');
         </div>
         <div class="text-center">
             <button @click="generate()" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
-                <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Generate Card
+                <i class="fa-solid fa-wand-magic-sparkles mr-2"></i><?= htmlspecialchars(t('autogen.generate_card')) ?>
             </button>
         </div>
     </div>
@@ -252,8 +251,8 @@ adminHeader('Generating Card', 'employees');
         <div class="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-4">
             <i class="fa-solid fa-wand-magic-sparkles text-2xl text-blue-600 animate-pulse"></i>
         </div>
-        <h2 class="text-xl font-bold text-gray-900 mb-2">Generating Business Card</h2>
-        <p class="text-gray-600 mb-4">Creating card for <strong><?php echo sanitize($employee['name_en'] ?? $employee['email']); ?></strong></p>
+        <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('autogen.generating_card')) ?></h2>
+        <p class="text-gray-600 mb-4"><?= htmlspecialchars(t('autogen.creating_for', ['name' => sanitize($employee['name_en'] ?? $employee['email'])])) ?></p>
         <div class="flex items-center justify-center gap-2">
             <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
             <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
@@ -267,10 +266,10 @@ adminHeader('Generating Card', 'employees');
         <div class="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
             <i class="fa-solid fa-check text-2xl text-green-600"></i>
         </div>
-        <h2 class="text-xl font-bold text-gray-900 mb-2">Card Generated!</h2>
-        <p class="text-gray-500 text-sm mb-6">Your digital business card is live and ready to share.</p>
+        <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('autogen.card_generated')) ?></h2>
+        <p class="text-gray-500 text-sm mb-6"><?= htmlspecialchars(t('autogen.live_and_ready')) ?></p>
         <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 text-left">
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Your Digital Card Link</p>
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2"><?= htmlspecialchars(t('autogen.digital_link_label')) ?></p>
             <div class="flex items-center gap-2">
                 <input type="text" readonly :value="cardShareUrl"
                        class="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 font-mono truncate">
@@ -278,23 +277,23 @@ adminHeader('Generating Card', 'employees');
                         class="flex-shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                         :class="copied ? 'bg-green-600 hover:bg-green-600' : ''">
                     <i :class="copied ? 'fa-solid fa-check' : 'fa-solid fa-copy'"></i>
-                    <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                    <span x-text="copied ? <?= json_encode(t('autogen.copied')) ?> : <?= json_encode(t('autogen.copy')) ?>"></span>
                 </button>
             </div>
         </div>
         <div class="flex flex-col sm:flex-row gap-3 justify-center mb-6">
             <a :href="cardShareUrl" target="_blank" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
-                <i class="fa-solid fa-eye"></i> View Card
+                <i class="fa-solid fa-eye"></i> <?= htmlspecialchars(t('autogen.view_card')) ?>
             </a>
             <a :href="waShareUrl" target="_blank" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition-colors">
-                <i class="fa-brands fa-whatsapp"></i> Share on WhatsApp
+                <i class="fa-brands fa-whatsapp"></i> <?= htmlspecialchars(t('autogen.share_whatsapp')) ?>
             </a>
             <a :href="continueUrl" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors">
-                <i class="fa-solid fa-arrow-right"></i> Continue
+                <i class="fa-solid fa-arrow-right"></i> <?= htmlspecialchars(t('autogen.continue')) ?>
             </a>
         </div>
-        <p class="text-xs text-gray-400">Redirecting in <span x-text="countdown"></span>s
-            <button @click="cancelRedirect()" class="text-blue-500 hover:underline ml-1">Stay here</button>
+        <p class="text-xs text-gray-400"><?= htmlspecialchars(str_replace(':sec', '', t('autogen.redirecting_in'))) ?><span x-text="countdown"></span>
+            <button @click="cancelRedirect()" class="text-blue-500 hover:underline ml-1"><?= htmlspecialchars(t('autogen.stay_here')) ?></button>
         </p>
     </div>
 
@@ -303,10 +302,10 @@ adminHeader('Generating Card', 'employees');
         <div class="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
             <i class="fa-solid fa-exclamation-triangle text-2xl text-red-600"></i>
         </div>
-        <h2 class="text-xl font-bold text-gray-900 mb-2">Generation Failed</h2>
+        <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('autogen.generation_failed')) ?></h2>
         <p class="text-gray-600 mb-4" x-text="errorMessage"></p>
         <button @click="status = 'picking'" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-            <i class="fa-solid fa-arrow-left mr-2"></i>Try Again
+            <i class="fa-solid fa-arrow-left mr-2"></i><?= htmlspecialchars(t('autogen.try_again')) ?>
         </button>
     </div>
 </div>
@@ -343,6 +342,23 @@ const layoutIds = <?php echo json_encode(array_keys($preDesignedLayouts)); ?>;
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/dist/qrcode.min.js"></script>
 
 <script>
+// i18n strings for JS runtime (see lang/{en,ar}/autogen.php)
+const AUTOGEN_I18N = <?php echo json_encode([
+    'initializing'       => t('autogen.js_initializing'),
+    'preparing_layout'   => t('autogen.js_preparing_layout'),
+    'generating_qr'      => t('autogen.js_generating_qr'),
+    'rendering_front'    => t('autogen.js_rendering_front'),
+    'rendering_back'     => t('autogen.js_rendering_back'),
+    'saving_front'       => t('autogen.js_saving_front'),
+    'saving_back'        => t('autogen.js_saving_back'),
+    'logging_gen'        => t('autogen.js_logging_gen'),
+    'init_editor'        => t('autogen.js_init_editor'),
+    'generating_front'   => t('autogen.js_generating_front'),
+    'generating_back'    => t('autogen.js_generating_back'),
+    'saving_cards'       => t('autogen.js_saving_cards'),
+    'generic_error'      => t('autogen.js_generic_error'),
+], JSON_UNESCAPED_UNICODE); ?>;
+
 // Inject layout previews
 document.addEventListener('DOMContentLoaded', function() {
     layoutIds.forEach(function(id) {
@@ -355,7 +371,7 @@ function layoutGenerator() {
     return {
         status: <?php echo ($isNew || $isRegenerate) ? "'generating'" : "'picking'"; ?>,
         selectedLayout: '<?php echo $selectedLayout; ?>',
-        statusMessage: 'Initializing...',
+        statusMessage: AUTOGEN_I18N.initializing,
         errorMessage: '',
         copied: false,
         countdown: 8,
@@ -364,13 +380,14 @@ function layoutGenerator() {
         companySlug: <?php echo json_encode($companySlug); ?>,
         employeeId: <?php echo json_encode($employeeId); ?>,
         baseUrl: <?php echo json_encode(rtrim($baseUrl, '/')); ?>,
+        apexHost: <?php echo json_encode(cardifyApexHost()); ?>,
         basePath: <?php echo json_encode(rtrim($basePath, '/')); ?>,
         returnTo: <?php echo json_encode($returnTo); ?>,
         vcfUrl: <?php echo json_encode($vcfUrl); ?>,
         isNew: <?php echo $isNew ? 'true' : 'false'; ?>,
 
         get cardShareUrl() {
-            return this.baseUrl + '/' + this.companySlug + '/card/' + this.employeeId;
+            return 'https://' + this.companySlug + '.' + this.apexHost + '/card/' + this.employeeId;
         },
         get waShareUrl() {
             return 'https://wa.me/?text=' + encodeURIComponent('Here is my digital business card: ' + this.cardShareUrl);
@@ -398,7 +415,7 @@ function layoutGenerator() {
 
         async generate() {
             this.status = 'generating';
-            this.statusMessage = 'Preparing card layout...';
+            this.statusMessage = AUTOGEN_I18N.preparing_layout;
 
             try {
                 // Wait for html2canvas to be available
@@ -406,7 +423,7 @@ function layoutGenerator() {
 
                 // Generate QR code and inject into back card
                 if (this.vcfUrl && typeof qrcode !== 'undefined') {
-                    this.statusMessage = 'Generating QR code...';
+                    this.statusMessage = AUTOGEN_I18N.generating_qr;
                     var qr = qrcode(0, 'M');
                     qr.addData(this.vcfUrl);
                     qr.make();
@@ -433,7 +450,7 @@ function layoutGenerator() {
                 }
 
                 // Render front card
-                this.statusMessage = 'Rendering front card...';
+                this.statusMessage = AUTOGEN_I18N.rendering_front;
                 var frontEl = document.getElementById('layout-render-front');
                 var frontTarget = frontEl.firstElementChild;
                 if (!frontTarget) throw new Error('No front card to render');
@@ -449,7 +466,7 @@ function layoutGenerator() {
                 });
 
                 // Render back card
-                this.statusMessage = 'Rendering back card...';
+                this.statusMessage = AUTOGEN_I18N.rendering_back;
                 var backEl = document.getElementById('layout-render-back');
                 var backTarget = backEl.firstElementChild;
                 var backCanvas = null;
@@ -466,7 +483,7 @@ function layoutGenerator() {
                 }
 
                 // Save front
-                this.statusMessage = 'Saving front card...';
+                this.statusMessage = AUTOGEN_I18N.saving_front;
                 var frontBlob = await this.canvasToBlob(frontCanvas);
                 var frontResult = await this.saveCard(frontBlob, 'front');
                 if (!frontResult.success) throw new Error(frontResult.error || 'Failed to save front card');
@@ -474,7 +491,7 @@ function layoutGenerator() {
                 // Save back
                 var backFile = null;
                 if (backCanvas) {
-                    this.statusMessage = 'Saving back card...';
+                    this.statusMessage = AUTOGEN_I18N.saving_back;
                     var backBlob = await this.canvasToBlob(backCanvas);
                     var backResult = await this.saveCard(backBlob, 'back');
                     if (!backResult.success) throw new Error(backResult.error || 'Failed to save back card');
@@ -482,7 +499,7 @@ function layoutGenerator() {
                 }
 
                 // Log generation
-                this.statusMessage = 'Logging generation...';
+                this.statusMessage = AUTOGEN_I18N.logging_gen;
                 var logResp = await fetch(this.baseUrl + '/log_generation.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -574,10 +591,10 @@ function layoutGenerator() {
             <i class="fa-solid fa-wand-magic-sparkles text-2xl text-blue-600 animate-pulse"></i>
         </div>
         <h2 class="text-xl font-bold text-gray-900 mb-2">
-            <?php echo $isRegenerate ? 'Regenerating' : 'Generating'; ?> Business Card
+            <?= htmlspecialchars($isRegenerate ? t('autogen.regenerating_card') : t('autogen.generating_card')) ?>
         </h2>
         <p class="text-gray-600 mb-4">
-            Creating card for <strong><?php echo sanitize($employee['name_en'] ?? $employee['email']); ?></strong>
+            <?= htmlspecialchars(t('autogen.creating_for', ['name' => sanitize($employee['name_en'] ?? $employee['email'])])) ?>
         </p>
         <div class="flex items-center justify-center gap-2">
             <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
@@ -592,12 +609,12 @@ function layoutGenerator() {
         <div class="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
             <i class="fa-solid fa-check text-2xl text-green-600"></i>
         </div>
-        <h2 class="text-xl font-bold text-gray-900 mb-2">Card Generated!</h2>
-        <p class="text-gray-500 text-sm mb-6">Your digital business card is live and ready to share.</p>
+        <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('autogen.card_generated')) ?></h2>
+        <p class="text-gray-500 text-sm mb-6"><?= htmlspecialchars(t('autogen.live_and_ready')) ?></p>
 
         <!-- Shareable Link -->
         <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 text-left">
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Your Digital Card Link</p>
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2"><?= htmlspecialchars(t('autogen.digital_link_label')) ?></p>
             <div class="flex items-center gap-2">
                 <input type="text" id="card-share-url" readonly
                        :value="cardShareUrl"
@@ -606,7 +623,7 @@ function layoutGenerator() {
                         class="flex-shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
                         :class="copied ? 'bg-green-600 hover:bg-green-600' : ''">
                     <i :class="copied ? 'fa-solid fa-check' : 'fa-solid fa-copy'"></i>
-                    <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                    <span x-text="copied ? <?= json_encode(t('autogen.copied')) ?> : <?= json_encode(t('autogen.copy')) ?>"></span>
                 </button>
             </div>
         </div>
@@ -616,22 +633,22 @@ function layoutGenerator() {
             <a :href="cardShareUrl" target="_blank"
                class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
                 <i class="fa-solid fa-eye"></i>
-                View Card
+                <?= htmlspecialchars(t('autogen.view_card')) ?>
             </a>
             <a :href="waShareUrl" target="_blank"
                class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition-colors">
                 <i class="fa-brands fa-whatsapp"></i>
-                Share on WhatsApp
+                <?= htmlspecialchars(t('autogen.share_whatsapp')) ?>
             </a>
             <a :href="continueUrl"
                class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors">
                 <i class="fa-solid fa-arrow-right"></i>
-                Continue
+                <?= htmlspecialchars(t('autogen.continue')) ?>
             </a>
         </div>
 
-        <p class="text-xs text-gray-400">Redirecting automatically in <span x-text="redirectCountdown"></span>s&hellip;
-            <button @click="cancelRedirect()" class="text-blue-500 hover:underline ml-1">Stay here</button>
+        <p class="text-xs text-gray-400"><?= htmlspecialchars(str_replace(':sec', '', t('autogen.redirecting_auto'))) ?><span x-text="redirectCountdown"></span>&hellip;
+            <button @click="cancelRedirect()" class="text-blue-500 hover:underline ml-1"><?= htmlspecialchars(t('autogen.stay_here')) ?></button>
         </p>
     </div>
     
@@ -640,10 +657,10 @@ function layoutGenerator() {
         <div class="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
             <i class="fa-solid fa-exclamation-triangle text-2xl text-red-600"></i>
         </div>
-        <h2 class="text-xl font-bold text-gray-900 mb-2">Generation Failed</h2>
+        <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('autogen.generation_failed')) ?></h2>
         <p class="text-gray-600 mb-4" x-text="errorMessage"></p>
         <a href="employees.php" class="inline-block px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-            <i class="fa-solid fa-arrow-left mr-2"></i>Back to Employees
+            <i class="fa-solid fa-arrow-left mr-2"></i><?= htmlspecialchars(t('autogen.back_to_employees')) ?>
         </a>
     </div>
 </div>
@@ -657,8 +674,8 @@ function layoutGenerator() {
 function autoGenerator() {
     return {
         status: 'generating',
-        statusMessage: 'Initializing...',
-        errorMessage: 'An error occurred',
+        statusMessage: AUTOGEN_I18N.initializing,
+        errorMessage: AUTOGEN_I18N.generic_error,
         
         // Data from PHP
         employee: <?php echo json_encode($employee, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
@@ -668,6 +685,7 @@ function autoGenerator() {
         companySlug: <?php echo json_encode($companySlug); ?>,
         basePath: <?php echo json_encode(rtrim($basePath, '/')); ?>,
         baseUrl: <?php echo json_encode(rtrim($baseUrl, '/')); ?>,
+        apexHost: <?php echo json_encode(cardifyApexHost()); ?>,
         vcfUrl: <?php echo json_encode($vcfUrl); ?>,
         returnTo: <?php echo json_encode($returnTo); ?>,
         isRegenerate: <?php echo $isRegenerate ? 'true' : 'false'; ?>,
@@ -681,7 +699,7 @@ function autoGenerator() {
         redirectTimer: null,
         countdownTimer: null,
         get cardShareUrl() {
-            return this.baseUrl + '/' + this.companySlug + '/card/' + this.employee.id;
+            return 'https://' + this.companySlug + '.' + this.apexHost + '/card/' + this.employee.id;
         },
         get waShareUrl() {
             const msg = encodeURIComponent('Here is my digital business card: ' + this.cardShareUrl);
@@ -792,7 +810,7 @@ function autoGenerator() {
                     throw new Error('No active templates configured. Please set up templates first.');
                 }
                 
-                this.statusMessage = 'Initializing card editor...';
+                this.statusMessage = AUTOGEN_I18N.init_editor;
                 
                 // Get canvas dimensions from template settings
                 const template = this.frontTemplate || this.backTemplate;
@@ -817,7 +835,7 @@ function autoGenerator() {
                 
                 // Generate front card
                 if (this.frontTemplate) {
-                    this.statusMessage = 'Generating front card...';
+                    this.statusMessage = AUTOGEN_I18N.generating_front;
                     
                     // Clear canvas
                     this.editor.clear();
@@ -857,7 +875,7 @@ function autoGenerator() {
                 
                 // Generate back card
                 if (this.backTemplate) {
-                    this.statusMessage = 'Generating back card...';
+                    this.statusMessage = AUTOGEN_I18N.generating_back;
                     
                     // Clear canvas
                     this.editor.clear();
@@ -895,7 +913,7 @@ function autoGenerator() {
                 }
                 
                 // Save the cards
-                this.statusMessage = 'Saving cards...';
+                this.statusMessage = AUTOGEN_I18N.saving_cards;
                 
                 if (!frontBlob && !backBlob) {
                     throw new Error('No cards were generated');
@@ -906,7 +924,7 @@ function autoGenerator() {
                 
                 // Save front card
                 if (frontBlob) {
-                    this.statusMessage = 'Saving front card...';
+                    this.statusMessage = AUTOGEN_I18N.saving_front;
                     const frontFormData = new FormData();
                     frontFormData.append('png', frontBlob, 'front.png');
                     frontFormData.append('side', 'front');
@@ -926,7 +944,7 @@ function autoGenerator() {
                 
                 // Save back card
                 if (backBlob) {
-                    this.statusMessage = 'Saving back card...';
+                    this.statusMessage = AUTOGEN_I18N.saving_back;
                     const backFormData = new FormData();
                     backFormData.append('png', backBlob, 'back.png');
                     backFormData.append('side', 'back');
@@ -945,7 +963,7 @@ function autoGenerator() {
                 }
                 
                 // Log the generation
-                this.statusMessage = 'Logging generation...';
+                this.statusMessage = AUTOGEN_I18N.logging_gen;
                 const logResponse = await fetch(this.baseUrl + '/log_generation.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -961,7 +979,7 @@ function autoGenerator() {
 
                 if (!logResult.success && logResult.limit_reached) {
                     this.status = 'error';
-                    this.errorMessage = logResult.error || 'Monthly card limit reached. Please upgrade your plan.';
+                    this.errorMessage = logResult.error || 'Card generation rate limit hit. Please wait a moment and try again.';
                     return;
                 }
 

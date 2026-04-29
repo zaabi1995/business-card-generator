@@ -835,9 +835,9 @@ HTML;
     public static function getQualityMultiplier($companyId) {
         $billing = new Billing();
         
-        // Check if company has paid plan
+        // Retained DPI tier gate from the subscription model.
         if ($billing->hasActiveSubscription($companyId)) {
-            return 4; // ~400 DPI for paid users
+            return 4; // ~400 DPI for companies with an active billing record
         }
         
         // Check plan type

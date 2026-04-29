@@ -1,6 +1,6 @@
 <?php
 /**
- * EmployeeSocials — flexible social link catalog + persistence.
+ * EmployeeSocials, flexible social link catalog + persistence.
  *
  * - PLATFORMS is the allow-list. Anything else is rejected.
  * - Each platform defines: label, Font Awesome icon class, URL prefix hint.
@@ -75,7 +75,7 @@ class EmployeeSocials
             return array_map([__CLASS__, 'decorate'], $rows);
         }
 
-        // Legacy fallback — surface linkedin/twitter columns if present
+        // Legacy fallback, surface linkedin/twitter columns if present
         $legacy = $db->fetchOne(
             "SELECT linkedin, twitter FROM employees WHERE id = :eid",
             ['eid' => $employeeId]

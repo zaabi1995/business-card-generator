@@ -1,10 +1,10 @@
 <?php
 /**
- * RateLimiter — atomic per-action / per-IP / per-time-window counters.
+ * RateLimiter, atomic per-action / per-IP / per-time-window counters.
  *
  * Uses a single `rate_limits` table with UNIQUE(action, ip, bucket) so
  * `INSERT ... ON DUPLICATE KEY UPDATE` gives us check+increment in one atomic
- * statement — no TOCTOU race between SELECT and INSERT.
+ * statement, no TOCTOU race between SELECT and INSERT.
  *
  * Usage:
  *   if (!RateLimiter::check('offer_redeem:' . $offerId, $ip, 10, 3600)) {
@@ -15,7 +15,7 @@
  *  - Bucket granularity = the provided window, expressed in seconds-since-epoch
  *    integer-divided by window. That means a single counter per bucket, rolling
  *    at the boundary. "5 per hour" = at most 5 increments per HH:00–HH:59 block
- *    (so worst case a burst of 10 straddling the boundary is possible — that's
+ *    (so worst case a burst of 10 straddling the boundary is possible, that's
  *    acceptable for abuse throttling vs. a sliding-window cost).
  *  - Garbage collection: a lightweight DELETE happens on ~1% of writes.
  *
@@ -45,7 +45,7 @@ class RateLimiter
         try {
             $db = Database::getInstance();
             if (!$db->isConnected()) {
-                return true; // fail-open — don't block legit users on DB hiccup
+                return true; // fail-open, don't block legit users on DB hiccup
             }
             $pdo = $db->getConnection();
             $bucket = (int) floor(time() / $windowSec);
@@ -90,7 +90,7 @@ class RateLimiter
     /**
      * Decrement the most-recent-bucket counter for ($action, $ip) by 1.
      * Used to "refund" a rate-limit slot when a subsequent validation (not the
-     * rate limit itself) fails — so repeated legit retries don't lock the user
+     * rate limit itself) fails, so repeated legit retries don't lock the user
      * out on misspelled input.
      *
      * Safe no-op if no row exists.

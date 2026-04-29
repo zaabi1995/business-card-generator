@@ -20,7 +20,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 <channel>
-    <title>Cardify Blog — Business Cards in Oman</title>
+    <title>Cardify Blog, Business Cards in Oman</title>
     <link>https://cardify.om/blog</link>
     <description>Tips on business card design, team management, and printing for Omani businesses.</description>
     <language>en</language>

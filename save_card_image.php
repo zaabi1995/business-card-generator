@@ -48,7 +48,7 @@ try {
         throw new Exception('Invalid file type: ' . $mimeType);
     }
 
-    // Create output directory (scoped per company — companyId validated above)
+    // Create output directory (scoped per company, companyId validated above)
     $outputDir = getCompanyCardsDir($companyId);
     if (!file_exists($outputDir)) {
         mkdir($outputDir, 0755, true);

@@ -59,31 +59,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageType = 'success';
         }
     } elseif ($action === 'create_company') {
-        $slug = sanitize($_POST['slug']);
-        
-        // Check if slug exists
-        $existing = $db->fetchOne("SELECT id FROM companies WHERE slug = :slug", ['slug' => $slug]);
-        if ($existing) {
-            $message = 'Company slug already exists';
+        require_once INCLUDES_DIR . '/CardifyConvention.php';
+
+        $adminEmail = sanitizeEmail($_POST['admin_email']);
+        $rawSlug    = sanitize($_POST['slug'] ?? '');
+
+        // Convention: if admin leaves slug blank, derive from email domain.
+        // E.g. admin@alali.om -> "alali"; collisions get -2, -3, ... appended.
+        if ($rawSlug === '' && $adminEmail !== '') {
+            $slug = CardifyConvention::companySlugFromEmail($adminEmail, $db);
+        } else {
+            $slug = strtolower($rawSlug);
+        }
+
+        // Validate the slug isn't reserved or already in use.
+        $reserved = CardifyConvention::reservedSlugs();
+        if (in_array($slug, $reserved, true)) {
+            $message = "Slug '{$slug}' is reserved, please choose another";
+            $messageType = 'error';
+        } elseif ($slug === '' || !preg_match('/^[a-z0-9][a-z0-9-]{1,62}$/', $slug)) {
+            $message = 'Slug must be 2-63 chars, lowercase letters, digits and hyphens only';
             $messageType = 'error';
         } else {
-            $newCompany = [
-                'id' => generateUUID(),
-                'name' => sanitize($_POST['name']),
-                'slug' => $slug,
-                'admin_email' => sanitizeEmail($_POST['admin_email']),
-                'password_hash' => password_hash($_POST['password'], PASSWORD_BCRYPT),
-                'status' => sanitize($_POST['status']),
-                'plan' => sanitize($_POST['plan']),
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ];
-            
-            $companyId = $db->insert('companies', $newCompany);
-            AuditLog::logCompany('create', $companyId, null, $newCompany);
-            
-            $message = 'Company created successfully';
-            $messageType = 'success';
+            $existing = $db->fetchOne("SELECT id FROM companies WHERE slug = :slug", ['slug' => $slug]);
+            if ($existing) {
+                $message = 'Company slug already exists';
+                $messageType = 'error';
+            } else {
+                $emailDomain = sanitize($_POST['email_domain'] ?? '');
+                if ($emailDomain === '' && strpos($adminEmail, '@') !== false) {
+                    $emailDomain = strtolower(substr($adminEmail, strpos($adminEmail, '@') + 1));
+                }
+
+                $newCompany = [
+                    'id' => generateUUID(),
+                    'name' => sanitize($_POST['name']),
+                    'slug' => $slug,
+                    'admin_email' => $adminEmail,
+                    'email_domain' => $emailDomain,
+                    'password_hash' => password_hash($_POST['password'], PASSWORD_BCRYPT),
+                    'status' => sanitize($_POST['status']),
+                    'plan' => sanitize($_POST['plan']),
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s')
+                ];
+
+                $companyId = $db->insert('companies', $newCompany);
+                AuditLog::logCompany('create', $companyId, null, $newCompany);
+
+                $message = "Company '{$slug}' created. Tenant URL: " . CardifyConvention::tenantUrl($slug);
+                $messageType = 'success';
+            }
         }
     }
 }
@@ -247,7 +273,7 @@ adminHeader('Companies Management', 'companies');
                     <td class="px-6 py-4"><?php echo $company['employee_count']; ?></td>
                     <td class="px-6 py-4">
                         <?php if ((int)$company['template_count'] === 0 && (int)$company['employee_count'] > 0): ?>
-                            <span class="text-amber-600 font-semibold" title="No templates — cards can't be generated">
+                            <span class="text-amber-600 font-semibold" title="No templates, cards can't be generated">
                                 0 <i class="fa-solid fa-triangle-exclamation text-xs ml-0.5"></i>
                             </span>
                         <?php else: ?>
@@ -266,7 +292,7 @@ adminHeader('Companies Management', 'companies');
                                class="text-green-600 hover:text-green-800" title="View Employees">
                                 <i class="fa-solid fa-users"></i>
                             </a>
-                            <a href="<?php echo getBasePath() . $company['slug']; ?>/" target="_blank"
+                            <a href="<?php echo htmlspecialchars(getTenantUrl($company['slug'])); ?>" target="_blank"
                                class="text-purple-600 hover:text-purple-800" title="Visit Portal">
                                 <i class="fa-solid fa-external-link"></i>
                             </a>

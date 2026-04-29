@@ -5,8 +5,8 @@
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
-$pageTitle = 'Business Cards for Real Estate Agents in Oman — Cardify';
-$pageDescription = 'Create professional business cards for real estate agents, property developers, and brokers in Oman. QR links to listings, digital sharing at viewings, and team management — free with Cardify.';
+$pageTitle = 'Business Cards for Real Estate Agents in Oman, Cardify';
+$pageDescription = 'Create professional business cards for real estate agents, property developers, and brokers in Oman. QR links to listings, digital sharing at viewings, and team management, free with Cardify.';
 $canonicalUrl = 'https://cardify.om/industries/real-estate';
 $ogType = 'website';
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
@@ -18,7 +18,7 @@ $showNavigation = true;
 $extraHead = '<script type="application/ld+json">' . json_encode([
     '@context' => 'https://schema.org',
     '@type' => 'Service',
-    'name' => 'Cardify — Business Cards for Real Estate Agents',
+    'name' => 'Cardify, Business Cards for Real Estate Agents',
     'description' => 'Professional digital and printed business cards for real estate agents, property developers, and brokers in Oman.',
     'provider' => [
         '@type' => 'Organization',
@@ -70,13 +70,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="grid lg:grid-cols-2 gap-12 items-center">
                 <div>
                     <p class="text-gray-600 leading-relaxed mb-4">
-                        In real estate, relationships are everything. You meet potential buyers at property viewings, network at exhibitions, and connect with developers at industry events. Every interaction is an opportunity — and your business card is the bridge between a meeting and a deal.
+                        In real estate, relationships are everything. You meet potential buyers at property viewings, network at exhibitions, and connect with developers at industry events. Every interaction is an opportunity, and your business card is the bridge between a meeting and a deal.
                     </p>
                     <p class="text-gray-600 leading-relaxed mb-4">
                         With <?php echo $brandName; ?>, real estate agents in Oman can share their card at a viewing and the buyer instantly sees their photo, listings, WhatsApp, and office location. No paper card lost in a car, no manually typing phone numbers.
                     </p>
                     <p class="text-gray-600 leading-relaxed">
-                        Whether you're selling villas in Muscat Hills, commercial plots in Barka, or apartments in Al Mouj — a <?php echo $brandName; ?> card makes you look professional and keeps you accessible.
+                        Whether you're selling villas in Muscat Hills, commercial plots in Barka, or apartments in Al Mouj, a <?php echo $brandName; ?> card makes you look professional and keeps you accessible.
                     </p>
                 </div>
                 <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-8">
@@ -87,7 +87,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </div>
                             <div>
                                 <h3 class="font-semibold text-gray-900">QR to Your Listings</h3>
-                                <p class="text-gray-600 text-sm">Link your card to your property portfolio — buyers browse available listings instantly.</p>
+                                <p class="text-gray-600 text-sm">Link your card to your property portfolio, buyers browse available listings instantly.</p>
                             </div>
                         </div>
                         <div class="flex items-start gap-4">
@@ -96,7 +96,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </div>
                             <div>
                                 <h3 class="font-semibold text-gray-900">One-Tap WhatsApp</h3>
-                                <p class="text-gray-600 text-sm">Buyers tap and message you directly on WhatsApp — the most-used channel in Oman real estate.</p>
+                                <p class="text-gray-600 text-sm">Buyers tap and message you directly on WhatsApp, the most-used channel in Oman real estate.</p>
                             </div>
                         </div>
                         <div class="flex items-start gap-4">
@@ -114,7 +114,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </div>
                             <div>
                                 <h3 class="font-semibold text-gray-900">Easy Referral Sharing</h3>
-                                <p class="text-gray-600 text-sm">Happy clients forward your digital card to friends and family — word of mouth, digitized.</p>
+                                <p class="text-gray-600 text-sm">Happy clients forward your digital card to friends and family, word of mouth, digitized.</p>
                             </div>
                         </div>
                     </div>
@@ -135,7 +135,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Personal Brand Cards</h3>
                     <p class="text-gray-600">
-                        Your photo, name, title, certifications, and areas of expertise — all presented in a stunning card that reflects your professionalism.
+                        Your photo, name, title, certifications, and areas of expertise, all presented in a stunning card that reflects your professionalism.
                     </p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-8 text-center">
@@ -144,7 +144,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Area Specialization</h3>
                     <p class="text-gray-600">
-                        Highlight your coverage areas — Al Mouj, Muscat Hills, Seeb, Barka, Salalah — so clients know your local expertise immediately.
+                        Highlight your coverage areas, Al Mouj, Muscat Hills, Seeb, Barka, Salalah, so clients know your local expertise immediately.
                     </p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-8 text-center">
@@ -169,13 +169,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="bg-white rounded-xl shadow-sm p-8 border-l-4 border-indigo-500">
                     <h3 class="text-lg font-bold text-gray-900 mb-3">Property Viewings</h3>
                     <p class="text-gray-600">
-                        At the end of a viewing, share your digital card. The buyer saves your contact instantly and can reach you when they're ready to make an offer — no card lost in a pocket.
+                        At the end of a viewing, share your digital card. The buyer saves your contact instantly and can reach you when they're ready to make an offer, no card lost in a pocket.
                     </p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-8 border-l-4 border-purple-500">
                     <h3 class="text-lg font-bold text-gray-900 mb-3">Real Estate Exhibitions</h3>
                     <p class="text-gray-600">
-                        At Oman Real Estate Exhibition (OREX) or Cityscape events, share unlimited cards. No running out of paper stock — just scan, tap, or share a link.
+                        At Oman Real Estate Exhibition (OREX) or Cityscape events, share unlimited cards. No running out of paper stock, just scan, tap, or share a link.
                     </p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-8 border-l-4 border-blue-500">

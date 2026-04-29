@@ -26,7 +26,7 @@ class CreditManager {
             if ($existing['status'] === 'approved') {
                 return ['error' => 'Credit account already active'];
             }
-            // Rejected/suspended — allow re-request
+            // Rejected/suspended, allow re-request
             $db->update('credit_accounts',
                 [
                     'status' => 'pending',
@@ -73,7 +73,70 @@ class CreditManager {
             'id = :id AND status = :status',
             ['id' => $creditAccountId, 'status' => 'pending']
         );
-        return $count > 0;
+        if ($count <= 0) return false;
+
+        // Dispatch approval email. Non-fatal on delivery failure.
+        try {
+            self::sendApprovalEmail($creditAccountId, $approvedLimit, $paymentTerms);
+        } catch (Throwable $e) {
+            error_log('[CreditManager::approve] email dispatch failed: ' . $e->getMessage());
+        }
+
+        return true;
+    }
+
+    /**
+     * Dispatch credit_approved email to the customer company admin.
+     * Template: includes/notifications/templates/credit_approved.email.{locale}.php
+     */
+    private static function sendApprovalEmail(
+        string $creditAccountId,
+        float $approvedLimit,
+        string $paymentTerms
+    ): void {
+        $db = Database::getInstance();
+        $row = $db->fetchOne(
+            "SELECT ca.exposure_limit,
+                    c.name AS company_name, c.admin_email, c.locale,
+                    c.brand_color, c.logo_url,
+                    ps.name AS shop_name, ps.currency
+             FROM credit_accounts ca
+             JOIN companies c    ON c.id = ca.company_id
+             JOIN print_shops ps ON ps.id = ca.print_shop_id
+             WHERE ca.id = :id",
+            ['id' => $creditAccountId]
+        );
+        if (!$row || empty($row['admin_email']) || !class_exists('Mailer')) return;
+
+        $locale = ($row['locale'] === 'ar') ? 'ar' : 'en';
+        $currency = $row['currency'] ?? 'OMR';
+        $limitFormatted = number_format($approvedLimit, 3) . ' ' . $currency;
+        $exposureFormatted = null;
+        if (!empty($row['exposure_limit']) && (float) $row['exposure_limit'] > 0) {
+            $exposureFormatted = number_format((float) $row['exposure_limit'], 3) . ' ' . $currency;
+        }
+
+        $ctx = [
+            'contactName'       => $row['company_name'],
+            'companyName'       => $row['company_name'],
+            'shopName'          => $row['shop_name'],
+            'limitFormatted'    => $limitFormatted,
+            'currency'          => $currency,
+            'paymentTerms'      => strtoupper($paymentTerms),
+            'exposureFormatted' => $exposureFormatted,
+            'dashboardUrl'      => 'https://cardify.om/admin/credit-accounts',
+            'brandColor'        => $row['brand_color'] ?? null,
+            'logoUrl'           => $row['logo_url'] ?? null,
+        ];
+
+        $path = __DIR__ . "/notifications/templates/credit_approved.email.{$locale}.php";
+        if (!is_file($path)) $path = __DIR__ . "/notifications/templates/credit_approved.email.en.php";
+
+        extract($ctx, EXTR_SKIP);
+        $subject = ''; $body = '';
+        require $path;
+
+        Mailer::send($row['admin_email'], $subject, $body);
     }
 
     /**
@@ -273,6 +336,10 @@ class CreditManager {
         int $orderId,
         float $amount
     ): array {
+        if (!is_finite($amount) || $amount <= 0) {
+            return ['error' => 'Amount must be a positive number'];
+        }
+
         $db = Database::getInstance();
 
         $db->beginTransaction();
@@ -332,6 +399,10 @@ class CreditManager {
         ?string $notes = null,
         ?string $recordedBy = null
     ): array {
+        if (!is_finite($amount) || $amount <= 0) {
+            return ['error' => 'Amount must be a positive number'];
+        }
+
         $db = Database::getInstance();
         $conn = $db->getConnection();
 
@@ -343,6 +414,13 @@ class CreditManager {
             if (!$account) {
                 $conn->rollBack();
                 return ['error' => 'Credit account not found'];
+            }
+
+            // Never credit beyond what was actually owed.
+            $amount = min($amount, (float)$account['balance_used']);
+            if ($amount <= 0) {
+                $conn->rollBack();
+                return ['error' => 'No outstanding balance to pay'];
             }
 
             $newBalance = max(0, (float)$account['balance_used'] - $amount);
@@ -375,6 +453,10 @@ class CreditManager {
         int $orderId,
         float $amount
     ): array {
+        if (!is_finite($amount) || $amount <= 0) {
+            return ['error' => 'Amount must be a positive number'];
+        }
+
         $db = Database::getInstance();
         $conn = $db->getConnection();
 
@@ -386,6 +468,22 @@ class CreditManager {
             if (!$account) {
                 $conn->rollBack();
                 return ['error' => 'Credit account not found'];
+            }
+
+            // Cap refund at the net charge recorded for this order, so we
+            // cannot hand back more credit than was charged.
+            $charged = $conn->prepare(
+                "SELECT COALESCE(SUM(CASE WHEN type='charge' THEN amount WHEN type='refund' THEN -amount ELSE 0 END),0) AS net
+                 FROM credit_transactions WHERE credit_account_id = ? AND order_id = ?"
+            );
+            $charged->execute([$creditAccountId, $orderId]);
+            $netCharged = (float)($charged->fetchColumn() ?: 0);
+            if ($netCharged <= 0) {
+                $conn->rollBack();
+                return ['error' => 'No refundable charge for this order'];
+            }
+            if ($amount > $netCharged) {
+                $amount = $netCharged;
             }
 
             $newBalance = max(0, (float)$account['balance_used'] - $amount);

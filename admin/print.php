@@ -346,8 +346,8 @@ adminHeader('Print Orders', 'print');
         <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <i class="fa-solid fa-print text-2xl text-gray-400"></i>
         </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">No print orders yet</h3>
-        <p class="text-gray-500 mb-4">Create your first print order to get started.</p>
+        <h3 class="text-lg font-medium text-gray-900 mb-2"><?= htmlspecialchars(t('emptystates.no_orders_h')) ?></h3>
+        <p class="text-gray-500 mb-4"><?= htmlspecialchars(t('emptystates.no_orders_sub')) ?></p>
         <a href="?tab=create" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
             <i class="fa-solid fa-plus"></i>
             Create Order
@@ -523,7 +523,7 @@ adminHeader('Print Orders', 'print');
                         <?php if (empty($employees)): ?>
                         <div class="p-4 text-center text-gray-500">
                             <i class="fa-solid fa-users mb-2 text-2xl"></i>
-                            <p>No employees found. Add employees first.</p>
+                            <p><?= htmlspecialchars(t('emptystates.no_employees_sub')) ?></p>
                         </div>
                         <?php else: ?>
                         <?php foreach ($employees as $employee): ?>
@@ -561,7 +561,7 @@ adminHeader('Print Orders', 'print');
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Quantity per Employee</label>
-                        <input type="number" name="quantity" value="100" min="50" step="50" required 
+                        <input type="number" name="quantity" value="<?php echo max(50, (int)($_GET['qty'] ?? 100)); ?>" min="50" step="50" required
                                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <p class="text-xs text-gray-500 mt-1">Minimum 50 cards per employee</p>
                     </div>

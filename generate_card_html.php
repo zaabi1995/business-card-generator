@@ -20,7 +20,7 @@ if (!getCurrentCompanyId()) {
     die('Company context required. Please provide a valid company parameter.');
 }
 
-// Get employee data — always scoped to the current company
+// Get employee data, always scoped to the current company
 $employeeId = $_GET['id'] ?? '';
 $employee = null;
 
@@ -58,12 +58,12 @@ if ($companyId) {
     $currentCompany = findCompanyById($companyId);
 }
 
-// Generate VCF URL for QR code — short format produces smaller, faster-scanning QR codes
+// Generate VCF URL for QR code, short format produces smaller, faster-scanning QR codes
 require_once INCLUDES_DIR . '/VCF.php';
 require_once INCLUDES_DIR . '/Billing.php';
 $vcfUrl = '';
 if ($currentCompany && $employee) {
-    // Use short employee ID format: /qr.php?i={id} — minimal URL = smallest QR code
+    // Use short employee ID format: /qr.php?i={id}, minimal URL = smallest QR code
     $vcfUrl = (defined('APP_HOST') ? 'https://' . APP_HOST : 'https://cardify.om')
               . '/qr.php?i=' . urlencode($employee['id'] ?? '');
 }
@@ -394,7 +394,7 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                 if (!data.success && data.limit_reached) {
                     var banner = document.createElement('div');
                     banner.className = 'fixed top-0 left-0 right-0 z-50 bg-amber-500 text-white text-center py-3 px-4 text-sm font-medium';
-                    banner.innerHTML = (data.error || 'Monthly card limit reached.') + ' <a href="' + config.basePath + 'billing" class="underline font-bold">Upgrade your plan</a>';
+                    banner.innerHTML = (data.error || 'Card generation limit reached.') + ' <a href="https://wa.me/96899899100" class="underline font-bold">Contact us</a>';
                     document.body.prepend(banner);
                 }
             }).catch(function() {});

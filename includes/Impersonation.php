@@ -1,6 +1,6 @@
 <?php
 /**
- * Impersonation helper — "Login as" for super admins.
+ * Impersonation helper, "Login as" for super admins.
  *
  * Session shape when impersonating:
  *   $_SESSION['impersonator'] = [
@@ -39,7 +39,7 @@ class Impersonation
 
         // Block nested impersonation.
         if (self::isActive()) {
-            return ['success' => false, 'error' => 'Already impersonating — exit current session first'];
+            return ['success' => false, 'error' => 'Already impersonating, exit current session first'];
         }
 
         $db = Database::getInstance();
@@ -135,7 +135,7 @@ class Impersonation
             $durationSeconds = max(0, strtotime($stoppedAt) - strtotime($startedAt));
         }
 
-        // Log stop (still in target session — logger will record target as actor,
+        // Log stop (still in target session, logger will record target as actor,
         // so pass admin identity in the payload).
         if (class_exists('AuditLog')) {
             AuditLog::log(
@@ -175,7 +175,7 @@ class Impersonation
         }
 
         if (!$admin) {
-            // Admin user gone — force re-login.
+            // Admin user gone, force re-login.
             $basePath = function_exists('getBasePath') ? getBasePath() : '/';
             return ['success' => true, 'redirect' => $basePath . 'login.php'];
         }
@@ -191,7 +191,7 @@ class Impersonation
     }
 
     /**
-     * Render the sticky impersonation banner. Safe to call unconditionally —
+     * Render the sticky impersonation banner. Safe to call unconditionally ,
      * emits nothing when not impersonating.
      */
     public static function renderBanner(): void
@@ -237,7 +237,7 @@ class Impersonation
         <?php
     }
 
-    /** Clear impersonation stash — called from logout paths so it never persists. */
+    /** Clear impersonation stash, called from logout paths so it never persists. */
     public static function clearStash(): void
     {
         unset($_SESSION['impersonator']);

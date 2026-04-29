@@ -16,7 +16,7 @@ $messageType = 'success';
 // Handle updates
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_rate') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-        die('Invalid request');
+        die(htmlspecialchars(t('fxrates.invalid_request')));
     }
     $id = $_POST['id'] ?? '';
     $rate = (float)($_POST['rate'] ?? 0);
@@ -33,13 +33,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
                 'id = :id',
                 ['id' => $id]
             );
-            $message = 'Rate updated.';
+            $message = t('fxrates.rate_updated');
         } catch (Exception $e) {
-            $message = 'Update failed: ' . $e->getMessage();
+            $message = str_replace(':msg', $e->getMessage(), t('fxrates.update_failed'));
             $messageType = 'error';
         }
     } else {
-        $message = 'Rate must be greater than zero.';
+        $message = t('fxrates.rate_zero');
         $messageType = 'error';
     }
 }
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
 // Reset to seeds
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'reset_seeds') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-        die('Invalid request');
+        die(htmlspecialchars(t('fxrates.invalid_request')));
     }
     $seeds = [
         'USD' => 2.598000,
@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'reset
             ['base' => 'OMR', 'target' => $target]
         );
     }
-    $message = 'Rates reset to seed values.';
+    $message = t('fxrates.seeds_reset');
 }
 
 $rates = $db->fetchAll(
@@ -70,22 +70,21 @@ $rates = $db->fetchAll(
 );
 $csrfToken = generateCSRFToken();
 
-adminHeader('FX Rates', 'fx-rates');
+adminHeader(t('adminchrome.fx_rates'), 'fx-rates');
 ?>
 
 <div class="max-w-5xl mx-auto px-4 py-8">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">FX Rates</h1>
-        <form method="post" onsubmit="return confirm('Reset all rates to seed values?')">
+        <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('fxrates.page_h1')) ?></h1>
+        <form method="post" onsubmit="return confirm(<?= json_encode(t('fxrates.confirm_reset'), JSON_UNESCAPED_UNICODE) ?>)">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
             <input type="hidden" name="action" value="reset_seeds">
-            <button type="submit" class="text-sm text-gray-600 hover:text-gray-900">Reset to seeds</button>
+            <button type="submit" class="text-sm text-gray-600 hover:text-gray-900"><?= htmlspecialchars(t('fxrates.reset_btn')) ?></button>
         </form>
     </div>
 
     <p class="text-gray-600 mb-6">
-        These rates are used for display only. Every payment is charged in OMR via Paymob.
-        Update when exchange rates move meaningfully (OMR is pegged to USD, so updates are rare).
+        <?= htmlspecialchars(t('fxrates.intro')) ?>
     </p>
 
     <?php if ($message): ?>
@@ -98,10 +97,10 @@ adminHeader('FX Rates', 'fx-rates');
         <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Pair</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">1 OMR =</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Notes</th>
-                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Updated</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"><?= htmlspecialchars(t('fxrates.col_pair')) ?></th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"><?= htmlspecialchars(t('fxrates.col_one_omr')) ?></th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"><?= htmlspecialchars(t('fxrates.col_notes')) ?></th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"><?= htmlspecialchars(t('fxrates.col_updated')) ?></th>
                     <th class="px-6 py-3"></th>
                 </tr>
             </thead>
@@ -118,11 +117,11 @@ adminHeader('FX Rates', 'fx-rates');
                             <span class="text-gray-500 text-xs ml-2"><?= htmlspecialchars($r['target_currency']) ?></span>
                         </td>
                         <td class="px-6 py-4">
-                            <input type="text" name="notes" value="<?= htmlspecialchars($r['notes'] ?? '') ?>" class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" placeholder="(optional)">
+                            <input type="text" name="notes" value="<?= htmlspecialchars($r['notes'] ?? '') ?>" class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm" placeholder="<?= htmlspecialchars(t('fxrates.notes_ph')) ?>">
                         </td>
                         <td class="px-6 py-4 text-xs text-gray-500"><?= htmlspecialchars($r['updated_at']) ?></td>
                         <td class="px-6 py-4 text-right">
-                            <button type="submit" class="text-sm font-semibold text-blue-600 hover:text-blue-800">Save</button>
+                            <button type="submit" class="text-sm font-semibold text-blue-600 hover:text-blue-800"><?= htmlspecialchars(t('fxrates.save')) ?></button>
                         </td>
                     </form>
                 </tr>

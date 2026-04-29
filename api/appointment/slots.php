@@ -3,7 +3,7 @@
  * GET /api/appointment/slots.php?eid=<employee_id>&date=<yyyy-mm-dd>
  *
  * Returns JSON: { success: true, slots: [{start, end, label}, ...] }
- * Public — no auth.
+ * Public, no auth.
  */
 require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/Appointments.php';

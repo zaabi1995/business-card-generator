@@ -1,6 +1,6 @@
 <?php
 /**
- * LinkedIn OAuth — captures org (Cardify company page) access token.
+ * LinkedIn OAuth, captures org (Cardify company page) access token.
  * Saves to system_settings.linkedin_org_access_token.
  * Scopes: openid profile email w_member_social w_organization_social r_organization_social
  */

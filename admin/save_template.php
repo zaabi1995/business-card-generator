@@ -37,6 +37,12 @@ try {
         case 'activate':
             $result = activateTemplate();
             break;
+        case 'set_as_default':
+            $result = setAsCompanyDefault();
+            break;
+        case 'revert_version':
+            $result = revertTemplateVersion();
+            break;
         default:
             throw new Exception('Invalid action');
     }
@@ -75,7 +81,7 @@ function addTemplatePair() {
     }
 
     $destination = getCompanyTemplatesDir($companyId);
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'image/svg+xml'];
     
     $fields = json_decode($fieldsJson, true);
     if (!$fields) {
@@ -288,7 +294,7 @@ function updateTemplateBackground() {
     }
     
     $destination = getCompanyTemplatesDir($companyId);
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'image/svg+xml'];
     $uploadResult = handleFileUpload($_FILES['image'], $destination, $allowedTypes);
     
     if (!$uploadResult['success']) {
@@ -428,7 +434,7 @@ function addNewTemplate() {
 
     $destination = getCompanyTemplatesDir($companyId);
     // Allow images and PDFs for templates
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'image/svg+xml'];
     $uploadResult = handleFileUpload($_FILES['image'], $destination, $allowedTypes);
     if (!$uploadResult['success']) {
         throw new Exception($uploadResult['error']);
@@ -463,7 +469,7 @@ function addNewTemplate() {
     // Stamp coord format so loadTemplates skips the legacy % conversion.
     $template['settings'] = is_array($template['settings']) ? $template['settings'] : [];
     $template['settings']['fields_format'] = 'px';
-    
+
     // Save to config
     $config = loadTemplates($companyId);
     $config['templates'][] = $template;
@@ -522,7 +528,7 @@ function updateTemplate() {
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                 $destination = $companyId ? getCompanyTemplatesDir($companyId) : TEMPLATES_DIR;
                 // Allow images and PDFs for templates
-                $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+                $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'image/svg+xml'];
                 $uploadResult = handleFileUpload($_FILES['image'], $destination, $allowedTypes);
                 if ($uploadResult['success']) {
                     // Delete old image
@@ -613,11 +619,142 @@ function activateTemplate() {
     } else {
         $config['activeBackId'] = $id;
     }
-    
+
     if (!saveTemplates($config, $companyId)) {
         throw new Exception('Failed to activate template');
     }
-    
+
     return ['success' => true];
+}
+
+/**
+ * Set the current template as the company-wide default for new employees.
+ * Writes to companies.default_front_template_id or default_back_template_id
+ * based on the supplied side. Template must belong to the current company.
+ */
+function setAsCompanyDefault() {
+    $id   = trim($_POST['id']   ?? '');
+    $side = $_POST['side'] ?? 'front';
+    if (empty($id)) {
+        throw new Exception('Template ID is required');
+    }
+    if (!in_array($side, ['front', 'back'], true)) {
+        throw new Exception('Invalid side');
+    }
+
+    $companyId = getCurrentCompanyId();
+    if (!$companyId) {
+        throw new Exception('Company context required');
+    }
+
+    // Verify template belongs to this company before writing the id to
+    // companies.default_*_template_id (cross-tenant guard).
+    $config = loadTemplates($companyId);
+    $found  = false;
+    foreach ($config['templates'] ?? [] as $t) {
+        if (($t['id'] ?? null) === $id) { $found = true; break; }
+    }
+    if (!$found) {
+        throw new Exception('Template not found');
+    }
+
+    $col = $side === 'front' ? 'default_front_template_id' : 'default_back_template_id';
+    try {
+        $db = Database::getInstance();
+        $db->update('companies', [$col => $id], 'id = :id', ['id' => $companyId]);
+    } catch (Throwable $e) {
+        throw new Exception('Failed to set company default: ' . $e->getMessage());
+    }
+
+    if (class_exists('AuditLog')) {
+        try {
+            AuditLog::log('template_set_as_default', 'company', $companyId, null,
+                ['side' => $side, 'template_id' => $id], $companyId);
+        } catch (Throwable $_) { /* best-effort */ }
+    }
+
+    return ['success' => true, 'side' => $side, 'template_id' => $id];
+}
+
+/**
+ * Revert a template to a previous version stored in template_versions.
+ * Restores fields_json + settings_json + background_image_path onto the
+ * live templates row, bumps current_version + 1 (does NOT overwrite the
+ * historic row), records an AuditLog entry. Cross-tenant-guarded.
+ */
+function revertTemplateVersion() {
+    $id      = trim($_POST['id']      ?? '');
+    $version = (int) ($_POST['version'] ?? 0);
+    if ($id === '' || $version <= 0) {
+        throw new Exception('Template id and version are required');
+    }
+
+    $companyId = getCurrentCompanyId();
+    if (!$companyId) {
+        throw new Exception('Company context required');
+    }
+
+    $db = Database::getInstance();
+
+    // Cross-tenant guard: template must belong to this company.
+    $tpl = $db->fetchOne(
+        "SELECT id, company_id, current_version FROM templates WHERE id = :id",
+        ['id' => $id]
+    );
+    if (!$tpl || ($tpl['company_id'] ?? null) !== $companyId) {
+        throw new Exception('Template not found');
+    }
+
+    $snap = $db->fetchOne(
+        "SELECT fields_json, settings_json, background_image_path
+           FROM template_versions
+          WHERE template_id = :id AND version_number = :v LIMIT 1",
+        ['id' => $id, 'v' => $version]
+    );
+    if (!$snap) {
+        throw new Exception('Version not found');
+    }
+
+    $newVersion = ((int) ($tpl['current_version'] ?? 1)) + 1;
+
+    try {
+        // Snapshot the current live row into template_versions first so
+        // users can re-revert. Pull the live row then insert a new
+        // version row with the next sequential number BEFORE applying
+        // the restore (so current_version points at the historic copy).
+        $live = $db->fetchOne(
+            "SELECT fields_json, settings_json, background_image_path
+               FROM templates WHERE id = :id",
+            ['id' => $id]
+        );
+        $db->insert('template_versions', [
+            'template_id'            => $id,
+            'version_number'         => $newVersion,
+            'fields_json'            => $snap['fields_json'],
+            'settings_json'          => $snap['settings_json'],
+            'background_image_path'  => $snap['background_image_path'],
+            'created_by'             => $_SESSION['user_id'] ?? null,
+            'change_summary'         => 'Revert to version ' . $version,
+        ]);
+
+        $db->update('templates', [
+            'fields_json'           => $snap['fields_json'],
+            'settings_json'         => $snap['settings_json'],
+            'background_image_path' => $snap['background_image_path'],
+            'current_version'       => $newVersion,
+        ], 'id = :id', ['id' => $id]);
+    } catch (Throwable $e) {
+        throw new Exception('Revert failed: ' . $e->getMessage());
+    }
+
+    if (class_exists('AuditLog')) {
+        try {
+            AuditLog::log('template_reverted', 'template', $id, null,
+                ['restored_from_version' => $version, 'new_version' => $newVersion],
+                $companyId);
+        } catch (Throwable $_) { /* best-effort */ }
+    }
+
+    return ['success' => true, 'template_id' => $id, 'restored_from' => $version, 'new_version' => $newVersion];
 }
 

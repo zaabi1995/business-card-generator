@@ -1,6 +1,6 @@
 <?php
 /**
- * UrlSafety — shared URL/host/IP safety helpers.
+ * UrlSafety, shared URL/host/IP safety helpers.
  *
  * DRY helpers used by card_click.php, admin/short-links.php, s.php,
  * api/offer/redeem.php, api/appointment/book.php, api/lead.php, api/testimonial.php.
@@ -130,7 +130,7 @@ function isAllowedRedirectHost(string $dest, array $allowedHttpsHosts): ?string
     }
     // Relative same-origin path
     if ($dest[0] === '/') {
-        // Disallow "//" (protocol-relative) — open redirect vector
+        // Disallow "//" (protocol-relative), open redirect vector
         if (isset($dest[1]) && $dest[1] === '/') {
             return null;
         }
@@ -142,7 +142,7 @@ function isAllowedRedirectHost(string $dest, array $allowedHttpsHosts): ?string
 
     $lower = strtolower($dest);
 
-    // Non-http(s) schemes: tel:, mailto:, sms:, whatsapp: — accept as-is.
+    // Non-http(s) schemes: tel:, mailto:, sms:, whatsapp:, accept as-is.
     $passthroughSchemes = ['tel:', 'mailto:', 'sms:', 'whatsapp:'];
     foreach ($passthroughSchemes as $prefix) {
         if (strpos($lower, $prefix) === 0) {
@@ -153,7 +153,7 @@ function isAllowedRedirectHost(string $dest, array $allowedHttpsHosts): ?string
         }
     }
 
-    // https:// — validate URL, then check host whitelist.
+    // https://, validate URL, then check host whitelist.
     if (strpos($lower, 'https://') === 0) {
         if (!filter_var($dest, FILTER_VALIDATE_URL)) {
             return null;
@@ -162,7 +162,7 @@ function isAllowedRedirectHost(string $dest, array $allowedHttpsHosts): ?string
         if ($host === '') {
             return null;
         }
-        // Reject URL shorteners unconditionally — never laundered even if on
+        // Reject URL shorteners unconditionally, never laundered even if on
         // a caller's allowlist.
         if (isUrlShortener($host)) {
             return null;
@@ -207,7 +207,7 @@ function getClientIp(): string
 /**
  * True if the current request is (effectively) HTTPS, taking proxy headers
  * into account. Cloudflare in "Flexible" mode hits us over HTTP but the
- * visitor is on HTTPS — so without this check cookies would be mint'd without
+ * visitor is on HTTPS, so without this check cookies would be mint'd without
  * Secure.
  */
 function isHttpsRequest(): bool
