@@ -1845,8 +1845,13 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 // against employee data. They keep their original
                 // position, font, weight, size, and colour.
                 if (field.is_static) {
-                    const txt = (field.detected_text || '').trim();
-                    if (!txt) continue;
+                    // Preserve leading/trailing spaces. PDF importer splits
+                    // multi-color text runs into adjacent static_N tokens
+                    // (e.g. "An ", "Omantel", " Company") and the spaces are
+                    // load-bearing for visual separation. Trimming makes the
+                    // tokens collide.
+                    const txt = (field.detected_text || '');
+                    if (!txt || !txt.replace(/\s+/g, '')) continue;
                     const t = new fabric.Text(txt, {
                         left: field.x || 0,
                         top: field.y || 0,
@@ -1865,6 +1870,9 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         hoverCursor: 'default',
                     });
                     editor.canvas.add(t);
+                    // Register so reanchorStaticDecorationRuns can find this
+                    // object when stitching multi-token runs.
+                    editor.fields[key] = t;
                     continue;
                 }
 
