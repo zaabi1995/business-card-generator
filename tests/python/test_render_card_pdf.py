@@ -155,6 +155,58 @@ def test_fonts_are_embedded(otech_dir, tmp_path):
     assert any('lato' in f for f in families), f"Lato not embedded: {families}"
 
 
+# ---------------------------------------------------------------------------
+# Phase 3: font-weight ranker unit test
+# ---------------------------------------------------------------------------
+# render-card-pdf.py has a hyphenated filename, which is not a valid Python
+# identifier, so we cannot use a plain `import` statement. importlib lets us
+# load it directly. The functions under test (_pick_font, _font_weight_of)
+# are defined at module scope, making them accessible after import.
+def _import_renderer():
+    import importlib.util, os
+    spec = importlib.util.spec_from_file_location(
+        'render_card_pdf',
+        os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'render-card-pdf.py'),
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_pick_font_weight_ranker_chooses_closest(otech_dir, tmp_path):
+    """When the exact weight is missing, the ranker picks the
+    numerically-closest available weight."""
+    rcp = _import_renderer()
+
+    # Stub buffers: name -> bytes (ranker operates on names only).
+    buffers = {
+        'Lato-Medium':  b'',
+        'Lato-Black':   b'',
+        'Sora-Regular': b'',
+    }
+
+    # Weight 700 (Bold): Medium=500, Black=900. Distance 200 vs 200. Tie
+    # broken alphabetically: "Lato-Black" < "Lato-Medium".
+    name, _ = rcp._pick_font('Lato', 700, buffers)
+    assert name == 'Lato-Black', f'expected Lato-Black for 700, got {name}'
+
+    # Weight 500 (Medium): exact match.
+    name, _ = rcp._pick_font('Lato', 500, buffers)
+    assert name == 'Lato-Medium', f'expected Lato-Medium for 500, got {name}'
+
+    # Weight 400 (Regular): Medium=500 (dist 100), Black=900 (dist 500). Medium wins.
+    name, _ = rcp._pick_font('Lato', 400, buffers)
+    assert name == 'Lato-Medium', f'expected Lato-Medium for 400, got {name}'
+
+    # Only Sora-Regular available for family Sora; any weight request returns it.
+    name, _ = rcp._pick_font('Sora', 700, buffers)
+    assert name == 'Sora-Regular', f'expected Sora-Regular fallback, got {name}'
+
+    # Unknown family returns (None, None).
+    name, buf = rcp._pick_font('Helvetica', 400, buffers)
+    assert name is None, f'expected None for unknown family, got {name}'
+
+
 def test_text_baselines_match_source_pdf(otech_dir, tmp_path):
     fixture = json.loads(json.dumps(TEMPLATE_FIXTURE))
     fixture['fonts_dir']  = os.path.join(otech_dir, 'fonts')

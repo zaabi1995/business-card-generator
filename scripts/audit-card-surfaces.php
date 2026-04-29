@@ -74,6 +74,31 @@ $ok    = 0;
 $bad   = 0;
 $rows  = [];
 
+// --- vector audit setup ---------------------------------------------------
+// Determine whether any of this company's active templates have
+// has_vector_source=1. We look up once here so each employee row can use the
+// pre-fetched flag without a per-row query.
+$companyTemplates = $db->fetchAll(
+    'SELECT id, side, has_vector_source FROM templates
+      WHERE company_id = :cid AND status = "active"',
+    ['cid' => $company['id']]
+);
+
+// Both front and back templates must have has_vector_source=1 for the vector
+// path to be active. Count by side.
+$vectorBySide = ['front' => false, 'back' => false];
+foreach ($companyTemplates as $tpl) {
+    if (!empty($tpl['has_vector_source'])) {
+        $vectorBySide[$tpl['side']] = true;
+    }
+}
+$companyHasVectorSource = $vectorBySide['front'] && $vectorBySide['back'];
+
+// Counters for summary line.
+$vectorFresh    = 0;
+$vectorFallback = 0;
+$rasterOnly     = 0;
+
 foreach ($employees as $emp) {
     $ctx = CardRenderer::forEmployee((string)$emp['id']);
     if (!$ctx) {
@@ -86,6 +111,7 @@ foreach ($employees as $emp) {
             'back_present'  => false,
             'signature'     => '',
             'note'          => 'CardRenderer returned null',
+            'vector_status' => 'error',
         ];
         continue;
     }
@@ -96,14 +122,24 @@ foreach ($employees as $emp) {
 
     if ($fresh) $ok++; else $bad++;
 
+    // --- vector status for this employee -----------------------------------
+    $vectorStatus = vectorStatusForEmployee((string)$emp['id'], $companyHasVectorSource);
+    switch ($vectorStatus) {
+        case 'vector':          $vectorFresh++;    break;
+        case 'raster-fallback': $vectorFallback++; break;
+        case 'n/a':             $rasterOnly++;     break;
+        default:                                   break;
+    }
+
     $rows[] = [
-        'slug'          => $emp['id'], // employees.id is the URL slug
+        'slug'          => $emp['id'],
         'name'          => $emp['name_en'] ?? '?',
         'fresh'         => $fresh,
         'front_present' => $hasFront,
         'back_present'  => $hasBack,
         'signature'     => substr($ctx['signature'], 0, 10),
         'note'          => $fresh ? 'OK' : self_describeStaleness($ctx),
+        'vector_status' => $vectorStatus,
     ];
 }
 
@@ -115,8 +151,8 @@ $col = function ($s, $w) {
 };
 
 echo "\n";
-echo $col('SLUG', 22) . $col('NAME', 28) . $col('FRESH', 7) . $col('FRONT', 7) . $col('BACK', 6) . $col('SIG', 12) . "NOTE\n";
-echo str_repeat('-', 110) . "\n";
+echo $col('SLUG', 22) . $col('NAME', 28) . $col('FRESH', 7) . $col('FRONT', 7) . $col('BACK', 6) . $col('SIG', 12) . $col('VECTOR', 18) . "NOTE\n";
+echo str_repeat('-', 128) . "\n";
 foreach ($rows as $r) {
     echo $col($r['slug'], 22)
        . $col($r['name'], 28)
@@ -124,12 +160,14 @@ foreach ($rows as $r) {
        . $col($r['front_present'] ? 'yes' : 'NO', 7)
        . $col($r['back_present']  ? 'yes' : 'NO', 6)
        . $col($r['signature'], 12)
+       . $col($r['vector_status'], 18)
        . $r['note'] . "\n";
 }
 
 echo "\nCompany: {$company['name']} ({$company['slug']})\n";
 echo "Surfaces aligned via canonical PNG: digital_card.php, card-pdf.php, wallet_apple.php, wallet_google.php, og:image, print-shop preview.\n";
 echo "Result: {$ok} fresh / {$bad} stale\n";
+echo "Vector:  {$vectorFresh} vector / {$vectorFallback} raster-fallback / {$rasterOnly} raster-only (no vector source)\n";
 
 if ($bad > 0) {
     echo "\nNext step: open the admin Card Editor and click Save on each stale employee, OR run a batch regen, to refresh the cache. Re-render is browser-side (Fabric.js).\n";
@@ -150,4 +188,56 @@ function self_describeStaleness(array $ctx): string
         $bits[] = 'template-version-drift';
     }
     return implode(',', $bits) ?: 'stale';
+}
+
+/**
+ * Determine the vector PDF status for one employee.
+ *
+ * Returns one of:
+ *   'vector'          - company has has_vector_source=1 and card-pdf.php
+ *                       responded with a compact vector PDF (50K-500K).
+ *   'raster-fallback' - company has has_vector_source=1 but card-pdf.php
+ *                       responded with a large raster-in-PDF (>1MB), meaning
+ *                       the vector render failed for this employee.
+ *   'n/a'             - company has has_vector_source=0 (raster-only tenant).
+ *   'error'           - HTTP error or unexpected Content-Length range.
+ */
+function vectorStatusForEmployee(string $employeeId, bool $companyHasVectorSource): string
+{
+    if (!$companyHasVectorSource) {
+        return 'n/a';
+    }
+
+    // HEAD the PDF endpoint. Use curl with -sI to get headers only so we
+    // don't download the whole file. 10s timeout is enough for a warm cache.
+    $url = 'https://cardify.om/card-pdf.php?i=' . rawurlencode($employeeId);
+    $ch  = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_NOBODY         => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HEADER         => true,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_MAXREDIRS      => 2,
+        CURLOPT_USERAGENT      => 'CardifyAudit/1.0',
+    ]);
+    curl_exec($ch);
+    $httpCode     = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $contentLength = (int)curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
+    curl_close($ch);
+
+    if ($httpCode !== 200) {
+        return 'error';
+    }
+
+    // Vector PDF: 50K-500K. Raster fallback: > 1MB.
+    if ($contentLength >= 50_000 && $contentLength <= 500_000) {
+        return 'vector';
+    }
+    if ($contentLength > 1_000_000) {
+        return 'raster-fallback';
+    }
+
+    return 'error';
 }
