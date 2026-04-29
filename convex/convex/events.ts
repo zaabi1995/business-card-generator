@@ -17,26 +17,6 @@ import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { verifyIngestSecret, IngestAuthError } from "./lib/ingestAuth";
 import { requireIdentity } from "./lib/identity";
-import type { Id } from "./_generated/dataModel";
-
-const EVENT_TYPE_LITERALS = v.union(
-  v.literal("view"),
-  v.literal("qr_scan"),
-  v.literal("click_phone"),
-  v.literal("click_mobile"),
-  v.literal("click_whatsapp"),
-  v.literal("click_email"),
-  v.literal("click_website"),
-  v.literal("click_map"),
-  v.literal("click_social"),
-  v.literal("save_contact"),
-  v.literal("wallet_add"),
-  v.literal("offer_redeem"),
-  v.literal("product_order_click"),
-  v.literal("short_link_click"),
-  v.literal("viral_footer_click"),
-  v.literal("viral_footer_view"),
-);
 
 /**
  * HTTP action invoked by PHP. Validates the shared secret, resolves (or
@@ -210,11 +190,12 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const liveCounter = query({
   args: {
+    token: v.string(),
     employeeId: v.optional(v.string()),
     days: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const me = await requireIdentity(ctx);
+    const me = await requireIdentity(ctx, args.token);
     const since = Date.now() - (args.days ?? 7) * DAY_MS;
 
     const rows = await (args.employeeId
@@ -251,11 +232,12 @@ export const liveCounter = query({
 
 export const recentActivity = query({
   args: {
+    token: v.string(),
     employeeId: v.optional(v.string()),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const me = await requireIdentity(ctx);
+    const me = await requireIdentity(ctx, args.token);
     const limit = Math.min(Math.max(args.limit ?? 30, 1), 100);
 
     const rows = await (args.employeeId
@@ -285,11 +267,12 @@ export const recentActivity = query({
 
 export const byCountry = query({
   args: {
+    token: v.string(),
     employeeId: v.optional(v.string()),
     days: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const me = await requireIdentity(ctx);
+    const me = await requireIdentity(ctx, args.token);
     const since = Date.now() - (args.days ?? 7) * DAY_MS;
 
     const rows = await (args.employeeId
@@ -320,12 +303,13 @@ export const byCountry = query({
 
 export const timeline = query({
   args: {
+    token: v.string(),
     employeeId: v.optional(v.string()),
     days: v.optional(v.number()),
     bucketMinutes: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const me = await requireIdentity(ctx);
+    const me = await requireIdentity(ctx, args.token);
     const days = args.days ?? 7;
     const bucketMs = (args.bucketMinutes ?? 60) * 60 * 1000;
     const since = Date.now() - days * DAY_MS;
@@ -356,11 +340,12 @@ export const timeline = query({
 
 export const livePresence = query({
   args: {
+    token: v.string(),
     employeeId: v.optional(v.string()),
     windowMinutes: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const me = await requireIdentity(ctx);
+    const me = await requireIdentity(ctx, args.token);
     const since = Date.now() - (args.windowMinutes ?? 5) * 60 * 1000;
 
     if (args.employeeId) {
@@ -380,5 +365,3 @@ export const livePresence = query({
   },
 });
 
-// Imported by lib/tenant for type safety
-export type _TenantId = Id<"companies">;

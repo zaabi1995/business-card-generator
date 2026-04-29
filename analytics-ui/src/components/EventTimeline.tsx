@@ -9,14 +9,17 @@ interface BucketRow {
 }
 
 export function EventTimeline({
+  token,
   employeeId,
   days,
 }: {
+  token: string;
   employeeId: string | null;
   days: number;
 }) {
   const bucketMinutes = days <= 1 ? 15 : days <= 7 ? 60 : 360;
   const rows = useQuery(api.events.timeline, {
+    token,
     employeeId: employeeId ?? undefined,
     days,
     bucketMinutes,

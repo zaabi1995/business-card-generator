@@ -20,13 +20,16 @@ function flag(code: string): string {
 }
 
 export function GeoBreakdown({
+  token,
   employeeId,
   days,
 }: {
+  token: string;
   employeeId: string | null;
   days: number;
 }) {
   const rows = useQuery(api.events.byCountry, {
+    token,
     employeeId: employeeId ?? undefined,
     days,
   }) as CountryRow[] | undefined;

@@ -10,9 +10,11 @@ import "./styles.css";
 type Tab = "live" | "activity" | "geo" | "timeline";
 
 export function App({
+  token,
   employeeId,
   days,
 }: {
+  token: string;
   employeeId: string | null;
   days: number;
 }) {
@@ -42,7 +44,7 @@ export function App({
         </div>
       </header>
 
-      <LiveCounter employeeId={employeeId} days={range} />
+      <LiveCounter token={token} employeeId={employeeId} days={range} />
 
       <nav className="cardify-live__tabs">
         {(
@@ -64,19 +66,20 @@ export function App({
       </nav>
 
       <main className="cardify-live__panel">
-        {tab === "live" && <LivePresenceTab employeeId={employeeId} />}
-        {tab === "activity" && <RecentActivity employeeId={employeeId} />}
-        {tab === "geo" && <GeoBreakdown employeeId={employeeId} days={range} />}
+        {tab === "live" && <LivePresenceTab token={token} employeeId={employeeId} />}
+        {tab === "activity" && <RecentActivity token={token} employeeId={employeeId} />}
+        {tab === "geo" && <GeoBreakdown token={token} employeeId={employeeId} days={range} />}
         {tab === "timeline" && (
-          <EventTimeline employeeId={employeeId} days={range} />
+          <EventTimeline token={token} employeeId={employeeId} days={range} />
         )}
       </main>
     </div>
   );
 }
 
-function LivePresenceTab({ employeeId }: { employeeId: string | null }) {
+function LivePresenceTab({ token, employeeId }: { token: string; employeeId: string | null }) {
   const count = useQuery(api.events.livePresence, {
+    token,
     employeeId: employeeId ?? undefined,
     windowMinutes: 5,
   }) as number | undefined;
@@ -94,7 +97,7 @@ function LivePresenceTab({ employeeId }: { employeeId: string | null }) {
         {count === undefined ? "Connecting…" : `${count} viewing now`}
       </div>
       <hr />
-      <RecentActivity employeeId={employeeId} limit={10} />
+      <RecentActivity token={token} employeeId={employeeId} limit={10} />
     </div>
   );
 }

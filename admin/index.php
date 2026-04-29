@@ -80,10 +80,14 @@ $templates = $templatesConfig['templates'] ?? [];
 $activeFrontId = $templatesConfig['activeFrontId'] ?? null;
 $activeBackId = $templatesConfig['activeBackId'] ?? null;
 
-// Convert legacy field positions for existing templates
+// Convert legacy field positions for existing templates.
+// Modern saves stamp settings.fields_format = 'px' so the legacy
+// percentage-to-pixel heuristic is skipped (it mis-fires on real
+// small-pixel coords like an Arabic name placed near top-left).
 foreach ($templates as &$template) {
     if (isset($template['fields'])) {
-        $template['fields'] = convertLegacyFieldPositions($template['fields']);
+        $fmt = $template['settings']['fields_format'] ?? null;
+        $template['fields'] = convertLegacyFieldPositions($template['fields'], 1050, 600, $fmt);
     }
 }
 unset($template);

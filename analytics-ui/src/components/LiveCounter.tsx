@@ -12,13 +12,16 @@ interface LiveCounterStats {
 }
 
 export function LiveCounter({
+  token,
   employeeId,
   days,
 }: {
+  token: string;
   employeeId: string | null;
   days: number;
 }) {
   const stats = useQuery(api.events.liveCounter, {
+    token,
     employeeId: employeeId ?? undefined,
     days,
   }) as LiveCounterStats | undefined;

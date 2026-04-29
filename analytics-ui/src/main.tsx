@@ -32,13 +32,10 @@ if (!cfg.convexUrl) {
     "</div>";
 } else {
   const client = new ConvexReactClient(cfg.convexUrl);
-  if (cfg.token) {
-    client.setAuth(async () => cfg.token);
-  }
   ReactDOM.createRoot(root).render(
     <React.StrictMode>
       <ConvexProvider client={client}>
-        <App employeeId={cfg.employeeId} days={cfg.days} />
+        <App token={cfg.token} employeeId={cfg.employeeId} days={cfg.days} />
       </ConvexProvider>
     </React.StrictMode>,
   );

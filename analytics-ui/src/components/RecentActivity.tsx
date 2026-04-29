@@ -45,13 +45,16 @@ function timeAgo(ts: number): string {
 }
 
 export function RecentActivity({
+  token,
   employeeId,
   limit = 30,
 }: {
+  token: string;
   employeeId: string | null;
   limit?: number;
 }) {
   const rows = useQuery(api.events.recentActivity, {
+    token,
     employeeId: employeeId ?? undefined,
     limit,
   }) as ActivityRow[] | undefined;
