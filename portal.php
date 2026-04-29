@@ -1324,8 +1324,22 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         'company_en','company_ar','department_id',
                         'qr_code',
                     ];
+                    // Resolve metadata for catch-all fields by looking the key
+                    // up in either active template, so we can skip static
+                    // decoration tokens (static_1..N) that the PDF importer
+                    // creates. They render directly from detected_text and
+                    // must not appear as user inputs.
+                    $__lookupField = function (string $k) use ($activeFrontTemplate, $activeBackTemplate) {
+                        foreach ([$activeFrontTemplate, $activeBackTemplate] as $tpl) {
+                            if ($tpl && isset($tpl['fields'][$k])) return $tpl['fields'][$k];
+                        }
+                        return null;
+                    };
                     foreach ($enabledFields as $__k => $__v):
                         if (in_array($__k, $handledKeys, true)) continue;
+                        $__field = $__lookupField($__k);
+                        if ($__field && !empty($__field['is_static'])) continue;
+                        if ($__field && isset($__field['enabled']) && $__field['enabled'] === false) continue;
                         $__label = ucwords(str_replace('_', ' ', $__k));
                     ?>
                     <div>
