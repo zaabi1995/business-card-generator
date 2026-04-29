@@ -536,9 +536,17 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
     fonts_dir_rel = None
     if extract_main is not None:
         try:
-            rc = extract_main(output_dir)
+            # The extractor looks for source.pdf in the directory it receives.
+            # When called from import_pdf.php, source.pdf lives alongside the
+            # background images in output_dir. When called from the CLI with a
+            # source.pdf at a different path, fall back to the pdf's own dir.
+            pdf_dir = os.path.dirname(os.path.abspath(pdf_path))
+            extract_dir = output_dir if os.path.isfile(os.path.join(output_dir, 'source.pdf')) else pdf_dir
+            rc = extract_main(extract_dir)
             if rc == 0:
-                fonts_dir_rel = os.path.join(os.path.basename(output_dir), 'fonts')
+                # fonts_dir_rel is relative to the extract_dir parent so
+                # import_pdf.php can prepend outRel and get a valid URL.
+                fonts_dir_rel = os.path.join(os.path.basename(extract_dir), 'fonts')
         except Exception as e:
             print(f'WARN: font extraction failed: {e}', file=sys.stderr)
 

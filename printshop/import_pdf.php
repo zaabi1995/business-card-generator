@@ -145,7 +145,9 @@ unset($page);
 // later without rerunning the parser. We also remember which company
 // owns this token so the persist endpoint can authorise the call.
 $companyId = function_exists('getCurrentCompanyId') ? getCurrentCompanyId() : null;
-$fontsDirRel = $parsed['fonts_dir_rel'] ?? null;
+// Python returns a truthy fonts_dir_rel when fonts were extracted; the PHP
+// side knows the canonical web-root-relative path (outRel + /fonts).
+$fontsDirRel = !empty($parsed['fonts_dir_rel']) ? ($outRel . '/fonts') : null;
 $envelope = [
     'token'             => $token,
     'company_id'        => $companyId,
