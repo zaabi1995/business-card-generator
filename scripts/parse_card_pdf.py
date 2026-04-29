@@ -526,8 +526,12 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
     # ── 6. Extract embedded fonts to <output_dir>/fonts/. CardPDFRenderer
     # picks them up via templates.fonts_dir at render time.
     try:
-        from extract_template_fonts import main as extract_main
-    except ImportError:
+        import importlib, sys as _sys
+        _scripts_dir = os.path.dirname(os.path.abspath(__file__))
+        if _scripts_dir not in _sys.path:
+            _sys.path.insert(0, _scripts_dir)
+        extract_main = importlib.import_module('extract_template_fonts').main
+    except Exception:
         extract_main = None
     fonts_dir_rel = None
     if extract_main is not None:
