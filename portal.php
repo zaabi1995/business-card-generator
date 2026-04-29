@@ -1911,17 +1911,34 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 
                 const value = fieldValues[key];
                 if (!value) continue;
-                
+
+                // PDF importer can't always split a labelled line (e.g.
+                // "M +971 50 789 4563", "E name@otech.om") into separate
+                // static label + dynamic value, so the leading single-letter
+                // label is buried inside detected_text. When the user types
+                // a fresh value the label vanishes from the rendered card.
+                // Re-prepend it here when the original had this exact shape:
+                // a single letter + whitespace + the rest.
+                let renderText = String(value);
+                const dt = (field.detected_text || '');
+                const labelMatch = dt.match(/^([A-Za-z])\s+\S/);
+                if (labelMatch) {
+                    const prefix = dt.slice(0, dt.indexOf(' ') + 1); // e.g. "M "
+                    if (prefix && !renderText.startsWith(prefix)) {
+                        renderText = prefix + renderText;
+                    }
+                }
+
                 // Debug: Log field alignment data
                 console.log('Field:', key, 'textAlign:', field.textAlign, 'originX:', field.originX);
-                
+
                 // Use alignment directly from template (don't override with defaults)
                 const textAlign = field.textAlign || 'left';
                 const originX = field.originX || (textAlign === 'center' ? 'center' : textAlign === 'right' ? 'right' : 'left');
-                
+
                 // Add text field using template values directly (no scaling - canvas is standard 1050x600)
                 editor.addTextField(key, {
-                    text: value,
+                    text: renderText,
                     x: field.x,
                     y: field.y,
                     fontSize: field.fontSize || 14,
