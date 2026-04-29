@@ -334,11 +334,25 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                 const initW = Math.max(frontDims.w, backDims.w);
                 const initH = Math.max(frontDims.h, backDims.h);
 
-                // Initialize card editor at the actual template dimensions
+                // Initialize card editor at the actual template dimensions.
+                // CardEditor's _init() is async (waits for Fabric to load + creates
+                // the Canvas), so we must await isReady before kicking off renders.
+                // Otherwise clear()/loadBackground silently no-op for the first
+                // side and the front exports as blank-with-QR.
                 cardEditor = new CardEditor('renderCanvas', {
                     width: initW,
                     height: initH,
                     backgroundColor: '#ffffff'
+                });
+                await new Promise(resolve => {
+                    if (cardEditor.isReady) return resolve();
+                    const start = Date.now();
+                    const tick = () => {
+                        if (cardEditor.isReady) return resolve();
+                        if (Date.now() - start > 8000) return resolve();
+                        setTimeout(tick, 30);
+                    };
+                    tick();
                 });
                 
                 // Generate front card
