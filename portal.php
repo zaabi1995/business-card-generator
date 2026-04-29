@@ -1710,6 +1710,48 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         }
     }
     
+    // Group consecutive static_N tokens that share a baseline (same y, x of
+    // each is roughly previous's right edge) and re-anchor them using the
+    // text objects' actually-measured widths. Fixes "Omantel|Company" style
+    // overlaps caused by font-metrics drift between source PDF and web font.
+    function reanchorStaticDecorationRuns(editor, template) {
+        if (!editor || !editor.fields || !template || !template.fields) return;
+        const staticEntries = Object.entries(template.fields)
+            .filter(([k, f]) => f && f.enabled !== false && f.is_static && /^static_\d+$/.test(k))
+            .sort((a, b) => parseInt(a[0].split('_')[1], 10) - parseInt(b[0].split('_')[1], 10));
+        if (staticEntries.length < 2) return;
+
+        const runs = [];
+        let cur = [staticEntries[0]];
+        for (let i = 1; i < staticEntries.length; i++) {
+            const prev = cur[cur.length - 1][1];
+            const f = staticEntries[i][1];
+            const sameLine = Math.abs((prev.y || 0) - (f.y || 0)) <= 6;
+            const adjacent = Math.abs(((prev.x || 0) + (prev.width || 0)) - (f.x || 0)) <= 30;
+            if (sameLine && adjacent) cur.push(staticEntries[i]);
+            else { if (cur.length > 1) runs.push(cur); cur = [staticEntries[i]]; }
+        }
+        if (cur.length > 1) runs.push(cur);
+
+        for (const run of runs) {
+            const firstObj = editor.fields[run[0][0]];
+            if (!firstObj) continue;
+            let cursor = run[0][1].x;
+            firstObj.set({ left: cursor, originX: 'left' });
+            firstObj.setCoords();
+            cursor += firstObj.width;
+            for (let i = 1; i < run.length; i++) {
+                const [key] = run[i];
+                const obj = editor.fields[key];
+                if (!obj) continue;
+                obj.set({ left: cursor, originX: 'left' });
+                obj.setCoords();
+                cursor += obj.width;
+            }
+        }
+        editor.canvas.requestRenderAll();
+    }
+
     // Render card using CardEditor (same method as main card generation)
     async function renderCardWithEditor(editor, template, data, side) {
         if (!editor || !editor.canvas) {
@@ -1889,7 +1931,16 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 }
             }
         }
-        
+
+        // Re-anchor multi-token static decoration runs (e.g. PDF-imported
+        // "An | Omantel | Company" stored as 3 static_N fields with their own
+        // colors). The PDF importer baked in pixel widths measured against the
+        // source font; Google Fonts often renders the same family at slightly
+        // different widths, which makes adjacent tokens overlap or gap. We
+        // group consecutive static_N tokens that share a baseline and stitch
+        // them using each text object's actually-rendered width.
+        reanchorStaticDecorationRuns(editor, template);
+
         // Add PREVIEW watermark (centered on the actual template canvas size)
         const watermark = new fabric.Text('PREVIEW', {
             left: editor.canvas.width / 2,
