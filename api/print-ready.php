@@ -366,7 +366,7 @@ function handleGenerateRequest() {
                 $py = trim((string)@shell_exec('command -v python3 2>/dev/null')) ?: 'python3';
                 $rows = isset($_POST['rows']) ? (int)$_POST['rows'] : 5;
                 $cols = isset($_POST['cols']) ? (int)$_POST['cols'] : 2;
-                $vectorCmd = escapeshellcmd($py)
+                $vectorCmd = escapeshellarg($py)
                            . ' ' . escapeshellarg(BASE_DIR . '/scripts/imposition-vector.py')
                            . ' --card '  . escapeshellarg($cardPdf['path'])
                            . ' --paper ' . escapeshellarg($paperSize)
@@ -374,9 +374,15 @@ function handleGenerateRequest() {
                            . ' --cols '  . (int)$cols
                            . ' --out '   . escapeshellarg($outputPath)
                            . ' 2>&1';
+                if (trim((string)@shell_exec('command -v timeout 2>/dev/null')) !== '') {
+                    $vectorCmd = 'timeout 30 ' . $vectorCmd;
+                }
                 $vectorRc = 0;
                 $vectorOut = [];
                 exec($vectorCmd, $vectorOut, $vectorRc);
+                if ($vectorRc === 124) {
+                    error_log('print-ready vector imposition timed out after 30s');
+                }
                 if ($vectorRc === 0 && is_file($outputPath) && filesize($outputPath) > 1024) {
                     $useVectorImposition = true;
                 } else {

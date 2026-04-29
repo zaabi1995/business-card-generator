@@ -51,14 +51,28 @@ def _load_font_buffers(fonts_dir: str) -> dict:
     return buffers
 
 
+def _font_weight_of(name: str) -> int:
+    """Infer a CSS weight from a font filename stem (e.g. 'Lato-Bold' -> 700)."""
+    m = {
+        'thin': 100, 'extralight': 200, 'light': 300,
+        'regular': 400, 'book': 400,
+        'medium': 500, 'semibold': 600, 'demibold': 600,
+        'bold': 700, 'extrabold': 800, 'black': 900,
+    }
+    name_lc = name.lower()
+    for tok, w in m.items():
+        if tok in name_lc:
+            return w
+    return 400  # default if unparseable
+
+
 def _pick_font(family: str, weight: int, font_buffers: dict) -> tuple:
     """
     Return (font_name, font_buffer) for the best match of (family, weight).
 
     Lookup strategy:
       1. Exact: <Family>-<WeightName>  (e.g. Lato-Medium for weight 500)
-      2. Family prefix match, prefer closer weight
-      3. First buffer whose key contains the family name
+      2. Family prefix match, ranked by absolute weight distance then name
 
     Returns (None, None) when no match is found.
     """
@@ -80,9 +94,11 @@ def _pick_font(family: str, weight: int, font_buffers: dict) -> tuple:
     if exact_key in candidates:
         return exact_key, candidates[exact_key]
 
-    # Fall back to any candidate (first alphabetically, deterministic)
-    first_key = sorted(candidates.keys())[0]
-    return first_key, candidates[first_key]
+    # Fall back: closest weight distance, then alphabetical for ties
+    ranked = sorted(candidates.keys(),
+                    key=lambda k: (abs(_font_weight_of(k) - weight), k))
+    best_key = ranked[0]
+    return best_key, candidates[best_key]
 
 
 def _hex_to_rgb(hex_color: str) -> tuple:

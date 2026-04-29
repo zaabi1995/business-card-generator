@@ -100,17 +100,24 @@ class CardPDFRenderer
         file_put_contents($tmpEmp, json_encode($employee, JSON_UNESCAPED_UNICODE));
 
         $py  = trim((string)@shell_exec('command -v python3 2>/dev/null')) ?: 'python3';
-        $cmd = escapeshellcmd($py)
+        $cmd = escapeshellarg($py)
              . ' ' . escapeshellarg(BASE_DIR . '/scripts/render-card-pdf.py')
              . ' --template ' . escapeshellarg($tmpTpl)
              . ' --employee ' . escapeshellarg($tmpEmp)
              . ' --out '      . escapeshellarg($cachePath)
              . ' 2>&1';
+        if (trim((string)@shell_exec('command -v timeout 2>/dev/null')) !== '') {
+            $cmd = 'timeout 30 ' . $cmd;
+        }
         $rc = 0; $out = [];
         exec($cmd, $out, $rc);
         @unlink($tmpTpl);
         @unlink($tmpEmp);
 
+        if ($rc === 124) {
+            error_log('CardPDFRenderer timed out after 30s');
+            return ['success' => false, 'error' => 'render timed out'];
+        }
         if ($rc !== 0 || !is_file($cachePath) || filesize($cachePath) < 1024) {
             error_log('CardPDFRenderer rc=' . $rc . ' out=' . implode("\n", $out));
             return ['success' => false, 'error' => 'render failed'];

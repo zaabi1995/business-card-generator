@@ -23,6 +23,10 @@ foreach ($rows as $r) {
         echo "skip {$r['id']}: " . implode("\n", $out) . "\n";
         continue;
     }
+    $fontsAbs = $absDir . '/fonts';
+    if (is_dir($fontsAbs)) {
+        @exec('chown -R www:www ' . escapeshellarg($fontsAbs));
+    }
     $rel = '/' . trim(str_replace(BASE_DIR, '', $absDir . '/fonts'), '/');
     $db->query(
         "UPDATE templates SET has_vector_source = 1, fonts_dir = :fd WHERE id = :id",
