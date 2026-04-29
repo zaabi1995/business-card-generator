@@ -2825,6 +2825,11 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                         if (key === 'qr_code') continue;
                         var field = template.fields[key];
                         if (!field.enabled) continue;
+                        // Static decorations baked into the bg PNG by the
+                        // PyMuPDF importer, skip drawing so we don't
+                        // double-render. The bg already has them at
+                        // pixel-perfect source-PDF metrics.
+                        if (field.render_in_bg) continue;
 
                         // Pick the text the field should display in the
                         // sample preview:
@@ -3080,6 +3085,13 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                     } else {
                         if (enabled) {
                             var field = this.selectedTemplate.fields[key];
+                            // Static decorations baked into the bg PNG by
+                            // the importer, never draw on canvas (would
+                            // double-render over the bg).
+                            if (field && field.render_in_bg) {
+                                this.cardEditor.removeField(key);
+                                return;
+                            }
                             var dims = this.getCanvasDimensions();
 
                             // Alignment/origin first so we can pick a sane
