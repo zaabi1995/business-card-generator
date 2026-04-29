@@ -363,6 +363,17 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
             except Exception:
                 return None
 
+        # Field keys that map to per-employee data. Anything else (taglines,
+        # social handles, decorative captions) is "static" and gets baked
+        # into the bg image at print DPI for pixel-perfect source-PDF
+        # alignment. This matches CardifyTemplateImporter::suggestBinding.
+        TYPED_DYNAMIC_KEYS = {
+            'name_en', 'name_ar', 'position_en', 'position_ar',
+            'mobile', 'phone', 'fax', 'email', 'website',
+            'address', 'address_en', 'address_ar',
+            'company_en', 'company_ar',
+        }
+
         fields = []
         text_bboxes_for_redaction = []  # only dynamic, redacted from bg
         all_text_bboxes = []             # all spans, used for QR detection
@@ -372,6 +383,12 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
             field_key, is_static = classify_span(sp['text'], sp['size'],
                                                  color_int_to_hex(sp['color']),
                                                  sp['bbox'], height_pt, grouped)
+            # Promote anything that doesn't map to a typed dynamic key into
+            # static (mirrors the persist-time rule in CardifyTemplateImporter
+            # ::suggestBinding). This is what makes "@otech" / "An Omantel
+            # Company" / "Oman" classify as static so they bake into the bg.
+            if not is_static and field_key not in TYPED_DYNAMIC_KEYS:
+                is_static = True
             x0, y0, x1, y1 = sp['bbox']
 
             # Empirical correction: replace y0 (PyMuPDF cell-top) with the
