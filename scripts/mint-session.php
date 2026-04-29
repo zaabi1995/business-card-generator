@@ -30,6 +30,10 @@ if (!is_array($user)) {
     exit(2);
 }
 
+// PHP CLI defaults session.save_path to "" which silently no-ops the write.
+// PHP-FPM uses /tmp on this VPS (verified, files like /tmp/sess_*).
+session_save_path('/tmp');
+
 // Bind a fresh session id (the CLI doesn't get one automatically).
 $sid = bin2hex(random_bytes(16));
 session_id($sid);
@@ -51,5 +55,14 @@ if (!empty($user['company_id'])) {
 }
 
 session_write_close();
+
+// PHP-FPM runs as www:www, the session file we just wrote is root:root.
+// Chown so PHP-FPM can read it on the next HTTP request.
+$sessFile = '/tmp/sess_' . $sid;
+if (is_file($sessFile) && function_exists('posix_geteuid') && posix_geteuid() === 0) {
+    @chown($sessFile, 'www');
+    @chgrp($sessFile, 'www');
+    @chmod($sessFile, 0600);
+}
 
 echo $sid . "\n";
