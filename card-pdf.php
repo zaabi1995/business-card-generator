@@ -38,6 +38,28 @@ try {
 
     $employee = $ctx['employee'];
     $company  = $ctx['company'];
+
+    // Prefer the vector PDF when the template was imported with a
+    // vector source. Falls back to the existing PNG-in-PDF path
+    // when the renderer is unavailable.
+    require_once INCLUDES_DIR . '/CardPDFRenderer.php';
+    $vector = CardPDFRenderer::render((string)$employee['id']);
+    if (!empty($vector['success']) && is_file($vector['path'])) {
+        try { QRTracker::logScan($employee['id'], $company['id']); } catch (Throwable $e) {}
+        while (ob_get_level()) { ob_end_clean(); }
+        $name = trim((string)($employee['name_en'] ?? $employee['name'] ?? '')) ?: 'Employee';
+        $downloadName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $name) . '.pdf';
+        if ($downloadName === '.pdf') $downloadName = 'business-card.pdf';
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="' . $downloadName . '"');
+        header('Content-Length: ' . filesize($vector['path']));
+        header('Cache-Control: private, max-age=300');
+        header('X-Content-Type-Options: nosniff');
+        readfile($vector['path']);
+        exit;
+    }
+    // Otherwise fall through to the existing canvas-PNG-embed fallback.
+
     $theme    = $ctx['theme'];
     $frontFs  = $ctx['front_fs'];
     $backFs   = $ctx['back_fs'];
