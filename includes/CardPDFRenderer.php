@@ -123,6 +123,10 @@ class CardPDFRenderer
         file_put_contents($tmpEmp, json_encode($employee, JSON_UNESCAPED_UNICODE));
 
         // Phase 7: generate a vCard and write to a temp file for embedding.
+        // Lazy-load VCF class if not already available in this context.
+        if (!class_exists('VCF') && defined('INCLUDES_DIR') && is_file(INCLUDES_DIR . '/VCF.php')) {
+            require_once INCLUDES_DIR . '/VCF.php';
+        }
         $tmpVcf = '';
         if (class_exists('VCF') && is_array($company)) {
             $vcfContent = VCF::generate($employee, $company);
