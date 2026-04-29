@@ -301,6 +301,66 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
             if not placed:
                 grouped.append(dict(sp))
 
+        # Render the page WITH text intact, used to empirically locate the
+        # visible-glyph-top of each field. PyMuPDF's bbox.y0 is the cell-top
+        # which sits well above the visible glyph (about 0.25 to 0.42 of
+        # fontSize, depending on the font's ascender + leading). Fabric.js
+        # IText positions textbox.top close to the visible glyph, so blindly
+        # using bbox.y0 makes rendered text appear "up a bit" by 0.5 to 1.5 mm.
+        # We pixel-scan the rendered page to find the actual visible top.
+        try:
+            from PIL import Image
+            import io
+            _page_render_pix = page.get_pixmap(matrix=fitz.Matrix(BG_SCALE, BG_SCALE), alpha=False)
+            _page_render_img = Image.frombytes('RGB', (_page_render_pix.width, _page_render_pix.height), _page_render_pix.samples)
+            # Sample bg color from a corner pixel
+            _bg_color = _page_render_img.getpixel((4, 4))
+        except Exception as _e:
+            print(f'WARN: text-y empirical-scan disabled, {_e}', file=sys.stderr)
+            _page_render_img = None
+            _bg_color = None
+
+        # Fabric.js IText default lineHeight = 1.16, so visible glyph top
+        # sits half_leading = 0.08 * fontSize BELOW textbox.top. We subtract
+        # that to make textbox.top a tighter match to PDF visible top.
+        FABRIC_HALF_LEADING_FRAC = 0.08
+
+        def _empirical_visible_top_pt(bbox_pt, color_hex):
+            """Find the topmost row inside bbox that contains ink matching
+            the field's text color, ignoring the bg pattern (which may also
+            differ from the page-corner sample). Returns y in PDF points,
+            or None if scan failed.
+            """
+            if _page_render_img is None:
+                return None
+            x0, y0, x1, y1 = bbox_pt
+            rx0 = max(0, int(x0 * BG_SCALE))
+            rx1 = min(_page_render_img.width,  int(x1 * BG_SCALE))
+            ry0 = max(0, int(y0 * BG_SCALE))
+            ry1 = min(_page_render_img.height, int(y1 * BG_SCALE))
+            if rx1 <= rx0 or ry1 <= ry0:
+                return None
+            try:
+                import numpy as _np
+                # Decode the field's color
+                ch = color_hex.lstrip('#')
+                target = _np.array([int(ch[0:2], 16), int(ch[2:4], 16), int(ch[4:6], 16)], dtype=_np.int16)
+                crop = _page_render_img.crop((rx0, ry0, rx1, ry1)).convert('RGB')
+                arr = _np.asarray(crop).astype(_np.int16)
+                # Pixel matches target if all 3 channels are close (within 60).
+                close = (_np.abs(arr - target).max(axis=2) < 60)
+                # Need at least N matching pixels in a row to filter dot-pattern noise
+                row_counts = close.sum(axis=1)
+                # Use 8% of crop width as the threshold (a real glyph row hits many pixels)
+                min_row = max(2, int(close.shape[1] * 0.08))
+                rows_with_text = _np.where(row_counts >= min_row)[0]
+                if len(rows_with_text) == 0:
+                    return None
+                visible_top_in_crop_px = int(rows_with_text[0])
+                return ry0 / BG_SCALE + visible_top_in_crop_px / BG_SCALE
+            except Exception:
+                return None
+
         fields = []
         text_bboxes_for_redaction = []
         for sp in grouped:
@@ -310,14 +370,30 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
                                                  color_int_to_hex(sp['color']),
                                                  sp['bbox'], height_pt, grouped)
             x0, y0, x1, y1 = sp['bbox']
+
+            # Empirical correction: replace y0 (PyMuPDF cell-top) with the
+            # actual rendered visible-glyph-top, then back off Fabric's
+            # half-leading so the on-canvas textbox.top lands the visible
+            # glyph at the same y as the source PDF.
+            visible_top_pt = _empirical_visible_top_pt(
+                (x0, y0, x1, y1), color_int_to_hex(sp['color'])
+            )
+            if visible_top_pt is not None:
+                fabric_top_pt = visible_top_pt - FABRIC_HALF_LEADING_FRAC * sp['size']
+                # Don't let the correction push us above the original cell-top
+                # (would be wrong if the bbox was already tight to the glyph).
+                y0_corrected = max(y0, fabric_top_pt)
+            else:
+                y0_corrected = y0
+
             fields.append({
                 'field_key': field_key,
                 'detected_text': sp['text'],
                 'is_static': is_static,
-                'x_pt': round(x0, 2), 'y_pt': round(y0, 2),
+                'x_pt': round(x0, 2), 'y_pt': round(y0_corrected, 2),
                 'w_pt': round(x1 - x0, 2), 'h_pt': round(y1 - y0, 2),
                 'x_px': int(round(x0 * SCALE)),
-                'y_px': int(round(y0 * SCALE)),
+                'y_px': int(round(y0_corrected * SCALE)),
                 'w_px': int(round((x1 - x0) * SCALE)),
                 'h_px': int(round((y1 - y0) * SCALE)),
                 'font_raw': sp['font'],
@@ -328,6 +404,7 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
                 'font_size_px': int(round(sp['size'] * SCALE)),
                 'color': color_int_to_hex(sp['color']),
                 'align': 'left',
+                'y_correction_pt': round(y0_corrected - y0, 3),
             })
             text_bboxes_for_redaction.append(sp['bbox'])
 
