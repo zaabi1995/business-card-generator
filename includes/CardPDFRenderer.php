@@ -41,6 +41,12 @@ class CardPDFRenderer
         }
 
         $companyId = $employee['company_id'];
+        $company = $db->fetchOne(
+            'SELECT id, name, slug FROM companies WHERE id = :cid LIMIT 1',
+            ['cid' => $companyId]
+        );
+        $companyName = is_array($company) ? ($company['name'] ?? '') : '';
+        $companySlug = is_array($company) ? ($company['slug'] ?? '') : '';
         $tplFront = $db->fetchOne(
             "SELECT * FROM templates
               WHERE company_id = :cid AND side = 'front' AND is_active = 1
@@ -102,8 +108,10 @@ class CardPDFRenderer
         }
 
         $template = [
-            'import_dir' => $importDir,
-            'fonts_dir'  => $fontsDir,
+            'import_dir'   => $importDir,
+            'fonts_dir'    => $fontsDir,
+            'company_name' => $companyName,
+            'company_slug' => $companySlug,
             'pages' => [
                 self::pageSpec($tplFront, 'front'),
                 self::pageSpec($tplBack,  'back'),
@@ -114,12 +122,21 @@ class CardPDFRenderer
         file_put_contents($tmpTpl, json_encode($template, JSON_UNESCAPED_UNICODE));
         file_put_contents($tmpEmp, json_encode($employee, JSON_UNESCAPED_UNICODE));
 
+        // Phase 7: generate a vCard and write to a temp file for embedding.
+        $tmpVcf = '';
+        if (class_exists('VCF') && is_array($company)) {
+            $vcfContent = VCF::generate($employee, $company);
+            $tmpVcf     = tempnam(sys_get_temp_dir(), 'cpdfvcf_') . '.vcf';
+            file_put_contents($tmpVcf, $vcfContent);
+        }
+
         $py  = trim((string)@shell_exec('command -v python3 2>/dev/null')) ?: 'python3';
         $cmd = escapeshellarg($py)
              . ' ' . escapeshellarg(BASE_DIR . '/scripts/render-card-pdf.py')
              . ' --template ' . escapeshellarg($tmpTpl)
              . ' --employee ' . escapeshellarg($tmpEmp)
              . ' --out '      . escapeshellarg($cachePath)
+             . ($tmpVcf !== '' ? ' --vcard ' . escapeshellarg($tmpVcf) : '')
              . ' 2>&1';
         if (trim((string)@shell_exec('command -v timeout 2>/dev/null')) !== '') {
             $cmd = 'timeout 30 ' . $cmd;
@@ -128,6 +145,7 @@ class CardPDFRenderer
         exec($cmd, $out, $rc);
         @unlink($tmpTpl);
         @unlink($tmpEmp);
+        if ($tmpVcf !== '') @unlink($tmpVcf);
 
         if ($rc === 124) {
             error_log('CardPDFRenderer timed out after 30s');
@@ -137,6 +155,17 @@ class CardPDFRenderer
             error_log('CardPDFRenderer rc=' . $rc . ' out=' . implode("\n", $out));
             return ['success' => false, 'error' => 'render failed'];
         }
+
+        // Phase 8: write sidecar .meta so invalidation can prune per-employee.
+        $themeUpdatedAt = is_array($theme) ? ($theme['updated_at'] ?? '') : '';
+        @file_put_contents($cacheDir . '/' . $sig . '.meta', json_encode([
+            'employee_id'         => $employee['id'],
+            'company_id'          => $companyId,
+            'generated_at'        => date('c'),
+            'employee_updated_at' => $employee['updated_at'] ?? '',
+            'theme_updated_at'    => $themeUpdatedAt,
+        ]));
+
         return ['success' => true, 'path' => $cachePath, 'cached' => false];
     }
 

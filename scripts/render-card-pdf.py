@@ -6,12 +6,15 @@ Usage:
     python3 scripts/render-card-pdf.py \
         --template <path/to/template.json> \
         --employee <path/to/employee.json> \
-        --out      <path/to/output.pdf>
+        --out      <path/to/output.pdf> \
+        [--vcard   <path/to/contact.vcf>]
 
 template.json shape:
     {
-      "import_dir": "<absolute path holding source.pdf + bg-page-N.svg>",
-      "fonts_dir":  "<absolute path holding extracted .ttf fonts>",
+      "import_dir":    "<absolute path holding source.pdf + bg-page-N.svg>",
+      "fonts_dir":     "<absolute path holding extracted .ttf fonts>",
+      "company_name":  "Otech",
+      "company_slug":  "otech",
       "pages": [
         {"side": "front", "width_pt": 262.55, "height_pt": 169.89,
          "background_svg_path": "bg-page-1.svg",
@@ -147,7 +150,7 @@ def _hex_to_rgb(hex_color: str) -> tuple:
     return r / 255.0, g / 255.0, b / 255.0
 
 
-def render(template_path: str, employee_path: str, out_path: str) -> int:
+def render(template_path: str, employee_path: str, out_path: str, vcard_path: str = '') -> int:
     with open(template_path) as fh:
         template = json.load(fh)
     with open(employee_path) as fh:
@@ -240,8 +243,51 @@ def render(template_path: str, employee_path: str, out_path: str) -> int:
                 color=color,
             )
 
+    # Phase 5: PDF metadata (title/author/subject/keywords in Acrobat Properties).
+    company_name = template.get('company_name', '')
+    company_slug = template.get('company_slug', '')
+    emp_name = (employee.get('name_en') or employee.get('name') or 'Business').strip()
+    out_doc.set_metadata({
+        'title':    f'{emp_name} business card',
+        'author':   company_name,
+        'subject':  'Digital business card',
+        'keywords': f'business card, contact, vCard, {company_slug}',
+        'creator':  'Cardify (cardify.om)',
+        'producer': f'PyMuPDF {fitz.__version__}',
+    })
+
+    # Phase 6: PDF/UA accessibility tags.
+    # PyMuPDF 1.27 does not expose insert_text(tag=...) or a tag-tree API,
+    # so full PDF/UA-1 tagging is not achievable without a C-level extension.
+    # Deferred: PyMuPDF 1.27 lacks the high-level tag-insertion API needed.
+
+    # Phase 9: linearization (linear=True) skipped.
+    # PyMuPDF 1.27 removed linearization support entirely:
+    # FzErrorArgument: Linearisation is no longer supported.
+    # The flag is gone from the MuPDF build used by PyMuPDF >= 1.24.
     out_doc.save(out_path, garbage=4, deflate=True)
     out_doc.close()
+
+    # Phase 7: embed vCard as a PDF attachment (Acrobat / Apple Mail "Add to Contacts").
+    # Re-open the saved file, add the attachment, save to a sibling temp path,
+    # then atomically replace the original (PyMuPDF cannot overwrite in-place
+    # without incremental=True, which inflates size; write-then-replace is cleaner).
+    if vcard_path and os.path.isfile(vcard_path):
+        vcf_doc = fitz.open(out_path)
+        with open(vcard_path, 'rb') as fh:
+            vcard_bytes = fh.read()
+        vcf_doc.embfile_add(
+            'contact.vcf',
+            vcard_bytes,
+            filename='contact.vcf',
+            ufilename='contact.vcf',
+            desc='Add this contact to your address book',
+        )
+        tmp_vcf_out = out_path + '.vcf_tmp.pdf'
+        vcf_doc.save(tmp_vcf_out, garbage=4, deflate=True)
+        vcf_doc.close()
+        os.replace(tmp_vcf_out, out_path)
+
     return 0
 
 
@@ -250,8 +296,9 @@ def main():
     ap.add_argument('--template', required=True)
     ap.add_argument('--employee', required=True)
     ap.add_argument('--out',      required=True)
+    ap.add_argument('--vcard',    default='', help='Optional path to a .vcf file to embed')
     args = ap.parse_args()
-    sys.exit(render(args.template, args.employee, args.out))
+    sys.exit(render(args.template, args.employee, args.out, args.vcard))
 
 
 if __name__ == '__main__':

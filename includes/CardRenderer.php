@@ -169,25 +169,24 @@ class CardRenderer
             ));
         }
 
-        // Clear cached vector PDFs for every employee in the company.
-        // Cache key includes employee_id + template_version, but bumping
-        // the template version means every employee's signature changes,
-        // so the simplest correct sweep is to drop everything in the
-        // company's slice. The dir is shared so we filter by employee.
+        // Phase 8: prune vector PDF cache using .meta sidecars so only this
+        // company's PDFs are deleted, leaving other tenants' cache intact.
         try {
             $cacheDir = BASE_DIR . '/tmp/pdf-vector';
             if (is_dir($cacheDir)) {
-                $employeeIds = $db->fetchAll(
-                    'SELECT id FROM employees WHERE company_id = :cid',
-                    ['cid' => $companyId]
-                );
-                $ids = array_map(fn($r) => $r['id'], $employeeIds);
-                // Cache filenames are sha1 of (id|...) so we can't filter
-                // by id alone. The conservative sweep is to delete every
-                // file in the dir; the dir is bounded (one PDF per
-                // employee) and re-renders on next download.
-                foreach (glob($cacheDir . '/*.pdf') as $f) {
-                    @unlink($f);
+                foreach (glob($cacheDir . '/*.meta') as $metaFile) {
+                    $meta = @json_decode((string)@file_get_contents($metaFile), true);
+                    if (is_array($meta) && ($meta['company_id'] ?? '') === $companyId) {
+                        @unlink($metaFile);
+                        @unlink(preg_replace('/\.meta$/', '.pdf', $metaFile));
+                    }
+                }
+                // Fallback: if no .meta files exist yet (pre-Phase-8 cache),
+                // fall back to sweeping all PDFs as before.
+                if (empty(glob($cacheDir . '/*.meta')) && !empty(glob($cacheDir . '/*.pdf'))) {
+                    foreach (glob($cacheDir . '/*.pdf') as $f) {
+                        @unlink($f);
+                    }
                 }
             }
         } catch (Throwable $e) {
@@ -221,15 +220,25 @@ class CardRenderer
             ));
         }
 
-        // Vector PDF cache is sha1-keyed and we can't filter by
-        // employee_id alone from the filename. Sweep the whole dir,
-        // it's bounded (one PDF per employee) and re-renders on next
-        // download. Same approach as invalidateForCompany.
+        // Phase 8: prune only this employee's cached PDF using .meta sidecars.
         try {
             $cacheDir = BASE_DIR . '/tmp/pdf-vector';
             if (is_dir($cacheDir)) {
-                foreach (glob($cacheDir . '/*.pdf') as $f) {
-                    @unlink($f);
+                $matched = false;
+                foreach (glob($cacheDir . '/*.meta') as $metaFile) {
+                    $meta = @json_decode((string)@file_get_contents($metaFile), true);
+                    if (is_array($meta) && ($meta['employee_id'] ?? '') === $employeeId) {
+                        @unlink($metaFile);
+                        @unlink(preg_replace('/\.meta$/', '.pdf', $metaFile));
+                        $matched = true;
+                    }
+                }
+                // Fallback: if no .meta files exist yet (pre-Phase-8 cache),
+                // fall back to sweeping all PDFs as before.
+                if (!$matched && !empty(glob($cacheDir . '/*.pdf'))) {
+                    foreach (glob($cacheDir . '/*.pdf') as $f) {
+                        @unlink($f);
+                    }
                 }
             }
         } catch (Throwable $e) {
