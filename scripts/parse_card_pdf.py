@@ -223,6 +223,15 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
 
     DPI = 300
     SCALE = DPI / 72.0
+    # Background images are rasterized at PRINT resolution (1200 DPI), the
+    # same multiplier (4x) Fabric.js uses when exporting the final card. This
+    # eliminates the upscale step that previously softened vector edges
+    # (icons, dot patterns, brand marks) at print time. Field positions stay
+    # on the 300 DPI editor canvas so existing templates + Fabric remain
+    # backwards-compatible. See docs (cardify CLAUDE.md, "Importer", iter
+    # ee8441d).
+    BG_DPI = 1200
+    BG_SCALE = BG_DPI / 72.0
 
     installed_fonts = collect_fonts(installed_fonts_path)
     fonts_used_raw = set()
@@ -342,14 +351,18 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
                     f['field_key'] = 'company_tagline'
 
         # ── 4. Render background WITHOUT the detected text ──
-        # Strategy: render full page at 300 DPI, then mask out text bboxes.
-        # PyMuPDF redaction would alter the PDF; simpler: render full, then
-        # in PIL, fill text bboxes with neighbouring pixel color.
-        pix = page.get_pixmap(matrix=fitz.Matrix(SCALE, SCALE), alpha=False)
+        # Render at PRINT DPI (BG_SCALE) so vector content (icons, paths,
+        # patterns) survives without an upscale at export time. The editor
+        # canvas size (width_px / height_px on the field metadata) stays
+        # at 300 DPI so existing templates + Fabric coordinate math don't
+        # shift. Fabric scales the high-res PNG to fit the canvas in the
+        # editor, then samples it at full resolution when exporting at
+        # multiplier=4.
+        pix = page.get_pixmap(matrix=fitz.Matrix(BG_SCALE, BG_SCALE), alpha=False)
         bg_path = os.path.join(output_dir, f'bg-page-{page_num}.png')
         pix.save(bg_path)
 
-        # Background WITH text: keep a copy for preview
+        # Background WITH text: keep a copy for preview (also at print DPI)
         bg_with_text_path = os.path.join(output_dir, f'bg-page-{page_num}-with-text.png')
         shutil.copy(bg_path, bg_with_text_path)
 
@@ -362,8 +375,18 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
                 rect = fitz.Rect(x0 - 0.3, y0 - 0.3, x1 + 0.3, y1 + 0.3)
                 page_for_redaction.add_redact_annot(rect, fill=None)
             page_for_redaction.apply_redactions(images=0)
-            pix2 = page_for_redaction.get_pixmap(matrix=fitz.Matrix(SCALE, SCALE), alpha=False)
+            pix2 = page_for_redaction.get_pixmap(matrix=fitz.Matrix(BG_SCALE, BG_SCALE), alpha=False)
             pix2.save(bg_path)
+            # Also emit a true vector SVG of the redacted page. Surfaces that
+            # render to PDF (card-pdf.php) or to print will eventually prefer
+            # this over the raster bg, no quality loss at any output size.
+            try:
+                svg_path = os.path.join(output_dir, f'bg-page-{page_num}.svg')
+                svg_str = page_for_redaction.get_svg_image(text_as_path=False)
+                with open(svg_path, 'w', encoding='utf-8') as fh:
+                    fh.write(svg_str)
+            except Exception as e:
+                print(f'WARN: svg export failed for page {page_num}: {e}', file=sys.stderr)
         except Exception as e:
             print(f'WARN: redaction failed for page {page_num}: {e}', file=sys.stderr)
 
@@ -376,6 +399,8 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
             'height_px': height_px,
             'background_path': os.path.basename(bg_path),
             'background_with_text_path': os.path.basename(bg_with_text_path),
+            'background_svg_path': f'bg-page-{page_num}.svg',
+            'background_dpi': BG_DPI,
             'qr_area': qr_area,
             'fields': fields,
         })

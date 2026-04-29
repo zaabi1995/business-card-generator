@@ -132,6 +132,12 @@ foreach ($parsed['pages'] as &$page) {
     if (!empty($page['background_with_text_path'])) {
         $page['background_with_text_url'] = $outRel . '/' . $page['background_with_text_path'];
     }
+    // True-vector SVG export (added with 1200 DPI bg bump). Surfaces that
+    // need lossless output (PDF download, Wallet print strip, future
+    // direct-print pipeline) can prefer this over the raster bg.
+    if (!empty($page['background_svg_path'])) {
+        $page['background_svg_url'] = $outRel . '/' . $page['background_svg_path'];
+    }
 }
 unset($page);
 
@@ -182,6 +188,8 @@ foreach ($parsed['pages'] as $page) {
         'height_px'    => $page['height_px'],
         'background_url'           => $page['background_url'] ?? null,
         'background_with_text_url' => $page['background_with_text_url'] ?? null,
+        'background_svg_url'       => $page['background_svg_url'] ?? null,
+        'background_dpi'           => $page['background_dpi'] ?? null,
         'qr_area'      => $page['qr_area'] ?? null,
         'blocks'       => $blocks,
     ];
