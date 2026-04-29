@@ -300,6 +300,43 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
                     Anything you bind to a Cardify field becomes a per-employee placeholder.
                 </div>
 
+                <!-- Missing fonts: source PDF references font faces we don't have on the
+                     server. Without the actual face the browser uses the nearest weight,
+                     so e.g. a Lato-Medium tagline reads slightly thinner than the source.
+                     Drop the .woff2 / .ttf / .otf and Cardify wires it in. -->
+                <template x-if="cardPdfReview.missing_fonts && cardPdfReview.missing_fonts.length">
+                    <div class="mt-4 border border-amber-200 bg-amber-50 rounded-lg p-3">
+                        <div class="flex items-start gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-600 mt-0.5"></i>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-amber-900">Some fonts are not on the server yet</p>
+                                <p class="text-xs text-amber-700">Upload the actual .woff2 / .ttf / .otf files so your card renders in the same face as your PDF (otherwise the closest available weight is used).</p>
+                            </div>
+                        </div>
+                        <div class="mt-3 space-y-2">
+                            <template x-for="mf in cardPdfReview.missing_fonts" :key="mf.raw_name">
+                                <div class="flex items-center gap-3 bg-white rounded px-3 py-2 border border-amber-100">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-mono text-gray-800 truncate" x-text="mf.raw_name"></div>
+                                        <div class="text-[11px] text-gray-500">family <span class="font-semibold" x-text="mf.family"></span></div>
+                                    </div>
+                                    <span x-show="fontUploadStatus[mf.raw_name] === 'done'"
+                                          class="text-xs text-green-700 font-semibold whitespace-nowrap">
+                                        <i class="fa-solid fa-circle-check mr-1"></i> Uploaded
+                                    </span>
+                                    <label x-show="fontUploadStatus[mf.raw_name] !== 'done'"
+                                           class="text-xs px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-700 text-white font-medium cursor-pointer whitespace-nowrap">
+                                        <span x-show="fontUploadStatus[mf.raw_name] !== 'uploading'"><i class="fa-solid fa-upload mr-1"></i> Upload</span>
+                                        <span x-show="fontUploadStatus[mf.raw_name] === 'uploading'"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Uploading…</span>
+                                        <input type="file" class="hidden" accept=".woff2,.woff,.ttf,.otf"
+                                               @change="uploadMissingFont(mf, $event.target.files[0])">
+                                    </label>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
                 <div id="card-pdf-persist-error" class="hidden bg-red-50 border-l-4 border-red-500 px-4 py-2 rounded mt-3 text-sm text-red-700"></div>
             </div>
         </div>
@@ -392,6 +429,32 @@ function onboarding(init) {
         cardPdfBindings: {},
         focusedBlock: null,
         cardPdfPersisting: false,
+        fontUploadStatus: {},
+
+        async uploadMissingFont(missing, file) {
+            if (!file) return;
+            this.fontUploadStatus[missing.raw_name] = 'uploading';
+            const fd = new FormData();
+            fd.append('font_file', file);
+            fd.append('raw_name',  missing.raw_name);
+            try {
+                const r = await fetch('<?= getBasePath() ?>printshop/upload_font.php', {
+                    method: 'POST', credentials: 'same-origin',
+                    headers: {'X-CSRF-Token': this.csrf},
+                    body: fd
+                });
+                const j = await r.json();
+                if (!r.ok || !j.ok) {
+                    this.fontUploadStatus[missing.raw_name] = 'error';
+                    alert('Upload failed: ' + (j.error || ('HTTP ' + r.status)));
+                    return;
+                }
+                this.fontUploadStatus[missing.raw_name] = 'done';
+            } catch (e) {
+                this.fontUploadStatus[missing.raw_name] = 'error';
+                alert('Upload failed: ' + e.message);
+            }
+        },
 
         bindingOptions: [
             { value: 'static',       label: 'Decoration (keep fixed)' },

@@ -93,6 +93,26 @@ $templates = $templatesConfig['templates'] ?? [];
 $activeFrontId = $templatesConfig['activeFrontId'] ?? null;
 $activeBackId = $templatesConfig['activeBackId'] ?? null;
 
+// Cardify font registry: emit @font-face declarations for every
+// family any of this company's templates references so Fabric draws
+// imported PDF designs in the actual face (Lato-Medium, Sora-Regular,
+// etc.) instead of the browser's nearest-weight fallback.
+require_once INCLUDES_DIR . '/CompanyFonts.php';
+$editorFamilies = [];
+foreach ($templates as $tpl) {
+    $settings = isset($tpl['settings_json'])
+        ? (is_array($tpl['settings_json']) ? $tpl['settings_json'] : json_decode($tpl['settings_json'], true))
+        : ($tpl['settings'] ?? []);
+    if (is_array($settings) && !empty($settings['fonts_used'])) {
+        foreach ($settings['fonts_used'] as $fam) {
+            if ($fam) $editorFamilies[$fam] = true;
+        }
+    }
+}
+$editorFontFaceCss = !empty($editorFamilies)
+    ? CompanyFonts::fontFaceCss(realpath(__DIR__ . '/..'), $companyId, array_keys($editorFamilies))
+    : '';
+
 // Convert legacy field positions for existing templates.
 // Modern saves stamp settings.fields_format = 'px' so the legacy
 // percentage-to-pixel heuristic is skipped (it mis-fires on real
@@ -469,6 +489,11 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
     #bhd224-banner-phone + .iti, .iti:has(#bhd224-banner-phone) { width: 12rem; display: inline-block; }
     #bhd224-banner-phone.iti__tel-input { padding-left: 3.5rem !important; }
 </style>
+<?php if ($editorFontFaceCss): ?>
+<style id="cardify-editor-font-registry">
+<?= $editorFontFaceCss ?>
+</style>
+<?php endif; ?>
 <div class="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4" id="phone-prompt-banner">
     <form method="post" class="flex flex-col sm:flex-row sm:items-center gap-3">
         <?= csrfField(); ?>

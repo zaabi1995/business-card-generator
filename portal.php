@@ -539,6 +539,22 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         }, $loadFams);
         echo '<link href="https://fonts.googleapis.com/css2?' . implode('&', $famParts) . '&display=swap" rel="stylesheet">' . "\n";
     }
+
+    // Cardify font registry: emit @font-face for any family the active
+    // template references that we have on the server, either in the
+    // global library or as a company upload. Company uploads win on
+    // (family, weight, style) collisions so a tenant can drop in a
+    // licensed Lato-Medium and override Google Fonts' nearest-weight
+    // fallback.
+    require_once INCLUDES_DIR . '/CompanyFonts.php';
+    $registryCss = CompanyFonts::fontFaceCss(
+        realpath(__DIR__),
+        $companyId,
+        array_keys($importedFonts)
+    );
+    if ($registryCss) {
+        echo "<style id=\"cardify-font-registry\">\n" . $registryCss . "</style>\n";
+    }
     ?>
 
     <!-- Myriad Pro (matches admin designer so Fabric preview renders the same face) -->
