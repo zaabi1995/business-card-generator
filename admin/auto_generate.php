@@ -277,7 +277,7 @@ adminHeader(t('autogen.page_title'), 'employees');
                         class="flex-shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                         :class="copied ? 'bg-green-600 hover:bg-green-600' : ''">
                     <i :class="copied ? 'fa-solid fa-check' : 'fa-solid fa-copy'"></i>
-                    <span x-text="copied ? <?= json_encode(t('autogen.copied')) ?> : <?= json_encode(t('autogen.copy')) ?>"></span>
+                    <span x-text='copied ? <?= json_encode(t("autogen.copied")) ?> : <?= json_encode(t("autogen.copy")) ?>'></span>
                 </button>
             </div>
         </div>
@@ -623,7 +623,7 @@ function layoutGenerator() {
                         class="flex-shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
                         :class="copied ? 'bg-green-600 hover:bg-green-600' : ''">
                     <i :class="copied ? 'fa-solid fa-check' : 'fa-solid fa-copy'"></i>
-                    <span x-text="copied ? <?= json_encode(t('autogen.copied')) ?> : <?= json_encode(t('autogen.copy')) ?>"></span>
+                    <span x-text='copied ? <?= json_encode(t("autogen.copied")) ?> : <?= json_encode(t("autogen.copy")) ?>'></span>
                 </button>
             </div>
         </div>
