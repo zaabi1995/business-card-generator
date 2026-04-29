@@ -80,7 +80,7 @@ $rows  = [];
 // pre-fetched flag without a per-row query.
 $companyTemplates = $db->fetchAll(
     'SELECT id, side, has_vector_source FROM templates
-      WHERE company_id = :cid AND status = "active"',
+      WHERE company_id = :cid AND is_active = 1 AND deleted_at IS NULL',
     ['cid' => $company['id']]
 );
 
