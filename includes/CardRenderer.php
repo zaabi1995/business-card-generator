@@ -168,6 +168,32 @@ class CardRenderer
                 $companyId, $n, $reason ?? 'unspecified'
             ));
         }
+
+        // Clear cached vector PDFs for every employee in the company.
+        // Cache key includes employee_id + template_version, but bumping
+        // the template version means every employee's signature changes,
+        // so the simplest correct sweep is to drop everything in the
+        // company's slice. The dir is shared so we filter by employee.
+        try {
+            $cacheDir = BASE_DIR . '/tmp/pdf-vector';
+            if (is_dir($cacheDir)) {
+                $employeeIds = $db->fetchAll(
+                    'SELECT id FROM employees WHERE company_id = :cid',
+                    ['cid' => $companyId]
+                );
+                $ids = array_map(fn($r) => $r['id'], $employeeIds);
+                // Cache filenames are sha1 of (id|...) so we can't filter
+                // by id alone. The conservative sweep is to delete every
+                // file in the dir; the dir is bounded (one PDF per
+                // employee) and re-renders on next download.
+                foreach (glob($cacheDir . '/*.pdf') as $f) {
+                    @unlink($f);
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('CardPDFRenderer cache sweep: ' . $e->getMessage());
+        }
+
         return $n;
     }
 
