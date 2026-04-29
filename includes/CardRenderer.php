@@ -68,6 +68,32 @@ class CardRenderer
         );
         $card = is_array($cardRow) ? $cardRow : null;
 
+        // Pull the active template's design dimensions so consumers can
+        // honour the admin-uploaded card size (front side wins; falls back
+        // to back if no front). settings_json carries customWidth/Height in
+        // mm. Default = standard business card 92.62 x 59.93 mm (1.545:1).
+        $tplWidth = 92.62;
+        $tplHeight = 59.93;
+        try {
+            $tplRow = $db->fetchOne(
+                "SELECT settings_json FROM templates
+                  WHERE company_id = :cid AND is_active = 1
+                  ORDER BY (side = 'front') DESC, created_at DESC
+                  LIMIT 1",
+                ['cid' => $company['id']]
+            );
+            if (is_array($tplRow) && !empty($tplRow['settings_json'])) {
+                $s = json_decode($tplRow['settings_json'], true);
+                if (is_array($s)) {
+                    if (!empty($s['customWidth']))  $tplWidth  = (float)$s['customWidth'];
+                    if (!empty($s['customHeight'])) $tplHeight = (float)$s['customHeight'];
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('CardRenderer template dims: ' . $e->getMessage());
+        }
+        $aspect = $tplHeight > 0 ? round($tplWidth / $tplHeight, 4) : 1.545;
+
         $frontStored = ($card['front_web_path'] ?? '') !== '' ? $card['front_web_path'] : ($card['front_file_path'] ?? null);
         $backStored  = ($card['back_web_path']  ?? '') !== '' ? $card['back_web_path']  : ($card['back_file_path']  ?? null);
 
@@ -97,16 +123,19 @@ class CardRenderer
             && self::matchesTemplateVersion($db, $company, $card);
 
         return [
-            'employee'  => $employee,
-            'company'   => $company,
-            'theme'     => $theme,
-            'card'      => $card,
-            'front_fs'  => $frontFs,
-            'back_fs'   => $backFs,
-            'front_url' => $frontUrl,
-            'back_url'  => $backUrl,
-            'is_fresh'  => $isFresh,
-            'signature' => $sig,
+            'employee'      => $employee,
+            'company'       => $company,
+            'theme'         => $theme,
+            'card'          => $card,
+            'front_fs'      => $frontFs,
+            'back_fs'       => $backFs,
+            'front_url'     => $frontUrl,
+            'back_url'      => $backUrl,
+            'is_fresh'      => $isFresh,
+            'signature'     => $sig,
+            'card_width_mm' => $tplWidth,
+            'card_height_mm'=> $tplHeight,
+            'aspect_ratio'  => $aspect,
         ];
     }
 

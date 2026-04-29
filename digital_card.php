@@ -139,6 +139,22 @@ try {
         ['eid' => $employee['id'], 'cid' => $company['id']]
     );
 
+    // Resolve canonical card aspect ratio from the admin-designed template
+    // (settings_json customWidth/Height). Same source CardRenderer reads, so
+    // the public page, card-pdf.php, wallet passes, and admin editor all show
+    // identical proportions. Fallback = standard business card 1.545:1.
+    require_once INCLUDES_DIR . '/CardRenderer.php';
+    $cardAspect = 1.545;
+    try {
+        $rendererCtx = CardRenderer::forEmployee((string)$employee['id']);
+        if ($rendererCtx && !empty($rendererCtx['aspect_ratio'])) {
+            $cardAspect = (float)$rendererCtx['aspect_ratio'];
+        }
+    } catch (Throwable $e) {
+        error_log('digital_card aspect lookup: ' . $e->getMessage());
+    }
+    $cardAspectCss = number_format($cardAspect, 4, '.', '') . ' / 1';
+
     // Log QR scan (non-fatal)
     try {
         QRTracker::logScan($employee['id'], $company['id']);
@@ -460,7 +476,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .card-flip-inner {
             position: relative;
             width: 100%;
-            aspect-ratio: 1050/600;
+            aspect-ratio: var(--card-aspect, 1.545 / 1);
             transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
             transform-style: preserve-3d;
         }
@@ -480,7 +496,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .card-face img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
             display: block;
         }
         .card-back-face {
@@ -987,7 +1003,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         <!-- Flippable Card -->
         <?php if ($frontImage): ?>
         <div class="card-flip-container" id="cardFlip">
-            <div class="card-flip-inner" id="cardInner">
+            <div class="card-flip-inner" id="cardInner" style="--card-aspect: <?php echo htmlspecialchars($cardAspectCss, ENT_QUOTES); ?>;">
                 <div class="card-face">
                     <img src="<?php echo htmlspecialchars($frontImage); ?>" alt="<?= htmlspecialchars(t('digitalcard.alt_card_front')) ?>" loading="lazy">
                 </div>
