@@ -49,11 +49,12 @@ if (!$company) {
 $db = Database::getInstance();
 
 if ($employeeSlug !== '') {
+    // employees.id IS the URL-facing slug (e.g. "muhammed.ali"); no separate slug column.
     $employees = $db->fetchAll(
         "SELECT * FROM employees
-          WHERE company_id = :cid AND slug = :slug AND status = 'active'
+          WHERE company_id = :cid AND id = :id AND status = 'active'
           LIMIT 1",
-        ['cid' => $company['id'], 'slug' => $employeeSlug]
+        ['cid' => $company['id'], 'id' => $employeeSlug]
     );
 } else {
     $employees = $db->fetchAll(
@@ -78,8 +79,8 @@ foreach ($employees as $emp) {
     if (!$ctx) {
         $bad++;
         $rows[] = [
-            'slug'          => $emp['slug'] ?? '?',
-            'name'          => $emp['name_en'] ?? $emp['name'] ?? '?',
+            'slug'          => $emp['id'],
+            'name'          => $emp['name_en'] ?? '?',
             'fresh'         => false,
             'front_present' => false,
             'back_present'  => false,
@@ -96,8 +97,8 @@ foreach ($employees as $emp) {
     if ($fresh) $ok++; else $bad++;
 
     $rows[] = [
-        'slug'          => $emp['slug'] ?? '?',
-        'name'          => $emp['name_en'] ?? $emp['name'] ?? '?',
+        'slug'          => $emp['id'], // employees.id is the URL slug
+        'name'          => $emp['name_en'] ?? '?',
         'fresh'         => $fresh,
         'front_present' => $hasFront,
         'back_present'  => $hasBack,

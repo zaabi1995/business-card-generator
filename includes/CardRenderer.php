@@ -171,8 +171,10 @@ class CardRenderer
     {
         if ($companyId === '') return [];
         $db = Database::getInstance();
+        // employees.id is the URL-facing slug (e.g. "muhammed.ali"), there is
+        // no separate `slug` column. See `DESCRIBE employees`.
         $rows = $db->fetchAll(
-            "SELECT e.id, e.slug, e.name_en, e.name,
+            "SELECT e.id, e.name_en,
                     gc.front_file_path, gc.back_file_path,
                     gc.front_web_path,  gc.back_web_path,
                     gc.front_template_version, gc.back_template_version
@@ -196,8 +198,8 @@ class CardRenderer
             if ($missingFront || $missingBack || $drift) {
                 $stale[] = [
                     'employee_id'   => (string)$r['id'],
-                    'slug'          => (string)($r['slug'] ?? ''),
-                    'name'          => (string)($r['name_en'] ?? $r['name'] ?? ''),
+                    'slug'          => (string)$r['id'], // employees.id is the URL slug
+                    'name'          => (string)($r['name_en'] ?? ''),
                     'missing_front' => $missingFront,
                     'missing_back'  => $missingBack,
                     'version_drift' => $drift,
