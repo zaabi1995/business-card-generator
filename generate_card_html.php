@@ -443,6 +443,12 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                 if (key === 'qr_code') continue;
                 if (!field.enabled) continue;
 
+                // Fields flagged render_in_bg are baked into the bg image
+                // by the importer (PyMuPDF render at print DPI = pixel-
+                // identical to the source PDF). Skip them entirely so we
+                // don't double-draw with Fabric's font metrics offset.
+                if (field.render_in_bg) continue;
+
                 // Static fields render their detected_text as part of the design,
                 // not driven by employee data. Preserve whitespace verbatim, skip
                 // truly blank tokens but keep " " (used for layout spacing).

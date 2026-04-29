@@ -364,7 +364,8 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
                 return None
 
         fields = []
-        text_bboxes_for_redaction = []
+        text_bboxes_for_redaction = []  # only dynamic, redacted from bg
+        all_text_bboxes = []             # all spans, used for QR detection
         for sp in grouped:
             fonts_used_raw.add(sp['font'])
             family, weight, italic = font_to_family_and_weight(sp['font'])
@@ -407,11 +408,23 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
                 'color': color_int_to_hex(sp['color']),
                 'align': 'left',
                 'y_correction_pt': round(y0_corrected - y0, 3),
+                # Static decorations get rendered into the bg by PyMuPDF so
+                # they're pixel-identical to the source PDF (no Fabric.js
+                # rendering = no font-stack drift). Editor + saver skip them.
+                'render_in_bg': bool(is_static),
             })
-            text_bboxes_for_redaction.append(sp['bbox'])
+            all_text_bboxes.append(sp['bbox'])
+            # Only redact DYNAMIC text from the bg, static text stays baked
+            # in so it renders at the source PDF's exact metrics. (See
+            # render_in_bg flag above + card-editor.js skipBakedFields.)
+            if not is_static:
+                text_bboxes_for_redaction.append(sp['bbox'])
 
         # ── 3. Detect QR placeholder area ──
-        qr_area = detect_qr_area(page, text_bboxes_for_redaction)
+        # Use ALL text bboxes (including static decorations) to avoid
+        # placing the QR over baked-in text. Redaction set is dynamic-only
+        # by design.
+        qr_area = detect_qr_area(page, all_text_bboxes)
 
         # Mark fields whose centre is inside the QR placeholder as static.
         # These are decorative captions like "QR Code, to save the contact"

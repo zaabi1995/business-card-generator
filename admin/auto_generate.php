@@ -1031,10 +1031,14 @@ function autoGenerator() {
             for (const [key, field] of Object.entries(fields)) {
                 // Skip QR code - handled separately
                 if (key === 'qr_code') continue;
-                
+
                 // Skip if field is disabled
                 if (!field.enabled) continue;
-                
+
+                // Skip fields that the importer baked into the bg PNG (static
+                // decorations rendered at source-PDF metrics, no Fabric).
+                if (field.render_in_bg) continue;
+
                 // Get the value for this field
                 const value = fieldValues[key];
                 if (!value) continue;

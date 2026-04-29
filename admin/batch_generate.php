@@ -604,7 +604,9 @@ function batchGenerator() {
             for (const [key, field] of Object.entries(fields)) {
                 if (key === 'qr_code') continue;
                 if (!field.enabled) continue;
-                
+                // Static decorations baked into bg by the PyMuPDF importer
+                if (field.render_in_bg) continue;
+
                 const value = fieldValues[key];
                 if (!value) continue;
                 
