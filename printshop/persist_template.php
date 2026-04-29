@@ -118,6 +118,7 @@ foreach ($bindings as $pageKey => $pageBindings) {
 
 try {
     $db = Database::getInstance();
+    $fontsDirRel = $envelope['fonts_dir_rel'] ?? null;
     $result = CardifyTemplateImporter::persist(
         $db,
         $companyId,
@@ -125,7 +126,8 @@ try {
         $outRel,
         (string)($envelope['original_filename'] ?? 'design.pdf'),
         $envelope['pages'],
-        $bindingsByPage
+        $bindingsByPage,
+        $fontsDirRel
     );
 
     echo json_encode([

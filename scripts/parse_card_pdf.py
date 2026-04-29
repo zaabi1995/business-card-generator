@@ -523,10 +523,26 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
         if installed_fonts and family.lower() not in installed_fonts:
             missing.append({'raw_name': f, 'family': family})
 
+    # ── 6. Extract embedded fonts to <output_dir>/fonts/. CardPDFRenderer
+    # picks them up via templates.fonts_dir at render time.
+    try:
+        from extract_template_fonts import main as extract_main
+    except ImportError:
+        extract_main = None
+    fonts_dir_rel = None
+    if extract_main is not None:
+        try:
+            rc = extract_main(output_dir)
+            if rc == 0:
+                fonts_dir_rel = os.path.join(os.path.basename(output_dir), 'fonts')
+        except Exception as e:
+            print(f'WARN: font extraction failed: {e}', file=sys.stderr)
+
     return {
-        'pages': pages_out,
-        'fonts_used': fonts_used,
+        'pages':         pages_out,
+        'fonts_used':    fonts_used,
         'missing_fonts': missing,
+        'fonts_dir_rel': fonts_dir_rel,
     }
 
 

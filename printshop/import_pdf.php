@@ -145,6 +145,7 @@ unset($page);
 // later without rerunning the parser. We also remember which company
 // owns this token so the persist endpoint can authorise the call.
 $companyId = function_exists('getCurrentCompanyId') ? getCurrentCompanyId() : null;
+$fontsDirRel = $parsed['fonts_dir_rel'] ?? null;
 $envelope = [
     'token'             => $token,
     'company_id'        => $companyId,
@@ -154,6 +155,7 @@ $envelope = [
     'pages'             => $parsed['pages'],
     'fonts_used'        => $parsed['fonts_used']    ?? [],
     'missing_fonts'     => $parsed['missing_fonts'] ?? [],
+    'fonts_dir_rel'     => $fontsDirRel,
 ];
 file_put_contents($outAbs . '/parse.json', json_encode($envelope, JSON_UNESCAPED_UNICODE));
 

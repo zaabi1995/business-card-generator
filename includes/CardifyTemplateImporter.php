@@ -221,7 +221,8 @@ class CardifyTemplateImporter
         string $outRel,
         string $origName,
         array $pages,
-        array $bindingsByPage
+        array $bindingsByPage,
+        ?string $fontsDirRel = null
     ): array {
         // Drop any previous templates that point at this token's source PDF.
         $sourcePath = $outRel . '/source.pdf';
@@ -254,7 +255,7 @@ class CardifyTemplateImporter
 
             $settings = self::buildSettings($page, $token, array_keys($fontFamilies));
 
-            $db->insert('templates', [
+            $rowData = [
                 'id'                    => $tplId,
                 'company_id'            => $companyId,
                 'pair_id'               => $pairId,
@@ -267,7 +268,12 @@ class CardifyTemplateImporter
                 'settings_json'         => json_encode($settings, JSON_UNESCAPED_UNICODE),
                 'is_active'             => 1,
                 'description'           => 'Auto-imported from ' . $origName,
-            ]);
+            ];
+            if ($fontsDirRel !== null) {
+                $rowData['has_vector_source'] = 1;
+                $rowData['fonts_dir'] = '/' . trim($fontsDirRel, '/');
+            }
+            $db->insert('templates', $rowData);
             $createdTemplateIds[$side] = $tplId;
         }
 
