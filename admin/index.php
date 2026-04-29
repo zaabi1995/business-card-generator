@@ -1854,8 +1854,31 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                                             </button>
                                         </div>
                                     </div>
+                                    <!-- Static / Editable toggle. When 'Static' is on, this
+                                         field's detected_text is rendered on every employee's
+                                         card instead of the per-employee value. Use for shared
+                                         brand/decoration text (address, website, slogans). -->
+                                    <div class="flex items-start gap-2 mt-2 pt-2 border-t border-gray-100">
+                                        <input type="checkbox" :id="'static-' + key"
+                                               :checked="!!field.is_static"
+                                               @change="toggleFieldStatic(key, $event.target.checked)"
+                                               class="w-4 h-4 mt-0.5 rounded border-gray-300 text-amber-600 focus:ring-amber-500">
+                                        <label :for="'static-' + key" class="text-xs text-gray-700 leading-tight cursor-pointer">
+                                            <span class="font-medium">Static (don't replace per employee)</span>
+                                            <span class="text-gray-400 block text-[11px] mt-0.5">
+                                                Renders the design text exactly. Use for address, website, taglines.
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <div x-show="field.is_static" class="mt-2">
+                                        <label class="text-xs text-gray-500 block mb-1">Static text</label>
+                                        <input type="text"
+                                               :value="field.detected_text || ''"
+                                               @input="updateFieldProperty(key, 'detected_text', $event.target.value)"
+                                               class="w-full px-2 py-1 bg-amber-50 border border-amber-200 rounded text-xs text-gray-900">
+                                    </div>
                                 </div>
-                                
+
                                 <div x-show="field.enabled && key === 'qr_code'" class="mt-2">
                                     <label class="text-xs text-gray-500 block mb-1">QR Size</label>
                                     <input type="number" 
@@ -3157,10 +3180,27 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                 }
             },
             
+            // Mark a field as static (keep design text on every card) or dynamic
+            // (replace with per-employee value). Updates the canvas preview so the
+            // user sees the change immediately.
+            toggleFieldStatic: function(key, isStatic) {
+                if (!this.selectedTemplate || !this.selectedTemplate.fields[key]) return;
+                var f = this.selectedTemplate.fields[key];
+                f.is_static = !!isStatic;
+                if (isStatic && !f.label) {
+                    f.label = 'Decoration: ' + (f.detected_text || key);
+                }
+                this.refreshPreviewText();
+            },
+
             updateFieldProperty: function(key, property, value) {
                 if (!this.selectedTemplate || !this.selectedTemplate.fields[key]) return;
-                
+
                 this.selectedTemplate.fields[key][property] = value;
+                if (property === 'detected_text' && this.selectedTemplate.fields[key].is_static) {
+                    this.refreshPreviewText();
+                    return;
+                }
                 
                 // Also update color for backward compat
                 if (property === 'fill') {
