@@ -104,8 +104,11 @@ def render(template_path: str, employee_path: str, out_path: str) -> int:
     # Load all font buffers once.
     font_buffers = _load_font_buffers(fonts_dir)
 
-    # Read each font's actual ascender (em units, e.g. 0.987 for Lato-Medium).
-    # Used to place the text baseline accurately relative to the field's y_pt (top).
+    # Read each font's actual ascender (em units) once and cache it.
+    # Lato-Medium = 0.987, Sora-Regular = 0.970 (from fitz.Font.ascender).
+    # baseline_y = y_pt + ascender * font_size gives sub-0.1pt drift vs
+    # the source PDF (measured: name_en ~0.05pt, position_en ~0.04pt).
+    # A magic constant like 0.97 would accumulate error across font sizes.
     font_ascenders = {}
     for fname, buf in font_buffers.items():
         try:
