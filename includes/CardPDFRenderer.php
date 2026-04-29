@@ -4,7 +4,7 @@
  *
  * Shells out to scripts/render-card-pdf.py, caches the resulting PDF
  * in tmp/pdf-vector/ keyed by:
- *   sha1(employee_id . current_version . employee.updated_at . theme.updated_at)
+ *   sha1(employee_id | front_version | back_version | employee.updated_at | theme.updated_at)
  * so it stays warm until any of those bump.
  */
 class CardPDFRenderer
@@ -13,6 +13,14 @@ class CardPDFRenderer
      * Render or fetch a cached vector PDF for one employee.
      * Returns ['success'=>true, 'path'=>absolute fs path, 'cached'=>bool]
      * or ['success'=>false, 'error'=>string].
+     *
+     * Cache signature covers: employee_id, front template version, back
+     * template version, employee.updated_at, and company_themes.updated_at.
+     * Any of those changing busts the key. The theme sweep in
+     * CardRenderer::invalidateForCompany also deletes all files in
+     * tmp/pdf-vector/, so this signature is belt-and-suspenders for cases
+     * where the sweep is missed (e.g. a CLI script updates the theme row
+     * without going through the normal save path).
      *
      * Caller (card-pdf.php) is responsible for falling back to the
      * raster path when has_vector_source=0 or success=false.
@@ -55,12 +63,19 @@ class CardPDFRenderer
             return ['success' => false, 'error' => 'template lacks vector source'];
         }
 
-        // Cache signature, anything that changes the visible card busts.
+        // Look up the active brand theme so a color change busts the cache key.
+        $theme = $db->fetchOne(
+            'SELECT updated_at FROM company_themes WHERE company_id = :cid LIMIT 1',
+            ['cid' => $companyId]
+        );
+
+        // Cache signature: anything that changes the visible card busts it.
         $sig = sha1(implode('|', [
             $employee['id'],
             (int)($tplFront['current_version'] ?? 1),
             (int)($tplBack['current_version']  ?? 1),
             $employee['updated_at']  ?? '',
+            is_array($theme) ? ($theme['updated_at'] ?? '') : '',
         ]));
         $cacheDir = BASE_DIR . '/tmp/pdf-vector';
         if (!is_dir($cacheDir)) @mkdir($cacheDir, 0775, true);

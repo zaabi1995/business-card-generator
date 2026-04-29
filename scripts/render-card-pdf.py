@@ -101,6 +101,45 @@ def _pick_font(family: str, weight: int, font_buffers: dict) -> tuple:
     return best_key, candidates[best_key]
 
 
+def _resolve_employee_value(field_key: str, employee: dict) -> str:
+    """Return the employee's value for a template field_key, trying:
+    1. Exact key (e.g. 'name_en')
+    2. Locale-stripped key (e.g. 'name' for 'name_en' / 'name_ar')
+    3. The other locale's variant (e.g. 'name_en' for 'name_ar' if missing)
+    """
+    val = (employee.get(field_key) or '').strip()
+    if val:
+        return val
+    # If field_key has a locale suffix, try without it
+    if field_key.endswith('_en'):
+        bare = field_key[:-3]
+        val = (employee.get(bare) or '').strip()
+        if val:
+            return val
+        # Cross-locale fallback to _ar
+        val = (employee.get(bare + '_ar') or '').strip()
+        if val:
+            return val
+    elif field_key.endswith('_ar'):
+        bare = field_key[:-3]
+        val = (employee.get(bare) or '').strip()
+        if val:
+            return val
+        # Cross-locale fallback to _en
+        val = (employee.get(bare + '_en') or '').strip()
+        if val:
+            return val
+    else:
+        # Bare key like 'address': try _en then _ar
+        val = (employee.get(field_key + '_en') or '').strip()
+        if val:
+            return val
+        val = (employee.get(field_key + '_ar') or '').strip()
+        if val:
+            return val
+    return ''
+
+
 def _hex_to_rgb(hex_color: str) -> tuple:
     """Convert '#rrggbb' to (r, g, b) floats in [0, 1]."""
     h = hex_color.lstrip('#')
@@ -167,8 +206,7 @@ def render(template_path: str, employee_path: str, out_path: str) -> int:
         # Layer 2: dynamic text fields.
         for field in page_spec.get('fields', []):
             field_key = field.get('field_key', '')
-            # Support 'address' as alias for 'address_en'.
-            text = employee.get(field_key) or employee.get(field_key + '_en', '')
+            text = _resolve_employee_value(field_key, employee)
             if not text:
                 continue
 

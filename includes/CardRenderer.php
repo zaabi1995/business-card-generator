@@ -220,6 +220,22 @@ class CardRenderer
                 $employeeId, $n, $reason ?? 'unspecified'
             ));
         }
+
+        // Vector PDF cache is sha1-keyed and we can't filter by
+        // employee_id alone from the filename. Sweep the whole dir,
+        // it's bounded (one PDF per employee) and re-renders on next
+        // download. Same approach as invalidateForCompany.
+        try {
+            $cacheDir = BASE_DIR . '/tmp/pdf-vector';
+            if (is_dir($cacheDir)) {
+                foreach (glob($cacheDir . '/*.pdf') as $f) {
+                    @unlink($f);
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('CardRenderer::invalidateForEmployee vector sweep: ' . $e->getMessage());
+        }
+
         return $n;
     }
 
