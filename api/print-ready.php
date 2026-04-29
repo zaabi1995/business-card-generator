@@ -361,7 +361,9 @@ function handleGenerateRequest() {
         if ($wantVector) {
             require_once INCLUDES_DIR . '/CardPDFRenderer.php';
             $employeeId = (string)($order['employee_id'] ?? '');
-            $cardPdf = $employeeId !== '' ? CardPDFRenderer::render($employeeId) : ['success' => false];
+            // Use 'print' profile: full font embedding (PDF/X-4 best-effort).
+            // --for-print adds 3mm bleed + corner crop marks on the per-card PDF.
+            $cardPdf = $employeeId !== '' ? CardPDFRenderer::render($employeeId, 'print') : ['success' => false];
             if (!empty($cardPdf['success'])) {
                 $py = trim((string)@shell_exec('command -v python3 2>/dev/null')) ?: 'python3';
                 $rows = isset($_POST['rows']) ? (int)$_POST['rows'] : 5;

@@ -143,14 +143,70 @@ def _resolve_employee_value(field_key: str, employee: dict) -> str:
     return ''
 
 
-def _hex_to_rgb(hex_color: str) -> tuple:
-    """Convert '#rrggbb' to (r, g, b) floats in [0, 1]."""
-    h = hex_color.lstrip('#')
-    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-    return r / 255.0, g / 255.0, b / 255.0
+def _hex_to_rgb(hex_color) -> tuple:
+    """Convert '#rrggbb' or '#rgb' to (r, g, b) floats in [0, 1].
+
+    Handles: None, empty string, 3-char shorthand, garbage input.
+    Always returns a safe (0, 0, 0) on any parse failure.
+    """
+    s = (hex_color or '').lstrip('#')
+    if len(s) == 3:
+        s = ''.join(c * 2 for c in s)
+    if len(s) != 6:
+        return (0, 0, 0)
+    try:
+        return tuple(int(s[i:i+2], 16) / 255.0 for i in (0, 2, 4))
+    except ValueError:
+        return (0, 0, 0)
 
 
-def render(template_path: str, employee_path: str, out_path: str, vcard_path: str = '') -> int:
+def _draw_crop_marks(page, card_rect, mark_len_pt=14.17, bleed_pt=8.5, line_width=0.71):
+    """Draw 5mm crop marks at the four corners of card_rect.
+
+    card_rect is the original card area before bleed expansion.
+    Marks are drawn just outside the bleed zone (i.e. outside card_rect
+    by bleed_pt) and extend inward for mark_len_pt (~5mm at 72dpi).
+
+    Parameters
+    ----------
+    page       : fitz.Page  (already expanded by bleed_pt on all sides)
+    card_rect  : fitz.Rect  original card boundary in the new page coords
+                            (= fitz.Rect(bleed_pt, bleed_pt,
+                                         orig_w + bleed_pt, orig_h + bleed_pt))
+    mark_len_pt: float      length of each mark stroke (default 14.17pt = 5mm)
+    bleed_pt   : float      bleed extension used; marks start at bleed_pt - 2pt
+                            gap outside the card edge
+    line_width : float      stroke width in pt (0.25pt = 0.71px at 72dpi)
+    """
+    # Gap between card edge and start of crop mark (2pt breathing room inside bleed).
+    gap = 2.0
+    x0, y0, x1, y1 = card_rect.x0, card_rect.y0, card_rect.x1, card_rect.y1
+
+    # Corners: (start_h, end_h, start_v, end_v) for horizontal + vertical strokes.
+    corners = [
+        # top-left
+        (x0 - bleed_pt + gap, x0 - gap,   y0 - bleed_pt + gap, y0 - gap,   x0, y0),
+        # top-right
+        (x1 + gap, x1 + bleed_pt - gap,   y0 - bleed_pt + gap, y0 - gap,   x1, y0),
+        # bottom-left
+        (x0 - bleed_pt + gap, x0 - gap,   y1 + gap, y1 + bleed_pt - gap,   x0, y1),
+        # bottom-right
+        (x1 + gap, x1 + bleed_pt - gap,   y1 + gap, y1 + bleed_pt - gap,   x1, y1),
+    ]
+
+    shape = page.new_shape()
+    for (hx0, hx1, vy0, vy1, cx, cy) in corners:
+        # Horizontal stroke
+        shape.draw_line(fitz.Point(hx0, cy), fitz.Point(hx1, cy))
+        shape.finish(color=(0, 0, 0), width=line_width, fill=None, closePath=False)
+        # Vertical stroke
+        shape.draw_line(fitz.Point(cx, vy0), fitz.Point(cx, vy1))
+        shape.finish(color=(0, 0, 0), width=line_width, fill=None, closePath=False)
+    shape.commit()
+
+
+def render(template_path: str, employee_path: str, out_path: str,
+           vcard_path: str = '', profile: str = 'web', for_print: bool = False) -> int:
     with open(template_path) as fh:
         template = json.load(fh)
     with open(employee_path) as fh:
@@ -177,11 +233,36 @@ def render(template_path: str, employee_path: str, out_path: str, vcard_path: st
 
     out_doc = fitz.open()
 
+    # Phase 12: bleed expansion (3mm = 8.5pt on each side) when --for-print.
+    BLEED_PT = 8.504  # 3mm * (72 / 25.4)
+
+    # Phase 11: font embedding mode.
+    # print profile: set_simple=False embeds the full font (no subset).
+    # web profile (default): set_simple=True uses WinAnsiEncoding subset.
+    # Note: full PDF/X-4 compliance requires post-processing via Ghostscript
+    # --dPDFA=2 --dPDFACompatibilityPolicy=1. PyMuPDF does not expose an
+    # output-intent ICC dictionary or explicit PDF version control in 1.27.
+    use_simple_encoding = (profile != 'print')
+
     for page_spec in template['pages']:
-        page = out_doc.new_page(
-            width=page_spec['width_pt'],
-            height=page_spec['height_pt'],
-        )
+        orig_w = page_spec['width_pt']
+        orig_h = page_spec['height_pt']
+
+        if for_print:
+            page_w = orig_w + 2 * BLEED_PT
+            page_h = orig_h + 2 * BLEED_PT
+        else:
+            page_w = orig_w
+            page_h = orig_h
+
+        page = out_doc.new_page(width=page_w, height=page_h)
+
+        # card_rect: where the original card sits on the (possibly expanded) page.
+        if for_print:
+            card_rect = fitz.Rect(BLEED_PT, BLEED_PT,
+                                   BLEED_PT + orig_w, BLEED_PT + orig_h)
+        else:
+            card_rect = fitz.Rect(0, 0, orig_w, orig_h)
 
         # Layer 1: SVG background as vector underlay.
         svg_rel = page_spec.get('background_svg_path')
@@ -199,12 +280,16 @@ def render(template_path: str, employee_path: str, out_path: str, vcard_path: st
                 svg_doc.close()
                 pdf_doc = fitz.open(stream=pdf_bytes, filetype='pdf')
                 page.show_pdf_page(
-                    page.rect,
+                    card_rect,
                     pdf_doc,
                     pno=0,
                     keep_proportion=False,
                 )
                 pdf_doc.close()
+
+        # Phase 12: draw crop marks outside the card boundary when --for-print.
+        if for_print:
+            _draw_crop_marks(page, card_rect, bleed_pt=BLEED_PT)
 
         # Layer 2: dynamic text fields.
         for field in page_spec.get('fields', []):
@@ -224,19 +309,23 @@ def render(template_path: str, employee_path: str, out_path: str, vcard_path: st
             if font_name is None:
                 continue  # skip field if no matching font found
 
-            # Register font on this page using set_simple=True (WinAnsiEncoding).
-            # Without set_simple, PyMuPDF creates a CID/Identity-encoded font whose
-            # space glyph (0x20) round-trips back as U+00A0 (NBSP) in get_text().
-            # set_simple forces the same WinAnsiEncoding that the source PDF uses,
-            # so spaces extract as regular spaces and get_text() comparisons work.
-            page.insert_font(fontname=font_name, fontbuffer=font_buf, set_simple=True)
+            # Register font on this page.
+            # web profile (default): set_simple=True uses WinAnsiEncoding so spaces
+            # round-trip cleanly from get_text() (CID Identity-encoded fonts return NBSP).
+            # print profile: set_simple=False embeds the full font without subsetting,
+            # which is required for PDF/X-4 compliance at the print shop.
+            page.insert_font(fontname=font_name, fontbuffer=font_buf,
+                             set_simple=use_simple_encoding)
 
             # baseline_y = y_pt (top of em-square) + ascender * font_size.
+            # Offset by bleed margin when for_print so text stays in the card area.
             ascender = font_ascenders.get(font_name, 0.97)
-            baseline_y = y_pt + ascender * font_size
+            text_x = x_pt + (BLEED_PT if for_print else 0)
+            text_y = y_pt + (BLEED_PT if for_print else 0)
+            baseline_y = text_y + ascender * font_size
 
             page.insert_text(
-                fitz.Point(x_pt, baseline_y),
+                fitz.Point(text_x, baseline_y),
                 text,
                 fontname=font_name,
                 fontsize=font_size,
@@ -247,13 +336,14 @@ def render(template_path: str, employee_path: str, out_path: str, vcard_path: st
     company_name = template.get('company_name', '')
     company_slug = template.get('company_slug', '')
     emp_name = (employee.get('name_en') or employee.get('name') or 'Business').strip()
+    subject = 'Print-ready business card' if profile == 'print' else 'Digital business card'
     out_doc.set_metadata({
         'title':    f'{emp_name} business card',
         'author':   company_name,
-        'subject':  'Digital business card',
+        'subject':  subject,
         'keywords': f'business card, contact, vCard, {company_slug}',
         'creator':  'Cardify (cardify.om)',
-        'producer': f'PyMuPDF {fitz.__version__}',
+        'producer': f'PyMuPDF {fitz.__version__} profile={profile}',
     })
 
     # Phase 6: PDF/UA accessibility tags.
@@ -293,12 +383,18 @@ def render(template_path: str, employee_path: str, out_path: str, vcard_path: st
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--template', required=True)
-    ap.add_argument('--employee', required=True)
-    ap.add_argument('--out',      required=True)
-    ap.add_argument('--vcard',    default='', help='Optional path to a .vcf file to embed')
+    ap.add_argument('--template',  required=True)
+    ap.add_argument('--employee',  required=True)
+    ap.add_argument('--out',       required=True)
+    ap.add_argument('--vcard',     default='', help='Optional path to a .vcf file to embed')
+    ap.add_argument('--profile',   default='web', choices=['web', 'print'],
+                    help='web (default): subset fonts, no bleed. '
+                         'print: full font embed, use with --for-print for bleed+crop marks.')
+    ap.add_argument('--for-print', action='store_true',
+                    help='Expand page by 3mm bleed and draw corner crop marks.')
     args = ap.parse_args()
-    sys.exit(render(args.template, args.employee, args.out, args.vcard))
+    sys.exit(render(args.template, args.employee, args.out, args.vcard,
+                    profile=args.profile, for_print=args.for_print))
 
 
 if __name__ == '__main__':

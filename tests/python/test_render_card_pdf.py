@@ -207,6 +207,25 @@ def test_pick_font_weight_ranker_chooses_closest(otech_dir, tmp_path):
     assert name is None, f'expected None for unknown family, got {name}'
 
 
+def test_hex_to_rgb_handles_malformed():
+    import importlib.util, sys, os
+    spec = importlib.util.spec_from_file_location(
+        'rcp', os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'render-card-pdf.py'))
+    rcp = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(rcp)
+    # Valid 6-char
+    assert rcp._hex_to_rgb('#ff0000') == (1.0, 0.0, 0.0)
+    # Valid 3-char shorthand
+    assert rcp._hex_to_rgb('#f00') == (1.0, 0.0, 0.0)
+    # Empty / None
+    assert rcp._hex_to_rgb('') == (0.0, 0.0, 0.0)
+    assert rcp._hex_to_rgb(None) == (0.0, 0.0, 0.0)
+    # Garbage
+    assert rcp._hex_to_rgb('xyz') == (0.0, 0.0, 0.0)
+    # Wrong length
+    assert rcp._hex_to_rgb('#1234') == (0.0, 0.0, 0.0)
+
+
 def test_text_baselines_match_source_pdf(otech_dir, tmp_path):
     fixture = json.loads(json.dumps(TEMPLATE_FIXTURE))
     fixture['fonts_dir']  = os.path.join(otech_dir, 'fonts')

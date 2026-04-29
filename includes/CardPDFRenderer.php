@@ -25,11 +25,20 @@ class CardPDFRenderer
      * Caller (card-pdf.php) is responsible for falling back to the
      * raster path when has_vector_source=0 or success=false.
      */
-    public static function render(string $employeeId): array
+    /**
+     * @param string $employeeId
+     * @param string $profile 'web' (default) or 'print'.
+     *   'web'   - subset fonts, no bleed, optimised for screen/download.
+     *   'print' - full font embed, passed to render-card-pdf.py --profile print.
+     *             api/print-ready.php also passes --for-print for bleed + crop marks.
+     *             Cache key differs per profile so both can coexist on disk.
+     */
+    public static function render(string $employeeId, string $profile = 'web'): array
     {
         if ($employeeId === '') {
             return ['success' => false, 'error' => 'empty employee id'];
         }
+        $profile = in_array($profile, ['web', 'print'], true) ? $profile : 'web';
 
         $db = Database::getInstance();
         $employee = $db->fetchOne(
@@ -76,12 +85,14 @@ class CardPDFRenderer
         );
 
         // Cache signature: anything that changes the visible card busts it.
+        // Profile is included so 'web' and 'print' renders coexist on disk.
         $sig = sha1(implode('|', [
             $employee['id'],
             (int)($tplFront['current_version'] ?? 1),
             (int)($tplBack['current_version']  ?? 1),
             $employee['updated_at']  ?? '',
             is_array($theme) ? ($theme['updated_at'] ?? '') : '',
+            $profile,
         ]));
         $cacheDir = BASE_DIR . '/tmp/pdf-vector';
         if (!is_dir($cacheDir)) @mkdir($cacheDir, 0775, true);
@@ -140,6 +151,7 @@ class CardPDFRenderer
              . ' --template ' . escapeshellarg($tmpTpl)
              . ' --employee ' . escapeshellarg($tmpEmp)
              . ' --out '      . escapeshellarg($cachePath)
+             . ' --profile '  . escapeshellarg($profile)
              . ($tmpVcf !== '' ? ' --vcard ' . escapeshellarg($tmpVcf) : '')
              . ' 2>&1';
         if (trim((string)@shell_exec('command -v timeout 2>/dev/null')) !== '') {
