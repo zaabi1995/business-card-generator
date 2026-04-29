@@ -557,6 +557,15 @@ function clearCompanyContext() {
 }
 
 function requireAdmin() {
+    // Auto-load Auth so callers don't all need to require it first. Some
+    // admin pages (e.g. auto_generate.php) call requireAdmin BEFORE pulling
+    // admin-layout.php, the absent class made the gate redirect to /login.php
+    // for any direct URL access.
+    if (!class_exists('Auth') && defined('INCLUDES_DIR')) {
+        $authPath = INCLUDES_DIR . '/Auth.php';
+        if (is_file($authPath)) require_once $authPath;
+    }
+
     // Check if logged in
     if (!class_exists('Auth') || !Auth::isLoggedIn()) {
         header('Location: ' . getBasePath() . 'login.php');
