@@ -1394,48 +1394,16 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                                 <span id="previewTitle"><?= htmlspecialchars(t('portal.card_template')) ?></span>
                             </h3>
                             
-                            <!-- Initial: Show template backgrounds -->
-                            <div id="templatePreview" class="space-y-4">
-                                <?php if ($activeFrontTemplate && !empty($activeFrontTemplate['backgroundImage'])): ?>
+                            <!-- Single set of canvases: shows bg + static
+                                 design tokens on load, switches to full preview
+                                 (with employee data + watermark) after the user
+                                 hits Generate Preview. -->
+                            <div id="cardCanvases" class="space-y-4">
+                                <?php if ($activeFrontTemplate): ?>
                                 <div>
                                     <div class="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                                        <i class="fa-solid fa-image text-blue-400"></i> Front
-                                    </div>
-                                    <div class="rounded-lg overflow-hidden shadow-md border border-gray-200" style="aspect-ratio: 3.5/2;">
-                                        <img src="<?php echo imageUrl($activeFrontTemplate['backgroundImage']); ?>" 
-                                             alt="Front Card Template" class="w-full h-full object-cover">
-                                    </div>
-                                </div>
-                                <?php endif; ?>
-                                
-                                <?php if ($activeBackTemplate && !empty($activeBackTemplate['backgroundImage'])): ?>
-                                <div>
-                                    <div class="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                                        <i class="fa-solid fa-image text-green-400"></i> Back
-                                    </div>
-                                    <div class="rounded-lg overflow-hidden shadow-md border border-gray-200" style="aspect-ratio: 3.5/2;">
-                                        <img src="<?php echo imageUrl($activeBackTemplate['backgroundImage']); ?>" 
-                                             alt="Back Card Template" class="w-full h-full object-cover">
-                                    </div>
-                                </div>
-                                <?php endif; ?>
-                                
-                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                    <div class="flex items-start gap-2">
-                                        <i class="fa-solid fa-info-circle text-blue-600 mt-0.5"></i>
-                                        <div>
-                                            <p class="text-xs font-medium text-blue-800">Your Info Will Be Added</p>
-                                            <p class="text-[10px] text-blue-700 mt-1">Fill in your details and click "Generate Preview" to see your card.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- After Generate: Show preview with watermark -->
-                            <div id="generatedPreview" class="space-y-4" style="display: none;">
-                                <div>
-                                    <div class="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                                        <i class="fa-solid fa-image text-blue-400"></i> Front Preview
+                                        <i class="fa-solid fa-image text-blue-400"></i>
+                                        <span id="frontPreviewLabel">Front</span>
                                     </div>
                                     <div class="canvas-preview-wrapper rounded-lg shadow-md border border-gray-200 relative">
                                         <canvas id="previewFrontCanvas"></canvas>
@@ -1444,10 +1412,13 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                                         </div>
                                     </div>
                                 </div>
-                                
+                                <?php endif; ?>
+
+                                <?php if ($activeBackTemplate): ?>
                                 <div>
                                     <div class="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                                        <i class="fa-solid fa-image text-green-400"></i> Back Preview
+                                        <i class="fa-solid fa-image text-green-400"></i>
+                                        <span id="backPreviewLabel">Back</span>
                                     </div>
                                     <div class="canvas-preview-wrapper rounded-lg shadow-md border border-gray-200 relative">
                                         <canvas id="previewBackCanvas"></canvas>
@@ -1456,14 +1427,25 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                                         </div>
                                     </div>
                                 </div>
-                                
-                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                                    <div class="flex items-start gap-2">
-                                        <i class="fa-solid fa-eye text-yellow-600 mt-0.5"></i>
-                                        <div>
-                                            <p class="text-xs font-medium text-yellow-800">Preview Only</p>
-                                            <p class="text-[10px] text-yellow-700 mt-1">This is a watermarked preview. Final card will be generated after approval.</p>
-                                        </div>
+                                <?php endif; ?>
+                            </div>
+
+                            <div id="templateHint" class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                                <div class="flex items-start gap-2">
+                                    <i class="fa-solid fa-info-circle text-blue-600 mt-0.5"></i>
+                                    <div>
+                                        <p class="text-xs font-medium text-blue-800">Your Info Will Be Added</p>
+                                        <p class="text-[10px] text-blue-700 mt-1">Fill in your details and click "Generate Preview" to see your card.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="generatedHint" class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4" style="display: none;">
+                                <div class="flex items-start gap-2">
+                                    <i class="fa-solid fa-eye text-yellow-600 mt-0.5"></i>
+                                    <div>
+                                        <p class="text-xs font-medium text-yellow-800">Preview Only</p>
+                                        <p class="text-[10px] text-yellow-700 mt-1">This is a watermarked preview. Final card will be generated after approval.</p>
                                     </div>
                                 </div>
                             </div>
@@ -1616,7 +1598,84 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             scaleCanvasToFit('previewFrontCanvas', frontDims.width);
             scaleCanvasToFit('previewBackCanvas',  backDims.width);
         });
+
+        // Render the static-only template (background + decoration tokens
+        // like "An Omantel Company" / "@otech") so the user sees the actual
+        // design from the start, not a flat background image.
+        await renderInitialTemplate();
+        const _hideOnInit = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
+        _hideOnInit('frontLoading');
+        _hideOnInit('backLoading');
     });
+
+    // Render bg image + every is_static field of a template into the editor.
+    // Used for the initial design preview AND when the user clicks Edit
+    // Details to roll back to the unwatermarked template view.
+    async function renderTemplateStatics(editor, template) {
+        if (!editor || !editor.canvas || !template) return;
+
+        // Preload fonts the static tokens reference so cold-cache renders
+        // don't fall back to a serif.
+        if (document.fonts && document.fonts.load) {
+            const needed = new Set();
+            for (const f of Object.values(template.fields || {})) {
+                if (!f || f.enabled === false || !f.is_static) continue;
+                const fam = (f.fontFamily || '').trim();
+                if (!fam) continue;
+                const w = f.fontWeight || 400;
+                const style = (f.italic === true || f.fontStyle === 'italic') ? 'italic' : 'normal';
+                needed.add(`${style} ${w} 16px "${fam}"`);
+            }
+            try { await Promise.all([...needed].map(s => document.fonts.load(s))); await document.fonts.ready; } catch (e) {}
+        }
+
+        editor.canvas.clear();
+        editor.canvas.backgroundColor = '#ffffff';
+        editor.fields = {};
+
+        if (template.backgroundImage) {
+            const bgUrl = template.backgroundImage.startsWith('http')
+                ? template.backgroundImage
+                : window.location.origin + (template.backgroundImage.startsWith('/') ? '' : '/') + template.backgroundImage;
+            const bgTransform = (template.settings && template.settings.backgroundTransform) || null;
+            try {
+                await editor.loadBackground(bgUrl, bgTransform);
+                editor.setBackgroundLocked && editor.setBackgroundLocked(true);
+            } catch (e) { console.warn('bg load failed', e); }
+        }
+
+        for (const [key, field] of Object.entries(template.fields || {})) {
+            if (!field || field.enabled === false) continue;
+            if (!field.is_static) continue;
+            const txt = (field.detected_text || '');
+            if (!txt || !txt.replace(/\s+/g, '')) continue;
+            const t = new fabric.Text(txt, {
+                left: field.x || 0,
+                top: field.y || 0,
+                fontSize: field.fontSize || 14,
+                fontFamily: field.fontFamily || 'Inter',
+                fontWeight: field.fontWeight || 'normal',
+                fontStyle: field.italic ? 'italic' : 'normal',
+                fill: field.fill || field.color || '#222',
+                textAlign: field.textAlign || 'left',
+                originX: field.originX || 'left',
+                originY: field.originY || 'top',
+                selectable: false, evented: false, hasControls: false, hasBorders: false, hoverCursor: 'default',
+            });
+            editor.canvas.add(t);
+            editor.fields[key] = t;
+        }
+
+        reanchorStaticDecorationRuns(editor, template);
+        editor.canvas.requestRenderAll();
+    }
+
+    async function renderInitialTemplate() {
+        if (frontEditor && frontTemplate) await renderTemplateStatics(frontEditor, frontTemplate);
+        if (backEditor && backTemplate)   await renderTemplateStatics(backEditor,  backTemplate);
+        const _hide = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
+        _hide('frontLoading'); _hide('backLoading');
+    }
     
     // Generate preview with watermark
     async function generatePreview() {
@@ -1655,8 +1714,13 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         // up yet, so every lookup has to guard).
         const _hide = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
         const _show = (id, disp='block') => { const el = document.getElementById(id); if (el) el.style.display = disp; };
-        _hide('templatePreview');
-        _show('generatedPreview');
+        // Single canvas set, just swap the surrounding labels + hints from
+        // template-mode to preview-mode.
+        _hide('templateHint');
+        _show('generatedHint');
+        const _setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+        _setText('frontPreviewLabel', 'Front Preview');
+        _setText('backPreviewLabel', 'Back Preview');
         const _title = document.getElementById('previewTitle');
         if (_title) _title.textContent = <?= json_encode(t('portal.your_card_preview')) ?>;
         
@@ -2012,10 +2076,21 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     function editForm() {
         document.getElementById('generatePreviewSection').style.display = 'block';
         document.getElementById('submitSection').style.display = 'none';
-        document.getElementById('templatePreview').style.display = 'block';
-        document.getElementById('generatedPreview').style.display = 'none';
+        const tHint = document.getElementById('templateHint');
+        if (tHint) tHint.style.display = 'block';
+        const gHint = document.getElementById('generatedHint');
+        if (gHint) gHint.style.display = 'none';
+        const _setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+        _setText('frontPreviewLabel', 'Front');
+        _setText('backPreviewLabel', 'Back');
         document.getElementById('previewTitle').textContent = 'Card Template';
-        
+
+        // Re-render the static-only template view so the user sees the design
+        // again (without their data + watermark).
+        if (typeof renderInitialTemplate === 'function') {
+            renderInitialTemplate();
+        }
+
         const btn = document.getElementById('generatePreviewBtn');
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-magic-wand-sparkles mr-2"></i>Generate Preview';
