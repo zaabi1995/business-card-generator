@@ -22,6 +22,10 @@
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/CardRenderer.php';
 
+// config.php turns on output buffering for security headers, but in CLI we
+// want every echo to hit stdout immediately so progress is visible.
+while (ob_get_level()) { ob_end_clean(); }
+
 if (PHP_SAPI !== 'cli') {
     http_response_code(403);
     echo "CLI only.\n";
