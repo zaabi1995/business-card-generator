@@ -232,17 +232,112 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
         let backImageUrl = null;
         let cardEditor = null;
         
+        // Convert each template's stored design dimensions (mm/pt/in) into pixels so
+        // the rendered PNG matches the source PDF aspect ratio. Falls back to the
+        // legacy 1050x600 canvas only when the template has no settings.
+        function getTemplatePixelDims(template) {
+            const fallback = { w: 1050, h: 600 };
+            if (!template || !template.settings) return fallback;
+            const s = template.settings;
+            const cw = parseFloat(s.customWidth);
+            const ch = parseFloat(s.customHeight);
+            const dpi = parseFloat(s.dpi) || 300;
+            if (!cw || !ch) return fallback;
+            const unit = (s.customUnit || 'mm').toLowerCase();
+            const toIn = unit === 'mm' ? 1 / 25.4
+                       : unit === 'pt' ? 1 / 72
+                       : unit === 'in' ? 1
+                       : 1 / 25.4;
+            return {
+                w: Math.round(cw * toIn * dpi),
+                h: Math.round(ch * toIn * dpi),
+            };
+        }
+
+        // Build the unique (family, weight, style) specs the template's enabled fields
+        // reference, then call document.fonts.load() for each one. Without this, Fabric
+        // draws into the canvas before the .woff2 file is fetched and falls back to a
+        // serif system font on cold cache. WebFontLoader's bundled list often misses
+        // weights like Lato-Medium 500. See memory feedback_fabric_canvas_font_preload.md.
+        async function preloadTemplateFonts(template) {
+            if (!document.fonts || !template || !template.fields) return;
+            const seen = new Set();
+            const promises = [];
+            for (const key in template.fields) {
+                const f = template.fields[key];
+                if (!f || !f.enabled) continue;
+                const family = f.fontFamily || 'Inter';
+                const weight = f.fontWeight || 400;
+                const style = f.fontStyle || 'normal';
+                const sig = style + ' ' + weight + ' "' + family + '"';
+                if (seen.has(sig)) continue;
+                seen.add(sig);
+                try { promises.push(document.fonts.load(style + ' ' + weight + ' 16px "' + family + '"')); }
+                catch (e) {}
+            }
+            try { await Promise.all(promises); } catch (e) {}
+            try { await document.fonts.ready; } catch (e) {}
+        }
+
+        // Re-anchor consecutive static decoration tokens (static_1, static_2, ...) so
+        // adjacent multi-color runs don't overlap when Fabric's actual measured width
+        // differs from the importer's stored width. Same fix as portal.php.
+        function reanchorStaticDecorationRuns(template) {
+            if (!template || !template.fields || !cardEditor || !cardEditor.fields) return;
+            const tokens = [];
+            for (const key in template.fields) {
+                if (!/^static_\d+$/.test(key)) continue;
+                const f = template.fields[key];
+                if (!f || !f.enabled || !f.is_static) continue;
+                const obj = cardEditor.fields[key];
+                if (!obj) continue;
+                tokens.push({ key, idx: parseInt(key.split('_')[1], 10), x: f.x, y: f.y, obj });
+            }
+            tokens.sort((a, b) => a.idx - b.idx);
+            const ROW_TOL = 4;
+            let runStart = 0;
+            for (let i = 1; i <= tokens.length; i++) {
+                const breakRun = (i === tokens.length) ||
+                    Math.abs(tokens[i].y - tokens[i - 1].y) > ROW_TOL ||
+                    tokens[i].x < tokens[i - 1].x;
+                if (breakRun) {
+                    if (i - runStart > 1) {
+                        let cursor = tokens[runStart].x;
+                        for (let j = runStart; j < i; j++) {
+                            const tok = tokens[j];
+                            tok.obj.set({ left: cursor });
+                            tok.obj.setCoords();
+                            const w = tok.obj.width || 0;
+                            cursor = cursor + w;
+                        }
+                    }
+                    runStart = i;
+                }
+            }
+            cardEditor.canvas.requestRenderAll();
+        }
+
         async function generateCards() {
             try {
                 // Load fonts
                 await FontLoader.load();
+                // Preload exact (family, weight, style) tuples for each template so
+                // Lato-Medium etc don't fall back to serif on first paint.
+                await preloadTemplateFonts(config.frontTemplate);
+                await preloadTemplateFonts(config.backTemplate);
                 await document.fonts.ready;
                 await new Promise(r => setTimeout(r, 300));
-                
-                // Initialize card editor
+
+                // Pick the larger of the two card sides as the initial canvas size.
+                const frontDims = getTemplatePixelDims(config.frontTemplate);
+                const backDims  = getTemplatePixelDims(config.backTemplate);
+                const initW = Math.max(frontDims.w, backDims.w);
+                const initH = Math.max(frontDims.h, backDims.h);
+
+                // Initialize card editor at the actual template dimensions
                 cardEditor = new CardEditor('renderCanvas', {
-                    width: 1050,
-                    height: 600,
+                    width: initW,
+                    height: initH,
                     backgroundColor: '#ffffff'
                 });
                 
@@ -283,10 +378,19 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
         
         async function generateCard(template, bgUrl, side) {
             if (!cardEditor) return null;
-            
+
+            // Resize the canvas to this side's stored design dimensions so the
+            // exported PNG matches the source PDF aspect ratio (Otech back =
+            // 1094x708 @ 300 DPI from a 92.6x59.9mm card, NOT the legacy 1050x600).
+            const dims = getTemplatePixelDims(template);
+            try { cardEditor.canvas.setDimensions({ width: dims.w, height: dims.h }); }
+            catch (e) {}
+            cardEditor.options.width = dims.w;
+            cardEditor.options.height = dims.h;
+
             // Clear canvas
             cardEditor.clear();
-            
+
             // Load background
             if (bgUrl) {
                 try {
@@ -295,7 +399,7 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                     console.warn('Background load error:', e);
                 }
             }
-            
+
             // Add text fields
             const fields = template.fields || {};
             const emp = config.employee;
@@ -317,31 +421,43 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                 'address_en': emp.address_en || emp.address || '',
                 'address_ar': emp.address_ar || ''
             };
-            
+
             for (const [key, field] of Object.entries(fields)) {
                 if (key === 'qr_code') continue;
                 if (!field.enabled) continue;
-                
-                const value = fieldValues[key];
-                if (!value) continue;
-                
+
+                // Static fields render their detected_text as part of the design,
+                // not driven by employee data. Preserve whitespace verbatim, skip
+                // truly blank tokens but keep " " (used for layout spacing).
+                let textToDraw;
+                if (field.is_static) {
+                    textToDraw = (field.detected_text != null) ? String(field.detected_text) : '';
+                    if (!textToDraw.replace(/\s+/g, '')) continue;
+                } else {
+                    const value = fieldValues[key];
+                    if (!value) continue;
+                    textToDraw = value;
+                }
+
                 // Determine text alignment based on field type
                 const textAlign = field.textAlign || (key.endsWith('_ar') ? 'right' : 'left');
                 const originX = field.originX || (textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'right' : 'left'));
-                
+
                 cardEditor.addTextField(key, {
-                    text: value,
+                    text: textToDraw,
                     x: field.x,
                     y: field.y,
                     fontSize: field.fontSize,
                     fontFamily: field.fontFamily,
-                    fontWeight: field.fontWeight,
+                    // Pass numeric weight straight through (Lato-Medium=500, etc).
+                    fontWeight: field.fontWeight || 400,
+                    fontStyle: field.fontStyle || 'normal',
                     fill: field.fill || field.color,
                     textAlign: textAlign,
                     originX: originX
                 });
             }
-            
+
             // Add QR code if enabled
             if (fields.qr_code && fields.qr_code.enabled && config.vcfUrl) {
                 await cardEditor.addQRCode(config.vcfUrl, {
@@ -350,10 +466,16 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                     size: fields.qr_code.size
                 });
             }
-            
+
+            // Re-anchor adjacent static decoration runs (static_1/2/3 with same y
+            // and adjacent x) so Fabric's measured widths don't overlap or gap.
+            // This is the same fix that resolved "An Omantel Company" overlap on
+            // portal.php.
+            reanchorStaticDecorationRuns(template);
+
             // Wait for rendering
             await new Promise(r => setTimeout(r, 100));
-            
+
             // Export and save (quality multiplier based on plan)
             // Free users: 1x (~100 DPI), Paid users: 4x (~400 DPI)
             const blob = await cardEditor.exportPNGBlob(config.qualityMultiplier);
