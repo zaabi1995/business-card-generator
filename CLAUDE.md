@@ -20,6 +20,7 @@ Paymob Oman for payments, BHD-ERP for accounting.
 | `/changelog` (public) | Marketing timeline powered by `data/changelog.php`. |
 | `ops/runbook.md` | Incident playbook, 10 sections, symptom → check → fix → escalation. |
 | `SPRINT_PLAN.md` + `SPRINT_ACTIONS.md` + `SPRINT_LOG.md` | Sprint state. Used by the autonomous /loop iteration. |
+| `docs/CONVEX_DEPLOY.md` + `docs/superpowers/plans/2026-04-29-cardify-convex-live-analytics.md` | Live Analytics architecture + 9-step deploy runbook. Self-hosted Convex sidecar at `/_convex/{api,http,admin}/`, hybrid event store mirrors `card_events` MySQL writes. Admin page: `/admin/live-analytics.php`. Feature-flagged via `FEATURE_LIVE_ANALYTICS`. |
 
 ## Cardify invariants (break these, break prod)
 
