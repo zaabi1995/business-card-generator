@@ -320,10 +320,12 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
             _page_render_img = None
             _bg_color = None
 
-        # Fabric.js IText default lineHeight = 1.16, so visible glyph top
-        # sits half_leading = 0.08 * fontSize BELOW textbox.top. We subtract
-        # that to make textbox.top a tighter match to PDF visible top.
-        FABRIC_HALF_LEADING_FRAC = 0.08
+        # Fabric.js IText with default settings actually puts the visible
+        # ascender ~0.20 * fontSize BELOW textbox.top, not 0.08. Empirically
+        # tuned (Apr 29 2026) after a v1 with 0.08 over-corrected by ~0.2 of
+        # fontSize on the Otech import. Treat as a font/render-stack constant
+        # until/unless we find a font where it differs.
+        FABRIC_HALF_LEADING_FRAC = 0.20
 
         def _empirical_visible_top_pt(bbox_pt, color_hex):
             """Find the topmost row inside bbox that contains ink matching
