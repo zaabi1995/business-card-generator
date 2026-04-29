@@ -343,7 +343,67 @@ function handleGenerateRequest() {
                        date('Ymd-His'));
     $outputPath = $outputDir . '/' . $filename;
     
-    // Generate PDF
+    // Prefer the vector imposition when both sides are vector-source.
+    $companyId = $order['company_id'] ?? null;
+    $useVectorImposition = false;
+    if ($companyId) {
+        $frontTpl = $db->fetchOne(
+            "SELECT has_vector_source FROM templates WHERE company_id = ? AND side='front' AND is_active=1 LIMIT 1",
+            [$companyId]
+        );
+        $backTpl = $db->fetchOne(
+            "SELECT has_vector_source FROM templates WHERE company_id = ? AND side='back' AND is_active=1 LIMIT 1",
+            [$companyId]
+        );
+        $wantVector = is_array($frontTpl) && (int)($frontTpl['has_vector_source'] ?? 0) === 1
+                   && is_array($backTpl)  && (int)($backTpl['has_vector_source']  ?? 0) === 1;
+
+        if ($wantVector) {
+            require_once INCLUDES_DIR . '/CardPDFRenderer.php';
+            $employeeId = (string)($order['employee_id'] ?? '');
+            $cardPdf = $employeeId !== '' ? CardPDFRenderer::render($employeeId) : ['success' => false];
+            if (!empty($cardPdf['success'])) {
+                $py = trim((string)@shell_exec('command -v python3 2>/dev/null')) ?: 'python3';
+                $rows = isset($_POST['rows']) ? (int)$_POST['rows'] : 5;
+                $cols = isset($_POST['cols']) ? (int)$_POST['cols'] : 2;
+                $vectorCmd = escapeshellcmd($py)
+                           . ' ' . escapeshellarg(BASE_DIR . '/scripts/imposition-vector.py')
+                           . ' --card '  . escapeshellarg($cardPdf['path'])
+                           . ' --paper ' . escapeshellarg($paperSize)
+                           . ' --rows '  . (int)$rows
+                           . ' --cols '  . (int)$cols
+                           . ' --out '   . escapeshellarg($outputPath)
+                           . ' 2>&1';
+                $vectorRc = 0;
+                $vectorOut = [];
+                exec($vectorCmd, $vectorOut, $vectorRc);
+                if ($vectorRc === 0 && is_file($outputPath) && filesize($outputPath) > 1024) {
+                    $useVectorImposition = true;
+                } else {
+                    error_log('print-ready vector imposition failed rc=' . $vectorRc . ' out=' . implode("\n", $vectorOut));
+                }
+            }
+        }
+    }
+
+    if ($useVectorImposition) {
+        $relativeUrl = 'data/print-sheets/' . $filename;
+        echo json_encode([
+            'success'         => true,
+            'download_url'    => getBasePath() . $relativeUrl,
+            'filename'        => $filename,
+            'layout'          => ['vector' => true],
+            'cards_per_sheet' => ($rows ?? 5) * ($cols ?? 2),
+            'detected_size'   => [
+                'width'  => $cardWidth,
+                'height' => $cardHeight,
+            ],
+            'vector_imposition' => true,
+        ]);
+        return;
+    }
+
+    // Generate PDF via TCPDF (raster fallback)
     $generator = new PrintReadyGenerator([
         'paper_size' => $paperSize,
         'card_width' => $cardWidth,
@@ -351,13 +411,13 @@ function handleGenerateRequest() {
         'dpi' => 300,
         'scale' => $scale // Scale percentage for zoom
     ]);
-    
+
     // Determine which images to include
     $frontImage = ($side === 'back') ? null : $frontPath;
     $backImage = ($side === 'front') ? null : $backPath;
-    
+
     $result = $generator->generatePDF($frontImage, $backImage, $outputPath, $quantity);
-    
+
     if ($result['success']) {
         // Return download URL
         $relativeUrl = 'data/print-sheets/' . $filename;
