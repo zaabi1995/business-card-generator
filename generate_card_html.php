@@ -379,17 +379,20 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
         async function generateCard(template, bgUrl, side) {
             if (!cardEditor) return null;
 
-            // Resize the canvas to this side's stored design dimensions so the
-            // exported PNG matches the source PDF aspect ratio (Otech back =
-            // 1094x708 @ 300 DPI from a 92.6x59.9mm card, NOT the legacy 1050x600).
+            // Compute this side's pixel dims from the template's stored design
+            // (customWidth/customHeight + dpi). Otech back = 92.6x59.9mm @ 300 DPI
+            // = 1094x708, NOT the legacy 1050x600 default.
             const dims = getTemplatePixelDims(template);
+
+            // Clear FIRST, then resize. Fabric's canvas.clear() resets canvas
+            // dims to its default 300x150, so setting dimensions before clear
+            // gets clobbered and loadBackground scales using the wrong size
+            // (background ends up tiny in the corner or misaligned).
+            cardEditor.clear();
             try { cardEditor.canvas.setDimensions({ width: dims.w, height: dims.h }); }
             catch (e) {}
             cardEditor.options.width = dims.w;
             cardEditor.options.height = dims.h;
-
-            // Clear canvas
-            cardEditor.clear();
 
             // Load background
             if (bgUrl) {
