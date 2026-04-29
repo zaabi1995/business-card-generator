@@ -88,6 +88,10 @@ playwright/.cache/
 .env.convex
 convex-data/
 convex/_generated/
+convex/convex/_generated/
 analytics-ui/dist/
 analytics-ui/node_modules/
 convex/node_modules/
+
+# Local Conductor / Cursor worktrees (host-only)
+.worktrees/
