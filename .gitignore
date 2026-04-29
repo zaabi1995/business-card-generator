@@ -82,3 +82,12 @@ playwright-report/
 test-results/
 blob-report/
 playwright/.cache/
+.gstack/
+
+# Convex self-hosted (live analytics)
+.env.convex
+convex-data/
+convex/_generated/
+analytics-ui/dist/
+analytics-ui/node_modules/
+convex/node_modules/

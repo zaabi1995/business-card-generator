@@ -1,0 +1,62 @@
+# Convex self-hosted sidecar for Cardify live analytics.
+#
+# Brings up a Convex backend (functions + reactive query engine) and the
+# Convex dashboard. Both bind to 127.0.0.1 only; nginx proxies from cardify.om
+# under /_convex/* (see docs/CONVEX_DEPLOY.md).
+#
+# First-time setup (on the VPS):
+#   1. cp .env.convex.example .env.convex && edit secrets
+#   2. docker compose -f docker-compose.convex.yml up -d
+#   3. docker compose -f docker-compose.convex.yml exec backend ./generate_admin_key.sh
+#      → save the printed admin key into config.php as CONVEX_ADMIN_KEY (or .env.convex)
+#   4. From repo root:  npx convex deploy   (pushes schema + functions)
+#
+# Data lives in /opt/cardify/convex-data (bind mount). Add to your nightly
+# backup cron alongside MySQL dumps.
+
+services:
+  convex-backend:
+    image: ghcr.io/get-convex/convex-backend:latest
+    container_name: cardify-convex-backend
+    restart: unless-stopped
+    env_file:
+      - .env.convex
+    environment:
+      INSTANCE_NAME: cardify
+      # SQLite by default, fast and simple.
+      # Switch to Postgres later by setting DATABASE_URL here.
+      CONVEX_CLOUD_ORIGIN: ${CONVEX_CLOUD_ORIGIN:-https://cardify.om/_convex/api}
+      CONVEX_SITE_ORIGIN: ${CONVEX_SITE_ORIGIN:-https://cardify.om/_convex/http}
+      DISABLE_BEACON: "true"
+      DO_NOT_REQUIRE_SSL: "true"
+      RUST_LOG: info
+    ports:
+      - "127.0.0.1:3210:3210"   # API (queries, mutations, admin)
+      - "127.0.0.1:3211:3211"   # HTTP actions (the /ingest endpoint)
+    volumes:
+      - ./convex-data:/convex/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3210/version"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1500M
+
+  convex-dashboard:
+    image: ghcr.io/get-convex/convex-dashboard:latest
+    container_name: cardify-convex-dashboard
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_DEPLOYMENT_URL: ${CONVEX_CLOUD_ORIGIN:-https://cardify.om/_convex/api}
+    ports:
+      - "127.0.0.1:6791:6791"
+    depends_on:
+      convex-backend:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
