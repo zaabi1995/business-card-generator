@@ -101,6 +101,38 @@ Paymob Oman for payments, BHD-ERP for accounting.
 - Writing tone: direct, action-oriented. Short commit messages that
   say "why" not "what". Long proposals get rejected as AI-sounding.
 
+## Vector PDF render path
+
+Cardify produces two canonical artifacts per employee card:
+
+| Artifact | Source | Used by |
+|---|---|---|
+| Front + back PNG | Browser-side Fabric.js export | digital_card.php, wallet strip, og:image, print-shop preview |
+| Vector PDF (front + back) | Server-side PyMuPDF, `scripts/render-card-pdf.py` | card-pdf.php (download), api/print-ready.php (imposition) |
+
+The vector path engages when `templates.has_vector_source = 1` (set at import time when source.pdf has embedded fonts and the SVG bg renders). Falls back to PNG-in-PDF when the flag is 0 or the Python render fails.
+
+Cache: `tmp/pdf-vector/<sha1>.pdf` keyed by `(employee_id, front_version, back_version, employee.updated_at, theme.updated_at, profile)`. Sidecar `.meta` JSON enables granular invalidation in `CardRenderer::invalidateForCompany|Employee`.
+
+Profiles:
+- `web` (default): subset fonts, smaller file (~300 KB), used by `card-pdf.php`
+- `print`: full font embed, used by `api/print-ready.php` imposition
+
+Components:
+- `scripts/render-card-pdf.py` (Python, PyMuPDF) - single card to PDF
+- `scripts/imposition-vector.py` - N copies to A4/A3 sheet with crop marks
+- `scripts/extract_template_fonts.py` - pulls Lato/Sora out of source.pdf
+- `scripts/warm-vector-cache.php` - cron-driven pre-render, every 5 min
+- `includes/CardPDFRenderer.php` - PHP wrapper, signature cache, fallback
+- `database/migrations/095_template_vector_assets.php` - has_vector_source + fonts_dir columns
+
+Headers on responses:
+- `X-Cardify-Pdf-Mode: vector | vector-304 | raster-fallback | raster-fallback-304`
+
+Cache-Control is `private, max-age=86400` (1 day). The cache is invalidated server-side on template/theme/employee change, so the long TTL is safe. `Last-Modified` is emitted on every response; a conditional `If-Modified-Since` request returns 304 with no body.
+
+If the print shop reports a quality issue: check `audit-card-surfaces.php <slug>` - the VECTOR column shows which employees got vector vs raster fallback.
+
 ## Common gotchas from memory
 
 | Memory file | Gotcha |

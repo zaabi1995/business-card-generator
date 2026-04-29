@@ -50,10 +50,25 @@ try {
         $name = trim((string)($employee['name_en'] ?? $employee['name'] ?? '')) ?: 'Employee';
         $downloadName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $name) . '.pdf';
         if ($downloadName === '.pdf') $downloadName = 'business-card.pdf';
+        $mtime = filemtime($vector['path']);
+        $lastModified = gmdate('D, d M Y H:i:s', $mtime) . ' GMT';
+        // 304 Not Modified shortcut for conditional GET
+        $ifMod = $_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? '';
+        if ($ifMod !== '') {
+            $reqTime = strtotime($ifMod);
+            if ($reqTime !== false && $reqTime >= $mtime) {
+                http_response_code(304);
+                header('Last-Modified: ' . $lastModified);
+                header('Cache-Control: private, max-age=86400');
+                header('X-Cardify-Pdf-Mode: vector-304');
+                exit;
+            }
+        }
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="' . $downloadName . '"');
         header('Content-Length: ' . filesize($vector['path']));
-        header('Cache-Control: private, max-age=300');
+        header('Last-Modified: ' . $lastModified);
+        header('Cache-Control: private, max-age=86400');
         header('X-Content-Type-Options: nosniff');
         header('X-Cardify-Pdf-Mode: vector');
         readfile($vector['path']);
@@ -165,10 +180,26 @@ try {
     $downloadName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $name) . '.pdf';
     if ($downloadName === '.pdf') { $downloadName = 'business-card.pdf'; }
 
+    $mtime = filemtime($cachePath);
+    $lastModified = gmdate('D, d M Y H:i:s', $mtime) . ' GMT';
+    // 304 Not Modified shortcut for conditional GET
+    $ifMod = $_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? '';
+    if ($ifMod !== '') {
+        $reqTime = strtotime($ifMod);
+        if ($reqTime !== false && $reqTime >= $mtime) {
+            http_response_code(304);
+            header('Last-Modified: ' . $lastModified);
+            header('Cache-Control: private, max-age=86400');
+            header('X-Cardify-Pdf-Mode: raster-fallback-304');
+            exit;
+        }
+    }
+
     header('Content-Type: application/pdf');
     header('Content-Disposition: attachment; filename="' . $downloadName . '"');
     header('Content-Length: ' . filesize($cachePath));
-    header('Cache-Control: private, max-age=300');
+    header('Last-Modified: ' . $lastModified);
+    header('Cache-Control: private, max-age=86400');
     header('X-Content-Type-Options: nosniff');
     header('X-Cardify-Pdf-Mode: raster-fallback');
     readfile($cachePath);
