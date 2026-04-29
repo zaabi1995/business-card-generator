@@ -394,7 +394,9 @@ function layoutGenerator() {
         isNew: <?php echo $isNew ? 'true' : 'false'; ?>,
 
         get cardShareUrl() {
-            return 'https://' + this.companySlug + '.' + this.apexHost + '/card/' + this.employeeId;
+            // Tenant-style URL: https://{slug}.cardify.om/{employee_id}
+            // (the old /card/{id} prefix was a legacy path-style URL.)
+            return 'https://' + this.companySlug + '.' + this.apexHost + '/' + this.employeeId;
         },
         get waShareUrl() {
             return 'https://wa.me/?text=' + encodeURIComponent('Here is my digital business card: ' + this.cardShareUrl);
@@ -706,7 +708,9 @@ function autoGenerator() {
         redirectTimer: null,
         countdownTimer: null,
         get cardShareUrl() {
-            return 'https://' + this.companySlug + '.' + this.apexHost + '/card/' + this.employee.id;
+            // Tenant-style URL (no /card/ prefix). Matches digital_card.php's
+            // canonical URL and the .vcf / wallet flows.
+            return 'https://' + this.companySlug + '.' + this.apexHost + '/' + this.employee.id;
         },
         get waShareUrl() {
             const msg = encodeURIComponent('Here is my digital business card: ' + this.cardShareUrl);
@@ -756,9 +760,12 @@ function autoGenerator() {
             if (!template || !template.backgroundImage) return '';
             // Remove leading slash from path
             const path = template.backgroundImage.replace(/^\//, '');
-            // Use baseUrl (full site URL) to construct absolute URL
-            // Background images are always at site root, not in admin folder
-            return this.baseUrl + '/' + path;
+            // Cache-bust with the template version so CDNs (Cloudflare)
+            // don't serve a stale bg after a re-import. Stable per version,
+            // no per-request thrash.
+            const v = template.current_version || 1;
+            const sep = path.indexOf('?') === -1 ? '?' : '&';
+            return this.baseUrl + '/' + path + sep + 'v=' + v;
         },
         
         // Card size presets (matching template editor)

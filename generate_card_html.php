@@ -78,11 +78,18 @@ $isFreePlan = $planInfo['plan'] === 'free';
 $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
 $basePath = getBasePath();
 
-$frontBgUrl = $frontTemplate && $frontTemplate['backgroundImage'] 
-    ? $baseUrl . $basePath . ltrim($frontTemplate['backgroundImage'], '/') 
+// Cache-bust the bg URL with the template's current_version so CDNs
+// (Cloudflare) don't serve a stale bg after re-import. Otherwise the
+// rendered card includes the old bg and any newly-baked-in static text
+// goes missing.
+$_bgVer = function ($tpl) {
+    return (int)($tpl['current_version'] ?? 1);
+};
+$frontBgUrl = $frontTemplate && $frontTemplate['backgroundImage']
+    ? $baseUrl . $basePath . ltrim($frontTemplate['backgroundImage'], '/') . '?v=' . $_bgVer($frontTemplate)
     : '';
-$backBgUrl = $backTemplate && $backTemplate['backgroundImage'] 
-    ? $baseUrl . $basePath . ltrim($backTemplate['backgroundImage'], '/') 
+$backBgUrl = $backTemplate && $backTemplate['backgroundImage']
+    ? $baseUrl . $basePath . ltrim($backTemplate['backgroundImage'], '/') . '?v=' . $_bgVer($backTemplate)
     : '';
 
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';

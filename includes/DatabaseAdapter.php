@@ -556,6 +556,10 @@ class DatabaseAdapter {
                 'originalPdf' => $tpl['original_pdf_path'] ?? null,
                 'fields' => json_decode($tpl['fields_json'], true) ?: getDefaultFieldSettings(),
                 'settings' => isset($tpl['settings_json']) ? json_decode($tpl['settings_json'], true) : null,
+                // Surface the version number so the editor can cache-bust
+                // the bg URL when the template gets re-imported. CDNs (CF)
+                // hold the bg file aggressively, the v= param breaks that.
+                'current_version' => isset($tpl['current_version']) ? (int)$tpl['current_version'] : 1,
                 'created_at' => $tpl['created_at']
             ];
             

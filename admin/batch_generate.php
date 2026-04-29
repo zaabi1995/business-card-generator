@@ -666,7 +666,9 @@ function batchGenerator() {
         getBackgroundUrl(template) {
             if (!template || !template.backgroundImage) return '';
             const path = template.backgroundImage.replace(/^\//, '');
-            return window.location.origin + this.basePath + path;
+            const v = template.current_version || 1;
+            const sep = path.indexOf('?') === -1 ? '?' : '&';
+            return window.location.origin + this.basePath + path + sep + 'v=' + v;
         },
         
         async saveCard(blob, side, employeeId, fileType = 'png') {
