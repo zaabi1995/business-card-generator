@@ -214,6 +214,28 @@ adminHeader(t('autogen.page_title'), 'employees');
 </div>
 <?php endif; ?>
 
+<!-- AUTOGEN_I18N is referenced by BOTH the layoutGenerator() and the
+     autoGenerator() Alpine components below. Define it here so both
+     branches of the if/else have it; was previously only inside the
+     usePreDesigned branch which broke the Fabric template path. -->
+<script>
+const AUTOGEN_I18N = <?php echo json_encode([
+    'initializing'       => t('autogen.js_initializing'),
+    'preparing_layout'   => t('autogen.js_preparing_layout'),
+    'generating_qr'      => t('autogen.js_generating_qr'),
+    'rendering_front'    => t('autogen.js_rendering_front'),
+    'rendering_back'     => t('autogen.js_rendering_back'),
+    'saving_front'       => t('autogen.js_saving_front'),
+    'saving_back'        => t('autogen.js_saving_back'),
+    'logging_gen'        => t('autogen.js_logging_gen'),
+    'init_editor'        => t('autogen.js_init_editor'),
+    'generating_front'   => t('autogen.js_generating_front'),
+    'generating_back'    => t('autogen.js_generating_back'),
+    'saving_cards'       => t('autogen.js_saving_cards'),
+    'generic_error'      => t('autogen.js_generic_error'),
+], JSON_UNESCAPED_UNICODE); ?>;
+</script>
+
 <?php if ($usePreDesigned): ?>
 <!-- ═══ PRE-DESIGNED LAYOUT PATH (no Fabric.js needed) ═══ -->
 <div class="max-w-4xl mx-auto" x-data="layoutGenerator()" x-init="init()">
@@ -342,22 +364,7 @@ const layoutIds = <?php echo json_encode(array_keys($preDesignedLayouts)); ?>;
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/dist/qrcode.min.js"></script>
 
 <script>
-// i18n strings for JS runtime (see lang/{en,ar}/autogen.php)
-const AUTOGEN_I18N = <?php echo json_encode([
-    'initializing'       => t('autogen.js_initializing'),
-    'preparing_layout'   => t('autogen.js_preparing_layout'),
-    'generating_qr'      => t('autogen.js_generating_qr'),
-    'rendering_front'    => t('autogen.js_rendering_front'),
-    'rendering_back'     => t('autogen.js_rendering_back'),
-    'saving_front'       => t('autogen.js_saving_front'),
-    'saving_back'        => t('autogen.js_saving_back'),
-    'logging_gen'        => t('autogen.js_logging_gen'),
-    'init_editor'        => t('autogen.js_init_editor'),
-    'generating_front'   => t('autogen.js_generating_front'),
-    'generating_back'    => t('autogen.js_generating_back'),
-    'saving_cards'       => t('autogen.js_saving_cards'),
-    'generic_error'      => t('autogen.js_generic_error'),
-], JSON_UNESCAPED_UNICODE); ?>;
+// AUTOGEN_I18N defined earlier (above the usePreDesigned if/else split).
 
 // Inject layout previews
 document.addEventListener('DOMContentLoaded', function() {
