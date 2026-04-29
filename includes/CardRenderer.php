@@ -68,18 +68,23 @@ class CardRenderer
         );
         $card = is_array($cardRow) ? $cardRow : null;
 
-        $frontStored = $card['front_web_path'] ?? null;
-        if (!$frontStored) $frontStored = $card['front_file_path'] ?? null;
-        $backStored = $card['back_web_path'] ?? null;
-        if (!$backStored) $backStored = $card['back_file_path'] ?? null;
+        $frontStored = ($card['front_web_path'] ?? '') !== '' ? $card['front_web_path'] : ($card['front_file_path'] ?? null);
+        $backStored  = ($card['back_web_path']  ?? '') !== '' ? $card['back_web_path']  : ($card['back_file_path']  ?? null);
 
-        $frontFs = $frontStored ? self::resolveFs($frontStored) : null;
-        $backFs  = $backStored  ? self::resolveFs($backStored)  : null;
+        // Stored path may be a bare filename like "card_front_...png" (older
+        // rows) OR a webroot-relative path like "/uploads/companies/.../cards/...png".
+        // digital_card.php normalizes the same way (line 222-224).
+        $cardBaseUrl = '/uploads/companies/' . $company['id'] . '/cards/';
+        $frontStoredFull = self::expandStored($frontStored, $cardBaseUrl);
+        $backStoredFull  = self::expandStored($backStored,  $cardBaseUrl);
+
+        $frontFs = $frontStoredFull ? self::resolveFs($frontStoredFull) : null;
+        $backFs  = $backStoredFull  ? self::resolveFs($backStoredFull)  : null;
         if ($frontFs && !is_file($frontFs)) $frontFs = null;
         if ($backFs  && !is_file($backFs))  $backFs  = null;
 
-        $frontUrl = ($frontFs && $frontStored) ? imageUrl($frontStored) : null;
-        $backUrl  = ($backFs  && $backStored)  ? imageUrl($backStored)  : null;
+        $frontUrl = ($frontFs && $frontStoredFull) ? imageUrl($frontStoredFull) : null;
+        $backUrl  = ($backFs  && $backStoredFull)  ? imageUrl($backStoredFull)  : null;
 
         // Freshness signature: rolls forward when template/theme/employee changes
         // OR when the cached PNG no longer exists on disk.
@@ -190,12 +195,13 @@ class CardRenderer
             ['cid' => $companyId]
         );
         $tplVersions = self::templateVersionsForCompany($db, $companyId);
+        $cardBaseUrl = '/uploads/companies/' . $companyId . '/cards/';
         $stale = [];
         foreach ($rows as $r) {
-            $frontStored = $r['front_web_path'] ?: $r['front_file_path'] ?: '';
-            $backStored  = $r['back_web_path']  ?: $r['back_file_path']  ?: '';
-            $missingFront = ($frontStored === '') || !is_file(self::resolveFs($frontStored));
-            $missingBack  = ($backStored  === '') || !is_file(self::resolveFs($backStored));
+            $frontStored = self::expandStored($r['front_web_path'] ?: $r['front_file_path'], $cardBaseUrl);
+            $backStored  = self::expandStored($r['back_web_path']  ?: $r['back_file_path'],  $cardBaseUrl);
+            $missingFront = $frontStored === null || !is_file(self::resolveFs($frontStored));
+            $missingBack  = $backStored  === null || !is_file(self::resolveFs($backStored));
             $drift = false;
             if ($tplVersions['front'] !== null && (int)($r['front_template_version'] ?? 0) !== $tplVersions['front']) $drift = true;
             if ($tplVersions['back']  !== null && (int)($r['back_template_version']  ?? 0) !== $tplVersions['back'])  $drift = true;
@@ -222,6 +228,19 @@ class CardRenderer
             return getFilePath($stored);
         }
         return BASE_DIR . '/' . ltrim($stored, '/');
+    }
+
+    /**
+     * Match digital_card.php's normalization, a bare filename gets prefixed
+     * with the company cards URL, an already-absolute path is left alone.
+     */
+    private static function expandStored(?string $stored, string $cardBaseUrl): ?string
+    {
+        if ($stored === null || $stored === '') return null;
+        if (strpos($stored, '/') === false) {
+            return $cardBaseUrl . $stored;
+        }
+        return $stored;
     }
 
     private static function matchesTemplateVersion($db, array $company, ?array $card): bool
