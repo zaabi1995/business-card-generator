@@ -50,6 +50,7 @@ function getAdminNavItems() {
         ['name' => 'Card Requests', 'icon' => 'fa-solid fa-inbox', 'url' => $basePath . 'requests' . $ext, 'key' => 'requests'],
         ['name' => 'Print Orders', 'icon' => 'fa-solid fa-print', 'url' => $basePath . 'print' . $ext, 'key' => 'print'],
         ['name' => 'QR Analytics', 'icon' => 'fa-solid fa-chart-line', 'url' => $basePath . 'analytics' . $ext, 'key' => 'analytics'],
+        ['name' => 'Live Analytics', 'icon' => 'fa-solid fa-bolt', 'url' => $basePath . 'live-analytics' . $ext, 'key' => 'live-analytics', 'badge' => 'LIVE'],
         ['name' => 'Growth Dashboard', 'icon' => 'fa-solid fa-chart-simple', 'url' => $basePath . 'growth' . $ext, 'key' => 'growth'],
         ['name' => 'Appointments', 'icon' => 'fa-solid fa-calendar-check', 'url' => $basePath . 'appointments' . $ext, 'key' => 'appointments'],
         ['name' => 'Theme', 'icon' => 'fa-solid fa-palette', 'url' => $basePath . 'theme' . $ext, 'key' => 'theme'],
@@ -405,6 +406,8 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
                                 <span class="ml-3 flex-1"><?php echo $item['name']; ?></span>
                                 <?php if ($item['key'] === 'requests' && $pendingRequestsCount > 0): ?>
                                 <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-[11px] font-semibold text-white bg-red-500 rounded-full"><?php echo $pendingRequestsCount > 99 ? '99+' : $pendingRequestsCount; ?></span>
+                                <?php elseif (!empty($item['badge'])): ?>
+                                <span class="inline-flex items-center px-1.5 h-4 text-[10px] font-semibold tracking-wide text-emerald-700 bg-emerald-100 rounded"><?php echo htmlspecialchars($item['badge']); ?></span>
                                 <?php endif; ?>
                             </a>
                         </li>
