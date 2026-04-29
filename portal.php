@@ -1399,11 +1399,34 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                                  (with employee data + watermark) after the user
                                  hits Generate Preview. -->
                             <div id="cardCanvases" class="space-y-4">
+                                <?php
+                                // Compute the design's printed dimensions so
+                                // the preview shows the exact card size from
+                                // the imported PDF (mm + "x.xx in" tag).
+                                $fmtCardSize = function ($tpl) {
+                                    if (!$tpl || empty($tpl['settings'])) return null;
+                                    $s = $tpl['settings'];
+                                    $w = $s['customWidth'] ?? null;
+                                    $h = $s['customHeight'] ?? null;
+                                    $unit = $s['customUnit'] ?? 'mm';
+                                    if (!$w || !$h) return null;
+                                    $mm_w = $unit === 'mm' ? $w : ($unit === 'pt' ? $w * 0.352778 : ($unit === 'in' ? $w * 25.4 : $w));
+                                    $mm_h = $unit === 'mm' ? $h : ($unit === 'pt' ? $h * 0.352778 : ($unit === 'in' ? $h * 25.4 : $h));
+                                    return sprintf('%.1f × %.1f mm  ·  %.2f × %.2f in', $mm_w, $mm_h, $mm_w/25.4, $mm_h/25.4);
+                                };
+                                $frontSizeStr = $fmtCardSize($activeFrontTemplate);
+                                $backSizeStr = $fmtCardSize($activeBackTemplate);
+                                ?>
                                 <?php if ($activeFrontTemplate): ?>
                                 <div>
-                                    <div class="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                                        <i class="fa-solid fa-image text-blue-400"></i>
-                                        <span id="frontPreviewLabel">Front</span>
+                                    <div class="text-xs text-gray-500 mb-2 flex items-center justify-between gap-2">
+                                        <span class="flex items-center gap-1">
+                                            <i class="fa-solid fa-image text-blue-400"></i>
+                                            <span id="frontPreviewLabel">Front</span>
+                                        </span>
+                                        <?php if ($frontSizeStr): ?>
+                                        <span class="text-[10px] font-mono text-gray-400" title="Card size from source design"><?= htmlspecialchars($frontSizeStr) ?></span>
+                                        <?php endif; ?>
                                     </div>
                                     <div class="canvas-preview-wrapper rounded-lg shadow-md border border-gray-200 relative">
                                         <canvas id="previewFrontCanvas"></canvas>
@@ -1416,9 +1439,14 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
 
                                 <?php if ($activeBackTemplate): ?>
                                 <div>
-                                    <div class="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                                        <i class="fa-solid fa-image text-green-400"></i>
-                                        <span id="backPreviewLabel">Back</span>
+                                    <div class="text-xs text-gray-500 mb-2 flex items-center justify-between gap-2">
+                                        <span class="flex items-center gap-1">
+                                            <i class="fa-solid fa-image text-green-400"></i>
+                                            <span id="backPreviewLabel">Back</span>
+                                        </span>
+                                        <?php if ($backSizeStr): ?>
+                                        <span class="text-[10px] font-mono text-gray-400" title="Card size from source design"><?= htmlspecialchars($backSizeStr) ?></span>
+                                        <?php endif; ?>
                                     </div>
                                     <div class="canvas-preview-wrapper rounded-lg shadow-md border border-gray-200 relative">
                                         <canvas id="previewBackCanvas"></canvas>
@@ -1601,7 +1629,24 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
 
         // Render the static-only template (background + decoration tokens
         // like "An Omantel Company" / "@otech") so the user sees the actual
-        // design from the start, not a flat background image.
+        // design from the start, not a flat background image. Editors are
+        // built async (onReady fires after a setTimeout); poll until both
+        // canvases exist before issuing the static render so the bg image
+        // doesn't get dropped on the first pass.
+        const waitForEditor = (getter) => new Promise(res => {
+            const start = Date.now();
+            const tick = () => {
+                const ed = getter();
+                if (ed && ed.canvas) return res(ed);
+                if (Date.now() - start > 5000) return res(null);
+                setTimeout(tick, 30);
+            };
+            tick();
+        });
+        await Promise.all([
+            frontTemplate ? waitForEditor(() => frontEditor) : Promise.resolve(),
+            backTemplate  ? waitForEditor(() => backEditor)  : Promise.resolve(),
+        ]);
         await renderInitialTemplate();
         const _hideOnInit = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
         _hideOnInit('frontLoading');
