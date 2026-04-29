@@ -30,42 +30,41 @@ if (!is_array($user)) {
     exit(2);
 }
 
-// PHP CLI defaults session.save_path to "" which silently no-ops the write.
-// PHP-FPM uses /tmp on this VPS (verified, files like /tmp/sess_*).
-session_save_path('/tmp');
-
-// config.php already calls session_start() on its own session ID, close it
-// before binding a new one (session_id() is a no-op while a session is open).
-if (session_status() === PHP_SESSION_ACTIVE) {
-    session_write_close();
-}
-
-// Bind a fresh session id under our control.
-$sid = bin2hex(random_bytes(16));
-session_id($sid);
-session_start();
-
-$_SESSION['user_id']         = $user['id'];
-$_SESSION['user_email']      = $user['email'];
-$_SESSION['user_name']       = $user['name'];
-$_SESSION['user_role']       = $user['role'];
-$_SESSION['user_company_id'] = $user['company_id'] ?? null;
-
+// config.php emits startup warnings (Session ini settings cannot be changed
+// after headers already sent, etc) that flush the output buffer, which makes
+// session_start() unusable from CLI. Bypass session_start entirely and write
+// the file directly using PHP's session_encode wire format:
+//   key1|<serialized value>key2|<serialized value>...
+$payload = [
+    'user_id'         => $user['id'],
+    'user_email'      => $user['email'],
+    'user_name'       => $user['name'],
+    'user_role'       => $user['role'],
+    'user_company_id' => $user['company_id'] ?? null,
+];
 if (!empty($user['company_id'])) {
-    $_SESSION['company_id'] = $user['company_id'];
+    $payload['company_id'] = $user['company_id'];
     $company = $db->fetchOne('SELECT slug, name FROM companies WHERE id = :i', ['i' => $user['company_id']]);
     if ($company) {
-        $_SESSION['company_slug'] = $company['slug'];
-        $_SESSION['company_name'] = $company['name'];
+        $payload['company_slug'] = $company['slug'];
+        $payload['company_name'] = $company['name'];
     }
 }
 
-session_write_close();
+$encoded = '';
+foreach ($payload as $k => $v) {
+    $encoded .= $k . '|' . serialize($v);
+}
 
-// PHP-FPM runs as www:www, the session file we just wrote is root:root.
-// Chown so PHP-FPM can read it on the next HTTP request.
+$sid = bin2hex(random_bytes(16));
 $sessFile = '/tmp/sess_' . $sid;
-if (is_file($sessFile) && function_exists('posix_geteuid') && posix_geteuid() === 0) {
+if (file_put_contents($sessFile, $encoded) === false) {
+    fwrite(STDERR, "Failed to write $sessFile\n");
+    exit(2);
+}
+
+// PHP-FPM runs as www:www, chown so it can read on next HTTP request.
+if (function_exists('posix_geteuid') && posix_geteuid() === 0) {
     @chown($sessFile, 'www');
     @chgrp($sessFile, 'www');
     @chmod($sessFile, 0600);
