@@ -666,7 +666,15 @@ function onboarding(init) {
         },
         tplLabel(t) { return this.tplLabels[t] || t; },
         previewUrl() {
-            const empSlug = (this.data.first_employee.name || '').toLowerCase().replace(/[^a-z0-9]+/g,'-') || 'preview';
+            // Match the actual production routing from index.php:45 —
+            // `<slug>.cardify.om/<email-localpart>` resolves to digital_card.php.
+            // Use email local-part first (real URL the employee will get),
+            // fall back to slugified name only if the email field is empty.
+            const email = (this.data.first_employee.email || '').trim();
+            const localPart = email.includes('@') ? email.split('@')[0] : '';
+            const fromEmail = localPart.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            const fromName  = (this.data.first_employee.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            const empSlug = fromEmail || fromName || 'preview';
             const apex = <?= json_encode(cardifyApexHost()) ?>;
             return 'https://' + this.companySlug + '.' + apex + '/' + empSlug;
         },
