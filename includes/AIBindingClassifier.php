@@ -26,8 +26,11 @@
  */
 class AIBindingClassifier
 {
-    private const MODEL_DEFAULT = 'qwen/qwen3.6-plus';
-    private const TIMEOUT_SEC   = 25;
+    // qwen3.6-flash classifies in ~3-6s vs qwen3.6-plus 15-30s. Classification
+    // doesn't need -plus depth, and the wizard upload UX shouldn't make
+    // the user stare at a spinner for half a minute.
+    private const MODEL_DEFAULT = 'qwen/qwen3.6-flash';
+    private const TIMEOUT_SEC   = 45;
     // Cardify-side typed keys + the universal escape hatches.
     private const VALID = [
         'name_en','name_ar',
@@ -164,7 +167,10 @@ SYS;
     private static function callQwen(string $systemPrompt, string $userPrompt): array
     {
         $apiKey = OPENROUTER_API_KEY;
-        $model = defined('AI_MODEL') ? AI_MODEL : self::MODEL_DEFAULT;
+        // Always use the classification-tuned (fast) model. We deliberately
+        // ignore AI_MODEL env, that one is set for translate.php where
+        // -plus quality matters more than latency.
+        $model = defined('AI_CLASSIFY_MODEL') ? AI_CLASSIFY_MODEL : self::MODEL_DEFAULT;
         $url = 'https://openrouter.ai/api/v1/chat/completions';
 
         $payload = [
