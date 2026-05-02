@@ -86,6 +86,10 @@ class CardifyTemplateImporter
             $out[$key] = [
                 'enabled'       => true,
                 'is_static'     => $isStatic,
+                // Mirror is_static onto render_in_bg so render-card-pdf.py
+                // and the Fabric renderers skip baked-in decorations
+                // instead of double-striking on top of the bg PNG/SVG.
+                'render_in_bg'  => $isStatic,
                 'label'         => $label,
                 'detected_text' => $f['detected_text'] ?? '',
                 'x'             => (int)($f['x_px'] ?? 0),

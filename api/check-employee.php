@@ -16,10 +16,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Require authentication to prevent email enumeration
+// Anti-enumeration: anonymous callers (public portal page) get a
+// silent {exists:false}, not a 401. The portal calls this opportunistically
+// to pre-fill the form for returning employees; an anonymous visitor just
+// fills the form fresh, no console noise either way.
 if (!Auth::isLoggedIn()) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Authentication required']);
+    echo json_encode(['exists' => false]);
     exit;
 }
 

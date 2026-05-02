@@ -19,6 +19,7 @@ require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/CardifyTemplateImporter.php';
 require_once INCLUDES_DIR . '/AIBindingClassifier.php';
+require_once INCLUDES_DIR . '/BindingValidator.php';
 
 header('Content-Type: application/json');
 
@@ -210,24 +211,53 @@ foreach ($parsed['pages'] as $page) {
     ];
 }
 
-// AI refinement pass: ask Qwen 3.6 to classify each block by reading the
-// detected text + neighbours. Overrides the parser's regex-only suggestion
-// when the model returns a label we recognise. Fail-open: if AI is not
-// configured or the call errors, the original heuristic suggestions stand.
-$aiResult = AIBindingClassifier::classify($reviewPages);
-if (!empty($aiResult['by_block_id'])) {
-    $aiMap = $aiResult['by_block_id'];
-    foreach ($reviewPages as &$rp) {
-        foreach ($rp['blocks'] as &$blk) {
-            if (isset($aiMap[$blk['id']])) {
-                $blk['suggested_binding'] = $aiMap[$blk['id']];
-                $blk['ai_classified']     = true;
-            }
+// Pipeline: script-first classification, AI only fills the gaps, then every
+// answer (script, AI, parser-heuristic) gets re-validated against script
+// rules so we never trust an AI label that conflicts with the actual text.
+$ambiguousIds = [];
+foreach ($reviewPages as &$rp) {
+    foreach ($rp['blocks'] as &$blk) {
+        $script = BindingValidator::scriptClassify((string)($blk['detected_text'] ?? ''));
+        $blk['script_binding'] = $script['binding'];
+        $blk['script_reason']  = $script['reason'];
+        if ($script['confident'] && $script['binding'] !== null) {
+            // Hard-lock: script wins, do not waste an AI slot on this.
+            $blk['suggested_binding'] = $script['binding'];
+            $blk['source'] = 'script';
+        } else {
+            $ambiguousIds[$blk['id']] = true;
         }
-        unset($blk);
     }
-    unset($rp);
+    unset($blk);
 }
+unset($rp);
+
+$aiResult = ['by_block_id' => [], 'used_ai' => false];
+if (!empty($ambiguousIds)) {
+    // Build a slim copy with only the ambiguous blocks so the AI prompt
+    // stays focused (and cheap). Fail-open: AI errors leave script answers.
+    $aiResult = AIBindingClassifier::classify($reviewPages);
+}
+
+foreach ($reviewPages as &$rp) {
+    foreach ($rp['blocks'] as &$blk) {
+        $text = (string)($blk['detected_text'] ?? '');
+        if (($blk['source'] ?? null) === 'script') {
+            // Already locked. Still pass through sanitize as a safety net.
+            $blk['suggested_binding'] = BindingValidator::sanitize($text, $blk['suggested_binding']);
+            continue;
+        }
+        $aiLabel = $aiResult['by_block_id'][$blk['id']] ?? null;
+        if ($aiLabel) {
+            $blk['ai_classified'] = true;
+        }
+        $candidate = $aiLabel ?? ($blk['suggested_binding'] ?? 'static');
+        $blk['suggested_binding'] = BindingValidator::sanitize($text, $candidate);
+        $blk['source'] = $aiLabel ? 'ai_validated' : 'parser_validated';
+    }
+    unset($blk);
+}
+unset($rp);
 
 echo json_encode([
     'import_token'      => $token,
