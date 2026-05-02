@@ -424,15 +424,19 @@ function processImportedEmployee($data, $autoConvertArabic = true) {
             if ($dept) {
                 $data['department_id'] = $dept['id'];
             } else {
-                // Create new department
-                $newDeptId = $db->insert('departments', [
-                    'id' => generateUUID(),
-                    'company_id' => $companyId,
-                    'name' => $deptName,
-                    'created_at' => date('Y-m-d H:i:s')
-                ]);
-                if ($newDeptId) {
+                // Create new department. Capture the UUID locally; Database::insert
+                // returns lastInsertId() which is '0' for UUID-PK tables.
+                $newDeptId = generateUUID();
+                try {
+                    $db->insert('departments', [
+                        'id' => $newDeptId,
+                        'company_id' => $companyId,
+                        'name' => $deptName,
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]);
                     $data['department_id'] = $newDeptId;
+                } catch (Exception $e) {
+                    error_log('[employees.import] department create failed for ' . $deptName . ': ' . $e->getMessage());
                 }
             }
         }

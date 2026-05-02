@@ -104,8 +104,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'updated_at' => date('Y-m-d H:i:s')
                 ];
 
-                $companyId = $db->insert('companies', $newCompany);
-                AuditLog::logCompany('create', $companyId, null, $newCompany);
+                $db->insert('companies', $newCompany);
+                // Use the locally-generated UUID; Database::insert returns
+                // lastInsertId() which is '0' for UUID-PK tables.
+                AuditLog::logCompany('create', $newCompany['id'], null, $newCompany);
 
                 $message = "Company '{$slug}' created. Tenant URL: " . CardifyConvention::tenantUrl($slug);
                 $messageType = 'success';

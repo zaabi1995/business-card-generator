@@ -76,10 +76,16 @@ if (!$skipSession && session_status() === PHP_SESSION_NONE) {
     ini_set('session.use_strict_mode', 1);
     ini_set('session.cookie_samesite', 'Lax');
     // Share session across {slug}.cardify.om subdomains so post-signup
-    // redirect to tenant subdomain doesn't lose the login.
+    // redirect to tenant subdomain doesn't lose the login. Use a fresh
+    // cookie name (CARDIFY_SID) instead of PHPSESSID so any stale
+    // host-only PHPSESSID cookies left over from before the migration
+    // don't shadow the new apex-scoped cookie (browsers send the more-
+    // specific host-only cookie first, which would point at a deleted
+    // session and silently log the user out on /admin/).
     $__sessHost = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
     if ($__sessHost === 'cardify.om' || (strlen($__sessHost) > 11 && substr($__sessHost, -11) === '.cardify.om')) {
         ini_set('session.cookie_domain', '.cardify.om');
+        ini_set('session.name', 'CARDIFY_SID');
     }
     session_start();
 }
