@@ -127,13 +127,63 @@ try {
         }
     }
 
-    // Step 7 (order cards) is the final step. Commit parsed CSV rows
-    // saved at step 6 now, so invites go out atomically with wizard
-    // finish. Silent on failure, wizard close is the priority here.
+    // Final wizard step. Three things happen atomically with finish:
+    //   1. Wipe the 5 demo placeholder employees (Sarah/Ahmed/Fatma/...)
+    //      seeded by DemoData on first wizard visit. After setup is real,
+    //      the user shouldn't see fake names mixed with real data on the
+    //      print-orders / employees pages.
+    //   2. Insert the admin as their own first employee (the wizard's
+    //      step 3 preview promises hosn.cardify.om/ali — that URL needs
+    //      a matching employee row to actually resolve).
+    //   3. Commit parsed CSV rows saved at step 6 (legacy 7-step flow).
     $importResult = null;
+    $firstEmpResult = null;
     if ($step === Onboarding::TOTAL_STEPS) {
         $state = Onboarding::get($companyId);
-        $rows  = $state['data']['invite_team']['csv']['parsed']['rows'] ?? [];
+
+        // 1. Clear demos
+        try {
+            require_once INCLUDES_DIR . '/DemoData.php';
+            DemoData::clear($companyId);
+        } catch (Throwable $e) {
+            error_log('[onboarding] demo clear failed: ' . $e->getMessage());
+        }
+
+        // 2. Insert first employee from saveMeta-seeded state
+        $firstEmp = $state['data']['first_employee'] ?? [];
+        $feEmail  = trim((string) ($firstEmp['email'] ?? ''));
+        $feName   = trim((string) ($firstEmp['name']  ?? ''));
+        if ($feEmail !== '' && $feName !== '' && filter_var($feEmail, FILTER_VALIDATE_EMAIL)) {
+            try {
+                $db = Database::getInstance();
+                $existing = $db->fetchOne(
+                    "SELECT id FROM employees WHERE company_id = :cid AND LOWER(email) = LOWER(:em) LIMIT 1",
+                    ['cid' => $companyId, 'em' => $feEmail]
+                );
+                if (!$existing) {
+                    require_once INCLUDES_DIR . '/CardifyConvention.php';
+                    $eid = CardifyConvention::employeeIdFromEmail($feEmail, $companyId, $db);
+                    $db->insert('employees', [
+                        'id'          => $eid,
+                        'company_id'  => $companyId,
+                        'email'       => $feEmail,
+                        'name_en'     => $feName,
+                        'position_en' => trim((string) ($firstEmp['title'] ?? '')) ?: null,
+                        'phone'       => trim((string) ($firstEmp['phone'] ?? '')) ?: null,
+                        'mobile'      => trim((string) ($firstEmp['phone'] ?? '')) ?: null,
+                        'status'      => 'active',
+                    ]);
+                    $firstEmpResult = ['inserted' => true, 'id' => $eid, 'email' => $feEmail];
+                } else {
+                    $firstEmpResult = ['inserted' => false, 'reason' => 'already_exists'];
+                }
+            } catch (Throwable $e) {
+                error_log('[onboarding] first_employee insert failed: ' . $e->getMessage());
+            }
+        }
+
+        // 3. CSV commit (legacy)
+        $rows = $state['data']['invite_team']['csv']['parsed']['rows'] ?? [];
         if (!empty($rows) && is_array($rows)) {
             try {
                 $importResult = OnboardingImport::commit($companyId, $rows);
