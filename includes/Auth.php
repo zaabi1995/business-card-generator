@@ -479,24 +479,26 @@ class Auth {
         }
         
         $userId = generateUUID();
-        $result = self::$db->insert('users', [
-            'id' => $userId,
-            'email' => sanitizeEmail($email),
-            'password_hash' => password_hash($password, PASSWORD_BCRYPT),
-            'name' => $name,
-            'role' => $role,
-            'company_id' => $companyId,
-            'status' => 'active'
-        ]);
-        
-        if ($result) {
+        try {
+            // Database::insert returns lastInsertId() which is '0' for UUID-PK
+            // tables. Treat a non-throwing insert as success; the row IS written.
+            self::$db->insert('users', [
+                'id' => $userId,
+                'email' => sanitizeEmail($email),
+                'password_hash' => password_hash($password, PASSWORD_BCRYPT),
+                'name' => $name,
+                'role' => $role,
+                'company_id' => $companyId,
+                'status' => 'active'
+            ]);
             return [
                 'success' => true,
                 'user_id' => $userId
             ];
+        } catch (Exception $e) {
+            error_log('[Auth::createUser] insert failed for ' . $email . ': ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Failed to create user'];
         }
-        
-        return ['success' => false, 'error' => 'Failed to create user'];
     }
 }
 
