@@ -1665,6 +1665,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             const needed = new Set();
             for (const f of Object.values(template.fields || {})) {
                 if (!f || f.enabled === false || !f.is_static) continue;
+                if (f.render_in_bg) continue; // already baked into bg PNG
                 const fam = (f.fontFamily || '').trim();
                 if (!fam) continue;
                 const w = f.fontWeight || 400;
@@ -1692,6 +1693,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         for (const [key, field] of Object.entries(template.fields || {})) {
             if (!field || field.enabled === false) continue;
             if (!field.is_static) continue;
+            if (field.render_in_bg) continue; // already baked into bg PNG
             const txt = (field.detected_text || '');
             if (!txt || !txt.replace(/\s+/g, '')) continue;
             const t = new fabric.Text(txt, {
@@ -1840,7 +1842,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     function reanchorStaticDecorationRuns(editor, template) {
         if (!editor || !editor.fields || !template || !template.fields) return;
         const staticEntries = Object.entries(template.fields)
-            .filter(([k, f]) => f && f.enabled !== false && f.is_static && /^static_\d+$/.test(k))
+            .filter(([k, f]) => f && f.enabled !== false && f.is_static && !f.render_in_bg && /^static_\d+$/.test(k))
             .sort((a, b) => parseInt(a[0].split('_')[1], 10) - parseInt(b[0].split('_')[1], 10));
         if (staticEntries.length < 2) return;
 
@@ -1968,6 +1970,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 // against employee data. They keep their original
                 // position, font, weight, size, and colour.
                 if (field.is_static) {
+                    if (field.render_in_bg) continue; // already baked into bg PNG
                     // Preserve leading/trailing spaces. PDF importer splits
                     // multi-color text runs into adjacent static_N tokens
                     // (e.g. "An ", "Omantel", " Company") and the spaces are
