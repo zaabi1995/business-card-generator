@@ -17,20 +17,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Require authentication
-if (!Auth::isLoggedIn()) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Authentication required']);
-    exit;
-}
-
-// Simple session-based rate limiting: 20 requests per minute
+// Public portal visitors hit this endpoint anonymously to translate
+// their own name/position from English to Arabic. Rate limit + length
+// cap below are the spend protection; full auth would block the use case.
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 $now = time();
 $rateLimitWindow = 60; // seconds
-$rateLimitMax = 20; // requests per window
+$rateLimitMax = Auth::isLoggedIn() ? 20 : 8; // tighter cap for anonymous
 
 if (!isset($_SESSION['translate_requests'])) {
     $_SESSION['translate_requests'] = [];
@@ -72,6 +67,14 @@ $fieldType = $input['field_type'] ?? 'text'; // name, position, address, phone, 
 
 if (empty($text)) {
     echo json_encode(['error' => 'No text provided', 'translation' => '']);
+    exit;
+}
+
+// Hard cap on input size so an anonymous caller can't dump a novel
+// into the model. Names/positions/addresses are short by definition.
+if (mb_strlen($text) > 300) {
+    http_response_code(413);
+    echo json_encode(['error' => 'Text too long (max 300 chars)']);
     exit;
 }
 
