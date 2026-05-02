@@ -1039,10 +1039,6 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <i class="fa-solid fa-check-circle"></i>
                     <span><?= htmlspecialchars(t('landing.cta_free_trial')) ?></span>
                 </div>
-                <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-check-circle"></i>
-                    <span><?= htmlspecialchars(t('pricing.home_plans_from', ['amount' => $priceStarterFrom, 'currency' => $homeCurName])) ?></span>
-                </div>
             </div>
             </p>
         </div>

@@ -211,8 +211,18 @@ function sanitize($input) {
  * @return string The CSRF token
  */
 function generateCSRFToken() {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
+    // Only attempt to start a session if headers haven't been sent yet
+    // (calling generateCSRFToken from inside a rendered page would emit
+    // a noisy "Session cannot be started after headers have already been
+    // sent" warning into php-errors.log on every request).
+    if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+        @session_start();
+    }
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        // Without a session we still need a CSRF token, fall back to a
+        // request-scoped random one. It won't survive across requests
+        // but it satisfies the form-render contract.
+        return bin2hex(random_bytes(16));
     }
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
