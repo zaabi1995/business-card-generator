@@ -18,6 +18,7 @@
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/CardifyTemplateImporter.php';
+require_once INCLUDES_DIR . '/AIBindingClassifier.php';
 
 header('Content-Type: application/json');
 
@@ -209,6 +210,25 @@ foreach ($parsed['pages'] as $page) {
     ];
 }
 
+// AI refinement pass: ask Qwen 3.6 to classify each block by reading the
+// detected text + neighbours. Overrides the parser's regex-only suggestion
+// when the model returns a label we recognise. Fail-open: if AI is not
+// configured or the call errors, the original heuristic suggestions stand.
+$aiResult = AIBindingClassifier::classify($reviewPages);
+if (!empty($aiResult['by_block_id'])) {
+    $aiMap = $aiResult['by_block_id'];
+    foreach ($reviewPages as &$rp) {
+        foreach ($rp['blocks'] as &$blk) {
+            if (isset($aiMap[$blk['id']])) {
+                $blk['suggested_binding'] = $aiMap[$blk['id']];
+                $blk['ai_classified']     = true;
+            }
+        }
+        unset($blk);
+    }
+    unset($rp);
+}
+
 echo json_encode([
     'import_token'      => $token,
     'import_path'       => $outRel,
@@ -217,4 +237,5 @@ echo json_encode([
     'pages'             => $reviewPages,
     'fonts_used'        => $parsed['fonts_used']    ?? [],
     'missing_fonts'     => $parsed['missing_fonts'] ?? [],
+    'ai_used'           => !empty($aiResult['used_ai']),
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
