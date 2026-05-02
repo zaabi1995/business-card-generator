@@ -31,14 +31,20 @@ class AIBindingClassifier
     // the user stare at a spinner for half a minute.
     private const MODEL_DEFAULT = 'qwen/qwen3.6-flash';
     private const TIMEOUT_SEC   = 45;
-    // Cardify-side typed keys + the universal escape hatches.
+    // MUST stay in lockstep with bindingOptions in admin/onboarding.php.
+    // Anything not on this list gets silently dropped, which then falls
+    // back to 'static' on the frontend (the user sees "Decoration" with
+    // no idea why). Keep the spelling identical to what the dropdown ships.
     private const VALID = [
         'name_en','name_ar',
         'position_en','position_ar',
-        'company_name','tagline',
-        'mobile','phone','fax',
-        'email','website',
-        'address_en','address_ar',
+        'company_en','company_ar',
+        'mobile','mobile_ar',
+        'phone','phone_ar','fax',
+        'email',
+        'website','website_ar',
+        'address','address_en','address_2_en','address_ar','address_2_ar',
+        'social',
         'static','skip',
     ];
 
@@ -110,42 +116,50 @@ class AIBindingClassifier
         // sees Omani-real cards (Arabic + English mixed, gov+corporate style)
         // and learns to distinguish labels ("PHONE") from values ("+968...").
         return <<<'SYS'
-You are a precise classifier that labels text on a business card with one of these field types:
+You are a precise classifier that labels text on a business card with EXACTLY ONE of these field labels (no others, no synonyms):
 
-  name_en        Person's name in English (e.g., "Mohammed Al Adawi", "Ali Al-Zaabi")
-  name_ar        Person's name in Arabic  (e.g., "محمد العدوي", "علي الزعابي")
-  position_en    Job title in English     (e.g., "Founding Partner", "CEO", "Senior Engineer", "Head of Marketing")
-  position_ar    Job title in Arabic      (e.g., "الشريك المؤسس", "الرئيس التنفيذي", "مهندس أول")
-  company_name   Company / org name       (e.g., "Hosn AI Services", "Omantel", "حصن لخدمات الذكاء الاصطناعي")
-  tagline        Brand tagline / slogan   (e.g., "Sovereign AI, hosted inside your organisation", "ذكاء اصطناعي سيادي")
-  mobile         Mobile phone number      (e.g., "+968 9214 4404", "+968 7161 6161", "+971 50 123 4567")
-  phone          Landline phone           (e.g., "+968 2456 7890", "T: +968 24...")
-  fax            Fax number               (e.g., "F: +968 ...")
-  email          Email address            (e.g., "mohammed@hosn.om", "info@cardify.om")
-  website        URL                      (e.g., "hosn.om", "https://cardify.om", "www.bhd.om")
-  address_en     Postal address (EN)      (e.g., "Bousher, Muscat, Sultanate of Oman", "PO Box 1234, Muscat 121")
-  address_ar     Postal address (AR)      (e.g., "بوشر، مسقط، سلطنة عُمان")
-  static         A label, decorative tagline, brand line, or social handle that should NEVER be replaced per-employee. Examples: "PHONE", "EMAIL", "MOBILE", "P H O N E" (label, not value), "An Omantel Company", "@hosn.om", "بريد", "هاتف", "Follow us", "Trusted by leaders since 1995"
-  skip           Pure decoration with no text meaning (rare; only if the text is meaningless symbols)
+  name_en        Person's name in Latin/English script (e.g., "Mohammed Al Adawi", "Ali Al-Zaabi")
+  name_ar        Person's name in Arabic script         (e.g., "محمد العدوي", "علي الزعابي")
+  position_en    Job title in Latin/English script      (e.g., "Founding Partner", "CEO", "Senior Engineer", "Head of Marketing")
+  position_ar    Job title in Arabic script             (e.g., "الشريك المؤسس", "الرئيس التنفيذي", "مهندس أول")
+  company_en     Company / org name in Latin/English    (e.g., "Hosn AI Services LLC", "Omantel", "BHD Group", "HOSN ARTIFICIAL INTELLIGENCE SERVICES LLC")
+  company_ar     Company / org name in Arabic           (e.g., "حصن لخدمات الذكاء الاصطناعي ش م م", "شركة عُمانتل")
+  mobile         Mobile/phone number in Latin digits    (e.g., "+968 9214 4404", "+968 7161 6161", "+971 50 123 4567", "9214 4404")
+  mobile_ar      Mobile/phone number in Arabic digits   (e.g., "٩٢١٤ ٤٤٠٤ ٩٦٨+")
+  phone          Landline phone in Latin digits         (e.g., "+968 2456 7890", "T: +968 24...")
+  phone_ar       Landline phone in Arabic digits
+  fax            Fax number                              (e.g., "F: +968 ...")
+  email          Email address                           (e.g., "mohammed@hosn.om", "ali@hosn.om", "info@cardify.om")
+  website        URL in Latin                            (e.g., "hosn.om", "HOSN.OM", "https://cardify.om", "www.bhd.om")
+  website_ar     URL in Arabic                           (e.g., "حصن.عُمان")
+  address_en     Postal address in Latin                 (e.g., "Bousher, Muscat, Sultanate of Oman", "BOUSHER, MUSCAT, SULTANATE OF OMAN", "PO Box 1234, Muscat 121")
+  address_ar     Postal address in Arabic                (e.g., "بوشر، مسقط، سلطنة عُمان")
+  social         Social-media handle                     (e.g., "@hosn.om", "@cardify_om")
+  static         Anything that should NEVER be replaced per-employee: field-name labels ("PHONE", "EMAIL", "P H O N E", "هاتف", "بريد"), brand taglines/slogans ("Sovereign AI, hosted inside your organisation", "ذكاء اصطناعي سيادي يعمل داخل مؤسستكم", "Design that delivers", "An Omantel Company"), follow-us prompts, established-since lines.
+  skip           Pure visual noise with no text meaning (rare).
 
-CLASSIFICATION RULES:
+ABSOLUTE RULES:
 
-1. FIELD LABELS vs VALUES: Words like "PHONE", "EMAIL", "MOBILE", "ADDRESS", "WEBSITE", "FAX" — and their tracking-spaced variants ("P H O N E", "E M A I L") — and Arabic equivalents ("هاتف", "بريد", "موقع", "عنوان", "فاكس") are LABELS. Always classify as 'static'. Only the actual phone number / email / URL gets the typed binding.
+1. SCRIPT WINS, NOT POSITION. If the text contains Arabic letters (ا ب ت ث ج ...), use the *_ar variant. If the text is in Latin/Roman letters (a b c ...), use the *_en variant. NEVER use *_ar for Latin text or *_en for Arabic text. Even on the "back" page that is mostly Arabic, if a specific block contains Latin text (like an email "ali@hosn.om" appearing on both sides), it is NOT _ar.
 
-2. NAMES vs POSITIONS: A name is usually 2-4 words, capitalised, no digits, no occupation words. A position contains words like CEO, Director, Manager, Officer, Engineer, Founder, Partner, President, Lead, Head, Chief, Principal, Specialist, Consultant, Architect, Analyst, Owner, Founder, مدير, رئيس, مؤسس, مهندس, شريك, مستشار.
+2. EMAIL vs MOBILE - DO NOT SWAP. An email ALWAYS contains "@" (e.g., "ali@hosn.om", "info@cardify.om"). A mobile/phone is digits, possibly with +, spaces, dashes, parentheses, leading "T:" or "M:" (e.g., "+968 7161 6161"). If you see "@" → email. If you see digits → mobile (or phone if explicitly a landline). NEVER label a phone number as email or an email address as mobile/phone.
 
-3. COMPANY NAME vs TAGLINE: A company name is short (1-5 words), often ends with Ltd/LLC/Group/Co/SAOC/شركة/مجموعة/ش م م. A tagline is a longer descriptive phrase ("hosted inside your organisation", "sovereign AI", "design that delivers", "ذكاء اصطناعي سيادي").
+3. FIELD LABELS ARE STATIC, NOT TYPED. The strings "PHONE", "EMAIL", "MOBILE", "ADDRESS", "WEBSITE", "FAX", "P H O N E", "E M A I L", "هاتف", "بريد", "موقع", "عنوان", "فاكس" are field NAMES, not values. They get 'static' EVERY time. Only the actual phone number, email, address, URL gets the typed binding.
 
-4. BILINGUAL CARDS: Use the script of the text itself. Arabic script -> *_ar variant. Latin script -> *_en variant. Don't infer language from the side of the card.
+4. TAGLINES & SLOGANS ARE STATIC. A tagline is a sentence that describes the company's mission/value, not a discrete data field. Examples: "Sovereign AI, hosted inside your organisation", "ذكاء اصطناعي سيادي يعمل داخل مؤسستكم", "Design that delivers", "Trusted since 1995". These get 'static' (NOT a typed binding).
 
-5. ADDRESS: Multi-part location with city, country, district, or PO Box. "Bousher, Muscat, Sultanate of Oman" is address_en. "بوشر، مسقط، سلطنة عُمان" is address_ar. Just "Muscat" alone with nothing else is too thin — treat as 'static' unless clearly intended as the address.
+5. COMPANY NAME (company_en/company_ar). A company name is short, often ends with LLC, Ltd, Group, Co, SAOC, ش م م, شركة, مجموعة. Examples: "Hosn AI Services", "HOSN ARTIFICIAL INTELLIGENCE SERVICES LLC", "حصن لخدمات الذكاء الاصطناعي ش م م". Use company_en for Latin, company_ar for Arabic.
 
-6. WEBSITE: Anything that looks like a domain (contains a dot and ends in .om/.com/.co/.io/.ai/.org/.net) — even without protocol. "hosn.om" is website. "info@hosn.om" is email (the @ wins).
+6. NAMES vs POSITIONS. A name is a personal name (2-4 capitalised words, no occupation words). A position contains words like CEO, Director, Manager, Officer, Engineer, Founder, Partner, President, Lead, Head, Chief, Principal, Specialist, Consultant, Architect, Analyst, Owner, مدير, رئيس, مؤسس, مهندس, شريك, مستشار.
 
-7. WHEN UNSURE: prefer 'static' over wrong typed binding. A wrong binding silently corrupts every employee card; 'static' just keeps the original text.
+7. ADDRESS. Multi-part location with city, country, district, or PO Box. Example Latin: "BOUSHER, MUSCAT, SULTANATE OF OMAN" → address_en. Example Arabic: "بوشر، مسقط، سلطنة عُمان" → address_ar.
 
-OUTPUT FORMAT: a single JSON object, no prose, no markdown fences. Example:
-{"block_0":"name_en","block_1":"position_en","block_2":"static","block_3":"phone","block_4":"email","block_5":"static","block_6":"address_en","block_7":"website"}
+8. WEBSITE. Anything that looks like a domain (contains a dot and ends in .om/.com/.co/.io/.ai/.org/.net), with or without protocol or www. Examples: "hosn.om", "HOSN.OM", "cardify.om", "https://bhd.om". An email (contains @) is NEVER a website.
+
+9. WHEN UNSURE → 'static'. A wrong typed binding silently corrupts every employee card the template generates. 'static' just keeps the original text on the card. Prefer 'static' over a guess.
+
+OUTPUT FORMAT: a single JSON object, NO prose, NO markdown fences, NO explanation. Use ONLY the labels listed above. Example output:
+{"block_0":"name_en","block_1":"position_en","block_2":"static","block_3":"static","block_4":"static","block_5":"mobile","block_6":"email","block_7":"address_en","block_8":"website","block_9":"name_ar","block_10":"position_ar","block_11":"static","block_12":"static","block_13":"static","block_14":"email","block_15":"mobile","block_16":"company_ar","block_17":"address_ar"}
 SYS;
     }
 
