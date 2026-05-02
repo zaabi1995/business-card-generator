@@ -666,15 +666,21 @@ function onboarding(init) {
         },
         tplLabel(t) { return this.tplLabels[t] || t; },
         previewUrl() {
-            // Match the actual production routing from index.php:45 —
-            // `<slug>.cardify.om/<email-localpart>` resolves to digital_card.php.
-            // Use email local-part first (real URL the employee will get),
-            // fall back to slugified name only if the email field is empty.
+            // Email is the source of truth — every employee in a company has
+            // a unique email by business rule (enforced at the API layer).
+            // Take the local-part (before @) and clean it: lowercase, every
+            // run of non-alphanumeric chars becomes a single dash, strip
+            // leading/trailing dashes. So:
+            //   ali@hosn.om                        -> /ali
+            //   Ali.Al-Zaabi+work@hosn.om          -> /ali-al-zaabi-work
+            //   info@hosn.om                       -> /info
+            // The backend route in index.php resolves this localpart back
+            // to the employee row by matching SUBSTRING_INDEX(email,'@',1).
             const email = (this.data.first_employee.email || '').trim();
-            const localPart = email.includes('@') ? email.split('@')[0] : '';
-            const fromEmail = localPart.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-            const fromName  = (this.data.first_employee.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-            const empSlug = fromEmail || fromName || 'preview';
+            const localPart = email.includes('@') ? email.split('@')[0] : email;
+            const empSlug = localPart.toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '') || 'preview';
             const apex = <?= json_encode(cardifyApexHost()) ?>;
             return 'https://' + this.companySlug + '.' + apex + '/' + empSlug;
         },

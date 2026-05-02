@@ -50,10 +50,52 @@ if (file_exists(__DIR__ . '/includes/TenantHost.php')) {
         $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
         if ($reqPath === '/login' || $reqPath === '/login/') {
             require __DIR__ . '/tenant_login.php';
-        } else {
-            // Default: employee request portal
-            require __DIR__ . '/portal.php';
+            exit;
         }
+
+        // Single-segment URL like /ali, /mohammed, /first-last → try to
+        // resolve as an employee email-localpart on this tenant's company
+        // and serve the digital card. Falls through to portal.php only
+        // when no matching employee exists. Implements the documented
+        // "<slug>.cardify.om/<email-localpart>" pattern (was previously
+        // only a comment, never wired).
+        $trimmed = trim($reqPath, '/');
+        if ($trimmed !== '' && strpos($trimmed, '/') === false
+            && preg_match('/^[a-z0-9._-]+$/i', $trimmed)) {
+            $tenant = TenantHost::resolve();
+            if ($tenant && !empty($tenant['id']) && class_exists('Database')) {
+                try {
+                    $db = Database::getInstance();
+                    // Match emails by both localpart-as-given and the dash-
+                    // normalised form (so /ali-zaabi matches ali.zaabi@... or
+                    // ali_zaabi@...). LIMIT 1 — if duplicates exist they
+                    // share the same URL anyway (business rule: unique email).
+                    $row = $db->fetchOne(
+                        "SELECT id, email FROM employees
+                         WHERE company_id = :cid
+                           AND status = 'active'
+                           AND (
+                                LOWER(SUBSTRING_INDEX(email, '@', 1)) = LOWER(:exact)
+                             OR REPLACE(REPLACE(LOWER(SUBSTRING_INDEX(email, '@', 1)), '.', '-'), '_', '-') = LOWER(:dashed)
+                           )
+                         LIMIT 1",
+                        ['cid' => $tenant['id'], 'exact' => $trimmed, 'dashed' => $trimmed]
+                    );
+                    if ($row && !empty($row['email'])) {
+                        $_GET['company_slug'] = $tenant['slug'];
+                        $_GET['employee_id']  = $row['email'];
+                        require __DIR__ . '/digital_card.php';
+                        exit;
+                    }
+                } catch (Exception $e) {
+                    error_log('[tenant slug→employee] lookup failed: ' . $e->getMessage());
+                    // fall through to portal
+                }
+            }
+        }
+
+        // Default: employee request portal
+        require __DIR__ . '/portal.php';
         exit;
     }
 }
