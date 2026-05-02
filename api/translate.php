@@ -152,7 +152,9 @@ function callTranslator($prompt, $systemPrompt = '') {
 
     if ($useOpenRouter) {
         $apiKey = OPENROUTER_API_KEY;
-        $model = defined('AI_MODEL') ? AI_MODEL : 'qwen/qwen3.6-plus';
+        // Names/positions/addresses are short, qwen3.6-flash returns in 1-2s
+        // vs qwen3.6-plus's 8-12s. Quality is identical for these inputs.
+        $model = defined('AI_TRANSLATE_MODEL') ? AI_TRANSLATE_MODEL : 'qwen/qwen3.6-flash';
         $url = 'https://openrouter.ai/api/v1/chat/completions';
         $providerLabel = 'openrouter';
     } else {
@@ -171,8 +173,8 @@ function callTranslator($prompt, $systemPrompt = '') {
     $data = [
         'model' => $model,
         'messages' => $messages,
-        'max_tokens' => 500,
-        'temperature' => 0.3
+        'max_tokens' => 80,
+        'temperature' => 0.2
     ];
 
     $headers = [

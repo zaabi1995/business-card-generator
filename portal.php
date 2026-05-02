@@ -1095,7 +1095,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             <?= htmlspecialchars(t('portal.full_name_ar')) ?>
-                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('name_en', 'name_ar', 'name')">
+                            <button type="button" class="translate-btn ml-2 text-xs text-blue-600 hover:text-blue-700 inline-flex items-center gap-1" onclick="translateField(this,'name_en', 'name_ar', 'name')">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
                         </label>
@@ -1122,7 +1122,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             <?= htmlspecialchars(t('portal.position_ar')) ?>
-                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('position_en', 'position_ar', 'position')">
+                            <button type="button" class="translate-btn ml-2 text-xs text-blue-600 hover:text-blue-700 inline-flex items-center gap-1" onclick="translateField(this,'position_en', 'position_ar', 'position')">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
                         </label>
@@ -1219,7 +1219,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             <?= htmlspecialchars(t('portal.address_01_ar')) ?>
-                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('address_en', 'address_ar', 'address')">
+                            <button type="button" class="translate-btn ml-2 text-xs text-blue-600 hover:text-blue-700 inline-flex items-center gap-1" onclick="translateField(this,'address_en', 'address_ar', 'address')">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
                         </label>
@@ -1237,7 +1237,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             <?= htmlspecialchars(t('portal.address_02_ar')) ?>
-                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('address_2_en', 'address_2_ar', 'address')">
+                            <button type="button" class="translate-btn ml-2 text-xs text-blue-600 hover:text-blue-700 inline-flex items-center gap-1" onclick="translateField(this,'address_2_en', 'address_2_ar', 'address')">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
                         </label>
@@ -2339,29 +2339,48 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         });
     }
     
-    async function translateField(sourceId, targetId, fieldType) {
+    async function translateField(btnOrSourceId, sourceIdOrTargetId, targetIdOrFieldType, fieldTypeMaybe) {
+        // Support both legacy 3-arg form and new 4-arg form (button passed first).
+        let btn = null, sourceId, targetId, fieldType;
+        if (btnOrSourceId && typeof btnOrSourceId === 'object' && btnOrSourceId.tagName === 'BUTTON') {
+            btn = btnOrSourceId;
+            sourceId  = sourceIdOrTargetId;
+            targetId  = targetIdOrFieldType;
+            fieldType = fieldTypeMaybe;
+        } else {
+            sourceId  = btnOrSourceId;
+            targetId  = sourceIdOrTargetId;
+            fieldType = targetIdOrFieldType;
+        }
+
         const sourceEl = document.getElementById(sourceId);
         const targetEl = document.getElementById(targetId);
-        
+
         if (!sourceEl || !targetEl) return;
-        
+
         const sourceText = sourceEl.value.trim();
         if (!sourceText) {
             showToast(<?= json_encode(t('portal.english_first')) ?>, 'warning');
             sourceEl.focus();
             return;
         }
-        
+
         // Don't translate if already in progress
         if (isTranslating[targetId]) return;
         isTranslating[targetId] = true;
-        
-        // Find the translate button and show loading
-        const btn = targetEl.parentElement.querySelector('.translate-btn');
+
+        // Always show clear "Translating..." feedback. The button label is
+        // visible-text + spinner so users see something happen the instant
+        // they click, even on slow links / first-token-time.
+        const originalHtml = btn ? btn.innerHTML : '';
         if (btn) {
-            btn.innerHTML = '<i class="fa-solid fa-spinner spinner"></i>';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Translating...';
             btn.disabled = true;
+            btn.style.opacity = '0.7';
         }
+        // Soft-disable the target field while we fill it.
+        targetEl.placeholder = 'Translating...';
+        targetEl.classList.add('opacity-60');
         
         try {
             const response = await fetch(translateApiUrl, {
@@ -2396,9 +2415,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             showToast('Translation failed. Please try again.', 'error');
         } finally {
             isTranslating[targetId] = false;
+            targetEl.placeholder = '';
+            targetEl.classList.remove('opacity-60');
             if (btn) {
-                btn.innerHTML = '<i class="fa-solid fa-language"></i>';
+                btn.innerHTML = originalHtml || '<i class="fa-solid fa-wand-magic-sparkles"></i> AI Translate';
                 btn.disabled = false;
+                btn.style.opacity = '';
             }
         }
     }
