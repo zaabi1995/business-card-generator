@@ -60,13 +60,16 @@ def main(import_dir: str = None):
                 print(f"WARN xref={xref}: {e}", file=sys.stderr)
 
     if not seen:
-        print(f"No embedded TTF/OTF fonts found in {src}")
+        print(f"No embedded TTF/OTF fonts found in {src}", file=sys.stderr)
         return 1
 
     manifest_path = os.path.join(fonts_dir, 'manifest.json')
     with open(manifest_path, 'w') as fh:
         json.dump({str(k): v for k, v in seen.items()}, fh, indent=2)
-    print(f"Extracted {len(seen)} fonts to {fonts_dir}")
+    # Progress messages go to stderr so callers that capture stdout as
+    # JSON (printshop/import_pdf.php, scripts/parse_card_pdf.py) aren't
+    # poisoned by mixed output.
+    print(f"Extracted {len(seen)} fonts to {fonts_dir}", file=sys.stderr)
     return 0
 
 

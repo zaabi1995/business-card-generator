@@ -100,17 +100,26 @@ if (!file_exists($installedFontsFile)) {
     file_put_contents($installedFontsFile, implode("\n", $defaultFonts) . "\n");
 }
 
+// Keep stderr OUT of stdout: the parser (and its sub-tools like
+// extract_template_fonts.py) print progress messages to stderr, and
+// merging them via 2>&1 silently corrupts the JSON we try to decode.
+// Sidecar the stderr to a log file so we can still surface it on failure.
+$stderrLog = $outAbs . '/parser-stderr.log';
 $cmd = sprintf(
-    'python3 %s %s %s %s 2>&1',
+    'python3 %s %s %s %s 2>%s',
     escapeshellarg(__DIR__ . '/../scripts/parse_card_pdf.py'),
     escapeshellarg($srcPdf),
     escapeshellarg($outAbs),
-    escapeshellarg($installedFontsFile)
+    escapeshellarg($installedFontsFile),
+    escapeshellarg($stderrLog)
 );
 $out = shell_exec($cmd);
 if (!$out) {
     http_response_code(500);
-    echo json_encode(['error' => 'parser_no_output', 'cmd' => $cmd]);
+    echo json_encode([
+        'error' => 'parser_no_output',
+        'parser_stderr' => is_file($stderrLog) ? substr((string)@file_get_contents($stderrLog), 0, 4000) : null,
+    ]);
     exit;
 }
 
@@ -120,6 +129,7 @@ if ($parsed === null) {
     echo json_encode([
         'error' => 'parser_failed',
         'parser_output' => substr($out, 0, 4000),
+        'parser_stderr' => is_file($stderrLog) ? substr((string)@file_get_contents($stderrLog), 0, 4000) : null,
     ]);
     exit;
 }
