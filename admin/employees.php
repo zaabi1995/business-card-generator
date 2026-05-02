@@ -213,9 +213,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $autoConvertArabic = isset($_POST['auto_convert_arabic']);
             $result = importFromExcel($_FILES['excel_file'] ?? null, $skipDuplicates, $autoConvertArabic);
             if ($result['success']) {
-                $msg = "Imported {$result['count']} employees successfully";
-                if (!empty($result['skipped'])) {
-                    $msg .= " ({$result['skipped']} duplicates skipped)";
+                // Send the user straight to the batch generator so the cards
+                // for the freshly-imported rows actually get rendered. The
+                // separate "Generate All" step was a footgun: HR imported
+                // 50 employees, never noticed the cards page was empty.
+                $msg = "Imported {$result['count']} employees";
+                if (!empty($result['skipped'])) $msg .= " ({$result['skipped']} duplicates skipped)";
+                if (($result['count'] ?? 0) > 0) {
+                    header('Location: batch-auto-generate.php?from=import&imported=' . (int)$result['count']);
+                    exit;
                 }
                 $message = $msg;
                 $employees = loadEmployees($companyId);

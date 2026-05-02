@@ -986,17 +986,21 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
         </div>
     </div>
     
-    <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+    <a href="<?= getAdminBasePath() ?>employees<?= defined('COMPANY_ADMIN_BASE') ? '' : '.php' ?>"
+       class="block bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md hover:border-green-200 transition-all">
         <div class="flex items-center gap-4">
             <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <i class="fa-solid fa-users text-green-600 text-xl"></i>
             </div>
-            <div>
+            <div class="flex-1">
                 <p class="text-3xl font-bold text-gray-900"><?php echo $employeeCount; ?></p>
                 <p class="text-gray-500 text-sm"><?= htmlspecialchars(t('dashboard.kpi_employees')) ?></p>
             </div>
+            <span class="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 px-2.5 py-1 rounded-full">
+                <i class="fa-solid fa-plus"></i> Add
+            </span>
         </div>
-    </div>
+    </a>
     
     <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
         <div class="flex items-center gap-4">
