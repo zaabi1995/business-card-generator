@@ -212,7 +212,8 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
             </div>
 
             <!-- 2b: review (parser ran, user confirms each text block) -->
-            <div x-show="cardPdfReview" x-cloak>
+            <template x-if="cardPdfReview">
+            <div x-cloak>
                 <div class="flex items-start justify-between gap-3 mb-3">
                     <div>
                         <h2 class="text-xl font-bold text-gray-900 mb-1">Match each text block to a Cardify field</h2>
@@ -339,6 +340,7 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
 
                 <div id="card-pdf-persist-error" class="hidden bg-red-50 border-l-4 border-red-500 px-4 py-2 rounded mt-3 text-sm text-red-700"></div>
             </div>
+            </template>
         </div>
 
         <!-- Step 3: Preview / Launch -->

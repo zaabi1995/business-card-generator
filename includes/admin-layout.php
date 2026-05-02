@@ -189,6 +189,7 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     <!-- PWA manifest + theme color (action 287) -->
     <link rel="manifest" href="<?php echo $basePath; ?>manifest.webmanifest">
     <meta name="theme-color" content="<?= htmlspecialchars($tBrand) ?>">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
