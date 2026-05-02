@@ -127,15 +127,16 @@ try {
         }
     }
 
-    // Final wizard step. Three things happen atomically with finish:
-    //   1. Wipe the 5 demo placeholder employees (Sarah/Ahmed/Fatma/...)
-    //      seeded by DemoData on first wizard visit. After setup is real,
-    //      the user shouldn't see fake names mixed with real data on the
-    //      print-orders / employees pages.
-    //   2. Insert the admin as their own first employee (the wizard's
-    //      step 3 preview promises hosn.cardify.om/ali — that URL needs
-    //      a matching employee row to actually resolve).
-    //   3. Commit parsed CSV rows saved at step 6 (legacy 7-step flow).
+    // Final wizard step. Five things happen atomically with finish:
+    //   1. Wipe the 5 demo placeholder employees (Sarah/Ahmed/Fatma/...).
+    //   2. Persist the uploaded logo (data:image base64) to a real file
+    //      and upsert company_themes so the digital card shows the brand.
+    //   3. Mark the most recent imported PDF template pair as active
+    //      and set companies.default_{front,back}_template_id so cards
+    //      render with that design instead of the seeded BHD-Classic.
+    //   4. Insert the admin as their own first employee (matches the
+    //      hosn.cardify.om/<localpart> URL the wizard preview promises).
+    //   5. Commit parsed CSV rows saved at step 6 (legacy 7-step flow).
     $importResult = null;
     $firstEmpResult = null;
     if ($step === Onboarding::TOTAL_STEPS) {
@@ -149,7 +150,81 @@ try {
             error_log('[onboarding] demo clear failed: ' . $e->getMessage());
         }
 
-        // 2. Insert first employee from saveMeta-seeded state
+        // 2. Persist logo + upsert company_themes
+        try {
+            $logoBlob = $state['data']['logo'] ?? [];
+            $primaryColor = trim((string) ($logoBlob['dominant_color'] ?? ''))
+                ?: trim((string) ($state['data']['colors']['primary'] ?? ''))
+                ?: '#009bc1';
+            $logoUrl = (string) ($logoBlob['url'] ?? '');
+            $logoPath = null;
+            if ($logoUrl !== '' && strncmp($logoUrl, 'data:image/', 11) === 0) {
+                $logoPath = onboarding_save_logo_file($companyId, $logoUrl);
+            }
+            $db = Database::getInstance();
+            $existingTheme = $db->fetchOne(
+                "SELECT id FROM company_themes WHERE company_id = :cid LIMIT 1",
+                ['cid' => $companyId]
+            );
+            $themeData = ['primary_color' => $primaryColor];
+            if ($logoPath !== null) $themeData['logo_path'] = $logoPath;
+            if ($existingTheme) {
+                $db->update('company_themes', $themeData, 'company_id = :cid', ['cid' => $companyId]);
+            } else {
+                $themeData['id']         = generateUUID();
+                $themeData['company_id'] = $companyId;
+                $db->insert('company_themes', $themeData);
+            }
+        } catch (Throwable $e) {
+            error_log('[onboarding] theme persist failed: ' . $e->getMessage());
+        }
+
+        // 3. Mark latest imported template pair active for this company
+        try {
+            $db = Database::getInstance();
+            $pair = $db->fetchOne(
+                "SELECT pair_id, MAX(created_at) AS ts FROM templates
+                 WHERE company_id = :cid AND pair_id IS NOT NULL
+                   AND deleted_at IS NULL AND has_vector_source = 1
+                 GROUP BY pair_id ORDER BY ts DESC LIMIT 1",
+                ['cid' => $companyId]
+            );
+            if ($pair && !empty($pair['pair_id'])) {
+                $front = $db->fetchOne(
+                    "SELECT id FROM templates WHERE company_id = :cid
+                       AND pair_id = :p AND side = 'front' AND deleted_at IS NULL LIMIT 1",
+                    ['cid' => $companyId, 'p' => $pair['pair_id']]
+                );
+                $back = $db->fetchOne(
+                    "SELECT id FROM templates WHERE company_id = :cid
+                       AND pair_id = :p AND side = 'back' AND deleted_at IS NULL LIMIT 1",
+                    ['cid' => $companyId, 'p' => $pair['pair_id']]
+                );
+                if ($front || $back) {
+                    // Deactivate everything else first
+                    $db->query(
+                        "UPDATE templates SET is_active = 0
+                         WHERE company_id = :cid AND pair_id != :p",
+                        ['cid' => $companyId, 'p' => $pair['pair_id']]
+                    );
+                    $db->query(
+                        "UPDATE templates SET is_active = 1
+                         WHERE company_id = :cid AND pair_id = :p",
+                        ['cid' => $companyId, 'p' => $pair['pair_id']]
+                    );
+                    $companyUpdate = [];
+                    if ($front) $companyUpdate['default_front_template_id'] = $front['id'];
+                    if ($back)  $companyUpdate['default_back_template_id']  = $back['id'];
+                    if ($companyUpdate) {
+                        $db->update('companies', $companyUpdate, 'id = :id', ['id' => $companyId]);
+                    }
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('[onboarding] template activation failed: ' . $e->getMessage());
+        }
+
+        // 4. Insert first employee from saveMeta-seeded state
         $firstEmp = $state['data']['first_employee'] ?? [];
         $feEmail  = trim((string) ($firstEmp['email'] ?? ''));
         $feName   = trim((string) ($firstEmp['name']  ?? ''));
@@ -182,7 +257,7 @@ try {
             }
         }
 
-        // 3. CSV commit (legacy)
+        // 5. CSV commit (legacy)
         $rows = $state['data']['invite_team']['csv']['parsed']['rows'] ?? [];
         if (!empty($rows) && is_array($rows)) {
             try {
@@ -208,6 +283,31 @@ try {
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode(['ok' => false, 'error' => 'save failed']);
+}
+
+/**
+ * Persist a data:image base64 logo to /uploads/logos/<companyId>.<ext>
+ * and return the web-relative path (e.g. /uploads/logos/abc.png) for
+ * storage in company_themes.logo_path. Returns null on failure.
+ */
+function onboarding_save_logo_file(string $companyId, string $dataUrl): ?string
+{
+    if (!preg_match('#^data:(image/(png|jpeg|jpg|webp|svg\+xml));base64,(.+)$#i', $dataUrl, $m)) {
+        return null;
+    }
+    $mimeMap = ['image/png'=>'png','image/jpeg'=>'jpg','image/jpg'=>'jpg','image/webp'=>'webp','image/svg+xml'=>'svg'];
+    $mime = strtolower($m[1]);
+    $ext = $mimeMap[$mime] ?? 'png';
+    $bin = base64_decode(strtr($m[3], "\n\r\t ", ''), true);
+    if ($bin === false || strlen($bin) === 0) return null;
+    $logosDir = realpath(__DIR__ . '/..') . '/uploads/logos';
+    if (!is_dir($logosDir)) @mkdir($logosDir, 0755, true);
+    if (!is_dir($logosDir)) return null;
+    $filename = preg_replace('/[^a-z0-9-]/i', '', $companyId) . '.' . $ext;
+    $absPath  = $logosDir . '/' . $filename;
+    if (file_put_contents($absPath, $bin) === false) return null;
+    @chmod($absPath, 0644);
+    return '/uploads/logos/' . $filename;
 }
 
 /**
