@@ -1,8 +1,10 @@
 <?php
 /**
  * AI Translation API Endpoint
- * Uses OpenAI to translate text between English and Arabic
- * Requires authentication to prevent unauthorized OpenAI credit consumption.
+ * Uses Qwen 3.6 via OpenRouter to translate text between English and Arabic.
+ * Falls back to OPENAI_API_KEY (gpt-4o-mini) if OPENROUTER_API_KEY is unset,
+ * so existing deploys keep working while the new key rolls out.
+ * Requires authentication to prevent unauthorized AI credit consumption.
  */
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config.php';
@@ -47,8 +49,10 @@ if (count($_SESSION['translate_requests']) >= $rateLimitMax) {
 }
 $_SESSION['translate_requests'][] = $now;
 
-// Check if OpenAI is configured
-if (!defined('OPENAI_API_KEY') || empty(OPENAI_API_KEY)) {
+// Check if any AI provider is configured (prefer OpenRouter, fall back to OpenAI)
+$hasOpenRouter = defined('OPENROUTER_API_KEY') && !empty(OPENROUTER_API_KEY);
+$hasOpenAI = defined('OPENAI_API_KEY') && !empty(OPENAI_API_KEY);
+if (!$hasOpenRouter && !$hasOpenAI) {
     http_response_code(503);
     echo json_encode(['error' => 'AI translation not configured', 'code' => 'not_configured']);
     exit;
@@ -120,13 +124,13 @@ switch ($fieldType) {
         }
 }
 
-// Call OpenAI API
-$response = callOpenAI($prompt, $systemPrompt);
+// Call AI provider (OpenRouter Qwen first, OpenAI fallback)
+$response = callTranslator($prompt, $systemPrompt);
 
 if ($response['success']) {
     echo json_encode([
         'translation' => $response['text'],
-        'source' => 'openai'
+        'source' => $response['provider'] ?? 'ai'
     ]);
 } else {
     http_response_code(500);
@@ -137,55 +141,75 @@ if ($response['success']) {
 }
 
 /**
- * Call OpenAI API
+ * Call the configured AI translator. Prefers OpenRouter Qwen 3.6, falls back
+ * to OpenAI gpt-4o-mini if OPENROUTER_API_KEY isn't set yet.
  */
-function callOpenAI($prompt, $systemPrompt = '') {
-    $apiKey = OPENAI_API_KEY;
-    $model = defined('OPENAI_MODEL') ? OPENAI_MODEL : 'gpt-4o-mini';
-    
+function callTranslator($prompt, $systemPrompt = '') {
+    $useOpenRouter = defined('OPENROUTER_API_KEY') && !empty(OPENROUTER_API_KEY);
+
+    if ($useOpenRouter) {
+        $apiKey = OPENROUTER_API_KEY;
+        $model = defined('AI_MODEL') ? AI_MODEL : 'qwen/qwen3.6-plus';
+        $url = 'https://openrouter.ai/api/v1/chat/completions';
+        $providerLabel = 'openrouter';
+    } else {
+        $apiKey = OPENAI_API_KEY;
+        $model = defined('OPENAI_MODEL') ? OPENAI_MODEL : 'gpt-4o-mini';
+        $url = 'https://api.openai.com/v1/chat/completions';
+        $providerLabel = 'openai';
+    }
+
     $messages = [];
     if ($systemPrompt) {
         $messages[] = ['role' => 'system', 'content' => $systemPrompt];
     }
     $messages[] = ['role' => 'user', 'content' => $prompt];
-    
+
     $data = [
         'model' => $model,
         'messages' => $messages,
         'max_tokens' => 500,
         'temperature' => 0.3
     ];
-    
-    $ch = curl_init('https://api.openai.com/v1/chat/completions');
+
+    $headers = [
+        'Content-Type: application/json',
+        'Authorization: Bearer ' . $apiKey,
+    ];
+    if ($useOpenRouter) {
+        // Recommended by OpenRouter for attribution + better rate-limit tier.
+        $headers[] = 'HTTP-Referer: https://cardify.om';
+        $headers[] = 'X-Title: Cardify';
+    }
+
+    $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => json_encode($data),
-        CURLOPT_HTTPHEADER => [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $apiKey
-        ],
+        CURLOPT_HTTPHEADER => $headers,
         CURLOPT_TIMEOUT => 30
     ]);
-    
+
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $error = curl_error($ch);
     curl_close($ch);
-    
+
     if ($error) {
         return ['success' => false, 'error' => 'Connection error: ' . $error];
     }
-    
+
     $result = json_decode($response, true);
-    
+
     if ($httpCode !== 200) {
-        $errorMsg = $result['error']['message'] ?? 'API error';
+        $errorMsg = $result['error']['message'] ?? ($result['error'] ?? 'API error');
+        if (is_array($errorMsg)) { $errorMsg = json_encode($errorMsg); }
         return ['success' => false, 'error' => $errorMsg];
     }
-    
+
     $text = $result['choices'][0]['message']['content'] ?? '';
-    return ['success' => true, 'text' => trim($text)];
+    return ['success' => true, 'text' => trim($text), 'provider' => $providerLabel];
 }
 
 /**

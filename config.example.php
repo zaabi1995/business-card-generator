@@ -177,6 +177,11 @@ if (!defined('LINKEDIN_CLIENT_SECRET')) define('LINKEDIN_CLIENT_SECRET', ''); //
 // Accepts either a console API key (sk-ant-api03-...) or a Claude Code OAuth token (sk-ant-oat01-...)
 if (!defined('ANTHROPIC_API_KEY')) define('ANTHROPIC_API_KEY', '');
 
+// OpenRouter API key (primary AI translator for /api/translate.php, Qwen 3.6).
+// If empty, translate.php falls back to OPENAI_API_KEY + gpt-4o-mini.
+if (!defined('OPENROUTER_API_KEY')) define('OPENROUTER_API_KEY', '');
+if (!defined('AI_MODEL')) define('AI_MODEL', 'qwen/qwen3.6-plus');
+
 // Google Gemini API (used by LinkedIn carousel image generator)
 if (!defined('GEMINI_API_KEY')) define('GEMINI_API_KEY', '');
 
