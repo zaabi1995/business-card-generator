@@ -15,7 +15,11 @@ header('Content-Type: application/json');
 
 Auth::requireLogin();
 $user = Auth::getCurrentUser();
-if ($user['role'] !== 'print_shop' && $user['role'] !== 'super_admin') {
+// Same role list as upload_font.php (singular wizard endpoint) so a
+// company admin can drop a missing font from the template editor's
+// banner, not just during the onboarding wizard.
+$allowedRoles = ['print_shop', 'super_admin', 'admin', 'company_admin', 'company'];
+if (!in_array($user['role'], $allowedRoles, true)) {
     http_response_code(403);
     echo json_encode(['error' => 'forbidden']);
     exit;
