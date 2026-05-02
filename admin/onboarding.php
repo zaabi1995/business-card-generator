@@ -249,24 +249,18 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
 
                             <!-- QR area: detected QR code that Cardify will replace
                                  per-employee with a tracking QR (vCard download +
-                                 scan analytics). Only shown if the parser found one.
-                                 Border surrounds the QR; the label floats ABOVE the
-                                 box so it never covers the QR pixels themselves. -->
+                                 scan analytics). Outline only, no badge on top of
+                                 the QR pixels. The "what does this mean" copy is
+                                 in the info card UNDER the preview so nothing
+                                 ever overlaps the QR itself. -->
                             <template x-if="page.qr_area">
-                                <div class="absolute pointer-events-none z-20"
+                                <div class="absolute border-2 border-dashed border-fuchsia-500 rounded-md pointer-events-none z-20"
                                      :style="
                                          'left:'   + (page.qr_area.x_pt * 100 / page.width_pt)  + '%;' +
                                          'top:'    + (page.qr_area.y_pt * 100 / page.height_pt) + '%;' +
                                          'width:'  + (page.qr_area.w_pt * 100 / page.width_pt)  + '%;' +
                                          'height:' + (page.qr_area.h_pt * 100 / page.height_pt) + '%;'
-                                     ">
-                                    <!-- Outline only, no inner fill, so the QR underneath stays fully visible -->
-                                    <div class="absolute inset-0 border-2 border-dashed border-fuchsia-500 rounded-md"></div>
-                                    <!-- Floating badge sitting just above the box, anchored top-left -->
-                                    <span class="absolute -top-5 left-0 bg-fuchsia-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow whitespace-nowrap">
-                                        <i class="fa-solid fa-qrcode mr-0.5"></i>QR &rarr; Cardify
-                                    </span>
-                                </div>
+                                     "></div>
                             </template>
 
                             <template x-for="b in page.blocks" :key="b.id">
@@ -288,6 +282,18 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
                                         :aria-label="b.detected_text + ' - ' + bindingLabelShort(bindingFor(page.page_number, b.id))"></button>
                             </template>
                         </div>
+
+                        <!-- QR explainer: only renders if the parser detected a QR on this page.
+                             Sits BELOW the preview so nothing covers the QR pixels themselves. -->
+                        <template x-if="page.qr_area">
+                            <div class="mt-2 flex items-start gap-2 text-xs bg-fuchsia-50 border border-fuchsia-200 rounded-md px-3 py-2">
+                                <i class="fa-solid fa-qrcode text-fuchsia-600 mt-0.5"></i>
+                                <div class="flex-1 text-fuchsia-900">
+                                    <span class="font-semibold">QR detected (dashed area).</span>
+                                    Cardify will swap this region with each employee's tracking QR (vCard download + scan analytics) when their card is generated.
+                                </div>
+                            </div>
+                        </template>
 
                         <!-- List of every block with bind dropdown. Sticky list mirrors overlays so the user can
                              change a binding even when the overlay is tiny. -->
