@@ -144,9 +144,14 @@ def font_to_family_and_weight(font_name):
     return (family, weight, italic)
 
 
-def detect_qr_area(page, redacted_text_bboxes):
-    """Find the largest white-ish rectangle on a coloured page that doesn't overlap text.
-    Returns dict {x_pt, y_pt, w_pt, h_pt, hint} or None."""
+def detect_qr_area(page, redacted_text_bboxes, bg_image_path=None, bg_dpi=None):
+    """Find the QR area on the card.
+    First tries the cheap drawing-layer heuristic (white-ish square placeholder);
+    falls back to pyzbar on the rasterized background to catch real rendered QRs
+    (the common case when a card embeds a working QR via python qrcode etc.).
+    Returns dict {x_pt, y_pt, w_pt, h_pt, hint, payload?} or None."""
+
+    # Path 1: drawing-layer placeholder (cheap, no PIL/pyzbar needed)
     drawings = page.get_drawings()
     candidates = []
     for d in drawings:
@@ -183,14 +188,46 @@ def detect_qr_area(page, redacted_text_bboxes):
             continue
         candidates.append({'x_pt': x0, 'y_pt': y0, 'w_pt': w, 'h_pt': h, 'area': w * h})
 
-    if not candidates:
+    if candidates:
+        best = max(candidates, key=lambda c: c['area'])
+        return {
+            'x_pt': best['x_pt'], 'y_pt': best['y_pt'],
+            'w_pt': best['w_pt'], 'h_pt': best['h_pt'],
+            'hint': 'detected white square, likely QR placeholder',
+        }
+
+    # Path 2: pyzbar on the rasterized bg (catches real rendered QR codes)
+    if not bg_image_path or not bg_dpi:
         return None
-    best = max(candidates, key=lambda c: c['area'])
-    return {
-        'x_pt': best['x_pt'], 'y_pt': best['y_pt'],
-        'w_pt': best['w_pt'], 'h_pt': best['h_pt'],
-        'hint': 'detected white square, likely QR placeholder',
-    }
+    try:
+        from pyzbar.pyzbar import decode as zbar_decode  # type: ignore
+        from PIL import Image  # type: ignore
+    except ImportError as e:
+        print(f'WARN: pyzbar/PIL not available, skipping raster QR detection: {e}', file=sys.stderr)
+        return None
+    try:
+        img = Image.open(bg_image_path)
+        results = zbar_decode(img)
+        # Filter to actual QRCODE type (not other 1D barcodes)
+        qrs = [r for r in results if r.type == 'QRCODE']
+        if not qrs:
+            return None
+        # Pick the largest-area QR if multiple
+        qr = max(qrs, key=lambda r: r.rect.width * r.rect.height)
+        # Convert pixel rect (top-left origin) -> PDF points (top-left origin)
+        # PDF "points" use 72 per inch; bg was rasterized at bg_dpi.
+        scale = 72.0 / float(bg_dpi)
+        return {
+            'x_pt': qr.rect.left * scale,
+            'y_pt': qr.rect.top * scale,
+            'w_pt': qr.rect.width * scale,
+            'h_pt': qr.rect.height * scale,
+            'hint': 'detected real QR code via pyzbar',
+            'payload': qr.data.decode('utf-8', errors='replace')[:512],
+        }
+    except Exception as e:
+        print(f'WARN: pyzbar raster scan failed: {e}', file=sys.stderr)
+        return None
 
 
 def collect_fonts(installed_fonts_path):
@@ -440,7 +477,9 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
         # ── 3. Detect QR placeholder area ──
         # Use ALL text bboxes (including static decorations) to avoid
         # placing the QR over baked-in text. Redaction set is dynamic-only
-        # by design.
+        # by design. The drawings-only first pass catches white-rect
+        # placeholders; the pyzbar fallback (raster scan) below catches
+        # real rendered QRs after the bg image is generated.
         qr_area = detect_qr_area(page, all_text_bboxes)
 
         # Mark fields whose centre is inside the QR placeholder as static.
@@ -474,6 +513,30 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
         # Background WITH text: keep a copy for preview (also at print DPI)
         bg_with_text_path = os.path.join(output_dir, f'bg-page-{page_num}-with-text.png')
         shutil.copy(bg_path, bg_with_text_path)
+
+        # Raster QR fallback: if the drawing-layer heuristic didn't find a QR
+        # placeholder, scan the just-rendered bg with pyzbar to catch real
+        # rendered QR codes (the common case for cards built with python qrcode,
+        # canva exports, etc.). We pass the with-text copy so the QR finder
+        # patterns are intact.
+        if not qr_area:
+            qr_area = detect_qr_area(page, all_text_bboxes,
+                                     bg_image_path=bg_with_text_path,
+                                     bg_dpi=BG_DPI)
+            # Re-run the static-marking pass below if a QR was just found, so
+            # decorative captions sitting on top of the QR get flagged.
+            if qr_area:
+                qx0 = qr_area['x_pt']
+                qy0 = qr_area['y_pt']
+                qx1 = qx0 + qr_area['w_pt']
+                qy1 = qy0 + qr_area['h_pt']
+                for f in fields:
+                    cx = (f['x_pt'] + f['w_pt'] / 2) if 'x_pt' in f else None
+                    cy = (f['y_pt'] + f['h_pt'] / 2) if 'y_pt' in f else None
+                    if cx is None: continue
+                    if qx0 <= cx <= qx1 and qy0 <= cy <= qy1:
+                        f['is_static'] = True
+                        f['render_in_bg'] = True
 
         # Strip text by re-rendering the page with text spans redacted.
         # PyMuPDF: add_redact_annot then apply.

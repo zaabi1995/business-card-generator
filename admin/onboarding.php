@@ -236,31 +236,51 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
                             </div>
                         </div>
 
-                        <!-- Card preview with clickable block overlays. -->
+                        <!-- Card preview with clickable block overlays.
+                             Renders bg-with-text so the user can see their actual
+                             design. Block chips are outline-only to avoid
+                             obscuring the rendered text underneath; the detected
+                             text + font + size is shown in the list below. -->
                         <div class="card-preview-wrap relative bg-gray-100 rounded-xl overflow-hidden border border-gray-200"
                              :style="'aspect-ratio: ' + page.width_px + ' / ' + page.height_px">
                             <img :src="page.background_with_text_url"
                                  alt="Imported card"
                                  class="absolute inset-0 w-full h-full object-contain">
+
+                            <!-- QR area: detected QR code that Cardify will replace
+                                 per-employee with a tracking QR (vCard download +
+                                 scan analytics). Only shown if the parser found one. -->
+                            <template x-if="page.qr_area">
+                                <div class="absolute border-2 border-dashed border-fuchsia-500 bg-fuchsia-500/5 rounded-md pointer-events-none flex items-start justify-end p-1 z-20"
+                                     :style="
+                                         'left:'   + (page.qr_area.x_pt * 100 / page.width_pt)  + '%;' +
+                                         'top:'    + (page.qr_area.y_pt * 100 / page.height_pt) + '%;' +
+                                         'width:'  + (page.qr_area.w_pt * 100 / page.width_pt)  + '%;' +
+                                         'height:' + (page.qr_area.h_pt * 100 / page.height_pt) + '%;'
+                                     ">
+                                    <span class="bg-fuchsia-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow whitespace-nowrap">
+                                        <i class="fa-solid fa-qrcode mr-0.5"></i>QR &rarr; Cardify
+                                    </span>
+                                </div>
+                            </template>
+
                             <template x-for="b in page.blocks" :key="b.id">
                                 <button type="button"
                                         @click="focusBlock(page.page_number, b.id)"
                                         :class="[
-                                            'absolute border-2 rounded-md transition cursor-pointer text-[10px] font-semibold leading-none flex items-end justify-start px-1 pb-0.5',
-                                            isFocused(page.page_number, b.id) ? 'border-blue-500 ring-2 ring-blue-200 z-10' :
-                                                bindingFor(page.page_number, b.id) === 'static' ? 'border-amber-400/80 bg-amber-100/30 hover:border-amber-500' :
-                                                bindingFor(page.page_number, b.id) === 'skip'   ? 'border-red-300/80 bg-red-100/30 line-through opacity-50 hover:border-red-500' :
-                                                                                                  'border-blue-400/80 bg-blue-100/30 hover:border-blue-600'
+                                            'absolute border-2 rounded-md transition cursor-pointer',
+                                            isFocused(page.page_number, b.id) ? 'border-blue-500 ring-2 ring-blue-200 z-10 bg-blue-100/20' :
+                                                bindingFor(page.page_number, b.id) === 'static' ? 'border-amber-400/80 hover:border-amber-500 hover:bg-amber-100/10' :
+                                                bindingFor(page.page_number, b.id) === 'skip'   ? 'border-red-300/80 opacity-60 hover:border-red-500' :
+                                                                                                  'border-blue-400/80 hover:border-blue-600 hover:bg-blue-100/10'
                                         ]"
                                         :style="
                                             'left:'   + (b.x      * 100 / page.width_px)  + '%;' +
                                             'top:'    + (b.y      * 100 / page.height_px) + '%;' +
                                             'width:'  + (b.width  * 100 / page.width_px)  + '%;' +
                                             'height:' + (b.height * 100 / page.height_px) + '%;'
-                                        ">
-                                    <span class="bg-white/90 text-gray-700 px-1 rounded shadow-sm whitespace-nowrap"
-                                          x-text="bindingLabelShort(bindingFor(page.page_number, b.id))"></span>
-                                </button>
+                                        "
+                                        :aria-label="b.detected_text + ' - ' + bindingLabelShort(bindingFor(page.page_number, b.id))"></button>
                             </template>
                         </div>
 
