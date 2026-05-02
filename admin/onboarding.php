@@ -809,9 +809,19 @@ function onboarding(init) {
 
                 if (this.step < this.totalSteps) { this.step++; window.scrollTo({top:0,behavior:'smooth'}); }
                 else {
-                    // If the admin picked a printed-card quantity at or
-                    // above the minimum order size, skip straight into
-                    // the real print-order form with qty pre-filled.
+                    // First, render the new employee's card images so /<localpart>
+                    // shows the actual flip card (not just contact info). The
+                    // auto_generate page Fabric.js-renders front+back, POSTs to
+                    // save_card_image.php, then auto-redirects to the dashboard.
+                    if (json.first_employee && json.first_employee.id && json.first_employee.inserted) {
+                        const empId = encodeURIComponent(json.first_employee.id);
+                        window.location.href = '<?= getBasePath() ?>admin/auto_generate.php?employee_id=' + empId + '&new=1&return=dashboard';
+                        return;
+                    }
+
+                    // No first employee inserted (already existed, or no email):
+                    // skip straight into print-order form when admin picked
+                    // a meaningful print quantity, otherwise the dashboard.
                     const qty = Math.max(0, parseInt(this.data.order_cards.per_person || 0));
                     if (qty >= <?= (int) CardPrintPricing::MIN_QTY ?>) {
                         window.location.href = this.printUrl + '?tab=create&wizard=done&qty=' + qty;

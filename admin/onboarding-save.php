@@ -279,6 +279,14 @@ try {
     if ($importResult !== null) {
         $resp['import'] = $importResult;
     }
+    if ($firstEmpResult !== null) {
+        // Wizard JS uses this to redirect through admin/auto_generate.php
+        // so the browser renders the new employee's card front+back PNGs
+        // before landing on the dashboard. Otherwise their /<localpart>
+        // URL would only show the basic contact-info page (no flip card)
+        // until an admin manually clicks "Auto-generate cards".
+        $resp['first_employee'] = $firstEmpResult;
+    }
     echo json_encode($resp);
 } catch (Throwable $e) {
     http_response_code(500);
