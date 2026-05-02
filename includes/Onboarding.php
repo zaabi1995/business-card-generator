@@ -16,7 +16,15 @@
 class Onboarding
 {
     public const TOTAL_STEPS = 3;
-    public const STEP_KEYS = ['brand','card_design','launch'];
+    // STEP_KEYS must match what the frontend sends on each step
+    // (admin/onboarding.php's stepPayload + the keys read into init.data).
+    // Step 1 = the logo upload bundle ({url, filename, size, dominant_color}),
+    // step 2 = card_design import metadata, step 3 = launch state.
+    // Earlier this was 'brand' for step 1 which created a save/read mismatch:
+    // payload was stored under data['brand'] but the read code at
+    // admin/onboarding.php:62 reads data['logo'], so the wizard kept showing
+    // an empty step 1 after refresh.
+    public const STEP_KEYS = ['logo','card_design','launch'];
 
     public static function get(string $companyId): array
     {
