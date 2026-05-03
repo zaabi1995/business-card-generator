@@ -221,6 +221,17 @@ if (empty($enabledFields)) {
     ];
 }
 
+// Per-company keys never get exposed to the public request form. Employees
+// don't have their own website / address / company name; the renderer
+// fills these from the company / theme / address rows at draw time.
+// Hiding them here also future-proofs against admin templates whose
+// fields_json was built before BindingValidator existed.
+foreach (['website','website_ar','address','address_en','address_2_en',
+          'address_ar','address_2_ar','company_en','company_ar','fax','fax_ar','social']
+         as $__perCompanyKey) {
+    unset($enabledFields[$__perCompanyKey]);
+}
+
 // Apply theme colors (like main page)
 $primaryColor = $companyTheme['primary_color'] ?? '#3b82f6';
 $secondaryColor = $companyTheme['secondary_color'] ?? '#036e87';

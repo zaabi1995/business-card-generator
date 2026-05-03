@@ -704,6 +704,16 @@ function autoGenerator() {
         backTemplate: <?php echo json_encode($backTemplate, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
         companyId: <?php echo json_encode($companyId); ?>,
         companySlug: <?php echo json_encode($companySlug); ?>,
+        company: <?php echo json_encode([
+            'name'                  => $company['name'] ?? '',
+            'name_ar'               => $company['name_ar'] ?? '',
+            'default_website'       => $company['default_website'] ?? '',
+            'default_fax'           => $company['default_fax'] ?? '',
+            'default_address_en'    => $company['default_address_en'] ?? '',
+            'default_address_2_en'  => $company['default_address_2_en'] ?? '',
+            'default_address_ar'    => $company['default_address_ar'] ?? '',
+            'default_address_2_ar'  => $company['default_address_2_ar'] ?? '',
+        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>,
         basePath: <?php echo json_encode(rtrim($basePath, '/')); ?>,
         baseUrl: <?php echo json_encode(rtrim($baseUrl, '/')); ?>,
         apexHost: <?php echo json_encode(cardifyApexHost()); ?>,
@@ -1041,24 +1051,33 @@ function autoGenerator() {
         },
         
         async addFieldsToCard(editor, fields) {
-            // Map field keys to employee data values (matching batch_generate.php exactly)
+            // Map field keys to employee data values, with company-level fallback
+            // for per-company fields (website, address, company name, fax). The
+            // public portal hides these inputs from employees, so the company
+            // default is the source of truth at render time.
+            const co = (this.company || {});
+            const coName = co.name || co.company_name || '';
             const fieldValues = {
                 'name_en': this.employee.name_en || '',
                 'name_ar': this.employee.name_ar || '',
                 'position_en': this.employee.position_en || '',
                 'position_ar': this.employee.position_ar || '',
-                'company_en': this.employee.company_en || '',
-                'company_ar': this.employee.company_ar || '',
+                'company_en': this.employee.company_en || coName,
+                'company_ar': this.employee.company_ar || co.name_ar || coName,
                 'phone': this.employee.phone || '',
                 'phone_ar': this.employee.phone_ar || '',
                 'mobile': this.employee.mobile || '',
                 'mobile_ar': this.employee.mobile_ar || '',
                 'email': this.employee.email || '',
-                'website': this.employee.website || '',
-                'website_ar': this.employee.website_ar || '',
-                'address': this.employee.address_en || this.employee.address || '',
-                'address_en': this.employee.address_en || '',
-                'address_ar': this.employee.address_ar || ''
+                'website': this.employee.website || co.default_website || '',
+                'website_ar': this.employee.website_ar || co.default_website || '',
+                'fax': this.employee.fax || co.default_fax || '',
+                'fax_ar': this.employee.fax_ar || co.default_fax || '',
+                'address': this.employee.address_en || this.employee.address || co.default_address_en || '',
+                'address_en': this.employee.address_en || co.default_address_en || '',
+                'address_2_en': this.employee.address_2_en || co.default_address_2_en || '',
+                'address_ar': this.employee.address_ar || co.default_address_ar || '',
+                'address_2_ar': this.employee.address_2_ar || co.default_address_2_ar || ''
             };
             
             for (const [key, field] of Object.entries(fields)) {
