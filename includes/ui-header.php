@@ -19,6 +19,19 @@
  */
 
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
+
+// Tenant subdomains ({slug}.cardify.om) get auto-branded with the
+// company's logo as favicon + a logo + brand-coloured spinner ring on
+// the page loader. Falls through to defaults on the apex (cardify.om)
+// and on tenants without a theme row yet.
+$cardifyTenantTheme = null;
+if (class_exists('TenantHost')) {
+    try { $cardifyTenantTheme = TenantHost::theme(); } catch (Throwable $e) { $cardifyTenantTheme = null; }
+    if ($cardifyTenantTheme && !empty($cardifyTenantTheme['name'])) {
+        $brandName = $cardifyTenantTheme['name'];
+    }
+}
+
 $pageTitle = $pageTitle ?? $brandName;
 $pageDescription = $pageDescription ?? 'Business Cards Made Simple';
 $htmlClass = $htmlClass ?? 'scroll-smooth';
@@ -130,8 +143,17 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     </script>
     <?php endif; ?>
 
+    <?php if (!empty($cardifyTenantTheme['favicon'])):
+        $__favType = preg_match('/\.svg(\?|$)/i', $cardifyTenantTheme['favicon']) ? 'image/svg+xml'
+                    : (preg_match('/\.png(\?|$)/i', $cardifyTenantTheme['favicon']) ? 'image/png'
+                    : (preg_match('/\.ico(\?|$)/i', $cardifyTenantTheme['favicon']) ? 'image/x-icon' : 'image/png'));
+    ?>
+    <link rel="icon" href="<?= htmlspecialchars($cardifyTenantTheme['favicon'], ENT_QUOTES) ?>" type="<?= $__favType ?>">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($cardifyTenantTheme['favicon'], ENT_QUOTES) ?>">
+    <?php else: ?>
     <link rel="icon" href="<?php echo getBasePath(); ?>favicon.svg" type="image/svg+xml">
     <link rel="alternate icon" href="<?php echo getBasePath(); ?>favicon.ico">
+    <?php endif; ?>
     
     <!-- Google Fonts - Inter + (when rtl) IBM Plex Sans Arabic -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -221,6 +243,34 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
             /* CSS-only auto-hide after 0.3s (fallback if JS fails) */
             animation: loaderAutoHide 0.3s ease-out 0.3s forwards;
         }
+        /* Tenant-branded loader: logo in centre + spinner ring in primary
+           colour. Falls back to default Cardify-blue gradient ring on the
+           apex (no tenant context) so the marketing site keeps its look. */
+        .page-loader-ring {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .page-loader-ring::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 4px solid rgba(15, 51, 84, 0.10);
+            border-top-color: var(--cardify-loader-primary, #0f3354);
+            animation: pageLoaderSpin 1s linear infinite;
+        }
+        .page-loader-ring img {
+            max-width: 70px;
+            max-height: 70px;
+            object-fit: contain;
+        }
+        @keyframes pageLoaderSpin {
+            to { transform: rotate(360deg); }
+        }
         @keyframes loaderAutoHide {
             to {
                 opacity: 0;
@@ -276,11 +326,21 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
 <style>body { padding-top: 26px; }</style>
 <?php endif; ?>
     <!-- Page Loader (auto-hides via CSS after 2.5s even without JS) -->
+    <?php if (!empty($cardifyTenantTheme['logo'])): ?>
+    <div class="page-loader" id="pageLoader" style="--cardify-loader-primary: <?= htmlspecialchars($cardifyTenantTheme['primary'] ?? '#0f3354', ENT_QUOTES) ?>;">
+        <div class="page-loader-ring">
+            <img src="<?= htmlspecialchars($cardifyTenantTheme['logo'], ENT_QUOTES) ?>" alt="<?= htmlspecialchars($brandName, ENT_QUOTES) ?>" onerror="this.style.display='none'">
+        </div>
+        <div class="page-loader-text">Loading...</div>
+        <div class="page-loader-brand" style="background:linear-gradient(135deg, <?= htmlspecialchars($cardifyTenantTheme['primary'] ?? '#0f3354', ENT_QUOTES) ?> 0%, <?= htmlspecialchars($cardifyTenantTheme['secondary'] ?? '#c9a961', ENT_QUOTES) ?> 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;"><?php echo htmlspecialchars($brandName); ?></div>
+    </div>
+    <?php else: ?>
     <div class="page-loader" id="pageLoader">
         <img src="<?php echo getBasePath(); ?>assets/images/cardify-loader.svg" alt="Loading" width="100" height="100" onerror="this.style.display='none'">
         <div class="page-loader-text">Loading...</div>
         <div class="page-loader-brand"><?php echo $brandName; ?></div>
     </div>
+    <?php endif; ?>
 <?php
 /**
  * Dynamic Navigation Component

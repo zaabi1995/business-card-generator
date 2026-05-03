@@ -78,4 +78,76 @@ class TenantHost
         $c = self::resolve();
         return $c['id'] ?? null;
     }
+
+    /**
+     * Return the tenant's brand pack: logo URL, favicon URL, primary +
+     * secondary colours, and display name. Used by ui-header.php to
+     * auto-customise the favicon, page loader and brand-coloured spinner
+     * for every page on a {slug}.cardify.om subdomain.
+     *
+     * Auto-fallbacks (so HR doesn't have to upload separate assets):
+     *   - favicon defaults to the logo when company_themes.favicon_path
+     *     is NULL (the most common case after registration). Browsers
+     *     accept SVG / PNG logos as favicon directly.
+     *   - colours default to a sensible neutral pair when company_themes
+     *     row doesn't exist yet.
+     *
+     * Returns null when the host isn't a tenant subdomain.
+     *
+     * @return array{logo:?string,favicon:?string,primary:string,secondary:string,name:string}|null
+     */
+    private static $brandCache = null;
+    public static function theme(): ?array
+    {
+        if (self::$brandCache !== null) {
+            return self::$brandCache === false ? null : self::$brandCache;
+        }
+        $c = self::resolve();
+        if (!$c) {
+            self::$brandCache = false;
+            return null;
+        }
+        $theme = null;
+        try {
+            $db = Database::getInstance();
+            $theme = $db->fetchOne(
+                "SELECT logo_path, favicon_path, primary_color, secondary_color
+                 FROM company_themes WHERE company_id = :cid LIMIT 1",
+                ['cid' => $c['id']]
+            );
+        } catch (Throwable $e) {
+            // Theme table missing on a fresh install: just use fallbacks.
+        }
+
+        // Normalise upload paths to absolute URLs. company_themes.logo_path
+        // is stored as either '/uploads/...' (preferred) or
+        // 'companies/<id>/theme/foo.svg' (legacy bare relative). Prepend
+        // '/uploads/' for the legacy form so <link href> works on any host.
+        $normalize = function ($p) {
+            if (!$p) return null;
+            $p = trim((string)$p);
+            if ($p === '' || preg_match('#^https?://#i', $p)) return $p;
+            if ($p[0] === '/') return $p;
+            return '/uploads/' . ltrim($p, '/');
+        };
+
+        $logoUrl    = $normalize($theme['logo_path']    ?? null);
+        $faviconUrl = $normalize($theme['favicon_path'] ?? null);
+
+        // Auto-derive favicon from logo when not explicitly set. Most
+        // tenants only upload one logo; the browser accepts SVG / PNG
+        // logos as favicons directly.
+        if (!$faviconUrl && $logoUrl) {
+            $faviconUrl = $logoUrl;
+        }
+
+        self::$brandCache = [
+            'logo'      => $logoUrl,
+            'favicon'   => $faviconUrl,
+            'primary'   => $theme['primary_color']   ?? '#0f3354',
+            'secondary' => $theme['secondary_color'] ?? '#c9a961',
+            'name'      => $c['name'] ?? ($c['slug'] ?? 'Cardify'),
+        ];
+        return self::$brandCache;
+    }
 }
