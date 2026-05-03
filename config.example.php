@@ -75,6 +75,13 @@ if (!$skipSession && session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_secure', 1);
     ini_set('session.use_strict_mode', 1);
     ini_set('session.cookie_samesite', 'Lax');
+    // Bump session lifetime to 4 hours (default 24min was too short for
+    // casual visitors filling out the portal form: they'd open the page,
+    // get distracted, come back, hit submit and get "Invalid request"
+    // because gc_maxlifetime had wiped their CSRF token. 4h covers a
+    // typical work-day pause without being so long it weakens auth.
+    ini_set('session.gc_maxlifetime', 14400);   // 4 hours
+    ini_set('session.cookie_lifetime', 14400);  // browser-side cookie too
     // Share session across {slug}.cardify.om subdomains so post-signup
     // redirect to tenant subdomain doesn't lose the login. Use a fresh
     // cookie name (CARDIFY_SID) instead of PHPSESSID so any stale

@@ -124,7 +124,11 @@ if ($passcodeRequired) {
     // Handle passcode form submission
     if (!$passcodeVerified && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['portal_passcode'])) {
         if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-            $passcodeError = 'Invalid request. Please try again.';
+            // Session expired or cookie wasn't sent. Wipe the dead token
+            // so the form re-renders with a fresh one, give a clearer
+            // message that hints at the actual cause.
+            unset($_SESSION['csrf_token']);
+            $passcodeError = 'Your session expired. Please re-enter your access code.';
         } else {
         $submittedPasscode = trim($_POST['portal_passcode']);
         if (hash_equals($portalPasscode, $submittedPasscode)) {
@@ -272,7 +276,22 @@ $formData = [
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-        $error = 'Invalid request. Please try again.';
+        // CSRF token didn't match. Most common cause is an expired
+        // session (left tab open > gc_maxlifetime), or a multi-tab
+        // race where the other tab rotated the session token, or a
+        // browser extension stripping the CARDIFY_SID cookie. Wipe
+        // the dead token so the form re-renders with a fresh one,
+        // give a message that hints at the actual cause + tells HR
+        // they can just resubmit.
+        unset($_SESSION['csrf_token']);
+        $error = 'Your session expired while the form was open. Please click Submit again, your details are still here.';
+        // Repopulate $formData from $_POST so the form fields show
+        // the user's submitted values when re-rendered (otherwise
+        // they fall back to company defaults / empty placeholders
+        // and the user has to retype everything).
+        foreach (['email','name_en','name_ar','position_en','position_ar','phone','phone_ar','mobile','mobile_ar','fax','fax_ar','website','website_ar','address_en','address_2_en','address_ar','address_2_ar','company_en','company_ar'] as $__k) {
+            if (isset($_POST[$__k])) $formData[$__k] = trim((string)$_POST[$__k]);
+        }
     } else {
     $formData = [
         'email' => trim(strtolower($_POST['email'] ?? '')),
