@@ -939,6 +939,23 @@ class CardEditor {
                     : 0;
                 const cornerRadiusPct = Math.max(0, Math.min(40, s.border_radius_pct || 0));
 
+                // Panel padding: when the source design wraps the QR in a
+                // rounded container of the same colour as bg_color, the
+                // detector emits panel_padding_px (in 1200-DPI source-bg
+                // pixels). The backfill grew the qr_code field by 2x that
+                // padding so the canvas now covers the full panel; we
+                // inset the modules by the same fraction so the QR sits
+                // centred inside the panel with quiet zone all around.
+                // qr_px_width is the ORIGINAL QR module width, so the
+                // panel takes up panel_padding_px / (qr_px_width + 2*pad)
+                // of the canvas on each side.
+                const panelPaddingSrc = Math.max(0, s.panel_padding_px || 0);
+                const qrPxOrig = Math.max(80, s.qr_px_width || 600);
+                const panelRatio = panelPaddingSrc > 0
+                    ? panelPaddingSrc / (qrPxOrig + 2 * panelPaddingSrc)
+                    : 0;
+                const panelRadiusPct = Math.max(0, Math.min(40, s.panel_radius_pct || 0));
+
                 // Create canvas and draw QR code. The OUTER canvas is `size`
                 // (matches what the editor expects). The QR modules paint
                 // inside a smaller inset to leave room for the border.
@@ -959,15 +976,26 @@ class CardEditor {
                         ctx.fillRect(0, 0, size, size);
                     }
                 }
-                // Inset rect for the QR itself.
+                // Inset rect for the QR + outer panel.
                 const borderPx = hasBorder ? Math.round(size * borderRatio) : 0;
+                const panelPx = Math.round(size * panelRatio);
                 const innerSize = size - borderPx * 2;
                 const moduleCount = qr.getModuleCount();
-                const cellSize = innerSize / moduleCount;
+                const moduleAreaSize = innerSize - panelPx * 2;
+                const cellSize = moduleAreaSize / moduleCount;
 
-                // Inner background.
+                // Panel: rounded rectangle of bg colour filling the area
+                // between the (optional) outer border and the QR modules.
+                // When panelRatio is 0, this fills the whole inner area
+                // edge-to-edge (current behaviour).
                 ctx.fillStyle = bgColor;
-                ctx.fillRect(borderPx, borderPx, innerSize, innerSize);
+                if (panelRadiusPct > 0 && typeof ctx.roundRect === 'function') {
+                    ctx.beginPath();
+                    ctx.roundRect(borderPx, borderPx, innerSize, innerSize, innerSize * panelRadiusPct / 100);
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(borderPx, borderPx, innerSize, innerSize);
+                }
 
                 // Modules. Finder patterns are the 7x7 blocks in the top-left,
                 // top-right, and bottom-left corners; they get the sampled
@@ -980,13 +1008,15 @@ class CardEditor {
                     if (row >= moduleCount - 7 && col < 7) return true;                     // bottom-left
                     return false;
                 };
+                const moduleOriginX = borderPx + panelPx;
+                const moduleOriginY = borderPx + panelPx;
                 for (let row = 0; row < moduleCount; row++) {
                     for (let col = 0; col < moduleCount; col++) {
                         if (qr.isDark(row, col)) {
                             ctx.fillStyle = _inEye(row, col) ? eyeColor : moduleColor;
                             ctx.fillRect(
-                                borderPx + col * cellSize,
-                                borderPx + row * cellSize,
+                                moduleOriginX + col * cellSize,
+                                moduleOriginY + row * cellSize,
                                 cellSize,
                                 cellSize
                             );

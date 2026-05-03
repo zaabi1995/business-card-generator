@@ -146,6 +146,31 @@ foreach ($rows as $row) {
         $fields['qr_code'] = [];
     }
     $fields['qr_code']['qr_style'] = $newStyle;
+
+    // Expand the qr_code field to include the detected outer panel
+    // (the rounded container surrounding the QR). The bg PNG can lose
+    // the panel during redaction, so we ask the dynamic QR canvas to
+    // paint it. Need to grow size + recenter so the QR modules stay
+    // pinned to their original position.
+    //
+    // panel_padding_px is sampled at 1200 DPI (BG_DPI). Editor coords
+    // are 300 DPI. Scale factor = 300/1200 = 0.25.
+    if (!empty($newStyle['panel_padding_px']) && $newStyle['qr_px_width'] > 0) {
+        $padEditorPx = (int)round($newStyle['panel_padding_px'] * 300.0 / 1200.0);
+        if ($padEditorPx > 0) {
+            $oldX = (int)($fields['qr_code']['x'] ?? 0);
+            $oldY = (int)($fields['qr_code']['y'] ?? 0);
+            $oldSize = (int)($fields['qr_code']['size'] ?? 145);
+            $newX = max(0, $oldX - $padEditorPx);
+            $newY = max(0, $oldY - $padEditorPx);
+            $newSize = $oldSize + 2 * $padEditorPx;
+            $fields['qr_code']['x'] = $newX;
+            $fields['qr_code']['y'] = $newY;
+            $fields['qr_code']['size'] = $newSize;
+            echo "$tag   panel: pad=" . $newStyle['panel_padding_px'] . "px(bg) -> " . $padEditorPx . "px(editor); size $oldSize -> $newSize\n";
+        }
+    }
+
     $newJson = json_encode($fields, JSON_UNESCAPED_UNICODE);
     $newVersion = (int)$row['current_version'] + 1;
     $db->update(

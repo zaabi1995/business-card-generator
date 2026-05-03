@@ -402,6 +402,64 @@ def sample_qr_style(img, rect_px, real_qr=False):
             if max(abs(avg_c[i] - border_color[i]) for i in range(3)) > 30:
                 border_radius_pct = 8
 
+    # --- 6. Outer panel probe (the "container" around the QR) ---
+    # Many designs wrap the QR in a styled rounded rectangle that uses the
+    # SAME colour as the QR's own bg (cream box around navy modules).
+    # The border ring above only fires when border != bg, so it misses
+    # this case entirely. Probe outward in 4 cardinal directions checking
+    # how far the bg colour extends before the page colour takes over.
+    # The minimum extent across all 4 sides becomes panel_padding_px;
+    # the renderer paints a rounded rectangle of bg_color out to that
+    # padding so the dynamic QR sits inside a faithful container.
+    panel_padding_px = 0
+    panel_radius_pct = 0
+    if mode in ('real_qr_styled', 'real_qr_plain', 'empty_placeholder'):
+        max_walk = min(W, H, max(40, w // 2))
+        def _walk(dx, dy, sx0, sy0):
+            steps = 0
+            for k in range(1, max_walk + 1):
+                sx, sy = sx0 + dx * k, sy0 + dy * k
+                if not (0 <= sx < W and 0 <= sy < H):
+                    break
+                p = rgb.getpixel((sx, sy))
+                if max(abs(p[i] - bg[i]) for i in range(3)) > 30:
+                    break
+                steps = k
+            return steps
+        cy_mid = (y0 + y1) // 2
+        cx_mid = (x0 + x1) // 2
+        left_walk  = _walk(-1, 0, x0, cy_mid)
+        right_walk = _walk( 1, 0, x1 - 1, cy_mid)
+        up_walk    = _walk(0, -1, cx_mid, y0)
+        down_walk  = _walk(0,  1, cx_mid, y1 - 1)
+        walks = [left_walk, right_walk, up_walk, down_walk]
+        # Only consider it a real panel if every direction extends a
+        # meaningful distance (>= 2% of QR width). Asymmetric extents
+        # mean the QR is flush against the card edge, no panel.
+        min_ext = min(walks)
+        threshold = max(4, int(w * 0.02))
+        if min_ext >= threshold:
+            panel_padding_px = min_ext
+            # Probe the panel corner: if a small triangle inside the
+            # outer corner reads as page bg (not bg colour), the panel
+            # has rounded corners.
+            outer_x0 = max(0, x0 - panel_padding_px)
+            outer_y0 = max(0, y0 - panel_padding_px)
+            corner_size = max(2, panel_padding_px // 2)
+            tri = []
+            for dx in range(0, corner_size):
+                for dy in range(0, corner_size - dx):
+                    sx, sy = outer_x0 + dx, outer_y0 + dy
+                    if 0 <= sx < W and 0 <= sy < H:
+                        tri.append(rgb.getpixel((sx, sy)))
+            if tri:
+                avg_t = tuple(sum(c) // len(tri) for c in zip(*tri))
+                if max(abs(avg_t[i] - bg[i]) for i in range(3)) > 30:
+                    # Corner is NOT bg colour -> panel is rounded.
+                    # Estimate radius pct based on how much of the
+                    # corner triangle is page-bg vs panel-bg.
+                    panel_radius_pct = 12
+
     return {
         'mode': mode,
         'color': _rgb_to_hex(fg),
@@ -411,6 +469,8 @@ def sample_qr_style(img, rect_px, real_qr=False):
         'border_width_px': border_width_px if has_border else 0,
         'has_border': bool(has_border),
         'border_radius_pct': border_radius_pct,
+        'panel_padding_px': panel_padding_px,
+        'panel_radius_pct': panel_radius_pct,
         'qr_px_width': w,
     }
 
