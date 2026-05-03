@@ -653,12 +653,12 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 <?php endif; ?>
 
 <?php if ($showOrderNudge): ?>
-<div class="mb-4 rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-center justify-between gap-4">
+<div class="mb-4 rounded-xl bg-amber-50 border border-amber-200 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div class="flex items-center gap-3 text-amber-900">
         <i class="fa-solid fa-truck-fast text-amber-600"></i>
         <span class="text-sm font-medium"><?= htmlspecialchars(t('onboarding.dashboard_order_nudge')) ?></span>
     </div>
-    <a href="<?= $adminBase ?>/print<?= $ext ?>" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg whitespace-nowrap">
+    <a href="<?= $adminBase ?>/print<?= $ext ?>" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg whitespace-nowrap text-center sm:text-left">
         <?= htmlspecialchars(t('onboarding.dashboard_order_cta')) ?>
         <i class="fa-solid fa-arrow-right ml-1"></i>
     </a>
@@ -729,7 +729,7 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
 </div>
 <?php else: ?>
 <!-- Has employees + template but no cards generated, generate nudge -->
-<div class="mb-6 rounded-2xl p-5 text-white shadow-lg flex items-center justify-between gap-4" id="generate-cards-nudge" style="background:linear-gradient(to right,#16a34a,#10b981);">
+<div class="mb-6 rounded-2xl p-5 text-white shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" id="generate-cards-nudge" style="background:linear-gradient(to right,#16a34a,#10b981);">
     <div class="flex items-center gap-4">
         <div class="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
             <i class="fa-solid fa-id-card text-white text-lg"></i>
@@ -739,8 +739,8 @@ $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? ''
             <p class="text-green-100 text-sm mt-0.5">You have <?= $employeeCount ?> employee<?= $employeeCount !== 1 ? 's' : '' ?> set up. Generate all cards in one click.</p>
         </div>
     </div>
-    <div class="flex items-center gap-3 flex-shrink-0">
-        <a href="<?= getAdminBasePath() ?>batch_generate<?= $batchExt ?>" class="bg-white text-green-700 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-green-50 transition-all whitespace-nowrap">
+    <div class="flex items-center gap-3 flex-shrink-0 sm:flex-row">
+        <a href="<?= getAdminBasePath() ?>batch_generate<?= $batchExt ?>" class="flex-1 sm:flex-initial bg-white text-green-700 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-green-50 transition-all whitespace-nowrap text-center">
             Generate All Cards
         </a>
         <button onclick="document.getElementById('generate-cards-nudge').remove()" class="text-white/60 hover:text-white">
