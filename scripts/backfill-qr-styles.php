@@ -168,9 +168,13 @@ foreach ($rows as $row) {
             $qHeditor = (float)$qa['h_pt'] * $editorScale;
             $qXeditor = (float)$qa['x_pt'] * $editorScale;
             $qYeditor = (float)$qa['y_pt'] * $editorScale;
-            // Original module-only size = 90% of QR area, centred (matches
-            // CardifyTemplateImporter::translatePage).
-            $origSize = (int)round(min($qWeditor, $qHeditor) * 0.90);
+            // When a panel exists, use the FULL QR-module area size
+            // (NOT the importer's 90% factor) as the canonical base, so
+            // (size + 2*padding) fully covers the source PDF's baked-in
+            // panel. Otherwise the rendered cream panel is ~10% smaller
+            // than the source panel and you see a sliver of the original
+            // peeking around the edges.
+            $origSize = (int)round(min($qWeditor, $qHeditor));
             $origX = (int)round($qXeditor + ($qWeditor - $origSize) / 2);
             $origY = (int)round($qYeditor + ($qHeditor - $origSize) / 2);
             // Now grow by panel padding from the canonical original.
