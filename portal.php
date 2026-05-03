@@ -2305,6 +2305,13 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     originY: field.originY || 'top',
                     autoShrink: (typeof ov.autoShrink === 'boolean') ? ov.autoShrink : field.auto_shrink,
                     shrinkFloorPct: ov.shrinkFloorPct || field.shrink_floor_pct,
+                    // Customer portal preview is READ-ONLY: the employee
+                    // requesting a card shouldn't be able to drag fields
+                    // around. addTextField now propagates this through to
+                    // both the IText path and the RTL canvas-image rebuild,
+                    // so the 80ms font-load swap doesn't make text
+                    // accidentally draggable.
+                    selectable: false,
                 });
                 
                 // Make fields non-selectable for preview

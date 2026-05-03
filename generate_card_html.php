@@ -503,6 +503,8 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                     originX: originX,
                     autoShrink: (typeof __ov.autoShrink === 'boolean') ? __ov.autoShrink : field.auto_shrink,
                     shrinkFloorPct: __ov.shrinkFloorPct || field.shrink_floor_pct,
+                    // Card is for download/print, never user-interactive.
+                    selectable: false,
                 });
             }
 

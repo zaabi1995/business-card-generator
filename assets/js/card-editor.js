@@ -717,6 +717,12 @@ class CardEditor {
         
         const fontFamily = options.fontFamily || 'Inter';
         
+        // Read-only mode for preview surfaces (portal preview, public
+        // card render): caller passes selectable=false explicitly so the
+        // employee/visitor can't drag the text around. Defaults to true
+        // (admin / template editor uses interactive mode).
+        const interactive = options.selectable !== false;
+
         const fieldOptions = {
             left: options.x || 50,
             top: options.y || 50,
@@ -730,11 +736,14 @@ class CardEditor {
             // Fabric.js 7.x: set origin based on text alignment
             originX: originX,
             originY: options.originY || 'top',
-            // Interactive properties
-            selectable: true,
+            // Interactive properties (defaults: editor mode = on,
+            // preview mode = off when selectable=false passed in)
+            selectable: interactive,
+            evented: interactive,
             editable: false,
-            hasControls: true,
-            hasBorders: true,
+            hasControls: interactive,
+            hasBorders: interactive,
+            hoverCursor: interactive ? 'move' : 'default',
             lockScalingX: true,
             lockScalingY: true,
             lockRotation: true
@@ -767,16 +776,28 @@ class CardEditor {
                 this.canvas.add(rtlObj);
                 this.canvas.requestRenderAll();
                 // Schedule a re-render after fonts settle, in case the
-                // initial measure used a fallback face.
+                // initial measure used a fallback face. Preserve the
+                // selectability flags from the existing field so callers
+                // who locked it down (portal preview, generate_card_html)
+                // don't get a draggable replacement on font-load swap.
                 const canvas = this.canvas;
                 const self = this;
                 setTimeout(() => {
+                    const oldField = self.fields[key];
+                    const carry = oldField ? {
+                        selectable: oldField.selectable,
+                        evented: oldField.evented,
+                        hasControls: oldField.hasControls,
+                        hasBorders: oldField.hasBorders,
+                        hoverCursor: oldField.hoverCursor,
+                    } : {};
                     const rebuilt = self._buildRtlTextImage(options, fieldOptions, textAlign);
                     if (rebuilt) {
                         rebuilt.fieldKey = key;
                         rebuilt.fieldType = 'text';
                         rebuilt.textAlignValue = textAlign;
-                        self.canvas.remove(self.fields[key]);
+                        rebuilt.set(carry);
+                        self.canvas.remove(oldField);
                         self.fields[key] = rebuilt;
                         self.canvas.add(rebuilt);
                         self.canvas.requestRenderAll();
