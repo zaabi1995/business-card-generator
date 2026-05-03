@@ -106,6 +106,8 @@ $currentSampleBack = $company['sample_card_back'] ?? null;
 // We hide every modal input that no template references so HR users
 // don't have to scroll through 14 boxes for a name + position card.
 $activeFieldKeys = [];
+$templateStaticFieldCount = 0;
+$templateStaticFieldSamples = []; // first few labels/texts, capped at 4 for the notice
 try {
     $activeRows = $db->fetchAll(
         "SELECT fields_json FROM templates WHERE company_id = :c AND is_active = 1",
@@ -116,8 +118,19 @@ try {
         if (!is_array($f)) continue;
         foreach ($f as $k => $meta) {
             if (!is_array($meta)) continue;
-            if (!empty($meta['is_static'])) continue;
             if ($k === 'qr_code') continue;
+            if (!empty($meta['is_static'])) {
+                // Count for the HR notice: how many fields are template-locked,
+                // and sample a few labels so the message reads concretely.
+                $templateStaticFieldCount++;
+                if (count($templateStaticFieldSamples) < 4) {
+                    $sample = trim((string)($meta['label'] ?? $meta['detected_text'] ?? $k));
+                    if ($sample !== '' && !in_array($sample, $templateStaticFieldSamples, true)) {
+                        $templateStaticFieldSamples[] = $sample;
+                    }
+                }
+                continue;
+            }
             $activeFieldKeys[$k] = true;
         }
     }
@@ -1287,6 +1300,27 @@ adminHeader(t('employees.page_title'), 'employees');
                     </div>
                     <input type="hidden" name="hide_cardify_branding" :value="hideCardifyBranding ? '1' : '0'">
                 </div>
+
+                <?php if ($templateStaticFieldCount > 0): ?>
+                <!-- Inform HR that some template fields are static (shared by all
+                     employees, edited in the design editor) so they don't go
+                     looking for them in the per-employee override list. -->
+                <div class="mt-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-info text-blue-500 mt-0.5"></i>
+                        <div class="text-xs text-blue-900 leading-relaxed">
+                            <span class="font-semibold"><?php echo (int)$templateStaticFieldCount; ?> template-static field<?php echo $templateStaticFieldCount === 1 ? '' : 's'; ?></span>
+                            (shared by every employee, not editable per person):
+                            <?php if (!empty($templateStaticFieldSamples)): ?>
+                            <span class="text-blue-700"><?php echo htmlspecialchars(implode(', ', $templateStaticFieldSamples)); ?><?php echo $templateStaticFieldCount > count($templateStaticFieldSamples) ? '...' : ''; ?></span>
+                            <?php endif; ?>
+                            Edit them in the
+                            <a href="<?php echo getAdminBasePath(); ?>index<?php echo (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php'; ?>#design-editor"
+                               class="underline font-semibold hover:text-blue-700">Design Editor</a>.
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- Per-employee field overrides (migration 104).
                      HR escape hatch: when a single employee has an unusually

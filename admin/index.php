@@ -1672,18 +1672,41 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                 
                 <!-- Field Controls -->
                 <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                    <h4 class="font-medium text-gray-900 mb-3"><?= htmlspecialchars(t('dashboard.field_settings')) ?></h4>
+                    <div class="flex items-center justify-between mb-3 gap-2">
+                        <h4 class="font-medium text-gray-900"><?= htmlspecialchars(t('dashboard.field_settings')) ?></h4>
+                        <div class="flex items-center gap-2 text-[11px]">
+                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-100 text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span>Dynamic</span>
+                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-100 text-blue-800"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>Static</span>
+                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-800"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Baked</span>
+                        </div>
+                    </div>
+                    <div x-show="showFieldModeHelp" x-cloak class="mb-3 p-3 bg-white rounded-lg border border-blue-200 text-xs text-gray-700 space-y-2">
+                        <div><span class="inline-block px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 font-semibold uppercase tracking-wide text-[10px]">Dynamic</span> the field is replaced with the per-employee value at render time (name, position, phone, etc.).</div>
+                        <div><span class="inline-block px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-semibold uppercase tracking-wide text-[10px]">Static</span> the same text renders on every employee card, drawn live on top of the design background. Use for shared brand/decoration text (address line, slogan, website) that you may still want to tweak in this panel.</div>
+                        <div><span class="inline-block px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold uppercase tracking-wide text-[10px]">Baked</span> the field is already flattened into the design background PNG, set during PDF import. Cannot be edited live, must be re-baked to change.</div>
+                    </div>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
                         <template x-for="(field, key) in (selectedTemplate && selectedTemplate.fields ? selectedTemplate.fields : {})" :key="key">
                             <div class="bg-white rounded-lg p-3 border border-gray-200">
-                                <div class="flex items-center justify-between mb-2">
-                                    <label class="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                        <input type="checkbox" 
-                                               :checked="field.enabled" 
-                                               @change="toggleField(key, $event.target.checked)" 
-                                               class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                        <span x-text="getFieldLabel(key)"></span>
+                                <div class="flex items-center justify-between mb-2 gap-2">
+                                    <label class="text-sm font-medium text-gray-700 flex items-center gap-2 min-w-0">
+                                        <input type="checkbox"
+                                               :checked="field.enabled"
+                                               @change="toggleField(key, $event.target.checked)"
+                                               class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0">
+                                        <span x-text="getFieldLabel(key)" class="truncate"></span>
                                     </label>
+                                    <!-- Display mode pill: shows whether this field will render
+                                         per-employee (Dynamic), as fixed design text on top of the
+                                         bg (Static-live), or is already flattened into the bg PNG
+                                         (Baked). The third state is set at PDF import time and
+                                         only changes via the Re-bake action (Tier 3 backend). -->
+                                    <template x-if="key !== 'qr_code'">
+                                        <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wide flex-shrink-0"
+                                              :class="field.render_in_bg ? 'bg-amber-100 text-amber-800' : (field.is_static ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700')"
+                                              :title="field.render_in_bg ? 'Flattened into the background PNG. Edit by re-baking.' : (field.is_static ? 'Same text on every employee card. Edit in this panel.' : 'Replaced with the per-employee value at render time.')"
+                                              x-text="field.render_in_bg ? 'Baked' : (field.is_static ? 'Static' : 'Dynamic')"></span>
+                                    </template>
                                 </div>
                                 
                                 <div x-show="field.enabled && key !== 'qr_code'" class="space-y-2 mt-2">
@@ -1858,21 +1881,39 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                                             </button>
                                         </div>
                                     </div>
-                                    <!-- Static / Editable toggle. When 'Static' is on, this
-                                         field's detected_text is rendered on every employee's
-                                         card instead of the per-employee value. Use for shared
-                                         brand/decoration text (address, website, slogans). -->
-                                    <div class="flex items-start gap-2 mt-2 pt-2 border-t border-gray-100">
-                                        <input type="checkbox" :id="'static-' + key"
-                                               :checked="!!field.is_static"
-                                               @change="toggleFieldStatic(key, $event.target.checked)"
-                                               class="w-4 h-4 mt-0.5 rounded border-gray-300 text-amber-600 focus:ring-amber-500">
-                                        <label :for="'static-' + key" class="text-xs text-gray-700 leading-tight cursor-pointer">
-                                            <span class="font-medium">Static (don't replace per employee)</span>
-                                            <span class="text-gray-400 block text-[11px] mt-0.5">
-                                                Renders the design text exactly. Use for address, website, taglines.
+                                    <!-- Display mode toggle. Switches the field between Dynamic
+                                         (per-employee value) and Static (same text on every
+                                         employee card). Baked-into-bg is the third mode but
+                                         is set at PDF import time and only changes via Re-bake. -->
+                                    <div class="mt-2 pt-2 border-t border-gray-100">
+                                        <div class="flex items-center justify-between mb-1.5">
+                                            <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Display mode</span>
+                                            <button type="button"
+                                                    @click="showFieldModeHelp = !showFieldModeHelp"
+                                                    class="text-[10px] text-blue-600 hover:underline">
+                                                <i class="fa-solid fa-circle-question"></i> What's this?
+                                            </button>
+                                        </div>
+                                        <label class="flex items-start gap-2 cursor-pointer"
+                                               :class="field.render_in_bg ? 'opacity-50 cursor-not-allowed' : ''">
+                                            <input type="checkbox" :id="'static-' + key"
+                                                   :checked="!!field.is_static"
+                                                   :disabled="!!field.render_in_bg"
+                                                   @change="toggleFieldStatic(key, $event.target.checked)"
+                                                   class="w-4 h-4 mt-0.5 rounded border-gray-300 text-amber-600 focus:ring-amber-500 flex-shrink-0">
+                                            <span class="text-xs text-gray-700 leading-tight">
+                                                <span class="font-medium">Static text</span>
+                                                <span class="text-gray-400 block text-[11px] mt-0.5">
+                                                    Same text on every employee card. Use for address, website, taglines.
+                                                </span>
                                             </span>
                                         </label>
+                                        <template x-if="field.render_in_bg">
+                                            <p class="text-[11px] text-amber-700 mt-1.5 flex items-start gap-1">
+                                                <i class="fa-solid fa-lock mt-0.5"></i>
+                                                <span>Baked into the background PNG. Use Re-bake (coming soon) to change.</span>
+                                            </p>
+                                        </template>
                                     </div>
                                     <div x-show="field.is_static" class="mt-2">
                                         <label class="text-xs text-gray-500 block mb-1">Static text</label>
@@ -2059,7 +2100,8 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
             brandSecondary: '<?php echo htmlspecialchars($secondaryColor, ENT_QUOTES); ?>',
             fontsLoaded: false,
             initialized: false,
-            
+            showFieldModeHelp: false,
+
             // Card size and orientation
             cardSize: 'standard',
             cardOrientation: 'landscape',
