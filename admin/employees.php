@@ -1052,7 +1052,14 @@ adminHeader(t('employees.page_title'), 'employees');
 
                     <?php if ($needsField('name_ar')): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Name (Arabic)</label>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-sm font-semibold text-gray-700">Name (Arabic)</label>
+                            <button type="button"
+                                    @click="aiTranslate('name_en', 'name_ar', 'name', $event.currentTarget)"
+                                    class="text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md inline-flex items-center gap-1.5 transition-colors disabled:opacity-50">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Translate
+                            </button>
+                        </div>
                         <input type="text" name="name_ar" x-model="formData.name_ar" dir="rtl"
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     </div>
@@ -1068,7 +1075,14 @@ adminHeader(t('employees.page_title'), 'employees');
 
                     <?php if ($needsField('position_ar')): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Position (Arabic)</label>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-sm font-semibold text-gray-700">Position (Arabic)</label>
+                            <button type="button"
+                                    @click="aiTranslate('position_en', 'position_ar', 'position', $event.currentTarget)"
+                                    class="text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md inline-flex items-center gap-1.5 transition-colors disabled:opacity-50">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Translate
+                            </button>
+                        </div>
                         <input type="text" name="position_ar" x-model="formData.position_ar" dir="rtl"
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     </div>
@@ -1120,7 +1134,16 @@ adminHeader(t('employees.page_title'), 'employees');
                         <?php endif; ?>
                         <?php if ($needsField('company_ar')): ?>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Company (Arabic)</label>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-sm font-semibold text-gray-700">Company (Arabic)</label>
+                                <?php if ($needsField('company_en')): ?>
+                                <button type="button"
+                                        @click="aiTranslate('company_en', 'company_ar', 'text', $event.currentTarget)"
+                                        class="text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md inline-flex items-center gap-1.5 transition-colors disabled:opacity-50">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Translate
+                                </button>
+                                <?php endif; ?>
+                            </div>
                             <input type="text" name="company_ar" x-model="formData.company_ar" dir="rtl"
                                    class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
@@ -1148,7 +1171,16 @@ adminHeader(t('employees.page_title'), 'employees');
                         <?php endif; ?>
                         <?php if ($needsField('address_ar')): ?>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Address (Arabic)</label>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-sm font-semibold text-gray-700">Address (Arabic)</label>
+                                <?php if ($needsField('address_en')): ?>
+                                <button type="button"
+                                        @click="aiTranslate('address_en', 'address_ar', 'address', $event.currentTarget)"
+                                        class="text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md inline-flex items-center gap-1.5 transition-colors disabled:opacity-50">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Translate
+                                </button>
+                                <?php endif; ?>
+                            </div>
                             <input type="text" name="address_ar" x-model="formData.address_ar" dir="rtl"
                                    class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
@@ -1659,6 +1691,70 @@ function employeeManager() {
         qrRedirectEnabled: false,
         cardDarkModeToggle: true,
         hideCardifyBranding: false,
+
+        // AI translate state. Same /api/translate.php endpoint the customer
+        // portal uses, same UX (button shows spinner + 'Translating...', target
+        // field gets briefly highlighted on success). One in-flight flag per
+        // target field so HR can fire several translations in parallel without
+        // them clobbering each other's button labels.
+        translateApiUrl: '<?php echo getBasePath(); ?>api/translate.php',
+        translating: { name_ar: false, position_ar: false, address_ar: false, company_ar: false },
+
+        async aiTranslate(sourceKey, targetKey, fieldType, btn) {
+            const sourceText = String(this.formData[sourceKey] || '').trim();
+            if (!sourceText) {
+                this._toast('Type the English text first', 'warning');
+                return;
+            }
+            if (this.translating[targetKey]) return;
+            this.translating[targetKey] = true;
+
+            const originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Translating...';
+                btn.disabled = true;
+                btn.style.opacity = '0.7';
+            }
+            try {
+                const res = await fetch(this.translateApiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: sourceText, target: 'ar', field_type: fieldType })
+                });
+                const data = await res.json();
+                if (data.error) {
+                    this._toast(data.code === 'not_configured'
+                        ? 'AI translation not configured. Add your OpenRouter / OpenAI key in config.php.'
+                        : data.error, 'error');
+                    return;
+                }
+                if (data.translation) {
+                    this.formData[targetKey] = data.translation;
+                    this._toast('Translated', 'success');
+                }
+            } catch (e) {
+                console.error('Translate error:', e);
+                this._toast('Translation failed. Please try again.', 'error');
+            } finally {
+                this.translating[targetKey] = false;
+                if (btn) {
+                    btn.innerHTML = originalHtml || '<i class="fa-solid fa-wand-magic-sparkles"></i> AI Translate';
+                    btn.disabled = false;
+                    btn.style.opacity = '';
+                }
+            }
+        },
+
+        _toast(message, type) {
+            const colors = { success: 'bg-green-500', error: 'bg-red-500', warning: 'bg-yellow-500', info: 'bg-blue-500' };
+            const t = document.createElement('div');
+            t.className = `fixed bottom-4 right-4 ${colors[type] || colors.info} text-white px-4 py-2 rounded-lg shadow-lg z-[100] transform transition-all duration-300 translate-y-full opacity-0`;
+            const icon = type === 'success' ? 'fa-check' : type === 'error' ? 'fa-times' : 'fa-info-circle';
+            t.innerHTML = `<i class="fa-solid ${icon} mr-2"></i>${message}`;
+            document.body.appendChild(t);
+            requestAnimationFrame(() => { t.classList.remove('translate-y-full', 'opacity-0'); });
+            setTimeout(() => { t.classList.add('translate-y-full', 'opacity-0'); setTimeout(() => t.remove(), 300); }, 2500);
+        },
 
         // Fields exposed in the per-employee override section. Order matches
         // typical priority (name first, then position). Add more keys here
