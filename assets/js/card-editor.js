@@ -754,6 +754,24 @@ class CardEditor {
         if (isRtl) {
             TextCtor = this.fabricRef.FabricText || this.fabricRef.Text || (typeof fabric !== 'undefined' ? (fabric.FabricText || fabric.Text) : null) || this.fabricRef.IText;
             fieldOptions.direction = 'rtl';
+            // RTL-anchor on the bbox RIGHT edge instead of the LEFT.
+            // The PDF parser stores x = LEFT edge of detected glyphs +
+            // width = pixel width of the parser's (often gibberish-order)
+            // detected_text. The RUNTIME text is the actual employee
+            // name/position, which often measures wider once shaped with
+            // the correct Arsenica-Arabic-Antiqua font. With originX='left'
+            // the text grows rightward off the bbox + can overflow past
+            // the card right edge (the first character "ع" of "علي" was
+            // getting clipped on Hosn back). Anchoring on the right edge
+            // keeps the text inside the bbox + grows leftward into the
+            // card, which is the natural Arabic reading direction.
+            // Skip when caller explicitly requested centre alignment.
+            const tA = fieldOptions.textAlign;
+            if ((tA === 'left' || tA === 'right') && fieldOptions.originX === 'left' && options.width) {
+                fieldOptions.left = (options.x || 0) + Number(options.width || 0);
+                fieldOptions.originX = 'right';
+                fieldOptions.textAlign = 'right';
+            }
         }
         const textObj = new TextCtor(options.text || key, fieldOptions);
         textObj.fieldKey = key;

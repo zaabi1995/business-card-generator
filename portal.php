@@ -2204,10 +2204,16 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 const originX = field.originX || (textAlign === 'center' ? 'center' : textAlign === 'right' ? 'right' : 'left');
 
                 // Add text field using template values directly (no scaling - canvas is standard 1050x600)
+                // width is plumbed through so addTextField can RTL-anchor
+                // Arabic text on the bbox right edge instead of the left,
+                // preventing dynamic text wider than the parser's bbox
+                // from clipping past the card right edge.
                 editor.addTextField(key, {
                     text: renderText,
                     x: field.x,
                     y: field.y,
+                    width: field.width,
+                    height: field.height,
                     fontSize: field.fontSize || 14,
                     fontFamily: pickFontFamily(field.fontFamily || (isArabic ? 'Cairo' : 'Inter'), renderText),
                     fontWeight: field.fontWeight || 'normal',

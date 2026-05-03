@@ -477,6 +477,8 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                     text: textToDraw,
                     x: field.x,
                     y: field.y,
+                    width: field.width,
+                    height: field.height,
                     fontSize: field.fontSize,
                     fontFamily: field.fontFamily,
                     // Pass numeric weight straight through (Lato-Medium=500, etc).
