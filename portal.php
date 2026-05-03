@@ -523,6 +523,25 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 if ($fam !== '') $importedFonts[$fam] = true;
             }
         }
+        // ALSO scan the template's import dir manifest so we register every
+        // weight + script variant the importer extracted, not just the
+        // single base name fields_json happened to store. Otherwise an
+        // Arsenica-stored Latin family keeps Arsenica-Arabic-Antiqua
+        // unloaded and Arabic glyphs fall back to the system serif.
+        if ($tpl && !empty($tpl['settings']['import_token'])) {
+            $manifestPath = realpath(__DIR__) . '/uploads/templates/imports/'
+                . preg_replace('/[^a-z0-9_-]/i', '', $tpl['settings']['import_token'])
+                . '/fonts/manifest.json';
+            if (is_file($manifestPath)) {
+                $m = json_decode(file_get_contents($manifestPath), true);
+                if (is_array($m)) {
+                    foreach ($m as $entry) {
+                        $fam = trim((string)($entry['family'] ?? ''));
+                        if ($fam !== '') $importedFonts[$fam] = true;
+                    }
+                }
+            }
+        }
     }
     // Whitelist Google-Fonts-hosted families (anything else likely needs a
     // commercial license, so we only auto-load these).
@@ -558,10 +577,17 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     // licensed Lato-Medium and override Google Fonts' nearest-weight
     // fallback.
     require_once INCLUDES_DIR . '/CompanyFonts.php';
+    $__importTokens = [];
+    foreach ([$activeFrontTemplate, $activeBackTemplate] as $tpl) {
+        if ($tpl && !empty($tpl['settings']['import_token'])) {
+            $__importTokens[] = $tpl['settings']['import_token'];
+        }
+    }
     $registryCss = CompanyFonts::fontFaceCss(
         realpath(__DIR__),
         $companyId,
-        array_keys($importedFonts)
+        array_keys($importedFonts),
+        $__importTokens
     );
     if ($registryCss) {
         echo "<style id=\"cardify-font-registry\">\n" . $registryCss . "</style>\n";
@@ -1664,6 +1690,55 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         _hideOnInit('backLoading');
     });
 
+    // Resolve a field's stored fontFamily to one that's actually loaded.
+    //   - Arabic text: prefer a "<base>-Arabic-<rest>" or any registered
+    //     family with "Arabic" in the name.
+    //   - Latin text: prefer "<base>-Antiqua" / "<base>-Regular" if the
+    //     bare base isn't a registered family (PDF importer often stores
+    //     "Arsenica" but the actual file is "Arsenica-Antiqua").
+    //   - Falls back to a known web-safe Arabic / Latin family.
+    const __cardifyArabicRe = /[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]/;
+    function pickFontFamily(stored, text) {
+        const want = (stored || '').trim() || 'Inter';
+        const isAr = __cardifyArabicRe.test(text || '');
+        try {
+            // Probe document.fonts for what's actually registered, fallback
+            // to scanning <style> sheets for @font-face family declarations.
+            const registered = new Set();
+            if (document.fonts && typeof document.fonts.values === 'function') {
+                for (const f of document.fonts.values()) {
+                    registered.add(String(f.family).replace(/^['"]|['"]$/g, ''));
+                }
+            }
+            const has = (n) => registered.has(n);
+            if (isAr) {
+                // Try `<base>-Arabic-<rest>`, then any registered family containing "Arabic"
+                if (has(want + '-Arabic-Antiqua')) return want + '-Arabic-Antiqua';
+                const m = want.match(/^(.+?)(-(.+))?$/);
+                if (m) {
+                    const base = m[1], suffix = m[3] || '';
+                    const cand = base + '-Arabic' + (suffix ? '-' + suffix : '');
+                    if (has(cand)) return cand;
+                    if (has(base + '-Arabic')) return base + '-Arabic';
+                    if (has(base + '-Arabic-Antiqua')) return base + '-Arabic-Antiqua';
+                }
+                for (const r of registered) {
+                    if (r.toLowerCase().includes('arabic')) return r;
+                }
+                return 'Cairo, "Noto Sans Arabic", Tajawal, ' + want;
+            }
+            // Latin path: if bare family isn't loaded but a -Antiqua / -Regular variant is, use that
+            if (!has(want)) {
+                if (has(want + '-Antiqua')) return want + '-Antiqua';
+                if (has(want + '-Regular')) return want + '-Regular';
+                if (has(want + ' Antiqua')) return want + ' Antiqua';
+            }
+            return want;
+        } catch (e) {
+            return want;
+        }
+    }
+
     // Render bg image + every is_static field of a template into the editor.
     // Used for the initial design preview AND when the user clicks Edit
     // Details to roll back to the unwatermarked template view.
@@ -1711,7 +1786,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 left: field.x || 0,
                 top: field.y || 0,
                 fontSize: field.fontSize || 14,
-                fontFamily: field.fontFamily || 'Inter',
+                fontFamily: pickFontFamily(field.fontFamily, txt),
                 fontWeight: field.fontWeight || 'normal',
                 fontStyle: field.italic ? 'italic' : 'normal',
                 fill: field.fill || field.color || '#222',
@@ -1993,7 +2068,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         left: field.x || 0,
                         top: field.y || 0,
                         fontSize: field.fontSize || 14,
-                        fontFamily: field.fontFamily || 'Inter',
+                        fontFamily: pickFontFamily(field.fontFamily, txt),
                         fontWeight: field.fontWeight || 'normal',
                         fontStyle: field.italic ? 'italic' : 'normal',
                         fill: field.fill || field.color || '#222',
@@ -2079,7 +2154,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     x: field.x,
                     y: field.y,
                     fontSize: field.fontSize || 14,
-                    fontFamily: field.fontFamily || (isArabic ? 'Cairo' : 'Inter'),
+                    fontFamily: pickFontFamily(field.fontFamily || (isArabic ? 'Cairo' : 'Inter'), renderText),
                     fontWeight: field.fontWeight || 'normal',
                     fill: field.fill || field.color || '#333333',
                     textAlign: textAlign,

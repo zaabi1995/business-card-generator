@@ -171,23 +171,55 @@ class CompanyFonts
     }
 
     /**
-     * Emit @font-face declarations for the given family list. Company
-     * uploads win over library on (family, weight, style) collisions
-     * so a tenant can override a global face with their licensed copy.
+     * Per-template imported fonts (the PDF importer extracts every embedded
+     * font into uploads/templates/imports/<token>/fonts/). These take top
+     * priority because the template was designed against THESE exact files.
      */
-    public static function fontFaceCss(string $appRoot, string $companyId, array $familiesNeeded): string
+    public static function templateImportsIndex(string $appRoot, array $tokens): array
+    {
+        $byFamily = [];
+        foreach ($tokens as $token) {
+            $token = preg_replace('/[^a-z0-9_-]/i', '', (string)$token);
+            if ($token === '') continue;
+            $dir = $appRoot . '/uploads/templates/imports/' . $token . '/fonts';
+            if (!is_dir($dir)) continue;
+            foreach (scandir($dir) as $name) {
+                if ($name === '.' || $name === '..') continue;
+                $desc = self::describeFile($name);
+                if (!$desc) continue;
+                $rel = '/uploads/templates/imports/' . $token . '/fonts/' . $name;
+                $byFamily[$desc['family']][] = [
+                    'weight' => $desc['weight'],
+                    'style'  => $desc['style'],
+                    'file'   => $rel,
+                    'ext'    => $desc['ext'],
+                ];
+            }
+        }
+        return $byFamily;
+    }
+
+    /**
+     * Emit @font-face declarations for the given family list. Resolution
+     * order: template imports (PDF-extracted) > company uploads > library.
+     * The template imports always win because they are the exact files the
+     * design was built against.
+     */
+    public static function fontFaceCss(string $appRoot, string $companyId, array $familiesNeeded, array $templateTokens = []): string
     {
         if (empty($familiesNeeded)) return '';
-        $library = self::libraryIndex($appRoot);
-        $company = self::companyIndex($appRoot, $companyId);
+        $library  = self::libraryIndex($appRoot);
+        $company  = self::companyIndex($appRoot, $companyId);
+        $template = self::templateImportsIndex($appRoot, $templateTokens);
         $css = '';
         $emitted = [];
 
         foreach ($familiesNeeded as $family) {
-            $library_faces = $library[$family] ?? [];
-            $company_faces = $company[$family] ?? [];
-            // Company uploads first, so library is skipped on collision
-            $faces = array_merge($company_faces, $library_faces);
+            $library_faces  = $library[$family]  ?? [];
+            $company_faces  = $company[$family]  ?? [];
+            $template_faces = $template[$family] ?? [];
+            // Template imports first, then company, then library
+            $faces = array_merge($template_faces, $company_faces, $library_faces);
             foreach ($faces as $face) {
                 $key = $family . '|' . $face['weight'] . '|' . $face['style'];
                 if (isset($emitted[$key])) continue;
