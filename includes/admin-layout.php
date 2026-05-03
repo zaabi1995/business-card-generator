@@ -132,6 +132,9 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     }
     
     $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
+    $tBrandLogo = null;
+    $tBrandFavicon = null;
+    $tBrandName = null;
     $basePath = getBasePath();
     $nav = getAdminNavItems();
     
@@ -159,7 +162,10 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
         $_cid = $_SESSION['company_id'] ?? null;
         if ($_cid && class_exists('Database') && class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
             $_theme = Database::getInstance()->fetchOne(
-                'SELECT primary_color, secondary_color FROM company_themes WHERE company_id = :id LIMIT 1',
+                'SELECT t.primary_color, t.secondary_color, t.logo_path, t.favicon_path, c.name AS company_name
+                 FROM companies c
+                 LEFT JOIN company_themes t ON t.company_id = c.id
+                 WHERE c.id = :id LIMIT 1',
                 ['id' => $_cid]
             );
             if ($_theme) {
@@ -168,6 +174,29 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
                 }
                 if (preg_match('/^#[0-9a-fA-F]{6}$/', $_theme['secondary_color'] ?? '')) {
                     $tBrand2 = $_theme['secondary_color'];
+                }
+                // Path normalisation: company_themes stores either '/uploads/...'
+                // (preferred) or 'companies/<id>/theme/foo.svg' (legacy bare
+                // relative). Prepend '/uploads/' for the legacy form so admin
+                // pages render the correct path. Mirrors TenantHost::theme().
+                $_norm = function ($p) {
+                    if (!$p) return null;
+                    $p = trim((string)$p);
+                    if ($p === '' || preg_match('#^https?://#i', $p)) return $p;
+                    if ($p[0] === '/') return $p;
+                    return '/uploads/' . ltrim($p, '/');
+                };
+                $tBrandLogo    = $_norm($_theme['logo_path']    ?? null);
+                $tBrandFavicon = $_norm($_theme['favicon_path'] ?? null);
+                // Auto-derive favicon from logo when not explicitly set, the
+                // most common case after registration. Browsers accept SVG /
+                // PNG logos as favicons directly.
+                if (!$tBrandFavicon && $tBrandLogo) {
+                    $tBrandFavicon = $tBrandLogo;
+                }
+                if (!empty($_theme['company_name'])) {
+                    $tBrandName = $_theme['company_name'];
+                    $brandName  = $tBrandName;
                 }
             }
         }
@@ -184,7 +213,16 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($pageTitle); ?> - <?php echo $brandName; ?></title>
+    <?php if (!empty($tBrandFavicon)):
+        $__favType = preg_match('/\.svg(\?|$)/i', $tBrandFavicon) ? 'image/svg+xml'
+                    : (preg_match('/\.png(\?|$)/i', $tBrandFavicon) ? 'image/png'
+                    : (preg_match('/\.ico(\?|$)/i', $tBrandFavicon) ? 'image/x-icon' : 'image/png'));
+    ?>
+    <link rel="icon" href="<?= htmlspecialchars($tBrandFavicon, ENT_QUOTES) ?>" type="<?= $__favType ?>">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($tBrandFavicon, ENT_QUOTES) ?>">
+    <?php else: ?>
     <link rel="icon" href="<?php echo $basePath; ?>favicon.svg" type="image/svg+xml">
+    <?php endif; ?>
 
     <!-- PWA manifest + theme color (action 287) -->
     <link rel="manifest" href="<?php echo $basePath; ?>manifest.webmanifest">
@@ -455,13 +493,27 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
       /* Page-loader brand gradient (line 293 fallback) uses hardcoded blue -
          swap to brand primary→secondary. */
       .page-loader-brand{background:none!important;color:var(--tbrand)!important;-webkit-text-fill-color:var(--tbrand)!important}
+      /* Tenant-branded loader: logo in centre + ::before ring spinner in
+         --tbrand. Mirrors the portal-loader UX so admin and customer pages
+         look visually consistent. */
+      .page-loader-ring{position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center}
+      .page-loader-ring::before{content:'';position:absolute;inset:0;border-radius:50%;border:4px solid color-mix(in srgb, var(--tbrand) 12%, transparent);border-top-color:var(--tbrand);animation:adminLoaderSpin 1s linear infinite}
+      .page-loader-ring img{max-width:70px;max-height:70px;object-fit:contain}
+      @keyframes adminLoaderSpin{to{transform:rotate(360deg)}}
     </style>
 </head>
 <body class="bg-gray-50"<?php echo Impersonation::isActive() ? ' data-impersonating="true"' : ''; ?>>
     <?php Impersonation::renderBanner(); ?>
     <!-- Page Loader (auto-hides via CSS after 1s even without JS).
-         SVG inlined so the tenant brand colors apply via CSS variables. -->
+         When the tenant has a logo, we show it in a brand-coloured ring
+         (matches portal-loader). Otherwise, fall back to the abstract
+         Cardify card SVG (used on apex / brand-less tenants). -->
     <div class="page-loader" id="pageLoader">
+        <?php if (!empty($tBrandLogo)): ?>
+        <div class="page-loader-ring">
+            <img src="<?= htmlspecialchars($tBrandLogo, ENT_QUOTES) ?>" alt="<?= htmlspecialchars($brandName, ENT_QUOTES) ?>" onerror="this.style.display='none'">
+        </div>
+        <?php else: ?>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100" height="100" role="img" aria-label="Loading" class="page-loader-svg">
             <circle cx="60" cy="60" r="52" fill="none" stroke="#e2e8f0" stroke-width="6"/>
             <circle class="page-loader-arc" cx="60" cy="60" r="52" fill="none" stroke="var(--tbrand)" stroke-width="6" stroke-linecap="round" stroke-dasharray="60 266"/>
@@ -477,6 +529,7 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
             <circle class="page-loader-dot dot-3" cx="60" cy="108" r="3" fill="var(--tbrand)"/>
             <circle class="page-loader-dot dot-4" cx="12" cy="60" r="3" fill="var(--tbrand)"/>
         </svg>
+        <?php endif; ?>
         <div class="page-loader-text">Loading...</div>
         <div class="page-loader-brand"><?php echo $brandName; ?></div>
     </div>
@@ -496,7 +549,11 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
                     $logoUrl = (Auth::getCurrentRole() === 'super_admin') ? getBasePath() . 'admin/super/' : getAdminBasePath();
                     ?>
                     <a href="<?php echo $logoUrl; ?>" class="flex items-center mr-10 lg:mr-14">
+                        <?php if (!empty($tBrandLogo)): ?>
+                        <img src="<?= htmlspecialchars($tBrandLogo, ENT_QUOTES) ?>" class="h-8 w-auto" alt="<?php echo htmlspecialchars($brandName, ENT_QUOTES); ?>">
+                        <?php else: ?>
                         <img src="<?php echo assetUrl('images/logo.svg'); ?>" class="h-8 w-auto" alt="<?php echo $brandName; ?>">
+                        <?php endif; ?>
                     </a>
 
                     <!-- Search (desktop) -->

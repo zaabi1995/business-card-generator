@@ -113,12 +113,39 @@ $isCompanyAdmin = defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slu
 $ext = $isCompanyAdmin ? '' : '.php';
 $selfHref = $basePath . 'credit-statement' . $ext;
 ?>
+<?php
+// Tenant brand (mirrors includes/admin-layout.php). Print views bypass the
+// shared admin header so we look up logo/favicon directly here. Falls back
+// to Cardify default when no theme row exists.
+$_tBrandLogo = null; $_tBrandFavicon = null;
+try {
+    $_cid = $_SESSION['company_id'] ?? null;
+    if ($_cid && class_exists('Database') && class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
+        $_t = Database::getInstance()->fetchOne(
+            'SELECT logo_path, favicon_path FROM company_themes WHERE company_id = :id LIMIT 1',
+            ['id' => $_cid]
+        );
+        $_norm = function ($p) { if (!$p) return null; $p = trim((string)$p); if ($p === '' || preg_match('#^https?://#i', $p)) return $p; return $p[0] === '/' ? $p : '/uploads/' . ltrim($p, '/'); };
+        $_tBrandLogo    = $_norm($_t['logo_path']    ?? null);
+        $_tBrandFavicon = $_norm($_t['favicon_path'] ?? null) ?: $_tBrandLogo;
+    }
+} catch (Throwable $_) { /* legacy installs */ }
+?>
 <?php if ($printView): ?>
 <!DOCTYPE html>
 <html lang="<?= $locale ?>" dir="<?= $isAr ? 'rtl' : 'ltr' ?>">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title><?= htmlspecialchars($pageTitle) ?></title>
+<?php if (!empty($_tBrandFavicon)):
+    $__favType = preg_match('/\.svg(\?|$)/i', $_tBrandFavicon) ? 'image/svg+xml'
+                : (preg_match('/\.png(\?|$)/i', $_tBrandFavicon) ? 'image/png' : 'image/png');
+?>
+<link rel="icon" href="<?= htmlspecialchars($_tBrandFavicon, ENT_QUOTES) ?>" type="<?= $__favType ?>">
+<link rel="apple-touch-icon" href="<?= htmlspecialchars($_tBrandFavicon, ENT_QUOTES) ?>">
+<?php else: ?>
+<link rel="icon" href="<?= getBasePath() ?>favicon.svg" type="image/svg+xml">
+<?php endif; ?>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
@@ -139,7 +166,11 @@ $selfHref = $basePath . 'credit-statement' . $ext;
 <div class="max-w-3xl mx-auto my-6 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
     <div class="bg-blue-600 px-8 py-6 text-white">
         <div class="flex items-center justify-between mb-2">
+            <?php if (!empty($_tBrandLogo)): ?>
+            <img src="<?= htmlspecialchars($_tBrandLogo, ENT_QUOTES) ?>" alt="" class="h-8 w-auto brightness-0 invert">
+            <?php else: ?>
             <img src="<?= getBasePath() ?>assets/images/logo.svg" alt="Cardify" class="h-8 w-auto brightness-0 invert">
+            <?php endif; ?>
             <div class="<?= $isAr ? 'text-left' : 'text-right' ?>">
                 <p class="text-blue-200 text-xs uppercase tracking-wide"><?= htmlspecialchars(t('credit_statement.doc_title')) ?></p>
                 <p class="font-bold text-lg"><?= htmlspecialchars($account['print_shop_name'] ?? ',') ?></p>
