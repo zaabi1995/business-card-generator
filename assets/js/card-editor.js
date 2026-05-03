@@ -896,9 +896,39 @@ class CardEditor {
 
                 // Resolve style with sensible defaults so a missing/partial
                 // qr_style still renders a valid black-on-white code.
+                //
+                // mode classifier (set by parse_card_pdf.py sample_qr_style):
+                //   'real_qr_styled'    -> paint sampled fg/bg (+ eye + border)
+                //   'real_qr_plain'     -> paint sampled fg/bg (likely black/white)
+                //   'empty_placeholder' -> sampled bg is the placeholder colour;
+                //                          auto-pick a contrasting fg by luminance
+                //                          so the dynamic QR sits cleanly inside
+                //                          the box even when the template designer
+                //                          left only an empty square.
+                //   missing             -> classic black-on-white (legacy default)
                 const s = style || {};
-                const moduleColor = s.color || '#000000';
+                const mode = s.mode || null;
+                const _hexToRgb = (hex) => {
+                    const m = /^#?([a-f0-9]{6})$/i.exec(String(hex || ''));
+                    if (!m) return null;
+                    const n = parseInt(m[1], 16);
+                    return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
+                };
+                const _lum = (rgb) => rgb ? (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) : 128;
+                const _contrastFg = (bg) => {
+                    const rgb = _hexToRgb(bg);
+                    return _lum(rgb) > 140 ? '#111111' : '#f5f5f5';
+                };
+
+                let moduleColor = s.color || '#000000';
                 const bgColor = s.bg_color || '#ffffff';
+                if (mode === 'empty_placeholder') {
+                    // Sampled "color" is just the luminance pick from Python;
+                    // recompute on the JS side using the canonical bg so the
+                    // contrast holds even if downstream code overrode bg_color.
+                    moduleColor = _contrastFg(bgColor);
+                }
+                const eyeColor = s.eye_color || null;
                 const hasBorder = !!s.has_border && !!s.border_color;
                 const borderColor = hasBorder ? s.border_color : null;
                 // border_width_px is in source-bg pixels (sampled at 1200 DPI).
@@ -939,11 +969,21 @@ class CardEditor {
                 ctx.fillStyle = bgColor;
                 ctx.fillRect(borderPx, borderPx, innerSize, innerSize);
 
-                // Modules.
-                ctx.fillStyle = moduleColor;
+                // Modules. Finder patterns are the 7x7 blocks in the top-left,
+                // top-right, and bottom-left corners; they get the sampled
+                // eye_color when present so brand-styled QRs that use a
+                // distinct accent on the eyes stay faithful.
+                const _inEye = (row, col) => {
+                    if (!eyeColor) return false;
+                    if (row < 7 && col < 7) return true;                                    // top-left
+                    if (row < 7 && col >= moduleCount - 7) return true;                     // top-right
+                    if (row >= moduleCount - 7 && col < 7) return true;                     // bottom-left
+                    return false;
+                };
                 for (let row = 0; row < moduleCount; row++) {
                     for (let col = 0; col < moduleCount; col++) {
                         if (qr.isDark(row, col)) {
+                            ctx.fillStyle = _inEye(row, col) ? eyeColor : moduleColor;
                             ctx.fillRect(
                                 borderPx + col * cellSize,
                                 borderPx + row * cellSize,

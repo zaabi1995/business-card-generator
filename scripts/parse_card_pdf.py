@@ -217,10 +217,9 @@ def detect_qr_area(page, redacted_text_bboxes, bg_image_path=None, bg_dpi=None):
         # Convert pixel rect (top-left origin) -> PDF points (top-left origin)
         # PDF "points" use 72 per inch; bg was rasterized at bg_dpi.
         scale = 72.0 / float(bg_dpi)
-        # Sample design language (fg/bg/border colors + border width) so the
-        # generated dynamic vCard QR matches the original visual style instead
-        # of defaulting to plain black-on-white.
-        style = _detect_qr_style(img, qr.rect)
+        # Style sampling now happens centrally in parse_pdf() after the bg
+        # is rendered + redacted, so both placeholder and real-QR rects get
+        # the same treatment. We just hand back the rect + payload here.
         return {
             'x_pt': qr.rect.left * scale,
             'y_pt': qr.rect.top * scale,
@@ -228,7 +227,6 @@ def detect_qr_area(page, redacted_text_bboxes, bg_image_path=None, bg_dpi=None):
             'h_pt': qr.rect.height * scale,
             'hint': 'detected real QR code via pyzbar',
             'payload': qr.data.decode('utf-8', errors='replace')[:512],
-            'style': style,
         }
     except Exception as e:
         print(f'WARN: pyzbar raster scan failed: {e}', file=sys.stderr)
@@ -240,17 +238,28 @@ def _rgb_to_hex(rgb):
     return f'#{r:02x}{g:02x}{b:02x}'
 
 
-def _detect_qr_style(img, rect):
-    """Inspect a small neighbourhood around the detected QR rect to pick up the
-    "design language" the source PDF used: foreground module colour, background
-    fill, optional border colour + width. The dynamic per-employee QR can then
-    be re-rendered with the same look so it doesn't drop in as a plain
-    black-on-white square that fights the rest of the card.
+def sample_qr_style(img, rect_px, real_qr=False):
+    """Analyze the visual style of a QR area on the rendered bg.
 
-    Returns a dict (color, bg_color, border_color, border_width_px,
-    border_radius_pct, has_border). All fields are optional; the renderer
-    falls back to black-on-white when a key is missing or the sample is
-    inconclusive.
+    Works for two distinct cases without the caller knowing which one:
+      A) Real rendered QR (pyzbar found one) -> sample modules + bg + border.
+      B) Empty placeholder square (designer-drawn box, no scannable code)
+         -> sample box bg + derive a contrasting fg so the dynamic QR has
+         guaranteed contrast when rendered on top.
+
+    Returns dict:
+        mode             : 'real_qr_styled' | 'real_qr_plain' | 'empty_placeholder'
+        color            : hex, foreground (module) colour
+        bg_color         : hex, fill behind the modules
+        eye_color        : hex | null, finder pattern colour (real QR only)
+        border_color     : hex | null
+        border_width_px  : int (sampled pixels in the bg image)
+        has_border       : bool
+        border_radius_pct: int (0-15)
+        qr_px_width      : int, area width in bg pixels (used to scale border at render)
+
+    None fields fall through to renderer defaults. Returns None only on
+    fatal sampling failure (e.g. PIL unavailable, rect off-canvas).
     """
     try:
         from PIL import Image  # type: ignore
@@ -259,72 +268,150 @@ def _detect_qr_style(img, rect):
         return None
     rgb = img.convert('RGB')
     W, H = rgb.size
-    x0, y0, w, h = rect.left, rect.top, rect.width, rect.height
-    x1, y1 = x0 + w, y0 + h
-    # Module colour: inside the QR rect, sample a grid of pixels and pick
-    # the darkest cluster. Background is the brightest cluster of the same
-    # interior sample. Step through ~32 points per side so we don't pin to
-    # a single eye marker.
+    x0, y0 = max(0, int(round(rect_px[0]))), max(0, int(round(rect_px[1])))
+    w, h = int(round(rect_px[2])), int(round(rect_px[3]))
+    x1, y1 = min(W, x0 + w), min(H, y0 + h)
+    w, h = x1 - x0, y1 - y0
+    if w < 8 or h < 8:
+        return None
+
+    # --- 1. Sample the interior at ~32 grid points per side ---
     interior = []
     step = max(2, w // 32)
-    for sy in range(y0 + 4, y1 - 4, step):
-        for sx in range(x0 + 4, x1 - 4, step):
-            if 0 <= sx < W and 0 <= sy < H:
-                interior.append(rgb.getpixel((sx, sy)))
+    inset = max(2, w // 40)
+    for sy in range(y0 + inset, y1 - inset, step):
+        for sx in range(x0 + inset, x1 - inset, step):
+            interior.append(rgb.getpixel((sx, sy)))
     if not interior:
         return None
-    interior_sorted = sorted(interior, key=lambda p: 0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2])
-    dark_pool = interior_sorted[: max(1, len(interior_sorted) // 6)]
-    light_pool = interior_sorted[-max(1, len(interior_sorted) // 6):]
-    fg = tuple(sum(c) // len(dark_pool) for c in zip(*dark_pool)) if dark_pool else (0, 0, 0)
-    bg = tuple(sum(c) // len(light_pool) for c in zip(*light_pool)) if light_pool else (255, 255, 255)
-    # Border: walk outward from each edge until the colour stops matching the
-    # immediate ring (i.e. a frame of constant colour outside the QR modules).
-    # If the ring of pixels just outside the QR is uniform AND distinct from
-    # bg, treat it as a border.
-    def _ring(pad):
+
+    # Histogram-quantize to 4 bits/channel = 4096 buckets max. Far more
+    # reliable than dark/light cluster averaging when the design uses a
+    # custom palette (gold modules, cream bg, etc).
+    def _q(p):
+        return ((p[0] >> 4) << 8) | ((p[1] >> 4) << 4) | (p[2] >> 4)
+    def _dq(q):
+        return (((q >> 8) & 0xf) << 4 | 8, ((q >> 4) & 0xf) << 4 | 8, (q & 0xf) << 4 | 8)
+    bins = Counter(_q(p) for p in interior)
+    most = bins.most_common(8)
+    lums = [0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] for p in interior]
+    spread = max(lums) - min(lums)
+
+    # --- 2. Mode classifier ---
+    # A real QR has high luminance spread (modules + bg both present).
+    # A flat placeholder reads as one dominant colour, low spread.
+    has_code = bool(real_qr) and spread > 60
+
+    if has_code:
+        bins_by_lum = sorted(
+            most,
+            key=lambda kv: 0.299 * _dq(kv[0])[0] + 0.587 * _dq(kv[0])[1] + 0.114 * _dq(kv[0])[2],
+        )
+        fg = _dq(bins_by_lum[0][0])
+        bg = _dq(bins_by_lum[-1][0])
+        fg_lum = 0.299 * fg[0] + 0.587 * fg[1] + 0.114 * fg[2]
+        bg_lum = 0.299 * bg[0] + 0.587 * bg[1] + 0.114 * bg[2]
+        fg_chroma = max(fg) - min(fg)
+        bg_chroma = max(bg) - min(bg)
+        is_plain = (fg_lum < 40 and fg_chroma < 20 and bg_lum > 220 and bg_chroma < 20)
+        mode = 'real_qr_plain' if is_plain else 'real_qr_styled'
+    else:
+        # Flat placeholder -> bg = dominant colour. fg = contrast pick by
+        # luminance (renderer can override).
+        bg = _dq(most[0][0])
+        bg_lum = 0.299 * bg[0] + 0.587 * bg[1] + 0.114 * bg[2]
+        fg = (17, 17, 17) if bg_lum > 140 else (245, 245, 245)
+        mode = 'empty_placeholder'
+
+    # --- 3. Eye / finder-pattern colour (real QR only) ---
+    eye_color = None
+    if has_code:
+        eye_inset = max(3, int(w * 0.10))
+        eye_size = max(4, int(w * 0.07))
+        corners = [
+            (x0 + eye_inset, y0 + eye_inset),
+            (x1 - eye_inset - eye_size, y0 + eye_inset),
+            (x0 + eye_inset, y1 - eye_inset - eye_size),
+        ]
+        eye_pool = []
+        for (ex, ey) in corners:
+            for sy in range(ey, ey + eye_size):
+                for sx in range(ex, ex + eye_size):
+                    if 0 <= sx < W and 0 <= sy < H:
+                        eye_pool.append(rgb.getpixel((sx, sy)))
+        if eye_pool:
+            eye_lums = [0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] for p in eye_pool]
+            avg_lum = sum(eye_lums) / len(eye_lums)
+            dark_eye = [eye_pool[i] for i, lum in enumerate(eye_lums) if lum < avg_lum]
+            if dark_eye:
+                eye_color = tuple(sum(c) // len(dark_eye) for c in zip(*dark_eye))
+                # Only surface if visibly different from main fg.
+                if max(abs(eye_color[i] - fg[i]) for i in range(3)) < 25:
+                    eye_color = None
+
+    # --- 4. Border ring outside the rect ---
+    def _ring(pad_):
         pts = []
-        for sx in range(x0 - pad, x1 + pad, max(2, w // 24)):
-            for sy in (y0 - pad, y1 + pad - 1):
+        sx_step = max(2, w // 24)
+        sy_step = max(2, h // 24)
+        for sx in range(x0 - pad_, x1 + pad_, sx_step):
+            for sy in (y0 - pad_, y1 + pad_ - 1):
                 if 0 <= sx < W and 0 <= sy < H:
                     pts.append(rgb.getpixel((sx, sy)))
-        for sy in range(y0 - pad, y1 + pad, max(2, h // 24)):
-            for sx in (x0 - pad, x1 + pad - 1):
+        for sy in range(y0 - pad_, y1 + pad_, sy_step):
+            for sx in (x0 - pad_, x1 + pad_ - 1):
                 if 0 <= sx < W and 0 <= sy < H:
                     pts.append(rgb.getpixel((sx, sy)))
         return pts
+
     border_color = None
     border_width_px = 0
     has_border = False
-    # Try padding 2..max(8, w/15)
-    max_pad = max(8, w // 15)
-    last_color = None
-    for pad in range(2, max_pad + 1, 2):
-        ring = _ring(pad)
+    max_pad = max(8, w // 12)
+    for pad_ in range(2, max_pad + 1, 2):
+        ring = _ring(pad_)
         if not ring:
             break
-        # Check uniformity: stdev of luminance below threshold
-        lums = [0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] for p in ring]
-        mean = sum(lums) / len(lums)
-        spread = max(lums) - min(lums)
-        if spread > 60:
+        rl = [0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] for p in ring]
+        if max(rl) - min(rl) > 60:
             break
         avg = tuple(sum(c) // len(ring) for c in zip(*ring))
-        # Distinct from bg?
         if max(abs(avg[i] - bg[i]) for i in range(3)) > 25:
             border_color = avg
-            border_width_px = pad
+            border_width_px = pad_
             has_border = True
-            last_color = avg
         else:
             break
+
+    # --- 5. Rounded-corner probe ---
+    # If the outermost border corner reads as the page bg (not the border
+    # colour), the corner is rounded. Sample a small triangle one
+    # border-width inward from each corner.
+    border_radius_pct = 0
+    if has_border and border_color is not None:
+        cs = max(2, border_width_px)
+        cx0, cy0 = max(0, x0 - border_width_px), max(0, y0 - border_width_px)
+        triangle = []
+        for dx in range(0, cs):
+            for dy in range(0, cs - dx):
+                sx, sy = cx0 + dx, cy0 + dy
+                if 0 <= sx < W and 0 <= sy < H:
+                    triangle.append(rgb.getpixel((sx, sy)))
+        if triangle:
+            avg_c = tuple(sum(c) // len(triangle) for c in zip(*triangle))
+            if max(abs(avg_c[i] - border_color[i]) for i in range(3)) > 30:
+                border_radius_pct = 8
+
     return {
+        'mode': mode,
         'color': _rgb_to_hex(fg),
         'bg_color': _rgb_to_hex(bg),
+        'eye_color': _rgb_to_hex(eye_color) if eye_color else None,
         'border_color': _rgb_to_hex(border_color) if border_color else None,
         'border_width_px': border_width_px if has_border else 0,
         'has_border': bool(has_border),
-        'border_radius_pct': 8 if has_border else 0,  # safe default; PDF QRs rarely have very rounded corners
+        'border_radius_pct': border_radius_pct,
+        'qr_px_width': w,
     }
 
 
@@ -659,6 +746,27 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
                 print(f'WARN: svg export failed for page {page_num}: {e}', file=sys.stderr)
         except Exception as e:
             print(f'WARN: redaction failed for page {page_num}: {e}', file=sys.stderr)
+
+        # ── Central QR style sampling pass ──
+        # Run regardless of which detection path found the rect. The
+        # redacted bg is the cleanest source: text on top of a placeholder
+        # is gone, but the QR modules survive (apply_redactions(images=0)).
+        # Falls back to bg_with_text_path if the redacted file is missing.
+        if qr_area:
+            try:
+                from PIL import Image as _PIL  # type: ignore
+                _sample_path = bg_path if os.path.exists(bg_path) else bg_with_text_path
+                _sample_img = _PIL.open(_sample_path)
+                _rect_px = (
+                    qr_area['x_pt'] * BG_SCALE,
+                    qr_area['y_pt'] * BG_SCALE,
+                    qr_area['w_pt'] * BG_SCALE,
+                    qr_area['h_pt'] * BG_SCALE,
+                )
+                _real = 'pyzbar' in (qr_area.get('hint') or '')
+                qr_area['style'] = sample_qr_style(_sample_img, _rect_px, real_qr=_real)
+            except Exception as e:
+                print(f'WARN: qr style sample failed for page {page_num}: {e}', file=sys.stderr)
 
         pages_out.append({
             'page_number': page_num,
