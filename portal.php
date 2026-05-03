@@ -1218,12 +1218,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <!-- Name Arabic -->
                     <?php if (!empty($enabledFields['name_ar'])): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <?= htmlspecialchars(t('portal.full_name_ar')) ?>
-                            <button type="button" class="translate-btn ml-2 text-xs text-blue-600 hover:text-blue-700 inline-flex items-center gap-1" onclick="translateField(this,'name_en', 'name_ar', 'name')">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-sm font-semibold text-gray-700"><?= htmlspecialchars(t('portal.full_name_ar')) ?></label>
+                            <button type="button" class="translate-btn text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md inline-flex items-center gap-1.5 transition-colors" onclick="translateField(this,'name_en', 'name_ar', 'name')">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
-                        </label>
+                        </div>
                         <input type="text" name="name_ar" id="name_ar"
                                value="<?php echo htmlspecialchars($formData['name_ar'] ?? ''); ?>"
                                placeholder="جون دو"
@@ -1245,12 +1245,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <!-- Position Arabic -->
                     <?php if (!empty($enabledFields['position_ar'])): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <?= htmlspecialchars(t('portal.position_ar')) ?>
-                            <button type="button" class="translate-btn ml-2 text-xs text-blue-600 hover:text-blue-700 inline-flex items-center gap-1" onclick="translateField(this,'position_en', 'position_ar', 'position')">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-sm font-semibold text-gray-700"><?= htmlspecialchars(t('portal.position_ar')) ?></label>
+                            <button type="button" class="translate-btn text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md inline-flex items-center gap-1.5 transition-colors" onclick="translateField(this,'position_en', 'position_ar', 'position')">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
-                        </label>
+                        </div>
                         <input type="text" name="position_ar" id="position_ar"
                                value="<?php echo htmlspecialchars($formData['position_ar'] ?? ''); ?>"
                                placeholder="مهندس برمجيات"
@@ -1342,12 +1342,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <!-- Address 01 Arabic -->
                     <?php if (!empty($enabledFields['address_ar'])): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <?= htmlspecialchars(t('portal.address_01_ar')) ?>
-                            <button type="button" class="translate-btn ml-2 text-xs text-blue-600 hover:text-blue-700 inline-flex items-center gap-1" onclick="translateField(this,'address_en', 'address_ar', 'address')">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-sm font-semibold text-gray-700"><?= htmlspecialchars(t('portal.address_01_ar')) ?></label>
+                            <button type="button" class="translate-btn text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md inline-flex items-center gap-1.5 transition-colors" onclick="translateField(this,'address_en', 'address_ar', 'address')">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
-                        </label>
+                        </div>
                         <textarea name="address_ar" id="address_ar" rows="2"
                                   placeholder="<?= htmlspecialchars(t('portal.address_ph_ar')) ?>"
                                   class="form-input rtl-input"><?php echo htmlspecialchars($formData['address_ar'] ?? ''); ?></textarea>
@@ -1360,12 +1360,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                          hidden unless a tenant adds it later. -->
                     <?php if (!empty($enabledFields['address_2_ar'])): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <?= htmlspecialchars(t('portal.address_02_ar')) ?>
-                            <button type="button" class="translate-btn ml-2 text-xs text-blue-600 hover:text-blue-700 inline-flex items-center gap-1" onclick="translateField(this,'address_2_en', 'address_2_ar', 'address')">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-sm font-semibold text-gray-700"><?= htmlspecialchars(t('portal.address_02_ar')) ?></label>
+                            <button type="button" class="translate-btn text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md inline-flex items-center gap-1.5 transition-colors" onclick="translateField(this,'address_2_en', 'address_2_ar', 'address')">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
-                        </label>
+                        </div>
                         <textarea name="address_2_ar" id="address_2_ar" rows="2"
                                   placeholder="<?= htmlspecialchars(t('portal.address_02_ph_ar')) ?>"
                                   class="form-input rtl-input"><?php echo htmlspecialchars($formData['address_2_ar'] ?? ''); ?></textarea>
@@ -2712,26 +2712,16 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         }, 3000);
     }
     
-    // Optional: Auto-translate on blur (when user leaves field)
+    // Click-to-translate only. Earlier this fired on blur of name_en /
+    // position_en when the Arabic was empty, but employees found it
+    // unexpected ("why did my Arabic name change while I was tabbing
+    // through?") and there was no way to opt out short of typing
+    // something into the Arabic box first. Now the AI Translate button
+    // is the single trigger -- pressing it (re-)fills the Arabic field
+    // from the current English value, every time. Empty English shows
+    // an inline error in translateField().
     document.addEventListener('DOMContentLoaded', function() {
-        const autoTranslateFields = ['name_en', 'position_en'];
-        
-        autoTranslateFields.forEach(fieldId => {
-            const el = document.getElementById(fieldId);
-            if (el) {
-                el.addEventListener('blur', function() {
-                    const targetId = fieldId.replace('_en', '_ar');
-                    const targetEl = document.getElementById(targetId);
-                    
-                    // Only auto-translate if target is empty and source has value
-                    if (targetEl && !targetEl.value.trim() && this.value.trim()) {
-                        const fieldType = fieldId.replace('_en', '');
-                        translateField(fieldId, targetId, fieldType);
-                    }
-                });
-            }
-        });
-        
+        // intentionally no auto-translate handlers
     });
     </script>
     
