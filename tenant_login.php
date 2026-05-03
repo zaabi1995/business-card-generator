@@ -242,7 +242,17 @@ $switchUrl   = '/login?lang=' . $otherLocale;
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= htmlspecialchars($companyName) ?> · Cardify</title>
+<?php
+$__loginTheme = class_exists('TenantHost') ? TenantHost::theme() : null;
+if (!empty($__loginTheme['favicon'])):
+    $__favType = preg_match('/\.svg(\?|$)/i', $__loginTheme['favicon']) ? 'image/svg+xml'
+                : (preg_match('/\.png(\?|$)/i', $__loginTheme['favicon']) ? 'image/png' : 'image/png');
+?>
+<link rel="icon" href="<?= htmlspecialchars($__loginTheme['favicon'], ENT_QUOTES) ?>" type="<?= $__favType ?>">
+<link rel="apple-touch-icon" href="<?= htmlspecialchars($__loginTheme['favicon'], ENT_QUOTES) ?>">
+<?php else: ?>
 <link rel="icon" href="/favicon.svg">
+<?php endif; ?>
 <?php
     $__ogImage = OgImage::url($tenant, ['variant' => 'login', 'locale' => $locale]);
     $__ogDesc  = ($locale === 'ar')

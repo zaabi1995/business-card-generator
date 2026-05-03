@@ -525,7 +525,22 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
+    <?php
+    // Auto-brand favicon from the tenant's logo (with theme.favicon_path
+    // overriding when explicitly uploaded). TenantHost::theme() applies
+    // the same logo-as-favicon fallback as ui-header.php so HR doesn't
+    // need to upload a separate favicon file.
+    $__portalTheme = class_exists('TenantHost') ? TenantHost::theme() : null;
+    if (!empty($__portalTheme['favicon'])):
+        $__favType = preg_match('/\.svg(\?|$)/i', $__portalTheme['favicon']) ? 'image/svg+xml'
+                    : (preg_match('/\.png(\?|$)/i', $__portalTheme['favicon']) ? 'image/png'
+                    : (preg_match('/\.ico(\?|$)/i', $__portalTheme['favicon']) ? 'image/x-icon' : 'image/png'));
+    ?>
+    <link rel="icon" href="<?= htmlspecialchars($__portalTheme['favicon'], ENT_QUOTES) ?>" type="<?= $__favType ?>">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($__portalTheme['favicon'], ENT_QUOTES) ?>">
+    <?php else: ?>
     <link rel="icon" href="<?php echo getBasePath(); ?>favicon.svg" type="image/svg+xml">
+    <?php endif; ?>
 
     <meta name="description" content="<?= htmlspecialchars($__ogDesc) ?>">
     <meta property="og:type" content="website">
@@ -821,11 +836,37 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             margin-top: 8px;
             font-size: 20px;
             font-weight: 700;
-            background: linear-gradient(135deg, #009bc1 0%, #0284a1 100%);
+            background: linear-gradient(135deg, var(--portal-loader-primary, #009bc1) 0%, var(--portal-loader-secondary, #0284a1) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
+        /* Tenant-branded ring spinner around the company logo, primary
+           colour from company_themes (auto on subdomain, default Cardify
+           teal on apex). */
+        .page-loader-ring {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .page-loader-ring::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 4px solid rgba(15, 51, 84, 0.10);
+            border-top-color: var(--portal-loader-primary, #009bc1);
+            animation: portalLoaderSpin 1s linear infinite;
+        }
+        .page-loader-ring img {
+            max-width: 70px;
+            max-height: 70px;
+            object-fit: contain;
+        }
+        @keyframes portalLoaderSpin { to { transform: rotate(360deg); } }
         body.loading > *:not(.page-loader) {
             opacity: 0;
         }
@@ -836,9 +877,19 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     </style>
 </head>
 <body class="h-full bg-gray-50 loading">
-    <!-- Page Loader -->
-    <div class="page-loader" id="pageLoader">
+    <!-- Page Loader: tenant logo + brand-coloured spinner ring + company
+         name. Falls back to the Cardify-teal gradient on the apex. -->
+    <div class="page-loader" id="pageLoader" style="<?php
+        if (!empty($__portalTheme['primary'])) echo '--portal-loader-primary:' . htmlspecialchars($__portalTheme['primary'], ENT_QUOTES) . ';';
+        if (!empty($__portalTheme['secondary'])) echo '--portal-loader-secondary:' . htmlspecialchars($__portalTheme['secondary'], ENT_QUOTES) . ';';
+    ?>">
+        <?php if (!empty($__portalTheme['logo'])): ?>
+        <div class="page-loader-ring">
+            <img src="<?= htmlspecialchars($__portalTheme['logo'], ENT_QUOTES) ?>" alt="<?php echo htmlspecialchars($companyName); ?>" onerror="this.style.display='none'">
+        </div>
+        <?php else: ?>
         <img src="<?php echo getBasePath(); ?>assets/images/cardify-loader.svg" alt="Loading" width="100" height="100">
+        <?php endif; ?>
         <div class="page-loader-text">Loading...</div>
         <div class="page-loader-brand"><?php echo htmlspecialchars($companyName); ?></div>
     </div>
