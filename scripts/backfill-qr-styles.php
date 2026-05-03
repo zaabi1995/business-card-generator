@@ -29,9 +29,9 @@ $filterSlug = $opts['slug'] ?? null;
 $filterSide = $opts['side'] ?? null;
 
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../includes/Database.php';
+require_once INCLUDES_DIR . '/Database.php';
 
-$db = new Database();
+$db = Database::getInstance();
 
 $where = ["t.is_active = 1"];
 $params = [];
