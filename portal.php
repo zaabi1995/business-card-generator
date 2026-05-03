@@ -1571,7 +1571,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     <!-- QR Code Generator -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
     <!-- CardEditor (uses Fabric.js) -->
-    <script src="<?php echo getBasePath(); ?>assets/js/card-editor.js"></script>
+    <script src="<?php echo getBasePath(); ?>assets/js/card-editor.js?v=<?php echo @filemtime(__DIR__ . '/assets/js/card-editor.js') ?: time(); ?>"></script>
     
     <script>
     // Template data from PHP
