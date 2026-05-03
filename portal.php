@@ -695,55 +695,15 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         .collapse-content.open {
             max-height: 500px;
         }
-        /* Translate button styles */
-        .translate-btn {
-            position: absolute;
-            right: 0.5rem;
-            top: 50%;
-            transform: translateY(-50%);
-            padding: 0.25rem 0.5rem;
-            font-size: 0.7rem;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            color: white;
-            border-radius: 0.375rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            transition: all 0.2s;
-            border: none;
-        }
-        .translate-btn:hover {
-            transform: translateY(-50%) scale(1.05);
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
-        }
-        .translate-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .translate-btn.loading {
-            pointer-events: none;
-        }
-        .translate-btn .spinner {
-            animation: spin 1s linear infinite;
-        }
+        /* Translate button: now lives in its own flex row above the
+           input (Tailwind classes own all visual styling). Keep the
+           class name so JS can still find/disable the button, but no
+           legacy absolute positioning, no gradient overlay -- those
+           were overriding the new pill-style Tailwind classes. */
+        .translate-btn .spinner { animation: spin 1s linear infinite; }
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
-        }
-        .input-with-btn {
-            position: relative;
-        }
-        .input-with-btn .form-input {
-            padding-right: 4.5rem;
-        }
-        .rtl-input.form-input {
-            padding-right: 0.875rem;
-            padding-left: 4.5rem;
-        }
-        .rtl-input ~ .translate-btn {
-            right: auto;
-            left: 0.5rem;
         }
         /* Auto-fill indicator */
         .auto-filled {
