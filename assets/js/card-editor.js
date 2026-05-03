@@ -885,9 +885,15 @@ class CardEditor {
         const fontStyle = fieldOptions.fontStyle || 'normal';
         const fill = String(fieldOptions.fill || '#333333');
 
-        // Render at 2x DPR so card-export multiplier=4 doesn't softens
-        // the glyphs back to today's blurry baseline.
-        const dpr = 2;
+        // Render at 4x DPR to match the export multiplier (Cardify's
+        // exportPNG uses multiplier=4 for HD print). At dpr=2, Fabric
+        // would upscale the bitmap 2x at export -> visible blur on the
+        // saved PNG / downloaded PDF (live portal preview at 1x looked
+        // crisp, but the cached card image generated/served from
+        // admin/generated.php was softer because the bitmap was
+        // 2x-baseline upscaled to 4x at toDataURL time).
+        // dpr=4 means the bitmap is 1:1 with the export pixel grid.
+        const dpr = 4;
         const buildFontSpec = (fs) => `${fontStyle} ${fontWeight} ${fs * dpr}px "${fontFamily}", "Cairo", "Tajawal", serif`;
 
         // Measure once + auto-shrink: when the dynamic text is wider than
