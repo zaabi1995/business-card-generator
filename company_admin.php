@@ -83,6 +83,7 @@ try {
         'save_template' => 'admin/save_template.php',
         'redetect-qr-style' => 'admin/redetect-qr-style.php',
         'redetect-text-field' => 'admin/redetect-text-field.php',
+        'rebake-template-bg' => 'admin/rebake-template-bg.php',
         'send_card_email' => 'admin/send_card_email.php',
         'analytics' => 'admin/analytics.php',
         'audit-logs' => 'admin/audit-logs.php',

@@ -1685,6 +1685,27 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                         <div><span class="inline-block px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-semibold uppercase tracking-wide text-[10px]">Static</span> the same text renders on every employee card, drawn live on top of the design background. Use for shared brand/decoration text (address line, slogan, website) that you may still want to tweak in this panel.</div>
                         <div><span class="inline-block px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold uppercase tracking-wide text-[10px]">Baked</span> the field is already flattened into the design background PNG, set during PDF import. Cannot be edited live, must be re-baked to change.</div>
                     </div>
+                    <!-- Pending changes banner: shows up when admin flips one or
+                         more fields between Static-live and Baked. The actual
+                         re-bake happens server-side via rebake-template-bg.php
+                         when admin clicks Apply. -->
+                    <div x-show="Object.keys(pendingFieldChanges || {}).length > 0" x-cloak
+                         class="mb-3 p-3 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-between gap-3">
+                        <div class="text-xs text-amber-900">
+                            <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                            <span x-text="Object.keys(pendingFieldChanges || {}).length"></span> field(s) need re-baking. The design background will be regenerated from the source PDF.
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" @click="cancelPendingFieldChanges()"
+                                    class="px-3 py-1 text-xs bg-white border border-gray-200 rounded hover:bg-gray-50">Cancel</button>
+                            <button type="button" @click="applyPendingFieldChanges()"
+                                    :disabled="isRebakingTemplate"
+                                    class="px-3 py-1 text-xs font-semibold bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50 inline-flex items-center gap-1.5">
+                                <template x-if="isRebakingTemplate"><i class="fa-solid fa-spinner fa-spin"></i></template>
+                                <span x-text="isRebakingTemplate ? 'Re-baking…' : 'Apply changes'"></span>
+                            </button>
+                        </div>
+                    </div>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
                         <template x-for="(field, key) in (selectedTemplate && selectedTemplate.fields ? selectedTemplate.fields : {})" :key="key">
                             <div class="bg-white rounded-lg p-3 border border-gray-200">
@@ -1881,10 +1902,12 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                                             </button>
                                         </div>
                                     </div>
-                                    <!-- Display mode toggle. Switches the field between Dynamic
-                                         (per-employee value) and Static (same text on every
-                                         employee card). Baked-into-bg is the third mode but
-                                         is set at PDF import time and only changes via Re-bake. -->
+                                    <!-- Display mode toggle. Three modes:
+                                         - Dynamic: replaced with per-employee value at render time
+                                         - Static: same text on every card, drawn live by Fabric
+                                         - Baked: flattened into the bg PNG at import time, immutable until re-bake
+                                         The first two are toggleable in-place; the third requires an
+                                         apply step that re-renders the bg from source.pdf. -->
                                     <div class="mt-2 pt-2 border-t border-gray-100">
                                         <div class="flex items-center justify-between mb-1.5">
                                             <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Display mode</span>
@@ -1894,24 +1917,31 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                                                 <i class="fa-solid fa-circle-question"></i> What's this?
                                             </button>
                                         </div>
-                                        <label class="flex items-start gap-2 cursor-pointer"
-                                               :class="field.render_in_bg ? 'opacity-50 cursor-not-allowed' : ''">
-                                            <input type="checkbox" :id="'static-' + key"
-                                                   :checked="!!field.is_static"
-                                                   :disabled="!!field.render_in_bg"
-                                                   @change="toggleFieldStatic(key, $event.target.checked)"
-                                                   class="w-4 h-4 mt-0.5 rounded border-gray-300 text-amber-600 focus:ring-amber-500 flex-shrink-0">
-                                            <span class="text-xs text-gray-700 leading-tight">
-                                                <span class="font-medium">Static text</span>
-                                                <span class="text-gray-400 block text-[11px] mt-0.5">
-                                                    Same text on every employee card. Use for address, website, taglines.
-                                                </span>
-                                            </span>
-                                        </label>
-                                        <template x-if="field.render_in_bg">
-                                            <p class="text-[11px] text-amber-700 mt-1.5 flex items-start gap-1">
-                                                <i class="fa-solid fa-lock mt-0.5"></i>
-                                                <span>Baked into the background PNG. Use Re-bake (coming soon) to change.</span>
+                                        <div class="grid grid-cols-3 gap-1 text-[11px]">
+                                            <button type="button"
+                                                    @click="setFieldMode(key, 'dynamic')"
+                                                    :class="(!field.is_static) ? 'bg-gray-200 text-gray-900 font-semibold ring-1 ring-gray-400' : 'bg-white text-gray-600 hover:bg-gray-50'"
+                                                    class="px-2 py-1 rounded border border-gray-200 transition-colors">
+                                                Dynamic
+                                            </button>
+                                            <button type="button"
+                                                    @click="setFieldMode(key, 'static')"
+                                                    :class="(field.is_static && !pendingFieldMode(key, 'baked')) || pendingFieldMode(key, 'static') ? 'bg-blue-100 text-blue-900 font-semibold ring-1 ring-blue-400' : 'bg-white text-gray-600 hover:bg-blue-50'"
+                                                    class="px-2 py-1 rounded border border-blue-200 transition-colors">
+                                                Static
+                                            </button>
+                                            <button type="button"
+                                                    @click="setFieldMode(key, 'baked')"
+                                                    :class="(field.render_in_bg && !pendingFieldMode(key, 'static') && !pendingFieldMode(key, 'dynamic')) || pendingFieldMode(key, 'baked') ? 'bg-amber-100 text-amber-900 font-semibold ring-1 ring-amber-400' : 'bg-white text-gray-600 hover:bg-amber-50'"
+                                                    class="px-2 py-1 rounded border border-amber-200 transition-colors"
+                                                    title="Flatten this field into the background PNG. Requires re-bake.">
+                                                Baked
+                                            </button>
+                                        </div>
+                                        <template x-if="hasPendingChange(key)">
+                                            <p class="text-[10px] text-amber-700 mt-1 flex items-start gap-1">
+                                                <i class="fa-solid fa-circle-exclamation mt-0.5"></i>
+                                                <span>Pending: re-bake required to apply</span>
                                             </p>
                                         </template>
                                     </div>
@@ -2108,6 +2138,11 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
             fontsLoaded: false,
             initialized: false,
             showFieldModeHelp: false,
+            // Map of field_key -> {is_static, render_in_bg} desired state
+            // for fields whose desired mode no longer matches the persisted
+            // state. Cleared after a successful Apply.
+            pendingFieldChanges: {},
+            isRebakingTemplate: false,
 
             // Card size and orientation
             cardSize: 'standard',
@@ -3541,6 +3576,109 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                     .catch(function (e) {
                         console.error('redetect_text_field', e);
                         self.showStatus('Re-detect failed', 'error');
+                    });
+            },
+
+            // Display-mode tri-state. 'dynamic' / 'static' / 'baked'.
+            // Dynamic <-> Static is in-place (just toggleFieldStatic). Baked
+            // requires the bg PNG to be regenerated, so we queue the change
+            // in pendingFieldChanges and surface a banner with Apply/Cancel.
+            // Going FROM Baked back to Static or Dynamic also queues, since
+            // we need to redact the text out of the bg.
+            setFieldMode: function(key, mode) {
+                if (!this.selectedTemplate || !this.selectedTemplate.fields[key]) return;
+                if (key === 'qr_code') return;
+                var f = this.selectedTemplate.fields[key];
+                var was = f.render_in_bg ? 'baked' : (f.is_static ? 'static' : 'dynamic');
+                if (was === mode) {
+                    // No change vs persisted state, drop any pending entry
+                    if (this.pendingFieldChanges[key]) delete this.pendingFieldChanges[key];
+                    return;
+                }
+                if (mode === 'dynamic' && was === 'static') {
+                    // Cheap toggle, no re-bake needed (text wasn't in the bg)
+                    delete this.pendingFieldChanges[key];
+                    this.toggleFieldStatic(key, false);
+                    return;
+                }
+                if (mode === 'static' && was === 'dynamic') {
+                    delete this.pendingFieldChanges[key];
+                    this.toggleFieldStatic(key, true);
+                    return;
+                }
+                // All other transitions touch render_in_bg, so we MUST re-bake
+                // (either to add the field to the bg or to redact it out).
+                var desired;
+                if (mode === 'baked')      desired = { is_static: true,  render_in_bg: true  };
+                else if (mode === 'static') desired = { is_static: true,  render_in_bg: false };
+                else                        desired = { is_static: false, render_in_bg: false };
+                // Use Alpine-compatible reactive set
+                this.pendingFieldChanges = Object.assign({}, this.pendingFieldChanges, {
+                    [key]: desired,
+                });
+            },
+
+            pendingFieldMode: function(key, mode) {
+                var p = this.pendingFieldChanges[key];
+                if (!p) return false;
+                if (mode === 'baked')   return p.render_in_bg === true;
+                if (mode === 'static')  return p.is_static === true && p.render_in_bg !== true;
+                if (mode === 'dynamic') return p.is_static === false && p.render_in_bg !== true;
+                return false;
+            },
+
+            hasPendingChange: function(key) {
+                return !!this.pendingFieldChanges[key];
+            },
+
+            cancelPendingFieldChanges: function() {
+                this.pendingFieldChanges = {};
+            },
+
+            applyPendingFieldChanges: function() {
+                if (!this.selectedTemplate) return;
+                if (this.isRebakingTemplate) return;
+                var keys = Object.keys(this.pendingFieldChanges || {});
+                if (keys.length === 0) return;
+                if (!confirm('Re-baking will regenerate the design background and force every cached card to re-render. Continue?')) return;
+                var self = this;
+                this.isRebakingTemplate = true;
+                this.showStatus('Re-baking design background…', 'success');
+                var fd = this.newFormData('rebake_template_bg');
+                fd.append('template_id', this.selectedTemplate.id);
+                fd.append('field_changes', JSON.stringify(this.pendingFieldChanges));
+                fetch(this.basePath + 'admin/rebake-template-bg.php', { method: 'POST', body: fd })
+                    .then(function (r) { return r.json(); })
+                    .then(function (result) {
+                        self.isRebakingTemplate = false;
+                        if (!result.success) {
+                            self.showStatus(result.error || 'Re-bake failed', 'error');
+                            return;
+                        }
+                        // Patch fields_json in place + bump version, then
+                        // force a full canvas redraw with the new bg URL.
+                        if (result.fields) self.selectedTemplate.fields = result.fields;
+                        self.selectedTemplate.current_version = result.current_version || self.selectedTemplate.current_version;
+                        if (result.bg_url) {
+                            self.selectedTemplate.background_image_path = result.bg_url.split('?')[0];
+                        }
+                        self.pendingFieldChanges = {};
+                        // Re-render the design preview from scratch so the new
+                        // bg PNG (cache-busted by current_version) loads.
+                        // selectTemplate is the canonical entry point; pass
+                        // skipApplySettings=true so we don't reset the user's
+                        // current zoom / pan in the editor.
+                        if (typeof self.selectTemplate === 'function') {
+                            self.selectTemplate(self.selectedTemplate, { skipApplySettings: true });
+                        } else if (typeof self.refreshPreviewText === 'function') {
+                            self.refreshPreviewText();
+                        }
+                        self.showStatus('Design re-baked. ' + (result.rects_redacted || 0) + ' field(s) redacted.', 'success');
+                    })
+                    .catch(function (e) {
+                        self.isRebakingTemplate = false;
+                        console.error('rebake_template_bg', e);
+                        self.showStatus('Re-bake failed', 'error');
                     });
             },
 
