@@ -1766,17 +1766,25 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         // Preload fonts the static tokens reference so cold-cache renders
         // don't fall back to a serif.
         if (document.fonts && document.fonts.load) {
-            const needed = new Set();
+            // Preload BOTH the stored fontFamily and the script-resolved
+            // family pickFontFamily() will use (e.g. Arsenica-Arabic-Antiqua
+            // for Arabic glyphs). Pass the actual text so Arabic glyph
+            // subsets are fetched, not just Latin.
+            const tasks = [];
             for (const f of Object.values(template.fields || {})) {
                 if (!f || f.enabled === false || !f.is_static) continue;
-                if (f.render_in_bg) continue; // already baked into bg PNG
-                const fam = (f.fontFamily || '').trim();
-                if (!fam) continue;
+                if (f.render_in_bg) continue;
+                const storedFam = (f.fontFamily || '').trim();
+                if (!storedFam) continue;
                 const w = f.fontWeight || 400;
                 const style = (f.italic === true || f.fontStyle === 'italic') ? 'italic' : 'normal';
-                needed.add(`${style} ${w} 16px "${fam}"`);
+                const sample = String(f.detected_text || '');
+                const resolvedFam = (typeof pickFontFamily === 'function') ? pickFontFamily(storedFam, sample) : storedFam;
+                for (const fam of new Set([storedFam, resolvedFam].filter(Boolean))) {
+                    tasks.push(document.fonts.load(`${style} ${w} 16px "${fam}"`, sample || ' ').catch(() => {}));
+                }
             }
-            try { await Promise.all([...needed].map(s => document.fonts.load(s))); await document.fonts.ready; } catch (e) {}
+            try { await Promise.all(tasks); await document.fonts.ready; } catch (e) {}
         }
 
         editor.canvas.clear();
@@ -1997,19 +2005,38 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         // appears as Times-italic until the page is reloaded with a warm
         // cache.
         if (document.fonts && document.fonts.load) {
-            const needed = new Set();
+            // Preload (family, weight, style) for BOTH the stored fontFamily
+            // and the script-resolved family that pickFontFamily() will swap
+            // to at draw time (e.g. Arsenica -> Arsenica-Arabic-Antiqua for
+            // Arabic glyphs). Without this, Fabric draws before the Arabic
+            // face has fetched and falls back to a generic serif.
+            // Also pass the actual text so the Arabic glyph subset (not just
+            // Latin) is fetched.
+            const tasks = [];
             if (template && template.fields) {
-                for (const f of Object.values(template.fields)) {
+                for (const [key, f] of Object.entries(template.fields)) {
                     if (!f || f.enabled === false) continue;
-                    const fam = (f.fontFamily || '').trim();
-                    if (!fam) continue;
+                    const storedFam = (f.fontFamily || '').trim();
+                    if (!storedFam) continue;
                     const w = f.fontWeight || 400;
                     const style = (f.italic === true || f.fontStyle === 'italic') ? 'italic' : 'normal';
-                    needed.add(`${style} ${w} 16px "${fam}"`);
+                    // Pick the text we'll actually draw for this field so
+                    // pickFontFamily can choose the right script variant.
+                    const sample = f.is_static
+                        ? String(f.detected_text || '')
+                        : String((data && data[key]) || f.detected_text || '');
+                    const resolvedFam = (typeof pickFontFamily === 'function')
+                        ? pickFontFamily(storedFam, sample) : storedFam;
+                    const fams = new Set([storedFam, resolvedFam].filter(Boolean));
+                    for (const fam of fams) {
+                        const spec = `${style} ${w} 16px "${fam}"`;
+                        // Pass the text so the Arabic glyph subset is requested.
+                        tasks.push(document.fonts.load(spec, sample || ' ').catch(() => {}));
+                    }
                 }
             }
             try {
-                await Promise.all(Array.from(needed).map(spec => document.fonts.load(spec)));
+                await Promise.all(tasks);
                 await document.fonts.ready;
             } catch (e) { /* best effort */ }
         }
