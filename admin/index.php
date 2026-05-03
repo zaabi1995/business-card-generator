@@ -1947,7 +1947,7 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                                     </div>
                                     <div x-show="field.is_static" class="mt-2">
                                         <div class="flex items-center justify-between mb-1 gap-2">
-                                            <label class="text-xs text-gray-500">Static text</label>
+                                            <label class="text-xs text-gray-500" x-text="field.render_in_bg ? 'Detected text (baked, see note)' : 'Static text'"></label>
                                             <button type="button" @click="redetectTextField(key)"
                                                     class="px-2 py-0.5 text-[10px] font-medium bg-purple-50 text-purple-700 rounded hover:bg-purple-100 border border-purple-200 inline-flex items-center gap-1"
                                                     title="Re-sample this field's text + font from the original PDF">
@@ -1958,6 +1958,11 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                                                :value="field.detected_text || ''"
                                                @input="updateFieldProperty(key, 'detected_text', $event.target.value)"
                                                class="w-full px-2 py-1 bg-amber-50 border border-amber-200 rounded text-xs text-gray-900">
+                                        <template x-if="field.render_in_bg">
+                                            <p class="text-[10px] text-amber-700 mt-1 leading-snug">
+                                                Visible text comes from the design background PNG (source PDF). Editing here only updates the field's metadata. To replace what shows on the card, switch to <strong>Static</strong> mode and Apply, or re-import the source PDF.
+                                            </p>
+                                        </template>
                                     </div>
                                     <!-- Auto-shrink controls (dynamic fields only) -->
                                     <div x-show="!field.is_static" class="mt-2 pt-2 border-t border-gray-100">
