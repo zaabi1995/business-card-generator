@@ -488,7 +488,43 @@ class DatabaseAdapter {
             'hide_cardify_branding' => self::resolveHideCardifyBranding($data['hide_cardify_branding'] ?? 0, $companyId),
             'updated_at' => date('Y-m-d H:i:s')
         ];
-        
+
+        // Per-field render overrides (migration 104). Accept either an
+        // already-decoded array or a JSON string from the form. Whitelist
+        // the props we actually merge at render time so we don't store
+        // arbitrary client payload (and so the column stays small).
+        if (array_key_exists('field_overrides', $data)) {
+            $raw = $data['field_overrides'];
+            if (is_string($raw)) {
+                $decoded = json_decode($raw, true);
+                $raw = is_array($decoded) ? $decoded : null;
+            }
+            $allowedProps = ['fontSize', 'fill', 'fontWeight', 'fontFamily', 'autoShrink', 'shrinkFloorPct'];
+            $clean = [];
+            if (is_array($raw)) {
+                foreach ($raw as $fieldKey => $props) {
+                    if (!is_string($fieldKey) || !is_array($props)) continue;
+                    $row = [];
+                    foreach ($allowedProps as $prop) {
+                        if (!array_key_exists($prop, $props)) continue;
+                        $val = $props[$prop];
+                        if ($val === null || $val === '') continue;
+                        if ($prop === 'fontSize' || $prop === 'fontWeight' || $prop === 'shrinkFloorPct') {
+                            $row[$prop] = (float)$val;
+                        } elseif ($prop === 'autoShrink') {
+                            $row[$prop] = (bool)$val;
+                        } else {
+                            $row[$prop] = (string)$val;
+                        }
+                    }
+                    if (!empty($row)) $clean[$fieldKey] = $row;
+                }
+            }
+            $updateData['field_overrides'] = !empty($clean)
+                ? json_encode($clean, JSON_UNESCAPED_UNICODE)
+                : null;
+        }
+
         try {
             $where = 'id = :id';
             $whereParams = ['id' => $id];

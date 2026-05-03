@@ -2065,6 +2065,14 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             }
         }
         
+        // Per-employee field overrides (migration 104). Comes from
+        // employees.field_overrides JSON column when an employee_id is
+        // attached to the preview, otherwise from data.field_overrides
+        // when the form is being filled live (admin live-preview path).
+        // Shape: { fieldKey: { fontSize?, fill?, fontWeight?, autoShrink?, shrinkFloorPct?, fontFamily? } }
+        const fieldOverrides = (data && data.field_overrides && typeof data.field_overrides === 'object')
+            ? data.field_overrides : {};
+
         // Map form data to template field keys
         const fieldValues = {
             'name_en': data.name_en,
@@ -2208,21 +2216,25 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 // Arabic text on the bbox right edge instead of the left,
                 // preventing dynamic text wider than the parser's bbox
                 // from clipping past the card right edge.
+                // Merge per-employee overrides on top of template field
+                // defaults. Only the keys present in the override dict
+                // win, so a fontSize-only override doesn't reset color.
+                const ov = fieldOverrides[key] || {};
                 editor.addTextField(key, {
                     text: renderText,
                     x: field.x,
                     y: field.y,
                     width: field.width,
                     height: field.height,
-                    fontSize: field.fontSize || 14,
-                    fontFamily: pickFontFamily(field.fontFamily || (isArabic ? 'Cairo' : 'Inter'), renderText),
-                    fontWeight: field.fontWeight || 'normal',
-                    fill: field.fill || field.color || '#333333',
+                    fontSize: ov.fontSize || field.fontSize || 14,
+                    fontFamily: pickFontFamily(ov.fontFamily || field.fontFamily || (isArabic ? 'Cairo' : 'Inter'), renderText),
+                    fontWeight: ov.fontWeight || field.fontWeight || 'normal',
+                    fill: ov.fill || field.fill || field.color || '#333333',
                     textAlign: textAlign,
                     originX: originX,
                     originY: field.originY || 'top',
-                    autoShrink: field.auto_shrink,
-                    shrinkFloorPct: field.shrink_floor_pct,
+                    autoShrink: (typeof ov.autoShrink === 'boolean') ? ov.autoShrink : field.auto_shrink,
+                    shrinkFloorPct: ov.shrinkFloorPct || field.shrink_floor_pct,
                 });
                 
                 // Make fields non-selectable for preview

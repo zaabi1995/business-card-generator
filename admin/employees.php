@@ -1256,6 +1256,69 @@ adminHeader(t('employees.page_title'), 'employees');
                     <input type="hidden" name="hide_cardify_branding" :value="hideCardifyBranding ? '1' : '0'">
                 </div>
 
+                <!-- Per-employee field overrides (migration 104).
+                     HR escape hatch: when a single employee has an unusually
+                     long name or wants different ink colour, override the
+                     template defaults for THIS employee only. Empty/0 = use
+                     template default. Render merge happens at draw time. -->
+                <details class="mt-4 rounded-xl border border-gray-200 bg-violet-50/40">
+                    <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-violet-50 select-none flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-xs text-violet-600"></i>
+                        Per-employee text overrides
+                        <span class="text-xs font-normal text-gray-500">(blank = use template default)</span>
+                    </summary>
+                    <div class="p-4 pt-2 space-y-3">
+                        <p class="text-xs text-gray-600">
+                            Use this when one specific employee needs a different font size or colour from
+                            the template default (typically when their name is unusually long even after
+                            auto-shrink, or for a special-edition card with gold ink instead of white).
+                        </p>
+                        <template x-for="row in overridableFields" :key="row.key">
+                            <div class="grid grid-cols-12 gap-2 items-center">
+                                <label class="col-span-3 text-xs font-medium text-gray-700" x-text="row.label"></label>
+                                <div class="col-span-3">
+                                    <label class="block text-[10px] text-gray-500 mb-0.5">Font size (pt)</label>
+                                    <input type="number" min="6" max="120" step="0.5"
+                                           :value="(formData.field_overrides[row.key] && formData.field_overrides[row.key].fontSize_pt) || ''"
+                                           @input="setOverride(row.key, 'fontSize_pt', $event.target.value)"
+                                           placeholder="default"
+                                           class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-900">
+                                </div>
+                                <div class="col-span-3">
+                                    <label class="block text-[10px] text-gray-500 mb-0.5">Fill colour</label>
+                                    <div class="flex items-center gap-1">
+                                        <input type="color"
+                                               :value="(formData.field_overrides[row.key] && formData.field_overrides[row.key].fill) || '#000000'"
+                                               @input="setOverride(row.key, 'fill', $event.target.value)"
+                                               class="w-7 h-7 rounded border border-gray-200">
+                                        <input type="text" maxlength="7"
+                                               :value="(formData.field_overrides[row.key] && formData.field_overrides[row.key].fill) || ''"
+                                               @input="setOverride(row.key, 'fill', $event.target.value)"
+                                               placeholder="default"
+                                               class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs font-mono uppercase text-gray-900">
+                                    </div>
+                                </div>
+                                <div class="col-span-3">
+                                    <label class="block text-[10px] text-gray-500 mb-0.5">Auto-shrink</label>
+                                    <select
+                                        :value="overrideAutoShrinkValue(row.key)"
+                                        @change="setOverride(row.key, 'autoShrink', $event.target.value)"
+                                        class="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs text-gray-900">
+                                        <option value="">Use template</option>
+                                        <option value="true">On</option>
+                                        <option value="false">Off</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </template>
+                        <p class="text-[11px] text-gray-500 italic">
+                            Tip: most cases are handled automatically by the template's auto-shrink. Only
+                            override when the auto-shrink result still doesn't fit your taste.
+                        </p>
+                    </div>
+                </details>
+                <input type="hidden" name="field_overrides" :value="serializeOverrides()">
+
                 <div class="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
                     <button type="button" @click="showModal = false" class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors">
                         Cancel
@@ -1590,11 +1653,95 @@ function employeeManager() {
             id: '', email: '', department_id: '', name_en: '', name_ar: '',
             position_en: '', position_ar: '', phone: '', phone_ar: '', mobile: '', mobile_ar: '',
             company_en: '', company_ar: '', website: '', website_ar: '', address_en: '', address_ar: '',
-            qr_redirect_url: ''
+            qr_redirect_url: '',
+            field_overrides: {}
         },
         qrRedirectEnabled: false,
         cardDarkModeToggle: true,
         hideCardifyBranding: false,
+
+        // Fields exposed in the per-employee override section. Order matches
+        // typical priority (name first, then position). Add more keys here
+        // (company_en, address_en, website, etc.) if HR needs to override
+        // those for a specific employee.
+        overridableFields: [
+            { key: 'name_en',     label: 'Name (English)' },
+            { key: 'name_ar',     label: 'Name (Arabic)'  },
+            { key: 'position_en', label: 'Position (English)' },
+            { key: 'position_ar', label: 'Position (Arabic)'  },
+        ],
+
+        // Render-side fontSize is in editor pixels (300 DPI). HR types in
+        // print points (1 pt = 300/72 ≈ 4.1667 px). Same conversion the
+        // template editor's pxToPt / ptToPx use.
+        _ptToPx(pt) { return Math.round(parseFloat(pt) * 300 / 72); },
+        _pxToPt(px) {
+            const v = parseFloat(px);
+            if (!v) return '';
+            return Math.round(v * 72 / 300 * 10) / 10;
+        },
+
+        setOverride(fieldKey, prop, value) {
+            if (!this.formData.field_overrides[fieldKey]) {
+                this.formData.field_overrides[fieldKey] = {};
+            }
+            const o = this.formData.field_overrides[fieldKey];
+            if (prop === 'fontSize_pt') {
+                if (!value || value === '') { delete o.fontSize_pt; delete o.fontSize; }
+                else { o.fontSize_pt = parseFloat(value); o.fontSize = this._ptToPx(value); }
+            } else if (prop === 'fill') {
+                const v = (value || '').trim().toLowerCase();
+                if (!v || !/^#[0-9a-f]{6}$/.test(v)) delete o.fill;
+                else o.fill = v;
+            } else if (prop === 'autoShrink') {
+                if (value === '' || value === null) delete o.autoShrink;
+                else o.autoShrink = (value === 'true' || value === true);
+            }
+            // Empty bag => drop the field key entirely so JSON stays small.
+            if (!Object.keys(o).length) delete this.formData.field_overrides[fieldKey];
+        },
+
+        overrideAutoShrinkValue(fieldKey) {
+            const o = this.formData.field_overrides[fieldKey];
+            if (!o || !('autoShrink' in o)) return '';
+            return o.autoShrink ? 'true' : 'false';
+        },
+
+        // Strip the UI-only fontSize_pt (we keep editor px in fontSize for the
+        // server) before serializing to the hidden input.
+        serializeOverrides() {
+            const out = {};
+            const all = this.formData.field_overrides || {};
+            Object.keys(all).forEach(k => {
+                const src = all[k] || {};
+                const row = {};
+                if (src.fontSize) row.fontSize = src.fontSize;
+                if (src.fill) row.fill = src.fill;
+                if ('autoShrink' in src) row.autoShrink = !!src.autoShrink;
+                if (src.shrinkFloorPct) row.shrinkFloorPct = src.shrinkFloorPct;
+                if (src.fontWeight) row.fontWeight = src.fontWeight;
+                if (Object.keys(row).length) out[k] = row;
+            });
+            return JSON.stringify(out);
+        },
+
+        // Convert a server-side field_overrides object back to the UI shape
+        // (adds fontSize_pt for the input value-binding).
+        _loadOverrides(raw) {
+            let parsed = {};
+            if (typeof raw === 'string' && raw.trim()) {
+                try { parsed = JSON.parse(raw) || {}; } catch (e) { parsed = {}; }
+            } else if (raw && typeof raw === 'object') {
+                parsed = raw;
+            }
+            const out = {};
+            Object.keys(parsed).forEach(k => {
+                const src = parsed[k] || {};
+                out[k] = { ...src };
+                if (src.fontSize) out[k].fontSize_pt = this._pxToPt(src.fontSize);
+            });
+            return out;
+        },
 
         // Tracker URL printed on the card, never changes post-print.
         qrTrackerUrl() {
@@ -1628,7 +1775,8 @@ function employeeManager() {
                 id: '', email: '', department_id: '', name_en: '', name_ar: '',
                 position_en: '', position_ar: '', phone: '', phone_ar: '', mobile: '', mobile_ar: '',
                 company_en: '', company_ar: '', website: '', website_ar: '', address_en: '', address_ar: '',
-                qr_redirect_url: ''
+                qr_redirect_url: '',
+                field_overrides: {}
             };
             this.qrRedirectEnabled = false;
             this.cardDarkModeToggle = true;
@@ -1642,7 +1790,8 @@ function employeeManager() {
                 id: '', email: prefill.email || '', department_id: '', name_en: prefill.name_en || '',
                 name_ar: '', position_en: '', position_ar: '', phone: '', phone_ar: '', mobile: '', mobile_ar: '',
                 company_en: '', company_ar: '', website: '', website_ar: '', address_en: '', address_ar: '',
-                qr_redirect_url: ''
+                qr_redirect_url: '',
+                field_overrides: {}
             };
             this.qrRedirectEnabled = false;
             this.cardDarkModeToggle = true;
@@ -1652,7 +1801,11 @@ function employeeManager() {
 
         openEditModal(employee) {
             this.editingEmployee = true;
-            this.formData = { ...employee, qr_redirect_url: employee.qr_redirect_url || '' };
+            this.formData = {
+                ...employee,
+                qr_redirect_url: employee.qr_redirect_url || '',
+                field_overrides: this._loadOverrides(employee.field_overrides),
+            };
             this.qrRedirectEnabled = !!(employee.qr_redirect_url && employee.qr_redirect_url.trim());
             // DB stores 0/1; treat missing as 1 (default-on for existing rows)
             this.cardDarkModeToggle = employee.card_dark_mode_toggle === undefined || employee.card_dark_mode_toggle === null

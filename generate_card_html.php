@@ -427,6 +427,19 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
             // Add text fields
             const fields = template.fields || {};
             const emp = config.employee;
+            // Per-employee field overrides (migration 104). HR can set these
+            // in the admin employee edit modal for one-off cases (very long
+            // name, special edition card with gold ink, etc.) without
+            // forking the template. Shape: { fieldKey: { fontSize?, fill?, ... } }
+            let __fieldOverrides = {};
+            if (emp && emp.field_overrides) {
+                if (typeof emp.field_overrides === 'string') {
+                    try { __fieldOverrides = JSON.parse(emp.field_overrides) || {}; }
+                    catch (e) { __fieldOverrides = {}; }
+                } else if (typeof emp.field_overrides === 'object') {
+                    __fieldOverrides = emp.field_overrides;
+                }
+            }
             const fieldValues = {
                 'name_en': emp.name_en || '',
                 'name_ar': emp.name_ar || '',
@@ -473,22 +486,23 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                 const textAlign = field.textAlign || (key.endsWith('_ar') ? 'right' : 'left');
                 const originX = field.originX || (textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'right' : 'left'));
 
+                const __ov = __fieldOverrides[key] || {};
                 cardEditor.addTextField(key, {
                     text: textToDraw,
                     x: field.x,
                     y: field.y,
                     width: field.width,
                     height: field.height,
-                    fontSize: field.fontSize,
-                    fontFamily: field.fontFamily,
+                    fontSize: __ov.fontSize || field.fontSize,
+                    fontFamily: __ov.fontFamily || field.fontFamily,
                     // Pass numeric weight straight through (Lato-Medium=500, etc).
-                    fontWeight: field.fontWeight || 400,
+                    fontWeight: __ov.fontWeight || field.fontWeight || 400,
                     fontStyle: field.fontStyle || 'normal',
-                    fill: field.fill || field.color,
+                    fill: __ov.fill || field.fill || field.color,
                     textAlign: textAlign,
                     originX: originX,
-                    autoShrink: field.auto_shrink,
-                    shrinkFloorPct: field.shrink_floor_pct,
+                    autoShrink: (typeof __ov.autoShrink === 'boolean') ? __ov.autoShrink : field.auto_shrink,
+                    shrinkFloorPct: __ov.shrinkFloorPct || field.shrink_floor_pct,
                 });
             }
 
