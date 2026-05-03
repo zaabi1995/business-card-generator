@@ -741,47 +741,61 @@ class CardEditor {
         };
         
         // Arabic / Hebrew etc. text needs RTL bidi + Canvas-native shaping.
-        // Fabric IText splits text per character for cursor positioning,
-        // which destroys contextual Arabic shaping (every glyph renders in
-        // isolated form, e.g. "علي" -> "ع ل ي" disjoined).
-        // For RTL-script content we use fabric.Text (or FabricText in v7),
-        // which makes a single fillText() call so the browser's text engine
-        // shapes glyphs correctly. Cursor editing is not needed in the
-        // portal preview path.
+        // Fabric 7.1.0's text engine (both IText AND Text) splits the
+        // string per-character before rendering for cursor / per-char
+        // styling support. That destroys Arabic contextual shaping —
+        // every glyph renders in its isolated form (e.g. "علي" -> "ع ل ي"
+        // disconnected). Setting direction='rtl' on the Fabric object
+        // does not fix this; the per-character split happens before the
+        // direction takes effect. Verified directly in browser console
+        // 3 May 2026: only RAW canvas2D ctx.fillText() with direction='rtl'
+        // produces correctly shaped Arabic; every Fabric text variant
+        // (IText, Text, FabricText, Textbox) breaks the joining.
+        //
+        // Workaround: pre-render the RTL string to an offscreen canvas
+        // with raw ctx.fillText(), then wrap it as a fabric.Image so we
+        // get Fabric's positioning / hit-testing without its text engine.
         const _rtlRe = new RegExp('[\\u0590-\\u08FF\\u0750-\\u077F\\uFB50-\\uFDFF\\uFE70-\\uFEFF]');
         const isRtl = _rtlRe.test(String(options.text || ''));
-        let TextCtor = this.fabricRef.IText;
         if (isRtl) {
-            TextCtor = this.fabricRef.FabricText || this.fabricRef.Text || (typeof fabric !== 'undefined' ? (fabric.FabricText || fabric.Text) : null) || this.fabricRef.IText;
-            fieldOptions.direction = 'rtl';
-            // RTL-anchor on the bbox RIGHT edge instead of the LEFT.
-            // The PDF parser stores x = LEFT edge of detected glyphs +
-            // width = pixel width of the parser's (often gibberish-order)
-            // detected_text. The RUNTIME text is the actual employee
-            // name/position, which often measures wider once shaped with
-            // the correct Arsenica-Arabic-Antiqua font. With originX='left'
-            // the text grows rightward off the bbox + can overflow past
-            // the card right edge (the first character "ع" of "علي" was
-            // getting clipped on Hosn back). Anchoring on the right edge
-            // keeps the text inside the bbox + grows leftward into the
-            // card, which is the natural Arabic reading direction.
-            // Skip when caller explicitly requested centre alignment.
-            const tA = fieldOptions.textAlign;
-            if ((tA === 'left' || tA === 'right') && fieldOptions.originX === 'left' && options.width) {
-                fieldOptions.left = (options.x || 0) + Number(options.width || 0);
-                fieldOptions.originX = 'right';
-                fieldOptions.textAlign = 'right';
+            const rtlObj = this._buildRtlTextImage(options, fieldOptions, textAlign);
+            if (rtlObj) {
+                rtlObj.fieldKey = key;
+                rtlObj.fieldType = 'text';
+                rtlObj.textAlignValue = textAlign;
+                this.fields[key] = rtlObj;
+                this.canvas.add(rtlObj);
+                this.canvas.requestRenderAll();
+                // Schedule a re-render after fonts settle, in case the
+                // initial measure used a fallback face.
+                const canvas = this.canvas;
+                const self = this;
+                setTimeout(() => {
+                    const rebuilt = self._buildRtlTextImage(options, fieldOptions, textAlign);
+                    if (rebuilt) {
+                        rebuilt.fieldKey = key;
+                        rebuilt.fieldType = 'text';
+                        rebuilt.textAlignValue = textAlign;
+                        self.canvas.remove(self.fields[key]);
+                        self.fields[key] = rebuilt;
+                        self.canvas.add(rebuilt);
+                        self.canvas.requestRenderAll();
+                    }
+                }, 80);
+                return rtlObj;
             }
+            // Fall through to Fabric Text if image building failed.
         }
+        const TextCtor = this.fabricRef.IText;
         const textObj = new TextCtor(options.text || key, fieldOptions);
         textObj.fieldKey = key;
         textObj.fieldType = 'text';
         textObj.textAlignValue = textAlign; // Store for later retrieval
-        
+
         this.fields[key] = textObj;
         this.canvas.add(textObj);
         this.canvas.requestRenderAll();
-        
+
         // Schedule a re-render to ensure font is applied after it loads
         const canvas = this.canvas;
         setTimeout(() => {
@@ -789,8 +803,103 @@ class CardEditor {
             textObj.setCoords();
             canvas.requestRenderAll();
         }, 50);
-        
+
         return textObj;
+    }
+
+    /**
+     * Pre-render RTL text to an offscreen canvas via raw ctx.fillText
+     * (the only path that preserves Arabic contextual shaping in
+     * Fabric 7.1.0), then return it wrapped as a fabric.Image positioned
+     * to match the original field bbox. The image right edge anchors at
+     * options.x + options.width when width is provided, otherwise at
+     * options.x (the same anchor as a left-aligned Latin field).
+     *
+     * Returns null if Image class not available or rendering fails.
+     */
+    _buildRtlTextImage(options, fieldOptions, textAlign) {
+        const ImageClass = this.fabricRef.FabricImage ||
+                           this.fabricRef.Image ||
+                           (typeof fabric !== 'undefined' ? (fabric.FabricImage || fabric.Image) : null);
+        if (!ImageClass) return null;
+
+        const text = String(options.text || '');
+        if (!text) return null;
+
+        const fontSize = Number(fieldOptions.fontSize || 16);
+        const fontFamily = String(fieldOptions.fontFamily || 'Inter');
+        const fontWeight = fieldOptions.fontWeight || 'normal';
+        const fontStyle = fieldOptions.fontStyle || 'normal';
+        const fill = String(fieldOptions.fill || '#333333');
+
+        // Render at 2x DPR so card-export multiplier=4 doesn't softens
+        // the glyphs back to today's blurry baseline.
+        const dpr = 2;
+        const fontSpec = `${fontStyle} ${fontWeight} ${fontSize * dpr}px "${fontFamily}", "Cairo", "Tajawal", serif`;
+
+        // Measure text first.
+        const measureC = document.createElement('canvas');
+        const mctx = measureC.getContext('2d');
+        mctx.font = fontSpec;
+        mctx.direction = 'rtl';
+        const measure = mctx.measureText(text);
+        const padX = Math.ceil(fontSize * dpr * 0.15);
+        const padY = Math.ceil(fontSize * dpr * 0.30);
+        const ascent = measure.actualBoundingBoxAscent || (fontSize * dpr * 0.85);
+        const descent = measure.actualBoundingBoxDescent || (fontSize * dpr * 0.30);
+        const W = Math.max(8, Math.ceil(measure.width) + padX * 2);
+        const H = Math.max(8, Math.ceil(ascent + descent) + padY * 2);
+
+        const c = document.createElement('canvas');
+        c.width = W;
+        c.height = H;
+        const ctx = c.getContext('2d');
+        ctx.font = fontSpec;
+        ctx.direction = 'rtl';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = fill;
+        // Anchor right edge of glyph run at canvas right - padX.
+        ctx.textAlign = 'right';
+        ctx.fillText(text, W - padX, padY + ascent);
+
+        // Place image into Fabric. Scale back to logical size (1x), so
+        // a fontSize=67 input renders at 67px tall on the editor canvas.
+        const x = Number(options.x || 0);
+        const y = Number(options.y || 0);
+        const width = Number(options.width || 0);
+        const scale = 1 / dpr;
+        const imgW = W * scale;
+        const imgH = H * scale;
+
+        // For RTL, anchor the image RIGHT edge at (x + width) when width
+        // was provided (so the visually-rightmost glyph sits where the
+        // PDF parser detected the right edge of the original text). When
+        // width is missing, fall back to anchoring left at x.
+        const left = width > 0 ? (x + width) - (W - padX) * scale : x - padX * scale;
+        const top = y - padY * scale;
+
+        const imgEl = new Image();
+        const dataUrl = c.toDataURL('image/png');
+        imgEl.src = dataUrl;
+        // Construct via fabric.FabricImage (Fabric 7.x) directly with the
+        // canvas element, since fromURL is async + we want a sync object.
+        const img = new ImageClass(c, {
+            left: left,
+            top: top,
+            originX: 'left',
+            originY: 'top',
+            scaleX: scale,
+            scaleY: scale,
+            selectable: !!fieldOptions.selectable,
+            hasControls: !!fieldOptions.hasControls,
+            hasBorders: !!fieldOptions.hasBorders,
+            lockRotation: true,
+            lockScalingX: true,
+            lockScalingY: true,
+        });
+        img._isRtlText = true;
+        img._rtlText = text;
+        return img;
     }
     
     /**
