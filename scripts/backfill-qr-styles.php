@@ -153,21 +153,35 @@ foreach ($rows as $row) {
     // paint it. Need to grow size + recenter so the QR modules stay
     // pinned to their original position.
     //
+    // IDEMPOTENT: derive the canonical original size + position from
+    // settings.qr_area + the importer's 90% factor, NOT from the
+    // existing field.size (which may already be panel-grown from a
+    // prior backfill run, and growing it again would compound).
+    //
     // panel_padding_px is sampled at 1200 DPI (BG_DPI). Editor coords
     // are 300 DPI. Scale factor = 300/1200 = 0.25.
     if (!empty($newStyle['panel_padding_px']) && $newStyle['qr_px_width'] > 0) {
         $padEditorPx = (int)round($newStyle['panel_padding_px'] * 300.0 / 1200.0);
         if ($padEditorPx > 0) {
-            $oldX = (int)($fields['qr_code']['x'] ?? 0);
-            $oldY = (int)($fields['qr_code']['y'] ?? 0);
-            $oldSize = (int)($fields['qr_code']['size'] ?? 145);
-            $newX = max(0, $oldX - $padEditorPx);
-            $newY = max(0, $oldY - $padEditorPx);
-            $newSize = $oldSize + 2 * $padEditorPx;
+            $editorScale = 300.0 / 72.0;  // PDF points -> editor px
+            $qWeditor = (float)$qa['w_pt'] * $editorScale;
+            $qHeditor = (float)$qa['h_pt'] * $editorScale;
+            $qXeditor = (float)$qa['x_pt'] * $editorScale;
+            $qYeditor = (float)$qa['y_pt'] * $editorScale;
+            // Original module-only size = 90% of QR area, centred (matches
+            // CardifyTemplateImporter::translatePage).
+            $origSize = (int)round(min($qWeditor, $qHeditor) * 0.90);
+            $origX = (int)round($qXeditor + ($qWeditor - $origSize) / 2);
+            $origY = (int)round($qYeditor + ($qHeditor - $origSize) / 2);
+            // Now grow by panel padding from the canonical original.
+            $newSize = $origSize + 2 * $padEditorPx;
+            $newX = max(0, $origX - $padEditorPx);
+            $newY = max(0, $origY - $padEditorPx);
+            $oldSize = (int)($fields['qr_code']['size'] ?? 0);
             $fields['qr_code']['x'] = $newX;
             $fields['qr_code']['y'] = $newY;
             $fields['qr_code']['size'] = $newSize;
-            echo "$tag   panel: pad=" . $newStyle['panel_padding_px'] . "px(bg) -> " . $padEditorPx . "px(editor); size $oldSize -> $newSize\n";
+            echo "$tag   panel: pad=" . $newStyle['panel_padding_px'] . "px(bg) -> " . $padEditorPx . "px(editor); orig=$origSize  size $oldSize -> $newSize\n";
         }
     }
 
