@@ -1916,7 +1916,14 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                                         </template>
                                     </div>
                                     <div x-show="field.is_static" class="mt-2">
-                                        <label class="text-xs text-gray-500 block mb-1">Static text</label>
+                                        <div class="flex items-center justify-between mb-1 gap-2">
+                                            <label class="text-xs text-gray-500">Static text</label>
+                                            <button type="button" @click="redetectTextField(key)"
+                                                    class="px-2 py-0.5 text-[10px] font-medium bg-purple-50 text-purple-700 rounded hover:bg-purple-100 border border-purple-200 inline-flex items-center gap-1"
+                                                    title="Re-sample this field's text + font from the original PDF">
+                                                <i class="fa-solid fa-wand-magic-sparkles"></i>Re-detect
+                                            </button>
+                                        </div>
                                         <input type="text"
                                                :value="field.detected_text || ''"
                                                @input="updateFieldProperty(key, 'detected_text', $event.target.value)"
@@ -3483,7 +3490,60 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                         self.showStatus('Re-detect failed', 'error');
                     });
             },
-            
+
+            // Re-sample one text field from the original PDF. Useful when the
+            // importer mis-OCR'd a static decoration (e.g. ligatures collapsed,
+            // Arabic shaped wrong, kerned-pair lost a space). Mirrors
+            // redetectQRStyle exactly: server runs scripts/sample_text_field_cli.py
+            // against the source PDF + the field's stored bbox, returns the
+            // re-detected text + font props, we patch them in place and
+            // refresh the canvas.
+            redetectTextField: function(key) {
+                if (!this.selectedTemplate || !this.selectedTemplate.fields[key]) return;
+                var self = this;
+                this.showStatus('Re-detecting "' + key + '" from PDF...', 'success');
+                var fd = this.newFormData('redetect_text_field');
+                fd.append('template_id', this.selectedTemplate.id);
+                fd.append('field_key', key);
+                fetch(this.basePath + 'admin/redetect-text-field.php', { method: 'POST', body: fd })
+                    .then(function (r) { return r.json(); })
+                    .then(function (result) {
+                        if (!result.success) {
+                            self.showStatus(result.error || 'Re-detect failed', 'error');
+                            return;
+                        }
+                        if (result.field) {
+                            // Splice in the updated props but keep position +
+                            // size that the admin may have moved (re-sampler
+                            // returns merged bbox; we ignore it and trust the
+                            // current x/y/width/height as the source of truth).
+                            var existing = self.selectedTemplate.fields[key] || {};
+                            ['detected_text','fontFamily','fontWeight','fontStyle','italic','fontSize','fill','color'].forEach(function (p) {
+                                if (typeof result.field[p] !== 'undefined') existing[p] = result.field[p];
+                            });
+                            self.selectedTemplate.fields[key] = existing;
+                            self.selectedTemplate.current_version = result.current_version || self.selectedTemplate.current_version;
+                            // Refresh the live preview text + Fabric object.
+                            if (self.refreshPreviewText) self.refreshPreviewText();
+                            if (self.cardEditor && self.cardEditor.updateField) {
+                                self.cardEditor.updateField(key, {
+                                    text: existing.detected_text,
+                                    fontFamily: existing.fontFamily,
+                                    fontWeight: existing.fontWeight,
+                                    fontStyle: existing.fontStyle,
+                                    fontSize: existing.fontSize,
+                                    fill: existing.fill,
+                                });
+                            }
+                        }
+                        self.showStatus('Re-detected ' + (result.span_count || 1) + ' span(s) from PDF', 'success');
+                    })
+                    .catch(function (e) {
+                        console.error('redetect_text_field', e);
+                        self.showStatus('Re-detect failed', 'error');
+                    });
+            },
+
             // Font selector methods
             filteredFonts: function(searchTerm) {
                 var search = (searchTerm || '').toLowerCase();

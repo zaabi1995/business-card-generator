@@ -82,6 +82,7 @@ try {
         'get_templates' => 'admin/get_templates.php',
         'save_template' => 'admin/save_template.php',
         'redetect-qr-style' => 'admin/redetect-qr-style.php',
+        'redetect-text-field' => 'admin/redetect-text-field.php',
         'send_card_email' => 'admin/send_card_email.php',
         'analytics' => 'admin/analytics.php',
         'audit-logs' => 'admin/audit-logs.php',
