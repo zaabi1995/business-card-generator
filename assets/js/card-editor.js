@@ -748,7 +748,7 @@ class CardEditor {
         // which makes a single fillText() call so the browser's text engine
         // shapes glyphs correctly. Cursor editing is not needed in the
         // portal preview path.
-        const _rtlRe = /[֐-ࣿיִ-ﻼ]/;
+        const _rtlRe = new RegExp('[\\u0590-\\u08FF\\u0750-\\u077F\\uFB50-\\uFDFF\\uFE70-\\uFEFF]');
         const isRtl = _rtlRe.test(String(options.text || ''));
         let TextCtor = this.fabricRef.IText;
         if (isRtl) {

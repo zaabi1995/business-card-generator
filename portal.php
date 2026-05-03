@@ -1715,7 +1715,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     //     bare base isn't a registered family (PDF importer often stores
     //     "Arsenica" but the actual file is "Arsenica-Antiqua").
     //   - Falls back to a known web-safe Arabic / Latin family.
-    const __cardifyArabicRe = /[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]/;
+    const __cardifyArabicRe = new RegExp('[\\u0590-\\u08FF\\u0750-\\u077F\\uFB50-\\uFDFF\\uFE70-\\uFEFF]');
     function pickFontFamily(stored, text) {
         const want = (stored || '').trim() || 'Inter';
         const isAr = __cardifyArabicRe.test(text || '');
