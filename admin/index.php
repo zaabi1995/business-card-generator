@@ -1881,15 +1881,124 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                                                @input="updateFieldProperty(key, 'detected_text', $event.target.value)"
                                                class="w-full px-2 py-1 bg-amber-50 border border-amber-200 rounded text-xs text-gray-900">
                                     </div>
+                                    <!-- Auto-shrink controls (dynamic fields only) -->
+                                    <div x-show="!field.is_static" class="mt-2 pt-2 border-t border-gray-100">
+                                        <label class="flex items-start gap-2 text-xs cursor-pointer">
+                                            <input type="checkbox"
+                                                   :checked="field.auto_shrink !== false"
+                                                   @change="updateFieldProperty(key, 'auto_shrink', $event.target.checked)"
+                                                   class="w-4 h-4 mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                            <span class="text-gray-700 leading-tight">
+                                                <span class="font-medium">Auto-shrink long text</span>
+                                                <span class="text-gray-400 block text-[11px] mt-0.5">Steps font down 0.5pt at a time when the dynamic value is wider than this field, so it never overlaps neighbours.</span>
+                                            </span>
+                                        </label>
+                                        <div x-show="field.auto_shrink !== false" class="ml-6 mt-1.5">
+                                            <label class="text-[11px] text-gray-500">Minimum size: <span x-text="(field.shrink_floor_pct || 70) + '%'"></span> of original</label>
+                                            <input type="range" min="40" max="100" step="5"
+                                                   :value="field.shrink_floor_pct || 70"
+                                                   @input="updateFieldProperty(key, 'shrink_floor_pct', parseInt($event.target.value))"
+                                                   class="w-full mt-1">
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div x-show="field.enabled && key === 'qr_code'" class="mt-2">
-                                    <label class="text-xs text-gray-500 block mb-1">QR Size</label>
-                                    <input type="number" 
-                                           :value="field.size" 
-                                           @change="updateQRSize(parseInt($event.target.value))" 
-                                           min="60" max="200" 
-                                           class="w-full px-2 py-1 bg-white border border-gray-200 rounded text-xs text-gray-900">
+                                <div x-show="field.enabled && key === 'qr_code'" class="mt-2 space-y-2">
+                                    <div class="flex gap-2 items-end">
+                                        <div class="flex-1">
+                                            <label class="text-xs text-gray-500 block mb-1">QR Size (px)</label>
+                                            <input type="number"
+                                                   :value="field.size"
+                                                   @change="updateQRSize(parseInt($event.target.value))"
+                                                   min="60" max="400"
+                                                   class="w-full px-2 py-1 bg-white border border-gray-200 rounded text-xs text-gray-900">
+                                        </div>
+                                        <button type="button" @click="redetectQRStyle()"
+                                                class="px-2 py-1 text-xs bg-purple-50 text-purple-700 rounded hover:bg-purple-100 border border-purple-200 whitespace-nowrap"
+                                                title="Re-sample QR style from the original PDF">
+                                            <i class="fa-solid fa-wand-magic-sparkles me-1"></i>Re-detect
+                                        </button>
+                                    </div>
+                                    <div class="border-t border-gray-100 pt-2">
+                                        <p class="text-[10px] text-gray-400 uppercase tracking-wide mb-1.5">QR Style</p>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label class="text-xs text-gray-500 block mb-0.5">Modules</label>
+                                                <div class="flex items-center gap-1">
+                                                    <input type="color" :value="(field.qr_style && field.qr_style.color) || '#000000'"
+                                                           @input="updateQRStyle('color', $event.target.value)"
+                                                           class="w-7 h-7 rounded cursor-pointer border border-gray-200 flex-shrink-0">
+                                                    <input type="text" :value="(field.qr_style && field.qr_style.color) || '#000000'"
+                                                           @input="updateQRStyle('color', $event.target.value)" maxlength="7"
+                                                           class="w-20 px-1.5 py-1 bg-white border border-gray-200 rounded text-xs font-mono uppercase text-gray-900">
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-500 block mb-0.5">Background</label>
+                                                <div class="flex items-center gap-1">
+                                                    <input type="color" :value="(field.qr_style && field.qr_style.bg_color) || '#ffffff'"
+                                                           @input="updateQRStyle('bg_color', $event.target.value)"
+                                                           class="w-7 h-7 rounded cursor-pointer border border-gray-200 flex-shrink-0">
+                                                    <input type="text" :value="(field.qr_style && field.qr_style.bg_color) || '#ffffff'"
+                                                           @input="updateQRStyle('bg_color', $event.target.value)" maxlength="7"
+                                                           class="w-20 px-1.5 py-1 bg-white border border-gray-200 rounded text-xs font-mono uppercase text-gray-900">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-2 mt-2">
+                                            <div>
+                                                <label class="text-xs text-gray-500 block mb-0.5">Panel padding (src px)</label>
+                                                <input type="number" :value="(field.qr_style && field.qr_style.panel_padding_px) || 0"
+                                                       @input="updateQRStyle('panel_padding_px', parseInt($event.target.value) || 0)"
+                                                       min="0" max="200" step="1"
+                                                       class="w-full px-2 py-1 bg-white border border-gray-200 rounded text-xs">
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-500 block mb-0.5">Panel radius (%)</label>
+                                                <input type="number" :value="(field.qr_style && field.qr_style.panel_radius_pct) || 0"
+                                                       @input="updateQRStyle('panel_radius_pct', parseInt($event.target.value) || 0)"
+                                                       min="0" max="40" step="1"
+                                                       class="w-full px-2 py-1 bg-white border border-gray-200 rounded text-xs">
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+                                                <input type="checkbox"
+                                                       :checked="field.qr_style && field.qr_style.has_border"
+                                                       @change="updateQRStyle('has_border', $event.target.checked)"
+                                                       class="rounded border-gray-300">
+                                                <span>Outer border</span>
+                                            </label>
+                                            <div x-show="field.qr_style && field.qr_style.has_border" class="grid grid-cols-2 gap-2 mt-1">
+                                                <div>
+                                                    <label class="text-xs text-gray-500 block mb-0.5">Border color</label>
+                                                    <input type="color" :value="(field.qr_style && field.qr_style.border_color) || '#000000'"
+                                                           @input="updateQRStyle('border_color', $event.target.value)"
+                                                           class="w-full h-7 rounded cursor-pointer border border-gray-200">
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs text-gray-500 block mb-0.5">Border (src px)</label>
+                                                    <input type="number" :value="(field.qr_style && field.qr_style.border_width_px) || 0"
+                                                           @input="updateQRStyle('border_width_px', parseInt($event.target.value) || 0)"
+                                                           min="0" max="100"
+                                                           class="w-full px-2 py-1 bg-white border border-gray-200 rounded text-xs">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer mb-1">
+                                                <input type="checkbox"
+                                                       :checked="field.qr_style && field.qr_style.eye_color !== null && field.qr_style.eye_color"
+                                                       @change="updateQRStyle('eye_color', $event.target.checked ? ((field.qr_style && field.qr_style.color) || '#000000') : null)"
+                                                       class="rounded border-gray-300">
+                                                <span>Distinct eye colour (3 corner finders)</span>
+                                            </label>
+                                            <input x-show="field.qr_style && field.qr_style.eye_color"
+                                                   type="color" :value="(field.qr_style && field.qr_style.eye_color) || '#000000'"
+                                                   @input="updateQRStyle('eye_color', $event.target.value)"
+                                                   class="w-full h-7 rounded cursor-pointer border border-gray-200">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </template>
@@ -3254,12 +3363,83 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
             
             updateQRSize: function(size) {
                 if (!this.selectedTemplate || !this.selectedTemplate.fields.qr_code) return;
-                
+
                 this.selectedTemplate.fields.qr_code.size = size;
-                
+
                 if (this.cardEditor) {
                     this.cardEditor.updateQRCode({ size: size });
                 }
+            },
+
+            // Update one property of the QR style dict. Re-renders the QR
+            // immediately so the picker is live. Saved with the rest of
+            // fields_json on Save Template.
+            updateQRStyle: function(prop, value) {
+                if (!this.selectedTemplate || !this.selectedTemplate.fields.qr_code) return;
+                if (!this.selectedTemplate.fields.qr_code.qr_style ||
+                    typeof this.selectedTemplate.fields.qr_code.qr_style !== 'object') {
+                    this.selectedTemplate.fields.qr_code.qr_style = {
+                        mode: 'real_qr_styled', color: '#000000', bg_color: '#ffffff',
+                        eye_color: null, border_color: null, border_width_px: 0,
+                        has_border: false, border_radius_pct: 0,
+                        panel_padding_px: 0, panel_radius_pct: 0, qr_px_width: 600
+                    };
+                }
+                this.selectedTemplate.fields.qr_code.qr_style[prop] = value;
+                // Re-render the QR using the current style.
+                if (this.cardEditor && typeof this.cardEditor.refreshQRCode === 'function') {
+                    this.cardEditor.refreshQRCode(this.selectedTemplate.fields.qr_code.qr_style);
+                } else if (this.cardEditor) {
+                    var style = this.selectedTemplate.fields.qr_code.qr_style;
+                    this.cardEditor.removeField('qr_code');
+                    var vcfUrl = this.baseUrl + '/' + this.companySlug + '/card/' + (this.sampleEmployee && this.sampleEmployee.id ? this.sampleEmployee.id : 'preview');
+                    this.cardEditor.addQRCode(vcfUrl, {
+                        x: this.selectedTemplate.fields.qr_code.x,
+                        y: this.selectedTemplate.fields.qr_code.y,
+                        size: this.selectedTemplate.fields.qr_code.size,
+                        style: style
+                    });
+                }
+            },
+
+            // Re-sample the QR style from the original PDF + auto-fit the
+            // panel. Calls the same backfill that ships with the importer
+            // (server-side, idempotent, bumps current_version on success).
+            redetectQRStyle: function() {
+                if (!this.selectedTemplate) return;
+                var self = this;
+                this.showStatus('Re-detecting QR style from PDF…', 'success');
+                var fd = this.newFormData('redetect_qr_style');
+                fd.append('template_id', this.selectedTemplate.id);
+                fetch(this.basePath + 'admin/redetect-qr-style.php', { method: 'POST', body: fd })
+                    .then(function (r) { return r.json(); })
+                    .then(function (result) {
+                        if (!result.success) {
+                            self.showStatus(result.error || 'Re-detect failed', 'error');
+                            return;
+                        }
+                        // Merge new qr_code field back into selectedTemplate
+                        if (result.qr_code && self.selectedTemplate.fields) {
+                            self.selectedTemplate.fields.qr_code = result.qr_code;
+                            self.selectedTemplate.current_version = result.current_version || self.selectedTemplate.current_version;
+                            // Re-render preview
+                            if (self.cardEditor) {
+                                self.cardEditor.removeField('qr_code');
+                                var vcfUrl = self.baseUrl + '/' + self.companySlug + '/card/' + (self.sampleEmployee && self.sampleEmployee.id ? self.sampleEmployee.id : 'preview');
+                                self.cardEditor.addQRCode(vcfUrl, {
+                                    x: result.qr_code.x,
+                                    y: result.qr_code.y,
+                                    size: result.qr_code.size,
+                                    style: result.qr_code.qr_style
+                                });
+                            }
+                        }
+                        self.showStatus('QR style re-detected from PDF', 'success');
+                    })
+                    .catch(function (e) {
+                        console.error('redetect_qr_style', e);
+                        self.showStatus('Re-detect failed', 'error');
+                    });
             },
             
             // Font selector methods

@@ -791,11 +791,15 @@ class CardEditor {
         // a longer dynamic name (e.g. "Ali Adnan Haider Darwish" replacing
         // "Ali Al-Zaabi") would otherwise spill into adjacent elements
         // (logo, gold accent line). Step down 0.5pt at a time until it
-        // fits or hits 70% of original.
-        if (options.width && options.text) {
+        // fits or hits the per-field floor (default 70% of original).
+        // Honours options.autoShrink === false to disable the behaviour
+        // and options.shrinkFloorPct (40-100) to customize the floor.
+        const autoShrinkEnabled = options.autoShrink !== false;
+        if (autoShrinkEnabled && options.width && options.text) {
             const fieldWidth = Number(options.width);
             const originalSize = Number(fieldOptions.fontSize || 16);
-            const minSize = Math.max(6, originalSize * 0.7);
+            const floorPct = Math.max(40, Math.min(100, Number(options.shrinkFloorPct || 70)));
+            const minSize = Math.max(6, originalSize * floorPct / 100);
             const measC = document.createElement('canvas');
             const mc = measC.getContext('2d');
             const buildSpec = (fs) => `${fieldOptions.fontStyle || 'normal'} ${fieldOptions.fontWeight || 'normal'} ${fs}px "${fieldOptions.fontFamily}", sans-serif`;
@@ -865,20 +869,22 @@ class CardEditor {
         // Measure once + auto-shrink: when the dynamic text is wider than
         // the parser's bbox (longer name than the source design held), step
         // the font down 0.5pt at a time until it fits within field.width.
-        // Floor at 70% of the original size so a hugely long string just
-        // gets cropped rather than collapsing into illegible text.
+        // Floor at shrinkFloorPct (default 70%) of the original size.
+        // Honours options.autoShrink === false (HR may want fixed sizing).
+        const autoShrinkEnabled = options.autoShrink !== false;
         const fieldWidth = Number(options.width || 0);
+        const floorPct = Math.max(40, Math.min(100, Number(options.shrinkFloorPct || 70)));
         const measureC = document.createElement('canvas');
         const mctx = measureC.getContext('2d');
         let measure;
         let attempts = 0;
-        const minSize = Math.max(6, fontSize * 0.7);
+        const minSize = Math.max(6, fontSize * floorPct / 100);
         while (true) {
             mctx.font = buildFontSpec(fontSize);
             mctx.direction = 'rtl';
             measure = mctx.measureText(text);
             const renderedLogicalW = measure.width / dpr;
-            if (fieldWidth <= 0 || renderedLogicalW <= fieldWidth || fontSize <= minSize || attempts >= 80) break;
+            if (!autoShrinkEnabled || fieldWidth <= 0 || renderedLogicalW <= fieldWidth || fontSize <= minSize || attempts >= 80) break;
             fontSize -= 0.5;
             attempts++;
         }

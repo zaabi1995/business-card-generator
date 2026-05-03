@@ -2220,7 +2220,9 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     fill: field.fill || field.color || '#333333',
                     textAlign: textAlign,
                     originX: originX,
-                    originY: field.originY || 'top'
+                    originY: field.originY || 'top',
+                    autoShrink: field.auto_shrink,
+                    shrinkFloorPct: field.shrink_floor_pct,
                 });
                 
                 // Make fields non-selectable for preview

@@ -486,7 +486,9 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                     fontStyle: field.fontStyle || 'normal',
                     fill: field.fill || field.color,
                     textAlign: textAlign,
-                    originX: originX
+                    originX: originX,
+                    autoShrink: field.auto_shrink,
+                    shrinkFloorPct: field.shrink_floor_pct,
                 });
             }
 
