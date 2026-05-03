@@ -102,6 +102,37 @@ $company = findCompanyById($companyId);
 $currentSampleFront = $company['sample_card_front'] ?? null;
 $currentSampleBack = $company['sample_card_back'] ?? null;
 
+// Derive which dynamic fields the active card templates actually use.
+// We hide every modal input that no template references so HR users
+// don't have to scroll through 14 boxes for a name + position card.
+$activeFieldKeys = [];
+try {
+    $activeRows = $db->fetchAll(
+        "SELECT fields_json FROM templates WHERE company_id = :c AND is_active = 1",
+        ['c' => $companyId]
+    );
+    foreach ($activeRows as $r) {
+        $f = json_decode($r['fields_json'] ?? '{}', true);
+        if (!is_array($f)) continue;
+        foreach ($f as $k => $meta) {
+            if (!is_array($meta)) continue;
+            if (!empty($meta['is_static'])) continue;
+            if ($k === 'qr_code') continue;
+            $activeFieldKeys[$k] = true;
+        }
+    }
+} catch (Exception $e) {}
+// Sensible fallback: show name+position+mobile+email if no templates yet.
+if (empty($activeFieldKeys)) {
+    foreach (['name_en', 'name_ar', 'position_en', 'position_ar', 'mobile', 'email'] as $k) {
+        $activeFieldKeys[$k] = true;
+    }
+}
+// Helper closure used in the modal markup.
+$needsField = function (string $key) use ($activeFieldKeys): bool {
+    return isset($activeFieldKeys[$key]);
+};
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
@@ -1011,102 +1042,120 @@ adminHeader(t('employees.page_title'), 'employees');
                     </div>
                     <?php endif; ?>
                     
+                    <?php if ($needsField('name_en')): ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Name (English) <span class="text-red-500">*</span></label>
-                        <input type="text" name="name_en" x-model="formData.name_en" required 
+                        <input type="text" name="name_en" x-model="formData.name_en" required
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     </div>
-                    
+                    <?php endif; ?>
+
+                    <?php if ($needsField('name_ar')): ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Name (Arabic)</label>
-                        <input type="text" name="name_ar" x-model="formData.name_ar" dir="rtl" 
+                        <input type="text" name="name_ar" x-model="formData.name_ar" dir="rtl"
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     </div>
-                    
+                    <?php endif; ?>
+
+                    <?php if ($needsField('position_en')): ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Position (English)</label>
-                        <input type="text" name="position_en" x-model="formData.position_en" 
+                        <input type="text" name="position_en" x-model="formData.position_en"
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     </div>
-                    
+                    <?php endif; ?>
+
+                    <?php if ($needsField('position_ar')): ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Position (Arabic)</label>
-                        <input type="text" name="position_ar" x-model="formData.position_ar" dir="rtl" 
+                        <input type="text" name="position_ar" x-model="formData.position_ar" dir="rtl"
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     </div>
-                    
+                    <?php endif; ?>
+
+                    <?php if ($needsField('mobile')): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Phone (English)</label>
-                        <input type="text" name="phone" x-model="formData.phone" 
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Mobile</label>
+                        <input type="text" name="mobile" x-model="formData.mobile" placeholder="+968 9XXX XXXX"
+                               @input="formData.mobile_ar = toArabicNumerals(formData.mobile || '')"
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                        <input type="hidden" name="mobile_ar" :value="toArabicNumerals(formData.mobile || '')">
                     </div>
-                    
+                    <?php endif; ?>
+
+                    <?php if ($needsField('phone')): ?>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Phone (Arabic)</label>
-                        <div class="flex gap-2">
-                            <input type="text" name="phone_ar" x-model="formData.phone_ar" dir="rtl"
-                                   class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                            <button type="button" @click="formData.phone_ar = toArabicNumerals(formData.phone)" 
-                                    class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-sm transition-colors" title="Copy from English & convert">
-                                <i class="fa-solid fa-copy"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Mobile (English)</label>
-                        <input type="text" name="mobile" x-model="formData.mobile" 
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
+                        <input type="text" name="phone" x-model="formData.phone" placeholder="+968 2XXX XXXX"
+                               @input="formData.phone_ar = toArabicNumerals(formData.phone || '')"
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                        <input type="hidden" name="phone_ar" :value="toArabicNumerals(formData.phone || '')">
                     </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Mobile (Arabic)</label>
-                        <div class="flex gap-2">
-                            <input type="text" name="mobile_ar" x-model="formData.mobile_ar" dir="rtl"
-                                   class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                            <button type="button" @click="formData.mobile_ar = toArabicNumerals(formData.mobile)" 
-                                    class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-sm transition-colors" title="Copy from English & convert">
-                                <i class="fa-solid fa-copy"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Company (English)</label>
-                        <input type="text" name="company_en" x-model="formData.company_en" 
-                               class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Company (Arabic)</label>
-                        <input type="text" name="company_ar" x-model="formData.company_ar" dir="rtl" 
-                               class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Website (English)</label>
-                        <input type="text" name="website" x-model="formData.website" placeholder="www.example.com"
-                               class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Website (Arabic)</label>
-                        <input type="text" name="website_ar" x-model="formData.website_ar" dir="rtl" placeholder="www.example.com"
-                               class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Address (English)</label>
-                        <input type="text" name="address_en" x-model="formData.address_en" 
-                               class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Address (Arabic)</label>
-                        <input type="text" name="address_ar" x-model="formData.address_ar" dir="rtl"
-                               class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                    </div>
+                    <?php endif; ?>
                 </div>
+
+                <?php
+                $hasOverridable = false;
+                foreach (['company_en','company_ar','website','website_ar','address_en','address_ar'] as $__ovKey) {
+                    if ($needsField($__ovKey)) { $hasOverridable = true; break; }
+                }
+                ?>
+                <?php if ($hasOverridable): ?>
+                <!-- Per-company fields. Defaulted to company-level values, only
+                     unfold if HR needs to override for one employee. -->
+                <details class="mt-4 rounded-xl border border-gray-200 bg-gray-50">
+                    <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-100 select-none flex items-center gap-2">
+                        <i class="fa-solid fa-chevron-down text-xs"></i>
+                        Override company defaults
+                        <span class="text-xs font-normal text-gray-500">(optional, leave blank to inherit)</span>
+                    </summary>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 pt-2">
+                        <?php if ($needsField('company_en')): ?>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Company (English)</label>
+                            <input type="text" name="company_en" x-model="formData.company_en"
+                                   class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($needsField('company_ar')): ?>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Company (Arabic)</label>
+                            <input type="text" name="company_ar" x-model="formData.company_ar" dir="rtl"
+                                   class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($needsField('website')): ?>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Website</label>
+                            <input type="text" name="website" x-model="formData.website" placeholder="www.example.com"
+                                   class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($needsField('website_ar')): ?>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Website (Arabic)</label>
+                            <input type="text" name="website_ar" x-model="formData.website_ar" dir="rtl" placeholder="www.example.com"
+                                   class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($needsField('address_en')): ?>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Address (English)</label>
+                            <input type="text" name="address_en" x-model="formData.address_en"
+                                   class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($needsField('address_ar')): ?>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Address (Arabic)</label>
+                            <input type="text" name="address_ar" x-model="formData.address_ar" dir="rtl"
+                                   class="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </details>
+                <?php endif; ?>
 
                 <!-- Dynamic QR -->
                 <div class="mt-6 p-4 rounded-xl bg-indigo-50 border border-indigo-100">
