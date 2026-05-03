@@ -261,29 +261,95 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
             };
         }
 
-        // Build the unique (family, weight, style) specs the template's enabled fields
-        // reference, then call document.fonts.load() for each one. Without this, Fabric
-        // draws into the canvas before the .woff2 file is fetched and falls back to a
-        // serif system font on cold cache. WebFontLoader's bundled list often misses
-        // weights like Lato-Medium 500. See memory feedback_fabric_canvas_font_preload.md.
-        async function preloadTemplateFonts(template) {
-            if (!document.fonts || !template || !template.fields) return;
-            const seen = new Set();
-            const promises = [];
+        // Resolve a field's stored fontFamily to one actually registered in
+        // document.fonts. For Arabic text, prefer an `<base>-Arabic-Antiqua` or
+        // similar variant; for Latin, fall back to `<base>-Antiqua/-Regular`.
+        // Same implementation as portal.php so the saved-card render path picks
+        // the same font as the live preview.
+        const __cardifyArabicRe = new RegExp('[\\u0590-\\u08FF\\u0750-\\u077F\\uFB50-\\uFDFF\\uFE70-\\uFEFF]');
+        function pickFontFamily(stored, text) {
+            const want = (stored || '').trim() || 'Inter';
+            const isAr = __cardifyArabicRe.test(text || '');
+            try {
+                const registered = new Set();
+                if (document.fonts && typeof document.fonts.values === 'function') {
+                    for (const f of document.fonts.values()) {
+                        registered.add(String(f.family).replace(/^['"]|['"]$/g, ''));
+                    }
+                }
+                const has = (n) => registered.has(n);
+                if (isAr) {
+                    if (has(want + '-Arabic-Antiqua')) return want + '-Arabic-Antiqua';
+                    const m = want.match(/^(.+?)(-(.+))?$/);
+                    if (m) {
+                        const base = m[1], suffix = m[3] || '';
+                        const cand = base + '-Arabic' + (suffix ? '-' + suffix : '');
+                        if (has(cand)) return cand;
+                        if (has(base + '-Arabic')) return base + '-Arabic';
+                        if (has(base + '-Arabic-Antiqua')) return base + '-Arabic-Antiqua';
+                    }
+                    for (const r of registered) {
+                        if (r.toLowerCase().includes('arabic')) return r;
+                    }
+                    return 'Cairo, "Noto Sans Arabic", Tajawal, ' + want;
+                }
+                if (!has(want)) {
+                    if (has(want + '-Antiqua')) return want + '-Antiqua';
+                    if (has(want + '-Regular')) return want + '-Regular';
+                    if (has(want + ' Antiqua')) return want + ' Antiqua';
+                }
+                return want;
+            } catch (e) { return want; }
+        }
+
+        // Build a field-key map of the actual values that will be drawn so
+        // preloadTemplateFonts can pass the real Arabic string to
+        // document.fonts.load(spec, sample). Without sample text Google Fonts
+        // only fetches the Latin subset and the canvas-image RTL bypass falls
+        // back to a serif that lacks contextual joining tables.
+        function buildFieldSamples(template, emp) {
+            const out = {};
+            if (!template || !template.fields || !emp) return out;
             for (const key in template.fields) {
                 const f = template.fields[key];
                 if (!f || !f.enabled) continue;
-                const family = f.fontFamily || 'Inter';
-                const weight = f.fontWeight || 400;
-                const style = f.fontStyle || 'normal';
-                const sig = style + ' ' + weight + ' "' + family + '"';
-                if (seen.has(sig)) continue;
-                seen.add(sig);
-                try { promises.push(document.fonts.load(style + ' ' + weight + ' 16px "' + family + '"')); }
-                catch (e) {}
+                if (f.is_static) {
+                    out[key] = String(f.detected_text || '');
+                } else {
+                    out[key] = String(emp[key] || f.detected_text || '');
+                }
             }
-            try { await Promise.all(promises); } catch (e) {}
-            try { await document.fonts.ready; } catch (e) {}
+            return out;
+        }
+
+        // Build the unique (family, weight, style, sample) specs the template's
+        // enabled fields reference, then call document.fonts.load() for each
+        // one with the actual text so Arabic glyph subsets get fetched.
+        // Mirrors portal.php's preload loop. Both the stored family AND the
+        // pickFontFamily-resolved variant get queued so cold-cache canvas-image
+        // rebuilds find the right Arabic-Antiqua weight.
+        async function preloadTemplateFonts(template, data) {
+            if (!document.fonts || !template || !template.fields) return;
+            const tasks = [];
+            for (const key in template.fields) {
+                const f = template.fields[key];
+                if (!f || !f.enabled) continue;
+                const storedFam = (f.fontFamily || 'Inter').trim();
+                if (!storedFam) continue;
+                const w = f.fontWeight || 400;
+                const style = (f.italic === true || f.fontStyle === 'italic') ? 'italic' : 'normal';
+                const sample = f.is_static
+                    ? String(f.detected_text || '')
+                    : String((data && data[key]) || f.detected_text || '');
+                const resolvedFam = (typeof pickFontFamily === 'function')
+                    ? pickFontFamily(storedFam, sample) : storedFam;
+                const fams = new Set([storedFam, resolvedFam].filter(Boolean));
+                for (const fam of fams) {
+                    const spec = `${style} ${w} 16px "${fam}"`;
+                    tasks.push(document.fonts.load(spec, sample || ' ').catch(() => {}));
+                }
+            }
+            try { await Promise.all(tasks); await document.fonts.ready; } catch (e) {}
         }
 
         // Re-anchor consecutive static decoration tokens (static_1, static_2, ...) so
@@ -328,10 +394,16 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
             try {
                 // Load fonts
                 await FontLoader.load();
-                // Preload exact (family, weight, style) tuples for each template so
-                // Lato-Medium etc don't fall back to serif on first paint.
-                await preloadTemplateFonts(config.frontTemplate);
-                await preloadTemplateFonts(config.backTemplate);
+                // Preload exact (family, weight, style, sample text) tuples for
+                // each template so Lato-Medium etc don't fall back to serif on
+                // cold paint AND so Arabic glyph subsets get fetched (not just
+                // Latin). Pass per-field samples derived from the actual
+                // employee values so document.fonts.load(spec, sample) gets the
+                // real Arabic string. Mirrors portal.php exactly.
+                const __frontSamples = buildFieldSamples(config.frontTemplate, config.employee);
+                const __backSamples  = buildFieldSamples(config.backTemplate, config.employee);
+                await preloadTemplateFonts(config.frontTemplate, __frontSamples);
+                await preloadTemplateFonts(config.backTemplate, __backSamples);
                 await document.fonts.ready;
                 await new Promise(r => setTimeout(r, 300));
 
@@ -487,6 +559,15 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                 const originX = field.originX || (textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'right' : 'left'));
 
                 const __ov = __fieldOverrides[key] || {};
+                // Resolve the actual font family the canvas-image RTL bypass
+                // will draw with: for Arabic text, swap Arsenica-Antiqua ->
+                // ArsenicaArabicAntiqua so contextual joining tables apply.
+                // Without this, every Arabic field falls back to a Latin-only
+                // family and shaping breaks (letters disconnected, words
+                // reordered). Same swap portal.php does.
+                const __storedFam = __ov.fontFamily || field.fontFamily || 'Inter';
+                const __resolvedFam = (typeof pickFontFamily === 'function')
+                    ? pickFontFamily(__storedFam, textToDraw) : __storedFam;
                 cardEditor.addTextField(key, {
                     text: textToDraw,
                     x: field.x,
@@ -494,7 +575,7 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                     width: field.width,
                     height: field.height,
                     fontSize: __ov.fontSize || field.fontSize,
-                    fontFamily: __ov.fontFamily || field.fontFamily,
+                    fontFamily: __resolvedFam,
                     // Pass numeric weight straight through (Lato-Medium=500, etc).
                     fontWeight: __ov.fontWeight || field.fontWeight || 400,
                     fontStyle: field.fontStyle || 'normal',
@@ -523,8 +604,18 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
             // portal.php.
             reanchorStaticDecorationRuns(template);
 
-            // Wait for rendering
-            await new Promise(r => setTimeout(r, 100));
+            // Wait for the RTL canvas-image rebuild queue to drain. card-editor.js
+            // schedules an 80ms rebuild per RTL field that replaces the Fabric
+            // IText (which splits Arabic per-character and breaks shaping) with
+            // a fabric.Image of the offscreen-rendered Arabic. The Hosn back
+            // has 6+ RTL fields, so 100ms isn't enough -- the export captures
+            // a half-rebuilt canvas where some fields are still ITexts. 250ms
+            // covers ~3 rebuild cycles plus margin; the two rAF ticks make
+            // sure the canvas has actually drawn the new images before export.
+            await new Promise(r => setTimeout(r, 250));
+            await new Promise(r => requestAnimationFrame(r));
+            cardEditor.canvas.requestRenderAll();
+            await new Promise(r => requestAnimationFrame(r));
 
             // Export and save (quality multiplier based on plan)
             // Free users: 1x (~100 DPI), Paid users: 4x (~400 DPI)
