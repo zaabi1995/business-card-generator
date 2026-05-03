@@ -158,6 +158,15 @@ if ($selectedDepartment && !empty($selectedDepartment['template_pair_id']) && $d
     );
     
     if ($frontTemplate || $backTemplate) {
+        // Cache-bust bg URLs with current_version. Cloudflare pins
+        // /uploads/* for ~30 days; without ?v= the browser + CDN keep
+        // serving the pre-redaction bg (with the old PDF text baked in)
+        // long after a re-import.
+        $bustBg = function ($path, $ver) {
+            if (!$path) return $path;
+            $sep = strpos($path, '?') === false ? '?' : '&';
+            return $path . $sep . 'v=' . (int)($ver ?: 1);
+        };
         // Parse fields_json for both templates
         if ($frontTemplate) {
             $activeFrontTemplate = [
@@ -165,7 +174,7 @@ if ($selectedDepartment && !empty($selectedDepartment['template_pair_id']) && $d
                 'pair_id' => $frontTemplate['pair_id'] ?? null,
                 'name' => $frontTemplate['name'],
                 'side' => 'front',
-                'backgroundImage' => $frontTemplate['background_image_path'],
+                'backgroundImage' => $bustBg($frontTemplate['background_image_path'], $frontTemplate['current_version'] ?? 1),
                 'originalPdf' => $frontTemplate['original_pdf_path'] ?? null,
                 'fields' => json_decode($frontTemplate['fields_json'], true) ?: [],
                 'settings' => isset($frontTemplate['settings_json']) ? json_decode($frontTemplate['settings_json'], true) : null
@@ -177,7 +186,7 @@ if ($selectedDepartment && !empty($selectedDepartment['template_pair_id']) && $d
                 'pair_id' => $backTemplate['pair_id'] ?? null,
                 'name' => $backTemplate['name'],
                 'side' => 'back',
-                'backgroundImage' => $backTemplate['background_image_path'],
+                'backgroundImage' => $bustBg($backTemplate['background_image_path'], $backTemplate['current_version'] ?? 1),
                 'originalPdf' => $backTemplate['original_pdf_path'] ?? null,
                 'fields' => json_decode($backTemplate['fields_json'], true) ?: [],
                 'settings' => isset($backTemplate['settings_json']) ? json_decode($backTemplate['settings_json'], true) : null
@@ -191,6 +200,15 @@ if ($selectedDepartment && !empty($selectedDepartment['template_pair_id']) && $d
 if (!$activeFrontTemplate && !$activeBackTemplate) {
     $activeFrontTemplate = getActiveFrontTemplate($companyId);
     $activeBackTemplate = getActiveBackTemplate($companyId);
+    // Same cache-bust as the department branch above.
+    $bustBg2 = function ($tpl) {
+        if (!$tpl || empty($tpl['backgroundImage'])) return $tpl;
+        $sep = strpos($tpl['backgroundImage'], '?') === false ? '?' : '&';
+        $tpl['backgroundImage'] .= $sep . 'v=' . (int)($tpl['current_version'] ?? 1);
+        return $tpl;
+    };
+    $activeFrontTemplate = $bustBg2($activeFrontTemplate);
+    $activeBackTemplate  = $bustBg2($activeBackTemplate);
 }
 
 // Collect enabled fields from templates
