@@ -285,30 +285,35 @@ def sample_qr_style(img, rect_px, real_qr=False):
     if not interior:
         return None
 
-    # Histogram-quantize to 4 bits/channel = 4096 buckets max. Far more
-    # reliable than dark/light cluster averaging when the design uses a
-    # custom palette (gold modules, cream bg, etc).
-    def _q(p):
-        return ((p[0] >> 4) << 8) | ((p[1] >> 4) << 4) | (p[2] >> 4)
-    def _dq(q):
-        return (((q >> 8) & 0xf) << 4 | 8, ((q >> 4) & 0xf) << 4 | 8, (q & 0xf) << 4 | 8)
-    bins = Counter(_q(p) for p in interior)
-    most = bins.most_common(8)
-    lums = [0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] for p in interior]
-    spread = max(lums) - min(lums)
+    # Sort interior pixels by luminance. The brightest cluster is the QR
+    # background colour, the darkest is the module colour. Average each
+    # cluster WITHOUT quantization so we get the exact source-PDF colour
+    # (e.g. cream #f4efe2, not the bucketed approximation #f8e8e8).
+    pixels_by_lum = sorted(interior, key=lambda p: 0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2])
+    lums = [0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] for p in pixels_by_lum]
+    spread = lums[-1] - lums[0]
 
     # --- 2. Mode classifier ---
     # A real QR has high luminance spread (modules + bg both present).
     # A flat placeholder reads as one dominant colour, low spread.
     has_code = bool(real_qr) and spread > 60
 
+    def _avg(pool):
+        n = len(pool)
+        if n == 0: return (0, 0, 0)
+        r = sum(p[0] for p in pool) // n
+        g = sum(p[1] for p in pool) // n
+        b = sum(p[2] for p in pool) // n
+        return (r, g, b)
+
     if has_code:
-        bins_by_lum = sorted(
-            most,
-            key=lambda kv: 0.299 * _dq(kv[0])[0] + 0.587 * _dq(kv[0])[1] + 0.114 * _dq(kv[0])[2],
-        )
-        fg = _dq(bins_by_lum[0][0])
-        bg = _dq(bins_by_lum[-1][0])
+        # Take the darkest 25% as fg pool, brightest 25% as bg pool. Average
+        # each WITHOUT quantization so the rendered QR matches the source
+        # design's palette exactly (otherwise 4-bit bucketing pulls #f4efe2
+        # cream to #f8e8e8 pink, off by ~6 levels per channel).
+        cut = max(1, len(pixels_by_lum) // 4)
+        fg = _avg(pixels_by_lum[:cut])
+        bg = _avg(pixels_by_lum[-cut:])
         fg_lum = 0.299 * fg[0] + 0.587 * fg[1] + 0.114 * fg[2]
         bg_lum = 0.299 * bg[0] + 0.587 * bg[1] + 0.114 * bg[2]
         fg_chroma = max(fg) - min(fg)
@@ -316,9 +321,11 @@ def sample_qr_style(img, rect_px, real_qr=False):
         is_plain = (fg_lum < 40 and fg_chroma < 20 and bg_lum > 220 and bg_chroma < 20)
         mode = 'real_qr_plain' if is_plain else 'real_qr_styled'
     else:
-        # Flat placeholder -> bg = dominant colour. fg = contrast pick by
-        # luminance (renderer can override).
-        bg = _dq(most[0][0])
+        # Flat placeholder -> bg = average of brightest 50% (filters out
+        # any dark text that overlaps the box). fg = contrast pick from
+        # luminance.
+        cut = max(1, len(pixels_by_lum) // 2)
+        bg = _avg(pixels_by_lum[-cut:])
         bg_lum = 0.299 * bg[0] + 0.587 * bg[1] + 0.114 * bg[2]
         fg = (17, 17, 17) if bg_lum > 140 else (245, 245, 245)
         mode = 'empty_placeholder'

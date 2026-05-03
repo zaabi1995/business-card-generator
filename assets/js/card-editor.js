@@ -786,6 +786,31 @@ class CardEditor {
             }
             // Fall through to Fabric Text if image building failed.
         }
+        // Auto-shrink Latin text when it would overflow field.width. The
+        // PDF parser bbox was sized for the source design's literal text;
+        // a longer dynamic name (e.g. "Ali Adnan Haider Darwish" replacing
+        // "Ali Al-Zaabi") would otherwise spill into adjacent elements
+        // (logo, gold accent line). Step down 0.5pt at a time until it
+        // fits or hits 70% of original.
+        if (options.width && options.text) {
+            const fieldWidth = Number(options.width);
+            const originalSize = Number(fieldOptions.fontSize || 16);
+            const minSize = Math.max(6, originalSize * 0.7);
+            const measC = document.createElement('canvas');
+            const mc = measC.getContext('2d');
+            const buildSpec = (fs) => `${fieldOptions.fontStyle || 'normal'} ${fieldOptions.fontWeight || 'normal'} ${fs}px "${fieldOptions.fontFamily}", sans-serif`;
+            let trial = originalSize;
+            let attempts = 0;
+            while (attempts < 80 && trial > minSize) {
+                mc.font = buildSpec(trial);
+                if (mc.measureText(String(options.text)).width <= fieldWidth) break;
+                trial -= 0.5;
+                attempts++;
+            }
+            if (trial < originalSize) {
+                fieldOptions.fontSize = trial;
+            }
+        }
         const TextCtor = this.fabricRef.IText;
         const textObj = new TextCtor(options.text || key, fieldOptions);
         textObj.fieldKey = key;
@@ -826,7 +851,7 @@ class CardEditor {
         const text = String(options.text || '');
         if (!text) return null;
 
-        const fontSize = Number(fieldOptions.fontSize || 16);
+        let fontSize = Number(fieldOptions.fontSize || 16);
         const fontFamily = String(fieldOptions.fontFamily || 'Inter');
         const fontWeight = fieldOptions.fontWeight || 'normal';
         const fontStyle = fieldOptions.fontStyle || 'normal';
@@ -835,14 +860,30 @@ class CardEditor {
         // Render at 2x DPR so card-export multiplier=4 doesn't softens
         // the glyphs back to today's blurry baseline.
         const dpr = 2;
-        const fontSpec = `${fontStyle} ${fontWeight} ${fontSize * dpr}px "${fontFamily}", "Cairo", "Tajawal", serif`;
+        const buildFontSpec = (fs) => `${fontStyle} ${fontWeight} ${fs * dpr}px "${fontFamily}", "Cairo", "Tajawal", serif`;
 
-        // Measure text first.
+        // Measure once + auto-shrink: when the dynamic text is wider than
+        // the parser's bbox (longer name than the source design held), step
+        // the font down 0.5pt at a time until it fits within field.width.
+        // Floor at 70% of the original size so a hugely long string just
+        // gets cropped rather than collapsing into illegible text.
+        const fieldWidth = Number(options.width || 0);
         const measureC = document.createElement('canvas');
         const mctx = measureC.getContext('2d');
-        mctx.font = fontSpec;
-        mctx.direction = 'rtl';
-        const measure = mctx.measureText(text);
+        let measure;
+        let attempts = 0;
+        const minSize = Math.max(6, fontSize * 0.7);
+        while (true) {
+            mctx.font = buildFontSpec(fontSize);
+            mctx.direction = 'rtl';
+            measure = mctx.measureText(text);
+            const renderedLogicalW = measure.width / dpr;
+            if (fieldWidth <= 0 || renderedLogicalW <= fieldWidth || fontSize <= minSize || attempts >= 80) break;
+            fontSize -= 0.5;
+            attempts++;
+        }
+        const fontSpec = buildFontSpec(fontSize);
+
         const padX = Math.ceil(fontSize * dpr * 0.15);
         const padY = Math.ceil(fontSize * dpr * 0.30);
         const ascent = measure.actualBoundingBoxAscent || (fontSize * dpr * 0.85);
