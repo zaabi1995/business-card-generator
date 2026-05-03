@@ -129,13 +129,13 @@ foreach ($rows as $row) {
         continue;
     }
 
+    // Always recompute the canonical field rect even when the style hasn't
+    // changed -- a prior backfill may have compounded the panel growth.
+    // The actual write-back is gated on whether anything ACTUALLY differs
+    // (style or rect) so re-runs are still no-ops once everything matches.
     $oldStyle = $fields['qr_code']['qr_style'] ?? null;
-    if ($oldStyle == $newStyle) {
-        echo "$tag unchanged (mode={$newStyle['mode']})\n";
-        $skipped++;
-        continue;
-    }
-    echo "$tag update: mode={$newStyle['mode']} fg={$newStyle['color']} bg={$newStyle['bg_color']}";
+    $styleChanged = ($oldStyle != $newStyle);
+    echo "$tag " . ($styleChanged ? "update" : "verify") . ": mode={$newStyle['mode']} fg={$newStyle['color']} bg={$newStyle['bg_color']}";
     if ($newStyle['eye_color']) echo " eye={$newStyle['eye_color']}";
     if ($newStyle['has_border']) echo " border={$newStyle['border_color']}/{$newStyle['border_width_px']}px";
     echo "\n";
@@ -178,11 +178,25 @@ foreach ($rows as $row) {
             $newX = max(0, $origX - $padEditorPx);
             $newY = max(0, $origY - $padEditorPx);
             $oldSize = (int)($fields['qr_code']['size'] ?? 0);
+            $oldX = (int)($fields['qr_code']['x'] ?? 0);
+            $oldY = (int)($fields['qr_code']['y'] ?? 0);
+            $rectChanged = ($oldX !== $newX || $oldY !== $newY || $oldSize !== $newSize);
             $fields['qr_code']['x'] = $newX;
             $fields['qr_code']['y'] = $newY;
             $fields['qr_code']['size'] = $newSize;
-            echo "$tag   panel: pad=" . $newStyle['panel_padding_px'] . "px(bg) -> " . $padEditorPx . "px(editor); orig=$origSize  size $oldSize -> $newSize\n";
+            if ($rectChanged) {
+                echo "$tag   panel: pad=" . $newStyle['panel_padding_px'] . "px(bg) -> " . $padEditorPx . "px(editor); orig=$origSize  size $oldSize -> $newSize, x $oldX -> $newX\n";
+            }
+            // If only rect changed and style was unchanged, still write.
+            if ($rectChanged && !$styleChanged) {
+                $styleChanged = true;
+            }
         }
+    }
+
+    if (!$styleChanged) {
+        $skipped++;
+        continue;
     }
 
     $newJson = json_encode($fields, JSON_UNESCAPED_UNICODE);
