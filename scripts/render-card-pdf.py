@@ -38,8 +38,20 @@ employee text drawn as PDF text with embedded font subsets.
 import argparse
 import json
 import os
+import re
 import sys
 import fitz
+
+# Arabic / Hebrew script ranges -- triggers preference for the
+# "<family>-Arabic" / "<family>-Arabic-Antiqua" font variant in
+# _pick_font when the text contains these codepoints. Without this,
+# fields stored as fontFamily="Arsenica" (the Latin family name) +
+# Arabic content would match the Latin face, and PyMuPDF would
+# silently substitute an internal fallback font (Cairo / system
+# Naskh) for the unrenderable Arabic glyphs.
+_RTL_CHAR_RE = re.compile(
+    '[֐-ࣿݐ-ݿﭐ-﷿ﹰ-﻿]'
+)
 
 
 def _load_font_buffers(fonts_dir: str) -> dict:
@@ -69,15 +81,27 @@ def _font_weight_of(name: str) -> int:
     return 400  # default if unparseable
 
 
-def _pick_font(family: str, weight: int, font_buffers: dict) -> tuple:
+def _pick_font(family: str, weight: int, font_buffers: dict, text: str = '') -> tuple:
     """
     Return (font_name, font_buffer) for the best match of (family, weight).
 
     Lookup strategy:
-      1. Exact: <Family>-<WeightName>  (e.g. Lato-Medium for weight 500)
-      2. Family prefix match, ranked by absolute weight distance then name
+      1. If `text` contains Arabic glyphs: prefer keys that include
+         "arabic" in their name (and the family substring). Picks the
+         bare "<family>-Arabic-*" variant first, falling back to
+         "<family>-Arabic-Antiqua-*" -- this matches the foundry
+         catalogue we ship for Hosn (Arsenica-Arabic + Arsenica-Arabic-
+         Antiqua live alongside the Latin Arsenica-Antiqua faces).
+      2. Exact: <Family>-<WeightName>  (e.g. Lato-Medium for weight 500)
+      3. Family prefix match, ranked by absolute weight distance then name
 
     Returns (None, None) when no match is found.
+
+    Without the Arabic-aware step, fields stored as fontFamily="Arsenica"
+    + Arabic content matched the Latin face and PyMuPDF silently
+    substituted an internal fallback (Cairo / system Naskh) for the
+    unrenderable glyphs -- visible to the user as a font swap on
+    downloaded PDFs.
     """
     weight_names = {
         100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular',
@@ -85,6 +109,35 @@ def _pick_font(family: str, weight: int, font_buffers: dict) -> tuple:
         900: 'Black',
     }
     family_lc = family.lower()
+
+    # 1. Arabic-script preference. Skip the Antiqua sub-pool first so
+    # the bare "Arsenica-Arabic" variant wins over "Arsenica-Arabic-
+    # Antiqua" (matches the user's stated preference + reads cleaner
+    # at body sizes). Falls back to *any* font containing "arabic" if
+    # the family doesn't have an Arabic variant on disk.
+    if text and _RTL_CHAR_RE.search(text):
+        def _rank(pool):
+            return sorted(pool.keys(),
+                          key=lambda k: (abs(_font_weight_of(k) - weight), k))
+        family_arabic = {k: v for k, v in font_buffers.items()
+                         if 'arabic' in k.lower()
+                         and family_lc in k.lower()
+                         and 'antiqua' not in k.lower()}
+        if family_arabic:
+            best = _rank(family_arabic)[0]
+            return best, family_arabic[best]
+        family_arabic_antiqua = {k: v for k, v in font_buffers.items()
+                                 if 'arabic' in k.lower()
+                                 and family_lc in k.lower()}
+        if family_arabic_antiqua:
+            best = _rank(family_arabic_antiqua)[0]
+            return best, family_arabic_antiqua[best]
+        any_arabic = {k: v for k, v in font_buffers.items()
+                      if 'arabic' in k.lower()}
+        if any_arabic:
+            best = _rank(any_arabic)[0]
+            return best, any_arabic[best]
+
     # Build candidate list: keys whose name contains the family
     candidates = {k: v for k, v in font_buffers.items()
                   if family_lc in k.lower()}
@@ -305,7 +358,7 @@ def render(template_path: str, employee_path: str, out_path: str,
             x_pt = float(field['x_pt'])
             y_pt = float(field['y_pt'])
 
-            font_name, font_buf = _pick_font(family, weight, font_buffers)
+            font_name, font_buf = _pick_font(family, weight, font_buffers, text=text)
             if font_name is None:
                 continue  # skip field if no matching font found
 
