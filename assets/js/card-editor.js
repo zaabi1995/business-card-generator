@@ -740,7 +740,22 @@ class CardEditor {
             lockRotation: true
         };
         
-        const textObj = new this.fabricRef.IText(options.text || key, fieldOptions);
+        // Arabic / Hebrew etc. text needs RTL bidi + Canvas-native shaping.
+        // Fabric IText splits text per character for cursor positioning,
+        // which destroys contextual Arabic shaping (every glyph renders in
+        // isolated form, e.g. "علي" -> "ع ل ي" disjoined).
+        // For RTL-script content we use fabric.Text (or FabricText in v7),
+        // which makes a single fillText() call so the browser's text engine
+        // shapes glyphs correctly. Cursor editing is not needed in the
+        // portal preview path.
+        const _rtlRe = /[֐-ࣿיִ-ﻼ]/;
+        const isRtl = _rtlRe.test(String(options.text || ''));
+        let TextCtor = this.fabricRef.IText;
+        if (isRtl) {
+            TextCtor = this.fabricRef.FabricText || this.fabricRef.Text || (typeof fabric !== 'undefined' ? (fabric.FabricText || fabric.Text) : null) || this.fabricRef.IText;
+            fieldOptions.direction = 'rtl';
+        }
+        const textObj = new TextCtor(options.text || key, fieldOptions);
         textObj.fieldKey = key;
         textObj.fieldType = 'text';
         textObj.textAlignValue = textAlign; // Store for later retrieval

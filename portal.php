@@ -1819,6 +1819,10 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 textAlign: field.textAlign || 'left',
                 originX: field.originX || 'left',
                 originY: field.originY || 'top',
+                // RTL bidi so Arabic glyphs go through the canvas text-shaper
+                // (initial/medial/final/isolated forms join correctly). LTR
+                // strings ignore this hint.
+                direction: __cardifyArabicRe.test(txt) ? 'rtl' : 'ltr',
                 selectable: false, evented: false, hasControls: false, hasBorders: false, hoverCursor: 'default',
             });
             editor.canvas.add(t);
@@ -2120,6 +2124,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         textAlign: field.textAlign || 'left',
                         originX: field.originX || 'left',
                         originY: field.originY || 'top',
+                        direction: __cardifyArabicRe.test(txt) ? 'rtl' : 'ltr',
                         selectable: false,
                         evented: false,
                         hasControls: false,
