@@ -748,14 +748,18 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
             print(f'WARN: redaction failed for page {page_num}: {e}', file=sys.stderr)
 
         # ── Central QR style sampling pass ──
-        # Run regardless of which detection path found the rect. The
-        # redacted bg is the cleanest source: text on top of a placeholder
-        # is gone, but the QR modules survive (apply_redactions(images=0)).
-        # Falls back to bg_with_text_path if the redacted file is missing.
+        # Run regardless of which detection path found the rect. We sample
+        # against the WITH-TEXT bg (pre-redaction) because PyMuPDF's
+        # apply_redactions can wipe out vector QR modules that overlap
+        # the inflated text bboxes (Hosn back was a real-world case: the
+        # redacted bg had a uniform navy square where the QR used to be,
+        # so dark/light sampling correctly read empty_placeholder, but
+        # we lose the actual fg/bg/border style of the source design).
+        # Falls back to redacted bg only if with-text is missing.
         if qr_area:
             try:
                 from PIL import Image as _PIL  # type: ignore
-                _sample_path = bg_path if os.path.exists(bg_path) else bg_with_text_path
+                _sample_path = bg_with_text_path if os.path.exists(bg_with_text_path) else bg_path
                 _sample_img = _PIL.open(_sample_path)
                 _rect_px = (
                     qr_area['x_pt'] * BG_SCALE,

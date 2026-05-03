@@ -91,6 +91,14 @@ foreach ($rows as $row) {
         $skipped++;
         continue;
     }
+    // Sample the WITH-TEXT bg (pre-redaction) because the redacted bg
+    // can have the QR modules wiped out where they overlapped inflated
+    // text bboxes. parse_card_pdf.py emits both copies as
+    // bg-page-N.png (redacted) + bg-page-N-with-text.png (original).
+    $withTextPath = preg_replace('/(bg-page-\d+)\.png$/i', '$1-with-text.png', $bgPath);
+    if ($withTextPath && $withTextPath !== $bgPath && is_file($withTextPath)) {
+        $bgPath = $withTextPath;
+    }
 
     $cmd = sprintf(
         '%s %s --bg %s --x-pt %s --y-pt %s --w-pt %s --h-pt %s --bg-dpi 1200 --real-qr 2>&1',
