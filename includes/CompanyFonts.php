@@ -183,17 +183,41 @@ class CompanyFonts
             if ($token === '') continue;
             $dir = $appRoot . '/uploads/templates/imports/' . $token . '/fonts';
             if (!is_dir($dir)) continue;
+            // Manifest is the source of truth for family names (the importer
+            // wrote it from the actual PDF font tables). Filename parsing
+            // would lose hyphens that the design relies on (Arsenica-Antiqua
+            // vs "Arsenica Antiqua").
+            $manifest = [];
+            $manifestPath = $dir . '/manifest.json';
+            if (is_file($manifestPath)) {
+                $m = json_decode(file_get_contents($manifestPath), true);
+                if (is_array($m)) {
+                    foreach ($m as $entry) {
+                        if (!is_array($entry) || empty($entry['file']) || empty($entry['family'])) continue;
+                        $manifest[$entry['file']] = $entry;
+                    }
+                }
+            }
             foreach (scandir($dir) as $name) {
-                if ($name === '.' || $name === '..') continue;
+                if ($name === '.' || $name === '..' || $name === 'manifest.json') continue;
                 $desc = self::describeFile($name);
                 if (!$desc) continue;
                 $rel = '/uploads/templates/imports/' . $token . '/fonts/' . $name;
-                $byFamily[$desc['family']][] = [
-                    'weight' => $desc['weight'],
-                    'style'  => $desc['style'],
-                    'file'   => $rel,
-                    'ext'    => $desc['ext'],
-                ];
+                // Prefer manifest's family (canonical PDF name); use describeFile's
+                // weight/style detection. Register under BOTH the canonical name
+                // (e.g. "Arsenica-Antiqua") AND the bare base ("Arsenica") so
+                // legacy fields_json that stored only the base resolves too.
+                $canonical = $manifest[$name]['family'] ?? $desc['family'];
+                $baseFamily = preg_replace('/[-_\s](Antiqua|Regular|Medium|Bold|Light|Thin|Book|Black|SemiBold|ExtraBold|ExtraLight|Italic|Oblique).*$/i', '', $canonical);
+                foreach (array_unique([$canonical, $baseFamily, $desc['family']]) as $fam) {
+                    if (!$fam) continue;
+                    $byFamily[$fam][] = [
+                        'weight' => $desc['weight'],
+                        'style'  => $desc['style'],
+                        'file'   => $rel,
+                        'ext'    => $desc['ext'],
+                    ];
+                }
             }
         }
         return $byFamily;
