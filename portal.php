@@ -2142,7 +2142,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         const qrObj = await editor.addQRCode(vcfUrl, {
                             x: field.x,
                             y: field.y,
-                            size: field.size || 140
+                            size: field.size || 140,
+                            // Pass the design language sampled at PDF-import
+                            // time so the dynamic QR matches the original
+                            // (gold border + black modules etc.) instead of
+                            // dropping in as plain black-on-white.
+                            style: field.qr_style || null
                         });
                         if (qrObj) {
                             qrObj.set({

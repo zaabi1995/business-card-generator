@@ -126,6 +126,12 @@ class CardifyTemplateImporter
                 'y'       => (int)round($qYpx + ($qHpx - $qrSize) / 2),
                 'size'    => $qrSize > 0 ? $qrSize : 140,
             ];
+            // Carry through the visual style sampled from the original PDF
+            // QR (fg/bg/border) so the dynamic vCard QR matches the design
+            // language instead of dropping in as plain black-on-white.
+            if (!empty($qa['style']) && is_array($qa['style'])) {
+                $out['qr_code']['qr_style'] = $qa['style'];
+            }
         } else {
             $defaultPx = (int)round(18 / 25.4 * 300);
             $pageWpx = (int)round((float)($page['width_pt'] ?? 255) * $scale);

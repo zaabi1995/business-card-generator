@@ -816,15 +816,17 @@ class CardEditor {
      */
     async addQRCode(data, options = {}) {
         if (!this.canvas) return null;
-        
+
         // Remove existing QR
         this.removeField('qr_code');
-        
+
         const size = options.size || 100;
-        
+
         try {
-            // Generate QR code using QRCode library
-            const qrDataUrl = await this._generateQRCode(data, size);
+            // Generate QR code using QRCode library, applying any style
+            // sampled from the source PDF (foreground colour, background,
+            // border colour + width, corner radius).
+            const qrDataUrl = await this._generateQRCode(data, size, options.style || null);
             
             // Fabric.js 7.x: Image class
             const ImageClass = this.fabricRef.FabricImage || 
@@ -862,45 +864,81 @@ class CardEditor {
         }
     }
     
-    async _generateQRCode(data, size) {
+    async _generateQRCode(data, size, style) {
         return new Promise((resolve, reject) => {
             // Check for qrcode-generator library (global function named 'qrcode')
             if (typeof qrcode === 'undefined') {
                 reject(new Error('QRCode library not loaded'));
                 return;
             }
-            
+
             try {
                 // Use qrcode-generator library
                 // Type 0 = auto-detect, 'M' = medium error correction
                 const qr = qrcode(0, 'M');
                 qr.addData(data);
                 qr.make();
-                
-                // Create canvas and draw QR code
+
+                // Resolve style with sensible defaults so a missing/partial
+                // qr_style still renders a valid black-on-white code.
+                const s = style || {};
+                const moduleColor = s.color || '#000000';
+                const bgColor = s.bg_color || '#ffffff';
+                const hasBorder = !!s.has_border && !!s.border_color;
+                const borderColor = hasBorder ? s.border_color : null;
+                // border_width_px is in source-bg pixels (sampled at 1200 DPI).
+                // Scale to the target size relative to the QR area; cap at
+                // 8% of the QR side so it never eats the modules.
+                const borderRatio = hasBorder
+                    ? Math.min(0.08, Math.max(0.015, (s.border_width_px || 4) / Math.max(80, (s.qr_px_width || 600))))
+                    : 0;
+                const cornerRadiusPct = Math.max(0, Math.min(40, s.border_radius_pct || 0));
+
+                // Create canvas and draw QR code. The OUTER canvas is `size`
+                // (matches what the editor expects). The QR modules paint
+                // inside a smaller inset to leave room for the border.
                 const canvas = document.createElement('canvas');
-                const moduleCount = qr.getModuleCount();
-                const cellSize = Math.floor(size / moduleCount);
-                const actualSize = cellSize * moduleCount;
-                
-                canvas.width = actualSize;
-                canvas.height = actualSize;
+                canvas.width = size;
+                canvas.height = size;
                 const ctx = canvas.getContext('2d');
-                
-                // White background
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, actualSize, actualSize);
-                
-                // Draw QR modules
-                ctx.fillStyle = '#000000';
+
+                // Outer fill (border colour, or bg if no border so a single
+                // flood paints the whole area cleanly).
+                if (hasBorder) {
+                    ctx.fillStyle = borderColor;
+                    if (cornerRadiusPct > 0 && typeof ctx.roundRect === 'function') {
+                        ctx.beginPath();
+                        ctx.roundRect(0, 0, size, size, size * cornerRadiusPct / 100);
+                        ctx.fill();
+                    } else {
+                        ctx.fillRect(0, 0, size, size);
+                    }
+                }
+                // Inset rect for the QR itself.
+                const borderPx = hasBorder ? Math.round(size * borderRatio) : 0;
+                const innerSize = size - borderPx * 2;
+                const moduleCount = qr.getModuleCount();
+                const cellSize = innerSize / moduleCount;
+
+                // Inner background.
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(borderPx, borderPx, innerSize, innerSize);
+
+                // Modules.
+                ctx.fillStyle = moduleColor;
                 for (let row = 0; row < moduleCount; row++) {
                     for (let col = 0; col < moduleCount; col++) {
                         if (qr.isDark(row, col)) {
-                            ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                            ctx.fillRect(
+                                borderPx + col * cellSize,
+                                borderPx + row * cellSize,
+                                cellSize,
+                                cellSize
+                            );
                         }
                     }
                 }
-                
+
                 resolve(canvas.toDataURL('image/png'));
             } catch (e) {
                 reject(e);
