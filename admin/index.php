@@ -3212,7 +3212,7 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                                         self.showStatus('Design imported' + aiNote + '. ' + miss.length + ' missing font' + (miss.length === 1 ? '' : 's') + ' to upload.', 'success');
                                     } else {
                                         var aiNote = result.ai_used ? ' (AI-classified)' : '';
-                                        self.showStatus('Card design imported from PDF' + aiNote, 'success');
+                                        self.showStatus('Card design imported from PDF' + aiNote + '. All fonts verified.', 'success');
                                         self.openImportedDesign();
                                     }
                                 }, 700);

@@ -374,21 +374,36 @@ def sample_qr_style(img, rect_px, real_qr=False):
     border_color = None
     border_width_px = 0
     has_border = False
+    # Border probe is meaningless for empty placeholders. The "ring" outside
+    # an empty white square is just the surrounding card bg, NOT a designed
+    # border around the QR. Painting it as a border would draw a fat coloured
+    # frame around every dynamic QR that replaces the placeholder. The user
+    # can flip on a real border later via the editor if their design needs
+    # one. Real QRs (with visible modules) keep the original probe so genuine
+    # accent rings are still detected.
     max_pad = max(8, w // 12)
-    for pad_ in range(2, max_pad + 1, 2):
-        ring = _ring(pad_)
-        if not ring:
-            break
-        rl = [0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] for p in ring]
-        if max(rl) - min(rl) > 60:
-            break
-        avg = tuple(sum(c) // len(ring) for c in zip(*ring))
-        if max(abs(avg[i] - bg[i]) for i in range(3)) > 25:
-            border_color = avg
-            border_width_px = pad_
-            has_border = True
-        else:
-            break
+    if mode != 'empty_placeholder':
+        for pad_ in range(2, max_pad + 1, 2):
+            ring = _ring(pad_)
+            if not ring:
+                break
+            rl = [0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] for p in ring]
+            if max(rl) - min(rl) > 60:
+                break
+            avg = tuple(sum(c) // len(ring) for c in zip(*ring))
+            if max(abs(avg[i] - bg[i]) for i in range(3)) > 25:
+                border_color = avg
+                border_width_px = pad_
+                has_border = True
+            else:
+                break
+        # Sanity check: if we walked all the way out without ever hitting the
+        # placeholder bg again, the "border" is really just the page bg, NOT
+        # a deliberate ring. Drop has_border so we don't paint a fake frame.
+        if has_border and border_width_px >= max_pad:
+            border_color = None
+            border_width_px = 0
+            has_border = False
 
     # --- 5. Rounded-corner probe ---
     # If the outermost border corner reads as the page bg (not the border
