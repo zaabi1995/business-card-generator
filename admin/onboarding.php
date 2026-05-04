@@ -44,11 +44,11 @@ if (!empty($state['completed_at'])) {
 //   - When ONLY step 2 is satisfied, the wizard initial step jumps past it.
 try {
     $_db = Database::getInstance();
-    $_companyRow = $_db->fetchOne(
-        "SELECT logo_path FROM companies WHERE id = :id",
+    $_themeRow = $_db->fetchOne(
+        "SELECT logo_path FROM company_themes WHERE company_id = :id",
         ['id' => $companyId]
     );
-    $hasLogo = !empty($_companyRow['logo_path']);
+    $hasLogo = !empty($_themeRow['logo_path']);
     $hasTemplates = (int)$_db->fetchOne(
         "SELECT COUNT(*) AS n FROM templates WHERE company_id = :id AND deleted_at IS NULL",
         ['id' => $companyId]

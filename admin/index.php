@@ -573,12 +573,12 @@ if ($companyId) {
 if ($onboardState && empty($onboardState['completed_at'])) {
     try {
         $_db = Database::getInstance();
-        $_co = $_db->fetchOne("SELECT logo_path FROM companies WHERE id = :id", ['id' => $companyId]);
+        $_theme = $_db->fetchOne("SELECT logo_path FROM company_themes WHERE company_id = :id", ['id' => $companyId]);
         $_tplCount = (int)$_db->fetchOne(
             "SELECT COUNT(*) AS n FROM templates WHERE company_id = :id AND deleted_at IS NULL",
             ['id' => $companyId]
         )['n'];
-        if (!empty($_co['logo_path']) && $_tplCount > 0) {
+        if (!empty($_theme['logo_path']) && $_tplCount > 0) {
             Onboarding::markCompleted($companyId);
             $onboardState = Onboarding::get($companyId);
         }
