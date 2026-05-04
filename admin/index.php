@@ -1279,17 +1279,104 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                 </div>
                 
                 <div class="flex items-center justify-end gap-3 mt-4">
-                    <button type="button" @click="showAddModal = false" class="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors">
+                    <button type="button" @click="showAddModal = false" :disabled="pdfImporting"
+                            class="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-40">
                         Cancel
                     </button>
-                    <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-                        Create Card Design
+                    <button type="submit" :disabled="pdfImporting"
+                            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span x-show="!pdfImporting">Create Card Design</span>
+                        <span x-show="pdfImporting"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Importing PDF...</span>
                     </button>
                 </div>
             </form>
         </div>
     </div>
-    
+
+    <!-- PDF parsing progress overlay -->
+    <div x-show="pdfImporting" x-cloak
+         class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 text-center">
+            <div class="mx-auto w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
+                <i class="fa-solid fa-file-pdf text-blue-600 text-3xl animate-pulse"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-1">Importing your PDF design</h3>
+            <p class="text-sm text-gray-600 mb-4" x-text="pdfImportStep"></p>
+            <div class="space-y-2 text-left text-xs text-gray-500">
+                <div class="flex items-center gap-2">
+                    <i :class="pdfImportProgress >= 1 ? 'fa-solid fa-circle-check text-green-600' : (pdfImportProgress === 0.5 ? 'fa-solid fa-spinner fa-spin text-blue-600' : 'fa-regular fa-circle text-gray-300')"></i>
+                    <span>Uploading PDF file</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i :class="pdfImportProgress >= 2 ? 'fa-solid fa-circle-check text-green-600' : (pdfImportProgress === 1.5 ? 'fa-solid fa-spinner fa-spin text-blue-600' : 'fa-regular fa-circle text-gray-300')"></i>
+                    <span>Extracting text, fonts &amp; positions (parser)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i :class="pdfImportProgress >= 3 ? 'fa-solid fa-circle-check text-green-600' : (pdfImportProgress === 2.5 ? 'fa-solid fa-spinner fa-spin text-blue-600' : 'fa-regular fa-circle text-gray-300')"></i>
+                    <span>Auto-classifying fields with AI</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i :class="pdfImportProgress >= 4 ? 'fa-solid fa-circle-check text-green-600' : (pdfImportProgress === 3.5 ? 'fa-solid fa-spinner fa-spin text-blue-600' : 'fa-regular fa-circle text-gray-300')"></i>
+                    <span>Saving template &amp; preparing editor</span>
+                </div>
+            </div>
+            <p class="text-[11px] text-gray-400 mt-4">This usually takes 10-30 seconds, please don't close the tab.</p>
+        </div>
+    </div>
+
+    <!-- Missing fonts dialog (shown after PDF import succeeds with missing fonts) -->
+    <div x-show="missingFontsDialog && missingFontsDialog.length" x-cloak
+         class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full">
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Some fonts aren't on the server yet</h3>
+                        <p class="text-sm text-gray-600 mt-1">Upload the actual <code>.woff2</code> / <code>.ttf</code> / <code>.otf</code> files so your card renders in the same face as your PDF. Without the real files, the closest available weight is used and text may look slightly off.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 space-y-2 max-h-80 overflow-y-auto">
+                <template x-for="mf in missingFontsDialog" :key="mf.raw_name">
+                    <div class="flex items-center gap-3 bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-mono text-gray-800 truncate" x-text="mf.raw_name"></div>
+                            <div class="text-[11px] text-gray-500">family <span class="font-semibold" x-text="mf.family"></span></div>
+                            <div x-show="fontUploadStatus[mf.raw_name] === 'error'" class="text-[11px] text-red-600 mt-0.5" x-text="fontUploadError[mf.raw_name]"></div>
+                            <div x-show="fontUploadStatus[mf.raw_name] === 'done'" class="text-[11px] text-green-700 mt-0.5">
+                                Verified family: <span x-text="fontUploadVerified[mf.raw_name]"></span>
+                            </div>
+                        </div>
+                        <span x-show="fontUploadStatus[mf.raw_name] === 'done'"
+                              class="text-xs text-green-700 font-semibold whitespace-nowrap">
+                            <i class="fa-solid fa-circle-check mr-1"></i> Uploaded
+                        </span>
+                        <label x-show="fontUploadStatus[mf.raw_name] !== 'done'"
+                               class="text-xs px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-700 text-white font-medium cursor-pointer whitespace-nowrap">
+                            <span x-show="fontUploadStatus[mf.raw_name] !== 'uploading'"><i class="fa-solid fa-upload mr-1"></i> Upload</span>
+                            <span x-show="fontUploadStatus[mf.raw_name] === 'uploading'"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Uploading...</span>
+                            <input type="file" class="hidden" accept=".woff2,.woff,.ttf,.otf"
+                                   @change="uploadMissingFont(mf, $event.target.files[0])">
+                        </label>
+                    </div>
+                </template>
+            </div>
+            <div class="p-6 border-t border-gray-100 flex items-center justify-between">
+                <span class="text-xs text-gray-500">
+                    <span x-text="fontUploadCount + ' / ' + missingFontsDialog.length"></span> uploaded
+                </span>
+                <button type="button" @click="closeMissingFontsDialog()"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm">
+                    <span x-show="fontUploadCount === missingFontsDialog.length">Done, open editor</span>
+                    <span x-show="fontUploadCount < missingFontsDialog.length">Skip remaining &amp; continue</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Templates Grid -->
     <div class="grid lg:grid-cols-3 gap-6">
         <!-- Card Designs List -->
@@ -2128,6 +2215,22 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
             currentDesign: null,
             showAddModal: false,
             newTemplate: { name: '', side: 'front', frontImageFile: null, backImageFile: null, bgColor: '#1e3a5f' },
+
+            // PDF import state, mirrors the onboarding wizard's progress tracker.
+            // pdfImportProgress: 0 idle, 0.5 upload, 1 done-upload, 1.5 parse,
+            //                    2 done-parse, 2.5 ai, 3 done-ai, 3.5 persist, 4 done.
+            pdfImporting: false,
+            pdfImportStep: '',
+            pdfImportProgress: 0,
+            // Missing fonts: each row { raw_name, family }, plus per-row status maps.
+            missingFontsDialog: null,
+            fontUploadStatus: {},
+            fontUploadError: {},
+            fontUploadVerified: {},
+            fontUploadCount: 0,
+            // Pair id of the design we just imported, used to auto-open editor
+            // once the missing-fonts dialog closes.
+            justImportedPairId: null,
             statusMessage: '',
             statusType: 'success',
             cardEditor: null,
@@ -2827,6 +2930,96 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                 }
             },
 
+            // Upload a single missing font (.woff2/.woff/.ttf/.otf) to the
+            // company's font dir, then verify the response describes a valid
+            // family. Same endpoint the onboarding wizard uses.
+            uploadMissingFont: function(missing, file) {
+                if (!file) return;
+                var self = this;
+                var name = missing.raw_name;
+                self.fontUploadStatus[name] = 'uploading';
+                delete self.fontUploadError[name];
+
+                // Client-side guards before the network call
+                var lower = (file.name || '').toLowerCase();
+                var okExt = ['.woff2','.woff','.ttf','.otf'].some(function(ext){ return lower.endsWith(ext); });
+                if (!okExt) {
+                    self.fontUploadStatus[name] = 'error';
+                    self.fontUploadError[name]  = 'Unsupported format. Use .woff2, .woff, .ttf or .otf';
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    self.fontUploadStatus[name] = 'error';
+                    self.fontUploadError[name]  = 'File too large (max 5 MB)';
+                    return;
+                }
+
+                var fd = new FormData();
+                fd.append('font_file', file);
+                fd.append('raw_name',  name);
+                fetch('<?= getBasePath() ?>printshop/upload_font.php', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {'X-CSRF-Token': self.csrfToken},
+                    body: fd
+                })
+                .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, body:j}; }); })
+                .then(function(wrap) {
+                    if (!wrap.ok || !wrap.body.ok) {
+                        self.fontUploadStatus[name] = 'error';
+                        self.fontUploadError[name]  = (wrap.body && wrap.body.error) || 'Upload failed';
+                        return;
+                    }
+                    // Verify: the server returned the parsed family name; if it
+                    // doesn't roughly match the requested family, flag it as a
+                    // mismatch so the user knows they uploaded the wrong file.
+                    var parsedFamily = (wrap.body.family || '').toLowerCase().replace(/\s+/g,'');
+                    var wantFamily   = (missing.family   || '').toLowerCase().replace(/\s+/g,'');
+                    if (wantFamily && parsedFamily && parsedFamily.indexOf(wantFamily) === -1 && wantFamily.indexOf(parsedFamily) === -1) {
+                        self.fontUploadStatus[name] = 'error';
+                        self.fontUploadError[name]  = 'Uploaded file is "' + (wrap.body.family || '?') + '", expected "' + missing.family + '"';
+                        return;
+                    }
+                    self.fontUploadStatus[name]   = 'done';
+                    self.fontUploadVerified[name] = wrap.body.family || missing.family;
+                    self.fontUploadCount++;
+                })
+                .catch(function(err) {
+                    self.fontUploadStatus[name] = 'error';
+                    self.fontUploadError[name]  = err.message || 'Network error';
+                });
+            },
+
+            closeMissingFontsDialog: function() {
+                this.missingFontsDialog = null;
+                this.openImportedDesign();
+            },
+
+            // After a PDF import succeeds (and any font dialog is closed), drop
+            // the user into the editor for the freshly-created design pair.
+            openImportedDesign: function() {
+                var self = this;
+                if (!this.justImportedPairId) {
+                    if (typeof this.loadCompanyData === 'function') this.loadCompanyData();
+                    else window.location.reload();
+                    return;
+                }
+                var pid = this.justImportedPairId;
+                var openIt = function() {
+                    var designs = (typeof self.getCardDesigns === 'function') ? self.getCardDesigns() : [];
+                    var d = designs.find(function(x) { return x.pair_id === pid; });
+                    if (d && typeof self.selectCardDesign === 'function') {
+                        self.selectCardDesign(d);
+                        self.justImportedPairId = null;
+                    }
+                };
+                if (typeof this.loadCompanyData === 'function') {
+                    Promise.resolve(this.loadCompanyData()).then(function () { setTimeout(openIt, 100); });
+                } else {
+                    window.location.reload();
+                }
+            },
+
             // Auto-detect width/height from an uploaded PDF MediaBox.
             // Front and back must always match the PDF size or the bg
             // gets cropped/letterboxed in the editor canvas. The MediaBox
@@ -2963,32 +3156,78 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                     if (isPdf(this.newTemplate.backImageFile)) {
                         pdfForm.append('back_pdf', this.newTemplate.backImageFile);
                     }
-                    this.showStatus('Parsing PDF, this can take 10-30 seconds...', 'success');
+
+                    // Drive the visual progress tracker. The fetch is one
+                    // round-trip from the browser's POV but the server runs
+                    // upload -> pdfunite -> parser -> AI -> persist serially,
+                    // so we time-stub the steps to give the user visible feedback
+                    // while the request is in flight.
+                    self.pdfImporting       = true;
+                    self.pdfImportProgress  = 0.5;
+                    self.pdfImportStep      = 'Uploading PDF file to server';
+                    var stepTimers = [];
+                    stepTimers.push(setTimeout(function () {
+                        if (!self.pdfImporting) return;
+                        self.pdfImportProgress = 1.5;
+                        self.pdfImportStep     = 'Extracting text blocks, fonts, positions and QR placeholder';
+                    }, 1500));
+                    stepTimers.push(setTimeout(function () {
+                        if (!self.pdfImporting) return;
+                        self.pdfImportProgress = 2.5;
+                        self.pdfImportStep     = 'Auto-classifying fields with AI (name, email, phone, address...)';
+                    }, 8000));
+                    stepTimers.push(setTimeout(function () {
+                        if (!self.pdfImporting) return;
+                        self.pdfImportProgress = 3.5;
+                        self.pdfImportStep     = 'Saving template and preparing the editor';
+                    }, 16000));
+                    var clearStepTimers = function () { stepTimers.forEach(function (t) { clearTimeout(t); }); };
+
                     fetch('create_design_from_pdf', { method: 'POST', body: pdfForm })
-                        .then(function(response) { return response.json(); })
-                        .then(function(result) {
-                            if (result.ok) {
-                                self.showAddModal = false;
-                                self.newTemplate = { name: '', frontImageFile: null, backImageFile: null, bgColor: '#1e3a5f' };
-                                var msg = 'Card design imported from PDF';
-                                if (result.ai_used) msg += ' (AI-classified)';
-                                if (result.missing_fonts && result.missing_fonts.length) {
-                                    msg += '. Missing fonts: ' + result.missing_fonts.join(', ');
-                                }
-                                self.showStatus(msg, 'success');
-                                // Reload templates so the parsed fields show up
-                                if (typeof self.loadCompanyData === 'function') {
-                                    self.loadCompanyData();
-                                } else {
-                                    window.location.reload();
-                                }
+                        .then(function(response) { return response.json().then(function(j){ return {status: response.status, body: j}; }); })
+                        .then(function(wrap) {
+                            clearStepTimers();
+                            var result = wrap.body || {};
+                            if (wrap.status === 200 && result.ok) {
+                                self.pdfImportProgress = 4;
+                                self.pdfImportStep     = 'Done!';
+                                self.justImportedPairId = result.pair_id || null;
+
+                                // Brief "Done!" pause so the user sees the green tick,
+                                // then either show missing-fonts dialog or close.
+                                setTimeout(function () {
+                                    self.pdfImporting = false;
+                                    self.pdfImportProgress = 0;
+                                    self.showAddModal = false;
+                                    self.newTemplate = { name: '', frontImageFile: null, backImageFile: null, bgColor: '#1e3a5f' };
+
+                                    var miss = (result.missing_fonts || []).filter(function(m){ return m && m.raw_name; });
+                                    if (miss.length) {
+                                        self.missingFontsDialog = miss;
+                                        self.fontUploadStatus   = {};
+                                        self.fontUploadError    = {};
+                                        self.fontUploadVerified = {};
+                                        self.fontUploadCount    = 0;
+                                        var aiNote = result.ai_used ? ' (AI-classified)' : '';
+                                        self.showStatus('Design imported' + aiNote + '. ' + miss.length + ' missing font' + (miss.length === 1 ? '' : 's') + ' to upload.', 'success');
+                                    } else {
+                                        var aiNote = result.ai_used ? ' (AI-classified)' : '';
+                                        self.showStatus('Card design imported from PDF' + aiNote, 'success');
+                                        self.openImportedDesign();
+                                    }
+                                }, 700);
                             } else {
-                                self.showStatus(result.error || 'PDF import failed', 'error');
+                                self.pdfImporting = false;
+                                self.pdfImportProgress = 0;
+                                self.showStatus(result.error || ('PDF import failed (HTTP ' + wrap.status + ')'), 'error');
                             }
                         })
                         .catch(function(error) {
+                            clearStepTimers();
+                            self.pdfImporting = false;
+                            self.pdfImportProgress = 0;
                             console.error('PDF design import error:', error);
-                            self.showStatus('Error importing PDF', 'error');
+                            self.showStatus('Error importing PDF: ' + error.message, 'error');
                         });
                     return;
                 }
