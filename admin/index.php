@@ -2812,13 +2812,74 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
             // Handle front image for new template
             handleNewFrontImage: function(event) {
                 var file = event.target.files[0];
-                if (file) this.newTemplate.frontImageFile = file;
+                if (file) {
+                    this.newTemplate.frontImageFile = file;
+                    this.maybeApplyPdfDimensions(file);
+                }
             },
-            
+
             // Handle back image for new template
             handleNewBackImage: function(event) {
                 var file = event.target.files[0];
-                if (file) this.newTemplate.backImageFile = file;
+                if (file) {
+                    this.newTemplate.backImageFile = file;
+                    this.maybeApplyPdfDimensions(file);
+                }
+            },
+
+            // Auto-detect width/height from an uploaded PDF MediaBox.
+            // Front and back must always match the PDF size or the bg
+            // gets cropped/letterboxed in the editor canvas. The MediaBox
+            // sits in plaintext within the first ~32KB of any PDF, so we
+            // skip pdf.js and parse the bytes directly.
+            readPdfDimensions: function(file) {
+                return new Promise(function(resolve) {
+                    if (!file) return resolve(null);
+                    var name = (file.name || '').toLowerCase();
+                    if (!name.endsWith('.pdf') && file.type !== 'application/pdf') {
+                        return resolve(null);
+                    }
+                    var reader = new FileReader();
+                    reader.onload = function() {
+                        try {
+                            var bytes = new Uint8Array(reader.result);
+                            var text = '';
+                            for (var i = 0; i < bytes.length; i++) {
+                                text += String.fromCharCode(bytes[i]);
+                            }
+                            var m = text.match(/\/MediaBox\s*\[\s*([\d.\-]+)\s+([\d.\-]+)\s+([\d.\-]+)\s+([\d.\-]+)\s*\]/);
+                            if (!m) return resolve(null);
+                            var a = parseFloat(m[1]), b = parseFloat(m[2]);
+                            var c = parseFloat(m[3]), d = parseFloat(m[4]);
+                            resolve({ widthPt: c - a, heightPt: d - b });
+                        } catch (e) { resolve(null); }
+                    };
+                    reader.onerror = function() { resolve(null); };
+                    reader.readAsArrayBuffer(file.slice(0, 32768));
+                });
+            },
+
+            maybeApplyPdfDimensions: function(file) {
+                var self = this;
+                this.readPdfDimensions(file).then(function(dims) {
+                    if (!dims || dims.widthPt <= 0 || dims.heightPt <= 0) return;
+                    var widthMm  = dims.widthPt  / 72 * 25.4;
+                    var heightMm = dims.heightPt / 72 * 25.4;
+                    if (self.customUnit === 'mm') {
+                        self.customWidth  = Math.round(widthMm  * 100) / 100;
+                        self.customHeight = Math.round(heightMm * 100) / 100;
+                    } else if (self.customUnit === 'in') {
+                        self.customWidth  = Math.round((widthMm  / 25.4) * 1000) / 1000;
+                        self.customHeight = Math.round((heightMm / 25.4) * 1000) / 1000;
+                    } else {
+                        self.customWidth  = Math.round(dims.widthPt);
+                        self.customHeight = Math.round(dims.heightPt);
+                    }
+                    if (typeof self.changeCardSize === 'function') self.changeCardSize();
+                    if (typeof self.showStatus === 'function') {
+                        self.showStatus('Auto-detected PDF size: ' + widthMm.toFixed(2) + ' × ' + heightMm.toFixed(2) + ' mm', 'success');
+                    }
+                });
             },
             
             // Upload background for current template
