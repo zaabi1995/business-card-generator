@@ -158,7 +158,11 @@ class CardPDFRenderer
         // a flag; profile=web is what render-card-pdf.py expects (it has no
         // 'sample' enum). Map sample → web internally + watermark text.
         $pyProfile  = ($profile === 'sample') ? 'web' : $profile;
-        $watermark  = ($profile === 'sample') ? 'SAMPLE - NOT FOR PRINT' : '';
+        // Short watermark text on per-card pages (~85x55mm); long text gets
+        // clipped after the -30deg rotation on this small canvas. The
+        // imposition sheet (A4) uses the longer "SAMPLE - NOT FOR PRINT"
+        // string since it has the room.
+        $watermark  = ($profile === 'sample') ? 'SAMPLE' : '';
 
         $py  = trim((string)@shell_exec('command -v python3 2>/dev/null')) ?: 'python3';
         $cmd = escapeshellarg($py)
