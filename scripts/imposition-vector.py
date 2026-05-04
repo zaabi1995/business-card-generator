@@ -30,6 +30,9 @@ def main():
     ap.add_argument('--bleed-mm', type=float, default=3.0)
     ap.add_argument('--margin-mm', type=float, default=10.0)
     ap.add_argument('--out',  required=True)
+    ap.add_argument('--watermark', default='',
+                    help='Stamp the given text diagonally across the page (e.g. "SAMPLE").'
+                         ' Empty = no watermark.')
     args = ap.parse_args()
 
     paper_w, paper_h = PAPER_PT[args.paper]
@@ -73,6 +76,23 @@ def main():
                     fitz.Point(mx, my - mm), fitz.Point(mx, my + mm),
                     color=(0, 0, 0), width=0.25
                 )
+
+    # Optional sheet-wide watermark for tenant-admin previews. Print shop
+    # downloads omit this so the press file is clean.
+    if args.watermark:
+        try:
+            font_size = max(48.0, paper_w * 0.18)
+            cx, cy = paper_w / 2.0, paper_h / 2.0
+            font = fitz.Font('Helvetica-Bold')
+            text_w = fitz.get_text_length(args.watermark, fontname='Helvetica-Bold',
+                                          fontsize=font_size)
+            tw = fitz.TextWriter(sheet.rect, color=(0.7, 0.7, 0.7), opacity=0.18)
+            tw.append(fitz.Point(cx - text_w / 2, cy + font_size / 3),
+                      args.watermark, fontsize=font_size, font=font)
+            tw.write_text(sheet, morph=(fitz.Point(cx, cy), fitz.Matrix(-30)))
+        except Exception as e:
+            import sys as _sys
+            print(f'WARN: watermark failed: {e}', file=_sys.stderr)
 
     out.save(args.out, garbage=4, deflate=True)
 

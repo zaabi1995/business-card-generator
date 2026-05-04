@@ -27,18 +27,22 @@ class CardPDFRenderer
      */
     /**
      * @param string $employeeId
-     * @param string $profile 'web' (default) or 'print'.
-     *   'web'   - subset fonts, no bleed, optimised for screen/download.
-     *   'print' - full font embed, passed to render-card-pdf.py --profile print.
-     *             api/print-ready.php also passes --for-print for bleed + crop marks.
-     *             Cache key differs per profile so both can coexist on disk.
+     * @param string $profile 'web' (default), 'print', or 'sample'.
+     *   'web'    - subset fonts, no bleed, no watermark; for screen/download.
+     *   'print'  - full font embed; api/print-ready.php pairs this with
+     *              --for-print for bleed + crop marks. Goes to print shops.
+     *   'sample' - same as 'web' but renders a diagonal "SAMPLE - NOT FOR
+     *              PRINT" watermark on every page. Tenant admins always
+     *              get this when downloading the per-card PDF; print shops
+     *              never do.
+     *   Cache key differs per profile so all three can coexist on disk.
      */
     public static function render(string $employeeId, string $profile = 'web'): array
     {
         if ($employeeId === '') {
             return ['success' => false, 'error' => 'empty employee id'];
         }
-        $profile = in_array($profile, ['web', 'print'], true) ? $profile : 'web';
+        $profile = in_array($profile, ['web', 'print', 'sample'], true) ? $profile : 'web';
 
         $db = Database::getInstance();
         $employee = $db->fetchOne(
@@ -149,13 +153,21 @@ class CardPDFRenderer
             file_put_contents($tmpVcf, $vcfContent);
         }
 
+        // The 'sample' profile is the same render path as 'web' but with the
+        // watermark overlay. The Python script accepts the watermark text as
+        // a flag; profile=web is what render-card-pdf.py expects (it has no
+        // 'sample' enum). Map sample → web internally + watermark text.
+        $pyProfile  = ($profile === 'sample') ? 'web' : $profile;
+        $watermark  = ($profile === 'sample') ? 'SAMPLE - NOT FOR PRINT' : '';
+
         $py  = trim((string)@shell_exec('command -v python3 2>/dev/null')) ?: 'python3';
         $cmd = escapeshellarg($py)
              . ' ' . escapeshellarg(BASE_DIR . '/scripts/render-card-pdf.py')
              . ' --template ' . escapeshellarg($tmpTpl)
              . ' --employee ' . escapeshellarg($tmpEmp)
              . ' --out '      . escapeshellarg($cachePath)
-             . ' --profile '  . escapeshellarg($profile)
+             . ' --profile '  . escapeshellarg($pyProfile)
+             . ($watermark !== '' ? ' --watermark ' . escapeshellarg($watermark) : '')
              . ($tmpVcf !== '' ? ' --vcard ' . escapeshellarg($tmpVcf) : '')
              . ' 2>&1';
         if (trim((string)@shell_exec('command -v timeout 2>/dev/null')) !== '') {

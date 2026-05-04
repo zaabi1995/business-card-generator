@@ -42,8 +42,18 @@ try {
     // Prefer the vector PDF when the template was imported with a
     // vector source. Falls back to the existing PNG-in-PDF path
     // when the renderer is unavailable.
+    //
+    // Profile selection by role:
+    //   print_shop / super_admin  → 'web' (clean, no watermark)
+    //   anyone else (admin, company, anonymous) → 'sample' (watermarked)
+    // Tenants who want a press-ready file go through the print shop, who
+    // can issue an unwatermarked download via api/print-ready.php.
     require_once INCLUDES_DIR . '/CardPDFRenderer.php';
-    $vector = CardPDFRenderer::render((string)$employee['id']);
+    require_once INCLUDES_DIR . '/Auth.php';
+    $callerRole = Auth::isLoggedIn() ? (string)Auth::getCurrentRole() : '';
+    $isUnwatermarked = in_array($callerRole, ['print_shop', 'super_admin'], true);
+    $profile = $isUnwatermarked ? 'web' : 'sample';
+    $vector = CardPDFRenderer::render((string)$employee['id'], $profile);
     if (!empty($vector['success']) && is_file($vector['path'])) {
         try { QRTracker::logScan($employee['id'], $company['id']); } catch (Throwable $e) {}
         while (ob_get_level()) { ob_end_clean(); }

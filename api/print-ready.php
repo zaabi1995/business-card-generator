@@ -361,19 +361,27 @@ function handleGenerateRequest() {
         if ($wantVector) {
             require_once INCLUDES_DIR . '/CardPDFRenderer.php';
             $employeeId = (string)($order['employee_id'] ?? '');
-            // Use 'print' profile: full font embedding (PDF/X-4 best-effort).
-            // --for-print adds 3mm bleed + corner crop marks on the per-card PDF.
-            $cardPdf = $employeeId !== '' ? CardPDFRenderer::render($employeeId, 'print') : ['success' => false];
+            // Profile selection by caller role:
+            //   print_shop / super_admin → 'print' (full font embed, no watermark, ready for press)
+            //   anyone else (company / company_admin) → 'sample' (web profile + SAMPLE watermark)
+            // The watermark is also stamped on the assembled imposition sheet
+            // so even if a tenant downloads the ganged A4, every card on it
+            // is clearly marked NOT FOR PRINT.
+            $isUnwatermarked = in_array($userRole, ['print_shop', 'super_admin'], true);
+            $renderProfile   = $isUnwatermarked ? 'print' : 'sample';
+            $cardPdf = $employeeId !== '' ? CardPDFRenderer::render($employeeId, $renderProfile) : ['success' => false];
             if (!empty($cardPdf['success'])) {
                 $py = trim((string)@shell_exec('command -v python3 2>/dev/null')) ?: 'python3';
                 $rows = isset($_POST['rows']) ? (int)$_POST['rows'] : 5;
                 $cols = isset($_POST['cols']) ? (int)$_POST['cols'] : 2;
+                $watermarkText = $isUnwatermarked ? '' : 'SAMPLE - NOT FOR PRINT';
                 $vectorCmd = escapeshellarg($py)
                            . ' ' . escapeshellarg(BASE_DIR . '/scripts/imposition-vector.py')
                            . ' --card '  . escapeshellarg($cardPdf['path'])
                            . ' --paper ' . escapeshellarg($paperSize)
                            . ' --rows '  . (int)$rows
                            . ' --cols '  . (int)$cols
+                           . ($watermarkText !== '' ? ' --watermark ' . escapeshellarg($watermarkText) : '')
                            . ' --out '   . escapeshellarg($outputPath)
                            . ' 2>&1';
                 if (trim((string)@shell_exec('command -v timeout 2>/dev/null')) !== '') {

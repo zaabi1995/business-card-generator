@@ -258,8 +258,53 @@ def _draw_crop_marks(page, card_rect, mark_len_pt=14.17, bleed_pt=8.5, line_widt
     shape.commit()
 
 
+def _draw_watermark(page, text: str) -> None:
+    """Stamp a diagonal SAMPLE-style watermark across the centre of a page.
+
+    Used for tenant-admin downloads so the artwork is visibly marked as
+    not-for-press until a print shop generates the un-watermarked version.
+    Uses Helvetica (built-in, no font loading needed) at ~18% page width
+    point size, light grey, ~25% alpha approximated via tint, rotated -30deg.
+    """
+    if not text:
+        return
+    try:
+        rect = page.rect
+        # Size proportional to page width
+        font_size = max(28.0, rect.width * 0.18)
+        cx, cy = rect.width / 2.0, rect.height / 2.0
+        # PyMuPDF's TextWriter supports rotation around a point; insert_text
+        # is faster but doesn't rotate. Use a Shape with rotated text instead.
+        # Fallback: insert_textbox at center if rotation fails.
+        # Simpler: stamp the text twice without rotation when rotation isn't
+        # available. We try the rotated path first.
+        try:
+            tw = fitz.TextWriter(rect, color=(0.6, 0.6, 0.6))
+            tw.append(fitz.Point(0, 0), text, fontsize=font_size,
+                      font=fitz.Font('Helvetica-Bold'))
+            morph = (fitz.Point(cx, cy), fitz.Matrix(-30).prerotate(0))
+            # Translate baseline so the text is roughly centred on (cx, cy)
+            text_w = fitz.get_text_length(text, fontname='Helvetica-Bold', fontsize=font_size)
+            tw2 = fitz.TextWriter(rect, color=(0.6, 0.6, 0.6), opacity=0.25)
+            tw2.append(fitz.Point(cx - text_w / 2, cy + font_size / 3),
+                       text, fontsize=font_size, font=fitz.Font('Helvetica-Bold'))
+            tw2.write_text(page, morph=(fitz.Point(cx, cy), fitz.Matrix(-30)))
+        except Exception:
+            page.insert_textbox(
+                fitz.Rect(rect.x0, cy - font_size, rect.x1, cy + font_size),
+                text,
+                fontsize=font_size,
+                fontname='Helvetica-Bold',
+                color=(0.7, 0.7, 0.7),
+                align=fitz.TEXT_ALIGN_CENTER,
+            )
+    except Exception as e:
+        print(f'WARN: watermark draw failed: {e}', file=sys.stderr)
+
+
 def render(template_path: str, employee_path: str, out_path: str,
-           vcard_path: str = '', profile: str = 'web', for_print: bool = False) -> int:
+           vcard_path: str = '', profile: str = 'web', for_print: bool = False,
+           watermark: str = '') -> int:
     with open(template_path) as fh:
         template = json.load(fh)
     with open(employee_path) as fh:
@@ -385,6 +430,10 @@ def render(template_path: str, employee_path: str, out_path: str,
                 color=color,
             )
 
+        # Layer 3: optional watermark stamp (last, so it overlays everything).
+        if watermark:
+            _draw_watermark(page, watermark)
+
     # Phase 5: PDF metadata (title/author/subject/keywords in Acrobat Properties).
     company_name = template.get('company_name', '')
     company_slug = template.get('company_slug', '')
@@ -445,9 +494,13 @@ def main():
                          'print: full font embed, use with --for-print for bleed+crop marks.')
     ap.add_argument('--for-print', action='store_true',
                     help='Expand page by 3mm bleed and draw corner crop marks.')
+    ap.add_argument('--watermark', default='',
+                    help='Stamp the given text diagonally across the centre of every '
+                         'page (e.g. "SAMPLE - NOT FOR PRINT"). Empty = no watermark.')
     args = ap.parse_args()
     sys.exit(render(args.template, args.employee, args.out, args.vcard,
-                    profile=args.profile, for_print=args.for_print))
+                    profile=args.profile, for_print=args.for_print,
+                    watermark=args.watermark))
 
 
 if __name__ == '__main__':
