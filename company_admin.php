@@ -81,6 +81,7 @@ try {
         'auto_generate' => 'admin/auto_generate.php',
         'get_templates' => 'admin/get_templates.php',
         'save_template' => 'admin/save_template.php',
+        'create_design_from_pdf' => 'admin/create_design_from_pdf.php',
         'redetect-qr-style' => 'admin/redetect-qr-style.php',
         'redetect-text-field' => 'admin/redetect-text-field.php',
         'rebake-template-bg' => 'admin/rebake-template-bg.php',

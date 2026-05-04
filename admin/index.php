@@ -2942,24 +2942,73 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                     this.showStatus('Please enter a design name', 'error');
                     return;
                 }
-                
+
+                var self = this;
+                var isPdf = function(f) {
+                    if (!f) return false;
+                    var n = (f.name || '').toLowerCase();
+                    return n.endsWith('.pdf') || f.type === 'application/pdf';
+                };
+                var hasPdf = isPdf(this.newTemplate.frontImageFile) || isPdf(this.newTemplate.backImageFile);
+
+                // PDF path: route through the parser pipeline so detected text,
+                // fonts, positions, QR style and AI bindings come out matching
+                // the source design (same logic as the onboarding wizard).
+                if (hasPdf) {
+                    var pdfForm = this.newFormData('create_from_pdf');
+                    pdfForm.append('name', this.newTemplate.name);
+                    if (isPdf(this.newTemplate.frontImageFile)) {
+                        pdfForm.append('front_pdf', this.newTemplate.frontImageFile);
+                    }
+                    if (isPdf(this.newTemplate.backImageFile)) {
+                        pdfForm.append('back_pdf', this.newTemplate.backImageFile);
+                    }
+                    this.showStatus('Parsing PDF, this can take 10-30 seconds...', 'success');
+                    fetch('create_design_from_pdf', { method: 'POST', body: pdfForm })
+                        .then(function(response) { return response.json(); })
+                        .then(function(result) {
+                            if (result.ok) {
+                                self.showAddModal = false;
+                                self.newTemplate = { name: '', frontImageFile: null, backImageFile: null, bgColor: '#1e3a5f' };
+                                var msg = 'Card design imported from PDF';
+                                if (result.ai_used) msg += ' (AI-classified)';
+                                if (result.missing_fonts && result.missing_fonts.length) {
+                                    msg += '. Missing fonts: ' + result.missing_fonts.join(', ');
+                                }
+                                self.showStatus(msg, 'success');
+                                // Reload templates so the parsed fields show up
+                                if (typeof self.loadCompanyData === 'function') {
+                                    self.loadCompanyData();
+                                } else {
+                                    window.location.reload();
+                                }
+                            } else {
+                                self.showStatus(result.error || 'PDF import failed', 'error');
+                            }
+                        })
+                        .catch(function(error) {
+                            console.error('PDF design import error:', error);
+                            self.showStatus('Error importing PDF', 'error');
+                        });
+                    return;
+                }
+
+                // Non-PDF path: legacy add_pair (image bg + default fields)
                 var formData = this.newFormData('add_pair');
                 formData.append('name', this.newTemplate.name);
                 formData.append('fields', JSON.stringify(<?php echo json_encode(getDefaultFieldSettings(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>));
                 formData.append('settings', JSON.stringify(this.getTemplateSettings()));
-                
+
                 if (this.newTemplate.frontImageFile) {
                     formData.append('front_image', this.newTemplate.frontImageFile);
                 }
                 if (this.newTemplate.backImageFile) {
                     formData.append('back_image', this.newTemplate.backImageFile);
                 }
-                // Pass background color for solid-color generation when no image is uploaded
                 if (this.newTemplate.bgColor) {
                     formData.append('bg_color', this.newTemplate.bgColor);
                 }
-                
-                var self = this;
+
                 fetch('save_template', { method: 'POST', body: formData })
                     .then(function(response) { return response.json(); })
                     .then(function(result) {
