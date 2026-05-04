@@ -3449,7 +3449,12 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                         return self.cardEditor.addQRCode(vcfUrl, {
                             x: template.fields.qr_code.x,
                             y: template.fields.qr_code.y,
-                            size: template.fields.qr_code.size
+                            size: template.fields.qr_code.size,
+                            // Pass the design language sampled at PDF-import
+                            // so the editor preview matches the source (orange
+                            // eyes, panel padding, brand border) instead of
+                            // dropping in as plain black-on-white.
+                            style: template.fields.qr_code.qr_style || null
                         });
                     });
                 }
@@ -3634,7 +3639,8 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                             this.cardEditor.addQRCode(vcfUrl, {
                                 x: x,
                                 y: y,
-                                size: field.size || 100
+                                size: field.size || 100,
+                                style: field.qr_style || null
                             });
                             // Update the field with new position
                             this.selectedTemplate.fields.qr_code.x = x;
