@@ -33,6 +33,44 @@ if (!empty($state['completed_at'])) {
     exit;
 }
 
+// Auto-detect work the user did outside the wizard (uploaded a card design
+// via the dashboard "Create Card Design" modal, set a logo via the Theme
+// page, etc.) so we don't make them redo it inside the wizard.
+//   - Step 1 (logo)        considered satisfied when companies.logo_path is set
+//   - Step 2 (card_design) considered satisfied when at least one active,
+//                          non-deleted template pair exists for the company
+//   - When BOTH are satisfied, the wizard is essentially done and the user
+//     is bumped to the dashboard with the same toast as a completed wizard.
+//   - When ONLY step 2 is satisfied, the wizard initial step jumps past it.
+try {
+    $_db = Database::getInstance();
+    $_companyRow = $_db->fetchOne(
+        "SELECT logo_path FROM companies WHERE id = :id",
+        ['id' => $companyId]
+    );
+    $hasLogo = !empty($_companyRow['logo_path']);
+    $hasTemplates = (int)$_db->fetchOne(
+        "SELECT COUNT(*) AS n FROM templates WHERE company_id = :id AND deleted_at IS NULL",
+        ['id' => $companyId]
+    )['n'] > 0;
+    if ($hasLogo && $hasTemplates) {
+        Onboarding::markCompleted($companyId);
+        header('Location: ' . getAdminBasePath() . 'index.php?wizard=already_done');
+        exit;
+    }
+    // Promote the wizard's starting step past whatever's already done. The
+    // user can still hit Back to revisit, but the default landing skips
+    // satisfied steps.
+    $impliedStep = (int)($state['step'] ?? 0);
+    if ($hasLogo)      $impliedStep = max($impliedStep, 2);
+    if ($hasTemplates) $impliedStep = max($impliedStep, 3);
+    if ($impliedStep > (int)($state['step'] ?? 0)) {
+        $state['step'] = $impliedStep;
+    }
+} catch (Throwable $e) {
+    error_log('[onboarding] auto-skip detection failed: ' . $e->getMessage());
+}
+
 // First visit (no step data, no employees): seed 5 placeholder employees
 // so the admin has something to play with outside the wizard. The seeded
 // ids are stored on company_onboarding.data.demo_employee_ids so the

@@ -565,6 +565,28 @@ if ($companyId) {
     require_once INCLUDES_DIR . '/Onboarding.php';
     $onboardState = Onboarding::get($companyId);
 }
+
+// If the company has already done the wizard's work outside it (uploaded a
+// card via the dashboard modal AND set a logo), retire the wizard so the
+// "Continue setup" banner stops nagging. Mirrors the same detection in
+// admin/onboarding.php.
+if ($onboardState && empty($onboardState['completed_at'])) {
+    try {
+        $_db = Database::getInstance();
+        $_co = $_db->fetchOne("SELECT logo_path FROM companies WHERE id = :id", ['id' => $companyId]);
+        $_tplCount = (int)$_db->fetchOne(
+            "SELECT COUNT(*) AS n FROM templates WHERE company_id = :id AND deleted_at IS NULL",
+            ['id' => $companyId]
+        )['n'];
+        if (!empty($_co['logo_path']) && $_tplCount > 0) {
+            Onboarding::markCompleted($companyId);
+            $onboardState = Onboarding::get($companyId);
+        }
+    } catch (Throwable $e) {
+        error_log('[admin/index] auto-complete onboarding check failed: ' . $e->getMessage());
+    }
+}
+
 $showResumeBanner = $onboardState && !empty($onboardState['started_at']) && empty($onboardState['completed_at']) && (int)$onboardState['step'] > 0 && (int)$onboardState['step'] < Onboarding::TOTAL_STEPS;
 $showOrderNudge  = $onboardState && !empty($onboardState['completed_at']) && empty($onboardState['data']['order_cards']['per_person']);
 $demoSeededIds = !empty($onboardState['data']['demo_employee_ids']) && is_array($onboardState['data']['demo_employee_ids'])
