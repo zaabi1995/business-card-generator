@@ -3569,20 +3569,21 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                 if (!template || !template.backgroundImage) return '';
                 var raw = String(template.backgroundImage);
                 // Guard against stray HTML/expressions landing in the field.
-                // A render-timing race was producing stray 404s on URLs that
-                // looked like HTML fragments; belt-and-braces reject here.
                 if (raw.indexOf('<') !== -1 || raw.indexOf('>') !== -1) return '';
                 if (!/^[\/A-Za-z0-9][\w\-\.\/:]*$/.test(raw.replace(/^\//, ''))) return '';
-                // Prefer SVG background when the template was imported with a vector source.
-                var path = raw;
-                if (template.has_vector_source && template.backgroundSvg) {
-                    path = String(template.backgroundSvg);
-                } else if (template.has_vector_source && raw) {
-                    // Derive sibling .svg (importer always emits one next to the .png).
-                    path = raw.replace(/\.png$/i, '.svg');
-                }
-                path = path.replace(/^\//, '');
-                return this.basePath + path;
+                // Always use the PNG. The PyMuPDF-generated SVG references the
+                // PDF's subset font name (e.g. "GUWOUL+Lato-Medium") which the
+                // browser can't resolve, so it falls back to Times and the card
+                // looks wrong. The PNG is rendered by Poppler (parse_card_pdf.py)
+                // at print DPI and matches the source design exactly.
+                var path = raw.replace(/^\//, '');
+                // Append the template's current_version as a cache buster so
+                // bumping the version (after a parser fix, font swap, etc.)
+                // invalidates the browser/CDN cache instead of serving stale
+                // bytes from before the fix.
+                var ver = template.current_version || template.version || 1;
+                var sep = path.indexOf('?') === -1 ? '?' : '&';
+                return this.basePath + path + sep + 'v=' + encodeURIComponent(ver);
             },
             
             isTemplateActive: function(template) {
