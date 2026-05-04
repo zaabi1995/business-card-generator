@@ -144,24 +144,50 @@ if ($response['success']) {
 }
 
 /**
- * Call the configured AI translator. Prefers OpenRouter Qwen 3.6, falls back
- * to OpenAI gpt-4o-mini if OPENROUTER_API_KEY isn't set yet.
+ * Call the configured AI translator. Tries providers in order: OpenRouter Qwen
+ * 3.6 first, then OpenAI gpt-4o-mini. OpenRouter gets one retry on transient
+ * 5xx/network failures before falling through. Returns the first success.
  */
 function callTranslator($prompt, $systemPrompt = '') {
-    $useOpenRouter = defined('OPENROUTER_API_KEY') && !empty(OPENROUTER_API_KEY);
+    $providers = [];
+    if (defined('OPENROUTER_API_KEY') && !empty(OPENROUTER_API_KEY)) {
+        $providers[] = 'openrouter';
+    }
+    if (defined('OPENAI_API_KEY') && !empty(OPENAI_API_KEY)) {
+        $providers[] = 'openai';
+    }
 
-    if ($useOpenRouter) {
+    $lastError = 'No AI provider configured';
+    foreach ($providers as $i => $provider) {
+        $attempts = ($provider === 'openrouter') ? 2 : 1;
+        for ($n = 0; $n < $attempts; $n++) {
+            $res = callProviderOnce($provider, $prompt, $systemPrompt);
+            if ($res['success']) {
+                return $res;
+            }
+            $lastError = $res['error'];
+            // Retry only on transient failures (5xx, timeout, network).
+            if (!empty($res['transient']) && $n < $attempts - 1) {
+                usleep(500000); // 500ms
+                continue;
+            }
+            break;
+        }
+    }
+    return ['success' => false, 'error' => $lastError];
+}
+
+function callProviderOnce($provider, $prompt, $systemPrompt) {
+    if ($provider === 'openrouter') {
         $apiKey = OPENROUTER_API_KEY;
         // Names/positions/addresses are short, qwen3.6-flash returns in 1-2s
         // vs qwen3.6-plus's 8-12s. Quality is identical for these inputs.
         $model = defined('AI_TRANSLATE_MODEL') ? AI_TRANSLATE_MODEL : 'qwen/qwen3.6-flash';
         $url = 'https://openrouter.ai/api/v1/chat/completions';
-        $providerLabel = 'openrouter';
     } else {
         $apiKey = OPENAI_API_KEY;
         $model = defined('OPENAI_MODEL') ? OPENAI_MODEL : 'gpt-4o-mini';
         $url = 'https://api.openai.com/v1/chat/completions';
-        $providerLabel = 'openai';
     }
 
     $messages = [];
@@ -181,8 +207,7 @@ function callTranslator($prompt, $systemPrompt = '') {
         'Content-Type: application/json',
         'Authorization: Bearer ' . $apiKey,
     ];
-    if ($useOpenRouter) {
-        // Recommended by OpenRouter for attribution + better rate-limit tier.
+    if ($provider === 'openrouter') {
         $headers[] = 'HTTP-Referer: https://cardify.om';
         $headers[] = 'X-Title: Cardify';
     }
@@ -193,7 +218,8 @@ function callTranslator($prompt, $systemPrompt = '') {
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => json_encode($data),
         CURLOPT_HTTPHEADER => $headers,
-        CURLOPT_TIMEOUT => 30
+        CURLOPT_TIMEOUT => 20,
+        CURLOPT_CONNECTTIMEOUT => 5,
     ]);
 
     $response = curl_exec($ch);
@@ -202,19 +228,24 @@ function callTranslator($prompt, $systemPrompt = '') {
     curl_close($ch);
 
     if ($error) {
-        return ['success' => false, 'error' => 'Connection error: ' . $error];
+        return ['success' => false, 'error' => "[{$provider}] connection error: {$error}", 'transient' => true];
     }
 
     $result = json_decode($response, true);
 
     if ($httpCode !== 200) {
-        $errorMsg = $result['error']['message'] ?? ($result['error'] ?? 'API error');
+        $errorMsg = $result['error']['message'] ?? ($result['error'] ?? "HTTP {$httpCode}");
         if (is_array($errorMsg)) { $errorMsg = json_encode($errorMsg); }
-        return ['success' => false, 'error' => $errorMsg];
+        // 408/429/5xx are worth retrying or falling through to next provider.
+        $transient = ($httpCode === 408 || $httpCode === 429 || $httpCode >= 500);
+        return ['success' => false, 'error' => "[{$provider}] {$errorMsg}", 'transient' => $transient];
     }
 
     $text = $result['choices'][0]['message']['content'] ?? '';
-    return ['success' => true, 'text' => trim($text), 'provider' => $providerLabel];
+    if (trim($text) === '') {
+        return ['success' => false, 'error' => "[{$provider}] empty response", 'transient' => true];
+    }
+    return ['success' => true, 'text' => trim($text), 'provider' => $provider];
 }
 
 /**
