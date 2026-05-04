@@ -43,9 +43,52 @@ import os
 import re
 import json
 import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 
 import fitz  # PyMuPDF
+
+
+def _render_pdf_page_with_poppler(pdf_path: str, page_num: int, dpi: int, out_png_path: str) -> bool:
+    """Render a single PDF page to PNG using pdftoppm (Poppler).
+
+    PyMuPDF's get_pixmap() renders embedded font subsets at a slightly heavier
+    weight than the source design (Lato-Medium ends up looking like Lato-Bold,
+    Sora-Medium ends up looking heavier than Adobe / browser PDF viewers). The
+    bg PNG is the canonical source for every static decoration baked into the
+    card, so this drift is visible on every imported card. Poppler renders the
+    same subset fonts at the correct weight, matching what users see when they
+    open the PDF in Acrobat / Preview / Chrome.
+
+    Returns True on success, False if pdftoppm isn't available or fails.
+    """
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            base = os.path.join(td, 'p')
+            res = subprocess.run(
+                ['pdftoppm', '-r', str(dpi), '-png',
+                 '-f', str(page_num), '-l', str(page_num),
+                 pdf_path, base],
+                capture_output=True, text=True, timeout=60,
+            )
+            if res.returncode != 0:
+                print(f'WARN: pdftoppm exit {res.returncode}: {res.stderr[:300]}', file=sys.stderr)
+                return False
+            # pdftoppm outputs <base>-<page>.png with zero-padding to the page
+            # count's width. For 1-2 page docs that's just <base>-1.png /
+            # <base>-2.png. Glob to be safe.
+            out_files = sorted(Path(td).glob('p-*.png'))
+            if not out_files:
+                return False
+            shutil.copy(str(out_files[0]), out_png_path)
+            return True
+    except FileNotFoundError:
+        # pdftoppm not installed; caller falls back to PyMuPDF.
+        return False
+    except Exception as e:
+        print(f'WARN: pdftoppm render failed: {e}', file=sys.stderr)
+        return False
 
 
 # ────────── Field detection patterns and heuristics ──────────
@@ -773,12 +816,20 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
         # shift. Fabric scales the high-res PNG to fit the canvas in the
         # editor, then samples it at full resolution when exporting at
         # multiplier=4.
-        pix = page.get_pixmap(matrix=fitz.Matrix(BG_SCALE, BG_SCALE), alpha=False)
+        #
+        # Prefer Poppler over PyMuPDF for the rasterisation step. PyMuPDF
+        # renders embedded font subsets a hair heavier than the source
+        # weight (Lato-Medium reads as Lato-Bold), which is visible on
+        # every static decoration baked into the card bg. Poppler matches
+        # what Acrobat / Preview / Chrome show. PyMuPDF stays in charge
+        # of redaction (text removal), font extraction, and SVG export.
         bg_path = os.path.join(output_dir, f'bg-page-{page_num}.png')
-        pix.save(bg_path)
+        bg_with_text_path = os.path.join(output_dir, f'bg-page-{page_num}-with-text.png')
+        if not _render_pdf_page_with_poppler(pdf_path, page_num, BG_DPI, bg_path):
+            pix = page.get_pixmap(matrix=fitz.Matrix(BG_SCALE, BG_SCALE), alpha=False)
+            pix.save(bg_path)
 
         # Background WITH text: keep a copy for preview (also at print DPI)
-        bg_with_text_path = os.path.join(output_dir, f'bg-page-{page_num}-with-text.png')
         shutil.copy(bg_path, bg_with_text_path)
 
         # Raster QR fallback: if the drawing-layer heuristic didn't find a QR
@@ -806,7 +857,9 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
                         f['render_in_bg'] = True
 
         # Strip text by re-rendering the page with text spans redacted.
-        # PyMuPDF: add_redact_annot then apply.
+        # PyMuPDF: add_redact_annot then apply. Then re-render the redacted
+        # page through Poppler for the same font-fidelity reason as the
+        # initial bg render (PyMuPDF subset glyphs render too heavy).
         try:
             page_for_redaction = doc[page_num - 1]
             for bb in text_bboxes_for_redaction:
@@ -814,8 +867,23 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
                 rect = fitz.Rect(x0 - 0.3, y0 - 0.3, x1 + 0.3, y1 + 0.3)
                 page_for_redaction.add_redact_annot(rect, fill=None)
             page_for_redaction.apply_redactions(images=0)
-            pix2 = page_for_redaction.get_pixmap(matrix=fitz.Matrix(BG_SCALE, BG_SCALE), alpha=False)
-            pix2.save(bg_path)
+
+            redacted_rendered = False
+            try:
+                with tempfile.TemporaryDirectory() as td:
+                    redacted_pdf = os.path.join(td, 'redacted.pdf')
+                    # Save just the redacted page so pdftoppm sees it as page 1.
+                    single = fitz.open()
+                    single.insert_pdf(doc, from_page=page_num - 1, to_page=page_num - 1)
+                    single.save(redacted_pdf, garbage=3, deflate=True)
+                    single.close()
+                    redacted_rendered = _render_pdf_page_with_poppler(redacted_pdf, 1, BG_DPI, bg_path)
+            except Exception as e:
+                print(f'WARN: poppler redacted render failed for page {page_num}: {e}', file=sys.stderr)
+
+            if not redacted_rendered:
+                pix2 = page_for_redaction.get_pixmap(matrix=fitz.Matrix(BG_SCALE, BG_SCALE), alpha=False)
+                pix2.save(bg_path)
             # Also emit a true vector SVG of the redacted page. Surfaces that
             # render to PDF (card-pdf.php) or to print will eventually prefer
             # this over the raster bg, no quality loss at any output size.
