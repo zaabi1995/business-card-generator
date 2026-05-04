@@ -1212,7 +1212,7 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                         <div class="flex items-center gap-2">
                             <span class="text-sm text-gray-600">Width:</span>
                             <input type="number" x-model.number="customWidth" @change="changeCardSize()"
-                                   :step="customUnit === 'mm' ? 1 : 0.1"
+                                   :step="customUnit === 'mm' ? 0.01 : 0.001"
                                    :min="customUnit === 'mm' ? 10 : 0.5"
                                    :max="customUnit === 'mm' ? 300 : 12"
                                    class="w-20 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
@@ -1220,7 +1220,7 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                         <div class="flex items-center gap-2">
                             <span class="text-sm text-gray-600">Height:</span>
                             <input type="number" x-model.number="customHeight" @change="changeCardSize()"
-                                   :step="customUnit === 'mm' ? 1 : 0.1"
+                                   :step="customUnit === 'mm' ? 0.01 : 0.001"
                                    :min="customUnit === 'mm' ? 10 : 0.5"
                                    :max="customUnit === 'mm' ? 300 : 12"
                                    class="w-20 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
@@ -1618,13 +1618,13 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                         <span class="text-sm font-medium text-gray-600">Custom:</span>
                         <div class="flex items-center gap-1">
                             <input type="number" x-model.number="customWidth" @change="changeCardSize()"
-                                   :step="customUnit === 'mm' ? 1 : 0.1"
+                                   :step="customUnit === 'mm' ? 0.01 : 0.001"
                                    :min="customUnit === 'mm' ? 10 : 0.5"
                                    :max="customUnit === 'mm' ? 300 : 12"
                                    class="w-20 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700">
                             <span class="text-gray-400">×</span>
                             <input type="number" x-model.number="customHeight" @change="changeCardSize()"
-                                   :step="customUnit === 'mm' ? 1 : 0.1"
+                                   :step="customUnit === 'mm' ? 0.01 : 0.001"
                                    :min="customUnit === 'mm' ? 10 : 0.5"
                                    :max="customUnit === 'mm' ? 300 : 12"
                                    class="w-20 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700">
