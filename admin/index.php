@@ -1325,7 +1325,7 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
     </div>
 
     <!-- Missing fonts dialog (shown after PDF import succeeds with missing fonts) -->
-    <div x-show="missingFontsDialog && missingFontsDialog.length" x-cloak
+    <div x-show="missingFontsDialog && missingFontsDialog.length > 0" x-cloak
          class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full">
             <div class="p-6 border-b border-gray-100">
@@ -2223,7 +2223,7 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
             pdfImportStep: '',
             pdfImportProgress: 0,
             // Missing fonts: each row { raw_name, family }, plus per-row status maps.
-            missingFontsDialog: null,
+            missingFontsDialog: [],
             fontUploadStatus: {},
             fontUploadError: {},
             fontUploadVerified: {},
