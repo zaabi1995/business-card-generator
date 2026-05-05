@@ -53,4 +53,77 @@ return [
 
     // تحديث سريع للحالة
     'btn_update'        => 'تحديث',
+
+    // شريط التحية
+    'greeting_morning'        => 'صباح الخير، :name',
+    'greeting_afternoon'      => 'مساء الخير، :name',
+    'greeting_evening'        => 'مساء الخير، :name',
+    'greeting_today_summary'  => ':n طلبات اليوم، :rev حتى الآن',
+    'greeting_today_empty'    => 'لا توجد طلبات اليوم بعد',
+    'badge_internal_provider' => 'مزوّد داخلي',
+
+    // شريط مؤشّرات الأداء
+    'kpi_today_h'         => 'اليوم',
+    'kpi_awaiting_h'      => 'بانتظار إجراء',
+    'kpi_in_production_h' => 'قيد الإنتاج',
+    'kpi_shipped_week_h'  => 'تم الشحن (7 أيام)',
+    'kpi_revenue_30d_h'   => 'الإيراد (30 يومًا)',
+    'kpi_outstanding_h'   => 'الائتمان المستحق',
+    'kpi_delta_up'        => '+:pct% مقارنة بـ 30 يومًا سابقة',
+    'kpi_delta_down'      => ':pct% مقارنة بـ 30 يومًا سابقة',
+    'kpi_delta_flat'      => 'بدون تغيير عن 30 يومًا سابقة',
+    'kpi_delta_new'       => 'إيراد جديد',
+
+    // قائمة الإجراءات
+    'queue_h'                  => 'قائمة الإجراءات',
+    'queue_sub'                => 'الطلبات التي تحتاج اهتمامك، مُجمّعة حسب المرحلة.',
+    'queue_stage_submitted'    => 'مُقدَّمة',
+    'queue_stage_processing'   => 'قيد المعالجة',
+    'queue_stage_printing'     => 'في الطباعة',
+    'queue_stage_shipped'      => 'جاهزة للتسليم',
+    'queue_count_one'          => 'طلب واحد',
+    'queue_count_many'         => ':n طلبات',
+    'queue_empty'              => 'لا شيء هنا.',
+    'queue_advance_processing' => 'بدء المعالجة',
+    'queue_advance_printing'   => 'إرسال للطباعة',
+    'queue_advance_shipped'    => 'تم الشحن',
+    'queue_advance_delivered'  => 'تم التسليم',
+    'queue_open'               => 'فتح',
+
+    // لوحة المزوّد الداخلي
+    'internal_h'                => 'العملاء في قائمتك',
+    'internal_top_clients'      => 'أعلى 5 حسب عدد الطلبات، خلال 30 يومًا',
+    'internal_order_on_behalf'  => 'إنشاء طلب نيابة',
+    'internal_browse_clients'   => 'تصفّح جميع العملاء',
+    'internal_dormant'          => ':n عملاء لم يطلبوا منذ 60 يومًا أو أكثر',
+    'internal_active_count'     => ':n عميل نشط خلال 30 يومًا',
+    'internal_no_recent'        => 'لا توجد طلبات من العملاء خلال 30 يومًا الأخيرة.',
+
+    // لوحة مخاطر الائتمان
+    'credit_risk_h'           => 'تعرّض الائتمان',
+    'credit_risk_total'       => ':used من :limit مستخدم',
+    'credit_risk_review'      => 'مراجعة الحسابات',
+    'credit_risk_top_exposed' => 'الأعلى تعرّضًا',
+    'credit_risk_no_accounts' => 'لا توجد حسابات ائتمان معتمدة بعد.',
+    'credit_risk_terms'       => 'صافي :n',
+
+    // لوحة نشاط المُشغّلين
+    'operator_activity_h'      => 'نشاط المُشغّلين (7 أيام)',
+    'operator_orders_unit_one' => 'طلب واحد',
+    'operator_orders_unit'     => ':n طلبات',
+    'operator_no_activity'     => 'لا توجد طلبات بعد',
+    'operator_view_team'       => 'إدارة الفريق',
+
+    // تدفّق النشاط الأخير
+    'activity_h'                  => 'النشاط الأخير',
+    'activity_view_all'           => 'عرض الكل',
+    'activity_empty'              => 'لا يوجد نشاط حديث بعد.',
+    'activity_erp_failed'         => 'فشل مزامنة ERP للطلب :ref',
+    'activity_credit_requested'   => 'طلب ائتمان من :ref',
+    'activity_template_requested' => 'طلب قالب من :ref',
+    'activity_new_order'          => 'طلب جديد :ref',
+    'activity_just_now'           => 'الآن',
+    'activity_minutes_ago'        => 'منذ :n دقيقة',
+    'activity_hours_ago'          => 'منذ :n ساعة',
+    'activity_days_ago'           => 'منذ :n يوم',
 ];

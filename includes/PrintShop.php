@@ -327,12 +327,268 @@ class PrintShop {
             $stats['this_month_revenue'] = (float)$row[1];
             
             return $stats;
-            
+
         } catch (PDOException $e) {
             return [];
         }
     }
-    
+
+    /**
+     * Aggregator: one call, all dashboard data.
+     *
+     * Returns a structured payload covering KPIs, the action queue,
+     * internal-provider widgets, credit-risk panel, operator activity
+     * and a recent-activity feed. Each section is null/empty when not
+     * applicable (no internal-provider flag, no credit accounts, etc.)
+     * so the template can branch with isset()/!empty() checks.
+     */
+    public static function getDashboardData($printShopId, $operatorId = null) {
+        $printShopId = (int) $printShopId;
+        $db  = Database::getInstance();
+        $pdo = $db->getConnection();
+
+        $shop = self::getById($printShopId);
+        $isInternalProvider = !empty($shop['is_internal_provider']);
+
+        // ---- KPIs -------------------------------------------------
+        $kpis = [
+            'today_orders'         => 0,
+            'today_revenue'        => 0.0,
+            'awaiting_action'      => 0,
+            'in_production'        => 0,
+            'shipped_this_week'    => 0,
+            'revenue_30d'          => 0.0,
+            'revenue_30d_prev'     => 0.0,
+            'outstanding_credit'   => 0.0,
+            'credit_limit_total'   => 0.0,
+            'erp_sync_failures'    => 0,
+        ];
+        try {
+            $stmt = $pdo->prepare(
+                "SELECT
+                    SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) AS today_orders,
+                    SUM(CASE WHEN DATE(created_at) = CURDATE() AND status != 'cancelled'
+                             THEN total ELSE 0 END) AS today_revenue,
+                    SUM(CASE WHEN status IN ('submitted','processing') THEN 1 ELSE 0 END) AS awaiting_action,
+                    SUM(CASE WHEN status = 'printing' THEN 1 ELSE 0 END) AS in_production,
+                    SUM(CASE WHEN status = 'shipped' AND shipped_at >= (CURDATE() - INTERVAL 7 DAY)
+                             THEN 1 ELSE 0 END) AS shipped_this_week,
+                    SUM(CASE WHEN status != 'cancelled'
+                             AND created_at >= (NOW() - INTERVAL 30 DAY)
+                             THEN total ELSE 0 END) AS revenue_30d,
+                    SUM(CASE WHEN status != 'cancelled'
+                             AND created_at >= (NOW() - INTERVAL 60 DAY)
+                             AND created_at <  (NOW() - INTERVAL 30 DAY)
+                             THEN total ELSE 0 END) AS revenue_30d_prev,
+                    SUM(CASE WHEN erp_sync_status = 'error' THEN 1 ELSE 0 END) AS erp_sync_failures
+                 FROM print_orders WHERE print_shop_id = ?"
+            );
+            $stmt->execute([$printShopId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            $kpis['today_orders']      = (int)   ($row['today_orders']      ?? 0);
+            $kpis['today_revenue']     = (float) ($row['today_revenue']     ?? 0);
+            $kpis['awaiting_action']   = (int)   ($row['awaiting_action']   ?? 0);
+            $kpis['in_production']     = (int)   ($row['in_production']     ?? 0);
+            $kpis['shipped_this_week'] = (int)   ($row['shipped_this_week'] ?? 0);
+            $kpis['revenue_30d']       = (float) ($row['revenue_30d']       ?? 0);
+            $kpis['revenue_30d_prev']  = (float) ($row['revenue_30d_prev']  ?? 0);
+            $kpis['erp_sync_failures'] = (int)   ($row['erp_sync_failures'] ?? 0);
+
+            $stmt = $pdo->prepare(
+                "SELECT COALESCE(SUM(balance_used),0) AS used,
+                        COALESCE(SUM(credit_limit),0) AS approved
+                 FROM credit_accounts
+                 WHERE print_shop_id = ? AND status = 'approved'"
+            );
+            $stmt->execute([$printShopId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            $kpis['outstanding_credit'] = (float) ($row['used']     ?? 0);
+            $kpis['credit_limit_total'] = (float) ($row['approved'] ?? 0);
+        } catch (PDOException $e) {
+            error_log("PrintShop::getDashboardData kpis: " . $e->getMessage());
+        }
+
+        // ---- Action queue ----------------------------------------
+        // 4 stage buckets. Reuse self::getOrders so the company /
+        // employee / operator joins stay in one place.
+        $actionQueue = [
+            'submitted'  => self::getOrders($printShopId, 'submitted',  6),
+            'processing' => self::getOrders($printShopId, 'processing', 6),
+            'printing'   => self::getOrders($printShopId, 'printing',   6),
+            'shipped'    => self::getOrders($printShopId, 'shipped',    6),
+        ];
+
+        // ---- Internal provider panel -----------------------------
+        $internalProvider = null;
+        if ($isInternalProvider) {
+            $internalProvider = ['top_clients_30d' => [], 'dormant_count' => 0, 'active_clients_30d' => 0];
+            try {
+                $stmt = $pdo->prepare(
+                    "SELECT po.company_id,
+                            COALESCE(c.name, 'Unknown') AS company_name,
+                            c.slug AS company_slug,
+                            COUNT(*) AS order_count,
+                            COALESCE(SUM(po.total),0) AS revenue
+                     FROM print_orders po
+                     LEFT JOIN companies c ON c.id = po.company_id
+                     WHERE po.print_shop_id = ?
+                       AND po.status != 'cancelled'
+                       AND po.created_at >= (NOW() - INTERVAL 30 DAY)
+                       AND po.company_id IS NOT NULL
+                     GROUP BY po.company_id, c.name, c.slug
+                     ORDER BY order_count DESC, revenue DESC
+                     LIMIT 5"
+                );
+                $stmt->execute([$printShopId]);
+                $internalProvider['top_clients_30d'] = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+                $internalProvider['active_clients_30d'] = count($internalProvider['top_clients_30d']);
+
+                // Dormant: companies who ordered before but not in 60d.
+                $stmt = $pdo->prepare(
+                    "SELECT COUNT(*) FROM (
+                        SELECT po.company_id, MAX(po.created_at) AS last_order
+                        FROM print_orders po
+                        WHERE po.print_shop_id = ? AND po.company_id IS NOT NULL
+                        GROUP BY po.company_id
+                        HAVING last_order < (NOW() - INTERVAL 60 DAY)
+                     ) AS dormant"
+                );
+                $stmt->execute([$printShopId]);
+                $internalProvider['dormant_count'] = (int) $stmt->fetchColumn();
+            } catch (PDOException $e) {
+                error_log("PrintShop::getDashboardData internal: " . $e->getMessage());
+            }
+        }
+
+        // ---- Credit risk -----------------------------------------
+        $creditRisk = ['top_exposed' => [], 'account_count' => 0];
+        try {
+            $stmt = $pdo->prepare(
+                "SELECT ca.id, ca.company_id, COALESCE(c.name,'Unknown') AS company_name,
+                        ca.credit_limit, ca.balance_used, ca.payment_terms
+                 FROM credit_accounts ca
+                 LEFT JOIN companies c ON c.id = ca.company_id
+                 WHERE ca.print_shop_id = ? AND ca.status = 'approved' AND ca.balance_used > 0
+                 ORDER BY ca.balance_used DESC LIMIT 3"
+            );
+            $stmt->execute([$printShopId]);
+            $creditRisk['top_exposed'] = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            $stmt = $pdo->prepare(
+                "SELECT COUNT(*) FROM credit_accounts WHERE print_shop_id = ? AND status = 'approved'"
+            );
+            $stmt->execute([$printShopId]);
+            $creditRisk['account_count'] = (int) $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("PrintShop::getDashboardData credit: " . $e->getMessage());
+        }
+
+        // ---- Operator activity (only when 2+ active operators) ---
+        $operatorActivity = null;
+        try {
+            $stmt = $pdo->prepare(
+                "SELECT COUNT(*) FROM print_shop_operators WHERE print_shop_id = ? AND status = 'active'"
+            );
+            $stmt->execute([$printShopId]);
+            if ((int) $stmt->fetchColumn() >= 2) {
+                $stmt = $pdo->prepare(
+                    "SELECT op.id, op.name,
+                            COUNT(po.id) AS orders_week,
+                            COALESCE(SUM(po.total),0) AS revenue_week
+                     FROM print_shop_operators op
+                     LEFT JOIN print_orders po
+                            ON po.placed_by_operator_id = op.id
+                           AND po.print_shop_id = ?
+                           AND po.created_at >= (CURDATE() - INTERVAL 7 DAY)
+                           AND po.status != 'cancelled'
+                     WHERE op.print_shop_id = ? AND op.status = 'active'
+                     GROUP BY op.id, op.name
+                     ORDER BY orders_week DESC, op.name ASC"
+                );
+                $stmt->execute([$printShopId, $printShopId]);
+                $operatorActivity = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            }
+        } catch (PDOException $e) {
+            error_log("PrintShop::getDashboardData operators: " . $e->getMessage());
+        }
+
+        // ---- Recent activity feed --------------------------------
+        // Union of: ERP sync failures, new credit requests, new orders,
+        // new template requests. All scoped to this shop. Latest 10.
+        $recentActivity = [];
+        try {
+            $stmt = $pdo->prepare(
+                "SELECT 'erp_failed'    AS type, po.id AS ref_id, po.order_number AS ref_label,
+                        COALESCE(c.name,'') AS context, po.erp_last_sync AS at
+                 FROM print_orders po
+                 LEFT JOIN companies c ON c.id = po.company_id
+                 WHERE po.print_shop_id = ? AND po.erp_sync_status = 'error'
+                 ORDER BY po.erp_last_sync DESC LIMIT 4"
+            );
+            $stmt->execute([$printShopId]);
+            $recentActivity = array_merge($recentActivity, $stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
+
+            $stmt = $pdo->prepare(
+                "SELECT 'credit_requested' AS type, ca.id AS ref_id,
+                        COALESCE(c.name,'') AS ref_label,
+                        CONCAT(CAST(ca.requested_limit AS CHAR),' OMR') AS context,
+                        ca.created_at AS at
+                 FROM credit_accounts ca
+                 LEFT JOIN companies c ON c.id = ca.company_id
+                 WHERE ca.print_shop_id = ? AND ca.status = 'pending'
+                 ORDER BY ca.created_at DESC LIMIT 4"
+            );
+            $stmt->execute([$printShopId]);
+            $recentActivity = array_merge($recentActivity, $stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
+
+            $stmt = $pdo->prepare(
+                "SELECT 'new_order' AS type, po.id AS ref_id, po.order_number AS ref_label,
+                        COALESCE(c.name,'') AS context, po.created_at AS at
+                 FROM print_orders po
+                 LEFT JOIN companies c ON c.id = po.company_id
+                 WHERE po.print_shop_id = ? AND po.status IN ('pending','submitted')
+                 ORDER BY po.created_at DESC LIMIT 4"
+            );
+            $stmt->execute([$printShopId]);
+            $recentActivity = array_merge($recentActivity, $stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
+
+            $tmplExists = (int) $pdo->query(
+                "SELECT COUNT(*) FROM information_schema.tables
+                 WHERE table_schema = DATABASE() AND table_name = 'shop_template_requests'"
+            )->fetchColumn();
+            if ($tmplExists) {
+                $stmt = $pdo->prepare(
+                    "SELECT 'template_requested' AS type, str.id AS ref_id,
+                            COALESCE(str.customer_name,'') AS ref_label,
+                            COALESCE(str.customer_email,'') AS context,
+                            str.created_at AS at
+                     FROM shop_template_requests str
+                     WHERE str.print_shop_id = ? AND str.status = 'pending'
+                     ORDER BY str.created_at DESC LIMIT 4"
+                );
+                $stmt->execute([$printShopId]);
+                $recentActivity = array_merge($recentActivity, $stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
+            }
+
+            // Sort merged feed DESC by timestamp, cap at 8.
+            usort($recentActivity, function ($a, $b) {
+                return strcmp((string)($b['at'] ?? ''), (string)($a['at'] ?? ''));
+            });
+            $recentActivity = array_slice($recentActivity, 0, 8);
+        } catch (PDOException $e) {
+            error_log("PrintShop::getDashboardData activity: " . $e->getMessage());
+        }
+
+        return [
+            'kpis'              => $kpis,
+            'action_queue'      => $actionQueue,
+            'internal_provider' => $internalProvider,
+            'credit_risk'       => $creditRisk,
+            'operator_activity' => $operatorActivity,
+            'recent_activity'   => $recentActivity,
+        ];
+    }
+
     /**
      * Look up a per-client pricing override row.
      * Returns the decoded pricing JSON or null when none exists.
