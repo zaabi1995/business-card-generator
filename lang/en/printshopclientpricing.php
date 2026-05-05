@@ -17,9 +17,20 @@ return [
     // Row
     'unknown_company'      => 'Unknown company',
     'no_tiers_set'         => 'No tiers set',
+    'min_qty_badge'        => 'Min :n',
+    'per_paper_badge'      => 'Per paper-type pricing',
     'edit_btn'             => 'Edit',
     'reset_btn'            => 'Reset',
     'reset_confirm'        => 'Remove this override and revert to default pricing?',
+
+    // Min quantity
+    'field_min_qty'        => 'Minimum order quantity',
+    'min_qty_help'         => 'Block orders below this quantity. Leave 0 to allow any quantity.',
+
+    // Pricing mode toggle
+    'mode_single'          => 'Single tier table',
+    'mode_per_paper'       => 'Per paper-type pricing',
+    'per_paper_help'       => 'Set separate tier tables for each paper variant. Prices already include the variant, no silk multiplier is applied on top. Currency: :currency.',
 
     // Add button + modal
     'add_btn'              => 'Add Client Pricing',

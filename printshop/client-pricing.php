@@ -3,8 +3,11 @@
  * Print Shop, Client Pricing
  *
  * Lets a print shop set per-client price overrides on top of its
- * default tier table. Use case: BHD honoring a quoted price for
- * Otech without having to change global pricing for everyone.
+ * default tier table. Supports two modes per client:
+ *  - Single tier table  (one set of qty -> total-price rows for any paper type)
+ *  - Per paper type     (separate tier tables for uncoated / matte / silk)
+ *
+ * Plus an optional `min_quantity` floor that blocks orders below it.
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
@@ -37,7 +40,15 @@ $shopTiers   = $shopPricing['quantity_tiers'] ?? [];
 $currency    = $printShop['currency'] ?? ($shopPricing['currency'] ?? 'OMR');
 $decimals    = in_array($currency, ['OMR', 'BHD', 'KWD'], true) ? 3 : 2;
 
-$overrides = PrintShop::listClientPricing($shopId);
+// Paper types Cardify exposes in the order flow. Keep these keys in
+// lockstep with admin/order_print.php paperType select values.
+$paperTypes = [
+    'uncoated' => 'Uncoated (no lamination)',
+    'matte'    => 'Matte lamination',
+    'silk'     => 'Silk / glossy lamination',
+];
+
+$overrides  = PrintShop::listClientPricing($shopId);
 $candidates = PrintShop::getClientCompanies($shopId);
 
 // Strip companies that already have an override from the candidate list
@@ -45,6 +56,14 @@ $existingCompanyIds = array_column($overrides, 'company_id');
 $candidates = array_values(array_filter($candidates, function ($c) use ($existingCompanyIds) {
     return !in_array($c['id'], $existingCompanyIds, true);
 }));
+
+// Default tier rows in the shape Alpine consumes
+$defaultTierRows = [];
+foreach ($shopTiers as $qty => $val) {
+    $price = is_array($val) ? ($val['price'] ?? 0) : ((float)$val * (int)$qty);
+    $defaultTierRows[] = ['qty' => (int)$qty, 'price' => round((float)$price, 3)];
+}
+usort($defaultTierRows, fn($a, $b) => $a['qty'] <=> $b['qty']);
 
 $pageTitle = t('printshopclientpricing.page_title', ['shop' => $printShop['name']]);
 $bodyClass = 'bg-gray-50';
@@ -134,21 +153,57 @@ unset($_SESSION['client_pricing_flash']);
         <div class="divide-y divide-gray-100">
         <?php foreach ($overrides as $row):
             $rowPricing = json_decode($row['pricing'] ?? '{}', true) ?: [];
+            $minQty     = isset($rowPricing['min_quantity']) ? (int) $rowPricing['min_quantity'] : 0;
             $rowTiers   = $rowPricing['quantity_tiers'] ?? [];
+            $perPaper   = (!empty($rowPricing['paper_type_pricing']) && is_array($rowPricing['paper_type_pricing']))
+                ? $rowPricing['paper_type_pricing']
+                : null;
             ksort($rowTiers, SORT_NUMERIC);
         ?>
             <div class="p-4 sm:p-5 flex flex-wrap items-start justify-between gap-4">
                 <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 mb-2">
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
                         <span class="font-semibold text-gray-900"><?= sanitize($row['company_name'] ?? t('printshopclientpricing.unknown_company')) ?></span>
                         <?php if (!empty($row['company_slug'])): ?>
                         <span class="text-xs text-gray-400">/<?= sanitize($row['company_slug']) ?></span>
                         <?php endif; ?>
+                        <?php if ($minQty > 0): ?>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-full text-[11px] font-medium text-amber-800">
+                            <i class="fa-solid fa-circle-arrow-up text-[10px]"></i>
+                            <?= htmlspecialchars(t('printshopclientpricing.min_qty_badge', ['n' => $minQty])) ?>
+                        </span>
+                        <?php endif; ?>
+                        <?php if ($perPaper): ?>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 border border-purple-200 rounded-full text-[11px] font-medium text-purple-800">
+                            <i class="fa-solid fa-layer-group text-[10px]"></i>
+                            <?= htmlspecialchars(t('printshopclientpricing.per_paper_badge')) ?>
+                        </span>
+                        <?php endif; ?>
                     </div>
-                    <?php if (empty($rowTiers)): ?>
-                    <p class="text-sm text-gray-500 italic"><?= htmlspecialchars(t('printshopclientpricing.no_tiers_set')) ?></p>
-                    <?php else: ?>
-                    <div class="flex flex-wrap gap-2 mb-2">
+
+                    <?php if ($perPaper): ?>
+                        <?php foreach ($paperTypes as $pkey => $pname):
+                            $pTiers = $perPaper[$pkey]['quantity_tiers'] ?? null;
+                            if (!$pTiers) continue;
+                            ksort($pTiers, SORT_NUMERIC);
+                        ?>
+                        <div class="mt-2">
+                            <p class="text-xs font-semibold text-gray-600 mb-1"><?= sanitize($pname) ?></p>
+                            <div class="flex flex-wrap gap-2">
+                                <?php foreach ($pTiers as $qty => $val):
+                                    $price = is_array($val) ? ($val['price'] ?? 0) : ((float)$val * (int)$qty);
+                                ?>
+                                <span class="inline-flex items-center gap-2 px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-md text-xs">
+                                    <span class="font-medium"><?= (int)$qty ?></span>
+                                    <span class="text-gray-400">/</span>
+                                    <span class="text-gray-900 font-semibold"><?= number_format((float)$price, $decimals) ?> <?= htmlspecialchars($currency) ?></span>
+                                </span>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php elseif (!empty($rowTiers)): ?>
+                    <div class="flex flex-wrap gap-2 mb-1">
                         <?php foreach ($rowTiers as $qty => $val):
                             $price = is_array($val) ? ($val['price'] ?? 0) : ((float)$val * (int)$qty);
                         ?>
@@ -159,9 +214,12 @@ unset($_SESSION['client_pricing_flash']);
                         </span>
                         <?php endforeach; ?>
                     </div>
+                    <?php else: ?>
+                    <p class="text-sm text-gray-500 italic"><?= htmlspecialchars(t('printshopclientpricing.no_tiers_set')) ?></p>
                     <?php endif; ?>
+
                     <?php if (!empty($row['notes'])): ?>
-                    <p class="text-xs text-gray-500 mt-1"><i class="fa-solid fa-note-sticky mr-1 text-gray-400"></i><?= sanitize($row['notes']) ?></p>
+                    <p class="text-xs text-gray-500 mt-2"><i class="fa-solid fa-note-sticky mr-1 text-gray-400"></i><?= sanitize($row['notes']) ?></p>
                     <?php endif; ?>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
@@ -169,7 +227,9 @@ unset($_SESSION['client_pricing_flash']);
                             @click='openEdit(<?= json_encode([
                                 "company_id"   => $row["company_id"],
                                 "company_name" => $row["company_name"],
+                                "min_quantity" => $minQty,
                                 "tiers"        => $rowTiers,
+                                "paper_type_pricing" => $perPaper,
                                 "notes"        => $row["notes"] ?? "",
                             ], JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'
                             class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md text-sm font-medium">
@@ -199,7 +259,7 @@ unset($_SESSION['client_pricing_flash']);
          x-cloak
          class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40"
          @click.self="open = false">
-        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <form method="POST" action="save-client-pricing.php">
                 <?= csrfField() ?>
                 <input type="hidden" name="action" value="save">
@@ -246,70 +306,144 @@ unset($_SESSION['client_pricing_flash']);
                         <div class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900" x-text="companyName"></div>
                     </div>
 
-                    <!-- Tier table -->
+                    <!-- Min quantity -->
                     <div>
-                        <div class="flex items-end justify-between mb-2">
-                            <label class="block text-sm font-medium text-gray-700">
-                                <?= htmlspecialchars(t('printshopclientpricing.field_tiers')) ?>
-                            </label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                            <?= htmlspecialchars(t('printshopclientpricing.field_min_qty')) ?>
+                            <span class="text-gray-400 font-normal text-xs">(<?= htmlspecialchars(t('printshopclientpricing.optional')) ?>)</span>
+                        </label>
+                        <input type="number"
+                               name="min_quantity"
+                               x-model.number="minQuantity"
+                               min="0"
+                               step="1"
+                               placeholder="0"
+                               class="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                        <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('printshopclientpricing.min_qty_help')) ?></p>
+                    </div>
+
+                    <!-- Pricing mode toggle -->
+                    <div class="border border-gray-200 rounded-xl overflow-hidden">
+                        <div class="grid grid-cols-2 divide-x divide-gray-200 bg-gray-50">
                             <button type="button"
-                                    @click="copyDefault()"
-                                    class="text-xs text-blue-600 hover:text-blue-800 font-medium">
-                                <i class="fa-solid fa-copy mr-1"></i><?= htmlspecialchars(t('printshopclientpricing.copy_default_btn')) ?>
+                                    @click="pricingMode = 'single'"
+                                    :class="pricingMode === 'single' ? 'bg-white text-blue-600 font-semibold' : 'text-gray-600'"
+                                    class="px-4 py-3 text-sm transition-colors">
+                                <i class="fa-solid fa-table mr-2"></i><?= htmlspecialchars(t('printshopclientpricing.mode_single')) ?>
+                            </button>
+                            <button type="button"
+                                    @click="pricingMode = 'per_paper'"
+                                    :class="pricingMode === 'per_paper' ? 'bg-white text-blue-600 font-semibold' : 'text-gray-600'"
+                                    class="px-4 py-3 text-sm transition-colors">
+                                <i class="fa-solid fa-layer-group mr-2"></i><?= htmlspecialchars(t('printshopclientpricing.mode_per_paper')) ?>
                             </button>
                         </div>
-                        <p class="text-xs text-gray-500 mb-3"><?= htmlspecialchars(t('printshopclientpricing.tiers_help', ['currency' => $currency])) ?></p>
+                        <input type="hidden" name="pricing_mode" :value="pricingMode">
 
-                        <div class="border border-gray-200 rounded-lg overflow-hidden">
-                            <table class="w-full text-sm">
-                                <thead class="bg-gray-50 text-gray-600 text-xs uppercase">
-                                    <tr>
-                                        <th class="px-3 py-2 text-start"><?= htmlspecialchars(t('printshopclientpricing.col_quantity')) ?></th>
-                                        <th class="px-3 py-2 text-start"><?= htmlspecialchars(t('printshopclientpricing.col_total_price', ['currency' => $currency])) ?></th>
-                                        <th class="px-3 py-2 text-start"><?= htmlspecialchars(t('printshopclientpricing.col_per_card')) ?></th>
-                                        <th class="px-3 py-2 w-10"></th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    <template x-for="(tier, idx) in tiers" :key="idx">
+                        <!-- Single tier table -->
+                        <div x-show="pricingMode === 'single'" class="p-4">
+                            <div class="flex items-end justify-between mb-2">
+                                <p class="text-sm text-gray-600"><?= htmlspecialchars(t('printshopclientpricing.tiers_help', ['currency' => $currency])) ?></p>
+                                <button type="button"
+                                        @click="copyDefault()"
+                                        class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                    <i class="fa-solid fa-copy mr-1"></i><?= htmlspecialchars(t('printshopclientpricing.copy_default_btn')) ?>
+                                </button>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-gray-50 text-gray-600 text-xs uppercase">
                                         <tr>
-                                            <td class="px-3 py-2">
-                                                <input type="number"
-                                                       :name="'tier_qty[' + idx + ']'"
-                                                       x-model.number="tier.qty"
-                                                       min="1"
-                                                       step="1"
-                                                       required
-                                                       class="w-24 px-2 py-1 border border-gray-300 rounded">
-                                            </td>
-                                            <td class="px-3 py-2">
-                                                <input type="number"
-                                                       :name="'tier_price[' + idx + ']'"
-                                                       x-model.number="tier.price"
-                                                       min="0"
-                                                       step="0.001"
-                                                       required
-                                                       class="w-32 px-2 py-1 border border-gray-300 rounded">
-                                            </td>
-                                            <td class="px-3 py-2 text-gray-500 text-xs"
-                                                x-text="(tier.qty > 0 ? (tier.price / tier.qty).toFixed(<?= $decimals ?>) : '0')">
-                                            </td>
-                                            <td class="px-3 py-2 text-end">
-                                                <button type="button"
-                                                        @click="removeTier(idx)"
-                                                        class="text-gray-400 hover:text-red-600">
-                                                    <i class="fa-solid fa-trash"></i>
-                                                </button>
-                                            </td>
+                                            <th class="px-3 py-2 text-start"><?= htmlspecialchars(t('printshopclientpricing.col_quantity')) ?></th>
+                                            <th class="px-3 py-2 text-start"><?= htmlspecialchars(t('printshopclientpricing.col_total_price', ['currency' => $currency])) ?></th>
+                                            <th class="px-3 py-2 text-start"><?= htmlspecialchars(t('printshopclientpricing.col_per_card')) ?></th>
+                                            <th class="px-3 py-2 w-10"></th>
                                         </tr>
-                                    </template>
-                                </tbody>
-                            </table>
-                            <button type="button"
-                                    @click="addTier()"
-                                    class="w-full px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 border-t border-gray-200">
-                                <i class="fa-solid fa-plus mr-1"></i><?= htmlspecialchars(t('printshopclientpricing.add_tier_btn')) ?>
-                            </button>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        <template x-for="(tier, idx) in tiers" :key="idx">
+                                            <tr>
+                                                <td class="px-3 py-2">
+                                                    <input type="number" :name="'tier_qty[' + idx + ']'" x-model.number="tier.qty"
+                                                           min="1" step="1" :required="pricingMode === 'single'"
+                                                           class="w-24 px-2 py-1 border border-gray-300 rounded">
+                                                </td>
+                                                <td class="px-3 py-2">
+                                                    <input type="number" :name="'tier_price[' + idx + ']'" x-model.number="tier.price"
+                                                           min="0" step="0.001" :required="pricingMode === 'single'"
+                                                           class="w-32 px-2 py-1 border border-gray-300 rounded">
+                                                </td>
+                                                <td class="px-3 py-2 text-gray-500 text-xs"
+                                                    x-text="(tier.qty > 0 ? (tier.price / tier.qty).toFixed(<?= $decimals ?>) : '0')"></td>
+                                                <td class="px-3 py-2 text-end">
+                                                    <button type="button" @click="removeTier(idx)" class="text-gray-400 hover:text-red-600">
+                                                        <i class="fa-solid fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                                <button type="button" @click="addTier()" class="w-full px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 border-t border-gray-200">
+                                    <i class="fa-solid fa-plus mr-1"></i><?= htmlspecialchars(t('printshopclientpricing.add_tier_btn')) ?>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Per paper-type tier tables -->
+                        <div x-show="pricingMode === 'per_paper'" class="p-4 space-y-5">
+                            <p class="text-sm text-gray-600"><?= htmlspecialchars(t('printshopclientpricing.per_paper_help', ['currency' => $currency])) ?></p>
+
+                            <?php foreach ($paperTypes as $pkey => $pname): ?>
+                            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                <div class="px-3 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                                    <p class="text-sm font-semibold text-gray-700"><?= sanitize($pname) ?></p>
+                                    <button type="button"
+                                            @click="copyDefaultToPaper('<?= $pkey ?>')"
+                                            class="text-xs text-blue-600 hover:text-blue-800">
+                                        <i class="fa-solid fa-copy mr-1"></i><?= htmlspecialchars(t('printshopclientpricing.copy_default_btn')) ?>
+                                    </button>
+                                </div>
+                                <table class="w-full text-sm">
+                                    <thead class="bg-white text-gray-600 text-xs uppercase">
+                                        <tr>
+                                            <th class="px-3 py-2 text-start"><?= htmlspecialchars(t('printshopclientpricing.col_quantity')) ?></th>
+                                            <th class="px-3 py-2 text-start"><?= htmlspecialchars(t('printshopclientpricing.col_total_price', ['currency' => $currency])) ?></th>
+                                            <th class="px-3 py-2 text-start"><?= htmlspecialchars(t('printshopclientpricing.col_per_card')) ?></th>
+                                            <th class="px-3 py-2 w-10"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        <template x-for="(tier, idx) in paperTiers['<?= $pkey ?>']" :key="idx">
+                                            <tr>
+                                                <td class="px-3 py-2">
+                                                    <input type="number" :name="'paper_qty[<?= $pkey ?>][' + idx + ']'" x-model.number="tier.qty"
+                                                           min="1" step="1"
+                                                           class="w-24 px-2 py-1 border border-gray-300 rounded">
+                                                </td>
+                                                <td class="px-3 py-2">
+                                                    <input type="number" :name="'paper_price[<?= $pkey ?>][' + idx + ']'" x-model.number="tier.price"
+                                                           min="0" step="0.001"
+                                                           class="w-32 px-2 py-1 border border-gray-300 rounded">
+                                                </td>
+                                                <td class="px-3 py-2 text-gray-500 text-xs"
+                                                    x-text="(tier.qty > 0 ? (tier.price / tier.qty).toFixed(<?= $decimals ?>) : '0')"></td>
+                                                <td class="px-3 py-2 text-end">
+                                                    <button type="button" @click="removePaperTier('<?= $pkey ?>', idx)" class="text-gray-400 hover:text-red-600">
+                                                        <i class="fa-solid fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                                <button type="button"
+                                        @click="addPaperTier('<?= $pkey ?>')"
+                                        class="w-full px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 border-t border-gray-200">
+                                    <i class="fa-solid fa-plus mr-1"></i><?= htmlspecialchars(t('printshopclientpricing.add_tier_btn')) ?>
+                                </button>
+                            </div>
+                            <?php endforeach; ?>
                         </div>
                     </div>
 
@@ -346,32 +480,34 @@ unset($_SESSION['client_pricing_flash']);
 
 <script>
 function clientPricing() {
+    const PAPER_KEYS = ['uncoated', 'matte', 'silk'];
     return {
         open: false,
         mode: 'add',
+        pricingMode: 'single',
         companyId: '',
         companyName: '',
         notes: '',
+        minQuantity: 0,
         tiers: [],
-        defaultTiers: <?php
-            $defaultTierRows = [];
-            foreach ($shopTiers as $qty => $val) {
-                $price = is_array($val) ? ($val['price'] ?? 0) : ((float)$val * (int)$qty);
-                $defaultTierRows[] = ['qty' => (int)$qty, 'price' => round((float)$price, 3)];
-            }
-            usort($defaultTierRows, fn($a, $b) => $a['qty'] <=> $b['qty']);
-            echo json_encode($defaultTierRows);
-        ?>,
+        paperTiers: { uncoated: [], matte: [], silk: [] },
+        defaultTiers: <?= json_encode($defaultTierRows) ?>,
 
         init() {},
 
         openAdd() {
             this.mode = 'add';
+            this.pricingMode = 'single';
             this.companyId = '';
             this.companyName = '';
             this.notes = '';
+            this.minQuantity = 0;
             this.tiers = JSON.parse(JSON.stringify(this.defaultTiers));
             if (this.tiers.length === 0) this.addTier();
+            for (const k of PAPER_KEYS) {
+                this.paperTiers[k] = JSON.parse(JSON.stringify(this.defaultTiers));
+                if (this.paperTiers[k].length === 0) this.paperTiers[k].push({ qty: 100, price: 0 });
+            }
             this.open = true;
         },
 
@@ -380,22 +516,51 @@ function clientPricing() {
             this.companyId = payload.company_id;
             this.companyName = payload.company_name || '';
             this.notes = payload.notes || '';
-            const t = [];
-            for (const [qty, val] of Object.entries(payload.tiers || {})) {
+            this.minQuantity = parseInt(payload.min_quantity || 0) || 0;
+
+            this.tiers = this._normalizeTiers(payload.tiers);
+            if (this.tiers.length === 0) this.tiers = [{ qty: 100, price: 0 }];
+
+            const ppt = payload.paper_type_pricing || null;
+            for (const k of PAPER_KEYS) {
+                const slice = ppt && ppt[k] && ppt[k].quantity_tiers ? ppt[k].quantity_tiers : null;
+                if (slice) {
+                    this.paperTiers[k] = this._normalizeTiers(slice);
+                } else {
+                    this.paperTiers[k] = JSON.parse(JSON.stringify(this.tiers));
+                }
+                if (this.paperTiers[k].length === 0) this.paperTiers[k] = [{ qty: 100, price: 0 }];
+            }
+
+            this.pricingMode = ppt ? 'per_paper' : 'single';
+            this.open = true;
+        },
+
+        _normalizeTiers(input) {
+            const out = [];
+            if (!input) return out;
+            for (const [qty, val] of Object.entries(input)) {
                 const q = parseInt(qty);
+                if (!q) continue;
                 const price = (val && typeof val === 'object')
                     ? parseFloat(val.price || 0)
                     : (parseFloat(val) * q);
-                t.push({ qty: q, price: parseFloat(price.toFixed(3)) });
+                out.push({ qty: q, price: parseFloat(price.toFixed(3)) });
             }
-            t.sort((a, b) => a.qty - b.qty);
-            this.tiers = t.length ? t : [{ qty: 100, price: 0 }];
-            this.open = true;
+            out.sort((a, b) => a.qty - b.qty);
+            return out;
         },
 
         copyDefault() {
             this.tiers = JSON.parse(JSON.stringify(this.defaultTiers));
             if (this.tiers.length === 0) this.addTier();
+        },
+
+        copyDefaultToPaper(paperKey) {
+            this.paperTiers[paperKey] = JSON.parse(JSON.stringify(this.defaultTiers));
+            if (this.paperTiers[paperKey].length === 0) {
+                this.paperTiers[paperKey].push({ qty: 100, price: 0 });
+            }
         },
 
         addTier() {
@@ -407,6 +572,20 @@ function clientPricing() {
         removeTier(idx) {
             this.tiers.splice(idx, 1);
             if (this.tiers.length === 0) this.addTier();
+        },
+
+        addPaperTier(paperKey) {
+            const arr = this.paperTiers[paperKey];
+            const last = arr[arr.length - 1];
+            const nextQty = last ? last.qty * 2 : 100;
+            arr.push({ qty: nextQty, price: 0 });
+        },
+
+        removePaperTier(paperKey, idx) {
+            this.paperTiers[paperKey].splice(idx, 1);
+            if (this.paperTiers[paperKey].length === 0) {
+                this.paperTiers[paperKey].push({ qty: 100, price: 0 });
+            }
         }
     }
 }

@@ -182,7 +182,22 @@ class PrintShopIntegration {
                     'paper_type' => $paperType,
                     'finish' => $finish
                 ], $orderData['company_id'] ?? null);
-                
+
+                // Per-client min quantity gate. The price calculator returns
+                // an error marker rather than null so we can surface a
+                // specific message instead of falling through to defaults.
+                if (is_array($priceData) && isset($priceData['error']) && $priceData['error'] === 'min_quantity') {
+                    return [
+                        'success' => false,
+                        'error'   => 'min_quantity',
+                        'message' => sprintf(
+                            'Minimum order is %d cards for this client. Increase the quantity to continue.',
+                            (int) ($priceData['min_quantity'] ?? 0)
+                        ),
+                        'min_quantity' => (int) ($priceData['min_quantity'] ?? 0),
+                    ];
+                }
+
                 if ($priceData) {
                     $subtotal = $priceData['subtotal'];
                     $setupFee = $priceData['setup_fee'];

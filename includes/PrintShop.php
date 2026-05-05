@@ -489,80 +489,116 @@ class PrintShop {
             return null;
         }
 
-        $pricing = self::getEffectivePricing($shop, $companyId);
-        $basePerCard = $pricing['per_card'] ?? 0.10;
-        $setupFee = $pricing['setup_fee'] ?? 0;
+        $pricing      = self::getEffectivePricing($shop, $companyId);
+        $currency     = $shop['currency'] ?? ($pricing['currency'] ?? 'OMR');
+        $basePerCard  = $pricing['per_card'] ?? 0.10;
+        $setupFee     = $pricing['setup_fee'] ?? 0;
         $shippingBase = $pricing['shipping_base'] ?? 2.00;
-        
-        // Apply quantity tier pricing if available
-        $perCard = self::getQuantityTierPrice($pricing, $quantity, $basePerCard);
-        
-        // Apply paper type multiplier
-        $paperType = $options['paper_type'] ?? 'matte';
-        if ($paperType === 'silk') {
+        $paperType    = $options['paper_type'] ?? 'matte';
+        $finish       = $options['finish'] ?? 'standard';
+
+        // Min quantity gate (per-client overrides may set a floor)
+        $minQty = isset($pricing['min_quantity']) ? (int) $pricing['min_quantity'] : 0;
+        if ($minQty > 0 && (int) $quantity < $minQty) {
+            return [
+                'error'        => 'min_quantity',
+                'min_quantity' => $minQty,
+                'quantity'     => (int) $quantity,
+                'currency'     => $currency,
+            ];
+        }
+
+        // Pick the tier table. Per-paper-type override beats global tiers.
+        // When the override carries `paper_type_pricing`, we DO NOT apply
+        // the silk multiplier, since the variant price is already encoded.
+        $tierTable             = null;
+        $usingPaperTypePricing = false;
+        if (!empty($pricing['paper_type_pricing']) && is_array($pricing['paper_type_pricing'])) {
+            $ppt = $pricing['paper_type_pricing'][$paperType] ?? null;
+            if (is_array($ppt) && !empty($ppt['quantity_tiers'])) {
+                $tierTable             = $ppt['quantity_tiers'];
+                $usingPaperTypePricing = true;
+            }
+        }
+        if ($tierTable === null) {
+            $tierTable = $pricing['quantity_tiers'] ?? null;
+        }
+
+        $perCard = self::resolvePerCardFromTiers($tierTable, $quantity, $basePerCard);
+
+        if (!$usingPaperTypePricing && $paperType === 'silk') {
             $perCard *= 1.15;
         }
-        
-        // Apply finish multiplier
-        $finish = $options['finish'] ?? 'standard';
+
         $finishMultipliers = [
             'rounded_corners' => 1.10,
-            'spot_uv' => 1.50,
-            'foil' => 1.50,
-            'embossed' => 1.80
+            'spot_uv'         => 1.50,
+            'foil'            => 1.50,
+            'embossed'        => 1.80,
         ];
         if (isset($finishMultipliers[$finish])) {
             $perCard *= $finishMultipliers[$finish];
         }
-        
+
         $subtotal = $quantity * $perCard;
-        
-        // Express shipping
+
         $expressShipping = 0;
         if (!empty($options['express']) && !empty($shop['express_available'])) {
-            $expressShipping = (float)($shop['express_fee'] ?? 0);
+            $expressShipping = (float) ($shop['express_fee'] ?? 0);
         }
-        
+
         $total = $subtotal + $setupFee + $shippingBase + $expressShipping;
-        
+
         return [
-            'quantity' => $quantity,
-            'per_card' => round($perCard, 3),
-            'subtotal' => round($subtotal, 2),
-            'setup_fee' => $setupFee,
-            'shipping' => $shippingBase,
+            'quantity'         => $quantity,
+            'per_card'         => round($perCard, 3),
+            'subtotal'         => round($subtotal, 2),
+            'setup_fee'        => $setupFee,
+            'shipping'         => $shippingBase,
             'express_shipping' => $expressShipping,
-            'total' => round($total, 2),
-            'currency' => $shop['currency'] ?? 'USD',
-            'turnaround_days' => !empty($options['express']) ? $shop['express_days'] : $shop['turnaround_days']
+            'total'            => round($total, 2),
+            'currency'         => $currency,
+            'turnaround_days'  => !empty($options['express']) ? $shop['express_days'] : $shop['turnaround_days'],
         ];
     }
-    
+
     /**
-     * Get price per card based on quantity tiers
+     * Resolve per-card price from a tier table at a given quantity.
+     * Accepts both stored shapes:
+     *   { "100": 0.06 }                          (legacy: per-card float)
+     *   { "100": {"price": 6.000, "per_card": 0.06} } (new: total-per-design)
      */
-    public static function getQuantityTierPrice($pricing, $quantity, $basePrice) {
-        $tiers = $pricing['quantity_tiers'] ?? null;
-        
-        if (!$tiers || !is_array($tiers)) {
-            return $basePrice;
+    public static function resolvePerCardFromTiers($tiers, $quantity, $basePerCard) {
+        if (!is_array($tiers) || empty($tiers)) {
+            return $basePerCard;
         }
-        
-        // Sort tiers by quantity (descending) to find the best applicable tier
-        $applicableTiers = [];
-        foreach ($tiers as $tierQty => $tierPrice) {
-            if ($quantity >= (int)$tierQty) {
-                $applicableTiers[(int)$tierQty] = (float)$tierPrice;
+        $applicable = [];
+        foreach ($tiers as $tierQty => $tierVal) {
+            $tq = (int) $tierQty;
+            if ((int) $quantity < $tq) continue;
+            if (is_array($tierVal)) {
+                if (isset($tierVal['per_card'])) {
+                    $applicable[$tq] = (float) $tierVal['per_card'];
+                } elseif (isset($tierVal['price']) && $tq > 0) {
+                    $applicable[$tq] = (float) $tierVal['price'] / $tq;
+                }
+            } else {
+                $applicable[$tq] = (float) $tierVal;
             }
         }
-        
-        if (empty($applicableTiers)) {
-            return $basePrice;
+        if (empty($applicable)) {
+            return $basePerCard;
         }
-        
-        // Return the price for the highest applicable tier
-        krsort($applicableTiers);
-        return reset($applicableTiers);
+        krsort($applicable);
+        return reset($applicable);
+    }
+
+    /**
+     * Legacy wrapper kept for callers that pass the full $pricing array.
+     * @deprecated Use resolvePerCardFromTiers() with the tier table directly.
+     */
+    public static function getQuantityTierPrice($pricing, $quantity, $basePrice) {
+        return self::resolvePerCardFromTiers($pricing['quantity_tiers'] ?? null, $quantity, $basePrice);
     }
     
     /**

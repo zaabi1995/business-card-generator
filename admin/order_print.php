@@ -169,7 +169,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($printShops)) {
             $messageType = 'success';
             $orderSuccess = true;
         } else {
-            $message = "Error: " . ($result['error'] ?? 'Unknown error');
+            // Min-quantity rejection from per-client override carries
+            // a friendlier message; surface that instead of the raw error code.
+            if (($result['error'] ?? '') === 'min_quantity') {
+                $message = $result['message'] ?? 'Minimum order quantity not met.';
+            } else {
+                $message = "Error: " . ($result['error'] ?? 'Unknown error');
+            }
             $messageType = 'error';
         }
     }
@@ -184,7 +190,19 @@ $shopCurrency = $selectedShop['currency'] ?? $companyCurrency;
 $shopPricing = $selectedShop ? json_decode($selectedShop['pricing'] ?? '{}', true) : [];
 $setupFee = $shopPricing['setup_fee'] ?? 0;
 $shippingFee = $shopPricing['shipping_base'] ?? 2;
+
+// Per-client min quantity gate + per-paper-type tier swap (Alpine reads
+// these directly off the shop.pricing JSON, but the initial render needs
+// to pick the right tiers for the default paper type 'matte').
+$shopMinQuantity      = isset($shopPricing['min_quantity']) ? (int) $shopPricing['min_quantity'] : 0;
+$shopPaperTypePricing = (!empty($shopPricing['paper_type_pricing']) && is_array($shopPricing['paper_type_pricing']))
+    ? $shopPricing['paper_type_pricing']
+    : null;
+$initialPaperType = 'matte';
 $rawTiers = $shopPricing['quantity_tiers'] ?? [];
+if ($shopPaperTypePricing && !empty($shopPaperTypePricing[$initialPaperType]['quantity_tiers'])) {
+    $rawTiers = $shopPaperTypePricing[$initialPaperType]['quantity_tiers'];
+}
 
 // Normalize tiers, support both old format (qty => per_card_price) and new format (qty => {price, per_card})
 // New format: price = total per design, per_card = price/card
@@ -559,13 +577,27 @@ $basePath = getAdminBasePath();
                     </div>
                 </div>
                 
+                <!-- Min quantity warning (per-client override) -->
+                <template x-if="belowMin">
+                    <div class="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm flex items-start gap-2">
+                        <i class="fa-solid fa-circle-exclamation mt-0.5"></i>
+                        <span>
+                            <strong x-text="'Minimum order is ' + minQuantity + ' cards.'"></strong>
+                            Increase the quantity to continue.
+                        </span>
+                    </div>
+                </template>
+
                 <!-- Submit -->
                 <div class="flex items-center justify-between">
                     <a href="<?php echo $basePath; ?>employees<?php echo $ext; ?>" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 rounded-lg font-medium transition-colors flex items-center gap-2">
                         <i class="fa-solid fa-arrow-left"></i>
                         <span>Back to Employees</span>
                     </a>
-                    <button type="submit" class="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold shadow-md transition-all hover:shadow-lg flex items-center gap-2">
+                    <button type="submit"
+                            :disabled="belowMin"
+                            :class="belowMin ? 'opacity-50 cursor-not-allowed' : ''"
+                            class="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold shadow-md transition-all hover:shadow-lg flex items-center gap-2">
                         <i class="fa-solid fa-paper-plane"></i>
                         Place Order
                     </button>
@@ -595,49 +627,77 @@ function orderForm() {
         setupFee: <?php echo $setupFee; ?>,
         shippingFee: <?php echo $shippingFee; ?>,
         quantityTiers: defaultTiers,
-        
+
+        // Per-client override metadata (extracted from shop.pricing)
+        minQuantity: <?php echo (int) $shopMinQuantity; ?>,
+        paperTypePricing: <?php echo $shopPaperTypePricing ? json_encode($shopPaperTypePricing) : 'null'; ?>,
+
         // Employee
         selectedEmployeeId: defaultEmployeeId,
         selectedEmployeeName: '',
         cardFrontUrl: defaultCardFront,
         cardBackUrl: defaultCardBack,
-        
+
         // Order
         quantity: 100,
         paperType: 'matte',
         finish: 'standard',
-        
+
         // Calculated
         perCardPrice: 0,
         subtotal: 0,
         total: 0,
-        
+
+        get belowMin() {
+            return this.minQuantity > 0 && this.quantity < this.minQuantity;
+        },
+
         init() {
             this.onEmployeeChange();
             this.updatePrice();
         },
-        
+
         selectShop(shop) {
             this.selectedShop = shop;
             this.selectedShopId = shop?.id || 0;
             if (shop && shop.pricing) {
                 const pricing = typeof shop.pricing === 'string' ? JSON.parse(shop.pricing) : shop.pricing;
-                const tiers = pricing.quantity_tiers || {};
                 this.setupFee = parseFloat(pricing.setup_fee) || 0;
                 this.shippingFee = parseFloat(pricing.shipping_base) || 2;
                 this.currency = shop.currency || 'OMR';
-                this.quantityTiers = tiers;
-                // Rebuild pricingByQty for the new shop, support both old (scalar) and new ({price,per_card}) formats
-                const rebuilt = {};
-                for (const [qty, val] of Object.entries(tiers)) {
-                    rebuilt[parseInt(qty)] = typeof val === 'object' ? parseFloat(val.price) : parseFloat(val) * parseInt(qty);
-                }
-                Object.assign(pricingByQty, rebuilt);
-                // basePrice = first tier per_card
-                const firstVal = Object.values(tiers)[0];
-                this.basePrice = typeof firstVal === 'object' ? parseFloat(firstVal.per_card || 0.06) : parseFloat(firstVal) || 0.06;
+                this.minQuantity = parseInt(pricing.min_quantity || 0) || 0;
+                this.paperTypePricing = (pricing.paper_type_pricing && typeof pricing.paper_type_pricing === 'object')
+                    ? pricing.paper_type_pricing
+                    : null;
+                this._loadTiersForPaperType();
             }
             this.updatePrice();
+        },
+
+        // Pick the right tier table given current paperType, then rebuild
+        // pricingByQty (qty -> design total) + quantityTiers (qty -> per_card).
+        _loadTiersForPaperType() {
+            const pricing = this.selectedShop && this.selectedShop.pricing
+                ? (typeof this.selectedShop.pricing === 'string' ? JSON.parse(this.selectedShop.pricing) : this.selectedShop.pricing)
+                : {};
+            let tiers = {};
+            if (this.paperTypePricing && this.paperTypePricing[this.paperType] && this.paperTypePricing[this.paperType].quantity_tiers) {
+                tiers = this.paperTypePricing[this.paperType].quantity_tiers;
+            } else {
+                tiers = pricing.quantity_tiers || {};
+            }
+            this.quantityTiers = tiers;
+            // wipe + rebuild pricingByQty
+            for (const k of Object.keys(pricingByQty)) delete pricingByQty[k];
+            for (const [qty, val] of Object.entries(tiers)) {
+                pricingByQty[parseInt(qty)] = typeof val === 'object'
+                    ? parseFloat(val.price)
+                    : parseFloat(val) * parseInt(qty);
+            }
+            const firstVal = Object.values(tiers)[0];
+            this.basePrice = typeof firstVal === 'object'
+                ? parseFloat(firstVal.per_card || 0.06)
+                : parseFloat(firstVal) || 0.06;
         },
         
         onEmployeeChange() {
@@ -676,11 +736,18 @@ function orderForm() {
         },
 
         updatePrice() {
-            // Flat price per design (not per card × quantity)
+            // When per-paper-type pricing is active, the variant price is
+            // already encoded in the tier table, so refresh the tiers from
+            // the right paper-type slice and skip the silk multiplier.
+            const usingPerPaper = !!this.paperTypePricing;
+            if (usingPerPaper) {
+                this._loadTiersForPaperType();
+            }
+
             let designPrice = this.getDesignPrice(this.quantity);
 
-            // Paper/finish multipliers on the design price
-            if (this.paperType === 'silk') designPrice *= 1.15;
+            // Paper multiplier only when no per-paper override exists
+            if (!usingPerPaper && this.paperType === 'silk') designPrice *= 1.15;
             if (this.finish === 'rounded_corners') designPrice *= 1.10;
             designPrice = Math.round(designPrice * 1000) / 1000;
 

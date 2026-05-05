@@ -17,9 +17,20 @@ return [
     // Row
     'unknown_company'      => 'شركة غير معروفة',
     'no_tiers_set'         => 'لا توجد شرائح',
+    'min_qty_badge'        => 'حد أدنى :n',
+    'per_paper_badge'      => 'تسعير حسب نوع الورق',
     'edit_btn'             => 'تعديل',
     'reset_btn'            => 'إعادة',
     'reset_confirm'        => 'هل تريد إزالة هذا التسعير الخاص والرجوع إلى التسعير الافتراضي؟',
+
+    // Min quantity
+    'field_min_qty'        => 'أدنى كمية للطلب',
+    'min_qty_help'         => 'منع الطلبات الأقل من هذه الكمية. اترك 0 للسماح بأي كمية.',
+
+    // Pricing mode toggle
+    'mode_single'          => 'جدول تسعير موحد',
+    'mode_per_paper'       => 'تسعير حسب نوع الورق',
+    'per_paper_help'       => 'حدد شرائح مستقلة لكل نوع ورق. السعر يتضمن الفرق بالفعل، لا يضاف معامل اللمعان فوقه. العملة: :currency.',
 
     // Add button + modal
     'add_btn'              => 'إضافة تسعير عميل',
