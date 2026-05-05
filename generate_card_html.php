@@ -135,6 +135,55 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
         .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); }
         .loading-overlay { position: fixed; inset: 0; background: rgba(249, 250, 251, 0.95); display: flex; align-items: center; justify-content: center; z-index: 100; }
     </style>
+
+    <?php
+    // CRITICAL: emit @font-face for every family the active templates
+    // reference, sourced from the company's own /uploads/templates/imports/
+    // /fonts dir. Without this, fontFamily="Lato" fontWeight=500 (Lato
+    // Medium) is requested by Fabric, and since Google Fonts only ships
+    // Lato in 400/700, canvas2D falls back to Times serif. Same registry
+    // emission portal.php has done since rule 17 was codified. Without
+    // it, every saved card with Lato-Medium dynamic text exports as serif.
+    require_once INCLUDES_DIR . '/CompanyFonts.php';
+    $__importTokens = [];
+    foreach ([$frontTemplate, $backTemplate] as $tpl) {
+        if ($tpl && !empty($tpl['settings']['import_token'])) {
+            $__importTokens[] = $tpl['settings']['import_token'];
+        }
+    }
+    $__importedFonts = [];
+    foreach ([$frontTemplate, $backTemplate] as $tpl) {
+        if ($tpl && !empty($tpl['settings']['fonts_used'])) {
+            foreach ($tpl['settings']['fonts_used'] as $fam) {
+                $fam = trim((string)$fam);
+                if ($fam !== '') $__importedFonts[$fam] = true;
+            }
+        }
+        if ($tpl && !empty($tpl['settings']['import_token'])) {
+            $__manifestPath = realpath(__DIR__) . '/uploads/templates/imports/'
+                . preg_replace('/[^a-z0-9_-]/i', '', $tpl['settings']['import_token'])
+                . '/fonts/manifest.json';
+            if (is_file($__manifestPath)) {
+                $__m = json_decode(file_get_contents($__manifestPath), true);
+                if (is_array($__m)) {
+                    foreach ($__m as $__entry) {
+                        $__fam = trim((string)($__entry['family'] ?? ''));
+                        if ($__fam !== '') $__importedFonts[$__fam] = true;
+                    }
+                }
+            }
+        }
+    }
+    $__registryCss = CompanyFonts::fontFaceCss(
+        realpath(__DIR__),
+        $companyId,
+        array_keys($__importedFonts),
+        $__importTokens
+    );
+    if ($__registryCss) {
+        echo "<style id=\"cardify-font-registry\">\n" . $__registryCss . "</style>\n";
+    }
+    ?>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen">
     <!-- Loading Overlay -->
