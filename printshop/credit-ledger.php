@@ -141,15 +141,15 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-white rounded-xl border p-4">
                 <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshopcredit.ledger_stat_limit')) ?></p>
-                <p class="text-2xl font-bold"><?= htmlspecialchars(formatPrice((float)$account['credit_limit'])) ?></p>
+                <p class="text-2xl font-bold"><?= formatPriceHtml((float)$account['credit_limit'], 'lg') ?></p>
             </div>
             <div class="bg-white rounded-xl border p-4">
                 <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshopcredit.ledger_stat_used')) ?></p>
-                <p class="text-2xl font-bold text-red-600"><?= htmlspecialchars(formatPrice((float)$account['balance_used'])) ?></p>
+                <p class="text-2xl font-bold text-red-600"><?= formatPriceHtml((float)$account['balance_used'], 'lg') ?></p>
             </div>
             <div class="bg-white rounded-xl border p-4">
                 <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshopcredit.ledger_stat_avail')) ?></p>
-                <p class="text-2xl font-bold text-green-600"><?= htmlspecialchars(formatPrice((float)$available)) ?></p>
+                <p class="text-2xl font-bold text-green-600"><?= formatPriceHtml((float)$available, 'lg') ?></p>
             </div>
             <div class="bg-white rounded-xl border p-4">
                 <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshopcredit.ledger_stat_terms')) ?></p>
@@ -186,9 +186,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                 </td>
                                 <td class="px-6 py-3 text-sm text-gray-500"><?= $tx['order_number'] ? htmlspecialchars($tx['order_number']) : ',' ?></td>
                                 <td class="px-6 py-3 text-sm text-right font-medium <?= $txColors[$tx['type']] ?? '' ?> whitespace-nowrap">
-                                    <?= $tx['type'] === 'charge' ? '+' : '-' ?><?= number_format($tx['amount'], 3) ?>
+                                    <?= $tx['type'] === 'charge' ? '+' : '-' ?><?= currencySymbolHtml('sm') ?> <?= number_format($tx['amount'], 3) ?>
                                 </td>
-                                <td class="px-6 py-3 text-sm text-right whitespace-nowrap"><?= number_format($tx['balance_after'], 3) ?></td>
+                                <td class="px-6 py-3 text-sm text-right whitespace-nowrap"><?= currencySymbolHtml('sm') ?> <?= number_format($tx['balance_after'], 3) ?></td>
                                 <td class="px-6 py-3 text-sm text-gray-500">
                                     <?= $tx['notes'] ? htmlspecialchars($tx['notes']) : '' ?>
                                     <?php if (!empty($tx['po_file_path'])): ?>
@@ -219,7 +219,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <input type="number" name="amount" step="0.001" min="0.001" max="<?= $account['balance_used'] ?>" required
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                placeholder="<?= htmlspecialchars(t('printshopcredit.amount_ph')) ?>">
-                        <p class="text-xs text-gray-400 mt-1"><?= htmlspecialchars(str_replace(':amt', formatPrice((float)$account['balance_used']), t('printshopcredit.outstanding_hint'))) ?></p>
+                        <p class="text-xs text-gray-400 mt-1"><?= str_replace(':amt', formatPriceHtml((float)$account['balance_used'], 'sm'), htmlspecialchars(t('printshopcredit.outstanding_hint'))) ?></p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('printshopcredit.field_notes')) ?></label>

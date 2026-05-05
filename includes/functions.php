@@ -1555,6 +1555,45 @@ if (!function_exists('formatPrice')) {
 }
 
 /**
+ * HTML version of formatPrice. Renders the inline SVG OMR symbol when
+ * the resolved display currency is OMR, otherwise falls back to the
+ * text symbol. Output is HTML, do NOT pass it through htmlspecialchars
+ * at the call site.
+ *
+ *   echo formatPriceHtml(5.000);        // <img ... > 5.000  (OMR)
+ *   echo formatPriceHtml(47.72, 'lg');  // larger symbol
+ */
+if (!function_exists('formatPriceHtml')) {
+    function formatPriceHtml(float $omrAmount, string $size = 'md', string $variant = 'dark'): string {
+        static $loaded = false;
+        if (!$loaded) {
+            require_once __DIR__ . '/Currency.php';
+            $loaded = true;
+        }
+        $cur = Currency::getUserCurrency();
+        $amt = Currency::convert($omrAmount, $cur);
+        return Currency::formatHtml($amt, $cur, $size, $variant);
+    }
+}
+
+/**
+ * Render just the currency symbol HTML for the user's display currency.
+ * Useful as a prefix in front of bare number_format() outputs.
+ *
+ *   echo currencySymbolHtml() . ' ' . number_format($x, 3);
+ */
+if (!function_exists('currencySymbolHtml')) {
+    function currencySymbolHtml(string $size = 'sm', string $variant = 'dark'): string {
+        static $loaded = false;
+        if (!$loaded) {
+            require_once __DIR__ . '/Currency.php';
+            $loaded = true;
+        }
+        return Currency::getSymbolHtml(Currency::getUserCurrency(), $size, $variant);
+    }
+}
+
+/**
  * Seed a starter template pair (front + back) for a company.
  * Idempotent: no-op if the company already has any templates.
  * Shared between api/onboarding.php and company/register.php so

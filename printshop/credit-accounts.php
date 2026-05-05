@@ -164,7 +164,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
         <div class="bg-white rounded-xl border p-4">
             <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshopcredit.stat_outstanding')) ?></p>
-            <p class="text-2xl font-bold text-blue-600"><?= htmlspecialchars(formatPrice((float)$totalOutstanding)) ?></p>
+            <p class="text-2xl font-bold text-blue-600"><?= formatPriceHtml((float)$totalOutstanding, 'lg') ?></p>
         </div>
         <div class="bg-white rounded-xl border p-4">
             <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshopcredit.stat_suspended')) ?></p>
@@ -186,7 +186,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="flex-1">
                     <p class="font-semibold text-gray-900"><?= htmlspecialchars($acc['company_name']) ?></p>
                     <p class="text-sm text-gray-500"><?= htmlspecialchars($acc['company_email']) ?></p>
-                    <p class="text-sm mt-1"><?= htmlspecialchars(t('printshopcredit.requested_prefix')) ?> <strong><?= htmlspecialchars(formatPrice((float)$acc['requested_limit'])) ?></strong></p>
+                    <p class="text-sm mt-1"><?= htmlspecialchars(t('printshopcredit.requested_prefix')) ?> <strong><?= formatPriceHtml((float)$acc['requested_limit']) ?></strong></p>
                     <?php if ($acc['request_notes']): ?>
                         <p class="text-sm text-gray-500 mt-1 italic">"<?= htmlspecialchars($acc['request_notes']) ?>"</p>
                     <?php endif; ?>
@@ -280,16 +280,16 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <span class="text-xs text-gray-400"><?= strtoupper($acc['payment_terms'] ?? 'NET30') ?></span>
                         <?php if ($exposureSet): ?>
                         <span class="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
-                            <?= htmlspecialchars(str_replace(':amt', formatPrice((float)$acc['exposure_limit']), t('printshopcredit.exposure_badge'))) ?>
+                            <?= str_replace(':amt', formatPriceHtml((float)$acc['exposure_limit']), htmlspecialchars(t('printshopcredit.exposure_badge'))) ?>
                         </span>
                         <?php endif; ?>
                     </div>
                     <p class="text-sm text-gray-500 mb-3"><?= htmlspecialchars($acc['company_email']) ?></p>
                     <!-- Usage bar -->
                     <div class="flex items-center gap-3 text-sm mb-1">
-                        <span class="text-gray-500"><?= htmlspecialchars(t('printshopcredit.limit_prefix')) ?> <strong><?= number_format($acc['credit_limit'], 3) ?></strong></span>
-                        <span class="text-red-600"><?= htmlspecialchars(t('printshopcredit.used_prefix')) ?> <strong><?= number_format($acc['balance_used'], 3) ?></strong></span>
-                        <span class="text-green-600"><?= htmlspecialchars(t('printshopcredit.avail_prefix')) ?> <strong><?= number_format($available, 3) ?></strong></span>
+                        <span class="text-gray-500"><?= htmlspecialchars(t('printshopcredit.limit_prefix')) ?> <strong><?= formatPriceHtml((float)$acc['credit_limit'], 'sm') ?></strong></span>
+                        <span class="text-red-600"><?= htmlspecialchars(t('printshopcredit.used_prefix')) ?> <strong><?= formatPriceHtml((float)$acc['balance_used'], 'sm') ?></strong></span>
+                        <span class="text-green-600"><?= htmlspecialchars(t('printshopcredit.avail_prefix')) ?> <strong><?= formatPriceHtml((float)$available, 'sm') ?></strong></span>
                     </div>
                     <div class="w-full max-w-xs h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div class="h-full rounded-full <?= $usedPct >= 90 ? 'bg-red-500' : ($usedPct >= 60 ? 'bg-yellow-400' : 'bg-green-500') ?>"
@@ -400,8 +400,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div>
                 <p class="font-medium"><?= htmlspecialchars($acc['company_name']) ?></p>
                 <p class="text-sm text-gray-500">
-                    <?= htmlspecialchars(t('printshopcredit.limit_prefix')) ?> <?= number_format($acc['credit_limit'], 3) ?> &middot;
-                    <?= htmlspecialchars(t('printshopcredit.outstanding_prefix')) ?> <span class="text-red-600 font-medium"><?= number_format($acc['balance_used'], 3) ?></span>
+                    <?= htmlspecialchars(t('printshopcredit.limit_prefix')) ?> <?= formatPriceHtml((float)$acc['credit_limit'], 'sm') ?> &middot;
+                    <?= htmlspecialchars(t('printshopcredit.outstanding_prefix')) ?> <span class="text-red-600 font-medium"><?= formatPriceHtml((float)$acc['balance_used'], 'sm') ?></span>
                 </p>
             </div>
             <div class="flex gap-2">

@@ -67,6 +67,18 @@ return [
     'no_employees'          => 'No employees in this company yet.',
     'order_btn'             => 'Order',
     'sheet_btn'             => 'Sheet',
+    'create_design_btn'     => 'Create new design',
+    'existing_designs_h'    => 'Existing designs',
+
+    // Create design modal
+    'create_design_h'       => 'Create new card design',
+    'create_design_sub'     => 'Upload front and/or back PDFs. The design will be added to :client and ready in their editor.',
+    'design_name_label'     => 'Design name',
+    'design_name_ph'        => 'e.g. 2026 Refresh',
+    'front_pdf_label'       => 'Front PDF',
+    'back_pdf_label'        => 'Back PDF (optional)',
+    'upload_hint'           => 'Max 25 MB per file. Vector PDFs work best, fonts are auto-extracted, fields are auto-classified.',
+    'upload_btn'            => 'Upload and parse',
 
     // Order on behalf
     'order_h'               => 'Order details',

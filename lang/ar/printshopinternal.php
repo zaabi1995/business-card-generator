@@ -67,6 +67,18 @@ return [
     'no_employees'          => 'لا يوجد موظفون في هذه الشركة بعد.',
     'order_btn'             => 'اطلب',
     'sheet_btn'             => 'ورقة',
+    'create_design_btn'     => 'إنشاء تصميم جديد',
+    'existing_designs_h'    => 'التصاميم الحالية',
+
+    // Create design modal
+    'create_design_h'       => 'إنشاء تصميم بطاقة جديد',
+    'create_design_sub'     => 'ارفع ملف PDF للوجه أو الخلف. سيتم إضافة التصميم إلى :client وسيكون جاهزاً في محرر العميل.',
+    'design_name_label'     => 'اسم التصميم',
+    'design_name_ph'        => 'مثال: تحديث 2026',
+    'front_pdf_label'       => 'PDF الوجه',
+    'back_pdf_label'        => 'PDF الخلف (اختياري)',
+    'upload_hint'           => '25 ميجابايت كحد أقصى لكل ملف. ملفات PDF الناقلة (vector) تعطي أفضل نتيجة، وسيتم استخراج الخطوط وتصنيف الحقول تلقائياً.',
+    'upload_btn'            => 'رفع وتحليل',
 
     // Order on behalf
     'order_h'               => 'تفاصيل الطلب',
