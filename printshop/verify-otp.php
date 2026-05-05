@@ -7,6 +7,8 @@ require_once INCLUDES_DIR . '/Phone.php';
 require_once INCLUDES_DIR . '/PrintShopOperator.php';
 require_once INCLUDES_DIR . '/PrintShop.php';
 require_once INCLUDES_DIR . '/PrintShopAuth.php';
+require_once INCLUDES_DIR . '/WhatsApp.php';
+require_once INCLUDES_DIR . '/Mailer.php';
 require_once INCLUDES_DIR . '/OtpService.php';
 require_once INCLUDES_DIR . '/AuditLog.php';
 
