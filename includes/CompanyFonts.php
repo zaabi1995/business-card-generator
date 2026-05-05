@@ -251,12 +251,18 @@ class CompanyFonts
                 $format = $face['ext'] === 'woff2' ? 'woff2'
                         : ($face['ext'] === 'woff' ? 'woff'
                         : ($face['ext'] === 'otf'  ? 'opentype' : 'truetype'));
+                // Cache-bust by file mtime so swapping a TTF on disk invalidates
+                // both the browser cache and Cloudflare edge cache without a
+                // manual purge (CF API token has no Cache Purge scope).
+                $absPath = $appRoot . '/' . ltrim($face['file'], '/');
+                $mtime = is_file($absPath) ? @filemtime($absPath) : 0;
+                $url = $face['file'] . '?v=' . ($mtime ?: 1);
                 $css .= sprintf(
                     "@font-face { font-family: '%s'; font-weight: %d; font-style: %s; src: url('%s') format('%s'); font-display: swap; }\n",
                     addslashes($family),
                     (int)$face['weight'],
                     $face['style'],
-                    htmlspecialchars($face['file'], ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($url, ENT_QUOTES, 'UTF-8'),
                     $format
                 );
             }
