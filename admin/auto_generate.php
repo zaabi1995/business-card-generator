@@ -827,14 +827,13 @@ function autoGenerator() {
         getBackgroundUrl(template) {
             if (!template || !template.backgroundImage) return '';
             const v = template.current_version || 1;
-            // Prefer SVG background when the template was imported with a vector source.
-            let raw = template.backgroundImage;
-            if (template.has_vector_source && template.backgroundSvg) {
-                raw = template.backgroundSvg;
-            } else if (template.has_vector_source && raw) {
-                // Derive sibling .svg (importer always emits one next to the .png).
-                raw = raw.replace(/\.png$/i, '.svg');
-            }
+            // ALWAYS use the PNG, never the SVG. The PyMuPDF-generated SVG
+            // references the PDF's internal subset font name (e.g.
+            // "GUWOUL+Lato-Medium") which the browser can't resolve, so it
+            // falls back to Times serif. The PNG is rendered by Poppler at
+            // print DPI and bakes the correct fonts into pixels. Same fix
+            // admin/index.php carries since commit e043240.
+            const raw = template.backgroundImage;
             const path = raw.replace(/^\//, '');
             const sep = path.indexOf('?') === -1 ? '?' : '&';
             return this.baseUrl + '/' + path + sep + 'v=' + v;
