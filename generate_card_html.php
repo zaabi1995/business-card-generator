@@ -589,12 +589,16 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                 });
             }
 
-            // Add QR code if enabled
+            // Add QR code if enabled. Pass the design language (orange eyes,
+            // panel padding, brand border) sampled at PDF-import time so the
+            // saved card matches the source instead of dropping in as plain
+            // black-on-white. Same fix portal.php + admin/index.php carry.
             if (fields.qr_code && fields.qr_code.enabled && config.vcfUrl) {
                 await cardEditor.addQRCode(config.vcfUrl, {
                     x: fields.qr_code.x,
                     y: fields.qr_code.y,
-                    size: fields.qr_code.size
+                    size: fields.qr_code.size,
+                    style: fields.qr_code.qr_style || null
                 });
             }
 
