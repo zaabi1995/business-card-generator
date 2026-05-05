@@ -359,7 +359,50 @@ const layoutIds = <?php echo json_encode(array_keys($preDesignedLayouts)); ?>;
 <!-- Fonts for pre-designed layouts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&family=Sora:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&family=Lato:wght@400;700&family=Sora:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<?php
+// CRITICAL: emit @font-face for company-extracted TTFs (Lato Medium 500
+// etc.) so canvas2D doesn't fall back to Times serif when fontWeight=500
+// is requested. Same fix portal.php + generate_card_html.php carry.
+require_once INCLUDES_DIR . '/CompanyFonts.php';
+$__importTokens = [];
+$__importedFonts = [];
+foreach ([$frontTemplate, $backTemplate] as $tpl) {
+    if ($tpl && !empty($tpl['settings']['import_token'])) {
+        $__importTokens[] = $tpl['settings']['import_token'];
+    }
+    if ($tpl && !empty($tpl['settings']['fonts_used'])) {
+        foreach ($tpl['settings']['fonts_used'] as $fam) {
+            $fam = trim((string)$fam);
+            if ($fam !== '') $__importedFonts[$fam] = true;
+        }
+    }
+    if ($tpl && !empty($tpl['settings']['import_token'])) {
+        $__manifestPath = realpath(__DIR__ . '/..') . '/uploads/templates/imports/'
+            . preg_replace('/[^a-z0-9_-]/i', '', $tpl['settings']['import_token'])
+            . '/fonts/manifest.json';
+        if (is_file($__manifestPath)) {
+            $__m = json_decode(file_get_contents($__manifestPath), true);
+            if (is_array($__m)) {
+                foreach ($__m as $__entry) {
+                    $__fam = trim((string)($__entry['family'] ?? ''));
+                    if ($__fam !== '') $__importedFonts[$__fam] = true;
+                }
+            }
+        }
+    }
+}
+$__registryCss = CompanyFonts::fontFaceCss(
+    realpath(__DIR__ . '/..'),
+    $companyId,
+    array_keys($__importedFonts),
+    $__importTokens
+);
+if ($__registryCss) {
+    echo "<style id=\"cardify-font-registry\">\n" . $__registryCss . "</style>\n";
+}
+?>
 
 <!-- html2canvas -->
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -897,13 +940,16 @@ function autoGenerator() {
                     // Add text fields
                     await this.addFieldsToCard(this.editor, this.frontTemplate.fields || {});
                     
-                    // Add QR code if enabled
+                    // Add QR code if enabled. Pass qr_style so the saved card
+                    // matches the design (orange eyes, brand border) instead of
+                    // dropping in as plain black-on-white.
                     const frontFields = this.frontTemplate.fields || {};
                     if (frontFields.qr_code && frontFields.qr_code.enabled && this.vcfUrl) {
                         await this.editor.addQRCode(this.vcfUrl, {
                             x: frontFields.qr_code.x,
                             y: frontFields.qr_code.y,
-                            size: frontFields.qr_code.size
+                            size: frontFields.qr_code.size,
+                            style: frontFields.qr_code.qr_style || null
                         });
                     }
                     
@@ -937,13 +983,16 @@ function autoGenerator() {
                     // Add text fields
                     await this.addFieldsToCard(this.editor, this.backTemplate.fields || {});
                     
-                    // Add QR code if enabled
+                    // Add QR code if enabled. Pass qr_style so the saved card
+                    // matches the design (orange eyes, brand border) instead of
+                    // dropping in as plain black-on-white.
                     const backFields = this.backTemplate.fields || {};
                     if (backFields.qr_code && backFields.qr_code.enabled && this.vcfUrl) {
                         await this.editor.addQRCode(this.vcfUrl, {
                             x: backFields.qr_code.x,
                             y: backFields.qr_code.y,
-                            size: backFields.qr_code.size
+                            size: backFields.qr_code.size,
+                            style: backFields.qr_code.qr_style || null
                         });
                     }
                     

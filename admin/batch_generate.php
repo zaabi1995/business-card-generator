@@ -117,6 +117,49 @@ $baseUrl = getBaseUrl();
 adminHeader(t('adminchrome.batch_generate'), 'generated');
 ?>
 
+<?php
+// CRITICAL: emit @font-face for company-extracted TTFs (Lato Medium 500
+// etc.) so canvas2D doesn't fall back to Times serif when fontWeight=500
+// is requested. Same fix portal.php + generate_card_html.php + auto_generate.
+require_once INCLUDES_DIR . '/CompanyFonts.php';
+$__importTokens = [];
+$__importedFonts = [];
+foreach ([$frontTemplate, $backTemplate] as $tpl) {
+    if ($tpl && !empty($tpl['settings']['import_token'])) {
+        $__importTokens[] = $tpl['settings']['import_token'];
+    }
+    if ($tpl && !empty($tpl['settings']['fonts_used'])) {
+        foreach ($tpl['settings']['fonts_used'] as $fam) {
+            $fam = trim((string)$fam);
+            if ($fam !== '') $__importedFonts[$fam] = true;
+        }
+    }
+    if ($tpl && !empty($tpl['settings']['import_token'])) {
+        $__manifestPath = realpath(__DIR__ . '/..') . '/uploads/templates/imports/'
+            . preg_replace('/[^a-z0-9_-]/i', '', $tpl['settings']['import_token'])
+            . '/fonts/manifest.json';
+        if (is_file($__manifestPath)) {
+            $__m = json_decode(file_get_contents($__manifestPath), true);
+            if (is_array($__m)) {
+                foreach ($__m as $__entry) {
+                    $__fam = trim((string)($__entry['family'] ?? ''));
+                    if ($__fam !== '') $__importedFonts[$__fam] = true;
+                }
+            }
+        }
+    }
+}
+$__registryCss = CompanyFonts::fontFaceCss(
+    realpath(__DIR__ . '/..'),
+    $companyId,
+    array_keys($__importedFonts),
+    $__importTokens
+);
+if ($__registryCss) {
+    echo "<style id=\"cardify-font-registry\">\n" . $__registryCss . "</style>\n";
+}
+?>
+
 <?php if ($isFreePlan): ?>
 <!-- Free Plan Quality Notice -->
 <div class="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
@@ -627,12 +670,14 @@ function batchGenerator() {
                 });
             }
             
-            // Add QR code if enabled
+            // Add QR code if enabled. Pass qr_style so the saved card matches
+            // the brand design (orange eyes etc) instead of plain black-on-white.
             if (fields.qr_code && fields.qr_code.enabled && cardUrl) {
                 await this.cardEditor.addQRCode(cardUrl, {
                     x: fields.qr_code.x,
                     y: fields.qr_code.y,
-                    size: fields.qr_code.size
+                    size: fields.qr_code.size,
+                    style: fields.qr_code.qr_style || null
                 });
             }
             
