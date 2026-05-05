@@ -13,6 +13,7 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/AuditLog.php';
+require_once INCLUDES_DIR . '/PrintShopAuth.php';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
@@ -26,6 +27,20 @@ if ($method === 'POST') {
             'email' => $_SESSION['user_email'] ?? 'unknown',
             'role'  => $_SESSION['user_role'] ?? 'unknown',
         ], $_SESSION['company_id'] ?? null);
+    }
+    // Clear print-shop operator session keys and the 30-day remember-me
+    // cookie before the global Auth::logout wipes the session.
+    PrintShopAuth::logout();
+    if (isset($_COOKIE['pso_remember'])) {
+        $secure = !empty($_SERVER['HTTPS']);
+        setcookie('pso_remember', '', [
+            'expires'  => time() - 3600,
+            'path'     => '/printshop/',
+            'secure'   => $secure,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+        unset($_COOKIE['pso_remember']);
     }
     Auth::logout();
     header('Location: ' . getBasePath() . 'login.php');

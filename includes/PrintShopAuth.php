@@ -54,6 +54,16 @@ class PrintShopAuth {
             }
         }
 
+        // Try the 30-day signed remember-me cookie. When the HMAC + ttl
+        // + operator status all check out, mint a session and treat the
+        // operator as logged in for this request (and subsequent ones).
+        if (!empty($_COOKIE['pso_remember'])) {
+            $restored = self::tryRestoreFromRememberCookie($_COOKIE['pso_remember']);
+            if ($restored) {
+                return ['operator' => $restored['operator'], 'shop' => $restored['shop'], 'via' => 'remember'];
+            }
+        }
+
         // Legacy path: shop owner logged in via email+password
         if (!empty($_SESSION['user_id']) && strpos((string)$_SESSION['user_id'], 'pso:') !== 0) {
             $shop = PrintShop::getByUserId($_SESSION['user_id']);
@@ -89,6 +99,32 @@ class PrintShopAuth {
             exit;
         }
         return $ctx;
+    }
+
+    /**
+     * Validate a `pso_remember` cookie. On success, mint an operator
+     * session and return the resolved [operator, shop] tuple. On any
+     * failure (bad signature, expired, disabled operator), null.
+     */
+    private static function tryRestoreFromRememberCookie(string $cookie): ?array {
+        $parts = explode('.', $cookie, 2);
+        if (count($parts) !== 2) return null;
+        [$payloadB64, $sig] = $parts;
+        $secret = defined('APP_SECRET') ? APP_SECRET : ($_SERVER['APP_SECRET'] ?? 'cardify-default-secret');
+        $expected = hash_hmac('sha256', $payloadB64, $secret);
+        if (!hash_equals($expected, $sig)) return null;
+        $payload = json_decode(base64_decode($payloadB64) ?: '', true);
+        if (!is_array($payload)) return null;
+        if (empty($payload['op']) || empty($payload['sh']) || empty($payload['exp'])) return null;
+        if ((int) $payload['exp'] < time()) return null;
+        $op = PrintShopOperator::getById((string) $payload['op']);
+        if (!$op || ($op['status'] ?? '') !== 'active') return null;
+        if ((int) $op['print_shop_id'] !== (int) $payload['sh']) return null;
+        $shop = PrintShop::getById((int) $payload['sh']);
+        if (!$shop) return null;
+        // Mint a fresh session so subsequent requests don't re-validate the cookie.
+        self::loginAsOperator($op, $shop, 'remember');
+        return ['operator' => $op, 'shop' => $shop];
     }
 
     public static function logout(): void {

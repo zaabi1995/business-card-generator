@@ -212,6 +212,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Files</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Total</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                            <?php if (!empty($printShop['is_internal_provider'])): ?>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Placed by</th>
+                            <?php endif; ?>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th>
                         </tr>
                     </thead>
@@ -278,12 +281,32 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                 <p class="text-xs text-blue-600 mt-1"><?= sanitize($order['tracking_number']) ?></p>
                                 <?php endif; ?>
                             </td>
+                            <?php if (!empty($printShop['is_internal_provider'])): ?>
+                            <td class="px-4 py-4 text-sm">
+                                <?php if (!empty($order['operator_name'])): ?>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full text-xs font-medium">
+                                    <i class="fa-solid fa-user-tie text-[10px]"></i>
+                                    <?= sanitize($order['operator_name']) ?>
+                                </span>
+                                <?php else: ?>
+                                <span class="text-xs text-gray-400">customer</span>
+                                <?php endif; ?>
+                            </td>
+                            <?php endif; ?>
                             <td class="px-4 py-4">
                                 <div class="flex items-center gap-2 justify-end">
                                     <a href="order.php?id=<?= $order['id'] ?>"
                                        class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">
                                         <i class="fa-solid fa-eye mr-1"></i>View
                                     </a>
+                                    <?php if (!empty($order['employee_id']) && !empty($order['company_id']) && !empty($printShop['is_internal_provider'])): ?>
+                                    <a href="print-sheet.php?employee=<?= urlencode($order['employee_id']) ?>&company=<?= urlencode($order['company_id']) ?>&order=<?= (int)$order['id'] ?>"
+                                       target="_blank" rel="noopener"
+                                       title="Download A4 sheet, 10 cards"
+                                       class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors">
+                                        <i class="fa-solid fa-print mr-1"></i>Sheet
+                                    </a>
+                                    <?php endif; ?>
                                     <form method="post" class="flex items-center gap-1">
                                         <?= csrfField() ?>
                                         <input type="hidden" name="action" value="update_status">

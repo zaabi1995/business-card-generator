@@ -9,12 +9,15 @@
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/PrintShopAuth.php';
 require_once INCLUDES_DIR . '/CardPDFRenderer.php';
+require_once INCLUDES_DIR . '/AuditLog.php';
 
 $ctx = PrintShopAuth::requireInternalProvider();
 $shop = $ctx['shop'];
+$shopId = (int) $shop['id'];
 
 $employeeId = trim($_GET['employee'] ?? '');
 $companyId  = trim($_GET['company']  ?? '');
+$orderId    = isset($_GET['order']) ? (int) $_GET['order'] : 0;
 $rows = max(1, min(10, (int)($_GET['rows'] ?? 5)));
 $cols = max(1, min(5,  (int)($_GET['cols'] ?? 2)));
 $paper = in_array(($_GET['paper'] ?? 'A4'), ['A4', 'A3'], true) ? $_GET['paper'] : 'A4';
@@ -28,12 +31,32 @@ if ($employeeId === '' || $companyId === '') {
 $db  = Database::getInstance();
 $pdo = $db->getConnection();
 
+// Sanity: employee must belong to the requested company
 $check = $pdo->prepare("SELECT 1 FROM employees WHERE id = ? AND company_id = ? LIMIT 1");
 $check->execute([$employeeId, $companyId]);
 if (!$check->fetchColumn()) {
     http_response_code(404);
     echo 'employee not found';
     exit;
+}
+
+// Ownership gate: when the caller passes ?order=N, that order must
+// belong to this print shop. This prevents one shop from generating
+// production sheets for another shop's order. Internal-provider shops
+// can still generate sample sheets for any company without ?order.
+if ($orderId > 0) {
+    $own = $pdo->prepare(
+        "SELECT 1 FROM print_orders
+         WHERE id = ? AND print_shop_id = ?
+           AND employee_id = ? AND company_id = ?
+         LIMIT 1"
+    );
+    $own->execute([$orderId, $shopId, $employeeId, $companyId]);
+    if (!$own->fetchColumn()) {
+        http_response_code(403);
+        echo 'order does not belong to this shop';
+        exit;
+    }
 }
 
 // Render the per-employee vector PDF (front + back), full font embed
@@ -77,6 +100,15 @@ if ($rc !== 0 || !is_file($outputPath) || filesize($outputPath) < 1024) {
     echo 'imposition failed';
     exit;
 }
+
+AuditLog::log('print_sheet', 'print_order', $orderId > 0 ? (string) $orderId : null, null, [
+    'shop_id'     => $shopId,
+    'company_id'  => $companyId,
+    'employee_id' => $employeeId,
+    'paper'       => $paper,
+    'rows'        => $rows,
+    'cols'        => $cols,
+]);
 
 // Stream the PDF
 $downloadName = sprintf('%s-%s-%dx%d.pdf', $shop['slug'] ?? 'print-shop', $slug, $rows, $cols);

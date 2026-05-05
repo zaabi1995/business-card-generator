@@ -12,6 +12,7 @@ require_once INCLUDES_DIR . '/PrintShopAuth.php';
 require_once INCLUDES_DIR . '/PrintShop.php';
 require_once INCLUDES_DIR . '/PrintShopIntegration.php';
 require_once INCLUDES_DIR . '/Currency.php';
+require_once INCLUDES_DIR . '/AuditLog.php';
 
 $ctx = PrintShopAuth::requireInternalProvider();
 $shop = $ctx['shop'];
@@ -83,6 +84,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($result['success'])) {
             $orderSuccess = true;
             $orderRef = $result;
+            AuditLog::log('place_order_on_behalf', 'print_order', (string) $result['order_id'], null, [
+                'shop_id'     => $shopId,
+                'company_id'  => $companyId,
+                'employee_id' => $employeeId,
+                'quantity'    => $orderData['quantity'],
+                'paper_type'  => $orderData['paper_type'],
+                'total'       => $result['total'] ?? null,
+                'currency'    => $result['currency'] ?? 'OMR',
+            ]);
             $message = 'Order #' . $result['order_id'] . ' placed for ' . $company['name'] . '. Total: ' . Currency::format($result['total'], $result['currency'] ?? 'OMR');
         } elseif (($result['error'] ?? '') === 'min_quantity') {
             $message = $result['message'] ?? 'Below minimum quantity.';

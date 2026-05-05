@@ -246,15 +246,19 @@ class PrintShop {
             $pdo = $db->getConnection();
             
             // Use COALESCE for column names - companies table uses 'name', employees use 'name_en'
+            // operator_name comes from print_shop_operators when an internal-provider
+            // operator placed the order (placed_by_operator_id is set).
             $sql = "
-                SELECT po.*, 
-                       COALESCE(c.name, 'Unknown Company') as company_name, 
+                SELECT po.*,
+                       COALESCE(c.name, 'Unknown Company') as company_name,
                        COALESCE(e.name_en, e.name_ar, '') as employee_name,
                        COALESCE(e.position_en, e.position_ar, '') as employee_position,
-                       e.email as employee_email
+                       e.email as employee_email,
+                       op.name as operator_name
                 FROM print_orders po
                 LEFT JOIN companies c ON po.company_id = c.id
                 LEFT JOIN employees e ON po.employee_id = e.id
+                LEFT JOIN print_shop_operators op ON op.id = po.placed_by_operator_id
                 WHERE po.print_shop_id = ?
             ";
             $params = [$printShopId];
