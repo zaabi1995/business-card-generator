@@ -114,6 +114,15 @@ return [
     'operator_no_activity'     => 'لا توجد طلبات بعد',
     'operator_view_team'       => 'إدارة الفريق',
 
+    // اتجاه الإيرادات
+    'revenue_widget_h'      => 'اتجاه الإيرادات',
+    'revenue_widget_sub'    => 'إيرادات الطلبات اليومية لمطبعتك',
+    'revenue_period_today'  => 'اليوم',
+    'revenue_period_7d'     => 'آخر 7 أيام',
+    'revenue_period_30d'    => 'آخر 30 يومًا',
+    'revenue_full_analytics'=> 'التحليلات الكاملة',
+    'revenue_widget_empty'  => 'لا توجد بيانات كافية لعرض الاتجاه بعد.',
+
     // تدفّق النشاط الأخير
     'activity_h'                  => 'النشاط الأخير',
     'activity_view_all'           => 'عرض الكل',

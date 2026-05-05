@@ -408,6 +408,31 @@ class PrintShop {
             error_log("PrintShop::getDashboardData kpis: " . $e->getMessage());
         }
 
+        // ---- Revenue 7d sparkline (one row per day, oldest first) -
+        $revenueSparkline = [];
+        try {
+            // Pre-fill 7 days so the chart always shows 7 bars.
+            for ($i = 6; $i >= 0; $i--) {
+                $revenueSparkline[date('Y-m-d', strtotime("-{$i} days"))] = 0.0;
+            }
+            $stmt = $pdo->prepare(
+                "SELECT DATE(created_at) AS d, COALESCE(SUM(total),0) AS rev
+                 FROM print_orders
+                 WHERE print_shop_id = ?
+                   AND status != 'cancelled'
+                   AND created_at >= (CURDATE() - INTERVAL 6 DAY)
+                 GROUP BY DATE(created_at)"
+            );
+            $stmt->execute([$printShopId]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                if (isset($revenueSparkline[$row['d']])) {
+                    $revenueSparkline[$row['d']] = (float) $row['rev'];
+                }
+            }
+        } catch (PDOException $e) {
+            error_log("PrintShop::getDashboardData sparkline: " . $e->getMessage());
+        }
+
         // ---- Action queue ----------------------------------------
         // 4 stage buckets. Reuse self::getOrders so the company /
         // employee / operator joins stay in one place.
@@ -581,6 +606,7 @@ class PrintShop {
 
         return [
             'kpis'              => $kpis,
+            'revenue_sparkline' => $revenueSparkline,
             'action_queue'      => $actionQueue,
             'internal_provider' => $internalProvider,
             'credit_risk'       => $creditRisk,

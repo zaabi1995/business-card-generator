@@ -76,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $data = PrintShop::getDashboardData($shopId, $operatorId);
 $kpis = $data['kpis'];
+$sparkline = $data['revenue_sparkline'] ?? [];
 $queue = $data['action_queue'];
 $internal = $data['internal_provider'];
 $creditRisk = $data['credit_risk'];
@@ -219,16 +220,16 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
         </div>
 
-        <!-- 2. KPI strip (6 tiles) -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+        <!-- 2. KPI strip (6 tiles, admin-style) -->
+        <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
             <?php
             $tiles = [
-                ['label' => t('printshopdash.kpi_today_h'),         'value' => $kpis['today_orders'],     'fmt' => 'int',   'color' => 'blue',   'icon' => 'fa-calendar-day'],
-                ['label' => t('printshopdash.kpi_awaiting_h'),      'value' => $kpis['awaiting_action'],  'fmt' => 'int',   'color' => 'amber',  'icon' => 'fa-clock'],
-                ['label' => t('printshopdash.kpi_in_production_h'), 'value' => $kpis['in_production'],    'fmt' => 'int',   'color' => 'purple', 'icon' => 'fa-print'],
-                ['label' => t('printshopdash.kpi_shipped_week_h'),  'value' => $kpis['shipped_this_week'],'fmt' => 'int',   'color' => 'cyan',   'icon' => 'fa-truck'],
-                ['label' => t('printshopdash.kpi_revenue_30d_h'),   'value' => $kpis['revenue_30d'],      'fmt' => 'money', 'color' => 'green',  'icon' => 'fa-coins',           'delta' => $revenue30dDelta],
-                ['label' => t('printshopdash.kpi_outstanding_h'),   'value' => $kpis['outstanding_credit'],'fmt' => 'money','color' => 'red',    'icon' => 'fa-building-columns'],
+                ['label' => t('printshopdash.kpi_today_h'),         'value' => $kpis['today_orders'],      'fmt' => 'int',   'color' => 'blue',   'icon' => 'fa-calendar-day'],
+                ['label' => t('printshopdash.kpi_awaiting_h'),      'value' => $kpis['awaiting_action'],   'fmt' => 'int',   'color' => 'amber',  'icon' => 'fa-clock'],
+                ['label' => t('printshopdash.kpi_in_production_h'), 'value' => $kpis['in_production'],     'fmt' => 'int',   'color' => 'purple', 'icon' => 'fa-print'],
+                ['label' => t('printshopdash.kpi_shipped_week_h'),  'value' => $kpis['shipped_this_week'], 'fmt' => 'int',   'color' => 'cyan',   'icon' => 'fa-truck'],
+                ['label' => t('printshopdash.kpi_revenue_30d_h'),   'value' => $kpis['revenue_30d'],       'fmt' => 'money', 'color' => 'green',  'icon' => 'fa-coins',           'delta' => $revenue30dDelta],
+                ['label' => t('printshopdash.kpi_outstanding_h'),   'value' => $kpis['outstanding_credit'],'fmt' => 'money', 'color' => 'red',    'icon' => 'fa-building-columns'],
             ];
             foreach ($tiles as $tile):
                 $deltaSign = $tile['delta']['sign'] ?? null;
@@ -243,29 +244,88 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     $deltaText = t('printshopdash.kpi_delta_new');
                 }
             ?>
-            <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm p-4 hover:shadow-md transition-shadow">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500"><?= htmlspecialchars($tile['label']) ?></span>
-                    <span class="w-7 h-7 bg-<?= $tile['color'] ?>-50 text-<?= $tile['color'] ?>-600 rounded-lg flex items-center justify-center text-xs"><i class="fa-solid <?= $tile['icon'] ?>"></i></span>
+            <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-<?= $tile['color'] ?>-100 flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid <?= $tile['icon'] ?> text-<?= $tile['color'] ?>-600 text-xl"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-3xl font-bold text-gray-900 tracking-tight leading-none">
+                            <?php if ($tile['fmt'] === 'money'): ?>
+                                <?= Currency::formatHtml((float) $tile['value'], $currency, 'sm') ?>
+                            <?php else: ?>
+                                <?= (int) $tile['value'] ?>
+                            <?php endif; ?>
+                        </p>
+                        <p class="text-gray-500 text-sm mt-1.5"><?= htmlspecialchars($tile['label']) ?></p>
+                        <?php if ($deltaText): ?>
+                        <p class="mt-1 text-xs font-medium <?= $deltaSign === 'up' ? 'text-green-600' : ($deltaSign === 'down' ? 'text-red-600' : 'text-gray-500') ?>">
+                            <?= htmlspecialchars($deltaText) ?>
+                        </p>
+                        <?php endif; ?>
+                    </div>
                 </div>
-                <p class="text-2xl font-bold tracking-tight text-gray-900 leading-none">
-                    <?php if ($tile['fmt'] === 'money'): ?>
-                        <?= Currency::formatHtml((float) $tile['value'], $currency, 'sm') ?>
-                    <?php else: ?>
-                        <?= (int) $tile['value'] ?>
-                    <?php endif; ?>
-                </p>
-                <?php if ($deltaText): ?>
-                <p class="mt-1 text-[11px] font-medium <?= $deltaSign === 'up' ? 'text-green-600' : ($deltaSign === 'down' ? 'text-red-600' : 'text-gray-500') ?>">
-                    <?= htmlspecialchars($deltaText) ?>
-                </p>
-                <?php endif; ?>
             </div>
             <?php endforeach; ?>
         </div>
 
+        <!-- 2b. Revenue trend widget (mirrors admin Card Views Analytics) -->
+        <?php
+        $maxDailyRev = 0;
+        foreach ($sparkline as $v) { if ($v > $maxDailyRev) $maxDailyRev = $v; }
+        $hasRevenue = $kpis['revenue_30d'] > 0.001 || $maxDailyRev > 0.001;
+        $revenue7d = 0;
+        foreach ($sparkline as $v) { $revenue7d += $v; }
+        ?>
+        <?php if ($hasRevenue): ?>
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                        <i class="fa-solid fa-chart-line text-green-600 text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900 text-sm"><?= htmlspecialchars(t('printshopdash.revenue_widget_h')) ?></h3>
+                        <p class="text-xs text-gray-500"><?= htmlspecialchars(t('printshopdash.revenue_widget_sub')) ?></p>
+                    </div>
+                </div>
+                <a href="analytics.php" class="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+                    <?= htmlspecialchars(t('printshopdash.revenue_full_analytics')) ?> <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
+                </a>
+            </div>
+            <!-- Period stats -->
+            <div class="grid grid-cols-3 gap-4 mb-5">
+                <div class="text-center p-3 rounded-lg bg-gray-50">
+                    <p class="text-2xl font-bold text-gray-900"><?= Currency::formatHtml((float) $kpis['today_revenue'], $currency, 'sm') ?></p>
+                    <p class="text-xs text-gray-500 mt-0.5"><?= htmlspecialchars(t('printshopdash.revenue_period_today')) ?></p>
+                </div>
+                <div class="text-center p-3 rounded-lg bg-gray-50">
+                    <p class="text-2xl font-bold text-gray-900"><?= Currency::formatHtml((float) $revenue7d, $currency, 'sm') ?></p>
+                    <p class="text-xs text-gray-500 mt-0.5"><?= htmlspecialchars(t('printshopdash.revenue_period_7d')) ?></p>
+                </div>
+                <div class="text-center p-3 rounded-lg bg-gray-50">
+                    <p class="text-2xl font-bold text-gray-900"><?= Currency::formatHtml((float) $kpis['revenue_30d'], $currency, 'sm') ?></p>
+                    <p class="text-xs text-gray-500 mt-0.5"><?= htmlspecialchars(t('printshopdash.revenue_period_30d')) ?></p>
+                </div>
+            </div>
+            <!-- 7-day bar chart -->
+            <div class="flex items-end gap-1.5 h-20">
+                <?php foreach ($sparkline as $date => $rev):
+                    $pct = $maxDailyRev > 0 ? max(4, round($rev / $maxDailyRev * 100)) : 4;
+                    $title = date('D, M j', strtotime($date)) . ': ' . Currency::format((float) $rev, $currency);
+                ?>
+                <div class="flex-1 flex flex-col items-center gap-1 group relative">
+                    <div class="w-full rounded-t bg-green-500 hover:bg-green-600 transition-colors cursor-default" style="height: <?= $pct ?>%"
+                         title="<?= htmlspecialchars($title) ?>"></div>
+                    <span class="text-[10px] text-gray-400 leading-none"><?= date('D', strtotime($date)) ?></span>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- 3. Action queue -->
-        <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden mb-8">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-8">
             <div class="p-5 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
                 <div>
                     <h2 class="text-lg font-semibold text-gray-900"><?= htmlspecialchars(t('printshopdash.queue_h')) ?></h2>
@@ -336,7 +396,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
         <!-- 4. Internal provider panel (rendered only for internal providers) -->
         <?php if ($internal !== null): ?>
-        <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden mb-8">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-8">
             <div class="p-5 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
                 <div>
                     <h2 class="text-lg font-semibold text-gray-900"><?= htmlspecialchars(t('printshopdash.internal_h')) ?></h2>
@@ -388,7 +448,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
 
             <!-- 5. Credit risk panel -->
-            <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                 <div class="p-5 border-b border-gray-100 flex items-center justify-between">
                     <h2 class="text-lg font-semibold text-gray-900"><?= htmlspecialchars(t('printshopdash.credit_risk_h')) ?></h2>
                     <a href="credit-accounts.php" class="text-sm text-blue-600 hover:text-blue-700 font-medium"><?= htmlspecialchars(t('printshopdash.credit_risk_review')) ?></a>
@@ -436,7 +496,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
             <!-- 6. Operator activity (only when 2+ active operators) -->
             <?php if ($opActivity !== null): ?>
-            <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                 <div class="p-5 border-b border-gray-100 flex items-center justify-between">
                     <h2 class="text-lg font-semibold text-gray-900"><?= htmlspecialchars(t('printshopdash.operator_activity_h')) ?></h2>
                     <a href="operators.php" class="text-sm text-blue-600 hover:text-blue-700 font-medium"><?= htmlspecialchars(t('printshopdash.operator_view_team')) ?></a>
@@ -466,7 +526,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
             <?php else: ?>
             <!-- Activity feed takes the right slot when no operator panel -->
-            <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                 <div class="p-5 border-b border-gray-100">
                     <h2 class="text-lg font-semibold text-gray-900"><?= htmlspecialchars(t('printshopdash.activity_h')) ?></h2>
                 </div>
@@ -500,7 +560,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
         <!-- 7. Recent activity feed (full width, only rendered if operator panel was shown) -->
         <?php if ($opActivity !== null): ?>
-        <div class="bg-white rounded-xl ring-1 ring-gray-200/70 shadow-sm overflow-hidden">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div class="p-5 border-b border-gray-100">
                 <h2 class="text-lg font-semibold text-gray-900"><?= htmlspecialchars(t('printshopdash.activity_h')) ?></h2>
             </div>

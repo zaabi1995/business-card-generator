@@ -114,6 +114,15 @@ return [
     'operator_no_activity'     => 'No orders yet',
     'operator_view_team'       => 'Manage team',
 
+    // Revenue trend widget
+    'revenue_widget_h'      => 'Revenue trend',
+    'revenue_widget_sub'    => 'Daily order revenue from your shop',
+    'revenue_period_today'  => 'Today',
+    'revenue_period_7d'     => 'Last 7 days',
+    'revenue_period_30d'    => 'Last 30 days',
+    'revenue_full_analytics'=> 'Full analytics',
+    'revenue_widget_empty'  => 'Not enough data yet to show a trend.',
+
     // Recent activity feed
     'activity_h'                  => 'Recent activity',
     'activity_view_all'           => 'View all',
