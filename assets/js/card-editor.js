@@ -1163,12 +1163,18 @@ class CardEditor {
                     : 0;
                 const panelRadiusPct = Math.max(0, Math.min(40, s.panel_radius_pct || 0));
 
-                // Create canvas and draw QR code. The OUTER canvas is `size`
-                // (matches what the editor expects). The QR modules paint
-                // inside a smaller inset to leave room for the border.
+                // Create canvas and draw QR code. The OUTER canvas is rendered
+                // at a high internal resolution so that when the card export
+                // runs at multiplier=3-4 (HD plan), Fabric DOWNSCALES this
+                // bitmap (sharp) instead of upscaling a tiny pixel-art QR
+                // (blurry). Fabric's scaleX/scaleY in addQRCode keeps the
+                // visual size at `size` regardless of internal resolution.
+                // 1024 lower bound covers small fields (size ~80-120 px); 8x
+                // covers larger fields and HD export at multiplier=4.
+                const renderSize = Math.max(1024, Math.round(size * 8));
                 const canvas = document.createElement('canvas');
-                canvas.width = size;
-                canvas.height = size;
+                canvas.width = renderSize;
+                canvas.height = renderSize;
                 const ctx = canvas.getContext('2d');
 
                 // Outer fill (border colour, or bg if no border so a single
@@ -1177,16 +1183,16 @@ class CardEditor {
                     ctx.fillStyle = borderColor;
                     if (cornerRadiusPct > 0 && typeof ctx.roundRect === 'function') {
                         ctx.beginPath();
-                        ctx.roundRect(0, 0, size, size, size * cornerRadiusPct / 100);
+                        ctx.roundRect(0, 0, renderSize, renderSize, renderSize * cornerRadiusPct / 100);
                         ctx.fill();
                     } else {
-                        ctx.fillRect(0, 0, size, size);
+                        ctx.fillRect(0, 0, renderSize, renderSize);
                     }
                 }
                 // Inset rect for the QR + outer panel.
-                const borderPx = hasBorder ? Math.round(size * borderRatio) : 0;
-                const panelPx = Math.round(size * panelRatio);
-                const innerSize = size - borderPx * 2;
+                const borderPx = hasBorder ? Math.round(renderSize * borderRatio) : 0;
+                const panelPx = Math.round(renderSize * panelRatio);
+                const innerSize = renderSize - borderPx * 2;
                 const moduleCount = qr.getModuleCount();
                 const moduleAreaSize = innerSize - panelPx * 2;
                 const cellSize = moduleAreaSize / moduleCount;
