@@ -74,8 +74,13 @@ class PrintShop {
      * Get print shop by user ID
      */
     public static function getByUserId($userId) {
+        // Operator session: id is `pso:<operator_id>`. The session
+        // also carries `ps_print_shop_id`; resolve directly through
+        // that so downstream pages get the operator's shop.
+        if (is_string($userId) && strpos($userId, 'pso:') === 0 && !empty($_SESSION['ps_print_shop_id'])) {
+            return self::getById((int) $_SESSION['ps_print_shop_id']);
+        }
         $db = Database::getInstance();
-        
         try {
             $pdo = $db->getConnection();
             $stmt = $pdo->prepare("SELECT * FROM print_shops WHERE user_id = ?");

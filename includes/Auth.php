@@ -375,7 +375,24 @@ class Auth {
         
         $userId = $_SESSION['user_id'] ?? null;
         $userRole = $_SESSION['user_role'] ?? null;
-        
+
+        // Case 0: Print-shop operator session. Synthesise a user dict
+        // that downstream pages can treat as if they were the shop
+        // owner. The 'role' is reported as 'print_shop' so existing
+        // role checks pass; the operator's own id/name is preserved
+        // under operator_id/operator_name for audit purposes.
+        if ($userRole === 'print_shop_operator' && !empty($_SESSION['ps_operator_id']) && !empty($_SESSION['ps_print_shop_id'])) {
+            return [
+                'id'             => $_SESSION['user_id'] ?? ('pso:' . $_SESSION['ps_operator_id']),
+                'email'          => $_SESSION['user_email'] ?? null,
+                'name'           => $_SESSION['ps_operator_name'] ?? 'Operator',
+                'role'           => 'print_shop',
+                'operator_id'    => $_SESSION['ps_operator_id'],
+                'operator_name'  => $_SESSION['ps_operator_name'] ?? '',
+                'print_shop_id'  => (int) $_SESSION['ps_print_shop_id'],
+            ];
+        }
+
         // Case 1: Employee, user_id holds the employee's ID
         if ($userRole === 'employee' && $userId) {
             $employee = self::$db->fetchOne(

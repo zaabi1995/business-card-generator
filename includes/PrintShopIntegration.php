@@ -232,6 +232,11 @@ class PrintShopIntegration {
             $cardifyCommission = round($total * ($commissionPct / 100), 3);
             $shopPayout = round($total - $cardifyCommission, 3);
 
+            // Operator attribution: set when an order was placed by a
+            // print-shop operator on behalf of a client (internal-provider flow).
+            $placedByOperatorId = $orderData['placed_by_operator_id']
+                ?? ($_SESSION['ps_operator_id'] ?? null);
+
             // Insert order using definitive schema (INT AUTO_INCREMENT id)
             $stmt = $pdo->prepare("
                 INSERT INTO print_orders
@@ -241,8 +246,8 @@ class PrintShopIntegration {
                  subtotal, setup_fee, shipping_fee, total, cardify_commission, shop_payout, commission_pct, currency,
                  shipping_name, shipping_address, shipping_city, shipping_state,
                  shipping_country, shipping_postal, shipping_phone,
-                 status, payment_status, express_delivery, notes, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                 status, payment_status, express_delivery, notes, placed_by_operator_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
             ");
 
             $stmt->execute([
@@ -276,7 +281,8 @@ class PrintShopIntegration {
                 'pending',
                 'pending',
                 !empty($orderData['express_delivery']) ? 1 : 0,
-                $orderData['notes'] ?? ''
+                $orderData['notes'] ?? '',
+                $placedByOperatorId,
             ]);
             
             $orderId = $pdo->lastInsertId();
