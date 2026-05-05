@@ -325,15 +325,171 @@ class PrintShop {
     }
     
     /**
-     * Calculate price for an order with quantity tiers
+     * Look up a per-client pricing override row.
+     * Returns the decoded pricing JSON or null when none exists.
      */
-    public static function calculatePrice($printShopId, $quantity, $options = []) {
+    public static function getClientPricing($printShopId, $companyId) {
+        if (empty($printShopId) || empty($companyId)) {
+            return null;
+        }
+        $db = Database::getInstance();
+        try {
+            $pdo = $db->getConnection();
+            $stmt = $pdo->prepare(
+                "SELECT pricing FROM print_shop_client_pricing
+                 WHERE print_shop_id = ? AND company_id = ? LIMIT 1"
+            );
+            $stmt->execute([$printShopId, $companyId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row) return null;
+            $decoded = json_decode($row['pricing'], true);
+            return is_array($decoded) ? $decoded : null;
+        } catch (PDOException $e) {
+            error_log("PrintShop::getClientPricing error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Resolve effective pricing JSON for a shop in the context of a
+     * specific company. Returns the override when one exists, else
+     * the shop default. When the override omits currency / setup_fee
+     * / shipping_base, those carry over from the shop default so a
+     * tier-only override still works.
+     */
+    public static function getEffectivePricing($shop, $companyId = null) {
+        $base = json_decode($shop['pricing'] ?? '{}', true) ?? [];
+        if (empty($companyId)) return $base;
+        $override = self::getClientPricing($shop['id'], $companyId);
+        if (!$override) return $base;
+        foreach (['currency', 'setup_fee', 'shipping_base'] as $k) {
+            if (!isset($override[$k]) && isset($base[$k])) {
+                $override[$k] = $base[$k];
+            }
+        }
+        return $override;
+    }
+
+    /**
+     * List all client-specific pricing overrides for a shop, joined
+     * with company name + slug for display.
+     */
+    public static function listClientPricing($printShopId) {
+        $db = Database::getInstance();
+        try {
+            $pdo = $db->getConnection();
+            $stmt = $pdo->prepare("
+                SELECT p.*, c.name AS company_name, c.slug AS company_slug
+                FROM print_shop_client_pricing p
+                LEFT JOIN companies c ON c.id = p.company_id
+                WHERE p.print_shop_id = ?
+                ORDER BY c.name ASC
+            ");
+            $stmt->execute([$printShopId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("PrintShop::listClientPricing error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Companies that have placed orders with this shop, used as the
+     * candidate list when adding a new override row.
+     */
+    public static function getClientCompanies($printShopId) {
+        $db = Database::getInstance();
+        try {
+            $pdo = $db->getConnection();
+            $stmt = $pdo->prepare("
+                SELECT c.id, c.name, c.slug
+                FROM companies c
+                INNER JOIN print_orders po ON po.company_id = c.id
+                WHERE po.print_shop_id = ?
+                GROUP BY c.id, c.name, c.slug
+                ORDER BY c.name ASC
+            ");
+            $stmt->execute([$printShopId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("PrintShop::getClientCompanies error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Upsert a per-client pricing override row.
+     */
+    public static function setClientPricing($printShopId, $companyId, $pricing, $notes = null, $userId = null) {
+        if (empty($printShopId) || empty($companyId) || !is_array($pricing)) {
+            return ['success' => false, 'error' => 'Missing required fields'];
+        }
+        $db = Database::getInstance();
+        try {
+            $pdo = $db->getConnection();
+            $existing = $pdo->prepare(
+                "SELECT id FROM print_shop_client_pricing
+                 WHERE print_shop_id = ? AND company_id = ? LIMIT 1"
+            );
+            $existing->execute([$printShopId, $companyId]);
+            $id = $existing->fetchColumn();
+
+            if ($id) {
+                $stmt = $pdo->prepare(
+                    "UPDATE print_shop_client_pricing
+                     SET pricing = ?, notes = ?
+                     WHERE id = ?"
+                );
+                $stmt->execute([json_encode($pricing), $notes, $id]);
+            } else {
+                $id = function_exists('generateUUID') ? generateUUID() : bin2hex(random_bytes(16));
+                $stmt = $pdo->prepare(
+                    "INSERT INTO print_shop_client_pricing
+                     (id, print_shop_id, company_id, pricing, notes, created_by)
+                     VALUES (?, ?, ?, ?, ?, ?)"
+                );
+                $stmt->execute([$id, $printShopId, $companyId, json_encode($pricing), $notes, $userId]);
+            }
+            return ['success' => true, 'id' => $id];
+        } catch (PDOException $e) {
+            error_log("PrintShop::setClientPricing error: " . $e->getMessage());
+            return ['success' => false, 'error' => 'Failed to save pricing'];
+        }
+    }
+
+    /**
+     * Remove a per-client pricing override (revert to shop defaults).
+     */
+    public static function deleteClientPricing($printShopId, $companyId) {
+        $db = Database::getInstance();
+        try {
+            $pdo = $db->getConnection();
+            $stmt = $pdo->prepare(
+                "DELETE FROM print_shop_client_pricing
+                 WHERE print_shop_id = ? AND company_id = ?"
+            );
+            $stmt->execute([$printShopId, $companyId]);
+            return ['success' => true];
+        } catch (PDOException $e) {
+            error_log("PrintShop::deleteClientPricing error: " . $e->getMessage());
+            return ['success' => false, 'error' => 'Failed to delete pricing'];
+        }
+    }
+
+    /**
+     * Calculate price for an order with quantity tiers.
+     *
+     * @param string|null $companyId When set, applies any per-client
+     *        override row for (shop, company). Falls through to shop
+     *        default pricing when no override exists.
+     */
+    public static function calculatePrice($printShopId, $quantity, $options = [], $companyId = null) {
         $shop = self::getById($printShopId);
         if (!$shop) {
             return null;
         }
-        
-        $pricing = json_decode($shop['pricing'], true) ?? [];
+
+        $pricing = self::getEffectivePricing($shop, $companyId);
         $basePerCard = $pricing['per_card'] ?? 0.10;
         $setupFee = $pricing['setup_fee'] ?? 0;
         $shippingBase = $pricing['shipping_base'] ?? 2.00;

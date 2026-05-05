@@ -108,6 +108,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <a href="orders.php" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium transition-colors"><i class="fa-solid fa-box"></i><?= htmlspecialchars(t('printshopdash.nav_orders')) ?></a>
                     <a href="analytics.php" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium transition-colors"><i class="fa-solid fa-chart-line"></i><?= htmlspecialchars(t('printshopdash.nav_analytics')) ?></a>
                     <a href="credit-accounts.php" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium transition-colors"><i class="fa-solid fa-building-columns"></i><?= htmlspecialchars(t('printshopdash.nav_credit')) ?></a>
+                    <a href="client-pricing.php" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium transition-colors"><i class="fa-solid fa-tags"></i><?= htmlspecialchars(t('printshopclientpricing.nav_label')) ?></a>
                     <a href="settings.php" class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors" aria-label="<?= htmlspecialchars(t('printshopdash.nav_settings')) ?>"><i class="fa-solid fa-cog"></i></a>
                 </div>
             </div>

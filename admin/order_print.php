@@ -34,6 +34,22 @@ if (!$selectedShopId && count($printShops) === 1) {
 }
 $selectedShop = $selectedShopId ? PrintShop::getById($selectedShopId) : null;
 
+// Apply per-client pricing overrides so the Alpine preview matches
+// what the server will actually charge. Each shop's `pricing` JSON
+// is replaced with the effective pricing for the current company
+// when an override row exists in print_shop_client_pricing.
+if (!empty($companyId)) {
+    foreach ($printShops as &$_shopRef) {
+        $_eff = PrintShop::getEffectivePricing($_shopRef, $companyId);
+        $_shopRef['pricing'] = json_encode($_eff);
+    }
+    unset($_shopRef);
+    if ($selectedShop) {
+        $_eff = PrintShop::getEffectivePricing($selectedShop, $companyId);
+        $selectedShop['pricing'] = json_encode($_eff);
+    }
+}
+
 // Get employee if specified
 $employeeId = $_GET['employee'] ?? $_POST['employee_id'] ?? '';
 $employee = null;

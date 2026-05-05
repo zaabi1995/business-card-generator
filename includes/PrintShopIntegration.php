@@ -181,7 +181,7 @@ class PrintShopIntegration {
                 $priceData = PrintShop::calculatePrice($printShopId, $quantity, [
                     'paper_type' => $paperType,
                     'finish' => $finish
-                ]);
+                ], $orderData['company_id'] ?? null);
                 
                 if ($priceData) {
                     $subtotal = $priceData['subtotal'];

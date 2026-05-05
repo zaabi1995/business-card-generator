@@ -105,6 +105,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <a href="orders.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-box mr-1"></i>Orders</a>
                 <a href="templates.php" class="text-blue-600 font-medium"><i class="fa-solid fa-layer-group mr-1"></i>Templates</a>
                 <a href="credit-accounts.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-building-columns mr-1"></i>Credit</a>
+                <a href="client-pricing.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-tags mr-1"></i><?= htmlspecialchars(t('printshopclientpricing.nav_label')) ?></a>
                 <a href="settings.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-cog"></i></a>
             </div>
         </div>
