@@ -145,8 +145,11 @@ class CardRenderer
      * any consumer surface picks up the design change.
      *
      * Sets *_file_path / *_web_path to NULL on all generated_cards rows for
-     * the company. Does NOT delete files, so the previous render survives
-     * on disk for forensic comparison until the next save_card_both.php run.
+     * the company AND deletes the on-disk PNG/PDF files. Without the file
+     * delete, surfaces that read paths from elsewhere (or admin lists that
+     * cache the path lookup) could keep serving the stale render. Caught
+     * 5 May 2026 on Otech: bg PNG was Poppler-fixed but cards/ folder still
+     * held PyMuPDF-era PNGs and digital_card.php served them.
      */
     public static function invalidateForCompany(string $companyId, ?string $reason = null): int
     {
@@ -167,6 +170,17 @@ class CardRenderer
                 'CardRenderer::invalidateForCompany(%s) cleared %d rows. reason=%s',
                 $companyId, $n, $reason ?? 'unspecified'
             ));
+        }
+
+        // Delete the on-disk card files. Best-effort, never fatal.
+        try {
+            $cardsDir = BASE_DIR . '/uploads/companies/' . $companyId . '/cards';
+            if (is_dir($cardsDir)) {
+                foreach (glob($cardsDir . '/card_*.png') ?: [] as $f) @unlink($f);
+                foreach (glob($cardsDir . '/card_*.pdf') ?: [] as $f) @unlink($f);
+            }
+        } catch (Throwable $e) {
+            error_log('CardRenderer::invalidateForCompany cards/ sweep: ' . $e->getMessage());
         }
 
         // Phase 8: prune vector PDF cache using .meta sidecars so only this
