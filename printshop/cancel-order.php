@@ -98,8 +98,13 @@ try {
         exit;
     }
 
-    // Stamp audit columns (migration 110). Best-effort: if columns are
-    // missing on an older deployment, fall back to status-only update.
+    // Stamp audit columns AND flip status atomically. The two writes touch
+    // the same row and must succeed together (otherwise we'd end up with
+    // cancelled metadata on a still-pending order, or vice versa).
+    // PrintShopIntegration::updateOrderStatus runs the email + WhatsApp +
+    // Notifier pipeline AFTER its own UPDATE returns, so commit before
+    // letting it dispatch.
+    $pdo->beginTransaction();
     try {
         $upd = $pdo->prepare(
             "UPDATE print_orders
@@ -114,9 +119,12 @@ try {
             ':oid'    => $orderId,
             ':sid'    => $shopId,
         ]);
+        $pdo->commit();
     } catch (Throwable $e) {
+        $pdo->rollBack();
+        // Audit columns might not exist on an older deployment (migration 110).
+        // Log and continue: the status flip below is the contract that matters.
         error_log('[cancel-order] audit columns missing or failed: ' . $e->getMessage());
-        // Continue, the status flip below still happens.
     }
 
     // Flip status. Reuses the existing pipeline, which fires email +
@@ -154,7 +162,7 @@ try {
     ]);
 
 } catch (Throwable $e) {
-    error_log('[cancel-order] FATAL ' . $e->getMessage());
+    error_log('[cancel-order] FATAL ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
     http_response_code(500);
-    echo json_encode(['ok' => false, 'error' => 'Server error: ' . $e->getMessage()]);
+    echo json_encode(['ok' => false, 'error' => t('printshopdash.unknown_error')]);
 }
