@@ -279,7 +279,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                                 <input type="hidden" name="action" value="upload_logo">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Upload New Logo</label>
-                                    <input type="file" name="logo" accept="image/*"
+                                    <input aria-label="Upload New Logo" type="file" name="logo" accept="image/*"
                                            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-50 file:text-purple-700 file:font-medium hover:file:bg-purple-100">
                                     <p class="text-xs text-gray-500 mt-1">JPG, PNG, GIF, WebP, or SVG. Max 2MB. Recommended: 200×200px</p>
                                 </div>
@@ -306,19 +306,19 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                     <div class="grid md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Shop Name</label>
-                            <input type="text" name="name" value="<?php echo sanitize($printShop['name']); ?>" required
+                            <input aria-label="Shop Name" type="text" name="name" value="<?php echo sanitize($printShop['name']); ?>" required
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
-                            <input type="email" name="email" value="<?php echo sanitize($printShop['email']); ?>" required
+                            <input aria-label="Email" type="email" name="email" value="<?php echo sanitize($printShop['email']); ?>" required
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
                     </div>
                     
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
-                        <textarea name="description" rows="3"
+                        <textarea aria-label="Description" name="description" rows="3"
                                   class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"><?php echo sanitize($printShop['description'] ?? ''); ?></textarea>
                     </div>
                     
@@ -337,26 +337,26 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">Website</label>
-                            <input type="url" name="website" value="<?php echo sanitize($printShop['website'] ?? ''); ?>"
+                            <input aria-label="Website" type="url" name="website" value="<?php echo sanitize($printShop['website'] ?? ''); ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
                     </div>
                     
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Address</label>
-                        <input type="text" name="address" value="<?php echo sanitize($printShop['address'] ?? ''); ?>"
+                        <input aria-label="Address" type="text" name="address" value="<?php echo sanitize($printShop['address'] ?? ''); ?>"
                                class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     </div>
                     
                     <div class="grid md:grid-cols-4 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">City</label>
-                            <input type="text" name="city" value="<?php echo sanitize($printShop['city'] ?? ''); ?>"
+                            <input aria-label="City" type="text" name="city" value="<?php echo sanitize($printShop['city'] ?? ''); ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">State</label>
-                            <input type="text" name="state" value="<?php echo sanitize($printShop['state'] ?? ''); ?>"
+                            <input aria-label="State" type="text" name="state" value="<?php echo sanitize($printShop['state'] ?? ''); ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
                         <div>
@@ -371,7 +371,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Postal Code</label>
-                            <input type="text" name="postal_code" value="<?php echo sanitize($printShop['postal_code'] ?? ''); ?>"
+                            <input aria-label="Postal Code" type="text" name="postal_code" value="<?php echo sanitize($printShop['postal_code'] ?? ''); ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
                     </div>
@@ -397,7 +397,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                     <!-- Currency Selection -->
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Currency</label>
-                        <select name="currency" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 bg-white">
+                        <select aria-label="Currency" name="currency" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 bg-white">
                             <?php echo Currency::getOptions($printShop['currency'] ?? 'USD'); ?>
                         </select>
                     </div>
@@ -423,19 +423,19 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                     <div class="grid md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Base Price per Card (<?php echo $currencySymbol; ?>)</label>
-                            <input type="number" name="per_card" step="0.001" min="0" value="<?php echo $basePrice; ?>"
+                            <input aria-label="Base Price per Card (<?= htmlspecialchars($currencySymbol) ?>)" type="number" name="per_card" step="0.001" min="0" value="<?php echo $basePrice; ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                             <p class="text-xs text-gray-500 mt-1">Default price if no tier applies</p>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Setup Fee (<?php echo $currencySymbol; ?>)</label>
-                            <input type="number" name="setup_fee" step="0.01" min="0" value="<?php echo $setupFee; ?>"
+                            <input aria-label="Setup Fee (<?= htmlspecialchars($currencySymbol) ?>)" type="number" name="setup_fee" step="0.01" min="0" value="<?php echo $setupFee; ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                             <p class="text-xs text-gray-500 mt-1">One-time setup charge</p>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Base Shipping (<?php echo $currencySymbol; ?>)</label>
-                            <input type="number" name="shipping_base" step="0.01" min="0" value="<?php echo $shippingFee; ?>"
+                            <input aria-label="Base Shipping (<?= htmlspecialchars($currencySymbol) ?>)" type="number" name="shipping_base" step="0.01" min="0" value="<?php echo $shippingFee; ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                             <p class="text-xs text-gray-500 mt-1">Standard delivery fee</p>
                         </div>
@@ -454,7 +454,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                             <div class="text-center">
                                 <label class="block text-xs font-medium text-green-800 mb-1"><?php echo $qty; ?>+ cards</label>
                                 <input type="hidden" name="tier_qty[]" value="<?php echo $qty; ?>">
-                                <input type="number" name="tier_price[]" step="0.001" min="0" value="<?php echo $price; ?>"
+                                <input aria-label="Price per card for <?= (int)$qty ?>+ cards" type="number" name="tier_price[]" step="0.001" min="0" value="<?php echo $price; ?>"
                                        class="w-full px-2 py-2 text-center border border-green-200 rounded-lg text-sm bg-white focus:border-green-500 focus:ring-1 focus:ring-green-500/20">
                             </div>
                             <?php endforeach; ?>
@@ -468,31 +468,31 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                     <div class="grid md:grid-cols-2 gap-4 mt-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Minimum Order Quantity</label>
-                            <input type="number" name="min_order_quantity" min="1" value="<?php echo $printShop['min_quantity'] ?? 50; ?>"
+                            <input aria-label="Minimum Order Quantity" type="number" name="min_order_quantity" min="1" value="<?php echo $printShop['min_quantity'] ?? 50; ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Standard Turnaround (days)</label>
-                            <input type="number" name="turnaround_days" min="1" value="<?php echo $printShop['turnaround_days'] ?? 5; ?>"
+                            <input aria-label="Standard Turnaround (days)" type="number" name="turnaround_days" min="1" value="<?php echo $printShop['turnaround_days'] ?? 5; ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
                     </div>
                     
                     <div class="p-4 bg-amber-50 rounded-lg border border-amber-100">
                         <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" name="express_available" <?php echo !empty($printShop['offers_express']) ? 'checked' : ''; ?>
+                            <input aria-label="Standard Turnaround (days)" type="checkbox" name="express_available" <?php echo !empty($printShop['offers_express']) ? 'checked' : ''; ?>
                                    class="w-5 h-5 rounded text-amber-600 border-gray-300 focus:ring-amber-500">
                             <span class="font-medium text-amber-900">Offer Express Delivery</span>
                         </label>
                         <div class="mt-4 grid md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-amber-800 mb-1">Express Days</label>
-                                <input type="number" name="express_days" min="1" value="<?php echo $printShop['express_days'] ?? 2; ?>"
+                                <input aria-label="Express Days" type="number" name="express_days" min="1" value="<?php echo $printShop['express_days'] ?? 2; ?>"
                                        class="w-full px-3 py-2 border border-amber-200 rounded-lg bg-white focus:border-amber-500">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-amber-800 mb-1">Express Fee (<?php echo $currencySymbol; ?>)</label>
-                                <input type="number" name="express_fee" step="0.01" min="0" value="<?php echo $printShop['express_fee'] ?? 0; ?>"
+                                <input aria-label="Express Fee (<?= htmlspecialchars($currencySymbol) ?>)" type="number" name="express_fee" step="0.01" min="0" value="<?php echo $printShop['express_fee'] ?? 0; ?>"
                                        class="w-full px-3 py-2 border border-amber-200 rounded-lg bg-white focus:border-amber-500">
                             </div>
                         </div>
@@ -524,7 +524,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                             foreach ($allPaperTypes as $paper): 
                             ?>
                             <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                                <input type="checkbox" name="paper_types[<?php echo $paper; ?>]" 
+                                <input aria-label="Offer <?= htmlspecialchars(ucfirst($paper)) ?> paper" type="checkbox" name="paper_types[<?php echo $paper; ?>]"
                                        <?php echo in_array($paper, $paperTypes) ? 'checked' : ''; ?>
                                        class="rounded text-purple-600 border-gray-300">
                                 <span class="text-sm text-gray-700"><?php echo ucfirst($paper); ?></span>
@@ -541,7 +541,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                             foreach ($allFinishes as $finish): 
                             ?>
                             <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                                <input type="checkbox" name="finishes[<?php echo $finish; ?>]" 
+                                <input aria-label="Offer <?= htmlspecialchars(ucfirst(str_replace('_', ' ', $finish))) ?> finish" type="checkbox" name="finishes[<?php echo $finish; ?>]"
                                        <?php echo in_array($finish, $finishes) ? 'checked' : ''; ?>
                                        class="rounded text-purple-600 border-gray-300">
                                 <span class="text-sm text-gray-700"><?php echo ucfirst(str_replace('_', ' ', $finish)); ?></span>
@@ -574,7 +574,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                         <h4 class="font-medium text-gray-900">Order Workflow</h4>
                         <div class="grid md:grid-cols-3 gap-4">
                             <label class="flex items-start gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                                <input type="checkbox" name="require_quotation" <?php echo ($printShop['require_quotation'] ?? false) ? 'checked' : ''; ?>
+                                <input aria-label="Require Quotation" type="checkbox" name="require_quotation" <?php echo ($printShop['require_quotation'] ?? false) ? 'checked' : ''; ?>
                                        class="mt-0.5 rounded text-indigo-600 border-gray-300">
                                 <div>
                                     <span class="font-medium text-gray-900">Require Quotation</span>
@@ -582,7 +582,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                                 </div>
                             </label>
                             <label class="flex items-start gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                                <input type="checkbox" name="require_po" <?php echo ($printShop['require_po'] ?? false) ? 'checked' : ''; ?>
+                                <input aria-label="Require Quotation Send quotation before accepting orders" type="checkbox" name="require_po" <?php echo ($printShop['require_po'] ?? false) ? 'checked' : ''; ?>
                                        class="mt-0.5 rounded text-indigo-600 border-gray-300">
                                 <div>
                                     <span class="font-medium text-gray-900">Require PO</span>
@@ -590,7 +590,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                                 </div>
                             </label>
                             <label class="flex items-start gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                                <input type="checkbox" name="auto_invoice" <?php echo ($printShop['auto_invoice'] ?? true) ? 'checked' : ''; ?>
+                                <input aria-label="Require PO Customer must submit purchase order" type="checkbox" name="auto_invoice" <?php echo ($printShop['auto_invoice'] ?? true) ? 'checked' : ''; ?>
                                        class="mt-0.5 rounded text-indigo-600 border-gray-300">
                                 <div>
                                     <span class="font-medium text-gray-900">Auto Invoice</span>
@@ -604,19 +604,19 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                     <div class="grid md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Quotation Prefix</label>
-                            <input type="text" name="quotation_prefix" value="<?php echo sanitize($printShop['quotation_prefix'] ?? 'QT-'); ?>"
+                            <input aria-label="Quotation Prefix" type="text" name="quotation_prefix" value="<?php echo sanitize($printShop['quotation_prefix'] ?? 'QT-'); ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                             <p class="text-xs text-gray-500 mt-1">e.g., QT-2026-0001</p>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Invoice Prefix</label>
-                            <input type="text" name="invoice_prefix" value="<?php echo sanitize($printShop['invoice_prefix'] ?? 'INV-'); ?>"
+                            <input aria-label="Invoice Prefix" type="text" name="invoice_prefix" value="<?php echo sanitize($printShop['invoice_prefix'] ?? 'INV-'); ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                             <p class="text-xs text-gray-500 mt-1">e.g., INV-2026-0001</p>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Delivery Note Prefix</label>
-                            <input type="text" name="delivery_note_prefix" value="<?php echo sanitize($printShop['delivery_note_prefix'] ?? 'DN-'); ?>"
+                            <input aria-label="Delivery Note Prefix" type="text" name="delivery_note_prefix" value="<?php echo sanitize($printShop['delivery_note_prefix'] ?? 'DN-'); ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                             <p class="text-xs text-gray-500 mt-1">e.g., DN-2026-0001</p>
                         </div>
@@ -626,22 +626,22 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                     <div class="grid md:grid-cols-4 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Quotation Validity (days)</label>
-                            <input type="number" name="quotation_validity_days" min="1" value="<?php echo $printShop['quotation_validity_days'] ?? 30; ?>"
+                            <input aria-label="Quotation Validity (days)" type="number" name="quotation_validity_days" min="1" value="<?php echo $printShop['quotation_validity_days'] ?? 30; ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Payment Terms (days)</label>
-                            <input type="number" name="payment_terms_days" min="0" value="<?php echo $printShop['payment_terms_days'] ?? 30; ?>"
+                            <input aria-label="Payment Terms (days)" type="number" name="payment_terms_days" min="0" value="<?php echo $printShop['payment_terms_days'] ?? 30; ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Tax Rate (%)</label>
-                            <input type="number" name="tax_rate" step="0.01" min="0" max="100" value="<?php echo $printShop['tax_rate'] ?? 0; ?>"
+                            <input aria-label="Tax Rate (%)" type="number" name="tax_rate" step="0.01" min="0" max="100" value="<?php echo $printShop['tax_rate'] ?? 0; ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Tax Number / VAT</label>
-                            <input type="text" name="tax_number" value="<?php echo sanitize($printShop['tax_number'] ?? ''); ?>"
+                            <input aria-label="Tax Number / VAT" type="text" name="tax_number" value="<?php echo sanitize($printShop['tax_number'] ?? ''); ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                         </div>
                     </div>
@@ -675,7 +675,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                             <p class="text-sm text-gray-500 mt-1">Connect to Odoo or other ERP systems for automatic invoicing</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="erp_enabled" x-model="erpEnabled" class="sr-only peer">
+                            <input aria-label="Tax Number / VAT" type="checkbox" name="erp_enabled" x-model="erpEnabled" class="sr-only peer">
                             <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                         </label>
                     </div>
@@ -690,7 +690,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                             <label class="relative flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-all
                                           <?php echo ($system['supported'] ?? false) ? 'border-gray-200 hover:border-orange-300 hover:bg-orange-50' : 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'; ?>"
                                    <?php echo ($system['supported'] ?? false) ? '' : 'title="Coming Soon"'; ?>>
-                                <input type="radio" name="erp_system" value="<?php echo $key; ?>" 
+                                <input aria-label="ERP System" type="radio" name="erp_system" value="<?php echo $key; ?>" 
                                        x-model="erpSystem"
                                        <?php echo ($system['supported'] ?? false) ? '' : 'disabled'; ?>
                                        class="text-orange-600 border-gray-300 focus:ring-orange-500">
@@ -716,13 +716,13 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                         <div class="grid md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-orange-900 mb-2">Odoo URL</label>
-                                <input type="url" name="erp_url" value="<?php echo sanitize($erpSettings['erp_url'] ?? ''); ?>"
+                                <input aria-label="Odoo URL" type="url" name="erp_url" value="<?php echo sanitize($erpSettings['erp_url'] ?? ''); ?>"
                                        placeholder="https://your-instance.odoo.com"
                                        class="w-full px-4 py-2.5 border border-orange-200 rounded-lg bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-orange-900 mb-2">Database Name</label>
-                                <input type="text" name="erp_database" value="<?php echo sanitize($erpSettings['erp_database'] ?? ''); ?>"
+                                <input aria-label="Database Name" type="text" name="erp_database" value="<?php echo sanitize($erpSettings['erp_database'] ?? ''); ?>"
                                        placeholder="your_database"
                                        class="w-full px-4 py-2.5 border border-orange-200 rounded-lg bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20">
                             </div>
@@ -731,13 +731,13 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                         <div class="grid md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-orange-900 mb-2">Username / Email</label>
-                                <input type="text" name="erp_username" value="<?php echo sanitize($erpSettings['erp_username'] ?? ''); ?>"
+                                <input aria-label="Username / Email" type="text" name="erp_username" value="<?php echo sanitize($erpSettings['erp_username'] ?? ''); ?>"
                                        placeholder="admin@company.com"
                                        class="w-full px-4 py-2.5 border border-orange-200 rounded-lg bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-orange-900 mb-2">API Key / Password</label>
-                                <input type="password" name="erp_api_key" value="<?php echo $erpSettings['erp_api_key'] === '***' ? '' : sanitize($erpSettings['erp_api_key']); ?>"
+                                <input aria-label="API Key / Password" type="password" name="erp_api_key" value="<?php echo $erpSettings['erp_api_key'] === '***' ? '' : sanitize($erpSettings['erp_api_key']); ?>"
                                        placeholder="<?php echo $erpSettings['erp_api_key'] === '***' ? '••••••••' : 'Enter API key or password'; ?>"
                                        autocomplete="new-password"
                                        class="w-full px-4 py-2.5 border border-orange-200 rounded-lg bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20">
@@ -750,14 +750,14 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                         
                         <div>
                             <label class="block text-sm font-medium text-orange-900 mb-2">Company ID (optional)</label>
-                            <input type="text" name="erp_company_id" value="<?php echo sanitize($erpSettings['erp_company_id'] ?? ''); ?>"
+                            <input aria-label="Company ID (optional)" type="text" name="erp_company_id" value="<?php echo sanitize($erpSettings['erp_company_id'] ?? ''); ?>"
                                    placeholder="Leave empty for default company"
                                    class="w-full px-4 py-2.5 border border-orange-200 rounded-lg bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20">
                         </div>
                         
                         <!-- Auto-sync toggle -->
                         <label class="flex items-center gap-3 p-4 bg-white border border-orange-200 rounded-lg cursor-pointer">
-                            <input type="checkbox" name="erp_sync_enabled" <?php echo $erpSettings['erp_sync_enabled'] ? 'checked' : ''; ?>
+                            <input aria-label="Company ID (optional)" type="checkbox" name="erp_sync_enabled" <?php echo $erpSettings['erp_sync_enabled'] ? 'checked' : ''; ?>
                                    class="rounded text-orange-600 border-orange-300 focus:ring-orange-500">
                             <div>
                                 <span class="font-medium text-orange-900">Enable Auto-Sync</span>
@@ -821,7 +821,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                         <p class="text-sm text-gray-500">Disable to pause new orders temporarily</p>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="accepting_orders" value="1" class="sr-only peer" <?= $acceptingOrders ? 'checked' : '' ?>>
+                        <input aria-label="Enable Auto-Sync Automatically create quotations and invoices in Odoo when orders are placed" type="checkbox" name="accepting_orders" value="1" class="sr-only peer" <?= $acceptingOrders ? 'checked' : '' ?>>
                         <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
                     </label>
                 </div>
@@ -829,7 +829,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                 <!-- Max daily orders -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Max Daily Orders <span class="text-gray-400 font-normal">(0 = unlimited)</span></label>
-                    <input type="number" name="max_daily_orders" value="<?= (int)$maxDaily ?>" min="0" max="9999"
+                    <input aria-label="Max Daily Orders (0 = unlimited)" type="number" name="max_daily_orders" value="<?= (int)$maxDaily ?>" min="0" max="9999"
                            class="w-40 border border-gray-200 rounded-xl px-4 py-2 focus:border-teal-500 focus:ring-1 focus:ring-teal-500">
                 </div>
 
@@ -842,13 +842,13 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                         ?>
                         <div class="flex items-center gap-4">
                             <label class="flex items-center gap-2 w-28">
-                                <input type="checkbox" name="wh_<?= $key ?>" value="1" class="rounded border-gray-300 text-teal-500 focus:ring-teal-500" <?= !empty($h['enabled']) ? 'checked' : '' ?>>
+                                <input aria-label="<?= htmlspecialchars($label) ?> open for orders" type="checkbox" name="wh_<?= $key ?>" value="1" class="rounded border-gray-300 text-teal-500 focus:ring-teal-500" <?= !empty($h['enabled']) ? 'checked' : '' ?>>
                                 <span class="text-sm font-medium text-gray-700"><?= $label ?></span>
                             </label>
-                            <input type="time" name="wh_<?= $key ?>_open" value="<?= htmlspecialchars($h['open'] ?? '08:00') ?>"
+                            <input aria-label="<?= htmlspecialchars($label) ?> opening time" type="time" name="wh_<?= $key ?>_open" value="<?= htmlspecialchars($h['open'] ?? '08:00') ?>"
                                    class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:border-teal-500">
                             <span class="text-gray-400 text-sm">to</span>
-                            <input type="time" name="wh_<?= $key ?>_close" value="<?= htmlspecialchars($h['close'] ?? '17:00') ?>"
+                            <input aria-label="<?= htmlspecialchars($label) ?> closing time" type="time" name="wh_<?= $key ?>_close" value="<?= htmlspecialchars($h['close'] ?? '17:00') ?>"
                                    class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:border-teal-500">
                         </div>
                         <?php endforeach; ?>
@@ -858,7 +858,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                 <!-- Capacity notes -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Capacity Notes <span class="text-gray-400 font-normal">(shown to customers)</span></label>
-                    <textarea name="capacity_notes" rows="2" placeholder="e.g. Peak season, expect 7 day turnaround"
+                    <textarea aria-label="Capacity Notes (shown to customers)" name="capacity_notes" rows="2" placeholder="e.g. Peak season, expect 7 day turnaround"
                               class="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"><?= htmlspecialchars($printShop['capacity_notes'] ?? '') ?></textarea>
                 </div>
 
