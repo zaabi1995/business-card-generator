@@ -44,10 +44,14 @@ try {
         throw new Exception('Company not found: ' . $companySlug);
     }
     
-    // Find employee; fall back to the latest card_request for this email so
-    // the QR on a watermarked preview resolves to a real vCard even before
-    // the admin approves the request.
+    // Find employee; fall back to (a) lookup by id/slug when the URL token
+    // has no '@' (e.g. /<slug>.vcf manually typed), then (b) the latest
+    // card_request for this email so the QR on a watermarked preview resolves
+    // to a real vCard even before the admin approves the request.
     $employee = findEmployeeByEmail($employeeEmail, $company['id']);
+    if (!$employee && strpos($employeeEmail, '@') === false) {
+        $employee = findEmployeeById($employeeEmail, $company['id']);
+    }
     if (!$employee) {
         $db = Database::getInstance();
         $req = $db->fetchOne(
