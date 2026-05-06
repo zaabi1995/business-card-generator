@@ -66,14 +66,14 @@ unset($_SESSION['ps_login_flash']);
                                @keydown.enter.prevent="requestOtp()"
                                placeholder="<?= htmlspecialchars(t('printshopinternal.identifier_placeholder')) ?>"
                                autocomplete="username"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2">
                         <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('printshopinternal.identifier_help')) ?></p>
                     </div>
                     <button type="button"
                             @click="requestOtp()"
                             :disabled="busy || identifier.trim() === ''"
                             :class="(busy || identifier.trim() === '') ? 'opacity-50 cursor-not-allowed' : ''"
-                            class="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
+                            class="w-full px-4 py-2.5 text-white rounded-lg font-medium">
                         <span x-show="!busy"><i class="fa-solid fa-paper-plane mr-2"></i><?= htmlspecialchars(t('printshopinternal.send_code_btn')) ?></span>
                         <span x-show="busy"><i class="fa-solid fa-spinner fa-spin mr-2"></i><?= htmlspecialchars(t('printshopinternal.sending')) ?></span>
                     </button>
@@ -94,7 +94,7 @@ unset($_SESSION['ps_login_flash']);
                                maxlength="6"
                                placeholder="000000"
                                autocomplete="one-time-code"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-center tracking-widest text-lg font-mono">
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 text-center tracking-widest text-lg font-mono">
                     </div>
                     <label class="flex items-center gap-2 text-sm text-gray-700">
                         <input type="checkbox" x-model="remember" class="rounded">
@@ -110,7 +110,7 @@ unset($_SESSION['ps_login_flash']);
                                 @click="verifyOtp()"
                                 :disabled="busy || code.length !== 6"
                                 :class="(busy || code.length !== 6) ? 'opacity-50 cursor-not-allowed' : ''"
-                                class="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
+                                class="flex-1 px-4 py-2.5 text-white rounded-lg font-medium">
                             <span x-show="!busy"><i class="fa-solid fa-check mr-2"></i><?= htmlspecialchars(t('printshopinternal.verify_btn')) ?></span>
                             <span x-show="busy"><i class="fa-solid fa-spinner fa-spin mr-2"></i><?= htmlspecialchars(t('printshopinternal.verifying')) ?></span>
                         </button>

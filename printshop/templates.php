@@ -84,36 +84,9 @@ $recentRequests = $db->fetchAll(
     ['shop' => $shopId]
 );
 
-$pageTitle = t('printshoppages.title_templates');
-$bodyClass = 'bg-gray-50';
-require_once INCLUDES_DIR . '/ui-header.php';
+require_once INCLUDES_DIR . '/printshop-layout.php';
+printshopHeader(t('printshoppages.title_templates'), 'template_requests');
 ?>
-
-<!-- Nav -->
-<nav class="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex items-center gap-4">
-                <a href="<?= getBasePath() ?>printshop/dashboard.php" class="flex items-center gap-2">
-                    <img src="<?= getBasePath() ?>assets/images/logo.svg" alt="Cardify" class="h-8 w-auto">
-                </a>
-                <span class="text-gray-300">|</span>
-                <span class="font-semibold text-gray-900"><?= sanitize($printShop['name']) ?></span>
-            </div>
-            <div class="flex items-center gap-4 text-sm">
-                <a href="dashboard.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-chart-pie mr-1"></i>Dashboard</a>
-                <a href="orders.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-box mr-1"></i>Orders</a>
-                <a href="templates.php" class="text-blue-600 font-medium"><i class="fa-solid fa-layer-group mr-1"></i>Templates</a>
-                <a href="credit-accounts.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-building-columns mr-1"></i>Credit</a>
-                <a href="client-pricing.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-tags mr-1"></i><?= htmlspecialchars(t('printshopclientpricing.nav_label')) ?></a>
-                <a href="settings.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-cog"></i></a>
-            </div>
-        </div>
-    </div>
-</nav>
-
-<div class="pt-20 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-
     <?php if ($message): ?>
     <div class="mb-4 p-4 rounded-lg <?= $messageType === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200' ?>">
         <?= sanitize($message) ?>
@@ -270,7 +243,4 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
     </div>
     <?php endif; ?>
-
-</div>
-
-<?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>
+<?php printshopFooter(); ?>

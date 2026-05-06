@@ -102,48 +102,18 @@ $statusColors = [
     'cancelled'  => 'bg-red-100 text-red-700',
 ];
 
-$pageTitle = t('printshoppages.title_orders', ['shop' => $printShop['name']]);
-$bodyClass = 'bg-gray-50';
-require_once INCLUDES_DIR . '/ui-header.php';
+require_once INCLUDES_DIR . '/printshop-layout.php';
+printshopHeader(t('printshoppages.title_orders', ['shop' => $printShop['name']]), 'orders');
 ?>
 
-<div class="min-h-screen">
-    <!-- Top Nav -->
-    <nav class="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center gap-4">
-                    <a href="<?= getBasePath() ?>" class="flex items-center gap-2">
-                        <img src="<?= getBasePath() ?>assets/images/logo.svg" alt="Cardify" class="h-8 w-auto">
-                    </a>
-                    <span class="text-gray-300">|</span>
-                    <a href="dashboard.php" class="font-semibold text-gray-900 hover:text-blue-600">
-                        <?= sanitize($printShop['name']) ?>
-                    </a>
-                </div>
-                <div class="flex items-center gap-4 text-sm">
-                    <a href="dashboard.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-chart-pie mr-1"></i>Dashboard</a>
-                    <a href="orders.php" class="text-blue-600 font-medium"><i class="fa-solid fa-box mr-1"></i>Orders</a>
-                    <a href="analytics.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-chart-line mr-1"></i>Analytics</a>
-                    <a href="credit-accounts.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-building-columns mr-1"></i>Credit</a>
-                    <a href="client-pricing.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-tags mr-1"></i><?= htmlspecialchars(t('printshopclientpricing.nav_label')) ?></a>
-                    <a href="settings.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-cog"></i></a>
-                    <a href="<?= getBasePath() ?>logout.php" class="text-gray-500 hover:text-red-600"><i class="fa-solid fa-sign-out-alt"></i></a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <div class="pt-20 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-
         <!-- Header -->
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t("printshoppages.h1_orders")) ?></h1>
-                <p class="text-gray-500">Manage incoming print orders</p>
+                <h1 class="text-2xl font-bold text-gray-900 tracking-tight"><?= htmlspecialchars(t("printshoppages.h1_orders")) ?></h1>
+                <p class="text-sm text-gray-500 mt-1">Manage incoming print orders</p>
             </div>
-            <a href="analytics.php" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm">
-                <i class="fa-solid fa-chart-line mr-2"></i>View Analytics
+            <a href="analytics.php" class="ps-btn-primary text-sm">
+                <i class="fa-solid fa-chart-line"></i>View analytics
             </a>
         </div>
 
@@ -180,7 +150,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <option value="delivered">Delivered</option>
                     <option value="cancelled">Cancelled</option>
                 </select>
-                <button type="submit" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+                <button type="submit" class="ps-btn-primary text-sm" style="padding: 6px 14px;">
                     Apply to Selected
                 </button>
             </form>
@@ -319,7 +289,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                             <option value="delivered"  <?= $order['status'] === 'delivered'  ? 'selected' : '' ?>>Delivered</option>
                                             <option value="cancelled"  <?= $order['status'] === 'cancelled'  ? 'selected' : '' ?>>Cancelled</option>
                                         </select>
-                                        <button type="submit" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+                                        <button type="submit" class="ps-btn-primary text-sm" style="padding: 6px 12px;">
                                             Update
                                         </button>
                                     </form>
@@ -332,8 +302,6 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
             <?php endif; ?>
         </div>
-    </div>
-</div>
 
 <script>
 function updateSelection() {
@@ -388,4 +356,4 @@ document.getElementById('bulkForm')?.addEventListener('submit', function(e) {
 });
 </script>
 
-<?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>
+<?php printshopFooter(); ?>

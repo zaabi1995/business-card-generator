@@ -49,34 +49,9 @@ $designs = $tplStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 $cardsBase = getBasePath() . 'uploads/companies/' . $companyId . '/cards/';
 $companyLogo = $company['logo_path'] ? getBasePath() . ltrim($company['logo_path'], '/') : '';
 
-$pageTitle = $company['name'] . ' , ' . $shop['name'];
-$bodyClass = 'bg-gray-50';
-require_once INCLUDES_DIR . '/ui-header.php';
+require_once INCLUDES_DIR . '/printshop-layout.php';
+printshopHeader($company['name'] . ' , ' . $shop['name'], 'clients');
 ?>
-
-<nav class="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex items-center gap-4">
-                <a href="<?= getBasePath() ?>printshop/dashboard.php" class="flex items-center gap-2">
-                    <img src="<?= getBasePath() ?>assets/images/logo.svg" alt="Cardify" class="h-8 w-auto">
-                </a>
-                <span class="text-gray-300">|</span>
-                <span class="font-semibold text-gray-900"><?= sanitize($shop['name']) ?></span>
-            </div>
-            <div class="flex items-center gap-4 text-sm">
-                <a href="dashboard.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-chart-pie mr-1"></i>Dashboard</a>
-                <a href="orders.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-box mr-1"></i>Orders</a>
-                <a href="clients.php" class="text-blue-600 font-medium"><i class="fa-solid fa-building mr-1"></i><?= htmlspecialchars(t('printshopinternal.nav_clients')) ?></a>
-                <a href="operators.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-users-gear mr-1"></i><?= htmlspecialchars(t('printshopinternal.nav_operators')) ?></a>
-                <a href="<?= getBasePath() ?>logout.php" class="text-gray-500 hover:text-red-600"><i class="fa-solid fa-sign-out-alt"></i></a>
-            </div>
-        </div>
-    </div>
-</nav>
-
-<div class="pt-20 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-
     <div class="mb-2 text-sm text-gray-500"><a href="clients.php" class="hover:underline"><i class="fa-solid fa-arrow-left mr-1"></i><?= htmlspecialchars(t('printshopinternal.back_to_clients')) ?></a></div>
 
     <div class="mb-6 flex flex-wrap items-center gap-4">
@@ -243,5 +218,4 @@ require_once INCLUDES_DIR . '/ui-header.php';
     });
 })();
 </script>
-
-<?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>
+<?php printshopFooter(); ?>

@@ -112,44 +112,12 @@ $chartMonths   = array_column($monthlyData, 'month');
 $chartRevenue  = array_column($monthlyData, 'revenue');
 $chartOrders   = array_column($monthlyData, 'total_orders');
 
-$pageTitle = t('printshoppages.title_analytics', ['shop' => $printShop['name']]);
-$bodyClass = 'bg-gray-50';
-require_once INCLUDES_DIR . '/ui-header.php';
+require_once INCLUDES_DIR . '/printshop-layout.php';
+printshopHeader(t('printshoppages.title_analytics', ['shop' => $printShop['name']]), 'analytics');
 ?>
-
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
-<div class="min-h-screen">
-    <!-- Top Nav -->
-    <nav class="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center gap-4">
-                    <a href="<?= getBasePath() ?>" class="flex items-center gap-2">
-                        <img src="<?= getBasePath() ?>assets/images/logo.svg" alt="Cardify" class="h-8 w-auto">
-                    </a>
-                    <span class="text-gray-300">|</span>
-                    <a href="dashboard.php" class="font-semibold text-gray-900 hover:text-blue-600">
-                        <?= sanitize($printShop['name']) ?>
-                    </a>
-                </div>
-                <div class="flex items-center gap-4 text-sm">
-                    <a href="dashboard.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-chart-pie mr-1"></i><?= htmlspecialchars(t('printshopanalytics.nav_dashboard')) ?></a>
-                    <a href="orders.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-box mr-1"></i><?= htmlspecialchars(t('printshopanalytics.nav_orders')) ?></a>
-                    <a href="analytics.php" class="text-blue-600 font-medium"><i class="fa-solid fa-chart-line mr-1"></i><?= htmlspecialchars(t('printshopanalytics.nav_analytics')) ?></a>
-                    <a href="credit-accounts.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-building-columns mr-1"></i><?= htmlspecialchars(t('printshopanalytics.nav_credit')) ?></a>
-                    <a href="client-pricing.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-tags mr-1"></i><?= htmlspecialchars(t('printshopclientpricing.nav_label')) ?></a>
-                    <a href="settings.php" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-cog"></i></a>
-                    <a href="<?= getBasePath() ?>logout.php" class="text-gray-500 hover:text-red-600"><i class="fa-solid fa-sign-out-alt"></i></a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <div class="pt-20 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-
-        <!-- Header + period selector -->
+            <!-- Header + period selector -->
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t("printshoppages.h1_analytics")) ?></h1>
@@ -415,5 +383,4 @@ new Chart(document.getElementById('statusChart'), {
 });
 <?php endif; ?>
 </script>
-
-<?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>
+<?php printshopFooter(); ?>

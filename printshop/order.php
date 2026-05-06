@@ -462,39 +462,10 @@ $currentStepIndex = array_search($order['status'], $statusSteps);
 
 $currency = $order['currency'] ?? $printShop['currency'] ?? 'OMR';
 
-$pageTitle = t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $printShop['name'] ?? 'Print Shop']);
-$bodyClass = 'bg-gray-50';
-require_once INCLUDES_DIR . '/ui-header.php';
+require_once INCLUDES_DIR . '/printshop-layout.php';
+printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $printShop['name'] ?? 'Print Shop']), 'orders');
 ?>
-
-<div class="min-h-screen">
-    <!-- Top Nav -->
-    <nav class="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center gap-4">
-                    <a href="<?php echo getBasePath(); ?>" class="flex items-center gap-2">
-                        <img src="<?php echo getBasePath(); ?>assets/images/logo.svg" alt="Cardify" class="h-8 w-auto">
-                    </a>
-                    <span class="text-gray-300">|</span>
-                    <a href="dashboard.php" class="font-semibold text-gray-900 hover:text-blue-600">
-                        <?php echo sanitize($printShop['name'] ?? 'Print Shop'); ?>
-                    </a>
-                </div>
-                <div class="flex items-center gap-4">
-                    <a href="orders.php" class="text-gray-500 hover:text-gray-700">
-                        <i class="fa-solid fa-list"></i>
-                    </a>
-                    <a href="dashboard.php" class="text-gray-500 hover:text-gray-700">
-                        <i class="fa-solid fa-home"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </nav>
-    
-    <div class="pt-20 pb-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
-        
+    <div class="max-w-6xl mx-auto">
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
             <div>
@@ -1762,5 +1733,5 @@ function downloadAllFiles() {
     });
 }
 </script>
-
-<?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>
+</div>
+<?php printshopFooter(); ?>

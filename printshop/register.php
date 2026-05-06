@@ -133,6 +133,21 @@ $minimalFooter = true; // compact footer for auth page
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
 
+<style id="ps-page-style">
+  /* BHD teal accents on the auth pages, matching the rest of the print shop */
+  .text-white.bg-blue-600 { background-color: var(--cardify-primary-500, #009bc1); }
+  button.text-white:not([class*="bg-"]),
+  a.text-white:not([class*="bg-"]) { background-color: var(--cardify-primary-500, #009bc1); }
+  button.text-white:not([class*="bg-"]):hover,
+  a.text-white:not([class*="bg-"]):hover { background-color: var(--cardify-primary-600, #0086a6); }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--cardify-primary-500, #009bc1) !important;
+    box-shadow: 0 0 0 3px var(--cardify-shadow-focus, rgba(0,155,193,0.25)) !important;
+  }
+  a[href]:not(.no-teal):hover { color: var(--cardify-primary-700, #00708c); }
+  .text-blue-600 { color: var(--cardify-primary-500, #009bc1); }
+  .text-blue-700 { color: var(--cardify-primary-700, #00708c); }
+</style>
 <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-2xl w-full">
         <!-- Header -->
@@ -163,7 +178,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <?= htmlspecialchars(t('printshopregister.submitted_body')) ?>
             </p>
             <div class="flex items-center justify-center gap-4">
-                <a href="<?php echo getBasePath(); ?>login.php" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
+                <a href="<?php echo getBasePath(); ?>login.php" class="px-6 py-3 text-white rounded-xl font-medium transition-colors">
                     <?= htmlspecialchars(t('printshopregister.sign_in')) ?>
                 </a>
                 <a href="<?php echo getBasePath(); ?>" class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors">
@@ -186,14 +201,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.shop_name')) ?></label>
                     <input type="text" name="shop_name" required
                            value="<?php echo sanitize($_POST['shop_name'] ?? ''); ?>"
-                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                            placeholder="<?= htmlspecialchars(t('printshopregister.shop_name_ph')) ?>">
                 </div>
                 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.description')) ?></label>
                     <textarea name="description" rows="3"
-                              class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                              class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                               placeholder="<?= htmlspecialchars(t('printshopregister.description_ph')) ?>"><?php echo sanitize($_POST['description'] ?? ''); ?></textarea>
                 </div>
                 
@@ -202,7 +217,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.email')) ?></label>
                         <input type="email" name="email" required
                                value="<?php echo sanitize($_POST['email'] ?? ''); ?>"
-                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                                placeholder="<?= htmlspecialchars(t('printshopregister.email_ph')) ?>">
                     </div>
                     <div>
@@ -225,13 +240,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.website')) ?></label>
                         <input type="url" name="website"
                                value="<?php echo sanitize($_POST['website'] ?? ''); ?>"
-                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                                placeholder="<?= htmlspecialchars(t('printshopregister.website_ph')) ?>">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.currency')) ?></label>
                         <select name="currency" id="register-currency" 
-                                class="w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500">
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:outline-none focus:ring-2">
                             <?php echo Currency::getCurrencyOptions($_POST['currency'] ?? 'OMR'); ?>
                         </select>
                     </div>
@@ -250,7 +265,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.address')) ?></label>
                     <input type="text" name="address"
                            value="<?php echo sanitize($_POST['address'] ?? ''); ?>"
-                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                            placeholder="<?= htmlspecialchars(t('printshopregister.address_ph')) ?>">
                 </div>
                 
@@ -259,14 +274,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.city')) ?></label>
                         <input type="text" name="city" required
                                value="<?php echo sanitize($_POST['city'] ?? ''); ?>"
-                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                                placeholder="<?= htmlspecialchars(t('printshopregister.city_ph')) ?>">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.state')) ?></label>
                         <input type="text" name="state"
                                value="<?php echo sanitize($_POST['state'] ?? ''); ?>"
-                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                                placeholder="<?= htmlspecialchars(t('printshopregister.state_ph')) ?>">
                     </div>
                 </div>
@@ -276,7 +291,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.country')) ?></label>
                         <select name="country" id="register-country" required
                                 onchange="CardifyGeo.updateCurrencyFromCountry(this.value, 'register-currency')"
-                                class="w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500">
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:outline-none focus:ring-2">
                             <?php echo Currency::getCountryOptions($_POST['country'] ?? 'OM'); ?>
                         </select>
                     </div>
@@ -284,7 +299,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.postal_code')) ?></label>
                         <input type="text" name="postal_code"
                                value="<?php echo sanitize($_POST['postal_code'] ?? ''); ?>"
-                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                                placeholder="<?= htmlspecialchars(t('printshopregister.postal_code_ph')) ?>">
                     </div>
                 </div>
@@ -302,13 +317,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.password')) ?></label>
                         <input type="password" name="password" required minlength="8" autocomplete="new-password"
-                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                                placeholder="<?= htmlspecialchars(t('printshopregister.password_ph')) ?>">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.confirm_password')) ?></label>
                         <input type="password" name="confirm_password" required autocomplete="new-password"
-                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                                placeholder="<?= htmlspecialchars(t('printshopregister.confirm_password_ph')) ?>">
                     </div>
                 </div>
@@ -316,7 +331,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             
             <!-- Submit -->
             <div class="p-6 bg-gray-50 border-t border-gray-100">
-                <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2">
+                <button type="submit" class="w-full py-3 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2">
                     <i class="fa-solid fa-paper-plane"></i>
                     <?= htmlspecialchars(t('printshopregister.btn_submit')) ?>
                 </button>
