@@ -170,7 +170,7 @@ printshopHeader(t('printshoppages.title_profile', ['shop' => $printShop['name']]
                             <?php endif; ?>
                         </div>
                         <div class="flex-1">
-                            <input type="file" name="logo" accept="image/jpeg,image/png,image/webp" 
+                            <input aria-label="Logo" type="file" name="logo" accept="image/jpeg,image/png,image/webp" 
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
                             <p class="text-sm text-gray-500 mt-2">JPG, PNG or WebP. Max 2MB. Recommended: 200x200px</p>
                         </div>
@@ -196,12 +196,12 @@ printshopHeader(t('printshoppages.title_profile', ['shop' => $printShop['name']]
                     <div class="grid md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Shop Name *</label>
-                            <input type="text" name="name" value="<?php echo sanitize($printShop['name']); ?>" required
+                            <input aria-label="Shop Name *" type="text" name="name" value="<?php echo sanitize($printShop['name']); ?>" required
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Tagline</label>
-                            <input type="text" name="tagline" value="<?php echo sanitize($printShop['tagline'] ?? ''); ?>"
+                            <input aria-label="Tagline" type="text" name="tagline" value="<?php echo sanitize($printShop['tagline'] ?? ''); ?>"
                                    placeholder="Your shop's slogan"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
@@ -209,7 +209,7 @@ printshopHeader(t('printshoppages.title_profile', ['shop' => $printShop['name']]
                     
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
-                        <textarea name="description" rows="4"
+                        <textarea aria-label="Description" name="description" rows="4"
                                   placeholder="Tell customers about your print shop, services, and what makes you special..."
                                   class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"><?php echo sanitize($printShop['description'] ?? ''); ?></textarea>
                     </div>
@@ -217,7 +217,7 @@ printshopHeader(t('printshoppages.title_profile', ['shop' => $printShop['name']]
                     <div class="grid md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
-                            <input type="email" name="email" value="<?php echo sanitize($printShop['email']); ?>" required
+                            <input aria-label="Email" type="email" name="email" value="<?php echo sanitize($printShop['email']); ?>" required
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
                         <div>
@@ -236,7 +236,7 @@ printshopHeader(t('printshoppages.title_profile', ['shop' => $printShop['name']]
                     
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Website</label>
-                        <input type="url" name="website" value="<?php echo sanitize($printShop['website'] ?? ''); ?>"
+                        <input aria-label="Website" type="url" name="website" value="<?php echo sanitize($printShop['website'] ?? ''); ?>"
                                placeholder="https://yourshop.com"
                                class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     </div>
@@ -246,19 +246,19 @@ printshopHeader(t('printshoppages.title_profile', ['shop' => $printShop['name']]
                         <div class="grid md:grid-cols-3 gap-4">
                             <div class="relative">
                                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-brands fa-facebook"></i></span>
-                                <input type="text" name="facebook" value="<?php echo sanitize($printShop['facebook'] ?? ''); ?>"
+                                <input aria-label="Social Media" type="text" name="facebook" value="<?php echo sanitize($printShop['facebook'] ?? ''); ?>"
                                        placeholder="Facebook URL"
                                        class="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                             </div>
                             <div class="relative">
                                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-brands fa-instagram"></i></span>
-                                <input type="text" name="instagram" value="<?php echo sanitize($printShop['instagram'] ?? ''); ?>"
+                                <input aria-label="Social Media" type="text" name="instagram" value="<?php echo sanitize($printShop['instagram'] ?? ''); ?>"
                                        placeholder="Instagram URL"
                                        class="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                             </div>
                             <div class="relative">
                                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-brands fa-x-twitter"></i></span>
-                                <input type="text" name="twitter" value="<?php echo sanitize($printShop['twitter'] ?? ''); ?>"
+                                <input aria-label="Social Media" type="text" name="twitter" value="<?php echo sanitize($printShop['twitter'] ?? ''); ?>"
                                        placeholder="X/Twitter URL"
                                        class="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                             </div>
@@ -268,33 +268,33 @@ printshopHeader(t('printshoppages.title_profile', ['shop' => $printShop['name']]
                     <div class="pt-4 border-t border-gray-100">
                         <label class="block text-sm font-semibold text-gray-700 mb-3">Location</label>
                         <div>
-                            <input type="text" name="address" value="<?php echo sanitize($printShop['address'] ?? ''); ?>"
+                            <input aria-label="Location" type="text" name="address" value="<?php echo sanitize($printShop['address'] ?? ''); ?>"
                                    placeholder="Street address"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 mb-3">
                         </div>
                         <div class="grid md:grid-cols-4 gap-4">
                             <div>
                                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">City</label>
-                                <input type="text" name="city" value="<?php echo sanitize($printShop['city'] ?? ''); ?>"
+                                <input aria-label="City" type="text" name="city" value="<?php echo sanitize($printShop['city'] ?? ''); ?>"
                                        placeholder="City" required
                                        class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                             </div>
                             <div>
                                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">State/Region</label>
-                                <input type="text" name="state" value="<?php echo sanitize($printShop['state'] ?? ''); ?>"
+                                <input aria-label="State/Region" type="text" name="state" value="<?php echo sanitize($printShop['state'] ?? ''); ?>"
                                        placeholder="State/Region"
                                        class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                             </div>
                             <div>
                                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Country</label>
-                                <select name="country" id="profile-country" required
+                                <select aria-label="Country" name="country" id="profile-country" required
                                         class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                                     <?php echo Currency::getCountryOptions($printShop['country'] ?? 'OM'); ?>
                                 </select>
                             </div>
                             <div>
                                 <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Postal Code</label>
-                                <input type="text" name="postal_code" value="<?php echo sanitize($printShop['postal_code'] ?? ''); ?>"
+                                <input aria-label="Postal Code" type="text" name="postal_code" value="<?php echo sanitize($printShop['postal_code'] ?? ''); ?>"
                                        placeholder="Postal Code"
                                        class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                             </div>
@@ -321,19 +321,19 @@ printshopHeader(t('printshoppages.title_profile', ['shop' => $printShop['name']]
                 <div class="p-6 space-y-4">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Current Password</label>
-                        <input type="password" name="current_password" autocomplete="current-password"
+                        <input aria-label="Current Password" type="password" name="current_password" autocomplete="current-password"
                                class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                     </div>
                     
                     <div class="grid md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">New Password</label>
-                            <input type="password" name="new_password" autocomplete="new-password"
+                            <input aria-label="New Password" type="password" name="new_password" autocomplete="new-password"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Confirm New Password</label>
-                            <input type="password" name="confirm_password" autocomplete="new-password"
+                            <input aria-label="Confirm New Password" type="password" name="confirm_password" autocomplete="new-password"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
                     </div>
