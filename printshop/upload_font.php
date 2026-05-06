@@ -35,6 +35,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// Accept CSRF token from either FormData (csrf_token) or header (X-CSRF-Token)
+// since callers built before this hardening pass send it as a header.
+$csrf = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+if (!validateCSRFToken($csrf)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'invalid_csrf']);
+    exit;
+}
+
 // Tenant-admin path uses session company_id; print-shop operator path
 // posts company_id explicitly when uploading on behalf of a tenant.
 $companyId = function_exists('getCurrentCompanyId') ? getCurrentCompanyId() : null;
@@ -68,6 +77,23 @@ $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
 if (!in_array($ext, ['woff2', 'woff', 'ttf', 'otf'], true)) {
     http_response_code(400);
     echo json_encode(['error' => 'unsupported_format', 'allowed' => ['woff2','woff','ttf','otf']]);
+    exit;
+}
+
+// Defense in depth: extension whitelist + finfo (cardify rule 7).
+// $_FILES['type'] is client-controlled. finfo trusts file content.
+$finfo = new finfo(FILEINFO_MIME_TYPE);
+$realMime = $finfo->file($_FILES['font_file']['tmp_name']);
+$allowedMimes = [
+    'font/woff2', 'application/font-woff2',
+    'font/woff',  'application/font-woff',
+    'font/ttf',   'application/x-font-ttf', 'application/font-sfnt',
+    'font/otf',   'application/x-font-otf',
+    'application/octet-stream', // PHP+finfo often falls back here on .ttf/.otf
+];
+if (!in_array($realMime, $allowedMimes, true)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'unsupported_mime', 'detected' => $realMime]);
     exit;
 }
 

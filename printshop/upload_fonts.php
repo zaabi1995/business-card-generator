@@ -25,6 +25,19 @@ if (!in_array($user['role'], $allowedRoles, true)) {
     exit;
 }
 
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['error' => 'method_not_allowed']);
+    exit;
+}
+
+$csrf = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+if (!validateCSRFToken($csrf)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'invalid_csrf']);
+    exit;
+}
+
 if (empty($_FILES['fonts'])) {
     http_response_code(400);
     echo json_encode(['error' => 'no_files']);

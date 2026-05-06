@@ -401,6 +401,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
         const fd = new FormData();
         fd.append('pdf', file);
+        fd.append('csrf_token', '<?= generateCSRFToken() ?>');
         try {
             const res = await fetch(basePath + 'printshop/import_pdf.php', { method: 'POST', body: fd, credentials: 'same-origin' });
             const data = await res.json();
@@ -594,6 +595,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         bar.querySelector('#font-upload-input').addEventListener('change', async function(e) {
             const fd = new FormData();
             for (const f of e.target.files) fd.append('fonts[]', f);
+            fd.append('csrf_token', '<?= generateCSRFToken() ?>');
             const res = await fetch(basePath + 'printshop/upload_fonts.php', { method: 'POST', body: fd, credentials: 'same-origin' });
             const data = await res.json();
             if (data.uploaded) {

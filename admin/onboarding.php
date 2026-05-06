@@ -614,7 +614,7 @@ function onboarding(init) {
                 status.innerHTML = '<span class="text-blue-600"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Analysing card design...</span>';
                 summary.textContent = '';
 
-                const fd = new FormData(); fd.append('pdf', file);
+                const fd = new FormData(); fd.append('pdf', file); fd.append('csrf_token', '<?= generateCSRFToken() ?>');
                 fetch('<?= getBasePath() ?>printshop/import_pdf.php', { method: 'POST', credentials: 'same-origin', body: fd })
                     .then(r => r.json())
                     .then(data => {

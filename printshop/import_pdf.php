@@ -38,6 +38,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// Accept CSRF token from either FormData (csrf_token) or header (X-CSRF-Token)
+// since callers built before this hardening pass send it as a header.
+$csrf = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+if (!validateCSRFToken($csrf)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'invalid_csrf']);
+    exit;
+}
+
 if (empty($_FILES['pdf']) || $_FILES['pdf']['error'] !== UPLOAD_ERR_OK) {
     http_response_code(400);
     echo json_encode(['error' => 'no_pdf_uploaded']);
@@ -69,6 +78,15 @@ fclose($fh);
 if (substr($magic, 0, 4) !== '%PDF') {
     http_response_code(400);
     echo json_encode(['error' => 'not_a_pdf']);
+    exit;
+}
+
+// Defense in depth: magic-bytes + finfo (cardify rule 7).
+$finfo = new finfo(FILEINFO_MIME_TYPE);
+$realMime = $finfo->file($tmp);
+if ($realMime !== 'application/pdf') {
+    http_response_code(400);
+    echo json_encode(['error' => 'not_a_pdf', 'detected_mime' => $realMime]);
     exit;
 }
 
@@ -117,22 +135,20 @@ $cmd = sprintf(
 );
 $out = shell_exec($cmd);
 if (!$out) {
+    error_log('[import_pdf] parser_no_output stderr=' . substr((string)@file_get_contents($stderrLog), 0, 4000));
     http_response_code(500);
-    echo json_encode([
-        'error' => 'parser_no_output',
-        'parser_stderr' => is_file($stderrLog) ? substr((string)@file_get_contents($stderrLog), 0, 4000) : null,
-    ]);
+    // Do NOT echo parser_stderr to API consumers: it includes Python tracebacks
+    // with absolute server paths and library internals. The token is enough
+    // for an operator to find the stderr sidecar in the import dir.
+    echo json_encode(['error' => 'parser_no_output', 'import_token' => $token]);
     exit;
 }
 
 $parsed = json_decode($out, true);
 if ($parsed === null) {
+    error_log('[import_pdf] parser_failed output=' . substr($out, 0, 1000) . ' stderr=' . substr((string)@file_get_contents($stderrLog), 0, 1000));
     http_response_code(500);
-    echo json_encode([
-        'error' => 'parser_failed',
-        'parser_output' => substr($out, 0, 4000),
-        'parser_stderr' => is_file($stderrLog) ? substr((string)@file_get_contents($stderrLog), 0, 4000) : null,
-    ]);
+    echo json_encode(['error' => 'parser_failed', 'import_token' => $token]);
     exit;
 }
 

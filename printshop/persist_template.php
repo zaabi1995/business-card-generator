@@ -41,6 +41,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// CSRF: sent in the X-CSRF-Token header by the wizard's fetch() call,
+// since the body is application/json (so $_POST won't have csrf_token).
+$csrfHeader = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+if (!validateCSRFToken($csrfHeader)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'invalid_csrf']);
+    exit;
+}
+
 // Two callers: tenant-admin onboarding (session has company_id) and the
 // print-shop template editor (session has operator+shop, no direct company).
 // Resolve via the tenant path first; fall back to the envelope's company_id
@@ -164,7 +173,7 @@ try {
         'import_token' => $token,
     ], JSON_UNESCAPED_SLASHES);
 } catch (Throwable $e) {
-    error_log('[persist_template] ' . $e->getMessage());
+    error_log('[persist_template] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
     http_response_code(500);
-    echo json_encode(['error' => 'persist_failed', 'message' => $e->getMessage()]);
+    echo json_encode(['error' => 'persist_failed']);
 }
