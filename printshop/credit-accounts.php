@@ -342,7 +342,9 @@ printshopHeader(t('printshoppages.title_credit_accounts', ['shop' => $printShop[
                                    value="<?= htmlspecialchars($acc['po_number'] ?? '') ?>"
                                    aria-label="<?= htmlspecialchars(t('printshopcredit.po_ref_ph')) ?>"
                                    class="w-full border rounded px-2 py-1.5 text-sm">
-                            <input type="file" name="po_file" accept=".pdf,.jpg,.jpeg,.png" required class="text-xs w-full">
+                            <input type="file" name="po_file" accept=".pdf,.jpg,.jpeg,.png" required
+                                   aria-label="<?= htmlspecialchars(empty($acc['po_file_path']) ? t('printshopcredit.attach_po') : t('printshopcredit.replace_po')) ?>"
+                                   class="text-xs w-full">
                             <p class="text-xs text-gray-400"><?= htmlspecialchars(t('printshopcredit.file_size_hint')) ?></p>
                             <button type="submit" class="w-full bg-purple-600 text-white py-1.5 rounded-lg text-sm hover:bg-purple-700 transition">
                                 <?= htmlspecialchars(t('printshopcredit.btn_upload')) ?>
