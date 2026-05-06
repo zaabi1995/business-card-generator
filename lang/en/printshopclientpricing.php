@@ -63,4 +63,5 @@ return [
     'invalid_request'      => 'Invalid request',
     'error_missing_company'=> 'Please choose a client company.',
     'error_no_tiers'       => 'Please add at least one quantity tier.',
+    'close_btn'            => 'Close',
 ];

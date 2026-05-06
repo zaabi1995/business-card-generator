@@ -63,4 +63,5 @@ return [
     'invalid_request'      => 'طلب غير صالح',
     'error_missing_company'=> 'الرجاء اختيار شركة عميلة.',
     'error_no_tiers'       => 'الرجاء إضافة شريحة كمية واحدة على الأقل.',
+    'close_btn'            => 'إغلاق',
 ];

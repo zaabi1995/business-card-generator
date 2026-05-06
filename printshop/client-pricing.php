@@ -243,7 +243,10 @@ printshopHeader(t('printshopclientpricing.page_title', ['shop' => $printShop['na
                         <span x-show="mode === 'add'"><?= htmlspecialchars(t('printshopclientpricing.modal_add_h')) ?></span>
                         <span x-show="mode === 'edit'"><?= htmlspecialchars(t('printshopclientpricing.modal_edit_h')) ?></span>
                     </h3>
-                    <button type="button" @click="open = false" class="text-gray-400 hover:text-gray-600">
+                    <button type="button" @click="open = false"
+                            aria-label="<?= htmlspecialchars(t('printshopclientpricing.close_btn') ?: 'Close') ?>"
+                            title="<?= htmlspecialchars(t('printshopclientpricing.close_btn') ?: 'Close') ?>"
+                            class="text-gray-400 hover:text-gray-600 rounded-full p-1 hover:bg-gray-100 transition-colors">
                         <i class="fa-solid fa-xmark text-xl"></i>
                     </button>
                 </div>
@@ -260,8 +263,10 @@ printshopHeader(t('printshopclientpricing.page_title', ['shop' => $printShop['na
                         </div>
                         <?php else: ?>
                         <select name="company_id"
+                                id="cp_company_id"
                                 x-model="companyId"
                                 :required="mode === 'add'"
+                                aria-label="<?= htmlspecialchars(t('printshopclientpricing.field_company')) ?>"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                             <option value=""><?= htmlspecialchars(t('printshopclientpricing.select_company')) ?></option>
                             <?php foreach ($candidates as $c): ?>
@@ -282,16 +287,18 @@ printshopHeader(t('printshopclientpricing.page_title', ['shop' => $printShop['na
 
                     <!-- Min quantity -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5" for="cp_min_quantity">
                             <?= htmlspecialchars(t('printshopclientpricing.field_min_qty')) ?>
                             <span class="text-gray-400 font-normal text-xs">(<?= htmlspecialchars(t('printshopclientpricing.optional')) ?>)</span>
                         </label>
                         <input type="number"
+                               id="cp_min_quantity"
                                name="min_quantity"
                                x-model.number="minQuantity"
                                min="0"
                                step="1"
                                placeholder="0"
+                               aria-label="<?= htmlspecialchars(t('printshopclientpricing.field_min_qty')) ?>"
                                class="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('printshopclientpricing.min_qty_help')) ?></p>
                     </div>
@@ -423,13 +430,15 @@ printshopHeader(t('printshopclientpricing.page_title', ['shop' => $printShop['na
 
                     <!-- Notes -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                        <label class="block text-sm font-medium text-gray-700 mb-1.5" for="cp_notes">
                             <?= htmlspecialchars(t('printshopclientpricing.field_notes')) ?>
                             <span class="text-gray-400 font-normal text-xs">(<?= htmlspecialchars(t('printshopclientpricing.optional')) ?>)</span>
                         </label>
                         <input type="text"
+                               id="cp_notes"
                                name="notes"
                                x-model="notes"
+                               aria-label="<?= htmlspecialchars(t('printshopclientpricing.field_notes')) ?>"
                                maxlength="255"
                                placeholder="<?= htmlspecialchars(t('printshopclientpricing.notes_placeholder')) ?>"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
