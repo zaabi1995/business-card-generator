@@ -107,13 +107,15 @@ printshopHeader(t('printshoppages.title_templates'), 'template_requests');
     </div>
 
     <!-- Customer Link Banner -->
+    <?php $shopTemplatesUrl = getBaseUrl() . sanitize($printShop['slug']) . '/templates.php'; ?>
     <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <div class="flex-1">
             <p class="text-sm font-medium text-blue-800">Share with customers</p>
             <p class="text-xs text-blue-600 mt-0.5">Customers can browse and customize your templates at this link:</p>
-            <code class="text-xs text-blue-700 font-mono mt-1 block"><?= getBaseUrl() ?>bhd/templates.php</code>
+            <code class="text-xs text-blue-700 font-mono mt-1 block break-all"><?= $shopTemplatesUrl ?></code>
         </div>
-        <button onclick="navigator.clipboard.writeText('<?= getBaseUrl() ?>bhd/templates.php').then(() => this.textContent = 'Copied!')"
+        <button onclick="navigator.clipboard.writeText('<?= $shopTemplatesUrl ?>').then(() => this.textContent = 'Copied!')"
+                aria-label="Copy customer link <?= $shopTemplatesUrl ?>"
                 class="flex-shrink-0 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors">
             Copy Link
         </button>
@@ -192,16 +194,16 @@ printshopHeader(t('printshoppages.title_templates'), 'template_requests');
                         <?= csrfField() ?>
                         <input type="hidden" name="action" value="toggle_active">
                         <input type="hidden" name="template_id" value="<?= sanitize($tmpl['id']) ?>">
-                        <button type="submit" class="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 rounded-lg transition-colors" title="<?= $tmpl['is_active'] ? 'Deactivate' : 'Activate' ?>">
-                            <i class="fa-solid fa-<?= $tmpl['is_active'] ? 'toggle-on text-green-500' : 'toggle-off' ?>"></i>
+                        <button type="submit" class="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 rounded-lg transition-colors" title="<?= $tmpl['is_active'] ? 'Deactivate' : 'Activate' ?>" aria-label="<?= $tmpl['is_active'] ? 'Deactivate' : 'Activate' ?> template <?= sanitize($tmpl['name']) ?>">
+                            <i class="fa-solid fa-<?= $tmpl['is_active'] ? 'toggle-on text-green-500' : 'toggle-off' ?>" aria-hidden="true"></i>
                         </button>
                     </form>
                     <form method="POST" class="inline" onsubmit="return confirm('Delete this template? This cannot be undone.')">
                         <?= csrfField() ?>
                         <input type="hidden" name="action" value="delete">
                         <input type="hidden" name="template_id" value="<?= sanitize($tmpl['id']) ?>">
-                        <button type="submit" class="text-xs text-red-400 hover:text-red-600 px-2 py-1.5 rounded-lg transition-colors">
-                            <i class="fa-solid fa-trash"></i>
+                        <button type="submit" class="text-xs text-red-400 hover:text-red-600 px-2 py-1.5 rounded-lg transition-colors" title="Delete template" aria-label="Delete template <?= sanitize($tmpl['name']) ?>">
+                            <i class="fa-solid fa-trash" aria-hidden="true"></i>
                         </button>
                     </form>
                 </div>
