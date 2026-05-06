@@ -117,6 +117,7 @@ printshopHeader(t('printshoppages.title_template_requests'), 'template_requests'
         foreach ($tabs as $val => $label):
         ?>
         <a href="?status=<?= $val ?>"
+           <?= $statusFilter === $val ? 'aria-current="page"' : '' ?>
            class="text-xs px-3 py-1.5 rounded-full font-medium transition-colors <?= $statusFilter === $val ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50' ?>">
             <?= htmlspecialchars($label) ?>
         </a>
@@ -164,10 +165,11 @@ printshopHeader(t('printshoppages.title_template_requests'), 'template_requests'
                 <td class="px-4 py-3">
                     <p class="font-medium text-gray-900"><?= sanitize($req['customer_name'] ?: t('printshoptpl.anonymous')) ?></p>
                     <?php if ($req['customer_phone']): ?>
-                    <a href="https://api.whatsapp.com/send?phone=<?= preg_replace('/\D/', '', $req['customer_phone']) ?>&text=Hi+<?= urlencode($req['customer_name'] ?? '') ?>%2C+your+business+card+from+BHD+Printing"
+                    <a href="https://api.whatsapp.com/send?phone=<?= preg_replace('/\D/', '', $req['customer_phone']) ?>&text=<?= urlencode('Hi ' . ($req['customer_name'] ?? '') . ', your business card from ' . ($printShop['name'] ?? 'us')) ?>"
                        target="_blank"
+                       aria-label="WhatsApp <?= sanitize($req['customer_phone']) ?>"
                        class="text-xs text-green-600 hover:text-green-700 flex items-center gap-0.5 mt-0.5">
-                        <i class="fa-brands fa-whatsapp"></i>
+                        <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
                         <?= sanitize($req['customer_phone']) ?>
                     </a>
                     <?php endif; ?>
@@ -197,11 +199,11 @@ printshopHeader(t('printshoppages.title_template_requests'), 'template_requests'
                     <p class="text-xs text-orange-600 mt-0.5"><i class="fa-solid fa-note-sticky mr-0.5"></i><?= sanitize($req['notes']) ?></p>
                     <?php endif; ?>
                 </td>
-                <td class="px-4 py-3 text-gray-700"><?= (int)$req['quantity'] ?></td>
+                <td class="px-4 py-3 text-gray-700 tabular-nums"><?= (int)$req['quantity'] ?></td>
                 <td class="px-4 py-3">
                     <span class="text-xs font-medium px-2 py-0.5 rounded-full <?= $sc ?>"><?php $stk = 'printshoptpl.status_' . $req['status']; $stl = t($stk); echo htmlspecialchars($stl === $stk ? ucfirst($req['status']) : $stl); ?></span>
                 </td>
-                <td class="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
+                <td class="px-4 py-3 text-xs text-gray-400 whitespace-nowrap tabular-nums">
                     <?= date('M j, Y', strtotime($req['created_at'])) ?><br>
                     <?= date('g:ia', strtotime($req['created_at'])) ?>
                 </td>
@@ -210,7 +212,8 @@ printshopHeader(t('printshoppages.title_template_requests'), 'template_requests'
                         <?= csrfField() ?>
                         <input type="hidden" name="action" value="update_status">
                         <input type="hidden" name="request_id" value="<?= sanitize($req['id']) ?>">
-                        <select name="status" class="text-xs border border-gray-200 rounded px-2 py-1 bg-white" onchange="this.form.submit()">
+                        <label for="tpl_status_<?= sanitize($req['id']) ?>" class="sr-only"><?= htmlspecialchars(t('printshoptpl.col_status')) ?></label>
+                        <select name="status" id="tpl_status_<?= sanitize($req['id']) ?>" aria-label="<?= htmlspecialchars(t('printshoptpl.col_status')) ?>" class="text-xs border border-gray-200 rounded px-2 py-1 bg-white" onchange="this.form.submit()">
                             <?php foreach (['pending','confirmed','printing','ready','delivered','cancelled'] as $s): ?>
                             <option value="<?= $s ?>" <?= $req['status'] === $s ? 'selected' : '' ?>><?= htmlspecialchars(t('printshoptpl.status_' . $s)) ?></option>
                             <?php endforeach; ?>
