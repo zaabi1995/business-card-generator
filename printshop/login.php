@@ -62,6 +62,7 @@ unset($_SESSION['ps_login_flash']);
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_identifier')) ?></label>
                         <input type="text"
+                               aria-label="<?= htmlspecialchars(t('printshopinternal.field_identifier')) ?>"
                                x-model="identifier"
                                @keydown.enter.prevent="requestOtp()"
                                placeholder="<?= htmlspecialchars(t('printshopinternal.identifier_placeholder')) ?>"
@@ -87,6 +88,7 @@ unset($_SESSION['ps_login_flash']);
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_code')) ?></label>
                         <input type="text"
+                               aria-label="<?= htmlspecialchars(t('printshopinternal.field_code')) ?>"
                                x-model="code"
                                @keydown.enter.prevent="verifyOtp()"
                                inputmode="numeric"
@@ -97,7 +99,7 @@ unset($_SESSION['ps_login_flash']);
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 text-center tracking-widest text-lg font-mono">
                     </div>
                     <label class="flex items-center gap-2 text-sm text-gray-700">
-                        <input type="checkbox" x-model="remember" class="rounded">
+                        <input type="checkbox" x-model="remember" aria-label="<?= htmlspecialchars(t('printshopinternal.remember_me')) ?>" class="rounded">
                         <?= htmlspecialchars(t('printshopinternal.remember_me')) ?>
                     </label>
                     <div class="flex items-center gap-2">

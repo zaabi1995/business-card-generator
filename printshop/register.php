@@ -199,7 +199,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="p-6 space-y-4">
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.shop_name')) ?></label>
-                    <input type="text" name="shop_name" required
+                    <input aria-label="Shop Name" type="text" name="shop_name" required
                            value="<?php echo sanitize($_POST['shop_name'] ?? ''); ?>"
                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                            placeholder="<?= htmlspecialchars(t('printshopregister.shop_name_ph')) ?>">
@@ -207,7 +207,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.description')) ?></label>
-                    <textarea name="description" rows="3"
+                    <textarea aria-label="Description" name="description" rows="3"
                               class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                               placeholder="<?= htmlspecialchars(t('printshopregister.description_ph')) ?>"><?php echo sanitize($_POST['description'] ?? ''); ?></textarea>
                 </div>
@@ -215,7 +215,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.email')) ?></label>
-                        <input type="email" name="email" required
+                        <input aria-label="Email" type="email" name="email" required
                                value="<?php echo sanitize($_POST['email'] ?? ''); ?>"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                                placeholder="<?= htmlspecialchars(t('printshopregister.email_ph')) ?>">
@@ -238,14 +238,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.website')) ?></label>
-                        <input type="url" name="website"
+                        <input aria-label="Website" type="url" name="website"
                                value="<?php echo sanitize($_POST['website'] ?? ''); ?>"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                                placeholder="<?= htmlspecialchars(t('printshopregister.website_ph')) ?>">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.currency')) ?></label>
-                        <select name="currency" id="register-currency" 
+                        <select aria-label="Currency" name="currency" id="register-currency" 
                                 class="w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:outline-none focus:ring-2">
                             <?php echo Currency::getCurrencyOptions($_POST['currency'] ?? 'OMR'); ?>
                         </select>
@@ -263,7 +263,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="p-6 space-y-4">
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.address')) ?></label>
-                    <input type="text" name="address"
+                    <input aria-label="Address" type="text" name="address"
                            value="<?php echo sanitize($_POST['address'] ?? ''); ?>"
                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                            placeholder="<?= htmlspecialchars(t('printshopregister.address_ph')) ?>">
@@ -272,14 +272,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.city')) ?></label>
-                        <input type="text" name="city" required
+                        <input aria-label="City" type="text" name="city" required
                                value="<?php echo sanitize($_POST['city'] ?? ''); ?>"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                                placeholder="<?= htmlspecialchars(t('printshopregister.city_ph')) ?>">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.state')) ?></label>
-                        <input type="text" name="state"
+                        <input aria-label="State" type="text" name="state"
                                value="<?php echo sanitize($_POST['state'] ?? ''); ?>"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                                placeholder="<?= htmlspecialchars(t('printshopregister.state_ph')) ?>">
@@ -289,7 +289,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.country')) ?></label>
-                        <select name="country" id="register-country" required
+                        <select aria-label="Country" name="country" id="register-country" required
                                 onchange="CardifyGeo.updateCurrencyFromCountry(this.value, 'register-currency')"
                                 class="w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:outline-none focus:ring-2">
                             <?php echo Currency::getCountryOptions($_POST['country'] ?? 'OM'); ?>
@@ -297,7 +297,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.postal_code')) ?></label>
-                        <input type="text" name="postal_code"
+                        <input aria-label="Postal Code" type="text" name="postal_code"
                                value="<?php echo sanitize($_POST['postal_code'] ?? ''); ?>"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                                placeholder="<?= htmlspecialchars(t('printshopregister.postal_code_ph')) ?>">
@@ -316,13 +316,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.password')) ?></label>
-                        <input type="password" name="password" required minlength="8" autocomplete="new-password"
+                        <input aria-label="Password" type="password" name="password" required minlength="8" autocomplete="new-password"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                                placeholder="<?= htmlspecialchars(t('printshopregister.password_ph')) ?>">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.confirm_password')) ?></label>
-                        <input type="password" name="confirm_password" required autocomplete="new-password"
+                        <input aria-label="Confirm Password" type="password" name="confirm_password" required autocomplete="new-password"
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2"
                                placeholder="<?= htmlspecialchars(t('printshopregister.confirm_password_ph')) ?>">
                     </div>
