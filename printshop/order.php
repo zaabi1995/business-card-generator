@@ -524,7 +524,17 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                 // Check for high-quality versions
                 $frontUrl = $order['card_front_url'] ?? '';
                 $backUrl = $order['card_back_url'] ?? '';
-                
+
+                // Verify the canonical PNG actually exists on disk; orders sometimes
+                // outlive their card files (cleanup, regeneration, retention sweeps).
+                // Empty out the URL so the empty-state branch renders instead of a broken img.
+                if (!empty($frontUrl) && !file_exists(BASE_DIR . '/' . ltrim($frontUrl, '/'))) {
+                    $frontUrl = '';
+                }
+                if (!empty($backUrl) && !file_exists(BASE_DIR . '/' . ltrim($backUrl, '/'))) {
+                    $backUrl = '';
+                }
+
                 // Check for _hq versions (high quality)
                 $frontHq = !empty($frontUrl) ? str_replace('.png', '_hq.png', $frontUrl) : '';
                 $backHq = !empty($backUrl) ? str_replace('.png', '_hq.png', $backUrl) : '';
