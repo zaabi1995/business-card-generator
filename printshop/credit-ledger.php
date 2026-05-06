@@ -189,20 +189,24 @@ printshopHeader(t('printshoppages.title_credit_ledger', ['name' => $company['nam
                     <?= csrfField() ?>
                     <input type="hidden" name="action" value="record_payment">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('printshopcredit.field_amount')) ?></label>
-                        <input type="number" name="amount" step="0.001" min="0.001" max="<?= $account['balance_used'] ?>" required
-                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        <label class="block text-sm font-medium text-gray-700 mb-1" for="cl_payment_amount"><?= htmlspecialchars(t('printshopcredit.field_amount')) ?></label>
+                        <input type="number" id="cl_payment_amount" name="amount" step="0.001" min="0.001" max="<?= $account['balance_used'] ?>" required
+                               aria-label="<?= htmlspecialchars(t('printshopcredit.field_amount')) ?>"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 tabular-nums"
                                placeholder="<?= htmlspecialchars(t('printshopcredit.amount_ph')) ?>">
                         <p class="text-xs text-gray-400 mt-1"><?= str_replace(':amt', formatPriceHtml((float)$account['balance_used'], 'sm'), htmlspecialchars(t('printshopcredit.outstanding_hint'))) ?></p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('printshopcredit.field_notes')) ?></label>
-                        <textarea name="notes" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                        <label class="block text-sm font-medium text-gray-700 mb-1" for="cl_payment_notes"><?= htmlspecialchars(t('printshopcredit.field_notes')) ?></label>
+                        <textarea id="cl_payment_notes" name="notes" rows="2"
+                                  aria-label="<?= htmlspecialchars(t('printshopcredit.field_notes')) ?>"
+                                  class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
                                   placeholder="<?= htmlspecialchars(t('printshopcredit.notes_ph')) ?>"></textarea>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('printshopcredit.field_proof')) ?></label>
-                        <input type="file" name="proof_file" accept=".pdf,.jpg,.jpeg,.png"
+                        <label class="block text-sm font-medium text-gray-700 mb-1" for="cl_payment_proof"><?= htmlspecialchars(t('printshopcredit.field_proof')) ?></label>
+                        <input type="file" id="cl_payment_proof" name="proof_file" accept=".pdf,.jpg,.jpeg,.png"
+                               aria-label="<?= htmlspecialchars(t('printshopcredit.field_proof')) ?>"
                                class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
                         <p class="text-xs text-gray-400 mt-1"><?= htmlspecialchars(t('printshopcredit.proof_hint')) ?></p>
                     </div>
