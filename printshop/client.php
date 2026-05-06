@@ -28,8 +28,16 @@ if (!$company) {
 }
 
 $empStmt = $pdo->prepare(
-    "SELECT id, name_en, name_ar, position_en, position_ar, email, mobile, front_file_path, back_file_path
-     FROM employees WHERE company_id = ? ORDER BY name_en ASC"
+    "SELECT e.id, e.name_en, e.name_ar, e.position_en, e.position_ar, e.email, e.mobile,
+            gc.front_web_path, gc.back_web_path, gc.front_file_path, gc.back_file_path,
+            gc.generated_at
+     FROM employees e
+     LEFT JOIN generated_cards gc ON gc.id = (
+        SELECT id FROM generated_cards
+        WHERE employee_id = e.id AND company_id = e.company_id
+        ORDER BY generated_at DESC LIMIT 1
+     )
+     WHERE e.company_id = ? ORDER BY e.name_en ASC"
 );
 $empStmt->execute([$companyId]);
 $employees = $empStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -94,8 +102,8 @@ printshopHeader($company['name'] . ' , ' . $shop['name'], 'clients');
     <?php else: ?>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <?php foreach ($employees as $emp):
-            $front = $emp['front_file_path'] ? $cardsBase . $emp['front_file_path'] : '';
-            $back  = $emp['back_file_path']  ? $cardsBase . $emp['back_file_path']  : '';
+            $front = $emp['front_web_path'] ?: ($emp['front_file_path'] ? $cardsBase . basename($emp['front_file_path']) : '');
+            $back  = $emp['back_web_path']  ?: ($emp['back_file_path']  ? $cardsBase . basename($emp['back_file_path'])  : '');
         ?>
         <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div class="aspect-[1.7/1] bg-gray-50 flex items-center justify-center">
