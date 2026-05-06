@@ -176,7 +176,7 @@ printshopHeader(t('printshoppages.title_orders', ['shop' => $printShop['name']])
                     <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
                             <th class="px-4 py-3 text-left">
-                                <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" onchange="toggleAll(this)">
+                                <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" onchange="toggleAll(this)" aria-label="Select all orders on this page">
                             </th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Order</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Company</th>
@@ -196,9 +196,10 @@ printshopHeader(t('printshoppages.title_orders', ['shop' => $printShop['name']])
                         <tr class="hover:bg-gray-50 order-row" data-order-id="<?= $order['id'] ?>">
                             <td class="px-4 py-4">
                                 <input type="checkbox" class="order-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                       value="<?= $order['id'] ?>" onchange="updateSelection()">
+                                       value="<?= $order['id'] ?>" onchange="updateSelection()"
+                                       aria-label="Select order #<?= (int) $order['id'] ?>">
                             </td>
-                            <td class="px-4 py-4">
+                            <td class="px-4 py-4 tabular-nums">
                                 <a href="order.php?id=<?= $order['id'] ?>" class="font-bold text-blue-600 hover:text-blue-700">#<?= $order['id'] ?></a>
                                 <span class="block text-xs text-gray-500"><?= date('M j, Y', strtotime($order['created_at'])) ?></span>
                             </td>
@@ -209,7 +210,7 @@ printshopHeader(t('printshoppages.title_orders', ['shop' => $printShop['name']])
                                 <?php endif; ?>
                             </td>
                             <td class="px-4 py-4">
-                                <p class="text-gray-900"><?= number_format($order['quantity']) ?> cards</p>
+                                <p class="text-gray-900 tabular-nums"><?= number_format($order['quantity']) ?> cards</p>
                                 <p class="text-sm text-gray-500"><?= ucfirst($order['paper_type'] ?? '') ?> &bull; <?= ucfirst(str_replace('_', ' ', $order['finish'] ?? '')) ?></p>
                             </td>
                             <td class="px-4 py-4 text-sm text-gray-600">
@@ -237,7 +238,7 @@ printshopHeader(t('printshoppages.title_orders', ['shop' => $printShop['name']])
                                 <span class="text-xs text-gray-400">No files</span>
                                 <?php endif; ?>
                             </td>
-                            <td class="px-4 py-4">
+                            <td class="px-4 py-4 tabular-nums">
                                 <span class="font-bold text-gray-900"><?= Currency::formatHtml($order['total'], $printShop['currency'] ?? 'OMR', 'sm') ?></span>
                             </td>
                             <td class="px-4 py-4">
