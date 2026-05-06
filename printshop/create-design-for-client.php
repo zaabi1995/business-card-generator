@@ -232,11 +232,22 @@ try {
     );
 
     if (!empty($result['template_ids'])) {
+        $opId = $ctx['operator']['id'] ?? null;
         foreach ($result['template_ids'] as $sideKey => $tplId) {
             try {
-                $db->update('templates', ['name' => $name], 'id = :id', ['id' => $tplId]);
+                $upd = ['name' => $name];
+                // Operator attribution (migration 109). Best-effort, ignored
+                // if the column is missing on older deployments.
+                if (!empty($opId)) {
+                    $upd['created_by_operator_id'] = $opId;
+                }
+                $db->update('templates', $upd, 'id = :id', ['id' => $tplId]);
             } catch (Throwable $e) {
-                error_log('[create-design-for-client] rename failed: ' . $e->getMessage());
+                error_log('[create-design-for-client] rename/attribute failed: ' . $e->getMessage());
+                // Retry without the attribution column if it does not yet exist
+                try {
+                    $db->update('templates', ['name' => $name], 'id = :id', ['id' => $tplId]);
+                } catch (Throwable $_) { /* swallow */ }
             }
         }
     }

@@ -547,11 +547,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         </div>
                     </div>
                     <div class="pf-tenant-actions flex justify-end gap-2">
+                        <button type="button"
+                                @click="openUpload(<?= htmlspecialchars(json_encode(['id' => $t['id'], 'name' => $t['name']]), ENT_QUOTES) ?>)"
+                                class="pf-action-btn ghost" title="<?= htmlspecialchars(t('printshopdash.tenants_btn_upload_pdf')) ?>">
+                            <i class="fa-solid fa-file-arrow-up"></i><span class="hidden xl:inline"><?= htmlspecialchars(t('printshopdash.tenants_btn_upload_pdf')) ?></span>
+                        </button>
                         <a href="client.php?company=<?= urlencode($t['id']) ?>" class="pf-action-btn primary">
                             <i class="fa-solid fa-id-card"></i><span><?= htmlspecialchars(t('printshopdash.tenants_btn_open')) ?></span>
-                        </a>
-                        <a href="client.php?company=<?= urlencode($t['id']) ?>#sheet" class="pf-action-btn ghost" title="<?= htmlspecialchars(t('printshopdash.tenants_btn_sheet')) ?>">
-                            <i class="fa-solid fa-file-pdf"></i><span class="hidden xl:inline"><?= htmlspecialchars(t('printshopdash.tenants_btn_sheet')) ?></span>
                         </a>
                         <a href="client.php?company=<?= urlencode($t['id']) ?>#order" class="pf-action-btn" title="<?= htmlspecialchars(t('printshopdash.tenants_btn_order')) ?>">
                             <i class="fa-solid fa-cart-plus"></i><span class="hidden xl:inline"><?= htmlspecialchars(t('printshopdash.tenants_btn_order')) ?></span>
@@ -569,6 +571,114 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <a href="order-on-behalf.php" class="pf-action-btn primary">
                     <i class="fa-solid fa-plus"></i><span><?= htmlspecialchars(t('printshopdash.internal_order_on_behalf')) ?></span>
                 </a>
+            </div>
+
+            <!-- Upload PDF modal (single instance, reused across rows via Alpine state) -->
+            <div x-cloak x-show="upload.open"
+                 @keydown.escape.window="upload.open = false"
+                 class="fixed inset-0 z-[100] flex items-center justify-center px-4"
+                 style="background: rgba(10,10,12,0.55);">
+                <div @click.outside="if (!upload.busy) upload.open = false"
+                     class="pf-paper relative w-full max-w-xl p-6 sm:p-8 pf-cropmarks">
+                    <div class="pf-cm-tr"></div><div class="pf-cm-br"></div>
+                    <button type="button" @click="upload.open = false"
+                            class="absolute" style="top: 14px; right: 14px; color: var(--ink-3); font-size: 18px;"
+                            :disabled="upload.busy">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                    <p class="ucase mono mb-2" style="color: var(--vermillion); font-size: 11px;"><?= htmlspecialchars(t('printshopdash.tenants_btn_upload_pdf')) ?></p>
+                    <h3 class="display" style="font-size: 28px; line-height: 1; font-weight: 700; letter-spacing: -0.025em;" x-text="'For ' + (upload.companyName || '')"></h3>
+                    <p class="text-sm mt-2 mb-5" style="color: var(--ink-3);"><?= htmlspecialchars(t('printshopdash.upload_modal_lede')) ?></p>
+
+                    <!-- Step indicator -->
+                    <ol class="grid grid-cols-4 gap-2 mb-5 mono" style="font-size: 10.5px; letter-spacing: 0.04em;">
+                        <template x-for="(label, i) in ['Upload','Parse','Classify','Save']" :key="i">
+                            <li class="flex flex-col gap-1.5">
+                                <span class="block" style="height: 3px;"
+                                      :style="upload.step > i ? 'background: var(--moss);' : (upload.step === i && upload.busy ? 'background: var(--vermillion);' : 'background: var(--rule);')"></span>
+                                <span :style="upload.step >= i ? 'color: var(--ink);' : 'color: var(--ink-4);'" x-text="(i+1).toString().padStart(2,'0') + ' / ' + label"></span>
+                            </li>
+                        </template>
+                    </ol>
+
+                    <!-- Form (hidden when success) -->
+                    <form x-show="!upload.success" @submit.prevent="submitUpload($event)" class="space-y-4">
+                        <input type="hidden" name="csrf_token" :value="csrfToken">
+                        <input type="hidden" name="company_id" :value="upload.companyId">
+
+                        <div>
+                            <label class="ucase block mb-1.5" style="font-size: 10.5px; color: var(--ink-3);"><?= htmlspecialchars(t('printshopdash.upload_field_name')) ?></label>
+                            <input type="text" name="name" x-model="upload.name" required
+                                   placeholder="<?= htmlspecialchars(t('printshopdash.upload_field_name_ph')) ?>"
+                                   class="w-full" style="border: 1.5px solid var(--ink); padding: 10px 14px; background: var(--paper); font-family: inherit; font-size: 14px; color: var(--ink); outline: none;">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label class="block">
+                                <span class="ucase block mb-1.5" style="font-size: 10.5px; color: var(--ink-3);"><?= htmlspecialchars(t('printshopdash.upload_field_front')) ?></span>
+                                <input type="file" name="front_pdf" accept="application/pdf"
+                                       @change="upload.frontFile = $event.target.files[0]?.name || ''" required
+                                       class="block w-full text-sm" style="color: var(--ink-2);">
+                                <span x-show="upload.frontFile" class="mono mt-1 block" style="font-size: 11px; color: var(--moss);" x-text="upload.frontFile"></span>
+                            </label>
+                            <label class="block">
+                                <span class="ucase block mb-1.5" style="font-size: 10.5px; color: var(--ink-3);"><?= htmlspecialchars(t('printshopdash.upload_field_back')) ?></span>
+                                <input type="file" name="back_pdf" accept="application/pdf"
+                                       @change="upload.backFile = $event.target.files[0]?.name || ''"
+                                       class="block w-full text-sm" style="color: var(--ink-2);">
+                                <span x-show="upload.backFile" class="mono mt-1 block" style="font-size: 11px; color: var(--moss);" x-text="upload.backFile"></span>
+                            </label>
+                        </div>
+
+                        <p x-show="upload.error" x-cloak class="pf-banner red" style="margin: 0;">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            <span class="text-sm" x-text="upload.error"></span>
+                        </p>
+
+                        <div class="flex justify-end gap-2 pt-2">
+                            <button type="button" class="pf-action-btn ghost" @click="upload.open = false" :disabled="upload.busy">
+                                <?= htmlspecialchars(t('printshopdash.upload_cancel')) ?>
+                            </button>
+                            <button type="submit" class="pf-action-btn primary" :disabled="upload.busy">
+                                <i class="fa-solid" :class="upload.busy ? 'fa-circle-notch fa-spin' : 'fa-arrow-right'"></i>
+                                <span x-text="upload.busy ? '<?= htmlspecialchars(t('printshopdash.upload_busy')) ?>' : '<?= htmlspecialchars(t('printshopdash.upload_submit')) ?>'"></span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Success state -->
+                    <div x-show="upload.success" x-cloak class="space-y-4">
+                        <p class="pf-banner green" style="margin: 0;">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span class="text-sm"><?= htmlspecialchars(t('printshopdash.upload_success')) ?></span>
+                        </p>
+                        <template x-if="upload.missingFonts && upload.missingFonts.length > 0">
+                            <div class="pf-banner amber" style="margin: 0; align-items: flex-start;">
+                                <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+                                <div>
+                                    <strong class="display block" style="font-size: 14px;"><?= htmlspecialchars(t('printshopdash.upload_missing_fonts_h')) ?></strong>
+                                    <p class="text-xs mt-1"><?= htmlspecialchars(t('printshopdash.upload_missing_fonts_b')) ?></p>
+                                    <ul class="mono text-xs mt-2 space-y-0.5" style="color: var(--ink-2);">
+                                        <template x-for="f in upload.missingFonts" :key="f">
+                                            <li>&middot; <span x-text="f"></span></li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </div>
+                        </template>
+                        <div class="flex justify-end gap-2 pt-2">
+                            <a class="pf-action-btn primary"
+                               :href="'client.php?company=' + encodeURIComponent(upload.companyId)">
+                                <i class="fa-solid fa-arrow-right"></i>
+                                <span><?= htmlspecialchars(t('printshopdash.upload_open_tenant')) ?></span>
+                            </a>
+                            <button type="button" class="pf-action-btn ghost" @click="resetUpload()">
+                                <?= htmlspecialchars(t('printshopdash.upload_another')) ?>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
         <?php endif; ?>
@@ -810,12 +920,26 @@ require_once INCLUDES_DIR . '/ui-header.php';
         setInterval(tick, 1000);
     })();
 
-    // Tenant console search + filter (Alpine x-data)
+    // Tenant console: search + filter + per-tenant PDF upload modal
     function tenantConsole() {
         return {
             q: '',
             filter: 'all',
             visible: 0,
+            csrfToken: <?= json_encode(generateCSRFToken()) ?>,
+            upload: {
+                open: false,
+                busy: false,
+                step: 0,
+                companyId: '',
+                companyName: '',
+                name: '',
+                frontFile: '',
+                backFile: '',
+                error: '',
+                success: false,
+                missingFonts: []
+            },
             init() { this.apply(); },
             apply() {
                 var q = (this.q || '').toLowerCase().trim();
@@ -835,6 +959,64 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     else r.hidden = true;
                 });
                 this.visible = n;
+            },
+            openUpload(tenant) {
+                this.resetUpload();
+                this.upload.companyId = tenant.id;
+                this.upload.companyName = tenant.name;
+                this.upload.name = tenant.name + ' card';
+                this.upload.open = true;
+            },
+            resetUpload() {
+                this.upload.busy = false;
+                this.upload.step = 0;
+                this.upload.error = '';
+                this.upload.success = false;
+                this.upload.missingFonts = [];
+                this.upload.frontFile = '';
+                this.upload.backFile = '';
+                this.upload.name = this.upload.companyName ? (this.upload.companyName + ' card') : '';
+            },
+            async submitUpload(ev) {
+                this.upload.error = '';
+                this.upload.busy = true;
+                this.upload.step = 0;
+
+                var fd = new FormData(ev.target);
+                fd.set('csrf_token', this.csrfToken);
+                fd.set('company_id', this.upload.companyId);
+                if (!fd.get('name') || !fd.get('name').trim()) fd.set('name', this.upload.name);
+
+                // Walk a coarse 4-step indicator while the request runs.
+                var self = this;
+                var stepTimer = setInterval(function () {
+                    if (self.upload.step < 3) self.upload.step++;
+                }, 1500);
+
+                try {
+                    var res = await fetch('create-design-for-client.php', { method: 'POST', body: fd, credentials: 'same-origin' });
+                    var json = null;
+                    try { json = await res.json(); } catch (_) {}
+                    clearInterval(stepTimer);
+
+                    if (!res.ok || !json || !json.ok) {
+                        this.upload.error = (json && json.error) || ('HTTP ' + res.status);
+                        this.upload.busy = false;
+                        this.upload.step = 0;
+                        return;
+                    }
+                    this.upload.step = 4;
+                    this.upload.success = true;
+                    this.upload.missingFonts = (json.missing_fonts || []).map(function (f) {
+                        return typeof f === 'string' ? f : (f.family || f.name || JSON.stringify(f));
+                    });
+                    this.upload.busy = false;
+                } catch (e) {
+                    clearInterval(stepTimer);
+                    this.upload.error = String(e && e.message ? e.message : e);
+                    this.upload.busy = false;
+                    this.upload.step = 0;
+                }
             }
         };
     }
