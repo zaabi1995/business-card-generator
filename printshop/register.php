@@ -221,6 +221,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                placeholder="<?= htmlspecialchars(t('printshopregister.email_ph')) ?>">
                     </div>
                     <div>
+                        <label for="shop-phone" class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('printshopregister.phone')) ?></label>
                         <?php echo Currency::renderSimplePhoneInput([
                             'name' => 'phone',
                             'id' => 'shop-phone',
