@@ -26,7 +26,10 @@ if (!PrintShopAuth::can('cancel_order')) {
      style="display: none;"
      :style="visible ? 'display: flex; background: rgba(15,23,42,0.55);' : 'display: none;'">
     <div @click.outside="if (!busy) close()" class="bg-white rounded-2xl shadow-lg w-full max-w-lg p-6 sm:p-8 relative">
-        <button type="button" @click="close()" :disabled="busy" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
+        <button type="button" @click="close()" :disabled="busy"
+                aria-label="<?= htmlspecialchars(t('printshopdash.cancel_keep')) ?>"
+                title="<?= htmlspecialchars(t('printshopdash.cancel_keep')) ?>"
+                class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 rounded-full p-1 hover:bg-gray-100 transition-colors">
             <i class="fa-solid fa-xmark text-lg"></i>
         </button>
 

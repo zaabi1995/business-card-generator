@@ -372,7 +372,9 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
         <div @click.outside="if (!upload.busy) upload.open = false"
              class="bg-white rounded-2xl shadow-lg w-full max-w-xl p-6 sm:p-8 relative">
             <button type="button" @click="upload.open = false" :disabled="upload.busy"
-                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
+                    aria-label="<?= htmlspecialchars(t('printshopdash.upload_cancel')) ?>"
+                    title="<?= htmlspecialchars(t('printshopdash.upload_cancel')) ?>"
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 rounded-full p-1 hover:bg-gray-100 transition-colors">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
             <h3 class="text-xl font-bold text-gray-900 tracking-tight" x-text="'<?= htmlspecialchars(t('printshopdash.tenants_btn_upload_pdf')) ?>: ' + (upload.companyName || '')"></h3>
