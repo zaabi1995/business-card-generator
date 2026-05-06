@@ -81,6 +81,7 @@ return [
     'upload_btn'            => 'رفع وتحليل',
 
     // Order on behalf
+    'order_h1'              => 'إنشاء طلب نيابةً عن :client',
     'order_h'               => 'تفاصيل الطلب',
     'preview_front'         => 'الوجه',
     'preview_back'          => 'الخلف',

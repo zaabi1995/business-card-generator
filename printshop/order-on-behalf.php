@@ -172,12 +172,12 @@ printshopHeader('Order , ' . $company['name'], 'clients');
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_quantity')) ?></label>
-                        <input type="number" name="quantity" x-model.number="quantity" @input="updatePrice()" min="1" step="1"
+                        <input aria-label="Quantity" type="number" name="quantity" x-model.number="quantity" @input="updatePrice()" min="1" step="1"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_paper')) ?></label>
-                        <select name="paper_type" x-model="paperType" @change="updatePrice()" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <select aria-label="Paper Type" name="paper_type" x-model="paperType" @change="updatePrice()" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                             <option value="uncoated"><?= htmlspecialchars(t('printshopinternal.paper_uncoated')) ?></option>
                             <option value="matte"><?= htmlspecialchars(t('printshopinternal.paper_matte')) ?></option>
                             <option value="silk"><?= htmlspecialchars(t('printshopinternal.paper_silk')) ?></option>
@@ -185,14 +185,14 @@ printshopHeader('Order , ' . $company['name'], 'clients');
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_finish')) ?></label>
-                        <select name="finish" x-model="finish" @change="updatePrice()" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <select aria-label="Finish" name="finish" x-model="finish" @change="updatePrice()" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                             <option value="standard"><?= htmlspecialchars(t('printshopinternal.finish_standard')) ?></option>
                             <option value="rounded_corners"><?= htmlspecialchars(t('printshopinternal.finish_rounded')) ?></option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_phone')) ?></label>
-                        <input type="text" name="shipping_phone" value="<?= sanitize($employee['mobile'] ?? '') ?>"
+                        <input aria-label="Shipping Phone" type="text" name="shipping_phone" value="<?= sanitize($employee['mobile'] ?? '') ?>"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                 </div>
@@ -200,24 +200,24 @@ printshopHeader('Order , ' . $company['name'], 'clients');
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                     <div class="sm:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_shipping_address')) ?></label>
-                        <input type="text" name="shipping_address"
+                        <input aria-label="Shipping Address" type="text" name="shipping_address"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_city')) ?></label>
-                        <input type="text" name="shipping_city" value="Muscat"
+                        <input aria-label="Shipping City" type="text" name="shipping_city" value="Muscat"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_country')) ?></label>
-                        <input type="text" name="shipping_country" value="OM"
+                        <input aria-label="Shipping Country" type="text" name="shipping_country" value="OM"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                 </div>
 
                 <div class="mt-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_notes')) ?></label>
-                    <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                    <textarea aria-label="Notes" name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
                 </div>
 
                 <div class="mt-6 p-4 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 space-y-2">

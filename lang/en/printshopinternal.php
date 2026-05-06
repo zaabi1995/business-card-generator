@@ -81,6 +81,7 @@ return [
     'upload_btn'            => 'Upload and parse',
 
     // Order on behalf
+    'order_h1'              => 'Place order for :client',
     'order_h'               => 'Order details',
     'preview_front'         => 'Front',
     'preview_back'          => 'Back',
