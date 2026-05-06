@@ -836,23 +836,23 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                                 <div class="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Quotation Number</label>
-                                        <input type="text" name="quotation_number" placeholder="Auto-generated if empty"
+                                        <input aria-label="Quotation Number" type="text" name="quotation_number" placeholder="Auto-generated if empty"
                                                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Amount (<?php echo $currency; ?>)</label>
-                                        <input type="number" name="quotation_amount" step="0.001" value="<?php echo $order['total'] ?? 0; ?>"
+                                        <input aria-label="Amount ( )" type="number" name="quotation_amount" step="0.001" value="<?php echo $order['total'] ?? 0; ?>"
                                                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                                     </div>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Valid Until</label>
-                                    <input type="date" name="quotation_valid_until" value="<?php echo date('Y-m-d', strtotime('+30 days')); ?>"
+                                    <input aria-label="Valid Until" type="date" name="quotation_valid_until" value="<?php echo date('Y-m-d', strtotime('+30 days')); ?>"
                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Upload Quotation PDF</label>
-                                    <input type="file" name="quotation_file" accept=".pdf,.doc,.docx"
+                                    <input aria-label="Upload Quotation PDF" type="file" name="quotation_file" accept=".pdf,.doc,.docx"
                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-indigo-50 file:text-indigo-700">
                                 </div>
                                 <div class="flex gap-2">
@@ -910,12 +910,12 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                                     <input type="hidden" name="action" value="upload_po">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">PO Number</label>
-                                        <input type="text" name="po_number" placeholder="Customer's PO number"
+                                        <input aria-label="PO Number" type="text" name="po_number" placeholder="Customer's PO number"
                                                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Upload PO Document</label>
-                                        <input type="file" name="po_file" accept=".pdf,.doc,.docx,.jpg,.png"
+                                        <input aria-label="Upload PO Document" type="file" name="po_file" accept=".pdf,.doc,.docx,.jpg,.png"
                                                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-gray-100 file:text-gray-700">
                                     </div>
                                     <button type="submit" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium">
@@ -967,7 +967,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                 <div>
                                                     <label class="block text-xs font-medium text-gray-600 mb-1">Payment Method</label>
-                                                    <select name="direct_method" required
+                                                    <select aria-label="Payment Method" name="direct_method" required
                                                         class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                                                         <option value="bank_transfer">Bank Transfer</option>
                                                         <option value="cash">Cash</option>
@@ -979,7 +979,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                                                 </div>
                                                 <div>
                                                     <label class="block text-xs font-medium text-gray-600 mb-1">Reference / PO Number</label>
-                                                    <input type="text" name="direct_ref"
+                                                    <input aria-label="Reference / PO Number" type="text" name="direct_ref"
                                                         value="<?php echo htmlspecialchars($order['po_number'] ?? ''); ?>"
                                                         placeholder="Bank ref, PO no., cheque no."
                                                         class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
@@ -987,7 +987,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                                             </div>
                                             <div>
                                                 <label class="block text-xs font-medium text-gray-600 mb-1">Notes (optional)</label>
-                                                <input type="text" name="direct_notes" placeholder="e.g. Paid by Mohsin Haider Darwish, ref TXN-12345"
+                                                <input aria-label="Notes (optional)" type="text" name="direct_notes" placeholder="e.g. Paid by Mohsin Haider Darwish, ref TXN-12345"
                                                     class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                                             </div>
                                             <div class="flex items-center gap-3">
@@ -1038,23 +1038,23 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                                 <div class="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Invoice Number</label>
-                                        <input type="text" name="invoice_number" placeholder="Auto-generated if empty"
+                                        <input aria-label="Invoice Number" type="text" name="invoice_number" placeholder="Auto-generated if empty"
                                                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Amount (<?php echo $currency; ?>)</label>
-                                        <input type="number" name="invoice_amount" step="0.001" value="<?php echo $order['total'] ?? 0; ?>"
+                                        <input aria-label="Amount ( )" type="number" name="invoice_amount" step="0.001" value="<?php echo $order['total'] ?? 0; ?>"
                                                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                                     </div>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
-                                    <input type="date" name="invoice_due_date" value="<?php echo date('Y-m-d', strtotime('+30 days')); ?>"
+                                    <input aria-label="Due Date" type="date" name="invoice_due_date" value="<?php echo date('Y-m-d', strtotime('+30 days')); ?>"
                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Upload Invoice PDF</label>
-                                    <input type="file" name="invoice_file" accept=".pdf,.doc,.docx"
+                                    <input aria-label="Upload Invoice PDF" type="file" name="invoice_file" accept=".pdf,.doc,.docx"
                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-indigo-50 file:text-indigo-700">
                                 </div>
                                 <div class="flex gap-2">
@@ -1097,12 +1097,12 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                                 <input type="hidden" name="action" value="upload_delivery_note">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Delivery Note Number</label>
-                                    <input type="text" name="delivery_note_number" placeholder="Auto-generated if empty"
+                                    <input aria-label="Delivery Note Number" type="text" name="delivery_note_number" placeholder="Auto-generated if empty"
                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Upload Delivery Note PDF</label>
-                                    <input type="file" name="delivery_note_file" accept=".pdf,.doc,.docx"
+                                    <input aria-label="Upload Delivery Note PDF" type="file" name="delivery_note_file" accept=".pdf,.doc,.docx"
                                            class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-cyan-50 file:text-cyan-700">
                                 </div>
                                 <button type="submit" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-sm font-medium">
@@ -1163,7 +1163,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                            <select name="status" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                            <select aria-label="Status" name="status" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                                 <option value="pending" <?php echo $order['status'] === 'pending' ? 'selected' : ''; ?>>Pending</option>
                                 <option value="processing" <?php echo $order['status'] === 'processing' ? 'selected' : ''; ?>>Processing</option>
                                 <option value="printing" <?php echo $order['status'] === 'printing' ? 'selected' : ''; ?>>Printing</option>
@@ -1175,14 +1175,14 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Tracking Number</label>
-                            <input type="text" name="tracking_number" value="<?php echo sanitize($order['tracking_number'] ?? ''); ?>"
+                            <input aria-label="Tracking Number" type="text" name="tracking_number" value="<?php echo sanitize($order['tracking_number'] ?? ''); ?>"
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                                    placeholder="Enter tracking number">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Internal Notes</label>
-                            <textarea name="internal_notes" rows="3"
+                            <textarea aria-label="Internal Notes" name="internal_notes" rows="3"
                                       class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                                       placeholder="Notes for your reference..."><?php echo sanitize($order['notes'] ?? ''); ?></textarea>
                         </div>
@@ -1291,8 +1291,8 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                     </h3>
                     <p class="text-sm text-gray-500 mt-1">Create A4 PDF with cutting marks for professional printing</p>
                 </div>
-                <button onclick="closePrintReadyModal()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <i class="fa-solid fa-times text-gray-400"></i>
+                <button type="button" onclick="closePrintReadyModal()" aria-label="Close print-ready modal" title="Close" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <i class="fa-solid fa-times text-gray-400" aria-hidden="true"></i>
                 </button>
             </div>
             
@@ -1302,7 +1302,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                 <div class="grid md:grid-cols-3 gap-6 mb-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Paper Size</label>
-                        <select id="printPaperSize" onchange="updatePrintPreview()" 
+                        <select aria-label="Paper Size" id="printPaperSize" onchange="updatePrintPreview()" 
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500">
                             <option value="A4" selected>A4 (210×297mm)</option>
                             <option value="A3">A3 (297×420mm)</option>
@@ -1322,7 +1322,7 @@ printshopHeader(t('printshoppages.title_order_n', ['n' => $orderId, 'shop' => $p
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Scale: <span id="scaleValue">100</span>%
                         </label>
-                        <input type="range" id="printScale" min="90" max="110" value="100" step="1"
+                        <input aria-label="Scale: 100 %" type="range" id="printScale" min="90" max="110" value="100" step="1"
                                onchange="updateScaleValue(); updatePrintPreview()"
                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600">
                         <div class="flex justify-between text-xs text-gray-400 mt-1">
