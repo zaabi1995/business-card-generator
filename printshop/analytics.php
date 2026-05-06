@@ -144,21 +144,25 @@ printshopHeader(t('printshoppages.title_analytics', ['shop' => $printShop['name'
                 ['label' => t('printshopanalytics.kpi_cards_printed'), 'value' => number_format($kpis['total_cards'] ?? 0), 'icon' => 'fa-id-card', 'color' => 'teal'],
             ];
             $colorMap = [
-                'blue'   => 'bg-blue-50 text-blue-600',
-                'purple' => 'bg-purple-50 text-purple-600',
-                'green'  => 'bg-green-50 text-green-600',
-                'red'    => 'bg-red-50 text-red-600',
-                'amber'  => 'bg-amber-50 text-amber-600',
-                'teal'   => 'bg-teal-50 text-teal-600',
+                'blue'   => 'bg-blue-100 text-blue-600',
+                'purple' => 'bg-purple-100 text-purple-600',
+                'green'  => 'bg-green-100 text-green-600',
+                'red'    => 'bg-red-100 text-red-600',
+                'amber'  => 'bg-amber-100 text-amber-600',
+                'teal'   => 'bg-teal-100 text-teal-600',
             ];
             foreach ($kpiCards as $card):
             ?>
-            <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-                <div class="w-10 h-10 rounded-xl <?= $colorMap[$card['color']] ?> flex items-center justify-center mb-3">
-                    <i class="fa-solid <?= $card['icon'] ?>"></i>
+            <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl <?= $colorMap[$card['color']] ?> flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid <?= $card['icon'] ?> text-lg"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-2xl font-bold text-gray-900 tracking-tight leading-none tabular-nums"><?= $card['value'] ?></p>
+                        <p class="text-gray-500 text-[13px] mt-2 font-medium"><?= htmlspecialchars($card['label']) ?></p>
+                    </div>
                 </div>
-                <p class="text-xl font-bold text-gray-900 leading-tight"><?= $card['value'] ?></p>
-                <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars($card['label']) ?></p>
             </div>
             <?php endforeach; ?>
         </div>
@@ -248,8 +252,8 @@ printshopHeader(t('printshoppages.title_analytics', ['shop' => $printShop['name'
                                     <span class="font-medium text-gray-900"><?= sanitize($cust['company_name'] ?? t('printshopanalytics.unknown_company')) ?></span>
                                 </div>
                             </td>
-                            <td class="px-6 py-3 text-right text-gray-700"><?= number_format($cust['order_count']) ?></td>
-                            <td class="px-6 py-3 text-right font-medium text-gray-900"><?= number_format($cust['total_spent'], 3) ?> <?= $currency ?></td>
+                            <td class="px-6 py-3 text-right text-gray-700 tabular-nums"><?= number_format($cust['order_count']) ?></td>
+                            <td class="px-6 py-3 text-right font-medium text-gray-900 tabular-nums"><?= number_format($cust['total_spent'], 3) ?> <?= $currency ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
