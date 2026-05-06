@@ -27,12 +27,12 @@ try {
     $ctx = PrintShopAuth::requireInternalProvider();
     $shop = $ctx['shop'];
 
-    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-        throw new Exception('Invalid request token. Please refresh and try again.');
-    }
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         http_response_code(405);
         throw new Exception('method_not_allowed');
+    }
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        throw new Exception('Invalid request token. Please refresh and try again.');
     }
 
     $companyId = trim($_POST['company_id'] ?? '');
@@ -65,6 +65,9 @@ try {
         }
     }
 
+    // Defense in depth: magic-bytes check + finfo (cardify rule 7).
+    // finfo trusts file content over $_FILES['type'] which is client-controlled.
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
     foreach (['front_pdf', 'back_pdf'] as $k) {
         if (isset($_FILES[$k]) && $_FILES[$k]['error'] === UPLOAD_ERR_OK) {
             $fh = @fopen($_FILES[$k]['tmp_name'], 'rb');
@@ -72,6 +75,10 @@ try {
             $magic = fread($fh, 5);
             fclose($fh);
             if (substr($magic, 0, 4) !== '%PDF') {
+                throw new Exception("$k is not a valid PDF");
+            }
+            $realMime = $finfo->file($_FILES[$k]['tmp_name']);
+            if ($realMime !== 'application/pdf') {
                 throw new Exception("$k is not a valid PDF");
             }
         }
@@ -283,7 +290,10 @@ try {
     http_response_code(400);
     echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
 } catch (Throwable $e) {
-    error_log('[create-design-for-client] FATAL ' . $e->getMessage());
+    error_log('[create-design-for-client] FATAL ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
     http_response_code(500);
-    echo json_encode(['ok' => false, 'error' => 'Server error: ' . $e->getMessage()]);
+    // Don't echo $e->getMessage() — Throwable is the catch-all for runtime
+    // failures (PyMuPDF / pdfunite / fatal Python tracebacks) and may include
+    // server paths or library internals. Surface a generic string.
+    echo json_encode(['ok' => false, 'error' => 'Server error. Check the operator import dir for details.']);
 }
