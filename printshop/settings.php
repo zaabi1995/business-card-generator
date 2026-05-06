@@ -360,7 +360,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-900 dark:text-white mb-2">Country</label>
+                            <label for="settings-country" class="block text-sm font-medium text-gray-900 dark:text-white mb-2">Country</label>
                             <?php echo Currency::renderCountrySelect([
                                 'name' => 'country',
                                 'id' => 'settings-country',
