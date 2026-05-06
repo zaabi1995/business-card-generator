@@ -123,6 +123,37 @@ return [
     'revenue_full_analytics'=> 'التحليلات الكاملة',
     'revenue_widget_empty'  => 'لا توجد بيانات كافية لعرض الاتجاه بعد.',
 
+    // إضافات لوحة Press Floor
+    'console_label'             => 'وحدة العمليات',
+    'jump_to_tenants'           => 'الانتقال إلى العملاء',
+    'nav_clients'               => 'العملاء',
+
+    // وحدة العملاء
+    'tenants_h'                 => 'وحدة العملاء',
+    'tenants_lede'              => 'جميع عملاء Cardify. ابحث، ادخل، أنشئ صفحات الطباعة، وأرسل الطلبات نيابةً عنهم.',
+    'tenants_total'             => 'عميل',
+    'tenants_search_ph'         => 'ابحث بالاسم أو المعرّف',
+    'tenants_filter_all'        => 'الكل',
+    'tenants_filter_active'     => 'نشط خلال 30 يومًا',
+    'tenants_filter_dormant'    => 'خامل أكثر من 60 يومًا',
+    'tenants_filter_unprinted'  => 'بطاقات غير مطبوعة',
+    'tenants_col_name'          => 'العميل',
+    'tenants_col_employees'     => 'الموظفون',
+    'tenants_col_cards'         => 'بطاقات جاهزة',
+    'tenants_col_last_order'    => 'آخر طلب',
+    'tenants_col_actions'       => 'الإجراءات',
+    'tenants_unit_tpl'          => 'قوالب',
+    'tenants_orders_n'          => ':n طلبات إجماليًا',
+    'tenants_no_orders'         => 'لم يطلب أبدًا',
+    'tenants_btn_open'          => 'فتح',
+    'tenants_btn_sheet'         => 'صفحة',
+    'tenants_btn_order'         => 'طلب',
+    'tenants_view_all'          => 'عرض جميع العملاء',
+    'tenants_empty'             => 'لا توجد نتائج.',
+    'tenant_status_active'      => 'نشط',
+    'tenant_status_dormant'     => 'خامل',
+    'tenant_status_empty'       => 'بدون فريق',
+
     // تدفّق النشاط الأخير
     'activity_h'                  => 'النشاط الأخير',
     'activity_view_all'           => 'عرض الكل',

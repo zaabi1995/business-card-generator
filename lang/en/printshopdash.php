@@ -123,6 +123,37 @@ return [
     'revenue_full_analytics'=> 'Full analytics',
     'revenue_widget_empty'  => 'Not enough data yet to show a trend.',
 
+    // Press Floor chrome additions
+    'console_label'             => 'Operations console',
+    'jump_to_tenants'           => 'Jump to tenants',
+    'nav_clients'               => 'Clients',
+
+    // Tenant console
+    'tenants_h'                 => 'Tenant console',
+    'tenants_lede'              => 'Every Cardify tenant. Search, jump in, generate sheets, place orders on their behalf.',
+    'tenants_total'             => 'tenants',
+    'tenants_search_ph'         => 'Search by name or slug',
+    'tenants_filter_all'        => 'All',
+    'tenants_filter_active'     => 'Active 30d',
+    'tenants_filter_dormant'    => 'Dormant 60d+',
+    'tenants_filter_unprinted'  => 'Unprinted cards',
+    'tenants_col_name'          => 'Tenant',
+    'tenants_col_employees'     => 'Employees',
+    'tenants_col_cards'         => 'Cards ready',
+    'tenants_col_last_order'    => 'Last order',
+    'tenants_col_actions'       => 'Actions',
+    'tenants_unit_tpl'          => 'templates',
+    'tenants_orders_n'          => ':n orders lifetime',
+    'tenants_no_orders'         => 'never ordered',
+    'tenants_btn_open'          => 'Open',
+    'tenants_btn_sheet'         => 'Sheet',
+    'tenants_btn_order'         => 'Order',
+    'tenants_view_all'          => 'View all clients',
+    'tenants_empty'             => 'No tenants found.',
+    'tenant_status_active'      => 'Active',
+    'tenant_status_dormant'     => 'Dormant',
+    'tenant_status_empty'       => 'No team yet',
+
     // Recent activity feed
     'activity_h'                  => 'Recent activity',
     'activity_view_all'           => 'View all',

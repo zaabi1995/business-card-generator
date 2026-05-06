@@ -604,6 +604,61 @@ class PrintShop {
             error_log("PrintShop::getDashboardData activity: " . $e->getMessage());
         }
 
+        // ---- Tenant console (internal-provider operations) ------
+        // Every Cardify tenant + employee/template/card counts and
+        // this-shop print history. Only meaningful in internal-provider
+        // mode but cheap enough to compute always (~30 tenants today).
+        $tenants = [];
+        if ($isInternalProvider) {
+            try {
+                $stmt = $pdo->prepare(
+                    "SELECT
+                        c.id, c.name, c.slug, c.country,
+                        ct.logo_path, ct.primary_color,
+                        COALESCE(emp.cnt, 0)        AS employee_count,
+                        COALESCE(tpl.cnt, 0)        AS template_count,
+                        COALESCE(gc.cnt, 0)         AS generated_count,
+                        COALESCE(po.cnt, 0)         AS order_count,
+                        po.last_at                  AS last_order_at,
+                        po.last_status              AS last_order_status
+                     FROM companies c
+                     LEFT JOIN company_themes ct ON ct.company_id = c.id
+                     LEFT JOIN (
+                         SELECT company_id, COUNT(*) AS cnt FROM employees GROUP BY company_id
+                     ) emp ON emp.company_id = c.id
+                     LEFT JOIN (
+                         SELECT company_id, COUNT(*) AS cnt FROM templates
+                         WHERE deleted_at IS NULL GROUP BY company_id
+                     ) tpl ON tpl.company_id = c.id
+                     LEFT JOIN (
+                         SELECT e.company_id, COUNT(*) AS cnt
+                         FROM generated_cards gc
+                         JOIN employees e ON e.id = gc.employee_id
+                         GROUP BY e.company_id
+                     ) gc ON gc.company_id = c.id
+                     LEFT JOIN (
+                         SELECT company_id,
+                                COUNT(*)         AS cnt,
+                                MAX(created_at)  AS last_at,
+                                SUBSTRING_INDEX(GROUP_CONCAT(status ORDER BY created_at DESC), ',', 1) AS last_status
+                         FROM print_orders WHERE print_shop_id = ?
+                         GROUP BY company_id
+                     ) po ON po.company_id = c.id
+                     WHERE c.status = 'active'
+                     ORDER BY
+                        (po.last_at IS NULL) ASC,
+                        po.last_at DESC,
+                        emp.cnt DESC,
+                        c.name ASC
+                     LIMIT 80"
+                );
+                $stmt->execute([$printShopId]);
+                $tenants = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } catch (PDOException $e) {
+                error_log("PrintShop::getDashboardData tenants: " . $e->getMessage());
+            }
+        }
+
         return [
             'kpis'              => $kpis,
             'revenue_sparkline' => $revenueSparkline,
@@ -612,6 +667,7 @@ class PrintShop {
             'credit_risk'       => $creditRisk,
             'operator_activity' => $operatorActivity,
             'recent_activity'   => $recentActivity,
+            'tenant_console'    => $tenants,
         ];
     }
 
