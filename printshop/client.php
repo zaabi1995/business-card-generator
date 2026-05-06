@@ -143,27 +143,30 @@ printshopHeader($company['name'] . ' , ' . $shop['name'], 'clients');
                 <h3 class="text-lg font-bold text-gray-900"><?= htmlspecialchars(t('printshopinternal.create_design_h')) ?></h3>
                 <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(str_replace(':client', $company['name'], t('printshopinternal.create_design_sub'))) ?></p>
             </div>
-            <button type="button" onclick="document.getElementById('newDesignModal').close()" class="text-gray-400 hover:text-gray-700">
-                <i class="fa-solid fa-xmark text-lg"></i>
+            <button type="button" onclick="document.getElementById('newDesignModal').close()" aria-label="<?= htmlspecialchars(t('printshopinternal.cancel_btn')) ?>" title="<?= htmlspecialchars(t('printshopinternal.cancel_btn')) ?>" class="text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md p-1.5 transition-colors">
+                <i class="fa-solid fa-xmark text-lg" aria-hidden="true"></i>
             </button>
         </div>
 
         <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('printshopinternal.design_name_label')) ?></label>
-            <input type="text" name="name" required maxlength="100"
+            <label for="newdesign-name" class="block text-xs font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('printshopinternal.design_name_label')) ?></label>
+            <input type="text" id="newdesign-name" name="name" required maxlength="100"
+                   aria-label="<?= htmlspecialchars(t('printshopinternal.design_name_label')) ?>"
                    placeholder="<?= htmlspecialchars(t('printshopinternal.design_name_ph')) ?>"
                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('printshopinternal.front_pdf_label')) ?></label>
-                <input type="file" name="front_pdf" accept="application/pdf,.pdf"
+                <label for="newdesign-front" class="block text-xs font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('printshopinternal.front_pdf_label')) ?></label>
+                <input type="file" id="newdesign-front" name="front_pdf" accept="application/pdf,.pdf"
+                       aria-label="<?= htmlspecialchars(t('printshopinternal.front_pdf_label')) ?>"
                        class="block w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700">
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('printshopinternal.back_pdf_label')) ?></label>
-                <input type="file" name="back_pdf" accept="application/pdf,.pdf"
+                <label for="newdesign-back" class="block text-xs font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('printshopinternal.back_pdf_label')) ?></label>
+                <input type="file" id="newdesign-back" name="back_pdf" accept="application/pdf,.pdf"
+                       aria-label="<?= htmlspecialchars(t('printshopinternal.back_pdf_label')) ?>"
                        class="block w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-gray-50 file:text-gray-700">
             </div>
         </div>
