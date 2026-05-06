@@ -490,7 +490,7 @@ if ($currentRole !== 'super_admin' && !empty($_SESSION['user_id'])) {
     #bhd224-banner-phone.iti__tel-input { padding-left: 3.5rem !important; }
 </style>
 <?php if ($editorFontFaceCss): ?>
-<style id="cardify-editor-font-registry">
+<style id="cardify-font-registry">
 <?= $editorFontFaceCss ?>
 </style>
 <?php endif; ?>
