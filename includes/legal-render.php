@@ -78,7 +78,7 @@ $lastUpdated = date($isAr ? 'Y-m-d' : 'F j, Y');
 
             <div class="mt-6 p-5 bg-gray-50 rounded-xl text-sm text-gray-600 leading-relaxed">
                 <strong class="text-gray-900"><?= $isAr ? 'مجموعة BHD' : 'BHD Group' ?></strong><br>
-                <?= $isAr ? 'بن حيدر درويش ش.ش.و' : 'Bin Haider Darwish S.P.C.' ?><br>
+                <?= $isAr ? 'بن حيدر درويش ش م م' : 'Bin Haider Darwish LLC' ?><br>
                 <?= $isAr ? 'س.ت 1334733' : 'C.R. No. 1334733' ?><br>
                 <a href="<?= ($isAr ? '/ar' : '') ?>/contact" class="text-blue-600 hover:text-blue-700 font-medium">
                     <i class="fa-solid fa-envelope <?= $isAr ? 'ml-1.5' : 'mr-1.5' ?>"></i>

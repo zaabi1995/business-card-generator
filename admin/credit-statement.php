@@ -220,7 +220,7 @@ $selfHref = $basePath . 'credit-statement' . $ext;
         <p><?= htmlspecialchars(t('credit_statement.footer_note')) ?></p>
         <p class="mt-2">
             <strong><?= $isAr ? 'مجموعة BHD' : 'BHD Group' ?></strong>
-            · <?= $isAr ? 'بن حيدر درويش ش.ش.و' : 'Bin Haider Darwish S.P.C.' ?>
+            · <?= $isAr ? 'بن حيدر درويش ش م م' : 'Bin Haider Darwish LLC' ?>
             · <?= $isAr ? 'س.ت 1334733' : 'C.R. 1334733' ?>
         </p>
     </div>

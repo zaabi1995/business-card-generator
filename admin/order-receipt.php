@@ -318,7 +318,7 @@ $pageTitle = t('order.receipt_header') . ' #' . ($order['order_number'] ?? $orde
             <p class="text-sm text-gray-500"><?= htmlspecialchars(t('order.receipt_footer')) ?></p>
             <p class="text-xs text-gray-500 mt-3">
                 <strong><?= $isAr ? 'مجموعة BHD' : 'BHD Group' ?></strong>
-                · <?= $isAr ? 'بن حيدر درويش ش.ش.و' : 'Bin Haider Darwish S.P.C.' ?>
+                · <?= $isAr ? 'بن حيدر درويش ش م م' : 'Bin Haider Darwish LLC' ?>
                 · <?= $isAr ? 'س.ت 1334733' : 'C.R. 1334733' ?>
             </p>
             <p class="text-xs text-gray-400 mt-1">cardify.om · info@cardify.om · +968 9889 9100</p>

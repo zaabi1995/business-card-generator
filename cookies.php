@@ -1,7 +1,7 @@
 <?php
 /**
  * Cardify - Cookie Policy
- * Part of BHD Group (Bin Haider Darwish S.P.C.)
+ * Part of BHD Group (Bin Haider Darwish LLC)
  */
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
@@ -35,7 +35,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <p class="text-gray-600 leading-relaxed">
                     Cookies are small text files that are stored on your device when you visit a website. They help websites 
                     remember your preferences, keep you logged in, and provide a better user experience. <?php echo $brandName; ?>, 
-                    operated by BHD Group (Bin Haider Darwish S.P.C. - C.R. No. 1334733), uses cookies to improve your experience.
+                    operated by BHD Group (Bin Haider Darwish LLC - C.R. No. 1334733), uses cookies to improve your experience.
                 </p>
             </section>
 
@@ -145,7 +145,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </p>
                 <div class="mt-4 p-4 bg-gray-50 rounded-lg">
                     <p class="text-gray-700"><strong>BHD Group</strong></p>
-                    <p class="text-gray-600">Bin Haider Darwish S.P.C.</p>
+                    <p class="text-gray-600">Bin Haider Darwish LLC</p>
                     <p class="text-gray-600">C.R. No. 1334733</p>
                     <p class="text-gray-600 mt-2"><a href="/contact.php" class="text-blue-600 hover:underline">Contact us</a></p>
                 </div>
