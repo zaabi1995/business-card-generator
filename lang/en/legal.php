@@ -16,7 +16,7 @@ return [
         'sections' => [
             [
                 'h' => 'Agreement to terms',
-                'p' => 'By accessing or using Cardify, a service provided by BHD Group (Bin Haider Darwish S.P.C., C.R. No. 1334733), you agree to these Terms of Service. If you do not agree, please do not use the service.',
+                'p' => 'By accessing or using Cardify, a service provided by BHD Group (Bin Haider Darwish LLC, C.R. No. 1334733), you agree to these Terms of Service. If you do not agree, please do not use the service.',
             ],
             [
                 'h' => 'Description of service',
@@ -77,7 +77,7 @@ return [
             ],
             [
                 'h' => 'Contact',
-                'p' => 'For questions about these terms, contact BHD Group (Bin Haider Darwish S.P.C., C.R. No. 1334733) via the Cardify contact page.',
+                'p' => 'For questions about these terms, contact BHD Group (Bin Haider Darwish LLC, C.R. No. 1334733) via the Cardify contact page.',
             ],
         ],
     ],
@@ -89,7 +89,7 @@ return [
         'sections' => [
             [
                 'h' => 'Introduction',
-                'p' => 'Cardify ("we", "our", "us"), a service of BHD Group (Bin Haider Darwish S.P.C., C.R. No. 1334733), takes your privacy seriously. This policy explains what data we collect, why, how we store and protect it, and what rights you have. It is aligned with Oman’s Personal Data Protection Law (PDPL) and respects GDPR-style requests from international users.',
+                'p' => 'Cardify ("we", "our", "us"), a service of BHD Group (Bin Haider Darwish LLC, C.R. No. 1334733), takes your privacy seriously. This policy explains what data we collect, why, how we store and protect it, and what rights you have. It is aligned with Oman’s Personal Data Protection Law (PDPL) and respects GDPR-style requests from international users.',
             ],
             [
                 'h' => 'Information we collect',

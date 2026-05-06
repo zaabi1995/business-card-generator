@@ -1,7 +1,7 @@
 <?php
 /**
  * Cardify - Security
- * Part of BHD Group (Bin Haider Darwish S.P.C.)
+ * Part of BHD Group (Bin Haider Darwish LLC)
  */
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
@@ -41,7 +41,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </div>
             </div>
             <p class="text-gray-600 leading-relaxed">
-                At <?php echo $brandName; ?>, operated by BHD Group (Bin Haider Darwish S.P.C. - C.R. No. 1334733), 
+                At <?php echo $brandName; ?>, operated by BHD Group (Bin Haider Darwish LLC - C.R. No. 1334733), 
                 we take the security of your data seriously. We implement industry-leading security measures to ensure 
                 your information is protected at all times.
             </p>
