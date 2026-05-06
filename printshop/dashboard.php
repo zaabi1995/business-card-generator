@@ -524,7 +524,7 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
                         </a>
                         <?php if ($canCancel): ?>
                         <button type="button"
-                                onclick="window.dispatchEvent(new CustomEvent('ps:cancel-order', {detail: {id: <?= (int) $order['id'] ?>, ref: <?= json_encode('#' . (int) $order['id']) ?>}}))"
+                                onclick="window.dispatchEvent(new CustomEvent('ps:cancel-order', {detail: {id: <?= (int) $order['id'] ?>, ref: '#<?= (int) $order['id'] ?>'}}))"
                                 class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-600 hover:text-white hover:bg-red-600 transition-colors"
                                 title="<?= htmlspecialchars(t('printshopdash.cancel_btn')) ?>"
                                 aria-label="<?= htmlspecialchars(t('printshopdash.cancel_btn')) ?>">
