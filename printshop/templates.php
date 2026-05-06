@@ -107,7 +107,12 @@ printshopHeader(t('printshoppages.title_templates'), 'template_requests');
     </div>
 
     <!-- Customer Link Banner -->
-    <?php $shopTemplatesUrl = getBaseUrl() . sanitize($printShop['slug']) . '/templates.php'; ?>
+    <?php
+    // The customer-facing template-browser route is currently shipped as bhd/templates.php
+    // (hardcoded $BHD_SHOP_ID = 2). Multi-tenant routing for /<slug>/templates.php is not
+    // wired yet, so we display the URL that actually resolves, not the slug-based one.
+    $shopTemplatesUrl = getBaseUrl() . 'bhd/templates.php';
+    ?>
     <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <div class="flex-1">
             <p class="text-sm font-medium text-blue-800">Share with customers</p>
