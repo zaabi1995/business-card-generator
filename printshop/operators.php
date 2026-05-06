@@ -111,31 +111,36 @@ printshopHeader(t('printshopinternal.operators_title', ['shop' => $shop['name']]
                         <span x-show="mode === 'add'"><?= htmlspecialchars(t('printshopinternal.modal_add_op_h')) ?></span>
                         <span x-show="mode === 'edit'"><?= htmlspecialchars(t('printshopinternal.modal_edit_op_h')) ?></span>
                     </h3>
-                    <button type="button" @click="open = false" class="text-gray-400 hover:text-gray-600">
-                        <i class="fa-solid fa-xmark text-xl"></i>
+                    <button type="button" @click="open = false" aria-label="<?= htmlspecialchars(t('printshopinternal.cancel_btn')) ?>" title="<?= htmlspecialchars(t('printshopinternal.cancel_btn')) ?>" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md p-1.5 transition-colors">
+                        <i class="fa-solid fa-xmark text-xl" aria-hidden="true"></i>
                     </button>
                 </div>
                 <div class="p-6 space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_name')) ?></label>
-                        <input type="text" name="name" x-model="form.name" required
+                        <label for="op_name" class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_name')) ?></label>
+                        <input type="text" name="name" id="op_name" x-model="form.name" required
+                               aria-label="<?= htmlspecialchars(t('printshopinternal.field_name')) ?>"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_phone')) ?></label>
-                        <input type="text" name="phone" x-model="form.phone"
+                        <label for="op_phone" class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_phone')) ?></label>
+                        <input type="text" name="phone" id="op_phone" x-model="form.phone"
+                               aria-label="<?= htmlspecialchars(t('printshopinternal.field_phone')) ?>"
                                placeholder="+968 7161 6161"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                         <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('printshopinternal.phone_help')) ?></p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_email')) ?></label>
-                        <input type="email" name="email" x-model="form.email"
+                        <label for="op_email" class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_email')) ?></label>
+                        <input type="email" name="email" id="op_email" x-model="form.email"
+                               aria-label="<?= htmlspecialchars(t('printshopinternal.field_email')) ?>"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                     <div x-show="mode === 'edit'">
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_status')) ?></label>
-                        <select name="status" x-model="form.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <label for="op_status" class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('printshopinternal.field_status')) ?></label>
+                        <select name="status" id="op_status" x-model="form.status"
+                                aria-label="<?= htmlspecialchars(t('printshopinternal.field_status')) ?>"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                             <option value="active"><?= htmlspecialchars(t('printshopinternal.status_active')) ?></option>
                             <option value="disabled"><?= htmlspecialchars(t('printshopinternal.status_disabled')) ?></option>
                         </select>
