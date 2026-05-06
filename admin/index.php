@@ -587,7 +587,7 @@ if ($onboardState && empty($onboardState['completed_at'])) {
     }
 }
 
-$showResumeBanner = $onboardState && !empty($onboardState['started_at']) && empty($onboardState['completed_at']) && (int)$onboardState['step'] > 0 && (int)$onboardState['step'] < Onboarding::TOTAL_STEPS;
+$showResumeBanner = !$hasGeneratedCard && $onboardState && !empty($onboardState['started_at']) && empty($onboardState['completed_at']) && (int)$onboardState['step'] > 0 && (int)$onboardState['step'] < Onboarding::TOTAL_STEPS;
 $showOrderNudge  = $onboardState && !empty($onboardState['completed_at']) && empty($onboardState['data']['order_cards']['per_person']);
 $demoSeededIds = !empty($onboardState['data']['demo_employee_ids']) && is_array($onboardState['data']['demo_employee_ids'])
     ? $onboardState['data']['demo_employee_ids'] : [];
@@ -862,7 +862,7 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
 </script>
 <?php endif; ?>
 
-<?php if (!$checklistAllDone && !$showWelcome && $currentRole !== 'super_admin'): ?>
+<?php if (!$checklistAllDone && !$hasGeneratedCard && !$showWelcome && $currentRole !== 'super_admin'): ?>
 <!-- Getting Started Checklist -->
 <div class="mb-8 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden" id="getting-started-card">
     <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
