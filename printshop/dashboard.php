@@ -275,7 +275,19 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
             $isActive    = $last && ($lastDays !== null && $lastDays <= 30);
             $isDormant   = ($last && $lastDays !== null && $lastDays >= 60) || (!$last && $emp > 0);
             $unprinted   = ($emp > $gen);
-            $logoSrc = !empty($t['logo_path']) ? getBasePath() . ltrim((string) $t['logo_path'], '/') : null;
+            // Resolve logo_path defensively: legacy rows store bare-relative
+            // paths like "companies/<id>/theme/logo.svg" (no /uploads/ prefix).
+            // Mirrors TenantHost::theme() + admin-layout.php normalization.
+            $logoSrc = null;
+            if (!empty($t['logo_path'])) {
+                $lp = (string) $t['logo_path'];
+                if (preg_match('#^https?://#i', $lp)) {
+                    $logoSrc = $lp;
+                } else {
+                    if ($lp[0] !== '/') $lp = '/uploads/' . ltrim($lp, '/');
+                    $logoSrc = getBasePath() . ltrim($lp, '/');
+                }
+            }
             $initials = '';
             foreach (array_slice(preg_split('/\s+/', trim((string) $t['name'])), 0, 2) as $p) { $initials .= mb_substr($p, 0, 1); }
             $initials = mb_strtoupper($initials) ?: '?';
