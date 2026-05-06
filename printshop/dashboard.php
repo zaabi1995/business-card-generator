@@ -211,22 +211,22 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
         elseif ($deltaSign === 'flat')  $deltaText = htmlspecialchars(t('printshopdash.kpi_delta_flat'));
         elseif ($deltaSign === 'new')   $deltaText = htmlspecialchars(t('printshopdash.kpi_delta_new'));
     ?>
-    <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+    <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all">
         <div class="flex items-center gap-4">
             <div class="w-12 h-12 rounded-xl <?= $tile['iconBg'] ?> flex items-center justify-center flex-shrink-0">
-                <i class="fa-solid <?= $tile['icon'] ?> <?= $tile['iconClr'] ?> text-xl"></i>
+                <i class="fa-solid <?= $tile['icon'] ?> <?= $tile['iconClr'] ?> text-lg"></i>
             </div>
-            <div class="min-w-0">
-                <p class="text-3xl font-bold <?= $tile['numClr'] ?> tracking-tight leading-none">
+            <div class="min-w-0 flex-1">
+                <p class="text-3xl font-bold <?= $tile['numClr'] ?> tracking-tight leading-none tabular-nums">
                     <?php if ($tile['fmt'] === 'money'): ?>
                         <?= Currency::formatHtml((float) $tile['val'], $currency, 'sm') ?>
                     <?php else: ?>
                         <?= (int) $tile['val'] ?>
                     <?php endif; ?>
                 </p>
-                <p class="text-gray-500 text-sm mt-1.5"><?= htmlspecialchars($tile['label']) ?></p>
+                <p class="text-gray-500 text-[13px] mt-2 font-medium"><?= htmlspecialchars($tile['label']) ?></p>
                 <?php if ($deltaText): ?>
-                <p class="mt-1 text-xs font-medium <?= $deltaSign === 'up' ? 'text-green-600' : ($deltaSign === 'down' ? 'text-red-600' : 'text-gray-500') ?>"><?= $deltaText ?></p>
+                <p class="mt-1 text-[11px] font-semibold tabular-nums <?= $deltaSign === 'up' ? 'text-green-600' : ($deltaSign === 'down' ? 'text-red-600' : 'text-gray-500') ?>"><?= $deltaText ?></p>
                 <?php endif; ?>
             </div>
         </div>
@@ -262,7 +262,12 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
 
     <!-- Tenant rows -->
     <?php if (empty($tenants)): ?>
-    <div class="p-12 text-center text-sm text-gray-500"><?= htmlspecialchars(t('printshopdash.tenants_empty')) ?></div>
+    <div class="p-12 text-center">
+        <div class="w-14 h-14 rounded-full bg-gray-50 border border-dashed border-gray-200 mx-auto mb-3 flex items-center justify-center">
+            <i class="fa-solid fa-magnifying-glass text-gray-300 text-lg"></i>
+        </div>
+        <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshopdash.tenants_empty')) ?></p>
+    </div>
     <?php else: ?>
     <div class="divide-y divide-gray-100">
         <?php foreach ($tenants as $t):
@@ -292,7 +297,7 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
             foreach (array_slice(preg_split('/\s+/', trim((string) $t['name'])), 0, 2) as $p) { $initials .= mb_substr($p, 0, 1); }
             $initials = mb_strtoupper($initials) ?: '?';
         ?>
-        <div class="p-4 hover:bg-gray-50 transition-colors flex items-center gap-4 flex-wrap"
+        <div class="p-4 hover:bg-gray-50/70 transition-colors flex items-center gap-4 flex-wrap group"
              data-name="<?= htmlspecialchars(mb_strtolower($t['name'] . ' ' . ($t['slug'] ?? ''))) ?>"
              data-active="<?= $isActive ? '1' : '0' ?>"
              data-dormant="<?= $isDormant ? '1' : '0' ?>"
@@ -322,22 +327,22 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
             </div>
             <!-- Stats: employees, cards ready, last order -->
             <div class="hidden lg:flex items-center gap-6 text-sm">
-                <div class="text-center">
-                    <p class="text-lg font-bold text-gray-900 leading-none"><?= $emp ?></p>
-                    <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold mt-1"><?= htmlspecialchars(t('printshopdash.tenants_col_employees')) ?></p>
+                <div class="text-center min-w-[64px]">
+                    <p class="text-lg font-bold text-gray-900 leading-none tabular-nums"><?= $emp ?></p>
+                    <p class="text-[10.5px] uppercase tracking-wider text-gray-400 font-semibold mt-1.5"><?= htmlspecialchars(t('printshopdash.tenants_col_employees')) ?></p>
                 </div>
-                <div class="text-center">
-                    <p class="text-lg font-bold leading-none <?= $unprinted ? 'text-amber-600' : 'text-gray-900' ?>">
-                        <?= $gen ?><?php if ($emp > 0 && $gen < $emp): ?><span class="text-sm font-medium"> / <?= $emp ?></span><?php endif; ?>
+                <div class="text-center min-w-[72px]">
+                    <p class="text-lg font-bold leading-none tabular-nums <?= $unprinted ? 'text-amber-600' : 'text-gray-900' ?>">
+                        <?= $gen ?><?php if ($emp > 0 && $gen < $emp): ?><span class="text-sm font-medium text-gray-400"> / <?= $emp ?></span><?php endif; ?>
                     </p>
-                    <p class="text-[11px] uppercase tracking-wide text-gray-400 font-semibold mt-1"><?= htmlspecialchars(t('printshopdash.tenants_col_cards')) ?></p>
+                    <p class="text-[10.5px] uppercase tracking-wider text-gray-400 font-semibold mt-1.5"><?= htmlspecialchars(t('printshopdash.tenants_col_cards')) ?></p>
                 </div>
-                <div class="text-center min-w-[80px]">
-                    <p class="text-sm font-medium text-gray-900 leading-none">
+                <div class="text-center min-w-[96px]">
+                    <p class="text-sm font-medium text-gray-900 leading-none tabular-nums">
                         <?= $last ? htmlspecialchars(date('M j, Y', strtotime($last))) : '<span class="text-gray-400 italic font-normal">' . htmlspecialchars(t('printshopdash.tenants_no_orders')) . '</span>' ?>
                     </p>
                     <?php if ($last): ?>
-                    <p class="text-[11px] text-gray-400 mt-1"><?= htmlspecialchars(strtr(t('printshopdash.tenants_orders_n'), [':n' => (string) $ord])) ?></p>
+                    <p class="text-[10.5px] text-gray-400 mt-1.5 tabular-nums"><?= htmlspecialchars(strtr(t('printshopdash.tenants_orders_n'), [':n' => (string) $ord])) ?></p>
                     <?php endif; ?>
                 </div>
             </div>
@@ -464,53 +469,64 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
             $count = count($orders);
             $countLabel = $count === 1 ? t('printshopdash.queue_count_one') : strtr(t('printshopdash.queue_count_many'), [':n' => (string) $count]);
         ?>
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-<?= $meta['tone'] ?>-50">
-                <span class="font-semibold text-sm text-gray-900 flex items-center gap-1.5">
-                    <i class="fa-solid <?= $meta['icon'] ?> text-<?= $meta['tone'] ?>-600"></i>
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+            <div class="px-4 py-3.5 border-b border-gray-100 bg-<?= $meta['tone'] ?>-50/70 flex items-center justify-between">
+                <span class="font-semibold text-sm text-gray-900 inline-flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-<?= $meta['tone'] ?>-100 text-<?= $meta['tone'] ?>-700 inline-flex items-center justify-center">
+                        <i class="fa-solid <?= $meta['icon'] ?> text-xs"></i>
+                    </span>
                     <?= htmlspecialchars(t('printshopdash.queue_stage_' . $stage)) ?>
                 </span>
-                <span class="text-xs text-gray-500"><?= htmlspecialchars($countLabel) ?></span>
+                <span class="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-full text-[11px] font-semibold tabular-nums <?= $count > 0 ? 'bg-' . $meta['tone'] . '-100 text-' . $meta['tone'] . '-700' : 'bg-gray-100 text-gray-500' ?>"><?= (int) $count ?></span>
             </div>
             <?php if (empty($orders)): ?>
-            <div class="p-6 text-center text-xs text-gray-400"><?= htmlspecialchars(t('printshopdash.queue_empty')) ?></div>
+            <div class="p-8 text-center">
+                <div class="w-10 h-10 rounded-full bg-gray-50 border border-dashed border-gray-200 mx-auto mb-2 flex items-center justify-center">
+                    <i class="fa-regular fa-circle-check text-gray-300"></i>
+                </div>
+                <p class="text-xs text-gray-400"><?= htmlspecialchars(t('printshopdash.queue_empty')) ?></p>
+            </div>
             <?php else: ?>
             <div class="divide-y divide-gray-100">
                 <?php foreach ($orders as $order): ?>
-                <div class="p-3.5">
-                    <div class="flex items-start justify-between gap-2 mb-1.5">
+                <div class="p-4 hover:bg-gray-50/50 transition-colors">
+                    <div class="flex items-start justify-between gap-2 mb-2">
                         <div class="min-w-0">
-                            <p class="text-sm font-semibold text-gray-900 truncate"><?= sanitize($order['company_name'] ?? t('printshopdash.unknown_company')) ?></p>
-                            <p class="text-xs text-gray-500 truncate">#<?= (int) $order['id'] ?>
+                            <p class="text-sm font-semibold text-gray-900 truncate leading-tight"><?= sanitize($order['company_name'] ?? t('printshopdash.unknown_company')) ?></p>
+                            <p class="text-xs text-gray-500 truncate mt-0.5 tabular-nums">#<?= (int) $order['id'] ?>
                                 <?php if (!empty($order['employee_name'])): ?>&middot; <?= sanitize($order['employee_name']) ?><?php endif; ?>
                             </p>
                         </div>
-                        <span class="text-xs font-semibold text-gray-700 whitespace-nowrap"><?= Currency::formatHtml((float) $order['total'], $currency, 'xs') ?></span>
+                        <span class="text-sm font-semibold text-gray-900 whitespace-nowrap tabular-nums"><?= Currency::formatHtml((float) $order['total'], $currency, 'xs') ?></span>
                     </div>
-                    <p class="text-xs text-gray-500 mb-2.5">
-                        <?= htmlspecialchars(strtr(t('printshopdash.order_meta'), [
-                            ':n' => (string) $order['quantity'],
-                            ':paper' => ucfirst($order['paper_type'] ?? 'standard'),
-                        ])) ?>
+                    <p class="text-[11px] text-gray-500 mb-3 inline-flex items-center gap-1.5">
+                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium tabular-nums">
+                            <i class="fa-solid fa-id-card text-[9px]"></i><?= (int) $order['quantity'] ?>
+                        </span>
+                        <span><?= htmlspecialchars(ucfirst($order['paper_type'] ?? 'standard')) ?></span>
                     </p>
-                    <form method="post" class="flex items-center gap-2">
+                    <form method="post" class="flex items-center gap-1.5">
                         <?= csrfField() ?>
                         <input type="hidden" name="action"   value="update_status">
                         <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
                         <input type="hidden" name="status"   value="<?= htmlspecialchars($meta['next']) ?>">
-                        <button type="submit" class="flex-1 ps-btn-primary text-xs" style="padding: 6px 10px;">
-                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        <button type="submit" class="flex-1 inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold text-white bg-cardify-primary hover:bg-cardify-primary-600 transition-colors"
+                                style="background: var(--cardify-primary-500, #009bc1);">
                             <span><?= htmlspecialchars(t('printshopdash.queue_advance_' . $meta['next'])) ?></span>
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
                         </button>
-                        <a href="orders.php?id=<?= (int) $order['id'] ?>" class="ps-btn-secondary text-xs" style="padding: 6px 10px;" title="<?= htmlspecialchars(t('printshopdash.queue_open')) ?>">
-                            <i class="fa-solid fa-eye"></i>
+                        <a href="orders.php?id=<?= (int) $order['id'] ?>"
+                           class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                           title="<?= htmlspecialchars(t('printshopdash.queue_open')) ?>" aria-label="<?= htmlspecialchars(t('printshopdash.queue_open')) ?>">
+                            <i class="fa-solid fa-eye text-[12px]"></i>
                         </a>
                         <?php if ($canCancel): ?>
                         <button type="button"
                                 onclick="window.dispatchEvent(new CustomEvent('ps:cancel-order', {detail: {id: <?= (int) $order['id'] ?>, ref: <?= json_encode('#' . (int) $order['id']) ?>}}))"
-                                class="ps-btn-secondary text-xs" style="padding: 6px 8px; color: #b91c1c; border-color: #fecaca;"
-                                title="<?= htmlspecialchars(t('printshopdash.cancel_btn')) ?>">
-                            <i class="fa-solid fa-xmark"></i>
+                                class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-600 hover:text-white hover:bg-red-600 transition-colors"
+                                title="<?= htmlspecialchars(t('printshopdash.cancel_btn')) ?>"
+                                aria-label="<?= htmlspecialchars(t('printshopdash.cancel_btn')) ?>">
+                            <i class="fa-solid fa-xmark text-[12px]"></i>
                         </button>
                         <?php endif; ?>
                     </form>
@@ -576,7 +592,12 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
             <a href="credit-accounts.php" class="text-sm font-medium text-cardify-primary hover:underline"><?= htmlspecialchars(t('printshopdash.credit_risk_review')) ?></a>
         </div>
         <?php if ($creditRisk['account_count'] === 0): ?>
-        <div class="p-8 text-center text-sm text-gray-500"><?= htmlspecialchars(t('printshopdash.credit_risk_no_accounts')) ?></div>
+        <div class="p-10 text-center">
+            <div class="w-12 h-12 rounded-full bg-gray-50 border border-dashed border-gray-200 mx-auto mb-3 flex items-center justify-center">
+                <i class="fa-solid fa-building-columns text-gray-300"></i>
+            </div>
+            <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshopdash.credit_risk_no_accounts')) ?></p>
+        </div>
         <?php else: ?>
         <div class="p-5">
             <p class="text-sm text-gray-700 mb-2">
@@ -622,7 +643,12 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
             <h3 class="font-semibold text-gray-900"><?= htmlspecialchars(t('printshopdash.activity_h')) ?></h3>
         </div>
         <?php if (empty($activity)): ?>
-        <div class="p-8 text-center text-sm text-gray-500"><?= htmlspecialchars(t('printshopdash.activity_empty')) ?></div>
+        <div class="p-10 text-center">
+            <div class="w-12 h-12 rounded-full bg-gray-50 border border-dashed border-gray-200 mx-auto mb-3 flex items-center justify-center">
+                <i class="fa-regular fa-bell text-gray-300"></i>
+            </div>
+            <p class="text-sm text-gray-500"><?= htmlspecialchars(t('printshopdash.activity_empty')) ?></p>
+        </div>
         <?php else: ?>
         <ul class="divide-y divide-gray-100">
             <?php foreach ($activity as $item):
