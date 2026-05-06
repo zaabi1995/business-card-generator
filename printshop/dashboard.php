@@ -398,8 +398,10 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
                         <span x-show="upload.backFile" class="block mt-1 text-xs text-green-600" x-text="upload.backFile"></span>
                     </div>
                 </div>
-                <div x-show="upload.error" x-cloak class="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-2">
-                    <i class="fa-solid fa-circle-exclamation mt-0.5"></i><span x-text="upload.error"></span>
+                <div x-show="upload.error" x-cloak class="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm" style="display: none;">
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-exclamation mt-0.5"></i><span x-text="upload.error"></span>
+                    </div>
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" class="ps-btn-secondary text-sm" @click="upload.open = false" :disabled="upload.busy"><?= htmlspecialchars(t('printshopdash.upload_cancel')) ?></button>

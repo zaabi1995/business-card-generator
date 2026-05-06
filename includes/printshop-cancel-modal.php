@@ -48,8 +48,10 @@ if (!PrintShopAuth::can('cancel_order')) {
                               placeholder="<?= htmlspecialchars(t('printshopdash.cancel_reason_ph')) ?>"
                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500"></textarea>
                 </div>
-                <div x-show="error" x-cloak class="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-2">
-                    <i class="fa-solid fa-circle-exclamation mt-0.5"></i><span x-text="error"></span>
+                <div x-show="error" x-cloak class="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm" style="display: none;">
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-exclamation mt-0.5"></i><span x-text="error"></span>
+                    </div>
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" class="ps-btn-secondary text-sm" @click="close()" :disabled="busy"><?= htmlspecialchars(t('printshopdash.cancel_keep')) ?></button>

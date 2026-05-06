@@ -780,7 +780,7 @@ printshopHeader(t('printshoppages.title_settings', ['shop' => $printShop['name']
                     </div>
                 </div>
                 
-                <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-between" x-show="erpEnabled">
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-100" x-show="erpEnabled" style="display: none;" :style="erpEnabled ? 'display: flex; justify-content: space-between;' : 'display: none;'">
                     <button type="submit" name="action" value="test_erp" class="px-4 py-2 border border-orange-300 text-orange-700 hover:bg-orange-50 rounded-lg font-medium transition-colors">
                         <i class="fa-solid fa-plug-circle-check mr-2"></i>Test Connection
                     </button>

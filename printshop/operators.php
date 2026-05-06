@@ -99,7 +99,9 @@ printshopHeader(t('printshopinternal.operators_title', ['shop' => $shop['name']]
     </div>
 
     <!-- Modal -->
-    <div x-show="open" x-cloak class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40" @click.self="open = false">
+    <div x-show="open" x-cloak class="fixed inset-0 z-[60] p-4 bg-black/40" style="display: none;"
+         :style="open ? 'display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4);' : 'display: none;'"
+         @click.self="open = false">
         <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full">
             <form method="POST" action="save-operator.php">
                 <?= csrfField() ?>
