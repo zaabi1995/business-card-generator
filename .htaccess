@@ -144,6 +144,7 @@
     RewriteRule ^security/?$ security.php [L,QSA]
     RewriteRule ^cookies/?$ cookies.php [L,QSA]
     RewriteRule ^get-started/?$ get-started.php [L,QSA]
+    RewriteRule ^ar/get-started/?$ get-started.php?lang=ar [L,QSA]
     RewriteRule ^claim/?$ claim.php [L,QSA]
 
     # Sitemap index + child sitemaps (split so Google can prioritise crawling)
