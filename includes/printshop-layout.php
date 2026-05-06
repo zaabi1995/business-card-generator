@@ -197,6 +197,22 @@ if (!function_exists('printshopHeader')) {
     transition: background 150ms;
 }
 .printshop-layout .ps-btn-secondary:hover { background: #f9fafb; }
+
+/* Cardify brand bridge: any Tailwind bg-blue-600 / hover:bg-blue-700 inside
+   the print shop pages renders as BHD teal so we don't have to touch every
+   button individually. text-blue-600 / 700 follow the same rule for links.
+   Specificity bumped past Tailwind utilities by scoping under .printshop-layout. */
+.printshop-layout .bg-blue-600 { background-color: var(--cardify-primary-500, #009bc1); }
+.printshop-layout .hover\:bg-blue-700:hover { background-color: var(--cardify-primary-600, #0086a6); }
+.printshop-layout .text-blue-600 { color: var(--cardify-primary-500, #009bc1); }
+.printshop-layout .text-blue-700 { color: var(--cardify-primary-700, #00708c); }
+.printshop-layout .border-blue-200 { border-color: var(--cardify-primary-100, #b3e0ec); }
+.printshop-layout .focus\:border-blue-500:focus { border-color: var(--cardify-primary-500, #009bc1); }
+.printshop-layout .focus\:ring-blue-500:focus { --tw-ring-color: var(--cardify-primary-500, #009bc1); box-shadow: 0 0 0 3px var(--cardify-shadow-focus, rgba(0,155,193,0.25)); }
+.printshop-layout .bg-blue-50 { background-color: var(--cardify-primary-50, #e6f5f9); }
+.printshop-layout .bg-blue-100 { background-color: var(--cardify-primary-100, #b3e0ec); }
+.printshop-layout .file\:bg-blue-50::file-selector-button { background-color: var(--cardify-primary-50, #e6f5f9); }
+.printshop-layout .file\:text-blue-700::file-selector-button { color: var(--cardify-primary-700, #00708c); }
 </style>
 <?php if ($extraHead): echo $extraHead; endif; ?>
 

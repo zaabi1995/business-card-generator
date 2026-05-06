@@ -156,7 +156,18 @@ unset($page);
 // Persist the raw parser output so persist_template.php can re-read it
 // later without rerunning the parser. We also remember which company
 // owns this token so the persist endpoint can authorise the call.
+//
+// Two callers post here: tenant-admin onboarding (session has
+// company_id) and the print-shop template editor (session has the
+// operator + shop). Try the tenant-admin path first; fall back to the
+// print-shop context, where the company arrives in POST['company_id'].
 $companyId = function_exists('getCurrentCompanyId') ? getCurrentCompanyId() : null;
+if (!$companyId) {
+    $postedCompanyId = trim((string) ($_POST['company_id'] ?? ''));
+    if ($postedCompanyId !== '') {
+        $companyId = $postedCompanyId;
+    }
+}
 // Python returns a truthy fonts_dir_rel when fonts were extracted; the PHP
 // side knows the canonical web-root-relative path (outRel + /fonts).
 $fontsDirRel = !empty($parsed['fonts_dir_rel']) ? ($outRel . '/fonts') : null;

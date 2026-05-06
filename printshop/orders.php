@@ -92,6 +92,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $statusFilter = $_GET['status'] ?? '';
 $orders = PrintShop::getOrders($shopId, $statusFilter ?: null, 100);
 
+require_once INCLUDES_DIR . '/PrintShopAuth.php';
+$canCancelOrders = PrintShopAuth::can('cancel_order');
+
 $statusColors = [
     'pending'    => 'bg-gray-100 text-gray-700',
     'confirmed'  => 'bg-blue-100 text-blue-700',
@@ -293,6 +296,17 @@ printshopHeader(t('printshoppages.title_orders', ['shop' => $printShop['name']])
                                             Update
                                         </button>
                                     </form>
+                                    <?php
+                                    $canCancelThis = $canCancelOrders && !in_array($order['status'], ['shipped', 'delivered', 'cancelled'], true);
+                                    if ($canCancelThis):
+                                    ?>
+                                    <button type="button"
+                                            onclick="window.dispatchEvent(new CustomEvent('ps:cancel-order', {detail: {id: <?= (int) $order['id'] ?>, ref: <?= json_encode('#' . (int) $order['id']) ?>}}))"
+                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-medium border border-red-200 text-red-700 hover:bg-red-50 transition-colors"
+                                            title="<?= htmlspecialchars(t('printshopdash.cancel_btn')) ?>">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
@@ -355,5 +369,7 @@ document.getElementById('bulkForm')?.addEventListener('submit', function(e) {
     if (!confirm(`Update ${count} order(s) to "${status}"?`)) e.preventDefault();
 });
 </script>
+
+<?php require_once INCLUDES_DIR . '/printshop-cancel-modal.php'; ?>
 
 <?php printshopFooter(); ?>

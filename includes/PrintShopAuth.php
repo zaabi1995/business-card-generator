@@ -138,4 +138,78 @@ class PrintShopAuth {
             unset($_SESSION['user_id'], $_SESSION['user_email'], $_SESSION['user_role']);
         }
     }
+
+    /**
+     * Capability check, computed from (shop.tier, operator.role).
+     *
+     * Tiers:
+     *   - 'admin'    BHD-style. Cross-tenant + cancel + refund + everything.
+     *   - 'standard' Own-shop only. Cancel gated to operator.role='admin'.
+     *
+     * Roles within a shop:
+     *   - 'admin'    Cancel, refund, manage operators + pricing + settings.
+     *   - 'operator' Advance status, view reports. No cancel/refund.
+     *   - 'viewer'   Read-only.
+     *
+     * Capabilities checked here (extend as the matrix grows):
+     *   - cancel_order      Issue a cancellation on a print order.
+     *   - refund_order      Trigger a refund (admin tier shops only).
+     *   - browse_clients    See / open every Cardify tenant from the
+     *                        print-shop side. Admin tier shops only.
+     *   - manage_operators  Add / edit / disable operators.
+     *   - manage_pricing    Edit per-client pricing overrides.
+     *   - manage_settings   Edit shop profile + payment terms.
+     *
+     * Pass an explicit context to test against arbitrary shop/operator data
+     * (e.g. when cross-checking a sub-resource); default reads the current
+     * session via context().
+     *
+     * @return bool
+     */
+    public static function can(string $capability, ?array $contextOverride = null): bool {
+        $ctx  = $contextOverride ?? self::context();
+        $shop = $ctx['shop']     ?? null;
+        $op   = $ctx['operator'] ?? null;
+        if (!$shop) return false;
+
+        $shopTier = ($shop['tier']     ?? 'standard') ?: 'standard';
+        $opRole   = ($op['role']       ?? null);
+        // Legacy owner login (no operator row) treats the user as admin
+        // within their own shop. Keeps existing single-operator shops
+        // working without a backfill on every login.
+        if ($opRole === null) $opRole = 'admin';
+
+        switch ($capability) {
+            case 'cancel_order':
+                // Admin-tier shops: any operator role except 'viewer' can cancel.
+                // Standard shops: only operator.role='admin' can cancel.
+                if ($shopTier === 'admin')    return $opRole !== 'viewer';
+                return $opRole === 'admin';
+
+            case 'refund_order':
+                // Refunds touch money. Admin tier shops + admin operator only.
+                return ($shopTier === 'admin') && ($opRole === 'admin');
+
+            case 'browse_clients':
+                // Cross-tenant browse is admin-tier only.
+                return ($shopTier === 'admin') && ($opRole !== 'viewer');
+
+            case 'manage_operators':
+            case 'manage_pricing':
+            case 'manage_settings':
+                return $opRole === 'admin';
+
+            case 'advance_status':
+                // Anyone with operator+ role can advance order status.
+                return $opRole !== 'viewer';
+
+            case 'view':
+                // Everyone signed in can view.
+                return true;
+
+            default:
+                // Unknown capabilities default to deny.
+                return false;
+        }
+    }
 }

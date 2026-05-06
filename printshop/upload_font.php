@@ -35,7 +35,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// Tenant-admin path uses session company_id; print-shop operator path
+// posts company_id explicitly when uploading on behalf of a tenant.
 $companyId = function_exists('getCurrentCompanyId') ? getCurrentCompanyId() : null;
+if (!$companyId) {
+    $postedCompanyId = trim((string) ($_POST['company_id'] ?? ''));
+    if ($postedCompanyId !== '') {
+        $companyId = $postedCompanyId;
+    }
+}
 if (!$companyId) {
     http_response_code(400);
     echo json_encode(['error' => 'no_company_context']);

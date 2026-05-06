@@ -67,6 +67,8 @@ $opActivity = $data['operator_activity'];
 $activity = $data['recent_activity'];
 $tenants = $data['tenant_console'] ?? [];
 
+$canCancel = PrintShopAuth::can('cancel_order', isset($ctx) ? $ctx : null);
+
 // Greeting
 $hour = (int) date('G');
 if      ($hour < 12) $greetingKey = 'printshopdash.greeting_morning';
@@ -489,6 +491,14 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
                         <a href="orders.php?id=<?= (int) $order['id'] ?>" class="ps-btn-secondary text-xs" style="padding: 6px 10px;" title="<?= htmlspecialchars(t('printshopdash.queue_open')) ?>">
                             <i class="fa-solid fa-eye"></i>
                         </a>
+                        <?php if ($canCancel): ?>
+                        <button type="button"
+                                onclick="window.dispatchEvent(new CustomEvent('ps:cancel-order', {detail: {id: <?= (int) $order['id'] ?>, ref: <?= json_encode('#' . (int) $order['id']) ?>}}))"
+                                class="ps-btn-secondary text-xs" style="padding: 6px 8px; color: #b91c1c; border-color: #fecaca;"
+                                title="<?= htmlspecialchars(t('printshopdash.cancel_btn')) ?>">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                        <?php endif; ?>
                     </form>
                 </div>
                 <?php endforeach; ?>
@@ -742,5 +752,7 @@ function tenantConsole() {
     };
 }
 </script>
+
+<?php require_once INCLUDES_DIR . '/printshop-cancel-modal.php'; ?>
 
 <?php printshopFooter(); ?>

@@ -112,6 +112,9 @@ printshopHeader('Order , ' . $company['name'], 'clients');
     <div class="mb-2 text-sm text-gray-500">
         <a href="client.php?company=<?= urlencode($companyId) ?>" class="hover:underline"><i class="fa-solid fa-arrow-left mr-1"></i><?= sanitize($company['name']) ?></a>
     </div>
+    <h1 class="text-2xl font-bold text-gray-900 tracking-tight mb-4">
+        <?= htmlspecialchars(t('printshopinternal.order_h1', ['client' => $company['name']]) ?: 'Place order for ' . $company['name']) ?>
+    </h1>
 
     <?php if ($orderSuccess): ?>
     <div class="bg-white rounded-2xl border border-gray-200 p-8 text-center shadow-sm max-w-2xl mx-auto">

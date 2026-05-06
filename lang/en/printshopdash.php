@@ -150,6 +150,22 @@ return [
     'tenants_btn_order'         => 'Order',
     'tenants_btn_upload_pdf'    => 'Upload PDF',
 
+    // Order cancellation
+    'cancel_btn'                => 'Cancel order',
+    'cancel_confirm_h'          => 'Cancel order #:id?',
+    'cancel_confirm_b'          => 'This will mark the order as cancelled, notify the client by email + WhatsApp, and write an audit entry. The action can only be reversed by a super-admin.',
+    'cancel_reason_label'       => 'Reason (required)',
+    'cancel_reason_ph'          => 'e.g. Client asked to cancel, design needs rework, paper out of stock...',
+    'cancel_submit'             => 'Cancel this order',
+    'cancel_busy'               => 'Cancelling...',
+    'cancel_success'            => 'Order #:id cancelled.',
+    'cancel_denied'             => 'You do not have permission to cancel orders.',
+    'cancel_missing_order'      => 'Order id is required.',
+    'cancel_reason_required'    => 'Please give a reason for the cancellation.',
+    'cancel_not_found'          => 'Order not found in this shop.',
+    'cancel_frozen'             => 'This order is :status and cannot be cancelled. Contact support if needed.',
+    'cancel_keep'               => 'Keep order',
+
     // Upload PDF modal (per-tenant)
     'upload_modal_lede'         => 'Upload the source PDF you received from the client. Front and back pages are merged, parsed, classified and saved as a new card design on the tenant.',
     'upload_field_name'         => 'Design name',

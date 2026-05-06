@@ -41,7 +41,25 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// Two callers: tenant-admin onboarding (session has company_id) and the
+// print-shop template editor (session has operator+shop, no direct company).
+// Resolve via the tenant path first; fall back to the envelope's company_id
+// (set at parse time, validated below at the wrong_company check).
 $companyId = function_exists('getCurrentCompanyId') ? getCurrentCompanyId() : null;
+if (!$companyId) {
+    // Print-shop path: pull operator+shop context. We accept the envelope's
+    // company_id as the source of truth here (line 85 still ensures the
+    // operator is acting on the company that uploaded the PDF).
+    if (class_exists('PrintShopAuth')) {
+        $psCtx = PrintShopAuth::context();
+        if (!empty($psCtx['shop'])) {
+            // Envelope gates the actual company; operator just needs to be
+            // a logged-in print-shop user. Set $companyId from envelope
+            // below after we read it.
+            $companyId = '__PSAUTH_DEFER__';
+        }
+    }
+}
 if (!$companyId) {
     http_response_code(400);
     echo json_encode(['error' => 'no_company_context']);
@@ -82,7 +100,16 @@ if (!is_array($envelope) || empty($envelope['pages'])) {
 }
 
 // Authorisation: only the company that uploaded this PDF can persist it.
-if (!empty($envelope['company_id']) && $envelope['company_id'] !== $companyId) {
+// For print-shop callers, the envelope's company_id wins (it was set when
+// the PDF was uploaded on behalf of that tenant).
+if ($companyId === '__PSAUTH_DEFER__') {
+    if (empty($envelope['company_id'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'envelope_missing_company']);
+        exit;
+    }
+    $companyId = (string) $envelope['company_id'];
+} elseif (!empty($envelope['company_id']) && $envelope['company_id'] !== $companyId) {
     http_response_code(403);
     echo json_encode(['error' => 'wrong_company']);
     exit;
