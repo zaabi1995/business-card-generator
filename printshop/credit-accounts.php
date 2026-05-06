@@ -182,22 +182,26 @@ printshopHeader(t('printshoppages.title_credit_accounts', ['shop' => $printShop[
                     <input type="hidden" name="account_id" value="<?= htmlspecialchars($acc['id']) ?>">
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="text-xs text-gray-500 block mb-1"><?= htmlspecialchars(t('printshopcredit.field_limit')) ?></label>
-                            <input type="number" name="credit_limit" step="0.001" min="0.001"
+                            <label class="text-xs text-gray-500 block mb-1" for="credit_limit_<?= htmlspecialchars($acc['id']) ?>"><?= htmlspecialchars(t('printshopcredit.field_limit')) ?></label>
+                            <input type="number" name="credit_limit" id="credit_limit_<?= htmlspecialchars($acc['id']) ?>" step="0.001" min="0.001"
                                    value="<?= $acc['requested_limit'] ?>"
-                                   class="w-full border rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-400" required>
+                                   aria-label="<?= htmlspecialchars(t('printshopcredit.field_limit')) ?>"
+                                   class="w-full border rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-400 tabular-nums" required>
                         </div>
                         <div>
-                            <label class="text-xs text-gray-500 block mb-1"><?= htmlspecialchars(t('printshopcredit.field_exposure')) ?></label>
-                            <input type="number" name="exposure_limit" step="0.001" min="0"
+                            <label class="text-xs text-gray-500 block mb-1" for="exposure_limit_<?= htmlspecialchars($acc['id']) ?>"><?= htmlspecialchars(t('printshopcredit.field_exposure')) ?></label>
+                            <input type="number" name="exposure_limit" id="exposure_limit_<?= htmlspecialchars($acc['id']) ?>" step="0.001" min="0"
                                    placeholder="<?= htmlspecialchars(t('printshopcredit.exposure_same_ph')) ?>"
-                                   class="w-full border rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-400">
+                                   aria-label="<?= htmlspecialchars(t('printshopcredit.field_exposure')) ?>"
+                                   class="w-full border rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-green-400 tabular-nums">
                             <p class="text-xs text-gray-400 mt-0.5"><?= htmlspecialchars(t('printshopcredit.exposure_hint')) ?></p>
                         </div>
                     </div>
                     <div>
-                        <label class="text-xs text-gray-500 block mb-1"><?= htmlspecialchars(t('printshopcredit.field_terms')) ?></label>
-                        <select name="payment_terms" class="w-full border rounded-lg px-2 py-1.5 text-sm">
+                        <label class="text-xs text-gray-500 block mb-1" for="payment_terms_<?= htmlspecialchars($acc['id']) ?>"><?= htmlspecialchars(t('printshopcredit.field_terms')) ?></label>
+                        <select name="payment_terms" id="payment_terms_<?= htmlspecialchars($acc['id']) ?>"
+                                aria-label="<?= htmlspecialchars(t('printshopcredit.field_terms')) ?>"
+                                class="w-full border rounded-lg px-2 py-1.5 text-sm">
                             <option value="net15"><?= htmlspecialchars(t('printshopcredit.terms_net15')) ?></option>
                             <option value="net30" selected><?= htmlspecialchars(t('printshopcredit.terms_net30')) ?></option>
                             <option value="net60"><?= htmlspecialchars(t('printshopcredit.terms_net60')) ?></option>
@@ -209,8 +213,11 @@ printshopHeader(t('printshoppages.title_credit_accounts', ['shop' => $printShop[
                         <label class="text-xs text-gray-500 block mb-1"><?= htmlspecialchars(t('printshopcredit.upload_po_optional')) ?></label>
                         <div class="grid grid-cols-2 gap-2">
                             <input type="text" name="po_number" placeholder="<?= htmlspecialchars(t('printshopcredit.po_number_ph')) ?>"
+                                   aria-label="<?= htmlspecialchars(t('printshopcredit.po_number_ph')) ?>"
                                    class="border rounded-lg px-2 py-1.5 text-sm">
-                            <input type="file" name="po_file" accept=".pdf,.jpg,.jpeg,.png" class="text-xs py-1.5">
+                            <input type="file" name="po_file" accept=".pdf,.jpg,.jpeg,.png"
+                                   aria-label="<?= htmlspecialchars(t('printshopcredit.upload_po_optional')) ?>"
+                                   class="text-xs py-1.5">
                         </div>
                     </div>
                     <?php endif; ?>
@@ -291,21 +298,25 @@ printshopHeader(t('printshoppages.title_credit_accounts', ['shop' => $printShop[
                             <input type="hidden" name="account_id" value="<?= htmlspecialchars($acc['id']) ?>">
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
-                                    <label class="text-xs text-gray-500"><?= htmlspecialchars(t('printshopcredit.field_limit_edit')) ?></label>
-                                    <input type="number" name="credit_limit" step="0.001" min="<?= $acc['balance_used'] ?>"
+                                    <label class="text-xs text-gray-500" for="edit_credit_limit_<?= htmlspecialchars($acc['id']) ?>"><?= htmlspecialchars(t('printshopcredit.field_limit_edit')) ?></label>
+                                    <input type="number" name="credit_limit" id="edit_credit_limit_<?= htmlspecialchars($acc['id']) ?>" step="0.001" min="<?= $acc['balance_used'] ?>"
                                            value="<?= $acc['credit_limit'] ?>"
-                                           class="w-full border rounded px-2 py-1.5 text-sm" required>
+                                           aria-label="<?= htmlspecialchars(t('printshopcredit.field_limit_edit')) ?>"
+                                           class="w-full border rounded px-2 py-1.5 text-sm tabular-nums" required>
                                 </div>
                                 <div>
-                                    <label class="text-xs text-gray-500"><?= htmlspecialchars(t('printshopcredit.field_exposure_edit')) ?></label>
-                                    <input type="number" name="exposure_limit" step="0.001" min="0"
+                                    <label class="text-xs text-gray-500" for="edit_exposure_limit_<?= htmlspecialchars($acc['id']) ?>"><?= htmlspecialchars(t('printshopcredit.field_exposure_edit')) ?></label>
+                                    <input type="number" name="exposure_limit" id="edit_exposure_limit_<?= htmlspecialchars($acc['id']) ?>" step="0.001" min="0"
                                            value="<?= $acc['exposure_limit'] ?? '' ?>" placeholder="<?= htmlspecialchars(t('printshopcredit.exposure_no_cap_ph')) ?>"
-                                           class="w-full border rounded px-2 py-1.5 text-sm">
+                                           aria-label="<?= htmlspecialchars(t('printshopcredit.field_exposure_edit')) ?>"
+                                           class="w-full border rounded px-2 py-1.5 text-sm tabular-nums">
                                 </div>
                             </div>
                             <div>
-                                <label class="text-xs text-gray-500"><?= htmlspecialchars(t('printshopcredit.field_terms')) ?></label>
-                                <select name="payment_terms" class="w-full border rounded px-2 py-1.5 text-sm">
+                                <label class="text-xs text-gray-500" for="edit_payment_terms_<?= htmlspecialchars($acc['id']) ?>"><?= htmlspecialchars(t('printshopcredit.field_terms')) ?></label>
+                                <select name="payment_terms" id="edit_payment_terms_<?= htmlspecialchars($acc['id']) ?>"
+                                        aria-label="<?= htmlspecialchars(t('printshopcredit.field_terms')) ?>"
+                                        class="w-full border rounded px-2 py-1.5 text-sm">
                                     <?php foreach (['net15','net30','net60','net90'] as $val): ?>
                                     <option value="<?= $val ?>" <?= ($acc['payment_terms'] ?? 'net30') === $val ? 'selected' : '' ?>><?= htmlspecialchars(t('printshopcredit.terms_' . $val)) ?></option>
                                     <?php endforeach; ?>
@@ -329,6 +340,7 @@ printshopHeader(t('printshoppages.title_credit_accounts', ['shop' => $printShop[
                             <input type="hidden" name="account_id" value="<?= htmlspecialchars($acc['id']) ?>">
                             <input type="text" name="po_number" placeholder="<?= htmlspecialchars(t('printshopcredit.po_ref_ph')) ?>"
                                    value="<?= htmlspecialchars($acc['po_number'] ?? '') ?>"
+                                   aria-label="<?= htmlspecialchars(t('printshopcredit.po_ref_ph')) ?>"
                                    class="w-full border rounded px-2 py-1.5 text-sm">
                             <input type="file" name="po_file" accept=".pdf,.jpg,.jpeg,.png" required class="text-xs w-full">
                             <p class="text-xs text-gray-400"><?= htmlspecialchars(t('printshopcredit.file_size_hint')) ?></p>
