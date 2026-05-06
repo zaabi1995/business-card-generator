@@ -283,12 +283,13 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
              data-active="<?= $isActive ? '1' : '0' ?>"
              data-dormant="<?= $isDormant ? '1' : '0' ?>"
              data-unprinted="<?= $unprinted ? '1' : '0' ?>">
-            <!-- Logo / initials -->
-            <div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+            <!-- Logo / initials with onerror fallback for stale logo paths -->
+            <div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden relative">
+                <span class="text-xs font-bold text-gray-500 absolute inset-0 flex items-center justify-center"><?= htmlspecialchars($initials) ?></span>
                 <?php if ($logoSrc): ?>
-                    <img src="<?= htmlspecialchars($logoSrc) ?>" alt="" loading="lazy" class="max-w-[80%] max-h-[80%]">
-                <?php else: ?>
-                    <span class="text-xs font-bold text-gray-500"><?= htmlspecialchars($initials) ?></span>
+                    <img src="<?= htmlspecialchars($logoSrc) ?>" alt="" loading="lazy"
+                         class="max-w-[80%] max-h-[80%] relative z-10 bg-gray-100"
+                         onerror="this.style.display='none'">
                 <?php endif; ?>
             </div>
             <!-- Name + slug + status -->
@@ -346,8 +347,9 @@ printshopHeader(t('printshoppages.title_dashboard', ['shop' => $printShop['name'
     <?php endif; ?>
 
     <!-- Upload PDF modal (Alpine, shared across all tenant rows) -->
-    <div x-cloak x-show="upload.open" @keydown.escape.window="if (!upload.busy) upload.open = false"
-         class="fixed inset-0 z-[100] flex items-center justify-center px-4" style="background: rgba(15,23,42,0.5);">
+    <div x-cloak x-show="upload.open" x-transition.opacity @keydown.escape.window="if (!upload.busy) upload.open = false"
+         class="fixed inset-0 z-[100] items-center justify-center px-4" style="display: none; background: rgba(15,23,42,0.5);"
+         :style="upload.open ? 'display: flex; background: rgba(15,23,42,0.5);' : 'display: none;'">
         <div @click.outside="if (!upload.busy) upload.open = false"
              class="bg-white rounded-2xl shadow-lg w-full max-w-xl p-6 sm:p-8 relative">
             <button type="button" @click="upload.open = false" :disabled="upload.busy"

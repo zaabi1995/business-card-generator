@@ -29,13 +29,15 @@ if ($q !== '') {
 
 $stmt = $pdo->prepare(
     "SELECT
-        c.id, c.name, c.slug, c.logo_path, c.country, c.created_at,
+        c.id, c.name, c.slug, c.country, c.created_at,
+        ct.logo_path,
         (SELECT COUNT(*) FROM employees e WHERE e.company_id = c.id) AS employee_count,
         (SELECT MAX(po.created_at) FROM print_orders po
             WHERE po.company_id = c.id AND po.print_shop_id = :shop_id) AS last_order_at,
         (SELECT COUNT(*) FROM print_orders po
             WHERE po.company_id = c.id AND po.print_shop_id = :shop_id_count) AS shop_order_count
      FROM companies c
+     LEFT JOIN company_themes ct ON ct.company_id = c.id
      $where
      ORDER BY c.name ASC
      LIMIT :lim OFFSET :off"
