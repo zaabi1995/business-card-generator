@@ -190,9 +190,10 @@ foreach ($entries as $e) {
             $slug = trim($slug, '-') ?: 'indexed-' . substr(md5($e['name']), 0, 8);
             $slug .= '-' . substr(md5($e['name']), 0, 4); // dedupe suffix
             try {
+                // Distinct placeholders, same value bound twice (PDO emulated prepares OFF, rule 12)
                 $pdo->prepare("INSERT INTO om_companies (name_en, name_ar, slug, sector, wilayat, size_bucket, curated)
-                               VALUES (:n, :n, :s, 'other', 'muscat', 'medium', 0)")
-                    ->execute([':n' => $e['name'], ':s' => $slug]);
+                               VALUES (:n_en, :n_ar, :s, 'other', 'muscat', 'medium', 0)")
+                    ->execute([':n_en' => $e['name'], ':n_ar' => $e['name'], ':s' => $slug]);
                 $companyId = (int) $pdo->lastInsertId();
                 $report['new_rows']++;
                 $sessionInserts[] = ['id' => $companyId, 'name' => $e['name']];
@@ -292,25 +293,28 @@ foreach ($entries as $e) {
     // :is_queue guard then preserves the live logo paths, and
     // logo_match_pending=1 surfaces it in admin/match-queue for explicit review.
 
+    // PDO emulated prepares OFF (rule 12). $isQueue is a script-local boolean,
+    // safe to inline as a literal so we don't have to rebind 9+ :is_queue copies.
+    $iq = $isQueue ? '1' : '0';
     $pdo->prepare("UPDATE om_companies SET
         logo_status          = IF(logo_status IN ('verified','takedown'), logo_status,
-                                 IF(:is_queue = 1, logo_status, 'indexed')),
+                                 IF($iq = 1, logo_status, 'indexed')),
         logo_source          = '2oman_net',
         logo_source_url      = :su,
-        logo_png_path        = IF(:is_queue = 1,
+        logo_png_path        = IF($iq = 1,
                                   logo_png_path,
                                   IF(:is_png  = 1, :rel_png,  NULL)),
-        logo_svg_path        = IF(:is_queue = 1,
+        logo_svg_path        = IF($iq = 1,
                                   logo_svg_path,
                                   IF(:is_svg  = 1, :rel_svg,  NULL)),
-        logo_webp_path       = IF(:is_queue = 1,
+        logo_webp_path       = IF($iq = 1,
                                   logo_webp_path,
                                   IF(:is_webp = 1, :rel_webp, NULL)),
-        logo_png_512_path    = IF(:is_queue = 1, logo_png_512_path,  NULL),
-        logo_png_2048_path   = IF(:is_queue = 1, logo_png_2048_path, NULL),
-        logo_width           = IF(:is_queue = 1, logo_width,           :w),
-        logo_height          = IF(:is_queue = 1, logo_height,          :h),
-        logo_dominant_color  = IF(:is_queue = 1, logo_dominant_color,  :c),
+        logo_png_512_path    = IF($iq = 1, logo_png_512_path,  NULL),
+        logo_png_2048_path   = IF($iq = 1, logo_png_2048_path, NULL),
+        logo_width           = IF($iq = 1, logo_width,           :w),
+        logo_height          = IF($iq = 1, logo_height,          :h),
+        logo_dominant_color  = IF($iq = 1, logo_dominant_color,  :c),
         logo_match_pending   = IF(:mp = 1, 1, logo_match_pending),
         logo_updated_at      = NOW()
         WHERE id = :id")
@@ -319,7 +323,6 @@ foreach ($entries as $e) {
            ':is_png'   => $isPng  ? 1 : 0,
            ':is_svg'   => $isSvg  ? 1 : 0,
            ':is_webp'  => $isWebp ? 1 : 0,
-           ':is_queue' => $isQueue ? 1 : 0,
            ':rel_png'  => $relPath,
            ':rel_svg'  => $relPath,
            ':rel_webp' => $relPath,

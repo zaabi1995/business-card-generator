@@ -129,8 +129,13 @@ $where = [];
 $params = [];
 
 if ($search) {
-    $where[] = "(name LIKE :search OR slug LIKE :search OR admin_email LIKE :search)";
-    $params['search'] = "%{$search}%";
+    // PDO emulated prepares are OFF; reusing :search would 500 with HY093.
+    // Split into 3 distinct placeholders bound to the same value (rule 12).
+    $where[] = "(name LIKE :search_n OR slug LIKE :search_s OR admin_email LIKE :search_e)";
+    $like = "%{$search}%";
+    $params['search_n'] = $like;
+    $params['search_s'] = $like;
+    $params['search_e'] = $like;
 }
 
 if ($statusFilter) {
