@@ -22,9 +22,8 @@ if (!PrintShopAuth::can('cancel_order')) {
 }
 ?>
 <div x-data="cancelOrderModal()" @ps:cancel-order.window="open($event.detail)"
-     x-cloak x-show="visible" x-transition.opacity
      class="fixed inset-0 z-[110] items-center justify-center px-4"
-     style="display: none; background: rgba(15,23,42,0.55);"
+     style="display: none;"
      :style="visible ? 'display: flex; background: rgba(15,23,42,0.55);' : 'display: none;'">
     <div @click.outside="if (!busy) close()" class="bg-white rounded-2xl shadow-lg w-full max-w-lg p-6 sm:p-8 relative">
         <button type="button" @click="close()" :disabled="busy" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700">

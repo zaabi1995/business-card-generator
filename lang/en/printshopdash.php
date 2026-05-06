@@ -152,7 +152,7 @@ return [
 
     // Order cancellation
     'cancel_btn'                => 'Cancel order',
-    'cancel_confirm_h'          => 'Cancel order #:id?',
+    'cancel_confirm_h'          => 'Cancel order :id?',
     'cancel_confirm_b'          => 'This will mark the order as cancelled, notify the client by email + WhatsApp, and write an audit entry. The action can only be reversed by a super-admin.',
     'cancel_reason_label'       => 'Reason (required)',
     'cancel_reason_ph'          => 'e.g. Client asked to cancel, design needs rework, paper out of stock...',
