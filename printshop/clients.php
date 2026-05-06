@@ -65,11 +65,13 @@ printshopHeader(t('printshopinternal.clients_title', ['shop' => $shop['name']]),
             <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('printshopinternal.clients_heading')) ?></h1>
             <p class="text-gray-600 mt-1 max-w-2xl"><?= htmlspecialchars(t('printshopinternal.clients_subheading')) ?></p>
         </div>
-        <form method="GET" class="flex items-center gap-2">
-            <input type="text" name="q" value="<?= sanitize($q) ?>"
+        <form method="GET" class="flex items-center gap-2" role="search">
+            <label for="clients-q" class="sr-only"><?= htmlspecialchars(t('printshopinternal.search_placeholder')) ?></label>
+            <input type="text" name="q" id="clients-q" value="<?= sanitize($q) ?>"
                    placeholder="<?= htmlspecialchars(t('printshopinternal.search_placeholder')) ?>"
+                   aria-label="<?= htmlspecialchars(t('printshopinternal.search_placeholder')) ?>"
                    class="px-3 py-2 border border-gray-300 rounded-lg w-64">
-            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium"><i class="fa-solid fa-magnifying-glass"></i></button>
+            <button type="submit" aria-label="<?= htmlspecialchars(t('printshopinternal.search_placeholder')) ?>" title="<?= htmlspecialchars(t('printshopinternal.search_placeholder')) ?>" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
         </form>
     </div>
 
@@ -108,9 +110,9 @@ printshopHeader(t('printshopinternal.clients_title', ['shop' => $shop['name']]),
                             </div>
                         </div>
                     </td>
-                    <td class="px-4 py-3 text-gray-700"><?= (int)$r['employee_count'] ?></td>
-                    <td class="px-4 py-3 text-gray-700"><?= (int)$r['shop_order_count'] ?></td>
-                    <td class="px-4 py-3 text-xs text-gray-500"><?= $r['last_order_at'] ? sanitize(date('Y-m-d', strtotime($r['last_order_at']))) : '<span class="text-gray-400">,</span>' ?></td>
+                    <td class="px-4 py-3 text-gray-700 tabular-nums"><?= (int)$r['employee_count'] ?></td>
+                    <td class="px-4 py-3 text-gray-700 tabular-nums"><?= (int)$r['shop_order_count'] ?></td>
+                    <td class="px-4 py-3 text-xs text-gray-500 tabular-nums"><?= $r['last_order_at'] ? sanitize(date('Y-m-d', strtotime($r['last_order_at']))) : '<span class="text-gray-400">,</span>' ?></td>
                     <td class="px-4 py-3 text-end">
                         <a href="client.php?company=<?= urlencode($r['id']) ?>" class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md text-sm font-medium">
                             <i class="fa-solid fa-arrow-right"></i> <?= htmlspecialchars(t('printshopinternal.open_btn')) ?>
