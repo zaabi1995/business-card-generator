@@ -29,6 +29,7 @@ try {
     readfile($pdfPath);
     @unlink($pdfPath);
 } catch (Throwable $e) {
+    error_log('[admin/blog-carousel-preview] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
     http_response_code(500);
-    echo '<pre>Preview failed: ' . htmlspecialchars($e->getMessage()) . '</pre>';
+    echo '<pre>Preview failed. Check the server log.</pre>';
 }
