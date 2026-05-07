@@ -85,7 +85,12 @@ try {
         }
     }
     if (!$employee) {
-        throw new Exception('Employee not found: ' . $employeeEmail);
+        // Not-found is 404, not 500. (iter 21, 7 May 2026.)
+        while (ob_get_level()) { ob_end_clean(); }
+        http_response_code(404);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Contact not found';
+        exit;
     }
     
     // Track the scan

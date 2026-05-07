@@ -39,6 +39,21 @@ try {
     $employee = $ctx['employee'];
     $company  = $ctx['company'];
 
+    // Tenant isolation: when served from a tenant subdomain
+    // (<slug>.cardify.om), refuse to leak another tenant's employee. Caught
+    // 7 May 2026 in the verify-everything loop (iter 21): hosn.cardify.om
+    // was serving Otech employee PDFs because no host check existed.
+    require_once INCLUDES_DIR . '/TenantHost.php';
+    if (TenantHost::isTenantHost()) {
+        $tenantSlug = (string) TenantHost::slug();
+        if ($tenantSlug !== '' && $tenantSlug !== ($company['slug'] ?? '')) {
+            http_response_code(404);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo 'Card not found';
+            exit;
+        }
+    }
+
     // Prefer the vector PDF when the template was imported with a
     // vector source. Falls back to the existing PNG-in-PDF path
     // when the renderer is unavailable.
