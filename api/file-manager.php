@@ -12,12 +12,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 
 require_once __DIR__ . '/../config.php';
 
-// API key lives in config so it can be rotated without a git commit.
-// Falls back to the old hardcoded key only if nothing is configured, to keep
-// existing integrations working during the rotation window.
-$expectedKey = defined('FILE_MANAGER_API_KEY') && FILE_MANAGER_API_KEY !== ''
-    ? FILE_MANAGER_API_KEY
-    : 'bhd-fm-cardify-2026';
+// FAIL CLOSED if no key is configured. Until 2026-05-06 this file fell back
+// to a hardcoded key 'bhd-fm-cardify-2026' shipped in the public GitHub
+// repo, which made the entire endpoint (companies list, employee list, even
+// create_employee) effectively anonymous. Tenant list + admin emails were
+// being scraped 24/7. Audit caught it during the iter 23 sweep; the live
+// FILE_MANAGER_API_KEY constant has been rotated server-side.
+if (!defined('FILE_MANAGER_API_KEY') || FILE_MANAGER_API_KEY === '') {
+    http_response_code(503);
+    echo json_encode(['error' => 'API key not configured']);
+    exit;
+}
+$expectedKey = FILE_MANAGER_API_KEY;
 
 $apiKey = $_SERVER['HTTP_X_API_KEY'] ?? $_GET['key'] ?? '';
 if (!is_string($apiKey) || !hash_equals($expectedKey, $apiKey)) {
