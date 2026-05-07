@@ -114,12 +114,19 @@ class OtpService
             return ['ok' => false, 'error' => 'wrong_code'];
         }
 
-        $db->update(
-            'otp_codes',
-            ['consumed_at' => date('Y-m-d H:i:s')],
-            'id = :id',
-            ['id' => $row['id']]
+        // Atomically consume: if a concurrent verify beat us to it, the WHERE
+        // consumed_at IS NULL clause matches 0 rows and we reject. Without
+        // this guard, two parallel verify calls (e.g. attacker + legitimate
+        // user racing the same observed code) could both succeed.
+        $conn = $db->getConnection();
+        $stmt = $conn->prepare(
+            "UPDATE otp_codes SET consumed_at = NOW()
+             WHERE id = :id AND consumed_at IS NULL"
         );
+        $stmt->execute([':id' => $row['id']]);
+        if ($stmt->rowCount() === 0) {
+            return ['ok' => false, 'error' => 'already_consumed'];
+        }
         return ['ok' => true];
     }
 
