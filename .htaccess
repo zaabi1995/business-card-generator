@@ -214,6 +214,7 @@ Options -Indexes
     RewriteRule ^data/print-sheets/ - [L]  # Allow print sheet downloads
     RewriteRule ^data/ - [F,L]
     RewriteRule ^logs/ - [F,L]
+    RewriteRule ^cron/ - [F,L]      # Cron scripts must run from CLI only (defense in depth, every cron file also has a CLI guard)
     RewriteRule ^api/check-slug\.php$ - [L]  # Allow API endpoint
     RewriteRule ^api/translate\.php$ - [L]  # Allow translation API
     RewriteRule ^api/get_templates_public\.php$ - [L]  # Allow public templates API

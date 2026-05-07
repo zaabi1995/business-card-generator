@@ -5,6 +5,11 @@
  * Run via cron: 0 9 * * * php /www/wwwroot/cardify.om/cron/linkedin-autoposter.php
  */
 
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit('CLI only');
+}
 $logFile = __DIR__ . '/../logs/linkedin-poster.log';
 
 function logMsg($msg) {
