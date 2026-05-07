@@ -57,12 +57,23 @@ $operator = $isEmail
     ? PrintShopOperator::getByEmail($identifier)
     : PrintShopOperator::getByPhone($identifier);
 
+// Anti-enumeration: do not branch on whether the operator exists. Previous
+// code returned 'No active operator with that phone or email' for unknown
+// identifiers and 'code sent' for known ones, letting an attacker probe a
+// list and learn which phones/emails are valid print-shop operators. Now
+// always show the same 'code sent' page; if the identifier was bogus, no
+// OTP actually goes out (no SMS/WhatsApp budget burn) and the verify step
+// naturally fails since otp_codes has no matching row.
 if (!$operator) {
-    // Don't leak whether the identifier is registered. Tell user generically.
     echo json_encode([
-        'ok' => false,
-        'error_message' => 'No active operator with that phone or email. Ask an admin to add you.',
+        'ok'      => true,
+        'channel' => $channel,
+        'masked'  => $isEmail ? $identifier : Phone::mask($identifier),
+        'message' => $isEmail
+            ? 'If that email is registered, we just emailed a 6-digit code to ' . $identifier . '.'
+            : 'If that phone is registered, we sent a 6-digit code via WhatsApp to ' . Phone::mask($identifier) . '.',
     ]);
+    error_log('[printshop/request-otp] no-op send for ' . substr(hash('sha256', $identifier), 0, 12) . ' (anti-enumeration)');
     exit;
 }
 
