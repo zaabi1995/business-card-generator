@@ -204,15 +204,20 @@
 Options -Indexes
 
 # Protect sensitive files
-<FilesMatch "^(config\.php|config\.example\.php|\.htaccess|\.git|composer\.(json|lock)|package\.json|package-lock\.json|\.env|\.env\..*)$">
+<FilesMatch "^(config\.php|config\.example\.php|\.htaccess|\.git|composer\.(json|lock)|package\.json|package-lock\.json|\.env|\.env\..*|CLAUDE\.md|DOCUMENTATION\.md|SPRINT_(PLAN|LOG|ACTIONS)\.md|CHANGELOG\.md|RELEASE_NOTES.*\.md|README\.md|LICENSE)$">
     Order allow,deny
     Deny from all
 </FilesMatch>
 
-# Block /install/ entirely once the site is up. Re-enable manually if a
-# fresh install is ever needed.
+# Block /install/ /vendor/ /docs/ /tests/ /node_modules/ entirely. Mirrors
+# the nginx vhost rules; .htaccess is a no-op on this server (nginx) but
+# we keep it so any future Apache deploy stays consistent.
 <IfModule mod_rewrite.c>
     RewriteRule ^install/ - [F,L]
+    RewriteRule ^vendor/ - [F,L]
+    RewriteRule ^docs/ - [F,L]
+    RewriteRule ^tests/ - [F,L]
+    RewriteRule ^node_modules/ - [F,L]
 </IfModule>
 
 # Protect sensitive directories
