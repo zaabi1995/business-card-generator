@@ -130,16 +130,36 @@ if ($passcodeRequired) {
             unset($_SESSION['csrf_token']);
             $passcodeError = 'Your session expired. Please re-enter your access code.';
         } else {
-        $submittedPasscode = trim($_POST['portal_passcode']);
-        if (hash_equals($portalPasscode, $submittedPasscode)) {
-            $_SESSION[$sessionKey] = true;
-            $passcodeVerified = true;
-            // Redirect to remove POST data
-            header('Location: ' . $_SERVER['REQUEST_URI']);
-            exit;
-        } else {
-            $passcodeError = 'Incorrect access code. Please try again.';
-        }
+            // Brute-force protection: cap passcode attempts per session+target
+            // at 8 per 15-min window. Without this, an attacker can iterate a
+            // 4-6 digit passcode (10K-1M combos) at full speed since CSRF is
+            // session-bound (one GET = one valid CSRF token good for many POSTs).
+            // Track attempts in $_SESSION keyed by the same target as $sessionKey
+            // so dept-A and dept-B brute force are tracked separately.
+            $attemptsKey = 'pc_attempts_' . $sessionKey;
+            $attempts = $_SESSION[$attemptsKey] ?? ['count' => 0, 'window_start' => 0];
+            $now = time();
+            if ($now - (int) $attempts['window_start'] > 900) {
+                $attempts = ['count' => 0, 'window_start' => $now];
+            }
+            if ((int) $attempts['count'] >= 8) {
+                $remaining = 900 - ($now - (int) $attempts['window_start']);
+                $passcodeError = 'Too many attempts. Wait ' . max(60, $remaining) . 's before trying again.';
+            } else {
+                $submittedPasscode = trim($_POST['portal_passcode']);
+                if (hash_equals($portalPasscode, $submittedPasscode)) {
+                    $_SESSION[$sessionKey] = true;
+                    unset($_SESSION[$attemptsKey]);
+                    $passcodeVerified = true;
+                    // Redirect to remove POST data
+                    header('Location: ' . $_SERVER['REQUEST_URI']);
+                    exit;
+                } else {
+                    $attempts['count']++;
+                    $_SESSION[$attemptsKey] = $attempts;
+                    $passcodeError = 'Incorrect access code. Please try again.';
+                }
+            }
         } // end CSRF else
     }
 }
