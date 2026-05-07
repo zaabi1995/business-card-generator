@@ -220,6 +220,7 @@ Options -Indexes
     RewriteRule ^api/check-employee\.php$ - [L]  # Allow employee check API
     RewriteRule ^api/file-manager.php$ - [L]  # Allow file-manager API
     RewriteRule ^api/linkedin/callback\.php$ - [L]  # Allow LinkedIn OAuth callback
+    RewriteRule ^api/linkedin/connect-company\.php$ - [L]  # Allow LinkedIn org-page OAuth callback
     RewriteRule ^api/print-ready\.php$ - [L]  # Allow print-ready PDF generator API
 
     # --- Omani Logo Library --- (mirrors docs/logos-nginx-rewrites.conf)
