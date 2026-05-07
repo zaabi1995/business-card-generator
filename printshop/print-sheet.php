@@ -25,7 +25,8 @@ $orderId    = isset($_GET['order']) ? (int) $_GET['order'] : 0;
 $autoFit = !isset($_GET['rows']) && !isset($_GET['cols']);
 $rows = max(1, min(10, (int)($_GET['rows'] ?? 5)));
 $cols = max(1, min(5,  (int)($_GET['cols'] ?? 2)));
-$paper = in_array(($_GET['paper'] ?? 'A4'), ['A4', 'A3'], true) ? $_GET['paper'] : 'A4';
+$paper = $_GET['paper'] ?? 'A4';
+if (!in_array($paper, ['A4', 'A3'], true)) $paper = 'A4';
 
 if ($employeeId === '' || $companyId === '') {
     http_response_code(400);
