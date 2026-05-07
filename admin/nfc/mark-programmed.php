@@ -16,11 +16,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// CSRF (best-effort: the same session already authenticated requireAdmin)
-$csrf = $_POST['csrf'] ?? '';
-if (isset($_SESSION['csrf_token']) && $csrf !== $_SESSION['csrf_token']) {
-    // Allow if csrf token isn't yet established for this session
-    // (some pages don't bootstrap it). Don't hard-fail.
+// CSRF: previously this was a "best-effort" if-block with an empty body
+// that validated nothing. requireAdmin gates the session, but the attacker's
+// vector against a logged-in admin (cross-site form auto-submit) bypasses
+// session auth alone. Validate properly via the project helper, which uses
+// hash_equals + handles the bootstrap/no-token case.
+$csrf = $_POST['csrf'] ?? ($_POST['csrf_token'] ?? '');
+if (!validateCSRFToken($csrf)) {
+    http_response_code(400);
+    echo json_encode(['ok' => false, 'error' => 'invalid_csrf']);
+    exit;
 }
 
 $db = Database::getInstance();
