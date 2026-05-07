@@ -304,10 +304,30 @@ class Billing {
 
         $transactionStatus = ($success === 'true' || $success === true) ? 'completed' : 'failed';
 
-        $db->update('payment_transactions',
-            ['status' => $transactionStatus, 'gateway_response' => json_encode($data)],
-            'id = :id', ['id' => $transaction['id']]
+        // Atomic claim: mark the transaction completed ONLY if it was still
+        // pending. Without the WHERE status='pending' guard, duplicate
+        // Paymob webhook deliveries (gateway retries are common) would each
+        // pass the idempotency check above, each call this UPDATE, each
+        // extend subscription_expires_at by another billing period. Real
+        // bug: paying once for one month gives the user N months of plan
+        // because Paymob retries N times. Charge rowCount() to detect that
+        // somebody else won the race; on miss, treat as idempotent success.
+        $conn = $db->getConnection();
+        $stmt = $conn->prepare(
+            "UPDATE payment_transactions
+             SET status = :st, gateway_response = :resp
+             WHERE id = :id AND status = 'pending'"
         );
+        $stmt->execute([
+            ':st'   => $transactionStatus,
+            ':resp' => json_encode($data),
+            ':id'   => $transaction['id'],
+        ]);
+        if ($stmt->rowCount() === 0) {
+            // Another concurrent webhook callback already moved this
+            // transaction off 'pending'. Return idempotent success.
+            return ['success' => true, 'status' => 'completed', 'transaction_id' => $transaction['id'], 'idempotent' => true];
+        }
 
         if ($transactionStatus === 'completed') {
             $expiresAt = date('Y-m-d H:i:s', strtotime('+1 ' . ($transaction['payment_method'] === 'yearly' ? 'year' : 'month')));
