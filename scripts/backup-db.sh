@@ -18,8 +18,19 @@ set -euo pipefail
 
 DB_NAME="${CARDIFY_DB:-bc}"
 DB_USER="${CARDIFY_DB_USER:-bc}"
-DB_PASS="${CARDIFY_DB_PASS:-pWewN3fwFmEHh32J}"
 DB_HOST="${CARDIFY_DB_HOST:-127.0.0.1}"
+
+# CARDIFY_DB_PASS MUST be supplied via the environment (set in the cron entry
+# or /etc/profile.d/cardify-env.sh on the VPS). Previously this script carried
+# a literal fallback password; that fallback was committed to the public
+# GitHub repo and the script was at one point web-readable, so the production
+# DB password was effectively public. Rotated + the literal removed
+# 2026-05-06 (E2E loop iter 30). Fail closed if the env var isn't set.
+if [ -z "${CARDIFY_DB_PASS:-}" ]; then
+    echo "[$(date -Is)] FATAL CARDIFY_DB_PASS not set, refusing to dump" >&2
+    exit 2
+fi
+DB_PASS="$CARDIFY_DB_PASS"
 
 BACKUP_DIR="${CARDIFY_BACKUP_DIR:-/var/backups/cardify}"
 RETENTION_COUNT="${CARDIFY_BACKUP_KEEP:-30}"
