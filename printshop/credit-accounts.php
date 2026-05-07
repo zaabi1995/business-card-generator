@@ -362,7 +362,7 @@ printshopHeader(t('printshoppages.title_credit_accounts', ['shop' => $printShop[
                             <?= csrfField() ?>
                             <input type="hidden" name="action" value="suspend">
                             <input type="hidden" name="account_id" value="<?= htmlspecialchars($acc['id']) ?>">
-                            <button type="submit" onclick="return confirm(<?= json_encode(t('printshopcredit.confirm_suspend'), JSON_UNESCAPED_UNICODE) ?>)"
+                            <button type="submit" onclick="return confirm(<?= htmlspecialchars(json_encode(t('printshopcredit.confirm_suspend'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>)"
                                     class="w-full py-1.5 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50 transition">
                                 <?= htmlspecialchars(t('printshopcredit.btn_suspend')) ?>
                             </button>

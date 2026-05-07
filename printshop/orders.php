@@ -302,7 +302,7 @@ printshopHeader(t('printshoppages.title_orders', ['shop' => $printShop['name']])
                                     if ($canCancelThis):
                                     ?>
                                     <button type="button"
-                                            onclick="window.dispatchEvent(new CustomEvent('ps:cancel-order', {detail: {id: <?= (int) $order['id'] ?>, ref: <?= json_encode('#' . (int) $order['id']) ?>}}))"
+                                            onclick="window.dispatchEvent(new CustomEvent('ps:cancel-order', {detail: {id: <?= (int) $order['id'] ?>, ref: '#<?= (int) $order['id'] ?>'}}))"
                                             class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-medium border border-red-200 text-red-700 hover:bg-red-50 transition-colors"
                                             title="<?= htmlspecialchars(t('printshopdash.cancel_btn')) ?>">
                                         <i class="fa-solid fa-xmark"></i>
