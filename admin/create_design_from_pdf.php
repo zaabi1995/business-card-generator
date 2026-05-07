@@ -261,7 +261,10 @@ try {
     http_response_code(400);
     echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
 } catch (Throwable $e) {
-    error_log('[create_design_from_pdf] FATAL ' . $e->getMessage());
+    error_log('[create_design_from_pdf] FATAL ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
     http_response_code(500);
-    echo json_encode(['ok' => false, 'error' => 'Server error: ' . $e->getMessage()]);
+    // Don't echo $e->getMessage() — Throwable is the catch-all for runtime
+    // failures (PyMuPDF / pdfunite / fatal Python tracebacks) that include
+    // server paths or library internals. Surface a generic string.
+    echo json_encode(['ok' => false, 'error' => 'Server error. Check the operator import dir for details.']);
 }

@@ -44,8 +44,9 @@ if (!empty($_POST['undo_id'])) {
         $stmt->execute($params);
         echo json_encode(['ok' => true, 'undone' => $stmt->rowCount()]);
     } catch (Exception $e) {
+        error_log('[admin/nfc/mark-programmed undo] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
         http_response_code(500);
-        echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+        echo json_encode(['ok' => false, 'error' => 'undo_failed']);
     }
     exit;
 }
@@ -84,6 +85,7 @@ try {
     ]);
     echo json_encode(['ok' => true, 'id' => (int)$pdo->lastInsertId()]);
 } catch (Exception $e) {
+    error_log('[admin/nfc/mark-programmed] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
     http_response_code(500);
-    echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+    echo json_encode(['ok' => false, 'error' => 'mark_failed']);
 }

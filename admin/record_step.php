@@ -49,8 +49,9 @@ if (!empty($_POST['data'])) {
 try {
     Onboarding::saveStep($companyId, $step, $data);
 } catch (Throwable $e) {
+    error_log('[admin/record_step] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
     http_response_code(500);
-    echo json_encode(['error' => 'save_failed', 'detail' => $e->getMessage()]);
+    echo json_encode(['error' => 'save_failed']);
     exit;
 }
 

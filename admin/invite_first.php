@@ -61,7 +61,8 @@ if (!$existing) {
             'status'     => 'unclaimed',
         ]);
     } catch (Throwable $e) {
-        echo json_encode(['ok' => false, 'error' => 'could_not_create_employee', 'detail' => $e->getMessage()]);
+        error_log('[admin/invite_first] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
+        echo json_encode(['ok' => false, 'error' => 'could_not_create_employee']);
         exit;
     }
 } else {

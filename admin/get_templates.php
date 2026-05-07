@@ -33,6 +33,7 @@ try {
     $config = loadTemplates($companyId);
     echo json_encode($config);
 } catch (Exception $e) {
+    error_log('[admin/get_templates] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
     http_response_code(500);
-    echo json_encode(['error' => 'Failed to load templates: ' . $e->getMessage()]);
+    echo json_encode(['error' => 'Failed to load templates']);
 }
