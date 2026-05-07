@@ -208,8 +208,11 @@ function vectorStatusForEmployee(string $employeeId, bool $companyHasVectorSourc
         return 'n/a';
     }
 
-    // HEAD the PDF endpoint. Use curl with -sI to get headers only so we
-    // don't download the whole file. 10s timeout is enough for a warm cache.
+    // HEAD the PDF endpoint and read the canonical X-Cardify-Pdf-Mode header
+    // (vector | vector-304 | raster-fallback | raster-fallback-304). The
+    // header is set by card-pdf.php itself so we don't have to guess from
+    // Content-Length, which fails on vector PDFs above 500K (see iter 9
+    // 7 May 2026 fix, real vectors are ~712K).
     $url = 'https://cardify.om/card-pdf.php?i=' . rawurlencode($employeeId);
     $ch  = curl_init($url);
     curl_setopt_array($ch, [
@@ -222,21 +225,19 @@ function vectorStatusForEmployee(string $employeeId, bool $companyHasVectorSourc
         CURLOPT_MAXREDIRS      => 2,
         CURLOPT_USERAGENT      => 'CardifyAudit/1.0',
     ]);
-    curl_exec($ch);
-    $httpCode     = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $contentLength = (int)curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
+    $resp = curl_exec($ch);
+    $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    if ($httpCode !== 200) {
+    if ($httpCode !== 200 || !is_string($resp)) {
         return 'error';
     }
 
-    // Vector PDF: 50K-500K. Raster fallback: > 1MB.
-    if ($contentLength >= 50_000 && $contentLength <= 500_000) {
-        return 'vector';
-    }
-    if ($contentLength > 1_000_000) {
-        return 'raster-fallback';
+    // Parse the Pdf-Mode header. Folds 304 variants into their underlying mode.
+    if (preg_match('/^X-Cardify-Pdf-Mode:\s*([^\r\n]+)/im', $resp, $m)) {
+        $mode = strtolower(trim($m[1]));
+        if (str_starts_with($mode, 'vector')) return 'vector';
+        if (str_starts_with($mode, 'raster-fallback')) return 'raster-fallback';
     }
 
     return 'error';
