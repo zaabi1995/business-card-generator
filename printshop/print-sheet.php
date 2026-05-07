@@ -18,14 +18,14 @@ $shopId = (int) $shop['id'];
 $employeeId = trim($_GET['employee'] ?? '');
 $companyId  = trim($_GET['company']  ?? '');
 $orderId    = isset($_GET['order']) ? (int) $_GET['order'] : 0;
-$rows = max(1, min(10, (int)($_GET['rows'] ?? 0)));
-$cols = max(1, min(5,  (int)($_GET['cols'] ?? 0)));
+// Detect "caller didn't pass rows/cols" BEFORE the clamp (max(1,...)
+// would otherwise rewrite an absent param to 1 and look like an
+// explicit choice). Auto-fit walks densest-to-sparsest layouts that
+// fit the card; explicit choice is honoured verbatim.
+$autoFit = !isset($_GET['rows']) && !isset($_GET['cols']);
+$rows = max(1, min(10, (int)($_GET['rows'] ?? 5)));
+$cols = max(1, min(5,  (int)($_GET['cols'] ?? 2)));
 $paper = in_array(($_GET['paper'] ?? 'A4'), ['A4', 'A3'], true) ? $_GET['paper'] : 'A4';
-$autoFit = ($rows === 0 || $cols === 0);
-if ($autoFit) {
-    // Defaults will be picked after card dims are known (line 90 below).
-    $rows = 5; $cols = 2;
-}
 
 if ($employeeId === '' || $companyId === '') {
     http_response_code(400);
