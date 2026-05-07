@@ -25,7 +25,10 @@ try {
 
     $employeeId = trim($_GET['i'] ?? '');
     if ($employeeId === '') {
-        throw new Exception('Missing employee id');
+        http_response_code(400);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Missing employee id (use ?i=<employee_id>)';
+        exit;
     }
 
     $ctx = CardRenderer::forEmployee($employeeId);
