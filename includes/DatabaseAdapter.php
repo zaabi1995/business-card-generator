@@ -536,15 +536,26 @@ class DatabaseAdapter {
             self::$db->update('employees', $updateData, $where, $whereParams);
             return ['success' => true];
         } catch (Exception $e) {
-            return ['success' => false, 'error' => 'Failed to update employee: ' . $e->getMessage()];
+            error_log('[DatabaseAdapter::updateEmployee] ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Failed to update employee'];
         }
     }
-    
+
     public static function deleteEmployee($id, $companyId = null) {
         if (!self::useDatabase()) {
             return ['success' => false, 'error' => 'Database not available'];
         }
-        
+
+        // Fallback to session-scoped company_id (mirrors updateEmployee).
+        // CRITICAL: without this fallback, callers who don't pass $companyId
+        // (e.g. admin/employees.php case 'delete' which passes only $_POST['id'])
+        // would issue an unscoped DELETE, letting a tenant A admin delete any
+        // tenant B employee by POSTing the foreign id. Super-admin keeps the
+        // ability to delete any row by passing $companyId=null EXPLICITLY,
+        // but only when invoked from CLI or super-admin context where
+        // getCurrentCompanyId() returns null too.
+        $companyId = $companyId ?: getCurrentCompanyId();
+
         try {
             $where = 'id = :id';
             $params = ['id' => $id];
@@ -552,13 +563,14 @@ class DatabaseAdapter {
                 $where .= ' AND company_id = :cid';
                 $params['cid'] = $companyId;
             }
-            
+
             $count = self::$db->delete('employees', $where, $params);
-            return $count > 0 
-                ? ['success' => true] 
+            return $count > 0
+                ? ['success' => true]
                 : ['success' => false, 'error' => 'Employee not found'];
         } catch (Exception $e) {
-            return ['success' => false, 'error' => 'Failed to delete employee: ' . $e->getMessage()];
+            error_log('[DatabaseAdapter::deleteEmployee] ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Failed to delete employee'];
         }
     }
     
