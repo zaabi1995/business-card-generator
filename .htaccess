@@ -204,10 +204,16 @@
 Options -Indexes
 
 # Protect sensitive files
-<FilesMatch "^(config\.php|\.htaccess|\.git|composer\.(json|lock))$">
+<FilesMatch "^(config\.php|config\.example\.php|\.htaccess|\.git|composer\.(json|lock)|package\.json|package-lock\.json|\.env|\.env\..*)$">
     Order allow,deny
     Deny from all
 </FilesMatch>
+
+# Block /install/ entirely once the site is up. Re-enable manually if a
+# fresh install is ever needed.
+<IfModule mod_rewrite.c>
+    RewriteRule ^install/ - [F,L]
+</IfModule>
 
 # Protect sensitive directories
 <IfModule mod_rewrite.c>
