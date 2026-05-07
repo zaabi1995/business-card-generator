@@ -115,11 +115,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: ' . $result['redirect']);
             }
             exit;
-        } elseif ($result['not_found'] ?? false) {
-            // Email not found - redirect to signup with pre-filled email
-            header('Location: ' . getBasePath() . 'company/register.php?email=' . urlencode($email));
-            exit;
         } else {
+            // Anti-enumeration: do not branch on 'not_found'. Previously, an
+            // unknown email triggered a redirect to /company/register.php
+            // with the email pre-filled, while a known email kept the user
+            // on /login.php with an error message. The differing responses
+            // let attackers probe arbitrary email addresses to learn which
+            // ones are registered Cardify accounts. Surface the same generic
+            // 'Invalid credentials' message either way; a legitimate new
+            // user can still hit /company/register.php from the link in the
+            // header.
             $error = $result['error'] ?? 'Invalid credentials';
         }
     }
