@@ -27,11 +27,23 @@ if (!Auth::isLoggedIn()) {
 
 try {
     $input = json_decode(file_get_contents('php://input'), true);
-    
+
     $email = sanitizeEmail($input['email'] ?? '');
     $companyId = $input['company_id'] ?? '';
-    
+
     if (empty($email) || empty($companyId)) {
+        echo json_encode(['exists' => false]);
+        exit;
+    }
+
+    // Cross-tenant enumeration guard: a logged-in user must only be able
+    // to probe employees of THEIR OWN tenant. Without this, any
+    // company_admin from tenant A could iterate emails against tenant B's
+    // company_id and learn which employees exist there. Super-admin keeps
+    // unrestricted access for support flows.
+    $userRole = Auth::getCurrentRole();
+    $userCompanyId = $_SESSION['company_id'] ?? null;
+    if ($userRole !== 'super_admin' && $userCompanyId !== $companyId) {
         echo json_encode(['exists' => false]);
         exit;
     }

@@ -263,10 +263,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 if ($userInfo) {
                     // User found - generate token and send password reset email
-                    error_log("=== FORGOT PASSWORD ===");
-                    error_log("User found: " . json_encode($userInfo));
-                    error_log("Creating token with type={$userInfo['type']}, id={$userInfo['id']}");
-                    
+                    // (deliberately don't log $userInfo, it contains the user's
+                    // name + role + ids; PII shouldn't end up in error_log.
+                    // Log only that a reset was issued.)
+                    error_log("forgot-password: reset issued for type=" . $userInfo['type']);
+
                     $token = createPasswordResetToken(
                         $db, 
                         $email, 
