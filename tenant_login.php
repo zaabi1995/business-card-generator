@@ -96,36 +96,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
         if (!$isEmail && strlen($deliveryId) < 8) {
             $error = t('auth.tenant_err_phone_invalid');
         } else {
-            $user = tl_lookup_user($identifier, $companyId);
-            // Rate limit: max 1 OTP per 60s and max 5 OTPs per hour per identifier.
-            // Prevents both accidental refresh loops and abuse.
-            $rateBucket = '/tmp/cardify-otp-rate-' . hash('sha256', $deliveryId);
+            // IP-based pre-lookup rate limit (anti-enumeration). Without this,
+            // an attacker can probe arbitrary identifiers without ever
+            // tripping the per-identifier limit (which only fires when an
+            // account actually exists).
+            $clientIp = $_SERVER['HTTP_CF_CONNECTING_IP']
+                ?? trim(explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''))[0])
+                ?: ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+            $ipBucketFile = '/tmp/cardify-otp-ip-' . hash('sha256', $clientIp);
             $now = time();
-            $rateData = is_file($rateBucket) ? @json_decode((string)@file_get_contents($rateBucket), true) : null;
-            if (!is_array($rateData)) $rateData = ['last' => 0, 'window_start' => $now, 'count' => 0];
-            if ($now - $rateData['window_start'] > 3600) {
-                $rateData = ['last' => 0, 'window_start' => $now, 'count' => 0];
+            $ipBucket = is_file($ipBucketFile) ? @json_decode((string) @file_get_contents($ipBucketFile), true) : null;
+            if (!is_array($ipBucket)) $ipBucket = ['window_start' => $now, 'count' => 0];
+            if ($now - (int) $ipBucket['window_start'] > 3600) {
+                $ipBucket = ['window_start' => $now, 'count' => 0];
             }
-            $cooldown = 60 - ($now - (int)$rateData['last']);
-            if ($cooldown > 0) {
-                $error = 'Please wait ' . $cooldown . 's before requesting another code.';
-                $user = false; // skip the send branch
-            } elseif ((int)$rateData['count'] >= 5) {
-                $secs = 3600 - ($now - $rateData['window_start']);
-                $error = 'Hourly OTP limit reached. Try again in ' . max(60, $secs) . 's, or contact support@cardify.om.';
+            if ((int) $ipBucket['count'] >= 20) {
+                // Quietly cap probing per IP at 20/hour. Use the same generic
+                // success-page redirect as a real send, so the attacker can't
+                // tell whether they hit the cap, the account exists, or the
+                // OTP was actually sent.
+                $error = '';
                 $user = false;
-            }
-            if (!$user) {
-                if (empty($error)) {
-                    $error = t('auth.tenant_err_no_account', [
-                        'kind' => t($isEmail ? 'auth.tenant_kind_email' : 'auth.tenant_kind_phone'),
-                    ]);
-                }
+                $ipBucket['count']++;
+                @file_put_contents($ipBucketFile, json_encode($ipBucket), LOCK_EX);
             } else {
-                // Mark this OTP attempt in the bucket BEFORE we send
-                $rateData['last'] = $now;
-                $rateData['count'] = (int)$rateData['count'] + 1;
-                @file_put_contents($rateBucket, json_encode($rateData), LOCK_EX);
+                $ipBucket['count']++;
+                @file_put_contents($ipBucketFile, json_encode($ipBucket), LOCK_EX);
+
+                $user = tl_lookup_user($identifier, $companyId);
+                // Per-identifier rate limit: max 1 OTP per 60s and max 5/hour.
+                $rateBucket = '/tmp/cardify-otp-rate-' . hash('sha256', $deliveryId);
+                $rateData = is_file($rateBucket) ? @json_decode((string) @file_get_contents($rateBucket), true) : null;
+                if (!is_array($rateData)) $rateData = ['last' => 0, 'window_start' => $now, 'count' => 0];
+                if ($now - $rateData['window_start'] > 3600) {
+                    $rateData = ['last' => 0, 'window_start' => $now, 'count' => 0];
+                }
+                $cooldown = 60 - ($now - (int) $rateData['last']);
+                if ($cooldown > 0) {
+                    $user = false;
+                } elseif ((int) $rateData['count'] >= 5) {
+                    $user = false;
+                }
+            }
+            // Always show the SAME post-submit page regardless of whether the
+            // identifier resolves to a real user. Otherwise the error message
+            // divergence (account exists / doesn't exist) is an account-
+            // enumeration vector. Real users receive the OTP via WhatsApp/email
+            // shortly after; attackers see the same page either way and only
+            // learn the result on the verify step.
+            $sendActual = (bool) $user;
+            if (!$user) {
+                $user = ['id' => '__noop__'];  // placeholder so the redirect-out branch fires
+            }
+            {
+                if ($sendActual) {
+                    // Mark this OTP attempt in the bucket BEFORE we send
+                    $rateData['last'] = $now;
+                    $rateData['count'] = (int) $rateData['count'] + 1;
+                    @file_put_contents($rateBucket, json_encode($rateData), LOCK_EX);
+                }
 
                 $purpose = 'tlogin:' . substr(hash('sha1', $companyId), 0, 12);
                 // Optimistic UX: stash session, issue the 302 immediately,
@@ -149,9 +178,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
                     @ob_end_flush(); flush();
                 }
                 ignore_user_abort(true);
-                $res = OtpService::send($deliveryId, $channel, $purpose);
-                if (empty($res['ok'])) {
-                    error_log('[tenant_login] background OTP send failed for ' . $deliveryId . ' ch=' . $channel . ': ' . ($res['error'] ?? 'unknown'));
+                if ($sendActual) {
+                    $res = OtpService::send($deliveryId, $channel, $purpose);
+                    if (empty($res['ok'])) {
+                        error_log('[tenant_login] background OTP send failed for ' . $deliveryId . ' ch=' . $channel . ': ' . ($res['error'] ?? 'unknown'));
+                    }
+                } else {
+                    // No-op: identifier did not resolve to a real user, OR per-IP
+                    // /per-identifier rate limit tripped. We already showed the
+                    // generic 'code sent' page via the redirect above; do not
+                    // burn SMS/WhatsApp budget on probing.
+                    error_log('[tenant_login] no-op send for ' . substr(hash('sha256', $deliveryId), 0, 12) . ' (anti-enumeration)');
                 }
                 exit;
             }
