@@ -78,12 +78,33 @@ function updateUserPassword($db, $tokenData, $newPassword) {
     $userType = $tokenData['user_type'];
     $userId = $tokenData['user_id'];
     $email = $tokenData['email'];
-    
+
     $debugInfo['user_type'] = $userType;
     $debugInfo['user_id'] = $userId;
     $debugInfo['email'] = $email;
     $debugInfo['steps'] = [];
-    
+
+    // Atomically mark the token used BEFORE changing the password. If a
+    // concurrent request beats us to it, the WHERE used_at IS NULL guard
+    // matches 0 rows and we abort. Without this, two parallel resets with
+    // the same token (e.g. attacker who captured the link races the user)
+    // would both succeed; last write wins. Single-use enforcement.
+    try {
+        $conn = $db->getConnection();
+        $stmt = $conn->prepare(
+            "UPDATE password_reset_tokens SET used_at = NOW()
+             WHERE token = :token AND used_at IS NULL"
+        );
+        $stmt->execute([':token' => $tokenData['token']]);
+        if ($stmt->rowCount() === 0) {
+            $debugInfo['steps'][] = "Token already consumed (race or replay)";
+            return false;
+        }
+    } catch (Throwable $e) {
+        error_log('[reset-password] consume failed: ' . $e->getMessage());
+        return false;
+    }
+
     try {
         switch ($userType) {
             case 'user':
@@ -216,15 +237,8 @@ function updateUserPassword($db, $tokenData, $newPassword) {
                 return false;
         }
         
-        $debugInfo['steps'][] = "Password updated successfully, marking token as used";
-        
-        // Mark token as used
-        $db->update('password_reset_tokens',
-            ['used_at' => date('Y-m-d H:i:s')],
-            'token = :token',
-            ['token' => $tokenData['token']]
-        );
-        
+        // Token already marked used atomically at the top of this function;
+        // do not re-mark here. The password is now safe to change.
         $debugInfo['steps'][] = "SUCCESS";
         return true;
     } catch (Exception $e) {
