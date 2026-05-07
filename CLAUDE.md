@@ -33,12 +33,18 @@ Paymob Oman for payments, BHD-ERP for accounting.
   5-URL smoke. A failing deploy auto-rolls back without reloading FPM
   so the previous good code stays hot in OPcache.
 - If you must bypass the deploy script, ALWAYS follow with the full
-  perms sweep:
+  perms sweep (preserving +x on `.sh` so backup/disk-alert/slow-query
+  crons keep firing):
   ```bash
   ssh root@147.93.20.54 "cd /www/wwwroot/cardify.om && \
-    chown -R www:www . && find . -type f -exec chmod 644 {} + && \
+    chown -R www:www . && \
+    find . -type f ! -name '*.sh' -exec chmod 644 {} + && \
+    find . -type f -name '*.sh' -exec chmod 755 {} + && \
     find . -type d -exec chmod 755 {} +"
   ```
+  (15-day silent backup outage on 7 May 2026 traced to the deploy
+  script stripping +x from `scripts/backup-*.sh` etc.; deploy script
+  patched on the VPS to special-case `.sh`.)
 
 ### Git
 - **Main lives in the `.worktrees/ux-employee-tabs/` worktree.** That
