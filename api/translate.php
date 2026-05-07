@@ -20,6 +20,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // Public portal visitors hit this endpoint anonymously to translate
 // their own name/position from English to Arabic. Rate limit + length
 // cap below are the spend protection; full auth would block the use case.
+//
+// Bucket the rate limit per CLIENT IP (not session). Cookie-less callers
+// would otherwise create a fresh session each request and bypass entirely
+// (caught 7 May 2026 in the verify-everything loop, iter 10/11).
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -27,22 +31,36 @@ $now = time();
 $rateLimitWindow = 60; // seconds
 $rateLimitMax = Auth::isLoggedIn() ? 20 : 8; // tighter cap for anonymous
 
-if (!isset($_SESSION['translate_requests'])) {
-    $_SESSION['translate_requests'] = [];
-}
-// Remove expired entries
-$_SESSION['translate_requests'] = array_filter(
-    $_SESSION['translate_requests'],
-    function ($ts) use ($now, $rateLimitWindow) {
-        return ($now - $ts) < $rateLimitWindow;
+// Real client IP behind Cloudflare; falls back to REMOTE_ADDR.
+$clientIp = $_SERVER['HTTP_CF_CONNECTING_IP']
+    ?? trim(explode(',', (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''))[0])
+    ?: ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+$bucketKey = sha1($clientIp);
+$bucketDir = sys_get_temp_dir() . '/cardify-rate-translate';
+if (!is_dir($bucketDir)) { @mkdir($bucketDir, 0775, true); }
+$bucketFile = $bucketDir . '/' . $bucketKey . '.json';
+$bucket = [];
+if (is_file($bucketFile)) {
+    $raw = @file_get_contents($bucketFile);
+    if ($raw) {
+        $decoded = json_decode($raw, true);
+        if (is_array($decoded)) $bucket = $decoded;
     }
-);
-if (count($_SESSION['translate_requests']) >= $rateLimitMax) {
+}
+$bucket = array_values(array_filter($bucket, fn($ts) => is_numeric($ts) && ($now - (int)$ts) < $rateLimitWindow));
+if (count($bucket) >= $rateLimitMax) {
     http_response_code(429);
     echo json_encode(['error' => 'Rate limit exceeded. Please wait before making more translation requests.']);
     exit;
 }
-$_SESSION['translate_requests'][] = $now;
+$bucket[] = $now;
+@file_put_contents($bucketFile, json_encode($bucket), LOCK_EX);
+// Probabilistic GC: 1 in 100 requests sweeps stale buckets.
+if (mt_rand(1, 100) === 1) {
+    foreach (glob($bucketDir . '/*.json') ?: [] as $f) {
+        if (@filemtime($f) < $now - $rateLimitWindow * 10) @unlink($f);
+    }
+}
 
 // Check if any AI provider is configured (prefer OpenRouter, fall back to OpenAI)
 $hasOpenRouter = defined('OPENROUTER_API_KEY') && !empty(OPENROUTER_API_KEY);
