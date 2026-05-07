@@ -16,6 +16,8 @@
  * and vice versa. Exits non-zero if any divergence is found.
  */
 
+
+if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
 chdir(dirname(__DIR__));
 $verbose = in_array('--verbose', $argv, true);
 $argsDirs = array_values(array_filter(array_slice($argv, 1), fn($a) => $a !== '--verbose' && !str_starts_with($a, '-')));

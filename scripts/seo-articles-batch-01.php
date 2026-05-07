@@ -2,6 +2,8 @@
 /**
  * One-shot: insert 2 SEO-targeted blog posts for the global-SEO loop.
  */
+
+if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
 require '/www/wwwroot/cardify.om/config.php';
 
 $posts = [

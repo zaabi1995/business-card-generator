@@ -14,6 +14,8 @@
  * Run from cron on the 1st of each month at 07:00 Muscat:
  *   5 7 1 * *  /www/server/php/83/bin/php /www/wwwroot/cardify.om/scripts/monthly-analytics-report.php
  */
+
+if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Database.php';
 require_once INCLUDES_DIR . '/Mailer.php';

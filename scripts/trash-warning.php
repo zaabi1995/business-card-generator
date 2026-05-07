@@ -19,6 +19,8 @@
  * Install: daily at 08:00 Muscat.
  *   0 8 * * *  /www/server/php/83/bin/php /www/wwwroot/cardify.om/scripts/trash-warning.php
  */
+
+if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Database.php';
 require_once INCLUDES_DIR . '/Mailer.php';

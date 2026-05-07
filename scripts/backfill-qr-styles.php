@@ -19,6 +19,8 @@
  * cache + Fabric editor all refetch.
  */
 
+
+if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
 $opts = getopt('', ['slug::', 'side::', 'dry-run', 'help']);
 if (isset($opts['help'])) {
     fwrite(STDERR, "Usage: php scripts/backfill-qr-styles.php [--slug=hosn] [--side=back] [--dry-run]\n");

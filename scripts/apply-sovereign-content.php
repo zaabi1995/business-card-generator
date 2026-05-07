@@ -10,6 +10,8 @@
  *
  * Run: /www/server/php/83/bin/php scripts/apply-sovereign-content.php [--force]
  */
+
+if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
 require '/www/wwwroot/cardify.om/config.php';
 
 $force = in_array('--force', $argv, true);

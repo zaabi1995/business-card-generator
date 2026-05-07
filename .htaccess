@@ -215,6 +215,7 @@ Options -Indexes
     RewriteRule ^data/ - [F,L]
     RewriteRule ^logs/ - [F,L]
     RewriteRule ^cron/ - [F,L]      # Cron scripts must run from CLI only (defense in depth, every cron file also has a CLI guard)
+    RewriteRule ^scripts/ - [F,L]   # CLI-only utilities, never web-callable. Source includes backup-db.sh (DB pass) + Python parsers + DB seeders + heavy backfills (CPU/disk burn). All .php scripts also have their own PHP_SAPI guard added below.
     RewriteRule ^api/check-slug\.php$ - [L]  # Allow API endpoint
     RewriteRule ^api/translate\.php$ - [L]  # Allow translation API
     RewriteRule ^api/get_templates_public\.php$ - [L]  # Allow public templates API

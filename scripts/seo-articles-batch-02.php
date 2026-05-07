@@ -4,6 +4,8 @@
  * Inserts 3 articles targeting GCC-wide queries around digital business
  * identity, cross-border networking, and regulated-industry compliance.
  */
+
+if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
 require '/www/wwwroot/cardify.om/config.php';
 
 $posts = [

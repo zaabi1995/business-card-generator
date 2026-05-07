@@ -4,6 +4,8 @@
  * import dir, set has_vector_source + fonts_dir on the row.
  * Idempotent, safe to re-run.
  */
+
+if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
 require_once __DIR__ . '/../config.php';
 
 $db = Database::getInstance();

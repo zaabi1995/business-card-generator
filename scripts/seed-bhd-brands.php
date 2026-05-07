@@ -13,6 +13,8 @@
  * Run:   php scripts/seed-bhd-brands.php
  * Then:  php scripts/render-logo-variants.php --only-missing
  */
+
+if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/LogoLibrary.php';
 

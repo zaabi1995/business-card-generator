@@ -19,6 +19,8 @@
  *   /www/server/php/83/bin/php scripts/import-ministerial-logos.php \
  *     /tmp/ministerial-logos-catalog.json /tmp/ministerial-logos
  */
+
+if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only.'); }
 require '/www/wwwroot/cardify.om/config.php';
 require '/www/wwwroot/cardify.om/includes/LogoLibrary.php';
 
