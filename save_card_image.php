@@ -79,10 +79,11 @@ try {
     ]);
     
 } catch (Exception $e) {
+    error_log('[save_card_image] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'error' => $e->getMessage()
+        'error'   => 'Failed to save card image',
     ]);
 }
 
