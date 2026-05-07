@@ -89,6 +89,20 @@ try {
         die('Employee not found');
     }
 
+    // Tenant isolation: when served from a tenant subdomain
+    // (<slug>.cardify.om), refuse to leak another tenant's employee vCard.
+    // Caught 7 May 2026 in iter 22 of the verify-everything loop, same
+    // root cause as the card-pdf.php leak fixed in iter 21.
+    require_once INCLUDES_DIR . '/TenantHost.php';
+    if (TenantHost::isTenantHost()) {
+        $tenantSlug = (string) TenantHost::slug();
+        if ($tenantSlug !== '' && $tenantSlug !== ($company['slug'] ?? '')) {
+            ob_end_clean();
+            http_response_code(404);
+            die('Employee not found');
+        }
+    }
+
     // Log the scan
     try {
         QRTracker::logScan($employee['id'], $company['id']);
