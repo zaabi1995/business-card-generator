@@ -16,32 +16,21 @@ ob_start();
 try {
     require_once __DIR__ . '/../config.php';
     require_once INCLUDES_DIR . '/Auth.php';
-    
-    // Check if TCPDF is available
-    $autoloadPath = dirname(__DIR__) . '/vendor/autoload.php';
-    if (!file_exists($autoloadPath)) {
-        ob_end_clean();
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'error' => 'TCPDF not installed. Run: composer require tecnickcom/tcpdf']);
-        exit;
-    }
-    
-    require_once INCLUDES_DIR . '/PrintReadyGenerator.php';
-    
 } catch (Exception $e) {
     ob_end_clean();
     header('Content-Type: application/json');
     error_log('print-ready config error: ' . $e->getMessage());
+    http_response_code(500);
     echo json_encode(['success' => false, 'error' => 'Server configuration error']);
     exit;
 }
 
 // Clear any output buffer content (warnings, etc)
 ob_end_clean();
-
 header('Content-Type: application/json');
 
-// Allow only authenticated print shops or super admins
+// Auth gates first so anonymous callers don't learn about server-side
+// dependency state from the error body.
 if (!Auth::isLoggedIn()) {
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'Unauthorized - Please log in']);
@@ -54,6 +43,19 @@ if (!in_array($role, ['print_shop', 'super_admin', 'company'])) {
     echo json_encode(['success' => false, 'error' => 'Access denied']);
     exit;
 }
+
+// TCPDF + PrintReadyGenerator are needed for the raster fallback path
+// only; the vector branch in handleGenerateRequest() shells out to
+// scripts/imposition-vector.py and does not need composer deps. Still,
+// load them up-front so handlers can rely on them.
+$autoloadPath = dirname(__DIR__) . '/vendor/autoload.php';
+if (!file_exists($autoloadPath)) {
+    error_log('print-ready: vendor/autoload.php missing on prod (run composer install)');
+    http_response_code(503);
+    echo json_encode(['success' => false, 'error' => 'Print service temporarily unavailable']);
+    exit;
+}
+require_once INCLUDES_DIR . '/PrintReadyGenerator.php';
 
 $action = $_GET['action'] ?? $_POST['action'] ?? 'layout';
 
