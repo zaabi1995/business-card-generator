@@ -9,6 +9,15 @@ require_once __DIR__ . '/LinkedInPoster.php';
  */
 class LinkedInCarousel {
     public static function postForBlog(array $blog, PDO $pdo, string $logFile): array {
+        // Kill switch: same flag file as the cron poster scripts. Allows the
+        // admin UI 'Post carousel now' button to be safely no-op'd along with
+        // the scheduled cron without editing code or removing the button.
+        $flag = dirname(__DIR__) . '/cron/.posting-disabled';
+        if (file_exists($flag)) {
+            self::log($logFile, "SKIPPED: LinkedIn posting disabled by flag file ({$flag})");
+            return ['posted' => false, 'reason' => 'posting_disabled'];
+        }
+
         self::log($logFile, "Generating carousel for: {$blog['title']}");
 
         $slides = CarouselSlideGenerator::generate($blog);

@@ -12,6 +12,16 @@ if (PHP_SAPI !== 'cli') {
     http_response_code(403);
     exit('CLI only');
 }
+
+// Kill switch: touch /www/wwwroot/cardify.om/cron/.posting-disabled to halt
+// all LinkedIn posting (cron + admin UI manual triggers) without editing
+// code. Currently OFF per Ali 2026-05-07: carousel was failing daily at the
+// Anthropic API credit step. Removing the flag file re-enables.
+if (file_exists(__DIR__ . '/.posting-disabled')) {
+    echo "[" . date('Y-m-d H:i:s') . "] LinkedIn posting disabled by flag file, exiting.\n";
+    exit(0);
+}
+
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../includes/CarouselSlideGenerator.php';
 require_once __DIR__ . '/../includes/CarouselPDFRenderer.php';
