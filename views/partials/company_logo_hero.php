@@ -8,6 +8,7 @@
  * @var array $company  om_companies row with logo_* fields
  * @var bool  $isAr
  */
+if (!defined('INCLUDES_DIR')) { http_response_code(404); exit; }
 if (!class_exists('LogoLibrary')) {
     require_once __DIR__ . '/../../includes/LogoLibrary.php';
 }

@@ -6,6 +6,7 @@
  * Deep-link: ?tab=card pre-selects the tab via Alpine x-init.
  * All forms, field names, and submit URLs are unchanged from the pre-tab version.
  */
+if (!defined('INCLUDES_DIR')) { http_response_code(404); exit; }
 require_once INCLUDES_DIR . '/Currency.php';
 require_once INCLUDES_DIR . '/CardSections.php';
 require_once INCLUDES_DIR . '/Appointments.php';

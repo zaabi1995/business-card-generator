@@ -12,6 +12,7 @@
  * @var bool   $isAr
  */
 
+if (!defined('INCLUDES_DIR')) { http_response_code(404); exit; }
 // Title / description lean into the "Omani {sector} logo" long-tail, that's
 // the query pattern for Google Image search on branded marks.
 $pageTitle       = t('logos.sector_meta_title', ['sector' => $sectorLabel]);

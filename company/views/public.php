@@ -3,6 +3,7 @@
  * Public Company View - Employee-focused landing page
  * Designed to help employees easily request and receive their business cards
  */
+if (!defined('INCLUDES_DIR')) { http_response_code(404); exit; }
 $companyName = sanitize($company['name_en'] ?? $company['name'] ?? $companySlug);
 $companyNameAr = sanitize($company['name_ar'] ?? '');
 $companyDomain = $company['email_domain'] ?? extractEmailDomain($company['admin_email'] ?? '');

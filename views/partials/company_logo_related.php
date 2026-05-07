@@ -8,6 +8,7 @@
  * @var array  $SECTORS
  * @var Database $db  (from companies.php scope)
  */
+if (!defined('INCLUDES_DIR')) { http_response_code(404); exit; }
 if (!function_exists('logos_related_esc')) {
     function logos_related_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 }

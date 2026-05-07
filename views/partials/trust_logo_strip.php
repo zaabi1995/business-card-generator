@@ -4,6 +4,7 @@
  *   require INCLUDES_DIR . '/../views/partials/trust_logo_strip.php';
  * Expects I18n globals + TrustLogos class loaded.
  */
+if (!defined('INCLUDES_DIR')) { http_response_code(404); exit; }
 if (!class_exists('TrustLogos')) {
     require_once __DIR__ . '/../../includes/TrustLogos.php';
 }

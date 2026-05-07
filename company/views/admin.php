@@ -2,6 +2,7 @@
 /**
  * Company Admin View - Dashboard with full management
  */
+if (!defined('INCLUDES_DIR')) { http_response_code(404); exit; }
 require_once INCLUDES_DIR . '/Currency.php';
 
 // Get stats

@@ -5,6 +5,7 @@
  * Emits a visible accordion matching site design language
  * (matches /logos hub + /gcc-business-index FAQ styling).
  */
+if (!defined('INCLUDES_DIR')) { http_response_code(404); exit; }
 if (empty($faq) || !is_array($faq)) return;
 $_faq_esc = fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 ?>

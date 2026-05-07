@@ -12,6 +12,7 @@
  * @var bool   $isAr
  */
 
+if (!defined('INCLUDES_DIR')) { http_response_code(404); exit; }
 $pageTitle       = $title;
 $pageDescription = t('logos.hub_desc_prefix') . number_format($total) . t('logos.hub_desc_suffix');
 $canonicalUrl    = $canonical;
