@@ -112,11 +112,13 @@ if ($rc !== 0 || !is_file($outputPath) || filesize($outputPath) < 1024) {
     error_log('printshop/print-sheet imposition failed rc=' . $rc . ' out=' . $stderr);
     http_response_code(500);
     header('Content-Type: text/plain; charset=utf-8');
-    // Surface the script's own error so the operator sees the real cause
-    // (e.g. "card 262x170 doesn't fit in slot 269x157") instead of a
-    // generic "imposition failed". Trim to first line for safety.
-    $firstLine = strtok($stderr, "\n") ?: 'imposition failed';
-    echo 'imposition failed: ' . htmlspecialchars($firstLine, ENT_QUOTES);
+    // Surface the script's own error so the operator sees the real cause.
+    // argparse prints multi-line usage + an `error:` summary on the LAST
+    // line; the dimension-fit SystemExit prints a single line. Pull the
+    // last non-empty line which is most informative either way.
+    $lines = array_values(array_filter(array_map('trim', explode("\n", $stderr)), 'strlen'));
+    $lastLine = end($lines) ?: 'imposition failed';
+    echo 'imposition failed: ' . htmlspecialchars($lastLine, ENT_QUOTES);
     exit;
 }
 $rows = $finalRows; $cols = $finalCols;
