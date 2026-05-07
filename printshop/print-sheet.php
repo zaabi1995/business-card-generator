@@ -18,9 +18,14 @@ $shopId = (int) $shop['id'];
 $employeeId = trim($_GET['employee'] ?? '');
 $companyId  = trim($_GET['company']  ?? '');
 $orderId    = isset($_GET['order']) ? (int) $_GET['order'] : 0;
-$rows = max(1, min(10, (int)($_GET['rows'] ?? 5)));
-$cols = max(1, min(5,  (int)($_GET['cols'] ?? 2)));
+$rows = max(1, min(10, (int)($_GET['rows'] ?? 0)));
+$cols = max(1, min(5,  (int)($_GET['cols'] ?? 0)));
 $paper = in_array(($_GET['paper'] ?? 'A4'), ['A4', 'A3'], true) ? $_GET['paper'] : 'A4';
+$autoFit = ($rows === 0 || $cols === 0);
+if ($autoFit) {
+    // Defaults will be picked after card dims are known (line 90 below).
+    $rows = 5; $cols = 2;
+}
 
 if ($employeeId === '' || $companyId === '') {
     http_response_code(400);
@@ -78,28 +83,43 @@ $filename = sprintf('print-sheet-%s-%s-%s.pdf', $slug, $paper, date('Ymd-His'));
 $outputPath = $outputDir . '/' . $filename;
 
 $py = trim((string)@shell_exec('command -v python3 2>/dev/null')) ?: 'python3';
-$cmd = escapeshellarg($py)
-     . ' ' . escapeshellarg(BASE_DIR . '/scripts/imposition-vector.py')
-     . ' --card '  . escapeshellarg($rendered['path'])
-     . ' --paper ' . escapeshellarg($paper)
-     . ' --rows '  . $rows
-     . ' --cols '  . $cols
-     . ' --out '   . escapeshellarg($outputPath)
-     . ' 2>&1';
+$timeoutPrefix = (trim((string)@shell_exec('command -v timeout 2>/dev/null')) !== '') ? 'timeout 30 ' : '';
 
-if (trim((string)@shell_exec('command -v timeout 2>/dev/null')) !== '') {
-    $cmd = 'timeout 30 ' . $cmd;
+// Auto-fit: when caller didn't specify rows/cols, try the densest layout
+// that fits the card. Falls back from 5x2 → 4x2 → 3x2 → 2x2 → 2x1 → 1x1.
+$layouts = $autoFit ? [[5,2],[4,2],[3,2],[2,2],[2,1],[1,1]] : [[$rows,$cols]];
+$rc = -1; $out = []; $finalRows = $rows; $finalCols = $cols;
+foreach ($layouts as [$r, $c]) {
+    $cmd = $timeoutPrefix . escapeshellarg($py)
+         . ' ' . escapeshellarg(BASE_DIR . '/scripts/imposition-vector.py')
+         . ' --card '  . escapeshellarg($rendered['path'])
+         . ' --paper ' . escapeshellarg($paper)
+         . ' --rows '  . $r
+         . ' --cols '  . $c
+         . ' --out '   . escapeshellarg($outputPath)
+         . ' 2>&1';
+    $out = []; $rc = 0;
+    exec($cmd, $out, $rc);
+    if ($rc === 0 && is_file($outputPath) && filesize($outputPath) >= 1024) {
+        $finalRows = $r; $finalCols = $c;
+        break;
+    }
+    @unlink($outputPath);
 }
-
-$rc = 0; $out = [];
-exec($cmd, $out, $rc);
 
 if ($rc !== 0 || !is_file($outputPath) || filesize($outputPath) < 1024) {
-    error_log('printshop/print-sheet imposition failed rc=' . $rc . ' out=' . implode("\n", $out));
+    $stderr = implode("\n", $out);
+    error_log('printshop/print-sheet imposition failed rc=' . $rc . ' out=' . $stderr);
     http_response_code(500);
-    echo 'imposition failed';
+    header('Content-Type: text/plain; charset=utf-8');
+    // Surface the script's own error so the operator sees the real cause
+    // (e.g. "card 262x170 doesn't fit in slot 269x157") instead of a
+    // generic "imposition failed". Trim to first line for safety.
+    $firstLine = strtok($stderr, "\n") ?: 'imposition failed';
+    echo 'imposition failed: ' . htmlspecialchars($firstLine, ENT_QUOTES);
     exit;
 }
+$rows = $finalRows; $cols = $finalCols;
 
 AuditLog::log('print_sheet', 'print_order', $orderId > 0 ? (string) $orderId : null, null, [
     'shop_id'     => $shopId,
