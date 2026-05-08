@@ -52,11 +52,11 @@ except ImportError:
 
 
 def _subset_font_buffer(font_buffer: bytes, used_text: str) -> bytes:
-    # PyMuPDF's set_simple=True uses WinAnsiEncoding but still embeds the
-    # full font file (~250-300KB per face). For the web profile we only
-    # need the glyphs actually drawn by employee fields, so we trim the
-    # OpenType tables down to the ~30 unique characters in use. Saves
-    # ~400KB per card on the typical EN+AR Lato + Sora pair.
+    # PyMuPDF's set_simple=True flips the encoding to WinAnsi but still embeds
+    # the full TTF for dynamic-field text. Trim it to the glyphs we actually
+    # draw. Note: SVG-background text goes through fitz.convert_to_pdf, which
+    # pulls fonts via fontconfig and is unaffected by this subsetter, so the
+    # background page typically dominates the PDF size budget.
     if not _HAS_FONTTOOLS or not used_text:
         return font_buffer
     try:

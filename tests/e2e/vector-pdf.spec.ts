@@ -10,7 +10,11 @@ test('card-pdf returns vector PDF with embedded fonts', async ({ request }) => {
   expect(r.headers()['content-type']).toContain('application/pdf');
   const buf = await r.body();
   expect(buf.length).toBeGreaterThan(20_000);
-  expect(buf.length).toBeLessThan(500_000);
+  // Budget covers the SVG-background pages whose convert_to_pdf path pulls
+  // system fonts via fontconfig (~600KB Lato + ~100KB Sora). Dynamic-field
+  // fonts ARE subsetted in render-card-pdf.py; the background path isn't.
+  // Bump only when a real regression beyond ~800KB lands.
+  expect(buf.length).toBeLessThan(800_000);
   const tmp = path.join('/tmp', `cv-${Date.now()}.pdf`);
   fs.writeFileSync(tmp, buf);
   // Use PyMuPDF in a child process to inspect text + fonts.
