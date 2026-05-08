@@ -30,7 +30,7 @@ const viewports = [
 // desktop nav link and produce false failures.
 const pages = [
   { path: '/',             marker: /Bilingual cards|every employee|Made in Oman/i },
-  { path: '/pricing',      marker: /Starter|Professional|Most popular/i },
+  { path: '/pricing',      marker: /Standard Cards|Premium Cards|Luxury Cards|NFC/i },
   { path: '/status',       marker: /All systems|Partial|Major outage|Operational/i },
   { path: '/faq',          marker: /Frequently asked|Getting started/i },
   { path: '/contact',      marker: /Talk to the team|WhatsApp|Send/i },

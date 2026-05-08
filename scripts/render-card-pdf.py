@@ -36,11 +36,42 @@ Output: 2-page A4-trimmed-to-card-size PDF; SVG bg as vector underlay,
 employee text drawn as PDF text with embedded font subsets.
 """
 import argparse
+import io
 import json
 import os
 import re
 import sys
 import fitz
+
+try:
+    from fontTools.subset import Subsetter
+    from fontTools.ttLib import TTFont
+    _HAS_FONTTOOLS = True
+except ImportError:
+    _HAS_FONTTOOLS = False
+
+
+def _subset_font_buffer(font_buffer: bytes, used_text: str) -> bytes:
+    # PyMuPDF's set_simple=True uses WinAnsiEncoding but still embeds the
+    # full font file (~250-300KB per face). For the web profile we only
+    # need the glyphs actually drawn by employee fields, so we trim the
+    # OpenType tables down to the ~30 unique characters in use. Saves
+    # ~400KB per card on the typical EN+AR Lato + Sora pair.
+    if not _HAS_FONTTOOLS or not used_text:
+        return font_buffer
+    try:
+        font = TTFont(io.BytesIO(font_buffer))
+        subsetter = Subsetter()
+        # Always include the space + a couple of common punctuation
+        # codepoints PyMuPDF may insert when measuring text width.
+        subsetter.populate(text=used_text + ' ()')
+        subsetter.subset(font)
+        out = io.BytesIO()
+        font.save(out)
+        return out.getvalue()
+    except Exception as e:
+        print(f'WARN: font subset failed: {e}', file=sys.stderr)
+        return font_buffer
 
 # Arabic / Hebrew script ranges -- triggers preference for the
 # "<family>-Arabic" / "<family>-Arabic-Antiqua" font variant in
@@ -342,6 +373,25 @@ def render(template_path: str, employee_path: str, out_path: str,
     # output-intent ICC dictionary or explicit PDF version control in 1.27.
     use_simple_encoding = (profile != 'print')
 
+    # Pre-pass: collect every glyph that will be drawn per font so we can
+    # subset each TTF to only those characters before insert_font. PyMuPDF
+    # set_simple=True does NOT subset the font, only the encoding, so the
+    # full ~250-300KB face still ships in the PDF. Subsetting here drops
+    # the web-profile output from ~700KB to ~300KB.
+    text_by_font = {}
+    if use_simple_encoding:
+        for _ps in template['pages']:
+            for _f in _ps.get('fields', []):
+                _txt = _resolve_employee_value(_f.get('field_key', ''), employee)
+                if not _txt:
+                    continue
+                _fam = _f.get('font_family', 'Lato')
+                _wt  = int(_f.get('font_weight', 400))
+                _name, _ = _pick_font(_fam, _wt, font_buffers, text=_txt)
+                if _name:
+                    text_by_font.setdefault(_name, set()).update(_txt)
+    subsetted_buffers = {}
+
     for page_spec in template['pages']:
         orig_w = page_spec['width_pt']
         orig_h = page_spec['height_pt']
@@ -409,10 +459,18 @@ def render(template_path: str, employee_path: str, out_path: str,
 
             # Register font on this page.
             # web profile (default): set_simple=True uses WinAnsiEncoding so spaces
-            # round-trip cleanly from get_text() (CID Identity-encoded fonts return NBSP).
+            # round-trip cleanly from get_text() (CID Identity-encoded fonts return NBSP),
+            # plus we subset the TTF to the glyphs actually drawn (cached per font).
             # print profile: set_simple=False embeds the full font without subsetting,
             # which is required for PDF/X-4 compliance at the print shop.
-            page.insert_font(fontname=font_name, fontbuffer=font_buf,
+            if use_simple_encoding and font_name in text_by_font:
+                if font_name not in subsetted_buffers:
+                    subsetted_buffers[font_name] = _subset_font_buffer(
+                        font_buf, ''.join(text_by_font[font_name]))
+                actual_buf = subsetted_buffers[font_name]
+            else:
+                actual_buf = font_buf
+            page.insert_font(fontname=font_name, fontbuffer=actual_buf,
                              set_simple=use_simple_encoding)
 
             # baseline_y = y_pt (top of em-square) + ascender * font_size.

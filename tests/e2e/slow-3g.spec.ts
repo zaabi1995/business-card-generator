@@ -33,7 +33,7 @@ const SLOW_3G = {
 const pages = [
   { path: '/',           marker: /Bilingual cards|every employee|Made in Oman/i, budgetMs: 25000 },
   { path: '/api/health', marker: /"status":"up"/, budgetMs: 15000 },
-  { path: '/pricing',    marker: /Starter|Professional/i, budgetMs: 25000 },
+  { path: '/pricing',    marker: /Standard Cards|Premium Cards|Luxury|NFC/i, budgetMs: 25000 },
   { path: '/status',     marker: /All systems|Operational|Partial|Outage/i, budgetMs: 20000 },
 ];
 

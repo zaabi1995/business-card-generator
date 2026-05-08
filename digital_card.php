@@ -59,10 +59,19 @@ try {
         exit;
     }
 
-    // Canonicalize: /{slug}/card/{id} on apex -> {slug}.cardify.om/card/{id}
+    // Canonicalize: /{slug}/card/{id} on apex -> {slug}.cardify.om/card/{id}.
+    // Preserve query string so ?lang=ar (and any future query params) survive
+    // the redirect; without this, RTL detection on the subdomain falls back
+    // to default English.
     $__h = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
     if (in_array($__h, ['cardify.om', 'www.cardify.om'], true) && ($company['status'] ?? 'active') === 'active') {
-        header('Location: ' . getTenantUrl($companySlug, '/card/' . rawurlencode($employeeId)), true, 301);
+        $__qs = $_SERVER['QUERY_STRING'] ?? '';
+        parse_str($__qs, $__qsParams);
+        unset($__qsParams['company_slug'], $__qsParams['employee_id']);
+        $__qsOut = http_build_query($__qsParams);
+        $__target = getTenantUrl($companySlug, '/card/' . rawurlencode($employeeId))
+            . ($__qsOut ? '?' . $__qsOut : '');
+        header('Location: ' . $__target, true, 301);
         exit;
     }
 
