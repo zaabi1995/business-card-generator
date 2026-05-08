@@ -37,6 +37,9 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Install PyMuPDF (used by vector-pdf.spec.ts to inspect fonts/text)
+        run: python3 -m pip install --user pymupdf
+
       - name: Run tests
         run: npx playwright test --project=chromium
 
