@@ -3406,26 +3406,20 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
 
                         // Pick the text the field should display in the
                         // sample preview:
-                        //   1. is_static fields (brand decoration like
-                        //      "An Omantel Company", "@otech") render
-                        //      their detected_text verbatim.
-                        //   2. typed fields (name_en, mobile, ...) use
-                        //      the sample employee profile.
-                        //   3. fields the editor has no sample for fall
-                        //      back to the field's detected_text if the
-                        //      template was imported from a PDF, otherwise
-                        //      they are skipped (no more "social" /
-                        //      "static_2" key names rendered as text).
-                        var textToRender;
-                        if (field.is_static) {
-                            textToRender = (field.detected_text || '').trim();
-                        } else {
+                        //   1. Prefer the field's detected_text from the
+                        //      parser (== source PDF content) so the editor
+                        //      preview matches what's on the imported design.
+                        //   2. Fall back to the sample employee profile only
+                        //      when there's no detected_text (manual fields).
+                        //   3. Fall back to generic placeholders last.
+                        // This makes the editor preview = source PDF, with
+                        // the actual employee card render (portal.php /
+                        // generate_card_html.php / card-pdf.php) continuing
+                        // to use the live employee data.
+                        var textToRender = (field.detected_text || '').trim();
+                        if (!textToRender && !field.is_static) {
                             var sampleMap = self.getSampleText(key);
-                            // getSampleText returns the key itself for
-                            // unknown fields; treat that as no sample.
-                            textToRender = (sampleMap && sampleMap !== key)
-                                ? sampleMap
-                                : (field.detected_text || '').trim();
+                            textToRender = (sampleMap && sampleMap !== key) ? sampleMap : '';
                         }
                         if (!textToRender) continue;
 
