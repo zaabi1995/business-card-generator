@@ -80,20 +80,25 @@ if (!in_array($ext, ['woff2', 'woff', 'ttf', 'otf'], true)) {
     exit;
 }
 
-// Defense in depth: extension whitelist + finfo (cardify rule 7).
-// $_FILES['type'] is client-controlled. finfo trusts file content.
-$finfo = new finfo(FILEINFO_MIME_TYPE);
-$realMime = $finfo->file($_FILES['font_file']['tmp_name']);
-$allowedMimes = [
-    'font/woff2', 'application/font-woff2',
-    'font/woff',  'application/font-woff',
-    'font/ttf',   'application/x-font-ttf', 'application/font-sfnt',
-    'font/otf',   'application/x-font-otf',
-    'application/octet-stream', // PHP+finfo often falls back here on .ttf/.otf
+// Defense in depth: extension whitelist + magic-byte sniff. finfo MIME
+// detection is unreliable for fonts (returns x-font-truetype, sfnt,
+// vnd.ms-opentype, octet-stream depending on libmagic version), so we
+// check the actual file signature instead. CompanyFonts::describeFile
+// validates the font structure on the next call.
+$fp = @fopen($_FILES['font_file']['tmp_name'], 'rb');
+$magic = $fp ? fread($fp, 4) : '';
+if ($fp) fclose($fp);
+$validMagic = [
+    'wOF2',                         // woff2
+    'wOFF',                         // woff
+    "\x00\x01\x00\x00",         // ttf (TrueType)
+    'true',                         // ttf (legacy Apple)
+    'typ1',                         // ttf (PostScript Type 1 in sfnt)
+    'OTTO',                         // otf (CFF/OpenType)
 ];
-if (!in_array($realMime, $allowedMimes, true)) {
+if (!in_array($magic, $validMagic, true)) {
     http_response_code(400);
-    echo json_encode(['error' => 'unsupported_mime', 'detected' => $realMime]);
+    echo json_encode(['error' => 'invalid_font_file', 'detail' => 'magic bytes did not match any supported font format']);
     exit;
 }
 
