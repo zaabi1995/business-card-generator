@@ -85,15 +85,25 @@ _RTL_CHAR_RE = re.compile(
 )
 
 
-def _load_font_buffers(fonts_dir: str) -> dict:
-    """Return {filename_stem: bytes} for all .ttf files in fonts_dir."""
+def _load_font_buffers(fonts_dir: str, company_fonts_dir: str = None) -> dict:
+    """Return {filename_stem: bytes} for all .ttf/.otf files in fonts_dir.
+    If company_fonts_dir is provided, ALSO load files from there; those take
+    precedence so user-uploaded full fonts override parser-extracted subsets
+    (which lack glyphs outside the source PDF's character set).
+    """
     buffers = {}
-    if not os.path.isdir(fonts_dir):
-        return buffers
-    for fname in os.listdir(fonts_dir):
-        if fname.lower().endswith('.ttf'):
-            with open(os.path.join(fonts_dir, fname), 'rb') as fh:
-                buffers[os.path.splitext(fname)[0]] = fh.read()
+    extensions = ('.ttf', '.otf')
+    if os.path.isdir(fonts_dir):
+        for fname in os.listdir(fonts_dir):
+            if fname.lower().endswith(extensions):
+                with open(os.path.join(fonts_dir, fname), 'rb') as fh:
+                    buffers[os.path.splitext(fname)[0]] = fh.read()
+    # Company-uploaded fonts override extracted subsets.
+    if company_fonts_dir and os.path.isdir(company_fonts_dir):
+        for fname in os.listdir(company_fonts_dir):
+            if fname.lower().endswith(extensions):
+                with open(os.path.join(company_fonts_dir, fname), 'rb') as fh:
+                    buffers[os.path.splitext(fname)[0]] = fh.read()
     return buffers
 
 
@@ -343,9 +353,11 @@ def render(template_path: str, employee_path: str, out_path: str,
 
     import_dir = template['import_dir']
     fonts_dir  = template.get('fonts_dir', os.path.join(import_dir, 'fonts'))
+    company_fonts_dir = template.get('company_fonts_dir')
 
-    # Load all font buffers once.
-    font_buffers = _load_font_buffers(fonts_dir)
+    # Load all font buffers once. Company-uploaded fonts override extracted
+    # subsets which only contain the source PDF's character set.
+    font_buffers = _load_font_buffers(fonts_dir, company_fonts_dir=company_fonts_dir)
 
     # Read each font's actual ascender (em units) once and cache it.
     # Lato-Medium = 0.987, Sora-Regular = 0.970 (from fitz.Font.ascender).
@@ -412,28 +424,33 @@ def render(template_path: str, employee_path: str, out_path: str,
         else:
             card_rect = fitz.Rect(0, 0, orig_w, orig_h)
 
-        # Layer 1: SVG background as vector underlay.
-        svg_rel = page_spec.get('background_svg_path')
-        if svg_rel:
-            svg_path = os.path.join(import_dir, svg_rel)
-            if os.path.isfile(svg_path):
-                with open(svg_path, 'rb') as fh:
-                    svg_bytes = fh.read()
-                # PyMuPDF 1.27 opens SVG natively via fitz.open(stream, filetype='svg'),
-                # but show_pdf_page requires a PDF source. We convert the SVG doc to PDF
-                # in-memory via convert_to_pdf(), then use show_pdf_page to copy all
-                # vector paths onto our card page without rasterising.
-                svg_doc = fitz.open(stream=svg_bytes, filetype='svg')
-                pdf_bytes = svg_doc.convert_to_pdf()
-                svg_doc.close()
-                pdf_doc = fitz.open(stream=pdf_bytes, filetype='pdf')
-                page.show_pdf_page(
-                    card_rect,
-                    pdf_doc,
-                    pno=0,
-                    keep_proportion=False,
-                )
-                pdf_doc.close()
+        # Layer 1: background.
+        # Prefer the redacted bg PNG (post_persist rebake removes dynamic
+        # text from it) over the SVG (which preserves the source PDF's
+        # baked text-as-paths and would double-strike under the runtime
+        # text overlay). PNG at 1200 DPI is print-quality and matches what
+        # the Fabric.js browser preview shows, so PDF + site stay in sync.
+        png_rel = page_spec.get('background_png_path') or (
+            page_spec.get('background_svg_path', '').replace('.svg', '.png')
+            if page_spec.get('background_svg_path') else None
+        )
+        png_path = os.path.join(import_dir, png_rel) if png_rel else None
+        if png_path and os.path.isfile(png_path):
+            page.insert_image(card_rect, filename=png_path, keep_proportion=False)
+        else:
+            # Fallback to SVG vector underlay if no PNG exists.
+            svg_rel = page_spec.get('background_svg_path')
+            if svg_rel:
+                svg_path = os.path.join(import_dir, svg_rel)
+                if os.path.isfile(svg_path):
+                    with open(svg_path, 'rb') as fh:
+                        svg_bytes = fh.read()
+                    svg_doc = fitz.open(stream=svg_bytes, filetype='svg')
+                    pdf_bytes = svg_doc.convert_to_pdf()
+                    svg_doc.close()
+                    pdf_doc = fitz.open(stream=pdf_bytes, filetype='pdf')
+                    page.show_pdf_page(card_rect, pdf_doc, pno=0, keep_proportion=False)
+                    pdf_doc.close()
 
         # Phase 12: draw crop marks outside the card boundary when --for-print.
         if for_print:
@@ -442,7 +459,13 @@ def render(template_path: str, employee_path: str, out_path: str,
         # Layer 2: dynamic text fields.
         for field in page_spec.get('fields', []):
             field_key = field.get('field_key', '')
-            text = _resolve_employee_value(field_key, employee)
+            # Static-text fields (decorations) carry their literal text in
+            # the field spec; typed dynamic fields resolve from the employee.
+            static_text = field.get('static_text')
+            if static_text:
+                text = static_text
+            else:
+                text = _resolve_employee_value(field_key, employee)
             if not text:
                 continue
 

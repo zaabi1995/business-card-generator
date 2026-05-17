@@ -126,11 +126,24 @@ class CardPDFRenderer
             return ['success' => false, 'error' => 'fonts_dir missing, run extract-template-fonts.py'];
         }
 
+        // Company-uploaded fonts override extracted subsets so user-uploaded
+        // full fonts (with all GSUB features + full Latin/Arabic glyph
+        // coverage) win over parser-extracted subset TTFs limited to the
+        // source PDF's character set.
+        $companyId = (string)($tplBack['company_id'] ?? '');
+        $companyFontsDir = $companyId
+            ? (BASE_DIR . '/uploads/fonts/companies/' . $companyId)
+            : null;
+        if ($companyFontsDir && !is_dir($companyFontsDir)) {
+            $companyFontsDir = null;
+        }
+
         $template = [
-            'import_dir'   => $importDir,
-            'fonts_dir'    => $fontsDir,
-            'company_name' => $companyName,
-            'company_slug' => $companySlug,
+            'import_dir'         => $importDir,
+            'fonts_dir'          => $fontsDir,
+            'company_fonts_dir'  => $companyFontsDir,
+            'company_name'       => $companyName,
+            'company_slug'       => $companySlug,
             'pages' => [
                 self::pageSpec($tplFront, 'front'),
                 self::pageSpec($tplBack,  'back'),
@@ -218,19 +231,27 @@ class CardPDFRenderer
         $fields   = json_decode((string)($tpl['fields_json'] ?? '[]'), true) ?: [];
 
         // settings_json from the importer carries a background_svg_path
-        // alongside background_image_path.
+        // alongside background_image_path. The renderer now prefers the
+        // PNG (redacted) over the SVG (still has source PDF baked text).
         $svgRel = $settings['background_svg_path'] ?? str_replace('.png', '.svg', basename((string)($tpl['background_image_path'] ?? '')));
+        $pngRel = basename((string)($tpl['background_image_path'] ?? '')) ?: str_replace('.svg', '.png', $svgRel);
 
         $fieldList = [];
         foreach ($fields as $key => $f) {
             if (!is_array($f)) continue;
-            // Only DYNAMIC fields go through PyMuPDF's text drawing.
-            // Statics are already in the SVG bg.
+            // Skip baked-in fields (already in the bg PNG) and the QR slot.
             if (!empty($f['render_in_bg'])) continue;
-            if (!empty($f['is_static']))    continue;
             if ($key === 'qr_code')         continue;
+
+            // Two runtime-drawn kinds:
+            //  - typed dynamic (is_static=false, value resolved from employee)
+            //  - static text   (is_static=true,  value = detected_text literal)
+            // Pass a static_text field for the latter so render-card-pdf.py
+            // can draw the literal instead of trying to resolve a binding.
+            $staticText = !empty($f['is_static']) ? (string)($f['detected_text'] ?? $f['static_text'] ?? '') : null;
             $fieldList[] = [
                 'field_key'    => $key,
+                'static_text'  => $staticText,
                 'x_pt'         => (float)($f['x_pt']     ?? ($f['x'] ?? 0) / 4.166),
                 'y_pt'         => (float)($f['y_pt']     ?? ($f['y'] ?? 0) / 4.166),
                 'font_family'  => (string)($f['fontFamily'] ?? $f['font_family'] ?? 'Lato'),
@@ -243,6 +264,7 @@ class CardPDFRenderer
             'side'                 => $side,
             'width_pt'             => $widthPt,
             'height_pt'            => $heightPt,
+            'background_png_path'  => $pngRel,
             'background_svg_path'  => $svgRel,
             'fields'               => $fieldList,
         ];
