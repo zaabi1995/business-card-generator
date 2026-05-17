@@ -202,28 +202,27 @@ def _resolve_employee_value(field_key: str, employee: dict) -> str:
     """Return the employee's value for a template field_key, trying:
     1. Exact key (e.g. 'name_en')
     2. Locale-stripped key (e.g. 'name' for 'name_en' / 'name_ar')
-    3. The other locale's variant (e.g. 'name_en' for 'name_ar' if missing)
+
+    No cross-locale fallback: when name_ar is empty we'd otherwise render
+    the Latin name in the Arabic-font slot (wrong script for the slot,
+    visually a duplicate of the name_en slot).
     """
     val = (employee.get(field_key) or '').strip()
     if val:
         return val
-    # If field_key has a locale suffix, try without it
+    # If field_key has a locale suffix, try without it (legacy un-locale-d data)
     if field_key.endswith('_en'):
         bare = field_key[:-3]
         val = (employee.get(bare) or '').strip()
         if val:
             return val
-        # Cross-locale fallback to _ar
-        val = (employee.get(bare + '_ar') or '').strip()
-        if val:
-            return val
+        val = ''  # no cross-locale
     elif field_key.endswith('_ar'):
         bare = field_key[:-3]
         val = (employee.get(bare) or '').strip()
         if val:
             return val
-        # Cross-locale fallback to _en
-        val = (employee.get(bare + '_en') or '').strip()
+        val = ''  # no cross-locale
         if val:
             return val
     else:
