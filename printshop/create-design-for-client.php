@@ -158,6 +158,12 @@ try {
     unset($page);
 
     $fontsDirRel = !empty($parsed['fonts_dir_rel']) ? ($outRel . '/fonts') : null;
+    require_once INCLUDES_DIR . '/CompanyFonts.php';
+    $missingFonts = CompanyFonts::filterMissingByCompanyUploads(
+        realpath(__DIR__ . '/..'),
+        $companyId,
+        $parsed['missing_fonts'] ?? []
+    );
     $envelope = [
         'token'             => $token,
         'company_id'        => $companyId,
@@ -166,7 +172,7 @@ try {
         'created_at'        => date('c'),
         'pages'             => $parsed['pages'],
         'fonts_used'        => $parsed['fonts_used']    ?? [],
-        'missing_fonts'     => $parsed['missing_fonts'] ?? [],
+        'missing_fonts'     => $missingFonts,
         'fonts_dir_rel'     => $fontsDirRel,
     ];
     file_put_contents($outAbs . '/parse.json', json_encode($envelope, JSON_UNESCAPED_UNICODE));
@@ -282,7 +288,7 @@ try {
         'template_ids' => $result['template_ids'],
         'import_token' => $token,
         'ai_used'      => !empty($aiResult['used_ai']),
-        'missing_fonts'=> $parsed['missing_fonts'] ?? [],
+        'missing_fonts'=> $missingFonts,
     ], JSON_UNESCAPED_SLASHES);
 
 } catch (Exception $e) {

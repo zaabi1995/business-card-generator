@@ -187,6 +187,16 @@ if (!$companyId) {
 // Python returns a truthy fonts_dir_rel when fonts were extracted; the PHP
 // side knows the canonical web-root-relative path (outRel + /fonts).
 $fontsDirRel = !empty($parsed['fonts_dir_rel']) ? ($outRel . '/fonts') : null;
+
+// Drop missing-font entries already uploaded by this company so re-imports
+// don't re-prompt for the same files.
+require_once INCLUDES_DIR . '/CompanyFonts.php';
+$missingFonts = CompanyFonts::filterMissingByCompanyUploads(
+    realpath(__DIR__ . '/..'),
+    $companyId,
+    $parsed['missing_fonts'] ?? []
+);
+
 $envelope = [
     'token'             => $token,
     'company_id'        => $companyId,
@@ -195,7 +205,7 @@ $envelope = [
     'created_at'        => date('c'),
     'pages'             => $parsed['pages'],
     'fonts_used'        => $parsed['fonts_used']    ?? [],
-    'missing_fonts'     => $parsed['missing_fonts'] ?? [],
+    'missing_fonts'     => $missingFonts,
     'fonts_dir_rel'     => $fontsDirRel,
 ];
 file_put_contents($outAbs . '/parse.json', json_encode($envelope, JSON_UNESCAPED_UNICODE));
@@ -293,6 +303,6 @@ echo json_encode([
     'original_filename' => $origName,
     'pages'             => $reviewPages,
     'fonts_used'        => $parsed['fonts_used']    ?? [],
-    'missing_fonts'     => $parsed['missing_fonts'] ?? [],
+    'missing_fonts'     => $missingFonts,
     'ai_used'           => !empty($aiResult['used_ai']),
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);

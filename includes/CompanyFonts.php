@@ -171,6 +171,37 @@ class CompanyFonts
     }
 
     /**
+     * Filter a parser-emitted missing_fonts list to drop entries that the
+     * company has already uploaded via the dashboard / onboarding wizard.
+     * Match is case-insensitive on the basename (raw_name), so re-importing
+     * the same PDF after uploading DINNextLTArabic-Medium.ttf will no longer
+     * re-prompt for that file.
+     */
+    public static function filterMissingByCompanyUploads(string $appRoot, ?string $companyId, array $missing): array
+    {
+        if (!$companyId) return $missing;
+        $compAbs = $appRoot . self::COMPANY_DIR . '/' . $companyId;
+        if (!is_dir($compAbs)) return $missing;
+
+        $haveBaseNames = [];
+        foreach (scandir($compAbs) as $name) {
+            if ($name === '.' || $name === '..') continue;
+            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+            if (!in_array($ext, ['woff2', 'woff', 'ttf', 'otf'], true)) continue;
+            $haveBaseNames[strtolower(pathinfo($name, PATHINFO_FILENAME))] = true;
+        }
+        if (!$haveBaseNames) return $missing;
+
+        $out = [];
+        foreach ($missing as $entry) {
+            $raw = strtolower((string)($entry['raw_name'] ?? ''));
+            if ($raw !== '' && isset($haveBaseNames[$raw])) continue;
+            $out[] = $entry;
+        }
+        return $out;
+    }
+
+    /**
      * Per-template imported fonts (the PDF importer extracts every embedded
      * font into uploads/templates/imports/<token>/fonts/). These take top
      * priority because the template was designed against THESE exact files.
