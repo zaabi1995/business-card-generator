@@ -361,9 +361,9 @@ class CardifyTemplateImporter
                 continue;
             }
 
-            // Match the parser's perms convention: PHP-FPM (www) must read.
-            @chown($bgPath, 'www');
-            @chgrp($bgPath, 'www');
+            // PIL overwrites in place, so ownership + perms carry over from
+            // the parser-written file (already www:www 0644). chown/chgrp
+            // are disabled by php.ini on this host; chmod is safe and idempotent.
             @chmod($bgPath, 0644);
         }
     }
