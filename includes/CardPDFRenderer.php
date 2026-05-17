@@ -252,6 +252,10 @@ class CardPDFRenderer
             $fieldList[] = [
                 'field_key'    => $key,
                 'static_text'  => $staticText,
+                // Template sample, used as fallback for tenant-constant
+                // fields (website/company/address) when the employee row
+                // has no value.
+                'detected_text' => (string)($f['detected_text'] ?? ''),
                 'x_pt'         => (float)($f['x_pt']     ?? ($f['x'] ?? 0) / 4.166),
                 'y_pt'         => (float)($f['y_pt']     ?? ($f['y'] ?? 0) / 4.166),
                 'font_family'  => (string)($f['fontFamily'] ?? $f['font_family'] ?? 'Lato'),

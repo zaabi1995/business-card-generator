@@ -198,42 +198,35 @@ def _pick_font(family: str, weight: int, font_buffers: dict, text: str = '') -> 
     return best_key, candidates[best_key]
 
 
-def _resolve_employee_value(field_key: str, employee: dict) -> str:
+def _resolve_employee_value(field_key: str, employee: dict, template_default: str = '') -> str:
     """Return the employee's value for a template field_key, trying:
     1. Exact key (e.g. 'name_en')
     2. Locale-stripped key (e.g. 'name' for 'name_en' / 'name_ar')
-
-    No cross-locale fallback: when name_ar is empty we'd otherwise render
-    the Latin name in the Arabic-font slot (wrong script for the slot,
-    visually a duplicate of the name_en slot).
+    3. Fall back to the template's detected_text (source PDF sample) for
+       any field when the employee has no value. Per user direction:
+       always use the source PDF data as the default.
     """
     val = (employee.get(field_key) or '').strip()
     if val:
         return val
-    # If field_key has a locale suffix, try without it (legacy un-locale-d data)
     if field_key.endswith('_en'):
         bare = field_key[:-3]
         val = (employee.get(bare) or '').strip()
         if val:
             return val
-        val = ''  # no cross-locale
     elif field_key.endswith('_ar'):
         bare = field_key[:-3]
         val = (employee.get(bare) or '').strip()
         if val:
             return val
-        val = ''  # no cross-locale
-        if val:
-            return val
     else:
-        # Bare key like 'address': try _en then _ar
         val = (employee.get(field_key + '_en') or '').strip()
         if val:
             return val
         val = (employee.get(field_key + '_ar') or '').strip()
         if val:
             return val
-    return ''
+    return (template_default or '').strip()
 
 
 def _hex_to_rgb(hex_color) -> tuple:
@@ -464,7 +457,12 @@ def render(template_path: str, employee_path: str, out_path: str,
             if static_text:
                 text = static_text
             else:
-                text = _resolve_employee_value(field_key, employee)
+                # detected_text is the template sample from the source
+                # PDF; used as fallback for tenant-constant fields only.
+                text = _resolve_employee_value(
+                    field_key, employee,
+                    template_default=field.get('detected_text', '')
+                )
             if not text:
                 continue
 
