@@ -59,7 +59,14 @@ def main():
         # pattern is a single big image on these Otech designs).
         page.apply_redactions(images=0)
 
-    doc.save(pdf_path, garbage=3, deflate=True, incremental=False)
+    # PyMuPDF refuses save-to-original unless incremental=True, and
+    # incremental keeps the original baked text accessible via prior xref.
+    # Write to a sibling temp and atomic-rename for a clean replacement.
+    tmp_path = pdf_path + ".tmp"
+    doc.save(tmp_path, garbage=3, deflate=True)
+    doc.close()
+    import os
+    os.replace(tmp_path, pdf_path)
     print(json.dumps({"ok": True, "redacted": redacted, "pages": list(by_page.keys())}))
 
 
