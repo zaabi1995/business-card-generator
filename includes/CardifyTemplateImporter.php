@@ -244,6 +244,11 @@ class CardifyTemplateImporter
             $db->delete('templates', 'id = :id', ['id' => $row['id']]);
         }
 
+        // Re-redact bg PNGs for any block the parser baked-as-static that
+        // AI later reclassified to a dynamic binding. Without this the
+        // dynamic text gets drawn on top of its own baked-in copy.
+        self::rebakeBackgroundIfNeeded($pages, $bindingsByPage, $outRel);
+
         $pairId = function_exists('generateUUID') ? generateUUID() : bin2hex(random_bytes(16));
         $createdTemplateIds = [];
 
@@ -296,5 +301,70 @@ class CardifyTemplateImporter
             'pair_id'      => $pairId,
             'template_ids' => $createdTemplateIds,
         ];
+    }
+
+    /**
+     * For each page, find blocks the parser marked is_static=true but
+     * whose final AI binding is dynamic (name_en, mobile, email, ...).
+     * The parser already baked those into bg-page-N.png; we white-rect
+     * them with sampled bg color so the runtime renderer's typed-field
+     * draw doesn't double-strike.
+     *
+     * Safe-noop when there's nothing to redact, when the bg PNG is
+     * missing, or when the python helper is unavailable. Logs but does
+     * NOT fail persist: a slightly-uglier card is better than no card.
+     */
+    public static function rebakeBackgroundIfNeeded(array $pages, array $bindingsByPage, string $outRel): void
+    {
+        $appRoot = realpath(__DIR__ . '/..');
+        if (!$appRoot) return;
+        $importDirAbs = $appRoot . $outRel;
+        $script = $appRoot . '/scripts/redact_bg_post_persist.py';
+        if (!is_file($script)) return;
+
+        foreach ($pages as $page) {
+            $pageNum = (int)($page['page_number'] ?? 1);
+            $bindings = $bindingsByPage[$pageNum] ?? [];
+            $bboxes = [];
+
+            foreach (($page['fields'] ?? []) as $idx => $f) {
+                if (empty($f['is_static'])) continue; // parser kept it dynamic, already redacted
+                $blockId = 'block_' . $idx;
+                $finalBinding = $bindings[$blockId] ?? 'static';
+                if ($finalBinding === 'static' || $finalBinding === 'skip') continue;
+                $bboxes[] = [
+                    'x' => (int)($f['x_px'] ?? 0),
+                    'y' => (int)($f['y_px'] ?? 0),
+                    'w' => (int)($f['w_px'] ?? 0),
+                    'h' => (int)($f['h_px'] ?? 0),
+                ];
+            }
+            if (!$bboxes) continue;
+
+            // Background PNG filename mirrors parser convention.
+            $bgPath = $importDirAbs . '/bg-page-' . $pageNum . '.png';
+            if (!is_file($bgPath)) {
+                error_log('[rebakeBackground] missing bg: ' . $bgPath);
+                continue;
+            }
+
+            $cmd = sprintf(
+                'timeout 30 python3 %s %s %s 2>&1',
+                escapeshellarg($script),
+                escapeshellarg($bgPath),
+                escapeshellarg(json_encode($bboxes))
+            );
+            $out = shell_exec($cmd);
+            $decoded = json_decode((string)$out, true);
+            if (!is_array($decoded) || empty($decoded['ok'])) {
+                error_log('[rebakeBackground] page ' . $pageNum . ' failed: ' . substr((string)$out, 0, 500));
+                continue;
+            }
+
+            // Match the parser's perms convention: PHP-FPM (www) must read.
+            @chown($bgPath, 'www');
+            @chgrp($bgPath, 'www');
+            @chmod($bgPath, 0644);
+        }
     }
 }
