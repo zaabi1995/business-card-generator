@@ -125,6 +125,26 @@ try {
         exit;
     }
 
+    // Default: 302 to the digital card page on the tenant subdomain.
+    // Opt-in ?vcf=1 keeps the legacy "scan saves contact directly"
+    // behaviour for owners who prefer it. Save Contact button on the
+    // digital card page still serves the vCard via /vcf.php.
+    if (empty($_GET['vcf'])) {
+        $slug = $company['slug'] ?? '';
+        $empId = urlencode($employee['id']);
+        // Prefer tenant subdomain if APP_HOST is set, otherwise path route.
+        $host = (defined('APP_HOST') ? APP_HOST : 'cardify.om');
+        $profileUrl = $slug
+            ? "https://{$slug}." . $host . '/' . $empId
+            : "https://" . $host . '/' . urlencode($slug) . '/card/' . $empId;
+        ob_end_clean();
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        header('Location: ' . $profileUrl, true, 302);
+        exit;
+    }
+
     // Generate VCF content
     $vcfContent = VCF::generate($employee, $company);
     $filename = VCF::sanitizeFilename($employee['name_en'] ?? $employee['email']) . '.vcf';
