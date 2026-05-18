@@ -849,7 +849,8 @@ adminHeader(t('employees.page_title'), 'employees');
                                 'latestCardBackUrl' => $backUrl
                             ];
                             ?>
-                            <div class="flex items-center gap-3 cursor-pointer group" @click='openDetailModal(<?php echo json_encode($empDetailData, JSON_HEX_APOS | JSON_HEX_QUOT); ?>)'>
+                            <?php $empDetailUrl = $basePath . 'employee' . $ext . '?id=' . urlencode($emp['id']); ?>
+                            <a href="<?= htmlspecialchars($empDetailUrl, ENT_QUOTES) ?>" class="flex items-center gap-3 cursor-pointer group">
                                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm group-hover:ring-2 group-hover:ring-blue-300 transition-all">
                                     <?php echo strtoupper(substr($emp['name_en'] ?? 'E', 0, 2)); ?>
                                 </div>
@@ -857,7 +858,7 @@ adminHeader(t('employees.page_title'), 'employees');
                                     <p class="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors"><?php echo sanitize($emp['name_en'] ?? ''); ?></p>
                                     <p class="text-gray-500 text-sm"><?php echo sanitize($emp['email'] ?? ''); ?></p>
                                 </div>
-                            </div>
+                            </a>
                         </td>
                         <td class="px-6 py-4 hidden lg:table-cell">
                             <p class="text-gray-900"><?php echo sanitize($emp['position_en'] ?? '-'); ?></p>
