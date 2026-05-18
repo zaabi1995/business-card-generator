@@ -31,9 +31,25 @@ class QRTracker {
         // Parse user agent
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
         $deviceInfo = self::parseUserAgent($userAgent);
-        
+
         // Get IP address
         $ipAddress = self::getClientIP();
+
+        // FILTER BOTS / SCRIPTS / CRONS / SELF-TRAFFIC before any DB write.
+        // These never represent a real card prospect; counting them inflates
+        // every tenant's dashboard numbers and makes the analytics misleading.
+        // Per CLAUDE.md feedback_cardify_analytics_must_filter_bots: bots
+        // get filtered at INSERT time, not at read time, so the raw qr_scans
+        // table stays trustworthy for every future widget.
+        $botUaPatterns = '/curl|wget|^got\b|HeadlessChrome|playwright|puppeteer|chrome-lighthouse|node-fetch|python-requests|axios|bot|spider|crawler|monitor|uptime|preview/i';
+        if ($userAgent === '' || preg_match($botUaPatterns, $userAgent)) {
+            return ['success' => false, 'error' => 'bot_filtered', 'visitor_id' => $visitorId];
+        }
+        // Drop self-traffic from VPS + localhost (cron jobs, smoke tests).
+        $selfIps = ['127.0.0.1', '::1', '147.93.20.54'];
+        if (in_array($ipAddress, $selfIps, true)) {
+            return ['success' => false, 'error' => 'self_traffic_filtered', 'visitor_id' => $visitorId];
+        }
         
         // Get geolocation from IP (async-friendly, can be null)
         $geoData = self::getGeoFromIP($ipAddress);
