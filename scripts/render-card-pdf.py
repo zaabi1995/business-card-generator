@@ -339,6 +339,29 @@ def _draw_watermark(page, text: str) -> None:
         print(f'WARN: watermark draw failed: {e}', file=sys.stderr)
 
 
+# Arabic shaping: PyMuPDF's insert_text draws glyphs in logical order
+# without applying contextual forms (init/medi/fina/isol) or bidi
+# reordering. For Arabic text we pre-shape with arabic_reshaper +
+# python-bidi so insert_text receives the visual-order presentation
+# forms ready to draw left-to-right.
+try:
+    import arabic_reshaper
+    from bidi.algorithm import get_display
+    _HAS_BIDI = True
+except ImportError:
+    _HAS_BIDI = False
+
+
+def _shape_arabic(text: str) -> str:
+    """Reshape Arabic text into its visual-order presentation forms.
+    No-op when bidi libs aren't installed or the text has no Arabic."""
+    if not _HAS_BIDI:
+        return text
+    if not any('؀' <= c <= 'ۿ' or 'ﭐ' <= c <= '﻿' for c in text):
+        return text
+    return get_display(arabic_reshaper.reshape(text))
+
+
 def _draw_qr_code(page, qr_spec: dict, employee: dict, template: dict,
                    card_rect, for_print: bool) -> None:
     """Render a styled QR code as PNG and insert it as an image onto the
@@ -587,6 +610,10 @@ def render(template_path: str, employee_path: str, out_path: str,
                 )
             if not text:
                 continue
+
+            # Pre-shape Arabic into visual-order presentation forms before
+            # passing to insert_text (which doesn't shape RTL on its own).
+            text = _shape_arabic(text)
 
             family = field.get('font_family', 'Lato')
             weight = int(field.get('font_weight', 400))
