@@ -87,6 +87,26 @@ class QRTracker {
             }
         } catch (\Throwable $e) { /* ignore, don't block tracking on limiter bug */ }
 
+        // 1-hour dedup window per (employee, visitor). If the same visitor
+        // (or the same IP if visitor cookie was cleared) hits this employee's
+        // card again within 60 minutes, treat it as ONE scan — repeat
+        // refreshes or back-button revisits should not inflate the count.
+        // The first hit in the window is logged; subsequent hits return ok
+        // without writing a new row.
+        try {
+            $dedup = self::$db->fetchOne(
+                "SELECT id FROM qr_scans
+                 WHERE employee_id = :eid
+                   AND (visitor_id = :vid OR ip_address = :ip)
+                   AND scanned_at > NOW() - INTERVAL 1 HOUR
+                 ORDER BY scanned_at DESC LIMIT 1",
+                ['eid' => $employeeId, 'vid' => $visitorId, 'ip' => $ipAddress]
+            );
+            if ($dedup) {
+                return ['success' => true, 'deduped' => true, 'scan_id' => $dedup['id'], 'visitor_id' => $visitorId];
+            }
+        } catch (\Throwable $e) { /* fall through and write normally */ }
+
         try {
             // Insert scan record
             $scanId = self::$db->insert('qr_scans', $scanData);
