@@ -226,7 +226,11 @@ def _resolve_employee_value(field_key: str, employee: dict, template_default: st
         val = (employee.get(field_key + '_ar') or '').strip()
         if val:
             return val
-    return (template_default or '').strip()
+    # Preserve leading / trailing whitespace from the source PDF's detected
+    # text, the bbox x assumes the space character is rendered. Stripping
+    # it shifts the visible glyph left by the space-width and collides
+    # with the preceding field (e.g. ' www.otech.om' next to '|').
+    return template_default or ''
 
 
 def _hex_to_rgb(hex_color) -> tuple:
