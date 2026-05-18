@@ -666,6 +666,22 @@ def render(template_path: str, employee_path: str, out_path: str,
             text_y = y_pt + (BLEED_PT if for_print else 0)
             baseline_y = text_y + ascender * font_size
 
+            # Honour textAlign/originX from the field spec. PyMuPDF
+            # insert_text always draws LTR from the point, so we shift
+            # text_x leftward by the measured glyph-run width for right/
+            # center alignment. Fabric handles this natively via originX.
+            text_align = (field.get('text_align') or field.get('textAlign') or '').lower()
+            if text_align in ('right', 'center'):
+                try:
+                    font_obj = fitz.Font(fontbuffer=actual_buf)
+                    text_w_pt = font_obj.text_length(text, fontsize=font_size)
+                    if text_align == 'right':
+                        text_x = text_x - text_w_pt
+                    elif text_align == 'center':
+                        text_x = text_x - text_w_pt / 2
+                except Exception:
+                    pass
+
             page.insert_text(
                 fitz.Point(text_x, baseline_y),
                 text,

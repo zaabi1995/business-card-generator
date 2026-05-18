@@ -267,6 +267,7 @@ class CardPDFRenderer
                 'font_weight'  => (int)($f['fontWeight'] ?? $f['font_weight'] ?? 400),
                 'font_size_pt' => (float)($f['font_size_pt'] ?? ($f['fontSize'] ?? 10) / 4.166),
                 'color'        => (string)($f['fill'] ?? $f['color'] ?? '#ffffff'),
+                'text_align'   => (string)($f['textAlign'] ?? 'left'),
             ];
         }
         // Pass the qr_code field spec separately so render-card-pdf.py
