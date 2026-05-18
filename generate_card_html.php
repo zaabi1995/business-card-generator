@@ -617,11 +617,20 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                 const __storedFam = __ov.fontFamily || field.fontFamily || 'Inter';
                 const __resolvedFam = (typeof pickFontFamily === 'function')
                     ? pickFontFamily(__storedFam, textToDraw) : __storedFam;
+                // For static decoration fields, skip the width constraint
+                // + auto-shrink entirely. The PDF parser sizes static bboxes
+                // tightly to the original glyph run (e.g. width=30px for
+                // "An "), and addTextField's auto-shrink + IText width
+                // constraint can collapse the visible glyphs. Pass width=0
+                // so addTextField bypasses shrink and renders at the
+                // detected font size. (Dynamic fields keep their bbox width
+                // so longer employee values still auto-shrink to fit.)
+                const widthForField = field.is_static ? 0 : field.width;
                 cardEditor.addTextField(key, {
                     text: textToDraw,
                     x: field.x,
                     y: field.y,
-                    width: field.width,
+                    width: widthForField,
                     height: field.height,
                     fontSize: __ov.fontSize || field.fontSize,
                     fontFamily: __resolvedFam,
