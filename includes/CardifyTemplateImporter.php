@@ -83,6 +83,30 @@ class CardifyTemplateImporter
             $weight = isset($f['font_weight']) ? (int)$f['font_weight'] : 400;
             if ($weight < 100 || $weight > 900) $weight = 400;
 
+            // Auto-align by bbox-center position:
+            //   left third  → left-align (fields hugging the design's left)
+            //   right third → right-align (phone/email/www hugging the right)
+            //   middle band → center-align (address blocks, taglines)
+            // Plus: a bbox that spans > 60% of the card width is treated as
+            // centred (a wide multi-line container is almost always centred).
+            // Honours explicit parser align hint when present.
+            $cardWidthPx = (float)(($page['width_pt'] ?? 262.55) * 300 / 72);
+            $bboxX = (float)($f['x_px'] ?? 0);
+            $bboxW = (float)($f['w_px'] ?? 0);
+            $bboxCenter = $bboxX + $bboxW / 2;
+            $cardCenter = $cardWidthPx / 2;
+            $centerBand = $cardWidthPx * 0.10;  // ±10% of card width
+            $isWideBox  = $bboxW > $cardWidthPx * 0.60;
+            if ($isWideBox || abs($bboxCenter - $cardCenter) < $centerBand) {
+                $autoAlign = 'center';
+            } elseif ($bboxCenter > $cardCenter) {
+                $autoAlign = 'right';
+            } else {
+                $autoAlign = 'left';
+            }
+            $textAlign = $f['align'] ?? $autoAlign;
+            $originX   = $textAlign;  // origin tracks alignment
+
             $out[$key] = [
                 'enabled'       => true,
                 'is_static'     => $isStatic,
@@ -103,8 +127,8 @@ class CardifyTemplateImporter
                 'fontStyle'     => !empty($f['italic']) ? 'italic' : 'normal',
                 'fill'          => $f['color'] ?? '#222222',
                 'color'         => $f['color'] ?? '#222222',
-                'textAlign'     => $f['align'] ?? 'left',
-                'originX'       => 'left',
+                'textAlign'     => $textAlign,
+                'originX'       => $originX,
                 'originY'       => 'top',
             ];
         }
