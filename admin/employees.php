@@ -996,6 +996,25 @@ adminHeader(t('employees.page_title'), 'employees');
                                 </a>
                                 <?php endif; ?>
                                 
+                                <!-- Public profile link: copy + open in new tab -->
+                                <?php
+                                $publicHost = defined('APP_HOST') ? APP_HOST : 'cardify.om';
+                                $publicUrl  = 'https://' . ($company['slug'] ?? 'app') . '.' . $publicHost . '/' . urlencode($emp['id']);
+                                ?>
+                                <a href="<?= htmlspecialchars($publicUrl, ENT_QUOTES) ?>"
+                                   target="_blank" rel="noopener"
+                                   onclick="event.stopPropagation(); navigator.clipboard.writeText('<?= addslashes($publicUrl) ?>').then(()=>{this.querySelector('i').className='fa-solid fa-check text-green-600';setTimeout(()=>this.querySelector('i').className='fa-solid fa-link',1500)}); return false;"
+                                   class="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                   title="Copy public link: <?= htmlspecialchars($publicUrl, ENT_QUOTES) ?>">
+                                    <i class="fa-solid fa-link"></i>
+                                </a>
+                                <a href="<?= htmlspecialchars($publicUrl, ENT_QUOTES) ?>"
+                                   target="_blank" rel="noopener"
+                                   class="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                   title="Open profile in new tab">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                </a>
+
                                 <!-- Edit -->
                                 <button
                                     @click='openEditModal(<?php echo json_encode($emp); ?>)'

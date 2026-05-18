@@ -134,6 +134,21 @@ foreach ([$frontTemplate, $backTemplate] as $tpl) {
             if ($fam !== '') $__importedFonts[$fam] = true;
         }
     }
+    // Pull font names directly from each field. Newer templates store
+    // suffixed face names (e.g. "DINNextLTArabic-Medium") that must be
+    // registered as their own @font-face family to guarantee weight match.
+    if ($tpl && !empty($tpl['fields_json'])) {
+        $__fj = json_decode($tpl['fields_json'], true);
+        if (is_array($__fj)) {
+            foreach ($__fj as $__f) {
+                if (!is_array($__f) || empty($__f['fontFamily'])) continue;
+                $__fam = trim((string)$__f['fontFamily']);
+                $__importedFonts[$__fam] = true;
+                $__bare = preg_replace('/-(Regular|Medium|Bold|Light|SemiBold|ExtraBold|Heavy|Black|Thin)(Italic)?$/', '', $__fam);
+                if ($__bare !== '' && $__bare !== $__fam) $__importedFonts[$__bare] = true;
+            }
+        }
+    }
     if ($tpl && !empty($tpl['settings']['import_token'])) {
         $__manifestPath = realpath(__DIR__ . '/..') . '/uploads/templates/imports/'
             . preg_replace('/[^a-z0-9_-]/i', '', $tpl['settings']['import_token'])

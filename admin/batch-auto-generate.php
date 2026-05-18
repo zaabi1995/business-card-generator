@@ -95,6 +95,65 @@ adminHeader(t('adminchrome.batch_auto_generate'), 'employees');
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/dist/qrcode.min.js"></script>
 
+<?php
+// Emit @font-face for company-uploaded TTFs (DIN-Medium 500, Lato-Medium
+// 500, Sora-Medium 500, etc.) so the Fabric canvas can render every
+// template field at the correct weight instead of falling back to system
+// serif. Same block carried by admin/auto_generate.php + generate_card_html.php.
+require_once INCLUDES_DIR . '/CompanyFonts.php';
+$__importTokens = [];
+$__importedFonts = [];
+foreach ([$frontTemplate, $backTemplate] as $tpl) {
+    if ($tpl && !empty($tpl['settings']['import_token'])) {
+        $__importTokens[] = $tpl['settings']['import_token'];
+    }
+    if ($tpl && !empty($tpl['settings']['fonts_used'])) {
+        foreach ($tpl['settings']['fonts_used'] as $fam) {
+            $fam = trim((string)$fam);
+            if ($fam !== '') $__importedFonts[$fam] = true;
+        }
+    }
+    // Also pull from each field's fontFamily so suffixed faces (Lato-Medium)
+    // are registered even when fonts_used wasn't filled in by the importer.
+    if ($tpl && !empty($tpl['fields_json'])) {
+        $__fj = json_decode($tpl['fields_json'], true);
+        if (is_array($__fj)) {
+            foreach ($__fj as $__f) {
+                if (is_array($__f) && !empty($__f['fontFamily'])) {
+                    $__importedFonts[trim((string)$__f['fontFamily'])] = true;
+                    // ALSO register the bare family (DINNextLTArabic without -Medium)
+                    $__bare = preg_replace('/-(Regular|Medium|Bold|Light|SemiBold|ExtraBold|Heavy|Black|Thin)(Italic)?$/', '', trim((string)$__f['fontFamily']));
+                    if ($__bare !== '') $__importedFonts[$__bare] = true;
+                }
+            }
+        }
+    }
+    if ($tpl && !empty($tpl['settings']['import_token'])) {
+        $__manifestPath = realpath(__DIR__ . '/..') . '/uploads/templates/imports/'
+            . preg_replace('/[^a-z0-9_-]/i', '', $tpl['settings']['import_token'])
+            . '/fonts/manifest.json';
+        if (is_file($__manifestPath)) {
+            $__m = json_decode(file_get_contents($__manifestPath), true);
+            if (is_array($__m)) {
+                foreach ($__m as $__entry) {
+                    $__fam = trim((string)($__entry['family'] ?? ''));
+                    if ($__fam !== '') $__importedFonts[$__fam] = true;
+                }
+            }
+        }
+    }
+}
+$__registryCss = CompanyFonts::fontFaceCss(
+    realpath(__DIR__ . '/..'),
+    $companyId,
+    array_keys($__importedFonts),
+    $__importTokens
+);
+if ($__registryCss) {
+    echo "<style id=\"cardify-font-registry\">\n" . $__registryCss . "</style>\n";
+}
+?>
+
 <?php if (empty($employeesWithoutCards)): ?>
 <div class="max-w-lg mx-auto bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
     <div class="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
