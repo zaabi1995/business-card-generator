@@ -600,7 +600,7 @@ function layoutGenerator() {
                         if (window.parent && window.parent !== window) {
                             window.parent.postMessage({
                                 type: 'cardify:batch:card-done',
-                                employee_id: this.employeeId,
+                                employee_id: this.employeeId || (this.employee && this.employee.id) || '',
                                 ok: true
                             }, '*');
                         }
@@ -618,7 +618,7 @@ function layoutGenerator() {
                         if (window.parent && window.parent !== window) {
                             window.parent.postMessage({
                                 type: 'cardify:batch:card-done',
-                                employee_id: this.employeeId,
+                                employee_id: this.employeeId || (this.employee && this.employee.id) || '',
                                 ok: false,
                                 error: err.message
                             }, '*');
@@ -1124,14 +1124,14 @@ function autoGenerator() {
                 this.status = 'success';
 
                 // Batch mode: notify parent window and skip the success UI countdown.
-                console.log('[auto_generate] Fabric success, batchMode=<?php echo $isBatchMode ? "true" : "false"; ?>, employee=', this.employeeId);
+                console.log('[auto_generate] Fabric success, batchMode=<?php echo $isBatchMode ? "true" : "false"; ?>, employee=', (this.employeeId || (this.employee && this.employee.id)));
                 if (<?php echo $isBatchMode ? 'true' : 'false'; ?>) {
                     try {
                         if (window.parent && window.parent !== window) {
                             console.log('[auto_generate] postMessage cardify:batch:card-done to parent');
                             window.parent.postMessage({
                                 type: 'cardify:batch:card-done',
-                                employee_id: this.employeeId,
+                                employee_id: this.employeeId || (this.employee && this.employee.id) || '',
                                 ok: true
                             }, '*');
                         } else {
@@ -1163,7 +1163,7 @@ function autoGenerator() {
                         if (window.parent && window.parent !== window) {
                             window.parent.postMessage({
                                 type: 'cardify:batch:card-done',
-                                employee_id: this.employeeId,
+                                employee_id: this.employeeId || (this.employee && this.employee.id) || '',
                                 ok: false,
                                 error: error.message
                             }, '*');
