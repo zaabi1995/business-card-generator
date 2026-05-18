@@ -529,48 +529,80 @@ function batchGenerator() {
         },
         
         async startGeneration() {
-            if (this.selectedEmployees.length === 0 || !this.fontsLoaded) return;
-            
+            if (this.selectedEmployees.length === 0) return;
+
             this.isGenerating = true;
             this.currentIndex = 0;
             this.completedCount = 0;
             this.generatedCards = [];
-            
-            // Extra wait for fonts
-            await new Promise(r => setTimeout(r, 300));
-            
+
+            // Iframe-delegate to admin/auto_generate.php for each employee.
+            // Single source of truth: the same code that renders a single
+            // card from /admin/employees → "Generate" runs in the iframe
+            // for batch too. Any future render fix flows automatically to
+            // both surfaces — no duplicated Fabric loop to keep in sync.
             for (const empId of this.selectedEmployees) {
                 const employee = this.employees.find(e => e.id === empId);
                 if (!employee) continue;
-                
+
                 this.currentEmployee = employee.name_en || employee.email;
-                
+
                 try {
-                    const result = await this.generateForEmployee(employee);
-                    if (result) {
-                        this.generatedCards.push({
-                            employee: employee,
-                            frontUrl: result.frontUrl,
-                            backUrl: result.backUrl,
-                            frontPdf: result.frontPdf,
-                            backPdf: result.backPdf
-                        });
+                    const ok = await this.generateViaIframe(empId);
+                    if (ok) {
+                        this.generatedCards.push({ employee: employee });
+                        this.completedCount++;
                     }
-                    this.completedCount++;
                 } catch (error) {
                     console.error('Error generating for', employee.email, error);
                 }
-                
+
                 this.currentIndex++;
             }
-            
+
             this.isGenerating = false;
             this.isComplete = true;
-            
+
             // Send emails if requested
             if (this.sendEmail && this.generatedCards.length > 0) {
                 await this.sendCardEmails();
             }
+        },
+
+        async generateViaIframe(employeeId) {
+            return new Promise((resolve) => {
+                const baseUrl = (this.baseUrl || '').replace(/\/$/, '');
+                const url = baseUrl + '/admin/auto_generate.php?employee_id='
+                    + encodeURIComponent(employeeId)
+                    + '&batch=1&regenerate=1';
+                const iframe = document.createElement('iframe');
+                iframe.style.cssText = 'position:absolute;left:-9999px;top:0;width:1px;height:1px;border:0;opacity:0';
+                iframe.src = url;
+                let settled = false;
+                const cleanup = () => {
+                    try { window.removeEventListener('message', handler); } catch (e) {}
+                    try { iframe.remove(); } catch (e) {}
+                };
+                const handler = (e) => {
+                    const d = e && e.data;
+                    if (!d || d.type !== 'cardify:batch:card-done') return;
+                    if (String(d.employee_id) !== String(employeeId)) return;
+                    if (settled) return;
+                    settled = true;
+                    cleanup();
+                    resolve(!!d.ok);
+                };
+                window.addEventListener('message', handler);
+                // Timeout fallback so a stuck render doesn't block the queue.
+                setTimeout(() => {
+                    if (settled) return;
+                    settled = true;
+                    cleanup();
+                    console.warn('Batch: timeout for', employeeId);
+                    resolve(false);
+                }, 90000);
+                document.body.appendChild(iframe);
+            });
         },
         
         async generateForEmployee(employee) {

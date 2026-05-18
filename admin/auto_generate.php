@@ -20,6 +20,10 @@ $returnTo = $_GET['return'] ?? 'employees';
 $isNew = isset($_GET['new']);
 $isUpdated = isset($_GET['updated']);
 $isRegenerate = isset($_GET['regenerate']);
+// Batch mode: when admin/batch_generate.php embeds this page in an iframe
+// for each employee, suppress the success-state UI + auto-redirect and
+// postMessage completion to the parent window so the batch loop can move on.
+$isBatchMode = isset($_GET['batch']) && $_GET['batch'] === '1';
 
 if (!$employeeId) {
     header('Location: employees.php?error=no_employee');
@@ -591,12 +595,36 @@ function layoutGenerator() {
                 }
 
                 this.status = 'success';
+                if (<?php echo $isBatchMode ? 'true' : 'false'; ?>) {
+                    try {
+                        if (window.parent && window.parent !== window) {
+                            window.parent.postMessage({
+                                type: 'cardify:batch:card-done',
+                                employee_id: this.employeeId,
+                                ok: true
+                            }, '*');
+                        }
+                    } catch (e) {}
+                    return;
+                }
                 this.startRedirect();
 
             } catch (err) {
                 console.error('Generation error:', err);
                 this.status = 'error';
                 this.errorMessage = err.message;
+                if (<?php echo $isBatchMode ? 'true' : 'false'; ?>) {
+                    try {
+                        if (window.parent && window.parent !== window) {
+                            window.parent.postMessage({
+                                type: 'cardify:batch:card-done',
+                                employee_id: this.employeeId,
+                                ok: false,
+                                error: err.message
+                            }, '*');
+                        }
+                    } catch (e) {}
+                }
             }
         },
 
@@ -1095,6 +1123,20 @@ function autoGenerator() {
 
                 this.status = 'success';
 
+                // Batch mode: notify parent window and skip the success UI countdown.
+                if (<?php echo $isBatchMode ? 'true' : 'false'; ?>) {
+                    try {
+                        if (window.parent && window.parent !== window) {
+                            window.parent.postMessage({
+                                type: 'cardify:batch:card-done',
+                                employee_id: this.employeeId,
+                                ok: true
+                            }, '*');
+                        }
+                    } catch (e) {}
+                    return;
+                }
+
                 // Countdown + redirect
                 this.redirectCountdown = 8;
                 this.countdownTimer = setInterval(() => {
@@ -1110,6 +1152,18 @@ function autoGenerator() {
                 console.error('Generation error:', error);
                 this.status = 'error';
                 this.errorMessage = error.message;
+                if (<?php echo $isBatchMode ? 'true' : 'false'; ?>) {
+                    try {
+                        if (window.parent && window.parent !== window) {
+                            window.parent.postMessage({
+                                type: 'cardify:batch:card-done',
+                                employee_id: this.employeeId,
+                                ok: false,
+                                error: error.message
+                            }, '*');
+                        }
+                    } catch (e) {}
+                }
             }
         },
         
