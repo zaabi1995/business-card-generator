@@ -670,15 +670,38 @@ def render(template_path: str, employee_path: str, out_path: str,
             # insert_text always draws LTR from the point, so we shift
             # text_x leftward by the measured glyph-run width for right/
             # center alignment. Fabric handles this natively via originX.
+            #
+            # text_length returns advance width (full char-cell including
+            # right side-bearing). Real visible right edge ends ~5-10px
+            # short. For perfect alignment with adjacent left-anchored
+            # text whose visible right edge is just the glyph bbox, we
+            # subtract the last glyph's right side-bearing (advance -
+            # glyph_bbox.x1).
             text_align = (field.get('text_align') or field.get('textAlign') or '').lower()
             if text_align in ('right', 'center'):
                 try:
                     font_obj = fitz.Font(fontbuffer=actual_buf)
                     text_w_pt = font_obj.text_length(text, fontsize=font_size)
+                    # Compute trailing side-bearing of the last visible glyph
+                    side_bearing_pt = 0.0
+                    try:
+                        last_ch = text.rstrip()[-1] if text.rstrip() else ''
+                        if last_ch:
+                            gid = font_obj.has_glyph(ord(last_ch))
+                            if gid:
+                                bbox = font_obj.glyph_bbox(gid)
+                                # bbox in font units, convert to pt at font_size
+                                units = font_obj.glyph_advance(gid) or 1.0
+                                advance_pt = font_obj.glyph_advance(gid) * font_size
+                                visible_right_pt = bbox.x1 * font_size
+                                side_bearing_pt = max(0.0, advance_pt - visible_right_pt)
+                    except Exception:
+                        side_bearing_pt = font_size * 0.05  # rough fallback
+                    effective_w = text_w_pt - side_bearing_pt
                     if text_align == 'right':
-                        text_x = text_x - text_w_pt
+                        text_x = text_x - effective_w
                     elif text_align == 'center':
-                        text_x = text_x - text_w_pt / 2
+                        text_x = text_x - effective_w / 2
                 except Exception:
                     pass
 
