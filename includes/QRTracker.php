@@ -41,7 +41,7 @@ class QRTracker {
         // Per CLAUDE.md feedback_cardify_analytics_must_filter_bots: bots
         // get filtered at INSERT time, not at read time, so the raw qr_scans
         // table stays trustworthy for every future widget.
-        $botUaPatterns = '/curl|wget|^got\b|HeadlessChrome|playwright|puppeteer|chrome-lighthouse|node-fetch|python-requests|axios|bot|spider|crawler|monitor|uptime|preview/i';
+        $botUaPatterns = '/curl|wget|^got\b|HeadlessChrome|playwright|puppeteer|chrome-lighthouse|node-fetch|python-requests|axios|postman|insomnia|httpie|libwww|scrapy|fetch\\b|bot|spider|crawler|monitor|uptime|preview/i';
         if ($userAgent === '' || preg_match($botUaPatterns, $userAgent)) {
             return ['success' => false, 'error' => 'bot_filtered', 'visitor_id' => $visitorId];
         }
