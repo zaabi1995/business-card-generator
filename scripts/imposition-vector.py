@@ -60,20 +60,30 @@ def main():
             y0 = margin + r * slot_h + (slot_h - card_h) / 2
             target = fitz.Rect(x0, y0, x0 + card_w, y0 + card_h)
             sheet.show_pdf_page(target, src, pno=0, keep_proportion=False)
-            # Cutting marks, 5mm long at each corner, 0.25pt
-            mm = 5 * 72 / 25.4
-            for (mx, my) in [
-                (x0, y0),
-                (x0 + card_w, y0),
-                (x0, y0 + card_h),
-                (x0 + card_w, y0 + card_h),
+            # Cutting marks, 5mm long, 0.25pt, OUTSIDE the card edge with a
+            # 1mm gap so the marks never touch the design (printers / press
+            # operators dislike marks crossing live artwork).
+            mark_len = 5 * 72 / 25.4
+            gap      = 1 * 72 / 25.4
+            for (mx, my, dx, dy) in [
+                # corner, then which side(s) the marks extend toward
+                (x0,          y0,          -1, -1),
+                (x0 + card_w, y0,          +1, -1),
+                (x0,          y0 + card_h, -1, +1),
+                (x0 + card_w, y0 + card_h, +1, +1),
             ]:
+                # Horizontal tick: outward only, starting `gap` away from corner
+                hx_inner = mx + dx * gap
+                hx_outer = mx + dx * (gap + mark_len)
                 sheet.draw_line(
-                    fitz.Point(mx - mm, my), fitz.Point(mx + mm, my),
+                    fitz.Point(hx_inner, my), fitz.Point(hx_outer, my),
                     color=(0, 0, 0), width=0.25
                 )
+                # Vertical tick: outward only, starting `gap` away from corner
+                vy_inner = my + dy * gap
+                vy_outer = my + dy * (gap + mark_len)
                 sheet.draw_line(
-                    fitz.Point(mx, my - mm), fitz.Point(mx, my + mm),
+                    fitz.Point(mx, vy_inner), fitz.Point(mx, vy_outer),
                     color=(0, 0, 0), width=0.25
                 )
 
