@@ -49,21 +49,19 @@ function getAdminNavItems() {
     // Super admin dashboard should go to /admin/super/
     $dashboardUrl = ($role === 'super_admin') ? getBasePath() . 'admin/super/' : $basePath;
     
+    // CONSOLIDATED 6-TAB IA (May 2026): merged 16 → 6 to cut admin
+    // cognitive load. Old pages still accessible via the merged tabs
+    // (Brand wraps Theme/Domains/NFC/Links; Orders wraps Requests/Print/
+    // Appointments; Billing tab contains Payment History sub-tab; the
+    // per-employee detail page folds QR analytics + live feed inline).
+    // Old top-level keys (customer-dashboard, growth, live-analytics,
+    // analytics, requests, print, theme, etc.) still map to the new
+    // sections so highlight-on-current-page keeps working.
     $items = [
-        ['name' => 'Dashboard', 'icon' => 'fa-solid fa-chart-pie', 'url' => $dashboardUrl, 'key' => 'dashboard'],
-        ['name' => 'My Dashboard', 'icon' => 'fa-solid fa-gauge', 'url' => $basePath . 'customer-dashboard' . $ext, 'key' => 'customer-dashboard'],
-        ['name' => 'Employees', 'icon' => 'fa-solid fa-users', 'url' => $basePath . 'employees' . $ext, 'key' => 'employees'],
-        ['name' => 'Departments', 'icon' => 'fa-solid fa-sitemap', 'url' => $basePath . 'departments' . $ext, 'key' => 'departments'],
-        ['name' => 'Card Requests', 'icon' => 'fa-solid fa-inbox', 'url' => $basePath . 'requests' . $ext, 'key' => 'requests'],
-        ['name' => 'Print Orders', 'icon' => 'fa-solid fa-print', 'url' => $basePath . 'print' . $ext, 'key' => 'print'],
-        ['name' => 'QR Analytics', 'icon' => 'fa-solid fa-chart-line', 'url' => $basePath . 'analytics' . $ext, 'key' => 'analytics'],
-        ['name' => 'Live Analytics', 'icon' => 'fa-solid fa-bolt', 'url' => $basePath . 'live-analytics' . $ext, 'key' => 'live-analytics', 'badge' => 'LIVE'],
-        ['name' => 'Growth Dashboard', 'icon' => 'fa-solid fa-chart-simple', 'url' => $basePath . 'growth' . $ext, 'key' => 'growth'],
-        ['name' => 'Appointments', 'icon' => 'fa-solid fa-calendar-check', 'url' => $basePath . 'appointments' . $ext, 'key' => 'appointments'],
-        ['name' => 'Theme', 'icon' => 'fa-solid fa-palette', 'url' => $basePath . 'theme' . $ext, 'key' => 'theme'],
-        ['name' => 'Custom Domains', 'icon' => 'fa-solid fa-globe', 'url' => $basePath . 'custom-domains' . $ext, 'key' => 'custom-domains'],
-        ['name' => 'NFC Tags', 'icon' => 'fa-solid fa-wifi', 'url' => $basePath . 'nfc/batch.php', 'key' => 'nfc-tags'],
-        ['name' => 'Short Links', 'icon' => 'fa-solid fa-link', 'url' => $basePath . 'short-links' . $ext, 'key' => 'short-links'],
+        ['name' => 'Dashboard',  'icon' => 'fa-solid fa-chart-pie',  'url' => $dashboardUrl,                          'key' => 'dashboard',  'matches' => ['customer-dashboard', 'growth', 'live-analytics']],
+        ['name' => 'Employees',  'icon' => 'fa-solid fa-users',      'url' => $basePath . 'employees' . $ext,         'key' => 'employees',  'matches' => ['departments', 'analytics', 'employee']],
+        ['name' => 'Orders',     'icon' => 'fa-solid fa-inbox',      'url' => $basePath . 'orders' . $ext,            'key' => 'orders',     'matches' => ['requests', 'print', 'appointments'], 'badge_count' => 'pending_requests'],
+        ['name' => 'Brand',      'icon' => 'fa-solid fa-palette',    'url' => $basePath . 'brand' . $ext,             'key' => 'brand',      'matches' => ['theme', 'custom-domains', 'nfc-tags', 'short-links']],
     ];
     
     // Add settings dropdown items
@@ -95,9 +93,10 @@ function getAdminNavItems() {
         $settingsItems[] = ['name' => t('admin.nav_erp_settings'), 'icon' => 'fa-solid fa-plug', 'url' => $basePath . 'odoo_settings' . $ext, 'key' => 'odoo'];
         $settingsItems[] = ['name' => 'Updates', 'icon' => 'fa-solid fa-download', 'url' => $basePath . 'updates' . $ext, 'key' => 'updates'];
     } else {
-        // Billing is only for company admins, not super admin
-        $items[] = ['name' => 'Billing', 'icon' => 'fa-solid fa-credit-card', 'url' => $basePath . 'billing' . $ext, 'key' => 'billing'];
-        $items[] = ['name' => 'Payment History', 'icon' => 'fa-solid fa-clock-rotate-left', 'url' => $basePath . 'payment-history' . $ext, 'key' => 'payment-history'];
+        // Billing (Payment History is a sub-tab inside billing.php now).
+        // Settings holds admin users / integrations / account preferences.
+        $items[] = ['name' => 'Billing',  'icon' => 'fa-solid fa-credit-card', 'url' => $basePath . 'billing' . $ext,  'key' => 'billing',  'matches' => ['payment-history']];
+        $items[] = ['name' => 'Settings', 'icon' => 'fa-solid fa-gear',        'url' => $basePath . 'settings' . $ext, 'key' => 'settings'];
     }
     
     return ['main' => $items, 'settings' => $settingsItems];
@@ -640,13 +639,22 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
             <div class="flex overflow-y-auto flex-col flex-1 pt-5 pb-4">
                 <div class="flex-1 px-3 space-y-1 bg-white divide-y divide-gray-100">
                     <ul class="pb-2 space-y-1">
-                        <?php foreach ($nav['main'] as $item): ?>
+                        <?php foreach ($nav['main'] as $item):
+                            // Active highlight matches the item's own key OR any
+                            // key in its 'matches' array (used when a merged tab
+                            // wraps multiple legacy pages — e.g. Orders matches
+                            // requests/print/appointments; Brand matches theme/
+                            // custom-domains/nfc-tags/short-links).
+                            $matches = $item['matches'] ?? [];
+                            $isActive = ($currentPage === $item['key']) || in_array($currentPage, $matches, true);
+                            $showBadge = ($item['key'] === 'orders' || $item['key'] === 'requests') && $pendingRequestsCount > 0;
+                        ?>
                         <li>
                             <a href="<?php echo htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8'); ?>"
-                               class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg group transition-colors <?php echo $currentPage === $item['key'] ? 'text-blue-700 bg-blue-50 ring-1 ring-blue-100' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'; ?>">
-                                <i class="<?php echo htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8'); ?> w-5 h-5 transition-colors flex-shrink-0 <?php echo $currentPage === $item['key'] ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'; ?>"></i>
+                               class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg group transition-colors <?php echo $isActive ? 'text-blue-700 bg-blue-50 ring-1 ring-blue-100' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'; ?>">
+                                <i class="<?php echo htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8'); ?> w-5 h-5 transition-colors flex-shrink-0 <?php echo $isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'; ?>"></i>
                                 <span class="ml-3 flex-1"><?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?></span>
-                                <?php if ($item['key'] === 'requests' && $pendingRequestsCount > 0): ?>
+                                <?php if ($showBadge): ?>
                                 <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-[11px] font-semibold text-white bg-red-500 rounded-full"><?php echo $pendingRequestsCount > 99 ? '99+' : $pendingRequestsCount; ?></span>
                                 <?php elseif (!empty($item['badge'])): ?>
                                 <span class="inline-flex items-center px-1.5 h-4 text-[10px] font-semibold tracking-wide text-emerald-700 bg-emerald-100 rounded"><?php echo htmlspecialchars($item['badge']); ?></span>

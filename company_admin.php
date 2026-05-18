@@ -127,6 +127,11 @@ try {
         'onboarding'          => 'admin/onboarding.php',
         'onboarding-save'     => 'admin/onboarding-save.php',
         'demo-clear'          => 'admin/demo-clear.php',
+        // 6-tab IA consolidation (May 2026)
+        'orders'              => 'admin/orders.php',
+        'brand'               => 'admin/brand.php',
+        'settings'            => 'admin/settings.php',
+        'employee'            => 'admin/employee.php',
     ];
     
     // Handle login page specially (no auth required)
