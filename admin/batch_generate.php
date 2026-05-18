@@ -429,6 +429,38 @@ function batchGenerator() {
             return Math.round((this.currentIndex / this.selectedEmployees.length) * 100);
         },
         
+        // Per-template font preload: forces document.fonts.load(spec, sample)
+        // for every (family, weight) tuple the template uses. Without this,
+        // Fabric measures + renders before the suffixed @font-face (e.g.
+        // 'Sora-Medium' weight 500) actually downloads, and canvas2D falls
+        // back to a system bold variant, making the saved card render text
+        // visibly heavier than the source PDF. Mirrors generate_card_html.php
+        // and portal.php (which already do this).
+        async preloadTemplateFonts(template) {
+            if (!document.fonts || !template || !template.fields_json) return;
+            let fields;
+            try { fields = JSON.parse(template.fields_json); } catch (e) { return; }
+            const tasks = [];
+            for (const key in fields) {
+                const f = fields[key];
+                if (!f || !f.enabled || !f.fontFamily) continue;
+                const w = f.fontWeight || 400;
+                const style = (f.italic === true || f.fontStyle === 'italic') ? 'italic' : 'normal';
+                const sample = String(f.detected_text || ' ');
+                const fam = String(f.fontFamily).trim();
+                // Queue BOTH the suffixed face ("Sora-Medium") AND the bare
+                // family ("Sora") so either path the renderer takes finds
+                // the right weight pre-loaded.
+                const bare = fam.replace(/-(Regular|Medium|Bold|Light|SemiBold|ExtraBold|Heavy|Black|Thin)(Italic)?$/, '');
+                const fams = new Set([fam, bare].filter(Boolean));
+                for (const family of fams) {
+                    const spec = `${style} ${w} 16px "${family}"`;
+                    tasks.push(document.fonts.load(spec, sample).catch(() => {}));
+                }
+            }
+            try { await Promise.all(tasks); await document.fonts.ready; } catch (e) {}
+        },
+
         async init() {
             // Load fonts
             try {
@@ -438,8 +470,16 @@ function batchGenerator() {
                 console.warn('Font loading error:', e);
                 this.fontsLoaded = true;
             }
-            
+
             await document.fonts.ready;
+
+            // Per-template preload (forces each suffixed face + weight to download)
+            try {
+                if (this.frontTemplate) await this.preloadTemplateFonts(this.frontTemplate);
+                if (this.backTemplate)  await this.preloadTemplateFonts(this.backTemplate);
+            } catch (e) {
+                console.warn('Template font preload error:', e);
+            }
             
             // Get canvas dimensions from template settings
             const template = this.frontTemplate || this.backTemplate;
