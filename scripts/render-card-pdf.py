@@ -376,8 +376,18 @@ def _draw_qr_code(page, qr_spec: dict, employee: dict, template: dict,
 
     style = qr_spec.get('qr_style', {}) or {}
     mode = style.get('mode', 'empty_placeholder')
+    # Draw a QR even when the parser only detected a placeholder area:
+    # every employee card should ship with a working QR that points to the
+    # tenant profile (qr.php tracker → profile redirect). Style defaults to
+    # plain black-on-white when the parser didn't sample brand colours.
     if mode == 'empty_placeholder':
-        return  # parser didn't detect a real QR
+        style = {
+            'color': style.get('color') or '#000000',
+            'bg_color': style.get('bg_color') or '#ffffff',
+            'eye_color': style.get('eye_color'),
+            'panel_padding_px': style.get('panel_padding_px', 0),
+            'panel_radius_pct': style.get('panel_radius_pct', 0),
+        }
 
     # Build the QR data URL: cardify QR tracker endpoint for this employee
     slug = template.get('company_slug', '')
