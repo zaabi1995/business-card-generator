@@ -138,12 +138,17 @@ class CardPDFRenderer
             $companyFontsDir = null;
         }
 
+        // Base URL for QR data — defaults to the apex; tenant subdomain
+        // (otech.cardify.om) also resolves to the same QR tracker endpoint.
+        $baseUrl = (defined('APP_HOST') ? 'https://' . APP_HOST . '/' : 'https://cardify.om/');
+
         $template = [
             'import_dir'         => $importDir,
             'fonts_dir'          => $fontsDir,
             'company_fonts_dir'  => $companyFontsDir,
             'company_name'       => $companyName,
             'company_slug'       => $companySlug,
+            'base_url'           => $baseUrl,
             'pages' => [
                 self::pageSpec($tplFront, 'front'),
                 self::pageSpec($tplBack,  'back'),
@@ -264,12 +269,17 @@ class CardPDFRenderer
                 'color'        => (string)($f['fill'] ?? $f['color'] ?? '#ffffff'),
             ];
         }
+        // Pass the qr_code field spec separately so render-card-pdf.py
+        // can generate a real styled QR (the field-list loop skips qr_code).
+        $qrSpec = isset($fields['qr_code']) && is_array($fields['qr_code']) ? $fields['qr_code'] : null;
+
         return [
             'side'                 => $side,
             'width_pt'             => $widthPt,
             'height_pt'            => $heightPt,
             'background_png_path'  => $pngRel,
             'background_svg_path'  => $svgRel,
+            'qr_code'              => $qrSpec,
             'fields'               => $fieldList,
         ];
     }

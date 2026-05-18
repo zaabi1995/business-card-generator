@@ -339,6 +339,116 @@ def _draw_watermark(page, text: str) -> None:
         print(f'WARN: watermark draw failed: {e}', file=sys.stderr)
 
 
+def _draw_qr_code(page, qr_spec: dict, employee: dict, template: dict,
+                   card_rect, for_print: bool) -> None:
+    """Render a styled QR code as PNG and insert it as an image onto the
+    page. Honors qr_style.color (modules), bg_color (panel), eye_color
+    (3 finder eyes), panel_radius_pct, panel_padding_px.
+    """
+    import qrcode
+    from qrcode.image.styledpil import StyledPilImage
+    from qrcode.image.styles.colormasks import SolidFillColorMask
+    from PIL import Image, ImageDraw
+    import io
+
+    style = qr_spec.get('qr_style', {}) or {}
+    mode = style.get('mode', 'empty_placeholder')
+    if mode == 'empty_placeholder':
+        return  # parser didn't detect a real QR
+
+    # Build the QR data URL: cardify QR tracker endpoint for this employee
+    slug = template.get('company_slug', '')
+    email = employee.get('email', '') or employee.get('email_en', '')
+    base = template.get('base_url', 'https://cardify.om/')
+    if not base.endswith('/'):
+        base += '/'
+    qr_data = f'{base}qr.php?c={slug}&e={email}' if slug and email else base
+
+    # Generate the QR matrix
+    qr = qrcode.QRCode(
+        version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=10,
+        border=0,
+    )
+    qr.add_data(qr_data)
+    qr.make(fit=True)
+    matrix = qr.get_matrix()
+    n = len(matrix)
+
+    # Style colors
+    color = style.get('color', '#000000') or '#000000'
+    bg_color = style.get('bg_color', '#ffffff') or '#ffffff'
+    eye_color = style.get('eye_color') or color  # fallback to module color
+    def hx(c):
+        c = c.lstrip('#')
+        return (int(c[0:2], 16), int(c[2:4], 16), int(c[4:6], 16))
+    fg_rgb, bg_rgb, eye_rgb = hx(color), hx(bg_color), hx(eye_color)
+
+    # Render at high resolution: each module = 20px
+    module_px = 20
+    img_size = n * module_px
+    img = Image.new('RGB', (img_size, img_size), bg_rgb)
+    draw = ImageDraw.Draw(img)
+
+    # Finder-eye regions: 7x7 modules in top-left, top-right, bottom-left
+    eye_regions = [
+        (0, 0, 7, 7),                 # top-left
+        (n - 7, 0, n, 7),             # top-right
+        (0, n - 7, 7, n),             # bottom-left
+    ]
+    def in_eye(r, c):
+        for r0, c0, r1, c1 in eye_regions:
+            if r0 <= r < r1 and c0 <= c < c1:
+                return True
+        return False
+
+    for r in range(n):
+        for c in range(n):
+            if not matrix[r][c]:
+                continue
+            x0, y0 = c * module_px, r * module_px
+            x1, y1 = x0 + module_px, y0 + module_px
+            fill = eye_rgb if in_eye(r, c) else fg_rgb
+            draw.rectangle([x0, y0, x1, y1], fill=fill)
+
+    # Optional rounded panel: paste QR onto a larger padded panel
+    padding = int(style.get('panel_padding_px', 0)) * module_px // 4
+    panel_radius_pct = float(style.get('panel_radius_pct', 0))
+    if padding > 0 or panel_radius_pct > 0:
+        panel_size = img_size + 2 * padding
+        panel = Image.new('RGB', (panel_size, panel_size), bg_rgb)
+        panel.paste(img, (padding, padding))
+        if panel_radius_pct > 0:
+            radius = int(panel_size * panel_radius_pct / 100)
+            mask = Image.new('L', (panel_size, panel_size), 0)
+            ImageDraw.Draw(mask).rounded_rectangle(
+                [0, 0, panel_size, panel_size], radius=radius, fill=255
+            )
+            rounded = Image.new('RGBA', (panel_size, panel_size), (0, 0, 0, 0))
+            rounded.paste(panel, (0, 0))
+            rounded.putalpha(mask)
+            img = rounded
+        else:
+            img = panel
+
+    # Place onto PDF. Convert canvas-px coords to PDF pt.
+    PX_TO_PT = 72.0 / 300.0
+    qr_x_pt = float(qr_spec.get('x', 0)) * PX_TO_PT
+    qr_y_pt = float(qr_spec.get('y', 0)) * PX_TO_PT
+    qr_size_pt = float(qr_spec.get('size', 100)) * PX_TO_PT
+    if for_print:
+        from_origin_pt = 13  # BLEED_PT
+        qr_x_pt += from_origin_pt
+        qr_y_pt += from_origin_pt
+    rect = fitz.Rect(qr_x_pt, qr_y_pt, qr_x_pt + qr_size_pt, qr_y_pt + qr_size_pt)
+
+    # Insert as raster (alpha if rounded panel was applied)
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    page.insert_image(rect, stream=buf.getvalue(), keep_proportion=False)
+
+
 def render(template_path: str, employee_path: str, out_path: str,
            vcard_path: str = '', profile: str = 'web', for_print: bool = False,
            watermark: str = '') -> int:
@@ -451,6 +561,14 @@ def render(template_path: str, employee_path: str, out_path: str,
         # Phase 12: draw crop marks outside the card boundary when --for-print.
         if for_print:
             _draw_crop_marks(page, card_rect, bleed_pt=BLEED_PT)
+
+        # Layer 1b: QR code if the page spec has one enabled.
+        qr_spec = page_spec.get('qr_code')
+        if qr_spec and qr_spec.get('enabled'):
+            try:
+                _draw_qr_code(page, qr_spec, employee, template, card_rect, for_print)
+            except Exception as e:
+                print(f'WARN: qr draw failed: {e}', file=sys.stderr)
 
         # Layer 2: dynamic text fields.
         for field in page_spec.get('fields', []):
