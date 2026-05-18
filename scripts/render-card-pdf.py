@@ -642,7 +642,14 @@ def render(template_path: str, employee_path: str, out_path: str,
             # plus we subset the TTF to the glyphs actually drawn (cached per font).
             # print profile: set_simple=False embeds the full font without subsetting,
             # which is required for PDF/X-4 compliance at the print shop.
-            if use_simple_encoding and font_name in text_by_font:
+            #
+            # CRITICAL: WinAnsi only covers Latin-1. For Arabic / Hebrew /
+            # Cyrillic / CJK text, set_simple=True silently drops every
+            # non-WinAnsi glyph (no rendering at all). Detect non-Latin
+            # codepoints in the actual text and force CID encoding.
+            has_non_latin = any(ord(c) > 0xFF for c in text)
+            field_uses_simple = use_simple_encoding and not has_non_latin
+            if field_uses_simple and font_name in text_by_font:
                 if font_name not in subsetted_buffers:
                     subsetted_buffers[font_name] = _subset_font_buffer(
                         font_buf, ''.join(text_by_font[font_name]))
@@ -650,7 +657,7 @@ def render(template_path: str, employee_path: str, out_path: str,
             else:
                 actual_buf = font_buf
             page.insert_font(fontname=font_name, fontbuffer=actual_buf,
-                             set_simple=use_simple_encoding)
+                             set_simple=field_uses_simple)
 
             # baseline_y = y_pt (top of em-square) + ascender * font_size.
             # Offset by bleed margin when for_print so text stays in the card area.
