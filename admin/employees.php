@@ -26,7 +26,28 @@ if (DatabaseAdapter::useDatabase() && $companyId) {
     );
 }
 
-$employees = loadEmployees($companyId);
+// Sort dropdown — overrides DatabaseAdapter::loadEmployees default (created DESC).
+// Validates against a whitelist so the GET param can't inject SQL.
+$sortParam = $_GET['sort'] ?? 'created_desc';
+$sortMap = [
+    'name_asc'      => 'name_en ASC, email ASC',
+    'name_desc'     => 'name_en DESC, email DESC',
+    'name_ar_asc'   => 'name_ar ASC, email ASC',
+    'position_asc'  => 'position_en ASC, name_en ASC',
+    'email_asc'     => 'email ASC',
+    'created_desc'  => 'created_at DESC',
+    'created_asc'   => 'created_at ASC',
+];
+$orderClause = $sortMap[$sortParam] ?? $sortMap['created_desc'];
+
+// Card-status filter: all / with_card / no_card
+$cardStatusParam = $_GET['card_status'] ?? 'all';
+
+$employees = $db->fetchAll(
+    "SELECT * FROM employees WHERE company_id = :id AND deleted_at IS NULL ORDER BY $orderClause",
+    ['id' => $companyId]
+);
+
 $message = null;
 $messageType = 'success';
 
@@ -737,6 +758,20 @@ adminHeader(t('employees.page_title'), 'employees');
                 <?php endforeach; ?>
             </select>
             <?php endif; ?>
+            <select x-model="filterCardStatus" class="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                <option value="all">All cards</option>
+                <option value="with_card">Has card</option>
+                <option value="no_card">No card yet</option>
+            </select>
+            <select onchange="window.location.href = '?sort=' + this.value + (window.location.search.match(/&?dept=[^&]+/) ? window.location.search.match(/&?dept=[^&]+/)[0] : '')" class="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                <option value="created_desc"<?= $sortParam==='created_desc'?' selected':'' ?>>Recently added</option>
+                <option value="created_asc"<?= $sortParam==='created_asc'?' selected':'' ?>>Oldest first</option>
+                <option value="name_asc"<?= $sortParam==='name_asc'?' selected':'' ?>>Name A→Z</option>
+                <option value="name_desc"<?= $sortParam==='name_desc'?' selected':'' ?>>Name Z→A</option>
+                <option value="name_ar_asc"<?= $sortParam==='name_ar_asc'?' selected':'' ?>>الاسم (أ→ي)</option>
+                <option value="position_asc"<?= $sortParam==='position_asc'?' selected':'' ?>>Position A→Z</option>
+                <option value="email_asc"<?= $sortParam==='email_asc'?' selected':'' ?>>Email A→Z</option>
+            </select>
         </div>
     </div>
 
@@ -792,7 +827,7 @@ adminHeader(t('employees.page_title'), 'employees');
                     ?>
                     <tr 
                         class="hover:bg-gray-50 transition-colors"
-                        x-show="matchesSearch('<?php echo addslashes($emp['email'] ?? ''); ?>', '<?php echo addslashes($emp['name_en'] ?? ''); ?>', '<?php echo addslashes($emp['name_ar'] ?? ''); ?>', '<?php echo addslashes($emp['department_id'] ?? ''); ?>')"
+                        x-show="matchesSearch('<?php echo addslashes($emp['email'] ?? ''); ?>', '<?php echo addslashes($emp['name_en'] ?? ''); ?>', '<?php echo addslashes($emp['name_ar'] ?? ''); ?>', '<?php echo addslashes($emp['department_id'] ?? ''); ?>', <?php echo $cardCount > 0 ? 'true' : 'false'; ?>)"
                     >
                         <td class="px-6 py-4">
                             <?php 
@@ -1710,6 +1745,7 @@ function employeeManager() {
     return {
         searchQuery: '',
         filterDepartment: '',
+        filterCardStatus: 'all',
         showModal: false,
         showImportModal: false,
         showDetailModal: false,
@@ -1890,13 +1926,16 @@ function employeeManager() {
             }).join('');
         },
         
-        matchesSearch(email, nameEn, nameAr, deptId) {
-            const searchMatch = !this.searchQuery || 
-                email.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
-                nameEn.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
+        matchesSearch(email, nameEn, nameAr, deptId, hasCard) {
+            const searchMatch = !this.searchQuery ||
+                email.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                nameEn.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
                 nameAr.toLowerCase().includes(this.searchQuery.toLowerCase());
             const deptMatch = !this.filterDepartment || deptId === this.filterDepartment;
-            return searchMatch && deptMatch;
+            const cardMatch = this.filterCardStatus === 'all'
+                || (this.filterCardStatus === 'with_card' && hasCard)
+                || (this.filterCardStatus === 'no_card' && !hasCard);
+            return searchMatch && deptMatch && cardMatch;
         },
         
         openAddModal() {
