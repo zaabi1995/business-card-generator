@@ -951,11 +951,23 @@ class CardEditor {
         const imgW = W * scale;
         const imgH = H * scale;
 
-        // For RTL, anchor the image RIGHT edge at (x + width) when width
-        // was provided (so the visually-rightmost glyph sits where the
-        // PDF parser detected the right edge of the original text). When
-        // width is missing, fall back to anchoring left at x.
-        const left = width > 0 ? (x + width) - (W - padX) * scale : x - padX * scale;
+        // Anchor the RTL bitmap per the field's textAlign:
+        //   'right' (default) - rightmost glyph at (x + width); Arabic
+        //          visually fills toward the LEFT of the bbox.
+        //   'left'            - leftmost glyph at x; Arabic visually
+        //          fills toward the RIGHT of the bbox (used when the
+        //          design places the Arabic block on the LEFT side of
+        //          the card and the visible run should start from x).
+        //   'center'          - bitmap centred in the bbox.
+        let left;
+        const bitmapDisplayW = (W - 2 * padX) * scale;  // visible glyph run width
+        if (textAlign === 'left' && width > 0) {
+            left = x - padX * scale;
+        } else if (textAlign === 'center' && width > 0) {
+            left = x + (width - bitmapDisplayW) / 2 - padX * scale;
+        } else {
+            left = width > 0 ? (x + width) - (W - padX) * scale : x - padX * scale;
+        }
         const top = y - padY * scale;
 
         const imgEl = new Image();
