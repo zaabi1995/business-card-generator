@@ -1139,28 +1139,38 @@ function autoGenerator() {
                 // decorations rendered at source-PDF metrics, no Fabric).
                 if (field.render_in_bg) continue;
 
-                // Get the value for this field
-                const value = fieldValues[key];
-                if (!value) continue;
-                
+                // Resolve text: static fields render detected_text as-is,
+                // typed dynamic fields look up the employee value with a
+                // detected_text fallback so tenant-constants like website
+                // ('www.otech.om') show on every employee card.
+                let value;
+                if (field.is_static) {
+                    value = field.detected_text != null ? String(field.detected_text) : '';
+                    if (!value.replace(/\s+/g, '')) continue;
+                } else {
+                    value = fieldValues[key] || (field.detected_text || '');
+                    if (!value) continue;
+                }
+
                 // Determine text alignment (matching template editor fallback logic)
                 const textAlign = field.textAlign || (key.endsWith('_ar') ? 'right' : 'left');
                 const originX = field.originX || (textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'right' : 'left'));
-                
-                // Debug logging
-                console.log(`Field ${key}: x=${field.x}, y=${field.y}, textAlign=${textAlign}, originX=${originX}`);
-                
-                // Add text field with alignment from template
+
+                // Add text field with alignment from template. Skip width
+                // constraint on static fields (tightly-sized bboxes + auto-
+                // shrink would collapse them to invisibility).
                 editor.addTextField(key, {
                     text: value,
                     x: field.x,
                     y: field.y,
+                    width: field.is_static ? 0 : field.width,
                     fontSize: field.fontSize,
                     fontFamily: field.fontFamily,
                     fontWeight: field.fontWeight || 'normal',
                     fill: field.fill || field.color || '#333333',
                     textAlign: textAlign,
-                    originX: originX
+                    originX: originX,
+                    selectable: false,
                 });
             }
         }

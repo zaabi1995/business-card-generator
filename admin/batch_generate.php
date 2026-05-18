@@ -650,23 +650,34 @@ function batchGenerator() {
                 // Static decorations baked into bg by the PyMuPDF importer
                 if (field.render_in_bg) continue;
 
-                const value = fieldValues[key];
-                if (!value) continue;
-                
+                // Static-text fields render detected_text; typed dynamic
+                // fields fall back to detected_text when employee value is
+                // empty (tenant constants like website).
+                let value;
+                if (field.is_static) {
+                    value = field.detected_text != null ? String(field.detected_text) : '';
+                    if (!value.replace(/\s+/g, '')) continue;
+                } else {
+                    value = fieldValues[key] || (field.detected_text || '');
+                    if (!value) continue;
+                }
+
                 // Determine text alignment (matching template editor fallback logic)
                 const textAlign = field.textAlign || (key.endsWith('_ar') ? 'right' : 'left');
                 const originX = field.originX || (textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'right' : 'left'));
-                
+
                 this.cardEditor.addTextField(key, {
                     text: value,
                     x: field.x,
                     y: field.y,
+                    width: field.is_static ? 0 : field.width,
                     fontSize: field.fontSize,
                     fontFamily: field.fontFamily,
                     fontWeight: field.fontWeight || 'normal',
                     fill: field.fill || field.color || '#333333',
                     textAlign: textAlign,
-                    originX: originX
+                    originX: originX,
+                    selectable: false,
                 });
             }
             
