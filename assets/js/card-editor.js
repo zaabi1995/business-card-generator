@@ -839,6 +839,30 @@ class CardEditor {
                 fieldOptions.fontSize = trial;
             }
         }
+        // Right-anchor side-bearing correction: Fabric IText with
+        // originX='right' anchors at the textbox right edge (= advance
+        // width including trailing side-bearing). Adjacent left-anchored
+        // text whose visible right edge is just the glyph bbox appears
+        // shifted left of the right-anchored text. Detect the last
+        // glyph's right side-bearing via canvas2D measureText with
+        // actualBoundingBoxRight and nudge the anchor x inward by it.
+        // Same logic as scripts/render-card-pdf.py right-anchor fix.
+        if (originX === 'right' && options.text) {
+            try {
+                const probe = document.createElement('canvas').getContext('2d');
+                probe.font = `${fieldOptions.fontStyle || 'normal'} ${fieldOptions.fontWeight || 'normal'} ${fieldOptions.fontSize}px "${fieldOptions.fontFamily}", sans-serif`;
+                const m = probe.measureText(String(options.text));
+                // actualBoundingBoxRight = distance from text-origin to right
+                // edge of LAST glyph's visible ink. measureText.width = advance.
+                if (typeof m.actualBoundingBoxRight === 'number' && m.width > 0) {
+                    const sideBearing = Math.max(0, m.width - m.actualBoundingBoxRight);
+                    if (sideBearing > 0 && sideBearing < m.width * 0.2) {
+                        fieldOptions.left = Number(fieldOptions.left) - sideBearing;
+                    }
+                }
+            } catch (e) {}
+        }
+
         const TextCtor = this.fabricRef.IText;
         const textObj = new TextCtor(options.text || key, fieldOptions);
         textObj.fieldKey = key;
