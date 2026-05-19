@@ -177,11 +177,12 @@ class EmployeeEditToken
             $apex = defined('APP_HOST') ? APP_HOST : 'cardify.om';
             $logoUrl = 'https://' . $apex . '/' . ltrim($logoUrl, '/');
         }
-        // Support email defaults to the tenant's admin_email; falls through
-        // to the Cardify-wide support inbox if the tenant hasn't set one.
-        $supportEmail = $company['admin_email']
-            ?? $company['contact_email']
-            ?? 'support@cardify.om';
+        // Support email shown in the email footer. Defaults to a real
+        // provisioned inbox so recipients can actually get a human reply.
+        // tenant admin_email gets used only if Ali has confirmed the
+        // mailbox exists and accepts mail (skipped by default to avoid
+        // dead-letter replies).
+        $supportEmail = 'info@cardify.om';
 
         $ctx = [
             'employeeName'    => $employee['name_en'] ?? $employee['name_ar'] ?? $employee['email'] ?? '',
@@ -219,12 +220,13 @@ class EmployeeEditToken
                 $fromName = $tenantName === '' || $tenantName === 'Cardify'
                     ? 'Cardify'
                     : ($tenantName . ' via Cardify');
-                // Reply-To: prefer a real admin mailbox so replies don't go
-                // to /dev/null. Falls through to the tenant's admin_email
-                // when set, else to the system default (no-reply).
-                $replyTo = $company['admin_email']
-                    ?? $company['contact_email']
-                    ?? null;
+                // Reply-To: must point to a REAL provisioned mailbox or
+                // Gmail downgrades the message. We don't auto-trust
+                // companies.admin_email because tenants seed it with
+                // aspirational addresses that don't accept mail.
+                // Fall back to info@cardify.om (provisioned + monitored).
+                $apex = defined('APP_HOST') ? APP_HOST : 'cardify.om';
+                $replyTo = 'info@' . $apex;
                 $emailOk = (bool) Mailer::send(
                     $email, $subject, $body,
                     [], // no attachments

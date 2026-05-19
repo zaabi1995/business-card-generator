@@ -161,14 +161,13 @@ class Mailer {
         $boundaryMixed = 'mixed-' . $boundary;
         $boundaryAlt = 'alt-' . $boundary;
 
-        // Deliverability: bulk transactional sends (employee invites,
-        // password resets, order receipts) need explicit unsubscribe +
-        // auto-submitted headers or Gmail/Outlook routes them to spam.
-        // Reply-To overrideable via $config so tenants point replies at
-        // their HR/admin inbox instead of a no-reply sink.
-        $unsubMailto = $config['unsubscribe_mailto']
-            ?? ('unsubscribe@' . (parse_url(getBaseUrl(), PHP_URL_HOST) ?: 'cardify.om'));
-        $replyTo = $config['reply_to'] ?? $config['from_email'];
+        // Deliverability: transactional 1:1 sends need to LOOK transactional.
+        // List-Unsubscribe must point to a REAL mailbox or Gmail/M365
+        // validate-and-penalise. Default fallback chain: caller override ->
+        // info@<host> (provisioned) -> from_email itself.
+        $defaultUnsub = 'info@' . (parse_url(getBaseUrl(), PHP_URL_HOST) ?: 'cardify.om');
+        $unsubMailto  = $config['unsubscribe_mailto'] ?? $defaultUnsub;
+        $replyTo      = $config['reply_to'] ?? $config['from_email'];
 
         // Build headers
         $headers = [];
@@ -179,20 +178,14 @@ class Mailer {
         $headers[] = "Subject: {$subject}";
         $headers[] = "Date: " . date('r');
         $headers[] = "Message-ID: <" . md5(uniqid()) . "@" . parse_url(getBaseUrl(), PHP_URL_HOST) . ">";
-        // List-Unsubscribe is the strongest single deliverability signal
-        // for transactional bulk mail. Gmail bulk-sender guidelines (since
-        // Feb 2024) require it on any sender >5000/day, and inbox heuristics
-        // for smaller senders reward it as well. Always emit both mailto:
-        // and the one-click POST variant so RFC 8058 fast-paths apply.
+        // List-Unsubscribe + RFC 3834 Auto-Submitted are the two highest-
+        // value deliverability signals for transactional mail. We keep them
+        // light: no Precedence: bulk (this is 1:1, not a campaign), no
+        // X-Auto-Response-Suppress (legitimate, low value, some filters
+        // misread). The mailto points to a real provisioned inbox.
         $headers[] = "List-Unsubscribe: <mailto:{$unsubMailto}?subject=unsubscribe>";
         $headers[] = "List-Unsubscribe-Post: List-Unsubscribe=One-Click";
-        // RFC 3834: identify this as auto-generated (not auto-replied) so
-        // recipient autoresponders don't bounce loops back at us.
         $headers[] = "Auto-Submitted: auto-generated";
-        $headers[] = "X-Auto-Response-Suppress: All";
-        // Helps some MTAs route into the right inbox bucket (Promotions,
-        // Updates) instead of Spam.
-        $headers[] = "Precedence: bulk";
         $headers[] = "X-Mailer: Cardify";
         
         if (!empty($attachments)) {
