@@ -1269,6 +1269,22 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <?php if ($isTrustedEdit): ?>
                     <!-- Magic-link token: server verifies on POST + binds to $editEmployee. -->
                     <input type="hidden" name="edit_token" value="<?= htmlspecialchars($editToken) ?>">
+                    <!-- Per-company keys (website, address, fax, company name) are
+                         hidden from the visible form by design (skill rule: HR seeds
+                         these on the employee row, employee doesn't retype them).
+                         But the live Fabric preview reads from form fields, so emit
+                         them as hidden inputs so the renderer sees the same values
+                         that will be on the saved card. -->
+                    <?php foreach ([
+                        'website','website_ar','fax','fax_ar',
+                        'address_en','address_2_en','address_ar','address_2_ar',
+                        'company_en','company_ar',
+                    ] as $__hidden):
+                        $__hv = $formData[$__hidden] ?? ($editEmployee[$__hidden] ?? '');
+                        if ($__hv === '' || $__hv === null) continue;
+                    ?>
+                    <input type="hidden" name="<?= htmlspecialchars($__hidden) ?>" id="<?= htmlspecialchars($__hidden) ?>" value="<?= htmlspecialchars((string) $__hv) ?>">
+                    <?php endforeach; ?>
                     <?php endif; ?>
                     
                     <!-- Email (always shown - required for submission) -->
