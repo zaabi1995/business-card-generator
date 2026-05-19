@@ -1283,57 +1283,111 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 $__firstName  = trim((string) strtok(trim((string) ($editEmployee['name_en'] ?? '')), ' ')) ?: 'there';
                 $__brand      = $companyTheme['primary_color']   ?? '#2d13ea';
                 $__brandSoft  = $companyTheme['secondary_color'] ?? '#ff7800';
+                // Compute a soft brand tint for icon backgrounds (rgba 10% alpha)
+                $__hex = ltrim($__brand, '#');
+                if (strlen($__hex) === 3) $__hex = $__hex[0].$__hex[0].$__hex[1].$__hex[1].$__hex[2].$__hex[2];
+                $__rgb = sscanf($__hex, '%02x%02x%02x') ?: [45, 19, 234];
+                $__brandTint = sprintf('rgba(%d,%d,%d,0.1)', $__rgb[0], $__rgb[1], $__rgb[2]);
             ?>
             <!-- Onboarding banner: continues the email's tone on Cardify itself.
-                 First-time landing from the magic-link email. Mobile-responsive
-                 via Tailwind breakpoints. -->
-            <div class="max-w-5xl mx-auto mb-6 rounded-2xl overflow-hidden shadow-sm border border-gray-200 bg-white" x-data="{ collapsed: false }">
-                <div class="px-5 sm:px-6 py-4 sm:py-5 text-white relative" style="background: <?= htmlspecialchars($__brand) ?>; border-bottom: 4px solid <?= htmlspecialchars($__brandSoft) ?>;">
-                    <button type="button" @click="collapsed = !collapsed" class="absolute end-4 top-4 text-white/80 hover:text-white text-sm" :title="collapsed ? 'Show' : 'Hide'">
-                        <i class="fa-solid" :class="collapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
-                    </button>
-                    <p class="text-xs uppercase tracking-widest opacity-80"><?= htmlspecialchars(t('portal.welcome_eyebrow')) ?></p>
-                    <h2 class="text-xl sm:text-2xl font-bold mt-1"><?= htmlspecialchars(t('portal.welcome_greeting', ['name' => $__firstName])) ?></h2>
-                    <p class="text-sm text-white/90 mt-1"><?= htmlspecialchars(t('portal.welcome_sub', ['company' => $companyName])) ?></p>
-                </div>
-                <div x-show="!collapsed" x-transition class="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
-                    <!-- Step 1: Review -->
-                    <div class="p-5 sm:p-6">
-                        <div class="flex items-center gap-3 mb-2">
-                            <span class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: <?= htmlspecialchars($__brand) ?>;">1</span>
-                            <p class="font-semibold text-gray-900"><?= htmlspecialchars(t('portal.step1_title')) ?></p>
+                 Hero with gradient + dot pattern, 3 step cards with icons,
+                 mobile-stacks below sm:. -->
+            <div class="max-w-5xl mx-auto mb-8 rounded-2xl overflow-hidden shadow-lg ring-1 ring-black/5 bg-white" x-data="{ collapsed: false }">
+                <!-- Hero -->
+                <div class="relative px-6 sm:px-8 py-7 sm:py-9 text-white overflow-hidden"
+                     style="background: linear-gradient(135deg, <?= htmlspecialchars($__brand) ?> 0%, <?= htmlspecialchars($__brand) ?> 60%, <?= htmlspecialchars($__brandSoft) ?> 200%);">
+                    <!-- subtle decorative orbs -->
+                    <div aria-hidden="true" class="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-15" style="background: radial-gradient(circle, #fff 0%, transparent 70%);"></div>
+                    <div aria-hidden="true" class="absolute -bottom-20 -left-10 w-56 h-56 rounded-full opacity-10" style="background: radial-gradient(circle, <?= htmlspecialchars($__brandSoft) ?> 0%, transparent 70%);"></div>
+
+                    <div class="absolute top-4 end-4 sm:top-5 sm:end-5 flex items-center gap-2">
+                        <button type="button" onclick="cardifyTour.restart()"
+                                class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-semibold transition backdrop-blur-sm">
+                            <i class="fa-solid fa-play text-[10px]"></i> <?= htmlspecialchars(t('portal.take_tour')) ?>
+                        </button>
+                        <button type="button" @click="collapsed = !collapsed"
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 text-white transition"
+                                :aria-expanded="!collapsed"
+                                :title="collapsed ? 'Show steps' : 'Hide steps'">
+                            <i class="fa-solid text-sm" :class="collapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+                        </button>
+                    </div>
+
+                    <div class="relative max-w-3xl">
+                        <div class="inline-flex items-center gap-2 mb-3 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm">
+                            <span class="inline-flex w-1.5 h-1.5 rounded-full bg-white"></span>
+                            <p class="text-[11px] uppercase tracking-[0.18em] font-semibold"><?= htmlspecialchars(t('portal.welcome_eyebrow')) ?></p>
                         </div>
-                        <p class="text-sm text-gray-600 mb-3 leading-relaxed"><?= htmlspecialchars(t('portal.step1_body')) ?></p>
-                        <a href="#cardRequestForm" class="inline-flex items-center gap-2 text-sm font-semibold" style="color: <?= htmlspecialchars($__brand) ?>;">
-                            <?= htmlspecialchars(t('portal.step1_cta')) ?> <i class="fa-solid fa-arrow-down text-xs"></i>
+                        <h2 class="text-2xl sm:text-3xl font-bold leading-tight mb-2"><?= htmlspecialchars(t('portal.welcome_greeting', ['name' => $__firstName])) ?></h2>
+                        <p class="text-sm sm:text-base text-white/90 leading-relaxed"><?= htmlspecialchars(t('portal.welcome_sub', ['company' => $companyName])) ?></p>
+                    </div>
+                </div>
+
+                <!-- Steps -->
+                <div x-show="!collapsed" x-transition class="grid sm:grid-cols-3 bg-gray-100" style="gap:1px;">
+                    <!-- Step 1: Review -->
+                    <div class="bg-white p-5 sm:p-6 flex flex-col">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="inline-flex shrink-0 w-11 h-11 rounded-xl items-center justify-center"
+                                  style="background: <?= htmlspecialchars($__brandTint) ?>; color: <?= htmlspecialchars($__brand) ?>;">
+                                <i class="fa-solid fa-pen-to-square text-lg"></i>
+                            </span>
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Step 1</p>
+                                <h3 class="text-base font-semibold text-gray-900"><?= htmlspecialchars(t('portal.step1_title')) ?></h3>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-600 leading-relaxed mb-4 flex-1"><?= htmlspecialchars(t('portal.step1_body')) ?></p>
+                        <a href="#cardRequestForm"
+                           class="inline-flex items-center gap-1.5 text-sm font-semibold hover:gap-2 transition-all"
+                           style="color: <?= htmlspecialchars($__brand) ?>;">
+                            <?= htmlspecialchars(t('portal.step1_cta')) ?> <i class="fa-solid fa-arrow-down text-[11px]"></i>
                         </a>
                     </div>
+
                     <!-- Step 2: Share -->
-                    <div class="p-5 sm:p-6">
-                        <div class="flex items-center gap-3 mb-2">
-                            <span class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: <?= htmlspecialchars($__brand) ?>;">2</span>
-                            <p class="font-semibold text-gray-900"><?= htmlspecialchars(t('portal.step2_title')) ?></p>
+                    <div class="bg-white p-5 sm:p-6 flex flex-col cardify-onboarding-share">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="inline-flex shrink-0 w-11 h-11 rounded-xl items-center justify-center"
+                                  style="background: <?= htmlspecialchars($__brandTint) ?>; color: <?= htmlspecialchars($__brand) ?>;">
+                                <i class="fa-solid fa-share-nodes text-lg"></i>
+                            </span>
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Step 2</p>
+                                <h3 class="text-base font-semibold text-gray-900"><?= htmlspecialchars(t('portal.step2_title')) ?></h3>
+                            </div>
                         </div>
-                        <p class="text-sm text-gray-600 mb-3 leading-relaxed"><?= htmlspecialchars(t('portal.step2_body')) ?></p>
+                        <p class="text-sm text-gray-600 leading-relaxed mb-4 flex-1"><?= htmlspecialchars(t('portal.step2_body')) ?></p>
                         <?php if ($publicCardUrl !== ''): ?>
-                        <div class="flex items-stretch gap-2">
-                            <a href="<?= htmlspecialchars($publicCardUrl) ?>" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border bg-white hover:bg-gray-50" style="color: <?= htmlspecialchars($__brand) ?>; border-color: <?= htmlspecialchars($__brand) ?>;">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i> <?= htmlspecialchars(t('portal.step2_open')) ?>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <a href="<?= htmlspecialchars($publicCardUrl) ?>" target="_blank" rel="noopener"
+                               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition"
+                               style="background: <?= htmlspecialchars($__brand) ?>;">
+                                <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i> <?= htmlspecialchars(t('portal.step2_open')) ?>
                             </a>
-                            <button type="button" onclick="cardifyCopyToClipboard(this, <?= htmlspecialchars(json_encode($publicCardUrl), ENT_QUOTES) ?>)" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border border-gray-200 bg-white hover:bg-gray-50 text-gray-700">
-                                <i class="fa-solid fa-link"></i> <span><?= htmlspecialchars(t('portal.step2_copy')) ?></span>
+                            <button type="button"
+                                    onclick="cardifyCopyToClipboard(this, <?= htmlspecialchars(json_encode($publicCardUrl), ENT_QUOTES) ?>)"
+                                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 transition">
+                                <i class="fa-solid fa-link text-[11px]"></i> <span><?= htmlspecialchars(t('portal.step2_copy')) ?></span>
                             </button>
                         </div>
-                        <p class="mt-2 text-[11px] text-gray-500 break-all"><?= htmlspecialchars($publicCardUrl) ?></p>
+                        <p class="text-[11px] text-gray-500 font-mono break-all bg-gray-50 rounded-md px-2 py-1.5"><?= htmlspecialchars($publicCardUrl) ?></p>
                         <?php endif; ?>
                     </div>
+
                     <!-- Step 3: Print -->
-                    <div class="p-5 sm:p-6">
-                        <div class="flex items-center gap-3 mb-2">
-                            <span class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: <?= htmlspecialchars($__brand) ?>;">3</span>
-                            <p class="font-semibold text-gray-900"><?= htmlspecialchars(t('portal.step3_title')) ?></p>
+                    <div class="bg-white p-5 sm:p-6 flex flex-col">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="inline-flex shrink-0 w-11 h-11 rounded-xl items-center justify-center"
+                                  style="background: <?= htmlspecialchars($__brandTint) ?>; color: <?= htmlspecialchars($__brand) ?>;">
+                                <i class="fa-solid fa-truck-fast text-lg"></i>
+                            </span>
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Step 3</p>
+                                <h3 class="text-base font-semibold text-gray-900"><?= htmlspecialchars(t('portal.step3_title')) ?></h3>
+                            </div>
                         </div>
-                        <p class="text-sm text-gray-600 leading-relaxed"><?= htmlspecialchars(t('portal.step3_body', ['date' => '28 May 2026'])) ?></p>
+                        <p class="text-sm text-gray-600 leading-relaxed flex-1"><?= htmlspecialchars(t('portal.step3_body', ['date' => '28 May 2026'])) ?></p>
                     </div>
                 </div>
             </div>
@@ -1341,11 +1395,250 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             <script>
             function cardifyCopyToClipboard(btn, txt) {
                 const orig = btn.innerHTML;
-                const done = () => { btn.innerHTML = '<i class="fa-solid fa-check"></i> <span><?= htmlspecialchars(t('portal.copied')) ?></span>'; setTimeout(() => btn.innerHTML = orig, 1800); };
+                const done = () => {
+                    btn.innerHTML = '<i class="fa-solid fa-check text-[11px]"></i> <span><?= htmlspecialchars(t('portal.copied')) ?></span>';
+                    setTimeout(() => btn.innerHTML = orig, 1800);
+                };
                 try {
                     navigator.clipboard.writeText(txt).then(done, () => { window.prompt('Copy:', txt); });
                 } catch (e) { window.prompt('Copy:', txt); }
             }
+            </script>
+
+            <!-- Interactive product tour (usertour-style): spotlights target
+                 elements one at a time, popup with Next/Skip, auto-shows once.
+                 Replayable via the "Take a tour" button in the banner. -->
+            <div id="cardifyTourOverlay" class="cardify-tour-overlay" aria-hidden="true"></div>
+            <div id="cardifyTourPopup" class="cardify-tour-popup" role="dialog" aria-live="polite" aria-hidden="true">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="cardify-tour-step-pill" id="cardifyTourStepLabel"></span>
+                    <button type="button" onclick="cardifyTour.skip()" class="text-gray-400 hover:text-gray-600 text-sm" aria-label="Close tour">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <h4 id="cardifyTourTitle" class="text-base font-semibold text-gray-900 mb-1"></h4>
+                <p id="cardifyTourBody" class="text-sm text-gray-600 leading-relaxed mb-4"></p>
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex gap-1.5" id="cardifyTourDots"></div>
+                    <div class="flex gap-2">
+                        <button type="button" id="cardifyTourBack" onclick="cardifyTour.prev()"
+                                class="text-sm font-semibold text-gray-500 hover:text-gray-700 px-3 py-2">Back</button>
+                        <button type="button" id="cardifyTourNext" onclick="cardifyTour.next()"
+                                class="text-sm font-semibold text-white px-4 py-2 rounded-lg transition"
+                                style="background: <?= htmlspecialchars($__brand) ?>;"></button>
+                    </div>
+                </div>
+            </div>
+
+            <style>
+            .cardify-tour-overlay {
+                position: fixed; inset: 0; z-index: 9998;
+                background: rgba(15, 23, 42, 0.65);
+                opacity: 0; pointer-events: none;
+                transition: opacity 0.2s ease;
+            }
+            .cardify-tour-overlay.is-active { opacity: 1; pointer-events: auto; }
+            .cardify-tour-target {
+                position: relative !important; z-index: 9999 !important;
+                box-shadow: 0 0 0 4px <?= htmlspecialchars($__brand) ?>, 0 0 0 8px <?= htmlspecialchars($__brandSoft) ?>66, 0 12px 32px rgba(0,0,0,0.35) !important;
+                border-radius: 12px !important;
+                transition: box-shadow 0.3s ease;
+                animation: cardifyTourPulse 2.5s ease-in-out infinite;
+            }
+            @keyframes cardifyTourPulse {
+                0%, 100% { box-shadow: 0 0 0 4px <?= htmlspecialchars($__brand) ?>, 0 0 0 8px <?= htmlspecialchars($__brandSoft) ?>66, 0 12px 32px rgba(0,0,0,0.35); }
+                50%      { box-shadow: 0 0 0 4px <?= htmlspecialchars($__brand) ?>, 0 0 0 14px <?= htmlspecialchars($__brandSoft) ?>22, 0 12px 32px rgba(0,0,0,0.35); }
+            }
+            .cardify-tour-popup {
+                position: fixed; z-index: 10000;
+                width: calc(100vw - 32px); max-width: 360px;
+                background: white; border-radius: 14px;
+                padding: 18px 18px 16px;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+                opacity: 0; transform: translateY(8px); pointer-events: none;
+                transition: opacity 0.2s ease, transform 0.2s ease;
+            }
+            .cardify-tour-popup.is-active { opacity: 1; transform: translateY(0); pointer-events: auto; }
+            .cardify-tour-step-pill {
+                font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+                text-transform: uppercase; color: <?= htmlspecialchars($__brand) ?>;
+                background: <?= htmlspecialchars($__brandTint) ?>;
+                padding: 3px 10px; border-radius: 999px;
+            }
+            #cardifyTourDots { display: flex; }
+            #cardifyTourDots span {
+                width: 6px; height: 6px; border-radius: 50%;
+                background: #e5e7eb; transition: background 0.2s, width 0.2s;
+            }
+            #cardifyTourDots span.is-active { background: <?= htmlspecialchars($__brand) ?>; width: 18px; border-radius: 3px; }
+            @media (max-width: 480px) {
+                .cardify-tour-popup {
+                    left: 16px !important; right: 16px !important;
+                    bottom: 16px !important; top: auto !important; max-width: none;
+                }
+            }
+            </style>
+
+            <script>
+            window.cardifyTour = (function () {
+                const STORAGE_KEY = 'cardify_tour_done_v1';
+                const PUBLIC_URL  = <?= json_encode($publicCardUrl) ?>;
+                const steps = [
+                    {
+                        selector: '#cardRequestForm',
+                        title: <?= json_encode(t('portal.tour_step1_title')) ?>,
+                        body:  <?= json_encode(t('portal.tour_step1_body')) ?>,
+                    },
+                    {
+                        selector: '.card-preview-container',
+                        title: <?= json_encode(t('portal.tour_step2_title')) ?>,
+                        body:  <?= json_encode(t('portal.tour_step2_body')) ?>,
+                    },
+                    {
+                        selector: '#cardRequestForm button[type="submit"]',
+                        title: <?= json_encode(t('portal.tour_step3_title')) ?>,
+                        body:  <?= json_encode(t('portal.tour_step3_body')) ?>,
+                    },
+                ];
+                if (PUBLIC_URL) {
+                    steps.push({
+                        // Anchor on step 2 card in the banner (Share your card)
+                        selector: '.cardify-onboarding-share',
+                        title: <?= json_encode(t('portal.tour_step4_title')) ?>,
+                        body:  <?= json_encode(t('portal.tour_step4_body')) ?>,
+                    });
+                }
+                let idx = 0;
+                let target = null;
+                const overlay = () => document.getElementById('cardifyTourOverlay');
+                const popup   = () => document.getElementById('cardifyTourPopup');
+                const labels  = {
+                    next: <?= json_encode(t('portal.tour_next')) ?>,
+                    done: <?= json_encode(t('portal.tour_done')) ?>,
+                    step: <?= json_encode(t('portal.tour_step_label')) ?>,
+                };
+
+                function findTarget(sel) {
+                    const els = document.querySelectorAll(sel);
+                    for (const el of els) {
+                        const r = el.getBoundingClientRect();
+                        if (r.width > 0 && r.height > 0) return el;
+                    }
+                    return null;
+                }
+
+                function clearTarget() {
+                    if (target) {
+                        target.classList.remove('cardify-tour-target');
+                        target = null;
+                    }
+                }
+
+                function renderDots() {
+                    const dots = document.getElementById('cardifyTourDots');
+                    dots.innerHTML = '';
+                    steps.forEach((_, i) => {
+                        const s = document.createElement('span');
+                        if (i === idx) s.classList.add('is-active');
+                        dots.appendChild(s);
+                    });
+                }
+
+                function placePopup() {
+                    const pop = popup();
+                    if (!target) {
+                        pop.style.left = '50%';
+                        pop.style.top  = '50%';
+                        pop.style.transform = 'translate(-50%, -50%)';
+                        return;
+                    }
+                    const r = target.getBoundingClientRect();
+                    const popH = pop.offsetHeight || 220;
+                    const popW = pop.offsetWidth || 360;
+                    const pad  = 16;
+                    let top, left;
+                    // Prefer below the target; fall back to above; else center
+                    if (r.bottom + popH + pad < window.innerHeight - pad) {
+                        top  = r.bottom + 12;
+                    } else if (r.top - popH - pad > pad) {
+                        top  = r.top - popH - 12;
+                    } else {
+                        top  = Math.max(pad, (window.innerHeight - popH) / 2);
+                    }
+                    left = Math.max(pad, Math.min(window.innerWidth - popW - pad, r.left));
+                    pop.style.top  = top + 'px';
+                    pop.style.left = left + 'px';
+                    pop.style.transform = 'none';
+                }
+
+                function render() {
+                    const step = steps[idx];
+                    if (!step) return done();
+                    clearTarget();
+                    target = findTarget(step.selector);
+                    if (target) {
+                        target.classList.add('cardify-tour-target');
+                        target.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    }
+                    document.getElementById('cardifyTourStepLabel').textContent =
+                        labels.step.replace(':n', idx + 1).replace(':total', steps.length);
+                    document.getElementById('cardifyTourTitle').textContent = step.title;
+                    document.getElementById('cardifyTourBody').textContent  = step.body;
+                    const nextBtn = document.getElementById('cardifyTourNext');
+                    nextBtn.textContent = (idx === steps.length - 1) ? labels.done : labels.next;
+                    const backBtn = document.getElementById('cardifyTourBack');
+                    backBtn.style.visibility = idx === 0 ? 'hidden' : 'visible';
+                    renderDots();
+                    setTimeout(placePopup, 320); // wait for scroll to settle
+                }
+
+                function start() {
+                    idx = 0;
+                    overlay().classList.add('is-active');
+                    overlay().setAttribute('aria-hidden', 'false');
+                    popup().classList.add('is-active');
+                    popup().setAttribute('aria-hidden', 'false');
+                    document.body.style.overflow = 'hidden';
+                    render();
+                    window.addEventListener('resize', placePopup);
+                    window.addEventListener('scroll', placePopup, true);
+                }
+
+                function next() {
+                    if (idx >= steps.length - 1) return done();
+                    idx++;
+                    render();
+                }
+                function prev() {
+                    if (idx === 0) return;
+                    idx--;
+                    render();
+                }
+                function skip() { done(); }
+                function done() {
+                    clearTarget();
+                    overlay().classList.remove('is-active');
+                    overlay().setAttribute('aria-hidden', 'true');
+                    popup().classList.remove('is-active');
+                    popup().setAttribute('aria-hidden', 'true');
+                    document.body.style.overflow = '';
+                    try { localStorage.setItem(STORAGE_KEY, '1'); } catch (_) {}
+                    window.removeEventListener('resize', placePopup);
+                    window.removeEventListener('scroll', placePopup, true);
+                }
+                function restart() {
+                    try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+                    start();
+                }
+
+                document.addEventListener('DOMContentLoaded', function () {
+                    let seen = false;
+                    try { seen = !!localStorage.getItem(STORAGE_KEY); } catch (_) {}
+                    if (!seen) setTimeout(start, 1200);
+                });
+
+                return { start, next, prev, skip, done, restart };
+            })();
             </script>
             <?php endif; ?>
 
