@@ -340,6 +340,16 @@ $formData = [
     'fax'          => $company['default_fax']          ?? '',
 ];
 
+// Edit-mode: derive the public-card URL (read-only digital card page
+// the QR + share-link resolve to) so the onboarding panel can show it
+// alongside the edit URL. Same shape EmployeeEditToken::sendInvite
+// uses in the invite email.
+$publicCardUrl = '';
+if ($isTrustedEdit && $editEmployee && !empty($companySlug)) {
+    $apexHost   = function_exists('cardifyApexHost') ? cardifyApexHost() : (defined('APP_HOST') ? APP_HOST : 'cardify.om');
+    $publicCardUrl = 'https://' . $companySlug . '.' . $apexHost . '/' . rawurlencode($editSlug);
+}
+
 // Edit-mode: seed the form with the employee's existing values so the
 // magic-link landing renders fully prefilled (works even without JS).
 // Field list mirrors the inputs in the form (lines 1100-1450 below).
@@ -1268,6 +1278,77 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             </div>
             
             <?php else: ?>
+
+            <?php if ($isTrustedEdit && $editEmployee):
+                $__firstName  = trim((string) strtok(trim((string) ($editEmployee['name_en'] ?? '')), ' ')) ?: 'there';
+                $__brand      = $companyTheme['primary_color']   ?? '#2d13ea';
+                $__brandSoft  = $companyTheme['secondary_color'] ?? '#ff7800';
+            ?>
+            <!-- Onboarding banner: continues the email's tone on Cardify itself.
+                 First-time landing from the magic-link email. Mobile-responsive
+                 via Tailwind breakpoints. -->
+            <div class="max-w-5xl mx-auto mb-6 rounded-2xl overflow-hidden shadow-sm border border-gray-200 bg-white" x-data="{ collapsed: false }">
+                <div class="px-5 sm:px-6 py-4 sm:py-5 text-white relative" style="background: <?= htmlspecialchars($__brand) ?>; border-bottom: 4px solid <?= htmlspecialchars($__brandSoft) ?>;">
+                    <button type="button" @click="collapsed = !collapsed" class="absolute end-4 top-4 text-white/80 hover:text-white text-sm" :title="collapsed ? 'Show' : 'Hide'">
+                        <i class="fa-solid" :class="collapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+                    </button>
+                    <p class="text-xs uppercase tracking-widest opacity-80"><?= htmlspecialchars(t('portal.welcome_eyebrow')) ?></p>
+                    <h2 class="text-xl sm:text-2xl font-bold mt-1"><?= htmlspecialchars(t('portal.welcome_greeting', ['name' => $__firstName])) ?></h2>
+                    <p class="text-sm text-white/90 mt-1"><?= htmlspecialchars(t('portal.welcome_sub', ['company' => $companyName])) ?></p>
+                </div>
+                <div x-show="!collapsed" x-transition class="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
+                    <!-- Step 1: Review -->
+                    <div class="p-5 sm:p-6">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: <?= htmlspecialchars($__brand) ?>;">1</span>
+                            <p class="font-semibold text-gray-900"><?= htmlspecialchars(t('portal.step1_title')) ?></p>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-3 leading-relaxed"><?= htmlspecialchars(t('portal.step1_body')) ?></p>
+                        <a href="#cardRequestForm" class="inline-flex items-center gap-2 text-sm font-semibold" style="color: <?= htmlspecialchars($__brand) ?>;">
+                            <?= htmlspecialchars(t('portal.step1_cta')) ?> <i class="fa-solid fa-arrow-down text-xs"></i>
+                        </a>
+                    </div>
+                    <!-- Step 2: Share -->
+                    <div class="p-5 sm:p-6">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: <?= htmlspecialchars($__brand) ?>;">2</span>
+                            <p class="font-semibold text-gray-900"><?= htmlspecialchars(t('portal.step2_title')) ?></p>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-3 leading-relaxed"><?= htmlspecialchars(t('portal.step2_body')) ?></p>
+                        <?php if ($publicCardUrl !== ''): ?>
+                        <div class="flex items-stretch gap-2">
+                            <a href="<?= htmlspecialchars($publicCardUrl) ?>" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border bg-white hover:bg-gray-50" style="color: <?= htmlspecialchars($__brand) ?>; border-color: <?= htmlspecialchars($__brand) ?>;">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> <?= htmlspecialchars(t('portal.step2_open')) ?>
+                            </a>
+                            <button type="button" onclick="cardifyCopyToClipboard(this, <?= htmlspecialchars(json_encode($publicCardUrl), ENT_QUOTES) ?>)" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border border-gray-200 bg-white hover:bg-gray-50 text-gray-700">
+                                <i class="fa-solid fa-link"></i> <span><?= htmlspecialchars(t('portal.step2_copy')) ?></span>
+                            </button>
+                        </div>
+                        <p class="mt-2 text-[11px] text-gray-500 break-all"><?= htmlspecialchars($publicCardUrl) ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <!-- Step 3: Print -->
+                    <div class="p-5 sm:p-6">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background: <?= htmlspecialchars($__brand) ?>;">3</span>
+                            <p class="font-semibold text-gray-900"><?= htmlspecialchars(t('portal.step3_title')) ?></p>
+                        </div>
+                        <p class="text-sm text-gray-600 leading-relaxed"><?= htmlspecialchars(t('portal.step3_body', ['date' => '28 May 2026'])) ?></p>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+            function cardifyCopyToClipboard(btn, txt) {
+                const orig = btn.innerHTML;
+                const done = () => { btn.innerHTML = '<i class="fa-solid fa-check"></i> <span><?= htmlspecialchars(t('portal.copied')) ?></span>'; setTimeout(() => btn.innerHTML = orig, 1800); };
+                try {
+                    navigator.clipboard.writeText(txt).then(done, () => { window.prompt('Copy:', txt); });
+                } catch (e) { window.prompt('Copy:', txt); }
+            }
+            </script>
+            <?php endif; ?>
+
             <!-- Two Column Layout: Form + Preview (if enabled) -->
             <div class="grid <?php echo $showPreview ? 'lg:grid-cols-2' : ''; ?> gap-8 items-start max-w-7xl mx-auto">
                 <!-- Left Column: Form -->
