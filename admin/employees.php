@@ -218,9 +218,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
         case 'bulk_send_edit_invites':
             require_once INCLUDES_DIR . '/EmployeeEditToken.php';
+            // Pull tenant brand from companies + company_themes so the email
+            // header carries the right logo + colors + admin contact.
             $bulkCompany = $db->fetchOne(
-                "SELECT id, name, slug, brand_color, logo_path AS logo_url
-                   FROM companies WHERE id = :cid LIMIT 1",
+                "SELECT c.id, c.name, c.slug, c.admin_email,
+                        ct.primary_color, ct.secondary_color, ct.logo_path AS logo_url
+                   FROM companies c
+                   LEFT JOIN company_themes ct ON ct.company_id = c.id
+                  WHERE c.id = :cid LIMIT 1",
                 ['cid' => $companyId]
             ) ?: ['id' => $companyId, 'name' => 'Cardify', 'slug' => null];
             // Bulk send is EMAIL-ONLY by design. WhatsApp bulk dispatch from
@@ -318,9 +323,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             require_once INCLUDES_DIR . '/EmployeeEditToken.php';
             $rid = trim($_POST['id'] ?? '');
             $emp = $rid ? $db->fetchOne(
-                "SELECT e.*, c.id AS _cid, c.name AS _cname, c.slug AS _cslug, c.brand_color, c.logo_path AS logo_url
+                "SELECT e.*, c.id AS _cid, c.name AS _cname, c.slug AS _cslug,
+                        c.admin_email AS _cadmin,
+                        ct.primary_color AS _cprimary, ct.secondary_color AS _csecondary,
+                        ct.logo_path AS _clogo
                    FROM employees e
                    JOIN companies c ON c.id = e.company_id
+                   LEFT JOIN company_themes ct ON ct.company_id = c.id
                   WHERE e.id = :id AND e.company_id = :cid LIMIT 1",
                 ['id' => $rid, 'cid' => $companyId]
             ) : null;
@@ -329,10 +338,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $messageType = 'error';
                 break;
             }
-            $company = ['id' => $companyId, 'name' => $emp['_cname'] ?? 'Cardify',
-                        'slug' => $emp['_cslug'] ?? null,
-                        'brand_color' => $emp['brand_color'] ?? null,
-                        'logo_url' => $emp['logo_url'] ?? null];
+            $company = [
+                'id'              => $companyId,
+                'name'            => $emp['_cname'] ?? 'Cardify',
+                'slug'            => $emp['_cslug'] ?? null,
+                'admin_email'     => $emp['_cadmin'] ?? null,
+                'brand_color'     => $emp['_cprimary'] ?? null,
+                'primary_color'   => $emp['_cprimary'] ?? null,
+                'secondary_color' => $emp['_csecondary'] ?? null,
+                'logo_url'        => $emp['_clogo'] ?? null,
+            ];
             $channel = (!empty($emp['phone']) || !empty($emp['mobile'])) ? 'both' : 'email';
             $res = EmployeeEditToken::sendInvite($emp, $company, $channel);
             $okWa = !empty($res['wa']);

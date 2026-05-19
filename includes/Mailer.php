@@ -86,6 +86,7 @@ class Mailer {
                     // sendWithSMTP defaults them when not provided.
                     'reply_to' => $options['reply_to'] ?? null,
                     'unsubscribe_mailto' => $options['unsubscribe_mailto'] ?? null,
+                    'skip_wrap' => !empty($options['skip_wrap']),
                 ]);
             } catch (Exception $e) {
                 self::$lastError = $e->getMessage();
@@ -215,11 +216,18 @@ class Mailer {
         $message .= chunk_split(base64_encode(strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $body))));
         $message .= "\r\n";
         
-        // HTML version
+        // HTML version: skip the global Cardify chrome when the caller has
+        // already provided a full <html>...</html> document (tenant-branded
+        // emails like the employee-invite). Detected via $config['skip_wrap']
+        // (set by Mailer::send when $options['skip_wrap'] is true) OR by
+        // sniffing the body for a leading <!DOCTYPE / <html.
+        $skipWrap = !empty($config['skip_wrap'])
+            || (is_string($body) && preg_match('/^\s*(<!DOCTYPE\s|<html[\s>])/i', $body) === 1);
+        $htmlBody = $skipWrap ? $body : self::wrapInTemplate($body);
         $message .= "--{$boundaryAlt}\r\n";
         $message .= "Content-Type: text/html; charset=UTF-8\r\n";
         $message .= "Content-Transfer-Encoding: base64\r\n\r\n";
-        $message .= chunk_split(base64_encode(self::wrapInTemplate($body)));
+        $message .= chunk_split(base64_encode($htmlBody));
         $message .= "\r\n";
         
         $message .= "--{$boundaryAlt}--\r\n";

@@ -15,7 +15,14 @@
  */
 class EmployeeEditToken
 {
-    public const TTL_DAYS = 30;
+    // Magic links are essentially permanent: an employee may receive the
+    // invite once and keep updating their card for years (job title change,
+    // new phone, photo update). TTL stays as a safety net (10 years), but
+    // the idle-timeout check below is intentionally disabled because the
+    // whole point is "link always works, click whenever". Revocation is
+    // explicit: admin clicks Copy link (mints fresh, revokes prior) or
+    // leave-company flow calls revokeAllForEmployee().
+    public const TTL_DAYS = 3650;
     public const BYTES = 20; // 40 hex chars
 
     /**
@@ -87,10 +94,9 @@ class EmployeeEditToken
         if (!$row) return null;
         if (!empty($row['_t_revoked_at'])) return null;
         if (strtotime($row['_t_expires_at']) < time()) return null;
-        // Idle-timeout: more than TTL_DAYS since last use also expires.
-        if (!empty($row['_t_last_used_at']) && strtotime($row['_t_last_used_at']) < (time() - self::TTL_DAYS * 86400)) {
-            return null;
-        }
+        // Idle-timeout removed: links are designed to live for the full
+        // tenure of the employment. Revocation is explicit via admin
+        // mint-replaces-prior or leave-company flow, not implicit drift.
 
         $db->update(
             'employee_edit_tokens',
@@ -128,7 +134,11 @@ class EmployeeEditToken
     public static function buildUrl(string $plain, ?string $tenantSlug = null, ?string $employeeSlug = null): string
     {
         $apex = defined('APP_HOST') ? APP_HOST : ($_SERVER['HTTP_HOST'] ?? 'cardify.om');
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        // Always emit https for cardify.om (live in production behind CF SSL).
+        // $_SERVER['HTTPS'] is unset in PHP CLI contexts like cron + admin
+        // bulk-send loops, which previously emitted http:// links that
+        // recipients flagged as insecure. Hardcode scheme for cardify.om.
+        $scheme = 'https';
         $host = $tenantSlug ? $tenantSlug . '.' . $apex : $apex;
         $slug = $employeeSlug !== null ? trim((string) $employeeSlug) : '';
         if ($slug !== '' && preg_match('/^[a-z0-9._-]+$/i', $slug)) {
@@ -159,13 +169,30 @@ class EmployeeEditToken
         $employeeSlug = $localPart !== '' ? strtr($localPart, ['.' => '-', '_' => '-']) : null;
         $editUrl = self::buildUrl($plain, $company['slug'] ?? null, $employeeSlug);
 
+        // Normalise logo to an absolute URL: company_themes.logo_path stores
+        // a relative path like /uploads/companies/otech-logo.png that won't
+        // render in an email client without the host prepended.
+        $logoUrl = $company['logo_url'] ?? null;
+        if ($logoUrl && strpos($logoUrl, 'http') !== 0) {
+            $apex = defined('APP_HOST') ? APP_HOST : 'cardify.om';
+            $logoUrl = 'https://' . $apex . '/' . ltrim($logoUrl, '/');
+        }
+        // Support email defaults to the tenant's admin_email; falls through
+        // to the Cardify-wide support inbox if the tenant hasn't set one.
+        $supportEmail = $company['admin_email']
+            ?? $company['contact_email']
+            ?? 'support@cardify.om';
+
         $ctx = [
             'employeeName'    => $employee['name_en'] ?? $employee['name_ar'] ?? $employee['email'] ?? '',
-            'companyName'    => $company['name'] ?? 'Cardify',
-            'editUrl'        => $editUrl,
-            'expiresInDays'  => self::TTL_DAYS,
-            'brandColor'     => $company['brand_color'] ?? null,
-            'logoUrl'        => $company['logo_url'] ?? null,
+            'companyName'     => $company['name'] ?? 'Cardify',
+            'companyDomain'   => $company['email_domain'] ?? '',
+            'editUrl'         => $editUrl,
+            'expiresInDays'   => self::TTL_DAYS,
+            'brandColor'      => $company['brand_color'] ?? $company['primary_color'] ?? null,
+            'secondaryColor'  => $company['secondary_color'] ?? null,
+            'logoUrl'         => $logoUrl,
+            'supportEmail'    => $supportEmail,
         ];
         $locale = function_exists('currentLocale') ? currentLocale() : 'en';
 
