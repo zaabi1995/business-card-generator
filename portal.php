@@ -2766,9 +2766,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         // Initialize request type toggle
         initRequestTypeToggle();
         
-        // Check existing employee on page load if email is pre-filled
+        // Check existing employee on page load if email is pre-filled.
+        // Skip in trusted-edit mode: the employee is already identified
+        // by the magic-link token, so the "Welcome back, you have 3 cards
+        // generated, you can request additional" banner is noise.
         const emailField = document.getElementById('email');
-        if (emailField && emailField.value) {
+        if (emailField && emailField.value && !isEditMode) {
             checkExistingEmployee(emailField.value);
         }
     });
