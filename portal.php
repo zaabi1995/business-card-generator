@@ -1283,114 +1283,394 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 $__firstName  = trim((string) strtok(trim((string) ($editEmployee['name_en'] ?? '')), ' ')) ?: 'there';
                 $__brand      = $companyTheme['primary_color']   ?? '#2d13ea';
                 $__brandSoft  = $companyTheme['secondary_color'] ?? '#ff7800';
-                // Compute a soft brand tint for icon backgrounds (rgba 10% alpha)
-                $__hex = ltrim($__brand, '#');
-                if (strlen($__hex) === 3) $__hex = $__hex[0].$__hex[0].$__hex[1].$__hex[1].$__hex[2].$__hex[2];
-                $__rgb = sscanf($__hex, '%02x%02x%02x') ?: [45, 19, 234];
-                $__brandTint = sprintf('rgba(%d,%d,%d,0.1)', $__rgb[0], $__rgb[1], $__rgb[2]);
+                $__deadline   = '28 May 2026';
+                $__publicHost = $publicCardUrl !== '' ? preg_replace('#^https?://#', '', $publicCardUrl) : '';
             ?>
-            <!-- Onboarding banner: continues the email's tone on Cardify itself.
-                 Hero with gradient + dot pattern, 3 step cards with icons,
-                 mobile-stacks below sm:. -->
-            <div class="max-w-5xl mx-auto mb-8 rounded-2xl overflow-hidden shadow-lg ring-1 ring-black/5 bg-white" x-data="{ collapsed: false }">
-                <!-- Hero -->
-                <div class="relative px-6 sm:px-8 py-7 sm:py-9 text-white overflow-hidden"
-                     style="background: linear-gradient(135deg, <?= htmlspecialchars($__brand) ?> 0%, <?= htmlspecialchars($__brand) ?> 60%, <?= htmlspecialchars($__brandSoft) ?> 200%);">
-                    <!-- subtle decorative orbs -->
-                    <div aria-hidden="true" class="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-15" style="background: radial-gradient(circle, #fff 0%, transparent 70%);"></div>
-                    <div aria-hidden="true" class="absolute -bottom-20 -left-10 w-56 h-56 rounded-full opacity-10" style="background: radial-gradient(circle, <?= htmlspecialchars($__brandSoft) ?> 0%, transparent 70%);"></div>
+            <!-- Cardify onboarding: Maximalism direction per design-stack.
+                 No purple→blue gradients (slop fingerprint). Editorial scale,
+                 decorative numerals, dense data strip, tactile dividers. -->
+            <section class="cf-onboard" x-data="{ collapsed: false }"
+                     style="--cf-brand: <?= htmlspecialchars($__brand) ?>; --cf-accent: <?= htmlspecialchars($__brandSoft) ?>;">
 
-                    <div class="absolute top-4 end-4 sm:top-5 sm:end-5 flex items-center gap-2">
-                        <button type="button" onclick="cardifyTour.restart()"
-                                class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-semibold transition backdrop-blur-sm">
-                            <i class="fa-solid fa-play text-[10px]"></i> <?= htmlspecialchars(t('portal.take_tour')) ?>
+                <!-- HERO -->
+                <header class="cf-onboard__hero">
+                    <div class="cf-onboard__hero-bg" aria-hidden="true"></div>
+                    <div class="cf-onboard__hero-grid" aria-hidden="true"></div>
+                    <div class="cf-onboard__hero-mark" aria-hidden="true"></div>
+
+                    <div class="cf-onboard__hero-actions">
+                        <button type="button" onclick="cardifyTour.restart()" class="cf-chip-btn" title="Replay tour">
+                            <i class="fa-solid fa-play"></i><span class="hide-sm"><?= htmlspecialchars(t('portal.take_tour')) ?></span>
                         </button>
-                        <button type="button" @click="collapsed = !collapsed"
-                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 text-white transition"
-                                :aria-expanded="!collapsed"
-                                :title="collapsed ? 'Show steps' : 'Hide steps'">
-                            <i class="fa-solid text-sm" :class="collapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+                        <button type="button" @click="collapsed = !collapsed" class="cf-chip-btn" :title="collapsed ? 'Expand' : 'Collapse'">
+                            <i class="fa-solid" :class="collapsed ? 'fa-chevron-down' : 'fa-minus'"></i>
                         </button>
                     </div>
 
-                    <div class="relative max-w-3xl">
-                        <div class="inline-flex items-center gap-2 mb-3 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm">
-                            <span class="inline-flex w-1.5 h-1.5 rounded-full bg-white"></span>
-                            <p class="text-[11px] uppercase tracking-[0.18em] font-semibold"><?= htmlspecialchars(t('portal.welcome_eyebrow')) ?></p>
-                        </div>
-                        <h2 class="text-2xl sm:text-3xl font-bold leading-tight mb-2"><?= htmlspecialchars(t('portal.welcome_greeting', ['name' => $__firstName])) ?></h2>
-                        <p class="text-sm sm:text-base text-white/90 leading-relaxed"><?= htmlspecialchars(t('portal.welcome_sub', ['company' => $companyName])) ?></p>
+                    <div class="cf-onboard__hero-body">
+                        <p class="cf-onboard__eyebrow">
+                            <span class="cf-onboard__eyebrow-dot"></span>
+                            <?= htmlspecialchars(t('portal.welcome_eyebrow')) ?>
+                            <span class="cf-onboard__eyebrow-sep">/</span>
+                            <span class="cf-onboard__eyebrow-co"><?= htmlspecialchars($companyName) ?></span>
+                        </p>
+                        <h1 class="cf-onboard__title">
+                            Welcome, <em><?= htmlspecialchars($__firstName) ?></em>.<br>
+                            Your card is ready.
+                        </h1>
+                        <p class="cf-onboard__sub">Three quick steps to confirm your details, share your digital page, and meet the <strong><?= htmlspecialchars($__deadline) ?></strong> print run.</p>
                     </div>
-                </div>
 
-                <!-- Steps -->
-                <div x-show="!collapsed" x-transition class="grid sm:grid-cols-3 bg-gray-100" style="gap:1px;">
-                    <!-- Step 1: Review -->
-                    <div class="bg-white p-5 sm:p-6 flex flex-col">
-                        <div class="flex items-center gap-3 mb-3">
-                            <span class="inline-flex shrink-0 w-11 h-11 rounded-xl items-center justify-center"
-                                  style="background: <?= htmlspecialchars($__brandTint) ?>; color: <?= htmlspecialchars($__brand) ?>;">
-                                <i class="fa-solid fa-pen-to-square text-lg"></i>
-                            </span>
-                            <div>
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Step 1</p>
-                                <h3 class="text-base font-semibold text-gray-900"><?= htmlspecialchars(t('portal.step1_title')) ?></h3>
-                            </div>
-                        </div>
-                        <p class="text-sm text-gray-600 leading-relaxed mb-4 flex-1"><?= htmlspecialchars(t('portal.step1_body')) ?></p>
-                        <a href="#cardRequestForm"
-                           class="inline-flex items-center gap-1.5 text-sm font-semibold hover:gap-2 transition-all"
-                           style="color: <?= htmlspecialchars($__brand) ?>;">
-                            <?= htmlspecialchars(t('portal.step1_cta')) ?> <i class="fa-solid fa-arrow-down text-[11px]"></i>
+                    <!-- Data strip: brand-color discipline + dense fact bar (Maximalism) -->
+                    <dl class="cf-onboard__strip">
+                        <div><dt>Employee</dt><dd><?= htmlspecialchars($editEmployee['name_en'] ?? $__firstName) ?></dd></div>
+                        <div><dt>Company</dt><dd><?= htmlspecialchars($companyName) ?></dd></div>
+                        <div><dt>Print run</dt><dd><?= htmlspecialchars($__deadline) ?></dd></div>
+                        <div><dt>Status</dt><dd><span class="cf-onboard__pulse"></span> Editable for life</dd></div>
+                    </dl>
+                </header>
+
+                <!-- STEPS -->
+                <ol x-show="!collapsed" x-transition class="cf-onboard__steps">
+                    <!-- 01 Review -->
+                    <li class="cf-step">
+                        <span class="cf-step__num" aria-hidden="true">01</span>
+                        <div class="cf-step__icon"><i class="fa-solid fa-pen-to-square"></i></div>
+                        <h3 class="cf-step__title"><?= htmlspecialchars(t('portal.step1_title')) ?></h3>
+                        <p class="cf-step__body"><?= htmlspecialchars(t('portal.step1_body')) ?></p>
+                        <a href="#cardRequestForm" class="cf-step__link">
+                            <?= htmlspecialchars(t('portal.step1_cta')) ?>
+                            <i class="fa-solid fa-arrow-down-long"></i>
                         </a>
-                    </div>
+                    </li>
 
-                    <!-- Step 2: Share -->
-                    <div class="bg-white p-5 sm:p-6 flex flex-col cardify-onboarding-share">
-                        <div class="flex items-center gap-3 mb-3">
-                            <span class="inline-flex shrink-0 w-11 h-11 rounded-xl items-center justify-center"
-                                  style="background: <?= htmlspecialchars($__brandTint) ?>; color: <?= htmlspecialchars($__brand) ?>;">
-                                <i class="fa-solid fa-share-nodes text-lg"></i>
-                            </span>
-                            <div>
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Step 2</p>
-                                <h3 class="text-base font-semibold text-gray-900"><?= htmlspecialchars(t('portal.step2_title')) ?></h3>
-                            </div>
-                        </div>
-                        <p class="text-sm text-gray-600 leading-relaxed mb-4 flex-1"><?= htmlspecialchars(t('portal.step2_body')) ?></p>
+                    <!-- 02 Share -->
+                    <li class="cf-step cf-step--feature cardify-onboarding-share">
+                        <span class="cf-step__num cf-step__num--invert" aria-hidden="true">02</span>
+                        <div class="cf-step__icon cf-step__icon--invert"><i class="fa-solid fa-share-nodes"></i></div>
+                        <h3 class="cf-step__title cf-step__title--invert"><?= htmlspecialchars(t('portal.step2_title')) ?></h3>
+                        <p class="cf-step__body cf-step__body--invert"><?= htmlspecialchars(t('portal.step2_body')) ?></p>
                         <?php if ($publicCardUrl !== ''): ?>
-                        <div class="flex flex-wrap gap-2 mb-2">
-                            <a href="<?= htmlspecialchars($publicCardUrl) ?>" target="_blank" rel="noopener"
-                               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white hover:opacity-90 transition"
-                               style="background: <?= htmlspecialchars($__brand) ?>;">
-                                <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i> <?= htmlspecialchars(t('portal.step2_open')) ?>
+                        <div class="cf-step__share">
+                            <a href="<?= htmlspecialchars($publicCardUrl) ?>" target="_blank" rel="noopener" class="cf-btn cf-btn--solid-on-feature">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> <?= htmlspecialchars(t('portal.step2_open')) ?>
                             </a>
-                            <button type="button"
-                                    onclick="cardifyCopyToClipboard(this, <?= htmlspecialchars(json_encode($publicCardUrl), ENT_QUOTES) ?>)"
-                                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 transition">
-                                <i class="fa-solid fa-link text-[11px]"></i> <span><?= htmlspecialchars(t('portal.step2_copy')) ?></span>
+                            <button type="button" onclick="cardifyCopyToClipboard(this, <?= htmlspecialchars(json_encode($publicCardUrl), ENT_QUOTES) ?>)" class="cf-btn cf-btn--ghost-on-feature">
+                                <i class="fa-solid fa-link"></i> <span><?= htmlspecialchars(t('portal.step2_copy')) ?></span>
                             </button>
                         </div>
-                        <p class="text-[11px] text-gray-500 font-mono break-all bg-gray-50 rounded-md px-2 py-1.5"><?= htmlspecialchars($publicCardUrl) ?></p>
+                        <code class="cf-step__url"><?= htmlspecialchars($__publicHost) ?></code>
                         <?php endif; ?>
-                    </div>
+                    </li>
 
-                    <!-- Step 3: Print -->
-                    <div class="bg-white p-5 sm:p-6 flex flex-col">
-                        <div class="flex items-center gap-3 mb-3">
-                            <span class="inline-flex shrink-0 w-11 h-11 rounded-xl items-center justify-center"
-                                  style="background: <?= htmlspecialchars($__brandTint) ?>; color: <?= htmlspecialchars($__brand) ?>;">
-                                <i class="fa-solid fa-truck-fast text-lg"></i>
-                            </span>
-                            <div>
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Step 3</p>
-                                <h3 class="text-base font-semibold text-gray-900"><?= htmlspecialchars(t('portal.step3_title')) ?></h3>
-                            </div>
-                        </div>
-                        <p class="text-sm text-gray-600 leading-relaxed flex-1"><?= htmlspecialchars(t('portal.step3_body', ['date' => '28 May 2026'])) ?></p>
-                    </div>
-                </div>
-            </div>
+                    <!-- 03 Print -->
+                    <li class="cf-step">
+                        <span class="cf-step__num" aria-hidden="true">03</span>
+                        <div class="cf-step__icon"><i class="fa-solid fa-truck-fast"></i></div>
+                        <h3 class="cf-step__title"><?= htmlspecialchars(t('portal.step3_title')) ?></h3>
+                        <p class="cf-step__body"><?= htmlspecialchars(t('portal.step3_body', ['date' => $__deadline])) ?></p>
+                        <span class="cf-step__badge"><i class="fa-solid fa-circle-check"></i> Digital edits forever</span>
+                    </li>
+                </ol>
+            </section>
+
+            <style>
+            /* Cardify onboarding (Maximalism: dense type, decorative numerals,
+               tactile dividers, brand-color discipline, system-ui only.) */
+            .cf-onboard {
+                --cf-bg: #f8fafc;
+                --cf-ink: #0a0a0f;
+                --cf-muted: #525560;
+                --cf-rule: #e7e7eb;
+                --cf-paper: #ffffff;
+                max-width: 1180px;
+                margin: 0 auto 32px;
+                background: var(--cf-paper);
+                border: 1px solid var(--cf-rule);
+                border-radius: 18px;
+                overflow: hidden;
+                box-shadow: 0 1px 0 #fff inset, 0 10px 30px -12px rgba(15,23,42,0.12);
+                font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+                color: var(--cf-ink);
+            }
+
+            /* HERO */
+            .cf-onboard__hero {
+                position: relative;
+                padding: 36px 32px 0;
+                background: var(--cf-brand);
+                color: #fff;
+                overflow: hidden;
+            }
+            .cf-onboard__hero-bg {
+                position: absolute; inset: 0;
+                background:
+                  radial-gradient(800px 320px at 90% -40%, color-mix(in srgb, var(--cf-accent) 35%, transparent) 0%, transparent 60%),
+                  radial-gradient(600px 320px at -10% 120%, color-mix(in srgb, #000 25%, transparent) 0%, transparent 60%);
+            }
+            .cf-onboard__hero-grid {
+                position: absolute; inset: 0; opacity: 0.18;
+                background-image:
+                  linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px);
+                background-size: 32px 32px;
+                mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
+            }
+            .cf-onboard__hero-mark {
+                position: absolute; top: -120px; right: -80px;
+                width: 320px; height: 320px;
+                border: 1px solid rgba(255,255,255,0.18);
+                border-radius: 50%;
+                box-shadow:
+                  inset 0 0 0 1px rgba(255,255,255,0.06),
+                  inset 0 0 0 60px transparent,
+                  inset 0 0 0 61px rgba(255,255,255,0.12);
+            }
+            .cf-onboard__hero-actions {
+                position: absolute; top: 20px; right: 20px;
+                display: inline-flex; gap: 6px; z-index: 2;
+            }
+            .cf-chip-btn {
+                display: inline-flex; align-items: center; gap: 6px;
+                padding: 7px 12px; border-radius: 999px;
+                background: rgba(255,255,255,0.10);
+                border: 1px solid rgba(255,255,255,0.22);
+                color: #fff; font-size: 12px; font-weight: 600; letter-spacing: 0.01em;
+                cursor: pointer; transition: background 0.15s ease, transform 0.1s ease;
+            }
+            .cf-chip-btn:hover { background: rgba(255,255,255,0.18); }
+            .cf-chip-btn:active { transform: translateY(1px); }
+
+            .cf-onboard__hero-body { position: relative; max-width: 780px; z-index: 1; }
+            .cf-onboard__eyebrow {
+                display: inline-flex; align-items: center; gap: 10px;
+                margin: 0 0 18px;
+                font-size: 11px; font-weight: 700;
+                letter-spacing: 0.18em; text-transform: uppercase;
+                color: rgba(255,255,255,0.9);
+            }
+            .cf-onboard__eyebrow-dot {
+                display: inline-block; width: 6px; height: 6px;
+                border-radius: 50%; background: var(--cf-accent);
+                box-shadow: 0 0 0 4px color-mix(in srgb, var(--cf-accent) 30%, transparent);
+            }
+            .cf-onboard__eyebrow-sep { opacity: 0.5; }
+            .cf-onboard__eyebrow-co { color: var(--cf-accent); }
+
+            .cf-onboard__title {
+                margin: 0 0 12px;
+                font-size: clamp(28px, 4vw, 42px);
+                line-height: 1.04;
+                font-weight: 800;
+                letter-spacing: -0.025em;
+                text-wrap: balance;
+            }
+            .cf-onboard__title em {
+                font-style: normal;
+                position: relative;
+                color: #fff;
+            }
+            .cf-onboard__title em::after {
+                content: '';
+                position: absolute; left: 0; right: 0; bottom: -2px; height: 6px;
+                background: var(--cf-accent);
+                z-index: -1;
+                transform: skewY(-1deg);
+            }
+            .cf-onboard__sub {
+                margin: 0 0 26px;
+                font-size: 15px; line-height: 1.55;
+                color: rgba(255,255,255,0.86);
+                max-width: 640px;
+            }
+            .cf-onboard__sub strong { color: var(--cf-accent); font-weight: 700; }
+
+            /* Data strip: editorial spec-row across the hero base */
+            .cf-onboard__strip {
+                position: relative; z-index: 1;
+                display: grid; grid-template-columns: repeat(4, 1fr);
+                gap: 0;
+                margin: 0 -32px;
+                padding: 18px 32px;
+                background: rgba(0,0,0,0.20);
+                border-top: 1px solid rgba(255,255,255,0.10);
+                font-size: 12px;
+            }
+            .cf-onboard__strip > div {
+                padding: 0 18px;
+                border-left: 1px solid rgba(255,255,255,0.12);
+            }
+            .cf-onboard__strip > div:first-child {
+                padding-left: 0; border-left: 0;
+            }
+            .cf-onboard__strip dt {
+                display: block;
+                font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+                color: rgba(255,255,255,0.55); font-weight: 600;
+                margin-bottom: 4px;
+            }
+            .cf-onboard__strip dd {
+                margin: 0;
+                font-size: 14px; font-weight: 600; color: #fff;
+                font-variant-numeric: tabular-nums;
+                display: inline-flex; align-items: center; gap: 6px;
+            }
+            .cf-onboard__pulse {
+                display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+                background: var(--cf-accent);
+                animation: cf-pulse 2s ease-in-out infinite;
+            }
+            @keyframes cf-pulse {
+                0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--cf-accent) 60%, transparent); }
+                50%      { box-shadow: 0 0 0 8px color-mix(in srgb, var(--cf-accent) 0%, transparent); }
+            }
+
+            /* STEPS */
+            .cf-onboard__steps {
+                list-style: none; padding: 0; margin: 0;
+                display: grid; grid-template-columns: repeat(3, 1fr);
+                background: var(--cf-rule);
+                gap: 1px;
+            }
+            .cf-step {
+                position: relative;
+                background: var(--cf-paper);
+                padding: 28px 26px 26px;
+                min-height: 240px;
+                display: flex; flex-direction: column;
+            }
+            .cf-step__num {
+                position: absolute; top: 18px; right: 22px;
+                font-size: 56px; font-weight: 800;
+                line-height: 1;
+                color: color-mix(in srgb, var(--cf-brand) 14%, transparent);
+                font-variant-numeric: tabular-nums;
+                letter-spacing: -0.04em;
+                pointer-events: none;
+            }
+            .cf-step__icon {
+                display: inline-flex; align-items: center; justify-content: center;
+                width: 44px; height: 44px;
+                border-radius: 12px;
+                background: color-mix(in srgb, var(--cf-brand) 10%, white);
+                color: var(--cf-brand);
+                font-size: 18px;
+                margin-bottom: 16px;
+                border: 1px solid color-mix(in srgb, var(--cf-brand) 18%, transparent);
+            }
+            .cf-step__title {
+                margin: 0 0 6px;
+                font-size: 18px; font-weight: 700; letter-spacing: -0.01em;
+                color: var(--cf-ink);
+            }
+            .cf-step__body {
+                margin: 0 0 16px;
+                font-size: 14px; line-height: 1.55;
+                color: var(--cf-muted);
+                flex: 1;
+            }
+            .cf-step__link {
+                display: inline-flex; align-items: center; gap: 8px;
+                color: var(--cf-brand);
+                font-size: 14px; font-weight: 600;
+                text-decoration: none;
+                transition: gap 0.15s ease;
+            }
+            .cf-step__link:hover { gap: 12px; }
+            .cf-step__link i { font-size: 12px; }
+
+            .cf-step__badge {
+                display: inline-flex; align-items: center; gap: 6px;
+                padding: 6px 10px;
+                font-size: 12px; font-weight: 600;
+                background: color-mix(in srgb, var(--cf-brand) 8%, white);
+                color: var(--cf-brand);
+                border-radius: 999px;
+                border: 1px solid color-mix(in srgb, var(--cf-brand) 18%, transparent);
+                width: fit-content;
+            }
+            .cf-step__badge i { font-size: 11px; }
+
+            /* Feature step (Share): inverted brand */
+            .cf-step--feature {
+                background: var(--cf-brand);
+                color: #fff;
+            }
+            .cf-step__num--invert { color: rgba(255,255,255,0.18); }
+            .cf-step__icon--invert {
+                background: rgba(255,255,255,0.12);
+                color: #fff;
+                border-color: rgba(255,255,255,0.20);
+            }
+            .cf-step__title--invert { color: #fff; }
+            .cf-step__body--invert { color: rgba(255,255,255,0.85); }
+            .cf-step__share {
+                display: flex; flex-wrap: wrap; gap: 8px;
+                margin-bottom: 12px;
+            }
+            .cf-btn {
+                display: inline-flex; align-items: center; gap: 8px;
+                padding: 9px 14px; border-radius: 8px;
+                font-size: 13px; font-weight: 600;
+                text-decoration: none; cursor: pointer; border: 0;
+                transition: transform 0.1s ease, background 0.15s ease;
+            }
+            .cf-btn:active { transform: translateY(1px); }
+            .cf-btn--solid-on-feature {
+                background: var(--cf-accent); color: #fff;
+            }
+            .cf-btn--solid-on-feature:hover {
+                background: color-mix(in srgb, var(--cf-accent) 85%, white);
+            }
+            .cf-btn--ghost-on-feature {
+                background: rgba(255,255,255,0.10);
+                color: #fff;
+                border: 1px solid rgba(255,255,255,0.22);
+            }
+            .cf-btn--ghost-on-feature:hover {
+                background: rgba(255,255,255,0.18);
+            }
+            .cf-step__url {
+                display: block;
+                font-family: 'SF Mono', ui-monospace, 'Cascadia Mono', monospace;
+                font-size: 12px;
+                background: rgba(0,0,0,0.25);
+                color: rgba(255,255,255,0.92);
+                padding: 8px 12px;
+                border-radius: 6px;
+                word-break: break-all;
+                letter-spacing: -0.01em;
+            }
+
+            /* RESPONSIVE */
+            @media (max-width: 760px) {
+                .cf-onboard__hero { padding: 28px 20px 0; }
+                .cf-onboard__hero-actions { top: 14px; right: 14px; }
+                .cf-onboard__title { font-size: 26px; }
+                .cf-onboard__sub { font-size: 14px; margin-bottom: 22px; }
+                .cf-onboard__strip {
+                    grid-template-columns: 1fr 1fr;
+                    margin: 0 -20px; padding: 14px 20px;
+                    gap: 14px 0;
+                }
+                .cf-onboard__strip > div {
+                    padding: 0 14px;
+                }
+                .cf-onboard__strip > div:nth-child(odd) {
+                    padding-left: 0; border-left: 0;
+                }
+                .cf-onboard__steps { grid-template-columns: 1fr; }
+                .cf-step { min-height: 0; padding: 22px 20px; }
+                .cf-step__num { font-size: 44px; top: 14px; right: 18px; }
+                .hide-sm { display: none; }
+            }
+
+            /* RTL polish for Arabic */
+            html[dir="rtl"] .cf-onboard__hero-actions { right: auto; left: 20px; }
+            html[dir="rtl"] .cf-step__num { right: auto; left: 22px; }
+            html[dir="rtl"] .cf-step__link i.fa-arrow-down-long { transform: scaleX(-1); }
+            html[dir="rtl"] .cf-onboard__hero-mark { right: auto; left: -80px; }
+            </style>
 
             <script>
             function cardifyCopyToClipboard(btn, txt) {
