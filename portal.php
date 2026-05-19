@@ -1768,8 +1768,13 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                                 <div class="flex items-start gap-2">
                                     <i class="fa-solid fa-eye text-yellow-600 mt-0.5"></i>
                                     <div>
+                                        <?php if ($isTrustedEdit): ?>
+                                        <p class="text-xs font-medium text-yellow-800"><?= htmlspecialchars(t('portal.edit_preview_title')) ?></p>
+                                        <p class="text-[10px] text-yellow-700 mt-1"><?= htmlspecialchars(t('portal.edit_preview_hint')) ?></p>
+                                        <?php else: ?>
                                         <p class="text-xs font-medium text-yellow-800">Preview Only</p>
                                         <p class="text-[10px] text-yellow-700 mt-1">This is a watermarked preview. Final card will be generated after approval.</p>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>

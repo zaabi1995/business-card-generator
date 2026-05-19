@@ -84,6 +84,8 @@ return [
     'btn_save_changes'  => 'Save changes',
     'save_changes_hint' => 'Saves immediately. Reopen this link anytime to make more changes.',
     'saved_toast'       => 'Your changes are saved.',
+    'edit_preview_title'=> 'Live preview',
+    'edit_preview_hint' => 'This is exactly how your card will print and how it will appear on your public link. Click Save changes to apply your edits.',
     'card_template'     => 'Card Template',
     'social_links'      => 'Social links',
     'social_add'        => 'Add link',
