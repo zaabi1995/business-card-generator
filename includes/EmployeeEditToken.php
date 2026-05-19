@@ -184,6 +184,16 @@ class EmployeeEditToken
         // dead-letter replies).
         $supportEmail = 'info@cardify.om';
 
+        // Public-share URL (the read-only digital card page that QR codes,
+        // wallet passes, and shared links resolve to). Same tenant-rooted
+        // host as the edit link, but no /edit + no token.
+        $apex = defined('APP_HOST') ? APP_HOST : 'cardify.om';
+        $tenantHost = !empty($company['slug']) ? $company['slug'] . '.' . $apex : $apex;
+        $publicSlug = $employeeSlug ?? '';
+        $publicUrl  = $publicSlug !== ''
+            ? 'https://' . $tenantHost . '/' . $publicSlug
+            : 'https://' . $tenantHost . '/';
+
         $ctx = [
             'employeeName'     => $employee['name_en'] ?? $employee['name_ar'] ?? $employee['email'] ?? '',
             'employeePosition' => $employee['position_en'] ?? $employee['position_ar'] ?? '',
@@ -193,6 +203,7 @@ class EmployeeEditToken
             'companyName'      => $company['name'] ?? 'Cardify',
             'companyDomain'    => $company['email_domain'] ?? '',
             'editUrl'          => $editUrl,
+            'publicUrl'        => $publicUrl,
             'expiresInDays'    => self::TTL_DAYS,
             'brandColor'       => $company['brand_color'] ?? $company['primary_color'] ?? null,
             'secondaryColor'   => $company['secondary_color'] ?? null,
