@@ -417,6 +417,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                     catch (Throwable $__ce) { error_log('[portal edit] cache invalidate: ' . $__ce->getMessage()); }
                 }
 
+                // Decode + save the front/back PNGs that JS exported from the
+                // Fabric preview at submit-time, then INSERT a fresh row in
+                // generated_cards so the public /<slug> view picks them up
+                // immediately (no headless re-render needed). The invalidate
+                // above nulled prior rows; this new row carries the new paths.
+                $__savedFront = null;
+                $__savedBack  = null;
+                $__dataUrlRe = '/^data:image\/png;base64,([A-Za-z0-9+\/=\s]+)$/';
+                $__cardsDir  = function_exists('getCompanyCardsDir')
+                    ? getCompanyCardsDir((string) $__verified['company_id'])
+                    : (BASE_DIR . '/uploads/companies/' . $__verified['company_id'] . '/cards');
+                if (!is_dir($__cardsDir)) { @mkdir($__cardsDir, 0755, true); }
+                foreach (['front', 'back'] as $__side) {
+                    $__b64 = (string) ($_POST[$__side . '_card_b64'] ?? '');
+                    if ($__b64 === '' || !preg_match($__dataUrlRe, $__b64, $__m)) continue;
+                    $__bin = base64_decode(preg_replace('/\s+/', '', $__m[1]), true);
+                    if ($__bin === false || strlen($__bin) < 100) continue;
+                    $__name = 'card_' . $__side . '_' . date('Ymd_His') . '_' . uniqid() . '.png';
+                    if (@file_put_contents($__cardsDir . '/' . $__name, $__bin) !== false) {
+                        @chmod($__cardsDir . '/' . $__name, 0644);
+                        if ($__side === 'front') $__savedFront = $__name;
+                        if ($__side === 'back')  $__savedBack  = $__name;
+                    }
+                }
+
+                if ($__savedFront || $__savedBack) {
+                    require_once INCLUDES_DIR . '/DatabaseAdapter.php';
+                    try {
+                        // Resolve the active front/back template ids for this
+                        // company so the new row carries the right pins.
+                        $__cfg = function_exists('loadTemplates')
+                            ? loadTemplates((string) $__verified['company_id'])
+                            : ['activeFrontId' => null, 'activeBackId' => null];
+                        \DatabaseAdapter::logGeneratedCard(
+                            (string) $__vEmpId,
+                            $__cfg['activeFrontId'] ?? null,
+                            $__cfg['activeBackId'] ?? null,
+                            $__savedFront,
+                            $__savedBack,
+                            null,
+                            (string) $__verified['company_id']
+                        );
+                    } catch (Throwable $__lge) {
+                        error_log('[portal edit] logGeneratedCard: ' . $__lge->getMessage());
+                    }
+                }
+
                 // Optional audit row, best-effort.
                 $__alFile = INCLUDES_DIR . '/AuditLog.php';
                 if (is_file($__alFile)) {
@@ -1269,6 +1316,13 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <?php if ($isTrustedEdit): ?>
                     <!-- Magic-link token: server verifies on POST + binds to $editEmployee. -->
                     <input type="hidden" name="edit_token" value="<?= htmlspecialchars($editToken) ?>">
+                    <!-- Card PNG payloads, filled by JS at submit time from the
+                         live Fabric preview so the server can persist them in
+                         the SAME request that updates the employee row. The
+                         server INSERTs a fresh generated_cards row so the
+                         public /<slug> view shows the new card immediately. -->
+                    <input type="hidden" name="front_card_b64" id="front_card_b64" value="">
+                    <input type="hidden" name="back_card_b64"  id="back_card_b64"  value="">
                     <!-- Per-company keys (website, address, fax, company name) are
                          hidden from the visible form by design (skill rule: HR seeds
                          these on the employee row, employee doesn't retype them).
@@ -1976,6 +2030,51 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 el.addEventListener('input', __reRender);
                 el.addEventListener('change', __reRender);
             });
+
+            // Save Changes intercept: make sure the live preview reflects the
+            // latest field values BEFORE we export, then dump both canvases
+            // into hidden inputs so the server can persist the rendered PNGs
+            // alongside the employee UPDATE in one round-trip. Form continues
+            // to its normal POST after the canvases are captured.
+            const __form = document.getElementById('cardRequestForm');
+            const __frontB64Input = document.getElementById('front_card_b64');
+            const __backB64Input  = document.getElementById('back_card_b64');
+            const __saveBtn = __form && __form.querySelector('button[type="submit"]');
+            if (__form && __frontB64Input && __backB64Input) {
+                let __submitting = false;
+                __form.addEventListener('submit', async function (ev) {
+                    if (__submitting) return; // allow the final native submit through
+                    ev.preventDefault();
+                    __submitting = true;
+                    if (__saveBtn) {
+                        __saveBtn.disabled = true;
+                        __saveBtn.dataset.origHtml = __saveBtn.innerHTML;
+                        __saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + <?= json_encode(t('portal.generating')) ?>;
+                    }
+                    try {
+                        // Force one last render with the very latest input
+                        // values so what we capture matches what the user sees.
+                        clearTimeout(__reRenderTimer);
+                        await generatePreview({silent: true});
+                        const grabPng = (editor) => {
+                            try {
+                                if (!editor || !editor.canvas) return '';
+                                // Use a moderate multiplier (3x) to keep the
+                                // POST body under typical request-size caps
+                                // while still printing crisp at 91x61mm.
+                                return editor.canvas.toDataURL({format: 'png', multiplier: 3});
+                            } catch (e) { console.warn('canvas export failed', e); return ''; }
+                        };
+                        __frontB64Input.value = grabPng(frontEditor);
+                        __backB64Input.value  = grabPng(backEditor);
+                    } catch (e) {
+                        console.error('save-changes export', e);
+                    }
+                    // Re-submit, this time letting the form go through natively
+                    // so the browser handles the 302 redirect from PHP.
+                    __form.submit();
+                });
+            }
         }
     });
 
