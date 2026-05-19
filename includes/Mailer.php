@@ -78,8 +78,14 @@ class Mailer {
                     'username' => $username,
                     'password' => $password,
                     'from_email' => $fromEmail,
-                    'from_name' => $fromName,
-                    'encryption' => $encryption
+                    // Per-send override (e.g. "Otech via Cardify") so tenants
+                    // show in the recipient's inbox; falls back to MAIL_FROM_NAME.
+                    'from_name' => $options['from_name_override'] ?? $fromName,
+                    'encryption' => $encryption,
+                    // Reply-To + List-Unsubscribe overrides flow through;
+                    // sendWithSMTP defaults them when not provided.
+                    'reply_to' => $options['reply_to'] ?? null,
+                    'unsubscribe_mailto' => $options['unsubscribe_mailto'] ?? null,
                 ]);
             } catch (Exception $e) {
                 self::$lastError = $e->getMessage();
@@ -153,16 +159,40 @@ class Mailer {
         $boundary = md5(uniqid(time()));
         $boundaryMixed = 'mixed-' . $boundary;
         $boundaryAlt = 'alt-' . $boundary;
-        
+
+        // Deliverability: bulk transactional sends (employee invites,
+        // password resets, order receipts) need explicit unsubscribe +
+        // auto-submitted headers or Gmail/Outlook routes them to spam.
+        // Reply-To overrideable via $config so tenants point replies at
+        // their HR/admin inbox instead of a no-reply sink.
+        $unsubMailto = $config['unsubscribe_mailto']
+            ?? ('unsubscribe@' . (parse_url(getBaseUrl(), PHP_URL_HOST) ?: 'cardify.om'));
+        $replyTo = $config['reply_to'] ?? $config['from_email'];
+
         // Build headers
         $headers = [];
         $headers[] = "MIME-Version: 1.0";
         $headers[] = "From: {$config['from_name']} <{$config['from_email']}>";
-        $headers[] = "Reply-To: {$config['from_email']}";
+        $headers[] = "Reply-To: {$replyTo}";
         $headers[] = "To: {$to}";
         $headers[] = "Subject: {$subject}";
         $headers[] = "Date: " . date('r');
         $headers[] = "Message-ID: <" . md5(uniqid()) . "@" . parse_url(getBaseUrl(), PHP_URL_HOST) . ">";
+        // List-Unsubscribe is the strongest single deliverability signal
+        // for transactional bulk mail. Gmail bulk-sender guidelines (since
+        // Feb 2024) require it on any sender >5000/day, and inbox heuristics
+        // for smaller senders reward it as well. Always emit both mailto:
+        // and the one-click POST variant so RFC 8058 fast-paths apply.
+        $headers[] = "List-Unsubscribe: <mailto:{$unsubMailto}?subject=unsubscribe>";
+        $headers[] = "List-Unsubscribe-Post: List-Unsubscribe=One-Click";
+        // RFC 3834: identify this as auto-generated (not auto-replied) so
+        // recipient autoresponders don't bounce loops back at us.
+        $headers[] = "Auto-Submitted: auto-generated";
+        $headers[] = "X-Auto-Response-Suppress: All";
+        // Helps some MTAs route into the right inbox bucket (Promotions,
+        // Updates) instead of Spam.
+        $headers[] = "Precedence: bulk";
+        $headers[] = "X-Mailer: Cardify";
         
         if (!empty($attachments)) {
             $headers[] = "Content-Type: multipart/mixed; boundary=\"{$boundaryMixed}\"";

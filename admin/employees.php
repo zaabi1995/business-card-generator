@@ -223,23 +223,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    FROM companies WHERE id = :cid LIMIT 1",
                 ['cid' => $companyId]
             ) ?: ['id' => $companyId, 'name' => 'Cardify', 'slug' => null];
+            // Bulk send is EMAIL-ONLY by design. WhatsApp bulk dispatch from
+            // a single Dardasha number trips Meta's spam heuristics within
+            // tens of messages, blocking the tenant's daily comms for hours.
+            // Per-employee resend ('resend_edit_invite' action) still uses
+            // 'both' channels because that's interactive + low volume.
             $bulkEmps = $db->fetchAll(
                 "SELECT * FROM employees
                   WHERE company_id = :cid
                     AND status = 'active'
-                    AND ((mobile IS NOT NULL AND mobile <> '')
-                      OR (phone  IS NOT NULL AND phone  <> '')
-                      OR (email  IS NOT NULL AND email  <> ''))
+                    AND email IS NOT NULL AND email <> ''
                   ORDER BY created_at ASC",
                 ['cid' => $companyId]
             );
             $bulkSent = 0;
             $bulkSkipped = 0;
             foreach ($bulkEmps as $bulkEmp) {
-                $bulkChannel = (!empty($bulkEmp['phone']) || !empty($bulkEmp['mobile'])) ? 'both' : 'email';
                 try {
-                    $bulkRes = EmployeeEditToken::sendInvite($bulkEmp, $bulkCompany, $bulkChannel);
-                    if (!empty($bulkRes['wa']) || !empty($bulkRes['email'])) {
+                    $bulkRes = EmployeeEditToken::sendInvite($bulkEmp, $bulkCompany, 'email');
+                    if (!empty($bulkRes['email'])) {
                         $bulkSent++;
                     } else {
                         $bulkSkipped++;
@@ -248,6 +250,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $bulkSkipped++;
                     error_log('[bulk_send_edit_invites] ' . $bulkErr->getMessage());
                 }
+                // Throttle so 220+ sends don't burst out as a sub-second
+                // spike from one IP. Receivers (Gmail, Outlook) treat slow
+                // cadence as a sign of a legitimate sender; bursts trip the
+                // volume-anomaly heuristics that route to junk.
+                usleep(150000); // 150 ms per send -> ~33s for 220 employees
             }
             if (class_exists('AuditLog')) {
                 try {
@@ -264,6 +271,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = t('employees.bulk_invites_result', ['sent' => $bulkSent, 'skipped' => $bulkSkipped]);
             $messageType = $bulkSent > 0 ? 'success' : 'error';
             break;
+
+        case 'get_edit_link':
+            // XHR-only: admin clicks "Copy link" on a row, we mint a fresh
+            // token and return the share URL as JSON so the browser writes
+            // it to the clipboard. Each call revokes the prior token (per
+            // EmployeeEditToken::mint semantics), so reissue invalidates
+            // any previously-shared link for that employee.
+            require_once INCLUDES_DIR . '/EmployeeEditToken.php';
+            $linkId  = trim($_POST['id'] ?? '');
+            $linkEmp = $linkId ? $db->fetchOne(
+                "SELECT e.id, e.email, e.name_en, c.slug AS _cslug
+                   FROM employees e
+                   JOIN companies c ON c.id = e.company_id
+                  WHERE e.id = :id AND e.company_id = :cid LIMIT 1",
+                ['id' => $linkId, 'cid' => $companyId]
+            ) : null;
+            header('Content-Type: application/json');
+            if (!$linkEmp) {
+                http_response_code(404);
+                echo json_encode(['ok' => false, 'error' => 'Employee not found']);
+                exit;
+            }
+            $linkToken = EmployeeEditToken::mint(
+                (string) $linkEmp['id'],
+                Auth::getCurrentUser()['id'] ?? null,
+                $_SERVER['REMOTE_ADDR'] ?? null
+            );
+            // Derive the same email-localpart slug used by the public router
+            // so the share URL matches the digital-card URL the employee sees.
+            $linkLocal = (string) strstr((string)($linkEmp['email'] ?? '') . '@', '@', true);
+            $linkSlug  = strtolower(strtr($linkLocal, ['.' => '-', '_' => '-']));
+            $linkUrl   = EmployeeEditToken::buildUrl(
+                $linkToken,
+                (string) ($linkEmp['_cslug'] ?? ''),
+                $linkSlug ?: null
+            );
+            echo json_encode([
+                'ok'   => true,
+                'url'  => $linkUrl,
+                'name' => $linkEmp['name_en'] ?? $linkEmp['email'],
+            ]);
+            exit;
 
         case 'resend_edit_invite':
             require_once INCLUDES_DIR . '/EmployeeEditToken.php';
@@ -1086,6 +1135,15 @@ adminHeader(t('employees.page_title'), 'employees');
                                     title="Edit"
                                 >
                                     <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+
+                                <!-- Copy edit-link to clipboard (fresh token, no send) -->
+                                <button type="button"
+                                        class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                        title="<?= htmlspecialchars(t('employees.copy_link_title')) ?>"
+                                        data-emp-id="<?php echo sanitize($emp['id']); ?>"
+                                        onclick="cardifyCopyEditLink(this)">
+                                    <i class="fa-solid fa-link"></i>
                                 </button>
 
                                 <!-- Re-send edit-link invite -->
@@ -2272,6 +2330,48 @@ function downloadEmployeeTemplate() {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
+}
+
+// Copy a fresh per-employee edit link to the clipboard. Mints a new
+// token server-side (which revokes any prior link for that employee)
+// and writes the URL to the system clipboard.
+async function cardifyCopyEditLink(btn) {
+    const empId = btn.getAttribute('data-emp-id');
+    const csrf  = document.querySelector('input[name="csrf_token"]')?.value || '';
+    const origIcon = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    try {
+        const fd = new FormData();
+        fd.set('action', 'get_edit_link');
+        fd.set('id', empId);
+        fd.set('csrf_token', csrf);
+        const resp = await fetch(window.location.pathname + window.location.search, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+            body: fd,
+            credentials: 'same-origin',
+        });
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || 'mint failed');
+        let copied = false;
+        try {
+            await navigator.clipboard.writeText(data.url);
+            copied = true;
+        } catch (e) {
+            // Clipboard API can fail on non-HTTPS or older browsers; fall back to prompt.
+            window.prompt('Copy the edit link:', data.url);
+            copied = true;
+        }
+        btn.innerHTML = '<i class="fa-solid fa-check text-green-600"></i>';
+        btn.title = 'Link copied for ' + (data.name || empId);
+        setTimeout(() => { btn.innerHTML = origIcon; btn.disabled = false; }, 1800);
+        if (copied && typeof window.toast === 'function') window.toast('Edit link copied');
+    } catch (err) {
+        btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-red-600"></i>';
+        setTimeout(() => { btn.innerHTML = origIcon; btn.disabled = false; }, 2200);
+        console.error('cardifyCopyEditLink', err);
+    }
 }
 </script>
 

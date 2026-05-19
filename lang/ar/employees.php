@@ -55,6 +55,7 @@ return [
     'stat_qr_scans'        => 'قراءات QR',
     'stat_print_orders'    => 'طلبات الطباعة',
     'current_card'         => 'بطاقة العمل الحالية',
+    'copy_link_title'      => 'نسخ رابط التعديل',
     'edit_invite_title'    => 'إعادة إرسال رابط التعديل',
     'edit_invite_confirm'  => 'إرسال رابط تعديل جديد لهذا الموظف؟',
     'edit_invite_sent'     => 'تم إرسال رابط التعديل عبر :channels.',

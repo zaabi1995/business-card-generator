@@ -183,7 +183,31 @@ class EmployeeEditToken
             $email = $employee['email'] ?? '';
             if ($email !== '') {
                 [$subject, $body] = self::renderEmailTemplate('employee_invite.email', $locale, $ctx);
-                $emailOk = (bool) Mailer::send($email, $subject, $body);
+                // Override From-name to "<Company> via Cardify" so the
+                // recipient's inbox lists their employer (the actual sender
+                // of the link), not just the platform. The From-address
+                // stays on cardify.om so DKIM/SPF still align.
+                $tenantName = (string) ($company['name'] ?? 'Cardify');
+                $tenantName = preg_replace('/[\r\n,"<>@]/', '', $tenantName); // RFC 5322 sanitise
+                $fromName = $tenantName === '' || $tenantName === 'Cardify'
+                    ? 'Cardify'
+                    : ($tenantName . ' via Cardify');
+                // Reply-To: prefer a real admin mailbox so replies don't go
+                // to /dev/null. Falls through to the tenant's admin_email
+                // when set, else to the system default (no-reply).
+                $replyTo = $company['admin_email']
+                    ?? $company['contact_email']
+                    ?? null;
+                $emailOk = (bool) Mailer::send(
+                    $email, $subject, $body,
+                    [], // no attachments
+                    [
+                        'from_name_override' => $fromName,
+                        'reply_to'           => $replyTo,
+                        'company_id'         => $company['id'] ?? null,
+                        'employee_id'        => $employee['id'] ?? null,
+                    ]
+                );
             }
         }
 
