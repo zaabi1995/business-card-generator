@@ -62,4 +62,8 @@ return [
     'edit_invite_confirm'  => 'Send a fresh edit-link invite to this employee?',
     'edit_invite_sent'     => 'Edit link sent via :channels.',
     'edit_invite_failed'   => 'Could not send the edit link. Check WhatsApp and email settings.',
+    'send_edit_link_all'   => 'Send edit link to all (:n)',
+    'bulk_invites_tooltip' => 'WhatsApp + email each employee a personal link to update their card details.',
+    'bulk_invites_confirm' => 'Send a personal edit-link to all :n active employees? They will receive a WhatsApp message and email with a link to update their card.',
+    'bulk_invites_result'  => 'Sent :sent invite(s). Skipped :skipped.',
 ];

@@ -216,6 +216,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             break;
             
+        case 'bulk_send_edit_invites':
+            require_once INCLUDES_DIR . '/EmployeeEditToken.php';
+            $bulkCompany = $db->fetchOne(
+                "SELECT id, name, slug, brand_color, logo_path AS logo_url
+                   FROM companies WHERE id = :cid LIMIT 1",
+                ['cid' => $companyId]
+            ) ?: ['id' => $companyId, 'name' => 'Cardify', 'slug' => null];
+            $bulkEmps = $db->fetchAll(
+                "SELECT * FROM employees
+                  WHERE company_id = :cid
+                    AND status = 'active'
+                    AND ((mobile IS NOT NULL AND mobile <> '')
+                      OR (phone  IS NOT NULL AND phone  <> '')
+                      OR (email  IS NOT NULL AND email  <> ''))
+                  ORDER BY created_at ASC",
+                ['cid' => $companyId]
+            );
+            $bulkSent = 0;
+            $bulkSkipped = 0;
+            foreach ($bulkEmps as $bulkEmp) {
+                $bulkChannel = (!empty($bulkEmp['phone']) || !empty($bulkEmp['mobile'])) ? 'both' : 'email';
+                try {
+                    $bulkRes = EmployeeEditToken::sendInvite($bulkEmp, $bulkCompany, $bulkChannel);
+                    if (!empty($bulkRes['wa']) || !empty($bulkRes['email'])) {
+                        $bulkSent++;
+                    } else {
+                        $bulkSkipped++;
+                    }
+                } catch (Throwable $bulkErr) {
+                    $bulkSkipped++;
+                    error_log('[bulk_send_edit_invites] ' . $bulkErr->getMessage());
+                }
+            }
+            if (class_exists('AuditLog')) {
+                try {
+                    AuditLog::log(
+                        'employee_invite_bulk',
+                        'company',
+                        (string) $companyId,
+                        null,
+                        ['sent' => $bulkSent, 'skipped' => $bulkSkipped, 'total' => count($bulkEmps)],
+                        (string) $companyId
+                    );
+                } catch (Throwable $alErr) { /* non-fatal */ }
+            }
+            $message = t('employees.bulk_invites_result', ['sent' => $bulkSent, 'skipped' => $bulkSkipped]);
+            $messageType = $bulkSent > 0 ? 'success' : 'error';
+            break;
+
         case 'resend_edit_invite':
             require_once INCLUDES_DIR . '/EmployeeEditToken.php';
             $rid = trim($_POST['id'] ?? '');
@@ -718,6 +767,20 @@ adminHeader(t('employees.page_title'), 'employees');
                 <i class="fa-solid fa-file-export"></i>
                 <span class="hidden sm:inline"><?= htmlspecialchars(t('employees.export_csv')) ?></span>
             </a>
+            <?php endif; ?>
+            <?php $__bulkInviteCount = count(array_filter($employees, function($__e) { return ($__e['status'] ?? 'active') === 'active' && (!empty($__e['mobile']) || !empty($__e['phone']) || !empty($__e['email'])); })); ?>
+            <?php if ($__bulkInviteCount >= 5): ?>
+            <form method="POST" class="inline"
+                  onsubmit="return confirm(<?= htmlspecialchars(json_encode(t('employees.bulk_invites_confirm', ['n' => $__bulkInviteCount])), ENT_QUOTES) ?>)">
+                <?= csrfField() ?>
+                <input type="hidden" name="action" value="bulk_send_edit_invites">
+                <button type="submit"
+                        class="px-4 py-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium flex items-center gap-2"
+                        title="<?= htmlspecialchars(t('employees.bulk_invites_tooltip')) ?>">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span class="hidden sm:inline"><?= htmlspecialchars(t('employees.send_edit_link_all', ['n' => $__bulkInviteCount])) ?></span>
+                </button>
+            </form>
             <?php endif; ?>
             <button @click="showImportModal = true" class="px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium flex items-center gap-2">
                 <i class="fa-solid fa-file-import"></i>

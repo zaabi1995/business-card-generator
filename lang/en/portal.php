@@ -77,6 +77,13 @@ return [
     'preview_review_hint' => 'Review your card on the right, then submit your request.',
     'btn_submit_request' => 'Submit Request',
     'btn_edit_details'  => 'Edit Details',
+
+    // Magic-link self-edit (/<slug>/edit?t=...)
+    'edit_form_h2'      => 'Edit your card',
+    'edit_form_sub'     => 'Update your details for :name. Changes go live the next time someone views your card.',
+    'btn_save_changes'  => 'Save changes',
+    'save_changes_hint' => 'Saves immediately. Reopen this link anytime to make more changes.',
+    'saved_toast'       => 'Your changes are saved.',
     'card_template'     => 'Card Template',
     'social_links'      => 'Social links',
     'social_add'        => 'Add link',

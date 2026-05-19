@@ -9,6 +9,7 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Mailer.php';
 require_once INCLUDES_DIR . '/TenantHost.php';
+require_once INCLUDES_DIR . '/EmployeeEditToken.php';
 
 // Get company slug and optional department slug from URL. When the
 // request lands on a tenant subdomain (ohb.cardify.om/portal), pull
@@ -20,6 +21,14 @@ if ($companySlug === '' && TenantHost::isTenantHost()) {
 }
 $departmentSlug = $_GET['department_slug'] ?? '';
 $departmentSlug = trim(strtolower($departmentSlug));
+
+// Edit-mode entry: /<employee_slug>/edit?t=<40-char hex> on a tenant
+// subdomain. The slug is the same email-localpart used by index.php's
+// bare-URL digital-card router. Token is the only auth; slug must bind
+// to the same employee on the same tenant or we 404 (rule 31 isolation).
+$editSlug   = trim(strtolower($_GET['edit_slug'] ?? ''));
+$editToken  = trim($_GET['t'] ?? $_GET['token'] ?? '');
+$isEditMode = ($editSlug !== '' && $editToken !== '');
 
 if (empty($companySlug)) {
     http_response_code(404);
@@ -50,6 +59,44 @@ if (isset($company['portal_enabled']) && !$company['portal_enabled']) {
 }
 
 $companyId = $company['id'];
+
+// Resolve edit-mode employee: verify the magic-link token, look up the
+// employee by email-localpart (same normalisation as index.php's bare-URL
+// router), assert it belongs to this tenant's company and matches the
+// employee the token was minted for. On any mismatch, 404 without leaking
+// which check failed (skill rule 31, cross-tenant isolation).
+$editEmployee  = null;
+$isTrustedEdit = false;
+if ($isEditMode) {
+    $verified = EmployeeEditToken::verify($editToken);
+    if ($verified && ($verified['company_id'] ?? null) === $companyId) {
+        try {
+            $__db = Database::getInstance();
+            $row = $__db->fetchOne(
+                "SELECT * FROM employees
+                 WHERE company_id = :cid
+                   AND status = 'active'
+                   AND (
+                        LOWER(SUBSTRING_INDEX(email, '@', 1)) = LOWER(:exact)
+                     OR REPLACE(REPLACE(LOWER(SUBSTRING_INDEX(email, '@', 1)), '.', '-'), '_', '-') = LOWER(:dashed)
+                   )
+                 LIMIT 1",
+                ['cid' => $companyId, 'exact' => $editSlug, 'dashed' => $editSlug]
+            );
+            if ($row && ($row['id'] ?? null) === ($verified['id'] ?? null)) {
+                $editEmployee  = $row;
+                $isTrustedEdit = true;
+            }
+        } catch (Exception $__e) {
+            error_log('[portal edit-mode] lookup failed: ' . $__e->getMessage());
+        }
+    }
+    if (!$isTrustedEdit) {
+        http_response_code(404);
+        include __DIR__ . '/404.php';
+        exit;
+    }
+}
 
 // Check preview setting
 $showPreview = ($company['portal_show_preview'] ?? 1) == 1;
@@ -293,6 +340,23 @@ $formData = [
     'fax'          => $company['default_fax']          ?? '',
 ];
 
+// Edit-mode: seed the form with the employee's existing values so the
+// magic-link landing renders fully prefilled (works even without JS).
+// Field list mirrors the inputs in the form (lines 1100-1450 below).
+if ($isTrustedEdit && $editEmployee) {
+    foreach ([
+        'email','name_en','name_ar','position_en','position_ar',
+        'phone','phone_ar','mobile','mobile_ar',
+        'website','website_ar','fax','fax_ar',
+        'address_en','address_2_en','address_ar','address_2_ar',
+        'company_en','company_ar','department_id',
+    ] as $__k) {
+        if (!empty($editEmployee[$__k])) {
+            $formData[$__k] = $editEmployee[$__k];
+        }
+    }
+}
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -313,6 +377,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
             if (isset($_POST[$__k])) $formData[$__k] = trim((string)$_POST[$__k]);
         }
     } else {
+
+    // Trusted-edit branch: when the form carries a valid magic-link
+    // token bound to the same employee that loaded the page, UPDATE
+    // the employee row directly, invalidate the render cache, and
+    // skip the admin-approval queue. The token IS the auth; CSRF is
+    // already verified above. Slug + tenant binding was asserted at
+    // page load (see $isTrustedEdit resolver near top of file).
+    $__postedToken = trim($_POST['edit_token'] ?? '');
+    if ($__postedToken !== '') {
+        $__verified = EmployeeEditToken::verify($__postedToken);
+        if ($__verified
+            && ($__verified['company_id'] ?? null) === $companyId
+            && (!$isTrustedEdit || ($__verified['id'] ?? null) === ($editEmployee['id'] ?? null))) {
+
+            $__update = [
+                'name_en'     => trim($_POST['name_en']     ?? ($__verified['name_en']     ?? '')),
+                'name_ar'     => trim($_POST['name_ar']     ?? ($__verified['name_ar']     ?? '')),
+                'position_en' => trim($_POST['position_en'] ?? ($__verified['position_en'] ?? '')),
+                'position_ar' => trim($_POST['position_ar'] ?? ($__verified['position_ar'] ?? '')),
+                'phone'       => trim($_POST['phone']       ?? ($__verified['phone']       ?? '')),
+                'phone_ar'    => trim($_POST['phone_ar']    ?? ($__verified['phone_ar']    ?? '')),
+                'mobile'      => trim($_POST['mobile']      ?? ($__verified['mobile']      ?? '')),
+                'mobile_ar'   => trim($_POST['mobile_ar']   ?? ($__verified['mobile_ar']   ?? '')),
+                'website'     => trim($_POST['website']     ?? ($__verified['website']     ?? '')),
+                'updated_at'  => date('Y-m-d H:i:s'),
+            ];
+            try {
+                $db->update('employees', $__update, 'id = :id', ['id' => $__verified['id']]);
+
+                // Cache-bust every cached render so the next card view
+                // picks up the new text (PNG + vector PDF + sidecar).
+                $__crFile = INCLUDES_DIR . '/CardRenderer.php';
+                if (is_file($__crFile)) {
+                    require_once $__crFile;
+                    try { CardRenderer::invalidateForEmployee((string) $__verified['id'], 'portal_self_edit'); }
+                    catch (Throwable $__ce) { error_log('[portal edit] cache invalidate: ' . $__ce->getMessage()); }
+                }
+
+                // Optional audit row, best-effort.
+                $__alFile = INCLUDES_DIR . '/AuditLog.php';
+                if (is_file($__alFile)) {
+                    require_once $__alFile;
+                    try {
+                        AuditLog::log(
+                            'employee_self_edit',
+                            'employee',
+                            (string) $__verified['id'],
+                            null,
+                            ['via' => 'edit_token', 'slug' => $editSlug],
+                            (string) $__verified['company_id']
+                        );
+                    } catch (Throwable $__ae) { /* non-fatal */ }
+                }
+
+                // Redirect back to the same pretty URL with saved=1 so
+                // a refresh doesn't re-POST and the user gets feedback.
+                $__redir = '/' . rawurlencode($editSlug) . '/edit?t=' . urlencode($__postedToken) . '&saved=1';
+                header('Location: ' . $__redir, true, 302);
+                exit;
+            } catch (Throwable $__ue) {
+                error_log('[portal edit] UPDATE employees failed: ' . $__ue->getMessage());
+                $error = 'Could not save changes. Please try again.';
+            }
+        } else {
+            // Token posted but didn't bind to a valid employee on this
+            // tenant. Treat as 404 rather than fall through to the
+            // new-request flow (which would create a duplicate row).
+            http_response_code(404);
+            include __DIR__ . '/404.php';
+            exit;
+        }
+    }
+
     $formData = [
         'email' => trim(strtolower($_POST['email'] ?? '')),
         'name_en' => trim($_POST['name_en'] ?? ''),
@@ -1089,6 +1226,10 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             <!-- Request Form -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8 text-white">
+                    <?php if ($isTrustedEdit): ?>
+                    <h2 class="text-2xl font-bold"><?= htmlspecialchars(t('portal.edit_form_h2')) ?></h2>
+                    <p class="mt-1 text-blue-100"><?= htmlspecialchars(t('portal.edit_form_sub', ['name' => (string) ($editEmployee['name_en'] ?? $editEmployee['email'] ?? '')])) ?></p>
+                    <?php else: ?>
                     <h2 class="text-2xl font-bold"><?= htmlspecialchars(t('cardportal.request_form_h2')) ?></h2>
                     <p class="mt-1 text-blue-100"><?= htmlspecialchars(t('cardportal.request_form_sub')) ?></p>
                     <?php if ($companyDomain): ?>
@@ -1096,6 +1237,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         <i class="fa-solid fa-info-circle mr-1"></i>
                         <?= htmlspecialchars(t('cardportal.domain_restricted', ['domain' => $companyDomain])) ?>
                     </p>
+                    <?php endif; ?>
                     <?php endif; ?>
                 </div>
                 
@@ -1108,11 +1250,24 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 </div>
                 <?php endif; ?>
                 
+                <?php if ($isTrustedEdit && !empty($_GET['saved'])): ?>
+                <div class="bg-green-50 border-l-4 border-green-500 p-4 mx-6 mt-6">
+                    <div class="flex">
+                        <i class="fa-solid fa-circle-check text-green-500 mt-0.5 mr-3"></i>
+                        <p class="text-sm text-green-700"><?= htmlspecialchars(t('portal.saved_toast')) ?></p>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <form method="POST" enctype="multipart/form-data" class="p-6 space-y-4" id="cardRequestForm">
                     <?php echo csrfField(); ?>
                     <!-- Hidden inputs for preview card URLs (generated client-side) -->
                     <input type="hidden" name="preview_front" id="preview_front_input" value="">
                     <input type="hidden" name="preview_back" id="preview_back_input" value="">
+                    <?php if ($isTrustedEdit): ?>
+                    <!-- Magic-link token: server verifies on POST + binds to $editEmployee. -->
+                    <input type="hidden" name="edit_token" value="<?= htmlspecialchars($editToken) ?>">
+                    <?php endif; ?>
                     
                     <!-- Email (always shown - required for submission) -->
                     <div>
@@ -1122,8 +1277,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         <input type="email" name="email" id="email" required
                                value="<?php echo htmlspecialchars($formData['email'] ?? ''); ?>"
                                placeholder="your.name@<?php echo htmlspecialchars($companyDomain ?: 'company.com'); ?>"
-                               class="form-input"
-                               onblur="checkExistingEmployee(this.value)">
+                               class="form-input<?= $isTrustedEdit ? ' bg-gray-100 cursor-not-allowed' : '' ?>"
+                               <?= $isTrustedEdit ? 'readonly' : 'onblur="checkExistingEmployee(this.value)"' ?>>
                         <?php if ($companyDomain): ?>
                         <p class="mt-1 text-xs text-gray-500"><?= htmlspecialchars(t('cardportal.email_domain_hint', ['domain' => $companyDomain])) ?></p>
                         <?php endif; ?>
@@ -1135,8 +1290,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         </div>
                     </div>
                     
-                    <!-- Request Type (shown for existing employees) -->
-                    <div id="requestTypeSection" class="hidden">
+                    <!-- Request Type (shown for existing employees, hidden in trusted edit) -->
+                    <div id="requestTypeSection" class="hidden"<?= $isTrustedEdit ? ' style="display:none"' : '' ?>>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             <?= htmlspecialchars(t('cardportal.what_to_do')) ?> <span class="text-red-500">*</span>
                         </label>
@@ -1455,6 +1610,23 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     </div>
                     <?php endforeach; ?>
 
+                    <?php if ($isTrustedEdit): ?>
+                    <!-- Edit mode: single "Save changes" button. Token is the auth,
+                         server UPDATEs the employee row + invalidates render cache
+                         on POST, then redirects back with ?saved=1. No preview-then-
+                         submit two-step (the live Fabric preview to the right of the
+                         form already shows the design while typing). -->
+                    <div class="pt-4 border-t border-gray-200">
+                        <button type="submit"
+                                class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <?= htmlspecialchars(t('portal.btn_save_changes')) ?>
+                        </button>
+                        <p class="mt-2 text-xs text-gray-500 text-center">
+                            <?= htmlspecialchars(t('portal.save_changes_hint')) ?>
+                        </p>
+                    </div>
+                    <?php else: ?>
                     <!-- Step 1: Generate Preview Button -->
                     <div class="pt-4 border-t border-gray-200" id="generatePreviewSection">
                         <button type="button" id="generatePreviewBtn" onclick="generatePreview()"
@@ -1466,7 +1638,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                             <?= htmlspecialchars(t('portal.generate_preview_hint')) ?>
                         </p>
                     </div>
-                    
+
                     <!-- Step 2: Submit Request (hidden until preview is generated) -->
                     <div class="pt-4 border-t border-gray-200" id="submitSection" style="display: none;">
                         <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
@@ -1485,6 +1657,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                             <i class="fa-solid fa-pencil mr-1"></i> <?= htmlspecialchars(t('portal.btn_edit_details')) ?>
                         </button>
                     </div>
+                    <?php endif; ?>
                 </form>
             </div>
                 </div><!-- End left column -->

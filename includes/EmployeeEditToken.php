@@ -101,12 +101,24 @@ class EmployeeEditToken
      * provided (or can be inferred from the current employee/company),
      * the URL is rooted on the tenant subdomain so staff land on their
      * branded host. Without a slug, falls back to the bare apex host.
+     *
+     * When $employeeSlug is provided (email-localpart used in the
+     * digital-card URL), emits the recognisable shape
+     * `https://{tenant}.cardify.om/{employeeSlug}/edit?t={plain}`
+     * which routes to portal.php in edit-mode (prefilled form, real
+     * Fabric.js card preview, "Save changes" submit). Without a slug,
+     * falls back to the legacy `/portal/employee-edit?token=...` URL
+     * so existing share-links keep working.
      */
-    public static function buildUrl(string $plain, ?string $tenantSlug = null): string
+    public static function buildUrl(string $plain, ?string $tenantSlug = null, ?string $employeeSlug = null): string
     {
         $apex = defined('APP_HOST') ? APP_HOST : ($_SERVER['HTTP_HOST'] ?? 'cardify.om');
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $tenantSlug ? $tenantSlug . '.' . $apex : $apex;
+        $slug = $employeeSlug !== null ? trim((string) $employeeSlug) : '';
+        if ($slug !== '' && preg_match('/^[a-z0-9._-]+$/i', $slug)) {
+            return $scheme . '://' . $host . '/' . $slug . '/edit?t=' . $plain;
+        }
         return $scheme . '://' . $host . '/portal/employee-edit?token=' . $plain;
     }
 
@@ -120,7 +132,17 @@ class EmployeeEditToken
     public static function sendInvite(array $employee, array $company, string $channel = 'both'): array
     {
         $plain = self::mint($employee['id'] ?? '', $employee['created_by'] ?? null, $_SERVER['REMOTE_ADDR'] ?? null);
-        $editUrl = self::buildUrl($plain, $company['slug'] ?? null);
+        // Derive the same slug used by index.php's tenant bare-URL router:
+        // email local-part with dots/underscores normalised to dashes. Keeps
+        // the share link visually recognisable to the recipient (their own
+        // name in the URL) instead of an opaque 40-char token.
+        $email = (string) ($employee['email'] ?? '');
+        $localPart = $email !== '' ? strtolower((string) strstr($email, '@', true)) : '';
+        if ($localPart === '') {
+            $localPart = strtolower((string) substr((string) strstr($email . '@', '@', true), 0));
+        }
+        $employeeSlug = $localPart !== '' ? strtr($localPart, ['.' => '-', '_' => '-']) : null;
+        $editUrl = self::buildUrl($plain, $company['slug'] ?? null, $employeeSlug);
 
         $ctx = [
             'employeeName'    => $employee['name_en'] ?? $employee['name_ar'] ?? $employee['email'] ?? '',
