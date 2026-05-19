@@ -185,15 +185,20 @@ class EmployeeEditToken
         $supportEmail = 'info@cardify.om';
 
         $ctx = [
-            'employeeName'    => $employee['name_en'] ?? $employee['name_ar'] ?? $employee['email'] ?? '',
-            'companyName'     => $company['name'] ?? 'Cardify',
-            'companyDomain'   => $company['email_domain'] ?? '',
-            'editUrl'         => $editUrl,
-            'expiresInDays'   => self::TTL_DAYS,
-            'brandColor'      => $company['brand_color'] ?? $company['primary_color'] ?? null,
-            'secondaryColor'  => $company['secondary_color'] ?? null,
-            'logoUrl'         => $logoUrl,
-            'supportEmail'    => $supportEmail,
+            'employeeName'     => $employee['name_en'] ?? $employee['name_ar'] ?? $employee['email'] ?? '',
+            'employeePosition' => $employee['position_en'] ?? $employee['position_ar'] ?? '',
+            'employeeNameAr'   => $employee['name_ar'] ?? '',
+            'employeeEmail'    => $employee['email'] ?? '',
+            'employeeMobile'   => $employee['mobile'] ?? $employee['phone'] ?? '',
+            'companyName'      => $company['name'] ?? 'Cardify',
+            'companyDomain'    => $company['email_domain'] ?? '',
+            'editUrl'          => $editUrl,
+            'expiresInDays'    => self::TTL_DAYS,
+            'brandColor'       => $company['brand_color'] ?? $company['primary_color'] ?? null,
+            'secondaryColor'   => $company['secondary_color'] ?? null,
+            'logoUrl'          => $logoUrl,
+            'supportEmail'     => $supportEmail,
+            'printDeadline'    => $company['print_deadline'] ?? null,
         ];
         $locale = function_exists('currentLocale') ? currentLocale() : 'en';
 
