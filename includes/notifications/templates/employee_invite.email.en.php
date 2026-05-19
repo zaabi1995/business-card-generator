@@ -36,6 +36,22 @@ if (!empty($logoUrl)) {
     $logoBlock = '<img src="' . $logoEsc . '" alt="' . $companyEsc . '" style="max-height:36px;display:block;margin:0 0 20px 0;border:0;">';
 }
 
+// Phone + email rendered inside the brand-coloured details box. Gmail
+// auto-links phone numbers + email addresses with its own default link
+// colour, which on a dark brand-blue background renders as low-contrast
+// pale blue. Force inline-style link colour to white so the auto-linked
+// text stays readable. Also wrap them in <a> ourselves so the inline
+// style wins against Gmail's auto-link.
+$mobileHtml = '';
+if ($mobileEsc !== '') {
+    $rawMobile = preg_replace('/[^+\d]/', '', (string) $employeeMobile);
+    $mobileHtml = '<a href="tel:' . htmlspecialchars($rawMobile, ENT_QUOTES, 'UTF-8') . '" style="color:#ffffff;text-decoration:none;">' . $mobileEsc . '</a>';
+}
+$emailHtml = '';
+if ($emailEsc !== '') {
+    $emailHtml = '<a href="mailto:' . $emailEsc . '" style="color:#ffffff;text-decoration:none;">' . $emailEsc . '</a>';
+}
+
 $roleLine = $positionEsc !== ''
     ? "As <strong>{$positionEsc}</strong> at {$companyEsc}, your card is on the way."
     : "{$companyEsc} has set up your business card.";
@@ -82,18 +98,18 @@ if ($arabicEsc !== '') {
 if ($positionEsc !== '') {
     $body .= "\n  <p style=\"margin:0 0 12px 0;font-size:14px;color:rgba(255,255,255,0.9);\">{$positionEsc}</p>";
 }
-if ($mobileEsc !== '' || $emailEsc !== '') {
+if ($mobileHtml !== '' || $emailHtml !== '') {
     $body .= "\n  <p style=\"margin:0;font-size:13px;color:rgba(255,255,255,0.85);\">";
-    if ($mobileEsc !== '') $body .= $mobileEsc;
-    if ($mobileEsc !== '' && $emailEsc !== '') $body .= " &middot; ";
-    if ($emailEsc !== '') $body .= $emailEsc;
+    if ($mobileHtml !== '') $body .= $mobileHtml;
+    if ($mobileHtml !== '' && $emailHtml !== '') $body .= " &middot; ";
+    if ($emailHtml !== '') $body .= $emailHtml;
     $body .= "</p>";
 }
 
 $body .= <<<HTML
 
 </div>
-<p style="margin:0 0 28px 0;font-size:13px;color:#64748b;">These are the details we'll print on your card on <strong style="color:{$colorEsc};">{$deadlineEsc}</strong>. Please review them now.</p>
+<p style="margin:0 0 28px 0;font-size:13px;color:#64748b;">Please review and <strong style="color:{$colorEsc};">update your details before {$deadlineEsc}</strong>, that's when we send the first batch to print.</p>
 
 <p style="margin:0 0 8px 0;font-weight:600;color:#0f172a;font-size:16px;">Getting started with Cardify, 3 steps:</p>
 
