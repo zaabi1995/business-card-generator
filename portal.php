@@ -69,7 +69,12 @@ $editEmployee  = null;
 $isTrustedEdit = false;
 if ($isEditMode) {
     $verified = EmployeeEditToken::verify($editToken);
-    if ($verified && ($verified['company_id'] ?? null) === $companyId) {
+    // EmployeeEditToken::verify returns the employees row with the column
+    // 'employee_id' carrying the token's bound employee id (the local 'id'
+    // key is unset to avoid leaking the internal token row id), so we
+    // compare slug-lookup result against $verified['employee_id'].
+    $verifiedEmployeeId = $verified['employee_id'] ?? null;
+    if ($verified && ($verified['company_id'] ?? null) === $companyId && $verifiedEmployeeId) {
         try {
             $__db = Database::getInstance();
             $row = $__db->fetchOne(
@@ -83,7 +88,7 @@ if ($isEditMode) {
                  LIMIT 1",
                 ['cid' => $companyId, 'exact' => $editSlug, 'dashed' => $editSlug]
             );
-            if ($row && ($row['id'] ?? null) === ($verified['id'] ?? null)) {
+            if ($row && ($row['id'] ?? null) === $verifiedEmployeeId) {
                 $editEmployee  = $row;
                 $isTrustedEdit = true;
             }
@@ -387,9 +392,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
     $__postedToken = trim($_POST['edit_token'] ?? '');
     if ($__postedToken !== '') {
         $__verified = EmployeeEditToken::verify($__postedToken);
+        // verify() returns the employee row but unsets the 'id' key, the
+        // bound employee id lives in $__verified['employee_id'].
+        $__vEmpId = $__verified['employee_id'] ?? null;
         if ($__verified
             && ($__verified['company_id'] ?? null) === $companyId
-            && (!$isTrustedEdit || ($__verified['id'] ?? null) === ($editEmployee['id'] ?? null))) {
+            && $__vEmpId
+            && (!$isTrustedEdit || $__vEmpId === ($editEmployee['id'] ?? null))) {
 
             $__update = [
                 'name_en'     => trim($_POST['name_en']     ?? ($__verified['name_en']     ?? '')),
@@ -404,14 +413,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                 'updated_at'  => date('Y-m-d H:i:s'),
             ];
             try {
-                $db->update('employees', $__update, 'id = :id', ['id' => $__verified['id']]);
+                $db->update('employees', $__update, 'id = :id', ['id' => $__vEmpId]);
 
                 // Cache-bust every cached render so the next card view
                 // picks up the new text (PNG + vector PDF + sidecar).
                 $__crFile = INCLUDES_DIR . '/CardRenderer.php';
                 if (is_file($__crFile)) {
                     require_once $__crFile;
-                    try { CardRenderer::invalidateForEmployee((string) $__verified['id'], 'portal_self_edit'); }
+                    try { CardRenderer::invalidateForEmployee((string) $__vEmpId, 'portal_self_edit'); }
                     catch (Throwable $__ce) { error_log('[portal edit] cache invalidate: ' . $__ce->getMessage()); }
                 }
 
@@ -423,7 +432,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                         AuditLog::log(
                             'employee_self_edit',
                             'employee',
-                            (string) $__verified['id'],
+                            (string) $__vEmpId,
                             null,
                             ['via' => 'edit_token', 'slug' => $editSlug],
                             (string) $__verified['company_id']
