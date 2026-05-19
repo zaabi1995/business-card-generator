@@ -70,18 +70,25 @@ class EmployeeEditToken
         $hash = hash('sha256', $plain);
 
         $db = Database::getInstance();
+        // Alias the token's columns to avoid clashing with e.* (employees has
+        // both 'id' and 'employee_id'; without aliases, e.employee_id silently
+        // wins and the returned row['id'] / row['employee_id'] both end up wrong).
         $row = $db->fetchOne(
-            "SELECT t.id, t.employee_id, t.expires_at, t.last_used_at, t.revoked_at, e.*
+            "SELECT t.id AS _t_id, t.employee_id AS _t_emp_id,
+                    t.expires_at AS _t_expires_at,
+                    t.last_used_at AS _t_last_used_at,
+                    t.revoked_at AS _t_revoked_at,
+                    e.*
              FROM employee_edit_tokens t
              JOIN employees e ON e.id = t.employee_id
              WHERE t.token_hash = :h LIMIT 1",
             ['h' => $hash]
         );
         if (!$row) return null;
-        if (!empty($row['revoked_at'])) return null;
-        if (strtotime($row['expires_at']) < time()) return null;
+        if (!empty($row['_t_revoked_at'])) return null;
+        if (strtotime($row['_t_expires_at']) < time()) return null;
         // Idle-timeout: more than TTL_DAYS since last use also expires.
-        if (!empty($row['last_used_at']) && strtotime($row['last_used_at']) < (time() - self::TTL_DAYS * 86400)) {
+        if (!empty($row['_t_last_used_at']) && strtotime($row['_t_last_used_at']) < (time() - self::TTL_DAYS * 86400)) {
             return null;
         }
 
@@ -89,10 +96,18 @@ class EmployeeEditToken
             'employee_edit_tokens',
             ['last_used_at' => date('Y-m-d H:i:s')],
             'id = :id',
-            ['id' => $row['id']]
+            ['id' => $row['_t_id']]
         );
 
-        unset($row['id'], $row['expires_at'], $row['last_used_at'], $row['revoked_at']);
+        // Return the employees row in the shape callers expect: $row['id']
+        // is the employee row id (which e.id confirmed equals the token's
+        // employee_id via the JOIN). Strip the token-only internals.
+        $boundEmpId = $row['_t_emp_id'];
+        unset(
+            $row['_t_id'], $row['_t_emp_id'], $row['_t_expires_at'],
+            $row['_t_last_used_at'], $row['_t_revoked_at']
+        );
+        $row['id'] = $boundEmpId;
         return $row;
     }
 

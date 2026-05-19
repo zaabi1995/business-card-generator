@@ -69,12 +69,7 @@ $editEmployee  = null;
 $isTrustedEdit = false;
 if ($isEditMode) {
     $verified = EmployeeEditToken::verify($editToken);
-    // EmployeeEditToken::verify returns the employees row with the column
-    // 'employee_id' carrying the token's bound employee id (the local 'id'
-    // key is unset to avoid leaking the internal token row id), so we
-    // compare slug-lookup result against $verified['employee_id'].
-    $verifiedEmployeeId = $verified['employee_id'] ?? null;
-    if ($verified && ($verified['company_id'] ?? null) === $companyId && $verifiedEmployeeId) {
+    if ($verified && ($verified['company_id'] ?? null) === $companyId && !empty($verified['id'])) {
         try {
             $__db = Database::getInstance();
             $row = $__db->fetchOne(
@@ -88,7 +83,7 @@ if ($isEditMode) {
                  LIMIT 1",
                 ['cid' => $companyId, 'exact' => $editSlug, 'dashed' => $editSlug]
             );
-            if ($row && ($row['id'] ?? null) === $verifiedEmployeeId) {
+            if ($row && ($row['id'] ?? null) === $verified['id']) {
                 $editEmployee  = $row;
                 $isTrustedEdit = true;
             }
@@ -392,9 +387,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
     $__postedToken = trim($_POST['edit_token'] ?? '');
     if ($__postedToken !== '') {
         $__verified = EmployeeEditToken::verify($__postedToken);
-        // verify() returns the employee row but unsets the 'id' key, the
-        // bound employee id lives in $__verified['employee_id'].
-        $__vEmpId = $__verified['employee_id'] ?? null;
+        $__vEmpId = $__verified['id'] ?? null;
         if ($__verified
             && ($__verified['company_id'] ?? null) === $companyId
             && $__vEmpId
