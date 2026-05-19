@@ -1738,7 +1738,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                                 <?php endif; ?>
                             </div>
 
-                            <div id="templateHint" class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                            <div id="templateHint" class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4"<?= $isTrustedEdit ? ' style="display:none"' : '' ?>>
                                 <div class="flex items-start gap-2">
                                     <i class="fa-solid fa-info-circle text-blue-600 mt-0.5"></i>
                                     <div>
@@ -1806,7 +1806,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     const apexHost = '<?php echo addslashes(cardifyApexHost()); ?>';
     const frontTemplate = <?php echo json_encode($activeFrontTemplate); ?>;
     const backTemplate = <?php echo json_encode($activeBackTemplate); ?>;
-    
+    const isEditMode = <?php echo $isTrustedEdit ? 'true' : 'false'; ?>;
+
     // CardEditor instances
     let frontEditor = null;
     let backEditor = null;
@@ -1931,6 +1932,30 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         const _hideOnInit = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
         _hideOnInit('frontLoading');
         _hideOnInit('backLoading');
+
+        // Edit-mode: form is already prefilled server-side from the employee
+        // row, so render the preview immediately using the SAME render path
+        // (generatePreview -> renderCardWithEditor) used everywhere else.
+        // Then wire debounced input listeners so the preview updates live as
+        // the user types. One source of truth for card render across portal,
+        // admin, generate_card_html, batch_generate, etc.
+        if (isEditMode) {
+            try { await generatePreview({silent: true}); }
+            catch (e) { console.error('edit-mode initial render', e); }
+
+            let __reRenderTimer = null;
+            const __reRender = () => {
+                clearTimeout(__reRenderTimer);
+                __reRenderTimer = setTimeout(() => {
+                    generatePreview({silent: true}).catch((e) => console.error('edit-mode re-render', e));
+                }, 250);
+            };
+            document.querySelectorAll('#cardRequestForm input, #cardRequestForm textarea, #cardRequestForm select').forEach((el) => {
+                if (el.name === 'csrf_token' || el.name === 'edit_token') return;
+                el.addEventListener('input', __reRender);
+                el.addEventListener('change', __reRender);
+            });
+        }
     });
 
     // Resolve a field's stored fontFamily to one that's actually loaded.
@@ -2066,14 +2091,16 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     }
     
     // Generate preview with watermark
-    async function generatePreview() {
+    async function generatePreview(opts) {
+        opts = opts || {};
+        const silent = !!opts.silent; // edit-mode auto-render: no alerts, no spinner
         const btn = document.getElementById('generatePreviewBtn');
         const email = document.getElementById('email')?.value;
         const nameEn = document.getElementById('name_en')?.value;
-        
+
         // Validate required fields
         if (!email) {
-            alert(<?= json_encode(t('portal.enter_email_first')) ?>);
+            if (!silent) alert(<?= json_encode(t('portal.enter_email_first')) ?>);
             return;
         }
         // Client-side domain gate so users can't even preview with an
@@ -2083,19 +2110,22 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             const atIdx = email.lastIndexOf('@');
             const emailDomain = atIdx >= 0 ? email.slice(atIdx + 1).toLowerCase() : '';
             if (emailDomain !== requiredDomain.toLowerCase()) {
-                alert(<?= json_encode(t('cardportal.email_domain_hint', ['domain' => ':domain'])) ?>
+                if (!silent) alert(<?= json_encode(t('cardportal.email_domain_hint', ['domain' => ':domain'])) ?>
                     .replace(':domain', requiredDomain));
                 return;
             }
         }
         if (!nameEn) {
-            alert(<?= json_encode(t('portal.enter_name_first')) ?>);
+            if (!silent) alert(<?= json_encode(t('portal.enter_name_first')) ?>);
             return;
         }
-        
-        // Show loading state
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>' + <?= json_encode(t('portal.generating')) ?>;
+
+        // Show loading state (button only exists in new-request flow; in edit
+        // mode the button was replaced with Save Changes so it can be null).
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>' + <?= json_encode(t('portal.generating')) ?>;
+        }
 
         // Switch to generated preview view (null-safe: template preview DOM
         // isn't rendered when the tenant has no front/back templates wired
@@ -2170,9 +2200,11 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             
         } catch (e) {
             console.error('Preview generation error:', e);
-            alert(<?= json_encode(t('portal.preview_error')) ?>);
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-eye mr-2"></i>Generate Preview';
+            if (!silent) alert(<?= json_encode(t('portal.preview_error')) ?>);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-eye mr-2"></i>Generate Preview';
+            }
         }
     }
     
