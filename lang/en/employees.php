@@ -10,6 +10,7 @@ return [
     'bulk_regenerate'      => 'Bulk regenerate',
     'bulk_regenerate_tooltip' => 'Regenerate cards for multiple employees',
     'export_csv'           => 'Export CSV',
+    'export_excel'         => 'Export Excel',
     'import_csv'           => 'Import CSV',
     'add_employee'         => 'Add employee',
 

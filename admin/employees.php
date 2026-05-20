@@ -486,6 +486,141 @@ if (isset($_GET['action']) && $_GET['action'] === 'export') {
     exportEmployeesToCSV($employees);
     exit;
 }
+if (isset($_GET['action']) && $_GET['action'] === 'export_xlsx') {
+    exportEmployeesToXLSX($employees);
+    exit;
+}
+
+/**
+ * Build the export rows (headers + data) shared by CSV and XLSX exports.
+ */
+function buildEmployeeExportRows($employees) {
+    $headers = [
+        'email', 'name_en', 'name_ar', 'position_en', 'position_ar',
+        'phone', 'phone_ar', 'mobile', 'mobile_ar',
+        'company_en', 'company_ar', 'website', 'website_ar',
+        'address_en', 'address_ar', 'department'
+    ];
+
+    $db = Database::getInstance();
+    $companyId = getCurrentCompanyId();
+    $deptLookup = [];
+    if ($companyId) {
+        $depts = $db->fetchAll("SELECT id, name FROM departments WHERE company_id = :id", ['id' => $companyId]);
+        foreach ($depts as $d) {
+            $deptLookup[$d['id']] = $d['name'];
+        }
+    }
+
+    $rows = [];
+    foreach ($employees as $emp) {
+        $deptName = '';
+        if (!empty($emp['department_id']) && isset($deptLookup[$emp['department_id']])) {
+            $deptName = $deptLookup[$emp['department_id']];
+        }
+        $rows[] = [
+            $emp['email'] ?? '',
+            $emp['name_en'] ?? '',
+            $emp['name_ar'] ?? '',
+            $emp['position_en'] ?? '',
+            $emp['position_ar'] ?? '',
+            $emp['phone'] ?? '',
+            $emp['phone_ar'] ?? '',
+            $emp['mobile'] ?? '',
+            $emp['mobile_ar'] ?? '',
+            $emp['company_en'] ?? '',
+            $emp['company_ar'] ?? '',
+            $emp['website'] ?? '',
+            $emp['website_ar'] ?? '',
+            $emp['address_en'] ?? $emp['address'] ?? '',
+            $emp['address_ar'] ?? '',
+            $deptName,
+        ];
+    }
+
+    return ['headers' => $headers, 'rows' => $rows];
+}
+
+/**
+ * Export employees to a native .xlsx file (no external library).
+ * Builds the minimal OOXML package by hand via ZipArchive so Arabic
+ * UTF-8 opens cleanly in Excel without the CSV text-import dialog.
+ */
+function exportEmployeesToXLSX($employees) {
+    $data = buildEmployeeExportRows($employees);
+    $allRows = array_merge([$data['headers']], $data['rows']);
+
+    // Build sheet rows as inline strings (everything is text, including phone
+    // numbers, so leading "+" / "0" are preserved instead of being mangled).
+    $colLetter = function ($index) {
+        $letter = '';
+        $index++;
+        while ($index > 0) {
+            $mod = ($index - 1) % 26;
+            $letter = chr(65 + $mod) . $letter;
+            $index = (int)(($index - $mod) / 26);
+        }
+        return $letter;
+    };
+
+    $sheetRows = '';
+    foreach ($allRows as $r => $cells) {
+        $rowNum = $r + 1;
+        $sheetRows .= '<row r="' . $rowNum . '">';
+        foreach ($cells as $c => $value) {
+            $ref = $colLetter($c) . $rowNum;
+            $text = htmlspecialchars((string)$value, ENT_QUOTES | ENT_XML1, 'UTF-8');
+            $sheetRows .= '<c r="' . $ref . '" t="inlineStr"><is><t xml:space="preserve">' . $text . '</t></is></c>';
+        }
+        $sheetRows .= '</row>';
+    }
+
+    $sheetXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        . '<sheetData>' . $sheetRows . '</sheetData></worksheet>';
+
+    $workbookXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+        . 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        . '<sheets><sheet name="Employees" sheetId="1" r:id="rId1"/></sheets></workbook>';
+
+    $workbookRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+        . '</Relationships>';
+
+    $rootRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+        . '</Relationships>';
+
+    $contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        . '<Default Extension="xml" ContentType="application/xml"/>'
+        . '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+        . '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+        . '</Types>';
+
+    $tmp = tempnam(sys_get_temp_dir(), 'xlsx');
+    $zip = new ZipArchive();
+    $zip->open($tmp, ZipArchive::OVERWRITE);
+    $zip->addFromString('[Content_Types].xml', $contentTypes);
+    $zip->addFromString('_rels/.rels', $rootRels);
+    $zip->addFromString('xl/workbook.xml', $workbookXml);
+    $zip->addFromString('xl/_rels/workbook.xml.rels', $workbookRels);
+    $zip->addFromString('xl/worksheets/sheet1.xml', $sheetXml);
+    $zip->close();
+
+    $filename = 'employees_export_' . date('Y-m-d_His') . '.xlsx';
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Content-Length: ' . filesize($tmp));
+    header('Pragma: no-cache');
+    header('Expires: 0');
+    readfile($tmp);
+    @unlink($tmp);
+}
 
 /**
  * Export employees to CSV file
@@ -830,6 +965,10 @@ adminHeader(t('employees.page_title'), 'employees');
             <a href="?action=export" class="px-4 py-2 bg-gray-50 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium flex items-center gap-2">
                 <i class="fa-solid fa-file-export"></i>
                 <span class="hidden sm:inline"><?= htmlspecialchars(t('employees.export_csv')) ?></span>
+            </a>
+            <a href="?action=export_xlsx" class="px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium flex items-center gap-2">
+                <i class="fa-solid fa-file-excel"></i>
+                <span class="hidden sm:inline"><?= htmlspecialchars(t('employees.export_excel')) ?></span>
             </a>
             <?php endif; ?>
             <?php $__bulkInviteCount = count(array_filter($employees, function($__e) { return ($__e['status'] ?? 'active') === 'active' && (!empty($__e['mobile']) || !empty($__e['phone']) || !empty($__e['email'])); })); ?>

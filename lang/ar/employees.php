@@ -10,6 +10,7 @@ return [
     'bulk_regenerate'      => 'إعادة إنشاء بالجملة',
     'bulk_regenerate_tooltip' => 'أعد إنشاء بطاقات موظفين متعدّدين',
     'export_csv'           => 'تصدير CSV',
+    'export_excel'         => 'تصدير Excel',
     'import_csv'           => 'استيراد CSV',
     'add_employee'         => 'إضافة موظف',
 
