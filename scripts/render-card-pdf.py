@@ -347,7 +347,16 @@ def _draw_watermark(page, text: str) -> None:
 try:
     import arabic_reshaper
     from bidi.algorithm import get_display
-    _HAS_BIDI = True
+    # arabic_reshaper can resolve to an empty *namespace package* (no
+    # reshape attr) when its files are present but unreadable by the
+    # running user (e.g. pip installed root-only 0640, PHP-FPM runs as
+    # www). That state applies get_display WITHOUT reshape -> isolated,
+    # reversed glyphs. Require the real callable so we fail loud instead.
+    _HAS_BIDI = hasattr(arabic_reshaper, 'reshape')
+    if not _HAS_BIDI:
+        print('WARN: arabic_reshaper imported without reshape() '
+              '(unreadable install? check perms on dist-packages/arabic_reshaper)',
+              file=sys.stderr)
 except ImportError:
     _HAS_BIDI = False
 
