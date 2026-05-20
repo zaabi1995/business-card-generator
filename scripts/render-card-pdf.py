@@ -41,6 +41,7 @@ import json
 import os
 import re
 import sys
+import unicodedata
 import fitz
 
 try:
@@ -368,7 +369,25 @@ def _shape_arabic(text: str) -> str:
         return text
     if not any('؀' <= c <= 'ۿ' or 'ﭐ' <= c <= '﻿' for c in text):
         return text
-    return get_display(arabic_reshaper.reshape(text))
+    reshaped = arabic_reshaper.reshape(text)
+    # Revert ISOLATED presentation forms (U+FBxx/U+FExx) back to their base
+    # codepoint so PyMuPDF draws the font's nominal glyph, which is what
+    # HarfBuzz/browsers use for an isolated letter. A font's dedicated
+    # *.isol glyph can carry decorative flourishes that differ from the
+    # nominal form (e.g. DIN Next LT Arabic gives isolated heh U+FEE9 a
+    # tail -> "سارهـ"). We keep initial/medial/final forms as-is since
+    # those match HarfBuzz for connected letters.
+    out = []
+    for ch in reshaped:
+        decomp = unicodedata.decomposition(ch)
+        if decomp.startswith('<isolated>'):
+            try:
+                out.append(chr(int(decomp.split()[1], 16)))
+                continue
+            except (ValueError, IndexError):
+                pass
+        out.append(ch)
+    return get_display(''.join(out))
 
 
 def _draw_qr_code(page, qr_spec: dict, employee: dict, template: dict,

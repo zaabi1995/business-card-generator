@@ -14,8 +14,10 @@ class CardPDFRenderer
      * (shaping libs, baseline/font logic, layout fixes). Part of the cache
      * signature, so a bump invalidates every previously cached PDF on disk.
      * v2 (20 May 2026): Arabic reshaper + bidi visual-order shaping.
+     * v3 (20 May 2026): isolated Arabic forms drawn via nominal glyph
+     *   (fixes decorative-tail isolated heh, matches HarfBuzz/browser).
      */
-    const RENDERER_VERSION = 2;
+    const RENDERER_VERSION = 3;
 
     /**
      * Render or fetch a cached vector PDF for one employee.
