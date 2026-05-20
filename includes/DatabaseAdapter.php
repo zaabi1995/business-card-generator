@@ -865,10 +865,71 @@ class DatabaseAdapter {
             } catch (Throwable $e) { /* columns optional */ }
 
             self::$db->insert('generated_cards', $entry);
+
+            // Keep only the latest card per employee. Every regeneration /
+            // batch run writes brand-new uniquely-named PNG/PDF files and a
+            // fresh row, but every consumer (CardRenderer::forEmployee, etc.)
+            // reads only ORDER BY generated_at DESC LIMIT 1. The older rows +
+            // their on-disk files are dead weight, so prune them now.
+            // Best-effort: a cleanup failure must never break generation.
+            try {
+                self::pruneOldGeneratedCards($employeeId, $companyId, $entry);
+            } catch (Throwable $e) {
+                error_log("logGeneratedCard prune error: " . $e->getMessage());
+            }
+
             return $entry;
         } catch (Exception $e) {
             error_log("Log generation error: " . $e->getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Delete every generated_cards row for an employee except the just-inserted
+     * one ($keep), and unlink the on-disk PNG/PDF files those stale rows point
+     * at. Only files inside the company's cards/ dir are touched, and never the
+     * files referenced by $keep.
+     */
+    private static function pruneOldGeneratedCards(string $employeeId, string $companyId, array $keep): void
+    {
+        $cardsDir = getCompanyCardsDir($companyId);
+
+        // Filenames that belong to the row we are keeping, never delete these.
+        $protected = [];
+        foreach (['front_file_path', 'back_file_path', 'front_web_path', 'back_web_path', 'pdf_file_path'] as $k) {
+            if (!empty($keep[$k])) {
+                $protected[basename((string) $keep[$k])] = true;
+            }
+        }
+
+        $oldRows = self::$db->fetchAll(
+            "SELECT * FROM generated_cards
+              WHERE employee_id = :eid AND company_id = :cid AND id != :keep",
+            ['eid' => $employeeId, 'cid' => $companyId, 'keep' => $keep['id']]
+        );
+        if (empty($oldRows)) {
+            return;
+        }
+
+        foreach ($oldRows as $row) {
+            foreach (['front_file_path', 'back_file_path', 'front_web_path', 'back_web_path', 'pdf_file_path'] as $k) {
+                if (empty($row[$k])) {
+                    continue;
+                }
+                $name = basename((string) $row[$k]);
+                if ($name === '' || isset($protected[$name])) {
+                    continue;
+                }
+                $fs = $cardsDir . '/' . $name;
+                if (is_file($fs)) {
+                    @unlink($fs);
+                }
+            }
+            self::$db->delete('generated_cards', 'id = :id AND company_id = :cid', [
+                'id'  => $row['id'],
+                'cid' => $companyId,
+            ]);
         }
     }
 
