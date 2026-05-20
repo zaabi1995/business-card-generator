@@ -10,6 +10,14 @@
 class CardPDFRenderer
 {
     /**
+     * Bump whenever render-card-pdf.py output can change for identical inputs
+     * (shaping libs, baseline/font logic, layout fixes). Part of the cache
+     * signature, so a bump invalidates every previously cached PDF on disk.
+     * v2 (20 May 2026): Arabic reshaper + bidi visual-order shaping.
+     */
+    const RENDERER_VERSION = 2;
+
+    /**
      * Render or fetch a cached vector PDF for one employee.
      * Returns ['success'=>true, 'path'=>absolute fs path, 'cached'=>bool]
      * or ['success'=>false, 'error'=>string].
@@ -94,7 +102,12 @@ class CardPDFRenderer
 
         // Cache signature: anything that changes the visible card busts it.
         // Profile is included so 'web' and 'print' renders coexist on disk.
+        // RENDERER_VERSION is bumped whenever the render script's output can
+        // change for the same inputs (e.g. Arabic shaping libs installed,
+        // baseline/font logic fixed) so stale PDFs cached by an older renderer
+        // are invalidated automatically. v2: Arabic reshaper+bidi shaping.
         $sig = sha1(implode('|', [
+            self::RENDERER_VERSION,
             $employee['id'],
             (int)($tplFront['current_version'] ?? 1),
             (int)($tplBack['current_version']  ?? 1),
