@@ -11,6 +11,7 @@ return [
     'bulk_regenerate_tooltip' => 'Regenerate cards for multiple employees',
     'export_csv'           => 'Export CSV',
     'export_excel'         => 'Export Excel',
+    'printed_label'        => 'printed',
     'import_csv'           => 'Import CSV',
     'add_employee'         => 'Add employee',
 

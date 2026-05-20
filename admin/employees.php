@@ -89,6 +89,21 @@ try {
     // Table might not exist
 }
 
+// Printed quantity per employee, from the Print Tracking log (company_print_runs).
+$printedByEmployee = [];
+try {
+    $printedRows = $db->fetchAll(
+        "SELECT employee_id, SUM(quantity) AS printed FROM company_print_runs
+         WHERE company_id = :id AND employee_id IS NOT NULL GROUP BY employee_id",
+        ['id' => $companyId]
+    );
+    foreach ($printedRows as $row) {
+        $printedByEmployee[$row['employee_id']] = (int)$row['printed'];
+    }
+} catch (Exception $e) {
+    // Print tracking table might not exist yet
+}
+
 // Load card requests by employee email
 $cardRequestsByEmail = [];
 try {
@@ -1123,6 +1138,11 @@ adminHeader(t('employees.page_title'), 'employees');
                                 <div>
                                     <p class="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors"><?php echo sanitize($emp['name_en'] ?? ''); ?></p>
                                     <p class="text-gray-500 text-sm"><?php echo sanitize($emp['email'] ?? ''); ?></p>
+                                    <?php $printedQty = (int)($printedByEmployee[$emp['id']] ?? 0); if ($printedQty > 0): ?>
+                                    <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-green-50 text-green-700">
+                                        <i class="fa-solid fa-print text-[10px]"></i><?= number_format($printedQty) ?> <?= htmlspecialchars(t('employees.printed_label')) ?>
+                                    </span>
+                                    <?php endif; ?>
                                 </div>
                             </a>
                         </td>

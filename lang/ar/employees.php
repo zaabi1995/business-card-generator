@@ -11,6 +11,7 @@ return [
     'bulk_regenerate_tooltip' => 'أعد إنشاء بطاقات موظفين متعدّدين',
     'export_csv'           => 'تصدير CSV',
     'export_excel'         => 'تصدير Excel',
+    'printed_label'        => 'مطبوعة',
     'import_csv'           => 'استيراد CSV',
     'add_employee'         => 'إضافة موظف',
 
