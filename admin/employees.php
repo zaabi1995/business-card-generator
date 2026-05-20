@@ -1193,21 +1193,33 @@ adminHeader(t('employees.page_title'), 'employees');
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 text-right">
-                            <div class="flex items-center justify-end gap-1" x-data="{ showMenu: false }">
+                            <?php
+                            $publicHost = defined('APP_HOST') ? APP_HOST : 'cardify.om';
+                            $publicUrl  = 'https://' . ($company['slug'] ?? 'app') . '.' . $publicHost . '/' . urlencode($emp['id']);
+                            $printReadyUrl = '/card-pdf.php?i=' . urlencode($emp['id']) . '&print=1';
+                            ?>
+                            <div class="flex items-center justify-end gap-1" x-data="{ showMenu: false, showMore: false }">
                                 <?php if ($latestCard && $frontUrl): ?>
                                 <!-- Download dropdown -->
                                 <div class="relative">
-                                    <button @click="showMenu = !showMenu" @click.outside="showMenu = false"
+                                    <button @click="showMenu = !showMenu; showMore = false" @click.outside="showMenu = false"
                                             class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                            title="Download">
+                                            title="Download card">
                                         <i class="fa-solid fa-download"></i>
                                     </button>
                                     <div x-show="showMenu" x-cloak
-                                         class="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                                         class="absolute right-0 mt-1 w-60 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 text-left">
+                                        <!-- Admin-only clean press-ready file (no watermark) -->
+                                        <a href="<?= htmlspecialchars($printReadyUrl, ENT_QUOTES) ?>"
+                                           class="flex items-start gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                            <i class="fa-solid fa-file-pdf text-green-600 w-4 mt-0.5"></i>
+                                            <span>Print-ready PDF<span class="block text-[11px] text-gray-400">High-res, fonts embedded, no watermark</span></span>
+                                        </a>
+                                        <hr class="my-1 border-gray-100">
                                         <?php if ($hasFrontPdf && $hasBackPdf): ?>
                                         <a href="javascript:void(0)" onclick="downloadAsPDF('<?php echo $cardBaseUrl . str_replace('.png', '.pdf', $frontFilename); ?>', '<?php echo $cardBaseUrl . str_replace('.png', '.pdf', $backFilename); ?>', '<?php echo addslashes($emp['name_en'] ?? 'card'); ?>')"
                                            class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                            <i class="fa-solid fa-file-pdf text-red-500 w-4"></i> Download PDF
+                                            <i class="fa-solid fa-file-pdf text-red-500 w-4"></i> Download PDF (preview)
                                         </a>
                                         <?php endif; ?>
                                         <a href="javascript:void(0)" onclick="downloadAsPNGs('<?php echo $frontUrl; ?>', '<?php echo $backUrl; ?>', '<?php echo addslashes($emp['name_en'] ?? 'card'); ?>')"
@@ -1216,109 +1228,108 @@ adminHeader(t('employees.page_title'), 'employees');
                                         </a>
                                         <hr class="my-1 border-gray-100">
                                         <a href="<?php echo $frontUrl; ?>" download class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                            <i class="fa-solid fa-image text-gray-400 w-4"></i> Front Only
+                                            <i class="fa-solid fa-image text-gray-400 w-4"></i> Front only
                                         </a>
                                         <?php if ($backUrl): ?>
                                         <a href="<?php echo $backUrl; ?>" download class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                            <i class="fa-solid fa-image text-gray-400 w-4"></i> Back Only
+                                            <i class="fa-solid fa-image text-gray-400 w-4"></i> Back only
                                         </a>
                                         <?php endif; ?>
                                     </div>
                                 </div>
-                                
-                                <!-- Set as sample -->
-                                <?php if (!$isSample && $frontFilename && $backFilename): ?>
-                                <form method="post" class="inline">
-                                    <?php echo csrfField(); ?>
-                                    <input type="hidden" name="action" value="set_sample">
-                                    <input type="hidden" name="sample_front" value="companies/<?php echo $companyId; ?>/cards/<?php echo $frontFilename; ?>">
-                                    <input type="hidden" name="sample_back" value="companies/<?php echo $companyId; ?>/cards/<?php echo $backFilename; ?>">
-                                    <button type="submit" class="p-2 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="Set as Sample">
-                                        <i class="fa-regular fa-star"></i>
-                                    </button>
-                                </form>
-                                <?php endif; ?>
-                                
-                                <!-- Order Print -->
-                                <a href="order_print.php?employee=<?php echo $emp['id']; ?>&card_front=<?php echo urlencode($frontUrl ?? ''); ?>&card_back=<?php echo urlencode($backUrl ?? ''); ?>" 
+
+                                <!-- Order a print run -->
+                                <a href="order_print.php?employee=<?php echo $emp['id']; ?>&card_front=<?php echo urlencode($frontUrl ?? ''); ?>&card_back=<?php echo urlencode($backUrl ?? ''); ?>"
                                    class="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                                   title="Order Print">
+                                   title="Order a print run">
                                     <i class="fa-solid fa-print"></i>
                                 </a>
                                 <?php else: ?>
-                                <!-- Regenerate if no card -->
-                                <a href="auto_generate.php?employee_id=<?php echo $emp['id']; ?>&return=employees" 
+                                <!-- Generate if no card yet -->
+                                <a href="auto_generate.php?employee_id=<?php echo $emp['id']; ?>&return=employees"
                                    class="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                                   title="Generate Card">
+                                   title="Generate card">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                                 </a>
                                 <?php endif; ?>
-                                
-                                <!-- Regenerate -->
-                                <?php if ($latestCard): ?>
-                                <a href="auto_generate.php?employee_id=<?php echo $emp['id']; ?>&return=employees&regenerate=1" 
-                                   class="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                                   title="Regenerate Card">
-                                    <i class="fa-solid fa-rotate"></i>
-                                </a>
-                                <?php endif; ?>
-                                
-                                <!-- Public profile link: copy + open in new tab -->
-                                <?php
-                                $publicHost = defined('APP_HOST') ? APP_HOST : 'cardify.om';
-                                $publicUrl  = 'https://' . ($company['slug'] ?? 'app') . '.' . $publicHost . '/' . urlencode($emp['id']);
-                                ?>
-                                <a href="<?= htmlspecialchars($publicUrl, ENT_QUOTES) ?>"
-                                   target="_blank" rel="noopener"
-                                   onclick="event.stopPropagation(); navigator.clipboard.writeText('<?= addslashes($publicUrl) ?>').then(()=>{this.querySelector('i').className='fa-solid fa-check text-green-600';setTimeout(()=>this.querySelector('i').className='fa-solid fa-link',1500)}); return false;"
-                                   class="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                   title="Copy public link: <?= htmlspecialchars($publicUrl, ENT_QUOTES) ?>">
-                                    <i class="fa-solid fa-link"></i>
-                                </a>
-                                <a href="<?= htmlspecialchars($publicUrl, ENT_QUOTES) ?>"
-                                   target="_blank" rel="noopener"
-                                   class="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                   title="Open profile in new tab">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                                </a>
 
-                                <!-- Edit -->
+                                <!-- Edit details -->
                                 <button
-                                    @click='openEditModal(<?php echo json_encode($emp); ?>)'
+                                    @click='openEditModal(<?php echo htmlspecialchars(json_encode($emp), ENT_QUOTES); ?>)'
                                     class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                    title="Edit"
-                                >
+                                    title="Edit details">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
 
-                                <!-- Copy edit-link to clipboard (fresh token, no send) -->
-                                <button type="button"
-                                        class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                        title="<?= htmlspecialchars(t('employees.copy_link_title')) ?>"
-                                        data-emp-id="<?php echo sanitize($emp['id']); ?>"
-                                        onclick="cardifyCopyEditLink(this)">
-                                    <i class="fa-solid fa-link"></i>
-                                </button>
-
-                                <!-- Re-send edit-link invite -->
-                                <form method="post" class="inline" onsubmit="return confirm(<?= htmlspecialchars(json_encode(t('employees.edit_invite_confirm')), ENT_QUOTES) ?>)">
-                                    <?php echo csrfField(); ?>
-                                    <input type="hidden" name="action" value="resend_edit_invite">
-                                    <input type="hidden" name="id" value="<?php echo sanitize($emp['id']); ?>">
-                                    <button type="submit" class="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" title="<?= htmlspecialchars(t('employees.edit_invite_title')) ?>">
-                                        <i class="fa-solid fa-paper-plane"></i>
+                                <!-- Overflow menu: lower-frequency actions -->
+                                <div class="relative">
+                                    <button @click="showMore = !showMore; showMenu = false" @click.outside="showMore = false"
+                                            class="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                                            title="More actions">
+                                        <i class="fa-solid fa-ellipsis-vertical"></i>
                                     </button>
-                                </form>
-                                
-                                <!-- Delete -->
-                                <form method="post" class="inline" onsubmit="return confirm('Are you sure you want to delete this employee and their cards?')">
-                                    <?php echo csrfField(); ?>
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="id" value="<?php echo sanitize($emp['id']); ?>">
-                                    <button type="submit" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </button>
-                                </form>
+                                    <div x-show="showMore" x-cloak
+                                         class="absolute right-0 mt-1 w-60 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 text-left">
+                                        <?php if ($latestCard && $frontUrl): ?>
+                                        <!-- View public card -->
+                                        <a href="<?= htmlspecialchars($publicUrl, ENT_QUOTES) ?>" target="_blank" rel="noopener"
+                                           class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                            <i class="fa-solid fa-arrow-up-right-from-square text-indigo-500 w-4"></i> View public card
+                                        </a>
+                                        <!-- Copy public link -->
+                                        <button type="button"
+                                                onclick="navigator.clipboard.writeText('<?= addslashes($publicUrl) ?>').then(()=>{const i=this.querySelector('i');const c=i.className;i.className='fa-solid fa-check text-green-600 w-4';setTimeout(()=>i.className=c,1500)})"
+                                                class="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                            <i class="fa-solid fa-share-nodes text-indigo-500 w-4"></i> Copy public link
+                                        </button>
+                                        <hr class="my-1 border-gray-100">
+                                        <!-- Regenerate card -->
+                                        <a href="auto_generate.php?employee_id=<?php echo $emp['id']; ?>&return=employees&regenerate=1"
+                                           class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                            <i class="fa-solid fa-rotate text-purple-500 w-4"></i> Regenerate card
+                                        </a>
+                                        <?php if (!$isSample && $frontFilename && $backFilename): ?>
+                                        <!-- Set as company sample -->
+                                        <form method="post">
+                                            <?php echo csrfField(); ?>
+                                            <input type="hidden" name="action" value="set_sample">
+                                            <input type="hidden" name="sample_front" value="companies/<?php echo $companyId; ?>/cards/<?php echo $frontFilename; ?>">
+                                            <input type="hidden" name="sample_back" value="companies/<?php echo $companyId; ?>/cards/<?php echo $backFilename; ?>">
+                                            <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                                <i class="fa-regular fa-star text-amber-500 w-4"></i> Set as company sample
+                                            </button>
+                                        </form>
+                                        <?php endif; ?>
+                                        <hr class="my-1 border-gray-100">
+                                        <?php endif; ?>
+                                        <!-- Copy self-edit link -->
+                                        <button type="button"
+                                                class="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                                data-emp-id="<?php echo sanitize($emp['id']); ?>"
+                                                onclick="cardifyCopyEditLink(this)">
+                                            <i class="fa-solid fa-link text-gray-400 w-4"></i> <?= htmlspecialchars(t('employees.copy_link_title')) ?>
+                                        </button>
+                                        <!-- Send self-edit invite -->
+                                        <form method="post" onsubmit="return confirm(<?= htmlspecialchars(json_encode(t('employees.edit_invite_confirm')), ENT_QUOTES) ?>)">
+                                            <?php echo csrfField(); ?>
+                                            <input type="hidden" name="action" value="resend_edit_invite">
+                                            <input type="hidden" name="id" value="<?php echo sanitize($emp['id']); ?>">
+                                            <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                                <i class="fa-solid fa-paper-plane text-purple-500 w-4"></i> <?= htmlspecialchars(t('employees.edit_invite_title')) ?>
+                                            </button>
+                                        </form>
+                                        <hr class="my-1 border-gray-100">
+                                        <!-- Delete employee -->
+                                        <form method="post" onsubmit="return confirm('Are you sure you want to delete this employee and their cards?')">
+                                            <?php echo csrfField(); ?>
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="id" value="<?php echo sanitize($emp['id']); ?>">
+                                            <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                                <i class="fa-solid fa-trash-can w-4"></i> Delete employee
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
                             </div>
                         </td>
                     </tr>

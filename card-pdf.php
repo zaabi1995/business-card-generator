@@ -62,22 +62,37 @@ try {
     // when the renderer is unavailable.
     //
     // Profile selection by role:
-    //   print_shop / super_admin  → 'web' (clean, no watermark)
-    //   anyone else (admin, company, anonymous) → 'sample' (watermarked)
-    // Tenants who want a press-ready file go through the print shop, who
-    // can issue an unwatermarked download via api/print-ready.php.
+    //   print_shop / super_admin            → clean (no watermark)
+    //   tenant admin downloading their OWN  → clean press file when ?print=1
+    //     staff's card (admin/employees.php)   (full font embed, no watermark)
+    //   anyone else (employee, anonymous)   → 'sample' (watermarked)
+    // The clean download is admin-gated and tenant-scoped: a company admin
+    // can only pull the press-ready file for an employee of their own company.
     require_once INCLUDES_DIR . '/CardPDFRenderer.php';
     require_once INCLUDES_DIR . '/Auth.php';
-    $callerRole = Auth::isLoggedIn() ? (string)Auth::getCurrentRole() : '';
-    $isUnwatermarked = in_array($callerRole, ['print_shop', 'super_admin'], true);
-    $profile = $isUnwatermarked ? 'web' : 'sample';
+    $callerRole  = Auth::isLoggedIn() ? (string)Auth::getCurrentRole() : '';
+    $wantsPrint  = (($_GET['print'] ?? '') === '1');
+    $adminRoles  = ['admin', 'company', 'company_admin'];
+    $callerCompany = function_exists('getCurrentCompanyId') ? (string)getCurrentCompanyId() : '';
+    $ownsEmployee  = $callerCompany !== '' && $callerCompany === (string)($company['id'] ?? '');
+
+    if (in_array($callerRole, ['print_shop', 'super_admin'], true)) {
+        // Print shop / super admin: always clean. Full embed when asked.
+        $profile = $wantsPrint ? 'print' : 'web';
+    } elseif ($wantsPrint && in_array($callerRole, $adminRoles, true) && $ownsEmployee) {
+        // Tenant admin pulling the press-ready file for their own staff.
+        $profile = 'print';
+    } else {
+        $profile = 'sample';
+    }
     $vector = CardPDFRenderer::render((string)$employee['id'], $profile);
     if (!empty($vector['success']) && is_file($vector['path'])) {
         try { QRTracker::logScan($employee['id'], $company['id']); } catch (Throwable $e) {}
         while (ob_get_level()) { ob_end_clean(); }
         $name = trim((string)($employee['name_en'] ?? $employee['name'] ?? '')) ?: 'Employee';
-        $downloadName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $name) . '.pdf';
-        if ($downloadName === '.pdf') $downloadName = 'business-card.pdf';
+        $suffix = ($profile === 'print') ? '-print-ready' : '';
+        $downloadName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $name) . $suffix . '.pdf';
+        if ($downloadName === $suffix . '.pdf') $downloadName = 'business-card' . $suffix . '.pdf';
         $mtime = filemtime($vector['path']);
         $lastModified = gmdate('D, d M Y H:i:s', $mtime) . ' GMT';
         // 304 Not Modified shortcut for conditional GET
