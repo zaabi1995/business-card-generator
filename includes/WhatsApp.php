@@ -92,16 +92,19 @@ class WhatsApp {
             $apiUrl = DARDASHA_API_URL;
             $token  = DARDASHA_TOKEN;
             $from   = DARDASHA_FROM;
-            // Dardasha's /send_message endpoint expects token IN the JSON body, not a header
+            // Dardasha /send_message wants Bearer header + token field in body, requestType=message
             $payload = [
                 'messageType' => 'text',
-                'requestType' => 'POST',
+                'requestType' => 'message',
                 'token' => $token,
                 'from' => $from,
                 'to' => $to,
                 'text' => $message,
             ];
-            $headers = ['Content-Type: application/json'];
+            $headers = [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $token,
+            ];
         } else {
             $apiUrl = self::$settings['whatsapp_api_url'] ?? 'http://127.0.0.1:3000/api/messages/api/send';
             $token  = self::$settings['whatsapp_api_token'] ?? '';
