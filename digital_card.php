@@ -440,6 +440,9 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
     <?php endif; ?>
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { overflow-x: hidden; }
@@ -620,33 +623,51 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             white-space: nowrap;
         }
 
-        /* Social Links */
+        /* Social Links — branded pills, mobile + desktop friendly */
         .social-links {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
             max-width: 400px;
-            margin: 16px auto 0;
+            margin: 20px auto 0;
         }
         .social-link {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: #f3f4f6;
+            background: #ffffff;
             color: #111827;
             text-decoration: none;
-            transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+            box-shadow: 0 1px 2px rgba(17,24,39,.06), 0 4px 12px rgba(17,24,39,.05);
+            transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
         }
-        .social-link:hover {
+        .social-link i { font-size: 20px; line-height: 1; }
+        .social-link:hover, .social-link:focus-visible {
             transform: translateY(-2px);
-            background: #111827;
-            color: #fff;
+            box-shadow: 0 4px 8px rgba(17,24,39,.10), 0 12px 24px rgba(17,24,39,.10);
+            outline: none;
         }
-        .social-link i { font-size: 18px; }
+        /* Brand-tinted hover, keeps idle state clean white */
+        .social-link[data-platform="linkedin"]:hover    { background: #0a66c2; color: #fff; }
+        .social-link[data-platform="twitter"]:hover     { background: #000;    color: #fff; }
+        .social-link[data-platform="facebook"]:hover    { background: #1877f2; color: #fff; }
+        .social-link[data-platform="instagram"]:hover   { background: linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); color: #fff; }
+        .social-link[data-platform="youtube"]:hover     { background: #ff0000; color: #fff; }
+        .social-link[data-platform="tiktok"]:hover      { background: #000;    color: #fff; }
+        .social-link[data-platform="whatsapp"]:hover    { background: #25d366; color: #fff; }
+        .social-link[data-platform="telegram"]:hover    { background: #229ed9; color: #fff; }
+        .social-link[data-platform="snapchat"]:hover    { background: #fffc00; color: #111827; }
+        .social-link[data-platform="github"]:hover      { background: #111827; color: #fff; }
+        .social-link[data-platform="website"]:hover,
+        .social-link[data-platform="email"]:hover       { background: #111827; color: #fff; }
+        <?php if ($isDarkPage): ?>
+        .social-link { background: rgba(255,255,255,.08); color: #f5f5f5; box-shadow: none; }
+        .social-link:hover, .social-link:focus-visible { box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+        <?php endif; ?>
 
         /* Bottom Buttons */
         .bottom-buttons {
@@ -1104,6 +1125,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <?php $__href = EmployeeSocials::hrefFor($sl['platform'], $sl['url']); ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('click_social', $__href)); ?>"
                class="social-link"
+               data-platform="<?php echo htmlspecialchars($sl['platform']); ?>"
                target="_blank"
                rel="noopener"
                title="<?php echo htmlspecialchars($sl['label']); ?>"
