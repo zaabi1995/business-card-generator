@@ -1769,26 +1769,41 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             });
         }
 
-        // Share
+        // Share. Prefer the clean tenant-slug URL (e.g. adnan.cardify.om/jarwish9)
+        // over the long /card/{employee_id} variant the visitor may have landed
+        // on. Falls back to window.location.href when no clean URL is known.
+        const __shareUrl = <?php
+            $emailLocal = '';
+            if (!empty($email) && strpos($email, '@') !== false) {
+                $emailLocal = strtolower(substr($email, 0, strpos($email, '@')));
+                $emailLocal = preg_replace('/[^a-z0-9._-]/', '', $emailLocal);
+            }
+            $tenantSlug = $company['slug'] ?? '';
+            if ($tenantSlug && $emailLocal) {
+                echo json_encode('https://' . $tenantSlug . '.cardify.om/' . $emailLocal);
+            } else {
+                echo 'window.location.href';
+            }
+        ?>;
         function shareCard() {
             const shareData = {
                 title: <?php echo json_encode($name . ' - ' . $companyName); ?>,
                 text: <?php echo json_encode($name . ' - ' . $position . ' at ' . $companyName); ?>,
-                url: window.location.href
+                url: __shareUrl
             };
 
             if (navigator.share) {
                 navigator.share(shareData).catch(() => {});
             } else {
                 // Fallback: copy to clipboard
-                navigator.clipboard.writeText(window.location.href).then(() => {
+                navigator.clipboard.writeText(__shareUrl).then(() => {
                     const toast = document.getElementById('copyToast');
                     toast.classList.add('show');
                     setTimeout(() => toast.classList.remove('show'), 2000);
                 }).catch(() => {
                     // Final fallback
                     const input = document.createElement('input');
-                    input.value = window.location.href;
+                    input.value = __shareUrl;
                     document.body.appendChild(input);
                     input.select();
                     document.execCommand('copy');
