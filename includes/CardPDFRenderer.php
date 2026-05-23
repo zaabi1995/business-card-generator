@@ -89,10 +89,21 @@ class CardPDFRenderer
         if (!is_array($tplFront) && !is_array($tplBack)) {
             return ['success' => false, 'error' => 'no active templates'];
         }
-        // Front + back must both be vector-capable; otherwise we fall back.
-        $vectorOk = is_array($tplFront) && (int)($tplFront['has_vector_source'] ?? 0) === 1
-                 && is_array($tplBack)  && (int)($tplBack['has_vector_source']  ?? 0) === 1;
-        if (!$vectorOk) {
+        // At least one side must be vector-capable. Single-sided cards (front
+        // only, e.g. personal cards imported from a one-page PDF) render their
+        // single side through the vector pipeline as a one-page PDF.
+        $frontVector = is_array($tplFront) && (int)($tplFront['has_vector_source'] ?? 0) === 1;
+        $backVector  = is_array($tplBack)  && (int)($tplBack['has_vector_source']  ?? 0) === 1;
+        // If a side exists but isn't vector-capable, fall back to the raster
+        // path for that whole render (mixing vector + raster across sides
+        // would produce visually inconsistent output).
+        if (is_array($tplFront) && !$frontVector) {
+            return ['success' => false, 'error' => 'template lacks vector source'];
+        }
+        if (is_array($tplBack) && !$backVector) {
+            return ['success' => false, 'error' => 'template lacks vector source'];
+        }
+        if (!$frontVector && !$backVector) {
             return ['success' => false, 'error' => 'template lacks vector source'];
         }
 
@@ -111,8 +122,8 @@ class CardPDFRenderer
         $sig = sha1(implode('|', [
             self::RENDERER_VERSION,
             $employee['id'],
-            (int)($tplFront['current_version'] ?? 1),
-            (int)($tplBack['current_version']  ?? 1),
+            is_array($tplFront) ? (int)($tplFront['current_version'] ?? 1) : 0,
+            is_array($tplBack)  ? (int)($tplBack['current_version']  ?? 1) : 0,
             $employee['updated_at']  ?? '',
             is_array($theme) ? ($theme['updated_at'] ?? '') : '',
             $profile,
@@ -125,18 +136,22 @@ class CardPDFRenderer
         }
 
         // Build template + employee JSON for the Python renderer.
-        $importDirFront = self::importDirOf($tplFront);
-        $importDirBack  = self::importDirOf($tplBack);
+        $importDirFront = is_array($tplFront) ? self::importDirOf($tplFront) : null;
+        $importDirBack  = is_array($tplBack)  ? self::importDirOf($tplBack)  : null;
         // Both sides currently come from the same import_token in
-        // practice. Pick the back's import_dir as the source for the
-        // shared font + svg paths; if they ever diverge, refactor to
-        // pass per-page import_dir.
+        // practice. Pick whichever side exists as the source for the
+        // shared font + svg paths.
         $importDir = $importDirBack ?: $importDirFront;
         if (!$importDir || !is_dir($importDir)) {
             return ['success' => false, 'error' => 'import_dir missing'];
         }
 
-        $fontsDir = self::resolveFs((string)($tplBack['fonts_dir'] ?? ''));
+        // Use whichever side has a fonts_dir set. Single-sided cards only have
+        // a front template, so prefer back -> front.
+        $fontsDirRel = '';
+        if (is_array($tplBack))  $fontsDirRel = (string)($tplBack['fonts_dir']  ?? '');
+        if ($fontsDirRel === '' && is_array($tplFront)) $fontsDirRel = (string)($tplFront['fonts_dir'] ?? '');
+        $fontsDir = self::resolveFs($fontsDirRel);
         if (!$fontsDir || !is_dir($fontsDir)) {
             return ['success' => false, 'error' => 'fonts_dir missing, run extract-template-fonts.py'];
         }
@@ -145,7 +160,7 @@ class CardPDFRenderer
         // full fonts (with all GSUB features + full Latin/Arabic glyph
         // coverage) win over parser-extracted subset TTFs limited to the
         // source PDF's character set.
-        $companyId = (string)($tplBack['company_id'] ?? '');
+        $companyId = (string)(($tplBack['company_id'] ?? $tplFront['company_id']) ?? '');
         $companyFontsDir = $companyId
             ? (BASE_DIR . '/uploads/fonts/companies/' . $companyId)
             : null;
@@ -157,6 +172,9 @@ class CardPDFRenderer
         // (otech.cardify.om) also resolves to the same QR tracker endpoint.
         $baseUrl = (defined('APP_HOST') ? 'https://' . APP_HOST . '/' : 'https://cardify.om/');
 
+        $pages = [];
+        if (is_array($tplFront)) $pages[] = self::pageSpec($tplFront, 'front');
+        if (is_array($tplBack))  $pages[] = self::pageSpec($tplBack,  'back');
         $template = [
             'import_dir'         => $importDir,
             'fonts_dir'          => $fontsDir,
@@ -164,10 +182,7 @@ class CardPDFRenderer
             'company_name'       => $companyName,
             'company_slug'       => $companySlug,
             'base_url'           => $baseUrl,
-            'pages' => [
-                self::pageSpec($tplFront, 'front'),
-                self::pageSpec($tplBack,  'back'),
-            ],
+            'pages'              => $pages,
         ];
         $tmpTpl = tempnam(sys_get_temp_dir(), 'cpdftpl_') . '.json';
         $tmpEmp = tempnam(sys_get_temp_dir(), 'cpdfemp_') . '.json';
