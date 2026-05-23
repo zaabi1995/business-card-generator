@@ -1057,8 +1057,12 @@ adminHeader(t('employees.page_title'), 'employees');
     </div>
 
     <!-- Employees Table -->
-    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
+    <!-- Wrapper has NO overflow clipping so per-row dropdowns (download / more)
+         can escape the table on every breakpoint. Horizontal scroll wrapper was
+         removed because hidden md/lg columns make the table fit at mobile widths,
+         and we'd rather lose horizontal scroll than clip the row actions menu. -->
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div>
             <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-200">
                     <tr>
