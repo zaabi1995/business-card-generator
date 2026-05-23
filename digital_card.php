@@ -485,6 +485,8 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
         }
+        /* One-sided card: no flip, no pointer affordance */
+        .card-flip-container.no-back { cursor: default; perspective: none; }
         .card-flip-inner {
             position: relative;
             width: 100%;
@@ -1032,7 +1034,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
 
         <!-- Flippable Card -->
         <?php if ($frontImage): ?>
-        <div class="card-flip-container" id="cardFlip">
+        <div class="card-flip-container<?php echo $backImage ? '' : ' no-back'; ?>" id="cardFlip">
             <div class="card-flip-inner" id="cardInner" style="--card-aspect: <?php echo htmlspecialchars($cardAspectCss, ENT_QUOTES); ?>;">
                 <div class="card-face">
                     <img src="<?php echo htmlspecialchars($frontImage); ?>" alt="<?= htmlspecialchars(t('digitalcard.alt_card_front')) ?>" loading="lazy">
@@ -1759,7 +1761,8 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         const cardInner = document.getElementById('cardInner');
         const tapHint = document.getElementById('tapHint');
 
-        if (cardFlip && cardInner) {
+        // Only wire the flip handler when a back face is actually present
+        if (cardFlip && cardInner && !cardFlip.classList.contains('no-back')) {
             cardFlip.addEventListener('click', function() {
                 cardInner.classList.toggle('flipped');
                 if (tapHint) tapHint.style.opacity = '0';
