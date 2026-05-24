@@ -234,7 +234,7 @@ $t = $isRtl
     <title><?php echo htmlspecialchars($t['title']); ?></title>
     <link rel="icon" href="/favicon.ico">
     <?php if ($isRtl): ?>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.bhd.om/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
     <?php endif; ?>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }

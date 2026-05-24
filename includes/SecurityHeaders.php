@@ -126,7 +126,7 @@ class SecurityHeaders
             ],
             'style' => [
                 "'self'", "'unsafe-inline'",
-                'https://fonts.googleapis.com',
+                'https://fonts.bhd.om',
                 'https://cdnjs.cloudflare.com',
                 'https://cdn.jsdelivr.net',
                 'https://unpkg.com',
@@ -134,7 +134,7 @@ class SecurityHeaders
             ],
             'font' => [
                 "'self'", 'data:',
-                'https://fonts.gstatic.com',
+                'https://fonts.bhd.om',
                 'https://cdnjs.cloudflare.com',
             ],
             'img' => [
