@@ -452,6 +452,16 @@ function layoutGenerator() {
         countdownTimer: null,
         companySlug: <?php echo json_encode($companySlug); ?>,
         employeeId: <?php echo json_encode($employeeId); ?>,
+        <?php
+            // Resolve clean URL slug from email localpart so the success screen
+            // shares /jarwish9 instead of the raw UUID.
+            $__empEmail = strtolower((string)($employee['email'] ?? ''));
+            $__atPos    = strpos($__empEmail, '@');
+            $__empSlug  = $__atPos > 0
+                ? preg_replace('/[^a-z0-9._-]/', '', substr($__empEmail, 0, $__atPos))
+                : '';
+        ?>
+        employeeSlug: <?php echo json_encode($__empSlug); ?>,
         baseUrl: <?php echo json_encode(rtrim($baseUrl, '/')); ?>,
         apexHost: <?php echo json_encode(cardifyApexHost()); ?>,
         basePath: <?php echo json_encode(rtrim($basePath, '/')); ?>,
@@ -460,9 +470,10 @@ function layoutGenerator() {
         isNew: <?php echo $isNew ? 'true' : 'false'; ?>,
 
         get cardShareUrl() {
-            // Tenant-style URL: https://{slug}.cardify.om/{employee_id}
-            // (the old /card/{id} prefix was a legacy path-style URL.)
-            return 'https://' + this.companySlug + '.' + this.apexHost + '/' + this.employeeId;
+            // Clean tenant URL using the email localpart (e.g. /jarwish9). Falls
+            // back to the long UUID slug only when no email is on file.
+            var slug = this.employeeSlug || this.employeeId;
+            return 'https://' + this.companySlug + '.' + this.apexHost + '/' + slug;
         },
         get waShareUrl() {
             return 'https://wa.me/?text=' + encodeURIComponent('Here is my digital business card: ' + this.cardShareUrl);

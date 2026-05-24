@@ -72,10 +72,17 @@ try {
     ) ?: [];
 } catch (Throwable $e) { /* table may not exist */ }
 
-// Company slug + public URL
+// Company slug + public URL. Use the clean /<email-localpart> URL so it
+// matches what users see when sharing (e.g. /jarwish9), not the raw UUID.
 $company = $db->fetchOne('SELECT slug, name FROM companies WHERE id = :id', ['id' => $companyId]);
 $publicHost = defined('APP_HOST') ? APP_HOST : 'cardify.om';
-$publicUrl = 'https://' . ($company['slug'] ?? 'app') . '.' . $publicHost . '/' . urlencode($employeeId);
+$__empEmail = strtolower((string)($employee['email'] ?? ''));
+$__atPos    = strpos($__empEmail, '@');
+$__empSlug  = $__atPos > 0
+    ? preg_replace('/[^a-z0-9._-]/', '', substr($__empEmail, 0, $__atPos))
+    : '';
+$__urlPath  = $__empSlug !== '' ? $__empSlug : urlencode($employeeId);
+$publicUrl = 'https://' . ($company['slug'] ?? 'app') . '.' . $publicHost . '/' . $__urlPath;
 
 adminHeader(($employee['name_en'] ?: $employee['email']), 'employees');
 ?>
