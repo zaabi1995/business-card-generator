@@ -131,12 +131,19 @@ try {
     // digital card page still serves the vCard via /vcf.php.
     if (empty($_GET['vcf'])) {
         $slug = $company['slug'] ?? '';
-        $empId = urlencode($employee['id']);
+        // Prefer /<email-localpart> (e.g. /jarwish9) over the raw UUID. The
+        // tenant nginx rewrite + digital_card.php both resolve localparts.
+        $empEmail = strtolower((string)($employee['email'] ?? ''));
+        $atPos    = strpos($empEmail, '@');
+        $empSlug  = $atPos > 0
+            ? preg_replace('/[^a-z0-9._-]/', '', substr($empEmail, 0, $atPos))
+            : '';
+        $urlPath  = $empSlug !== '' ? $empSlug : urlencode($employee['id']);
         // Prefer tenant subdomain if APP_HOST is set, otherwise path route.
         $host = (defined('APP_HOST') ? APP_HOST : 'cardify.om');
         $profileUrl = $slug
-            ? "https://{$slug}." . $host . '/' . $empId
-            : "https://" . $host . '/' . urlencode($slug) . '/card/' . $empId;
+            ? "https://{$slug}." . $host . '/' . $urlPath
+            : "https://" . $host . '/' . urlencode($slug) . '/card/' . $urlPath;
         ob_end_clean();
         header('Cache-Control: no-cache, no-store, must-revalidate');
         header('Pragma: no-cache');

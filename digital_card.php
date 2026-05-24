@@ -76,13 +76,34 @@ try {
     }
 
     // Look up employee scoped to company.
-    // The URL segment can be an employee_id OR an email (useful for QR codes
-    // baked onto a watermarked portal preview before the employee row exists).
+    // The URL segment can be an employee_id, an email, OR the email localpart
+    // (e.g. /jarwish9 or /firstname.lastname). The nginx tenant rewrite routes
+    // both single tokens and dotted localparts here, so we try all three in
+    // turn: explicit UUID → full email → localpart (with `.`/`_`/`-` variants).
     $employee = null;
     if (strpos($employeeId, '@') !== false) {
         $employee = findEmployeeByEmail($employeeId, $company['id']);
     } else {
         $employee = findEmployeeById($employeeId, $company['id']);
+        if (!$employee) {
+            try {
+                $__db = Database::getInstance();
+                $localLower = strtolower($employeeId);
+                $localDashed = str_replace(['.', '_'], '-', $localLower);
+                $employee = $__db->fetchOne(
+                    "SELECT * FROM employees
+                     WHERE company_id = :cid
+                       AND status = 'active'
+                       AND deleted_at IS NULL
+                       AND (
+                            LOWER(SUBSTRING_INDEX(email, '@', 1)) = LOWER(:exact)
+                         OR REPLACE(REPLACE(LOWER(SUBSTRING_INDEX(email, '@', 1)), '.', '-'), '_', '-') = LOWER(:dashed)
+                       )
+                     LIMIT 1",
+                    ['cid' => $company['id'], 'exact' => $localLower, 'dashed' => $localDashed]
+                ) ?: null;
+            } catch (Exception $__e) { /* fall through */ }
+        }
     }
     // Fall back to the latest pending/approved card_request so a freshly
     // submitted request still resolves to an E-Card page; the actual VCF
