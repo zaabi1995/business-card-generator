@@ -1219,7 +1219,18 @@ adminHeader(t('employees.page_title'), 'employees');
                         <td class="px-6 py-4 text-right">
                             <?php
                             $publicHost = defined('APP_HOST') ? APP_HOST : 'cardify.om';
-                            $publicUrl  = 'https://' . ($company['slug'] ?? 'app') . '.' . $publicHost . '/' . urlencode($emp['id']);
+                            // Prefer the clean /<email-localpart> URL so shared
+                            // links match the employee's identity (e.g.
+                            // /jarwish9) instead of the long internal UUID.
+                            // index.php on tenant subdomains resolves bare slugs
+                            // to the employee whose email localpart matches.
+                            $__empEmail = strtolower((string)($emp['email'] ?? ''));
+                            $__atPos    = strpos($__empEmail, '@');
+                            $__empSlug  = $__atPos > 0
+                                ? preg_replace('/[^a-z0-9._-]/', '', substr($__empEmail, 0, $__atPos))
+                                : '';
+                            $__urlPath  = $__empSlug !== '' ? $__empSlug : urlencode($emp['id']);
+                            $publicUrl  = 'https://' . ($company['slug'] ?? 'app') . '.' . $publicHost . '/' . $__urlPath;
                             $printReadyUrl = '/card-pdf.php?i=' . urlencode($emp['id']) . '&print=1';
                             ?>
                             <div class="flex items-center justify-end gap-1" x-data="{ showMenu: false, showMore: false }">
