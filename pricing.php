@@ -47,7 +47,7 @@ Seo::faqPage([
 ]);
 
 $waMsg   = $isAr ? 'مرحباً، أرغب بعرض توضيحي لكارديفاي' : 'Hi, I would like a demo of Cardify';
-$waUrl   = 'https://wa.me/96899899100?text=' . rawurlencode($waMsg);
+$waUrl   = 'https://wa.me/96898899100?text=' . rawurlencode($waMsg);
 $arrow   = $isAr ? 'left' : 'right';
 $regUrl  = ($isAr ? '/ar' : '') . '/company/register.php';
 

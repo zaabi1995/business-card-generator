@@ -121,7 +121,7 @@ Seo::breadcrumbs([
 ]);
 
 $waMsg   = $isAr ? 'مرحباً، لدي سؤال حول كارديفاي' : 'Hi, I have a question about Cardify';
-$waUrl   = 'https://wa.me/96899899100?text=' . rawurlencode($waMsg);
+$waUrl   = 'https://wa.me/96898899100?text=' . rawurlencode($waMsg);
 $mapUrl  = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode('AK Tower Bousher Muscat');
 $mapEmbed= 'https://www.google.com/maps?q=' . rawurlencode('AK Tower Bousher Muscat') . '&output=embed';
 ?>

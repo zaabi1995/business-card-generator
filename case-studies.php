@@ -200,7 +200,7 @@ if ($activeCase) {
                     <i class="fa-solid fa-arrow-<?= $isAr ? 'left' : 'right' ?>"></i>
                 </a>
                 <?php $waMsg = $isAr ? 'مرحباً، أرغب بعرض توضيحي لكارديفاي' : 'Hi, I would like a demo of Cardify'; ?>
-                <a href="https://wa.me/96899899100?text=<?= rawurlencode($waMsg) ?>" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 transition">
+                <a href="https://wa.me/96898899100?text=<?= rawurlencode($waMsg) ?>" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 transition">
                     <i class="fa-brands fa-whatsapp"></i>
                     <?= htmlspecialchars(t('case_studies.closing_cta_wa')) ?>
                 </a>

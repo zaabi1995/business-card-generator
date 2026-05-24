@@ -719,7 +719,7 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                 if (!data.success && data.limit_reached) {
                     var banner = document.createElement('div');
                     banner.className = 'fixed top-0 left-0 right-0 z-50 bg-amber-500 text-white text-center py-3 px-4 text-sm font-medium';
-                    banner.innerHTML = (data.error || 'Card generation limit reached.') + ' <a href="https://wa.me/96899899100" class="underline font-bold">Contact us</a>';
+                    banner.innerHTML = (data.error || 'Card generation limit reached.') + ' <a href="https://wa.me/96898899100" class="underline font-bold">Contact us</a>';
                     document.body.prepend(banner);
                 }
             }).catch(function() {});
