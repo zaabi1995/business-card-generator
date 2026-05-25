@@ -317,6 +317,46 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     </script>
     <?php endif; ?>
     <?php if (!empty($extraHead)) echo $extraHead; ?>
+
+    <!-- BHD-Group shared design layer (design.bhd.om).
+         Cardify keeps its own brand tokens + Tailwind theme; design.bhd.om
+         adds Cmd+K palette + skeleton loaders as a complementary layer. -->
+    <link rel="stylesheet" href="https://design.bhd.om/cmdk.css" />
+    <link rel="stylesheet" href="https://design.bhd.om/skeleton.css" />
+    <script src="https://design.bhd.om/cmdk.js" defer></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        if (!window.BHDCmdK) return;
+        var isAr = document.documentElement.getAttribute('dir') === 'rtl';
+        // Resolve base path the same way PHP's getBasePath() does
+        var base = (function () {
+          var p = location.pathname.replace(/\/+$/, '');
+          // strip /<tenant-slug>/admin/* prefix for slug-routed pages
+          var m = p.match(/^\/[^/]+\/(admin|company)\b/);
+          if (m) return p.slice(0, p.indexOf(m[1])).replace(/\/$/, '');
+          return '';
+        })();
+        BHDCmdK.init({
+          commands: [
+            { id: 'home',          label: isAr ? 'الرئيسية' : 'Home',           hint: isAr ? 'تنقل' : 'Navigate',  action: function () { location.href = '/'; } },
+            { id: 'dashboard',     label: isAr ? 'لوحة التحكم' : 'Dashboard',    hint: isAr ? 'تنقل' : 'Navigate', action: function () { location.href = base + '/admin/'; } },
+            { id: 'employees',     label: isAr ? 'الموظفون' : 'Employees',       hint: isAr ? 'تنقل' : 'Navigate', action: function () { location.href = base + '/admin/employees.php'; } },
+            { id: 'orders',        label: isAr ? 'طلبات الطباعة' : 'Print orders', hint: isAr ? 'تنقل' : 'Navigate', action: function () { location.href = base + '/admin/print-orders.php'; } },
+            { id: 'analytics',     label: isAr ? 'التحليلات' : 'Analytics',       hint: isAr ? 'تنقل' : 'Navigate', action: function () { location.href = base + '/admin/analytics.php'; } },
+            { id: 'live',          label: isAr ? 'التحليلات الحية' : 'Live analytics', hint: isAr ? 'تنقل' : 'Navigate', action: function () { location.href = base + '/admin/live-analytics.php'; } },
+            { id: 'billing',       label: isAr ? 'الفواتير' : 'Billing',           hint: isAr ? 'تنقل' : 'Navigate', action: function () { location.href = base + '/admin/billing.php'; } },
+            { id: 'settings',      label: isAr ? 'الإعدادات' : 'Settings',         hint: isAr ? 'تنقل' : 'Navigate', action: function () { location.href = base + '/admin/settings.php'; } },
+            { id: 'pricing-page',  label: isAr ? 'الأسعار' : 'Pricing',            hint: isAr ? 'تنقل' : 'Navigate', action: function () { location.href = '/pricing'; } },
+            { id: 'contact',       label: isAr ? 'تواصل' : 'Contact',              hint: isAr ? 'تنقل' : 'Navigate', action: function () { location.href = '/contact'; } },
+            { id: 'theme-toggle',  label: isAr ? 'تبديل المظهر' : 'Toggle theme',  hint: isAr ? 'واجهة' : 'UI',     action: function () {
+              var d = document.documentElement;
+              var dark = d.classList.toggle('dark');
+              try { localStorage.setItem('color-theme', dark ? 'dark' : 'light'); } catch (e) {}
+            } }
+          ]
+        });
+      });
+    </script>
 </head>
 <body class="bg-gray-50 text-gray-900 antialiased <?php echo $bodyClass; ?>" <?php echo $bodyAttributes; ?>>
 <?php if (defined('SHOW_STAGE_BANNER') && SHOW_STAGE_BANNER): /* Cat T action 468 staging banner */ ?>
