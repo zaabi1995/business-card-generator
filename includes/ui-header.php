@@ -155,13 +155,13 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <link rel="alternate icon" href="<?php echo getBasePath(); ?>favicon.ico">
     <?php endif; ?>
     
-    <!-- Google Fonts - Inter + (when rtl) IBM Plex Sans Arabic -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Fonts via fonts.bhd.om (BHD-Group canonical CDN, not Google) -->
+    <link rel="preconnect" href="https://fonts.bhd.om">
+    <link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
     <?php if ($cardifyDir === 'rtl'): ?>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.bhd.om/css2?family=Inter:wght@300;400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <?php else: ?>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.bhd.om/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <?php endif; ?>
     
     <!-- Preconnect to CDNs (parallel DNS+TLS) -->
