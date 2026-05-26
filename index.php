@@ -214,8 +214,8 @@ if (isset($_GET['company_slug'])) {
 // Brand name
 $brandName = 'Cardify';
 $tagline = 'Business Cards Made Simple';
-$pageTitle = 'Cardify, Digital & Printed Business Cards for the GCC';
-$pageDescription = 'Bilingual Arabic/English digital and printed business cards for teams across the Gulf: Oman (live), Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait (rolling out 2026). QR vCard save, Apple Wallet, NFC, bulk provisioning. Free to start.';
+$pageTitle = 'Cardify, the Best & Biggest Digital + Printed Business Card Platform in the GCC';
+$pageDescription = 'The Gulf\'s biggest and best digital + printed business card platform. Free forever for teams in Oman (live), Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait. Bilingual Arabic/English, QR vCard, Apple + Google Wallet, NFC, bulk provisioning. Built in Muscat by BHD Group.';
 $canonicalUrl = 'https://cardify.om/';
 $bodyClass = 'bg-white';
 
