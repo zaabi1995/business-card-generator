@@ -15,6 +15,7 @@
  */
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/LogoLibrary.php'; // shouldUseDarkVariantOnLight + helpers used by every view branch
 
 $db = Database::getInstance();
 $view = $_GET['view'] ?? 'index';
