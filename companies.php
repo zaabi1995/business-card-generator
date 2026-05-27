@@ -106,6 +106,29 @@ if ($view === 'company' && $slug) {
         header('HTTP/1.1 304 Not Modified');
         exit;
     }
+
+    // Related brands: same sector, prefer ones with logos. Skip when this
+    // entry's sector is missing or 'other' (too noisy a bucket).
+    $relatedBrands = [];
+    if (!empty($company['sector']) && $company['sector'] !== 'other') {
+        try {
+            $relatedBrands = $db->fetchAll(
+                "SELECT slug, name_en, name_ar, logo_status,
+                        logo_svg_path, logo_png_path, logo_png_512_path, logo_webp_path,
+                        logo_svg_dark_path, logo_png_dark_path, logo_webp_dark_path,
+                        logo_dominant_color, logo_palette, logo_updated_at
+                 FROM om_companies
+                 WHERE sector = :s
+                   AND slug != :slug
+                 ORDER BY FIELD(logo_status,'verified','indexed','pending','none'),
+                          size_bucket ASC, RAND()
+                 LIMIT 6",
+                [':s' => $company['sector'], ':slug' => $slug]
+            );
+        } catch (Throwable $e) {
+            $relatedBrands = [];
+        }
+    }
 } elseif ($view === 'sector' && $slug) {
     if (!isset($SECTORS[$slug])) {
         http_response_code(404);
@@ -609,6 +632,70 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                     <a href="<?= $basePrefix ?>/<?= escq($r['slug']) ?>" class="p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition">
                         <div class="font-medium text-gray-900 truncate"><?= escq($isAr ? ($r['name_ar'] ?: $r['name_en']) : $r['name_en']) ?></div>
                         <div class="text-xs text-gray-500 mt-1"><?= escq(labelOf($r['sector'], $SECTORS, $isAr)) ?></div>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </section>
+        <?php endif; ?>
+
+        <?php if (!empty($relatedBrands)):
+            $_secLabel = labelOf($company['sector'], $SECTORS, $isAr);
+        ?>
+        <section class="mt-10 bg-white rounded-2xl border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <div>
+                    <p class="text-xs uppercase tracking-wider text-blue-700 font-semibold mb-1">
+                        <i class="fa-solid fa-arrow-right-arrow-left text-[10px] <?= $isAr ? 'ml-1' : 'mr-1' ?>"></i>
+                        <?= escq($isAr ? 'علامات ذات صلة' : 'Related brands') ?>
+                    </p>
+                    <h2 class="text-lg font-bold text-gray-900">
+                        <?= escq($isAr ? "المزيد من قطاع: $_secLabel" : "More from $_secLabel") ?>
+                    </h2>
+                </div>
+                <a href="<?= $basePrefix ?>/sector/<?= escq($company['sector']) ?>"
+                   class="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700">
+                    <?= escq($isAr ? "كل شركات: $_secLabel" : "All in $_secLabel") ?>
+                    <i class="fa-solid fa-arrow-<?= $isAr ? 'left' : 'right' ?> text-xs"></i>
+                </a>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <?php foreach ($relatedBrands as $rb):
+                    $_rbPal  = json_decode((string) ($rb['logo_palette'] ?? ''), true) ?: null;
+                    $_rbFlip = LogoLibrary::shouldUseDarkVariantOnLight($_rbPal)
+                               && !empty($rb['logo_webp_dark_path'] ?? $rb['logo_png_dark_path'] ?? $rb['logo_svg_dark_path']);
+                    if ($_rbFlip) {
+                        $_rbSrc = $rb['logo_webp_dark_path']
+                            ?: $rb['logo_png_dark_path']
+                            ?: $rb['logo_svg_dark_path'];
+                    } else {
+                        $_rbSrc = $rb['logo_webp_path'] ?: $rb['logo_png_512_path']
+                            ?: $rb['logo_png_path'] ?: $rb['logo_svg_path'];
+                    }
+                    if ($_rbSrc && !empty($rb['logo_updated_at'])) {
+                        $_rbSrc .= '?v=' . strtotime($rb['logo_updated_at']);
+                    }
+                    $_rbBg = $rb['logo_dominant_color'] ?: '#f9fafb';
+                ?>
+                    <a href="<?= $basePrefix ?>/<?= escq($rb['slug']) ?>"
+                       class="cardify-logo-card group bg-white border border-gray-200 rounded-xl overflow-hidden transition-all duration-200 hover:border-gray-300 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)]"
+                       style="--brand-bg: <?= escq($_rbBg) ?>"
+                       title="<?= escq($rb['name_en']) ?>">
+                        <div class="aspect-square flex items-center justify-center p-3 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100 transition-colors duration-200 group-hover:bg-[var(--brand-bg)] group-hover:bg-none">
+                            <?php if ($_rbSrc): ?>
+                                <img src="<?= escq($_rbSrc) ?>" alt="<?= escq($rb['name_en']) ?> logo"
+                                     loading="lazy"
+                                     class="max-h-[70%] max-w-[80%] w-auto h-auto object-contain object-center transition-transform duration-200 group-hover:scale-105">
+                            <?php else: ?>
+                                <div class="text-gray-300 text-xl font-bold">
+                                    <?= escq(mb_substr($rb['name_en'], 0, 2)) ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="px-2.5 py-1.5">
+                            <p class="text-[11px] font-semibold text-gray-900 truncate">
+                                <?= escq($isAr ? ($rb['name_ar'] ?: $rb['name_en']) : $rb['name_en']) ?>
+                            </p>
+                        </div>
                     </a>
                 <?php endforeach; ?>
             </div>
