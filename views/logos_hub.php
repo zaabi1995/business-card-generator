@@ -306,6 +306,17 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                 <i class="fa-solid fa-circle-check text-[10px]"></i>
                 <?= logos_esc($isAr ? 'الموثَّقة فقط' : 'Verified only') ?>
             </button>
+
+            <?php if (!empty($randomSlug)): ?>
+                <span class="hidden sm:inline-block w-px h-5 bg-gray-200 mx-1"></span>
+                <a href="/companies/<?= logos_esc($randomSlug) ?>"
+                   id="logos-random-chip"
+                   class="cardify-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-purple-50 to-pink-50 text-purple-700 border border-purple-200 hover:border-purple-400 transition"
+                   title="<?= logos_esc($isAr ? 'تصفّح علامة عشوائية' : 'Browse a random brand') ?>">
+                    <i class="fa-solid fa-shuffle text-[10px]"></i>
+                    <?= logos_esc($isAr ? 'فاجئني' : 'Surprise me') ?>
+                </a>
+            <?php endif; ?>
         </div>
 
         <p class="text-sm text-gray-500 mb-5" id="logos-result-count">
@@ -748,6 +759,28 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                 repaintStatusChips();
                 applyFilter();
             }
+        });
+    }
+
+    // "Surprise me" chip — re-roll via /api/logos/random on each click
+    // (CF caches /logos HTML for 1h, the SSR href would stay fixed).
+    var rndChip = document.getElementById('logos-random-chip');
+    if (rndChip) {
+        rndChip.addEventListener('click', function (e) {
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;
+            e.preventDefault();
+            rndChip.style.opacity = '0.6';
+            fetch('/api/logos/random', { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { return r.json(); })
+                .then(function (j) {
+                    rndChip.style.opacity = '';
+                    if (j && j.slug) location.href = '/companies/' + j.slug;
+                    else location.href = rndChip.getAttribute('href');
+                })
+                .catch(function () {
+                    rndChip.style.opacity = '';
+                    location.href = rndChip.getAttribute('href');
+                });
         });
     }
 

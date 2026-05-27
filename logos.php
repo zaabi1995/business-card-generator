@@ -110,6 +110,16 @@ function logoLibraryStats(Database $db): array {
     ];
 }
 
+/** One random verified/indexed slug, for the "Surprise me" button. */
+function randomBrandSlug(Database $db): ?string {
+    $row = $db->fetchOne(
+        "SELECT slug FROM om_companies
+          WHERE logo_status IN ('indexed','verified')
+          ORDER BY RAND() LIMIT 1"
+    );
+    return $row['slug'] ?? null;
+}
+
 /** Last N verified brands for the featured band on /logos. */
 function featuredLogos(Database $db, int $limit = 8): array {
     return $db->fetchAll(
@@ -185,6 +195,7 @@ $total     = totalLogos($db);
 $counts    = sectorCounts($db);
 $libStats  = logoLibraryStats($db);
 $featured  = featuredLogos($db, 8);
+$randomSlug = randomBrandSlug($db);
 $title     = $isAr
     ? 'مكتبة الشعارات العمانية، ' . number_format($total) . '+ علامة عُمانية'
     : 'The Omani Logo Library, ' . number_format($total) . '+ Omani Brands';
