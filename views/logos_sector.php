@@ -137,10 +137,11 @@ $page = $data['page'];
                 ?>
                     <a href="/companies/<?= logos_sector_esc($r['slug']) ?>"
                        class="group relative bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all overflow-hidden">
-                        <div class="aspect-square flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100">
+                        <div class="aspect-square flex items-center justify-center p-3 sm:p-4 md:p-5 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100">
                             <?php if ($src): ?>
                                 <img src="<?= logos_sector_esc($src) ?>" alt="<?= logos_sector_esc($r['name_en']) ?>"
-                                     loading="lazy" class="max-h-full max-w-full object-contain">
+                                     loading="lazy"
+                                     class="max-h-[70%] max-w-[80%] w-auto h-auto object-contain object-center">
                             <?php else: ?>
                                 <div class="text-gray-300 text-xl font-bold">
                                     <?= logos_sector_esc(mb_substr($r['name_en'], 0, 2)) ?>

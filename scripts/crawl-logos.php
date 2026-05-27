@@ -395,6 +395,7 @@ function renderSvgVariants(string $svgPath, string $root, int $id, array &$out, 
         $dst = "$root/$id" . ($w === 1024 ? '' : "-$w") . '.png';
         @exec('rsvg-convert -w ' . $w . ' ' . escapeshellarg($svgPath) . ' -o ' . escapeshellarg($dst) . ' 2>/dev/null', $_o, $rc);
         if ($rc === 0 && is_file($dst) && filesize($dst) >= MIN_IMAGE_BYTES) {
+            LogoLibrary::trimRasterFile($dst); // strip transparent borders so logos center predictably
             @chmod($dst, 0644);
             $out[$key] = $rel . ($w === 1024 ? '.png' : "-$w.png");
         }
@@ -403,6 +404,7 @@ function renderSvgVariants(string $svgPath, string $root, int $id, array &$out, 
     if (is_file("$root/$id-2048.png")) {
         @exec('convert ' . escapeshellarg("$root/$id-2048.png") . ' -quality 85 ' . escapeshellarg($webp) . ' 2>/dev/null', $_o, $rc);
         if ($rc === 0 && is_file($webp)) {
+            LogoLibrary::trimRasterFile($webp);
             @chmod($webp, 0644);
             $out['webp'] = "$rel.webp";
         }
@@ -410,16 +412,19 @@ function renderSvgVariants(string $svgPath, string $root, int $id, array &$out, 
 }
 
 function renderPngVariants(string $masterPng, string $root, int $id, array &$out, string $rel): void {
+    LogoLibrary::trimRasterFile($masterPng); // trim the source 1024 first
     $out['png'] = "$rel.png";
     $small = "$root/$id-512.png";
     @exec('convert ' . escapeshellarg($masterPng) . ' -resize 512x512\> ' . escapeshellarg($small) . ' 2>/dev/null', $_o, $rc);
     if ($rc === 0 && is_file($small) && filesize($small) >= MIN_IMAGE_BYTES) {
+        LogoLibrary::trimRasterFile($small);
         @chmod($small, 0644);
         $out['png_512'] = "$rel-512.png";
     }
     $webp = "$root/$id.webp";
     @exec('convert ' . escapeshellarg($masterPng) . ' -quality 85 ' . escapeshellarg($webp) . ' 2>/dev/null', $_o, $rc);
     if ($rc === 0 && is_file($webp)) {
+        LogoLibrary::trimRasterFile($webp);
         @chmod($webp, 0644);
         $out['webp'] = "$rel.webp";
     }

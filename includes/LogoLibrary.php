@@ -226,6 +226,30 @@ class LogoLibrary {
             || ($rgb[0] < 25  && $rgb[1] < 25  && $rgb[2] < 25);
     }
 
+    /**
+     * Trim transparent borders from a raster file (PNG / WebP) in-place.
+     * Logos uploaded with whitespace in the source viewBox render with
+     * empty edges around the visible content; trimming gives every file
+     * a tight bounding box so the consumer can center it predictably.
+     * No-op if ImageMagick `convert` is unavailable, or if the file is
+     * already tight (convert -trim only touches matching transparent
+     * edge pixels, never the inner content).
+     */
+    public static function trimRasterFile(string $path): bool {
+        if (!is_file($path)) return false;
+        $convert = trim((string) @shell_exec('command -v convert 2>/dev/null'));
+        if ($convert === '') return false;
+        $bytesBefore = filesize($path);
+        $rc = 0; $out = [];
+        @exec(escapeshellarg($convert) . ' ' . escapeshellarg($path) . ' -trim +repage '
+              . escapeshellarg($path) . ' 2>/dev/null', $out, $rc);
+        if ($rc !== 0 || !is_file($path) || filesize($path) < 100) {
+            return false;
+        }
+        clearstatcache(true, $path);
+        return true;
+    }
+
     public static function ipHash(): string {
         // Use the shared getClientIp() helper so deployments behind Cloudflare /
         // reverse proxies hash the real client IP, not the proxy address.

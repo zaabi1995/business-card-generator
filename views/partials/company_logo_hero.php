@@ -48,11 +48,12 @@ $companyId = (int) ($company['id'] ?? 0);
     <div class="p-6 md:p-8">
         <div class="flex flex-col md:flex-row gap-6">
 
-            <!-- Logo tile -->
-            <div class="shrink-0 w-40 h-40 md:w-44 md:h-44 mx-auto md:mx-0 bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-2xl flex items-center justify-center p-5">
+            <!-- Logo tile, consistent "stage" sizing so wide wordmarks and
+                 square stamps look balanced; ~75% × 80% inner safe zone. -->
+            <div class="shrink-0 w-36 h-36 sm:w-40 sm:h-40 md:w-44 md:h-44 mx-auto md:mx-0 bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-2xl flex items-center justify-center p-4 sm:p-5">
                 <?php if ($src): ?>
                     <img src="<?= logo_hero_esc($src) ?>" alt="<?= logo_hero_esc($company['name_en'] ?? '') ?> logo"
-                         class="max-h-full max-w-full object-contain">
+                         class="max-h-[75%] max-w-[80%] w-auto h-auto object-contain object-center">
                 <?php else: ?>
                     <div class="text-gray-300 text-4xl font-extrabold">
                         <?= logo_hero_esc(mb_substr($company['name_en'] ?? '??', 0, 2)) ?>
