@@ -340,10 +340,40 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                     $src .= '?v=' . strtotime($r['logo_updated_at']);
                 }
                 $bg  = $r['logo_dominant_color'] ?: '#f9fafb';
+
+                // Stash row data on the card so the quick-preview modal can
+                // open without a network round-trip. Mirror of the API shape.
+                $_ver = !empty($r['logo_updated_at']) ? '?v=' . strtotime($r['logo_updated_at']) : '';
+                $_abs = fn(?string $p) => $p ? $p . $_ver : null;
+                $_quickJson = [
+                    'slug'           => $r['slug'],
+                    'name_en'        => $r['name_en'],
+                    'name_ar'        => $r['name_ar'] ?? null,
+                    'status'         => $r['logo_status'],
+                    'sector'         => $r['sector'] ?? null,
+                    'palette'        => $palette ?: [],
+                    'dominant_color' => $r['logo_dominant_color'] ?? null,
+                    'display_url'    => $src,
+                    'urls' => [
+                        'svg'        => $_abs($r['logo_svg_path']      ?? null),
+                        'png_512'    => $_abs($r['logo_png_512_path']  ?? null),
+                        'png_1024'   => $_abs($r['logo_png_path']      ?? null),
+                        'png_2048'   => $_abs($r['logo_png_2048_path'] ?? null),
+                        'webp'       => $_abs($r['logo_webp_path']     ?? null),
+                        'svg_dark'   => $_abs($r['logo_svg_dark_path'] ?? null),
+                        'png_dark'   => $_abs($r['logo_png_dark_path'] ?? null),
+                        'webp_dark'  => $_abs($r['logo_webp_dark_path'] ?? null),
+                        'svg_white'  => $_abs($r['logo_svg_white_path'] ?? null),
+                        'png_white'  => $_abs($r['logo_png_white_path'] ?? null),
+                        'webp_white' => $_abs($r['logo_webp_white_path'] ?? null),
+                    ],
+                    'profile_url'    => '/companies/' . $r['slug'],
+                ];
             ?>
                 <a href="/companies/<?= logos_esc($r['slug']) ?>"
                    class="cardify-logo-card group relative bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200 overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)]"
-                   style="--brand-bg: <?= logos_esc($bg) ?>">
+                   style="--brand-bg: <?= logos_esc($bg) ?>"
+                   data-logo='<?= htmlspecialchars(json_encode($_quickJson, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), ENT_QUOTES, "UTF-8") ?>'>
                     <div class="aspect-square flex items-center justify-center p-3 sm:p-4 md:p-5 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100 transition-colors duration-200 group-hover:bg-[var(--brand-bg)] group-hover:bg-none">
                         <?php if ($src): ?>
                             <img src="<?= logos_esc($src) ?>" alt="<?= logos_esc($r['name_en']) ?>"
@@ -522,6 +552,13 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
     </div>
 </div>
 
+<!-- Quick-preview modal (Iconify-style): click any grid card to see the
+     logo + palette + downloads inline, without a full page nav. -->
+<dialog id="logo-quick-preview"
+        class="rounded-2xl p-0 backdrop:bg-black/40 max-w-2xl w-[92vw] border border-gray-200 shadow-2xl">
+    <div class="p-6" id="logo-quick-body"><!-- populated by JS --></div>
+</dialog>
+
 <script>
 // Instant search-as-you-type for /logos. Debounced fetch to
 // /api/logos/list.php, replaces #logos-grid + result count in place.
@@ -566,13 +603,15 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
         var name = isAr ? (r.name_ar || r.name_en) : (r.name_en || r.name_ar);
         var src  = r.display_url;
         var bg   = r.dominant_color || '#f9fafb';
+        var dataLogo = escapeAttr(JSON.stringify(r));
         var imgInner = src
             ? '<img src="' + escapeAttr(src) + '" alt="' + escapeAttr(name) + '" loading="lazy" class="max-h-[70%] max-w-[80%] w-auto h-auto object-contain object-center transition-transform duration-200 group-hover:scale-105">'
             : '<div class="text-gray-300 text-2xl font-bold">' + escapeAttr((name || '').slice(0, 2)) + '</div>';
         return ''
             + '<a href="/companies/' + escapeAttr(r.slug) + '"'
             +    ' class="cardify-logo-card group relative bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200 overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)]"'
-            +    ' style="--brand-bg: ' + escapeAttr(bg) + '">'
+            +    ' style="--brand-bg: ' + escapeAttr(bg) + '"'
+            +    ' data-logo="' + dataLogo + '">'
             +   '<div class="aspect-square flex items-center justify-center p-3 sm:p-4 md:p-5 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100 transition-colors duration-200 group-hover:bg-[var(--brand-bg)] group-hover:bg-none">'
             +     imgInner
             +   '</div>'
@@ -718,6 +757,121 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
             qIn.value = ''; applyFilter();
         }
     });
+
+    // === Quick-preview modal ===
+    var qpDlg  = document.getElementById('logo-quick-preview');
+    var qpBody = document.getElementById('logo-quick-body');
+
+    function fmtBytes(b) {
+        if (!b && b !== 0) return '';
+        if (b < 1024) return b + ' B';
+        if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+        return (b / 1024 / 1024).toFixed(1) + ' MB';
+    }
+
+    function fmtChip(label, url, icon) {
+        if (!url) return '';
+        return '<a href="' + escapeAttr(url) + '" rel="nofollow" download'
+            +    ' class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 hover:border-gray-400 transition text-xs font-medium text-gray-800">'
+            +    '<i class="fa-solid ' + icon + ' text-[10px]"></i>'
+            +    escapeAttr(label)
+            +  '</a>';
+    }
+
+    function openQuickPreview(row) {
+        if (!qpDlg || !qpBody) return;
+        var name = isAr ? (row.name_ar || row.name_en) : (row.name_en || row.name_ar);
+        var pal  = (row.palette || []).slice(0, 5);
+        var urls = row.urls || {};
+        // Convert /logo-download links into actual download routes (require unlock cookie)
+        var dl = function (fmt) { return '/logo-download?company=' + encodeURIComponent(row.slug || '') + '&format=' + fmt; };
+        // The grid card data uses the company SLUG to navigate to /companies/<slug>
+        // but /logo-download needs the numeric company id. Fallback: use the raw urls map.
+        var swatches = pal.map(function (hex) {
+            hex = String(hex).toUpperCase();
+            return '<span class="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-white border border-gray-200 text-[10px] font-mono text-gray-700">'
+                +    '<span class="w-3 h-3 rounded-full ring-1 ring-inset ring-black/10" style="background:' + escapeAttr(hex) + '"></span>'
+                +    escapeAttr(hex)
+                + '</span>';
+        }).join(' ');
+
+        // Direct download links to the asset URLs (these don't pass through the
+        // unlock gate because they're the canonical CDN paths). For the gated
+        // /logo-download endpoint, the user can click "Open full page" instead.
+        var fmtRow = ''
+            + fmtChip('SVG',        urls.svg,        'fa-bezier-curve')
+            + fmtChip('PNG · 1024', urls.png_1024,   'fa-image')
+            + fmtChip('PNG · 2048', urls.png_2048,   'fa-image')
+            + fmtChip('WebP',       urls.webp,       'fa-image');
+        var darkRow = ''
+            + fmtChip('SVG · dark',  urls.svg_dark,  'fa-bezier-curve')
+            + fmtChip('PNG · dark',  urls.png_dark,  'fa-image')
+            + fmtChip('WebP · dark', urls.webp_dark, 'fa-image');
+        var whiteRow = ''
+            + fmtChip('SVG · white',  urls.svg_white,  'fa-bezier-curve')
+            + fmtChip('PNG · white',  urls.png_white,  'fa-image')
+            + fmtChip('WebP · white', urls.webp_white, 'fa-image');
+
+        qpBody.innerHTML = ''
+            + '<div class="flex items-start gap-4 mb-5">'
+            +   '<div class="shrink-0 w-20 h-20 rounded-xl bg-gradient-to-br from-gray-50 to-white border border-gray-200 flex items-center justify-center p-2">'
+            +     (row.display_url
+                ? '<img src="' + escapeAttr(row.display_url) + '" alt="' + escapeAttr(name) + '" class="max-h-[80%] max-w-[85%] object-contain">'
+                : '<div class="text-gray-300 text-xl font-extrabold">' + escapeAttr((name || '').slice(0, 2)) + '</div>')
+            +   '</div>'
+            +   '<div class="min-w-0 flex-1">'
+            +     '<p class="text-xs uppercase tracking-wider text-gray-400 mb-1">' + escapeAttr(<?= json_encode($isAr ? 'مكتبة الشعارات' : 'Logo Library') ?>) + '</p>'
+            +     '<h2 class="text-xl font-bold text-gray-900 truncate">' + escapeAttr(name) + '</h2>'
+            +     (row.name_ar && !isAr ? '<p class="text-sm text-gray-500 mt-0.5 truncate" dir="rtl">' + escapeAttr(row.name_ar) + '</p>' : '')
+            +     '<span class="inline-flex items-center gap-1.5 mt-2 px-2 py-0.5 rounded-full ring-1 ring-inset text-[10px] font-semibold ' + badgeClass(row.status) + '">'
+            +       escapeAttr(badgeLabel(row.status))
+            +     '</span>'
+            +   '</div>'
+            +   '<button type="button" data-qp-close class="shrink-0 -mt-1 -mr-1 w-9 h-9 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition flex items-center justify-center" aria-label="Close">'
+            +     '<i class="fa-solid fa-xmark text-lg"></i>'
+            +   '</button>'
+            + '</div>'
+            + (pal.length ? '<div class="mb-4"><p class="text-xs text-gray-500 mb-1.5">' + escapeAttr(<?= json_encode($isAr ? 'لوحة الألوان' : 'Brand palette') ?>) + '</p><div class="flex flex-wrap gap-1.5">' + swatches + '</div></div>' : '')
+            + '<div class="mb-3"><p class="text-xs text-gray-500 mb-1.5">' + escapeAttr(<?= json_encode($isAr ? 'الأصلي' : 'Original') ?>) + '</p><div class="flex flex-wrap gap-1.5">' + (fmtRow || '<span class="text-xs text-gray-400">,</span>') + '</div></div>'
+            + (darkRow ? '<div class="mb-3"><p class="text-xs text-gray-500 mb-1.5">' + escapeAttr(<?= json_encode($isAr ? 'داكن (للخلفيات الفاتحة)' : 'Dark (for light backgrounds)') ?>) + '</p><div class="flex flex-wrap gap-1.5">' + darkRow + '</div></div>' : '')
+            + (whiteRow ? '<div class="mb-4"><p class="text-xs text-gray-500 mb-1.5">' + escapeAttr(<?= json_encode($isAr ? 'فاتح (للخلفيات الداكنة)' : 'White (for dark backgrounds)') ?>) + '</p><div class="flex flex-wrap gap-1.5">' + whiteRow + '</div></div>' : '')
+            + '<div class="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">'
+            +   '<a href="' + escapeAttr(row.profile_url || ('/companies/' + (row.slug || ''))) + '" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">'
+            +     escapeAttr(<?= json_encode($isAr ? 'فتح الصفحة الكاملة' : 'Open full page') ?>) + ' <i class="fa-solid fa-arrow-' + (isAr ? 'left' : 'right') + ' text-xs"></i>'
+            +   '</a>'
+            + '</div>';
+
+        try { qpDlg.showModal(); } catch (_) { qpDlg.setAttribute('open', ''); }
+    }
+
+    // Click delegation: any element inside [data-logo] opens the modal
+    // (event bubbles up to the <a>), with normal click intent for the link
+    // also captured so we don't double-nav.
+    function onCardClick(e) {
+        var card = e.target.closest('[data-logo]');
+        if (!card) return;
+        // Allow modifier-click + middle-click to honour the link
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;
+        e.preventDefault();
+        var raw = card.getAttribute('data-logo');
+        if (!raw) return;
+        try {
+            var row = JSON.parse(raw);
+            openQuickPreview(row);
+        } catch (err) {
+            // JSON parse failed: just navigate to the profile
+            location.href = card.getAttribute('href');
+        }
+    }
+    document.addEventListener('click', onCardClick);
+    // Close handler
+    if (qpDlg) {
+        qpDlg.addEventListener('click', function (e) {
+            if (e.target && e.target.closest('[data-qp-close]')) qpDlg.close();
+            // backdrop click (when target IS the dialog itself, not children)
+            if (e.target === qpDlg) qpDlg.close();
+        });
+    }
 
     // Back/forward navigation re-applies the query string state
     window.addEventListener('popstate', function () {
