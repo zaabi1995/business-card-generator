@@ -185,6 +185,11 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                 $badgeColor = $status === 'verified' ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-gray-50 text-gray-600 ring-gray-200';
                 $badgeLabel = $status === 'verified' ? t('logos.badge_verified') : t('logos.badge_indexed');
                 $src = $r['logo_webp_path'] ?: $r['logo_png_512_path'] ?: $r['logo_png_path'] ?: $r['logo_svg_path'];
+                // Bust CF's 30-day immutable cache on retrims by appending the
+                // logo_updated_at timestamp; same pattern as the card-render bg URL.
+                if ($src && !empty($r['logo_updated_at'])) {
+                    $src .= '?v=' . strtotime($r['logo_updated_at']);
+                }
                 $bg  = $r['logo_dominant_color'] ?: '#f9fafb';
             ?>
                 <a href="/companies/<?= logos_esc($r['slug']) ?>"

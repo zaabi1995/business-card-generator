@@ -23,6 +23,10 @@ $src     = $company['logo_webp_path']
         ?: $company['logo_svg_path']
         ?: $company['logo_png_512_path']
         ?: null;
+// Bust Cloudflare's 30-day immutable cache on retrims/refreshes
+if ($src && !empty($company['logo_updated_at'])) {
+    $src .= '?v=' . strtotime($company['logo_updated_at']);
+}
 $bg           = $company['logo_dominant_color'] ?: '#f8fafc';
 $canDownload  = LogoLibrary::canDownload($company);
 

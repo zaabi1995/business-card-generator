@@ -134,6 +134,10 @@ $page = $data['page'];
                     $badgeColor = $status === 'verified' ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-gray-50 text-gray-600 ring-gray-200';
                     $badgeLabel = $status === 'verified' ? t('logos.badge_verified') : t('logos.badge_indexed');
                     $src = $r['logo_webp_path'] ?: $r['logo_png_512_path'] ?: $r['logo_png_path'] ?: $r['logo_svg_path'];
+                    // Bust CF's 30-day immutable cache (see logos_hub.php for context)
+                    if ($src && !empty($r['logo_updated_at'])) {
+                        $src .= '?v=' . strtotime($r['logo_updated_at']);
+                    }
                 ?>
                     <a href="/companies/<?= logos_sector_esc($r['slug']) ?>"
                        class="group relative bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all overflow-hidden">
