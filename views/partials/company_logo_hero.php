@@ -410,6 +410,55 @@ $companyId = (int) ($company['id'] ?? 0);
 </section>
 
 <?php
+// Sticky mobile download bar, hidden on md+; shows the brand mark, name,
+// and a primary one-tap SVG download. Tap goes through the unlock gate
+// like every other download link so the lead-capture flow still fires.
+if ($src && $canDownload):
+    $_primaryFmt = !empty($company['logo_svg_path'])
+        ? 'svg'
+        : (!empty($company['logo_png_path']) ? 'png_1024'
+            : (!empty($company['logo_webp_path']) ? 'webp' : 'zip'));
+    $_primaryUrl = '/logo-download?company=' . $companyId . '&format=' . $_primaryFmt;
+    $_primaryLabel = match ($_primaryFmt) {
+        'svg'      => 'SVG',
+        'png_1024' => 'PNG',
+        'webp'     => 'WebP',
+        default    => 'ZIP',
+    };
+?>
+<div class="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur border-t border-gray-200 shadow-[0_-4px_24px_-12px_rgba(15,23,42,0.18)]"
+     style="padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem)">
+    <div class="flex items-center gap-3 px-4 pt-2.5">
+        <div class="shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-gray-50 to-white border border-gray-200 flex items-center justify-center p-1">
+            <img src="<?= logo_hero_esc($src) ?>" alt="" class="max-h-[80%] max-w-[80%] object-contain">
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="text-[10px] uppercase tracking-wider text-gray-400 leading-none mb-0.5">
+                <?= $isAr ? 'تنزيل الشعار' : 'Download logo' ?>
+            </p>
+            <p class="text-sm font-semibold text-gray-900 truncate leading-tight">
+                <?= $isAr
+                    ? logo_hero_esc($company['name_ar'] ?: ($company['name_en'] ?? ''))
+                    : logo_hero_esc($company['name_en'] ?? '') ?>
+            </p>
+        </div>
+        <a href="<?= logo_hero_esc($_primaryUrl) ?>"
+           class="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow shadow-blue-600/30 transition"
+           rel="nofollow" download>
+            <i class="fa-solid fa-download text-[11px]"></i>
+            <?= logo_hero_esc($_primaryLabel) ?>
+        </a>
+    </div>
+</div>
+<style>
+    /* Bottom padding so page content isn't hidden behind the sticky bar on mobile */
+    @media (max-width: 767px) {
+        body { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+    }
+</style>
+<?php endif; ?>
+
+<?php
 // Lead-capture gate, only render when this hero will show download buttons
 $_isUnlocked = !empty($_COOKIE['cardify_logo_unlock_v1'])
     && preg_match('/^[a-f0-9]{32}$/i', (string) $_COOKIE['cardify_logo_unlock_v1']);
