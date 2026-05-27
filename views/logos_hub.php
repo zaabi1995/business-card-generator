@@ -135,7 +135,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <!-- Hero -->
-        <div class="text-center mb-10">
+        <div class="text-center mb-8">
             <span class="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-wide mb-4">
                 <?= logos_esc(t('logos.hero_badge')) ?>
             </span>
@@ -146,6 +146,81 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                 <?= logos_esc(t('logos.hero_subtitle', ['count' => number_format($total)])) ?>
             </p>
         </div>
+
+        <!-- Stats band (Metronic-style stat cards) -->
+        <div class="grid grid-cols-3 gap-3 mb-6">
+            <div class="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xl sm:text-2xl font-extrabold text-gray-900 leading-none"><?= number_format($libStats['verified']) ?></p>
+                    <p class="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide mt-1"><?= logos_esc($isAr ? 'علامات موثَّقة' : 'Verified brands') ?></p>
+                </div>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xl sm:text-2xl font-extrabold text-gray-900 leading-none"><?= number_format($libStats['indexed']) ?></p>
+                    <p class="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide mt-1"><?= logos_esc($isAr ? 'مفهرسة' : 'Indexed brands') ?></p>
+                </div>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-grid-2"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xl sm:text-2xl font-extrabold text-gray-900 leading-none"><?= number_format($libStats['sectors']) ?></p>
+                    <p class="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide mt-1"><?= logos_esc($isAr ? 'قطاعات' : 'Sectors') ?></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Featured (recently verified) band -->
+        <?php if (!empty($featured)): ?>
+        <div class="mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-bold text-gray-900 uppercase tracking-wide">
+                    <i class="fa-solid fa-sparkles text-amber-500 <?= $isAr ? 'ml-1.5' : 'mr-1.5' ?>"></i>
+                    <?= logos_esc($isAr ? 'مميَّزة' : 'Featured') ?>
+                </h2>
+                <span class="text-xs text-gray-500"><?= logos_esc($isAr ? 'أحدث العلامات الموثَّقة' : 'Most recently verified') ?></span>
+            </div>
+            <div class="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 snap-x">
+                <?php foreach ($featured as $f):
+                    $fpal = json_decode((string) ($f['logo_palette'] ?? ''), true) ?: null;
+                    $fFlip = LogoLibrary::shouldUseDarkVariantOnLight($fpal)
+                             && !empty($f['logo_webp_dark_path'] ?? $f['logo_png_dark_path'] ?? $f['logo_svg_dark_path']);
+                    $fsrc = $fFlip
+                        ? ($f['logo_webp_dark_path'] ?: $f['logo_png_dark_path'] ?: $f['logo_svg_dark_path'])
+                        : ($f['logo_webp_path'] ?: $f['logo_png_512_path'] ?: $f['logo_png_path'] ?: $f['logo_svg_path']);
+                    if (!$fsrc) continue;
+                    if (!empty($f['logo_updated_at'])) {
+                        $fsrc .= '?v=' . strtotime($f['logo_updated_at']);
+                    }
+                    $fbg = $f['logo_dominant_color'] ?: '#f9fafb';
+                ?>
+                    <a href="/companies/<?= logos_esc($f['slug']) ?>"
+                       class="cardify-logo-card group shrink-0 snap-start w-32 sm:w-36 bg-white border border-gray-200 rounded-xl overflow-hidden transition hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)]"
+                       style="--brand-bg: <?= logos_esc($fbg) ?>"
+                       title="<?= logos_esc($f['name_en']) ?>">
+                        <div class="aspect-[5/3] flex items-center justify-center p-3 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100 transition-colors duration-200 group-hover:bg-[var(--brand-bg)] group-hover:bg-none">
+                            <img src="<?= logos_esc($fsrc) ?>" alt="<?= logos_esc($f['name_en']) ?>"
+                                 loading="lazy"
+                                 class="max-h-[80%] max-w-[85%] w-auto h-auto object-contain object-center transition-transform duration-200 group-hover:scale-105">
+                        </div>
+                        <div class="px-2.5 py-1.5">
+                            <p class="text-[11px] font-semibold text-gray-900 truncate">
+                                <?= logos_esc($isAr ? ($f['name_ar'] ?: $f['name_en']) : $f['name_en']) ?>
+                            </p>
+                        </div>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <!-- Filter bar (form fallback for no-JS; JS upgrades to instant search) -->
         <form id="logos-filter-form" method="get" class="flex flex-wrap gap-2 mb-6 p-3 bg-white border border-gray-200 rounded-xl shadow-sm">

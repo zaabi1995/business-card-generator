@@ -94,6 +94,36 @@ function totalLogos(Database $db): int {
     )['c'] ?? 0);
 }
 
+/** Headline stats for the /logos hero band: verified / indexed / sectors. */
+function logoLibraryStats(Database $db): array {
+    return [
+        'verified' => (int) ($db->fetchOne(
+            "SELECT COUNT(*) c FROM om_companies WHERE logo_status = 'verified'"
+        )['c'] ?? 0),
+        'indexed'  => (int) ($db->fetchOne(
+            "SELECT COUNT(*) c FROM om_companies WHERE logo_status = 'indexed'"
+        )['c'] ?? 0),
+        'sectors'  => (int) ($db->fetchOne(
+            "SELECT COUNT(DISTINCT sector) c FROM om_companies
+             WHERE logo_status IN ('indexed','verified') AND sector IS NOT NULL AND sector != ''"
+        )['c'] ?? 0),
+    ];
+}
+
+/** Last N verified brands for the featured band on /logos. */
+function featuredLogos(Database $db, int $limit = 8): array {
+    return $db->fetchAll(
+        "SELECT id, slug, name_en, name_ar,
+                logo_svg_path, logo_png_path, logo_png_512_path, logo_webp_path,
+                logo_svg_dark_path, logo_png_dark_path, logo_webp_dark_path,
+                logo_dominant_color, logo_palette, logo_updated_at
+         FROM om_companies
+         WHERE logo_status = 'verified'
+         ORDER BY logo_verified_at DESC, id DESC
+         LIMIT $limit"
+    );
+}
+
 function sectorCounts(Database $db): array {
     return $db->fetchAll(
         "SELECT sector, COUNT(*) c FROM om_companies
@@ -153,6 +183,8 @@ $filters = [
 $data      = fetchLogoRows($db, $filters, $page, 60);
 $total     = totalLogos($db);
 $counts    = sectorCounts($db);
+$libStats  = logoLibraryStats($db);
+$featured  = featuredLogos($db, 8);
 $title     = $isAr
     ? 'مكتبة الشعارات العمانية، ' . number_format($total) . '+ علامة عُمانية'
     : 'The Omani Logo Library, ' . number_format($total) . '+ Omani Brands';
