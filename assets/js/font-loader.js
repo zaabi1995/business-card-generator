@@ -329,9 +329,9 @@ const FontLoader = {
         return new Promise((resolve) => {
             const fontFamilies = families || this.getEssentialFonts();
             const encodedFamilies = fontFamilies.map(f => f.replace(/ /g, '+')).join('&family=');
-            const cssUrl = `https://fonts.googleapis.com/css2?family=${encodedFamilies}&display=swap`;
+            const cssUrl = `https://fonts.bhd.om/css2?family=${encodedFamilies}&display=swap`;
             
-            const existing = document.querySelector(`link[href*="fonts.googleapis.com"]`);
+            const existing = document.querySelector(`link[href*="fonts.bhd.om"], link[href*="fonts.googleapis.com"]`);
             if (existing) {
                 this.isLoaded = true;
                 resolve(fontFamilies);
@@ -417,8 +417,8 @@ const FontLoader = {
      */
     preload() {
         const preconnects = [
-            'https://fonts.googleapis.com',
-            'https://fonts.gstatic.com'
+            'https://fonts.bhd.om',
+            'https://fonts.bhd.om'
         ];
         
         preconnects.forEach(url => {
@@ -443,7 +443,7 @@ const FontLoader = {
     getGoogleFontsUrl(families = null) {
         const fontFamilies = families || this.getAllFamilies();
         const encodedFamilies = fontFamilies.map(f => 'family=' + f.replace(/ /g, '+')).join('&');
-        return `https://fonts.googleapis.com/css2?${encodedFamilies}&display=swap`;
+        return `https://fonts.bhd.om/css2?${encodedFamilies}&display=swap`;
     },
     
     /**

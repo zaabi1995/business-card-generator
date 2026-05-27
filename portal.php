@@ -775,9 +775,9 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     <meta name="twitter:image" content="<?= htmlspecialchars($__ogImage) ?>">
     
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cairo:wght@300;400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.bhd.om">
+    <link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
+    <link href="https://fonts.bhd.om/css2?family=Inter:wght@300;400;500;600;700;800&family=Cairo:wght@300;400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
 
     <?php
     // Imported PDF templates can reference any number of font families
@@ -835,7 +835,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             // weight isn't published for that family.
             return 'family=' . str_replace(' ', '+', $f) . ':ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,700';
         }, $loadFams);
-        echo '<link href="https://fonts.googleapis.com/css2?' . implode('&', $famParts) . '&display=swap" rel="stylesheet">' . "\n";
+        echo '<link href="https://fonts.bhd.om/css2?' . implode('&', $famParts) . '&display=swap" rel="stylesheet">' . "\n";
     }
 
     // Cardify font registry: emit @font-face for any family the active

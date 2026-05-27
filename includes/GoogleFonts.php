@@ -246,7 +246,7 @@ class GoogleFonts {
         $weightQuery = implode(';', $weightNumbers);
         
         // Fetch CSS with all weights
-        $cssUrl = "https://fonts.googleapis.com/css2?family={$fontInfo['family']}:wght@{$weightQuery}&display=swap";
+        $cssUrl = "https://fonts.bhd.om/css2?family={$fontInfo['family']}:wght@{$weightQuery}&display=swap";
         
         $context = stream_context_create([
             'http' => [

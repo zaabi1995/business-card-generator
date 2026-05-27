@@ -233,9 +233,9 @@ $isAr   = ($locale === 'ar');
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" href="/favicon.ico">
     <?php if ($isAr): ?>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.bhd.om">
+    <link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
+    <link href="https://fonts.bhd.om/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
     <?php endif; ?>
     <style>
         body { font-family: <?= $isAr ? "'IBM Plex Sans Arabic', system-ui, -apple-system" : "system-ui, -apple-system, 'Segoe UI', sans-serif" ?>; background: #f5f7fb; }
@@ -344,9 +344,9 @@ function renderClaimError($titleEn, $detailEn, $titleAr = null, $detailAr = null
 <title><?= htmlspecialchars($title, ENT_QUOTES) ?><?= $isAr ? '، كارديفاي' : ', Cardify' ?></title>
 <script src="https://cdn.tailwindcss.com"></script>
 <?php if ($isAr): ?>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.bhd.om">
+<link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
+<link href="https://fonts.bhd.om/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
 <?php endif; ?>
 <style>body{font-family:<?= $font ?>;background:#f5f7fb;}</style>
 </head>

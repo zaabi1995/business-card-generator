@@ -15,9 +15,9 @@ function installerHeader($title, $basePath, $extraHead = '', $bodyClass = '') {
     <link rel="icon" href="<?php echo $basePath; ?>/favicon.svg" type="image/svg+xml">
     <link rel="alternate icon" href="<?php echo $basePath; ?>/favicon.ico">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.bhd.om">
+    <link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
+    <link href="https://fonts.bhd.om/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Font Awesome (CDN) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
