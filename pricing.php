@@ -79,7 +79,7 @@ $products = [
 
         <!-- Platform (free forever) -->
         <section class="mb-16">
-            <article class="relative bg-white rounded-3xl px-8 pt-12 pb-8 lg:px-10 lg:pt-14 lg:pb-10 ring-1 ring-gray-200/70 shadow-xl">
+            <article class="relative bg-white rounded-3xl px-8 pt-16 pb-8 lg:px-10 lg:pt-20 lg:pb-10 ring-1 ring-gray-200/70 shadow-xl">
                 <span class="absolute -top-3 <?= $isAr ? 'right-8' : 'left-8' ?> px-4 py-1 bg-green-600 text-white text-xs font-bold rounded-full uppercase tracking-wider whitespace-nowrap shadow-md z-10"><?= htmlspecialchars(t('pricing.platform_badge')) ?></span>
                 <div class="grid lg:grid-cols-2 gap-8 items-center">
                     <div>
