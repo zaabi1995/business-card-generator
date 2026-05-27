@@ -319,6 +319,46 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
             <?php endif; ?>
         </div>
 
+        <?php
+            // Sector quick-filter chips (top 6 by logo count). One-tap pivot
+            // without going through the dropdown; click-state mirrors the
+            // sector <select>'s value via the instant-search JS handler.
+            $_topSectors = array_slice($counts ?? [], 0, 6);
+            $_currentSector = $_GET['sector'] ?? '';
+        ?>
+        <?php if (!empty($_topSectors)): ?>
+        <div class="flex flex-wrap items-center gap-2 mb-5" id="logos-sector-chip-bar">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide <?= $isAr ? 'ml-1' : 'mr-1' ?>">
+                <?= logos_esc($isAr ? 'القطاع' : 'Sector') ?>:
+            </span>
+            <button type="button" data-sector-chip=""
+                    class="cardify-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition <?=
+                        $_currentSector === ''
+                            ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
+                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                    ?>">
+                <?= logos_esc($isAr ? 'الكل' : 'All') ?>
+            </button>
+            <?php foreach ($_topSectors as $secRow):
+                $secSlug  = $secRow['sector'] ?? '';
+                if ($secSlug === '' || $secSlug === 'other') continue;
+                $secLabel = $SECTOR_LABELS[$secSlug] ?? ucfirst($secSlug);
+                $secCount = (int) ($secRow['c'] ?? 0);
+                $active   = $_currentSector === $secSlug;
+            ?>
+                <button type="button" data-sector-chip="<?= logos_esc($secSlug) ?>"
+                        class="cardify-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition <?=
+                            $active
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20'
+                                : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                        ?>">
+                    <?= logos_esc($secLabel) ?>
+                    <span class="<?= $active ? 'text-blue-100' : 'text-gray-400' ?> font-mono text-[10px]"><?= $secCount ?></span>
+                </button>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+
         <p class="text-sm text-gray-500 mb-5" id="logos-result-count">
             <?= number_format($data['total']) ?>
             <?= logos_esc($data['total'] === 1 ? t('logos.result_singular') : t('logos.result_plural')) ?>
@@ -762,6 +802,39 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
         });
     }
 
+    // Sector quick-filter chips (top 6) → set sector dropdown + apply
+    var secChipBar = document.getElementById('logos-sector-chip-bar');
+    function repaintSectorChips() {
+        if (!secChipBar) return;
+        var current = secIn ? secIn.value : '';
+        secChipBar.querySelectorAll('[data-sector-chip]').forEach(function (btn) {
+            var slug = btn.getAttribute('data-sector-chip');
+            var active = slug === current;
+            if (slug === '') {
+                btn.className = 'cardify-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition ' + (
+                    active
+                        ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                );
+            } else {
+                btn.className = 'cardify-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition ' + (
+                    active
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                );
+            }
+        });
+    }
+    if (secChipBar) {
+        secChipBar.addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-sector-chip]');
+            if (!btn) return;
+            secIn.value = btn.getAttribute('data-sector-chip');
+            repaintSectorChips();
+            applyFilter();
+        });
+    }
+
     // "Surprise me" chip — re-roll via /api/logos/random on each click
     // (CF caches /logos HTML for 1h, the SSR href would stay fixed).
     var rndChip = document.getElementById('logos-random-chip');
@@ -915,6 +988,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
         if (sortIn) sortIn.value = p.get('sort') || 'alpha';
         repaintSortChips();
         repaintStatusChips();
+        repaintSectorChips();
         applyFilter();
     });
 })();
