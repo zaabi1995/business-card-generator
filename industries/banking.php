@@ -131,14 +131,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </div>
     <div class="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-6 space-y-3">
       <?php foreach ([
-        ['fa-shield-halved',    'Brand-locked templates',  'RMs only edit personal fields; logo, colors, fonts stay under brand team control.'],
-        ['fa-arrows-rotate',    'Instant updates',         'Change a title, a branch, a phone, every client who scanned the card sees the update on their next view.'],
+        ['fa-shield-halved',    'Brand-locked templates',  'RMs only edit personal fields; logo, colors, fonts stay under brand team control.',                                       'fa-solid'],
+        ['fa-arrows-rotate',    'Instant updates',         'Change a title, a branch, a phone, every client who scanned the card sees the update on their next view.',                'fa-solid'],
         ['fa-whatsapp',         'WhatsApp-first for GCC',  'One tap on the card opens a pre-filled WhatsApp chat, the default channel for client comms region-wide.',                'fa-brands'],
-        ['fa-chart-line',       'Scan analytics',          'See how many clients viewed each RM card, when, and from where. Actionable for relationship managers.'],
-        ['fa-globe',            'Bilingual EN/AR',         'Every card ships in both languages. Arabic is proper RTL, no font fallback flicker.'],
-        ['fa-users-gear',       'Bulk provisioning',       'Onboard 200 RMs from a spreadsheet. No IT ticket queue.'],
+        ['fa-chart-line',       'Scan analytics',          'See how many clients viewed each RM card, when, and from where. Actionable for relationship managers.',                   'fa-solid'],
+        ['fa-globe',            'Bilingual EN/AR',         'Every card ships in both languages. Arabic is proper RTL, no font fallback flicker.',                                     'fa-solid'],
+        ['fa-users-gear',       'Bulk provisioning',       'Onboard 200 RMs from a spreadsheet. No IT ticket queue.',                                                                 'fa-solid'],
       ] as [$icon, $title, $body, $lib]):
-          $lib = $lib ?? 'fa-solid';
       ?>
         <div class="flex items-start gap-4 p-3 rounded-xl bg-white">
           <div class="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">

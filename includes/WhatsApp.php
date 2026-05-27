@@ -132,10 +132,11 @@ class WhatsApp {
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
         ];
-        // Prefer system CA bundle on aaPanel Ubuntu hosts. Falls back to
-        // PHP's default when the file isn't present.
+        // Prefer system CA bundle on aaPanel Ubuntu hosts. open_basedir
+        // hides /etc/ssl/ from PHP, so probe with @ and fall through to
+        // libcurl's default bundle when blocked.
         $caBundle = '/etc/ssl/certs/ca-certificates.crt';
-        if (is_readable($caBundle)) {
+        if (@is_readable($caBundle)) {
             $curlOpts[CURLOPT_CAINFO] = $caBundle;
         }
         curl_setopt_array($ch, $curlOpts);

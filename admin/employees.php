@@ -933,6 +933,10 @@ function findColumn($header, $possibleNames) {
     return false;
 }
 
+// Link helpers used throughout the view layer (rule 2: company-slug-compatible)
+$basePath = getAdminBasePath();
+$ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php';
+
 // Start admin layout
 adminHeader(t('employees.page_title'), 'employees');
 ?>
