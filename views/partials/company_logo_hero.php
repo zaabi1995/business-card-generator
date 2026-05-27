@@ -89,7 +89,8 @@ $companyId = (int) ($company['id'] ?? 0);
                              alt="<?= logo_hero_esc($company['name_en'] ?? '') ?> logo, light"
                              class="max-h-[75%] max-w-[80%] w-auto h-auto object-contain object-center">
                     </div>
-                    <div class="aspect-square bg-[#0E0F11] border border-gray-900 rounded-xl flex items-center justify-center p-3 sm:p-4 group/dark hover:bg-black transition">
+                    <div class="aspect-square bg-gray-900 border border-gray-900 rounded-xl flex items-center justify-center p-3 sm:p-4 group/dark hover:bg-black transition"
+                         style="background-color:#0E0F11">
                         <img src="<?= logo_hero_esc($_darkSrc) . $_ver ?>"
                              alt="<?= logo_hero_esc($company['name_en'] ?? '') ?> logo, dark"
                              class="max-h-[75%] max-w-[80%] w-auto h-auto object-contain object-center">
