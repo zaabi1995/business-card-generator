@@ -176,7 +176,62 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                 <i class="fa-solid fa-spinner fa-spin"></i>
                 <?= logos_esc($isAr ? 'يبحث…' : 'Searching…') ?>
             </span>
+            <input type="hidden" name="sort" id="logos-sort" value="<?= logos_esc($_GET['sort'] ?? 'alpha') ?>">
         </form>
+
+        <!-- Sort + quick-status chips. Iconify-style pill row; clicking
+             updates the hidden sort input + verified checkbox and reruns
+             the instant-search filter via the existing JS hook. -->
+        <div class="flex flex-wrap items-center gap-2 mb-5" id="logos-chip-bar">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide <?= $isAr ? 'ml-1' : 'mr-1' ?>">
+                <?= logos_esc($isAr ? 'الفرز' : 'Sort') ?>:
+            </span>
+            <?php
+                $_currentSort = $_GET['sort'] ?? 'alpha';
+                $_sortChips = [
+                    'alpha'    => ['label' => $isAr ? 'الترتيب الأبجدي' : 'A–Z',         'icon' => 'fa-arrow-down-a-z'],
+                    'newest'   => ['label' => $isAr ? 'الأحدث' : 'Newest',                'icon' => 'fa-clock'],
+                    'verified' => ['label' => $isAr ? 'الموثَّقة أولاً' : 'Verified first', 'icon' => 'fa-circle-check'],
+                ];
+            ?>
+            <?php foreach ($_sortChips as $key => $meta): $active = $_currentSort === $key; ?>
+                <button type="button"
+                        data-sort-chip="<?= logos_esc($key) ?>"
+                        class="cardify-chip group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition <?=
+                            $active
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20'
+                                : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:text-gray-900'
+                        ?>">
+                    <i class="fa-solid <?= logos_esc($meta['icon']) ?> text-[10px]"></i>
+                    <?= logos_esc($meta['label']) ?>
+                </button>
+            <?php endforeach; ?>
+
+            <span class="hidden sm:inline-block w-px h-5 bg-gray-200 mx-1"></span>
+
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide <?= $isAr ? 'ml-1' : 'mr-1' ?>">
+                <?= logos_esc($isAr ? 'الحالة' : 'Status') ?>:
+            </span>
+            <?php $verifiedActive = !empty($_GET['verified']); ?>
+            <button type="button" data-status-chip="all"
+                    class="cardify-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition <?=
+                        $verifiedActive
+                            ? 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                            : 'bg-gray-900 text-white border-gray-900 shadow-sm'
+                    ?>">
+                <i class="fa-solid fa-layer-group text-[10px]"></i>
+                <?= logos_esc($isAr ? 'جميع الشعارات' : 'All logos') ?>
+            </button>
+            <button type="button" data-status-chip="verified"
+                    class="cardify-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition <?=
+                        $verifiedActive
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/20'
+                            : 'bg-white text-emerald-700 border-emerald-200 hover:border-emerald-400'
+                    ?>">
+                <i class="fa-solid fa-circle-check text-[10px]"></i>
+                <?= logos_esc($isAr ? 'الموثَّقة فقط' : 'Verified only') ?>
+            </button>
+        </div>
 
         <p class="text-sm text-gray-500 mb-5" id="logos-result-count">
             <?= number_format($data['total']) ?>
@@ -401,10 +456,12 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
     var qIn     = document.getElementById('logos-q');
     var secIn   = document.getElementById('logos-sector');
     var verIn   = document.getElementById('logos-verified');
+    var sortIn  = document.getElementById('logos-sort');
     var grid    = document.getElementById('logos-grid');
     var count   = document.getElementById('logos-result-count');
     var submitBtn = document.getElementById('logos-filter-submit');
     var ind     = document.getElementById('logos-search-indicator');
+    var chipBar = document.getElementById('logos-chip-bar');
     if (!form || !grid) return;
 
     var isAr = document.documentElement.lang === 'ar';
@@ -467,6 +524,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
         if (qIn.value.trim())   p.set('q', qIn.value.trim());
         if (secIn.value)        p.set('sector', secIn.value);
         if (verIn.checked)      p.set('verified', '1');
+        if (sortIn && sortIn.value && sortIn.value !== 'alpha') p.set('sort', sortIn.value);
         p.set('per_page', '60');
         return p;
     }
@@ -476,11 +534,47 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
         if (qIn.value.trim())   pageParams.set('q', qIn.value.trim());
         if (secIn.value)        pageParams.set('sector', secIn.value);
         if (verIn.checked)      pageParams.set('verified', '1');
+        if (sortIn && sortIn.value && sortIn.value !== 'alpha') pageParams.set('sort', sortIn.value);
         var qs = pageParams.toString();
         var newUrl = location.pathname + (qs ? '?' + qs : '');
         if (newUrl !== location.pathname + location.search) {
             history.replaceState(null, '', newUrl);
         }
+    }
+
+    function repaintSortChips() {
+        if (!chipBar) return;
+        var current = sortIn ? sortIn.value : 'alpha';
+        chipBar.querySelectorAll('[data-sort-chip]').forEach(function (btn) {
+            var active = btn.getAttribute('data-sort-chip') === current;
+            btn.className = 'cardify-chip group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition ' + (
+                active
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20'
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:text-gray-900'
+            );
+        });
+    }
+
+    function repaintStatusChips() {
+        if (!chipBar) return;
+        var verified = !!verIn.checked;
+        chipBar.querySelectorAll('[data-status-chip]').forEach(function (btn) {
+            var want = btn.getAttribute('data-status-chip');
+            var active = (want === 'verified') === verified;
+            if (want === 'all') {
+                btn.className = 'cardify-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition ' + (
+                    active
+                        ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                );
+            } else {
+                btn.className = 'cardify-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition ' + (
+                    active
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/20'
+                        : 'bg-white text-emerald-700 border-emerald-200 hover:border-emerald-400'
+                );
+            }
+        });
     }
 
     function fmtCount(n) {
@@ -520,9 +614,28 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
 
     qIn.addEventListener('input', debounceApply);
     secIn.addEventListener('change', applyFilter);
-    verIn.addEventListener('change', applyFilter);
+    verIn.addEventListener('change', function () { repaintStatusChips(); applyFilter(); });
     form.addEventListener('submit', function (e) { e.preventDefault(); applyFilter(); });
     if (submitBtn) submitBtn.style.display = 'none';
+
+    // Chip-bar event delegation
+    if (chipBar) {
+        chipBar.addEventListener('click', function (e) {
+            var sortChip = e.target.closest('[data-sort-chip]');
+            if (sortChip) {
+                if (sortIn) sortIn.value = sortChip.getAttribute('data-sort-chip');
+                repaintSortChips();
+                applyFilter();
+                return;
+            }
+            var statusChip = e.target.closest('[data-status-chip]');
+            if (statusChip) {
+                verIn.checked = statusChip.getAttribute('data-status-chip') === 'verified';
+                repaintStatusChips();
+                applyFilter();
+            }
+        });
+    }
 
     // ESC clears the search input
     qIn.addEventListener('keydown', function (e) {
@@ -537,6 +650,9 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
         qIn.value     = p.get('q') || '';
         secIn.value   = p.get('sector') || '';
         verIn.checked = p.get('verified') === '1';
+        if (sortIn) sortIn.value = p.get('sort') || 'alpha';
+        repaintSortChips();
+        repaintStatusChips();
         applyFilter();
     });
 })();
