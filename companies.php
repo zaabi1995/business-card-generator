@@ -343,15 +343,31 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                 <?php
                     /* Legacy logo_url header avatar. Suppress when the Logo Library
                        has flagged the logo as taken down so the takedown actually hides
-                       the mark. Library logos (logo_svg_path etc.) also take precedence. */
+                       the mark. Library logos take precedence and auto-flip to the
+                       dark monochrome variant when the original would be invisible on
+                       the light bg-gray-50 thumb (white wordmark on white surface). */
                     $headerLogoUrl = null;
                     if (($company['logo_status'] ?? 'none') !== 'takedown') {
-                        $headerLogoUrl = $company['logo_svg_path']
-                                      ?? null;
-                        $headerLogoUrl = $headerLogoUrl
-                                      ?: ($company['logo_png_path'] ?? null)
-                                      ?: ($company['logo_webp_path'] ?? null)
-                                      ?: ($company['logo_url'] ?? null);
+                        if (!class_exists('LogoLibrary')) {
+                            require_once INCLUDES_DIR . '/LogoLibrary.php';
+                        }
+                        $_headerPalette = json_decode((string) ($company['logo_palette'] ?? ''), true) ?: null;
+                        $_headerFlip = LogoLibrary::shouldUseDarkVariantOnLight($_headerPalette)
+                                       && !empty($company['logo_webp_dark_path'] ?? $company['logo_png_dark_path'] ?? $company['logo_svg_dark_path']);
+                        if ($_headerFlip) {
+                            $headerLogoUrl = $company['logo_svg_dark_path']
+                                          ?: $company['logo_webp_dark_path']
+                                          ?: $company['logo_png_dark_path'];
+                        } else {
+                            $headerLogoUrl = ($company['logo_svg_path'] ?? null)
+                                          ?: ($company['logo_png_path'] ?? null)
+                                          ?: ($company['logo_webp_path'] ?? null)
+                                          ?: ($company['logo_url'] ?? null);
+                        }
+                        if ($headerLogoUrl && !empty($company['logo_updated_at'])
+                            && !str_contains($headerLogoUrl, '?')) {
+                            $headerLogoUrl .= '?v=' . strtotime($company['logo_updated_at']);
+                        }
                     }
                 ?>
                 <?php if ($headerLogoUrl): ?>
@@ -627,7 +643,9 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                 try {
                     $hubLogoSample = $db->fetchAll(
                         "SELECT slug, name_en, logo_svg_path, logo_png_path,
-                                logo_webp_path, logo_png_512_path
+                                logo_webp_path, logo_png_512_path,
+                                logo_svg_dark_path, logo_png_dark_path, logo_webp_dark_path,
+                                logo_palette, logo_updated_at
                            FROM om_companies
                           WHERE sector = :s
                             AND logo_status IN ('indexed','verified')
@@ -665,14 +683,26 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                 </div>
                 <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2.5">
                     <?php foreach ($hubLogoSample as $l):
-                        $src = $l['logo_webp_path'] ?: $l['logo_png_512_path']
-                            ?: $l['logo_png_path'] ?: $l['logo_svg_path'];
+                        $_lPal  = json_decode((string) ($l['logo_palette'] ?? ''), true) ?: null;
+                        $_lFlip = LogoLibrary::shouldUseDarkVariantOnLight($_lPal)
+                                  && !empty($l['logo_webp_dark_path'] ?? $l['logo_png_dark_path'] ?? $l['logo_svg_dark_path']);
+                        if ($_lFlip) {
+                            $src = $l['logo_webp_dark_path']
+                                ?: $l['logo_png_dark_path']
+                                ?: $l['logo_svg_dark_path'];
+                        } else {
+                            $src = $l['logo_webp_path'] ?: $l['logo_png_512_path']
+                                ?: $l['logo_png_path'] ?: $l['logo_svg_path'];
+                        }
                         if (!$src) continue;
+                        if (!empty($l['logo_updated_at'])) {
+                            $src .= '?v=' . strtotime($l['logo_updated_at']);
+                        }
                     ?>
                         <a href="<?= $basePrefix ?>/<?= escq($l['slug']) ?>"
-                           class="group bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition p-3 aspect-square flex items-center justify-center">
+                           class="group bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition p-3 aspect-square flex items-center justify-center">
                             <img src="<?= escq($src) ?>" alt="<?= escq($l['name_en']) ?> logo"
-                                 loading="lazy" class="max-h-full max-w-full object-contain">
+                                 loading="lazy" class="max-h-[70%] max-w-[80%] w-auto h-auto object-contain object-center">
                         </a>
                     <?php endforeach; ?>
                 </div>
