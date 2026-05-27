@@ -157,7 +157,15 @@ if ($view === 'company' && $slug) {
     $whereSql = implode(' AND ', $where);
     $totalCount = (int) $db->fetchOne("SELECT COUNT(*) AS c FROM om_companies WHERE $whereSql", $params)['c'];
     $companies = $db->fetchAll(
-        "SELECT slug, name_en, name_ar, sector, wilayat, size_bucket FROM om_companies WHERE $whereSql ORDER BY size_bucket ASC, name_en ASC LIMIT $perPage OFFSET $offset",
+        "SELECT slug, name_en, name_ar, sector, wilayat, size_bucket,
+                logo_status, logo_svg_path, logo_png_path, logo_png_512_path, logo_webp_path,
+                logo_svg_dark_path, logo_png_dark_path, logo_webp_dark_path,
+                logo_dominant_color, logo_palette, logo_updated_at
+           FROM om_companies WHERE $whereSql
+          ORDER BY (logo_status = 'verified') DESC,
+                   (logo_status = 'indexed') DESC,
+                   size_bucket ASC, name_en ASC
+          LIMIT $perPage OFFSET $offset",
         $params
     );
     $indexQuery = compact('q', 'filterSector', 'filterWilayat', 'page', 'perPage');
@@ -780,18 +788,54 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
         <p class="text-sm text-gray-500 mb-6"><?= escq(t('companies.results_count', ['count' => $totalCount])) ?></p>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <?php foreach ($companies as $c): ?>
-                <a href="<?= $basePrefix ?>/<?= escq($c['slug']) ?>" class="p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition">
-                    <div class="font-semibold text-gray-900 truncate"><?= escq($isAr ? ($c['name_ar'] ?: $c['name_en']) : $c['name_en']) ?></div>
-                    <?php if (!$isAr && !empty($c['name_ar'])): ?>
-                        <div class="text-xs text-gray-500 font-arabic truncate mt-0.5" dir="rtl"><?= escq($c['name_ar']) ?></div>
+            <?php foreach ($companies as $c):
+                // Index thumbnail when the company has a Logo Library entry.
+                // Same auto-flip + ?v= cache buster as the rest of the site.
+                $_idxPal  = json_decode((string) ($c['logo_palette'] ?? ''), true) ?: null;
+                $_idxFlip = LogoLibrary::shouldUseDarkVariantOnLight($_idxPal)
+                            && !empty($c['logo_webp_dark_path'] ?? $c['logo_png_dark_path'] ?? $c['logo_svg_dark_path']);
+                if ($_idxFlip) {
+                    $_idxSrc = $c['logo_webp_dark_path'] ?: $c['logo_png_dark_path'] ?: $c['logo_svg_dark_path'];
+                } else {
+                    $_idxSrc = $c['logo_webp_path'] ?: $c['logo_png_512_path'] ?: $c['logo_png_path'] ?: $c['logo_svg_path'];
+                }
+                if ($_idxSrc && !empty($c['logo_updated_at'])) {
+                    $_idxSrc .= '?v=' . strtotime($c['logo_updated_at']);
+                }
+                $_idxBg = $c['logo_dominant_color'] ?: '#f3f4f6';
+                $_idxVerified = ($c['logo_status'] ?? null) === 'verified';
+            ?>
+                <a href="<?= $basePrefix ?>/<?= escq($c['slug']) ?>"
+                   class="cardify-idx-card group flex items-center gap-3 p-3 sm:p-4 bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)]"
+                   style="--brand-bg: <?= escq($_idxBg) ?>">
+                    <?php if ($_idxSrc): ?>
+                        <div class="shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-gradient-to-br from-gray-50 to-white border border-gray-100 flex items-center justify-center p-1.5 transition-colors duration-200 group-hover:bg-[var(--brand-bg)] group-hover:bg-none">
+                            <img src="<?= escq($_idxSrc) ?>" alt="<?= escq($c['name_en']) ?> logo"
+                                 loading="lazy"
+                                 class="max-h-[80%] max-w-[85%] w-auto h-auto object-contain object-center">
+                        </div>
+                    <?php else: ?>
+                        <div class="shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-gradient-to-br from-gray-50 to-white border border-gray-100 flex items-center justify-center text-gray-300 font-extrabold text-base">
+                            <?= escq(mb_substr($c['name_en'], 0, 2)) ?>
+                        </div>
                     <?php endif; ?>
-                    <div class="mt-2 flex items-center gap-2 text-xs text-gray-500">
-                        <i class="fa-solid fa-industry"></i>
-                        <span class="truncate"><?= escq(labelOf($c['sector'], $SECTORS, $isAr)) ?></span>
-                        <span class="text-gray-300">·</span>
-                        <i class="fa-solid fa-location-dot"></i>
-                        <span class="truncate"><?= escq(labelOf($c['wilayat'], $WILAYATS, $isAr)) ?></span>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <div class="font-semibold text-gray-900 truncate"><?= escq($isAr ? ($c['name_ar'] ?: $c['name_en']) : $c['name_en']) ?></div>
+                            <?php if ($_idxVerified): ?>
+                                <i class="fa-solid fa-circle-check text-emerald-500 text-xs shrink-0" title="Verified"></i>
+                            <?php endif; ?>
+                        </div>
+                        <?php if (!$isAr && !empty($c['name_ar'])): ?>
+                            <div class="text-xs text-gray-500 font-arabic truncate mt-0.5" dir="rtl"><?= escq($c['name_ar']) ?></div>
+                        <?php endif; ?>
+                        <div class="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                            <i class="fa-solid fa-industry text-[10px]"></i>
+                            <span class="truncate"><?= escq(labelOf($c['sector'], $SECTORS, $isAr)) ?></span>
+                            <span class="text-gray-300">·</span>
+                            <i class="fa-solid fa-location-dot text-[10px]"></i>
+                            <span class="truncate"><?= escq(labelOf($c['wilayat'], $WILAYATS, $isAr)) ?></span>
+                        </div>
                     </div>
                 </a>
             <?php endforeach; ?>
