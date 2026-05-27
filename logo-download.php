@@ -39,6 +39,20 @@ if (!LogoLibrary::canDownload($company)) {
     die($msg);
 }
 
+// Lead-capture gate: cookie set by /api/logo-unlock.php after the user
+// submits phone or email. Without it, redirect back to the company
+// profile with ?unlock=required so the page can pop the modal.
+$unlockCookie = $_COOKIE['cardify_logo_unlock_v1'] ?? '';
+if (!preg_match('/^[a-f0-9]{32}$/i', $unlockCookie)) {
+    $slug = (string) ($company['slug'] ?? '');
+    if ($slug !== '') {
+        header('Location: /companies/' . rawurlencode($slug) . '?unlock=required&format=' . rawurlencode($format), true, 303);
+        exit;
+    }
+    http_response_code(403);
+    die('Unlock required, please return to the company page and submit the short form.');
+}
+
 // Rate limit: 30 downloads/hour per IP, atomic via rate_limits table
 // (non-atomic SELECT COUNT then INSERT lets parallel fetches bypass the cap).
 $ipHash = LogoLibrary::ipHash();
@@ -118,17 +132,21 @@ if ($format === 'zip') {
     readfile(__DIR__ . $path);
 }
 
-// Log (non-blocking, failure here shouldn't break the download)
+// Log (non-blocking, failure here shouldn't break the download). The
+// cookie id ties the download back to the lead row in logo_leads so
+// we know which contact pulled which asset.
 try {
     $db->getConnection()->prepare(
-        "INSERT INTO logo_downloads (company_id, format, ip_hash, user_agent_hash, referrer)
-         VALUES (:cid, :f, :ih, :uh, :r)"
+        "INSERT INTO logo_downloads
+            (company_id, format, ip_hash, user_agent_hash, referrer, unlock_cookie_id)
+         VALUES (:cid, :f, :ih, :uh, :r, :ck)"
     )->execute([
         ':cid' => $companyId,
         ':f'   => $format,
         ':ih'  => $ipHash,
         ':uh'  => LogoLibrary::uaHash(),
         ':r'   => $_SERVER['HTTP_REFERER'] ?? null,
+        ':ck'  => $unlockCookie ?: null,
     ]);
 } catch (Throwable $e) {
     error_log('logo download log failed: ' . $e->getMessage());

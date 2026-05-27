@@ -192,3 +192,184 @@ $companyId = (int) ($company['id'] ?? 0);
         <?php endif; ?>
     </div>
 </section>
+
+<?php
+// Lead-capture gate, only render when this hero will show download buttons
+$_isUnlocked = !empty($_COOKIE['cardify_logo_unlock_v1'])
+    && preg_match('/^[a-f0-9]{32}$/i', (string) $_COOKIE['cardify_logo_unlock_v1']);
+if ($src && $canDownload):
+?>
+<dialog id="cardify-logo-unlock"
+        class="rounded-2xl p-0 backdrop:bg-black/40 max-w-md w-[92vw] border border-gray-200 shadow-2xl"
+        data-unlocked="<?= $_isUnlocked ? '1' : '0' ?>">
+    <form id="cardify-logo-unlock-form" class="p-6 space-y-4" novalidate>
+        <input type="hidden" name="company_id" value="<?= (int) $companyId ?>">
+        <input type="hidden" name="format" id="cardify-logo-unlock-format" value="">
+
+        <div>
+            <h3 class="text-lg font-bold text-gray-900">
+                <?= $isAr
+                    ? 'لتحميل الشعار، اترك رقمك أو بريدك'
+                    : 'One quick step to download' ?>
+            </h3>
+            <p class="text-sm text-gray-600 mt-1">
+                <?= $isAr
+                    ? 'نستخدم هذا لمتابعة استخدام مكتبة الشعارات العمانية. تعبئة واحدة تكفي لـ 90 يوماً، تنزيلات لاحقة لن تطلب منك أي شيء.'
+                    : 'We use it to keep the Omani Logo Library honest. One fill, 90 days of friction-free downloads after.' ?>
+            </p>
+        </div>
+
+        <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                <?= $isAr ? 'الاسم (اختياري)' : 'Name (optional)' ?>
+            </label>
+            <input type="text" name="name" maxlength="120"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="<?= $isAr ? 'فلان الفلاني' : 'Your name' ?>">
+        </div>
+
+        <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                <?= $isAr ? 'الجوال (واتساب)' : 'Mobile (WhatsApp)' ?>
+            </label>
+            <input type="tel" name="phone" inputmode="tel"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
+                   placeholder="+968 9XXX XXXX" pattern="^\+?[0-9 \-\(\)]{7,20}$">
+        </div>
+
+        <div class="flex items-center gap-2 text-xs text-gray-400">
+            <hr class="flex-1 border-gray-200">
+            <span><?= $isAr ? 'أو' : 'or' ?></span>
+            <hr class="flex-1 border-gray-200">
+        </div>
+
+        <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">
+                <?= $isAr ? 'البريد الإلكتروني' : 'Email' ?>
+            </label>
+            <input type="email" name="email" maxlength="160"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="you@company.com">
+        </div>
+
+        <p id="cardify-logo-unlock-error" class="hidden text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2"></p>
+
+        <div class="flex items-center justify-end gap-2 pt-1">
+            <button type="button" class="cardify-logo-unlock-cancel px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
+                <?= $isAr ? 'إلغاء' : 'Cancel' ?>
+            </button>
+            <button type="submit" id="cardify-logo-unlock-submit"
+                    class="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-60">
+                <?= $isAr ? 'تنزيل الشعار' : 'Unlock & download' ?>
+            </button>
+        </div>
+
+        <p class="text-[11px] text-gray-400 leading-relaxed">
+            <?= $isAr
+                ? 'بإرسالك التفاصيل توافق على أن يتواصل معك فريق Cardify بشأن مكتبة الشعارات. لن نبيع بياناتك.'
+                : 'By submitting you agree that Cardify may contact you about the Omani Logo Library. We never sell your details.' ?>
+        </p>
+    </form>
+</dialog>
+
+<script>
+(function () {
+    var dlg     = document.getElementById('cardify-logo-unlock');
+    var form    = document.getElementById('cardify-logo-unlock-form');
+    var errEl   = document.getElementById('cardify-logo-unlock-error');
+    var fmtIn   = document.getElementById('cardify-logo-unlock-format');
+    var btn     = document.getElementById('cardify-logo-unlock-submit');
+    var cancel  = dlg.querySelector('.cardify-logo-unlock-cancel');
+    var pending = null;
+
+    function isUnlocked() { return dlg.dataset.unlocked === '1'; }
+
+    function showError(msg) {
+        errEl.textContent = msg;
+        errEl.classList.remove('hidden');
+    }
+
+    function hideError() {
+        errEl.textContent = '';
+        errEl.classList.add('hidden');
+    }
+
+    // Intercept every download button on the page that points at logo-download
+    document.querySelectorAll('a[href*="logo-download"]').forEach(function (a) {
+        a.addEventListener('click', function (e) {
+            if (isUnlocked()) return; // pass through
+            e.preventDefault();
+            pending = a.getAttribute('href');
+            var u = new URL(a.href, location.origin);
+            fmtIn.value = u.searchParams.get('format') || '';
+            hideError();
+            try { dlg.showModal(); } catch (_) { dlg.setAttribute('open', ''); }
+        });
+    });
+
+    cancel.addEventListener('click', function () { dlg.close(); pending = null; });
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        hideError();
+        var fd = new FormData(form);
+        var phone = (fd.get('phone') || '').toString().trim();
+        var email = (fd.get('email') || '').toString().trim();
+        if (!phone && !email) {
+            showError(<?= $isAr ? "'يرجى تعبئة الجوال أو البريد الإلكتروني'" : "'Please enter a mobile or an email'" ?>);
+            return;
+        }
+        var payload = {
+            company_id: fd.get('company_id'),
+            format:     fd.get('format'),
+            name:       (fd.get('name') || '').toString().trim(),
+            phone:      phone,
+            email:      email
+        };
+        btn.disabled = true;
+        btn.dataset.label = btn.textContent;
+        btn.textContent = <?= $isAr ? "'لحظة…'" : "'Working…'" ?>;
+        fetch('/api/logo-unlock.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(payload)
+        }).then(function (r) {
+            return r.json().then(function (j) { return { ok: r.ok, status: r.status, body: j }; });
+        }).then(function (res) {
+            btn.disabled = false;
+            btn.textContent = btn.dataset.label;
+            if (!res.ok) {
+                var map = {
+                    missing_contact: <?= $isAr ? "'يرجى تعبئة الجوال أو البريد'" : "'Please enter mobile or email'" ?>,
+                    invalid_phone:   <?= $isAr ? "'رقم جوال غير صالح'" : "'That phone number looks wrong'" ?>,
+                    invalid_email:   <?= $isAr ? "'بريد إلكتروني غير صالح'" : "'That email looks wrong'" ?>,
+                    rate_limited:    <?= $isAr ? "'حاول مرة أخرى بعد ساعة'" : "'Too many tries, try again in an hour'" ?>
+                };
+                showError(map[res.body && res.body.error] || <?= $isAr ? "'لم نتمكن من المتابعة، حاول مرة أخرى'" : "'Could not continue, please try again'" ?>);
+                return;
+            }
+            dlg.dataset.unlocked = '1';
+            dlg.close();
+            if (pending) {
+                window.location = pending;
+                pending = null;
+            }
+        }).catch(function () {
+            btn.disabled = false;
+            btn.textContent = btn.dataset.label;
+            showError(<?= $isAr ? "'مشكلة في الاتصال، حاول مرة أخرى'" : "'Network glitch, please try again'" ?>);
+        });
+    });
+
+    // Auto-pop when redirected back from logo-download.php with ?unlock=required
+    var params = new URLSearchParams(location.search);
+    if (params.get('unlock') === 'required' && !isUnlocked()) {
+        var fmt = params.get('format') || '';
+        fmtIn.value = fmt;
+        pending = '/logo-download?company=<?= (int) $companyId ?>&format=' + encodeURIComponent(fmt);
+        try { dlg.showModal(); } catch (_) { dlg.setAttribute('open', ''); }
+    }
+})();
+</script>
+<?php endif; ?>
