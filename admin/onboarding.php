@@ -96,7 +96,7 @@ $initialData = $state['data'] ?? [];
 // classic. Previews use current state if present, or sensible placeholders
 // so new tenants see rendered cards on first visit.
 $colorsData = $initialData['colors'] ?? [];
-$employeeData = $initialData['first_employee'] ?? [];
+$employeeData = ($initialData['first_employee'] ?? []) + ['name' => '', 'title' => '', 'phone' => '', 'email' => ''];
 $logoData = $initialData['logo'] ?? [];
 $previewEmployee = [
     'name_en'     => $employeeData['name']  ?: ('Sample ' . ($companyName !== 'your company' ? substr($companyName, 0, 20) : 'Employee')),

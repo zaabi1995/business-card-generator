@@ -55,7 +55,7 @@ $tplStmt->execute([$companyId]);
 $designs = $tplStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
 $cardsBase = getBasePath() . 'uploads/companies/' . $companyId . '/cards/';
-$companyLogo = $company['logo_path'] ? getBasePath() . ltrim($company['logo_path'], '/') : '';
+$companyLogo = !empty($company['logo_path']) ? getBasePath() . ltrim($company['logo_path'], '/') : '';
 
 require_once INCLUDES_DIR . '/printshop-layout.php';
 printshopHeader($company['name'] . ' , ' . $shop['name'], 'clients');

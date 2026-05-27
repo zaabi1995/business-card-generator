@@ -1283,6 +1283,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 $__firstName  = trim((string) strtok(trim((string) ($editEmployee['name_en'] ?? '')), ' ')) ?: 'there';
                 $__brand      = $companyTheme['primary_color']   ?? '#2d13ea';
                 $__brandSoft  = $companyTheme['secondary_color'] ?? '#ff7800';
+                // 8% alpha tint of the brand, used as the tour step-pill background
+                $__brandTint  = $__brand . '14';
                 $__deadline   = '28 May 2026';
                 $__publicHost = $publicCardUrl !== '' ? preg_replace('#^https?://#', '', $publicCardUrl) : '';
             ?>
