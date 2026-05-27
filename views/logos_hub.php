@@ -147,15 +147,16 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
             </p>
         </div>
 
-        <!-- Filter bar -->
-        <form method="get" class="flex flex-wrap gap-2 mb-6 p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
+        <!-- Filter bar (form fallback for no-JS; JS upgrades to instant search) -->
+        <form id="logos-filter-form" method="get" class="flex flex-wrap gap-2 mb-6 p-3 bg-white border border-gray-200 rounded-xl shadow-sm">
             <div class="relative flex-1 min-w-[220px]">
                 <i class="fa-solid fa-magnifying-glass absolute <?= $isAr ? 'right-3' : 'left-3' ?> top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-                <input type="search" name="q" value="<?= logos_esc($_GET['q'] ?? '') ?>"
+                <input type="search" name="q" id="logos-q" value="<?= logos_esc($_GET['q'] ?? '') ?>"
                        placeholder="<?= logos_esc(t('logos.filter_search_placeholder')) ?>"
+                       autocomplete="off"
                        class="w-full <?= $isAr ? 'pr-10 pl-3' : 'pl-10 pr-3' ?> py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
             </div>
-            <select name="sector" class="px-3 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            <select name="sector" id="logos-sector" class="px-3 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                 <option value=""><?= logos_esc(t('logos.filter_all_sectors')) ?></option>
                 <?php foreach (($SECTOR_LABELS ?? $SECTORS) as $slug => $label): ?>
                     <option value="<?= logos_esc($slug) ?>" <?= ($_GET['sector'] ?? '') === $slug ? 'selected' : '' ?>>
@@ -164,22 +165,27 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                 <?php endforeach; ?>
             </select>
             <label class="inline-flex items-center gap-2 px-3 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-100">
-                <input type="checkbox" name="verified" value="1" <?= !empty($_GET['verified']) ? 'checked' : '' ?>
+                <input type="checkbox" name="verified" id="logos-verified" value="1" <?= !empty($_GET['verified']) ? 'checked' : '' ?>
                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                 <span class="text-gray-700 font-medium"><?= logos_esc(t('logos.filter_verified_only')) ?></span>
             </label>
-            <button class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow shadow-blue-600/20 transition">
+            <button id="logos-filter-submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow shadow-blue-600/20 transition">
                 <?= logos_esc(t('logos.filter_submit')) ?>
             </button>
+            <span id="logos-search-indicator" class="hidden inline-flex items-center gap-1.5 text-xs text-gray-500 px-2">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                <?= logos_esc($isAr ? 'يبحث…' : 'Searching…') ?>
+            </span>
         </form>
 
-        <p class="text-sm text-gray-500 mb-5">
+        <p class="text-sm text-gray-500 mb-5" id="logos-result-count">
             <?= number_format($data['total']) ?>
             <?= logos_esc($data['total'] === 1 ? t('logos.result_singular') : t('logos.result_plural')) ?>
         </p>
 
-        <!-- Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <!-- Grid (JS instant-search swaps innerHTML on filter; SSR pass on first load for SEO) -->
+        <div id="logos-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3"
+             data-default-rendered="1">
             <?php foreach ($data['rows'] as $r):
                 $status = $r['logo_status'];
                 $badgeColor = $status === 'verified' ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-gray-50 text-gray-600 ring-gray-200';
@@ -385,5 +391,155 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
         </div>
     </div>
 </div>
+
+<script>
+// Instant search-as-you-type for /logos. Debounced fetch to
+// /api/logos/list.php, replaces #logos-grid + result count in place.
+// URL state via pushState so filtered views are shareable + back-button friendly.
+(function () {
+    var form    = document.getElementById('logos-filter-form');
+    var qIn     = document.getElementById('logos-q');
+    var secIn   = document.getElementById('logos-sector');
+    var verIn   = document.getElementById('logos-verified');
+    var grid    = document.getElementById('logos-grid');
+    var count   = document.getElementById('logos-result-count');
+    var submitBtn = document.getElementById('logos-filter-submit');
+    var ind     = document.getElementById('logos-search-indicator');
+    if (!form || !grid) return;
+
+    var isAr = document.documentElement.lang === 'ar';
+    var BADGE_VERIFIED = <?= json_encode(t('logos.badge_verified')) ?>;
+    var BADGE_INDEXED  = <?= json_encode(t('logos.badge_indexed')) ?>;
+    var RESULT_ONE     = <?= json_encode(t('logos.result_singular')) ?>;
+    var RESULT_MANY    = <?= json_encode(t('logos.result_plural')) ?>;
+    var EMPTY_TITLE    = <?= json_encode($isAr ? 'لا توجد نتائج' : 'No matches') ?>;
+    var EMPTY_BODY     = <?= json_encode($isAr ? 'جرّب كلمة بحث مختلفة أو وسّع الفلاتر.' : 'Try a different keyword or widen the filters.') ?>;
+
+    var debounceId = null;
+    var inFlight   = null;
+
+    function badgeClass(status) {
+        return status === 'verified'
+            ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+            : 'bg-gray-50 text-gray-600 ring-gray-200';
+    }
+    function badgeLabel(status) {
+        return status === 'verified' ? BADGE_VERIFIED : BADGE_INDEXED;
+    }
+    function escapeAttr(s) { return String(s || '').replace(/[&"<>]/g, function (c) {
+        return ({ '&': '&amp;', '"': '&quot;', '<': '&lt;', '>': '&gt;' })[c];
+    }); }
+
+    function renderCard(r) {
+        var name = isAr ? (r.name_ar || r.name_en) : (r.name_en || r.name_ar);
+        var src  = r.display_url;
+        var bg   = r.dominant_color || '#f9fafb';
+        var imgInner = src
+            ? '<img src="' + escapeAttr(src) + '" alt="' + escapeAttr(name) + '" loading="lazy" class="max-h-[70%] max-w-[80%] w-auto h-auto object-contain object-center transition-transform duration-200 group-hover:scale-105">'
+            : '<div class="text-gray-300 text-2xl font-bold">' + escapeAttr((name || '').slice(0, 2)) + '</div>';
+        return ''
+            + '<a href="/companies/' + escapeAttr(r.slug) + '"'
+            +    ' class="cardify-logo-card group relative bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200 overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)]"'
+            +    ' style="--brand-bg: ' + escapeAttr(bg) + '">'
+            +   '<div class="aspect-square flex items-center justify-center p-3 sm:p-4 md:p-5 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100 transition-colors duration-200 group-hover:bg-[var(--brand-bg)] group-hover:bg-none">'
+            +     imgInner
+            +   '</div>'
+            +   '<div class="p-2.5">'
+            +     '<div class="text-xs font-semibold text-gray-900 truncate">' + escapeAttr(name) + '</div>'
+            +     '<span class="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full ring-1 ring-inset text-[10px] font-medium ' + badgeClass(r.status) + '">'
+            +       escapeAttr(badgeLabel(r.status))
+            +     '</span>'
+            +   '</div>'
+            + '</a>';
+    }
+
+    function renderEmpty() {
+        return ''
+            + '<div class="col-span-full py-16 text-center">'
+            +   '<div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 text-gray-400 mb-3"><i class="fa-regular fa-folder-open text-xl"></i></div>'
+            +   '<p class="text-lg font-semibold text-gray-700">' + escapeAttr(EMPTY_TITLE) + '</p>'
+            +   '<p class="mt-1 text-sm text-gray-500">' + escapeAttr(EMPTY_BODY) + '</p>'
+            + '</div>';
+    }
+
+    function buildQuery() {
+        var p = new URLSearchParams();
+        if (qIn.value.trim())   p.set('q', qIn.value.trim());
+        if (secIn.value)        p.set('sector', secIn.value);
+        if (verIn.checked)      p.set('verified', '1');
+        p.set('per_page', '60');
+        return p;
+    }
+
+    function syncUrlState() {
+        var pageParams = new URLSearchParams();
+        if (qIn.value.trim())   pageParams.set('q', qIn.value.trim());
+        if (secIn.value)        pageParams.set('sector', secIn.value);
+        if (verIn.checked)      pageParams.set('verified', '1');
+        var qs = pageParams.toString();
+        var newUrl = location.pathname + (qs ? '?' + qs : '');
+        if (newUrl !== location.pathname + location.search) {
+            history.replaceState(null, '', newUrl);
+        }
+    }
+
+    function fmtCount(n) {
+        var label = n === 1 ? RESULT_ONE : RESULT_MANY;
+        return (n).toLocaleString(isAr ? 'ar-OM' : 'en') + ' ' + label;
+    }
+
+    function applyFilter() {
+        ind.classList.remove('hidden');
+        if (inFlight) inFlight.abort();
+        inFlight = new AbortController();
+        var params = buildQuery();
+        fetch('/api/logos/list?' + params.toString(), {
+            signal: inFlight.signal,
+            headers: { 'Accept': 'application/json' }
+        }).then(function (r) { return r.json(); })
+          .then(function (data) {
+              ind.classList.add('hidden');
+              syncUrlState();
+              count.textContent = fmtCount(data.total || 0);
+              if (!data.results || !data.results.length) {
+                  grid.innerHTML = renderEmpty();
+                  return;
+              }
+              grid.innerHTML = data.results.map(renderCard).join('');
+          })
+          .catch(function (err) {
+              if (err && err.name === 'AbortError') return;
+              ind.classList.add('hidden');
+          });
+    }
+
+    function debounceApply() {
+        clearTimeout(debounceId);
+        debounceId = setTimeout(applyFilter, 220);
+    }
+
+    qIn.addEventListener('input', debounceApply);
+    secIn.addEventListener('change', applyFilter);
+    verIn.addEventListener('change', applyFilter);
+    form.addEventListener('submit', function (e) { e.preventDefault(); applyFilter(); });
+    if (submitBtn) submitBtn.style.display = 'none';
+
+    // ESC clears the search input
+    qIn.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && qIn.value) {
+            qIn.value = ''; applyFilter();
+        }
+    });
+
+    // Back/forward navigation re-applies the query string state
+    window.addEventListener('popstate', function () {
+        var p = new URLSearchParams(location.search);
+        qIn.value     = p.get('q') || '';
+        secIn.value   = p.get('sector') || '';
+        verIn.checked = p.get('verified') === '1';
+        applyFilter();
+    });
+})();
+</script>
 
 <?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>
