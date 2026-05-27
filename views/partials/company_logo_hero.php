@@ -18,11 +18,24 @@ if (!function_exists('logo_hero_esc')) {
 }
 
 $status  = $company['logo_status'] ?? 'none';
-$src     = $company['logo_webp_path']
+
+// Auto-flip to dark monochrome variant when the original would render
+// invisibly on the light page background (e.g. white wordmark). Same
+// heuristic + priority chain as the /logos grid.
+$_palette = json_decode((string) ($company['logo_palette'] ?? ''), true) ?: null;
+$_useDarkVar = LogoLibrary::shouldUseDarkVariantOnLight($_palette)
+               && !empty($company['logo_webp_dark_path'] ?? $company['logo_png_dark_path'] ?? $company['logo_svg_dark_path']);
+if ($_useDarkVar) {
+    $src = $company['logo_webp_dark_path']
+        ?: $company['logo_png_dark_path']
+        ?: $company['logo_svg_dark_path'];
+} else {
+    $src = $company['logo_webp_path']
         ?: $company['logo_png_path']
         ?: $company['logo_svg_path']
         ?: $company['logo_png_512_path']
         ?: null;
+}
 // Bust Cloudflare's 30-day immutable cache on retrims/refreshes
 if ($src && !empty($company['logo_updated_at'])) {
     $src .= '?v=' . strtotime($company['logo_updated_at']);
@@ -52,18 +65,50 @@ $companyId = (int) ($company['id'] ?? 0);
     <div class="p-6 md:p-8">
         <div class="flex flex-col md:flex-row gap-6">
 
-            <!-- Logo tile, consistent "stage" sizing so wide wordmarks and
-                 square stamps look balanced; ~75% × 80% inner safe zone. -->
-            <div class="shrink-0 w-36 h-36 sm:w-40 sm:h-40 md:w-44 md:h-44 mx-auto md:mx-0 bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-2xl flex items-center justify-center p-4 sm:p-5">
-                <?php if ($src): ?>
-                    <img src="<?= logo_hero_esc($src) ?>" alt="<?= logo_hero_esc($company['name_en'] ?? '') ?> logo"
-                         class="max-h-[75%] max-w-[80%] w-auto h-auto object-contain object-center">
-                <?php else: ?>
-                    <div class="text-gray-300 text-4xl font-extrabold">
-                        <?= logo_hero_esc(mb_substr($company['name_en'] ?? '??', 0, 2)) ?>
+            <?php
+                // Brandfetch-style dual preview: show the logo on a LIGHT
+                // tile and a DARK tile side-by-side when we have a matching
+                // monochrome variant for the inverse side. Falls back to a
+                // single tile when no variants exist.
+                $_hasLightVar = !empty($company['logo_webp_dark_path'] ?? $company['logo_png_dark_path'] ?? $company['logo_svg_dark_path']);
+                $_hasDarkVar  = !empty($company['logo_webp_white_path'] ?? $company['logo_png_white_path'] ?? $company['logo_svg_white_path']);
+                $_lightSrc = $_useDarkVar
+                    ? ($company['logo_webp_dark_path'] ?: $company['logo_png_dark_path'] ?: $company['logo_svg_dark_path'])
+                    : ($company['logo_webp_path'] ?: $company['logo_png_path'] ?: $company['logo_svg_path']);
+                $_darkSrc  = $_hasDarkVar
+                    ? ($company['logo_webp_white_path'] ?: $company['logo_png_white_path'] ?: $company['logo_svg_white_path'])
+                    : ($company['logo_webp_path'] ?: $company['logo_png_path'] ?: $company['logo_svg_path']);
+                $_ver = !empty($company['logo_updated_at']) ? '?v=' . strtotime($company['logo_updated_at']) : '';
+                $_showDualPreview = $src && ($_hasLightVar || $_hasDarkVar);
+            ?>
+            <?php if ($_showDualPreview): ?>
+                <!-- Brandfetch-style dual preview: light + dark stages -->
+                <div class="shrink-0 mx-auto md:mx-0 grid grid-cols-2 gap-2 w-[18.5rem] sm:w-[20rem] md:w-[22rem]">
+                    <div class="aspect-square bg-white border border-gray-200 rounded-xl flex items-center justify-center p-3 sm:p-4 group/light hover:border-gray-300 transition">
+                        <img src="<?= logo_hero_esc($_lightSrc) . $_ver ?>"
+                             alt="<?= logo_hero_esc($company['name_en'] ?? '') ?> logo, light"
+                             class="max-h-[75%] max-w-[80%] w-auto h-auto object-contain object-center">
                     </div>
-                <?php endif; ?>
-            </div>
+                    <div class="aspect-square bg-[#0E0F11] border border-gray-900 rounded-xl flex items-center justify-center p-3 sm:p-4 group/dark hover:bg-black transition">
+                        <img src="<?= logo_hero_esc($_darkSrc) . $_ver ?>"
+                             alt="<?= logo_hero_esc($company['name_en'] ?? '') ?> logo, dark"
+                             class="max-h-[75%] max-w-[80%] w-auto h-auto object-contain object-center">
+                    </div>
+                </div>
+            <?php else: ?>
+                <!-- Single tile, consistent "stage" sizing for wide wordmarks
+                     and square stamps; ~75% × 80% inner safe zone. -->
+                <div class="shrink-0 w-36 h-36 sm:w-40 sm:h-40 md:w-44 md:h-44 mx-auto md:mx-0 bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-2xl flex items-center justify-center p-4 sm:p-5">
+                    <?php if ($src): ?>
+                        <img src="<?= logo_hero_esc($src) ?>" alt="<?= logo_hero_esc($company['name_en'] ?? '') ?> logo"
+                             class="max-h-[75%] max-w-[80%] w-auto h-auto object-contain object-center">
+                    <?php else: ?>
+                        <div class="text-gray-300 text-4xl font-extrabold">
+                            <?= logo_hero_esc(mb_substr($company['name_en'] ?? '??', 0, 2)) ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
 
             <!-- Meta + actions -->
             <div class="flex-1 min-w-0 text-center md:text-<?= $isAr ? 'right' : 'left' ?>">
