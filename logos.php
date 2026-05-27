@@ -76,7 +76,9 @@ function fetchLogoRows(Database $db, array $filters, int $page = 1, int $perPage
     $rows = $db->fetchAll(
         "SELECT id, slug, name_en, name_ar, sector, wilayat, logo_status,
                 logo_png_path, logo_png_512_path, logo_svg_path, logo_webp_path,
-                logo_dominant_color, logo_width, logo_height, logo_updated_at
+                logo_png_dark_path, logo_svg_dark_path, logo_webp_dark_path,
+                logo_dominant_color, logo_palette,
+                logo_width, logo_height, logo_updated_at
          FROM om_companies WHERE $whereSql ORDER BY $sort LIMIT $perPage OFFSET $offset",
         $params
     );

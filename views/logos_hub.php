@@ -184,7 +184,20 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                 $status = $r['logo_status'];
                 $badgeColor = $status === 'verified' ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-gray-50 text-gray-600 ring-gray-200';
                 $badgeLabel = $status === 'verified' ? t('logos.badge_verified') : t('logos.badge_indexed');
-                $src = $r['logo_webp_path'] ?: $r['logo_png_512_path'] ?: $r['logo_png_path'] ?: $r['logo_svg_path'];
+
+                // Auto-flip to the dark monochrome variant when the original
+                // logo is light-leaning (e.g. white wordmark) and would render
+                // invisible on the white card. Heuristic in LogoLibrary.
+                $palette = json_decode((string) ($r['logo_palette'] ?? ''), true) ?: null;
+                $useDarkVar = LogoLibrary::shouldUseDarkVariantOnLight($palette)
+                              && !empty($r['logo_webp_dark_path'] ?? $r['logo_png_dark_path'] ?? $r['logo_svg_dark_path']);
+                if ($useDarkVar) {
+                    $src = $r['logo_webp_dark_path']
+                        ?: $r['logo_png_dark_path']
+                        ?: $r['logo_svg_dark_path'];
+                } else {
+                    $src = $r['logo_webp_path'] ?: $r['logo_png_512_path'] ?: $r['logo_png_path'] ?: $r['logo_svg_path'];
+                }
                 // Bust CF's 30-day immutable cache on retrims by appending the
                 // logo_updated_at timestamp; same pattern as the card-render bg URL.
                 if ($src && !empty($r['logo_updated_at'])) {

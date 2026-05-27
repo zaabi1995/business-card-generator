@@ -140,6 +140,17 @@ foreach ($rows as $row) {
             ':source'  => $sourceLabel,
             ':id'      => $id,
         ]);
+        // Auto-generate dark + white monochrome variants. Best-effort,
+        // a failure here doesn't undo the source persist.
+        try {
+            $vars = LogoLibrary::generateMonochromeVariants($id);
+            if ($vars) {
+                logLine("ok_variants\tid=$id\tslug=$slug\tcount=" . (count($vars) - 1));
+            }
+        } catch (Throwable $e) {
+            logLine("warn_variants\tid=$id\tslug=$slug\terr=" . substr($e->getMessage(), 0, 120));
+        }
+
         $counts['indexed']++;
         logLine("ok\tid=$id\tslug=$slug\tdomain=$domain\tsource=$sourceLabel\text=$ext\tcolor=" . ($written['color'] ?? '-'));
     } catch (Throwable $e) {

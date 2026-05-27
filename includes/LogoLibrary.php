@@ -227,6 +227,179 @@ class LogoLibrary {
     }
 
     /**
+     * Recolor an SVG document string into a single-color monochrome
+     * (black, white, or any target hex). Best-effort: respects
+     * none/transparent/currentColor/inherit keywords, replaces solid
+     * fill+stroke attrs and inline style fills, drops <defs> so
+     * gradients/patterns become the target color too, and ensures the
+     * root <svg> carries a default fill so unfilled paths inherit it.
+     */
+    public static function recolorSvgString(string $svg, string $color): string {
+        $skip = ['none', 'transparent', 'currentcolor', 'inherit'];
+
+        // Strip <defs> first so gradient/pattern refs collapse to solid
+        $svg = preg_replace('#<defs\b[^>]*>.*?</defs>#is', '', $svg) ?? $svg;
+
+        // Replace fill="..."/'...'
+        $svg = preg_replace_callback(
+            '/\b(fill|stroke)\s*=\s*(["\'])([^"\']*)\2/i',
+            function ($m) use ($color, $skip) {
+                $val = strtolower(trim($m[3]));
+                if ($val === '' || in_array($val, $skip, true)) return $m[0];
+                return $m[1] . '=' . $m[2] . $color . $m[2];
+            },
+            $svg
+        ) ?? $svg;
+
+        // Replace inline style fill:/stroke:
+        $svg = preg_replace_callback(
+            '/\b(fill|stroke)\s*:\s*([^;"\'\s}]+)/i',
+            function ($m) use ($color, $skip) {
+                $val = strtolower(trim($m[2]));
+                if ($val === '' || in_array($val, $skip, true)) return $m[0];
+                return $m[1] . ': ' . $color;
+            },
+            $svg
+        ) ?? $svg;
+
+        // Add a root <svg fill="..."> so unfilled paths inherit the target
+        if (!preg_match('/<svg\b[^>]*\bfill\s*=/i', $svg)) {
+            $svg = preg_replace('/<svg\b/i', '<svg fill="' . $color . '"', $svg, 1);
+        }
+        return $svg;
+    }
+
+    /**
+     * Heuristic: does the logo's palette suggest a light-leaning design
+     * (e.g. white wordmark + accent) that would render invisibly on a
+     * white card background? True only when the top 2 colors include a
+     * near-white WITHOUT a near-black companion (which would mean it's
+     * a 2-tone that works on either side).
+     */
+    public static function shouldUseDarkVariantOnLight(?array $palette): bool {
+        if (empty($palette)) return false;
+        $top = array_slice($palette, 0, 2);
+        $hasLight = false;
+        $hasDark  = false;
+        foreach ($top as $hex) {
+            $L = self::hexLuminance((string) $hex);
+            if ($L === null) continue;
+            if ($L > 0.90) $hasLight = true;
+            if ($L < 0.20) $hasDark  = true;
+        }
+        return $hasLight && !$hasDark;
+    }
+
+    /** sRGB perceived luminance, 0.0 (black) to 1.0 (white). */
+    public static function hexLuminance(string $hex): ?float {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) !== 6) return null;
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+        return (0.299 * $r + 0.587 * $g + 0.114 * $b) / 255;
+    }
+
+    /**
+     * Recolor a raster (PNG/WebP) into solid color while preserving
+     * alpha. Returns true on success. Requires ImageMagick `convert`.
+     */
+    public static function recolorRasterFile(string $src, string $dst, string $color): bool {
+        if (!is_file($src)) return false;
+        $convert = trim((string) @shell_exec('command -v convert 2>/dev/null'));
+        if ($convert === '') return false;
+        $rc = 0;
+        // -fill <color> -colorize 100 paints every non-transparent pixel
+        // the target color (preserving alpha). Works on PNG + WebP.
+        @exec(
+            escapeshellarg($convert) . ' ' . escapeshellarg($src)
+            . ' -fill ' . escapeshellarg($color) . ' -colorize 100 '
+            . escapeshellarg($dst) . ' 2>/dev/null',
+            $_o, $rc
+        );
+        if ($rc !== 0 || !is_file($dst) || filesize($dst) < 100) return false;
+        @chmod($dst, 0644);
+        return true;
+    }
+
+    /**
+     * One-shot: produce dark + white monochrome variants (SVG when
+     * source SVG is available, PNG + WebP always) for a company id.
+     * Writes alongside the original (-dark / -white suffixes) and
+     * returns the relative path map suitable for an om_companies UPDATE.
+     * Idempotent.
+     */
+    public static function generateMonochromeVariants(int $companyId): array {
+        $db = self::dbOrNull();
+        if (!$db) return [];
+
+        $row = $db->fetchOne(
+            "SELECT id, logo_svg_path, logo_png_path, logo_png_2048_path
+             FROM om_companies WHERE id = :id",
+            [':id' => $companyId]
+        );
+        if (!$row) return [];
+
+        $root = realpath(__DIR__ . '/..');
+        if (!$root) return [];
+
+        $svgRel = $row['logo_svg_path'] ?? null;
+        $pngRel = $row['logo_png_path'] ?? $row['logo_png_2048_path'] ?? null;
+        $out = [];
+
+        // SVG -> SVG dark/white
+        if ($svgRel && is_file($root . $svgRel)) {
+            $src = file_get_contents($root . $svgRel);
+            if ($src) {
+                foreach ([['dark', '#111111'], ['white', '#ffffff']] as [$tone, $color]) {
+                    $dstAbs = $root . str_replace('.svg', "-$tone.svg", $svgRel);
+                    $recolored = self::recolorSvgString($src, $color);
+                    if (file_put_contents($dstAbs, $recolored) !== false) {
+                        @chmod($dstAbs, 0644);
+                        $out["logo_svg_{$tone}_path"] = str_replace('.svg', "-$tone.svg", $svgRel);
+                    }
+                }
+            }
+        }
+
+        // PNG -> PNG dark/white (and same for WebP if WebP exists)
+        if ($pngRel && is_file($root . $pngRel)) {
+            $srcAbs = $root . $pngRel;
+            foreach ([['dark', '#111111'], ['white', '#ffffff']] as [$tone, $color]) {
+                $dstRel = str_replace('.png', "-$tone.png", $pngRel);
+                $dstAbs = $root . $dstRel;
+                if (self::recolorRasterFile($srcAbs, $dstAbs, $color)) {
+                    self::trimRasterFile($dstAbs);
+                    $out["logo_png_{$tone}_path"] = $dstRel;
+                    // Same recolor for WebP using the PNG as source
+                    $webpRel = str_replace('.png', "-$tone.webp", $pngRel);
+                    $webpAbs = $root . $webpRel;
+                    if (self::recolorRasterFile($srcAbs, $webpAbs, $color)) {
+                        $out["logo_webp_{$tone}_path"] = $webpRel;
+                    }
+                }
+            }
+        }
+
+        if ($out) {
+            $out['logo_variants_at'] = date('Y-m-d H:i:s');
+            $set = implode(', ', array_map(fn($k) => "$k = :$k", array_keys($out)));
+            $params = [];
+            foreach ($out as $k => $v) $params[":$k"] = $v;
+            $params[':id'] = $companyId;
+            $db->getConnection()
+                ->prepare("UPDATE om_companies SET $set, logo_updated_at = NOW() WHERE id = :id")
+                ->execute($params);
+        }
+        return $out;
+    }
+
+    /** Singleton accessor that won't throw if DB isn't configured. */
+    private static function dbOrNull(): ?Database {
+        try { return Database::getInstance(); } catch (Throwable $e) { return null; }
+    }
+
+    /**
      * Trim transparent borders from a raster file (PNG / WebP) in-place.
      * Logos uploaded with whitespace in the source viewBox render with
      * empty edges around the visible content; trimming gives every file
