@@ -81,33 +81,123 @@ $companyId = (int) ($company['id'] ?? 0);
                 </h2>
 
                 <?php if ($src): ?>
+                    <!-- Brand palette swatches (up to 5 colors extracted from the logo) -->
+                    <?php
+                        $palette = [];
+                        if (!empty($company['logo_palette'])) {
+                            $decoded = json_decode($company['logo_palette'], true);
+                            if (is_array($decoded)) $palette = array_slice($decoded, 0, 5);
+                        }
+                        if (empty($palette) && !empty($company['logo_dominant_color'])) {
+                            $palette = [$company['logo_dominant_color']];
+                        }
+                    ?>
+                    <?php if (!empty($palette)): ?>
+                        <div class="mt-4 flex flex-wrap items-center gap-2 justify-center md:justify-<?= $isAr ? 'end' : 'start' ?>">
+                            <span class="text-xs text-gray-500 <?= $isAr ? 'ml-1' : 'mr-1' ?>"><?= $isAr ? 'لوحة الألوان' : 'Brand palette' ?>:</span>
+                            <?php foreach ($palette as $hex): $hex = strtoupper((string) $hex); ?>
+                                <button type="button"
+                                        class="cardify-palette-chip group inline-flex items-center gap-1.5 pl-1.5 pr-2 py-1 rounded-full bg-white border border-gray-200 text-xs font-mono text-gray-700 hover:border-gray-400 transition"
+                                        data-copy="<?= logo_hero_esc($hex) ?>"
+                                        title="<?= $isAr ? 'انقر للنسخ' : 'Click to copy' ?>">
+                                    <span class="w-4 h-4 rounded-full ring-1 ring-inset ring-black/10" style="background: <?= logo_hero_esc($hex) ?>"></span>
+                                    <span class="group-[.copied]:hidden"><?= logo_hero_esc($hex) ?></span>
+                                    <span class="hidden group-[.copied]:inline text-emerald-600"><?= $isAr ? 'تم النسخ' : 'Copied' ?></span>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+
                     <!-- Download buttons, available whether indexed or verified -->
                     <?php if ($canDownload): ?>
-                        <div class="cardify-logo-downloads mt-5 <?= $isAr ? 'is-rtl' : '' ?>">
-                            <?php
-                                $formats = [
-                                    'svg'      => ['SVG',         'logo_svg_path',      'fa-bezier-curve'],
-                                    'png_1024' => ['PNG · 1024',  'logo_png_path',      'fa-image'],
-                                    'png_2048' => ['PNG · 2048',  'logo_png_2048_path', 'fa-image'],
-                                    'png_512'  => ['PNG · 512',   'logo_png_512_path',  'fa-image'],
-                                    'webp'     => ['WebP',        'logo_webp_path',     'fa-image'],
-                                    'zip'      => ['ZIP bundle',  null,                 'fa-box-archive'],
+                        <?php
+                            // Format catalogue with on-disk file probe for size + dimensions.
+                            // The probe is cheap, only 2-6 stat() calls per page.
+                            $root = realpath(__DIR__ . '/../..') ?: dirname(__DIR__, 2);
+                            $fmtCatalogue = [
+                                'svg'      => ['SVG',         'logo_svg_path',      'fa-bezier-curve', 'image/svg+xml'],
+                                'png_1024' => ['PNG · 1024',  'logo_png_path',      'fa-image',        'image/png'],
+                                'png_2048' => ['PNG · 2048',  'logo_png_2048_path', 'fa-image',        'image/png'],
+                                'png_512'  => ['PNG · 512',   'logo_png_512_path',  'fa-image',        'image/png'],
+                                'webp'     => ['WebP',        'logo_webp_path',     'fa-image',        'image/webp'],
+                                'zip'      => ['ZIP bundle',  null,                 'fa-box-archive',  'application/zip'],
+                            ];
+                            $availFormats = [];
+                            foreach ($fmtCatalogue as $fmt => [$label, $col, $icon, $mime]) {
+                                if ($fmt === 'zip') {
+                                    $availFormats[$fmt] = ['label' => $label, 'icon' => $icon, 'bytes' => null, 'mime' => $mime];
+                                    continue;
+                                }
+                                if (empty($company[$col])) continue;
+                                $abs = $root . $company[$col];
+                                $availFormats[$fmt] = [
+                                    'label' => $label,
+                                    'icon'  => $icon,
+                                    'bytes' => is_file($abs) ? filesize($abs) : null,
+                                    'mime'  => $mime,
                                 ];
-                                $primaryPlaced = false;
-                                foreach ($formats as $fmt => [$label, $col, $icon]):
-                                    $available = $fmt === 'zip' ? true : !empty($company[$col] ?? null);
-                                    if (!$available) continue;
-                                    $primary = !$primaryPlaced && ($fmt === 'svg' || $fmt === 'png_1024');
-                                    $primaryPlaced = $primaryPlaced || $primary;
+                            }
+                            $primaryPlaced = false;
+                        ?>
+                        <div class="cardify-logo-downloads mt-5 <?= $isAr ? 'is-rtl' : '' ?>">
+                            <?php foreach ($availFormats as $fmt => $meta):
+                                $primary = !$primaryPlaced && ($fmt === 'svg' || $fmt === 'png_1024');
+                                $primaryPlaced = $primaryPlaced || $primary;
+                                $sizeLabel = $meta['bytes']
+                                    ? ($meta['bytes'] < 1024
+                                        ? $meta['bytes'] . ' B'
+                                        : ($meta['bytes'] < 1024 * 1024
+                                            ? round($meta['bytes'] / 1024, 1) . ' KB'
+                                            : round($meta['bytes'] / 1024 / 1024, 1) . ' MB'))
+                                    : null;
                             ?>
                                 <a href="/logo-download?company=<?= $companyId ?>&format=<?= logo_hero_esc($fmt) ?>"
                                    class="cardify-dl-btn <?= $primary ? 'cardify-dl-btn--primary' : '' ?>"
                                    rel="nofollow"
                                    download>
-                                    <i class="fa-solid <?= logo_hero_esc($icon) ?>" aria-hidden="true"></i>
-                                    <span><?= logo_hero_esc($label) ?></span>
+                                    <i class="fa-solid <?= logo_hero_esc($meta['icon']) ?>" aria-hidden="true"></i>
+                                    <span><?= logo_hero_esc($meta['label']) ?></span>
+                                    <?php if ($sizeLabel): ?>
+                                        <span class="cardify-dl-btn__size text-[10px] opacity-60 ml-1 font-mono"><?= logo_hero_esc($sizeLabel) ?></span>
+                                    <?php endif; ?>
                                 </a>
                             <?php endforeach; ?>
+                        </div>
+
+                        <!-- Copy / embed row (power-user shortcut, no auth needed because the
+                             link itself still goes through logo-download.php + unlock cookie). -->
+                        <?php
+                            $defaultFmt = isset($availFormats['svg']) ? 'svg' : (isset($availFormats['png_1024']) ? 'png_1024' : array_key_first($availFormats));
+                            $defaultUrl = $baseUrl . '/logo-download?company=' . $companyId . '&format=' . $defaultFmt;
+                        ?>
+                        <div class="mt-3 flex flex-wrap items-center gap-2 text-xs <?= $isAr ? 'is-rtl flex-row-reverse' : '' ?>" data-logo-copy-row="<?= $companyId ?>">
+                            <button type="button"
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 hover:border-gray-400 transition text-gray-700"
+                                    data-copy="<?= logo_hero_esc($defaultUrl) ?>"
+                                    title="<?= $isAr ? 'انسخ رابط الشعار' : 'Copy logo URL' ?>">
+                                <i class="fa-solid fa-link text-[11px]"></i>
+                                <span><?= $isAr ? 'انسخ الرابط' : 'Copy link' ?></span>
+                                <span class="hidden text-emerald-600" data-copy-state="ok"><i class="fa-solid fa-check"></i></span>
+                            </button>
+                            <button type="button"
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 hover:border-gray-400 transition text-gray-700"
+                                    data-copy='<img src="<?= logo_hero_esc($defaultUrl) ?>" alt="<?= logo_hero_esc($company['name_en'] ?? '') ?> logo" width="160" height="160" loading="lazy">'
+                                    title="<?= $isAr ? 'انسخ كود التضمين' : 'Copy embed code' ?>">
+                                <i class="fa-solid fa-code text-[11px]"></i>
+                                <span><?= $isAr ? 'انسخ كود التضمين' : 'Copy embed' ?></span>
+                                <span class="hidden text-emerald-600" data-copy-state="ok"><i class="fa-solid fa-check"></i></span>
+                            </button>
+                            <details class="ml-auto">
+                                <summary class="cursor-pointer text-gray-500 hover:text-gray-700 select-none">
+                                    <i class="fa-solid fa-circle-info text-[11px]"></i>
+                                    <?= $isAr ? 'كيف أستخدمه' : 'How to use' ?>
+                                </summary>
+                                <div class="mt-2 p-3 rounded-lg bg-gray-50 border border-gray-200 text-gray-600 leading-relaxed text-[11px]" style="max-width: 460px">
+                                    <p><?= $isAr
+                                            ? 'الرابط يبقى صالحاً ما دامت الكوكي مفعّلة. للاستخدام التحريري أو الصحفي، الإسناد عبر «من مكتبة الشعارات العمانية على Cardify» مرحَّب به ومُقدَّر.'
+                                            : 'The link stays valid for 90 days from your unlock. For editorial or press use, attribution to "Omani Logo Library on Cardify" is welcomed but not required.' ?></p>
+                                </div>
+                            </details>
                         </div>
 
                         <!-- Secondary row: claim + takedown -->
@@ -206,18 +296,27 @@ if ($src && $canDownload):
         <input type="hidden" name="company_id" value="<?= (int) $companyId ?>">
         <input type="hidden" name="format" id="cardify-logo-unlock-format" value="">
 
-        <div>
-            <h3 class="text-lg font-bold text-gray-900">
-                <?= $isAr
-                    ? 'لتحميل الشعار، اترك رقمك أو بريدك'
-                    : 'One quick step to download' ?>
-            </h3>
-            <p class="text-sm text-gray-600 mt-1">
-                <?= $isAr
-                    ? 'نستخدم هذا لمتابعة استخدام مكتبة الشعارات العمانية. تعبئة واحدة تكفي لـ 90 يوماً، تنزيلات لاحقة لن تطلب منك أي شيء.'
-                    : 'We use it to keep the Omani Logo Library honest. One fill, 90 days of friction-free downloads after.' ?>
-            </p>
+        <!-- Logo preview so the user remembers WHAT they're unlocking -->
+        <div class="flex items-center gap-3 pb-1">
+            <div class="w-16 h-16 shrink-0 rounded-xl bg-gradient-to-br from-gray-50 to-white border border-gray-200 flex items-center justify-center p-2">
+                <img src="<?= logo_hero_esc($src) ?>" alt=""
+                     class="max-h-full max-w-full object-contain">
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs uppercase tracking-wider text-gray-400"><?= $isAr ? 'مكتبة الشعارات العمانية' : 'Omani Logo Library' ?></p>
+                <h3 class="text-base font-bold text-gray-900 truncate">
+                    <?= $isAr
+                        ? logo_hero_esc($company['name_ar'] ?: ($company['name_en'] ?? ''))
+                        : logo_hero_esc($company['name_en'] ?? '') ?>
+                </h3>
+            </div>
         </div>
+
+        <p class="text-sm text-gray-600">
+            <?= $isAr
+                ? 'اترك جوالك أو بريدك مرة واحدة، تحصل على 90 يوماً من التنزيلات بلا أي خطوة إضافية.'
+                : 'Leave your mobile or email once, get 90 days of friction-free downloads across the whole library.' ?>
+        </p>
 
         <div>
             <label class="block text-xs font-semibold text-gray-700 mb-1">
@@ -232,9 +331,18 @@ if ($src && $canDownload):
             <label class="block text-xs font-semibold text-gray-700 mb-1">
                 <?= $isAr ? 'الجوال (واتساب)' : 'Mobile (WhatsApp)' ?>
             </label>
-            <input type="tel" name="phone" inputmode="tel"
-                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
-                   placeholder="+968 9XXX XXXX" pattern="^\+?[0-9 \-\(\)]{7,20}$">
+            <div class="flex rounded-lg shadow-sm">
+                <span class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm font-mono select-none">
+                    +968
+                </span>
+                <input type="tel" name="phone" inputmode="tel"
+                       class="flex-1 min-w-0 block w-full px-3 py-2 border border-gray-300 rounded-none rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
+                       placeholder="9123 4567" pattern="^[+]?[0-9 \-\(\)]{6,20}$"
+                       data-default-cc="+968">
+            </div>
+            <p class="mt-1 text-[10px] text-gray-400">
+                <?= $isAr ? 'لرقم خارج عُمان، اكتب الرقم كاملاً مع رمز الدولة' : 'Outside Oman? type the full number with country code' ?>
+            </p>
         </div>
 
         <div class="flex items-center gap-2 text-xs text-gray-400">
@@ -280,6 +388,9 @@ if ($src && $canDownload):
     var fmtIn   = document.getElementById('cardify-logo-unlock-format');
     var btn     = document.getElementById('cardify-logo-unlock-submit');
     var cancel  = dlg.querySelector('.cardify-logo-unlock-cancel');
+    var phoneIn = form.querySelector('input[name="phone"]');
+    var emailIn = form.querySelector('input[name="email"]');
+    var nameIn  = form.querySelector('input[name="name"]');
     var pending = null;
 
     function isUnlocked() { return dlg.dataset.unlocked === '1'; }
@@ -294,6 +405,17 @@ if ($src && $canDownload):
         errEl.classList.add('hidden');
     }
 
+    function openModal() {
+        hideError();
+        try { dlg.showModal(); } catch (_) { dlg.setAttribute('open', ''); }
+        // Focus the most useful empty field (phone first, then email).
+        setTimeout(function () {
+            if (phoneIn && !phoneIn.value) phoneIn.focus();
+            else if (emailIn && !emailIn.value) emailIn.focus();
+            else if (nameIn) nameIn.focus();
+        }, 30);
+    }
+
     // Intercept every download button on the page that points at logo-download
     document.querySelectorAll('a[href*="logo-download"]').forEach(function (a) {
         a.addEventListener('click', function (e) {
@@ -302,12 +424,60 @@ if ($src && $canDownload):
             pending = a.getAttribute('href');
             var u = new URL(a.href, location.origin);
             fmtIn.value = u.searchParams.get('format') || '';
-            hideError();
-            try { dlg.showModal(); } catch (_) { dlg.setAttribute('open', ''); }
+            openModal();
         });
     });
 
     cancel.addEventListener('click', function () { dlg.close(); pending = null; });
+
+    // ESC closes the modal natively in <dialog>, but also clear the pending intent
+    dlg.addEventListener('close', function () { pending = null; });
+
+    // Phone normalizer: when the user types digits only (no +), prepend +968.
+    // Allow them to override by typing a leading "+" themselves.
+    if (phoneIn) {
+        phoneIn.addEventListener('blur', function () {
+            var v = (phoneIn.value || '').trim();
+            if (!v) return;
+            if (v.charAt(0) === '+') return;
+            // Looks like an Omani local number? Just digits, 7-10 long.
+            if (/^[0-9 \-\(\)]{6,12}$/.test(v)) {
+                var compact = v.replace(/\D/g, '');
+                phoneIn.value = (phoneIn.dataset.defaultCc || '+968') + compact;
+            }
+        });
+    }
+
+    // Copy-to-clipboard for palette swatches + Copy link / Copy embed buttons
+    document.querySelectorAll('[data-copy]').forEach(function (el) {
+        el.addEventListener('click', function (e) {
+            e.preventDefault();
+            var text = el.getAttribute('data-copy') || '';
+            var done = function () {
+                el.classList.add('copied');
+                var okBadge = el.querySelector('[data-copy-state="ok"]');
+                if (okBadge) okBadge.classList.remove('hidden');
+                setTimeout(function () {
+                    el.classList.remove('copied');
+                    if (okBadge) okBadge.classList.add('hidden');
+                }, 1500);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(done, function () {
+                    // Fallback: textarea + execCommand
+                    var ta = document.createElement('textarea');
+                    ta.value = text; document.body.appendChild(ta);
+                    ta.select(); try { document.execCommand('copy'); } catch (_) {}
+                    document.body.removeChild(ta); done();
+                });
+            } else {
+                var ta = document.createElement('textarea');
+                ta.value = text; document.body.appendChild(ta);
+                ta.select(); try { document.execCommand('copy'); } catch (_) {}
+                document.body.removeChild(ta); done();
+            }
+        });
+    });
 
     form.addEventListener('submit', function (e) {
         e.preventDefault();
@@ -368,7 +538,7 @@ if ($src && $canDownload):
         var fmt = params.get('format') || '';
         fmtIn.value = fmt;
         pending = '/logo-download?company=<?= (int) $companyId ?>&format=' + encodeURIComponent(fmt);
-        try { dlg.showModal(); } catch (_) { dlg.setAttribute('open', ''); }
+        openModal();
     }
 })();
 </script>

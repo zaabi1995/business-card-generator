@@ -11,10 +11,12 @@
  * gives up on a domain after 3 source failures.
  *
  * CLI:
- *   php crawl-logos.php                  # 50 random none-status rows
+ *   php crawl-logos.php                       # 50 logo_status=none rows
  *   php crawl-logos.php --limit=20
- *   php crawl-logos.php --id=2497        # re-crawl a specific company
- *   php crawl-logos.php --dry-run        # don't write anything
+ *   php crawl-logos.php --id=2497             # re-crawl a specific company
+ *   php crawl-logos.php --include-verified    # also refresh verified entries
+ *   php crawl-logos.php --refresh-older-than=90  # only refresh older than N days
+ *   php crawl-logos.php --dry-run             # don't write anything
  *
  * Output: tab-separated log lines to stdout. Pipe to a log file from cron.
  */
@@ -31,6 +33,8 @@ $opts = parseArgs($argv);
 $limit  = max(1, min(500, (int) ($opts['limit'] ?? 50)));
 $forceId = isset($opts['id']) ? (int) $opts['id'] : null;
 $dryRun  = !empty($opts['dry-run']);
+$includeVerified  = !empty($opts['include-verified']);
+$refreshOlderDays = isset($opts['refresh-older-than']) ? max(1, (int) $opts['refresh-older-than']) : null;
 
 $db = Database::getInstance();
 $storageRoot = __DIR__ . '/../storage/logos/indexed';
@@ -47,12 +51,19 @@ if ($forceId) {
         [':id' => $forceId]
     );
 } else {
+    $statusWhere = $includeVerified
+        ? "logo_status IN ('none', 'indexed', 'verified')"
+        : "logo_status = 'none'";
+    $extraWhere  = $refreshOlderDays
+        ? " AND (logo_updated_at IS NULL OR logo_updated_at < NOW() - INTERVAL " . (int) $refreshOlderDays . " DAY)"
+        : '';
     $rows = $db->fetchAll(
         "SELECT id, slug, name_en, website_domain_cache, logo_status
          FROM om_companies
-         WHERE logo_status = 'none'
+         WHERE $statusWhere
            AND website_domain_cache IS NOT NULL
-         ORDER BY curated DESC, id ASC
+           $extraWhere
+         ORDER BY (logo_status = 'none') DESC, curated DESC, id ASC
          LIMIT $limit"
     );
 }
@@ -97,6 +108,9 @@ foreach ($rows as $row) {
     }
 
     try {
+        // Don't demote a verified row back to indexed when refreshing
+        $newStatus = $row['logo_status'] === 'verified' ? 'verified' : 'indexed';
+
         $db->getConnection()->prepare(
             "UPDATE om_companies SET
                 logo_svg_path = :svg,
@@ -105,9 +119,10 @@ foreach ($rows as $row) {
                 logo_png_2048_path = :png2048,
                 logo_webp_path = :webp,
                 logo_dominant_color = :color,
+                logo_palette = :palette,
                 logo_width = :w,
                 logo_height = :h,
-                logo_status = 'indexed',
+                logo_status = :status,
                 logo_source = :source,
                 logo_updated_at = NOW()
              WHERE id = :id"
@@ -118,8 +133,10 @@ foreach ($rows as $row) {
             ':png2048' => $written['png_2048'] ?? null,
             ':webp'    => $written['webp']     ?? null,
             ':color'   => $written['color']    ?? null,
+            ':palette' => $written['palette']  ?? null,
             ':w'       => $written['width']    ?? null,
             ':h'       => $written['height']   ?? null,
+            ':status'  => $newStatus,
             ':source'  => $sourceLabel,
             ':id'      => $id,
         ]);
@@ -362,10 +379,13 @@ function persistLogo(int $id, array $best, string $storageRoot): ?array {
         renderPngVariants($masterPng, $storageRoot, $id, $out, $rel);
     }
 
-    [$w, $h] = @getimagesize("$storageRoot/$id.png") ?: [null, null];
+    $masterPng = "$storageRoot/$id.png";
+    [$w, $h] = @getimagesize($masterPng) ?: [null, null];
     $out['width']  = $w ?: null;
     $out['height'] = $h ?: null;
-    $out['color']  = LogoLibrary::dominantColor("$storageRoot/$id.png");
+    $out['color']  = LogoLibrary::dominantColor($masterPng);
+    $palette = LogoLibrary::palette($masterPng, 5);
+    $out['palette'] = !empty($palette) ? json_encode($palette) : null;
 
     return $out;
 }

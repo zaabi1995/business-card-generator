@@ -126,6 +126,106 @@ class LogoLibrary {
         return sprintf('#%02x%02x%02x', $r, $g, $b);
     }
 
+    /**
+     * Extract up to N (default 5) dominant colors as a hex palette.
+     * Uses GD: downsamples to 64x64, builds a 4-bit-per-channel histogram
+     * (4096 bins), filters near-white/near-black background unless they
+     * dominate. Returns ['#RRGGBB', ...] ordered by frequency.
+     */
+    public static function palette(string $imagePath, int $count = 5): array {
+        if (!is_file($imagePath)) return [];
+        $mime = function_exists('mime_content_type') ? mime_content_type($imagePath) : null;
+        $src = match ($mime) {
+            'image/png'  => @imagecreatefrompng($imagePath),
+            'image/jpeg' => @imagecreatefromjpeg($imagePath),
+            'image/webp' => @imagecreatefromwebp($imagePath),
+            'image/gif'  => @imagecreatefromgif($imagePath),
+            default      => null,
+        };
+        if (!$src) return [];
+
+        $w = imagesx($src);
+        $h = imagesy($src);
+        $size = 64;
+        $small = imagecreatetruecolor($size, $size);
+        // Preserve alpha so PNG transparency maps to a "skip" pixel
+        imagealphablending($small, false);
+        imagesavealpha($small, true);
+        imagecopyresampled($small, $src, 0, 0, 0, 0, $size, $size, $w, $h);
+        imagedestroy($src);
+
+        $bins = [];
+        for ($y = 0; $y < $size; $y++) {
+            for ($x = 0; $x < $size; $x++) {
+                $rgba = imagecolorat($small, $x, $y);
+                $a = ($rgba >> 24) & 0x7f;
+                if ($a > 100) continue; // ~78% transparent or more, skip
+                $r = ($rgba >> 16) & 0xff;
+                $g = ($rgba >> 8) & 0xff;
+                $b = $rgba & 0xff;
+                // 4-bit quantize, ~4096 bins
+                $key = ($r >> 4) << 8 | ($g >> 4) << 4 | ($b >> 4);
+                if (!isset($bins[$key])) {
+                    $bins[$key] = ['count' => 0, 'r' => 0, 'g' => 0, 'b' => 0];
+                }
+                $bins[$key]['count']++;
+                $bins[$key]['r'] += $r;
+                $bins[$key]['g'] += $g;
+                $bins[$key]['b'] += $b;
+            }
+        }
+        imagedestroy($small);
+        if (empty($bins)) return [];
+
+        // Sort by count desc
+        uasort($bins, fn($a, $b) => $b['count'] - $a['count']);
+
+        // Average each bin back to a real color, then dedupe colors that
+        // are within ~20 units in any channel (avoid 5 shades of the
+        // same near-white "background").
+        $palette = [];
+        $total   = array_sum(array_column($bins, 'count'));
+        $minShare = 0.01; // 1% minimum to count
+        foreach ($bins as $bin) {
+            if ($bin['count'] / $total < $minShare) break;
+            $r = (int) round($bin['r'] / $bin['count']);
+            $g = (int) round($bin['g'] / $bin['count']);
+            $b = (int) round($bin['b'] / $bin['count']);
+            // De-duplicate near-identical colors already in the palette
+            $tooClose = false;
+            foreach ($palette as $p) {
+                if (abs($p[0] - $r) < 20 && abs($p[1] - $g) < 20 && abs($p[2] - $b) < 20) {
+                    $tooClose = true;
+                    break;
+                }
+            }
+            if ($tooClose) continue;
+            $palette[] = [$r, $g, $b];
+            if (count($palette) >= $count) break;
+        }
+
+        // Demote pure white / near-white when the palette has at least
+        // one non-background color, the brand color is what users want.
+        $hasNonBg = false;
+        foreach ($palette as $p) {
+            if (!self::isBackground($p)) { $hasNonBg = true; break; }
+        }
+        if ($hasNonBg) {
+            usort($palette, fn($a, $b) => (self::isBackground($a) ? 1 : 0) - (self::isBackground($b) ? 1 : 0));
+        }
+
+        return array_map(
+            fn($p) => sprintf('#%02x%02x%02x', $p[0], $p[1], $p[2]),
+            $palette
+        );
+    }
+
+    private static function isBackground(array $rgb): bool {
+        // Near-white: all channels > 230. Near-black: all < 25.
+        return ($rgb[0] > 230 && $rgb[1] > 230 && $rgb[2] > 230)
+            || ($rgb[0] < 25  && $rgb[1] < 25  && $rgb[2] < 25);
+    }
+
     public static function ipHash(): string {
         // Use the shared getClientIp() helper so deployments behind Cloudflare /
         // reverse proxies hash the real client IP, not the proxy address.
