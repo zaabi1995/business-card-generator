@@ -57,13 +57,25 @@ test.describe('Cardify — public card view', () => {
     const saveHref = await saveContact.getAttribute('href');
     expect(saveHref, 'save-contact href').toMatch(/qr\.php/);
 
-    // And the endpoint itself must return a valid vCard payload.
-    const qrRes = await page.request.get(`/qr.php?i=${KNOWN_CARD.eid}`);
-    expect(qrRes.status(), 'qr.php status').toBe(200);
-    const qrCt = qrRes.headers()['content-type'] || '';
-    expect(qrCt.toLowerCase(), 'qr.php content-type').toMatch(/vcard|octet-stream/);
-    const qrBody = await qrRes.text();
-    expect(qrBody, 'qr.php body').toContain('BEGIN:VCARD');
+    // qr.php endpoint must return either a vCard payload (legacy) or a 302
+    // redirect to the friendly short URL (current behavior since the short-URL
+    // sharing rollout). Either is valid, but it must never 5xx or 4xx and a
+    // 200 response MUST be a real vCard.
+    const qrRes = await page.request.get(`/qr.php?i=${KNOWN_CARD.eid}`, {
+      maxRedirects: 0,
+      failOnStatusCode: false,
+    });
+    expect(qrRes.status(), 'qr.php status').toBeLessThan(400);
+    if (qrRes.status() === 200) {
+      const qrCt = qrRes.headers()['content-type'] || '';
+      expect(qrCt.toLowerCase(), 'qr.php content-type').toMatch(/vcard|octet-stream/);
+      const qrBody = await qrRes.text();
+      expect(qrBody, 'qr.php body').toContain('BEGIN:VCARD');
+    } else {
+      // 302 path: must redirect to a cardify.om short URL, not somewhere weird.
+      const loc = qrRes.headers()['location'] || '';
+      expect(loc, 'qr.php redirect target').toMatch(/cardify\.om/);
+    }
 
     // No console errors
     expect(consoleErrors, 'console errors').toEqual([]);
