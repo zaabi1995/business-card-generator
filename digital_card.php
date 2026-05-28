@@ -193,18 +193,10 @@ try {
     $cardAspectCss = number_format($cardAspect, 4, '.', '') . ' / 1';
 
     // Log QR scan (non-fatal)
-    try {
-        QRTracker::logScan($employee['id'], $company['id']);
-    } catch (Throwable $e) {
-        error_log("QR tracking failed: " . $e->getMessage());
-    }
-
-    // Log view / QR-scan event (non-fatal), per-card analytics
-    try {
-        CardAnalytics::logView($employee['id'], $company['id']);
-    } catch (Throwable $e) {
-        error_log("CardAnalytics logView failed: " . $e->getMessage());
-    }
+    // QRTracker::logScan and CardAnalytics::logView are deferred until after
+    // the response is sent (see the fastcgi_finish_request block at the very
+    // bottom of this file). They are inserts; the user does not need to wait
+    // on them. Trims another ~5-15ms off TTFB.
 
     // Pending-approval card_requests don't live in `employees`, so the
     // /card_click.php tracker (employee-only) would 400 on every button.
@@ -405,12 +397,13 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap"></noscript>
     <?php endif; ?>
-    <!-- Icons load async (media=print -> all on load) so text paints immediately; icons fill in a beat later. -->
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"></noscript>
+    <!-- Icons load async (media=print -> all on load) so text paints immediately; icons fill in a beat later.
+         Font Awesome is self-hosted on cardify.om: no third-party DNS lookup, reuses the existing HTTP/2
+         connection to the same origin, and Cloudflare cdn-cache + brotli applies the same as for the HTML. -->
+    <link rel="preload" href="/assets/fontawesome/webfonts/fa-brands-400.woff2?v=652" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fontawesome/webfonts/fa-solid-900.woff2?v=652" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=652" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=652"></noscript>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { overflow-x: hidden; }
@@ -2070,3 +2063,23 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
 <?php endif; ?>
 </body>
 </html>
+<?php
+// ============================================================================
+// POST-RESPONSE: analytics inserts run AFTER the client connection is closed.
+// ============================================================================
+// fastcgi_finish_request() flushes the response and closes the FastCGI socket
+// to nginx, so the user's browser stops waiting on us. PHP keeps running this
+// block in the background. The page has already been delivered, so the
+// analytics inserts (QR scan + card view) no longer add to TTFB or total time.
+if (isset($employee['id'], $company['id'])) {
+    if (function_exists('fastcgi_finish_request')) {
+        while (ob_get_level()) { @ob_end_flush(); }
+        @flush();
+        @fastcgi_finish_request();
+    }
+    try { QRTracker::logScan($employee['id'], $company['id']); }
+    catch (Throwable $e) { error_log('QR tracking failed (post-response): ' . $e->getMessage()); }
+    try { CardAnalytics::logView($employee['id'], $company['id']); }
+    catch (Throwable $e) { error_log('CardAnalytics logView failed (post-response): ' . $e->getMessage()); }
+}
+?>
