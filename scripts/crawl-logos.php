@@ -373,14 +373,27 @@ function persistLogo(int $id, array $best, string $storageRoot): ?array {
     $ext = $best['ext'];
     $bytes = $best['bytes'];
 
-    // ico is awkward, convert it to png up front
+    // ico is awkward (multi-frame), convert the LARGEST frame to png up front.
+    // Using [-1] (last frame) is wrong: some ICOs put a 1x1 frame last, which
+    // is how ABRAJ ended up with a 1x1 "logo".
     if ($ext === 'ico') {
         $tmp = tempnam(sys_get_temp_dir(), 'logocrawl_');
         @unlink($tmp);
         $icoPath = "$tmp.ico";
         $pngPath = "$tmp.png";
         file_put_contents($icoPath, $bytes);
-        @exec('convert ' . escapeshellarg($icoPath . '[-1]') . ' ' . escapeshellarg($pngPath) . ' 2>/dev/null', $_o, $rc);
+
+        // Find the frame index with the largest pixel area via identify.
+        $frameIdx = 0; $bestArea = 0;
+        @exec('identify ' . escapeshellarg($icoPath) . ' 2>/dev/null', $idLines);
+        foreach ($idLines as $line) {
+            // e.g. "/tmp/x.ico[2] ICO 48x48 48x48+0+0 ..."
+            if (preg_match('/\[(\d+)\]\s+\w+\s+(\d+)x(\d+)/', $line, $m)) {
+                $area = (int) $m[2] * (int) $m[3];
+                if ($area > $bestArea) { $bestArea = $area; $frameIdx = (int) $m[1]; }
+            }
+        }
+        @exec('convert ' . escapeshellarg($icoPath . "[$frameIdx]") . ' ' . escapeshellarg($pngPath) . ' 2>/dev/null', $_o, $rc);
         @unlink($icoPath);
         if ($rc !== 0 || !is_file($pngPath) || filesize($pngPath) < MIN_IMAGE_BYTES) {
             @unlink($pngPath);
@@ -417,6 +430,15 @@ function persistLogo(int $id, array $best, string $storageRoot): ?array {
 
     $masterPng = "$storageRoot/$id.png";
     [$w, $h] = @getimagesize($masterPng) ?: [null, null];
+
+    // Final backstop: reject degenerate results (1x1 tracking pixels, broken
+    // conversions). Better to leave the company logo-less than store junk.
+    if ($w !== null && $h !== null && ($w < 16 || $h < 16)) {
+        foreach (glob("$storageRoot/$id*.png") ?: [] as $f) @unlink($f);
+        foreach (glob("$storageRoot/$id*.webp") ?: [] as $f) @unlink($f);
+        return null;
+    }
+
     $out['width']  = $w ?: null;
     $out['height'] = $h ?: null;
     $out['color']  = LogoLibrary::dominantColor($masterPng);
