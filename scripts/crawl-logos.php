@@ -252,17 +252,15 @@ function aspectOk(array $cand): bool {
 function acceptCandidate(array|string|null $img, string $ext, string $source): ?array {
     if (!is_array($img) || !validateImageBytes($img)) return null;
     $bytes = $img['bytes'];
-    // SVG: vector, always acceptable
+    // SVG-ONLY POLICY (28 May 2026, Ali): the library accepts vector SVG
+    // logos only. A favicon PNG looks cheap; an SVG is crisp at any size.
+    // Reject every raster candidate - if a site has no SVG logo we simply
+    // don't index it here (marquee brands are sourced as SVG from Wikimedia
+    // via fetch-wikimedia-svg.php instead).
     if (preg_match('/^\s*<(\?xml|svg)/i', substr($bytes, 0, 200))) {
         return ['bytes' => $bytes, 'ext' => 'svg', 'source' => $source, 'area' => PHP_INT_MAX, 'big' => true];
     }
-    $dims = @getimagesizefromstring($bytes);
-    $w = $dims[0] ?? 0; $h = $dims[1] ?? 0;
-    $area = $w * $h;
-    // ICO often reports the first (small) frame; trust it past the hard floor
-    // since persistLogo() re-extracts the largest frame via convert.
-    $big = ($w >= MIN_LOGO_DIMENSION && $h >= MIN_LOGO_DIMENSION) || $ext === 'ico' && $area >= 1024;
-    return ['bytes' => $bytes, 'ext' => $ext, 'source' => $source, 'area' => $area, 'big' => $big];
+    return null; // not SVG -> rejected
 }
 
 /**
