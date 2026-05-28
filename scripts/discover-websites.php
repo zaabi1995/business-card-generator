@@ -58,7 +58,10 @@ if ($onlyId) {
         "SELECT id, slug, name_en FROM om_companies WHERE id = :id", [':id' => $onlyId]
     );
 } else {
-    $where = "logo_status = 'none' AND (website_domain_cache IS NULL OR website_domain_cache = '')";
+    // Exclude already-probed rows so the cron marches forward instead of
+    // re-probing the same non-matching head every night.
+    $where = "logo_status = 'none' AND (website_domain_cache IS NULL OR website_domain_cache = '')"
+           . " AND logo_discovery_attempted_at IS NULL";
     if ($curated) $where .= " AND curated = 1";
     $rows = $db->fetchAll(
         "SELECT id, slug, name_en FROM om_companies
@@ -74,6 +77,13 @@ fwrite(STDOUT, "discover_start\tmode=" . ($apply ? 'APPLY' : 'DRY') . "\trows=" 
 
 foreach ($rows as $r) {
     $considered++;
+    // Stamp attempted-at up front (apply mode) so every probed row drops
+    // out of future runs whether or not it matches.
+    if ($apply) {
+        $db->getConnection()
+            ->prepare("UPDATE om_companies SET logo_discovery_attempted_at = NOW() WHERE id = :id")
+            ->execute([':id' => $r['id']]);
+    }
     $tokens = nameTokens($r['name_en'], $STOP);
     if (empty($tokens)) {
         $skipped++;
