@@ -169,7 +169,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
             </div>
             <div class="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
                 <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                    <i class="fa-solid fa-grid-2"></i>
+                    <i class="fa-solid fa-table-cells-large"></i>
                 </div>
                 <div class="min-w-0">
                     <p class="text-xl sm:text-2xl font-extrabold text-gray-900 leading-none"><?= number_format($libStats['sectors']) ?></p>
