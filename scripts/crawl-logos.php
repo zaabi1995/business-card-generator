@@ -201,14 +201,11 @@ function findBestLogo(string $domain): ?array {
             if ($cand && $cand['big']) return $cand;          // good size, take it
             if ($cand) $fallback = $fallback ?? $cand;          // tiny, hold as fallback
         }
-        // og:image (usually a large banner, good fallback for logos)
-        $ogUrl = extractMeta($html, 'og:image', $domain);
-        if ($ogUrl) {
-            $img = httpFetch($ogUrl, true);
-            $cand = acceptCandidate($img, detectExt($img ?: ['bytes' => ''], $ogUrl), 'company_web');
-            if ($cand && $cand['big']) return $cand;
-            if ($cand) $fallback = $fallback ?? $cand;
-        }
+        // NOTE: og:image deliberately NOT used. For a logo library it's a
+        // net negative - sites set og:image to a hero/building photo or a
+        // marketing banner far more often than to their logo (caught Bank
+        // Muscat returning an HQ building photo). Favicon / apple-touch /
+        // mask-icon are reliable logo sources; og:image is not.
     }
 
     // 2. apple-touch-icon (typically 180x180, a reliable real logo)
