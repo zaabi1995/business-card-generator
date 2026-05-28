@@ -201,12 +201,11 @@ function findBestLogo(string $domain): ?array {
             if ($cand && $cand['big']) return $cand;          // good size, take it
             if ($cand) $fallback = $fallback ?? $cand;          // tiny, hold as fallback
         }
-        // og:image is held for LAST (see below) - it's the real logo on some
-        // sites (AkzoNobel, Jotun) but a hero/building photo on others (Bank
-        // Muscat). By trying it only after favicon/apple-touch, a site with a
-        // real favicon never reaches it, so we only fall back to og:image when
-        // there's no dedicated icon at all.
-        $ogUrl = extractMeta($html, 'og:image', $domain);
+        // og:image intentionally NOT used. Even as a last-resort with an
+        // aspect guard it's a coin-flip: empirically ~6/8 were product
+        // photos or marketing banners (Jotun paint cans, 1200x537 banners),
+        // not logos. Reliable logo sources only: <link rel=icon> above +
+        // apple-touch + favicon + clearbit below.
     }
 
     // 2. apple-touch-icon (typically 180x180, a reliable real logo)
@@ -228,15 +227,6 @@ function findBestLogo(string $domain): ?array {
     $cand = acceptCandidate($img, 'ico', 'favicon');
     if ($cand && $cand['big']) return $cand;
     if ($cand) $fallback = $fallback ?? $cand;
-
-    // 5. og:image LAST, with an aspect-ratio guard (reject banners > 3:1
-    //    which are almost never logos). Only reached when no icon was found.
-    if (!empty($ogUrl)) {
-        $img = httpFetch($ogUrl, true);
-        $cand = acceptCandidate($img, detectExt($img ?: ['bytes' => ''], $ogUrl), 'og_image');
-        if ($cand && $cand['big'] && aspectOk($cand)) return $cand;
-        if ($cand && aspectOk($cand)) $fallback = $fallback ?? $cand;
-    }
 
     // Nothing >= MIN_LOGO_DIMENSION found; use the best small candidate only
     // if it clears a hard floor (rejects 1x1 tracking pixels + junk).
