@@ -188,6 +188,7 @@ function logLine(string $line): void {
  */
 function findBestLogo(string $domain): ?array {
     $domain = trim($domain, '/');
+    $fallback = null; // best sub-MIN_LOGO_DIMENSION candidate, used only if nothing bigger
 
     // 1. Homepage scrape for <link rel="icon">
     $html = httpFetch("https://$domain/");
@@ -196,41 +197,65 @@ function findBestLogo(string $domain): ?array {
         $iconUrl = extractBestIconFromHtml($html, $domain);
         if ($iconUrl) {
             $img = httpFetch($iconUrl, true);
-            if ($img && validateImageBytes($img)) {
-                return ['bytes' => $img['bytes'], 'ext' => detectExt($img, $iconUrl), 'source' => 'company_web'];
-            }
+            $cand = acceptCandidate($img, detectExt($img ?: ['bytes' => ''], $iconUrl), 'company_web');
+            if ($cand && $cand['big']) return $cand;          // good size, take it
+            if ($cand) $fallback = $fallback ?? $cand;          // tiny, hold as fallback
         }
-        // og:image fallback
+        // og:image (usually a large banner, good fallback for logos)
         $ogUrl = extractMeta($html, 'og:image', $domain);
         if ($ogUrl) {
             $img = httpFetch($ogUrl, true);
-            if ($img && validateImageBytes($img)) {
-                return ['bytes' => $img['bytes'], 'ext' => detectExt($img, $ogUrl), 'source' => 'company_web'];
-            }
+            $cand = acceptCandidate($img, detectExt($img ?: ['bytes' => ''], $ogUrl), 'company_web');
+            if ($cand && $cand['big']) return $cand;
+            if ($cand) $fallback = $fallback ?? $cand;
         }
     }
 
-    // 2. apple-touch-icon at the well-known path
+    // 2. apple-touch-icon (typically 180x180, a reliable real logo)
     foreach (['/apple-touch-icon-precomposed.png', '/apple-touch-icon.png'] as $path) {
         $img = httpFetch("https://$domain$path", true);
-        if ($img && validateImageBytes($img)) {
-            return ['bytes' => $img['bytes'], 'ext' => 'png', 'source' => 'apple_touch_icon'];
-        }
+        $cand = acceptCandidate($img, 'png', 'apple_touch_icon');
+        if ($cand && $cand['big']) return $cand;
+        if ($cand) $fallback = $fallback ?? $cand;
     }
 
     // 3. Clearbit (likely 404 since they sunset, but cheap to try)
     $img = httpFetch("https://logo.clearbit.com/$domain", true);
-    if ($img && validateImageBytes($img)) {
-        return ['bytes' => $img['bytes'], 'ext' => 'png', 'source' => 'clearbit'];
-    }
+    $cand = acceptCandidate($img, 'png', 'clearbit');
+    if ($cand && $cand['big']) return $cand;
+    if ($cand) $fallback = $fallback ?? $cand;
 
     // 4. /favicon.ico, last resort
     $img = httpFetch("https://$domain/favicon.ico", true);
-    if ($img && validateImageBytes($img)) {
-        return ['bytes' => $img['bytes'], 'ext' => 'ico', 'source' => 'favicon'];
-    }
+    $cand = acceptCandidate($img, 'ico', 'favicon');
+    if ($cand && $cand['big']) return $cand;
+    if ($cand) $fallback = $fallback ?? $cand;
 
+    // Nothing >= MIN_LOGO_DIMENSION found; use the best small candidate only
+    // if it clears a hard floor (rejects 1x1 tracking pixels + junk).
+    if ($fallback && $fallback['area'] >= 256) return $fallback; // >=16x16
     return null;
+}
+
+/**
+ * Validate + size-gate a fetched candidate. Returns null if unusable,
+ * else ['bytes','ext','source','area','big'] where big = meets the
+ * MIN_LOGO_DIMENSION preferred floor. SVG is always 'big' (vector).
+ */
+function acceptCandidate(array|string|null $img, string $ext, string $source): ?array {
+    if (!is_array($img) || !validateImageBytes($img)) return null;
+    $bytes = $img['bytes'];
+    // SVG: vector, always acceptable
+    if (preg_match('/^\s*<(\?xml|svg)/i', substr($bytes, 0, 200))) {
+        return ['bytes' => $bytes, 'ext' => 'svg', 'source' => $source, 'area' => PHP_INT_MAX, 'big' => true];
+    }
+    $dims = @getimagesizefromstring($bytes);
+    $w = $dims[0] ?? 0; $h = $dims[1] ?? 0;
+    $area = $w * $h;
+    // ICO often reports the first (small) frame; trust it past the hard floor
+    // since persistLogo() re-extracts the largest frame via convert.
+    $big = ($w >= MIN_LOGO_DIMENSION && $h >= MIN_LOGO_DIMENSION) || $ext === 'ico' && $area >= 1024;
+    return ['bytes' => $bytes, 'ext' => $ext, 'source' => $source, 'area' => $area, 'big' => $big];
 }
 
 /**
