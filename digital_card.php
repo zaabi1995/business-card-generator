@@ -270,15 +270,14 @@ try {
         $backImage = $backRaw ? (strpos($backRaw, '/') === false ? $cardBasePath . $backRaw : $backRaw) : '';
     }
 
-    // Build VCF download URL. For pending previews the `qr.php?i=` short
-    // format would 404 (employees-only lookup), so point at /vcf.php which
-    // has a card_requests fallback for the same company+email.
-    if ($isPendingPreview) {
-        $vcfUrl = '/vcf.php?company=' . urlencode($company['slug'])
-               . '&email=' . urlencode($employee['email']);
-    } else {
-        $vcfUrl = '/qr.php?i=' . urlencode($employee['id']);
-    }
+    // Build VCF download URL. Always point at /vcf.php, which unconditionally
+    // serves the text/vcard file. Do NOT use /qr.php?i= here: that endpoint
+    // doubles as the printed-card QR target and 302-redirects to the owner's
+    // qr_redirect_url when one is set, so the Save Contact button would loop
+    // back to the card page (Safari then "saves the page") instead of saving
+    // the contact. vcf.php has a card_requests fallback so pending previews work too.
+    $vcfUrl = '/vcf.php?company=' . urlencode($company['slug'])
+           . '&email=' . urlencode($employee['email']);
 
     // ---- Locale resolution (sets cookie if ?lang= present) -------------
     $locale = CardSections::resolveLocale();
@@ -457,13 +456,16 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     <?php endif; ?>
     <link rel="icon" type="image/png" href="<?php echo (!empty($theme['favicon_path'])) ? htmlspecialchars(cardifyAssetUrl($theme['favicon_path'])) : ($logoPath ? htmlspecialchars($logoPath) : '/favicon.svg'); ?>">
     <?php if ($isRtl): ?>
-    <link rel="preconnect" href="https://fonts.bhd.om">
     <link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
-    <link href="https://fonts.bhd.om/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap"></noscript>
     <?php endif; ?>
+    <!-- Icons load async (media=print -> all on load) so text paints immediately; icons fill in a beat later. -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"></noscript>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { overflow-x: hidden; }
