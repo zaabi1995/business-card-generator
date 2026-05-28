@@ -1051,24 +1051,33 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
 
         <!-- Contact Details -->
         <div class="contact-card">
+            <?php
+            // Phone / email / website values render LTR even when the page is
+            // RTL: digits and "+" are bidi-weak (no strong character), so an
+            // RTL paragraph reorders "+968 9946 9942" into "9942 9946 968+".
+            // Explicit dir="ltr" on the value span forces left-to-right reading
+            // regardless of paragraph direction. Address span stays without
+            // dir so Arabic addresses render correctly.
+            ?>
             <?php if ($phone): ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('click_phone', 'tel:' . $phone)); ?>" class="contact-row">
                 <span class="contact-icon">&#128222;</span>
-                <span class="contact-value"><?php echo htmlspecialchars($phone); ?></span>
+                <span class="contact-value" dir="ltr"><?php echo htmlspecialchars($phone); ?></span>
             </a>
             <?php endif; ?>
 
             <?php if ($mobile && $mobile !== $phone): ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('click_mobile', 'tel:' . $mobile)); ?>" class="contact-row">
                 <span class="contact-icon">&#128241;</span>
-                <span class="contact-value"><?php echo htmlspecialchars($mobile); ?></span>
+                <span class="contact-value" dir="ltr"><?php echo htmlspecialchars($mobile); ?></span>
             </a>
             <?php endif; ?>
 
             <?php if ($email): ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('click_email', 'mailto:' . $email)); ?>" class="contact-row">
-                <span class="contact-icon">&#9993;</span>
-                <span class="contact-value"><?php echo htmlspecialchars($email); ?></span>
+                <?php // U+2709 is text-presentation; U+FE0F (VS16) selects the emoji variant so it matches the other icons. ?>
+                <span class="contact-icon">&#9993;&#65039;</span>
+                <span class="contact-value" dir="ltr"><?php echo htmlspecialchars($email); ?></span>
             </a>
             <?php endif; ?>
 
@@ -1076,7 +1085,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <?php $__webDest = strpos($website, 'http') === 0 ? $website : 'https://' . $website; ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('click_website', $__webDest)); ?>" class="contact-row" target="_blank" rel="noopener">
                 <span class="contact-icon">&#127760;</span>
-                <span class="contact-value"><?php echo htmlspecialchars($website); ?></span>
+                <span class="contact-value" dir="ltr"><?php echo htmlspecialchars($website); ?></span>
             </a>
             <?php endif; ?>
 
