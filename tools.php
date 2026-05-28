@@ -99,23 +99,25 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <?php foreach ($tools as $tItem):
-                $colorClass = [
-                    'blue' => 'from-blue-500 to-blue-600 text-blue-700 bg-blue-50',
-                    'indigo' => 'from-indigo-500 to-indigo-600 text-indigo-700 bg-indigo-50',
-                    'emerald' => 'from-emerald-500 to-emerald-600 text-emerald-700 bg-emerald-50',
-                    'purple' => 'from-purple-500 to-purple-600 text-purple-700 bg-purple-50',
-                ][$tItem['color']] ?? 'from-gray-500 to-gray-600 text-gray-700 bg-gray-50';
-                $parts = explode(' ', $colorClass);
-                $gradient = $parts[0] . ' ' . $parts[1];
-                $textColor = $parts[2];
-                $bgColor = $parts[3];
+                // Inline-style gradients - the Tailwind frozen-bundle on Cardify
+                // doesn't have most from-*/to-* utility pairs compiled, so the
+                // emerald/indigo icon tiles rendered with no background. Hex
+                // colors guarantee the gradient renders.
+                $palette = [
+                    'blue'    => ['#3b82f6', '#2563eb', 'text-blue-700'],
+                    'indigo'  => ['#6366f1', '#4f46e5', 'text-indigo-700'],
+                    'emerald' => ['#10b981', '#059669', 'text-emerald-700'],
+                    'purple'  => ['#a855f7', '#9333ea', 'text-purple-700'],
+                ][$tItem['color']] ?? ['#6b7280', '#4b5563', 'text-gray-700'];
+                $g500 = $palette[0]; $g600 = $palette[1]; $textColor = $palette[2];
                 $iconLib = $tItem['brand'] ?? 'fa-solid';
             ?>
             <a href="/tools/<?= htmlspecialchars($tItem['slug']) ?>" class="group relative bg-white rounded-2xl border border-gray-200 p-6 hover:border-blue-300 hover:shadow-lg transition-all">
                 <?php if (!empty($tItem['badge_key'])): ?>
                     <span class="absolute top-4 right-4 px-2.5 py-1 rounded-full bg-gray-900 text-white text-[11px] font-semibold"><?= htmlspecialchars(t($tItem['badge_key'])) ?></span>
                 <?php endif; ?>
-                <div class="w-12 h-12 rounded-xl bg-gradient-to-br <?= $gradient ?> flex items-center justify-center text-white text-lg mb-5">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg mb-5"
+                     style="background: linear-gradient(to bottom right, <?= $g500 ?>, <?= $g600 ?>);">
                     <i class="<?= $iconLib ?> <?= htmlspecialchars($tItem['icon']) ?>"></i>
                 </div>
                 <h2 class="text-xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t($tItem['title_key'])) ?></h2>
