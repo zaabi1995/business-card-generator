@@ -7,6 +7,13 @@
 
 ob_start();
 
+// Stream the response: above-the-fold HTML is pushed to the browser the moment
+// it is rendered (after the bottom-buttons div), then the below-the-fold section
+// queries run and the rest of the body flushes after. Nginx defaults to buffering
+// FastCGI responses; this header tells it to pass our flushed chunks straight to
+// the client. Cloudflare preserves streaming responses unchanged.
+header('X-Accel-Buffering: no');
+
 set_error_handler(function($severity, $message, $file, $line) {
     throw new ErrorException($message, 0, $severity, $file, $line);
 });
@@ -302,73 +309,11 @@ try {
     // Logo path
     $logoPath = ($theme && !empty($theme['logo_path'])) ? cardifyAssetUrl($theme['logo_path']) : '';
 
-    // Public card sections (localized with EN fallback)
-    $sectionMaster = CardSections::loadMaster($employee['id'], $company['id']);
+    // Social links are rendered in the hero (above the fold), so they must
+    // load before the early flush. Every OTHER section-data query has been
+    // moved past the flush boundary (search "DEFERRED-LOAD" below) so the
+    // hero + Save/Download/Share buttons can paint before those queries run.
     $socialLinks = EmployeeSocials::loadForEmployee($employee['id']);
-    $bioText = ($locale === 'ar' && trim((string)($sectionMaster['bio_text_ar'] ?? '')) !== '')
-        ? $sectionMaster['bio_text_ar']
-        : ($sectionMaster['bio_text'] ?? '');
-    $sectionServices = !empty($sectionMaster['services_enabled']) ? CardSections::loadServicesLocalized($employee['id'], $locale) : [];
-    $sectionGallery = !empty($sectionMaster['gallery_enabled']) ? CardSections::loadGallery($employee['id']) : [];
-    // Approved-only testimonials, then overlay AR translations.
-    if (!empty($sectionMaster['testimonials_enabled'])) {
-        $sectionTestimonials = CardSections::loadApprovedTestimonials($employee['id']);
-        if ($locale === 'ar' && !empty($sectionTestimonials)) {
-            // Apply AR overlay (mirrors loadTestimonialsLocalized but on already-filtered set).
-            $ids = array_column($sectionTestimonials, 'id');
-            $placeholders = implode(',', array_fill(0, count($ids), '?'));
-            $stmt = Database::getInstance()->getConnection()->prepare(
-                "SELECT testimonial_id, name, quote FROM employee_card_testimonials_i18n
-                 WHERE locale = ? AND testimonial_id IN ($placeholders)"
-            );
-            $stmt->execute(array_merge(['ar'], $ids));
-            $byId = [];
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) { $byId[$r['testimonial_id']] = $r; }
-            foreach ($sectionTestimonials as &$r) {
-                if (isset($byId[$r['id']])) {
-                    if (trim((string)$byId[$r['id']]['name'])  !== '') $r['name']  = $byId[$r['id']]['name'];
-                    if (trim((string)$byId[$r['id']]['quote']) !== '') $r['quote'] = $byId[$r['id']]['quote'];
-                }
-            }
-            unset($r);
-        }
-    } else {
-        $sectionTestimonials = [];
-    }
-    $sectionOffers = !empty($sectionMaster['offers_enabled']) ? CardSections::loadOffers($employee['id'], true) : [];
-    $sectionProducts = !empty($sectionMaster['products_enabled']) ? CardSections::loadProducts($employee['id'], true) : [];
-    $businessHours = !empty($sectionMaster['hours_enabled']) ? CardSections::loadBusinessHours($employee['id']) : [];
-    $businessTz = $sectionMaster['hours_timezone'] ?? 'Asia/Muscat';
-    $hoursStatus = !empty($businessHours) ? CardSections::computeOpenStatus($businessHours, $businessTz) : null;
-    $sectionFaqs = !empty($sectionMaster['faq_enabled']) ? CardSections::loadFaqsLocalized($employee['id'], $locale) : [];
-    $sectionOrder = array_values(array_filter(array_map('trim', explode(',', $sectionMaster['section_order'] ?? implode(',', CardSections::SECTION_KEYS)))));
-    if (!in_array('offers', $sectionOrder, true)) {
-        $sectionOrder[] = 'offers';
-    }
-    if (!in_array('location', $sectionOrder, true)) {
-        $sectionOrder[] = 'location';
-    }
-    if (!in_array('products', $sectionOrder, true)) {
-        $sectionOrder[] = 'products';
-    }
-    if (!in_array('hours', $sectionOrder, true)) {
-        $sectionOrder[] = 'hours';
-    }
-    if (!in_array('faq', $sectionOrder, true)) {
-        $sectionOrder[] = 'faq';
-    }
-
-    // Appointment booking settings (rendered as its own section after card sections)
-    $apptSettings = Appointments::loadSettings($employee['id'], $company['id']);
-    $apptEnabled = !empty($apptSettings['enabled']);
-
-    // Wallet pass endpoints (feature-flagged, buttons render only when enabled)
-    require_once INCLUDES_DIR . '/AppleWalletPass.php';
-    require_once INCLUDES_DIR . '/GoogleWalletPass.php';
-    $appleWalletEnabled  = AppleWalletPass::isEnabled();
-    $googleWalletEnabled = GoogleWalletPass::isEnabled();
-    $appleWalletUrl  = '/wallet_apple.php?i='  . urlencode($employee['id']) . '&c=' . urlencode($companySlug);
-    $googleWalletUrl = '/wallet_google.php?i=' . urlencode($employee['id']) . '&c=' . urlencode($companySlug);
 
 } catch (Throwable $e) {
     while (ob_get_level()) { ob_end_clean(); }
@@ -1172,6 +1117,104 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <?php endif; ?>
             <button class="bottom-btn btn-share" onclick="shareCard()"><?= htmlspecialchars(t('digitalcard.btn_share')) ?></button>
         </div>
+
+        <?php
+        // ================================================================
+        // EARLY FLUSH BOUNDARY
+        // ================================================================
+        // The hero (name, position, contact buttons, contact rows, social
+        // links, Save/Download/Share) is now on the wire. Push it to the
+        // browser before we touch the DB for any below-the-fold section.
+        // X-Accel-Buffering: no (sent at the top of this file) tells nginx
+        // not to buffer; Cloudflare forwards streaming responses unchanged.
+        if (function_exists('ob_flush')) { @ob_flush(); }
+        @flush();
+
+        // ================================================================
+        // DEFERRED-LOAD: section data, appointments, wallet
+        // ================================================================
+        // These queries used to run before the first byte of HTML left the
+        // server. They now run AFTER the hero is painted, so a phone scanning
+        // a printed card sees the contact info instantly while the section
+        // queries (which only matter for the part the user has to scroll to)
+        // hit the DB in the background.
+        try {
+            $sectionMaster   = CardSections::loadMaster($employee['id'], $company['id']);
+            $bioText         = ($locale === 'ar' && trim((string)($sectionMaster['bio_text_ar'] ?? '')) !== '')
+                ? $sectionMaster['bio_text_ar']
+                : ($sectionMaster['bio_text'] ?? '');
+            $sectionServices = !empty($sectionMaster['services_enabled']) ? CardSections::loadServicesLocalized($employee['id'], $locale) : [];
+            $sectionGallery  = !empty($sectionMaster['gallery_enabled'])  ? CardSections::loadGallery($employee['id']) : [];
+            // Approved-only testimonials, then overlay AR translations.
+            if (!empty($sectionMaster['testimonials_enabled'])) {
+                $sectionTestimonials = CardSections::loadApprovedTestimonials($employee['id']);
+                if ($locale === 'ar' && !empty($sectionTestimonials)) {
+                    $ids = array_column($sectionTestimonials, 'id');
+                    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+                    $stmt = Database::getInstance()->getConnection()->prepare(
+                        "SELECT testimonial_id, name, quote FROM employee_card_testimonials_i18n
+                         WHERE locale = ? AND testimonial_id IN ($placeholders)"
+                    );
+                    $stmt->execute(array_merge(['ar'], $ids));
+                    $byId = [];
+                    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) { $byId[$r['testimonial_id']] = $r; }
+                    foreach ($sectionTestimonials as &$r) {
+                        if (isset($byId[$r['id']])) {
+                            if (trim((string)$byId[$r['id']]['name'])  !== '') $r['name']  = $byId[$r['id']]['name'];
+                            if (trim((string)$byId[$r['id']]['quote']) !== '') $r['quote'] = $byId[$r['id']]['quote'];
+                        }
+                    }
+                    unset($r);
+                }
+            } else {
+                $sectionTestimonials = [];
+            }
+            $sectionOffers   = !empty($sectionMaster['offers_enabled'])   ? CardSections::loadOffers($employee['id'], true) : [];
+            $sectionProducts = !empty($sectionMaster['products_enabled']) ? CardSections::loadProducts($employee['id'], true) : [];
+            $businessHours   = !empty($sectionMaster['hours_enabled'])    ? CardSections::loadBusinessHours($employee['id']) : [];
+            $businessTz      = $sectionMaster['hours_timezone'] ?? 'Asia/Muscat';
+            $hoursStatus     = !empty($businessHours) ? CardSections::computeOpenStatus($businessHours, $businessTz) : null;
+            $sectionFaqs     = !empty($sectionMaster['faq_enabled'])      ? CardSections::loadFaqsLocalized($employee['id'], $locale) : [];
+            $sectionOrder    = array_values(array_filter(array_map('trim', explode(',', $sectionMaster['section_order'] ?? implode(',', CardSections::SECTION_KEYS)))));
+            foreach (['offers', 'location', 'products', 'hours', 'faq'] as $__defaultSec) {
+                if (!in_array($__defaultSec, $sectionOrder, true)) { $sectionOrder[] = $__defaultSec; }
+            }
+
+            // Appointment booking settings (rendered as its own section after card sections)
+            $apptSettings = Appointments::loadSettings($employee['id'], $company['id']);
+            $apptEnabled  = !empty($apptSettings['enabled']);
+
+            // Wallet pass endpoints (feature-flagged, buttons render only when enabled)
+            require_once INCLUDES_DIR . '/AppleWalletPass.php';
+            require_once INCLUDES_DIR . '/GoogleWalletPass.php';
+            $appleWalletEnabled  = AppleWalletPass::isEnabled();
+            $googleWalletEnabled = GoogleWalletPass::isEnabled();
+            $appleWalletUrl  = '/wallet_apple.php?i='  . urlencode($employee['id']) . '&c=' . urlencode($companySlug);
+            $googleWalletUrl = '/wallet_google.php?i=' . urlencode($employee['id']) . '&c=' . urlencode($companySlug);
+        } catch (Throwable $e) {
+            // Above-the-fold has already shipped; degrade gracefully by hiding
+            // every below-the-fold section instead of 500ing a half-rendered page.
+            error_log('digital_card.php deferred-load failed: ' . $e->getMessage());
+            $sectionMaster       = [];
+            $bioText             = '';
+            $sectionServices     = [];
+            $sectionGallery      = [];
+            $sectionTestimonials = [];
+            $sectionOffers       = [];
+            $sectionProducts     = [];
+            $businessHours       = [];
+            $businessTz          = 'Asia/Muscat';
+            $hoursStatus         = null;
+            $sectionFaqs         = [];
+            $sectionOrder        = [];
+            $apptSettings        = ['enabled' => false];
+            $apptEnabled         = false;
+            $appleWalletEnabled  = false;
+            $googleWalletEnabled = false;
+            $appleWalletUrl      = '';
+            $googleWalletUrl     = '';
+        }
+        ?>
 
         <!-- Public Card Sections -->
         <?php foreach ($sectionOrder as $__sec): ?>
