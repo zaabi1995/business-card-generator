@@ -258,6 +258,10 @@ function acceptCandidate(array|string|null $img, string $ext, string $source): ?
     // don't index it here (marquee brands are sourced as SVG from Wikimedia
     // via fetch-wikimedia-svg.php instead).
     if (preg_match('/^\s*<(\?xml|svg)/i', substr($bytes, 0, 200))) {
+        // Reject FAKE SVGs that are just a base64-embedded raster (data:image)
+        // wrapped in <svg>. These display + scale as raster, defeating the
+        // SVG-only quality bar (caught Alpha Motors).
+        if (stripos($bytes, 'data:image/') !== false) return null;
         return ['bytes' => $bytes, 'ext' => 'svg', 'source' => $source, 'area' => PHP_INT_MAX, 'big' => true];
     }
     return null; // not SVG -> rejected

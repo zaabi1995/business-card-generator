@@ -73,6 +73,12 @@ $svg = httpGet($url);
 if ($svg === null || !preg_match('/<svg[\s>]/i', $svg)) {
     echo "download_failed\tid=$id\n"; exit(1);
 }
+// Reject base64-raster-embedded fakes (an <svg> wrapper around a data:image
+// is just a PNG in disguise - same low quality as raster, not a true vector).
+if (stripos($svg, 'data:image/') !== false) {
+    echo "rejected_fake_svg\tid=$id\tfile=$fileTitle (raster embedded as base64 inside <svg>)\n";
+    exit(1);
+}
 
 $root = realpath(__DIR__ . '/..');
 $dst  = "$root/storage/logos/indexed/{$id}.svg";
