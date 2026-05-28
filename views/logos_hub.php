@@ -456,7 +456,8 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                 <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++):
                     $qs = $_GET; $qs['page'] = $p; ?>
                     <a href="?<?= http_build_query($qs) ?>"
-                       class="px-3.5 py-1.5 text-sm rounded-lg font-medium <?= $p === $page
+                       style="min-width:2.5rem; padding:0.5rem 0.875rem;"
+                       class="inline-flex items-center justify-center text-sm rounded-lg font-medium <?= $p === $page
                             ? 'bg-blue-600 text-white shadow shadow-blue-600/30'
                             : 'bg-white border border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600' ?>">
                         <?= $p ?>
