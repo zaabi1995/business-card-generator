@@ -871,9 +871,9 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     </style>
 
     <!-- Font Awesome (CDN) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rizmyabdulla/fontawesome-pro@main/releases/v7.2.0/css/fontawesome.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rizmyabdulla/fontawesome-pro@main/releases/v7.2.0/css/solid.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rizmyabdulla/fontawesome-pro@main/releases/v7.2.0/css/brands.min.css">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
     
     <!-- Tailwind CSS (Local) -->
     <link rel="stylesheet" href="<?php echo getBasePath(); ?>assets/techwind/css/tailwind.min.css">

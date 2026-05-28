@@ -127,6 +127,7 @@ class SecurityHeaders
             'style' => [
                 "'self'", "'unsafe-inline'",
                 'https://fonts.bhd.om',
+                'https://design.bhd.om', // FA 7.2.0 Pro self-hosted
                 'https://cdnjs.cloudflare.com',
                 'https://cdn.jsdelivr.net',
                 'https://unpkg.com',
@@ -136,7 +137,8 @@ class SecurityHeaders
                 "'self'", 'data:',
                 'https://fonts.bhd.om',
                 'https://cdnjs.cloudflare.com',
-                'https://cdn.jsdelivr.net', // FA Pro webfonts via rizmyabdulla mirror
+                'https://cdn.jsdelivr.net', // FA Pro webfonts via rizmyabdulla mirror (legacy fallback)
+                'https://design.bhd.om',    // FA 7.2.0 Pro self-hosted (primary)
             ],
             'img' => [
                 "'self'", 'data:', 'blob:',

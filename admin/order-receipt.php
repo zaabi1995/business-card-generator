@@ -357,8 +357,8 @@ try {
 </div>
 
 <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rizmyabdulla/fontawesome-pro@main/releases/v7.2.0/css/fontawesome.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rizmyabdulla/fontawesome-pro@main/releases/v7.2.0/css/solid.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rizmyabdulla/fontawesome-pro@main/releases/v7.2.0/css/brands.min.css">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
 </body>
 </html>
