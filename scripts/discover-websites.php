@@ -22,6 +22,16 @@ const UA = 'CardifyLogoCrawler/1.0 (+https://cardify.om/logos/press)';
 const TIMEOUT = 8;
 const SLEEP_SEC = 1;
 
+// Single generic words that are almost always a stranger's domain when
+// guessed as <word>.com. Reject these bases outright.
+const GENERIC_BASES = [
+    'advanced','africa','modern','united','global','national','badi','adhi',
+    'anwar','aqmar','athnain','ahlia','ahmadi','barakah','baraka','arkan',
+    'first','best','prime','royal','star','sun','gulf','east','west','north',
+    'south','new','top','smart','green','blue','gold','silver','power','energy',
+    'trading','general','oman','muscat','middle','east','grand','city','metro',
+];
+
 $opts = [];
 foreach (array_slice($argv, 1) as $a) {
     if (preg_match('/^--([a-z\-]+)(?:=(.*))?$/i', $a, $m)) $opts[$m[1]] = $m[2] ?? true;
@@ -59,6 +69,7 @@ if ($onlyId) {
 }
 
 $considered = $matched = $skipped = 0;
+$seenDomains = []; // within-run de-dupe: a domain matching 2+ companies is ambiguous
 fwrite(STDOUT, "discover_start\tmode=" . ($apply ? 'APPLY' : 'DRY') . "\trows=" . count($rows) . "\n");
 
 foreach ($rows as $r) {
@@ -73,11 +84,21 @@ foreach ($rows as $r) {
     $candidates = candidateDomains($tokens);
     $hit = null;
     foreach ($candidates as $domain) {
+        // Reject generic single-word bases outright (advanced.com, africa.com,
+        // badi.com) - these are almost always someone else's domain.
+        $base = explode('.', $domain)[0];
+        if (in_array($base, GENERIC_BASES, true)) continue;
+
         $page = httpGet("https://$domain/");
         if ($page === null) $page = httpGet("http://$domain/");
         if ($page === null) continue;
+
         $title = pageTitle($page) . ' ' . pageMeta($page, 'og:site_name');
-        if (nameMatches($title, $tokens)) {
+        // Two-signal guard: (1) a >=5-char distinctive token in the TITLE,
+        // AND (2) corroboration in the page body - either "OMAN" or a SECOND
+        // company token. A generic domain that happens to contain one word
+        // in its title won't also mention Oman or a second distinctive word.
+        if (nameMatchesStrict($title, $page, $tokens)) {
             $hit = $domain;
             break;
         }
@@ -91,6 +112,17 @@ foreach ($rows as $r) {
         sleep(SLEEP_SEC);
         continue;
     }
+
+    // Within-run de-dupe: if this domain already matched another company,
+    // both are ambiguous - skip and flag.
+    if (isset($seenDomains[$hit])) {
+        $skipped++;
+        fwrite(STDOUT, "dupe\tid={$r['id']}\tname=" . trim($r['name_en'])
+            . "\tdomain=$hit\talready_matched_id={$seenDomains[$hit]}\n");
+        sleep(SLEEP_SEC);
+        continue;
+    }
+    $seenDomains[$hit] = $r['id'];
 
     $matched++;
     fwrite(STDOUT, "MATCH\tid={$r['id']}\tname=" . trim($r['name_en']) . "\tdomain=$hit\n");
@@ -140,12 +172,31 @@ function candidateDomains(array $tokens): array {
     return array_slice(array_unique($out), 0, 12);
 }
 
-/** A domain is accepted only if the page title shares a >=4-char token. */
-function nameMatches(string $haystack, array $tokens): bool {
-    $h = strtoupper($haystack);
-    if (trim($h) === '') return false;
-    foreach ($tokens as $t) {
-        if (strlen($t) >= 4 && strpos($h, $t) !== false) return true;
+/**
+ * Two-signal acceptance:
+ *   (1) a >=5-char company token appears in the page TITLE, AND
+ *   (2) corroboration in the page BODY: the literal "OMAN", or a SECOND
+ *       distinct >=4-char company token.
+ * A generic domain whose title coincidentally contains one company word
+ * won't also mention Oman or a second distinctive word, so this rejects
+ * the advanced.com / africa.com / badi.com class of false positives.
+ */
+function nameMatchesStrict(string $title, string $page, array $tokens): bool {
+    $t = strtoupper($title);
+    $b = strtoupper($page);
+    if (trim($t) === '') return false;
+
+    $titleHit = null;
+    foreach ($tokens as $tok) {
+        if (strlen($tok) >= 5 && strpos($t, $tok) !== false) { $titleHit = $tok; break; }
+    }
+    if ($titleHit === null) return false;
+
+    // Corroboration
+    if (strpos($b, 'OMAN') !== false) return true;
+    foreach ($tokens as $tok) {
+        if ($tok === $titleHit) continue;
+        if (strlen($tok) >= 4 && strpos($b, $tok) !== false) return true;
     }
     return false;
 }
