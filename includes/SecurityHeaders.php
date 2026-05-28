@@ -136,6 +136,7 @@ class SecurityHeaders
                 "'self'", 'data:',
                 'https://fonts.bhd.om',
                 'https://cdnjs.cloudflare.com',
+                'https://cdn.jsdelivr.net', // FA Pro webfonts via rizmyabdulla mirror
             ],
             'img' => [
                 "'self'", 'data:', 'blob:',
