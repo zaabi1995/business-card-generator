@@ -100,10 +100,41 @@ function logos_press_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 
             <p class="text-gray-400 text-sm mb-4">
                 <?= logos_press_esc(t('logos.press_api_body')) ?>
             </p>
-            <pre class="text-gray-100 text-sm font-mono overflow-x-auto bg-black/30 rounded-lg p-4 leading-relaxed" dir="ltr"><code>GET https://cardify.om/api/logos/list?per_page=20
-GET https://cardify.om/api/logos/show?slug=omantel
-GET https://cardify.om/api/logos/sectors
-GET https://cardify.om/api/logos/stats</code></pre>
+            <pre class="text-gray-100 text-sm font-mono overflow-x-auto bg-black/30 rounded-lg p-4 leading-relaxed" dir="ltr"><code># List + search (60 req/min/IP)
+GET /api/logos/list?q=bank&sort=verified&sector=finance&verified=1&page=1&per_page=50
+GET /api/logos/show?slug=omantel
+GET /api/logos/sectors
+GET /api/logos/stats
+GET /api/logos/random          # one random brand, no-cache</code></pre>
+
+            <div class="grid sm:grid-cols-2 gap-4 mt-5" dir="ltr">
+                <div>
+                    <p class="text-xs font-bold text-gray-300 uppercase tracking-wide mb-2">/list query params</p>
+                    <ul class="text-xs text-gray-400 space-y-1 font-mono">
+                        <li><span class="text-emerald-400">q</span> &mdash; search name_en / name_ar / slug</li>
+                        <li><span class="text-emerald-400">sort</span> &mdash; alpha | newest | verified</li>
+                        <li><span class="text-emerald-400">sector</span> &mdash; e.g. finance, technology</li>
+                        <li><span class="text-emerald-400">verified</span> &mdash; 1 = verified only</li>
+                        <li><span class="text-emerald-400">page</span> / <span class="text-emerald-400">per_page</span> &mdash; pagination (max 100)</li>
+                    </ul>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-gray-300 uppercase tracking-wide mb-2">each result includes</p>
+                    <ul class="text-xs text-gray-400 space-y-1 font-mono">
+                        <li><span class="text-blue-400">display_url</span> &mdash; auto-picked (dark on light logos)</li>
+                        <li><span class="text-blue-400">urls.{svg,png_512,png_1024,png_2048,webp}</span></li>
+                        <li><span class="text-blue-400">urls.{svg,png,webp}_dark</span> &mdash; black monochrome</li>
+                        <li><span class="text-blue-400">urls.{svg,png,webp}_white</span> &mdash; white monochrome</li>
+                        <li><span class="text-blue-400">palette[]</span> &mdash; up to 5 brand hex colors</li>
+                        <li><span class="text-blue-400">dominant_color, status, profile_url</span></li>
+                    </ul>
+                </div>
+            </div>
+            <p class="text-[11px] text-gray-500 mt-4" dir="ltr">
+                CORS open (Access-Control-Allow-Origin: *). Every asset URL carries a
+                <span class="font-mono">?v=</span> cache-buster. Attribution to
+                <span class="text-gray-300">cardify.om/logos</span> appreciated for editorial use.
+            </p>
         </div>
 
         <!-- Contact -->
