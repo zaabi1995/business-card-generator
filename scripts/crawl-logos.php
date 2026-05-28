@@ -201,11 +201,12 @@ function findBestLogo(string $domain): ?array {
             if ($cand && $cand['big']) return $cand;          // good size, take it
             if ($cand) $fallback = $fallback ?? $cand;          // tiny, hold as fallback
         }
-        // NOTE: og:image deliberately NOT used. For a logo library it's a
-        // net negative - sites set og:image to a hero/building photo or a
-        // marketing banner far more often than to their logo (caught Bank
-        // Muscat returning an HQ building photo). Favicon / apple-touch /
-        // mask-icon are reliable logo sources; og:image is not.
+        // og:image is held for LAST (see below) - it's the real logo on some
+        // sites (AkzoNobel, Jotun) but a hero/building photo on others (Bank
+        // Muscat). By trying it only after favicon/apple-touch, a site with a
+        // real favicon never reaches it, so we only fall back to og:image when
+        // there's no dedicated icon at all.
+        $ogUrl = extractMeta($html, 'og:image', $domain);
     }
 
     // 2. apple-touch-icon (typically 180x180, a reliable real logo)
@@ -222,16 +223,35 @@ function findBestLogo(string $domain): ?array {
     if ($cand && $cand['big']) return $cand;
     if ($cand) $fallback = $fallback ?? $cand;
 
-    // 4. /favicon.ico, last resort
+    // 4. /favicon.ico
     $img = httpFetch("https://$domain/favicon.ico", true);
     $cand = acceptCandidate($img, 'ico', 'favicon');
     if ($cand && $cand['big']) return $cand;
     if ($cand) $fallback = $fallback ?? $cand;
 
+    // 5. og:image LAST, with an aspect-ratio guard (reject banners > 3:1
+    //    which are almost never logos). Only reached when no icon was found.
+    if (!empty($ogUrl)) {
+        $img = httpFetch($ogUrl, true);
+        $cand = acceptCandidate($img, detectExt($img ?: ['bytes' => ''], $ogUrl), 'og_image');
+        if ($cand && $cand['big'] && aspectOk($cand)) return $cand;
+        if ($cand && aspectOk($cand)) $fallback = $fallback ?? $cand;
+    }
+
     // Nothing >= MIN_LOGO_DIMENSION found; use the best small candidate only
     // if it clears a hard floor (rejects 1x1 tracking pixels + junk).
     if ($fallback && $fallback['area'] >= 256) return $fallback; // >=16x16
     return null;
+}
+
+/** Reject extreme-aspect images (banners) that are never logos. SVG ok. */
+function aspectOk(array $cand): bool {
+    if (($cand['ext'] ?? '') === 'svg') return true;
+    $dims = @getimagesizefromstring($cand['bytes']);
+    $w = $dims[0] ?? 0; $h = $dims[1] ?? 0;
+    if ($w < 1 || $h < 1) return true; // can't tell, don't block
+    $r = $w / $h;
+    return $r <= 3.0 && $r >= 0.33;
 }
 
 /**
