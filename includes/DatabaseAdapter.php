@@ -122,12 +122,33 @@ class DatabaseAdapter {
         
         try {
             self::$db->insert('companies', $company);
-            
+
+            // Seed a default brand theme row so tenant surfaces (portal, digital
+            // card, admin loader, favicon) always have colours to read instead of
+            // falling back per-request. Without this every new tenant launched
+            // with NULL branding until an admin saved the wizard, and 21 legacy
+            // companies were left themeless (BHD loop audit, 2 Jun 2026). Guarded
+            // so a later explicit theme insert never collides.
+            try {
+                if (!self::$db->fetchOne("SELECT id FROM company_themes WHERE company_id = :cid", ['cid' => $company['id']])) {
+                    self::$db->insert('company_themes', [
+                        'id'              => generateUUID(),
+                        'company_id'      => $company['id'],
+                        'primary_color'   => '#009bc1',
+                        'secondary_color' => '#824598',
+                        'created_at'      => date('Y-m-d H:i:s'),
+                        'updated_at'      => date('Y-m-d H:i:s'),
+                    ]);
+                }
+            } catch (Exception $themeErr) {
+                error_log('[createCompany] default theme seed failed: ' . $themeErr->getMessage());
+            }
+
             // Initialize company directories
             getCompanyUploadsDir($company['id']);
             getCompanyTemplatesDir($company['id']);
             getCompanyCardsDir($company['id']);
-            
+
             return ['success' => true, 'company' => $company];
         } catch (Exception $e) {
             return ['success' => false, 'error' => 'Failed to create company: ' . $e->getMessage()];
@@ -488,43 +509,7 @@ class DatabaseAdapter {
             'hide_cardify_branding' => self::resolveHideCardifyBranding($data['hide_cardify_branding'] ?? 0, $companyId),
             'updated_at' => date('Y-m-d H:i:s')
         ];
-
-        // Per-field render overrides (migration 104). Accept either an
-        // already-decoded array or a JSON string from the form. Whitelist
-        // the props we actually merge at render time so we don't store
-        // arbitrary client payload (and so the column stays small).
-        if (array_key_exists('field_overrides', $data)) {
-            $raw = $data['field_overrides'];
-            if (is_string($raw)) {
-                $decoded = json_decode($raw, true);
-                $raw = is_array($decoded) ? $decoded : null;
-            }
-            $allowedProps = ['fontSize', 'fill', 'fontWeight', 'fontFamily', 'autoShrink', 'shrinkFloorPct'];
-            $clean = [];
-            if (is_array($raw)) {
-                foreach ($raw as $fieldKey => $props) {
-                    if (!is_string($fieldKey) || !is_array($props)) continue;
-                    $row = [];
-                    foreach ($allowedProps as $prop) {
-                        if (!array_key_exists($prop, $props)) continue;
-                        $val = $props[$prop];
-                        if ($val === null || $val === '') continue;
-                        if ($prop === 'fontSize' || $prop === 'fontWeight' || $prop === 'shrinkFloorPct') {
-                            $row[$prop] = (float)$val;
-                        } elseif ($prop === 'autoShrink') {
-                            $row[$prop] = (bool)$val;
-                        } else {
-                            $row[$prop] = (string)$val;
-                        }
-                    }
-                    if (!empty($row)) $clean[$fieldKey] = $row;
-                }
-            }
-            $updateData['field_overrides'] = !empty($clean)
-                ? json_encode($clean, JSON_UNESCAPED_UNICODE)
-                : null;
-        }
-
+        
         try {
             $where = 'id = :id';
             $whereParams = ['id' => $id];
@@ -536,26 +521,15 @@ class DatabaseAdapter {
             self::$db->update('employees', $updateData, $where, $whereParams);
             return ['success' => true];
         } catch (Exception $e) {
-            error_log('[DatabaseAdapter::updateEmployee] ' . $e->getMessage());
-            return ['success' => false, 'error' => 'Failed to update employee'];
+            return ['success' => false, 'error' => 'Failed to update employee: ' . $e->getMessage()];
         }
     }
-
+    
     public static function deleteEmployee($id, $companyId = null) {
         if (!self::useDatabase()) {
             return ['success' => false, 'error' => 'Database not available'];
         }
-
-        // Fallback to session-scoped company_id (mirrors updateEmployee).
-        // CRITICAL: without this fallback, callers who don't pass $companyId
-        // (e.g. admin/employees.php case 'delete' which passes only $_POST['id'])
-        // would issue an unscoped DELETE, letting a tenant A admin delete any
-        // tenant B employee by POSTing the foreign id. Super-admin keeps the
-        // ability to delete any row by passing $companyId=null EXPLICITLY,
-        // but only when invoked from CLI or super-admin context where
-        // getCurrentCompanyId() returns null too.
-        $companyId = $companyId ?: getCurrentCompanyId();
-
+        
         try {
             $where = 'id = :id';
             $params = ['id' => $id];
@@ -563,14 +537,13 @@ class DatabaseAdapter {
                 $where .= ' AND company_id = :cid';
                 $params['cid'] = $companyId;
             }
-
+            
             $count = self::$db->delete('employees', $where, $params);
-            return $count > 0
-                ? ['success' => true]
+            return $count > 0 
+                ? ['success' => true] 
                 : ['success' => false, 'error' => 'Employee not found'];
         } catch (Exception $e) {
-            error_log('[DatabaseAdapter::deleteEmployee] ' . $e->getMessage());
-            return ['success' => false, 'error' => 'Failed to delete employee'];
+            return ['success' => false, 'error' => 'Failed to delete employee: ' . $e->getMessage()];
         }
     }
     
@@ -595,28 +568,15 @@ class DatabaseAdapter {
         $templateList = [];
         
         foreach ($templates as $tpl) {
-            // Derive the SVG sibling path when it exists alongside the PNG.
-            $bgImage = $tpl['background_image_path'];
-            $bgSvg   = $tpl['background_svg_path'] ?? null;
-            if (!$bgSvg && !empty($bgImage)) {
-                // Importer always emits a .svg next to the .png; derive it.
-                $bgSvg = preg_replace('/\.png$/i', '.svg', $bgImage);
-            }
             $template = [
                 'id' => $tpl['id'],
                 'pair_id' => $tpl['pair_id'] ?? null,
                 'name' => $tpl['name'],
                 'side' => $tpl['side'],
-                'backgroundImage' => $bgImage,
-                'backgroundSvg' => $bgSvg,
-                'has_vector_source' => (int)($tpl['has_vector_source'] ?? 0),
+                'backgroundImage' => $tpl['background_image_path'],
                 'originalPdf' => $tpl['original_pdf_path'] ?? null,
                 'fields' => json_decode($tpl['fields_json'], true) ?: getDefaultFieldSettings(),
                 'settings' => isset($tpl['settings_json']) ? json_decode($tpl['settings_json'], true) : null,
-                // Surface the version number so the editor can cache-bust
-                // the bg URL when the template gets re-imported. CDNs (CF)
-                // hold the bg file aggressively, the v= param breaks that.
-                'current_version' => isset($tpl['current_version']) ? (int)$tpl['current_version'] : 1,
                 'created_at' => $tpl['created_at']
             ];
             
@@ -865,71 +825,10 @@ class DatabaseAdapter {
             } catch (Throwable $e) { /* columns optional */ }
 
             self::$db->insert('generated_cards', $entry);
-
-            // Keep only the latest card per employee. Every regeneration /
-            // batch run writes brand-new uniquely-named PNG/PDF files and a
-            // fresh row, but every consumer (CardRenderer::forEmployee, etc.)
-            // reads only ORDER BY generated_at DESC LIMIT 1. The older rows +
-            // their on-disk files are dead weight, so prune them now.
-            // Best-effort: a cleanup failure must never break generation.
-            try {
-                self::pruneOldGeneratedCards($employeeId, $companyId, $entry);
-            } catch (Throwable $e) {
-                error_log("logGeneratedCard prune error: " . $e->getMessage());
-            }
-
             return $entry;
         } catch (Exception $e) {
             error_log("Log generation error: " . $e->getMessage());
             return null;
-        }
-    }
-
-    /**
-     * Delete every generated_cards row for an employee except the just-inserted
-     * one ($keep), and unlink the on-disk PNG/PDF files those stale rows point
-     * at. Only files inside the company's cards/ dir are touched, and never the
-     * files referenced by $keep.
-     */
-    private static function pruneOldGeneratedCards(string $employeeId, string $companyId, array $keep): void
-    {
-        $cardsDir = getCompanyCardsDir($companyId);
-
-        // Filenames that belong to the row we are keeping, never delete these.
-        $protected = [];
-        foreach (['front_file_path', 'back_file_path', 'front_web_path', 'back_web_path', 'pdf_file_path'] as $k) {
-            if (!empty($keep[$k])) {
-                $protected[basename((string) $keep[$k])] = true;
-            }
-        }
-
-        $oldRows = self::$db->fetchAll(
-            "SELECT * FROM generated_cards
-              WHERE employee_id = :eid AND company_id = :cid AND id != :keep",
-            ['eid' => $employeeId, 'cid' => $companyId, 'keep' => $keep['id']]
-        );
-        if (empty($oldRows)) {
-            return;
-        }
-
-        foreach ($oldRows as $row) {
-            foreach (['front_file_path', 'back_file_path', 'front_web_path', 'back_web_path', 'pdf_file_path'] as $k) {
-                if (empty($row[$k])) {
-                    continue;
-                }
-                $name = basename((string) $row[$k]);
-                if ($name === '' || isset($protected[$name])) {
-                    continue;
-                }
-                $fs = $cardsDir . '/' . $name;
-                if (is_file($fs)) {
-                    @unlink($fs);
-                }
-            }
-            self::$db->delete('generated_cards', 'id = :id AND company_id = :cid', [
-                'id'  => $row['id'],
-                'cid' => $companyId,
-            ]);
         }
     }
 
