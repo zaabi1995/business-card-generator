@@ -64,6 +64,14 @@ for d in tmp/pdf-vector tmp/pdf-cards data/print-sheets; do
   chown -R www:www "$d" 2>/dev/null || true
   chmod -R u+rwX,g+rwX "$d" 2>/dev/null || true
 done
+# Keep wallet signing material locked (the sweep above loosens dirs to 755 /
+# files to 644; the Apple PEM + Google service-account JSON must stay readable
+# only by www). HTTP access is already denied by the nginx extension conf.
+if [ -d data/wallet ]; then
+  chown -R www:www data/wallet 2>/dev/null || true
+  chmod 700 data/wallet 2>/dev/null || true
+  find data/wallet -type f -exec chmod 600 {} + 2>/dev/null || true
+fi
 echo "Perms OK"
 
 systemctl reload php8.3-fpm 2>/dev/null || systemctl reload php-fpm 2>/dev/null || true
