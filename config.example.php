@@ -231,6 +231,12 @@ if (!defined('MAIL_FROM_NAME')) define('MAIL_FROM_NAME', 'Cardify'); // From nam
 // Requires: Apple Developer Program membership ($99/yr), Pass Type ID + cert,
 // WWDR G4 intermediate cert. Full setup guide:
 //   docs/superpowers/plans/2026-04-16-wallet-passes.md
+//
+// SECURITY: php-fpm here is open_basedir-jailed to /www/wwwroot/cardify.om/:/tmp/,
+// so cert files MUST live under the webroot. Put them in data/wallet/ (0600,
+// www:www) and keep the nginx "location ~ ^/data/wallet/ { return 404; }" +
+// ".pem/.p12/.key" deny rules in the vhost, or the signing key is downloadable.
+// .htaccess does NOTHING on this nginx stack.
 if (!defined('APPLE_WALLET_ENABLED'))       define('APPLE_WALLET_ENABLED', false);
 if (!defined('APPLE_WALLET_CERT_PATH'))     define('APPLE_WALLET_CERT_PATH', '');     // PEM w/ cert + private key (from .p12)
 if (!defined('APPLE_WALLET_CERT_PASSWORD')) define('APPLE_WALLET_CERT_PASSWORD', ''); // password used when exporting the .p12

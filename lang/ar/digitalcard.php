@@ -62,4 +62,7 @@ return [
     'appt_sent_h'          => 'تمّ إرسال الطلب!',
     'appt_sent_body'       => 'ستصلك رسالة تأكيد قريباً.',
     'appt_loading'         => 'جاري التحميل...',
+    // أزرار المحفظة (النص الظاهر يبقى اسم العلامة؛ هذه تترجم تسمية الوصول فقط).
+    'wallet_apple_aria'    => 'أضف إلى Apple Wallet',
+    'wallet_google_aria'   => 'أضف إلى Google Wallet',
 ];

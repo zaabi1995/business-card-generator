@@ -27,10 +27,13 @@ the `pkpass` template structure is touched. Takes 5 minutes each.
    serialNumber (pass replacement, not duplicate).
 
 **When it fails**
-- "Cannot add pass" → cert expired or WWDR missing. Check
-  `APPLE_WALLET_CERT_PATH`, `APPLE_WALLET_KEY_PATH`, `APPLE_WALLET_WWDR_PATH`
-  in `config.php` and `openssl x509 -in … -text -noout` the cert for
-  expiry.
+- "Cannot add pass" → cert expired, WWDR missing, or a non-PNG logo.
+  Check `APPLE_WALLET_CERT_PATH` (a combined cert+key PEM, exported from the
+  .p12; there is no separate key-path constant) and `APPLE_WALLET_WWDR_PATH`
+  in `config.php`, and `openssl x509 -in … -text -noout` the cert for expiry.
+  Logo art is normalized to PNG at request time by `includes/WalletImage.php`,
+  so a bad logo no longer breaks the pass, but confirm GD + rsvg-convert exist
+  on the host if icons render blank.
 - 503 on `/wallet_apple.php?i=…` → feature flag off; see
   `includes/AppleWalletPass.php` for the env vars it needs.
 

@@ -20,6 +20,7 @@ set_error_handler(function ($severity, $message, $file, $line) {
 try {
     require_once __DIR__ . '/config.php';
     require_once INCLUDES_DIR . '/AppleWalletPass.php';
+    require_once INCLUDES_DIR . '/WalletImage.php';
     require_once INCLUDES_DIR . '/CardRenderer.php';
 
     $employeeId  = trim($_GET['i'] ?? $_GET['employee_id'] ?? '');
@@ -133,26 +134,38 @@ try {
     // ---- Build pass ----
     $passObj = new AppleWalletPass($pass);
 
-    // Bundle logo if we have one in the theme (Apple requires icon.png minimum).
-    // Apple expects icon.png (29pt) + icon@2x.png (58pt). We use the same file for both
-    // if only one size is available; Apple is tolerant of single-resolution art.
-    $logoBytes = null;
+    // Bundle the company logo. Apple requires a VALID PNG icon.png; a raw tenant
+    // logo can be SVG / JPEG / WebP / oversized, any of which makes iOS reject
+    // the pass with the opaque "Cannot add pass". WalletImage re-encodes to clean
+    // PNGs at Apple's expected sizes (icon = square; logo = wide, top-left).
+    $logoFs = null;
     if ($theme && !empty($theme['logo_path'])) {
-        $logoFs = BASE_DIR . '/' . ltrim($theme['logo_path'], '/');
-        if (is_readable($logoFs)) {
-            $logoBytes = @file_get_contents($logoFs);
+        $cand = BASE_DIR . '/' . ltrim($theme['logo_path'], '/');
+        if (is_readable($cand)) {
+            $logoFs = $cand;
         }
     }
-    if ($logoBytes === null || $logoBytes === false || $logoBytes === '') {
-        // Minimal 1x1 transparent PNG fallback so the manifest always has icon.png
-        $logoBytes = base64_decode(
-            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
-        );
+
+    // 1x1 transparent PNG, last-resort so the manifest always carries a valid icon.
+    $transparentPng = base64_decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+    );
+
+    // icon.png is REQUIRED (lock screen / notifications); always present.
+    foreach (['icon.png' => 29, 'icon@2x.png' => 58, 'icon@3x.png' => 87] as $fname => $px) {
+        $bytes = $logoFs ? WalletImage::fitPng($logoFs, $px, $px) : null;
+        $passObj->addAsset($fname, $bytes ?: $transparentPng);
     }
-    $passObj->addAsset('icon.png',    $logoBytes);
-    $passObj->addAsset('icon@2x.png', $logoBytes);
-    $passObj->addAsset('logo.png',    $logoBytes);
-    $passObj->addAsset('logo@2x.png', $logoBytes);
+    // logo.png is shown top-left; optional, so omit cleanly if it can't be made.
+    foreach (['logo.png' => [160, 50], 'logo@2x.png' => [320, 100], 'logo@3x.png' => [480, 150]] as $fname => $dim) {
+        if (!$logoFs) {
+            continue;
+        }
+        $bytes = WalletImage::fitPng($logoFs, $dim[0], $dim[1]);
+        if ($bytes) {
+            $passObj->addAsset($fname, $bytes);
+        }
+    }
 
     // Strip image, the canonical card design from CardRenderer. Same PNG that
     // /muhammed.ali serves, that wallet_google.php embeds, that card-pdf.php

@@ -1698,13 +1698,13 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         <!-- Add to Wallet -->
         <div class="wallet-buttons" id="walletButtons">
             <?php if ($appleWalletEnabled): ?>
-            <a href="<?php echo htmlspecialchars($appleWalletUrl); ?>" class="wallet-btn apple" aria-label="Add to Apple Wallet">
+            <a href="<?php echo htmlspecialchars($appleWalletUrl); ?>" class="wallet-btn apple" aria-label="<?php echo htmlspecialchars(t('digitalcard.wallet_apple_aria')); ?>">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.05 12.54c-.03-2.9 2.37-4.3 2.48-4.37-1.36-1.98-3.47-2.26-4.22-2.29-1.8-.18-3.51 1.06-4.43 1.06-.93 0-2.33-1.03-3.83-1-1.97.03-3.79 1.15-4.8 2.91-2.05 3.56-.52 8.82 1.48 11.71.98 1.41 2.15 2.99 3.68 2.94 1.48-.06 2.04-.96 3.83-.96s2.3.96 3.86.93c1.59-.03 2.6-1.44 3.57-2.86 1.13-1.64 1.59-3.24 1.62-3.32-.04-.02-3.11-1.2-3.14-4.75zM14.12 3.79c.8-.97 1.34-2.31 1.19-3.65-1.15.05-2.55.77-3.37 1.73-.74.85-1.39 2.21-1.22 3.53 1.29.1 2.59-.65 3.4-1.61z"/></svg>
                 Apple Wallet
             </a>
             <?php endif; ?>
             <?php if ($googleWalletEnabled): ?>
-            <a href="<?php echo htmlspecialchars($googleWalletUrl); ?>" class="wallet-btn google" aria-label="Add to Google Wallet">
+            <a href="<?php echo htmlspecialchars($googleWalletUrl); ?>" class="wallet-btn google" aria-label="<?php echo htmlspecialchars(t('digitalcard.wallet_google_aria')); ?>">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
                 Google Wallet
             </a>

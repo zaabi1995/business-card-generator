@@ -32,6 +32,9 @@ data/companies/
 data/print-sheets/
 data/proofs/
 data/cards/
+# Wallet signing material (Apple PEM/.p12, Google service-account JSON).
+# Lives ONLY on the server; never commit. nginx denies /data/wallet/ too.
+data/wallet/
 uploads/
 !uploads/.gitkeep
 

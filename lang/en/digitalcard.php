@@ -62,4 +62,8 @@ return [
     'appt_sent_h'          => 'Request sent!',
     'appt_sent_body'       => "You'll get a confirmation email shortly.",
     'appt_loading'         => 'Loading...',
+    // Wallet buttons (visible text stays the brand name; these localize the
+    // accessibility label only).
+    'wallet_apple_aria'    => 'Add to Apple Wallet',
+    'wallet_google_aria'   => 'Add to Google Wallet',
 ];
