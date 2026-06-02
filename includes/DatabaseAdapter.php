@@ -442,6 +442,21 @@ class DatabaseAdapter {
             'created_at' => date('Y-m-d H:i:s')
         ];
 
+        // Honour an explicit status (the domain-based "join existing company"
+        // signup passes 'pending' so a stranger on the company's email domain
+        // does NOT silently become an active employee without admin approval).
+        // The hardcoded array above used to drop it, defaulting the column to
+        // 'active' (BHD loop audit iter 2, 2 Jun 2026). Whitelist valid values.
+        if (!empty($data['status']) && in_array($data['status'], ['active', 'pending', 'suspended', 'inactive'], true)) {
+            $employee['status'] = $data['status'];
+        }
+        // Carry a pre-hashed login credential when the caller supplies one
+        // (self-service join request). Was previously dropped, leaving join
+        // requesters with no way to authenticate after approval.
+        if (!empty($data['password_hash']) && self::$db->columnExists('employees', 'password_hash')) {
+            $employee['password_hash'] = $data['password_hash'];
+        }
+
         try {
             self::$db->insert('employees', $employee);
 
@@ -449,7 +464,10 @@ class DatabaseAdapter {
             // explicitly opted out (e.g., demo seeder, quiet bulk loads).
             // Chooses channel automatically based on what contact info
             // we have. Silent-fail so insert success is not blocked.
-            $skipInvite = !empty($data['skip_invite']);
+            // Pending join-requests never get an invite until an admin approves
+            // them, otherwise a stranger could mint a card-edit link by signing
+            // up with the company's domain (BHD loop audit iter 2).
+            $skipInvite = !empty($data['skip_invite']) || (($employee['status'] ?? 'active') === 'pending');
             if (!$skipInvite && (!empty($employee['email']) || !empty($employee['phone']) || !empty($employee['mobile']))) {
                 try {
                     require_once __DIR__ . '/EmployeeEditToken.php';
