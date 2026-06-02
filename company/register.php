@@ -433,15 +433,15 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Error Message -->
                 <?php if ($error): ?>
-                <div class="mt-6 flex items-center gap-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">
-                    <i class="fa-solid fa-circle-exclamation flex-shrink-0"></i>
+                <div class="mt-6 flex items-center gap-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800" role="alert" aria-live="assertive">
+                    <i class="fa-solid fa-circle-exclamation flex-shrink-0" aria-hidden="true"></i>
                     <span><?php echo htmlspecialchars($error); ?></span>
                 </div>
                 <?php endif; ?>
 
                 <!-- Info/Success Message -->
                 <?php if ($info): ?>
-                <div class="mt-6 flex items-start gap-3 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800">
+                <div class="mt-6 flex items-start gap-3 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800" role="status" aria-live="polite">
                     <i class="fa-solid fa-circle-check flex-shrink-0 mt-0.5"></i>
                     <div>
                         <span><?php echo htmlspecialchars($info); ?></span>
@@ -475,7 +475,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <div class="mt-2">
                             <input type="email" name="admin_email" id="admin_email"
                                    value="<?php echo htmlspecialchars($_POST['admin_email'] ?? $prefillEmail); ?>"
-                                   class="form-input"
+                                   class="form-input" autocomplete="email" aria-required="true"
                                    placeholder="<?= htmlspecialchars(t('register.placeholder_email')) ?>" required
                                    onchange="checkEmailDomain()" onkeyup="checkEmailDomain()">
                         </div>
@@ -488,7 +488,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <div class="mt-2">
                             <input type="text" name="user_name" id="user_name"
                                    value="<?php echo htmlspecialchars($_POST['user_name'] ?? $prefillName); ?>"
-                                   class="form-input"
+                                   class="form-input" autocomplete="name" aria-required="true"
                                    placeholder="<?= htmlspecialchars(t('register.placeholder_name')) ?>" required>
                         </div>
                     </div>
@@ -500,7 +500,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <div class="mt-2">
                             <input type="text" name="company_name" id="company_name"
                                    value="<?php echo htmlspecialchars($_POST['company_name'] ?? ''); ?>"
-                                   class="form-input"
+                                   class="form-input" autocomplete="organization" aria-required="true"
                                    placeholder="<?= htmlspecialchars(t('register.placeholder_company')) ?>" required>
                         </div>
                     </div>
@@ -553,10 +553,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         </label>
                         <div class="mt-2">
                             <input type="password" name="password" id="password"
-                                   class="form-input"
+                                   class="form-input" autocomplete="new-password" aria-required="true"
+                                   aria-describedby="password-hint"
                                    placeholder="<?= htmlspecialchars(t('register.placeholder_password')) ?>" required minlength="8">
                         </div>
-                        <p class="mt-1.5 text-xs text-gray-500"><?= htmlspecialchars(t('register.password_hint')) ?></p>
+                        <p id="password-hint" class="mt-1.5 text-xs text-gray-500"><?= htmlspecialchars(t('register.password_hint')) ?></p>
                     </div>
 
                     <div>
