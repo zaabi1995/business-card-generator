@@ -71,28 +71,42 @@ class Mailer {
                 $errorMessage = 'PHP mail() failed';
             }
         } else {
-            try {
-                $success = self::sendWithSMTP($to, $subject, $body, $attachments, [
-                    'host' => $host,
-                    'port' => $port,
-                    'username' => $username,
-                    'password' => $password,
-                    'from_email' => $fromEmail,
-                    // Per-send override (e.g. "Otech via Cardify") so tenants
-                    // show in the recipient's inbox; falls back to MAIL_FROM_NAME.
-                    'from_name' => $options['from_name_override'] ?? $fromName,
-                    'encryption' => $encryption,
-                    // Reply-To + List-Unsubscribe overrides flow through;
-                    // sendWithSMTP defaults them when not provided.
-                    'reply_to' => $options['reply_to'] ?? null,
-                    'unsubscribe_mailto' => $options['unsubscribe_mailto'] ?? null,
-                    'skip_wrap' => !empty($options['skip_wrap']),
-                ]);
-            } catch (Exception $e) {
-                self::$lastError = $e->getMessage();
-                $errorMessage = $e->getMessage();
-                error_log("Mailer error: " . $e->getMessage());
-                $success = false;
+            $smtpConfig = [
+                'host' => $host,
+                'port' => $port,
+                'username' => $username,
+                'password' => $password,
+                'from_email' => $fromEmail,
+                'from_name' => $fromName,
+                'encryption' => $encryption
+            ];
+            // Retry transient SMTP failures with backoff. The Mailer opens a
+            // fresh connection + AUTH per message, so a burst (e.g. an admin
+            // bulk-adding employees, each triggering an invite) can trip the
+            // relay's "450 4.7.1 too many AUTH commands" / "421" / greylisting.
+            // These are temporary; a short wait + retry clears them instead of
+            // silently dropping the welcome/invite email. (BHD loop audit iter 7.)
+            $attempts = 0;
+            $maxAttempts = 3;
+            while ($attempts < $maxAttempts) {
+                $attempts++;
+                try {
+                    $success = self::sendWithSMTP($to, $subject, $body, $attachments, $smtpConfig);
+                    $errorMessage = null;
+                    break;
+                } catch (Exception $e) {
+                    self::$lastError = $e->getMessage();
+                    $errorMessage = $e->getMessage();
+                    $success = false;
+                    $transient = (bool) preg_match('/\b4\d\d\b|too many AUTH|greylist|try again|temporarily/i', $e->getMessage());
+                    if ($transient && $attempts < $maxAttempts) {
+                        // 1.5s, then 3s backoff. usleep keeps it sub-process-friendly.
+                        usleep(($attempts * 1500) * 1000);
+                        continue;
+                    }
+                    error_log("Mailer error (attempt {$attempts}/{$maxAttempts}): " . $e->getMessage());
+                    break;
+                }
             }
         }
         
@@ -160,33 +174,16 @@ class Mailer {
         $boundary = md5(uniqid(time()));
         $boundaryMixed = 'mixed-' . $boundary;
         $boundaryAlt = 'alt-' . $boundary;
-
-        // Deliverability: transactional 1:1 sends need to LOOK transactional.
-        // List-Unsubscribe must point to a REAL mailbox or Gmail/M365
-        // validate-and-penalise. Default fallback chain: caller override ->
-        // info@<host> (provisioned) -> from_email itself.
-        $defaultUnsub = 'info@' . (parse_url(getBaseUrl(), PHP_URL_HOST) ?: 'cardify.om');
-        $unsubMailto  = $config['unsubscribe_mailto'] ?? $defaultUnsub;
-        $replyTo      = $config['reply_to'] ?? $config['from_email'];
-
+        
         // Build headers
         $headers = [];
         $headers[] = "MIME-Version: 1.0";
         $headers[] = "From: {$config['from_name']} <{$config['from_email']}>";
-        $headers[] = "Reply-To: {$replyTo}";
+        $headers[] = "Reply-To: {$config['from_email']}";
         $headers[] = "To: {$to}";
         $headers[] = "Subject: {$subject}";
         $headers[] = "Date: " . date('r');
         $headers[] = "Message-ID: <" . md5(uniqid()) . "@" . parse_url(getBaseUrl(), PHP_URL_HOST) . ">";
-        // List-Unsubscribe + RFC 3834 Auto-Submitted are the two highest-
-        // value deliverability signals for transactional mail. We keep them
-        // light: no Precedence: bulk (this is 1:1, not a campaign), no
-        // X-Auto-Response-Suppress (legitimate, low value, some filters
-        // misread). The mailto points to a real provisioned inbox.
-        $headers[] = "List-Unsubscribe: <mailto:{$unsubMailto}?subject=unsubscribe>";
-        $headers[] = "List-Unsubscribe-Post: List-Unsubscribe=One-Click";
-        $headers[] = "Auto-Submitted: auto-generated";
-        $headers[] = "X-Mailer: Cardify";
         
         if (!empty($attachments)) {
             $headers[] = "Content-Type: multipart/mixed; boundary=\"{$boundaryMixed}\"";
@@ -209,18 +206,11 @@ class Mailer {
         $message .= chunk_split(base64_encode(strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $body))));
         $message .= "\r\n";
         
-        // HTML version: skip the global Cardify chrome when the caller has
-        // already provided a full <html>...</html> document (tenant-branded
-        // emails like the employee-invite). Detected via $config['skip_wrap']
-        // (set by Mailer::send when $options['skip_wrap'] is true) OR by
-        // sniffing the body for a leading <!DOCTYPE / <html.
-        $skipWrap = !empty($config['skip_wrap'])
-            || (is_string($body) && preg_match('/^\s*(<!DOCTYPE\s|<html[\s>])/i', $body) === 1);
-        $htmlBody = $skipWrap ? $body : self::wrapInTemplate($body);
+        // HTML version
         $message .= "--{$boundaryAlt}\r\n";
         $message .= "Content-Type: text/html; charset=UTF-8\r\n";
         $message .= "Content-Transfer-Encoding: base64\r\n\r\n";
-        $message .= chunk_split(base64_encode($htmlBody));
+        $message .= chunk_split(base64_encode(self::wrapInTemplate($body)));
         $message .= "\r\n";
         
         $message .= "--{$boundaryAlt}--\r\n";
