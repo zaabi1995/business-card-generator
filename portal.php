@@ -9,7 +9,6 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Mailer.php';
 require_once INCLUDES_DIR . '/TenantHost.php';
-require_once INCLUDES_DIR . '/EmployeeEditToken.php';
 
 // Get company slug and optional department slug from URL. When the
 // request lands on a tenant subdomain (ohb.cardify.om/portal), pull
@@ -21,14 +20,6 @@ if ($companySlug === '' && TenantHost::isTenantHost()) {
 }
 $departmentSlug = $_GET['department_slug'] ?? '';
 $departmentSlug = trim(strtolower($departmentSlug));
-
-// Edit-mode entry: /<employee_slug>/edit?t=<40-char hex> on a tenant
-// subdomain. The slug is the same email-localpart used by index.php's
-// bare-URL digital-card router. Token is the only auth; slug must bind
-// to the same employee on the same tenant or we 404 (rule 31 isolation).
-$editSlug   = trim(strtolower($_GET['edit_slug'] ?? ''));
-$editToken  = trim($_GET['t'] ?? $_GET['token'] ?? '');
-$isEditMode = ($editSlug !== '' && $editToken !== '');
 
 if (empty($companySlug)) {
     http_response_code(404);
@@ -59,44 +50,6 @@ if (isset($company['portal_enabled']) && !$company['portal_enabled']) {
 }
 
 $companyId = $company['id'];
-
-// Resolve edit-mode employee: verify the magic-link token, look up the
-// employee by email-localpart (same normalisation as index.php's bare-URL
-// router), assert it belongs to this tenant's company and matches the
-// employee the token was minted for. On any mismatch, 404 without leaking
-// which check failed (skill rule 31, cross-tenant isolation).
-$editEmployee  = null;
-$isTrustedEdit = false;
-if ($isEditMode) {
-    $verified = EmployeeEditToken::verify($editToken);
-    if ($verified && ($verified['company_id'] ?? null) === $companyId && !empty($verified['id'])) {
-        try {
-            $__db = Database::getInstance();
-            $row = $__db->fetchOne(
-                "SELECT * FROM employees
-                 WHERE company_id = :cid
-                   AND status = 'active'
-                   AND (
-                        LOWER(SUBSTRING_INDEX(email, '@', 1)) = LOWER(:exact)
-                     OR REPLACE(REPLACE(LOWER(SUBSTRING_INDEX(email, '@', 1)), '.', '-'), '_', '-') = LOWER(:dashed)
-                   )
-                 LIMIT 1",
-                ['cid' => $companyId, 'exact' => $editSlug, 'dashed' => $editSlug]
-            );
-            if ($row && ($row['id'] ?? null) === $verified['id']) {
-                $editEmployee  = $row;
-                $isTrustedEdit = true;
-            }
-        } catch (Exception $__e) {
-            error_log('[portal edit-mode] lookup failed: ' . $__e->getMessage());
-        }
-    }
-    if (!$isTrustedEdit) {
-        http_response_code(404);
-        include __DIR__ . '/404.php';
-        exit;
-    }
-}
 
 // Check preview setting
 $showPreview = ($company['portal_show_preview'] ?? 1) == 1;
@@ -171,42 +124,18 @@ if ($passcodeRequired) {
     // Handle passcode form submission
     if (!$passcodeVerified && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['portal_passcode'])) {
         if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-            // Session expired or cookie wasn't sent. Wipe the dead token
-            // so the form re-renders with a fresh one, give a clearer
-            // message that hints at the actual cause.
-            unset($_SESSION['csrf_token']);
-            $passcodeError = 'Your session expired. Please re-enter your access code.';
+            $passcodeError = 'Invalid request. Please try again.';
         } else {
-            // Brute-force protection: cap passcode attempts per session+target
-            // at 8 per 15-min window. Without this, an attacker can iterate a
-            // 4-6 digit passcode (10K-1M combos) at full speed since CSRF is
-            // session-bound (one GET = one valid CSRF token good for many POSTs).
-            // Track attempts in $_SESSION keyed by the same target as $sessionKey
-            // so dept-A and dept-B brute force are tracked separately.
-            $attemptsKey = 'pc_attempts_' . $sessionKey;
-            $attempts = $_SESSION[$attemptsKey] ?? ['count' => 0, 'window_start' => 0];
-            $now = time();
-            if ($now - (int) $attempts['window_start'] > 900) {
-                $attempts = ['count' => 0, 'window_start' => $now];
-            }
-            if ((int) $attempts['count'] >= 8) {
-                $remaining = 900 - ($now - (int) $attempts['window_start']);
-                $passcodeError = 'Too many attempts. Wait ' . max(60, $remaining) . 's before trying again.';
-            } else {
-                $submittedPasscode = trim($_POST['portal_passcode']);
-                if (hash_equals($portalPasscode, $submittedPasscode)) {
-                    $_SESSION[$sessionKey] = true;
-                    unset($_SESSION[$attemptsKey]);
-                    $passcodeVerified = true;
-                    // Redirect to remove POST data
-                    header('Location: ' . $_SERVER['REQUEST_URI']);
-                    exit;
-                } else {
-                    $attempts['count']++;
-                    $_SESSION[$attemptsKey] = $attempts;
-                    $passcodeError = 'Incorrect access code. Please try again.';
-                }
-            }
+        $submittedPasscode = trim($_POST['portal_passcode']);
+        if (hash_equals($portalPasscode, $submittedPasscode)) {
+            $_SESSION[$sessionKey] = true;
+            $passcodeVerified = true;
+            // Redirect to remove POST data
+            header('Location: ' . $_SERVER['REQUEST_URI']);
+            exit;
+        } else {
+            $passcodeError = 'Incorrect access code. Please try again.';
+        }
         } // end CSRF else
     }
 }
@@ -229,15 +158,6 @@ if ($selectedDepartment && !empty($selectedDepartment['template_pair_id']) && $d
     );
     
     if ($frontTemplate || $backTemplate) {
-        // Cache-bust bg URLs with current_version. Cloudflare pins
-        // /uploads/* for ~30 days; without ?v= the browser + CDN keep
-        // serving the pre-redaction bg (with the old PDF text baked in)
-        // long after a re-import.
-        $bustBg = function ($path, $ver) {
-            if (!$path) return $path;
-            $sep = strpos($path, '?') === false ? '?' : '&';
-            return $path . $sep . 'v=' . (int)($ver ?: 1);
-        };
         // Parse fields_json for both templates
         if ($frontTemplate) {
             $activeFrontTemplate = [
@@ -245,7 +165,7 @@ if ($selectedDepartment && !empty($selectedDepartment['template_pair_id']) && $d
                 'pair_id' => $frontTemplate['pair_id'] ?? null,
                 'name' => $frontTemplate['name'],
                 'side' => 'front',
-                'backgroundImage' => $bustBg($frontTemplate['background_image_path'], $frontTemplate['current_version'] ?? 1),
+                'backgroundImage' => $frontTemplate['background_image_path'],
                 'originalPdf' => $frontTemplate['original_pdf_path'] ?? null,
                 'fields' => json_decode($frontTemplate['fields_json'], true) ?: [],
                 'settings' => isset($frontTemplate['settings_json']) ? json_decode($frontTemplate['settings_json'], true) : null
@@ -257,7 +177,7 @@ if ($selectedDepartment && !empty($selectedDepartment['template_pair_id']) && $d
                 'pair_id' => $backTemplate['pair_id'] ?? null,
                 'name' => $backTemplate['name'],
                 'side' => 'back',
-                'backgroundImage' => $bustBg($backTemplate['background_image_path'], $backTemplate['current_version'] ?? 1),
+                'backgroundImage' => $backTemplate['background_image_path'],
                 'originalPdf' => $backTemplate['original_pdf_path'] ?? null,
                 'fields' => json_decode($backTemplate['fields_json'], true) ?: [],
                 'settings' => isset($backTemplate['settings_json']) ? json_decode($backTemplate['settings_json'], true) : null
@@ -271,15 +191,6 @@ if ($selectedDepartment && !empty($selectedDepartment['template_pair_id']) && $d
 if (!$activeFrontTemplate && !$activeBackTemplate) {
     $activeFrontTemplate = getActiveFrontTemplate($companyId);
     $activeBackTemplate = getActiveBackTemplate($companyId);
-    // Same cache-bust as the department branch above.
-    $bustBg2 = function ($tpl) {
-        if (!$tpl || empty($tpl['backgroundImage'])) return $tpl;
-        $sep = strpos($tpl['backgroundImage'], '?') === false ? '?' : '&';
-        $tpl['backgroundImage'] .= $sep . 'v=' . (int)($tpl['current_version'] ?? 1);
-        return $tpl;
-    };
-    $activeFrontTemplate = $bustBg2($activeFrontTemplate);
-    $activeBackTemplate  = $bustBg2($activeBackTemplate);
 }
 
 // Collect enabled fields from templates
@@ -310,17 +221,6 @@ if (empty($enabledFields)) {
     ];
 }
 
-// Per-company keys never get exposed to the public request form. Employees
-// don't have their own website / address / company name; the renderer
-// fills these from the company / theme / address rows at draw time.
-// Hiding them here also future-proofs against admin templates whose
-// fields_json was built before BindingValidator existed.
-foreach (['website','website_ar','address','address_en','address_2_en',
-          'address_ar','address_2_ar','company_en','company_ar','fax','fax_ar','social']
-         as $__perCompanyKey) {
-    unset($enabledFields[$__perCompanyKey]);
-}
-
 // Apply theme colors (like main page)
 $primaryColor = $companyTheme['primary_color'] ?? '#3b82f6';
 $secondaryColor = $companyTheme['secondary_color'] ?? '#036e87';
@@ -340,175 +240,11 @@ $formData = [
     'fax'          => $company['default_fax']          ?? '',
 ];
 
-// Edit-mode: derive the public-card URL (read-only digital card page
-// the QR + share-link resolve to) so the onboarding panel can show it
-// alongside the edit URL. Same shape EmployeeEditToken::sendInvite
-// uses in the invite email.
-$publicCardUrl = '';
-if ($isTrustedEdit && $editEmployee && !empty($companySlug)) {
-    $apexHost   = function_exists('cardifyApexHost') ? cardifyApexHost() : (defined('APP_HOST') ? APP_HOST : 'cardify.om');
-    $publicCardUrl = 'https://' . $companySlug . '.' . $apexHost . '/' . rawurlencode($editSlug);
-}
-
-// Edit-mode: seed the form with the employee's existing values so the
-// magic-link landing renders fully prefilled (works even without JS).
-// Field list mirrors the inputs in the form (lines 1100-1450 below).
-if ($isTrustedEdit && $editEmployee) {
-    foreach ([
-        'email','name_en','name_ar','position_en','position_ar',
-        'phone','phone_ar','mobile','mobile_ar',
-        'website','website_ar','fax','fax_ar',
-        'address_en','address_2_en','address_ar','address_2_ar',
-        'company_en','company_ar','department_id',
-    ] as $__k) {
-        if (!empty($editEmployee[$__k])) {
-            $formData[$__k] = $editEmployee[$__k];
-        }
-    }
-}
-
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-        // CSRF token didn't match. Most common cause is an expired
-        // session (left tab open > gc_maxlifetime), or a multi-tab
-        // race where the other tab rotated the session token, or a
-        // browser extension stripping the CARDIFY_SID cookie. Wipe
-        // the dead token so the form re-renders with a fresh one,
-        // give a message that hints at the actual cause + tells HR
-        // they can just resubmit.
-        unset($_SESSION['csrf_token']);
-        $error = 'Your session expired while the form was open. Please click Submit again, your details are still here.';
-        // Repopulate $formData from $_POST so the form fields show
-        // the user's submitted values when re-rendered (otherwise
-        // they fall back to company defaults / empty placeholders
-        // and the user has to retype everything).
-        foreach (['email','name_en','name_ar','position_en','position_ar','phone','phone_ar','mobile','mobile_ar','fax','fax_ar','website','website_ar','address_en','address_2_en','address_ar','address_2_ar','company_en','company_ar'] as $__k) {
-            if (isset($_POST[$__k])) $formData[$__k] = trim((string)$_POST[$__k]);
-        }
+        $error = 'Invalid request. Please try again.';
     } else {
-
-    // Trusted-edit branch: when the form carries a valid magic-link
-    // token bound to the same employee that loaded the page, UPDATE
-    // the employee row directly, invalidate the render cache, and
-    // skip the admin-approval queue. The token IS the auth; CSRF is
-    // already verified above. Slug + tenant binding was asserted at
-    // page load (see $isTrustedEdit resolver near top of file).
-    $__postedToken = trim($_POST['edit_token'] ?? '');
-    if ($__postedToken !== '') {
-        $__verified = EmployeeEditToken::verify($__postedToken);
-        $__vEmpId = $__verified['id'] ?? null;
-        if ($__verified
-            && ($__verified['company_id'] ?? null) === $companyId
-            && $__vEmpId
-            && (!$isTrustedEdit || $__vEmpId === ($editEmployee['id'] ?? null))) {
-
-            $__update = [
-                'name_en'     => trim($_POST['name_en']     ?? ($__verified['name_en']     ?? '')),
-                'name_ar'     => trim($_POST['name_ar']     ?? ($__verified['name_ar']     ?? '')),
-                'position_en' => trim($_POST['position_en'] ?? ($__verified['position_en'] ?? '')),
-                'position_ar' => trim($_POST['position_ar'] ?? ($__verified['position_ar'] ?? '')),
-                'phone'       => trim($_POST['phone']       ?? ($__verified['phone']       ?? '')),
-                'phone_ar'    => trim($_POST['phone_ar']    ?? ($__verified['phone_ar']    ?? '')),
-                'mobile'      => trim($_POST['mobile']      ?? ($__verified['mobile']      ?? '')),
-                'mobile_ar'   => trim($_POST['mobile_ar']   ?? ($__verified['mobile_ar']   ?? '')),
-                'website'     => trim($_POST['website']     ?? ($__verified['website']     ?? '')),
-                'updated_at'  => date('Y-m-d H:i:s'),
-            ];
-            try {
-                $db->update('employees', $__update, 'id = :id', ['id' => $__vEmpId]);
-
-                // Cache-bust every cached render so the next card view
-                // picks up the new text (PNG + vector PDF + sidecar).
-                $__crFile = INCLUDES_DIR . '/CardRenderer.php';
-                if (is_file($__crFile)) {
-                    require_once $__crFile;
-                    try { CardRenderer::invalidateForEmployee((string) $__vEmpId, 'portal_self_edit'); }
-                    catch (Throwable $__ce) { error_log('[portal edit] cache invalidate: ' . $__ce->getMessage()); }
-                }
-
-                // Decode + save the front/back PNGs that JS exported from the
-                // Fabric preview at submit-time, then INSERT a fresh row in
-                // generated_cards so the public /<slug> view picks them up
-                // immediately (no headless re-render needed). The invalidate
-                // above nulled prior rows; this new row carries the new paths.
-                $__savedFront = null;
-                $__savedBack  = null;
-                $__dataUrlRe = '/^data:image\/png;base64,([A-Za-z0-9+\/=\s]+)$/';
-                $__cardsDir  = function_exists('getCompanyCardsDir')
-                    ? getCompanyCardsDir((string) $__verified['company_id'])
-                    : (BASE_DIR . '/uploads/companies/' . $__verified['company_id'] . '/cards');
-                if (!is_dir($__cardsDir)) { @mkdir($__cardsDir, 0755, true); }
-                foreach (['front', 'back'] as $__side) {
-                    $__b64 = (string) ($_POST[$__side . '_card_b64'] ?? '');
-                    if ($__b64 === '' || !preg_match($__dataUrlRe, $__b64, $__m)) continue;
-                    $__bin = base64_decode(preg_replace('/\s+/', '', $__m[1]), true);
-                    if ($__bin === false || strlen($__bin) < 100) continue;
-                    $__name = 'card_' . $__side . '_' . date('Ymd_His') . '_' . uniqid() . '.png';
-                    if (@file_put_contents($__cardsDir . '/' . $__name, $__bin) !== false) {
-                        @chmod($__cardsDir . '/' . $__name, 0644);
-                        if ($__side === 'front') $__savedFront = $__name;
-                        if ($__side === 'back')  $__savedBack  = $__name;
-                    }
-                }
-
-                if ($__savedFront || $__savedBack) {
-                    require_once INCLUDES_DIR . '/DatabaseAdapter.php';
-                    try {
-                        // Resolve the active front/back template ids for this
-                        // company so the new row carries the right pins.
-                        $__cfg = function_exists('loadTemplates')
-                            ? loadTemplates((string) $__verified['company_id'])
-                            : ['activeFrontId' => null, 'activeBackId' => null];
-                        \DatabaseAdapter::logGeneratedCard(
-                            (string) $__vEmpId,
-                            $__cfg['activeFrontId'] ?? null,
-                            $__cfg['activeBackId'] ?? null,
-                            $__savedFront,
-                            $__savedBack,
-                            null,
-                            (string) $__verified['company_id']
-                        );
-                    } catch (Throwable $__lge) {
-                        error_log('[portal edit] logGeneratedCard: ' . $__lge->getMessage());
-                    }
-                }
-
-                // Optional audit row, best-effort.
-                $__alFile = INCLUDES_DIR . '/AuditLog.php';
-                if (is_file($__alFile)) {
-                    require_once $__alFile;
-                    try {
-                        AuditLog::log(
-                            'employee_self_edit',
-                            'employee',
-                            (string) $__vEmpId,
-                            null,
-                            ['via' => 'edit_token', 'slug' => $editSlug],
-                            (string) $__verified['company_id']
-                        );
-                    } catch (Throwable $__ae) { /* non-fatal */ }
-                }
-
-                // Redirect back to the same pretty URL with saved=1 so
-                // a refresh doesn't re-POST and the user gets feedback.
-                $__redir = '/' . rawurlencode($editSlug) . '/edit?t=' . urlencode($__postedToken) . '&saved=1';
-                header('Location: ' . $__redir, true, 302);
-                exit;
-            } catch (Throwable $__ue) {
-                error_log('[portal edit] UPDATE employees failed: ' . $__ue->getMessage());
-                $error = 'Could not save changes. Please try again.';
-            }
-        } else {
-            // Token posted but didn't bind to a valid employee on this
-            // tenant. Treat as 404 rather than fall through to the
-            // new-request flow (which would create a duplicate row).
-            http_response_code(404);
-            include __DIR__ . '/404.php';
-            exit;
-        }
-    }
-
     $formData = [
         'email' => trim(strtolower($_POST['email'] ?? '')),
         'name_en' => trim($_POST['name_en'] ?? ''),
@@ -586,10 +322,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
     // Handle photo upload
     $photoPath = null;
     if (!$error && isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         $maxSize = 5 * 1024 * 1024; // 5MB
-        
-        if (!in_array($_FILES['photo']['type'], $allowedTypes)) {
+        // SECURITY: this is a public, unauthenticated endpoint. Never trust
+        // $_FILES['type'] (client-controlled) or the uploaded filename's
+        // extension (lets a stranger drop request_xxx.php). Detect the real
+        // MIME from file contents and derive a safe extension from it.
+        // (BHD loop audit iter 4, 2 Jun 2026; matches project CLAUDE.md rule.)
+        $mimeToExt = [
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/gif'  => 'gif',
+            'image/webp' => 'webp',
+        ];
+        $realMime = '';
+        if (class_exists('finfo')) {
+            $finfo = new finfo(FILEINFO_MIME_TYPE);
+            $realMime = (string) $finfo->file($_FILES['photo']['tmp_name']);
+        }
+
+        if (!isset($mimeToExt[$realMime])) {
             $error = 'Photo must be a JPEG, PNG, GIF, or WebP image.';
         } elseif ($_FILES['photo']['size'] > $maxSize) {
             $error = 'Photo must be less than 5MB.';
@@ -598,12 +349,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
             if (!is_dir($uploadDir)) {
                 @mkdir($uploadDir, 0755, true);
             }
-            
-            $ext = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
+
+            $ext = $mimeToExt[$realMime]; // extension from verified MIME, not filename
             $filename = 'request_' . uniqid() . '.' . $ext;
             $targetPath = $uploadDir . '/' . $filename;
-            
+
             if (move_uploaded_file($_FILES['photo']['tmp_name'], $targetPath)) {
+                @chmod($targetPath, 0644);
                 $photoPath = 'uploads/companies/' . $companyId . '/photos/' . $filename;
             }
         }
@@ -741,22 +493,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
-    <?php
-    // Auto-brand favicon from the tenant's logo (with theme.favicon_path
-    // overriding when explicitly uploaded). TenantHost::theme() applies
-    // the same logo-as-favicon fallback as ui-header.php so HR doesn't
-    // need to upload a separate favicon file.
-    $__portalTheme = class_exists('TenantHost') ? TenantHost::theme() : null;
-    if (!empty($__portalTheme['favicon'])):
-        $__favType = preg_match('/\.svg(\?|$)/i', $__portalTheme['favicon']) ? 'image/svg+xml'
-                    : (preg_match('/\.png(\?|$)/i', $__portalTheme['favicon']) ? 'image/png'
-                    : (preg_match('/\.ico(\?|$)/i', $__portalTheme['favicon']) ? 'image/x-icon' : 'image/png'));
-    ?>
-    <link rel="icon" href="<?= htmlspecialchars($__portalTheme['favicon'], ENT_QUOTES) ?>" type="<?= $__favType ?>">
-    <link rel="apple-touch-icon" href="<?= htmlspecialchars($__portalTheme['favicon'], ENT_QUOTES) ?>">
-    <?php else: ?>
     <link rel="icon" href="<?php echo getBasePath(); ?>favicon.svg" type="image/svg+xml">
-    <?php endif; ?>
 
     <meta name="description" content="<?= htmlspecialchars($__ogDesc) ?>">
     <meta property="og:type" content="website">
@@ -789,25 +526,6 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             foreach ($tpl['settings']['fonts_used'] as $fam) {
                 $fam = trim((string)$fam);
                 if ($fam !== '') $importedFonts[$fam] = true;
-            }
-        }
-        // ALSO scan the template's import dir manifest so we register every
-        // weight + script variant the importer extracted, not just the
-        // single base name fields_json happened to store. Otherwise an
-        // Arsenica-stored Latin family keeps Arsenica-Arabic-Antiqua
-        // unloaded and Arabic glyphs fall back to the system serif.
-        if ($tpl && !empty($tpl['settings']['import_token'])) {
-            $manifestPath = realpath(__DIR__) . '/uploads/templates/imports/'
-                . preg_replace('/[^a-z0-9_-]/i', '', $tpl['settings']['import_token'])
-                . '/fonts/manifest.json';
-            if (is_file($manifestPath)) {
-                $m = json_decode(file_get_contents($manifestPath), true);
-                if (is_array($m)) {
-                    foreach ($m as $entry) {
-                        $fam = trim((string)($entry['family'] ?? ''));
-                        if ($fam !== '') $importedFonts[$fam] = true;
-                    }
-                }
             }
         }
     }
@@ -845,17 +563,10 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     // licensed Lato-Medium and override Google Fonts' nearest-weight
     // fallback.
     require_once INCLUDES_DIR . '/CompanyFonts.php';
-    $__importTokens = [];
-    foreach ([$activeFrontTemplate, $activeBackTemplate] as $tpl) {
-        if ($tpl && !empty($tpl['settings']['import_token'])) {
-            $__importTokens[] = $tpl['settings']['import_token'];
-        }
-    }
     $registryCss = CompanyFonts::fontFaceCss(
         realpath(__DIR__),
         $companyId,
-        array_keys($importedFonts),
-        $__importTokens
+        array_keys($importedFonts)
     );
     if ($registryCss) {
         echo "<style id=\"cardify-font-registry\">\n" . $registryCss . "</style>\n";
@@ -871,9 +582,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     </style>
 
     <!-- Font Awesome (CDN) -->
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     
     <!-- Tailwind CSS (Local) -->
     <link rel="stylesheet" href="<?php echo getBasePath(); ?>assets/techwind/css/tailwind.min.css">
@@ -913,15 +622,55 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         .collapse-content.open {
             max-height: 500px;
         }
-        /* Translate button: now lives in its own flex row above the
-           input (Tailwind classes own all visual styling). Keep the
-           class name so JS can still find/disable the button, but no
-           legacy absolute positioning, no gradient overlay -- those
-           were overriding the new pill-style Tailwind classes. */
-        .translate-btn .spinner { animation: spin 1s linear infinite; }
+        /* Translate button styles */
+        .translate-btn {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            transition: all 0.2s;
+            border: none;
+        }
+        .translate-btn:hover {
+            transform: translateY(-50%) scale(1.05);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+        .translate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .translate-btn.loading {
+            pointer-events: none;
+        }
+        .translate-btn .spinner {
+            animation: spin 1s linear infinite;
+        }
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
+        }
+        .input-with-btn {
+            position: relative;
+        }
+        .input-with-btn .form-input {
+            padding-right: 4.5rem;
+        }
+        .rtl-input.form-input {
+            padding-right: 0.875rem;
+            padding-left: 4.5rem;
+        }
+        .rtl-input ~ .translate-btn {
+            right: auto;
+            left: 0.5rem;
         }
         /* Auto-fill indicator */
         .auto-filled {
@@ -1014,37 +763,11 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             margin-top: 8px;
             font-size: 20px;
             font-weight: 700;
-            background: linear-gradient(135deg, var(--portal-loader-primary, #009bc1) 0%, var(--portal-loader-secondary, #0284a1) 100%);
+            background: linear-gradient(135deg, #009bc1 0%, #0284a1 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        /* Tenant-branded ring spinner around the company logo, primary
-           colour from company_themes (auto on subdomain, default Cardify
-           teal on apex). */
-        .page-loader-ring {
-            position: relative;
-            width: 120px;
-            height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .page-loader-ring::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            border: 4px solid rgba(15, 51, 84, 0.10);
-            border-top-color: var(--portal-loader-primary, #009bc1);
-            animation: portalLoaderSpin 1s linear infinite;
-        }
-        .page-loader-ring img {
-            max-width: 70px;
-            max-height: 70px;
-            object-fit: contain;
-        }
-        @keyframes portalLoaderSpin { to { transform: rotate(360deg); } }
         body.loading > *:not(.page-loader) {
             opacity: 0;
         }
@@ -1055,19 +778,9 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     </style>
 </head>
 <body class="h-full bg-gray-50 loading">
-    <!-- Page Loader: tenant logo + brand-coloured spinner ring + company
-         name. Falls back to the Cardify-teal gradient on the apex. -->
-    <div class="page-loader" id="pageLoader" style="<?php
-        if (!empty($__portalTheme['primary'])) echo '--portal-loader-primary:' . htmlspecialchars($__portalTheme['primary'], ENT_QUOTES) . ';';
-        if (!empty($__portalTheme['secondary'])) echo '--portal-loader-secondary:' . htmlspecialchars($__portalTheme['secondary'], ENT_QUOTES) . ';';
-    ?>">
-        <?php if (!empty($__portalTheme['logo'])): ?>
-        <div class="page-loader-ring">
-            <img src="<?= htmlspecialchars($__portalTheme['logo'], ENT_QUOTES) ?>" alt="<?php echo htmlspecialchars($companyName); ?>" onerror="this.style.display='none'">
-        </div>
-        <?php else: ?>
+    <!-- Page Loader -->
+    <div class="page-loader" id="pageLoader">
         <img src="<?php echo getBasePath(); ?>assets/images/cardify-loader.svg" alt="Loading" width="100" height="100">
-        <?php endif; ?>
         <div class="page-loader-text">Loading...</div>
         <div class="page-loader-brand"><?php echo htmlspecialchars($companyName); ?></div>
     </div>
@@ -1280,652 +993,6 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             </div>
             
             <?php else: ?>
-
-            <?php if ($isTrustedEdit && $editEmployee):
-                $__firstName  = trim((string) strtok(trim((string) ($editEmployee['name_en'] ?? '')), ' ')) ?: 'there';
-                $__brand      = $companyTheme['primary_color']   ?? '#2d13ea';
-                $__brandSoft  = $companyTheme['secondary_color'] ?? '#ff7800';
-                // 8% alpha tint of the brand, used as the tour step-pill background
-                $__brandTint  = $__brand . '14';
-                $__deadline   = '28 May 2026';
-                $__publicHost = $publicCardUrl !== '' ? preg_replace('#^https?://#', '', $publicCardUrl) : '';
-            ?>
-            <!-- Cardify onboarding: Maximalism direction per design-stack.
-                 No purple→blue gradients (slop fingerprint). Editorial scale,
-                 decorative numerals, dense data strip, tactile dividers. -->
-            <section class="cf-onboard" x-data="{ collapsed: false }"
-                     style="--cf-brand: <?= htmlspecialchars($__brand) ?>; --cf-accent: <?= htmlspecialchars($__brandSoft) ?>;">
-
-                <!-- HERO -->
-                <header class="cf-onboard__hero">
-                    <div class="cf-onboard__hero-bg" aria-hidden="true"></div>
-                    <div class="cf-onboard__hero-grid" aria-hidden="true"></div>
-                    <div class="cf-onboard__hero-mark" aria-hidden="true"></div>
-
-                    <div class="cf-onboard__hero-actions">
-                        <button type="button" onclick="cardifyTour.restart()" class="cf-chip-btn" title="Replay tour">
-                            <i class="fa-solid fa-play"></i><span class="hide-sm"><?= htmlspecialchars(t('portal.take_tour')) ?></span>
-                        </button>
-                        <button type="button" @click="collapsed = !collapsed" class="cf-chip-btn" :title="collapsed ? 'Expand' : 'Collapse'">
-                            <i class="fa-solid" :class="collapsed ? 'fa-chevron-down' : 'fa-minus'"></i>
-                        </button>
-                    </div>
-
-                    <div class="cf-onboard__hero-body">
-                        <p class="cf-onboard__eyebrow">
-                            <span class="cf-onboard__eyebrow-dot"></span>
-                            <?= htmlspecialchars(t('portal.welcome_eyebrow')) ?>
-                            <span class="cf-onboard__eyebrow-sep">/</span>
-                            <span class="cf-onboard__eyebrow-co"><?= htmlspecialchars($companyName) ?></span>
-                        </p>
-                        <h1 class="cf-onboard__title">
-                            Welcome, <em><?= htmlspecialchars($__firstName) ?></em>.<br>
-                            Your card is ready.
-                        </h1>
-                        <p class="cf-onboard__sub">Three quick steps to confirm your details, share your digital page, and meet the <strong><?= htmlspecialchars($__deadline) ?></strong> print run.</p>
-                    </div>
-
-                    <!-- Data strip: brand-color discipline + dense fact bar (Maximalism) -->
-                    <dl class="cf-onboard__strip">
-                        <div><dt>Employee</dt><dd><?= htmlspecialchars($editEmployee['name_en'] ?? $__firstName) ?></dd></div>
-                        <div><dt>Company</dt><dd><?= htmlspecialchars($companyName) ?></dd></div>
-                        <div><dt>Print run</dt><dd><?= htmlspecialchars($__deadline) ?></dd></div>
-                        <div><dt>Status</dt><dd><span class="cf-onboard__pulse"></span> Editable for life</dd></div>
-                    </dl>
-                </header>
-
-                <!-- STEPS -->
-                <ol x-show="!collapsed" x-transition class="cf-onboard__steps">
-                    <!-- 01 Review -->
-                    <li class="cf-step">
-                        <span class="cf-step__num" aria-hidden="true">01</span>
-                        <div class="cf-step__icon"><i class="fa-solid fa-pen-to-square"></i></div>
-                        <h3 class="cf-step__title"><?= htmlspecialchars(t('portal.step1_title')) ?></h3>
-                        <p class="cf-step__body"><?= htmlspecialchars(t('portal.step1_body')) ?></p>
-                        <a href="#cardRequestForm" class="cf-step__link">
-                            <?= htmlspecialchars(t('portal.step1_cta')) ?>
-                            <i class="fa-solid fa-arrow-down-long"></i>
-                        </a>
-                    </li>
-
-                    <!-- 02 Share -->
-                    <li class="cf-step cf-step--feature cardify-onboarding-share">
-                        <span class="cf-step__num cf-step__num--invert" aria-hidden="true">02</span>
-                        <div class="cf-step__icon cf-step__icon--invert"><i class="fa-solid fa-share-nodes"></i></div>
-                        <h3 class="cf-step__title cf-step__title--invert"><?= htmlspecialchars(t('portal.step2_title')) ?></h3>
-                        <p class="cf-step__body cf-step__body--invert"><?= htmlspecialchars(t('portal.step2_body')) ?></p>
-                        <?php if ($publicCardUrl !== ''): ?>
-                        <div class="cf-step__share">
-                            <a href="<?= htmlspecialchars($publicCardUrl) ?>" target="_blank" rel="noopener" class="cf-btn cf-btn--solid-on-feature">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i> <?= htmlspecialchars(t('portal.step2_open')) ?>
-                            </a>
-                            <button type="button" onclick="cardifyCopyToClipboard(this, <?= htmlspecialchars(json_encode($publicCardUrl), ENT_QUOTES) ?>)" class="cf-btn cf-btn--ghost-on-feature">
-                                <i class="fa-solid fa-link"></i> <span><?= htmlspecialchars(t('portal.step2_copy')) ?></span>
-                            </button>
-                        </div>
-                        <code class="cf-step__url"><?= htmlspecialchars($__publicHost) ?></code>
-                        <?php endif; ?>
-                    </li>
-
-                    <!-- 03 Print -->
-                    <li class="cf-step">
-                        <span class="cf-step__num" aria-hidden="true">03</span>
-                        <div class="cf-step__icon"><i class="fa-solid fa-truck-fast"></i></div>
-                        <h3 class="cf-step__title"><?= htmlspecialchars(t('portal.step3_title')) ?></h3>
-                        <p class="cf-step__body"><?= htmlspecialchars(t('portal.step3_body', ['date' => $__deadline])) ?></p>
-                        <span class="cf-step__badge"><i class="fa-solid fa-circle-check"></i> Digital edits forever</span>
-                    </li>
-                </ol>
-            </section>
-
-            <style>
-            /* Cardify onboarding (Maximalism: dense type, decorative numerals,
-               tactile dividers, brand-color discipline, system-ui only.) */
-            .cf-onboard {
-                --cf-bg: #f8fafc;
-                --cf-ink: #0a0a0f;
-                --cf-muted: #525560;
-                --cf-rule: #e7e7eb;
-                --cf-paper: #ffffff;
-                max-width: 1180px;
-                margin: 0 auto 32px;
-                background: var(--cf-paper);
-                border: 1px solid var(--cf-rule);
-                border-radius: 18px;
-                overflow: hidden;
-                box-shadow: 0 1px 0 #fff inset, 0 10px 30px -12px rgba(15,23,42,0.12);
-                font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
-                color: var(--cf-ink);
-            }
-
-            /* HERO */
-            .cf-onboard__hero {
-                position: relative;
-                padding: 36px 32px 0;
-                background: var(--cf-brand);
-                color: #fff;
-                overflow: hidden;
-            }
-            .cf-onboard__hero-bg {
-                position: absolute; inset: 0;
-                background:
-                  radial-gradient(800px 320px at 90% -40%, color-mix(in srgb, var(--cf-accent) 35%, transparent) 0%, transparent 60%),
-                  radial-gradient(600px 320px at -10% 120%, color-mix(in srgb, #000 25%, transparent) 0%, transparent 60%);
-            }
-            .cf-onboard__hero-grid {
-                position: absolute; inset: 0; opacity: 0.18;
-                background-image:
-                  linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px),
-                  linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px);
-                background-size: 32px 32px;
-                mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
-            }
-            .cf-onboard__hero-mark {
-                position: absolute; top: -120px; right: -80px;
-                width: 320px; height: 320px;
-                border: 1px solid rgba(255,255,255,0.18);
-                border-radius: 50%;
-                box-shadow:
-                  inset 0 0 0 1px rgba(255,255,255,0.06),
-                  inset 0 0 0 60px transparent,
-                  inset 0 0 0 61px rgba(255,255,255,0.12);
-            }
-            .cf-onboard__hero-actions {
-                position: absolute; top: 20px; right: 20px;
-                display: inline-flex; gap: 6px; z-index: 2;
-            }
-            .cf-chip-btn {
-                display: inline-flex; align-items: center; gap: 6px;
-                padding: 7px 12px; border-radius: 999px;
-                background: rgba(255,255,255,0.10);
-                border: 1px solid rgba(255,255,255,0.22);
-                color: #fff; font-size: 12px; font-weight: 600; letter-spacing: 0.01em;
-                cursor: pointer; transition: background 0.15s ease, transform 0.1s ease;
-            }
-            .cf-chip-btn:hover { background: rgba(255,255,255,0.18); }
-            .cf-chip-btn:active { transform: translateY(1px); }
-
-            .cf-onboard__hero-body { position: relative; max-width: 780px; z-index: 1; }
-            .cf-onboard__eyebrow {
-                display: inline-flex; align-items: center; gap: 10px;
-                margin: 0 0 18px;
-                font-size: 11px; font-weight: 700;
-                letter-spacing: 0.18em; text-transform: uppercase;
-                color: rgba(255,255,255,0.9);
-            }
-            .cf-onboard__eyebrow-dot {
-                display: inline-block; width: 6px; height: 6px;
-                border-radius: 50%; background: var(--cf-accent);
-                box-shadow: 0 0 0 4px color-mix(in srgb, var(--cf-accent) 30%, transparent);
-            }
-            .cf-onboard__eyebrow-sep { opacity: 0.5; }
-            .cf-onboard__eyebrow-co { color: var(--cf-accent); }
-
-            .cf-onboard__title {
-                margin: 0 0 12px;
-                font-size: clamp(28px, 4vw, 42px);
-                line-height: 1.04;
-                font-weight: 800;
-                letter-spacing: -0.025em;
-                text-wrap: balance;
-            }
-            .cf-onboard__title em {
-                font-style: normal;
-                position: relative;
-                color: #fff;
-            }
-            .cf-onboard__title em::after {
-                content: '';
-                position: absolute; left: 0; right: 0; bottom: -2px; height: 6px;
-                background: var(--cf-accent);
-                z-index: -1;
-                transform: skewY(-1deg);
-            }
-            .cf-onboard__sub {
-                margin: 0 0 26px;
-                font-size: 15px; line-height: 1.55;
-                color: rgba(255,255,255,0.86);
-                max-width: 640px;
-            }
-            .cf-onboard__sub strong { color: var(--cf-accent); font-weight: 700; }
-
-            /* Data strip: editorial spec-row across the hero base */
-            .cf-onboard__strip {
-                position: relative; z-index: 1;
-                display: grid; grid-template-columns: repeat(4, 1fr);
-                gap: 0;
-                margin: 0 -32px;
-                padding: 18px 32px;
-                background: rgba(0,0,0,0.20);
-                border-top: 1px solid rgba(255,255,255,0.10);
-                font-size: 12px;
-            }
-            .cf-onboard__strip > div {
-                padding: 0 18px;
-                border-left: 1px solid rgba(255,255,255,0.12);
-            }
-            .cf-onboard__strip > div:first-child {
-                padding-left: 0; border-left: 0;
-            }
-            .cf-onboard__strip dt {
-                display: block;
-                font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
-                color: rgba(255,255,255,0.55); font-weight: 600;
-                margin-bottom: 4px;
-            }
-            .cf-onboard__strip dd {
-                margin: 0;
-                font-size: 14px; font-weight: 600; color: #fff;
-                font-variant-numeric: tabular-nums;
-                display: inline-flex; align-items: center; gap: 6px;
-            }
-            .cf-onboard__pulse {
-                display: inline-block; width: 7px; height: 7px; border-radius: 50%;
-                background: var(--cf-accent);
-                animation: cf-pulse 2s ease-in-out infinite;
-            }
-            @keyframes cf-pulse {
-                0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--cf-accent) 60%, transparent); }
-                50%      { box-shadow: 0 0 0 8px color-mix(in srgb, var(--cf-accent) 0%, transparent); }
-            }
-
-            /* STEPS */
-            .cf-onboard__steps {
-                list-style: none; padding: 0; margin: 0;
-                display: grid; grid-template-columns: repeat(3, 1fr);
-                background: var(--cf-rule);
-                gap: 1px;
-            }
-            .cf-step {
-                position: relative;
-                background: var(--cf-paper);
-                padding: 28px 26px 26px;
-                min-height: 240px;
-                display: flex; flex-direction: column;
-            }
-            .cf-step__num {
-                position: absolute; top: 18px; right: 22px;
-                font-size: 56px; font-weight: 800;
-                line-height: 1;
-                color: color-mix(in srgb, var(--cf-brand) 14%, transparent);
-                font-variant-numeric: tabular-nums;
-                letter-spacing: -0.04em;
-                pointer-events: none;
-            }
-            .cf-step__icon {
-                display: inline-flex; align-items: center; justify-content: center;
-                width: 44px; height: 44px;
-                border-radius: 12px;
-                background: color-mix(in srgb, var(--cf-brand) 10%, white);
-                color: var(--cf-brand);
-                font-size: 18px;
-                margin-bottom: 16px;
-                border: 1px solid color-mix(in srgb, var(--cf-brand) 18%, transparent);
-            }
-            .cf-step__title {
-                margin: 0 0 6px;
-                font-size: 18px; font-weight: 700; letter-spacing: -0.01em;
-                color: var(--cf-ink);
-            }
-            .cf-step__body {
-                margin: 0 0 16px;
-                font-size: 14px; line-height: 1.55;
-                color: var(--cf-muted);
-                flex: 1;
-            }
-            .cf-step__link {
-                display: inline-flex; align-items: center; gap: 8px;
-                color: var(--cf-brand);
-                font-size: 14px; font-weight: 600;
-                text-decoration: none;
-                transition: gap 0.15s ease;
-            }
-            .cf-step__link:hover { gap: 12px; }
-            .cf-step__link i { font-size: 12px; }
-
-            .cf-step__badge {
-                display: inline-flex; align-items: center; gap: 6px;
-                padding: 6px 10px;
-                font-size: 12px; font-weight: 600;
-                background: color-mix(in srgb, var(--cf-brand) 8%, white);
-                color: var(--cf-brand);
-                border-radius: 999px;
-                border: 1px solid color-mix(in srgb, var(--cf-brand) 18%, transparent);
-                width: fit-content;
-            }
-            .cf-step__badge i { font-size: 11px; }
-
-            /* Feature step (Share): inverted brand */
-            .cf-step--feature {
-                background: var(--cf-brand);
-                color: #fff;
-            }
-            .cf-step__num--invert { color: rgba(255,255,255,0.18); }
-            .cf-step__icon--invert {
-                background: rgba(255,255,255,0.12);
-                color: #fff;
-                border-color: rgba(255,255,255,0.20);
-            }
-            .cf-step__title--invert { color: #fff; }
-            .cf-step__body--invert { color: rgba(255,255,255,0.85); }
-            .cf-step__share {
-                display: flex; flex-wrap: wrap; gap: 8px;
-                margin-bottom: 12px;
-            }
-            .cf-btn {
-                display: inline-flex; align-items: center; gap: 8px;
-                padding: 9px 14px; border-radius: 8px;
-                font-size: 13px; font-weight: 600;
-                text-decoration: none; cursor: pointer; border: 0;
-                transition: transform 0.1s ease, background 0.15s ease;
-            }
-            .cf-btn:active { transform: translateY(1px); }
-            .cf-btn--solid-on-feature {
-                background: var(--cf-accent); color: #fff;
-            }
-            .cf-btn--solid-on-feature:hover {
-                background: color-mix(in srgb, var(--cf-accent) 85%, white);
-            }
-            .cf-btn--ghost-on-feature {
-                background: rgba(255,255,255,0.10);
-                color: #fff;
-                border: 1px solid rgba(255,255,255,0.22);
-            }
-            .cf-btn--ghost-on-feature:hover {
-                background: rgba(255,255,255,0.18);
-            }
-            .cf-step__url {
-                display: block;
-                font-family: 'SF Mono', ui-monospace, 'Cascadia Mono', monospace;
-                font-size: 12px;
-                background: rgba(0,0,0,0.25);
-                color: rgba(255,255,255,0.92);
-                padding: 8px 12px;
-                border-radius: 6px;
-                word-break: break-all;
-                letter-spacing: -0.01em;
-            }
-
-            /* RESPONSIVE */
-            @media (max-width: 760px) {
-                .cf-onboard__hero { padding: 28px 20px 0; }
-                .cf-onboard__hero-actions { top: 14px; right: 14px; }
-                .cf-onboard__title { font-size: 26px; }
-                .cf-onboard__sub { font-size: 14px; margin-bottom: 22px; }
-                .cf-onboard__strip {
-                    grid-template-columns: 1fr 1fr;
-                    margin: 0 -20px; padding: 14px 20px;
-                    gap: 14px 0;
-                }
-                .cf-onboard__strip > div {
-                    padding: 0 14px;
-                }
-                .cf-onboard__strip > div:nth-child(odd) {
-                    padding-left: 0; border-left: 0;
-                }
-                .cf-onboard__steps { grid-template-columns: 1fr; }
-                .cf-step { min-height: 0; padding: 22px 20px; }
-                .cf-step__num { font-size: 44px; top: 14px; right: 18px; }
-                .hide-sm { display: none; }
-            }
-
-            /* RTL polish for Arabic */
-            html[dir="rtl"] .cf-onboard__hero-actions { right: auto; left: 20px; }
-            html[dir="rtl"] .cf-step__num { right: auto; left: 22px; }
-            html[dir="rtl"] .cf-step__link i.fa-arrow-down-long { transform: scaleX(-1); }
-            html[dir="rtl"] .cf-onboard__hero-mark { right: auto; left: -80px; }
-            </style>
-
-            <script>
-            function cardifyCopyToClipboard(btn, txt) {
-                const orig = btn.innerHTML;
-                const done = () => {
-                    btn.innerHTML = '<i class="fa-solid fa-check text-[11px]"></i> <span><?= htmlspecialchars(t('portal.copied')) ?></span>';
-                    setTimeout(() => btn.innerHTML = orig, 1800);
-                };
-                try {
-                    navigator.clipboard.writeText(txt).then(done, () => { window.prompt('Copy:', txt); });
-                } catch (e) { window.prompt('Copy:', txt); }
-            }
-            </script>
-
-            <!-- Interactive product tour (usertour-style): spotlights target
-                 elements one at a time, popup with Next/Skip, auto-shows once.
-                 Replayable via the "Take a tour" button in the banner. -->
-            <div id="cardifyTourOverlay" class="cardify-tour-overlay" aria-hidden="true"></div>
-            <div id="cardifyTourPopup" class="cardify-tour-popup" role="dialog" aria-live="polite" aria-hidden="true">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="cardify-tour-step-pill" id="cardifyTourStepLabel"></span>
-                    <button type="button" onclick="cardifyTour.skip()" class="text-gray-400 hover:text-gray-600 text-sm" aria-label="Close tour">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-                <h4 id="cardifyTourTitle" class="text-base font-semibold text-gray-900 mb-1"></h4>
-                <p id="cardifyTourBody" class="text-sm text-gray-600 leading-relaxed mb-4"></p>
-                <div class="flex items-center justify-between gap-3">
-                    <div class="flex gap-1.5" id="cardifyTourDots"></div>
-                    <div class="flex gap-2">
-                        <button type="button" id="cardifyTourBack" onclick="cardifyTour.prev()"
-                                class="text-sm font-semibold text-gray-500 hover:text-gray-700 px-3 py-2">Back</button>
-                        <button type="button" id="cardifyTourNext" onclick="cardifyTour.next()"
-                                class="text-sm font-semibold text-white px-4 py-2 rounded-lg transition"
-                                style="background: <?= htmlspecialchars($__brand) ?>;"></button>
-                    </div>
-                </div>
-            </div>
-
-            <style>
-            .cardify-tour-overlay {
-                position: fixed; inset: 0; z-index: 9998;
-                background: rgba(15, 23, 42, 0.65);
-                opacity: 0; pointer-events: none;
-                transition: opacity 0.2s ease;
-            }
-            .cardify-tour-overlay.is-active { opacity: 1; pointer-events: auto; }
-            .cardify-tour-target {
-                position: relative !important; z-index: 9999 !important;
-                box-shadow: 0 0 0 4px <?= htmlspecialchars($__brand) ?>, 0 0 0 8px <?= htmlspecialchars($__brandSoft) ?>66, 0 12px 32px rgba(0,0,0,0.35) !important;
-                border-radius: 12px !important;
-                transition: box-shadow 0.3s ease;
-                animation: cardifyTourPulse 2.5s ease-in-out infinite;
-            }
-            @keyframes cardifyTourPulse {
-                0%, 100% { box-shadow: 0 0 0 4px <?= htmlspecialchars($__brand) ?>, 0 0 0 8px <?= htmlspecialchars($__brandSoft) ?>66, 0 12px 32px rgba(0,0,0,0.35); }
-                50%      { box-shadow: 0 0 0 4px <?= htmlspecialchars($__brand) ?>, 0 0 0 14px <?= htmlspecialchars($__brandSoft) ?>22, 0 12px 32px rgba(0,0,0,0.35); }
-            }
-            .cardify-tour-popup {
-                position: fixed; z-index: 10000;
-                width: calc(100vw - 32px); max-width: 360px;
-                background: white; border-radius: 14px;
-                padding: 18px 18px 16px;
-                box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-                opacity: 0; transform: translateY(8px); pointer-events: none;
-                transition: opacity 0.2s ease, transform 0.2s ease;
-            }
-            .cardify-tour-popup.is-active { opacity: 1; transform: translateY(0); pointer-events: auto; }
-            .cardify-tour-step-pill {
-                font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
-                text-transform: uppercase; color: <?= htmlspecialchars($__brand) ?>;
-                background: <?= htmlspecialchars($__brandTint) ?>;
-                padding: 3px 10px; border-radius: 999px;
-            }
-            #cardifyTourDots { display: flex; }
-            #cardifyTourDots span {
-                width: 6px; height: 6px; border-radius: 50%;
-                background: #e5e7eb; transition: background 0.2s, width 0.2s;
-            }
-            #cardifyTourDots span.is-active { background: <?= htmlspecialchars($__brand) ?>; width: 18px; border-radius: 3px; }
-            @media (max-width: 480px) {
-                .cardify-tour-popup {
-                    left: 16px !important; right: 16px !important;
-                    bottom: 16px !important; top: auto !important; max-width: none;
-                }
-            }
-            </style>
-
-            <script>
-            window.cardifyTour = (function () {
-                const STORAGE_KEY = 'cardify_tour_done_v1';
-                const PUBLIC_URL  = <?= json_encode($publicCardUrl) ?>;
-                const steps = [
-                    {
-                        selector: '#cardRequestForm',
-                        title: <?= json_encode(t('portal.tour_step1_title')) ?>,
-                        body:  <?= json_encode(t('portal.tour_step1_body')) ?>,
-                    },
-                    {
-                        selector: '.card-preview-container',
-                        title: <?= json_encode(t('portal.tour_step2_title')) ?>,
-                        body:  <?= json_encode(t('portal.tour_step2_body')) ?>,
-                    },
-                    {
-                        selector: '#cardRequestForm button[type="submit"]',
-                        title: <?= json_encode(t('portal.tour_step3_title')) ?>,
-                        body:  <?= json_encode(t('portal.tour_step3_body')) ?>,
-                    },
-                ];
-                if (PUBLIC_URL) {
-                    steps.push({
-                        // Anchor on step 2 card in the banner (Share your card)
-                        selector: '.cardify-onboarding-share',
-                        title: <?= json_encode(t('portal.tour_step4_title')) ?>,
-                        body:  <?= json_encode(t('portal.tour_step4_body')) ?>,
-                    });
-                }
-                let idx = 0;
-                let target = null;
-                const overlay = () => document.getElementById('cardifyTourOverlay');
-                const popup   = () => document.getElementById('cardifyTourPopup');
-                const labels  = {
-                    next: <?= json_encode(t('portal.tour_next')) ?>,
-                    done: <?= json_encode(t('portal.tour_done')) ?>,
-                    step: <?= json_encode(t('portal.tour_step_label')) ?>,
-                };
-
-                function findTarget(sel) {
-                    const els = document.querySelectorAll(sel);
-                    for (const el of els) {
-                        const r = el.getBoundingClientRect();
-                        if (r.width > 0 && r.height > 0) return el;
-                    }
-                    return null;
-                }
-
-                function clearTarget() {
-                    if (target) {
-                        target.classList.remove('cardify-tour-target');
-                        target = null;
-                    }
-                }
-
-                function renderDots() {
-                    const dots = document.getElementById('cardifyTourDots');
-                    dots.innerHTML = '';
-                    steps.forEach((_, i) => {
-                        const s = document.createElement('span');
-                        if (i === idx) s.classList.add('is-active');
-                        dots.appendChild(s);
-                    });
-                }
-
-                function placePopup() {
-                    const pop = popup();
-                    if (!target) {
-                        pop.style.left = '50%';
-                        pop.style.top  = '50%';
-                        pop.style.transform = 'translate(-50%, -50%)';
-                        return;
-                    }
-                    const r = target.getBoundingClientRect();
-                    const popH = pop.offsetHeight || 220;
-                    const popW = pop.offsetWidth || 360;
-                    const pad  = 16;
-                    let top, left;
-                    // Prefer below the target; fall back to above; else center
-                    if (r.bottom + popH + pad < window.innerHeight - pad) {
-                        top  = r.bottom + 12;
-                    } else if (r.top - popH - pad > pad) {
-                        top  = r.top - popH - 12;
-                    } else {
-                        top  = Math.max(pad, (window.innerHeight - popH) / 2);
-                    }
-                    left = Math.max(pad, Math.min(window.innerWidth - popW - pad, r.left));
-                    pop.style.top  = top + 'px';
-                    pop.style.left = left + 'px';
-                    pop.style.transform = 'none';
-                }
-
-                function render() {
-                    const step = steps[idx];
-                    if (!step) return done();
-                    clearTarget();
-                    target = findTarget(step.selector);
-                    if (target) {
-                        target.classList.add('cardify-tour-target');
-                        target.scrollIntoView({behavior: 'smooth', block: 'center'});
-                    }
-                    document.getElementById('cardifyTourStepLabel').textContent =
-                        labels.step.replace(':n', idx + 1).replace(':total', steps.length);
-                    document.getElementById('cardifyTourTitle').textContent = step.title;
-                    document.getElementById('cardifyTourBody').textContent  = step.body;
-                    const nextBtn = document.getElementById('cardifyTourNext');
-                    nextBtn.textContent = (idx === steps.length - 1) ? labels.done : labels.next;
-                    const backBtn = document.getElementById('cardifyTourBack');
-                    backBtn.style.visibility = idx === 0 ? 'hidden' : 'visible';
-                    renderDots();
-                    setTimeout(placePopup, 320); // wait for scroll to settle
-                }
-
-                function start() {
-                    idx = 0;
-                    overlay().classList.add('is-active');
-                    overlay().setAttribute('aria-hidden', 'false');
-                    popup().classList.add('is-active');
-                    popup().setAttribute('aria-hidden', 'false');
-                    document.body.style.overflow = 'hidden';
-                    render();
-                    window.addEventListener('resize', placePopup);
-                    window.addEventListener('scroll', placePopup, true);
-                }
-
-                function next() {
-                    if (idx >= steps.length - 1) return done();
-                    idx++;
-                    render();
-                }
-                function prev() {
-                    if (idx === 0) return;
-                    idx--;
-                    render();
-                }
-                function skip() { done(); }
-                function done() {
-                    clearTarget();
-                    overlay().classList.remove('is-active');
-                    overlay().setAttribute('aria-hidden', 'true');
-                    popup().classList.remove('is-active');
-                    popup().setAttribute('aria-hidden', 'true');
-                    document.body.style.overflow = '';
-                    try { localStorage.setItem(STORAGE_KEY, '1'); } catch (_) {}
-                    window.removeEventListener('resize', placePopup);
-                    window.removeEventListener('scroll', placePopup, true);
-                }
-                function restart() {
-                    try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
-                    start();
-                }
-
-                document.addEventListener('DOMContentLoaded', function () {
-                    let seen = false;
-                    try { seen = !!localStorage.getItem(STORAGE_KEY); } catch (_) {}
-                    if (!seen) setTimeout(start, 1200);
-                });
-
-                return { start, next, prev, skip, done, restart };
-            })();
-            </script>
-            <?php endif; ?>
-
             <!-- Two Column Layout: Form + Preview (if enabled) -->
             <div class="grid <?php echo $showPreview ? 'lg:grid-cols-2' : ''; ?> gap-8 items-start max-w-7xl mx-auto">
                 <!-- Left Column: Form -->
@@ -1933,10 +1000,6 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             <!-- Request Form -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8 text-white">
-                    <?php if ($isTrustedEdit): ?>
-                    <h2 class="text-2xl font-bold"><?= htmlspecialchars(t('portal.edit_form_h2')) ?></h2>
-                    <p class="mt-1 text-blue-100"><?= htmlspecialchars(t('portal.edit_form_sub', ['name' => (string) ($editEmployee['name_en'] ?? $editEmployee['email'] ?? '')])) ?></p>
-                    <?php else: ?>
                     <h2 class="text-2xl font-bold"><?= htmlspecialchars(t('cardportal.request_form_h2')) ?></h2>
                     <p class="mt-1 text-blue-100"><?= htmlspecialchars(t('cardportal.request_form_sub')) ?></p>
                     <?php if ($companyDomain): ?>
@@ -1944,7 +1007,6 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         <i class="fa-solid fa-info-circle mr-1"></i>
                         <?= htmlspecialchars(t('cardportal.domain_restricted', ['domain' => $companyDomain])) ?>
                     </p>
-                    <?php endif; ?>
                     <?php endif; ?>
                 </div>
                 
@@ -1957,47 +1019,11 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 </div>
                 <?php endif; ?>
                 
-                <?php if ($isTrustedEdit && !empty($_GET['saved'])): ?>
-                <div class="bg-green-50 border-l-4 border-green-500 p-4 mx-6 mt-6">
-                    <div class="flex">
-                        <i class="fa-solid fa-circle-check text-green-500 mt-0.5 mr-3"></i>
-                        <p class="text-sm text-green-700"><?= htmlspecialchars(t('portal.saved_toast')) ?></p>
-                    </div>
-                </div>
-                <?php endif; ?>
-
                 <form method="POST" enctype="multipart/form-data" class="p-6 space-y-4" id="cardRequestForm">
                     <?php echo csrfField(); ?>
                     <!-- Hidden inputs for preview card URLs (generated client-side) -->
                     <input type="hidden" name="preview_front" id="preview_front_input" value="">
                     <input type="hidden" name="preview_back" id="preview_back_input" value="">
-                    <?php if ($isTrustedEdit): ?>
-                    <!-- Magic-link token: server verifies on POST + binds to $editEmployee. -->
-                    <input type="hidden" name="edit_token" value="<?= htmlspecialchars($editToken) ?>">
-                    <!-- Card PNG payloads, filled by JS at submit time from the
-                         live Fabric preview so the server can persist them in
-                         the SAME request that updates the employee row. The
-                         server INSERTs a fresh generated_cards row so the
-                         public /<slug> view shows the new card immediately. -->
-                    <input type="hidden" name="front_card_b64" id="front_card_b64" value="">
-                    <input type="hidden" name="back_card_b64"  id="back_card_b64"  value="">
-                    <!-- Per-company keys (website, address, fax, company name) are
-                         hidden from the visible form by design (skill rule: HR seeds
-                         these on the employee row, employee doesn't retype them).
-                         But the live Fabric preview reads from form fields, so emit
-                         them as hidden inputs so the renderer sees the same values
-                         that will be on the saved card. -->
-                    <?php foreach ([
-                        'website','website_ar','fax','fax_ar',
-                        'address_en','address_2_en','address_ar','address_2_ar',
-                        'company_en','company_ar',
-                    ] as $__hidden):
-                        $__hv = $formData[$__hidden] ?? ($editEmployee[$__hidden] ?? '');
-                        if ($__hv === '' || $__hv === null) continue;
-                    ?>
-                    <input type="hidden" name="<?= htmlspecialchars($__hidden) ?>" id="<?= htmlspecialchars($__hidden) ?>" value="<?= htmlspecialchars((string) $__hv) ?>">
-                    <?php endforeach; ?>
-                    <?php endif; ?>
                     
                     <!-- Email (always shown - required for submission) -->
                     <div>
@@ -2007,8 +1033,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         <input type="email" name="email" id="email" required
                                value="<?php echo htmlspecialchars($formData['email'] ?? ''); ?>"
                                placeholder="your.name@<?php echo htmlspecialchars($companyDomain ?: 'company.com'); ?>"
-                               class="form-input<?= $isTrustedEdit ? ' bg-gray-100 cursor-not-allowed' : '' ?>"
-                               <?= $isTrustedEdit ? 'readonly' : 'onblur="checkExistingEmployee(this.value)"' ?>>
+                               class="form-input"
+                               onblur="checkExistingEmployee(this.value)">
                         <?php if ($companyDomain): ?>
                         <p class="mt-1 text-xs text-gray-500"><?= htmlspecialchars(t('cardportal.email_domain_hint', ['domain' => $companyDomain])) ?></p>
                         <?php endif; ?>
@@ -2020,8 +1046,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         </div>
                     </div>
                     
-                    <!-- Request Type (shown for existing employees, hidden in trusted edit) -->
-                    <div id="requestTypeSection" class="hidden"<?= $isTrustedEdit ? ' style="display:none"' : '' ?>>
+                    <!-- Request Type (shown for existing employees) -->
+                    <div id="requestTypeSection" class="hidden">
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             <?= htmlspecialchars(t('cardportal.what_to_do')) ?> <span class="text-red-500">*</span>
                         </label>
@@ -2083,12 +1109,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <!-- Name Arabic -->
                     <?php if (!empty($enabledFields['name_ar'])): ?>
                     <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <label class="block text-sm font-semibold text-gray-700"><?= htmlspecialchars(t('portal.full_name_ar')) ?></label>
-                            <button type="button" class="translate-btn text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md inline-flex items-center gap-1.5 transition-colors" onclick="translateField(this,'name_en', 'name_ar', 'name')">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <?= htmlspecialchars(t('portal.full_name_ar')) ?>
+                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('name_en', 'name_ar', 'name')">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
-                        </div>
+                        </label>
                         <input type="text" name="name_ar" id="name_ar"
                                value="<?php echo htmlspecialchars($formData['name_ar'] ?? ''); ?>"
                                placeholder="جون دو"
@@ -2110,12 +1136,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <!-- Position Arabic -->
                     <?php if (!empty($enabledFields['position_ar'])): ?>
                     <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <label class="block text-sm font-semibold text-gray-700"><?= htmlspecialchars(t('portal.position_ar')) ?></label>
-                            <button type="button" class="translate-btn text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md inline-flex items-center gap-1.5 transition-colors" onclick="translateField(this,'position_en', 'position_ar', 'position')">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <?= htmlspecialchars(t('portal.position_ar')) ?>
+                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('position_en', 'position_ar', 'position')">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
-                        </div>
+                        </label>
                         <input type="text" name="position_ar" id="position_ar"
                                value="<?php echo htmlspecialchars($formData['position_ar'] ?? ''); ?>"
                                placeholder="مهندس برمجيات"
@@ -2207,12 +1233,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <!-- Address 01 Arabic -->
                     <?php if (!empty($enabledFields['address_ar'])): ?>
                     <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <label class="block text-sm font-semibold text-gray-700"><?= htmlspecialchars(t('portal.address_01_ar')) ?></label>
-                            <button type="button" class="translate-btn text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md inline-flex items-center gap-1.5 transition-colors" onclick="translateField(this,'address_en', 'address_ar', 'address')">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <?= htmlspecialchars(t('portal.address_01_ar')) ?>
+                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('address_en', 'address_ar', 'address')">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
-                        </div>
+                        </label>
                         <textarea name="address_ar" id="address_ar" rows="2"
                                   placeholder="<?= htmlspecialchars(t('portal.address_ph_ar')) ?>"
                                   class="form-input rtl-input"><?php echo htmlspecialchars($formData['address_ar'] ?? ''); ?></textarea>
@@ -2225,12 +1251,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                          hidden unless a tenant adds it later. -->
                     <?php if (!empty($enabledFields['address_2_ar'])): ?>
                     <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <label class="block text-sm font-semibold text-gray-700"><?= htmlspecialchars(t('portal.address_02_ar')) ?></label>
-                            <button type="button" class="translate-btn text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-md inline-flex items-center gap-1.5 transition-colors" onclick="translateField(this,'address_2_en', 'address_2_ar', 'address')">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <?= htmlspecialchars(t('portal.address_02_ar')) ?>
+                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('address_2_en', 'address_2_ar', 'address')">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
                             </button>
-                        </div>
+                        </label>
                         <textarea name="address_2_ar" id="address_2_ar" rows="2"
                                   placeholder="<?= htmlspecialchars(t('portal.address_02_ph_ar')) ?>"
                                   class="form-input rtl-input"><?php echo htmlspecialchars($formData['address_2_ar'] ?? ''); ?></textarea>
@@ -2314,22 +1340,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         'company_en','company_ar','department_id',
                         'qr_code',
                     ];
-                    // Resolve metadata for catch-all fields by looking the key
-                    // up in either active template, so we can skip static
-                    // decoration tokens (static_1..N) that the PDF importer
-                    // creates. They render directly from detected_text and
-                    // must not appear as user inputs.
-                    $__lookupField = function (string $k) use ($activeFrontTemplate, $activeBackTemplate) {
-                        foreach ([$activeFrontTemplate, $activeBackTemplate] as $tpl) {
-                            if ($tpl && isset($tpl['fields'][$k])) return $tpl['fields'][$k];
-                        }
-                        return null;
-                    };
                     foreach ($enabledFields as $__k => $__v):
                         if (in_array($__k, $handledKeys, true)) continue;
-                        $__field = $__lookupField($__k);
-                        if ($__field && !empty($__field['is_static'])) continue;
-                        if ($__field && isset($__field['enabled']) && $__field['enabled'] === false) continue;
                         $__label = ucwords(str_replace('_', ' ', $__k));
                     ?>
                     <div>
@@ -2340,23 +1352,6 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     </div>
                     <?php endforeach; ?>
 
-                    <?php if ($isTrustedEdit): ?>
-                    <!-- Edit mode: single "Save changes" button. Token is the auth,
-                         server UPDATEs the employee row + invalidates render cache
-                         on POST, then redirects back with ?saved=1. No preview-then-
-                         submit two-step (the live Fabric preview to the right of the
-                         form already shows the design while typing). -->
-                    <div class="pt-4 border-t border-gray-200">
-                        <button type="submit"
-                                class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-floppy-disk"></i>
-                            <?= htmlspecialchars(t('portal.btn_save_changes')) ?>
-                        </button>
-                        <p class="mt-2 text-xs text-gray-500 text-center">
-                            <?= htmlspecialchars(t('portal.save_changes_hint')) ?>
-                        </p>
-                    </div>
-                    <?php else: ?>
                     <!-- Step 1: Generate Preview Button -->
                     <div class="pt-4 border-t border-gray-200" id="generatePreviewSection">
                         <button type="button" id="generatePreviewBtn" onclick="generatePreview()"
@@ -2368,7 +1363,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                             <?= htmlspecialchars(t('portal.generate_preview_hint')) ?>
                         </p>
                     </div>
-
+                    
                     <!-- Step 2: Submit Request (hidden until preview is generated) -->
                     <div class="pt-4 border-t border-gray-200" id="submitSection" style="display: none;">
                         <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
@@ -2387,7 +1382,6 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                             <i class="fa-solid fa-pencil mr-1"></i> <?= htmlspecialchars(t('portal.btn_edit_details')) ?>
                         </button>
                     </div>
-                    <?php endif; ?>
                 </form>
             </div>
                 </div><!-- End left column -->
@@ -2402,39 +1396,48 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                                 <span id="previewTitle"><?= htmlspecialchars(t('portal.card_template')) ?></span>
                             </h3>
                             
-                            <!-- Single set of canvases: shows bg + static
-                                 design tokens on load, switches to full preview
-                                 (with employee data + watermark) after the user
-                                 hits Generate Preview. -->
-                            <div id="cardCanvases" class="space-y-4">
-                                <?php
-                                // Compute the design's printed dimensions so
-                                // the preview shows the exact card size from
-                                // the imported PDF (mm + "x.xx in" tag).
-                                $fmtCardSize = function ($tpl) {
-                                    if (!$tpl || empty($tpl['settings'])) return null;
-                                    $s = $tpl['settings'];
-                                    $w = $s['customWidth'] ?? null;
-                                    $h = $s['customHeight'] ?? null;
-                                    $unit = $s['customUnit'] ?? 'mm';
-                                    if (!$w || !$h) return null;
-                                    $mm_w = $unit === 'mm' ? $w : ($unit === 'pt' ? $w * 0.352778 : ($unit === 'in' ? $w * 25.4 : $w));
-                                    $mm_h = $unit === 'mm' ? $h : ($unit === 'pt' ? $h * 0.352778 : ($unit === 'in' ? $h * 25.4 : $h));
-                                    return sprintf('%.1f × %.1f mm  ·  %.2f × %.2f in', $mm_w, $mm_h, $mm_w/25.4, $mm_h/25.4);
-                                };
-                                $frontSizeStr = $fmtCardSize($activeFrontTemplate);
-                                $backSizeStr = $fmtCardSize($activeBackTemplate);
-                                ?>
-                                <?php if ($activeFrontTemplate): ?>
+                            <!-- Initial: Show template backgrounds -->
+                            <div id="templatePreview" class="space-y-4">
+                                <?php if ($activeFrontTemplate && !empty($activeFrontTemplate['backgroundImage'])): ?>
                                 <div>
-                                    <div class="text-xs text-gray-500 mb-2 flex items-center justify-between gap-2">
-                                        <span class="flex items-center gap-1">
-                                            <i class="fa-solid fa-image text-blue-400"></i>
-                                            <span id="frontPreviewLabel">Front</span>
-                                        </span>
-                                        <?php if ($frontSizeStr): ?>
-                                        <span class="text-[10px] font-mono text-gray-400" title="Card size from source design"><?= htmlspecialchars($frontSizeStr) ?></span>
-                                        <?php endif; ?>
+                                    <div class="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                                        <i class="fa-solid fa-image text-blue-400"></i> Front
+                                    </div>
+                                    <div class="rounded-lg overflow-hidden shadow-md border border-gray-200" style="aspect-ratio: 3.5/2;">
+                                        <img src="<?php echo imageUrl($activeFrontTemplate['backgroundImage']); ?>" 
+                                             alt="Front Card Template" class="w-full h-full object-cover">
+                                    </div>
+                                </div>
+                                <?php endif; ?>
+                                
+                                <?php if ($activeBackTemplate && !empty($activeBackTemplate['backgroundImage'])): ?>
+                                <div>
+                                    <div class="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                                        <i class="fa-solid fa-image text-green-400"></i> Back
+                                    </div>
+                                    <div class="rounded-lg overflow-hidden shadow-md border border-gray-200" style="aspect-ratio: 3.5/2;">
+                                        <img src="<?php echo imageUrl($activeBackTemplate['backgroundImage']); ?>" 
+                                             alt="Back Card Template" class="w-full h-full object-cover">
+                                    </div>
+                                </div>
+                                <?php endif; ?>
+                                
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <div class="flex items-start gap-2">
+                                        <i class="fa-solid fa-info-circle text-blue-600 mt-0.5"></i>
+                                        <div>
+                                            <p class="text-xs font-medium text-blue-800">Your Info Will Be Added</p>
+                                            <p class="text-[10px] text-blue-700 mt-1">Fill in your details and click "Generate Preview" to see your card.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- After Generate: Show preview with watermark -->
+                            <div id="generatedPreview" class="space-y-4" style="display: none;">
+                                <div>
+                                    <div class="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                                        <i class="fa-solid fa-image text-blue-400"></i> Front Preview
                                     </div>
                                     <div class="canvas-preview-wrapper rounded-lg shadow-md border border-gray-200 relative">
                                         <canvas id="previewFrontCanvas"></canvas>
@@ -2443,18 +1446,10 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                                         </div>
                                     </div>
                                 </div>
-                                <?php endif; ?>
-
-                                <?php if ($activeBackTemplate): ?>
+                                
                                 <div>
-                                    <div class="text-xs text-gray-500 mb-2 flex items-center justify-between gap-2">
-                                        <span class="flex items-center gap-1">
-                                            <i class="fa-solid fa-image text-green-400"></i>
-                                            <span id="backPreviewLabel">Back</span>
-                                        </span>
-                                        <?php if ($backSizeStr): ?>
-                                        <span class="text-[10px] font-mono text-gray-400" title="Card size from source design"><?= htmlspecialchars($backSizeStr) ?></span>
-                                        <?php endif; ?>
+                                    <div class="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                                        <i class="fa-solid fa-image text-green-400"></i> Back Preview
                                     </div>
                                     <div class="canvas-preview-wrapper rounded-lg shadow-md border border-gray-200 relative">
                                         <canvas id="previewBackCanvas"></canvas>
@@ -2463,30 +1458,14 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                                         </div>
                                     </div>
                                 </div>
-                                <?php endif; ?>
-                            </div>
-
-                            <div id="templateHint" class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4"<?= $isTrustedEdit ? ' style="display:none"' : '' ?>>
-                                <div class="flex items-start gap-2">
-                                    <i class="fa-solid fa-info-circle text-blue-600 mt-0.5"></i>
-                                    <div>
-                                        <p class="text-xs font-medium text-blue-800">Your Info Will Be Added</p>
-                                        <p class="text-[10px] text-blue-700 mt-1">Fill in your details and click "Generate Preview" to see your card.</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div id="generatedHint" class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4" style="display: none;">
-                                <div class="flex items-start gap-2">
-                                    <i class="fa-solid fa-eye text-yellow-600 mt-0.5"></i>
-                                    <div>
-                                        <?php if ($isTrustedEdit): ?>
-                                        <p class="text-xs font-medium text-yellow-800"><?= htmlspecialchars(t('portal.edit_preview_title')) ?></p>
-                                        <p class="text-[10px] text-yellow-700 mt-1"><?= htmlspecialchars(t('portal.edit_preview_hint')) ?></p>
-                                        <?php else: ?>
-                                        <p class="text-xs font-medium text-yellow-800">Preview Only</p>
-                                        <p class="text-[10px] text-yellow-700 mt-1">This is a watermarked preview. Final card will be generated after approval.</p>
-                                        <?php endif; ?>
+                                
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                    <div class="flex items-start gap-2">
+                                        <i class="fa-solid fa-eye text-yellow-600 mt-0.5"></i>
+                                        <div>
+                                            <p class="text-xs font-medium text-yellow-800">Preview Only</p>
+                                            <p class="text-[10px] text-yellow-700 mt-1">This is a watermarked preview. Final card will be generated after approval.</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -2529,7 +1508,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     <!-- QR Code Generator -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
     <!-- CardEditor (uses Fabric.js) -->
-    <script src="<?php echo getBasePath(); ?>assets/js/card-editor.js?v=<?php echo @filemtime(__DIR__ . '/assets/js/card-editor.js') ?: time(); ?>"></script>
+    <script src="<?php echo getBasePath(); ?>assets/js/card-editor.js"></script>
     
     <script>
     // Template data from PHP
@@ -2539,8 +1518,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     const apexHost = '<?php echo addslashes(cardifyApexHost()); ?>';
     const frontTemplate = <?php echo json_encode($activeFrontTemplate); ?>;
     const backTemplate = <?php echo json_encode($activeBackTemplate); ?>;
-    const isEditMode = <?php echo $isTrustedEdit ? 'true' : 'false'; ?>;
-
+    
     // CardEditor instances
     let frontEditor = null;
     let backEditor = null;
@@ -2640,245 +1618,17 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             scaleCanvasToFit('previewFrontCanvas', frontDims.width);
             scaleCanvasToFit('previewBackCanvas',  backDims.width);
         });
-
-        // Render the static-only template (background + decoration tokens
-        // like "An Omantel Company" / "@otech") so the user sees the actual
-        // design from the start, not a flat background image. Editors are
-        // built async (onReady fires after a setTimeout); poll until both
-        // canvases exist before issuing the static render so the bg image
-        // doesn't get dropped on the first pass.
-        const waitForEditor = (getter) => new Promise(res => {
-            const start = Date.now();
-            const tick = () => {
-                const ed = getter();
-                if (ed && ed.canvas) return res(ed);
-                if (Date.now() - start > 5000) return res(null);
-                setTimeout(tick, 30);
-            };
-            tick();
-        });
-        await Promise.all([
-            frontTemplate ? waitForEditor(() => frontEditor) : Promise.resolve(),
-            backTemplate  ? waitForEditor(() => backEditor)  : Promise.resolve(),
-        ]);
-        await renderInitialTemplate();
-        const _hideOnInit = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
-        _hideOnInit('frontLoading');
-        _hideOnInit('backLoading');
-
-        // Edit-mode: form is already prefilled server-side from the employee
-        // row, so render the preview immediately using the SAME render path
-        // (generatePreview -> renderCardWithEditor) used everywhere else.
-        // Then wire debounced input listeners so the preview updates live as
-        // the user types. One source of truth for card render across portal,
-        // admin, generate_card_html, batch_generate, etc.
-        if (isEditMode) {
-            try { await generatePreview({silent: true}); }
-            catch (e) { console.error('edit-mode initial render', e); }
-
-            let __reRenderTimer = null;
-            const __reRender = () => {
-                clearTimeout(__reRenderTimer);
-                __reRenderTimer = setTimeout(() => {
-                    generatePreview({silent: true}).catch((e) => console.error('edit-mode re-render', e));
-                }, 250);
-            };
-            document.querySelectorAll('#cardRequestForm input, #cardRequestForm textarea, #cardRequestForm select').forEach((el) => {
-                if (el.name === 'csrf_token' || el.name === 'edit_token') return;
-                el.addEventListener('input', __reRender);
-                el.addEventListener('change', __reRender);
-            });
-
-            // Save Changes intercept: make sure the live preview reflects the
-            // latest field values BEFORE we export, then dump both canvases
-            // into hidden inputs so the server can persist the rendered PNGs
-            // alongside the employee UPDATE in one round-trip. Form continues
-            // to its normal POST after the canvases are captured.
-            const __form = document.getElementById('cardRequestForm');
-            const __frontB64Input = document.getElementById('front_card_b64');
-            const __backB64Input  = document.getElementById('back_card_b64');
-            const __saveBtn = __form && __form.querySelector('button[type="submit"]');
-            if (__form && __frontB64Input && __backB64Input) {
-                let __submitting = false;
-                __form.addEventListener('submit', async function (ev) {
-                    if (__submitting) return; // allow the final native submit through
-                    ev.preventDefault();
-                    __submitting = true;
-                    if (__saveBtn) {
-                        __saveBtn.disabled = true;
-                        __saveBtn.dataset.origHtml = __saveBtn.innerHTML;
-                        __saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + <?= json_encode(t('portal.generating')) ?>;
-                    }
-                    try {
-                        // Force one last render with the very latest input
-                        // values so what we capture matches what the user sees.
-                        clearTimeout(__reRenderTimer);
-                        await generatePreview({silent: true});
-                        const grabPng = (editor) => {
-                            try {
-                                if (!editor || !editor.canvas) return '';
-                                // Use a moderate multiplier (3x) to keep the
-                                // POST body under typical request-size caps
-                                // while still printing crisp at 91x61mm.
-                                return editor.canvas.toDataURL({format: 'png', multiplier: 3});
-                            } catch (e) { console.warn('canvas export failed', e); return ''; }
-                        };
-                        __frontB64Input.value = grabPng(frontEditor);
-                        __backB64Input.value  = grabPng(backEditor);
-                    } catch (e) {
-                        console.error('save-changes export', e);
-                    }
-                    // Re-submit, this time letting the form go through natively
-                    // so the browser handles the 302 redirect from PHP.
-                    __form.submit();
-                });
-            }
-        }
     });
-
-    // Resolve a field's stored fontFamily to one that's actually loaded.
-    //   - Arabic text: prefer a "<base>-Arabic-<rest>" or any registered
-    //     family with "Arabic" in the name.
-    //   - Latin text: prefer "<base>-Antiqua" / "<base>-Regular" if the
-    //     bare base isn't a registered family (PDF importer often stores
-    //     "Arsenica" but the actual file is "Arsenica-Antiqua").
-    //   - Falls back to a known web-safe Arabic / Latin family.
-    const __cardifyArabicRe = new RegExp('[\\u0590-\\u08FF\\u0750-\\u077F\\uFB50-\\uFDFF\\uFE70-\\uFEFF]');
-    function pickFontFamily(stored, text) {
-        const want = (stored || '').trim() || 'Inter';
-        const isAr = __cardifyArabicRe.test(text || '');
-        try {
-            // Probe document.fonts for what's actually registered, fallback
-            // to scanning <style> sheets for @font-face family declarations.
-            const registered = new Set();
-            if (document.fonts && typeof document.fonts.values === 'function') {
-                for (const f of document.fonts.values()) {
-                    registered.add(String(f.family).replace(/^['"]|['"]$/g, ''));
-                }
-            }
-            const has = (n) => registered.has(n);
-            if (isAr) {
-                // Try `<base>-Arabic-<rest>`, then any registered family containing "Arabic"
-                if (has(want + '-Arabic-Antiqua')) return want + '-Arabic-Antiqua';
-                const m = want.match(/^(.+?)(-(.+))?$/);
-                if (m) {
-                    const base = m[1], suffix = m[3] || '';
-                    const cand = base + '-Arabic' + (suffix ? '-' + suffix : '');
-                    if (has(cand)) return cand;
-                    if (has(base + '-Arabic')) return base + '-Arabic';
-                    if (has(base + '-Arabic-Antiqua')) return base + '-Arabic-Antiqua';
-                }
-                for (const r of registered) {
-                    if (r.toLowerCase().includes('arabic')) return r;
-                }
-                return 'Cairo, "Noto Sans Arabic", Tajawal, ' + want;
-            }
-            // Latin path: if bare family isn't loaded but a -Antiqua / -Regular variant is, use that
-            if (!has(want)) {
-                if (has(want + '-Antiqua')) return want + '-Antiqua';
-                if (has(want + '-Regular')) return want + '-Regular';
-                if (has(want + ' Antiqua')) return want + ' Antiqua';
-            }
-            return want;
-        } catch (e) {
-            return want;
-        }
-    }
-
-    // Render bg image + every is_static field of a template into the editor.
-    // Used for the initial design preview AND when the user clicks Edit
-    // Details to roll back to the unwatermarked template view.
-    async function renderTemplateStatics(editor, template) {
-        if (!editor || !editor.canvas || !template) return;
-
-        // Preload fonts the static tokens reference so cold-cache renders
-        // don't fall back to a serif.
-        if (document.fonts && document.fonts.load) {
-            // Preload BOTH the stored fontFamily and the script-resolved
-            // family pickFontFamily() will use (e.g. Arsenica-Arabic-Antiqua
-            // for Arabic glyphs). Pass the actual text so Arabic glyph
-            // subsets are fetched, not just Latin.
-            const tasks = [];
-            for (const f of Object.values(template.fields || {})) {
-                if (!f || f.enabled === false || !f.is_static) continue;
-                if (f.render_in_bg) continue;
-                const storedFam = (f.fontFamily || '').trim();
-                if (!storedFam) continue;
-                const w = f.fontWeight || 400;
-                const style = (f.italic === true || f.fontStyle === 'italic') ? 'italic' : 'normal';
-                const sample = String(f.detected_text || '');
-                const resolvedFam = (typeof pickFontFamily === 'function') ? pickFontFamily(storedFam, sample) : storedFam;
-                for (const fam of new Set([storedFam, resolvedFam].filter(Boolean))) {
-                    tasks.push(document.fonts.load(`${style} ${w} 16px "${fam}"`, sample || ' ').catch(() => {}));
-                }
-            }
-            try { await Promise.all(tasks); await document.fonts.ready; } catch (e) {}
-        }
-
-        editor.canvas.clear();
-        editor.canvas.backgroundColor = '#ffffff';
-        editor.fields = {};
-
-        if (template.backgroundImage) {
-            const bgUrl = template.backgroundImage.startsWith('http')
-                ? template.backgroundImage
-                : window.location.origin + (template.backgroundImage.startsWith('/') ? '' : '/') + template.backgroundImage;
-            const bgTransform = (template.settings && template.settings.backgroundTransform) || null;
-            try {
-                await editor.loadBackground(bgUrl, bgTransform);
-                editor.setBackgroundLocked && editor.setBackgroundLocked(true);
-            } catch (e) { console.warn('bg load failed', e); }
-        }
-
-        for (const [key, field] of Object.entries(template.fields || {})) {
-            if (!field || field.enabled === false) continue;
-            if (!field.is_static) continue;
-            if (field.render_in_bg) continue; // already baked into bg PNG
-            const txt = (field.detected_text || '');
-            if (!txt || !txt.replace(/\s+/g, '')) continue;
-            const t = new fabric.Text(txt, {
-                left: field.x || 0,
-                top: field.y || 0,
-                fontSize: field.fontSize || 14,
-                fontFamily: pickFontFamily(field.fontFamily, txt),
-                fontWeight: field.fontWeight || 'normal',
-                fontStyle: field.italic ? 'italic' : 'normal',
-                fill: field.fill || field.color || '#222',
-                textAlign: field.textAlign || 'left',
-                originX: field.originX || 'left',
-                originY: field.originY || 'top',
-                // RTL bidi so Arabic glyphs go through the canvas text-shaper
-                // (initial/medial/final/isolated forms join correctly). LTR
-                // strings ignore this hint.
-                direction: __cardifyArabicRe.test(txt) ? 'rtl' : 'ltr',
-                selectable: false, evented: false, hasControls: false, hasBorders: false, hoverCursor: 'default',
-            });
-            editor.canvas.add(t);
-            editor.fields[key] = t;
-        }
-
-        reanchorStaticDecorationRuns(editor, template);
-        editor.canvas.requestRenderAll();
-    }
-
-    async function renderInitialTemplate() {
-        if (frontEditor && frontTemplate) await renderTemplateStatics(frontEditor, frontTemplate);
-        if (backEditor && backTemplate)   await renderTemplateStatics(backEditor,  backTemplate);
-        const _hide = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
-        _hide('frontLoading'); _hide('backLoading');
-    }
     
     // Generate preview with watermark
-    async function generatePreview(opts) {
-        opts = opts || {};
-        const silent = !!opts.silent; // edit-mode auto-render: no alerts, no spinner
+    async function generatePreview() {
         const btn = document.getElementById('generatePreviewBtn');
         const email = document.getElementById('email')?.value;
         const nameEn = document.getElementById('name_en')?.value;
-
+        
         // Validate required fields
         if (!email) {
-            if (!silent) alert(<?= json_encode(t('portal.enter_email_first')) ?>);
+            alert(<?= json_encode(t('portal.enter_email_first')) ?>);
             return;
         }
         // Client-side domain gate so users can't even preview with an
@@ -2888,35 +1638,27 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             const atIdx = email.lastIndexOf('@');
             const emailDomain = atIdx >= 0 ? email.slice(atIdx + 1).toLowerCase() : '';
             if (emailDomain !== requiredDomain.toLowerCase()) {
-                if (!silent) alert(<?= json_encode(t('cardportal.email_domain_hint', ['domain' => ':domain'])) ?>
+                alert(<?= json_encode(t('cardportal.email_domain_hint', ['domain' => ':domain'])) ?>
                     .replace(':domain', requiredDomain));
                 return;
             }
         }
         if (!nameEn) {
-            if (!silent) alert(<?= json_encode(t('portal.enter_name_first')) ?>);
+            alert(<?= json_encode(t('portal.enter_name_first')) ?>);
             return;
         }
-
-        // Show loading state (button only exists in new-request flow; in edit
-        // mode the button was replaced with Save Changes so it can be null).
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>' + <?= json_encode(t('portal.generating')) ?>;
-        }
+        
+        // Show loading state
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>' + <?= json_encode(t('portal.generating')) ?>;
 
         // Switch to generated preview view (null-safe: template preview DOM
         // isn't rendered when the tenant has no front/back templates wired
         // up yet, so every lookup has to guard).
         const _hide = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
         const _show = (id, disp='block') => { const el = document.getElementById(id); if (el) el.style.display = disp; };
-        // Single canvas set, just swap the surrounding labels + hints from
-        // template-mode to preview-mode.
-        _hide('templateHint');
-        _show('generatedHint');
-        const _setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-        _setText('frontPreviewLabel', 'Front Preview');
-        _setText('backPreviewLabel', 'Back Preview');
+        _hide('templatePreview');
+        _show('generatedPreview');
         const _title = document.getElementById('previewTitle');
         if (_title) _title.textContent = <?= json_encode(t('portal.your_card_preview')) ?>;
         
@@ -2978,56 +1720,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             
         } catch (e) {
             console.error('Preview generation error:', e);
-            if (!silent) alert(<?= json_encode(t('portal.preview_error')) ?>);
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-eye mr-2"></i>Generate Preview';
-            }
+            alert(<?= json_encode(t('portal.preview_error')) ?>);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-eye mr-2"></i>Generate Preview';
         }
     }
     
-    // Group consecutive static_N tokens that share a baseline (same y, x of
-    // each is roughly previous's right edge) and re-anchor them using the
-    // text objects' actually-measured widths. Fixes "Omantel|Company" style
-    // overlaps caused by font-metrics drift between source PDF and web font.
-    function reanchorStaticDecorationRuns(editor, template) {
-        if (!editor || !editor.fields || !template || !template.fields) return;
-        const staticEntries = Object.entries(template.fields)
-            .filter(([k, f]) => f && f.enabled !== false && f.is_static && !f.render_in_bg && /^static_\d+$/.test(k))
-            .sort((a, b) => parseInt(a[0].split('_')[1], 10) - parseInt(b[0].split('_')[1], 10));
-        if (staticEntries.length < 2) return;
-
-        const runs = [];
-        let cur = [staticEntries[0]];
-        for (let i = 1; i < staticEntries.length; i++) {
-            const prev = cur[cur.length - 1][1];
-            const f = staticEntries[i][1];
-            const sameLine = Math.abs((prev.y || 0) - (f.y || 0)) <= 6;
-            const adjacent = Math.abs(((prev.x || 0) + (prev.width || 0)) - (f.x || 0)) <= 30;
-            if (sameLine && adjacent) cur.push(staticEntries[i]);
-            else { if (cur.length > 1) runs.push(cur); cur = [staticEntries[i]]; }
-        }
-        if (cur.length > 1) runs.push(cur);
-
-        for (const run of runs) {
-            const firstObj = editor.fields[run[0][0]];
-            if (!firstObj) continue;
-            let cursor = run[0][1].x;
-            firstObj.set({ left: cursor, originX: 'left' });
-            firstObj.setCoords();
-            cursor += firstObj.width;
-            for (let i = 1; i < run.length; i++) {
-                const [key] = run[i];
-                const obj = editor.fields[key];
-                if (!obj) continue;
-                obj.set({ left: cursor, originX: 'left' });
-                obj.setCoords();
-                cursor += obj.width;
-            }
-        }
-        editor.canvas.requestRenderAll();
-    }
-
     // Render card using CardEditor (same method as main card generation)
     async function renderCardWithEditor(editor, template, data, side) {
         if (!editor || !editor.canvas) {
@@ -3035,49 +1733,11 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             return;
         }
 
-        // Force every (family, weight) the template references to actually
-        // download before Fabric draws. document.fonts.ready alone is not
-        // enough: the <link rel="stylesheet"> only declares @font-face, the
-        // .woff2 isn't fetched until something REFERENCES that face. On a
-        // cold cache Fabric draws first and the canvas falls back to a
-        // generic serif (italic-looking), so Lato/Sora text on the card
-        // appears as Times-italic until the page is reloaded with a warm
-        // cache.
-        if (document.fonts && document.fonts.load) {
-            // Preload (family, weight, style) for BOTH the stored fontFamily
-            // and the script-resolved family that pickFontFamily() will swap
-            // to at draw time (e.g. Arsenica -> Arsenica-Arabic-Antiqua for
-            // Arabic glyphs). Without this, Fabric draws before the Arabic
-            // face has fetched and falls back to a generic serif.
-            // Also pass the actual text so the Arabic glyph subset (not just
-            // Latin) is fetched.
-            const tasks = [];
-            if (template && template.fields) {
-                for (const [key, f] of Object.entries(template.fields)) {
-                    if (!f || f.enabled === false) continue;
-                    const storedFam = (f.fontFamily || '').trim();
-                    if (!storedFam) continue;
-                    const w = f.fontWeight || 400;
-                    const style = (f.italic === true || f.fontStyle === 'italic') ? 'italic' : 'normal';
-                    // Pick the text we'll actually draw for this field so
-                    // pickFontFamily can choose the right script variant.
-                    const sample = f.is_static
-                        ? String(f.detected_text || '')
-                        : String((data && data[key]) || f.detected_text || '');
-                    const resolvedFam = (typeof pickFontFamily === 'function')
-                        ? pickFontFamily(storedFam, sample) : storedFam;
-                    const fams = new Set([storedFam, resolvedFam].filter(Boolean));
-                    for (const fam of fams) {
-                        const spec = `${style} ${w} 16px "${fam}"`;
-                        // Pass the text so the Arabic glyph subset is requested.
-                        tasks.push(document.fonts.load(spec, sample || ' ').catch(() => {}));
-                    }
-                }
-            }
-            try {
-                await Promise.all(tasks);
-                await document.fonts.ready;
-            } catch (e) { /* best effort */ }
+        // Wait for webfonts so Fabric measures text with the right face (matches
+        // what the admin designer sees). Without this, Cairo / Myriad Pro fall
+        // back to system fonts and positions shift.
+        if (document.fonts && document.fonts.ready) {
+            try { await document.fonts.ready; } catch (e) { /* best effort */ }
         }
 
         // Clear existing content
@@ -3100,14 +1760,6 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             }
         }
         
-        // Per-employee field overrides (migration 104). Comes from
-        // employees.field_overrides JSON column when an employee_id is
-        // attached to the preview, otherwise from data.field_overrides
-        // when the form is being filled live (admin live-preview path).
-        // Shape: { fieldKey: { fontSize?, fill?, fontWeight?, autoShrink?, shrinkFloorPct?, fontFamily? } }
-        const fieldOverrides = (data && data.field_overrides && typeof data.field_overrides === 'object')
-            ? data.field_overrides : {};
-
         // Map form data to template field keys
         const fieldValues = {
             'name_en': data.name_en,
@@ -3148,26 +1800,19 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 // against employee data. They keep their original
                 // position, font, weight, size, and colour.
                 if (field.is_static) {
-                    if (field.render_in_bg) continue; // already baked into bg PNG
-                    // Preserve leading/trailing spaces. PDF importer splits
-                    // multi-color text runs into adjacent static_N tokens
-                    // (e.g. "An ", "Omantel", " Company") and the spaces are
-                    // load-bearing for visual separation. Trimming makes the
-                    // tokens collide.
-                    const txt = (field.detected_text || '');
-                    if (!txt || !txt.replace(/\s+/g, '')) continue;
+                    const txt = (field.detected_text || '').trim();
+                    if (!txt) continue;
                     const t = new fabric.Text(txt, {
                         left: field.x || 0,
                         top: field.y || 0,
                         fontSize: field.fontSize || 14,
-                        fontFamily: pickFontFamily(field.fontFamily, txt),
+                        fontFamily: field.fontFamily || 'Inter',
                         fontWeight: field.fontWeight || 'normal',
                         fontStyle: field.italic ? 'italic' : 'normal',
                         fill: field.fill || field.color || '#222',
                         textAlign: field.textAlign || 'left',
                         originX: field.originX || 'left',
                         originY: field.originY || 'top',
-                        direction: __cardifyArabicRe.test(txt) ? 'rtl' : 'ltr',
                         selectable: false,
                         evented: false,
                         hasControls: false,
@@ -3175,9 +1820,6 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         hoverCursor: 'default',
                     });
                     editor.canvas.add(t);
-                    // Register so reanchorStaticDecorationRuns can find this
-                    // object when stitching multi-token runs.
-                    editor.fields[key] = t;
                     continue;
                 }
 
@@ -3190,12 +1832,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         const qrObj = await editor.addQRCode(vcfUrl, {
                             x: field.x,
                             y: field.y,
-                            size: field.size || 140,
-                            // Pass the design language sampled at PDF-import
-                            // time so the dynamic QR matches the original
-                            // (gold border + black modules etc.) instead of
-                            // dropping in as plain black-on-white.
-                            style: field.qr_style || null
+                            size: field.size || 140
                         });
                         if (qrObj) {
                             qrObj.set({
@@ -3221,62 +1858,26 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 
                 const value = fieldValues[key];
                 if (!value) continue;
-
-                // PDF importer can't always split a labelled line (e.g.
-                // "M +971 50 789 4563", "E name@otech.om") into separate
-                // static label + dynamic value, so the leading single-letter
-                // label is buried inside detected_text. When the user types
-                // a fresh value the label vanishes from the rendered card.
-                // Re-prepend it here when the original had this exact shape:
-                // a single letter + whitespace + the rest.
-                let renderText = String(value);
-                const dt = (field.detected_text || '');
-                const labelMatch = dt.match(/^([A-Za-z])\s+\S/);
-                if (labelMatch) {
-                    const prefix = dt.slice(0, dt.indexOf(' ') + 1); // e.g. "M "
-                    if (prefix && !renderText.startsWith(prefix)) {
-                        renderText = prefix + renderText;
-                    }
-                }
-
+                
                 // Debug: Log field alignment data
                 console.log('Field:', key, 'textAlign:', field.textAlign, 'originX:', field.originX);
-
+                
                 // Use alignment directly from template (don't override with defaults)
                 const textAlign = field.textAlign || 'left';
                 const originX = field.originX || (textAlign === 'center' ? 'center' : textAlign === 'right' ? 'right' : 'left');
-
+                
                 // Add text field using template values directly (no scaling - canvas is standard 1050x600)
-                // width is plumbed through so addTextField can RTL-anchor
-                // Arabic text on the bbox right edge instead of the left,
-                // preventing dynamic text wider than the parser's bbox
-                // from clipping past the card right edge.
-                // Merge per-employee overrides on top of template field
-                // defaults. Only the keys present in the override dict
-                // win, so a fontSize-only override doesn't reset color.
-                const ov = fieldOverrides[key] || {};
                 editor.addTextField(key, {
-                    text: renderText,
+                    text: value,
                     x: field.x,
                     y: field.y,
-                    width: field.width,
-                    height: field.height,
-                    fontSize: ov.fontSize || field.fontSize || 14,
-                    fontFamily: pickFontFamily(ov.fontFamily || field.fontFamily || (isArabic ? 'Cairo' : 'Inter'), renderText),
-                    fontWeight: ov.fontWeight || field.fontWeight || 'normal',
-                    fill: ov.fill || field.fill || field.color || '#333333',
+                    fontSize: field.fontSize || 14,
+                    fontFamily: field.fontFamily || (isArabic ? 'Cairo' : 'Inter'),
+                    fontWeight: field.fontWeight || 'normal',
+                    fill: field.fill || field.color || '#333333',
                     textAlign: textAlign,
                     originX: originX,
-                    originY: field.originY || 'top',
-                    autoShrink: (typeof ov.autoShrink === 'boolean') ? ov.autoShrink : field.auto_shrink,
-                    shrinkFloorPct: ov.shrinkFloorPct || field.shrink_floor_pct,
-                    // Customer portal preview is READ-ONLY: the employee
-                    // requesting a card shouldn't be able to drag fields
-                    // around. addTextField now propagates this through to
-                    // both the IText path and the RTL canvas-image rebuild,
-                    // so the 80ms font-load swap doesn't make text
-                    // accidentally draggable.
-                    selectable: false,
+                    originY: field.originY || 'top'
                 });
                 
                 // Make fields non-selectable for preview
@@ -3285,16 +1886,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 }
             }
         }
-
-        // Re-anchor multi-token static decoration runs (e.g. PDF-imported
-        // "An | Omantel | Company" stored as 3 static_N fields with their own
-        // colors). The PDF importer baked in pixel widths measured against the
-        // source font; Google Fonts often renders the same family at slightly
-        // different widths, which makes adjacent tokens overlap or gap. We
-        // group consecutive static_N tokens that share a baseline and stitch
-        // them using each text object's actually-rendered width.
-        reanchorStaticDecorationRuns(editor, template);
-
+        
         // Add PREVIEW watermark (centered on the actual template canvas size)
         const watermark = new fabric.Text('PREVIEW', {
             left: editor.canvas.width / 2,
@@ -3327,21 +1919,10 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     function editForm() {
         document.getElementById('generatePreviewSection').style.display = 'block';
         document.getElementById('submitSection').style.display = 'none';
-        const tHint = document.getElementById('templateHint');
-        if (tHint) tHint.style.display = 'block';
-        const gHint = document.getElementById('generatedHint');
-        if (gHint) gHint.style.display = 'none';
-        const _setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-        _setText('frontPreviewLabel', 'Front');
-        _setText('backPreviewLabel', 'Back');
+        document.getElementById('templatePreview').style.display = 'block';
+        document.getElementById('generatedPreview').style.display = 'none';
         document.getElementById('previewTitle').textContent = 'Card Template';
-
-        // Re-render the static-only template view so the user sees the design
-        // again (without their data + watermark).
-        if (typeof renderInitialTemplate === 'function') {
-            renderInitialTemplate();
-        }
-
+        
         const btn = document.getElementById('generatePreviewBtn');
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-magic-wand-sparkles mr-2"></i>Generate Preview';
@@ -3424,12 +2005,9 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         // Initialize request type toggle
         initRequestTypeToggle();
         
-        // Check existing employee on page load if email is pre-filled.
-        // Skip in trusted-edit mode: the employee is already identified
-        // by the magic-link token, so the "Welcome back, you have 3 cards
-        // generated, you can request additional" banner is noise.
+        // Check existing employee on page load if email is pre-filled
         const emailField = document.getElementById('email');
-        if (emailField && emailField.value && !isEditMode) {
+        if (emailField && emailField.value) {
             checkExistingEmployee(emailField.value);
         }
     });
@@ -3545,48 +2123,29 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         });
     }
     
-    async function translateField(btnOrSourceId, sourceIdOrTargetId, targetIdOrFieldType, fieldTypeMaybe) {
-        // Support both legacy 3-arg form and new 4-arg form (button passed first).
-        let btn = null, sourceId, targetId, fieldType;
-        if (btnOrSourceId && typeof btnOrSourceId === 'object' && btnOrSourceId.tagName === 'BUTTON') {
-            btn = btnOrSourceId;
-            sourceId  = sourceIdOrTargetId;
-            targetId  = targetIdOrFieldType;
-            fieldType = fieldTypeMaybe;
-        } else {
-            sourceId  = btnOrSourceId;
-            targetId  = sourceIdOrTargetId;
-            fieldType = targetIdOrFieldType;
-        }
-
+    async function translateField(sourceId, targetId, fieldType) {
         const sourceEl = document.getElementById(sourceId);
         const targetEl = document.getElementById(targetId);
-
+        
         if (!sourceEl || !targetEl) return;
-
+        
         const sourceText = sourceEl.value.trim();
         if (!sourceText) {
             showToast(<?= json_encode(t('portal.english_first')) ?>, 'warning');
             sourceEl.focus();
             return;
         }
-
+        
         // Don't translate if already in progress
         if (isTranslating[targetId]) return;
         isTranslating[targetId] = true;
-
-        // Always show clear "Translating..." feedback. The button label is
-        // visible-text + spinner so users see something happen the instant
-        // they click, even on slow links / first-token-time.
-        const originalHtml = btn ? btn.innerHTML : '';
+        
+        // Find the translate button and show loading
+        const btn = targetEl.parentElement.querySelector('.translate-btn');
         if (btn) {
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Translating...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner spinner"></i>';
             btn.disabled = true;
-            btn.style.opacity = '0.7';
         }
-        // Soft-disable the target field while we fill it.
-        targetEl.placeholder = 'Translating...';
-        targetEl.classList.add('opacity-60');
         
         try {
             const response = await fetch(translateApiUrl, {
@@ -3621,12 +2180,9 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             showToast('Translation failed. Please try again.', 'error');
         } finally {
             isTranslating[targetId] = false;
-            targetEl.placeholder = '';
-            targetEl.classList.remove('opacity-60');
             if (btn) {
-                btn.innerHTML = originalHtml || '<i class="fa-solid fa-wand-magic-sparkles"></i> AI Translate';
+                btn.innerHTML = '<i class="fa-solid fa-language"></i>';
                 btn.disabled = false;
-                btn.style.opacity = '';
             }
         }
     }
@@ -3680,16 +2236,26 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         }, 3000);
     }
     
-    // Click-to-translate only. Earlier this fired on blur of name_en /
-    // position_en when the Arabic was empty, but employees found it
-    // unexpected ("why did my Arabic name change while I was tabbing
-    // through?") and there was no way to opt out short of typing
-    // something into the Arabic box first. Now the AI Translate button
-    // is the single trigger -- pressing it (re-)fills the Arabic field
-    // from the current English value, every time. Empty English shows
-    // an inline error in translateField().
+    // Optional: Auto-translate on blur (when user leaves field)
     document.addEventListener('DOMContentLoaded', function() {
-        // intentionally no auto-translate handlers
+        const autoTranslateFields = ['name_en', 'position_en'];
+        
+        autoTranslateFields.forEach(fieldId => {
+            const el = document.getElementById(fieldId);
+            if (el) {
+                el.addEventListener('blur', function() {
+                    const targetId = fieldId.replace('_en', '_ar');
+                    const targetEl = document.getElementById(targetId);
+                    
+                    // Only auto-translate if target is empty and source has value
+                    if (targetEl && !targetEl.value.trim() && this.value.trim()) {
+                        const fieldType = fieldId.replace('_en', '');
+                        translateField(fieldId, targetId, fieldType);
+                    }
+                });
+            }
+        });
+        
     });
     </script>
     

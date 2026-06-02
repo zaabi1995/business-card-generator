@@ -119,19 +119,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     
     // Handle P.O. file upload
     if (isset($_FILES['po_file']) && $_FILES['po_file']['error'] === UPLOAD_ERR_OK) {
-        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
-        $fileType = $_FILES['po_file']['type'];
-        
-        if (in_array($fileType, $allowedTypes)) {
+        // SECURITY: detect real MIME from contents (never $_FILES['type']) and
+        // build the filename from a verified extension, not the uploaded name
+        // (which could be po_..._evil.php). BHD loop audit iter 4, 2 Jun 2026.
+        $mimeToExt = [
+            'application/pdf' => 'pdf',
+            'image/jpeg'      => 'jpg',
+            'image/png'       => 'png',
+        ];
+        $realMime = '';
+        if (class_exists('finfo')) {
+            $finfo = new finfo(FILEINFO_MIME_TYPE);
+            $realMime = (string) $finfo->file($_FILES['po_file']['tmp_name']);
+        }
+
+        if (isset($mimeToExt[$realMime])) {
             $uploadDir = getCompanyUploadsDir($companyId) . '/po';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
-            
-            $fileName = 'po_' . date('Ymd_His') . '_' . uniqid() . '_' . basename($_FILES['po_file']['name']);
+
+            $fileName = 'po_' . date('Ymd_His') . '_' . uniqid() . '.' . $mimeToExt[$realMime];
             $filePath = $uploadDir . '/' . $fileName;
-            
+
             if (move_uploaded_file($_FILES['po_file']['tmp_name'], $filePath)) {
+                @chmod($filePath, 0644);
                 $poFilePath = getWebPath($filePath);
             }
         }
