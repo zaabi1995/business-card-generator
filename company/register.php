@@ -127,6 +127,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
         $error = 'Invalid request. Please try again.';
     } else {
+    // Per-IP signup throttle: a public POST that creates a tenant + sends a
+    // welcome email. Without this a bot could mass-create companies and spam
+    // mail. 8/hour/IP is generous for shared-NAT offices but stops bulk abuse.
+    // The slot is refunded below if the submission fails validation, so a user
+    // fixing a typo and resubmitting is never penalised. (BHD loop audit iter 6.)
+    require_once INCLUDES_DIR . '/RateLimiter.php';
+    require_once INCLUDES_DIR . '/UrlSafety.php';
+    $signupIp = getClientIp();
+    $rateOk = RateLimiter::check('company_signup_ip', $signupIp, 8, 3600);
+    if (!$rateOk) {
+        $error = 'Too many signups from your network. Please wait a little and try again, or contact support@cardify.om.';
+    } else {
     $name = trim($_POST['company_name'] ?? '');
     $email = sanitizeEmail($_POST['admin_email'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -375,6 +387,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $suggestedSlug = generateSlugFromEmail($email);
         }
     }
+
+    // Refund the rate-limit slot: a successful signup always exit()s above, so
+    // reaching here means validation failed. Don't make a user fixing a typo
+    // burn through their hourly quota.
+    if (!empty($error)) {
+        RateLimiter::refund('company_signup_ip', $signupIp, 3600);
+    }
+    } // end rate-limit else
     } // end CSRF else
 }
 $minimalFooter = true; // compact footer for auth page
@@ -489,17 +509,16 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <label for="company_slug" class="block text-sm font-medium text-gray-900">
                             <?= htmlspecialchars(t('register.company_url')) ?>
                         </label>
-                        <div class="mt-2 flex items-stretch rounded-md shadow-sm" dir="ltr">
-                            <span class="inline-flex items-center px-3 rounded-s-md border border-e-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">https://</span>
+                        <div class="mt-2 flex items-center">
+                            <span class="text-sm text-gray-500 mr-1"><?php echo defined('APP_HOST') ? APP_HOST : 'cardify.om'; ?>/</span>
                             <input type="text" name="company_slug" id="company_slug"
                                    value="<?php echo htmlspecialchars($_POST['company_slug'] ?? $suggestedSlug); ?>"
-                                   class="form-input flex-1 rounded-none border-s-0 border-e-0 text-center"
+                                   class="form-input flex-1"
                                    placeholder="<?php echo htmlspecialchars($suggestedSlug ?: t('register.placeholder_slug')); ?>">
-                            <span class="inline-flex items-center px-3 rounded-e-md border border-s-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">.<?php echo defined('APP_HOST') ? APP_HOST : 'cardify.om'; ?></span>
                         </div>
                         <p id="domain-info" class="mt-1.5 text-xs text-gray-500">
                             <?php if ($isBusinessDomain): ?>
-                            <i class="fa-solid fa-building text-green-500 me-1"></i><?= htmlspecialchars(t('register.domain_detected')) ?>
+                            <i class="fa-solid fa-building text-green-500 mr-1"></i><?= htmlspecialchars(t('register.domain_detected')) ?>
                             <?php else: ?>
                             <?= htmlspecialchars(t('register.slug_hint')) ?>
                             <?php endif; ?>
