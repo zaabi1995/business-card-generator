@@ -238,7 +238,17 @@ class Mailer {
             $message .= "--{$boundaryMixed}--\r\n";
         }
         
-        // Connect to SMTP server
+        // Connect to SMTP server.
+        // When the mail server runs on the SAME host as PHP and its public
+        // hostname resolves to the box's own public IP, dialling that public
+        // IP can time out because NAT hairpinning fails (the host can't loop
+        // back to itself through the router). Allow a separate CONNECT host
+        // (e.g. 127.0.0.1) for the socket while keeping the public hostname as
+        // the TLS SNI / peer_name so cert verification still passes.
+        // Set MAIL_CONNECT_HOST=127.0.0.1 in config.php on a self-hosted relay.
+        // (BHD loop audit iter 7.)
+        $certName   = $config['host'];
+        $dialHost   = self::getSetting('mail_connect_host', $config['host']);
         $contextOptions = [];
         if ($config['encryption'] === 'ssl') {
             // Verify the SMTP peer by default. Operators who truly need to
@@ -248,12 +258,15 @@ class Mailer {
                 'verify_peer'       => !$insecure,
                 'verify_peer_name'  => !$insecure,
                 'allow_self_signed' => $insecure,
+                // SNI + hostname verification target = the public cert name,
+                // even when we dial 127.0.0.1.
+                'peer_name'         => $certName,
             ];
-            $host = 'ssl://' . $config['host'];
+            $host = 'ssl://' . $dialHost;
         } elseif ($config['encryption'] === 'tls') {
-            $host = $config['host'];
+            $host = $dialHost;
         } else {
-            $host = $config['host'];
+            $host = $dialHost;
         }
         
         $context = stream_context_create($contextOptions);
