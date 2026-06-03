@@ -59,29 +59,55 @@ class DatabaseAdapter {
         $hasCompanyPath = self::$db->columnExists('companies', 'company_path');
         $hasCompanyType = self::$db->columnExists('companies', 'company_type');
 
+        // Reserved slugs: system subdomains, route prefixes, and on-disk
+        // directories. Without this a user could register slug 'admin' / 'api' /
+        // 'assets' / 'login', squatting admin.cardify.om (a phishing vector) and
+        // polluting the tenant namespace next to real routes. The tenant wildcard
+        // would resolve these subdomains to a user-controlled card page.
+        $reservedSlugs = [
+            'www','mail','admin','api','app','apps','assets','static','cdn','media',
+            'uploads','upload','files','file','download','downloads','img','images',
+            'js','css','fonts','font','portal','login','logout','register','signup',
+            'signin','dashboard','super','superadmin','system','sys','root','test',
+            'staging','stage','dev','demo','blog','logos','logo','companies','company',
+            'pricing','about','contact','terms','privacy','help','support','faq',
+            'status','health','card','cards','qr','vcf','vcard','share','edit','print',
+            'printshop','billing','pay','payment','payments','paymob','callback',
+            'webhook','webhooks','ftp','smtp','imap','pop','pop3','ns1','ns2','dns','mx',
+            'autodiscover','autoconfig','cpanel','whm','webmail','email','noreply',
+            'no-reply','info','sales','security','secure','ssl','account','accounts',
+            'settings','config','internal','intranet','vpn','proxy','gateway','cms',
+            'wp-admin','wp','onboarding','tenant','tenants','public','private','cron',
+        ];
+
         // Use custom slug if provided, otherwise generate from name
         if (!empty($customSlug)) {
             // Validate custom slug
             $customSlug = strtolower(trim($customSlug));
             $customSlug = preg_replace('/[^a-z0-9-]/', '', $customSlug);
             $customSlug = trim($customSlug, '-');
-            
+
             if (empty($customSlug)) {
                 return ['success' => false, 'error' => 'Invalid company abbreviation'];
             }
-            
+
+            if (in_array($customSlug, $reservedSlugs, true)) {
+                return ['success' => false, 'error' => 'That company abbreviation is reserved. Please choose another.'];
+            }
+
             // Check if custom slug is available
             if (self::findCompanyBySlug($customSlug)) {
                 return ['success' => false, 'error' => 'Company abbreviation already taken. Please choose another.'];
             }
-            
+
             $slug = $customSlug;
         } else {
             // Auto-generate slug from name
             $slug = slugify($name);
-            $baseSlug = $slug;
+            $baseSlug = $slug ?: 'company';
+            $slug = $baseSlug;
             $i = 1;
-            while (self::findCompanyBySlug($slug)) {
+            while (self::findCompanyBySlug($slug) || in_array($slug, $reservedSlugs, true)) {
                 $slug = $baseSlug . '-' . $i;
                 $i++;
             }
