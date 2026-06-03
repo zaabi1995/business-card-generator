@@ -13,7 +13,9 @@ require_once INCLUDES_DIR . '/EmployeeEditToken.php';
 require_once INCLUDES_DIR . '/AppleWalletPass.php';
 require_once INCLUDES_DIR . '/QRTracker.php';
 
-$token = trim($_GET['token'] ?? '');
+// Accept both `token` (legacy /portal/employee-edit.php?token=) and `t`
+// (pretty magic-link /{employee_slug}/edit?t=, rewritten here by .htaccess).
+$token = trim($_GET['token'] ?? ($_GET['t'] ?? ''));
 $employee = EmployeeEditToken::verify($token);
 
 $existingSocials = [];

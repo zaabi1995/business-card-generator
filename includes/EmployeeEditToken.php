@@ -126,10 +126,9 @@ class EmployeeEditToken
      * When $employeeSlug is provided (email-localpart used in the
      * digital-card URL), emits the recognisable shape
      * `https://{tenant}.cardify.om/{employeeSlug}/edit?t={plain}`
-     * which routes to portal.php in edit-mode (prefilled form, real
-     * Fabric.js card preview, "Save changes" submit). Without a slug,
-     * falls back to the legacy `/portal/employee-edit?token=...` URL
-     * so existing share-links keep working.
+     * which .htaccess routes to portal/employee-edit.php (the token is
+     * the auth, the slug is cosmetic). Without a slug, emits the same
+     * handler directly via `/portal/employee-edit.php?token=...`.
      */
     public static function buildUrl(string $plain, ?string $tenantSlug = null, ?string $employeeSlug = null): string
     {
@@ -144,7 +143,7 @@ class EmployeeEditToken
         if ($slug !== '' && preg_match('/^[a-z0-9._-]+$/i', $slug)) {
             return $scheme . '://' . $host . '/' . $slug . '/edit?t=' . $plain;
         }
-        return $scheme . '://' . $host . '/portal/employee-edit?token=' . $plain;
+        return $scheme . '://' . $host . '/portal/employee-edit.php?token=' . $plain;
     }
 
     /**

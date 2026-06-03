@@ -57,13 +57,14 @@
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^([a-z0-9-]+)/portal/?$ portal.php?company_slug=$1 [L,QSA]
 
-    # Employee self-edit (magic link): /{employee_slug}/edit?t={token} -> portal.php
-    # Tenant subdomain only. portal.php resolves the employee from edit_slug +
-    # TenantHost::slug() and 404s if the slug + token do not bind to the same
-    # employee on this tenant. Example: otech.cardify.om/salhashimi/edit?t=<hex>
+    # Employee self-edit (magic link): /{employee_slug}/edit?t={token}
+    # Routes to portal/employee-edit.php which resolves the employee from the
+    # 40-char token itself (the token IS the auth; the slug is cosmetic). The
+    # ?t= query flows through via QSA and employee-edit.php reads token||t.
+    # Example: otech.cardify.om/salhashimi/edit?t=<hex>
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^([a-z0-9][a-z0-9._-]{0,62})/edit/?$ portal.php?edit_slug=$1 [L,QSA]
+    RewriteRule ^([a-z0-9][a-z0-9._-]{0,62})/edit/?$ portal/employee-edit.php [L,QSA]
 
     # Share link routing (e.g., cardify.om/share/{token})
     RewriteCond %{REQUEST_FILENAME} !-f
