@@ -58,7 +58,7 @@ try {
     $theme = $company ? loadCompanyTheme($company['id']) : null;
 
     $name      = $employee['name_en'] ?? $employee['name'] ?? 'Employee';
-    $position  = $employee['position'] ?? $employee['job_title'] ?? '';
+    $position  = $employee['position_en'] ?? $employee['position'] ?? $employee['job_title'] ?? '';
     $companyNm = $company['name'] ?? '';
     $phone     = $employee['mobile'] ?? $employee['phone'] ?? '';
     $emailAddr = $employee['email'] ?? '';
