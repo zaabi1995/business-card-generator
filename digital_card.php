@@ -413,27 +413,27 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <?php endif; ?>
         }
         .page-container {
-            max-width: 440px;
+            max-width: 420px;
             margin: 0 auto;
-            padding: 24px 16px 40px;
+            padding: 14px 16px 14px;
         }
 
         /* Company Logo */
         .company-logo {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
         .company-logo img {
-            max-width: 120px;
+            max-width: 104px;
             height: auto;
             border-radius: 8px;
         }
 
-        /* Card Flip */
+        /* Card Flip (~10% smaller than the control column for a lighter hero) */
         .card-flip-container {
             perspective: 1000px;
-            max-width: 400px;
-            margin: 0 auto 8px;
+            max-width: 360px;
+            margin: 0 auto 6px;
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
         }
@@ -472,14 +472,14 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             text-align: center;
             font-size: 11px;
             color: <?php echo $isDarkPage ? '#666' : '#999'; ?>;
-            margin-top: 8px;
+            margin-top: 5px;
             transition: opacity 0.5s;
         }
 
         /* Employee Info */
         .employee-info {
             text-align: center;
-            margin: 20px auto 16px;
+            margin: 10px auto 12px;
             max-width: 400px;
         }
         .employee-name {
@@ -506,11 +506,11 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             display: flex;
             gap: 10px;
             max-width: 400px;
-            margin: 0 auto 18px;
+            margin: 0 auto 12px;
         }
         .action-btn {
             flex: 1;
-            padding: 12px 8px;
+            padding: 10px 8px;
             border-radius: 10px;
             text-align: center;
             font-size: 13px;
@@ -549,7 +549,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .contact-row {
             display: flex;
             align-items: center;
-            padding: 12px 16px;
+            padding: 10px 16px;
             font-size: 13px;
             text-decoration: none;
             transition: background 0.15s;
@@ -628,11 +628,11 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             display: flex;
             gap: 10px;
             max-width: 400px;
-            margin: 18px auto 0;
+            margin: 12px auto 0;
         }
         .bottom-btn {
             flex: 1;
-            padding: 13px;
+            padding: 11px;
             border-radius: 10px;
             text-align: center;
             font-size: 14px;
@@ -688,7 +688,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         }
         .wallet-buttons .wallet-btn {
             flex: 1;
-            padding: 11px 14px;
+            padding: 10px 14px;
             border-radius: 10px;
             text-align: center;
             font-size: 13px;
@@ -711,13 +711,14 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             border: 1px solid #dadce0;
         }
         .wallet-buttons .wallet-btn svg { flex-shrink: 0; }
-        .wallet-buttons.order-google-first .wallet-btn.apple  { order: 2; }
-        .wallet-buttons.order-google-first .wallet-btn.google { order: 1; }
+        /* Show only the current platform's wallet (JS adds the class). */
+        .wallet-buttons.plat-apple  .wallet-btn.google { display: none; }
+        .wallet-buttons.plat-google .wallet-btn.apple  { display: none; }
 
         /* Footer */
         .page-footer {
             text-align: center;
-            margin-top: 24px;
+            margin-top: 14px;
             font-size: 11px;
             color: <?php echo $isDarkPage ? '#444' : '#bbb'; ?>;
         }
@@ -906,8 +907,8 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .cardify-viral-footer {
             display: flex;
             justify-content: center;
-            padding: 20px 0 28px;
-            margin-top: 8px;
+            padding: 10px 0 12px;
+            margin-top: 4px;
         }
         .cardify-viral-footer .viral-link {
             display: inline-flex;
@@ -950,8 +951,8 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             outline-offset: 2px;
         }
         @media (max-width: 420px) {
-            .cardify-viral-footer { padding: 16px 12px 24px; }
-            .cardify-viral-footer .viral-link { font-size: 12px; width: 100%; justify-content: center; }
+            .cardify-viral-footer { padding: 8px 12px 12px; }
+            .cardify-viral-footer .viral-link { font-size: 12px; width: 100%; justify-content: center; min-height: 40px; }
         }
     </style>
 </head>
@@ -1702,16 +1703,17 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <?php endif; ?>
         </div>
         <script>
-            // UA detection: Android → Google first, iOS/macOS → Apple first, desktop → as-is
+            // Show only the wallet for the current platform: iPhone/iPad → Apple,
+            // Android → Google, desktop → both. A pkpass can't be added on Android
+            // (and vice-versa), so hiding the wrong button avoids a dead-end tap.
             (function () {
                 var w = document.getElementById('walletButtons');
                 if (!w) return;
                 var ua = navigator.userAgent || '';
+                var isIOS = /iPad|iPhone|iPod/i.test(ua) ||
+                            (/Macintosh/i.test(ua) && typeof document !== 'undefined' && 'ontouchend' in document);
                 var isAndroid = /Android/i.test(ua);
-                var isAppleOS = /iPad|iPhone|iPod|Macintosh/i.test(ua);
-                if (isAndroid && !isAppleOS) {
-                    w.classList.add('order-google-first');
-                }
+                w.classList.add(isAndroid ? 'plat-google' : (isIOS ? 'plat-apple' : 'plat-both'));
             })();
         </script>
         <?php endif; ?>
