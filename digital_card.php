@@ -315,17 +315,8 @@ try {
     exit;
 }
 
-/**
- * Load company theme from database
- */
-function loadCompanyTheme($companyId) {
-    try {
-        $db = Database::getInstance();
-        return $db->fetchOne("SELECT * FROM company_themes WHERE company_id = :cid", ['cid' => $companyId]);
-    } catch (Throwable $e) {
-        return null;
-    }
-}
+// loadCompanyTheme() now lives in includes/functions.php (shared with the wallet
+// endpoints). Kept out of here to avoid a duplicate definition.
 
 /**
  * Render branded 404 page

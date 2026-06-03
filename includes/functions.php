@@ -522,6 +522,20 @@ function loadCompanies() {
     return DatabaseAdapter::loadCompanies();
 }
 
+// Shared theme loader. Lives here (not only in digital_card.php) so standalone
+// endpoints like wallet_apple.php / wallet_google.php can resolve a tenant's
+// brand colours + logo too. Guarded so an inline copy never fatals on redeclare.
+if (!function_exists('loadCompanyTheme')) {
+    function loadCompanyTheme($companyId) {
+        try {
+            $db = Database::getInstance();
+            return $db->fetchOne("SELECT * FROM company_themes WHERE company_id = :cid", ['cid' => $companyId]);
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+}
+
 function findCompanyBySlug($slug) {
     if (!class_exists('DatabaseAdapter') || !DatabaseAdapter::useDatabase()) {
         return null;
