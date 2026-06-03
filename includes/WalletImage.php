@@ -16,8 +16,12 @@ class WalletImage
     /**
      * PNG bytes of $srcPath fit into a $w x $h box on a transparent canvas
      * (aspect preserved, centered). null when the source can't be decoded.
+     *
+     * $knockoutWhite: for reverse logos on a dark pass header. Only applied when
+     * the source actually HAS transparency (a transparent-background logo) so an
+     * opaque white-bg JPEG never becomes a solid white block.
      */
-    public static function fitPng(string $srcPath, int $w, int $h): ?string
+    public static function fitPng(string $srcPath, int $w, int $h, bool $knockoutWhite = false): ?string
     {
         if (!function_exists('imagecreatetruecolor')) {
             return null; // GD missing , caller falls back to the transparent icon
@@ -44,7 +48,23 @@ class WalletImage
         $dh = max(1, (int) round($sh * $scale));
         $dx = (int) (($w - $dw) / 2);
         $dy = (int) (($h - $dh) / 2);
+        $doKnockout = $knockoutWhite && self::hasTransparency($img);
         imagecopyresampled($canvas, $img, $dx, $dy, 0, 0, $dw, $dh, $sw, $sh);
+
+        if ($doKnockout) {
+            // Recolour every non-transparent pixel to white, preserving its alpha,
+            // so the logo reads as a clean reverse/knockout mark on the dark header.
+            imagealphablending($canvas, false);
+            for ($y = 0; $y < $h; $y++) {
+                for ($x = 0; $x < $w; $x++) {
+                    $a = (imagecolorat($canvas, $x, $y) >> 24) & 0x7F;
+                    if ($a < 127) {
+                        imagesetpixel($canvas, $x, $y, imagecolorallocatealpha($canvas, 255, 255, 255, $a));
+                    }
+                }
+            }
+            imagesavealpha($canvas, true);
+        }
 
         ob_start();
         $ok = imagepng($canvas);
@@ -53,6 +73,23 @@ class WalletImage
         // since 8.0 and an E_DEPRECATED on 8.5, which the caller's error handler
         // would turn into a fatal. So we deliberately don't call it.
         return ($ok && $bytes !== false && $bytes !== '') ? $bytes : null;
+    }
+
+    /** True if the image has any meaningfully transparent pixels (sampled grid). */
+    private static function hasTransparency($img): bool
+    {
+        $w = imagesx($img);
+        $h = imagesy($img);
+        $sx = max(1, (int) ($w / 50));
+        $sy = max(1, (int) ($h / 50));
+        for ($y = 0; $y < $h; $y += $sy) {
+            for ($x = 0; $x < $w; $x += $sx) {
+                if (((imagecolorat($img, $x, $y) >> 24) & 0x7F) > 20) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /** Load a source image as a GD resource, rasterizing SVG via CLI first. */

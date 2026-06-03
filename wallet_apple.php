@@ -175,12 +175,14 @@ try {
         $bytes = $logoFs ? WalletImage::fitPng($logoFs, $px, $px) : null;
         $passObj->addAsset($fname, $bytes ?: $transparentPng);
     }
-    // logo.png is shown top-left; optional, so omit cleanly if it can't be made.
+    // logo.png is shown top-left on the brand-coloured header. On a dark brand we
+    // knock the logo out to white (only if it has transparency) so it reads as a
+    // clean reverse mark instead of a colour-clashing badge. Icon stays original.
     foreach (['logo.png' => [160, 50], 'logo@2x.png' => [320, 100], 'logo@3x.png' => [480, 150]] as $fname => $dim) {
         if (!$logoFs) {
             continue;
         }
-        $bytes = WalletImage::fitPng($logoFs, $dim[0], $dim[1]);
+        $bytes = WalletImage::fitPng($logoFs, $dim[0], $dim[1], $isDarkBg);
         if ($bytes) {
             $passObj->addAsset($fname, $bytes);
         }
