@@ -509,12 +509,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <label for="company_slug" class="block text-sm font-medium text-gray-900">
                             <?= htmlspecialchars(t('register.company_url')) ?>
                         </label>
-                        <div class="mt-2 flex items-center">
-                            <span class="text-sm text-gray-500 mr-1"><?php echo defined('APP_HOST') ? APP_HOST : 'cardify.om'; ?>/</span>
+                        <div class="mt-2 flex items-center" dir="ltr">
                             <input type="text" name="company_slug" id="company_slug"
                                    value="<?php echo htmlspecialchars($_POST['company_slug'] ?? $suggestedSlug); ?>"
                                    class="form-input flex-1"
                                    placeholder="<?php echo htmlspecialchars($suggestedSlug ?: t('register.placeholder_slug')); ?>">
+                            <span class="text-sm text-gray-500 ms-1 whitespace-nowrap">.<?php echo defined('APP_HOST') ? APP_HOST : 'cardify.om'; ?></span>
                         </div>
                         <p id="domain-info" class="mt-1.5 text-xs text-gray-500">
                             <?php if ($isBusinessDomain): ?>
