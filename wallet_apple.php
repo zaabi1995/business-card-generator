@@ -75,19 +75,21 @@ try {
     // Tenant subdomain canonical URL (no double-slug regardless of host).
     $cardUrl = getTenantUrl($slug, '/' . rawurlencode($employee['id']));
 
-    // Colors (hex → "rgb(r,g,b)" per PKPass spec)
-    $primaryHex   = ($theme && !empty($theme['primary_color']))   ? $theme['primary_color']   : '#1a1a1a';
-    $secondaryHex = ($theme && !empty($theme['secondary_color'])) ? $theme['secondary_color'] : '#d4af37';
-    $hexToRgb = function (string $hex): string {
+    // Colors. Background = the tenant's brand colour; text auto-contrasts to its
+    // luminance so labels stay crisp on any brand (the old fixed dark labelColor
+    // went muddy on mid-tone brands).
+    $primaryHex = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#1a1a1a';
+    $rgbOf = function (string $hex): array {
         $hex = ltrim($hex, '#');
-        if (strlen($hex) === 3) {
-            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
-        }
-        $r = hexdec(substr($hex, 0, 2));
-        $g = hexdec(substr($hex, 2, 2));
-        $b = hexdec(substr($hex, 4, 2));
-        return "rgb($r, $g, $b)";
+        if (strlen($hex) === 3) { $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2]; }
+        return [hexdec(substr($hex, 0, 2)), hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))];
     };
+    [$br, $bgc, $bb] = $rgbOf($primaryHex);
+    $bgRgb = "rgb($br, $bgc, $bb)";
+    $lum   = (0.299 * $br + 0.587 * $bgc + 0.114 * $bb) / 255; // 0 dark .. 1 light
+    $isDarkBg   = $lum < 0.62;
+    $fgColor    = $isDarkBg ? 'rgb(255, 255, 255)' : 'rgb(17, 24, 39)';
+    $labelColor = $fgColor; // same hue as values; Apple sizes labels smaller for hierarchy
 
     $backFields = [];
     if ($phone !== '') {
@@ -101,33 +103,50 @@ try {
     }
     $backFields[] = ['key' => 'card', 'label' => 'Digital Card', 'value' => $cardUrl];
 
+    // Front hierarchy: logo+company (header) -> name (primary) -> position
+    // (secondary) -> contacts (auxiliary). Everything is conditional, so a sparse
+    // card simply shows fewer rows instead of empty captions.
+    $secondaryFields = [];
+    if ($position !== '') {
+        $secondaryFields[] = ['key' => 'position', 'label' => '', 'value' => $position];
+    }
+    $auxFields = [];
+    if ($phone !== '') {
+        $auxFields[] = ['key' => 'phone', 'label' => 'PHONE', 'value' => $phone];
+    }
+    if ($emailAddr !== '') {
+        $auxFields[] = ['key' => 'email', 'label' => 'EMAIL', 'value' => $emailAddr];
+    }
+
+    // Barcode WITHOUT altText so iOS draws no URL caption under the QR.
+    $qr = [
+        'format'          => 'PKBarcodeFormatQR',
+        'message'         => $cardUrl,
+        'messageEncoding' => 'iso-8859-1',
+    ];
+
     $pass = [
         'formatVersion'       => 1,
         'passTypeIdentifier'  => APPLE_WALLET_PASS_TYPE_ID,
         'serialNumber'        => (string)$employee['id'],
         'teamIdentifier'      => APPLE_WALLET_TEAM_ID,
         'organizationName'    => defined('APPLE_WALLET_ORG_NAME') ? APPLE_WALLET_ORG_NAME : 'Cardify',
-        'description'         => $name . ', ' . $companyNm,
-        'foregroundColor'     => 'rgb(255, 255, 255)',
-        'backgroundColor'     => $hexToRgb($primaryHex),
-        'labelColor'          => $hexToRgb($secondaryHex),
-        'barcodes' => [[
-            'format'          => 'PKBarcodeFormatQR',
-            'message'         => $cardUrl,
-            'messageEncoding' => 'iso-8859-1',
-            'altText'         => $cardUrl,
-        ]],
+        'description'         => trim($name . ($companyNm !== '' ? ', ' . $companyNm : '')),
+        'logoText'            => $companyNm !== '' ? $companyNm : $name,
+        'foregroundColor'     => $fgColor,
+        'backgroundColor'     => $bgRgb,
+        'labelColor'          => $labelColor,
+        'barcodes'            => [$qr],
+        'barcode'             => $qr, // legacy single-barcode key for older iOS
         'generic' => [
             'primaryFields' => [[
                 'key'   => 'name',
-                'label' => 'Name',
+                'label' => '',
                 'value' => $name,
             ]],
-            'secondaryFields' => array_values(array_filter([
-                $position !== ''  ? ['key' => 'title',   'label' => 'Title',   'value' => $position]  : null,
-                $companyNm !== '' ? ['key' => 'company', 'label' => 'Company', 'value' => $companyNm] : null,
-            ])),
-            'backFields' => $backFields,
+            'secondaryFields' => $secondaryFields,
+            'auxiliaryFields' => $auxFields,
+            'backFields'      => $backFields,
         ],
     ];
 
@@ -167,26 +186,8 @@ try {
         }
     }
 
-    // Strip image, the canonical card design from CardRenderer. Same PNG that
-    // /muhammed.ali serves, that wallet_google.php embeds, that card-pdf.php
-    // prints. Source of truth is templates.fields_json + admin upload, exported
-    // by the Fabric.js editor via save_card_*.php. When the canonical PNG is
-    // missing the pass still builds (icon/logo only) so the user gets a usable
-    // wallet card, audit-card-surfaces.php will flag the missing render.
-    try {
-        $ctx = CardRenderer::forEmployee((string)$employee['id']);
-        if ($ctx && !empty($ctx['front_fs']) && is_readable($ctx['front_fs'])) {
-            $stripBytes = @file_get_contents($ctx['front_fs']);
-            if ($stripBytes !== false && $stripBytes !== '') {
-                $passObj->addAsset('strip.png',    $stripBytes);
-                $passObj->addAsset('strip@2x.png', $stripBytes);
-                $passObj->addAsset('thumbnail.png',    $stripBytes);
-                $passObj->addAsset('thumbnail@2x.png', $stripBytes);
-            }
-        }
-    } catch (Throwable $e) {
-        error_log('wallet_apple strip image: ' . $e->getMessage());
-    }
+    // No strip/thumbnail: the cramped card-image preview is intentionally omitted
+    // for a clean, typographic pass (logo + name + position + contacts + QR).
 
     $bytes = $passObj->build();
 
