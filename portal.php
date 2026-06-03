@@ -195,18 +195,16 @@ if (!$activeFrontTemplate && !$activeBackTemplate) {
 
 // Collect enabled fields from templates
 $enabledFields = [];
-if ($activeFrontTemplate && !empty($activeFrontTemplate['fields'])) {
-    foreach ($activeFrontTemplate['fields'] as $key => $field) {
-        if (!empty($field['enabled'])) {
-            $enabledFields[$key] = true;
-        }
-    }
-}
-if ($activeBackTemplate && !empty($activeBackTemplate['fields'])) {
-    foreach ($activeBackTemplate['fields'] as $key => $field) {
-        if (!empty($field['enabled'])) {
-            $enabledFields[$key] = true;
-        }
+// Only DYNAMIC, per-employee fields become form inputs. Static decorations
+// (is_static) and fields baked into the background PNG at import (render_in_bg)
+// are not employee-editable; including them here rendered junk inputs like
+// "Static 9" ... "Static 16" on the public portal (caught on falaj/hosn).
+foreach ([$activeFrontTemplate, $activeBackTemplate] as $__tpl) {
+    if (!$__tpl || empty($__tpl['fields'])) continue;
+    foreach ($__tpl['fields'] as $key => $field) {
+        if (empty($field['enabled'])) continue;
+        if (!empty($field['is_static']) || !empty($field['render_in_bg'])) continue;
+        $enabledFields[$key] = true;
     }
 }
 
@@ -1793,6 +1791,13 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         if (template && template.fields) {
             for (const [key, field] of Object.entries(template.fields)) {
                 if (!field.enabled) continue;
+
+                // Decorations baked into the background PNG at import time
+                // (render_in_bg) are already pixels in the bg. Re-drawing them
+                // with Fabric double-strikes (offset overlap / wrong-font
+                // overstrike). Skip them, exactly like the other 4 render paths
+                // (rule 24). Non-baked statics still draw below.
+                if (field.render_in_bg) continue;
 
                 // Static / decorative spans imported from a PDF (e.g.,
                 // "QR Code, to save the contact", "Follow us") are
