@@ -673,14 +673,27 @@ function exportEmployeesToCSV($employees) {
         }
     }
     
+    // CSV injection (CWE-1236) guard: employee fields are settable by the
+    // public portal + passwordless self-edit, so a value like
+    // =HYPERLINK(...) / DDE payload would execute when the admin opens this
+    // export in Excel/Sheets. Neutralise any cell starting with a formula
+    // trigger char by prefixing a single quote (Excel renders it as text).
+    $csvSafe = function ($v) {
+        $v = (string)$v;
+        if ($v !== '' && strpos("=+-@\t\r", $v[0]) !== false) {
+            $v = "'" . $v;
+        }
+        return $v;
+    };
+
     // Data rows
     foreach ($employees as $emp) {
         $deptName = '';
         if (!empty($emp['department_id']) && isset($deptLookup[$emp['department_id']])) {
             $deptName = $deptLookup[$emp['department_id']];
         }
-        
-        fputcsv($output, [
+
+        fputcsv($output, array_map($csvSafe, [
             $emp['email'] ?? '',
             $emp['name_en'] ?? '',
             $emp['name_ar'] ?? '',
@@ -697,7 +710,7 @@ function exportEmployeesToCSV($employees) {
             $emp['address_en'] ?? $emp['address'] ?? '',
             $emp['address_ar'] ?? '',
             $deptName
-        ]);
+        ]));
     }
     
     fclose($output);

@@ -34,8 +34,18 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
         $companyMap[$c['id']] = $c['name'];
     }
     
+    // CSV injection guard (CWE-1236): audit rows include user-controlled data
+    // (actor_email, entity_id, action). Neutralise formula-trigger leading chars
+    // so a payload can't execute when a super-admin opens the export in Excel.
+    $csvSafe = function ($v) {
+        $v = (string)$v;
+        if ($v !== '' && strpos("=+-@\t\r", $v[0]) !== false) {
+            $v = "'" . $v;
+        }
+        return $v;
+    };
     foreach ($exportLogs as $log) {
-        fputcsv($output, [
+        fputcsv($output, array_map($csvSafe, [
             $log['created_at'],
             $log['actor_email'] ?? 'System',
             $log['actor_role'] ?? '-',
@@ -44,7 +54,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             $log['entity_id'] ?? '-',
             $companyMap[$log['company_id']] ?? 'Global',
             $log['ip_address'] ?? '-'
-        ]);
+        ]));
     }
     fclose($output);
     exit;
