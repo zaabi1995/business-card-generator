@@ -163,9 +163,12 @@ try {
         $headerFields[] = ['key' => 'tagline', 'label' => '', 'value' => $tagline, 'textAlignment' => $NAT];
     }
 
-    // FRONT: name (primary, large) + title (secondary, full-width). Only ONE field in
-    // the secondary/auxiliary band, so the title never shares/truncates. Contacts are
-    // all on the back (tappable). Values are single-language ($lang).
+    // FRONT (eventTicket style): unlike storeCard/coupon/generic, eventTicket renders
+    // secondaryFields and auxiliaryFields on SEPARATE rows (per Apple HIG), so the long
+    // title gets its own full-width row and never truncates next to phone/email.
+    //   primary   = name (over the brand strip)
+    //   secondary = title (own row, full width)
+    //   auxiliary = phone + email (own row)
     $primaryFields = [[
         'key' => 'name', 'label' => '', 'value' => $nameDisp, 'textAlignment' => $NAT,
     ]];
@@ -174,6 +177,12 @@ try {
         $secondaryFields[] = ['key' => 'title', 'label' => '', 'value' => $positionDisp, 'textAlignment' => $NAT];
     }
     $auxFields = [];
+    if ($phone !== '') {
+        $auxFields[] = ['key' => 'phone', 'label' => $L['phone'], 'value' => $phone, 'textAlignment' => $NAT];
+    }
+    if ($emailAddr !== '') {
+        $auxFields[] = ['key' => 'email', 'label' => $L['email'], 'value' => $emailAddr, 'textAlignment' => $NAT];
+    }
 
     // Barcode WITHOUT altText so iOS draws no URL caption under the QR.
     $qr = [
@@ -194,9 +203,11 @@ try {
         'labelColor'          => $labelColor,
         'barcodes'            => [$qr],
         'barcode'             => $qr, // legacy single-barcode key for older iOS
-        // storeCard: gives a crisp strip band (the design lever) + a clean stacked
-        // body below it, matching the corporate/membership cards in Apple's HIG.
-        'storeCard' => [
+        // eventTicket: the ONLY style that renders secondaryFields + auxiliaryFields on
+        // SEPARATE rows (Apple HIG), so title (secondary) gets a full-width row and
+        // phone/email (auxiliary) get their own row, no truncation. We supply a strip
+        // image (no background/thumbnail) so the brand band stays CRISP, not blurred.
+        'eventTicket' => [
             'headerFields'    => $headerFields,
             'primaryFields'   => $primaryFields,
             'secondaryFields' => $secondaryFields,
@@ -257,14 +268,15 @@ try {
         }
     }
 
-    // Strip band (storeCard). Per-tenant override at uploads/companies/<cid>/
-    // wallet-strip[@2x|@3x].png if present; otherwise an auto-generated dotted brand
-    // band from the tenant colour. Apple shows the strip CRISP (not blurred).
+    // Strip band (eventTicket, no background => 375x98 base / 750x196 / 1125x294).
+    // Per-tenant override at uploads/companies/<cid>/wallet-strip[@2x|@3x].png if
+    // present; otherwise an auto-generated dotted brand band from the tenant colour.
+    // Apple shows the strip CRISP (not blurred); the primary name renders over it.
     $cid = (string)($company['id'] ?? '');
     foreach ([
-        'strip.png'    => [375, 144, 'wallet-strip.png'],
-        'strip@2x.png' => [750, 288, 'wallet-strip@2x.png'],
-        'strip@3x.png' => [1125, 432, 'wallet-strip@3x.png'],
+        'strip.png'    => [375, 98, 'wallet-strip.png'],
+        'strip@2x.png' => [750, 196, 'wallet-strip@2x.png'],
+        'strip@3x.png' => [1125, 294, 'wallet-strip@3x.png'],
     ] as $asset => $info) {
         [$sw, $shh, $override] = $info;
         $bytes = null;
