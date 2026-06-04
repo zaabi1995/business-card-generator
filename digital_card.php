@@ -429,6 +429,12 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             border-radius: 8px;
         }
 
+        /* Motion tokens: stronger than the built-in CSS easings, which lack punch. */
+        :root {
+            --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+            --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+        }
+
         /* Card Flip (~10% smaller than the control column for a lighter hero) */
         .card-flip-container {
             perspective: 1000px;
@@ -443,7 +449,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             position: relative;
             width: 100%;
             aspect-ratio: var(--card-aspect, 1.545 / 1);
-            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.6s var(--ease-in-out);
             transform-style: preserve-3d;
         }
         .card-flip-inner.flipped {
@@ -467,6 +473,19 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         }
         .card-back-face {
             transform: rotateY(180deg);
+        }
+
+        /* Reduced motion: keep the flip + opacity feedback, drop the movement. */
+        @media (prefers-reduced-motion: reduce) {
+            .card-flip-inner { transition-duration: 0.01ms; }
+            .action-btn:active,
+            .bottom-btn:active,
+            .wallet-buttons .wallet-btn:active,
+            .social-link:active { transform: none; }
+            @media (hover: hover) and (pointer: fine) {
+                .social-link:hover { transform: none; }
+            }
+            .copy-toast { transition-duration: 0.01ms; }
         }
         .tap-hint {
             text-align: center;
@@ -518,9 +537,9 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             text-decoration: none;
             color: white;
             display: block;
-            transition: opacity 0.2s;
+            transition: transform 0.16s var(--ease-out), opacity 0.16s var(--ease-out);
         }
-        .action-btn:active { opacity: 0.8; }
+        .action-btn:active { opacity: 0.85; transform: scale(0.97); }
         .btn-call { background: <?php echo htmlspecialchars($accentColor); ?>; }
         .btn-whatsapp { background: #25d366; }
         .btn-email {
@@ -600,11 +619,18 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
         }
         .social-link i { font-size: 20px; line-height: 1; }
-        .social-link:hover, .social-link:focus-visible {
-            transform: translateY(-2px);
+        .social-link:focus-visible {
             box-shadow: 0 4px 8px rgba(17,24,39,.10), 0 12px 24px rgba(17,24,39,.10);
             outline: none;
         }
+        /* Lift only on real hover hardware; on touch this would stick after a tap. */
+        @media (hover: hover) and (pointer: fine) {
+            .social-link:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(17,24,39,.10), 0 12px 24px rgba(17,24,39,.10);
+            }
+        }
+        .social-link:active { transform: scale(0.96); }
         /* Brand-tinted hover, keeps idle state clean white */
         .social-link[data-platform="linkedin"]:hover    { background: #0a66c2; color: #fff; }
         .social-link[data-platform="twitter"]:hover     { background: #000;    color: #fff; }
@@ -651,7 +677,8 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         /* Same safeguard for any other <button> on the page (Share,
            testimonial-toggle, appointment submit, lead form submit, etc.). */
         button { font-family: inherit; }
-        .bottom-btn:active { opacity: 0.8; }
+        .bottom-btn { transition: transform 0.16s var(--ease-out), opacity 0.16s var(--ease-out); }
+        .bottom-btn:active { opacity: 0.85; transform: scale(0.97); }
         .btn-save {
             background: <?php echo htmlspecialchars($accentColor); ?>;
             color: white;
@@ -702,9 +729,9 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             border: 1px solid rgba(0,0,0,0.08);
             background: #000;
             color: #fff;
-            transition: opacity 0.2s;
+            transition: transform 0.16s var(--ease-out), opacity 0.16s var(--ease-out);
         }
-        .wallet-buttons .wallet-btn:active { opacity: 0.8; }
+        .wallet-buttons .wallet-btn:active { opacity: 0.85; transform: scale(0.97); }
         .wallet-buttons .wallet-btn.google {
             background: #fff;
             color: #1f1f1f;
@@ -740,7 +767,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             border-radius: 8px;
             font-size: 13px;
             opacity: 0;
-            transition: all 0.3s;
+            transition: transform 0.3s var(--ease-out), opacity 0.3s var(--ease-out);
             pointer-events: none;
             z-index: 100;
         }
@@ -868,7 +895,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             padding: 2px 8px;
             border-radius: 999px;
             color: <?php echo $isDarkPage ? '#bbb' : '#555'; ?>;
-            transition: all 0.15s;
+            transition: background 0.15s var(--ease-out), color 0.15s var(--ease-out);
         }
         .lang-switcher a.active {
             background: <?php echo $isDarkPage ? '#fff' : '#1a1a2e'; ?>;
