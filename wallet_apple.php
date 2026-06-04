@@ -109,8 +109,10 @@ try {
     // name + title + phone + email all competing there truncates the long title.
     // Clean fix: FRONT shows identity only (name primary + title secondary, each
     // full-width); the FULL contact set lives on the back as tappable links.
-    // PKTextAlignmentNatural right-aligns Arabic (RTL) and left-aligns English.
-    $NAT = 'PKTextAlignmentNatural';
+    // Alignment: Arabic forces RIGHT so the phone/email labels + their LTR digit values
+    // hug the right edge (PKTextAlignmentNatural left-aligns LTR digits, which looked
+    // wrong on the Arabic pass). English uses Natural.
+    $NAT = $isAr ? 'PKTextAlignmentRight' : 'PKTextAlignmentNatural';
     $L = $isAr
         ? ['phone' => 'الهاتف', 'email' => 'البريد الإلكتروني', 'web' => 'الموقع الإلكتروني', 'card' => 'البطاقة الرقمية']
         : ['phone' => 'Phone', 'email' => 'Email', 'web' => 'Website', 'card' => 'Digital Card'];
@@ -182,6 +184,11 @@ try {
     }
     if ($emailAddr !== '') {
         $auxFields[] = ['key' => 'email', 'label' => $L['email'], 'value' => $emailAddr, 'textAlignment' => $NAT];
+    }
+    // RTL: the row is laid out left-to-right by array order, so reverse it for Arabic
+    // (phone becomes the rightmost cell = first in RTL reading order).
+    if ($isAr) {
+        $auxFields = array_reverse($auxFields);
     }
 
     // Barcode WITHOUT altText so iOS draws no URL caption under the QR.
