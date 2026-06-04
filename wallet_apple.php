@@ -105,12 +105,6 @@ try {
     if ($positionAr !== '' && $positionAr !== $position) {
         $backFields[] = ['key' => 'title_ar', 'label' => 'Title / المسمى', 'value' => $position . "\n" . $positionAr];
     }
-    if ($phone !== '') {
-        $backFields[] = ['key' => 'phone', 'label' => 'Phone', 'value' => $phone];
-    }
-    if ($emailAddr !== '') {
-        $backFields[] = ['key' => 'email', 'label' => 'Email', 'value' => $emailAddr];
-    }
     if ($website !== '') {
         $backFields[] = ['key' => 'website', 'label' => 'Website', 'value' => $website];
     }
@@ -149,6 +143,14 @@ try {
     if ($position !== '') {
         $secondaryFields[] = ['key' => 'title', 'label' => '', 'value' => $position];
     }
+    // Contacts on the FRONT (auxiliary row): phone + email.
+    $auxFields = [];
+    if ($phone !== '') {
+        $auxFields[] = ['key' => 'phone', 'label' => 'PHONE', 'value' => $phone];
+    }
+    if ($emailAddr !== '') {
+        $auxFields[] = ['key' => 'email', 'label' => 'EMAIL', 'value' => $emailAddr];
+    }
 
     // Barcode WITHOUT altText so iOS draws no URL caption under the QR.
     $qr = [
@@ -175,7 +177,7 @@ try {
             'headerFields'    => $headerFields,
             'primaryFields'   => $primaryFields,
             'secondaryFields' => $secondaryFields,
-            'auxiliaryFields' => [],
+            'auxiliaryFields' => $auxFields,
             'backFields'      => $backFields,
         ],
     ];
