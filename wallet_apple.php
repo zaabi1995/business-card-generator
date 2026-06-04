@@ -63,8 +63,13 @@ try {
     $theme = $company ? loadCompanyTheme($company['id']) : null;
 
     // ---- Pass data ----
-    $name      = $employee['name_en'] ?? $employee['name'] ?? 'Employee';
-    $position  = $employee['position_en'] ?? $employee['position'] ?? $employee['job_title'] ?? '';
+    $name        = $employee['name_en'] ?? $employee['name'] ?? 'Employee';
+    $nameAr      = trim((string)($employee['name_ar'] ?? ''));
+    $position    = $employee['position_en'] ?? $employee['position'] ?? $employee['job_title'] ?? '';
+    $positionAr  = trim((string)($employee['position_ar'] ?? ''));
+    // Bilingual stacks: Arabic line on top, English underneath (Apple renders \n as a line break).
+    $nameVal     = ($nameAr !== '' && $nameAr !== $name) ? ($nameAr . "\n" . $name) : $name;
+    $positionVal = ($positionAr !== '' && $positionAr !== $position) ? ($positionAr . "\n" . $position) : $position;
     $companyNm = $company['name'] ?? '';
     $phone     = $employee['mobile'] ?? $employee['phone'] ?? '';
     $emailAddr = $employee['email'] ?? '';
@@ -119,14 +124,21 @@ try {
     }
     $backFields[] = ['key' => 'card', 'label' => 'Digital Card', 'value' => $cardUrl];
 
-    // Standard Apple "name badge" layout: name as the primary field (anchored
-    // under the logo) with the title right beneath it. Contacts live on the back.
-    // Apple owns the vertical distribution of these field groups; this is the most
-    // natural arrangement (logo + name + title up top, QR pinned at the bottom).
-    $primaryFields = [['key' => 'name', 'label' => '', 'value' => $name]];
-    $secondaryFields = [];
-    if ($position !== '') {
-        $secondaryFields[] = ['key' => 'position', 'label' => '', 'value' => $position];
+    // Header tagline, shown top-right next to the logo (e.g. "An Omantel Company").
+    // Comes from company_themes.tagline; a text field renders in a single colour.
+    $headerFields = [];
+    $tagline = trim((string)($theme['tagline'] ?? ''));
+    if ($tagline !== '') {
+        $headerFields[] = ['key' => 'tagline', 'label' => '', 'value' => $tagline];
+    }
+
+    // Store Card layout (Apple's own membership-card pattern): logo + tagline header,
+    // a brand strip band, then name + title stacked below it, QR at the bottom.
+    // Contacts live on the back. Name/title are bilingual (Arabic over English).
+    $secondaryFields = [['key' => 'name', 'label' => '', 'value' => $nameVal]];
+    $auxFields = [];
+    if ($positionVal !== '') {
+        $auxFields[] = ['key' => 'title', 'label' => '', 'value' => $positionVal];
     }
 
     // Barcode WITHOUT altText so iOS draws no URL caption under the QR.
@@ -143,20 +155,18 @@ try {
         'teamIdentifier'      => APPLE_WALLET_TEAM_ID,
         'organizationName'    => defined('APPLE_WALLET_ORG_NAME') ? APPLE_WALLET_ORG_NAME : 'Cardify',
         'description'         => trim($name . ($companyNm !== '' ? ', ' . $companyNm : '')),
-        // No logoText: the logo image already carries the wordmark, and logoText
-        // renders centred which fought the left-aligned logo.
         'foregroundColor'     => $fgColor,
         'backgroundColor'     => $bgRgb,
         'labelColor'          => $labelColor,
         'barcodes'            => [$qr],
         'barcode'             => $qr, // legacy single-barcode key for older iOS
-        // generic style: a clean solid brand background, matching the best-practice
-        // corporate wallet cards (Mercedes, Bupa, Blackstone, CBRE, ...). No busy
-        // pattern, no eventTicket ticket-notch.
-        'generic' => [
-            'primaryFields'   => $primaryFields,
+        // storeCard: gives a crisp strip band (the design lever) + a clean stacked
+        // body below it, matching the corporate/membership cards in Apple's HIG.
+        'storeCard' => [
+            'headerFields'    => $headerFields,
+            'primaryFields'   => [],
             'secondaryFields' => $secondaryFields,
-            'auxiliaryFields' => [],
+            'auxiliaryFields' => $auxFields,
             'backFields'      => $backFields,
         ],
     ];
@@ -213,8 +223,30 @@ try {
         }
     }
 
-    // No strip/thumbnail: the cramped card-image preview is intentionally omitted
-    // for a clean, typographic pass (logo + name + position + contacts + QR).
+    // Strip band (storeCard). Per-tenant override at uploads/companies/<cid>/
+    // wallet-strip[@2x|@3x].png if present; otherwise an auto-generated dotted brand
+    // band from the tenant colour. Apple shows the strip CRISP (not blurred).
+    $cid = (string)($company['id'] ?? '');
+    foreach ([
+        'strip.png'    => [375, 144, 'wallet-strip.png'],
+        'strip@2x.png' => [750, 288, 'wallet-strip@2x.png'],
+        'strip@3x.png' => [1125, 432, 'wallet-strip@3x.png'],
+    ] as $asset => $info) {
+        [$sw, $shh, $override] = $info;
+        $bytes = null;
+        if ($cid !== '') {
+            $ov = BASE_DIR . '/uploads/companies/' . $cid . '/' . $override;
+            if (is_readable($ov)) {
+                $bytes = @file_get_contents($ov);
+            }
+        }
+        if ($bytes === null || $bytes === false || $bytes === '') {
+            $bytes = WalletImage::brandBackground($primaryHex, $sw, $shh);
+        }
+        if ($bytes) {
+            $passObj->addAsset($asset, $bytes);
+        }
+    }
 
     $bytes = $passObj->build();
 
