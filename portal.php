@@ -787,21 +787,21 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         <!-- Header (consistent with main company page) -->
         <header class="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <?php 
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                        <?php
                         $logoPath = $companyTheme['logo_path'] ?? $company['logo_path'] ?? null;
-                        if (!empty($logoPath)): 
+                        if (!empty($logoPath)):
                         ?>
-                        <img src="<?php echo imageUrl($logoPath); ?>" alt="<?php echo htmlspecialchars($companyName); ?>" class="h-10 w-auto rounded-xl">
+                        <img src="<?php echo imageUrl($logoPath); ?>" alt="<?php echo htmlspecialchars($companyName); ?>" class="h-10 w-auto rounded-xl flex-shrink-0">
                         <?php else: ?>
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                             <?php echo strtoupper(substr($companyName, 0, 2)); ?>
                         </div>
                         <?php endif; ?>
-                        <div>
-                            <h1 class="text-lg font-bold text-gray-900"><?php echo htmlspecialchars($companyName); ?></h1>
-                            <p class="text-xs text-gray-500">
+                        <div class="min-w-0">
+                            <h1 class="text-lg font-bold text-gray-900 truncate"><?php echo htmlspecialchars($companyName); ?></h1>
+                            <p class="text-xs text-gray-500 truncate">
                                 <?php if ($selectedDepartment): ?>
                                     <?php echo htmlspecialchars($selectedDepartment['name']); ?> - <?= htmlspecialchars(t('portal.business_card_portal')) ?>
                                 <?php else: ?>
@@ -810,12 +810,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                             </p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-shrink-0">
                         <?php if (function_exists('currentLocale') && file_exists(INCLUDES_DIR . '/lang-switcher.php')): ?>
                             <?php require INCLUDES_DIR . '/lang-switcher.php'; ?>
                         <?php endif; ?>
-                        <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/admin/login'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 font-medium">
-                            <i class="fa-solid fa-lock"></i><span><?= htmlspecialchars(t('portal.admin_login')) ?></span>
+                        <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/admin/login'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-2 px-3 sm:px-4 py-2 text-sm text-gray-600 hover:text-gray-900 font-medium" title="<?= htmlspecialchars(t('portal.admin_login')) ?>">
+                            <i class="fa-solid fa-lock"></i><span class="hidden sm:inline"><?= htmlspecialchars(t('portal.admin_login')) ?></span>
                         </a>
                     </div>
                 </div>
