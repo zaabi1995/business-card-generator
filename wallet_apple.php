@@ -97,38 +97,47 @@ try {
     $fgColor    = $isDarkBg ? 'rgb(255, 255, 255)' : 'rgb(17, 24, 39)';
     $labelColor = $fgColor; // same hue as values; Apple sizes labels smaller for hierarchy
 
+    // ---- Per-device localization (Ali's choice, 4 Jun 2026) ----
+    // pass.json field values + labels are KEYS resolved from <lang>.lproj/pass.strings;
+    // iOS picks en vs ar by the DEVICE system language, so an Arabic iPhone shows the
+    // WHOLE pass in Arabic and iOS auto-mirrors the chrome to RTL (logo moves right,
+    // fields right-align). PKTextAlignmentNatural also right-aligns Arabic by script.
+    // No documented per-pass RTL toggle exists (deep-research verified) - RTL follows
+    // the device language. We always define each key in BOTH tables so nothing leaks.
+    $strings = ['en' => [], 'ar' => []];
+    $tr = function (string $key, string $en, string $ar) use (&$strings): string {
+        $strings['en'][$key] = $en;
+        $strings['ar'][$key] = ($ar !== '' ? $ar : $en);
+        return $key;
+    };
+    $NAT = 'PKTextAlignmentNatural';
+
     // A back field whose value is tappable. Apple renders a tiny HTML subset in
     // attributedValue (mainly <a href>), so phone/email/url become real links on
     // the pass back (validated against TimOliver/PassKit-Business-Card). `value`
     // stays as a plain-text fallback for accessibility + older iOS.
-    $linkField = function (string $key, string $label, string $display, string $href) {
+    $linkField = function (string $key, string $labelKey, string $display, string $href) use ($NAT) {
         return [
             'key'             => $key,
-            'label'           => $label,
+            'label'           => $labelKey,
             'value'           => $display,
             'attributedValue' => '<a href="' . htmlspecialchars($href, ENT_QUOTES) . '">'
                                  . htmlspecialchars($display, ENT_QUOTES) . '</a>',
+            'textAlignment'   => $NAT,
         ];
     };
 
     $backFields = [];
-    // Back fields DO support multi-line, so the Arabic + English stack lives here.
-    if ($nameAr !== '' && $nameAr !== $name) {
-        $backFields[] = ['key' => 'name_ar', 'label' => 'Name / الاسم', 'value' => $name . "\n" . $nameAr];
-    }
-    if ($positionAr !== '' && $positionAr !== $position) {
-        $backFields[] = ['key' => 'title_ar', 'label' => 'Title / المسمى', 'value' => $position . "\n" . $positionAr];
-    }
-    // Tappable contact links on the back.
+    // Tappable contact links on the back, labels localized per device language.
     if ($phone !== '') {
-        $backFields[] = $linkField('back_phone', 'Phone / الهاتف', $phone, 'tel:' . preg_replace('/[^\d+]/', '', $phone));
+        $backFields[] = $linkField('back_phone', $tr('LBL_PHONE_B', 'Phone', 'الهاتف'), $phone, 'tel:' . preg_replace('/[^\d+]/', '', $phone));
     }
     if ($emailAddr !== '') {
-        $backFields[] = $linkField('back_email', 'Email / البريد', $emailAddr, 'mailto:' . $emailAddr);
+        $backFields[] = $linkField('back_email', $tr('LBL_EMAIL_B', 'Email', 'البريد الإلكتروني'), $emailAddr, 'mailto:' . $emailAddr);
     }
     if ($website !== '') {
         $webHref = preg_match('#^https?://#i', $website) ? $website : ('https://' . $website);
-        $backFields[] = $linkField('website', 'Website / الموقع', $website, $webHref);
+        $backFields[] = $linkField('website', $tr('LBL_WEBSITE', 'Website', 'الموقع الإلكتروني'), $website, $webHref);
     }
     // Social profiles, rendered as tappable links on the pass back.
     try {
@@ -142,33 +151,40 @@ try {
     } catch (Throwable $e) {
         error_log('wallet_apple socials: ' . $e->getMessage());
     }
-    $backFields[] = $linkField('card', 'Digital Card / البطاقة', $cardUrl, $cardUrl);
+    $backFields[] = $linkField('card', $tr('LBL_CARD', 'Digital Card', 'البطاقة الرقمية'), $cardUrl, $cardUrl);
 
     // Header tagline, shown top-right next to the logo (e.g. "An Omantel Company").
     // Comes from company_themes.tagline; a text field renders in a single colour.
     $headerFields = [];
     $tagline = trim((string)($theme['tagline'] ?? ''));
     if ($tagline !== '') {
-        $headerFields[] = ['key' => 'tagline', 'label' => '', 'value' => $tagline];
+        $headerFields[] = ['key' => 'tagline', 'label' => '', 'value' => $tagline, 'textAlignment' => $NAT];
     }
 
-    // Store Card layout: logo + tagline header, brand strip band, then name (primary)
-    // and title (secondary) STACKED below. Apple text fields are single-line and don't
-    // stack Arabic-over-English, so the FRONT shows English (clean, scannable) and the
-    // Arabic name/title live on the back (back fields are multi-line). Faithful bilingual
-    // front would require baking the text into the strip image.
-    $primaryFields = [['key' => 'name', 'label' => '', 'value' => $name]];
+    // Store Card front: name (primary) + title (secondary) + phone/email (auxiliary).
+    // Values are localization keys, so each device shows its own language; the back
+    // carries the tappable full contact set. PKTextAlignmentNatural makes Arabic
+    // right-align (RTL) and English left-align automatically.
+    $primaryFields = [[
+        'key' => 'name', 'label' => '',
+        'value' => $tr('FLD_NAME', $name, $nameAr),
+        'textAlignment' => $NAT,
+    ]];
     $secondaryFields = [];
     if ($position !== '') {
-        $secondaryFields[] = ['key' => 'title', 'label' => '', 'value' => $position];
+        $secondaryFields[] = [
+            'key' => 'title', 'label' => '',
+            'value' => $tr('FLD_TITLE', $position, $positionAr),
+            'textAlignment' => $NAT,
+        ];
     }
-    // Contacts on the FRONT (auxiliary row): phone + email.
+    // Contacts on the FRONT (auxiliary row): phone + email, labels localized.
     $auxFields = [];
     if ($phone !== '') {
-        $auxFields[] = ['key' => 'phone', 'label' => 'PHONE', 'value' => $phone];
+        $auxFields[] = ['key' => 'phone', 'label' => $tr('LBL_PHONE', 'PHONE', 'الهاتف'), 'value' => $phone, 'textAlignment' => $NAT];
     }
     if ($emailAddr !== '') {
-        $auxFields[] = ['key' => 'email', 'label' => 'EMAIL', 'value' => $emailAddr];
+        $auxFields[] = ['key' => 'email', 'label' => $tr('LBL_EMAIL', 'EMAIL', 'البريد الإلكتروني'), 'value' => $emailAddr, 'textAlignment' => $NAT];
     }
 
     // Barcode WITHOUT altText so iOS draws no URL caption under the QR.
@@ -275,6 +291,23 @@ try {
         }
         if ($bytes) {
             $passObj->addAsset($asset, $bytes);
+        }
+    }
+
+    // Localization tables: en.lproj/pass.strings + ar.lproj/pass.strings. Apple
+    // requires UTF-16 for non-ASCII (Arabic), so both are emitted as UTF-16 (BOM +
+    // big-endian). Field values/labels above are keys resolved from these at display
+    // time; a missing key would fall back to the literal, but $tr always writes both.
+    foreach ($strings as $lang => $map) {
+        if (!$map) { continue; }
+        $lines = '';
+        foreach ($map as $k => $v) {
+            $ev = str_replace(['\\', '"', "\r", "\n"], ['\\\\', '\\"', '', '\\n'], (string)$v);
+            $lines .= '"' . $k . '" = "' . $ev . '";' . "\n";
+        }
+        $u16 = @iconv('UTF-8', 'UTF-16', $lines);
+        if ($u16 !== false && $u16 !== '') {
+            $passObj->addAsset($lang . '.lproj/pass.strings', $u16);
         }
     }
 
