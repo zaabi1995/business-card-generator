@@ -97,6 +97,20 @@ try {
     $fgColor    = $isDarkBg ? 'rgb(255, 255, 255)' : 'rgb(17, 24, 39)';
     $labelColor = $fgColor; // same hue as values; Apple sizes labels smaller for hierarchy
 
+    // A back field whose value is tappable. Apple renders a tiny HTML subset in
+    // attributedValue (mainly <a href>), so phone/email/url become real links on
+    // the pass back (validated against TimOliver/PassKit-Business-Card). `value`
+    // stays as a plain-text fallback for accessibility + older iOS.
+    $linkField = function (string $key, string $label, string $display, string $href) {
+        return [
+            'key'             => $key,
+            'label'           => $label,
+            'value'           => $display,
+            'attributedValue' => '<a href="' . htmlspecialchars($href, ENT_QUOTES) . '">'
+                                 . htmlspecialchars($display, ENT_QUOTES) . '</a>',
+        ];
+    };
+
     $backFields = [];
     // Back fields DO support multi-line, so the Arabic + English stack lives here.
     if ($nameAr !== '' && $nameAr !== $name) {
@@ -105,25 +119,30 @@ try {
     if ($positionAr !== '' && $positionAr !== $position) {
         $backFields[] = ['key' => 'title_ar', 'label' => 'Title / المسمى', 'value' => $position . "\n" . $positionAr];
     }
+    // Tappable contact links on the back.
+    if ($phone !== '') {
+        $backFields[] = $linkField('back_phone', 'Phone / الهاتف', $phone, 'tel:' . preg_replace('/[^\d+]/', '', $phone));
+    }
+    if ($emailAddr !== '') {
+        $backFields[] = $linkField('back_email', 'Email / البريد', $emailAddr, 'mailto:' . $emailAddr);
+    }
     if ($website !== '') {
-        $backFields[] = ['key' => 'website', 'label' => 'Website', 'value' => $website];
+        $webHref = preg_match('#^https?://#i', $website) ? $website : ('https://' . $website);
+        $backFields[] = $linkField('website', 'Website / الموقع', $website, $webHref);
     }
     // Social profiles, rendered as tappable links on the pass back.
     try {
         foreach (EmployeeSocials::loadForEmployee($employee['id']) as $i => $sl) {
             $href = EmployeeSocials::hrefFor($sl['platform'] ?? '', $sl['url'] ?? '');
             if ($href !== '') {
-                $backFields[] = [
-                    'key'   => 'social_' . ($sl['platform'] ?? $i),
-                    'label' => $sl['label'] ?? ucfirst((string)($sl['platform'] ?? 'Link')),
-                    'value' => $href,
-                ];
+                $label = $sl['label'] ?? ucfirst((string)($sl['platform'] ?? 'Link'));
+                $backFields[] = $linkField('social_' . ($sl['platform'] ?? $i), $label, $href, $href);
             }
         }
     } catch (Throwable $e) {
         error_log('wallet_apple socials: ' . $e->getMessage());
     }
-    $backFields[] = ['key' => 'card', 'label' => 'Digital Card', 'value' => $cardUrl];
+    $backFields[] = $linkField('card', 'Digital Card / البطاقة', $cardUrl, $cardUrl);
 
     // Header tagline, shown top-right next to the logo (e.g. "An Omantel Company").
     // Comes from company_themes.tagline; a text field renders in a single colour.
