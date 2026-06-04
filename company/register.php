@@ -420,9 +420,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         </div>
                     </div>
                     <?php endif; ?>
-                    <h2 class="mt-8 text-2xl font-bold tracking-tight text-gray-900">
+                    <h1 class="mt-8 text-2xl font-bold tracking-tight text-gray-900">
                         <?= htmlspecialchars(t($pendingReferral === 'bhd' ? 'register.headline_bhd' : 'register.headline_default')) ?>
-                    </h2>
+                    </h1>
                     <p class="mt-2 text-sm text-gray-600">
                         <?= htmlspecialchars(t('register.already_registered')) ?>
                         <a href="<?php echo getBasePath(); ?>login.php" class="font-semibold text-blue-600 hover:text-blue-500">

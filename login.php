@@ -141,9 +141,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <a href="<?php echo getBasePath(); ?>" class="flex items-center gap-3">
                         <img src="<?php echo assetUrl('images/logo.svg'); ?>" class="h-10 w-auto" alt="<?php echo $brandName; ?>">
                     </a>
-                    <h2 class="mt-8 text-2xl font-bold tracking-tight text-gray-900">
+                    <h1 class="mt-8 text-2xl font-bold tracking-tight text-gray-900">
                         <?= htmlspecialchars(t('auth.sign_in_headline')) ?>
-                    </h2>
+                    </h1>
                     <p class="mt-2 text-sm text-gray-600">
                         <?= htmlspecialchars(t('auth.not_member')) ?>
                         <a href="<?php echo getBasePath(); ?>company/register.php" class="font-semibold text-blue-600 hover:text-blue-500"><?= htmlspecialchars(t('auth.as_company')) ?></a>

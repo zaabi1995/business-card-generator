@@ -1006,7 +1006,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
 
         <!-- Employee Info -->
         <div class="employee-info">
-            <div class="employee-name"><?php echo htmlspecialchars($name); ?></div>
+            <div class="employee-name" role="heading" aria-level="1"><?php echo htmlspecialchars($name); ?></div>
             <?php if ($position || $companyName): ?>
             <div class="employee-title">
                 <?php

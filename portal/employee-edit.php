@@ -252,25 +252,25 @@ $pageTitle = t('portal.edit_my_details');
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.first_name')) ?></label>
-                <input type="text" x-model="data.name_en" @input.debounce.800ms="save()" class="form-input">
+                <input type="text" x-model="data.name_en" @input.debounce.800ms="save()" class="form-input" aria-label="<?= htmlspecialchars(t('portal.first_name')) ?>">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.job_title')) ?></label>
-                <input type="text" x-model="data.position_en" @input.debounce.800ms="save()" class="form-input">
+                <input type="text" x-model="data.position_en" @input.debounce.800ms="save()" class="form-input" aria-label="<?= htmlspecialchars(t('portal.job_title')) ?>">
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('common.phone')) ?></label>
-                    <input type="tel" x-model="data.phone" @input.debounce.800ms="save()" class="form-input" dir="ltr">
+                    <input type="tel" x-model="data.phone" @input.debounce.800ms="save()" class="form-input" dir="ltr" aria-label="<?= htmlspecialchars(t('common.phone')) ?>">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.mobile')) ?></label>
-                    <input type="tel" x-model="data.mobile" @input.debounce.800ms="save()" class="form-input" dir="ltr">
+                    <input type="tel" x-model="data.mobile" @input.debounce.800ms="save()" class="form-input" dir="ltr" aria-label="<?= htmlspecialchars(t('portal.mobile')) ?>">
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('common.email')) ?></label>
-                <input type="email" x-model="data.email" @input.debounce.800ms="save()" class="form-input" dir="ltr">
+                <input type="email" x-model="data.email" @input.debounce.800ms="save()" class="form-input" dir="ltr" aria-label="<?= htmlspecialchars(t('common.email')) ?>">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.website')) ?></label>
