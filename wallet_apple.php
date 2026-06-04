@@ -228,7 +228,7 @@ try {
         if (!$logoFs) {
             continue;
         }
-        $bytes = WalletImage::fitPng($logoFs, $dim[0], $dim[1], $knock);
+        $bytes = WalletImage::fitPng($logoFs, $dim[0], $dim[1], $knock, true); // left-aligned in canvas
         if ($bytes) {
             $passObj->addAsset($fname, $bytes);
         }

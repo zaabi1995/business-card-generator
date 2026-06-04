@@ -21,7 +21,7 @@ class WalletImage
      * the source actually HAS transparency (a transparent-background logo) so an
      * opaque white-bg JPEG never becomes a solid white block.
      */
-    public static function fitPng(string $srcPath, int $w, int $h, bool $knockoutWhite = false): ?string
+    public static function fitPng(string $srcPath, int $w, int $h, bool $knockoutWhite = false, bool $alignLeft = false): ?string
     {
         if (!function_exists('imagecreatetruecolor')) {
             return null; // GD missing , caller falls back to the transparent icon
@@ -46,7 +46,7 @@ class WalletImage
         $scale = min($w / $sw, $h / $sh);
         $dw = max(1, (int) round($sw * $scale));
         $dh = max(1, (int) round($sh * $scale));
-        $dx = (int) (($w - $dw) / 2);
+        $dx = $alignLeft ? 0 : (int) (($w - $dw) / 2);
         $dy = (int) (($h - $dh) / 2);
         $doKnockout = $knockoutWhite && self::hasTransparency($img);
         imagecopyresampled($canvas, $img, $dx, $dy, 0, 0, $dw, $dh, $sw, $sh);
