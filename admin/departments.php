@@ -330,7 +330,7 @@ adminHeader(t('departments.page_title'), 'departments');
         <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" @click="showModal = false"></div>
         <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md">
             <div class="p-6 border-b border-gray-100">
-                <h3 class="text-xl font-bold text-gray-900" x-text="editMode ? <?= json_encode(t('departments.modal_edit_title')) ?> : <?= json_encode(t('departments.modal_create_title')) ?>"></h3>
+                <h3 class="text-xl font-bold text-gray-900" x-text="editMode ? <?= htmlspecialchars(json_encode(t('departments.modal_edit_title'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?> : <?= htmlspecialchars(json_encode(t('departments.modal_create_title'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>"></h3>
             </div>
             
             <form method="post" class="p-6">
@@ -429,7 +429,7 @@ adminHeader(t('departments.page_title'), 'departments');
                         <?= htmlspecialchars(t('departments.cancel')) ?>
                     </button>
                     <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-                        <span x-text="editMode ? <?= json_encode(t('departments.save_changes')) ?> : <?= json_encode(t('departments.create_department')) ?>"></span>
+                        <span x-text="editMode ? <?= htmlspecialchars(json_encode(t('departments.save_changes'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?> : <?= htmlspecialchars(json_encode(t('departments.create_department'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>"></span>
                     </button>
                 </div>
             </form>
