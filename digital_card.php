@@ -415,7 +415,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .page-container {
             max-width: 420px;
             margin: 0 auto;
-            padding: 10px 16px 12px;
+            padding: 8px 16px 8px;
         }
 
         /* Company Logo */
@@ -438,8 +438,8 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         /* Card Flip (~10% smaller than the control column for a lighter hero) */
         .card-flip-container {
             perspective: 1000px;
-            max-width: 360px;
-            margin: 0 auto 6px;
+            max-width: 340px;
+            margin: 0 auto 4px;
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
         }
@@ -498,7 +498,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         /* Employee Info */
         .employee-info {
             text-align: center;
-            margin: 6px auto 10px;
+            margin: 4px auto 8px;
             max-width: 400px;
         }
         .employee-name {
@@ -525,11 +525,11 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             display: flex;
             gap: 10px;
             max-width: 400px;
-            margin: 0 auto 8px;
+            margin: 0 auto 6px;
         }
         .action-btn {
             flex: 1;
-            padding: 9px 8px;
+            padding: 8px 8px;
             border-radius: 10px;
             text-align: center;
             font-size: 13px;
@@ -568,7 +568,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .contact-row {
             display: flex;
             align-items: center;
-            padding: 9px 16px;
+            padding: 8px 16px;
             font-size: 13px;
             text-decoration: none;
             transition: background 0.15s;
@@ -603,7 +603,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             justify-content: center;
             gap: 12px;
             max-width: 400px;
-            margin: 14px auto 0;
+            margin: 10px auto 0;
         }
         .social-link {
             width: 48px;
@@ -654,11 +654,11 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             display: flex;
             gap: 10px;
             max-width: 400px;
-            margin: 8px auto 0;
+            margin: 6px auto 0;
         }
         .bottom-btn {
             flex: 1;
-            padding: 9px;
+            padding: 8px;
             border-radius: 10px;
             text-align: center;
             font-size: 14px;
@@ -710,12 +710,12 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             display: flex;
             gap: 10px;
             max-width: 400px;
-            margin: 8px auto 0;
+            margin: 6px auto 0;
             flex-direction: row;
         }
         .wallet-buttons .wallet-btn {
             flex: 1;
-            padding: 9px 14px;
+            padding: 8px 14px;
             border-radius: 10px;
             text-align: center;
             font-size: 13px;
@@ -934,15 +934,15 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .cardify-viral-footer {
             display: flex;
             justify-content: center;
-            padding: 10px 0 12px;
-            margin-top: 4px;
+            padding: 6px 0 4px;
+            margin-top: 2px;
         }
         .cardify-viral-footer .viral-link {
             display: inline-flex;
             align-items: center;
             gap: 7px;
-            min-height: 44px;
-            padding: 10px 16px;
+            min-height: 36px;
+            padding: 7px 16px;
             font-size: 12.5px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             letter-spacing: 0.2px;
@@ -978,8 +978,8 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             outline-offset: 2px;
         }
         @media (max-width: 420px) {
-            .cardify-viral-footer { padding: 8px 12px 12px; }
-            .cardify-viral-footer .viral-link { font-size: 12px; width: 100%; justify-content: center; min-height: 40px; }
+            .cardify-viral-footer { padding: 6px 12px 4px; }
+            .cardify-viral-footer .viral-link { font-size: 12px; width: 100%; justify-content: center; min-height: 36px; }
         }
     </style>
 </head>
@@ -1730,17 +1730,23 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <?php endif; ?>
         </div>
         <script>
-            // Show only the wallet for the current platform: iPhone/iPad → Apple,
-            // Android → Google, desktop → both. A pkpass can't be added on Android
-            // (and vice-versa), so hiding the wrong button avoids a dead-end tap.
+            // Apple Wallet (.pkpass) only adds on iOS mobile (iPhone/iPad), so the
+            // Apple button shows ONLY there. Google Wallet shows everywhere except
+            // iOS. If nothing is left for the platform, drop the block so it leaves
+            // no empty gap.
             (function () {
                 var w = document.getElementById('walletButtons');
                 if (!w) return;
                 var ua = navigator.userAgent || '';
                 var isIOS = /iPad|iPhone|iPod/i.test(ua) ||
                             (/Macintosh/i.test(ua) && typeof document !== 'undefined' && 'ontouchend' in document);
-                var isAndroid = /Android/i.test(ua);
-                w.classList.add(isAndroid ? 'plat-google' : (isIOS ? 'plat-apple' : 'plat-both'));
+                var apple = w.querySelector('.wallet-btn.apple');
+                var google = w.querySelector('.wallet-btn.google');
+                if (apple && !isIOS) apple.style.display = 'none';   // Apple = iOS mobile only
+                if (google && isIOS) google.style.display = 'none';  // Google never on iOS
+                var anyVisible = (apple && apple.style.display !== 'none') ||
+                                 (google && google.style.display !== 'none');
+                if (!anyVisible) w.style.display = 'none';
             })();
         </script>
         <?php endif; ?>
