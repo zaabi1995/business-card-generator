@@ -22,6 +22,7 @@ try {
     require_once INCLUDES_DIR . '/AppleWalletPass.php';
     require_once INCLUDES_DIR . '/WalletImage.php';
     require_once INCLUDES_DIR . '/CardRenderer.php';
+    require_once INCLUDES_DIR . '/EmployeeSocials.php';
 
     $employeeId  = trim($_GET['i'] ?? $_GET['employee_id'] ?? '');
     $companySlug = trim($_GET['c'] ?? $_GET['company_slug'] ?? '');
@@ -101,6 +102,21 @@ try {
     if ($website !== '') {
         $backFields[] = ['key' => 'website', 'label' => 'Website', 'value' => $website];
     }
+    // Social profiles, rendered as tappable links on the pass back.
+    try {
+        foreach (EmployeeSocials::loadForEmployee($employee['id']) as $i => $sl) {
+            $href = EmployeeSocials::hrefFor($sl['platform'] ?? '', $sl['url'] ?? '');
+            if ($href !== '') {
+                $backFields[] = [
+                    'key'   => 'social_' . ($sl['platform'] ?? $i),
+                    'label' => $sl['label'] ?? ucfirst((string)($sl['platform'] ?? 'Link')),
+                    'value' => $href,
+                ];
+            }
+        }
+    } catch (Throwable $e) {
+        error_log('wallet_apple socials: ' . $e->getMessage());
+    }
     $backFields[] = ['key' => 'card', 'label' => 'Digital Card', 'value' => $cardUrl];
 
     // Front hierarchy: logo+company (header) -> name (primary) -> position
@@ -132,14 +148,17 @@ try {
         'teamIdentifier'      => APPLE_WALLET_TEAM_ID,
         'organizationName'    => defined('APPLE_WALLET_ORG_NAME') ? APPLE_WALLET_ORG_NAME : 'Cardify',
         'description'         => trim($name . ($companyNm !== '' ? ', ' . $companyNm : '')),
-        'logoText'            => $companyNm !== '' ? $companyNm : $name,
+        // No logoText: the logo image already carries the wordmark, and logoText
+        // renders centred which fought the left-aligned logo.
         'foregroundColor'     => $fgColor,
         'backgroundColor'     => $bgRgb,
         'labelColor'          => $labelColor,
         'barcodes'            => [$qr],
         'barcode'             => $qr, // legacy single-barcode key for older iOS
-        // eventTicket (not generic) so we can ship a full-bleed brand background.
-        'eventTicket' => [
+        // generic style: a clean solid brand background, matching the best-practice
+        // corporate wallet cards (Mercedes, Bupa, Blackstone, CBRE, ...). No busy
+        // pattern, no eventTicket ticket-notch.
+        'generic' => [
             'primaryFields' => [[
                 'key'   => 'name',
                 'label' => '',
@@ -205,16 +224,6 @@ try {
 
     // No strip/thumbnail: the cramped card-image preview is intentionally omitted
     // for a clean, typographic pass (logo + name + position + contacts + QR).
-
-    // Full-bleed brand background (eventTicket only). Generated from the tenant's
-    // brand colour with a faint halftone dot wave, echoing the business card.
-    // Apple blurs + dims this behind the fields. Falls back to backgroundColor if absent.
-    foreach (['background.png' => [180, 220], 'background@2x.png' => [360, 440], 'background@3x.png' => [540, 660]] as $fname => $dim) {
-        $bytes = WalletImage::brandBackground($primaryHex, $dim[0], $dim[1]);
-        if ($bytes) {
-            $passObj->addAsset($fname, $bytes);
-        }
-    }
 
     $bytes = $passObj->build();
 

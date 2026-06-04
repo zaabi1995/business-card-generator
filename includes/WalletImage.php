@@ -92,24 +92,26 @@ class WalletImage
         $r = hexdec(substr($hx, 0, 2)); $g = hexdec(substr($hx, 2, 2)); $b = hexdec(substr($hx, 4, 2));
 
         $im = imagecreatetruecolor($w, $h);
-        // Vertical gradient: brand at top -> ~22% deeper at the bottom for depth.
+        // Vertical gradient: brand at top -> ~28% deeper at the bottom for depth.
         for ($y = 0; $y < $h; $y++) {
             $t = $y / max(1, $h - 1);
-            $f = 1 - 0.22 * $t;
+            $f = 1 - 0.28 * $t;
             $col = imagecolorallocate($im, (int)max(0, $r * $f), (int)max(0, $g * $f), (int)max(0, $b * $f));
             imageline($im, 0, $y, $w, $y, $col);
         }
-        // Faint halftone dot wave (a soft diagonal band), lighter tint of the brand.
+        // Allover halftone (like the Otech card), intensifying toward the bottom-
+        // right. Big dots + meaningful opacity so the texture survives Apple's
+        // heavy blur instead of washing out to flat colour.
         imagealphablending($im, true);
-        $lr = (int)min(255, $r + 95); $lg = (int)min(255, $g + 100); $lb = (int)min(255, $b + 120);
-        $step = max(6, (int)($w / 26));
+        $lr = (int)min(255, $r + 120); $lg = (int)min(255, $g + 125); $lb = (int)min(255, $b + 135);
+        $step = max(8, (int)($w / 15));
         for ($gy = 0; $gy < $h + $step; $gy += $step) {
             for ($gx = 0; $gx < $w + $step; $gx += $step) {
-                $wave = sin(($gx / max(1, $w)) * M_PI * 1.6) * ($h * 0.14) + $h * 0.58;
-                $band = 1 - (abs($gy - $wave) / ($h * 0.42));
-                if ($band <= 0.04) { continue; }
-                $rad = max(1, (int)round($step * 0.17 * $band));
-                $alpha = (int)max(96, min(124, 127 - 30 * $band)); // faint: 96..124
+                $diag = (($gx / max(1, $w)) + ($gy / max(1, $h))) / 2; // 0 top-left .. 1 bottom-right
+                $intensity = pow($diag, 1.15);
+                if ($intensity < 0.05) { continue; }
+                $rad = max(1, (int)round($step * 0.34 * $intensity));
+                $alpha = (int)max(40, min(120, 122 - 85 * $intensity)); // 40 strong .. 120 faint
                 $col = imagecolorallocatealpha($im, $lr, $lg, $lb, $alpha);
                 imagefilledellipse($im, (int)$gx, (int)$gy, $rad * 2, $rad * 2, $col);
             }
