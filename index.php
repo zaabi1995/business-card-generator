@@ -938,9 +938,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             ['k' => 'pin1', 'href' => '/companies/bhd-group'],
                             ['k' => 'pin2', 'href' => '/companies/bank-muscat'],
                             ['k' => 'pin3', 'href' => '/companies/oq'],
-                            ['k' => 'pin4', 'href' => '/companies/asyad'],
-                            ['k' => 'pin5', 'href' => '/companies/omantel'],
-                            ['k' => 'pin6', 'href' => '/companies/ooredoo-oman'],
+                            ['k' => 'pin4', 'href' => '/companies/asyad-group'],
+                            ['k' => 'pin5', 'href' => '/companies/oman-telecommunication'],
+                            ['k' => 'pin6', 'href' => '/companies/ooredoo-01-0d1b'],
                             ['k' => 'pin7', 'href' => '/companies/bank-dhofar'],
                             ['k' => 'pin8', 'href' => '/companies/sohar-international-bank'],
                         ] as $pin): ?>
