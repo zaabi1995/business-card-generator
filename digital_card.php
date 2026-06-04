@@ -415,16 +415,16 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .page-container {
             max-width: 420px;
             margin: 0 auto;
-            padding: 14px 16px 14px;
+            padding: 10px 16px 12px;
         }
 
         /* Company Logo */
         .company-logo {
             text-align: center;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
         .company-logo img {
-            max-width: 104px;
+            max-width: 92px;
             height: auto;
             border-radius: 8px;
         }
@@ -491,18 +491,18 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             text-align: center;
             font-size: 11px;
             color: <?php echo $isDarkPage ? '#666' : '#999'; ?>;
-            margin-top: 5px;
+            margin-top: 3px;
             transition: opacity 0.5s;
         }
 
         /* Employee Info */
         .employee-info {
             text-align: center;
-            margin: 10px auto 12px;
+            margin: 6px auto 10px;
             max-width: 400px;
         }
         .employee-name {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
             <?php if ($isDarkPage): ?>
             color: #f0f0f0;
@@ -525,11 +525,11 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             display: flex;
             gap: 10px;
             max-width: 400px;
-            margin: 0 auto 12px;
+            margin: 0 auto 8px;
         }
         .action-btn {
             flex: 1;
-            padding: 10px 8px;
+            padding: 9px 8px;
             border-radius: 10px;
             text-align: center;
             font-size: 13px;
@@ -568,7 +568,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .contact-row {
             display: flex;
             align-items: center;
-            padding: 10px 16px;
+            padding: 9px 16px;
             font-size: 13px;
             text-decoration: none;
             transition: background 0.15s;
@@ -603,7 +603,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             justify-content: center;
             gap: 12px;
             max-width: 400px;
-            margin: 20px auto 0;
+            margin: 14px auto 0;
         }
         .social-link {
             width: 48px;
@@ -654,11 +654,11 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             display: flex;
             gap: 10px;
             max-width: 400px;
-            margin: 12px auto 0;
+            margin: 8px auto 0;
         }
         .bottom-btn {
             flex: 1;
-            padding: 11px;
+            padding: 9px;
             border-radius: 10px;
             text-align: center;
             font-size: 14px;
@@ -710,12 +710,12 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             display: flex;
             gap: 10px;
             max-width: 400px;
-            margin: 10px auto 0;
+            margin: 8px auto 0;
             flex-direction: row;
         }
         .wallet-buttons .wallet-btn {
             flex: 1;
-            padding: 10px 14px;
+            padding: 9px 14px;
             border-radius: 10px;
             text-align: center;
             font-size: 13px;
