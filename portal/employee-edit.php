@@ -279,7 +279,7 @@ $pageTitle = t('portal.edit_my_details');
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.primary_tap')) ?></label>
-                <select x-model="data.preferred_contact_action" @change="save()" class="form-input" dir="<?= htmlspecialchars($dir) ?>">
+                <select x-model="data.preferred_contact_action" @change="save()" class="form-input" dir="<?= htmlspecialchars($dir) ?>" aria-label="<?= htmlspecialchars(t('portal.primary_tap')) ?>">
                     <option value="save_contact"><?= htmlspecialchars(t('portal.primary_tap_save')) ?></option>
                     <option value="whatsapp"><?= htmlspecialchars(t('portal.primary_tap_whatsapp')) ?></option>
                     <option value="call"><?= htmlspecialchars(t('portal.primary_tap_call')) ?></option>
@@ -307,7 +307,7 @@ $pageTitle = t('portal.edit_my_details');
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.department')) ?></label>
                 <div class="flex items-center gap-2">
-                    <select x-model="deptRequestValue" class="form-input flex-1" dir="<?= htmlspecialchars($dir) ?>">
+                    <select x-model="deptRequestValue" class="form-input flex-1" dir="<?= htmlspecialchars($dir) ?>" aria-label="<?= htmlspecialchars(t('portal.department')) ?>">
                         <option value=""><?= htmlspecialchars(t('portal.department_current', ['name' => $currentDepartmentName ?: t('portal.department_none')])) ?></option>
                         <?php foreach ($departments as $d): if ($d['id'] === ($employee['department_id'] ?? null)) continue; ?>
                             <option value="<?= htmlspecialchars($d['id']) ?>"><?= htmlspecialchars($d['name']) ?></option>
