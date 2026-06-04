@@ -138,7 +138,8 @@ try {
         'labelColor'          => $labelColor,
         'barcodes'            => [$qr],
         'barcode'             => $qr, // legacy single-barcode key for older iOS
-        'generic' => [
+        // eventTicket (not generic) so we can ship a full-bleed brand background.
+        'eventTicket' => [
             'primaryFields' => [[
                 'key'   => 'name',
                 'label' => '',
@@ -204,6 +205,16 @@ try {
 
     // No strip/thumbnail: the cramped card-image preview is intentionally omitted
     // for a clean, typographic pass (logo + name + position + contacts + QR).
+
+    // Full-bleed brand background (eventTicket only). Generated from the tenant's
+    // brand colour with a faint halftone dot wave, echoing the business card.
+    // Apple blurs + dims this behind the fields. Falls back to backgroundColor if absent.
+    foreach (['background.png' => [180, 220], 'background@2x.png' => [360, 440], 'background@3x.png' => [540, 660]] as $fname => $dim) {
+        $bytes = WalletImage::brandBackground($primaryHex, $dim[0], $dim[1]);
+        if ($bytes) {
+            $passObj->addAsset($fname, $bytes);
+        }
+    }
 
     $bytes = $passObj->build();
 

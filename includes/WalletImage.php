@@ -75,6 +75,51 @@ class WalletImage
         return ($ok && $bytes !== false && $bytes !== '') ? $bytes : null;
     }
 
+    /**
+     * Generate a brand-coloured pass background (PNG bytes): a soft vertical
+     * gradient in the tenant's colour plus a faint diagonal halftone dot wave,
+     * echoing the Otech-style business card. Designed to read well after Apple's
+     * heavy background blur. Returns null if GD is unavailable.
+     */
+    public static function brandBackground(string $hex, int $w, int $h): ?string
+    {
+        if (!function_exists('imagecreatetruecolor')) {
+            return null;
+        }
+        $hx = ltrim($hex, '#');
+        if (strlen($hx) === 3) { $hx = $hx[0].$hx[0].$hx[1].$hx[1].$hx[2].$hx[2]; }
+        if (strlen($hx) !== 6) { $hx = '2d13ea'; }
+        $r = hexdec(substr($hx, 0, 2)); $g = hexdec(substr($hx, 2, 2)); $b = hexdec(substr($hx, 4, 2));
+
+        $im = imagecreatetruecolor($w, $h);
+        // Vertical gradient: brand at top -> ~22% deeper at the bottom for depth.
+        for ($y = 0; $y < $h; $y++) {
+            $t = $y / max(1, $h - 1);
+            $f = 1 - 0.22 * $t;
+            $col = imagecolorallocate($im, (int)max(0, $r * $f), (int)max(0, $g * $f), (int)max(0, $b * $f));
+            imageline($im, 0, $y, $w, $y, $col);
+        }
+        // Faint halftone dot wave (a soft diagonal band), lighter tint of the brand.
+        imagealphablending($im, true);
+        $lr = (int)min(255, $r + 95); $lg = (int)min(255, $g + 100); $lb = (int)min(255, $b + 120);
+        $step = max(6, (int)($w / 26));
+        for ($gy = 0; $gy < $h + $step; $gy += $step) {
+            for ($gx = 0; $gx < $w + $step; $gx += $step) {
+                $wave = sin(($gx / max(1, $w)) * M_PI * 1.6) * ($h * 0.14) + $h * 0.58;
+                $band = 1 - (abs($gy - $wave) / ($h * 0.42));
+                if ($band <= 0.04) { continue; }
+                $rad = max(1, (int)round($step * 0.17 * $band));
+                $alpha = (int)max(96, min(124, 127 - 30 * $band)); // faint: 96..124
+                $col = imagecolorallocatealpha($im, $lr, $lg, $lb, $alpha);
+                imagefilledellipse($im, (int)$gx, (int)$gy, $rad * 2, $rad * 2, $col);
+            }
+        }
+        ob_start();
+        $ok = imagepng($im);
+        $bytes = ob_get_clean();
+        return ($ok && $bytes !== false && $bytes !== '') ? $bytes : null;
+    }
+
     /** True if the image has any meaningfully transparent pixels (sampled grid). */
     private static function hasTransparency($img): bool
     {
