@@ -119,19 +119,16 @@ try {
     }
     $backFields[] = ['key' => 'card', 'label' => 'Digital Card', 'value' => $cardUrl];
 
-    // Front hierarchy: logo+company (header) -> name (primary) -> position
-    // (secondary) -> contacts (auxiliary). Everything is conditional, so a sparse
-    // card simply shows fewer rows instead of empty captions.
-    $secondaryFields = [];
-    if ($position !== '') {
-        $secondaryFields[] = ['key' => 'position', 'label' => '', 'value' => $position];
-    }
+    // Best-practice corporate layout (CBRE / Mercedes / Bupa): logo hero up top,
+    // then name + title clustered together at the bottom near the QR. Contacts live
+    // on the back. Keeping primaryFields EMPTY is what removes the "weird spacing":
+    // a big primary field gets top-anchored while secondary/auxiliary get bottom-
+    // anchored, leaving an orphaned name with a huge gap. Clustering name+title in
+    // secondary/auxiliary keeps them together.
+    $secondaryFields = [['key' => 'name', 'label' => '', 'value' => $name]];
     $auxFields = [];
-    if ($phone !== '') {
-        $auxFields[] = ['key' => 'phone', 'label' => 'PHONE', 'value' => $phone];
-    }
-    if ($emailAddr !== '') {
-        $auxFields[] = ['key' => 'email', 'label' => 'EMAIL', 'value' => $emailAddr];
+    if ($position !== '') {
+        $auxFields[] = ['key' => 'position', 'label' => '', 'value' => $position];
     }
 
     // Barcode WITHOUT altText so iOS draws no URL caption under the QR.
@@ -159,11 +156,7 @@ try {
         // corporate wallet cards (Mercedes, Bupa, Blackstone, CBRE, ...). No busy
         // pattern, no eventTicket ticket-notch.
         'generic' => [
-            'primaryFields' => [[
-                'key'   => 'name',
-                'label' => '',
-                'value' => $name,
-            ]],
+            'primaryFields'   => [],
             'secondaryFields' => $secondaryFields,
             'auxiliaryFields' => $auxFields,
             'backFields'      => $backFields,
