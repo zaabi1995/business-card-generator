@@ -78,9 +78,16 @@ try {
     // is the canonical project host (CLAUDE.md, "URLs + security").
     $publicOrigin = 'https://' . (defined('APP_HOST') ? APP_HOST : 'cardify.om');
 
+    // Prefer a tenant REVERSE logo ("<name>-dark.<ext>" sibling of logo_path) since
+    // the Google pass background is the brand colour; fall back to the normal logo.
     $logoUri = null;
     if ($theme && !empty($theme['logo_path'])) {
-        $logoUri = $publicOrigin . '/' . ltrim($theme['logo_path'], '/');
+        $logoRel = $theme['logo_path'];
+        $darkFs  = preg_replace('/(\.[A-Za-z0-9]+)$/', '-dark$1', BASE_DIR . '/' . ltrim($logoRel, '/'));
+        if ($darkFs && is_readable($darkFs)) {
+            $logoRel = preg_replace('/(\.[A-Za-z0-9]+)$/', '-dark$1', $logoRel);
+        }
+        $logoUri = $publicOrigin . '/' . ltrim($logoRel, '/');
     }
 
     // Hero image, the canonical card design. Same PNG that /muhammed.ali shows,

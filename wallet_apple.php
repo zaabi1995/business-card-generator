@@ -157,11 +157,25 @@ try {
     // logo can be SVG / JPEG / WebP / oversized, any of which makes iOS reject
     // the pass with the opaque "Cannot add pass". WalletImage re-encodes to clean
     // PNGs at Apple's expected sizes (icon = square; logo = wide, top-left).
-    $logoFs = null;
+    // Icon (system contexts, often on white) = the original-colour logo.
+    $iconFs = null;
     if ($theme && !empty($theme['logo_path'])) {
         $cand = BASE_DIR . '/' . ltrim($theme['logo_path'], '/');
         if (is_readable($cand)) {
-            $logoFs = $cand;
+            $iconFs = $cand;
+        }
+    }
+    // Header logo can use a tenant REVERSE logo: a "<name>-dark.<ext>" sibling of
+    // logo_path (white text + brand accents, e.g. otech-logo-dark.png). If present
+    // it's used as-is on a dark brand (orange accents preserved); otherwise the
+    // plain logo is auto-knocked out to white.
+    $logoFs = $iconFs;
+    $logoIsReverse = false;
+    if ($iconFs && $isDarkBg) {
+        $darkCand = preg_replace('/(\.[A-Za-z0-9]+)$/', '-dark$1', $iconFs);
+        if ($darkCand && is_readable($darkCand)) {
+            $logoFs = $darkCand;
+            $logoIsReverse = true;
         }
     }
 
@@ -170,19 +184,19 @@ try {
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
     );
 
-    // icon.png is REQUIRED (lock screen / notifications); always present.
+    // icon.png is REQUIRED (lock screen / notifications); always the colour logo.
     foreach (['icon.png' => 29, 'icon@2x.png' => 58, 'icon@3x.png' => 87] as $fname => $px) {
-        $bytes = $logoFs ? WalletImage::fitPng($logoFs, $px, $px) : null;
+        $bytes = $iconFs ? WalletImage::fitPng($iconFs, $px, $px) : null;
         $passObj->addAsset($fname, $bytes ?: $transparentPng);
     }
-    // logo.png is shown top-left on the brand-coloured header. On a dark brand we
-    // knock the logo out to white (only if it has transparency) so it reads as a
-    // clean reverse mark instead of a colour-clashing badge. Icon stays original.
+    // logo.png top-left on the brand header. Reverse logo used as-is; otherwise the
+    // plain logo is knocked out to white on a dark brand (only if it has alpha).
+    $knock = $isDarkBg && !$logoIsReverse;
     foreach (['logo.png' => [160, 50], 'logo@2x.png' => [320, 100], 'logo@3x.png' => [480, 150]] as $fname => $dim) {
         if (!$logoFs) {
             continue;
         }
-        $bytes = WalletImage::fitPng($logoFs, $dim[0], $dim[1], $isDarkBg);
+        $bytes = WalletImage::fitPng($logoFs, $dim[0], $dim[1], $knock);
         if ($bytes) {
             $passObj->addAsset($fname, $bytes);
         }
