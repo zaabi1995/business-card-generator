@@ -58,4 +58,16 @@ return [
     'referral_code'        => 'Referral code',
     'referral_optional'    => '(optional)',
     'referral_placeholder' => 'e.g., BHD2026',
+    // Form-submit errors (shown in the page after a failed POST). Keep these
+    // translated so an Arabic visitor never gets an English error mid-flow.
+    'err_invalid_request'  => 'Invalid request. Please try again.',
+    'err_rate_limited'     => 'Too many signups from your network. Please wait a little and try again, or contact support@cardify.om.',
+    'err_captcha'          => 'We could not verify your request. Please reload and try again.',
+    'err_company_required' => 'Company name is required',
+    'err_email_invalid'    => 'Valid email address is required',
+    'err_password_short'   => 'Password must be at least 8 characters',
+    'err_email_exists'     => 'This email is already registered. Please sign in instead.',
+    'err_join_failed'      => 'Failed to submit join request. Please contact the company administrator.',
+    'err_create_failed'    => 'Failed to create company',
+    'info_join_submitted'  => 'Your request to join :name has been submitted. You will be notified once approved.',
 ];

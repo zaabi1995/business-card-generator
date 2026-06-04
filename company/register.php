@@ -125,7 +125,7 @@ HTML;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-        $error = 'Invalid request. Please try again.';
+        $error = t('register.err_invalid_request');
     } else {
     // Per-IP signup throttle: a public POST that creates a tenant + sends a
     // welcome email. Without this a bot could mass-create companies and spam
@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $signupIp = getClientIp();
     $rateOk = RateLimiter::check('company_signup_ip', $signupIp, 8, 3600);
     if (!$rateOk) {
-        $error = 'Too many signups from your network. Please wait a little and try again, or contact support@cardify.om.';
+        $error = t('register.err_rate_limited');
     } else {
     $name = trim($_POST['company_name'] ?? '');
     $email = sanitizeEmail($_POST['admin_email'] ?? '');
@@ -165,18 +165,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once INCLUDES_DIR . '/Recaptcha.php';
     $captcha = Recaptcha::verify((string) ($_POST['recaptcha_token'] ?? ''), 'signup');
     if (empty($captcha['ok'])) {
-        $error = 'We could not verify your request. Please reload and try again.';
+        $error = t('register.err_captcha');
     } elseif (empty($name)) {
-        $error = 'Company name is required';
+        $error = t('register.err_company_required');
     } elseif (empty($email) || !isValidEmail($email)) {
-        $error = 'Valid email address is required';
+        $error = t('register.err_email_invalid');
     } elseif (empty($password) || strlen($password) < 8) {
-        $error = 'Password must be at least 8 characters';
+        $error = t('register.err_password_short');
     } else {
         // Check if email already exists
         $existsCheck = Auth::emailExists($email);
         if ($existsCheck['exists']) {
-            $error = 'This email is already registered. Please sign in instead.';
+            $error = t('register.err_email_exists');
         } else {
             // Determine slug based on email domain
             $isBusinessDomain = isBusinessEmailDomain($email);
@@ -208,10 +208,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     $empResult = addEmployee($employeeData, $existingCompany['id']);
                     if ($empResult['success'] ?? false) {
-                        $info = 'Your request to join ' . htmlspecialchars($existingCompany['name']) . ' has been submitted. You will be notified once approved.';
+                        $info = t('register.info_join_submitted', ['name' => htmlspecialchars($existingCompany['name'])]);
                         // Don't redirect - show message
                     } else {
-                        $error = 'Failed to submit join request. Please contact the company administrator.';
+                        $error = t('register.err_join_failed');
                     }
                 }
             }
@@ -375,7 +375,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     exit;
                 }
-                $error = $result['error'] ?? 'Failed to create company';
+                $error = $result['error'] ?? t('register.err_create_failed');
             }
         }
     }
