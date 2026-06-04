@@ -57,12 +57,29 @@ try {
     }
     $theme = $company ? loadCompanyTheme($company['id']) : null;
 
-    $name      = $employee['name_en'] ?? $employee['name'] ?? 'Employee';
-    $position  = $employee['position_en'] ?? $employee['position'] ?? $employee['job_title'] ?? '';
+    // Pass language follows the CARDIFY SITE language (?lang=en|ar from the button),
+    // matching wallet_apple.php. One deterministic single-language pass.
+    $lang = strtolower(trim((string)($_GET['lang'] ?? 'en')));
+    if ($lang !== 'ar') { $lang = 'en'; }
+    $isAr = ($lang === 'ar');
+
+    $nameEn    = $employee['name_en'] ?? $employee['name'] ?? 'Employee';
+    $nameAr    = trim((string)($employee['name_ar'] ?? ''));
+    $posEn     = $employee['position_en'] ?? $employee['position'] ?? $employee['job_title'] ?? '';
+    $posAr     = trim((string)($employee['position_ar'] ?? ''));
+    $name      = ($isAr && $nameAr !== '') ? $nameAr : $nameEn;
+    $position  = ($isAr && $posAr !== '')  ? $posAr  : $posEn;
     $companyNm = $company['name'] ?? '';
     $phone     = $employee['mobile'] ?? $employee['phone'] ?? '';
     $emailAddr = $employee['email'] ?? '';
     $website   = $company['website'] ?? '';
+
+    // Localized labels for the text/links modules.
+    $L = $isAr
+        ? ['phone' => 'الهاتف', 'email' => 'البريد الإلكتروني', 'web' => 'الموقع الإلكتروني',
+           'callDesc' => 'اتصل بـ ', 'emailDesc' => 'راسل ', 'card' => 'البطاقة الرقمية', 'logo' => ' شعار']
+        : ['phone' => 'PHONE', 'email' => 'EMAIL', 'web' => 'Website',
+           'callDesc' => 'Call ', 'emailDesc' => 'Email ', 'card' => 'Business Card', 'logo' => ' logo'];
 
     $slug   = $company['slug'] ?? $companySlug;
 
@@ -107,31 +124,34 @@ try {
 
     $textModules = [];
     if ($phone !== '') {
-        $textModules[] = ['id' => 'phone', 'header' => 'PHONE', 'body' => $phone];
+        $textModules[] = ['id' => 'phone', 'header' => $L['phone'], 'body' => $phone];
     }
     if ($emailAddr !== '') {
-        $textModules[] = ['id' => 'email', 'header' => 'EMAIL', 'body' => $emailAddr];
+        $textModules[] = ['id' => 'email', 'header' => $L['email'], 'body' => $emailAddr];
     }
 
     $linksUris = [];
     if ($website !== '') {
         $linksUris[] = ['uri' => (stripos($website, 'http') === 0 ? $website : 'https://' . $website),
-                        'description' => 'Website'];
+                        'description' => $L['web']];
     }
     if ($emailAddr !== '') {
-        $linksUris[] = ['uri' => 'mailto:' . $emailAddr, 'description' => 'Email ' . $name];
+        $linksUris[] = ['uri' => 'mailto:' . $emailAddr, 'description' => $L['emailDesc'] . $name];
     }
     if ($phone !== '') {
-        $linksUris[] = ['uri' => 'tel:' . preg_replace('/[^+0-9]/', '', $phone), 'description' => 'Call ' . $name];
+        $linksUris[] = ['uri' => 'tel:' . preg_replace('/[^+0-9]/', '', $phone), 'description' => $L['callDesc'] . $name];
     }
 
     $object = [
-        'id'                => GoogleWalletPass::objectResourceId((string)$employee['id']),
+        // Language-specific object id: Google creates the object from the JWT only if it
+        // doesn't already exist, so en + ar need distinct ids or the first-saved language
+        // would stick.
+        'id'                => GoogleWalletPass::objectResourceId((string)$employee['id'] . '_' . $lang),
         'classId'           => GoogleWalletPass::classResourceId(),
         'state'             => 'ACTIVE',
-        'cardTitle'         => ['defaultValue' => ['language' => 'en', 'value' => $companyNm ?: 'Business Card']],
-        'subheader'         => ['defaultValue' => ['language' => 'en', 'value' => $position ?: 'Contact']],
-        'header'            => ['defaultValue' => ['language' => 'en', 'value' => $name]],
+        'cardTitle'         => ['defaultValue' => ['language' => $lang, 'value' => $companyNm ?: $L['card']]],
+        'subheader'         => ['defaultValue' => ['language' => $lang, 'value' => $position]],
+        'header'            => ['defaultValue' => ['language' => $lang, 'value' => $name]],
         'hexBackgroundColor' => $hexBg,
         'barcode'           => [
             'type'         => 'QR_CODE',
@@ -146,13 +166,13 @@ try {
     if ($logoUri) {
         $object['logo'] = [
             'sourceUri'         => ['uri' => $logoUri],
-            'contentDescription' => ['defaultValue' => ['language' => 'en', 'value' => $companyNm . ' logo']],
+            'contentDescription' => ['defaultValue' => ['language' => $lang, 'value' => $companyNm . $L['logo']]],
         ];
     }
     if ($heroUri) {
         $object['heroImage'] = [
             'sourceUri'         => ['uri' => $heroUri],
-            'contentDescription' => ['defaultValue' => ['language' => 'en', 'value' => $name . ' business card']],
+            'contentDescription' => ['defaultValue' => ['language' => $lang, 'value' => $name]],
         ];
     }
 
