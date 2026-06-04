@@ -186,7 +186,16 @@ $brandName = 'Cardify';
 $tagline = 'Business Cards Made Simple';
 $pageTitle = 'Cardify, Digital & Printed Business Cards for the GCC';
 $pageDescription = 'Bilingual Arabic/English digital and printed business cards for teams across the Gulf: Oman (live), Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait (rolling out 2026). QR vCard save, Apple Wallet, NFC, bulk provisioning. Free to start.';
-$canonicalUrl = 'https://cardify.om/';
+// Self-canonicalize per locale (the AR home previously canonicalized to the EN
+// home, so Google never indexed it) + emit a full bilingual hreflang set
+// (ui-header's default only advertises en + x-default, never ar).
+$canonicalUrl = (function_exists('currentLocale') && currentLocale() === 'ar')
+    ? 'https://cardify.om/ar/'
+    : 'https://cardify.om/';
+$suppressDefaultHreflang = true;
+$homeHreflang = '<link rel="alternate" hreflang="en" href="https://cardify.om/">'
+              . '<link rel="alternate" hreflang="ar" href="https://cardify.om/ar/">'
+              . '<link rel="alternate" hreflang="x-default" href="https://cardify.om/">';
 $bodyClass = 'bg-white';
 
 // Homepage pricing: compute display strings in the visitor's currency once,
@@ -248,7 +257,7 @@ $siteLd = [
 ];
 $homeJsonLd = '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES) . '</script>';
 
-$extraHead = $homeJsonLd . '<style>
+$extraHead = $homeHreflang . $homeJsonLd . '<style>
     .hero-gradient { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #fffbeb 100%); }
     .card-shadow { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); }
     .float-animation { animation: float 6s ease-in-out infinite; }
