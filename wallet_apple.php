@@ -119,16 +119,14 @@ try {
     }
     $backFields[] = ['key' => 'card', 'label' => 'Digital Card', 'value' => $cardUrl];
 
-    // Best-practice corporate layout (CBRE / Mercedes / Bupa): logo hero up top,
-    // then name + title clustered together at the bottom near the QR. Contacts live
-    // on the back. Keeping primaryFields EMPTY is what removes the "weird spacing":
-    // a big primary field gets top-anchored while secondary/auxiliary get bottom-
-    // anchored, leaving an orphaned name with a huge gap. Clustering name+title in
-    // secondary/auxiliary keeps them together.
-    $secondaryFields = [['key' => 'name', 'label' => '', 'value' => $name]];
-    $auxFields = [];
+    // Standard Apple "name badge" layout: name as the primary field (anchored
+    // under the logo) with the title right beneath it. Contacts live on the back.
+    // Apple owns the vertical distribution of these field groups; this is the most
+    // natural arrangement (logo + name + title up top, QR pinned at the bottom).
+    $primaryFields = [['key' => 'name', 'label' => '', 'value' => $name]];
+    $secondaryFields = [];
     if ($position !== '') {
-        $auxFields[] = ['key' => 'position', 'label' => '', 'value' => $position];
+        $secondaryFields[] = ['key' => 'position', 'label' => '', 'value' => $position];
     }
 
     // Barcode WITHOUT altText so iOS draws no URL caption under the QR.
@@ -156,9 +154,9 @@ try {
         // corporate wallet cards (Mercedes, Bupa, Blackstone, CBRE, ...). No busy
         // pattern, no eventTicket ticket-notch.
         'generic' => [
-            'primaryFields'   => [],
+            'primaryFields'   => $primaryFields,
             'secondaryFields' => $secondaryFields,
-            'auxiliaryFields' => $auxFields,
+            'auxiliaryFields' => [],
             'backFields'      => $backFields,
         ],
     ];
