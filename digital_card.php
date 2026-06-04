@@ -1210,8 +1210,9 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             require_once INCLUDES_DIR . '/GoogleWalletPass.php';
             $appleWalletEnabled  = AppleWalletPass::isEnabled();
             $googleWalletEnabled = GoogleWalletPass::isEnabled();
-            $appleWalletUrl  = '/wallet_apple.php?i='  . urlencode($employee['id']) . '&c=' . urlencode($companySlug);
-            $googleWalletUrl = '/wallet_google.php?i=' . urlencode($employee['id']) . '&c=' . urlencode($companySlug);
+            $walletLang = (currentLocale() === 'ar') ? 'ar' : 'en'; // pass language follows the site language
+            $appleWalletUrl  = '/wallet_apple.php?i='  . urlencode($employee['id']) . '&c=' . urlencode($companySlug) . '&lang=' . $walletLang;
+            $googleWalletUrl = '/wallet_google.php?i=' . urlencode($employee['id']) . '&c=' . urlencode($companySlug) . '&lang=' . $walletLang;
         } catch (Throwable $e) {
             // Above-the-fold has already shipped; degrade gracefully by hiding
             // every below-the-fold section instead of 500ing a half-rendered page.
