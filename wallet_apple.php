@@ -98,6 +98,13 @@ try {
     $labelColor = $fgColor; // same hue as values; Apple sizes labels smaller for hierarchy
 
     $backFields = [];
+    // Back fields DO support multi-line, so the Arabic + English stack lives here.
+    if ($nameAr !== '' && $nameAr !== $name) {
+        $backFields[] = ['key' => 'name_ar', 'label' => 'Name / الاسم', 'value' => $name . "\n" . $nameAr];
+    }
+    if ($positionAr !== '' && $positionAr !== $position) {
+        $backFields[] = ['key' => 'title_ar', 'label' => 'Title / المسمى', 'value' => $position . "\n" . $positionAr];
+    }
     if ($phone !== '') {
         $backFields[] = ['key' => 'phone', 'label' => 'Phone', 'value' => $phone];
     }
@@ -132,13 +139,15 @@ try {
         $headerFields[] = ['key' => 'tagline', 'label' => '', 'value' => $tagline];
     }
 
-    // Store Card layout (Apple's own membership-card pattern): logo + tagline header,
-    // a brand strip band, then name + title stacked below it, QR at the bottom.
-    // Contacts live on the back. Name/title are bilingual (Arabic over English).
-    $secondaryFields = [['key' => 'name', 'label' => '', 'value' => $nameVal]];
-    $auxFields = [];
-    if ($positionVal !== '') {
-        $auxFields[] = ['key' => 'title', 'label' => '', 'value' => $positionVal];
+    // Store Card layout: logo + tagline header, brand strip band, then name (primary)
+    // and title (secondary) STACKED below. Apple text fields are single-line and don't
+    // stack Arabic-over-English, so the FRONT shows English (clean, scannable) and the
+    // Arabic name/title live on the back (back fields are multi-line). Faithful bilingual
+    // front would require baking the text into the strip image.
+    $primaryFields = [['key' => 'name', 'label' => '', 'value' => $name]];
+    $secondaryFields = [];
+    if ($position !== '') {
+        $secondaryFields[] = ['key' => 'title', 'label' => '', 'value' => $position];
     }
 
     // Barcode WITHOUT altText so iOS draws no URL caption under the QR.
@@ -164,9 +173,9 @@ try {
         // body below it, matching the corporate/membership cards in Apple's HIG.
         'storeCard' => [
             'headerFields'    => $headerFields,
-            'primaryFields'   => [],
+            'primaryFields'   => $primaryFields,
             'secondaryFields' => $secondaryFields,
-            'auxiliaryFields' => $auxFields,
+            'auxiliaryFields' => [],
             'backFields'      => $backFields,
         ],
     ];
