@@ -415,16 +415,16 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .page-container {
             max-width: 420px;
             margin: 0 auto;
-            padding: 8px 16px 8px;
+            padding: 12px 16px 12px;
         }
 
         /* Company Logo */
         .company-logo {
             text-align: center;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
         .company-logo img {
-            max-width: 92px;
+            max-width: 96px;
             height: auto;
             border-radius: 8px;
         }
@@ -438,8 +438,8 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         /* Card Flip (~10% smaller than the control column for a lighter hero) */
         .card-flip-container {
             perspective: 1000px;
-            max-width: 340px;
-            margin: 0 auto 4px;
+            max-width: 352px;
+            margin: 0 auto 6px;
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
         }
@@ -491,18 +491,18 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             text-align: center;
             font-size: 11px;
             color: <?php echo $isDarkPage ? '#666' : '#999'; ?>;
-            margin-top: 3px;
+            margin-top: 4px;
             transition: opacity 0.5s;
         }
 
         /* Employee Info */
         .employee-info {
             text-align: center;
-            margin: 4px auto 8px;
+            margin: 8px auto 12px;
             max-width: 400px;
         }
         .employee-name {
-            font-size: 20px;
+            font-size: 21px;
             font-weight: 700;
             <?php if ($isDarkPage): ?>
             color: #f0f0f0;
@@ -525,11 +525,11 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             display: flex;
             gap: 10px;
             max-width: 400px;
-            margin: 0 auto 6px;
+            margin: 0 auto 10px;
         }
         .action-btn {
             flex: 1;
-            padding: 8px 8px;
+            padding: 10px 8px;
             border-radius: 10px;
             text-align: center;
             font-size: 13px;
@@ -568,7 +568,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .contact-row {
             display: flex;
             align-items: center;
-            padding: 8px 16px;
+            padding: 10px 16px;
             font-size: 13px;
             text-decoration: none;
             transition: background 0.15s;
@@ -603,7 +603,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             justify-content: center;
             gap: 12px;
             max-width: 400px;
-            margin: 10px auto 0;
+            margin: 16px auto 0;
         }
         .social-link {
             width: 48px;
@@ -654,11 +654,11 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             display: flex;
             gap: 10px;
             max-width: 400px;
-            margin: 6px auto 0;
+            margin: 10px auto 0;
         }
         .bottom-btn {
             flex: 1;
-            padding: 8px;
+            padding: 10px;
             border-radius: 10px;
             text-align: center;
             font-size: 14px;
@@ -710,12 +710,12 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             display: flex;
             gap: 10px;
             max-width: 400px;
-            margin: 6px auto 0;
+            margin: 9px auto 0;
             flex-direction: row;
         }
         .wallet-buttons .wallet-btn {
             flex: 1;
-            padding: 8px 14px;
+            padding: 10px 14px;
             border-radius: 10px;
             text-align: center;
             font-size: 13px;
@@ -934,15 +934,15 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .cardify-viral-footer {
             display: flex;
             justify-content: center;
-            padding: 6px 0 4px;
-            margin-top: 2px;
+            padding: 9px 0 8px;
+            margin-top: 3px;
         }
         .cardify-viral-footer .viral-link {
             display: inline-flex;
             align-items: center;
             gap: 7px;
-            min-height: 36px;
-            padding: 7px 16px;
+            min-height: 40px;
+            padding: 9px 16px;
             font-size: 12.5px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             letter-spacing: 0.2px;
@@ -979,7 +979,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         }
         @media (max-width: 420px) {
             .cardify-viral-footer { padding: 6px 12px 4px; }
-            .cardify-viral-footer .viral-link { font-size: 12px; width: 100%; justify-content: center; min-height: 36px; }
+            .cardify-viral-footer .viral-link { font-size: 12px; width: 100%; justify-content: center; min-height: 40px; }
         }
     </style>
 </head>
