@@ -50,52 +50,22 @@ if (file_exists(__DIR__ . '/includes/TenantHost.php')) {
         $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
         if ($reqPath === '/login' || $reqPath === '/login/') {
             require __DIR__ . '/tenant_login.php';
-            exit;
-        }
-
-        // Single-segment URL like /ali, /mohammed, /first-last → try to
-        // resolve as an employee email-localpart on this tenant's company
-        // and serve the digital card. Falls through to portal.php only
-        // when no matching employee exists. Implements the documented
-        // "<slug>.cardify.om/<email-localpart>" pattern (was previously
-        // only a comment, never wired).
-        $trimmed = trim($reqPath, '/');
-        if ($trimmed !== '' && strpos($trimmed, '/') === false
-            && preg_match('/^[a-z0-9._-]+$/i', $trimmed)) {
-            $tenant = TenantHost::resolve();
-            if ($tenant && !empty($tenant['id']) && class_exists('Database')) {
-                try {
-                    $db = Database::getInstance();
-                    // Match emails by both localpart-as-given and the dash-
-                    // normalised form (so /ali-zaabi matches ali.zaabi@... or
-                    // ali_zaabi@...). LIMIT 1 — if duplicates exist they
-                    // share the same URL anyway (business rule: unique email).
-                    $row = $db->fetchOne(
-                        "SELECT id, email FROM employees
-                         WHERE company_id = :cid
-                           AND status = 'active'
-                           AND (
-                                LOWER(SUBSTRING_INDEX(email, '@', 1)) = LOWER(:exact)
-                             OR REPLACE(REPLACE(LOWER(SUBSTRING_INDEX(email, '@', 1)), '.', '-'), '_', '-') = LOWER(:dashed)
-                           )
-                         LIMIT 1",
-                        ['cid' => $tenant['id'], 'exact' => $trimmed, 'dashed' => $trimmed]
-                    );
-                    if ($row && !empty($row['email'])) {
-                        $_GET['company_slug'] = $tenant['slug'];
-                        $_GET['employee_id']  = $row['email'];
-                        require __DIR__ . '/digital_card.php';
-                        exit;
-                    }
-                } catch (Exception $e) {
-                    error_log('[tenant slug→employee] lookup failed: ' . $e->getMessage());
-                    // fall through to portal
-                }
+        } else {
+            // Default: employee request portal. A bare single-token path that
+            // is NOT the canonical "/" or "/portal" reaches here only as a
+            // soft-404 fallback (mistyped/old card link, scanner probing
+            // /wp-admin, etc.). The portal still renders so a real visitor can
+            // request a card, but tell search engines NOT to index these
+            // arbitrary URLs, else Google indexes infinite junk paths per
+            // tenant as soft-404s. (BHD loop audit iter 13, 3 Jun 2026.)
+            $canonicalPortal = ($reqPath === '/' || $reqPath === ''
+                || $reqPath === '/portal' || $reqPath === '/portal/'
+                || preg_match('~^/portal/[a-z0-9-]+/?$~i', $reqPath));
+            if (!$canonicalPortal && !headers_sent()) {
+                header('X-Robots-Tag: noindex, nofollow', true);
             }
+            require __DIR__ . '/portal.php';
         }
-
-        // Default: employee request portal
-        require __DIR__ . '/portal.php';
         exit;
     }
 }
@@ -214,8 +184,8 @@ if (isset($_GET['company_slug'])) {
 // Brand name
 $brandName = 'Cardify';
 $tagline = 'Business Cards Made Simple';
-$pageTitle = 'Cardify, the Best & Biggest Digital + Printed Business Card Platform in the GCC';
-$pageDescription = 'The Gulf\'s biggest and best digital + printed business card platform. Free forever for teams in Oman (live), Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait. Bilingual Arabic/English, QR vCard, Apple + Google Wallet, NFC, bulk provisioning. Built in Muscat by BHD Group.';
+$pageTitle = 'Cardify, Digital & Printed Business Cards for the GCC';
+$pageDescription = 'Bilingual Arabic/English digital and printed business cards for teams across the Gulf: Oman (live), Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait (rolling out 2026). QR vCard save, Apple Wallet, NFC, bulk provisioning. Free to start.';
 $canonicalUrl = 'https://cardify.om/';
 $bodyClass = 'bg-white';
 
@@ -346,7 +316,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             $cardifyDemoMsg = (currentLocale() === 'ar')
                                 ? 'مرحباً، أرغب بعرض توضيحي لكارديفاي لشركتي'
                                 : 'Hi, I would like a demo of Cardify for my company';
-                            $cardifyDemoUrl = 'https://wa.me/96898899100?text=' . rawurlencode($cardifyDemoMsg);
+                            $cardifyDemoUrl = 'https://wa.me/96899899100?text=' . rawurlencode($cardifyDemoMsg);
                         ?>
                         <a href="<?= htmlspecialchars($cardifyDemoUrl) ?>" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all text-lg">
                             <i class="fa-brands fa-whatsapp"></i>
@@ -1039,6 +1009,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <i class="fa-solid fa-check-circle"></i>
                     <span><?= htmlspecialchars(t('landing.cta_free_trial')) ?></span>
                 </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-check-circle"></i>
+                    <span><?= htmlspecialchars(t('pricing.home_plans_from', ['amount' => $priceStarterFrom, 'currency' => $homeCurName])) ?></span>
+                </div>
             </div>
             </p>
         </div>
@@ -1286,14 +1260,7 @@ HTML;
       "availability": "https://schema.org/InStock",
       "url": "https://cardify.om/pricing"
     }
-  ],
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": "4.9",
-    "bestRating": "5",
-    "worstRating": "1",
-    "reviewCount": "156"
-  }
+  ]
 }
 </script>
 <script type="application/ld+json">
