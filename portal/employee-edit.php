@@ -294,7 +294,7 @@ $pageTitle = t('portal.edit_my_details');
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1"><?= htmlspecialchars($flabel) ?></label>
                         <input type="<?= htmlspecialchars($def['type']) ?>"
-                               x-model="customFields[<?= json_encode($fk) ?>]"
+                               x-model="customFields[<?= htmlspecialchars(json_encode($fk), ENT_QUOTES) ?>]"
                                @input.debounce.800ms="save()"
                                class="form-input"
                                <?= in_array($def['type'], ['email','url','tel'], true) ? 'dir="ltr"' : '' ?>>
@@ -389,7 +389,7 @@ $pageTitle = t('portal.edit_my_details');
         <?php if ($publicCardUrl): ?>
         <div class="mt-5 bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
              x-data="{ open: false, copied: false,
-                       copyUrl() { navigator.clipboard.writeText(<?= json_encode($publicCardUrl) ?>).then(() => { this.copied = true; setTimeout(() => this.copied = false, 1500); }); } }">
+                       copyUrl() { navigator.clipboard.writeText(<?= htmlspecialchars(json_encode($publicCardUrl), ENT_QUOTES) ?>).then(() => { this.copied = true; setTimeout(() => this.copied = false, 1500); }); } }">
             <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
                     <i class="fa-solid fa-wifi rotate-90 text-2xl text-purple-500"></i>
