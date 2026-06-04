@@ -373,7 +373,7 @@ $pageTitle = t('portal.edit_my_details');
                 <button type="button" @click="toggle()"
                         :disabled="pending"
                         class="px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 text-white text-xs font-semibold rounded-lg whitespace-nowrap"
-                        x-text="pending ? <?= json_encode(t('portal.reprint_pending')) ?> : (open ? <?= json_encode(t('portal.reprint_cancel')) ?> : <?= json_encode(t('portal.reprint_cta')) ?>)"></button>
+                        x-text="pending ? <?= htmlspecialchars(json_encode(t('portal.reprint_pending'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?> : (open ? <?= htmlspecialchars(json_encode(t('portal.reprint_cancel'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?> : <?= htmlspecialchars(json_encode(t('portal.reprint_cta'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>)"></button>
             </div>
             <div x-show="open && !pending" x-cloak class="mt-3 pt-3 border-t border-gray-100">
                 <label class="block text-xs text-gray-600 mb-1"><?= htmlspecialchars(t('portal.reprint_note_label')) ?></label>
@@ -400,7 +400,7 @@ $pageTitle = t('portal.edit_my_details');
                 </div>
                 <button type="button" @click="open = !open"
                         class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white text-xs font-semibold rounded-lg whitespace-nowrap">
-                    <span x-text="open ? <?= json_encode(t('portal.nfc_hide')) ?> : <?= json_encode(t('portal.nfc_cta')) ?>"></span>
+                    <span x-text="open ? <?= htmlspecialchars(json_encode(t('portal.nfc_hide'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?> : <?= htmlspecialchars(json_encode(t('portal.nfc_cta'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>"></span>
                 </button>
             </div>
             <div x-show="open" x-cloak class="mt-4 pt-4 border-t border-gray-100 space-y-3">
@@ -411,7 +411,7 @@ $pageTitle = t('portal.edit_my_details');
                     <code class="text-xs text-gray-700 break-all text-center" dir="ltr"><?= htmlspecialchars($publicCardUrl) ?></code>
                     <button type="button" @click="copyUrl()"
                             class="text-xs font-semibold text-[#009bc1] hover:text-[#007a99]">
-                        <span x-text="copied ? <?= json_encode(t('onboarding.copied')) ?> : <?= json_encode(t('portal.nfc_copy_url')) ?>"></span>
+                        <span x-text="copied ? <?= htmlspecialchars(json_encode(t('onboarding.copied'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?> : <?= htmlspecialchars(json_encode(t('portal.nfc_copy_url'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>"></span>
                     </button>
                 </div>
                 <ol class="text-xs text-gray-600 list-decimal ps-5 space-y-1">
@@ -486,7 +486,7 @@ $pageTitle = t('portal.edit_my_details');
                 </a>
                 <button type="button" @click="copyLink()" class="py-2 rounded-lg border border-gray-200 hover:border-gray-500 text-gray-700">
                     <i class="fa-solid fa-copy text-gray-600 text-lg block"></i>
-                    <span x-text="copied ? <?= json_encode(t('onboarding.copied')) ?> : <?= json_encode(t('onboarding.copy')) ?>"></span>
+                    <span x-text="copied ? <?= htmlspecialchars(json_encode(t('onboarding.copied'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?> : <?= htmlspecialchars(json_encode(t('onboarding.copy'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>"></span>
                 </button>
             </div>
         </div>
@@ -508,7 +508,7 @@ $pageTitle = t('portal.edit_my_details');
                 </div>
                 <button type="button" @click="toggle()" :disabled="pending"
                         class="px-4 py-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-200 disabled:text-gray-400 text-white text-xs font-semibold rounded-lg whitespace-nowrap"
-                        x-text="pending ? <?= json_encode(t('portal.leave_pending')) ?> : (open ? <?= json_encode(t('portal.leave_cancel')) ?> : <?= json_encode(t('portal.leave_cta')) ?>)"></button>
+                        x-text="pending ? <?= htmlspecialchars(json_encode(t('portal.leave_pending'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?> : (open ? <?= htmlspecialchars(json_encode(t('portal.leave_cancel'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?> : <?= htmlspecialchars(json_encode(t('portal.leave_cta'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>)"></button>
             </div>
             <div x-show="open && !pending" x-cloak class="mt-3 pt-3 border-t border-red-100">
                 <label class="block text-xs text-gray-600 mb-1"><?= htmlspecialchars(t('portal.leave_note_label')) ?></label>
