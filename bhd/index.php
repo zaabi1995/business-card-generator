@@ -416,4 +416,5 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </div>
 </footer>
 
+<?php $skipFooter = true; /* this page owns its footer above; ui-footer runs scripts only */ ?>
 <?php require_once INCLUDES_DIR . '/ui-footer.php'; ?>
