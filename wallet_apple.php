@@ -183,8 +183,10 @@ try {
     //   primary   = name (over the brand strip)
     //   secondary = title (own row, full width)
     //   auxiliary = phone + email (own row)
+    // Name is CENTER-aligned over the strip (clean hero look, avoids the LTR-vs-RTL
+    // alignment ambiguity); the RTL embedding above keeps Arabic word order correct.
     $primaryFields = [[
-        'key' => 'name', 'label' => '', 'value' => $nameDisp, 'textAlignment' => $NAT,
+        'key' => 'name', 'label' => '', 'value' => $nameDisp, 'textAlignment' => 'PKTextAlignmentCenter',
     ]];
     $secondaryFields = [];
     if ($positionDisp !== '') {
