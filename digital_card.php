@@ -391,10 +391,16 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     <!-- Icons load async (media=print -> all on load) so text paints immediately; icons fill in a beat later.
          Font Awesome is self-hosted on cardify.om: no third-party DNS lookup, reuses the existing HTTP/2
          connection to the same origin, and Cloudflare cdn-cache + brotli applies the same as for the HTML. -->
-    <link rel="preload" href="/assets/fontawesome/webfonts/fa-brands-400.woff2?v=652" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/assets/fontawesome/webfonts/fa-solid-900.woff2?v=652" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=652" media="print" onload="this.media='all'">
-    <noscript><link rel="stylesheet" href="/assets/fontawesome/css/all.min.css?v=652"></noscript>
+    <link rel="preload" href="https://design.bhd.om/fa/v7.2.0/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="https://design.bhd.om/fa/v7.2.0/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css?v=7.2.0" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css?v=7.2.0" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css?v=7.2.0" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css?v=7.2.0">
+        <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css?v=7.2.0">
+        <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css?v=7.2.0">
+    </noscript>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { overflow-x: hidden; }
