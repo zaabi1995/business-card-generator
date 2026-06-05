@@ -32,50 +32,58 @@ h1, h2, h3, .font-display {
   letter-spacing: -0.02em;
 }
 
+/* ============================================================
+   BLUE -> CYAN REMAP, gated to `.cardify-brand` (apex marketing/app
+   chrome only; ui-header.php adds that class). Tenant subdomains keep
+   their OWN brand color, so this NEVER repaints their hardcoded blue-*
+   chrome. Everything OUTSIDE this block (Sora, grid restore, view
+   transitions, reduced-motion) stays global on purpose.
+   ============================================================ */
+
 /* ---- Backgrounds ---- */
-.bg-blue-50  { background-color: var(--cf-50); }
-.bg-blue-100 { background-color: var(--cf-100); }
-.bg-blue-500 { background-color: var(--cf-500); }
-.bg-blue-600 { background-color: var(--cf-500); }
-.bg-blue-700 { background-color: var(--cf-600); }
-.bg-blue-800 { background-color: var(--cf-700); }
-.bg-blue-500\/10 { background-color: rgb(0 155 193 / 0.10); }
-.bg-blue-500\/20 { background-color: rgb(0 155 193 / 0.20); }
-.bg-blue-500\/30 { background-color: rgb(0 155 193 / 0.30); }
-.hover\:bg-blue-50:hover  { background-color: var(--cf-50); }
-.hover\:bg-blue-700:hover { background-color: var(--cf-600); }
-.group:hover .group-hover\:bg-blue-600 { background-color: var(--cf-500); }
+.cardify-brand .bg-blue-50  { background-color: var(--cf-50); }
+.cardify-brand .bg-blue-100 { background-color: var(--cf-100); }
+.cardify-brand .bg-blue-500 { background-color: var(--cf-500); }
+.cardify-brand .bg-blue-600 { background-color: var(--cf-500); }
+.cardify-brand .bg-blue-700 { background-color: var(--cf-600); }
+.cardify-brand .bg-blue-800 { background-color: var(--cf-700); }
+.cardify-brand .bg-blue-500\/10 { background-color: rgb(0 155 193 / 0.10); }
+.cardify-brand .bg-blue-500\/20 { background-color: rgb(0 155 193 / 0.20); }
+.cardify-brand .bg-blue-500\/30 { background-color: rgb(0 155 193 / 0.30); }
+.cardify-brand .hover\:bg-blue-50:hover  { background-color: var(--cf-50); }
+.cardify-brand .hover\:bg-blue-700:hover { background-color: var(--cf-600); }
+.cardify-brand .group:hover .group-hover\:bg-blue-600 { background-color: var(--cf-500); }
 
 /* ---- Text ---- */
-.text-blue-100 { color: var(--cf-100); }
-.text-blue-400 { color: var(--cf-300); }
-.text-blue-500 { color: var(--cf-500); }
-.text-blue-600 { color: var(--cf-500); }
-.text-blue-700 { color: var(--cf-600); }
-.text-blue-800 { color: var(--cf-700); }
+.cardify-brand .text-blue-100 { color: var(--cf-100); }
+.cardify-brand .text-blue-400 { color: var(--cf-300); }
+.cardify-brand .text-blue-500 { color: var(--cf-500); }
+.cardify-brand .text-blue-600 { color: var(--cf-500); }
+.cardify-brand .text-blue-700 { color: var(--cf-600); }
+.cardify-brand .text-blue-800 { color: var(--cf-700); }
 
 /* ---- Borders / ring ---- */
-.border-blue-100 { border-color: var(--cf-100); }
-.border-blue-400 { border-color: var(--cf-300); }
-.ring-blue-200   { --tw-ring-color: var(--cf-100); }
+.cardify-brand .border-blue-100 { border-color: var(--cf-100); }
+.cardify-brand .border-blue-400 { border-color: var(--cf-300); }
+.cardify-brand .ring-blue-200   { --tw-ring-color: var(--cf-100); }
 
 /* ---- Gradients (rewrite the Tailwind --tw-gradient-* custom props) ---- */
-.from-blue-50  { --tw-gradient-from: var(--cf-50) var(--tw-gradient-from-position); --tw-gradient-to: rgb(230 245 249 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.from-blue-500 { --tw-gradient-from: var(--cf-500) var(--tw-gradient-from-position); --tw-gradient-to: rgb(0 155 193 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.from-blue-600 { --tw-gradient-from: var(--cf-500) var(--tw-gradient-from-position); --tw-gradient-to: rgb(0 155 193 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.via-blue-700  { --tw-gradient-to: rgb(0 134 166 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--cf-600) var(--tw-gradient-via-position), var(--tw-gradient-to); }
-.to-blue-50    { --tw-gradient-to: var(--cf-50) var(--tw-gradient-to-position); }
-.to-blue-600   { --tw-gradient-to: var(--cf-500) var(--tw-gradient-to-position); }
-.to-indigo-50  { --tw-gradient-to: var(--cf-50) var(--tw-gradient-to-position); }
-.to-indigo-700 { --tw-gradient-to: var(--cf-700) var(--tw-gradient-to-position); }
-.to-indigo-800 { --tw-gradient-to: var(--cf-800) var(--tw-gradient-to-position); }
+.cardify-brand .from-blue-50  { --tw-gradient-from: var(--cf-50) var(--tw-gradient-from-position); --tw-gradient-to: rgb(230 245 249 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.cardify-brand .from-blue-500 { --tw-gradient-from: var(--cf-500) var(--tw-gradient-from-position); --tw-gradient-to: rgb(0 155 193 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.cardify-brand .from-blue-600 { --tw-gradient-from: var(--cf-500) var(--tw-gradient-from-position); --tw-gradient-to: rgb(0 155 193 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.cardify-brand .via-blue-700  { --tw-gradient-to: rgb(0 134 166 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--cf-600) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.cardify-brand .to-blue-50    { --tw-gradient-to: var(--cf-50) var(--tw-gradient-to-position); }
+.cardify-brand .to-blue-600   { --tw-gradient-to: var(--cf-500) var(--tw-gradient-to-position); }
+.cardify-brand .to-indigo-50  { --tw-gradient-to: var(--cf-50) var(--tw-gradient-to-position); }
+.cardify-brand .to-indigo-700 { --tw-gradient-to: var(--cf-700) var(--tw-gradient-to-position); }
+.cardify-brand .to-indigo-800 { --tw-gradient-to: var(--cf-800) var(--tw-gradient-to-position); }
 
 /* ---- Colored shadows ---- */
-.shadow-blue-500\/30 { --tw-shadow-color: rgb(0 155 193 / 0.30); --tw-shadow: var(--tw-shadow-colored); }
-.shadow-blue-600\/30 { --tw-shadow-color: rgb(0 155 193 / 0.30); --tw-shadow: var(--tw-shadow-colored); }
+.cardify-brand .shadow-blue-500\/30 { --tw-shadow-color: rgb(0 155 193 / 0.30); --tw-shadow: var(--tw-shadow-colored); }
+.cardify-brand .shadow-blue-600\/30 { --tw-shadow-color: rgb(0 155 193 / 0.30); --tw-shadow: var(--tw-shadow-colored); }
 
 /* ---- Hero wash: brand cyan instead of the generic blue/cream ---- */
-.hero-gradient { background: linear-gradient(135deg, #e6f5f9 0%, #ffffff 55%, #f0fbfd 100%); }
+.cardify-brand .hero-gradient { background: linear-gradient(135deg, #e6f5f9 0%, #ffffff 55%, #f0fbfd 100%); }
 
 /* ---- Restore responsive grid utilities missing from the prebuilt Tailwind ----
    `lg:grid-cols-5` / `lg:grid-cols-6` weren't compiled, so the footer fell back

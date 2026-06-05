@@ -32,6 +32,15 @@ if (class_exists('TenantHost')) {
     }
 }
 
+// Cardify's own marketing/app chrome (apex cardify.om) gets the cyan brand remap.
+// Tenant subdomains keep their OWN brand color, so the blue->cyan remap in
+// cardify-brand-2026.css is gated behind the body `.cardify-brand` class added
+// only here. A page may force it off with $forceCardifyBrand = false.
+$cardifyIsMarketing = !(class_exists('TenantHost') && TenantHost::isTenantHost());
+if (isset($forceCardifyBrand)) {
+    $cardifyIsMarketing = (bool) $forceCardifyBrand;
+}
+
 $pageTitle = $pageTitle ?? $brandName;
 $pageDescription = $pageDescription ?? 'Business Cards Made Simple';
 $htmlClass = $htmlClass ?? 'scroll-smooth';
@@ -364,7 +373,7 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
       });
     </script>
 </head>
-<body class="bg-gray-50 text-gray-900 antialiased <?php echo $bodyClass; ?>" <?php echo $bodyAttributes; ?>>
+<body class="bg-gray-50 text-gray-900 antialiased<?php echo $cardifyIsMarketing ? ' cardify-brand' : ''; ?> <?php echo $bodyClass; ?>" <?php echo $bodyAttributes; ?>>
 <?php if (defined('SHOW_STAGE_BANNER') && SHOW_STAGE_BANNER): /* Cat T action 468 staging banner */ ?>
 <div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#fbbf24;color:#111827;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;padding:4px 12px;text-align:center;border-bottom:2px solid #b45309;">
   <strong>STAGING</strong> · <?= defined('APP_HOST') ? htmlspecialchars(APP_HOST) : 'stage' ?> · not production data · Paymob sandbox

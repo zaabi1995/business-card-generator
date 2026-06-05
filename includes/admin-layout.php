@@ -248,10 +248,10 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     <link href="https://fonts.bhd.om/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <?php endif; ?>
 
-    <!-- Font Awesome (CDN) -->
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
+    <!-- Font Awesome 7.2 Pro (design.bhd.om), ?v busts stale CF cache -->
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css?v=7.2.0">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css?v=7.2.0">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css?v=7.2.0">
     
     <!-- Tailwind CSS (Local) -->
     <?php $tailwindVersion = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/techwind/css/tailwind.min.css') ?: time(); ?>
