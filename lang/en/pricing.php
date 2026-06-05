@@ -76,4 +76,5 @@ return [
     'home_headline' => 'Free platform, pay only for prints',
     'home_subhead'  => 'No subscriptions. Unlimited everything. You only pay when you order physical prints.',
     'home_footnote' => 'No subscription, no setup fee, no minimum order. Print prices are set by each verified Omani print shop and shown to you before you confirm.',
+    'home_plans_from' => 'Prints from :amount :currency',
 ];

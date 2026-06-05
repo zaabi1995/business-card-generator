@@ -219,6 +219,8 @@ $fmt = function ($omr) use ($homeCur) {
 };
 // Tier-based subscription pricing was removed Apr 2026. Platform is free forever,
 // revenue comes from per-order print products (see lang/en/pricing.php and /pricing).
+// Cheapest printed-card tier (Standard, OMR 6 / 100 cards) for the home "prints from" trust line.
+$priceStarterFrom = $fmt(6);
 
 // Latest blog posts for homepage SEO (internal links + freshness signal)
 $latestPosts = [];
@@ -469,7 +471,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <!-- ========== FEATURES SECTION (Flowbite Style) ========== -->
-    <section id="features" class="py-16 lg:py-24 bg-gray-50">
+    <section id="features" class="py-12 lg:py-16 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="mx-auto max-w-2xl text-center mb-16">
@@ -555,7 +557,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <!-- ========== HOW IT WORKS (Techwind Style) ========== -->
-    <section id="how-it-works" class="py-16 lg:py-24 bg-white">
+    <section id="how-it-works" class="py-12 lg:py-16 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="max-w-2xl mx-auto text-center mb-16">
@@ -619,7 +621,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <!-- ========== SCREENSHOT SECTION (Techwind Style) ========== -->
-    <section class="py-16 lg:py-24 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 overflow-hidden">
+    <section class="py-12 lg:py-16 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 overflow-hidden">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid lg:grid-cols-2 gap-12 items-center">
                 <!-- Content -->
@@ -674,7 +676,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <!-- ========== PRICING SECTION ========== -->
-    <section id="pricing" class="py-16 lg:py-24 bg-gradient-to-b from-gray-50 to-white px-4">
+    <section id="pricing" class="py-12 lg:py-16 bg-gradient-to-b from-gray-50 to-white px-4">
         <div class="max-w-6xl mx-auto">
             <!-- Section Header -->
             <div class="text-center mb-12">
@@ -687,8 +689,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
 
             <!-- Platform (free forever) card -->
-            <article class="relative bg-white rounded-3xl px-8 pt-12 pb-8 lg:px-10 lg:pt-14 lg:pb-10 ring-1 ring-gray-200/70 shadow-xl mb-10">
-                <span class="absolute -top-3 left-8 px-4 py-1 bg-green-600 text-white text-xs font-bold rounded-full uppercase tracking-wider whitespace-nowrap shadow-md z-10">
+            <article class="relative bg-white rounded-3xl p-8 lg:p-10 ring-1 ring-gray-200/70 shadow-xl mb-10">
+                <span class="inline-flex items-center px-4 py-1 mb-6 bg-green-600 text-white text-xs font-bold rounded-full uppercase tracking-wider shadow-sm">
                     <?= htmlspecialchars(t('pricing.platform_badge')) ?>
                 </span>
                 <div class="grid lg:grid-cols-2 gap-8 items-center">
@@ -757,10 +759,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <!-- ========== TESTIMONIALS SECTION (Flowbite Style) ========== -->
-    <section id="testimonials" class="py-16 lg:py-24 bg-gray-50">
+    <section id="testimonials" class="py-12 lg:py-16 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
-            <div class="max-w-2xl mx-auto text-center mb-16">
+            <div class="max-w-2xl mx-auto text-center mb-12">
                 <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-3"><?= htmlspecialchars(t('testimonials.kicker')) ?></p>
                 <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4">
                     <?= htmlspecialchars(t('testimonials.headline')) ?>
@@ -803,7 +805,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
     <!-- ========== FROM THE BLOG (SEO internal linking) ========== -->
     <?php if (!empty($latestPosts)): ?>
-    <section class="py-16 lg:py-24 bg-white">
+    <section class="py-12 lg:py-16 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-end justify-between mb-10 flex-wrap gap-4">
                 <div>
@@ -849,7 +851,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <?php endif; ?>
 
     <!-- ========== FREE TOOLS & DIRECTORIES (SEO HUB) ========== -->
-    <section id="resources" class="py-16 lg:py-24 bg-white">
+    <section id="resources" class="py-12 lg:py-16 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12">
                 <span class="inline-block text-sm font-semibold text-blue-600 uppercase tracking-wider mb-3"><?= htmlspecialchars(t('landing.res_kicker')) ?></span>
@@ -984,7 +986,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <!-- ========== CTA SECTION (Flowbite Style) ========== -->
-    <section class="py-16 lg:py-24 bg-gradient-to-br from-blue-600 to-indigo-700">
+    <section class="py-12 lg:py-16 bg-gradient-to-br from-blue-600 to-indigo-700">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white text-sm font-medium mb-6">
                 <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
@@ -1023,14 +1025,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <span><?= htmlspecialchars(t('pricing.home_plans_from', ['amount' => $priceStarterFrom, 'currency' => $homeCurName])) ?></span>
                 </div>
             </div>
-            </p>
         </div>
     </section>
 
     <!-- ========== FOOTER ========== -->
     <footer id="contact" class="bg-gray-900 text-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
                 <!-- Brand -->
                 <div class="lg:col-span-1">
                     <div class="flex items-center gap-3 mb-6">
@@ -1048,8 +1049,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Product Links -->
                 <div>
-                    <h4 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_product')) ?></h4>
-                    <ul class="space-y-3">
+                    <h4 class="font-bold text-lg mb-4"><?= htmlspecialchars(t('footer.col_product')) ?></h4>
+                    <ul class="space-y-2">
                         <li><a href="#features" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_features')) ?></a></li>
                         <li><a href="#pricing" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_pricing')) ?></a></li>
                         <li><a href="#resources" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_all_tools')) ?></a></li>
@@ -1059,8 +1060,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Free Tools -->
                 <div>
-                    <h4 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_free_tools')) ?></h4>
-                    <ul class="space-y-3">
+                    <h4 class="font-bold text-lg mb-4"><?= htmlspecialchars(t('footer.col_free_tools')) ?></h4>
+                    <ul class="space-y-2">
                         <li><a href="<?php echo getBasePath(); ?>tools/vcard-qr-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_vcard_qr')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>tools/email-signature-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_email_sig')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>tools/whatsapp-qr-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_whatsapp_qr')) ?></a></li>
@@ -1071,8 +1072,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Directory & Solutions -->
                 <div>
-                    <h4 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_directory')) ?></h4>
-                    <ul class="space-y-3">
+                    <h4 class="font-bold text-lg mb-4"><?= htmlspecialchars(t('footer.col_directory')) ?></h4>
+                    <ul class="space-y-2">
                         <li><a href="<?php echo getBasePath(); ?>oman-business-index" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_oman_index')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>companies" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_browse_companies')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>companies/sector/oil-gas" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_oil')) ?></a></li>
@@ -1084,8 +1085,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Company + Legal -->
                 <div>
-                    <h4 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_company')) ?></h4>
-                    <ul class="space-y-3">
+                    <h4 class="font-bold text-lg mb-4"><?= htmlspecialchars(t('footer.col_company')) ?></h4>
+                    <ul class="space-y-2">
                         <li><a href="<?php echo getBasePath(); ?>about" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_about')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>blog" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_blog')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>careers" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_careers')) ?></a></li>
@@ -1097,7 +1098,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
 
             <!-- Bottom Bar -->
-            <div class="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="pt-6 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
                 <p class="text-gray-500 text-sm">
                     <?= htmlspecialchars(t('footer.copyright', ['year' => date('Y'), 'brand' => $brandName])) ?>
                 </p>
