@@ -402,6 +402,15 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         .hp, .lead-form .hp { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); clip-path: inset(50%); white-space: nowrap; border: 0; left: auto !important; }
         body {
             min-height: 100vh;
+            /* Centre the (intentionally compact) card column so the leftover
+               viewport height splits top/bottom instead of dumping as empty
+               space below the footer on tall screens. margin:auto on the child
+               (below) is overflow-safe: long multi-section cards collapse the
+               auto margins to 0 and top-align + scroll normally. The top
+               lang/theme controls are position:absolute, so they stay pinned
+               in the corner and are unaffected by the centring. */
+            display: flex;
+            flex-direction: column;
             font-family: <?php echo $isRtl ? "'Noto Sans Arabic', " : ''; ?>-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             -webkit-font-smoothing: antialiased;
             <?php if ($isDarkPage): ?>
@@ -414,8 +423,9 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         }
         .page-container {
             max-width: 420px;
-            margin: 0 auto;
+            margin: auto;
             padding: 12px 16px 12px;
+            width: 100%;
         }
 
         /* Company Logo */
