@@ -334,7 +334,7 @@ function renderBranded404($company, $theme) {
     <title><?= htmlspecialchars(t('digitalcard.unavailable_title')) ?><?php echo $companyName ? ' - ' . htmlspecialchars($companyName) : ''; ?></title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(to bottom, #141421, #1a1a2e); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #eee; padding: 24px; }
+        body { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; background: linear-gradient(to bottom, #141421, #1a1a2e); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #eee; padding: 24px; }
         .container { text-align: center; max-width: 360px; }
         .logo { margin-bottom: 24px; }
         .logo img { max-width: 120px; height: auto; border-radius: 8px; }
@@ -401,7 +401,14 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         /* Honeypot anti-spam fields, visually hidden without causing document overflow (esp. in RTL) */
         .hp, .lead-form .hp { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); clip-path: inset(50%); white-space: nowrap; border: 0; left: auto !important; }
         body {
+            /* 100dvh (dynamic viewport) tracks the currently-visible height as
+               the iOS Safari toolbar shows/hides; plain 100vh resolves to the
+               LARGE viewport (toolbar-hidden height), so content gets sized
+               against more height than is actually visible = the classic iOS
+               "fits then scrolls when the bar appears" jump. 100vh kept first
+               as the fallback for browsers without dvh. */
             min-height: 100vh;
+            min-height: 100dvh;
             /* Centre the (intentionally compact) card column so the leftover
                viewport height splits top/bottom instead of dumping as empty
                space below the footer on tall screens. margin:auto on the child
