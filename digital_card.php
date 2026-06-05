@@ -981,6 +981,20 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             .cardify-viral-footer { padding: 6px 12px 4px; }
             .cardify-viral-footer .viral-link { font-size: 12px; width: 100%; justify-content: center; min-height: 40px; }
         }
+
+        /* Noto Sans Arabic has much taller line-leading than the Latin stack, so
+           the same markup overflowed the iPhone viewport in Arabic (+~98px) even
+           though English fit. Tighten the line-height on text-bearing controls
+           (harmless for Latin) and shave a few RTL-only gaps so the whole card,
+           including the Apple Wallet row on iOS, fits ~390x700 without scrolling. */
+        .employee-name { line-height: 1.12; }
+        .employee-title { line-height: 1.3; }
+        .action-btn, .bottom-btn, .wallet-buttons .wallet-btn { line-height: 1.2; }
+        [dir="rtl"] .employee-info { margin: 4px auto 6px; }
+        [dir="rtl"] .action-buttons { margin-bottom: 4px; }
+        [dir="rtl"] .bottom-buttons { margin-top: 6px; }
+        [dir="rtl"] .wallet-buttons { margin-top: 6px; }
+        [dir="rtl"] .social-links { margin-top: 8px; }
     </style>
 </head>
 <body class="<?php echo $isDarkPage ? 'force-dark' : 'force-light'; ?>">
