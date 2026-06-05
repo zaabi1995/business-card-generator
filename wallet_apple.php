@@ -77,6 +77,18 @@ try {
     // if a translation is missing so a field is never blank).
     $nameDisp     = ($isAr && $nameAr !== '')     ? $nameAr     : $name;
     $positionDisp = ($isAr && $positionAr !== '') ? $positionAr : $position;
+    // Apple renders pass fields with an LTR base paragraph direction on non-Arabic
+    // devices and gives NO direction attribute, so a multi-word Arabic name/title can
+    // lay out left-to-right. Force RTL base at the character level with Unicode
+    // embedding (U+202B RLE ... U+202C PDF). Only wrap the Arabic text fields (NOT
+    // phone/email, whose +968 / latin content must stay LTR).
+    if ($isAr) {
+        $rtl = function (string $s): string {
+            return $s === '' ? $s : "\u{202B}" . $s . "\u{202C}";
+        };
+        $nameDisp     = $rtl($nameDisp);
+        $positionDisp = $rtl($positionDisp);
+    }
     $companyNm = $company['name'] ?? '';
     $phone     = $employee['mobile'] ?? $employee['phone'] ?? '';
     $emailAddr = $employee['email'] ?? '';
