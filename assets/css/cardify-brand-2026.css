@@ -77,6 +77,15 @@ h1, h2, h3, .font-display {
 /* ---- Hero wash: brand cyan instead of the generic blue/cream ---- */
 .hero-gradient { background: linear-gradient(135deg, #e6f5f9 0%, #ffffff 55%, #f0fbfd 100%); }
 
+/* ---- Restore responsive grid utilities missing from the prebuilt Tailwind ----
+   `lg:grid-cols-5` / `lg:grid-cols-6` weren't compiled, so the footer fell back
+   to md:grid-cols-2 and stacked 5 sections into 3 tall rows. This puts it back
+   to a single row on desktop, which is the main fix for the oversized footer. */
+@media (min-width: 1024px) {
+  .lg\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .lg\:grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+
 /* ---- 2026 web-platform niceties ---- */
 @view-transition { navigation: auto; }
 
