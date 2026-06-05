@@ -1,0 +1,91 @@
+/* ============================================================
+   Cardify Brand 2026
+   Loaded LAST (after tailwind + cardify-overrides) so it wins on
+   equal specificity. Three jobs:
+     1. Map generic Tailwind blue/indigo to Cardify cyan (#009bc1).
+     2. Set the Sora display type system (matches the card templates).
+     3. Add 2026 web-platform niceties: View Transitions + a
+        prefers-reduced-motion guard.
+   ============================================================ */
+
+:root {
+  --cf-50:  #e6f5f9;
+  --cf-100: #b3e0ec;
+  --cf-200: #80cbde;
+  --cf-300: #4db7d1;
+  --cf-400: #26a6c7;
+  --cf-500: #009bc1; /* Cardify / BHD cyan, the brand anchor */
+  --cf-600: #0086a6;
+  --cf-700: #00708c;
+  --cf-800: #005b73;
+  --cf-900: #004559;
+}
+
+/* ---- Display type ----
+   Sora for headings (the same face the printed card templates use,
+   so the marketing site reads as the product). Body stays on Plus
+   Jakarta Sans (set in ui-header). Arabic keeps IBM Plex Sans Arabic
+   via the higher-specificity html[dir="rtl"] rule, so this never
+   touches RTL pages. */
+h1, h2, h3, .font-display {
+  font-family: 'Sora', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* ---- Backgrounds ---- */
+.bg-blue-50  { background-color: var(--cf-50); }
+.bg-blue-100 { background-color: var(--cf-100); }
+.bg-blue-500 { background-color: var(--cf-500); }
+.bg-blue-600 { background-color: var(--cf-500); }
+.bg-blue-700 { background-color: var(--cf-600); }
+.bg-blue-800 { background-color: var(--cf-700); }
+.bg-blue-500\/10 { background-color: rgb(0 155 193 / 0.10); }
+.bg-blue-500\/20 { background-color: rgb(0 155 193 / 0.20); }
+.bg-blue-500\/30 { background-color: rgb(0 155 193 / 0.30); }
+.hover\:bg-blue-50:hover  { background-color: var(--cf-50); }
+.hover\:bg-blue-700:hover { background-color: var(--cf-600); }
+.group:hover .group-hover\:bg-blue-600 { background-color: var(--cf-500); }
+
+/* ---- Text ---- */
+.text-blue-100 { color: var(--cf-100); }
+.text-blue-400 { color: var(--cf-300); }
+.text-blue-500 { color: var(--cf-500); }
+.text-blue-600 { color: var(--cf-500); }
+.text-blue-700 { color: var(--cf-600); }
+.text-blue-800 { color: var(--cf-700); }
+
+/* ---- Borders / ring ---- */
+.border-blue-100 { border-color: var(--cf-100); }
+.border-blue-400 { border-color: var(--cf-300); }
+.ring-blue-200   { --tw-ring-color: var(--cf-100); }
+
+/* ---- Gradients (rewrite the Tailwind --tw-gradient-* custom props) ---- */
+.from-blue-50  { --tw-gradient-from: var(--cf-50) var(--tw-gradient-from-position); --tw-gradient-to: rgb(230 245 249 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.from-blue-500 { --tw-gradient-from: var(--cf-500) var(--tw-gradient-from-position); --tw-gradient-to: rgb(0 155 193 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.from-blue-600 { --tw-gradient-from: var(--cf-500) var(--tw-gradient-from-position); --tw-gradient-to: rgb(0 155 193 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.via-blue-700  { --tw-gradient-to: rgb(0 134 166 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--cf-600) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.to-blue-50    { --tw-gradient-to: var(--cf-50) var(--tw-gradient-to-position); }
+.to-blue-600   { --tw-gradient-to: var(--cf-500) var(--tw-gradient-to-position); }
+.to-indigo-50  { --tw-gradient-to: var(--cf-50) var(--tw-gradient-to-position); }
+.to-indigo-700 { --tw-gradient-to: var(--cf-700) var(--tw-gradient-to-position); }
+.to-indigo-800 { --tw-gradient-to: var(--cf-800) var(--tw-gradient-to-position); }
+
+/* ---- Colored shadows ---- */
+.shadow-blue-500\/30 { --tw-shadow-color: rgb(0 155 193 / 0.30); --tw-shadow: var(--tw-shadow-colored); }
+.shadow-blue-600\/30 { --tw-shadow-color: rgb(0 155 193 / 0.30); --tw-shadow: var(--tw-shadow-colored); }
+
+/* ---- Hero wash: brand cyan instead of the generic blue/cream ---- */
+.hero-gradient { background: linear-gradient(135deg, #e6f5f9 0%, #ffffff 55%, #f0fbfd 100%); }
+
+/* ---- 2026 web-platform niceties ---- */
+@view-transition { navigation: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .float-animation, .float-delayed, .float-delay-2 { animation: none !important; }
+}

@@ -159,9 +159,9 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <link rel="preconnect" href="https://fonts.bhd.om">
     <link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
     <?php if ($cardifyDir === 'rtl'): ?>
-    <link href="https://fonts.bhd.om/css2?family=Inter:wght@300;400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.bhd.om/css2?family=Sora:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <?php else: ?>
-    <link href="https://fonts.bhd.om/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.bhd.om/css2?family=Sora:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <?php endif; ?>
     
     <!-- Preconnect to CDNs (parallel DNS+TLS) -->
@@ -209,22 +209,25 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <link rel="stylesheet" href="<?php echo assetUrl('css/cardify-tokens.css'); ?>?v=<?php echo $cardifyOverridesVersion; ?>">
     <link rel="stylesheet" href="<?php echo assetUrl('css/cardify-components.css'); ?>?v=<?php echo $cardifyOverridesVersion; ?>">
     <link rel="stylesheet" href="<?php echo assetUrl('css/cardify-overrides.css'); ?>?v=<?php echo $cardifyOverridesVersion; ?>"><?php /* Local fallback assets kept for offline use */ ?>
+    <?php $cardifyBrandVersion = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/css/cardify-brand-2026.css') ?: time(); ?>
+    <link rel="stylesheet" href="<?php echo assetUrl('css/cardify-brand-2026.css'); ?>?v=<?php echo $cardifyBrandVersion; ?>"><?php /* Brand 2026: cyan remap + Sora display + view transitions. Loads last. */ ?>
     
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
     <style>
-        /* Latin pages stay on Inter; Arabic pages render in IBM Plex Sans
-           Arabic end-to-end. Applying the Arabic face via [dir="rtl"] so
-           it wins over any tailwind or theme resets. */
-        body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+        /* Latin pages render in Plus Jakarta Sans (body) + Sora (display,
+           set in cardify-brand-2026.css); Arabic pages render in IBM Plex
+           Sans Arabic end-to-end. Applying the Arabic face via [dir="rtl"]
+           so it wins over any tailwind or theme resets. */
+        body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
         html[dir="rtl"], html[dir="rtl"] body,
         html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3,
         html[dir="rtl"] h4, html[dir="rtl"] h5, html[dir="rtl"] h6,
         html[dir="rtl"] p,  html[dir="rtl"] a,  html[dir="rtl"] span,
         html[dir="rtl"] button, html[dir="rtl"] input, html[dir="rtl"] select,
         html[dir="rtl"] textarea, html[dir="rtl"] label, html[dir="rtl"] li {
-            font-family: 'IBM Plex Sans Arabic', 'Inter', ui-sans-serif, system-ui, sans-serif;
+            font-family: 'IBM Plex Sans Arabic', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
         }
         [x-cloak] { display: none !important; }
         .bg-blur { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }

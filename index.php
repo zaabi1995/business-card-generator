@@ -258,7 +258,7 @@ $siteLd = [
 $homeJsonLd = '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES) . '</script>';
 
 $extraHead = $homeHreflang . $homeJsonLd . '<style>
-    .hero-gradient { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #fffbeb 100%); }
+    .hero-gradient { background: linear-gradient(135deg, #e6f5f9 0%, #ffffff 55%, #f0fbfd 100%); }
     .card-shadow { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); }
     .float-animation { animation: float 6s ease-in-out infinite; }
     @keyframes float {
@@ -298,7 +298,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="lg:col-span-6 text-center lg:text-left">
                     <!-- Badge -->
                     <div class="inline-flex items-center gap-2 py-1 pl-1 pr-4 mb-6 text-sm bg-white border border-gray-200 rounded-full shadow-sm">
-                        <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 font-semibold text-xs px-3 py-1 rounded-full"><span>🇴🇲</span> <?= htmlspecialchars(t('landing.hero_badge_loc')) ?></span>
+                        <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 font-semibold text-xs px-3 py-1 rounded-full"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> <?= htmlspecialchars(t('landing.hero_badge_loc')) ?></span>
                         <span class="font-medium text-gray-700"><?= htmlspecialchars(t('landing.hero_badge_copy')) ?></span>
                     </div>
 
@@ -325,7 +325,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             $cardifyDemoMsg = (currentLocale() === 'ar')
                                 ? 'مرحباً، أرغب بعرض توضيحي لكارديفاي لشركتي'
                                 : 'Hi, I would like a demo of Cardify for my company';
-                            $cardifyDemoUrl = 'https://wa.me/96899899100?text=' . rawurlencode($cardifyDemoMsg);
+                            $cardifyDemoUrl = 'https://api.whatsapp.com/send?phone=96899899100&text=' . rawurlencode($cardifyDemoMsg);
                         ?>
                         <a href="<?= htmlspecialchars($cardifyDemoUrl) ?>" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all text-lg">
                             <i class="fa-brands fa-whatsapp"></i>
@@ -987,7 +987,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <section class="py-16 lg:py-24 bg-gradient-to-br from-blue-600 to-indigo-700">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white text-sm font-medium mb-6">
-                <span>🇴🇲</span>
+                <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
                 <span><?= htmlspecialchars(t('landing.cta_supporting')) ?></span>
             </div>
 
