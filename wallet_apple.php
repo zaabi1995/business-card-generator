@@ -77,6 +77,8 @@ try {
     // if a translation is missing so a field is never blank).
     $nameDisp     = ($isAr && $nameAr !== '')     ? $nameAr     : $name;
     $positionDisp = ($isAr && $positionAr !== '') ? $positionAr : $position;
+    $nameRaw  = $nameDisp;   // unwrapped, used to bake the Arabic strip image
+    $titleRaw = $positionDisp;
     // Apple renders pass fields with an LTR base paragraph direction on non-Arabic
     // devices and gives NO direction attribute, so a multi-word Arabic name/title can
     // lay out left-to-right. Force RTL base at the character level with Unicode
@@ -115,6 +117,14 @@ try {
     $isDarkBg   = $lum < 0.62;
     $fgColor    = $isDarkBg ? 'rgb(255, 255, 255)' : 'rgb(17, 24, 39)';
     $labelColor = $fgColor; // same hue as values; Apple sizes labels smaller for hierarchy
+
+    // For Arabic: bake the name+title into the strip image as shaped RTL graphics,
+    // because PassKit text fields won't render true RTL on a non-Arabic-language
+    // device. storeCard's taller strip (375x144) holds two lines; if rendering fails
+    // we fall back to eventTicket text fields. English always uses eventTicket text.
+    $bakedStrip = $isAr ? WalletImage::brandStripWithText($primaryHex, $nameRaw, $titleRaw) : [];
+    $arBaked    = !empty($bakedStrip);
+    $styleKey   = $arBaked ? 'storeCard' : 'eventTicket';
 
     // ---- Single-language pass in the site language ($lang) ----
     // storeCard MERGES secondaryFields + auxiliaryFields into ONE shared row, so
@@ -177,20 +187,24 @@ try {
         $headerFields[] = ['key' => 'tagline', 'label' => '', 'value' => $tagline, 'textAlignment' => $NAT];
     }
 
-    // FRONT (eventTicket style): unlike storeCard/coupon/generic, eventTicket renders
-    // secondaryFields and auxiliaryFields on SEPARATE rows (per Apple HIG), so the long
-    // title gets its own full-width row and never truncates next to phone/email.
-    //   primary   = name (over the brand strip)
-    //   secondary = title (own row, full width)
-    //   auxiliary = phone + email (own row)
-    // Name is CENTER-aligned over the strip (clean hero look, avoids the LTR-vs-RTL
-    // alignment ambiguity); the RTL embedding above keeps Arabic word order correct.
-    $primaryFields = [[
-        'key' => 'name', 'label' => '', 'value' => $nameDisp, 'textAlignment' => 'PKTextAlignmentCenter',
-    ]];
-    $secondaryFields = [];
-    if ($positionDisp !== '') {
-        $secondaryFields[] = ['key' => 'title', 'label' => '', 'value' => $positionDisp, 'textAlignment' => $NAT];
+    // FRONT. Two cases:
+    //  - Arabic baked: name + title are IN the strip image (perfect RTL), so the text
+    //    rows are empty and only phone/email sit below (storeCard).
+    //  - English (eventTicket): name (primary, centered over strip) + title (secondary,
+    //    own full-width row), phone/email (auxiliary, own row). eventTicket is the only
+    //    style that puts secondary + auxiliary on SEPARATE rows so the title never
+    //    truncates next to phone/email.
+    if ($arBaked) {
+        $primaryFields   = [];
+        $secondaryFields = [];
+    } else {
+        $primaryFields = [[
+            'key' => 'name', 'label' => '', 'value' => $nameDisp, 'textAlignment' => 'PKTextAlignmentCenter',
+        ]];
+        $secondaryFields = [];
+        if ($positionDisp !== '') {
+            $secondaryFields[] = ['key' => 'title', 'label' => '', 'value' => $positionDisp, 'textAlignment' => $NAT];
+        }
     }
     $auxFields = [];
     if ($phone !== '') {
@@ -224,17 +238,17 @@ try {
         'labelColor'          => $labelColor,
         'barcodes'            => [$qr],
         'barcode'             => $qr, // legacy single-barcode key for older iOS
-        // eventTicket: the ONLY style that renders secondaryFields + auxiliaryFields on
-        // SEPARATE rows (Apple HIG), so title (secondary) gets a full-width row and
-        // phone/email (auxiliary) get their own row, no truncation. We supply a strip
-        // image (no background/thumbnail) so the brand band stays CRISP, not blurred.
-        'eventTicket' => [
-            'headerFields'    => $headerFields,
-            'primaryFields'   => $primaryFields,
-            'secondaryFields' => $secondaryFields,
-            'auxiliaryFields' => $auxFields,
-            'backFields'      => $backFields,
-        ],
+    ];
+    // Style is dynamic: Arabic-baked uses storeCard (taller strip holds the baked
+    // name+title, body = phone/email). English uses eventTicket (the only style with
+    // SEPARATE secondary + auxiliary rows, so the title never truncates next to
+    // phone/email). Both supply a strip image (no background) so it stays crisp.
+    $pass[$styleKey] = [
+        'headerFields'    => $headerFields,
+        'primaryFields'   => $primaryFields,
+        'secondaryFields' => $secondaryFields,
+        'auxiliaryFields' => $auxFields,
+        'backFields'      => $backFields,
     ];
 
     // ---- Build pass ----
@@ -289,29 +303,35 @@ try {
         }
     }
 
-    // Strip band (eventTicket, no background => 375x98 base / 750x196 / 1125x294).
-    // Per-tenant override at uploads/companies/<cid>/wallet-strip[@2x|@3x].png if
-    // present; otherwise an auto-generated dotted brand band from the tenant colour.
-    // Apple shows the strip CRISP (not blurred); the primary name renders over it.
-    $cid = (string)($company['id'] ?? '');
-    foreach ([
-        'strip.png'    => [375, 98, 'wallet-strip.png'],
-        'strip@2x.png' => [750, 196, 'wallet-strip@2x.png'],
-        'strip@3x.png' => [1125, 294, 'wallet-strip@3x.png'],
-    ] as $asset => $info) {
-        [$sw, $shh, $override] = $info;
-        $bytes = null;
-        if ($cid !== '') {
-            $ov = BASE_DIR . '/uploads/companies/' . $cid . '/' . $override;
-            if (is_readable($ov)) {
-                $bytes = @file_get_contents($ov);
-            }
-        }
-        if ($bytes === null || $bytes === false || $bytes === '') {
-            $bytes = WalletImage::brandBackground($primaryHex, $sw, $shh);
-        }
-        if ($bytes) {
+    // Strip band. Arabic-baked: the SVG-rendered strip already holds the RTL name+title
+    // at storeCard dims (375x144). Otherwise (English / fallback): a plain dotted brand
+    // band at eventTicket dims (375x98), with optional per-tenant override at
+    // uploads/companies/<cid>/wallet-strip[@2x|@3x].png. Apple shows the strip CRISP.
+    if ($arBaked) {
+        foreach ($bakedStrip as $asset => $bytes) {
             $passObj->addAsset($asset, $bytes);
+        }
+    } else {
+        $cid = (string)($company['id'] ?? '');
+        foreach ([
+            'strip.png'    => [375, 98, 'wallet-strip.png'],
+            'strip@2x.png' => [750, 196, 'wallet-strip@2x.png'],
+            'strip@3x.png' => [1125, 294, 'wallet-strip@3x.png'],
+        ] as $asset => $info) {
+            [$sw, $shh, $override] = $info;
+            $bytes = null;
+            if ($cid !== '') {
+                $ov = BASE_DIR . '/uploads/companies/' . $cid . '/' . $override;
+                if (is_readable($ov)) {
+                    $bytes = @file_get_contents($ov);
+                }
+            }
+            if ($bytes === null || $bytes === false || $bytes === '') {
+                $bytes = WalletImage::brandBackground($primaryHex, $sw, $shh);
+            }
+            if ($bytes) {
+                $passObj->addAsset($asset, $bytes);
+            }
         }
     }
 

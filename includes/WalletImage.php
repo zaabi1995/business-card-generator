@@ -122,6 +122,77 @@ class WalletImage
         return ($ok && $bytes !== false && $bytes !== '') ? $bytes : null;
     }
 
+    /**
+     * Brand strip (storeCard 375x144) with the Arabic NAME + TITLE baked in as
+     * properly-shaped, right-aligned RTL text. PassKit text fields can't be forced
+     * RTL on a non-Arabic device, so for Arabic passes we render the text into the
+     * image via SVG -> rsvg-convert (librsvg uses Pango, which shapes + bidis Arabic
+     * correctly). Returns ['strip.png'=>bytes,'strip@2x.png'=>..,'strip@3x.png'=>..]
+     * (all three) or [] on any failure so the caller can fall back to text fields.
+     */
+    public static function brandStripWithText(string $hex, string $name, string $title): array
+    {
+        $rsvg = trim((string) @shell_exec('command -v rsvg-convert 2>/dev/null'));
+        if ($rsvg === '') {
+            return [];
+        }
+        $hx = ltrim($hex, '#');
+        if (strlen($hx) === 3) { $hx = $hx[0].$hx[0].$hx[1].$hx[1].$hx[2].$hx[2]; }
+        if (strlen($hx) !== 6) { $hx = '2d13ea'; }
+        $r = hexdec(substr($hx, 0, 2)); $g = hexdec(substr($hx, 2, 2)); $b = hexdec(substr($hx, 4, 2));
+        $darker = sprintf('#%02x%02x%02x', (int)($r * 0.72), (int)($g * 0.72), (int)($b * 0.72));
+
+        $W = 375; $H = 144; $pad = 20;
+        $avail = $W - 2 * $pad;
+        $nlen = max(1, function_exists('mb_strlen') ? mb_strlen($name, 'UTF-8') : strlen($name));
+        $tlen = max(1, function_exists('mb_strlen') ? mb_strlen($title, 'UTF-8') : strlen($title));
+        // Shrink the font for long strings so they never overflow the strip width.
+        $nameSize  = max(22, min(42, (int) floor($avail / ($nlen * 0.55))));
+        $titleSize = max(12, min(19, (int) floor($avail / ($tlen * 0.52))));
+        $nameY  = ($title !== '') ? 66 : 84;
+        $titleY = 106;
+
+        $esc = function (string $s): string {
+            return htmlspecialchars($s, ENT_QUOTES | ENT_XML1, 'UTF-8');
+        };
+        $step = 22; $dotR = 3.4;
+        $svg  = '<?xml version="1.0" encoding="UTF-8"?>';
+        $svg .= '<svg xmlns="http://www.w3.org/2000/svg" width="' . $W . '" height="' . $H . '" viewBox="0 0 ' . $W . ' ' . $H . '">';
+        $svg .= '<defs>';
+        $svg .= '<linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#' . $hx . '"/><stop offset="1" stop-color="' . $darker . '"/></linearGradient>';
+        $svg .= '<pattern id="d" width="' . $step . '" height="' . $step . '" patternUnits="userSpaceOnUse"><circle cx="' . ($step / 2) . '" cy="' . ($step / 2) . '" r="' . $dotR . '" fill="#ffffff" fill-opacity="0.10"/></pattern>';
+        $svg .= '</defs>';
+        $svg .= '<rect width="' . $W . '" height="' . $H . '" fill="url(#g)"/>';
+        $svg .= '<rect width="' . $W . '" height="' . $H . '" fill="url(#d)"/>';
+        // direction=rtl + text-anchor=start + x at the right edge => right-aligned RTL.
+        $svg .= '<text x="' . ($W - $pad) . '" y="' . $nameY . '" text-anchor="start" direction="rtl" font-family="Noto Naskh Arabic, Noto Sans Arabic, sans-serif" font-weight="700" font-size="' . $nameSize . '" fill="#ffffff">' . $esc($name) . '</text>';
+        if ($title !== '') {
+            $svg .= '<text x="' . ($W - $pad) . '" y="' . $titleY . '" text-anchor="start" direction="rtl" font-family="Noto Sans Arabic, sans-serif" font-size="' . $titleSize . '" fill="#ffffff" fill-opacity="0.92">' . $esc($title) . '</text>';
+        }
+        $svg .= '</svg>';
+
+        $tmpSvg = tempnam(sys_get_temp_dir(), 'wstrip_') . '.svg';
+        if (@file_put_contents($tmpSvg, $svg) === false) {
+            return [];
+        }
+        $out = [];
+        foreach (['strip.png' => [375, 144], 'strip@2x.png' => [750, 288], 'strip@3x.png' => [1125, 432]] as $asset => $dim) {
+            $tmpPng = tempnam(sys_get_temp_dir(), 'wstripo_') . '.png';
+            $rc = 1; $o = [];
+            @exec(escapeshellarg($rsvg) . ' -w ' . $dim[0] . ' -h ' . $dim[1] . ' '
+                . escapeshellarg($tmpSvg) . ' -o ' . escapeshellarg($tmpPng) . ' 2>/dev/null', $o, $rc);
+            if ($rc === 0 && is_readable($tmpPng) && filesize($tmpPng) > 0) {
+                $bytes = @file_get_contents($tmpPng);
+                if ($bytes !== false && $bytes !== '') {
+                    $out[$asset] = $bytes;
+                }
+            }
+            @unlink($tmpPng);
+        }
+        @unlink($tmpSvg);
+        return (count($out) === 3) ? $out : [];
+    }
+
     /** True if the image has any meaningfully transparent pixels (sampled grid). */
     private static function hasTransparency($img): bool
     {
