@@ -52,10 +52,13 @@ test.describe('Cardify — public card view', () => {
     await expect(viralFooter, 'viral footer container').toBeVisible();
     await expect(viralFooter, 'viral footer text').toContainText(/made with cardify/i);
 
-    // Save-contact link embeds the VCF/QR endpoint — verify its href points at
-    // /qr.php (the VCF download the QR on printed/PDF cards resolves to).
+    // Save-contact link must resolve to the dedicated vCard endpoint (/vcf.php),
+    // wrapped in the card_click.php tracker. It must NOT point at /qr.php — that
+    // endpoint is dual-purpose (printed-card QR) and can 302-loop back to the
+    // card page, making iOS "save" the rendered page instead of the contact.
     const saveHref = await saveContact.getAttribute('href');
-    expect(saveHref, 'save-contact href').toMatch(/qr\.php/);
+    expect(saveHref, 'save-contact href').toMatch(/vcf\.php/);
+    expect(saveHref, 'save-contact must not use qr.php').not.toMatch(/qr\.php/);
 
     // qr.php endpoint must return either a vCard payload (legacy) or a 302
     // redirect to the friendly short URL (current behavior since the short-URL

@@ -149,7 +149,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
 
         <!-- Stats band (Metronic-style stat cards) -->
         <div class="grid grid-cols-3 gap-3 mb-6">
-            <div class="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
+            <div class="bg-white border border-gray-200 rounded-xl p-3 sm:p-5 flex flex-col items-center text-center gap-2 sm:flex-row sm:text-left sm:gap-4 min-w-0">
                 <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                     <i class="fa-solid fa-circle-check"></i>
                 </div>
@@ -158,7 +158,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                     <p class="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide mt-1"><?= logos_esc($isAr ? 'علامات موثَّقة' : 'Verified brands') ?></p>
                 </div>
             </div>
-            <div class="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
+            <div class="bg-white border border-gray-200 rounded-xl p-3 sm:p-5 flex flex-col items-center text-center gap-2 sm:flex-row sm:text-left sm:gap-4 min-w-0">
                 <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                     <i class="fa-solid fa-layer-group"></i>
                 </div>
@@ -167,7 +167,7 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                     <p class="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide mt-1"><?= logos_esc($isAr ? 'مفهرسة' : 'Indexed brands') ?></p>
                 </div>
             </div>
-            <div class="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4">
+            <div class="bg-white border border-gray-200 rounded-xl p-3 sm:p-5 flex flex-col items-center text-center gap-2 sm:flex-row sm:text-left sm:gap-4 min-w-0">
                 <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
                     <i class="fa-solid fa-grid-2"></i>
                 </div>

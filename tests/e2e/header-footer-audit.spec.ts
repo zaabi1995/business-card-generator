@@ -17,7 +17,10 @@
  *      (computed grid column count: 6 full / 5 inline / minimal=flex).
  *   5. No i18n leak (no literal t('...') or namespace.key in the body).
  *   6. No horizontal overflow (scrollWidth <= innerWidth + 2).
- *   7. No failed stylesheet / FA font requests; FA woff2 has CORS.
+ *   7. No failed SAME-ORIGIN stylesheet requests; the cross-origin FA woff2
+ *      is verified by PAINT (glyph width) + CORS header, not by network
+ *      success — Cloudflare can block CI datacenter IPs while real users load
+ *      it fine.
  *   8. Brand-color correctness: Cardify's own pages carry the
  *      `cardify-brand` body class and a cyan primary CTA; tenant
  *      subdomains must NOT carry it (they keep their own brand).
@@ -71,17 +74,26 @@ const RTL: Arch[] = [
 // ---- shared diagnostics collector ----
 async function collect(page: Page) {
   const failedCss: string[] = [];
+  const faFontNetFail: string[] = []; // cross-origin FA woff2 network failures — collected, NOT fatal
   const faWoff2: { url: string; status: number; acao: string | undefined }[] = [];
   page.on('requestfailed', (r) => {
     const u = r.url();
-    if (/\.css(\?|$)/.test(u) || FA_WOFF2.test(u)) failedCss.push(`${u} :: ${r.failure()?.errorText}`);
+    // Same-origin stylesheet failures are real regressions we own → fatal.
+    if (/\.css(\?|$)/.test(u)) failedCss.push(`${u} :: ${r.failure()?.errorText}`);
+    // The FontAwesome woff2 lives on the cross-origin design.bhd.om CDN behind
+    // Cloudflare, which intermittently blocks datacenter/CI IPs (net::ERR_FAILED)
+    // even though it serves 200 + ACAO to real browsers. That is a CI/CDN-edge
+    // artifact, NOT a site regression — collect it for visibility but do not fail
+    // the suite on it. Whether FA actually PAINTS is asserted separately via
+    // faStatus / iconWidth / iconGlyph, and its CORS via the badAcao check below.
+    else if (FA_WOFF2.test(u)) faFontNetFail.push(`${u} :: ${r.failure()?.errorText}`);
   });
   page.on('response', (res) => {
     const u = res.url();
     if (FA_WOFF2.test(u)) faWoff2.push({ url: u, status: res.status(), acao: res.headers()['access-control-allow-origin'] });
     if (/\.css(\?|$)/.test(u) && res.status() >= 400) failedCss.push(`${u} :: HTTP ${res.status()}`);
   });
-  return { failedCss, faWoff2 };
+  return { failedCss, faFontNetFail, faWoff2 };
 }
 
 async function evalAudit(page: Page, a: Arch) {
@@ -174,10 +186,6 @@ test.describe('header + footer · mobile overflow', () => {
   test.use({ viewport: { width: 390, height: 844 } });
   for (const a of [...PUBLIC, ...RTL]) {
     test(`${a.label} no overflow @390`, async ({ page }) => {
-      // Known pre-existing: /logos hub has a horizontal logo carousel
-      // (overflow-x-auto row) that leaks ~19px past the viewport at 390px.
-      // Not header/footer, not from the brand pass; tracked separately.
-      test.fixme(a.url === '/logos', 'pre-existing /logos carousel overflow ~19px @390');
       const res = await page.goto(a.url, { waitUntil: 'domcontentloaded' });
       expect(res?.status()).toBe(200);
       const { sw, iw } = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
