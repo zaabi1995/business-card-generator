@@ -1293,5 +1293,9 @@ HTML;
 </script>
 
 <?php
+    // The homepage owns its footer (above); ui-footer runs for scripts only.
+    // Explicit so ui-footer no longer has to guess "is this the homepage?"
+    // by script name (which also matched every other */index.php page).
+    $skipFooter = true;
     require INCLUDES_DIR . '/ui-footer.php';
     ?>

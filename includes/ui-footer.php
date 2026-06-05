@@ -20,7 +20,7 @@ elseif (!empty($minimalFooter)):
             </div>
         </div>
     </footer>
-<?php elseif ($currentPage !== 'index'): ?>
+<?php else: /* every page that doesn't own its footer ($skipFooter) or opt into $minimalFooter gets the full footer, including */index.php pages like /industries */ ?>
     <footer class="bg-gray-900 text-white mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="grid md:grid-cols-2 lg:grid-cols-6 gap-8 mb-8">
