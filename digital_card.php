@@ -609,8 +609,10 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         }
         .contact-icon {
             width: 24px;
-            font-size: 16px;
+            font-size: 15px;
             flex-shrink: 0;
+            text-align: center;
+            color: <?php echo htmlspecialchars($accentColor); ?>;
         }
         .contact-value {
             flex: 1;
@@ -1110,22 +1112,21 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             ?>
             <?php if ($phone): ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('click_phone', 'tel:' . $phone)); ?>" class="contact-row">
-                <span class="contact-icon">&#128222;</span>
+                <span class="contact-icon"><i class="fa-solid fa-phone" aria-hidden="true"></i></span>
                 <span class="contact-value" dir="ltr"><?php echo htmlspecialchars($phone); ?></span>
             </a>
             <?php endif; ?>
 
             <?php if ($mobile && $mobile !== $phone): ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('click_mobile', 'tel:' . $mobile)); ?>" class="contact-row">
-                <span class="contact-icon">&#128241;</span>
+                <span class="contact-icon"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i></span>
                 <span class="contact-value" dir="ltr"><?php echo htmlspecialchars($mobile); ?></span>
             </a>
             <?php endif; ?>
 
             <?php if ($email): ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('click_email', 'mailto:' . $email)); ?>" class="contact-row">
-                <?php // U+2709 is text-presentation; U+FE0F (VS16) selects the emoji variant so it matches the other icons. ?>
-                <span class="contact-icon">&#9993;&#65039;</span>
+                <span class="contact-icon"><i class="fa-solid fa-envelope" aria-hidden="true"></i></span>
                 <span class="contact-value" dir="ltr"><?php echo htmlspecialchars($email); ?></span>
             </a>
             <?php endif; ?>
@@ -1133,14 +1134,14 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <?php if ($website): ?>
             <?php $__webDest = strpos($website, 'http') === 0 ? $website : 'https://' . $website; ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('click_website', $__webDest)); ?>" class="contact-row" target="_blank" rel="noopener">
-                <span class="contact-icon">&#127760;</span>
+                <span class="contact-icon"><i class="fa-solid fa-globe" aria-hidden="true"></i></span>
                 <span class="contact-value" dir="ltr"><?php echo htmlspecialchars($website); ?></span>
             </a>
             <?php endif; ?>
 
             <?php if ($address): ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('click_map', 'https://maps.google.com/?q=' . urlencode($address))); ?>" class="contact-row" target="_blank" rel="noopener">
-                <span class="contact-icon">&#128205;</span>
+                <span class="contact-icon"><i class="fa-solid fa-location-dot" aria-hidden="true"></i></span>
                 <span class="contact-value"><?php echo htmlspecialchars($address); ?></span>
             </a>
             <?php endif; ?>
