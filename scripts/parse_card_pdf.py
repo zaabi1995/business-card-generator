@@ -800,6 +800,27 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
             if not is_static:
                 text_bboxes_for_redaction.append(sp['bbox'])
 
+        # ── 2b. Protect baked statics that overlap a dynamic redaction box ──
+        # A render_in_bg static (e.g. a stacked Arabic name line directly under
+        # the English name) lives in the bg PNG. If a DYNAMIC field's redaction
+        # rect overlaps it, redaction erases that static from the bg and nothing
+        # redraws it, so the static silently vanishes (this is the root cause of
+        # the Arabic name line disappearing on import). Flip such statics to
+        # render-on-top AND redact their baked copy too (so the surviving part
+        # isn't double-struck). They still carry is_static + detected_text, so
+        # the renderer/editor draw the literal text on the cleaned bg.
+        def _rects_overlap(a, b):
+            return not (a[2] <= b[0] or b[2] <= a[0] or a[3] <= b[1] or b[3] <= a[1])
+        _dyn_redact = list(text_bboxes_for_redaction)
+        for fld in fields:
+            if not fld.get('render_in_bg'):
+                continue
+            _oy0 = fld['y_pt'] - fld.get('y_correction_pt', 0)
+            _fb = [fld['x_pt'], _oy0, fld['x_pt'] + fld['w_pt'], _oy0 + fld['h_pt']]
+            if any(_rects_overlap(_fb, rb) for rb in _dyn_redact):
+                fld['render_in_bg'] = False
+                text_bboxes_for_redaction.append(_fb)
+
         # ── 3. Detect QR placeholder area ──
         # Use ALL text bboxes (including static decorations) to avoid
         # placing the QR over baked-in text. Redaction set is dynamic-only
@@ -986,6 +1007,16 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
                 # fonts_dir_rel is relative to the extract_dir parent so
                 # import_pdf.php can prepend outRel and get a valid URL.
                 fonts_dir_rel = os.path.join(os.path.basename(extract_dir), 'fonts')
+                # Upgrade the PyMuPDF subsets to foundry originals from
+                # fonts.bhd.om when available. Subsets lack Arabic glyphs +
+                # GSUB shaping, so Arabic text renders in the wrong font
+                # (Fabric) or as tofu/dots (PyMuPDF). Best-effort; never fail
+                # the import over a CDN miss.
+                try:
+                    fetch_main = importlib.import_module('fetch_foundry_fonts').main
+                    fetch_main(os.path.join(extract_dir, 'fonts'))
+                except Exception as e:
+                    print(f'WARN: foundry font upgrade failed: {e}', file=sys.stderr)
         except Exception as e:
             print(f'WARN: font extraction failed: {e}', file=sys.stderr)
 

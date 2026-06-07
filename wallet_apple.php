@@ -261,9 +261,20 @@ try {
     // Icon (system contexts, often on white) = the original-colour logo.
     $iconFs = null;
     if ($theme && !empty($theme['logo_path'])) {
-        $cand = BASE_DIR . '/' . ltrim($theme['logo_path'], '/');
-        if (is_readable($cand)) {
-            $iconFs = $cand;
+        // logo_path is stored inconsistently across tenants: some flows save it
+        // WITH the 'uploads/' prefix (onboarding, apply_theme), others WITHOUT
+        // it (theme-builder e.g. 'companies/<id>/theme/logo_*.png'). Only trying
+        // BASE_DIR.'/'.path silently missed the no-prefix form -> the wallet
+        // fell back to a blank logo. Try every sensible resolution so the wallet
+        // logo never silently disappears. Mirrors the normalisation already done
+        // in TenantHost::theme() / EmployeeEditToken / admin-layout.
+        $lp = ltrim((string) $theme['logo_path'], '/');
+        $cands = [BASE_DIR . '/' . $lp, BASE_DIR . '/uploads/' . $lp];
+        if (strpos($lp, 'uploads/') === 0) {
+            $cands[] = BASE_DIR . '/' . substr($lp, 8);
+        }
+        foreach ($cands as $c) {
+            if (is_readable($c)) { $iconFs = $c; break; }
         }
     }
     // Header logo can use a tenant REVERSE logo: a "<name>-dark.<ext>" sibling of
