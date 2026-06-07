@@ -30,6 +30,35 @@ class WalletImage
         if (!$img) {
             return null;
         }
+        // Trim transparent padding so $alignLeft anchors the actual logo mark,
+        // not the source image's transparent margin (a logo exported with built-in
+        // padding otherwise renders centered/right on the pass despite alignLeft;
+        // Apple's logo region is top-left). imagecropauto(IMG_CROP_TRANSPARENT) is
+        // unreliable on truecolor-alpha, so scan the alpha channel for the bbox.
+        $bw0 = imagesx($img); $bh0 = imagesy($img);
+        if ($bw0 > 2 && $bh0 > 2) {
+            $minX = $bw0; $minY = $bh0; $maxX = -1; $maxY = -1;
+            $stp = max(1, (int) floor(max($bw0, $bh0) / 600));
+            for ($yy = 0; $yy < $bh0; $yy += $stp) {
+                for ($xx = 0; $xx < $bw0; $xx += $stp) {
+                    if ((((imagecolorat($img, $xx, $yy)) >> 24) & 0x7F) < 100) {
+                        if ($xx < $minX) $minX = $xx;
+                        if ($xx > $maxX) $maxX = $xx;
+                        if ($yy < $minY) $minY = $yy;
+                        if ($yy > $maxY) $maxY = $yy;
+                    }
+                }
+            }
+            if ($maxX >= $minX && $maxY >= $minY) {
+                $minX = max(0, $minX - $stp); $minY = max(0, $minY - $stp);
+                $maxX = min($bw0 - 1, $maxX + $stp); $maxY = min($bh0 - 1, $maxY + $stp);
+                $cw = $maxX - $minX + 1; $ch = $maxY - $minY + 1;
+                if (($cw < $bw0 || $ch < $bh0) && $cw > 1 && $ch > 1) {
+                    $cropped = imagecrop($img, ['x' => $minX, 'y' => $minY, 'width' => $cw, 'height' => $ch]);
+                    if ($cropped !== false) { $img = $cropped; }
+                }
+            }
+        }
         $sw = imagesx($img);
         $sh = imagesy($img);
         if ($sw < 1 || $sh < 1) {
