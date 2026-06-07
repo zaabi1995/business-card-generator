@@ -137,6 +137,10 @@ class CardifyTemplateImporter
         // white square, otherwise dropped in the bottom-right corner
         // disabled by default.
         $scale = 300.0 / 72.0;
+        // Canvas bounds in px (used to clamp the QR field so it can NEVER land
+        // off-canvas, even if the parser hands back a bad qr_area).
+        $pageWpx = (int)round((float)($page['width_pt'] ?? 255) * $scale);
+        $pageHpx = (int)round((float)($page['height_pt'] ?? 165) * $scale);
         if (!empty($page['qr_area'])) {
             $qa = $page['qr_area'];
             $qWpx = (float)$qa['w_pt'] * $scale;
@@ -144,11 +148,22 @@ class CardifyTemplateImporter
             $qXpx = (float)$qa['x_pt'] * $scale;
             $qYpx = (float)$qa['y_pt'] * $scale;
             $qrSize = (int)round(min($qWpx, $qHpx) * 0.90);
+            if ($qrSize <= 0) { $qrSize = 140; }
+            // Defense in depth: cap size at 45% of the smaller side and clamp
+            // x/y so the whole QR stays inside the card. Without this, an
+            // off-canvas qr_area (negative y / x+w past the trim) produced a
+            // QR field hanging off the top-right edge on every affected import.
+            $maxSize = (int)floor(min($pageWpx, $pageHpx) * 0.45);
+            if ($maxSize > 40) { $qrSize = min($qrSize, $maxSize); }
+            $qx = (int)round($qXpx + ($qWpx - $qrSize) / 2);
+            $qy = (int)round($qYpx + ($qHpx - $qrSize) / 2);
+            $qx = max(0, min($qx, $pageWpx - $qrSize));
+            $qy = max(0, min($qy, $pageHpx - $qrSize));
             $out['qr_code'] = [
                 'enabled' => true,
-                'x'       => (int)round($qXpx + ($qWpx - $qrSize) / 2),
-                'y'       => (int)round($qYpx + ($qHpx - $qrSize) / 2),
-                'size'    => $qrSize > 0 ? $qrSize : 140,
+                'x'       => $qx,
+                'y'       => $qy,
+                'size'    => $qrSize,
             ];
             // Carry through the visual style sampled from the original PDF
             // QR (fg/bg/border) so the dynamic vCard QR matches the design
@@ -158,8 +173,6 @@ class CardifyTemplateImporter
             }
         } else {
             $defaultPx = (int)round(18 / 25.4 * 300);
-            $pageWpx = (int)round((float)($page['width_pt'] ?? 255) * $scale);
-            $pageHpx = (int)round((float)($page['height_pt'] ?? 165) * $scale);
             $marginPx = (int)round(6 / 25.4 * 300);
             $out['qr_code'] = [
                 'enabled' => false,

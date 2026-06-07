@@ -194,6 +194,10 @@ def detect_qr_area(page, redacted_text_bboxes, bg_image_path=None, bg_dpi=None):
     (the common case when a card embeds a working QR via python qrcode etc.).
     Returns dict {x_pt, y_pt, w_pt, h_pt, hint, payload?} or None."""
 
+    # Page bounds (points). Used to reject off-canvas / oversized false
+    # positives in the white-square heuristic below.
+    pw, ph = float(page.rect.width), float(page.rect.height)
+
     # Path 1: drawing-layer placeholder (cheap, no PIL/pyzbar needed)
     drawings = page.get_drawings()
     candidates = []
@@ -225,9 +229,21 @@ def detect_qr_area(page, redacted_text_bboxes, bg_image_path=None, bg_dpi=None):
         h = y1 - y0
         if w < 30 or h < 30:
             continue
-        # Aspect close to square (QR is square)
+        # Aspect close to square (QR is square). Tightened 1.5 -> 1.3 so a
+        # slightly-rectangular background panel cannot pass as a QR.
         aspect = max(w, h) / min(w, h) if min(w, h) > 0 else 99
-        if aspect > 1.5:
+        if aspect > 1.3:
+            continue
+        # Must sit (almost) fully inside the page. A real QR placeholder never
+        # bleeds off-canvas; large white *card-background* shapes do (negative
+        # coords, or they extend past the trim into the bleed). Rejecting these
+        # is the root-cause fix for QR fields landing off the top-right edge on
+        # import (e.g. a 128x179pt white shape at y=-23 grabbed as the QR).
+        if x0 < -2 or y0 < -2 or x1 > pw + 2 or y1 > ph + 2:
+            continue
+        # A QR placeholder is small relative to the card, not a full-height
+        # panel. Cap at 50% of either dimension.
+        if w > 0.5 * pw or h > 0.5 * ph:
             continue
         candidates.append({'x_pt': x0, 'y_pt': y0, 'w_pt': w, 'h_pt': h, 'area': w * h})
 
