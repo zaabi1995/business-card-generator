@@ -51,20 +51,51 @@ if (file_exists(__DIR__ . '/includes/TenantHost.php')) {
         if ($reqPath === '/login' || $reqPath === '/login/') {
             require __DIR__ . '/tenant_login.php';
         } else {
-            // Default: employee request portal. A bare single-token path that
-            // is NOT the canonical "/" or "/portal" reaches here only as a
-            // soft-404 fallback (mistyped/old card link, scanner probing
-            // /wp-admin, etc.). The portal still renders so a real visitor can
-            // request a card, but tell search engines NOT to index these
-            // arbitrary URLs, else Google indexes infinite junk paths per
-            // tenant as soft-404s. (BHD loop audit iter 13, 3 Jun 2026.)
-            $canonicalPortal = ($reqPath === '/' || $reqPath === ''
-                || $reqPath === '/portal' || $reqPath === '/portal/'
-                || preg_match('~^/portal/[a-z0-9-]+/?$~i', $reqPath));
-            if (!$canonicalPortal && !headers_sent()) {
-                header('X-Robots-Tag: noindex, nofollow', true);
+            // A bare single-token path (e.g. /ali or /first.last) is the
+            // printed-card / share target: resolve it to that employee's
+            // digital card. This mirrors the documented convention
+            // "<slug>.cardify.om/<email-localpart> -> digital_card.php" which
+            // the /card/<id> nginx rewrite handles for the dotted form but
+            // which never fired for the no-dot form (it fell through to the
+            // request portal). Only falls back to the portal when no employee
+            // matches, preserving the soft-404 behaviour for mistyped links.
+            $__tok = trim($reqPath, '/');
+            $__servedCard = false;
+            if ($__tok !== '' && strpos($__tok, '/') === false
+                && $__tok !== 'portal' && $__tok !== 'login'
+                && !preg_match('~\.(php|html?|css|js|png|jpe?g|gif|svg|webp|ico|pdf|txt|json|xml|map|woff2?|ttf|otf|webmanifest|eot|mp4|webm|mov|wav|mp3|csv)$~i', $__tok)
+                && function_exists('findCompanyBySlug') && function_exists('findEmployeeById')) {
+                $__co = findCompanyBySlug((string) TenantHost::slug());
+                if (is_array($__co) && !empty($__co['id'])) {
+                    $__emp = findEmployeeById($__tok, $__co['id']);
+                    if (!$__emp && function_exists('findEmployeeByEmail')) {
+                        $__emp = findEmployeeByEmail($__tok, $__co['id']);
+                        if (!$__emp && !empty($__co['email_domain'])) {
+                            $__emp = findEmployeeByEmail($__tok . '@' . $__co['email_domain'], $__co['id']);
+                        }
+                    }
+                    if (is_array($__emp) && !empty($__emp['id'])) {
+                        $_GET['employee_id']  = $__emp['id'];
+                        $_GET['company_slug'] = (string) TenantHost::slug();
+                        require __DIR__ . '/digital_card.php';
+                        $__servedCard = true;
+                    }
+                }
             }
-            require __DIR__ . '/portal.php';
+            if (!$__servedCard) {
+                // Canonical portal paths stay indexable; arbitrary junk paths
+                // (mistyped/old card links, scanner probes) render the portal
+                // but tell search engines NOT to index them, else Google
+                // indexes infinite junk paths per tenant as soft-404s.
+                // (BHD loop audit iter 13, 3 Jun 2026.)
+                $canonicalPortal = ($reqPath === '/' || $reqPath === ''
+                    || $reqPath === '/portal' || $reqPath === '/portal/'
+                    || preg_match('~^/portal/[a-z0-9-]+/?$~i', $reqPath));
+                if (!$canonicalPortal && !headers_sent()) {
+                    header('X-Robots-Tag: noindex, nofollow', true);
+                }
+                require __DIR__ . '/portal.php';
+            }
         }
         exit;
     }
