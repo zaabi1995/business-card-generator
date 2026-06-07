@@ -782,7 +782,7 @@ class CardEditor {
                 // don't get a draggable replacement on font-load swap.
                 const canvas = this.canvas;
                 const self = this;
-                setTimeout(() => {
+                const _rebuildRtl = () => {
                     const oldField = self.fields[key];
                     const carry = oldField ? {
                         selectable: oldField.selectable,
@@ -802,7 +802,22 @@ class CardEditor {
                         self.canvas.add(rebuilt);
                         self.canvas.requestRenderAll();
                     }
-                }, 80);
+                };
+                // Rebuild AFTER the field's real font has actually loaded, not on
+                // a fixed 80ms guess. A custom face (e.g. DialogueME) often isn't
+                // ready within 80ms, so the first RTL bitmap baked the fallback
+                // Arabic font (wrong glyphs) and the early re-render kept it.
+                // document.fonts.load resolves only once the face is usable.
+                const _rtlSpec = `${fieldOptions.fontStyle || 'normal'} ${fieldOptions.fontWeight || 'normal'} ${fieldOptions.fontSize}px "${fieldOptions.fontFamily}"`;
+                if (document.fonts && typeof document.fonts.load === 'function') {
+                    const _sample = String(options.text || '').slice(0, 16) || 'ابجد';
+                    Promise.resolve(document.fonts.load(_rtlSpec, _sample))
+                        .then(() => document.fonts.ready)
+                        .then(_rebuildRtl)
+                        .catch(() => setTimeout(_rebuildRtl, 150));
+                } else {
+                    setTimeout(_rebuildRtl, 80);
+                }
                 return rtlObj;
             }
             // Fall through to Fabric Text if image building failed.
