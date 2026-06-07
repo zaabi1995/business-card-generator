@@ -961,6 +961,29 @@ def parse_pdf(pdf_path, output_dir, installed_fonts_path=None):
                 )
                 _real = 'pyzbar' in (qr_area.get('hint') or '')
                 qr_area['style'] = sample_qr_style(_sample_img, _rect_px, real_qr=_real)
+
+                # ROOT-CAUSE FIX for "old QR shows through the new one": the
+                # source QR is baked into the render bg and a VECTOR QR survives
+                # PyMuPDF's text/image redaction, so the dynamic QR placed on
+                # top has to perfectly cover it. Instead, paint the QR panel
+                # colour over the detected area in the RENDER bg so the baked QR
+                # is gone and the new QR sits on a clean panel regardless of
+                # size. Sampled from with-text (line above), painted on bg_path.
+                try:
+                    from PIL import ImageDraw as _IDraw  # type: ignore
+                    _bgimg = _PIL.open(bg_path).convert('RGB')
+                    _stl = qr_area.get('style') or {}
+                    _pcol = (_stl.get('bg_color') or '#ffffff').lstrip('#')
+                    _pc = tuple(int(_pcol[i:i + 2], 16) for i in (0, 2, 4)) if len(_pcol) >= 6 else (255, 255, 255)
+                    _pad = max(2, int(_rect_px[2] * 0.06))
+                    _IDraw.Draw(_bgimg).rectangle(
+                        [int(_rect_px[0]) - _pad, int(_rect_px[1]) - _pad,
+                         int(_rect_px[0] + _rect_px[2]) + _pad,
+                         int(_rect_px[1] + _rect_px[3]) + _pad],
+                        fill=_pc)
+                    _bgimg.save(bg_path)
+                except Exception as _e2:
+                    print(f'WARN: qr bg-clear failed page {page_num}: {_e2}', file=sys.stderr)
             except Exception as e:
                 print(f'WARN: qr style sample failed for page {page_num}: {e}', file=sys.stderr)
 
