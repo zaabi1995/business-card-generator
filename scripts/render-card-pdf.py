@@ -427,6 +427,36 @@ def _font_has_presforms(font_name: str, font_buf: bytes) -> bool:
     return has
 
 
+_HB_ARABIC_CACHE = {}
+
+
+def _font_can_harfbuzz_arabic(font_name: str, font_buf: bytes) -> bool:
+    """True if the font has BASE Arabic codepoints (U+06xx) + GSUB shaping
+    features (init/medi/fina). When so, MuPDF's HarfBuzz (insert_htmlbox) shapes
+    Arabic from base codepoints correctly, INCLUDING ligatures (lam-alef, Allah).
+    This is far more reliable than reshape+insert_text, which drops ligatures even
+    when the glyphs exist (the cause of dropped letters on the print PDF). Covers
+    modern foundry fonts (DialogueME) AND PDF-extracted subsets that keep base
+    glyphs + GSUB (DINNextLTArabic). Cached per font."""
+    if font_name in _HB_ARABIC_CACHE:
+        return _HB_ARABIC_CACHE[font_name]
+    ok = False
+    try:
+        # Use PyMuPDF (always available to PHP-FPM's www user), NOT fontTools,
+        # which is root-only on the VPS and made this check silently throw ->
+        # False -> the broken reshaper path. If the font maps the common base
+        # Arabic letters, MuPDF's HarfBuzz can shape it (joining + ligatures).
+        fo = fitz.Font(fontbuffer=font_buf)
+        hits = sum(1 for cp in (0x0628, 0x062A, 0x0644, 0x0645,
+                                0x0647, 0x064A, 0x0631, 0x0633)
+                   if fo.has_glyph(cp))
+        ok = hits >= 4
+    except Exception:
+        ok = False
+    _HB_ARABIC_CACHE[font_name] = ok
+    return ok
+
+
 def _draw_arabic_htmlbox(page, text, font_name, font_buf, x_pt, y_pt, w_pt,
                          font_size, color_hex, align, bleed_pt):
     """Draw a single line of Arabic via MuPDF HarfBuzz shaping. Position is
@@ -750,10 +780,12 @@ def render(template_path: str, employee_path: str, out_path: str,
             if font_name is None:
                 continue  # skip field if no matching font found
 
-            # GSUB-only Arabic font -> reshape+insert_text would draw tofu/dots.
-            # Route through MuPDF's HarfBuzz htmlbox engine instead (gated, so
-            # presentation-form fonts keep their exact insert_text rendering).
-            if _is_arabic(raw_text) and not _font_has_presforms(font_name, font_buf):
+            # Arabic on any GSUB-shaping font -> route through MuPDF's HarfBuzz
+            # htmlbox engine. reshape+insert_text both drops ligatures (lam-alef,
+            # Allah) even when the glyphs exist AND draws tofu on GSUB-only fonts;
+            # HarfBuzz shapes from base codepoints + GSUB correctly in both cases.
+            # Reshaper path remains only for fonts without base+GSUB (rare).
+            if _is_arabic(raw_text) and _font_can_harfbuzz_arabic(font_name, font_buf):
                 _draw_arabic_htmlbox(
                     page, raw_text, font_name, font_buf, x_pt, y_pt,
                     float(field.get('w_pt', 0) or 0), font_size,
