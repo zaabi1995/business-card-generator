@@ -1416,6 +1416,14 @@ class CardEditor {
      * @param {number} multiplier - Resolution multiplier (3 = 3150x1800px, ~300 DPI)
      */
     async exportPNGBlob(multiplier = 3) {
+        // Make sure every webfont (incl. custom bilingual faces like DialogueME)
+        // is fully loaded before rasterising, then give any font-load-triggered
+        // RTL bitmap rebuilds a couple of frames to apply. Without this, a
+        // generate path that exports too early bakes the fallback Arabic font.
+        try {
+            if (document.fonts && document.fonts.ready) { await document.fonts.ready; }
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        } catch (e) {}
         const dataUrl = this.exportPNG(multiplier);
         if (!dataUrl) return null;
         

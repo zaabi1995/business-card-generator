@@ -328,6 +328,8 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                 }
                 const has = (n) => registered.has(n);
                 if (isAr) {
+                    // BHD convention: a dedicated <base>-Arabic[-Antiqua] sibling
+                    // (e.g. Arsenica -> Arsenica-Arabic-Antiqua). Prefer it.
                     if (has(want + '-Arabic-Antiqua')) return want + '-Arabic-Antiqua';
                     const m = want.match(/^(.+?)(-(.+))?$/);
                     if (m) {
@@ -337,10 +339,14 @@ $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
                         if (has(base + '-Arabic')) return base + '-Arabic';
                         if (has(base + '-Arabic-Antiqua')) return base + '-Arabic-Antiqua';
                     }
-                    for (const r of registered) {
-                        if (r.toLowerCase().includes('arabic')) return r;
-                    }
-                    return 'Cairo, "Noto Sans Arabic", Tajawal, ' + want;
+                    // No dedicated Arabic sibling: KEEP the designer's font. Many
+                    // faces are bilingual (e.g. DialogueME / "Dialogue ME") and
+                    // contain Arabic themselves. The old code swapped to "any
+                    // registered font whose name contains 'arabic'" (e.g. IBM Plex
+                    // Sans Arabic), which overrode the bilingual font with the
+                    // wrong typeface. Respect `want`; if it truly lacks Arabic the
+                    // browser falls back on its own.
+                    return want;
                 }
                 if (!has(want)) {
                     if (has(want + '-Antiqua')) return want + '-Antiqua';
