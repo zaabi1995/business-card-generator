@@ -291,6 +291,13 @@ try {
     if (trim((string)$companyName) === '') $companyName = $company['name'] ?? '';
     $phone = $employee['phone'] ?? '';
     $mobile = $employee['mobile'] ?? '';
+    // Same number stored in both phone + mobile (just different formatting)
+    // rendered as two identical rows. Compare digits-only so e.g.
+    // "+96871616161" == "+968 71616161" and show the number once.
+    if ($phone !== '' && $mobile !== ''
+        && preg_replace('/\D+/', '', (string) $phone) === preg_replace('/\D+/', '', (string) $mobile)) {
+        $phone = '';
+    }
     $email = $employee['email'] ?? '';
     $website = $company['website'] ?? '';
     $address = $company['address'] ?? '';

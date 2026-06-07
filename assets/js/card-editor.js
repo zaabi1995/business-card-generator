@@ -1263,12 +1263,17 @@ class CardEditor {
                     for (let col = 0; col < moduleCount; col++) {
                         if (qr.isDark(row, col)) {
                             ctx.fillStyle = _inEye(row, col) ? eyeColor : moduleColor;
-                            ctx.fillRect(
-                                moduleOriginX + col * cellSize,
-                                moduleOriginY + row * cellSize,
-                                cellSize,
-                                cellSize
-                            );
+                            // Snap each module's edges to integer pixels so an
+                            // adjacent dark module begins exactly where this one
+                            // ends. cellSize is fractional, so drawing at
+                            // fractional coords anti-aliases the shared edge and
+                            // leaves faint light seams -> a "woven" texture on
+                            // the QR. Rounding start+end removes the seams.
+                            const mx0 = Math.round(moduleOriginX + col * cellSize);
+                            const my0 = Math.round(moduleOriginY + row * cellSize);
+                            const mx1 = Math.round(moduleOriginX + (col + 1) * cellSize);
+                            const my1 = Math.round(moduleOriginY + (row + 1) * cellSize);
+                            ctx.fillRect(mx0, my0, mx1 - mx0, my1 - my0);
                         }
                     }
                 }

@@ -63,8 +63,13 @@ class VCF {
             $lines[] = 'X-DEPARTMENT:' . self::escape($department);
         }
         
-        // Phone numbers (English/Western numerals)
-        if (!empty($employee['phone'])) {
+        // Phone numbers (English/Western numerals). De-dupe: if phone and
+        // mobile are the same number in different formats, emit it once so the
+        // saved contact doesn't show two identical numbers.
+        $__pDig = preg_replace('/\D+/', '', (string) ($employee['phone'] ?? ''));
+        $__mDig = preg_replace('/\D+/', '', (string) ($employee['mobile'] ?? ''));
+        $__samePhoneMobile = ($__pDig !== '' && $__pDig === $__mDig);
+        if (!empty($employee['phone']) && !$__samePhoneMobile) {
             $lines[] = 'TEL;TYPE=WORK,VOICE:' . self::escape($employee['phone']);
         }
         if (!empty($employee['mobile'])) {
