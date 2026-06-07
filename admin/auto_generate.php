@@ -16,7 +16,20 @@ $qualityMultiplier = max(4, $planInfo['quality_multiplier'] ?? 4); // force HD
 $isFreePlan = false; // hides the legacy upgrade-for-HD nag
 $hasHighQuality = true;
 $employeeId = $_GET['employee_id'] ?? null;
-$returnTo = $_GET['return'] ?? 'employees';
+// Whitelist + map logical return targets to real admin files. The JS success
+// handler builds the redirect as `returnTo + '.php?generated=1'`, so the value
+// here MUST name an existing file. 'dashboard' is the logical name for the
+// admin dashboard, which lives at index.php (NOT dashboard.php) - mapping it
+// fixes the 404 after the onboarding "generate first card" flow. Any unknown
+// value falls back to 'employees' so a tampered ?return= cannot build an
+// arbitrary same-origin redirect target.
+$returnReqRaw = $_GET['return'] ?? 'employees';
+$returnTargetMap = [
+    'employees' => 'employees',
+    'index'     => 'index',
+    'dashboard' => 'index',
+];
+$returnTo = $returnTargetMap[$returnReqRaw] ?? 'employees';
 $isNew = isset($_GET['new']);
 $isUpdated = isset($_GET['updated']);
 $isRegenerate = isset($_GET['regenerate']);
