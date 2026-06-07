@@ -353,9 +353,14 @@ def sample_qr_style(img, rect_px, real_qr=False):
     spread = lums[-1] - lums[0]
 
     # --- 2. Mode classifier ---
-    # A real QR has high luminance spread (modules + bg both present).
-    # A flat placeholder reads as one dominant colour, low spread.
-    has_code = bool(real_qr) and spread > 60
+    # A real QR has high luminance spread (modules + bg both present); a flat
+    # placeholder reads as one dominant colour (low spread). pyzbar confirmation
+    # (real_qr) is a strong signal, but a DESIGN may bake a styled QR that the
+    # drawing-layer heuristic finds as a "white square" (real_qr=False) while
+    # the area clearly contains modules. Treat a high luminance spread as proof
+    # of real modules so we sample the actual fg/bg colour (auto-match the
+    # source QR colour) instead of defaulting to #111 on a coloured QR.
+    has_code = bool(real_qr) or spread > 70
 
     def _avg(pool):
         n = len(pool)

@@ -390,6 +390,91 @@ def _shape_arabic(text: str) -> str:
     return get_display(''.join(out))
 
 
+# ── HarfBuzz path for GSUB-only Arabic fonts ───────────────────────────────
+# The reshape+insert_text path above only works when the font's cmap carries
+# Arabic PRESENTATION forms (U+FB50.., U+FE70..) — true for PyMuPDF-extracted
+# PDF subsets, NOT for modern foundry fonts that shape via GSUB from base
+# codepoints. Drawing reshaped presentation forms with a GSUB-only font yields
+# tofu/dots. For that case we render through MuPDF's HTML/Story engine
+# (insert_htmlbox), which shapes Arabic correctly via HarfBuzz from the base
+# codepoints + the font's GSUB. Gated to Arabic-on-GSUB-only-font so every
+# existing (presentation-form) card keeps its exact insert_text rendering.
+_PRESFORM_CACHE = {}
+_HTMLBOX_FONT_DIR = None
+_ARABIC_RANGES = ((0x0600, 0x06FF), (0x0750, 0x077F), (0x08A0, 0x08FF),
+                  (0xFB50, 0xFDFF), (0xFE70, 0xFEFF))
+
+
+def _is_arabic(text: str) -> bool:
+    return any(any(lo <= ord(c) <= hi for lo, hi in _ARABIC_RANGES) for c in text)
+
+
+def _font_has_presforms(font_name: str, font_buf: bytes) -> bool:
+    """True if the font's cmap maps Arabic presentation forms (i.e. the legacy
+    reshape+insert_text path will render correctly). Cached per font."""
+    if font_name in _PRESFORM_CACHE:
+        return _PRESFORM_CACHE[font_name]
+    has = False
+    try:
+        fo = fitz.Font(fontbuffer=font_buf)
+        for cp in (0xFE8D, 0xFEE3, 0xFEDF, 0xFB50, 0xFEFB, 0xFEA1):
+            if fo.has_glyph(cp):
+                has = True
+                break
+    except Exception:
+        has = False
+    _PRESFORM_CACHE[font_name] = has
+    return has
+
+
+def _draw_arabic_htmlbox(page, text, font_name, font_buf, x_pt, y_pt, w_pt,
+                         font_size, color_hex, align, bleed_pt):
+    """Draw a single line of Arabic via MuPDF HarfBuzz shaping. Position is
+    matched to the insert_text path: visible glyph-top ≈ y_pt (em-square top)."""
+    import os as _os
+    import html as _html
+    import tempfile as _tf
+    global _HTMLBOX_FONT_DIR
+    if _HTMLBOX_FONT_DIR is None:
+        _HTMLBOX_FONT_DIR = _tf.mkdtemp(prefix='cardify_hb_')
+    safe = ''.join(c for c in font_name if c.isalnum() or c in '-_') or 'CF'
+    fp = _os.path.join(_HTMLBOX_FONT_DIR, safe + '.ttf')
+    if not _os.path.isfile(fp):
+        with open(fp, 'wb') as fh:
+            fh.write(font_buf)
+    arch = fitz.Archive(_HTMLBOX_FONT_DIR)
+    bx = x_pt + bleed_pt
+    by = y_pt + bleed_pt
+    # Measure the run so the box hugs the text. A too-wide box + RTL flow pushes
+    # the line to the box's right edge (drifts far from x_pt). text_length is a
+    # close estimate (ignores GSUB kerning); pad a little so nothing clips.
+    try:
+        meas = fitz.Font(fontbuffer=font_buf).text_length(text, fontsize=font_size)
+    except Exception:
+        meas = font_size * len(text) * 0.55
+    box_w = meas * 1.12 + font_size * 0.6
+    line_h = font_size * 1.7
+    ta = 'right' if align == 'right' else ('center' if align == 'center' else 'left')
+    css = ("@font-face{font-family:CF;src:url('%s');}"
+           "*{font-family:CF;margin:0;padding:0;line-height:1.05;}" % (safe + '.ttf'))
+    div = ('<div dir="rtl" style="font-size:%.2fpt;color:%s;text-align:%s;'
+           'white-space:nowrap;">%s</div>' % (font_size, color_hex, ta, _html.escape(text)))
+    top = by - font_size * 0.16   # nudge so glyph-top lands at the em-square top
+    # Anchor: left-aligned field -> block left at x_pt; right -> block right at
+    # x_pt+w_pt; center -> centered on the field box.
+    if ta == 'right' and w_pt:
+        left = bx + float(w_pt) - box_w
+    elif ta == 'center' and w_pt:
+        left = bx + (float(w_pt) - box_w) / 2.0
+    else:
+        left = bx
+    rect = fitz.Rect(left, top, left + box_w, top + line_h)
+    try:
+        page.insert_htmlbox(rect, div, css=css, archive=arch, scale_low=1.0)
+    except Exception:
+        page.insert_htmlbox(rect, div, css=css, archive=arch)
+
+
 def _draw_qr_code(page, qr_spec: dict, employee: dict, template: dict,
                    card_rect, for_print: bool) -> None:
     """Render a styled QR code as PNG and insert it as an image onto the
@@ -649,6 +734,7 @@ def render(template_path: str, employee_path: str, out_path: str,
             if not text:
                 continue
 
+            raw_text = text
             # Pre-shape Arabic into visual-order presentation forms before
             # passing to insert_text (which doesn't shape RTL on its own).
             text = _shape_arabic(text)
@@ -660,9 +746,23 @@ def render(template_path: str, employee_path: str, out_path: str,
             x_pt = float(field['x_pt'])
             y_pt = float(field['y_pt'])
 
-            font_name, font_buf = _pick_font(family, weight, font_buffers, text=text)
+            font_name, font_buf = _pick_font(family, weight, font_buffers, text=raw_text)
             if font_name is None:
                 continue  # skip field if no matching font found
+
+            # GSUB-only Arabic font -> reshape+insert_text would draw tofu/dots.
+            # Route through MuPDF's HarfBuzz htmlbox engine instead (gated, so
+            # presentation-form fonts keep their exact insert_text rendering).
+            if _is_arabic(raw_text) and not _font_has_presforms(font_name, font_buf):
+                _draw_arabic_htmlbox(
+                    page, raw_text, font_name, font_buf, x_pt, y_pt,
+                    float(field.get('w_pt', 0) or 0), font_size,
+                    field.get('color', '#000000'),
+                    (field.get('text_align') or field.get('textAlign')
+                     or field.get('align') or 'left').lower(),
+                    BLEED_PT if for_print else 0.0,
+                )
+                continue
 
             # Register font on this page.
             # web profile (default): set_simple=True uses WinAnsiEncoding so spaces
