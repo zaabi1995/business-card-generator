@@ -7,6 +7,7 @@
  * in-flight sessions land on the real dashboard instead.
  */
 require_once __DIR__ . '/../config.php';
+require_once INCLUDES_DIR . '/admin-layout.php'; // defines getAdminBasePath()
 
 $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php';
 $qs  = $_SERVER['QUERY_STRING'] ?? '';
