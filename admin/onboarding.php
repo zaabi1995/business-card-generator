@@ -212,6 +212,26 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
                 <input type="file" accept="image/png,image/svg+xml,image/jpeg" class="hidden"
                        @change="handleLogo($event)">
             </label>
+
+            <!-- Optional: light / reverse logo for dark backgrounds (Apple Wallet header) -->
+            <label class="block border-2 border-dashed rounded-xl p-5 mt-4 text-center cursor-pointer transition"
+                   style="background:#1f3a5f;border-color:#3a5680;">
+                <template x-if="data.logo && data.logo.light && data.logo.light.url">
+                    <div class="space-y-2">
+                        <img :src="data.logo.light.url" alt="Light logo preview" class="max-h-16 mx-auto">
+                        <p class="text-xs" style="color:#cfe0f5;"><?= htmlspecialchars(t('onboarding.light_logo_change')) ?></p>
+                    </div>
+                </template>
+                <template x-if="!(data.logo && data.logo.light && data.logo.light.url)">
+                    <div class="space-y-1">
+                        <i class="fa-solid fa-moon text-2xl" style="color:#9bc0ef;"></i>
+                        <p class="text-sm font-medium" style="color:#eef5ff;"><?= htmlspecialchars(t('onboarding.light_logo_title')) ?></p>
+                        <p class="text-xs" style="color:#9bb6d8;"><?= htmlspecialchars(t('onboarding.light_logo_hint')) ?></p>
+                    </div>
+                </template>
+                <input type="file" accept="image/png,image/svg+xml,image/webp" class="hidden"
+                       @change="handleLightLogo($event)">
+            </label>
         </div>
 
         <!-- Step 2: Card design (PDF) -->
@@ -745,7 +765,14 @@ function onboarding(init) {
             const f = ev.target.files && ev.target.files[0];
             if (!f) return;
             const reader = new FileReader();
-            reader.onload = () => { this.data.logo = { url: reader.result, filename: f.name, size: f.size }; };
+            reader.onload = () => { this.data.logo = Object.assign({}, this.data.logo, { url: reader.result, filename: f.name, size: f.size }); };
+            reader.readAsDataURL(f);
+        },
+        handleLightLogo(ev) {
+            const f = ev.target.files && ev.target.files[0];
+            if (!f) return;
+            const reader = new FileReader();
+            reader.onload = () => { this.data.logo = Object.assign({}, this.data.logo, { light: { url: reader.result, filename: f.name, size: f.size } }); };
             reader.readAsDataURL(f);
         },
         handleCsv(ev) {

@@ -288,6 +288,12 @@ try {
         if ($darkCand && is_readable($darkCand)) {
             $logoFs = $darkCand;
             $logoIsReverse = true;
+        } elseif (($__base = preg_replace('/\.[A-Za-z0-9]+$/', '', $iconFs))) {
+            // Reverse logo uploaded in a different format than the main logo
+            // (e.g. main .svg, light .png). Match <base>-dark.<anyext>.
+            foreach (glob($__base . '-dark.*') ?: [] as $__g) {
+                if (is_readable($__g)) { $logoFs = $__g; $logoIsReverse = true; break; }
+            }
         }
     }
 

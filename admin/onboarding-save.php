@@ -161,6 +161,14 @@ try {
             if ($logoUrl !== '' && strncmp($logoUrl, 'data:image/', 11) === 0) {
                 $logoPath = onboarding_save_logo_file($companyId, $logoUrl);
             }
+            // Optional light/reverse logo (white, for dark headers / Apple
+            // Wallet). Saved as the "-dark" sibling of the main logo so
+            // wallet_apple.php + the reverse-logo convention use it on dark
+            // backgrounds. Additive: absent => unchanged behaviour.
+            $lightUrl = (string) (($logoBlob['light']['url'] ?? '') ?: '');
+            if ($logoPath && $lightUrl !== '' && strncmp($lightUrl, 'data:image/', 11) === 0) {
+                onboarding_save_dark_logo_sibling($logoPath, $lightUrl);
+            }
             $db = Database::getInstance();
             $existingTheme = $db->fetchOne(
                 "SELECT id FROM company_themes WHERE company_id = :cid LIMIT 1",
@@ -316,6 +324,34 @@ function onboarding_save_logo_file(string $companyId, string $dataUrl): ?string
     if (file_put_contents($absPath, $bin) === false) return null;
     @chmod($absPath, 0644);
     return '/uploads/logos/' . $filename;
+}
+
+/**
+ * Save an optional light/reverse logo as the "-dark" sibling of the main logo
+ * (e.g. /uploads/logos/<id>.png -> <id>-dark.png). wallet_apple.php and the
+ * reverse-logo convention pick it up automatically for dark headers. Keeps the
+ * uploaded image's true extension; the wallet -dark lookup globs by extension.
+ */
+function onboarding_save_dark_logo_sibling(string $mainLogoWebPath, string $dataUrl): ?string
+{
+    if (!preg_match('#^data:(image/(png|jpeg|jpg|webp|svg\+xml));base64,(.+)$#i', $dataUrl, $m)) {
+        return null;
+    }
+    $mimeMap = ['image/png'=>'png','image/jpeg'=>'jpg','image/jpg'=>'jpg','image/webp'=>'webp','image/svg+xml'=>'svg'];
+    $ext = $mimeMap[strtolower($m[1])] ?? 'png';
+    $bin = base64_decode(strtr($m[3], "\n\r\t ", ''), true);
+    if ($bin === false || strlen($bin) === 0) return null;
+    $root = realpath(__DIR__ . '/..');
+    if (!$root) return null;
+    $rel = ltrim($mainLogoWebPath, '/');                 // uploads/logos/<id>.png
+    $base = (strrpos($rel, '.') !== false) ? substr($rel, 0, strrpos($rel, '.')) : $rel;
+    $darkRel = $base . '-dark.' . $ext;
+    $absPath = $root . '/' . $darkRel;
+    $dir = dirname($absPath);
+    if (!is_dir($dir)) @mkdir($dir, 0755, true);
+    if (file_put_contents($absPath, $bin) === false) return null;
+    @chmod($absPath, 0644);
+    return '/' . $darkRel;
 }
 
 /**

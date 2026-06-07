@@ -32,6 +32,9 @@ return [
     'logo_upload_hint'    => 'PNG or SVG, up to 5 MB. Clear background works best.',
     'logo_drag_drop'      => 'Drag your logo here or click to browse',
     'logo_change'         => 'Change logo',
+    'light_logo_title'    => 'Light logo (optional)',
+    'light_logo_hint'     => 'White / reverse version for dark backgrounds (Apple Wallet, dark headers). PNG or SVG.',
+    'light_logo_change'   => 'Change light logo',
 
     // Step 3 template
     'template_minimal'    => 'Minimal',

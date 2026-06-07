@@ -31,6 +31,9 @@ return [
     'logo_upload_hint'    => 'PNG أو SVG، حتى 5 ميغابايت. الخلفية الشفّافة أفضل.',
     'logo_drag_drop'      => 'اسحب شعارك هنا أو اضغط للاختيار',
     'logo_change'         => 'تغيير الشعار',
+    'light_logo_title'    => 'الشعار الفاتح (اختياري)',
+    'light_logo_hint'     => 'نسخة بيضاء أو عكسية للخلفيات الداكنة (محفظة آبل، الترويسات الداكنة). PNG أو SVG.',
+    'light_logo_change'   => 'تغيير الشعار الفاتح',
 
     'template_minimal'    => 'بسيط',
     'template_bold'       => 'جريء',
