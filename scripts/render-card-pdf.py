@@ -457,8 +457,32 @@ def _font_can_harfbuzz_arabic(font_name: str, font_buf: bytes) -> bool:
     return ok
 
 
+_HB_FONT_CACHE = {}
+
+
+def _shaped_width_pt(font_buf, text, font_size):
+    """Exact shaped advance width (pt) via HarfBuzz, the same engine MuPDF
+    uses, so Arabic can be positioned precisely. None if HB is unavailable."""
+    try:
+        import uharfbuzz as hb
+        key = id(font_buf)
+        ent = _HB_FONT_CACHE.get(key)
+        if ent is None:
+            face = hb.Face(font_buf)
+            ent = (hb.Font(face), face.upem or 1000)
+            _HB_FONT_CACHE[key] = ent
+        font, upem = ent
+        buf = hb.Buffer()
+        buf.add_str(text)
+        buf.guess_segment_properties()
+        hb.shape(font, buf)
+        return sum(g.x_advance for g in buf.glyph_positions) / upem * font_size
+    except Exception:
+        return None
+
+
 def _draw_arabic_htmlbox(page, text, font_name, font_buf, x_pt, y_pt, w_pt,
-                         font_size, color_hex, align, bleed_pt):
+                         font_size, color_hex, align, bleed_pt, left_x=None):
     """Draw a single line of Arabic via MuPDF HarfBuzz shaping. Position is
     matched to the insert_text path: visible glyph-top ≈ y_pt (em-square top)."""
     import os as _os
@@ -475,35 +499,37 @@ def _draw_arabic_htmlbox(page, text, font_name, font_buf, x_pt, y_pt, w_pt,
     arch = fitz.Archive(_HTMLBOX_FONT_DIR)
     bx = x_pt + bleed_pt
     by = y_pt + bleed_pt
-    # Measure the run so the box hugs the text. A too-wide box + RTL flow pushes
-    # the line to the box's right edge (drifts far from x_pt). text_length is a
-    # close estimate (ignores GSUB kerning); pad a little so nothing clips.
-    try:
-        meas = fitz.Font(fontbuffer=font_buf).text_length(text, fontsize=font_size)
-    except Exception:
-        meas = font_size * len(text) * 0.55
-    pad = font_size * 0.5
-    box_w = meas + pad
+    # Exact shaped width (HarfBuzz, same engine MuPDF uses) so the visible edge
+    # lands precisely; fall back to a rough estimate only if HB is unavailable.
+    meas = _shaped_width_pt(font_buf, text, font_size)
+    if meas is None:
+        try:
+            meas = fitz.Font(fontbuffer=font_buf).text_length(text, fontsize=font_size)
+        except Exception:
+            meas = font_size * len(text) * 0.55
     line_h = font_size * 1.7
     top = by - font_size * 0.16   # nudge so glyph-top lands at the em-square top
     css = ("@font-face{font-family:CF;src:url('%s');}"
            "*{font-family:CF;margin:0;padding:0;line-height:1.05;}" % (safe + '.ttf'))
-    # insert_htmlbox hugs RTL text to the RIGHT edge of the box (it ignores
-    # text-align:left for dir=rtl). Size the box tight (meas+pad) and place it so
-    # the VISIBLE edge matches the field intent:
-    #   'right'  -> text right edge at field right edge (x_pt+w_pt)
+    # insert_htmlbox right-aligns RTL text to the box's RIGHT edge (it ignores
+    # text-align:left for dir=rtl). Using the exact width, place the box so the
+    # VISIBLE edge matches the field intent:
+    #   'right'  -> text RIGHT edge at field right edge (x_pt + w_pt)
     #   'center' -> text centred in the field box
-    #   'left'   -> text LEFT edge at x_pt, so Arabic name/title left-align with
-    #               the English block (box right = bx+meas => text left = bx)
+    #   'left'   -> text LEFT edge at the left margin: the English counterpart's
+    #               x when known (left_x) else x_pt, so AR aligns exactly with EN
     if align == 'right' and w_pt:
-        left = bx + float(w_pt) - box_w
+        text_right = bx + float(w_pt)
     elif align == 'center' and w_pt:
-        left = bx + (float(w_pt) - box_w) / 2.0
+        text_right = bx + float(w_pt) / 2.0 + meas / 2.0
     else:
-        left = bx - pad
+        target_left = (float(left_x) + bleed_pt) if left_x is not None else bx
+        text_right = target_left + meas
+    box_right = text_right + font_size * 0.50   # +0.44fs corrects rightmost-glyph side bearing (HB advance vs MuPDF ink edge); 0.06 keeps last glyph from clipping
+    left = box_right - (meas + font_size * 0.6)  # extra room is empty space on the left
     div = ('<div dir="rtl" style="font-size:%.2fpt;color:%s;text-align:right;'
            'white-space:nowrap;">%s</div>' % (font_size, color_hex, _html.escape(text)))
-    rect = fitz.Rect(left, top, left + box_w, top + line_h)
+    rect = fitz.Rect(left, top, box_right, top + line_h)
     try:
         page.insert_htmlbox(rect, div, css=css, archive=arch, scale_low=1.0)
     except Exception:
@@ -702,6 +728,14 @@ def render(template_path: str, employee_path: str, out_path: str,
     for page_spec in template['pages']:
         orig_w = page_spec['width_pt']
         orig_h = page_spec['height_pt']
+        # Left-x of each LEFT-aligned English text field, so the matching Arabic
+        # field can left-align to EXACTLY the same margin (name_ar -> name_en x).
+        en_left_x = {}
+        for _ef in page_spec.get('fields', []):
+            _ek = _ef.get('field_key', '')
+            _eal = (_ef.get('text_align') or _ef.get('textAlign') or 'left').lower()
+            if _ek.endswith('_en') and _eal == 'left':
+                en_left_x[_ek[:-3]] = float(_ef.get('x_pt', 0))
 
         if for_print:
             page_w = orig_w + 2 * BLEED_PT
@@ -799,13 +833,15 @@ def render(template_path: str, employee_path: str, out_path: str,
             # HarfBuzz shapes from base codepoints + GSUB correctly in both cases.
             # Reshaper path remains only for fonts without base+GSUB (rare).
             if _is_arabic(raw_text) and _font_can_harfbuzz_arabic(font_name, font_buf):
+                _ar_left = (en_left_x.get(field_key[:-3])
+                            if field_key.endswith('_ar') else None)
                 _draw_arabic_htmlbox(
                     page, raw_text, font_name, font_buf, x_pt, y_pt,
                     float(field.get('w_pt', 0) or 0), font_size,
                     field.get('color', '#000000'),
                     (field.get('text_align') or field.get('textAlign')
                      or field.get('align') or 'left').lower(),
-                    BLEED_PT if for_print else 0.0,
+                    BLEED_PT if for_print else 0.0, _ar_left,
                 )
                 continue
 
@@ -820,9 +856,19 @@ def render(template_path: str, employee_path: str, out_path: str,
             _fit_w_pt = float(field.get("w_pt", 0) or 0)
             if _fit_w_pt > 0 and not static_text:
                 try:
-                    _meas_w = fitz.Font(fontbuffer=font_buf).text_length(text, fontsize=font_size)
-                    if _meas_w > _fit_w_pt:
-                        font_size = max(font_size * (_fit_w_pt / _meas_w), font_size * 0.55)
+                    _fo = fitz.Font(fontbuffer=font_buf)
+                    _g = 0
+                    # Reduce 1% at a time until the measured width fits the field
+                    # box (so a long name/title never overlaps the next element).
+                    # 8% safety margin: the importer's detected box can run a
+                    # touch wide and abut baked decorations (e.g. the social-icon
+                    # row sits just past the title box on Otech). Leave a gap so
+                    # text never collides with the next element.
+                    _target = _fit_w_pt * 0.92
+                    while (_g < 110 and font_size > 2.0
+                           and _fo.text_length(text, fontsize=font_size) > _target):
+                        font_size *= 0.99
+                        _g += 1
                 except Exception:
                     pass
 
