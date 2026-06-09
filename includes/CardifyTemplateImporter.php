@@ -42,6 +42,17 @@ class CardifyTemplateImporter
         $usedKeys = [];
         $staticIdx = 0;
 
+        // Detect text alignment once, up front, by clustering lines that
+        // share a common edge. Alignment is a property of how STACKED lines
+        // relate to each other, NOT where the block sits on the card. A
+        // right-aligned block can live entirely in the card's left half (e.g.
+        // text beside a right-side QR), so a card-center heuristic mis-reads
+        // it as left-aligned and dynamic per-employee text then drifts off the
+        // shared edge. detectAlignments() returns 'left'|'right'|'center'|null
+        // per field index (null = undecided, fall back to script default).
+        $cardWidthPx = (float)(($page['width_pt'] ?? 262.55) * 300 / 72);
+        $alignByIdx  = self::detectAlignments($page['fields'] ?? [], $cardWidthPx);
+
         foreach (($page['fields'] ?? []) as $idx => $f) {
             $blockId = 'block_' . $idx;
             $binding = $bindings[$blockId] ?? 'static';
@@ -83,29 +94,30 @@ class CardifyTemplateImporter
             $weight = isset($f['font_weight']) ? (int)$f['font_weight'] : 400;
             if ($weight < 100 || $weight > 900) $weight = 400;
 
-            // Auto-align by bbox-center position:
-            //   left third  → left-align (fields hugging the design's left)
-            //   right third → right-align (phone/email/www hugging the right)
-            //   middle band → center-align (address blocks, taglines)
-            // Plus: a bbox that spans > 60% of the card width is treated as
-            // centred (a wide multi-line container is almost always centred).
-            // Honours explicit parser align hint when present.
-            $cardWidthPx = (float)(($page['width_pt'] ?? 262.55) * 300 / 72);
+            // Alignment: explicit parser hint > clustered shared-edge result >
+            // script default (Arabic/RTL = right, Latin = left). The clustered
+            // result is what fixes right-aligned blocks that sit off-center
+            // (see detectAlignments + the pre-pass above).
             $bboxX = (float)($f['x_px'] ?? 0);
             $bboxW = (float)($f['w_px'] ?? 0);
-            $bboxCenter = $bboxX + $bboxW / 2;
-            $cardCenter = $cardWidthPx / 2;
-            $centerBand = $cardWidthPx * 0.10;  // ±10% of card width
-            $isWideBox  = $bboxW > $cardWidthPx * 0.60;
-            if ($isWideBox || abs($bboxCenter - $cardCenter) < $centerBand) {
-                $autoAlign = 'center';
-            } elseif ($bboxCenter > $cardCenter) {
-                $autoAlign = 'right';
-            } else {
-                $autoAlign = 'left';
-            }
-            $textAlign = $f['align'] ?? $autoAlign;
+            $scriptDefault = preg_match('/[\x{0590}-\x{08FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}]/u', (string)($f['detected_text'] ?? ''))
+                ? 'right' : 'left';
+            $textAlign = $f['align'] ?? ($alignByIdx[$idx] ?? $scriptDefault);
+            if (!in_array($textAlign, ['left', 'center', 'right'], true)) $textAlign = 'left';
             $originX   = $textAlign;  // origin tracks alignment
+
+            // Anchor x must match originX: Fabric places the field's `left` AT
+            // the origin point. originX=right means `left` is the RIGHT edge,
+            // center means the horizontal center. Store x accordingly so a
+            // longer/shorter dynamic value stays flush to the detected edge
+            // instead of growing past it from a stale left anchor.
+            if ($textAlign === 'right') {
+                $anchorX = (int)round($bboxX + $bboxW);
+            } elseif ($textAlign === 'center') {
+                $anchorX = (int)round($bboxX + $bboxW / 2);
+            } else {
+                $anchorX = (int)round($bboxX);
+            }
 
             $out[$key] = [
                 'enabled'       => true,
@@ -116,7 +128,7 @@ class CardifyTemplateImporter
                 'render_in_bg'  => $isStatic,
                 'label'         => $label,
                 'detected_text' => $f['detected_text'] ?? '',
-                'x'             => (int)($f['x_px'] ?? 0),
+                'x'             => $anchorX,
                 'y'             => (int)($f['y_px'] ?? 0),
                 'width'         => (int)($f['w_px'] ?? 0),
                 'height'        => (int)($f['h_px'] ?? 0),
@@ -183,6 +195,71 @@ class CardifyTemplateImporter
         }
 
         return $out;
+    }
+
+    /**
+     * Detect per-field text alignment by shared-edge clustering.
+     *
+     * Groups fields whose horizontal spans overlap into columns, then for each
+     * column picks the edge (left / right / center) whose positions vary the
+     * least across the stacked lines. That tightest-shared edge is the design's
+     * true alignment. Returns ['left'|'right'|'center'|null] keyed by the SAME
+     * field index used by the caller; null = undecided (single line or no
+     * clear shared edge), so the caller falls back to the script default.
+     *
+     * @param array $fields      parser page fields (each with x_px / w_px / y_px / h_px)
+     * @param float $cardWidthPx canvas width in px (for tolerance scaling)
+     * @return array<int,?string>
+     */
+    private static function detectAlignments(array $fields, float $cardWidthPx): array
+    {
+        $items = [];
+        foreach ($fields as $idx => $f) {
+            $x = (float)($f['x_px'] ?? 0);
+            $w = (float)($f['w_px'] ?? 0);
+            if ($w <= 0) { continue; } // zero-width boxes can't anchor a column
+            $items[$idx] = ['l' => $x, 'r' => $x + $w, 'c' => $x + $w / 2, 'w' => $w];
+        }
+
+        $align = [];
+        foreach (array_keys($items) as $i) { $align[$i] = null; }
+        if (count($items) < 2) { return $align; }
+
+        // Union-find: link fields whose horizontal spans meaningfully overlap.
+        $parent = [];
+        foreach (array_keys($items) as $i) { $parent[$i] = $i; }
+        $find = function ($a) use (&$parent, &$find) {
+            while ($parent[$a] !== $a) { $parent[$a] = $parent[$parent[$a]]; $a = $parent[$a]; }
+            return $a;
+        };
+        $keys = array_keys($items);
+        foreach ($keys as $i) {
+            foreach ($keys as $j) {
+                if ($j <= $i) { continue; }
+                $overlap = min($items[$i]['r'], $items[$j]['r']) - max($items[$i]['l'], $items[$j]['l']);
+                $minW    = max(1.0, min($items[$i]['w'], $items[$j]['w']));
+                if ($overlap > 0.35 * $minW) { $parent[$find($i)] = $find($j); }
+            }
+        }
+
+        $groups = [];
+        foreach ($keys as $i) { $groups[$find($i)][] = $i; }
+
+        $tol = max(6.0, $cardWidthPx * 0.012); // ~1.2% of card width
+        foreach ($groups as $members) {
+            if (count($members) < 2) { continue; } // single line stays null
+            $ls = array_map(fn($m) => $items[$m]['l'], $members);
+            $rs = array_map(fn($m) => $items[$m]['r'], $members);
+            $cs = array_map(fn($m) => $items[$m]['c'], $members);
+            $spread = fn($a) => max($a) - min($a);
+            $sl = $spread($ls); $sr = $spread($rs); $sc = $spread($cs);
+            $min = min($sl, $sr, $sc);
+            if ($min > $tol) { continue; } // no edge is tight enough -> undecided
+            $a = ($min === $sr) ? 'right' : (($min === $sc) ? 'center' : 'left');
+            foreach ($members as $m) { $align[$m] = $a; }
+        }
+
+        return $align;
     }
 
     /**
