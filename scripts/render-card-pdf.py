@@ -492,10 +492,15 @@ def _draw_arabic_htmlbox(page, text, font_name, font_buf, x_pt, y_pt, w_pt,
     top = by - font_size * 0.16   # nudge so glyph-top lands at the em-square top
     # Anchor: left-aligned field -> block left at x_pt; right -> block right at
     # x_pt+w_pt; center -> centered on the field box.
-    if ta == 'right' and w_pt:
-        left = bx + float(w_pt) - box_w
-    elif ta == 'center' and w_pt:
+    if ta == 'center' and w_pt:
         left = bx + (float(w_pt) - box_w) / 2.0
+    elif w_pt:
+        # RTL: the start edge is the RIGHT. Anchor explicit 'right' fields AND
+        # the importer's default 'left' fields to the field's right edge
+        # (x_pt + w_pt) so a short name and a long title share one right margin
+        # (mirror of the left-aligned English block). Without this, left-anchor
+        # + text-hugging box makes each line's right edge depend on its length.
+        left = bx + float(w_pt) - box_w
     else:
         left = bx
     rect = fitz.Rect(left, top, left + box_w, top + line_h)
