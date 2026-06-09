@@ -796,6 +796,21 @@ def render(template_path: str, employee_path: str, out_path: str,
                 )
                 continue
 
+            # Auto-shrink Latin text to fit the field width box. Templates carry
+            # a per-field w_pt (derived from the source-PDF text bbox); long names
+            # or titles otherwise overflow rightward into adjacent fields (e.g. a
+            # long English name colliding with the right-aligned email/mobile).
+            # Floor keeps it readable; names needing below the floor should be
+            # shortened to first+family in the data.
+            _fit_w_pt = float(field.get("w_pt", 0) or 0)
+            if _fit_w_pt > 0:
+                try:
+                    _meas_w = fitz.Font(fontbuffer=font_buf).text_length(text, fontsize=font_size)
+                    if _meas_w > _fit_w_pt:
+                        font_size = max(font_size * (_fit_w_pt / _meas_w), font_size * 0.55)
+                except Exception:
+                    pass
+
             # Register font on this page.
             # web profile (default): set_simple=True uses WinAnsiEncoding so spaces
             # round-trip cleanly from get_text() (CID Identity-encoded fonts return NBSP),

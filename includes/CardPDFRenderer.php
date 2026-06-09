@@ -17,7 +17,7 @@ class CardPDFRenderer
      * v3 (20 May 2026): isolated Arabic forms drawn via nominal glyph
      *   (fixes decorative-tail isolated heh, matches HarfBuzz/browser).
      */
-    const RENDERER_VERSION = 6;
+    const RENDERER_VERSION = 7;
 
     /**
      * Render or fetch a cached vector PDF for one employee.
@@ -297,6 +297,7 @@ class CardPDFRenderer
                 'detected_text' => (string)($f['detected_text'] ?? ''),
                 'x_pt'         => (float)($f['x_pt']     ?? ($f['x'] ?? 0) / 4.166),
                 'y_pt'         => (float)($f['y_pt']     ?? ($f['y'] ?? 0) / 4.166),
+                'w_pt'         => (float)($f['w_pt'] ?? (($f['width'] ?? 0) / 4.166)),
                 'font_family'  => (string)($f['fontFamily'] ?? $f['font_family'] ?? 'Lato'),
                 'font_weight'  => (int)($f['fontWeight'] ?? $f['font_weight'] ?? 400),
                 'font_size_pt' => (float)($f['font_size_pt'] ?? ($f['fontSize'] ?? 10) / 4.166),
