@@ -61,10 +61,10 @@ def main(fonts_dir):
         new_total, new_ar = glyph_stats(tmp)
         if new_total > cur_total or new_ar > cur_ar:
             os.replace(tmp, dst)
-            print(f"fetch-foundry-fonts: replaced {fn} glyphs {cur_total}->{new_total} arabic {cur_ar}->{new_ar}")
+            print(f"fetch-foundry-fonts: replaced {fn} glyphs {cur_total}->{new_total} arabic {cur_ar}->{new_ar}", file=sys.stderr)
         else:
             os.remove(tmp)
-            print(f"fetch-foundry-fonts: kept {fn} (subset >= cdn {cur_total}/{cur_ar})")
+            print(f"fetch-foundry-fonts: kept {fn} (subset >= cdn {cur_total}/{cur_ar})", file=sys.stderr)
 
 
 if __name__ == "__main__":
