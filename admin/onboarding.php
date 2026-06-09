@@ -49,8 +49,18 @@ try {
         ['id' => $companyId]
     );
     $hasLogo = !empty($_themeRow['logo_path']);
+    // Count ONLY real design work, never the auto-seeded BHD-Classic starter
+    // (every new company gets one via seedStarterTemplate(): empty background,
+    // has_vector_source = 0). A genuine design has a background image OR a
+    // vector source (PDF import, dashboard "Create Card Design" modal). Without
+    // this filter the starter falsely satisfies the card-design step and the
+    // wizard skips straight to step 3, so a brand-new tenant looks "done"
+    // without having uploaded a logo or designed a card.
     $hasTemplates = (int)$_db->fetchOne(
-        "SELECT COUNT(*) AS n FROM templates WHERE company_id = :id AND deleted_at IS NULL",
+        "SELECT COUNT(*) AS n FROM templates
+         WHERE company_id = :id AND deleted_at IS NULL
+           AND (has_vector_source = 1
+                OR (background_image_path IS NOT NULL AND background_image_path != ''))",
         ['id' => $companyId]
     )['n'] > 0;
     if ($hasLogo && $hasTemplates) {

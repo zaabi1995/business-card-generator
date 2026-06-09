@@ -574,8 +574,14 @@ if ($onboardState && empty($onboardState['completed_at'])) {
     try {
         $_db = Database::getInstance();
         $_theme = $_db->fetchOne("SELECT logo_path FROM company_themes WHERE company_id = :id", ['id' => $companyId]);
+        // Exclude the auto-seeded BHD-Classic starter (empty bg, vec=0); only
+        // a real design (vector source or uploaded background) counts as the
+        // card-design step being done. Mirrors admin/onboarding.php.
         $_tplCount = (int)$_db->fetchOne(
-            "SELECT COUNT(*) AS n FROM templates WHERE company_id = :id AND deleted_at IS NULL",
+            "SELECT COUNT(*) AS n FROM templates
+             WHERE company_id = :id AND deleted_at IS NULL
+               AND (has_vector_source = 1
+                    OR (background_image_path IS NOT NULL AND background_image_path != ''))",
             ['id' => $companyId]
         )['n'];
         if (!empty($_theme['logo_path']) && $_tplCount > 0) {
