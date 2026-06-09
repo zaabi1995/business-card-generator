@@ -194,6 +194,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
             }
         }
     }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['do'] ?? '') === 'resend') {
+    // Resend a code to the identifier already stashed in the session, without
+    // making the user re-type it. Stays on the verify (enter-code) screen.
+    $deliveryId = $_SESSION['tlogin_identifier'] ?? '';
+    $channel    = $_SESSION['tlogin_channel'] ?? 'whatsapp';
+    $purpose    = $_SESSION['tlogin_purpose'] ?? '';
+    $userId     = $_SESSION['tlogin_user_id'] ?? '';
+    $displayIdentifier = $deliveryId;
+    $step = 'verify';
+    if ($deliveryId === '' || $purpose === '' || $userId === '') {
+        $step = 'request';
+        $error = t('auth.tenant_err_session');
+    } else {
+        // Same file-based throttle as the request step (1 per 60s, 5 per hour).
+        $rateBucket = '/tmp/cardify-otp-rate-' . hash('sha256', $deliveryId);
+        $now = time();
+        $rateData = is_file($rateBucket) ? @json_decode((string)@file_get_contents($rateBucket), true) : null;
+        if (!is_array($rateData)) $rateData = ['last' => 0, 'window_start' => $now, 'count' => 0];
+        if ($now - $rateData['window_start'] > 3600) {
+            $rateData = ['last' => 0, 'window_start' => $now, 'count' => 0];
+        }
+        $cooldown = 60 - ($now - (int)$rateData['last']);
+        if ($cooldown > 0) {
+            $error = t('auth.tenant_resend_wait', ['s' => $cooldown]);
+        } elseif ((int)$rateData['count'] >= 5) {
+            $secs = 3600 - ($now - $rateData['window_start']);
+            $error = t('auth.tenant_err_hourly_limit', ['s' => max(60, $secs)]);
+        } else {
+            $rateData['last'] = $now;
+            $rateData['count'] = (int)$rateData['count'] + 1;
+            @file_put_contents($rateBucket, json_encode($rateData), LOCK_EX);
+
+            $_SESSION['tlogin_pending_verify'] = true;
+            $_SESSION['tlogin_notice'] = $channel === 'email'
+                ? t('auth.tenant_notice_email')
+                : t('auth.tenant_notice_wa');
+            session_write_close();
+            header('Location: /login');
+            header('Content-Length: 0');
+            if (function_exists('fastcgi_finish_request')) {
+                fastcgi_finish_request();
+            } else {
+                @ob_end_flush(); flush();
+            }
+            ignore_user_abort(true);
+            $res = OtpService::send($deliveryId, $channel, $purpose);
+            if (empty($res['ok'])) {
+                error_log('[tenant_login] background OTP resend failed for ' . $deliveryId . ' ch=' . $channel . ': ' . ($res['error'] ?? 'unknown'));
+            }
+            exit;
+        }
+    }
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
     $code = trim($_POST['code'] ?? '');
     $deliveryId = $_SESSION['tlogin_identifier'] ?? '';
@@ -401,6 +453,9 @@ html[dir=rtl] .code{letter-spacing:8px;direction:ltr}
     <label for="code"><?= htmlspecialchars(t('auth.tenant_code_label')) ?></label>
     <input type="text" name="code" id="code" inputmode="numeric" pattern="\d{6}" maxlength="6" autocomplete="one-time-code" class="code" required autofocus>
     <button type="submit"><?= htmlspecialchars(t('auth.tenant_verify_btn')) ?></button>
+    <button type="submit" name="do" value="resend" formnovalidate class="ghost" id="resend-btn"
+            data-label="<?= htmlspecialchars(t('auth.tenant_resend_btn')) ?>"
+            data-wait="<?= htmlspecialchars(t('auth.tenant_resend_in', ['s' => ':s'])) ?>"><?= htmlspecialchars(t('auth.tenant_resend_btn')) ?></button>
     <a href="/login" style="text-decoration:none"><button type="button" class="ghost"><?= htmlspecialchars(t('auth.tenant_use_different')) ?></button></a>
   <?php endif; ?>
 
@@ -497,6 +552,36 @@ html[dir=rtl] .code{letter-spacing:8px;direction:ltr}
   setTimeout(() => {
     (phonePane.dataset.active === 'true' ? phoneInput : emailInput).focus();
   }, 100);
+})();
+</script>
+<?php endif; ?>
+<?php if ($step === 'verify'): ?>
+<script>
+(function () {
+  // 60s resend cooldown countdown. Mirrors the server-side 60s file throttle so
+  // the user isn't told "please wait" after clicking, the button just counts down.
+  var btn = document.getElementById('resend-btn');
+  if (!btn) return;
+  var label = btn.getAttribute('data-label');
+  var waitTpl = btn.getAttribute('data-wait');
+  var left = 60;
+  function tick() {
+    if (left <= 0) {
+      btn.disabled = false;
+      btn.textContent = label;
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = waitTpl.replace(':s', left);
+    left -= 1;
+    setTimeout(tick, 1000);
+  }
+  tick();
+  btn.addEventListener('click', function () {
+    // Show a spinner on the real submit so the background send isn't double-fired.
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner" aria-hidden="true"></span>' + label;
+  });
 })();
 </script>
 <?php endif; ?>

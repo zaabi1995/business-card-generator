@@ -28,7 +28,7 @@ class OtpService
     public const MAX_ATTEMPTS = 5;
     public const CODE_LENGTH = 6;
 
-    public const RATE_PER_IDENTIFIER = 3;
+    public const RATE_PER_IDENTIFIER = 5;
     public const RATE_PER_IDENTIFIER_WINDOW = 3600; // 1 hour
     public const RATE_PER_IP = 10;
     public const RATE_PER_IP_WINDOW = 86400; // 1 day
