@@ -460,7 +460,8 @@ class Mailer {
         
         /* Header */
         .email-header {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #0ea5e9 100%);
+            background-color: #009bc1; /* solid fallback: gradients are dropped by many mail clients */
+            background-image: linear-gradient(135deg, #007a9c 0%, #009bc1 50%, #2bb6d4 100%);
             padding: 32px 40px;
             text-align: center;
         }
@@ -501,7 +502,10 @@ class Mailer {
         .btn {
             display: inline-block;
             padding: 14px 32px;
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            /* Solid color FIRST so the button is never invisible when a client
+               drops the gradient (white text on a dropped gradient = blank box). */
+            background-color: #009bc1;
+            background-image: linear-gradient(135deg, #009bc1 0%, #007a9c 100%);
             color: #ffffff !important;
             text-decoration: none;
             border-radius: 8px;
@@ -509,40 +513,45 @@ class Mailer {
             font-size: 14px;
             text-align: center;
             margin: 8px 0;
-            box-shadow: 0 4px 14px 0 rgba(30, 64, 175, 0.3);
+            box-shadow: 0 4px 14px 0 rgba(0, 155, 193, 0.3);
         }
-        
+
         .btn:hover {
-            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            background-color: #007a9c;
+            background-image: linear-gradient(135deg, #007a9c 0%, #006783 100%);
         }
         
         /* Info boxes */
         .info-box {
-            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-            border-left: 4px solid #3b82f6;
+            background-color: #eff6ff; /* solid fallback for clients that drop gradients */
+            background-image: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 4px solid #009bc1;
             padding: 20px;
             margin: 20px 0;
             border-radius: 0 12px 12px 0;
         }
-        
+
         .success-box {
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            background-color: #f0fdf4;
+            background-image: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
             border-left: 4px solid #22c55e;
             padding: 20px;
             margin: 20px 0;
             border-radius: 0 12px 12px 0;
         }
-        
+
         .warning-box {
-            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            background-color: #fffbeb;
+            background-image: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
             border-left: 4px solid #f59e0b;
             padding: 20px;
             margin: 20px 0;
             border-radius: 0 12px 12px 0;
         }
-        
+
         .error-box {
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            background-color: #fef2f2;
+            background-image: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
             border-left: 4px solid #ef4444;
             padding: 20px;
             margin: 20px 0;
@@ -1110,7 +1119,7 @@ HTML
 
 <div class="info-box">
     <strong>Your Portal URL:</strong><br>
-    <a href="{{portal_url}}" style="color: #2563eb;">{{portal_url}}</a><br>
+    <a href="{{portal_url}}" style="color: #009bc1;">{{portal_url}}</a><br>
     <small>Share this with employees so they can request their cards.</small>
 </div>
 
@@ -1563,7 +1572,7 @@ HTML
                 'body' => <<<HTML
 <h2>Your employees are waiting!</h2>
 <p>Hi {{admin_name}},</p>
-<p>You created your <strong>{{company_name}}</strong> account yesterday -- great start! But your team doesn't have their business cards yet.</p>
+<p>You created your <strong>{{company_name}}</strong> account yesterday, that is a great start! But your team doesn't have their business cards yet.</p>
 
 <div class="info-box">
     <strong>Adding employees takes under 2 minutes:</strong>
@@ -1581,7 +1590,7 @@ HTML
 
 <div class="info-box">
     <strong>Or let employees request their own cards:</strong><br>
-    Share your portal link: <a href="{{portal_url}}" style="color: #2563eb;">{{portal_url}}</a>
+    Share your portal link: <a href="{{portal_url}}" style="color: #009bc1;">{{portal_url}}</a>
 </div>
 
 <p>Questions? Just reply to this email.</p>
@@ -1593,13 +1602,13 @@ HTML
             'onboarding_day5' => [
                 'subject' => '{{company_name}}: ready to print your cards?',
                 'body' => <<<HTML
-<h2>From digital to printed -- in one click</h2>
+<h2>From digital to printed, in one click</h2>
 <p>Hi {{admin_name}},</p>
 <p>Companies using {{site_name}} save hours on business card management. Here's what you can do next:</p>
 
 <div class="success-box">
     <strong>Order printed cards directly from your dashboard.</strong><br>
-    Professional quality, delivered to your office. No design files needed -- we use the card you already built.
+    Professional quality, delivered to your office. No design files needed, we use the card you already built.
 </div>
 
 <h3>What other companies are doing:</h3>
@@ -1615,7 +1624,7 @@ HTML
 
 <div class="info-box">
     <strong>Need help?</strong><br>
-    Reply to this email or reach us on WhatsApp at <a href="https://wa.me/96898899100" style="color: #2563eb;">+968 9889 9100</a>.
+    Reply to this email or reach us on WhatsApp at <a href="https://api.whatsapp.com/send?phone=96898899100" style="color: #009bc1;">+968 9889 9100</a>.
 </div>
 
 <p>Best regards,<br>The {{site_name}} Team</p>
@@ -1675,7 +1684,7 @@ HTML
     }
 
     /**
-     * Process the email queue -- called by cron.
+     * Process the email queue, called by cron.
      * Sends all pending emails whose send_at has passed.
      * @param int $batchSize Max emails to process per run
      * @return array ['sent' => int, 'failed' => int]
