@@ -676,7 +676,15 @@ def render(template_path: str, employee_path: str, out_path: str,
     if use_simple_encoding:
         for _ps in template['pages']:
             for _f in _ps.get('fields', []):
-                _txt = _resolve_employee_value(_f.get('field_key', ''), employee)
+                # Mirror the draw loop: static decorations carry static_text
+                # (no employee binding); constant fields fall back to
+                # detected_text. Without this the subset omits static-only
+                # glyphs (e.g. A/O/l/y of "An Omantel Company") -> blank.
+                _st = _f.get('static_text')
+                if _st:
+                    _txt = _st
+                else:
+                    _txt = _resolve_employee_value(_f.get('field_key', ''), employee, template_default=_f.get('detected_text', ''))
                 if not _txt:
                     continue
                 _fam = _f.get('font_family', 'Lato')
@@ -802,8 +810,10 @@ def render(template_path: str, employee_path: str, out_path: str,
             # long English name colliding with the right-aligned email/mobile).
             # Floor keeps it readable; names needing below the floor should be
             # shortened to first+family in the data.
+            # Never shrink static decorations (importer sized their box to the
+            # exact text; shrinking clips them, e.g. "An Omantel Company").
             _fit_w_pt = float(field.get("w_pt", 0) or 0)
-            if _fit_w_pt > 0:
+            if _fit_w_pt > 0 and not static_text:
                 try:
                     _meas_w = fitz.Font(fontbuffer=font_buf).text_length(text, fontsize=font_size)
                     if _meas_w > _fit_w_pt:
