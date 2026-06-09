@@ -716,7 +716,27 @@ class CardEditor {
         }
         
         const fontFamily = options.fontFamily || 'Inter';
-        
+
+        // Derive the LTR anchor from (x, width, originX). `x` is the bbox LEFT
+        // edge; Fabric anchors the object's `left` at the origin point, so a
+        // right-aligned field must sit its `left` at x + width (the right edge)
+        // and a centered one at x + width/2. This mirrors the RTL bitmap path
+        // (_buildRtlTextImage), so Arabic and Latin share the same shared-edge
+        // math and a longer/shorter dynamic value stays flush to the design's
+        // detected edge. Static decorations (width<=0, verbatim text at the
+        // detected bbox) stay left-anchored at x so they land on their exact
+        // original spot.
+        const _fieldW = Number(options.width || 0);
+        let _anchorLeft = (options.x != null ? options.x : 50);
+        let _anchorOriginX = originX;
+        if (_fieldW > 0 && originX === 'right') {
+            _anchorLeft = (options.x || 0) + _fieldW;
+        } else if (_fieldW > 0 && originX === 'center') {
+            _anchorLeft = (options.x || 0) + _fieldW / 2;
+        } else if (_fieldW <= 0) {
+            _anchorOriginX = 'left';
+        }
+
         // Read-only mode for preview surfaces (portal preview, public
         // card render): caller passes selectable=false explicitly so the
         // employee/visitor can't drag the text around. Defaults to true
@@ -724,7 +744,7 @@ class CardEditor {
         const interactive = options.selectable !== false;
 
         const fieldOptions = {
-            left: options.x || 50,
+            left: _anchorLeft,
             top: options.y || 50,
             fontSize: options.fontSize || 16,
             fontFamily: fontFamily,
@@ -734,7 +754,7 @@ class CardEditor {
             // Text alignment
             textAlign: textAlign,
             // Fabric.js 7.x: set origin based on text alignment
-            originX: originX,
+            originX: _anchorOriginX,
             originY: options.originY || 'top',
             // Interactive properties (defaults: editor mode = on,
             // preview mode = off when selectable=false passed in)

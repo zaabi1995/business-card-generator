@@ -98,26 +98,16 @@ class CardifyTemplateImporter
             // script default (Arabic/RTL = right, Latin = left). The clustered
             // result is what fixes right-aligned blocks that sit off-center
             // (see detectAlignments + the pre-pass above).
-            $bboxX = (float)($f['x_px'] ?? 0);
-            $bboxW = (float)($f['w_px'] ?? 0);
+            // NOTE: `x` stays the bbox LEFT edge (x_px). Every renderer derives
+            // the visual anchor from (x, width, originX): the RTL bitmap path
+            // in card-editor.js uses (x + width) for right-align, and the LTR
+            // IText path does the same. Storing x as the right edge here would
+            // double-count the width on the RTL path (Arabic shoots off-card).
             $scriptDefault = preg_match('/[\x{0590}-\x{08FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}]/u', (string)($f['detected_text'] ?? ''))
                 ? 'right' : 'left';
             $textAlign = $f['align'] ?? ($alignByIdx[$idx] ?? $scriptDefault);
             if (!in_array($textAlign, ['left', 'center', 'right'], true)) $textAlign = 'left';
             $originX   = $textAlign;  // origin tracks alignment
-
-            // Anchor x must match originX: Fabric places the field's `left` AT
-            // the origin point. originX=right means `left` is the RIGHT edge,
-            // center means the horizontal center. Store x accordingly so a
-            // longer/shorter dynamic value stays flush to the detected edge
-            // instead of growing past it from a stale left anchor.
-            if ($textAlign === 'right') {
-                $anchorX = (int)round($bboxX + $bboxW);
-            } elseif ($textAlign === 'center') {
-                $anchorX = (int)round($bboxX + $bboxW / 2);
-            } else {
-                $anchorX = (int)round($bboxX);
-            }
 
             $out[$key] = [
                 'enabled'       => true,
@@ -128,7 +118,7 @@ class CardifyTemplateImporter
                 'render_in_bg'  => $isStatic,
                 'label'         => $label,
                 'detected_text' => $f['detected_text'] ?? '',
-                'x'             => $anchorX,
+                'x'             => (int)($f['x_px'] ?? 0),
                 'y'             => (int)($f['y_px'] ?? 0),
                 'width'         => (int)($f['w_px'] ?? 0),
                 'height'        => (int)($f['h_px'] ?? 0),
