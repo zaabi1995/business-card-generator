@@ -482,27 +482,27 @@ def _draw_arabic_htmlbox(page, text, font_name, font_buf, x_pt, y_pt, w_pt,
         meas = fitz.Font(fontbuffer=font_buf).text_length(text, fontsize=font_size)
     except Exception:
         meas = font_size * len(text) * 0.55
-    box_w = meas * 1.12 + font_size * 0.6
+    pad = font_size * 0.5
+    box_w = meas + pad
     line_h = font_size * 1.7
-    ta = 'right' if align == 'right' else ('center' if align == 'center' else 'left')
+    top = by - font_size * 0.16   # nudge so glyph-top lands at the em-square top
     css = ("@font-face{font-family:CF;src:url('%s');}"
            "*{font-family:CF;margin:0;padding:0;line-height:1.05;}" % (safe + '.ttf'))
-    div = ('<div dir="rtl" style="font-size:%.2fpt;color:%s;text-align:%s;'
-           'white-space:nowrap;">%s</div>' % (font_size, color_hex, ta, _html.escape(text)))
-    top = by - font_size * 0.16   # nudge so glyph-top lands at the em-square top
-    # Anchor: left-aligned field -> block left at x_pt; right -> block right at
-    # x_pt+w_pt; center -> centered on the field box.
-    if ta == 'center' and w_pt:
-        left = bx + (float(w_pt) - box_w) / 2.0
-    elif w_pt:
-        # RTL: the start edge is the RIGHT. Anchor explicit 'right' fields AND
-        # the importer's default 'left' fields to the field's right edge
-        # (x_pt + w_pt) so a short name and a long title share one right margin
-        # (mirror of the left-aligned English block). Without this, left-anchor
-        # + text-hugging box makes each line's right edge depend on its length.
+    # insert_htmlbox hugs RTL text to the RIGHT edge of the box (it ignores
+    # text-align:left for dir=rtl). Size the box tight (meas+pad) and place it so
+    # the VISIBLE edge matches the field intent:
+    #   'right'  -> text right edge at field right edge (x_pt+w_pt)
+    #   'center' -> text centred in the field box
+    #   'left'   -> text LEFT edge at x_pt, so Arabic name/title left-align with
+    #               the English block (box right = bx+meas => text left = bx)
+    if align == 'right' and w_pt:
         left = bx + float(w_pt) - box_w
+    elif align == 'center' and w_pt:
+        left = bx + (float(w_pt) - box_w) / 2.0
     else:
-        left = bx
+        left = bx - pad
+    div = ('<div dir="rtl" style="font-size:%.2fpt;color:%s;text-align:right;'
+           'white-space:nowrap;">%s</div>' % (font_size, color_hex, _html.escape(text)))
     rect = fitz.Rect(left, top, left + box_w, top + line_h)
     try:
         page.insert_htmlbox(rect, div, css=css, archive=arch, scale_low=1.0)

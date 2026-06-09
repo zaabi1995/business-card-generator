@@ -17,7 +17,7 @@ class CardPDFRenderer
      * v3 (20 May 2026): isolated Arabic forms drawn via nominal glyph
      *   (fixes decorative-tail isolated heh, matches HarfBuzz/browser).
      */
-    const RENDERER_VERSION = 10;
+    const RENDERER_VERSION = 11;
 
     /**
      * Render or fetch a cached vector PDF for one employee.
