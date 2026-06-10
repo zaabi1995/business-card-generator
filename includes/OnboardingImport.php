@@ -107,8 +107,16 @@ class OnboardingImport
         $db = Database::getInstance();
         $inserted = 0; $skipped = 0; $invitesSent = 0;
 
+        // brand_color / logo live in company_themes, NOT companies (the old
+        // companies.brand_color / .logo_path columns never existed, so this
+        // query threw PDOException and aborted the whole CSV import).
         $company = $db->fetchOne(
-            "SELECT id, name, slug, brand_color, logo_path AS logo_url FROM companies WHERE id = :id",
+            "SELECT c.id, c.name, c.slug,
+                    t.primary_color AS brand_color,
+                    t.logo_path AS logo_url
+             FROM companies c
+             LEFT JOIN company_themes t ON t.company_id = c.id
+             WHERE c.id = :id",
             ['id' => $companyId]
         ) ?: ['id' => $companyId, 'name' => 'Cardify'];
 

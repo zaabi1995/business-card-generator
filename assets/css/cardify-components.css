@@ -278,7 +278,13 @@ html[dir="rtl"] .cardify-switch input:checked + .cardify-switch__slider::before 
    Accessibility, focus rings on keyboard users only.
 ================================================================== */
 :focus-visible {
-    outline: 2px solid transparent;
+    /* Visible outline (not transparent): elements with their own box-shadow
+       (Tailwind shadow-* utilities, e.g. the Save Contact button and the
+       homepage logo links) override the brand box-shadow ring, leaving NO
+       focus indicator. A real outline survives that and keeps keyboard nav
+       visible everywhere. */
+    outline: 2px solid var(--bhd-teal-500, #009bc1);
+    outline-offset: 2px;
     box-shadow: var(--cardify-shadow-focus);
 }
 

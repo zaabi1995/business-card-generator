@@ -251,11 +251,22 @@ const AUTOGEN_I18N = <?php echo json_encode([
     'saving_cards'       => t('autogen.js_saving_cards'),
     'generic_error'      => t('autogen.js_generic_error'),
 ], JSON_UNESCAPED_UNICODE); ?>;
+// Localparts that collide with a real tenant path/dir (served before the
+// bare-slug card route). Keep in sync with the onboarding.php copy.
+const CARDIFY_RESERVED_SLUGS = new Set([
+    'admin','api','login','logout','portal','assets','uploads','data','logs',
+    'includes','printshop','paymob','amwalpay','webhooks','install','cron',
+    'storage','vendor','card','vcf','vcard','wallet','wallet-apple','wallet-google',
+    'sitemap','robots','favicon','og','r','claim','preview','index','public'
+]);
 </script>
 
 <?php if ($usePreDesigned): ?>
 <!-- ═══ PRE-DESIGNED LAYOUT PATH (no Fabric.js needed) ═══ -->
-<div class="max-w-4xl mx-auto" x-data="layoutGenerator()" x-init="init()">
+<!-- No x-init: Alpine 3 auto-invokes the component's init() method once.
+     Adding x-init="init()" ran the whole generate pipeline TWICE (duplicate
+     save_card_both + log_generation rows, double credit/limit consumption). -->
+<div class="max-w-4xl mx-auto" x-data="layoutGenerator()">
     <!-- Layout Picker (shown first, auto-generates with default) -->
     <div x-show="status === 'picking'" x-cloak class="space-y-6">
         <div class="text-center mb-2">
@@ -486,7 +497,10 @@ function layoutGenerator() {
             // Clean tenant URL using the email localpart (e.g. /jarwish9). Falls
             // back to the long UUID slug only when no email is on file.
             var slug = this.employeeSlug || this.employeeId;
-            return 'https://' + this.companySlug + '.' + this.apexHost + '/' + slug;
+            var base = 'https://' + this.companySlug + '.' + this.apexHost;
+            // Reserved localparts (admin, api, login...) are served as real
+            // paths before the bare-slug card route, so emit /card/<slug>.
+            return base + (CARDIFY_RESERVED_SLUGS.has(slug) ? '/card/' + slug : '/' + slug);
         },
         get waShareUrl() {
             return 'https://wa.me/?text=' + encodeURIComponent('Here is my digital business card: ' + this.cardShareUrl);
@@ -710,7 +724,8 @@ function layoutGenerator() {
 <?php else: ?>
 <!-- ═══ FABRIC.JS TEMPLATE PATH (existing) ═══ -->
 
-<div class="max-w-lg mx-auto" x-data="autoGenerator()" x-init="init()">
+<!-- No x-init: Alpine auto-invokes init() once; x-init="init()" double-ran it. -->
+<div class="max-w-lg mx-auto" x-data="autoGenerator()">
     <!-- Generating State -->
     <div x-show="status === 'generating'" class="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
         <div class="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-4">
@@ -841,8 +856,12 @@ function autoGenerator() {
         countdownTimer: null,
         get cardShareUrl() {
             // Tenant-style URL (no /card/ prefix). Matches digital_card.php's
-            // canonical URL and the .vcf / wallet flows.
-            return 'https://' + this.companySlug + '.' + this.apexHost + '/' + this.employee.id;
+            // canonical URL and the .vcf / wallet flows. Reserved localparts
+            // (admin, api, login...) collide with real paths, so route those
+            // through /card/<id> which nginx rewrites to the same card.
+            var id = this.employee.id;
+            var base = 'https://' + this.companySlug + '.' + this.apexHost;
+            return base + (CARDIFY_RESERVED_SLUGS.has(String(id)) ? '/card/' + id : '/' + id);
         },
         get waShareUrl() {
             const msg = encodeURIComponent('Here is my digital business card: ' + this.cardShareUrl);

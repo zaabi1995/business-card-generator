@@ -493,6 +493,14 @@ adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding
 </div>
 
 <script>
+// Localparts that collide with a real tenant path/dir (served before the
+// bare-slug card route). Keep in sync with the auto_generate.php copy.
+const CARDIFY_RESERVED_SLUGS = new Set([
+    'admin','api','login','logout','portal','assets','uploads','data','logs',
+    'includes','printshop','paymob','amwalpay','webhooks','install','cron',
+    'storage','vendor','card','vcf','vcard','wallet','wallet-apple','wallet-google',
+    'sitemap','robots','favicon','og','r','claim','preview','index','public'
+]);
 function onboarding(init) {
     return {
         step: init.step,
@@ -750,7 +758,12 @@ function onboarding(init) {
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-+|-+$/g, '') || 'preview';
             const apex = <?= json_encode(cardifyApexHost()) ?>;
-            return 'https://' + this.companySlug + '.' + apex + '/' + empSlug;
+            const base = 'https://' + this.companySlug + '.' + apex;
+            // A localpart that collides with a real path/dir (admin, api,
+            // login, portal, assets...) is served by nginx/the router BEFORE
+            // the bare-slug card route, so /admin would 302 to login instead
+            // of showing the card. Route those through /card/<slug> instead.
+            return base + (CARDIFY_RESERVED_SLUGS.has(empSlug) ? '/card/' + empSlug : '/' + empSlug);
         },
         pricingTiers: <?= json_encode(CardPrintPricing::tiersForJs()) ?>,
         pricePerCard() {

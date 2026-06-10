@@ -497,8 +497,17 @@ class DatabaseAdapter {
             if (!$skipInvite && (!empty($employee['email']) || !empty($employee['phone']) || !empty($employee['mobile']))) {
                 try {
                     require_once __DIR__ . '/EmployeeEditToken.php';
+                    // brand_color / logo live in company_themes, NOT companies.
+                    // The old query selected non-existent companies.brand_color
+                    // / .logo_path, so it threw and the catch below swallowed
+                    // it -> the new-employee invite was NEVER sent.
                     $company = self::$db->fetchOne(
-                        "SELECT id, name, slug, brand_color, logo_path AS logo_url FROM companies WHERE id = :id",
+                        "SELECT c.id, c.name, c.slug,
+                                t.primary_color AS brand_color,
+                                t.logo_path AS logo_url
+                         FROM companies c
+                         LEFT JOIN company_themes t ON t.company_id = c.id
+                         WHERE c.id = :id",
                         ['id' => $companyId]
                     );
                     $channel = !empty($employee['phone']) || !empty($employee['mobile']) ? 'both' : 'email';

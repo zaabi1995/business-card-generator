@@ -47,7 +47,10 @@ Seo::faqPage([
 ]);
 
 $waMsg   = $isAr ? 'مرحباً، أرغب بعرض توضيحي لكارديفاي' : 'Hi, I would like a demo of Cardify';
-$waUrl   = 'https://wa.me/96898899100?text=' . rawurlencode($waMsg);
+// NOTE: the codebase has 3 different demo numbers (96898899100, 96899999100,
+// 96899899100). Grammar normalised to api.whatsapp.com per house rule; the
+// digits are LEFT as-is pending confirmation of the canonical line.
+$waUrl   = 'https://api.whatsapp.com/send?phone=96898899100&text=' . rawurlencode($waMsg);
 $arrow   = $isAr ? 'left' : 'right';
 $regUrl  = ($isAr ? '/ar' : '') . '/company/register.php';
 
@@ -79,9 +82,11 @@ $products = [
 
         <!-- Platform (free forever) -->
         <section class="mb-16">
-            <article class="relative bg-white rounded-3xl px-8 pt-12 pb-8 lg:px-10 lg:pt-14 lg:pb-10 ring-1 ring-gray-200/70 shadow-xl">
-                <!-- Inline top/<side> styles defend against Tailwind JIT
-                     not having -top-3 / left-8 in the pre-built CSS. -->
+            <article class="relative bg-white rounded-3xl px-8 pt-12 pb-8 lg:px-10 lg:pt-14 lg:pb-10 ring-1 ring-gray-200/70 shadow-xl" style="padding-top:3.5rem">
+                <!-- Inline top/<side> styles defend against Tailwind JIT not
+                     having -top-3 / left-8 / pt-12 in the pre-built CSS. Without
+                     the inline padding-top the "FREE FOREVER" badge overlapped
+                     the "Platform Access" heading at every viewport. -->
                 <span class="absolute px-4 py-1 bg-green-600 text-white text-xs font-bold rounded-full uppercase tracking-wider whitespace-nowrap shadow-md z-10"
                       style="top:-12px; <?= $isAr ? 'right:2rem' : 'left:2rem' ?>"><?= htmlspecialchars(t('pricing.platform_badge')) ?></span>
                 <div class="grid lg:grid-cols-2 gap-8 items-center">

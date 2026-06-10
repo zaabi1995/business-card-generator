@@ -386,8 +386,19 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     <meta name="description" content="<?php echo htmlspecialchars($name . ' - ' . $position . ' at ' . $companyName); ?>">
     <meta property="og:title" content="<?php echo htmlspecialchars($name . ' - ' . $companyName); ?>">
     <meta property="og:description" content="<?php echo htmlspecialchars($position . ' at ' . $companyName); ?>">
-    <?php if ($frontImage): ?>
-    <meta property="og:image" content="<?php echo htmlspecialchars($frontImage); ?>">
+    <meta property="og:type" content="profile">
+    <?php
+        // OG scrapers (WhatsApp/Facebook) drop RELATIVE og:image URLs, so the
+        // shared card lost its preview. Absolutize against the current host.
+        $__ogScheme = ((($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')) ? 'https' : 'http';
+        $__ogHost   = $_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') ? APP_HOST : 'cardify.om');
+        $__ogImage  = $frontImage ? ((strpos($frontImage, 'http') === 0) ? $frontImage : ($__ogScheme . '://' . $__ogHost . '/' . ltrim($frontImage, '/'))) : '';
+    ?>
+    <meta property="og:url" content="<?php echo htmlspecialchars($__ogScheme . '://' . $__ogHost . strtok($_SERVER['REQUEST_URI'] ?? '/', '?'), ENT_QUOTES); ?>">
+    <?php if ($__ogImage): ?>
+    <meta property="og:image" content="<?php echo htmlspecialchars($__ogImage, ENT_QUOTES); ?>">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="<?php echo htmlspecialchars($__ogImage, ENT_QUOTES); ?>">
     <?php endif; ?>
     <link rel="icon" type="image/png" href="<?php echo (!empty($theme['favicon_path'])) ? htmlspecialchars(cardifyAssetUrl($theme['favicon_path'])) : ($logoPath ? htmlspecialchars($logoPath) : '/favicon.svg'); ?>">
     <?php if ($isRtl): ?>

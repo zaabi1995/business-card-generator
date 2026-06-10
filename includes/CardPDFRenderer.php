@@ -243,6 +243,12 @@ class CardPDFRenderer
             return ['success' => false, 'error' => 'render timed out'];
         }
         if ($rc !== 0 || !is_file($cachePath) || filesize($cachePath) < 1024) {
+            // Remove any truncated/0-byte artifact a partial render left behind.
+            // A lingering empty cachePath later crashed re-renders that re-open
+            // it (PyMuPDF EmptyFileError), poisoning that employee permanently.
+            if (is_file($cachePath) && filesize($cachePath) < 1024) {
+                @unlink($cachePath);
+            }
             error_log('CardPDFRenderer rc=' . $rc . ' out=' . implode("\n", $out));
             return ['success' => false, 'error' => 'render failed'];
         }

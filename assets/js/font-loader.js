@@ -259,14 +259,21 @@ const FontLoader = {
                     resolve(families);
                 },
                 inactive: () => {
+                    // Font load is best-effort: the families are ALSO loaded via
+                    // <link> to fonts.bhd.om and resolved natively, so a
+                    // WebFontLoader timeout is NOT fatal. Resolving (not
+                    // rejecting) avoids an unhandled-rejection pageerror on every
+                    // admin page while still notifying any onInactive observer.
                     this.isLoading = false;
-                    const error = new Error('Fonts failed to load');
-                    
-                    this.callbacks.forEach(cb => cb.reject(error));
+                    this.isLoaded = true;
+                    this.loadedFonts = families;
+                    console.warn('FontLoader: WebFontLoader timed out; relying on <link> + native font load.');
+
+                    this.callbacks.forEach(cb => cb.resolve(families));
                     this.callbacks = [];
-                    
-                    if (options.onInactive) options.onInactive(error);
-                    reject(error);
+
+                    if (options.onInactive) options.onInactive(new Error('Fonts failed to load'));
+                    resolve(families);
                 },
                 loading: () => {
                     if (options.onLoading) options.onLoading();
@@ -470,9 +477,11 @@ const FontLoader = {
     }
 };
 
-// Auto-preload essential fonts
+// Auto-preload essential fonts. Swallow any rejection: font load is
+// best-effort (families also arrive via <link>), so it must never surface as
+// an unhandled-rejection pageerror.
 if (typeof window !== 'undefined') {
-    FontLoader.preload();
+    Promise.resolve(FontLoader.preload()).catch(() => {});
 }
 
 // Export for modules

@@ -227,15 +227,15 @@ $mapEmbed= 'https://www.google.com/maps?q=' . rawurlencode('AK Tower Bousher Mus
                             <?= csrfField() ?>
                             <div class="grid md:grid-cols-2 gap-5">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('contact.form_name')) ?> *</label>
-                                    <input type="text" name="name" required
+                                    <label for="contact-name" class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('contact.form_name')) ?> *</label>
+                                    <input type="text" id="contact-name" name="name" required
                                            value="<?= htmlspecialchars($values['name']) ?>"
                                            placeholder="<?= htmlspecialchars(t('contact.form_name_ph')) ?>"
                                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('contact.form_email')) ?> *</label>
-                                    <input type="email" name="email" required
+                                    <label for="contact-email" class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('contact.form_email')) ?> *</label>
+                                    <input type="email" id="contact-email" name="email" required
                                            value="<?= htmlspecialchars($values['email']) ?>"
                                            placeholder="<?= htmlspecialchars(t('contact.form_email_ph')) ?>"
                                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -250,8 +250,8 @@ $mapEmbed= 'https://www.google.com/maps?q=' . rawurlencode('AK Tower Bousher Mus
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('contact.form_msg')) ?> *</label>
-                                <textarea name="message" rows="6" required
+                                <label for="contact-message" class="block text-sm font-medium text-gray-700 mb-1.5"><?= htmlspecialchars(t('contact.form_msg')) ?> *</label>
+                                <textarea id="contact-message" name="message" rows="6" required
                                           placeholder="<?= htmlspecialchars(t('contact.form_msg_ph')) ?>"
                                           class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"><?= htmlspecialchars($values['message']) ?></textarea>
                             </div>

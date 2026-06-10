@@ -995,13 +995,30 @@ def render(template_path: str, employee_path: str, out_path: str,
         vcf_doc = fitz.open(out_path)
         with open(vcard_path, 'rb') as fh:
             vcard_bytes = fh.read()
-        vcf_doc.embfile_add(
-            'contact.vcf',
-            vcard_bytes,
-            filename='contact.vcf',
-            ufilename='contact.vcf',
-            desc='Add this contact to your address book',
-        )
+        # If the source/template PDF already carries a contact.vcf (re-render of
+        # an already-embedded card), embfile_add raises "Name 'contact.vcf'
+        # already exists" and the whole render fails. Update in place when it
+        # exists, otherwise add fresh.
+        try:
+            existing = set(vcf_doc.embfile_names())
+        except Exception:
+            existing = set()
+        if 'contact.vcf' in existing:
+            vcf_doc.embfile_upd(
+                'contact.vcf',
+                vcard_bytes,
+                filename='contact.vcf',
+                ufilename='contact.vcf',
+                desc='Add this contact to your address book',
+            )
+        else:
+            vcf_doc.embfile_add(
+                'contact.vcf',
+                vcard_bytes,
+                filename='contact.vcf',
+                ufilename='contact.vcf',
+                desc='Add this contact to your address book',
+            )
         tmp_vcf_out = out_path + '.vcf_tmp.pdf'
         vcf_doc.save(tmp_vcf_out, garbage=4, deflate=True)
         vcf_doc.close()
