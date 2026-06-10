@@ -127,7 +127,10 @@ class WhatsApp {
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => json_encode($payload),
             CURLOPT_HTTPHEADER     => $headers,
-            CURLOPT_TIMEOUT        => 20,
+            // 30s, not 20: Dardasha sends exceed 20s while Baileys reconnects
+            // (10 Jun 2026: OTP reported delivery_failed at +20s, then actually
+            // delivered at +102s). Sends run post-flush, so latency is unseen.
+            CURLOPT_TIMEOUT        => 30,
             // Security: verify TLS certificates. Codex round-3 finding #2.
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,

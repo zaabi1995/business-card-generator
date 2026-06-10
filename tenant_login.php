@@ -114,6 +114,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && !empty($_SESSION['tlogin_pending_ver
 $error = null;
 $notice = $_SESSION['tlogin_notice'] ?? null;
 unset($_SESSION['tlogin_notice']);
+// Honest delivery feedback: the OTP send runs in the background after the
+// redirect, so a failure can't be shown synchronously. The send path stamps
+// 'send_fail' into the rate bucket; surface it on the next render instead of
+// letting the green 'Code sent' notice stand unchallenged.
+if ($step === 'verify' && $_SERVER['REQUEST_METHOD'] === 'GET' && !empty($_SESSION['tlogin_identifier'])) {
+    $dlvBucket = @json_decode((string) @file_get_contents('/tmp/cardify-otp-rate-' . hash('sha256', $_SESSION['tlogin_identifier'])), true);
+    if (is_array($dlvBucket) && !empty($dlvBucket['send_fail']) && time() - (int) $dlvBucket['send_fail'] < 600) {
+        $error  = t('auth.tenant_err_delivery');
+        $notice = null;
+    }
+}
 $identifier = trim($_POST['identifier'] ?? $_SESSION['tlogin_identifier'] ?? '');
 $channel = null;
 $displayIdentifier = $identifier;
@@ -158,27 +169,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
                 $user = tl_lookup_user($identifier, $companyId);
                 $isRealUser = (bool) $user;
                 // Per-identifier rate limit: max 1 OTP per 60s and max 5/hour.
-                // Atomic check-and-consume: a real send consumes a slot inside
-                // the same lock that checks the cap, so two parallel requests
-                // can't both pass.
+                // The slot is consumed for real AND unknown identifiers alike:
+                // a uniform cooldown leaks nothing about account existence
+                // (OWASP: keep messages consistent for existent/non-existent
+                // accounts), while an explicit "wait Ns" beats silently
+                // pretending the code was sent (which is how a wedged Dardasha
+                // hid behind a fake 'Code sent' page on 9-10 Jun 2026).
                 $rateBucket = '/tmp/cardify-otp-rate-' . hash('sha256', $deliveryId);
-                $rateAllowed = tl_bucket_rmw($rateBucket, function ($d) use ($now, $isRealUser) {
+                $rateOutcome = tl_bucket_rmw($rateBucket, function ($d) use ($now) {
                     if (!isset($d['last'], $d['window_start'], $d['count']) || $now - (int) $d['window_start'] > 3600) {
                         $d = ['last' => 0, 'window_start' => $now, 'count' => 0];
                     }
                     $cooldown = 60 - ($now - (int) $d['last']);
-                    $allowed  = ($cooldown <= 0 && (int) $d['count'] < 5);
-                    if ($allowed && $isRealUser) {
-                        // Only a genuine send consumes the per-identifier slot.
-                        $d['last']  = $now;
-                        $d['count'] = (int) $d['count'] + 1;
+                    if ($cooldown > 0) {
+                        return [$d, ['status' => 'cooldown', 'cooldown' => $cooldown]];
                     }
-                    return [$d, $allowed];
+                    if ((int) $d['count'] >= 5) {
+                        return [$d, ['status' => 'hourly', 'secs' => 3600 - ($now - (int) $d['window_start'])]];
+                    }
+                    $d['last']  = $now;
+                    $d['count'] = (int) $d['count'] + 1;
+                    unset($d['send_fail']); // fresh attempt, stale failure flag must not bleed in
+                    return [$d, ['status' => 'ok']];
                 });
-                if (!$rateAllowed) {
-                    $user = false;
+                if (($rateOutcome['status'] ?? '') === 'cooldown') {
+                    $error = t('auth.tenant_resend_wait', ['s' => $rateOutcome['cooldown']]);
+                } elseif (($rateOutcome['status'] ?? '') === 'hourly') {
+                    $error = t('auth.tenant_err_hourly_limit', ['s' => max(60, $rateOutcome['secs'])]);
                 }
+                unset($isRealUser);
             }
+            if ($error === null || $error === '') {
             // Always show the SAME post-submit page regardless of whether the
             // identifier resolves to a real user. Otherwise the error message
             // divergence (account exists / doesn't exist) is an account-
@@ -217,8 +238,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
                 ignore_user_abort(true);
                 if ($sendActual) {
                     $res = OtpService::send($deliveryId, $channel, $purpose);
+                    // Record the outcome in the rate bucket so the verify page
+                    // can stop claiming 'Code sent' when delivery actually
+                    // failed (the user is told to resend or switch channel).
+                    tl_bucket_rmw('/tmp/cardify-otp-rate-' . hash('sha256', $deliveryId), function ($d) use ($res) {
+                        if (empty($res['ok'])) { $d['send_fail'] = time(); } else { unset($d['send_fail']); }
+                        return [$d, null];
+                    });
                     if (empty($res['ok'])) {
-                        error_log('[tenant_login] background OTP send failed for ' . $deliveryId . ' ch=' . $channel . ': ' . ($res['error'] ?? 'unknown'));
+                        error_log('[tenant_login] background OTP send failed for ' . substr($deliveryId, 0, 4) . '**** ch=' . $channel . ': ' . ($res['error'] ?? 'unknown'));
                     }
                 } else {
                     // No-op: identifier did not resolve to a real user, OR per-IP
@@ -228,6 +256,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
                     error_log('[tenant_login] no-op send for ' . substr(hash('sha256', $deliveryId), 0, 12) . ' (anti-enumeration)');
                 }
                 exit;
+            }
             }
         }
     }
@@ -262,6 +291,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
             }
             $d['last']  = $now;
             $d['count'] = (int) $d['count'] + 1;
+            unset($d['send_fail']); // fresh attempt, stale failure flag must not bleed in
             return [$d, ['status' => 'ok']];
         });
         if (($rateOutcome['status'] ?? '') === 'cooldown') {
@@ -283,8 +313,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
             }
             ignore_user_abort(true);
             $res = OtpService::send($deliveryId, $channel, $purpose);
+            tl_bucket_rmw($rateBucket, function ($d) use ($res) {
+                if (empty($res['ok'])) { $d['send_fail'] = time(); } else { unset($d['send_fail']); }
+                return [$d, null];
+            });
             if (empty($res['ok'])) {
-                error_log('[tenant_login] background OTP resend failed for ' . $deliveryId . ' ch=' . $channel . ': ' . ($res['error'] ?? 'unknown'));
+                error_log('[tenant_login] background OTP resend failed for ' . substr($deliveryId, 0, 4) . '**** ch=' . $channel . ': ' . ($res['error'] ?? 'unknown'));
             }
             exit;
         }

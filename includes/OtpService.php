@@ -58,6 +58,14 @@ class OtpService
         $hash = hash('sha256', $code);
 
         $db = Database::getInstance();
+        // Exactly one active code per identifier+purpose (OWASP Forgot
+        // Password CS: codes are single use and invalidated on reissue).
+        // Without this, every unconsumed code in the 10-min window stays
+        // verifiable and a resend leaves the user guessing which one counts.
+        $db->getConnection()->prepare(
+            "UPDATE otp_codes SET consumed_at = NOW()
+             WHERE identifier = :id AND purpose = :p AND consumed_at IS NULL"
+        )->execute([':id' => $identifier, ':p' => $purpose]);
         $db->insert('otp_codes', [
             'identifier' => $identifier,
             'channel'    => $channel,

@@ -71,6 +71,7 @@ return [
     'tenant_support'           => 'Trouble signing in? Email :email',
     'tenant_notice_wa'         => 'Code sent via WhatsApp.',
     'tenant_notice_email'      => 'Code sent to your email.',
+    'tenant_err_delivery'      => 'We could not deliver your code. Tap "Resend code" or use a different email or phone.',
     'tenant_err_no_account'    => 'No account found for that :kind. Contact your admin.',
     'tenant_err_phone_invalid' => 'Enter a valid phone number.',
     'tenant_err_enter_id'      => 'Enter your email or phone number.',
