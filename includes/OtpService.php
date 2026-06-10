@@ -63,7 +63,9 @@ class OtpService
             'channel'    => $channel,
             'code_hash'  => $hash,
             'purpose'    => $purpose,
-            'expires_at' => date('Y-m-d H:i:s', time() + self::TTL_SECONDS),
+            // gmdate, not date: verify() compares against MySQL NOW() which
+            // runs in UTC, PHP local time (GMT+4) made codes live 4h10m.
+            'expires_at' => gmdate('Y-m-d H:i:s', time() + self::TTL_SECONDS),
             'ip'         => substr($ip, 0, 45),
             'user_agent' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255),
         ]);
