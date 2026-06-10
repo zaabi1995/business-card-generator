@@ -1,6 +1,6 @@
 <?php
 /**
- * Migration 095: track vector-source availability per template.
+ * Migration 119: track vector-source availability per template.
  *
  *   has_vector_source TINYINT(1) DEFAULT 0
  *     1 when scripts/parse_card_pdf.py exported a usable bg-page-N.svg
@@ -22,8 +22,8 @@ try {
          ADD COLUMN IF NOT EXISTS fonts_dir VARCHAR(500) NULL
                  AFTER has_vector_source"
     );
-    echo "Migration 095: templates.has_vector_source + fonts_dir added\n";
+    echo "Migration 119: templates.has_vector_source + fonts_dir added\n";
 } catch (Throwable $e) {
-    echo "Migration 095 failed: " . $e->getMessage() . "\n";
+    echo "Migration 119 failed: " . $e->getMessage() . "\n";
     exit(1);
 }

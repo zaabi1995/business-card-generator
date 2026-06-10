@@ -161,8 +161,8 @@ Then open `http://127.0.0.1:8000`
 - [Troubleshooting](docs/DOCUMENTATION.md#troubleshooting)
 
 **Integration Guides:**
-- [Amwal Pay Integration](docs/AMWAL_PAY_INTEGRATION.md)
-- [Odoo Integration](docs/ODOO_INTEGRATION.md)
+- Payments: **Paymob Oman** is the current gateway (see `includes/Payment.php`). Amwal Pay is legacy, archived at [docs/archived/AMWAL_PAY_INTEGRATION.md](docs/archived/AMWAL_PAY_INTEGRATION.md).
+- Accounting: **BHD-ERP** is current. Odoo is legacy, archived at [docs/archived/ODOO_INTEGRATION.md](docs/archived/ODOO_INTEGRATION.md).
 - [WhatsApp Integration](docs/WHATSAPP_INTEGRATION.md)
 - [Deployment Checklist](docs/DEPLOYMENT_CHECKLIST.md)
 

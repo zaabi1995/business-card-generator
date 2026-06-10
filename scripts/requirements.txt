@@ -1,0 +1,15 @@
+# Python dependencies for the Cardify server-side PDF render pipeline.
+# Pinned to the versions running in production (VPS 147.93.20.54, 10 Jun 2026).
+# Install: python3 -m pip install -r scripts/requirements.txt
+#
+# Used by: render-card-pdf.py, imposition-vector.py, extract_template_fonts.py
+# render-card-pdf.py degrades gracefully if arabic_reshaper/python-bidi are
+# missing (Arabic renders unshaped) - keep them installed for correct RTL.
+
+PyMuPDF==1.27.2.3
+fonttools==4.62.1
+arabic-reshaper==3.0.1
+python-bidi==0.6.10
+Pillow==10.2.0
+numpy==1.26.4
+qrcode==7.4.2

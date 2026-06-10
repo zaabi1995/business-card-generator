@@ -7,12 +7,12 @@ try {
         ADD COLUMN linkedin_commentary TEXT NULL AFTER linkedin_carousel_data,
         ADD COLUMN linkedin_marked_posted_at DATETIME NULL AFTER linkedin_commentary,
         ADD COLUMN linkedin_generated_at DATETIME NULL AFTER linkedin_marked_posted_at");
-    echo "Migration 066: linkedin_carousel_data + commentary + manual-post tracking columns added\n";
+    echo "Migration 118: linkedin_carousel_data + commentary + manual-post tracking columns added\n";
 } catch (Exception $e) {
     if (strpos($e->getMessage(), 'Duplicate column') !== false) {
-        echo "Migration 066: already exists, skipping\n";
+        echo "Migration 118: already exists, skipping\n";
         exit(0);
     }
-    echo "Migration 066 failed: " . $e->getMessage() . "\n";
+    echo "Migration 118 failed: " . $e->getMessage() . "\n";
     exit(1);
 }

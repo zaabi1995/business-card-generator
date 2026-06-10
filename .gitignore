@@ -20,8 +20,11 @@ access_log
 
 # Composer / Dependencies
 vendor/
-composer.lock
 composer.phar
+# composer.lock IS committed (application, not library) for reproducible deploys
+
+# lean-ctx local cache (developer tooling, never commit)
+.lean-ctx/
 
 # Configuration (contains secrets)
 config.php

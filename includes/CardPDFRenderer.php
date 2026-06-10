@@ -244,6 +244,15 @@ class CardPDFRenderer
             return ['success' => false, 'error' => 'render failed'];
         }
 
+        // Surface non-fatal WARN lines (e.g. arabic_reshaper/python-bidi not
+        // installed -> Arabic renders UNSHAPED with no rc!=0 failure). Without
+        // this, broken Arabic cards ship silently. See scripts/requirements.txt.
+        foreach ($out as $line) {
+            if (stripos($line, 'WARN') !== false) {
+                error_log('CardPDFRenderer WARN (rc=0): ' . trim($line));
+            }
+        }
+
         // Phase 8: write sidecar .meta so invalidation can prune per-employee.
         $themeUpdatedAt = is_array($theme) ? ($theme['updated_at'] ?? '') : '';
         @file_put_contents($cacheDir . '/' . $sig . '.meta', json_encode([

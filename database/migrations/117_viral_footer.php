@@ -1,6 +1,6 @@
 <?php
 /**
- * Migration 065: Viral "Made with Cardify" footer
+ * Migration 117: Viral "Made with Cardify" footer
  *
  * Adds per-card opt-out flag (Pro tier) for the viral footer shown on every
  * public digital card, extends the card_events ENUM with the new click +
@@ -39,9 +39,9 @@ try {
              ADD COLUMN `hide_cardify_branding` TINYINT(1) NOT NULL DEFAULT 0
              COMMENT 'When 1 (Pro only), hides the Made with Cardify viral footer on the public card.'"
         );
-        echo "[065] Added employees.hide_cardify_branding\n";
+        echo "[117] Added employees.hide_cardify_branding\n";
     } else {
-        echo "[065] employees.hide_cardify_branding already exists — skipped\n";
+        echo "[117] employees.hide_cardify_branding already exists — skipped\n";
     }
 
     // -------------------------------------------------------------------
@@ -73,9 +73,9 @@ try {
             return str_replace("'", "''", $v);
         }, $desired)) . "'";
         $pdo->exec("ALTER TABLE card_events MODIFY COLUMN event_type ENUM($enumList) NOT NULL");
-        echo "[065] card_events.event_type extended with viral_footer_click + viral_footer_view\n";
+        echo "[117] card_events.event_type extended with viral_footer_click + viral_footer_view\n";
     } else {
-        echo "[065] card_events.event_type already contains viral_footer_* — skipped\n";
+        echo "[117] card_events.event_type already contains viral_footer_* — skipped\n";
     }
 
     // -------------------------------------------------------------------
@@ -105,14 +105,14 @@ try {
             KEY `idx_created_at` (`created_at`),
             KEY `idx_source`     (`source`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-        echo "[065] Created cardify_signup_leads\n";
+        echo "[117] Created cardify_signup_leads\n";
     } else {
-        echo "[065] cardify_signup_leads already exists — skipped\n";
+        echo "[117] cardify_signup_leads already exists — skipped\n";
     }
 
-    echo "[065] Migration complete\n";
+    echo "[117] Migration complete\n";
     return ['success' => true];
 } catch (Throwable $e) {
-    echo "[065] ERROR: " . $e->getMessage() . "\n";
+    echo "[117] ERROR: " . $e->getMessage() . "\n";
     return ['success' => false, 'errors' => [$e->getMessage()]];
 }
