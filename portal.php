@@ -1878,6 +1878,11 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     text: value,
                     x: field.x,
                     y: field.y,
+                    // Pass the bbox width so right/center-aligned fields anchor
+                    // at x + width (x = bbox LEFT edge, rule 47). Without it,
+                    // addTextField degrades to left-anchored at x and the value
+                    // overflows the card's right edge.
+                    width: field.width,
                     fontSize: field.fontSize || 14,
                     fontFamily: field.fontFamily || (isArabic ? 'Cairo' : 'Inter'),
                     fontWeight: field.fontWeight || 'normal',

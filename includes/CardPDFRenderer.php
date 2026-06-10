@@ -16,8 +16,11 @@ class CardPDFRenderer
      * v2 (20 May 2026): Arabic reshaper + bidi visual-order shaping.
      * v3 (20 May 2026): isolated Arabic forms drawn via nominal glyph
      *   (fixes decorative-tail isolated heh, matches HarfBuzz/browser).
+     * v15 (10 Jun 2026): Latin right/center alignment anchors from the
+     *   field right edge (x_pt + w_pt), matching Fabric + Arabic htmlbox
+     *   (rule 47 convention: x = bbox LEFT edge).
      */
-    const RENDERER_VERSION = 14;
+    const RENDERER_VERSION = 15;
 
     /**
      * Render or fetch a cached vector PDF for one employee.

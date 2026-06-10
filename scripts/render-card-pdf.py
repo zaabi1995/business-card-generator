@@ -934,10 +934,18 @@ def render(template_path: str, employee_path: str, out_path: str,
                     except Exception:
                         side_bearing_pt = font_size * 0.05  # rough fallback
                     effective_w = text_w_pt - side_bearing_pt
+                    # Anchor from the field's RIGHT edge (x_pt + w_pt) when the
+                    # bbox width is known: x is the bbox LEFT edge (rule 47),
+                    # matching the Fabric paths (left = x + width) and the
+                    # Arabic htmlbox path (text_right = bx + w_pt). Fields
+                    # without a stored width keep x_pt itself as the anchor.
+                    _w_pt = float(field.get('w_pt') or 0)
                     if text_align == 'right':
-                        text_x = text_x - effective_w
+                        anchor_x = text_x + _w_pt if _w_pt > 0 else text_x
+                        text_x = anchor_x - effective_w
                     elif text_align == 'center':
-                        text_x = text_x - effective_w / 2
+                        anchor_x = text_x + _w_pt / 2 if _w_pt > 0 else text_x
+                        text_x = anchor_x - effective_w / 2
                 except Exception:
                     pass
 

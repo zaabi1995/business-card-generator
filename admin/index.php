@@ -3437,6 +3437,10 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                             text: textToRender,
                             x: field.x,
                             y: field.y,
+                            // x = bbox LEFT edge (rule 47): pass width so
+                            // right/center fields anchor at x + width. Statics
+                            // pass 0 to stay verbatim at their detected bbox.
+                            width: field.is_static ? 0 : field.width,
                             fontSize: field.fontSize,
                             fontFamily: field.fontFamily,
                             fontWeight: field.fontWeight || 'normal',
@@ -3745,6 +3749,9 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                                 text: fieldText,
                                 x: x,
                                 y: y,
+                                // x = bbox LEFT edge (rule 47): width makes
+                                // right/center fields anchor at x + width.
+                                width: field.is_static ? 0 : field.width,
                                 fontSize: fontSize,
                                 fontFamily: fontFamily,
                                 fontWeight: field.fontWeight || 'normal',
