@@ -45,13 +45,26 @@ try {
         exit;
     }
 
-    // Look up employee (scoped to company if slug supplied)
+    // Resolve the tenant first: an explicit ?c= slug wins; otherwise derive it
+    // from the tenant subdomain so the lookup is ALWAYS company-scoped on a
+    // tenant host (stops one tenant requesting another tenant's pass by bare
+    // employee id).
+    require_once INCLUDES_DIR . '/TenantHost.php';
     $company = null;
     if ($companySlug !== '') {
         $company = findCompanyBySlug($companySlug);
+    } elseif (TenantHost::isTenantHost()) {
+        $company = TenantHost::resolve();
     }
     $employee = findEmployeeById($employeeId, $company ? $company['id'] : null);
     if (!$employee) {
+        http_response_code(404);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo "Card not found.\n";
+        exit;
+    }
+    // Don't mint a pass for a card that isn't live yet (mirror digital_card.php).
+    if (($employee['status'] ?? 'active') === 'pending_approval') {
         http_response_code(404);
         header('Content-Type: text/plain; charset=utf-8');
         echo "Card not found.\n";

@@ -70,6 +70,38 @@ function tl_lookup_user(string $identifier, string $companyId): ?array {
     ) ?: null;
 }
 
+/**
+ * Atomic read-modify-write on a JSON rate-limit bucket file. Holds an
+ * EXCLUSIVE lock across the whole read -> decide -> write so two concurrent
+ * requests can't both read a stale count and each slip past the cap (the
+ * TOCTOU the previous LOCK_EX-on-write-only pattern allowed). $mutator gets
+ * the decoded array (or []) and must return [newStateArray, returnValue];
+ * tl_bucket_rmw returns returnValue. Fails open (still runs $mutator once) if
+ * the bucket file can't be opened.
+ */
+function tl_bucket_rmw(string $file, callable $mutator) {
+    $fh = @fopen($file, 'c+');
+    if ($fh === false) {
+        [, $result] = $mutator([]);
+        return $result;
+    }
+    try {
+        @flock($fh, LOCK_EX);
+        $raw   = stream_get_contents($fh);
+        $state = (is_string($raw) && $raw !== '') ? json_decode($raw, true) : null;
+        if (!is_array($state)) $state = [];
+        [$newState, $result] = $mutator($state);
+        rewind($fh);
+        ftruncate($fh, 0);
+        fwrite($fh, json_encode($newState));
+        fflush($fh);
+        return $result;
+    } finally {
+        @flock($fh, LOCK_UN);
+        @fclose($fh);
+    }
+}
+
 // PRG state: when a previous POST set up an OTP send, force the verify step
 // on the subsequent GET so the page visibly transitions and the back/forward
 // buttons don't replay the form submit.
@@ -105,36 +137,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
                 ?: ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
             $ipBucketFile = '/tmp/cardify-otp-ip-' . hash('sha256', $clientIp);
             $now = time();
-            $ipBucket = is_file($ipBucketFile) ? @json_decode((string) @file_get_contents($ipBucketFile), true) : null;
-            if (!is_array($ipBucket)) $ipBucket = ['window_start' => $now, 'count' => 0];
-            if ($now - (int) $ipBucket['window_start'] > 3600) {
-                $ipBucket = ['window_start' => $now, 'count' => 0];
-            }
-            if ((int) $ipBucket['count'] >= 20) {
+            // Atomic: count this probe and learn whether the IP was already
+            // over 20/hour, all under one exclusive lock (no concurrent slip).
+            $ipCapped = tl_bucket_rmw($ipBucketFile, function ($b) use ($now) {
+                if (!isset($b['window_start'], $b['count']) || $now - (int) $b['window_start'] > 3600) {
+                    $b = ['window_start' => $now, 'count' => 0];
+                }
+                $capped = ((int) $b['count'] >= 20);
+                $b['count'] = (int) $b['count'] + 1; // count every probe, capped or not
+                return [$b, $capped];
+            });
+            if ($ipCapped) {
                 // Quietly cap probing per IP at 20/hour. Use the same generic
                 // success-page redirect as a real send, so the attacker can't
                 // tell whether they hit the cap, the account exists, or the
                 // OTP was actually sent.
                 $error = '';
                 $user = false;
-                $ipBucket['count']++;
-                @file_put_contents($ipBucketFile, json_encode($ipBucket), LOCK_EX);
             } else {
-                $ipBucket['count']++;
-                @file_put_contents($ipBucketFile, json_encode($ipBucket), LOCK_EX);
-
                 $user = tl_lookup_user($identifier, $companyId);
+                $isRealUser = (bool) $user;
                 // Per-identifier rate limit: max 1 OTP per 60s and max 5/hour.
+                // Atomic check-and-consume: a real send consumes a slot inside
+                // the same lock that checks the cap, so two parallel requests
+                // can't both pass.
                 $rateBucket = '/tmp/cardify-otp-rate-' . hash('sha256', $deliveryId);
-                $rateData = is_file($rateBucket) ? @json_decode((string) @file_get_contents($rateBucket), true) : null;
-                if (!is_array($rateData)) $rateData = ['last' => 0, 'window_start' => $now, 'count' => 0];
-                if ($now - $rateData['window_start'] > 3600) {
-                    $rateData = ['last' => 0, 'window_start' => $now, 'count' => 0];
-                }
-                $cooldown = 60 - ($now - (int) $rateData['last']);
-                if ($cooldown > 0) {
-                    $user = false;
-                } elseif ((int) $rateData['count'] >= 5) {
+                $rateAllowed = tl_bucket_rmw($rateBucket, function ($d) use ($now, $isRealUser) {
+                    if (!isset($d['last'], $d['window_start'], $d['count']) || $now - (int) $d['window_start'] > 3600) {
+                        $d = ['last' => 0, 'window_start' => $now, 'count' => 0];
+                    }
+                    $cooldown = 60 - ($now - (int) $d['last']);
+                    $allowed  = ($cooldown <= 0 && (int) $d['count'] < 5);
+                    if ($allowed && $isRealUser) {
+                        // Only a genuine send consumes the per-identifier slot.
+                        $d['last']  = $now;
+                        $d['count'] = (int) $d['count'] + 1;
+                    }
+                    return [$d, $allowed];
+                });
+                if (!$rateAllowed) {
                     $user = false;
                 }
             }
@@ -149,12 +190,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
                 $user = ['id' => '__noop__'];  // placeholder so the redirect-out branch fires
             }
             {
-                if ($sendActual) {
-                    // Mark this OTP attempt in the bucket BEFORE we send
-                    $rateData['last'] = $now;
-                    $rateData['count'] = (int) $rateData['count'] + 1;
-                    @file_put_contents($rateBucket, json_encode($rateData), LOCK_EX);
-                }
+                // (The per-identifier slot was already consumed atomically in
+                // the tl_bucket_rmw above when $sendActual is true.)
 
                 $purpose = 'tlogin:' . substr(hash('sha1', $companyId), 0, 12);
                 // Optimistic UX: stash session, issue the 302 immediately,
@@ -207,25 +244,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
         $step = 'request';
         $error = t('auth.tenant_err_session');
     } else {
-        // Same file-based throttle as the request step (1 per 60s, 5 per hour).
+        // Same file-based throttle as the request step (1 per 60s, 5 per hour),
+        // now atomic: the cap check and the slot-consume happen under one lock.
         $rateBucket = '/tmp/cardify-otp-rate-' . hash('sha256', $deliveryId);
         $now = time();
-        $rateData = is_file($rateBucket) ? @json_decode((string)@file_get_contents($rateBucket), true) : null;
-        if (!is_array($rateData)) $rateData = ['last' => 0, 'window_start' => $now, 'count' => 0];
-        if ($now - $rateData['window_start'] > 3600) {
-            $rateData = ['last' => 0, 'window_start' => $now, 'count' => 0];
-        }
-        $cooldown = 60 - ($now - (int)$rateData['last']);
-        if ($cooldown > 0) {
-            $error = t('auth.tenant_resend_wait', ['s' => $cooldown]);
-        } elseif ((int)$rateData['count'] >= 5) {
-            $secs = 3600 - ($now - $rateData['window_start']);
-            $error = t('auth.tenant_err_hourly_limit', ['s' => max(60, $secs)]);
+        $rateOutcome = tl_bucket_rmw($rateBucket, function ($d) use ($now) {
+            if (!isset($d['last'], $d['window_start'], $d['count']) || $now - (int) $d['window_start'] > 3600) {
+                $d = ['last' => 0, 'window_start' => $now, 'count' => 0];
+            }
+            $cooldown = 60 - ($now - (int) $d['last']);
+            if ($cooldown > 0) {
+                return [$d, ['status' => 'cooldown', 'cooldown' => $cooldown]];
+            }
+            if ((int) $d['count'] >= 5) {
+                $secs = 3600 - ($now - (int) $d['window_start']);
+                return [$d, ['status' => 'hourly', 'secs' => $secs]];
+            }
+            $d['last']  = $now;
+            $d['count'] = (int) $d['count'] + 1;
+            return [$d, ['status' => 'ok']];
+        });
+        if (($rateOutcome['status'] ?? '') === 'cooldown') {
+            $error = t('auth.tenant_resend_wait', ['s' => $rateOutcome['cooldown']]);
+        } elseif (($rateOutcome['status'] ?? '') === 'hourly') {
+            $error = t('auth.tenant_err_hourly_limit', ['s' => max(60, $rateOutcome['secs'])]);
         } else {
-            $rateData['last'] = $now;
-            $rateData['count'] = (int)$rateData['count'] + 1;
-            @file_put_contents($rateBucket, json_encode($rateData), LOCK_EX);
-
             $_SESSION['tlogin_pending_verify'] = true;
             $_SESSION['tlogin_notice'] = $channel === 'email'
                 ? t('auth.tenant_notice_email')

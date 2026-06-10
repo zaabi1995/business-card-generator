@@ -21,14 +21,23 @@ class CardCredits
      *
      * Returns an array:
      *   ['charged' => bool, 'balance' => int, 'reason' => 'already_charged'|'insufficient'|'ok']
+     *
+     * Pass $inExternalTxn=true when the CALLER already opened a transaction
+     * (e.g. log_generation.php wrapping the generated_cards insert + the
+     * charge as one atomic unit). In that mode we do NOT open/commit/rollback
+     * our own transaction, and a hard error is RE-THROWN so the caller can
+     * roll the whole unit back. A raced duplicate-key is still swallowed as
+     * 'already_charged' (InnoDB keeps the surrounding txn usable on a
+     * statement-level dup-key error).
      */
-    public static function chargeForGenerate(string $companyId, string $employeeId): array
+    public static function chargeForGenerate(string $companyId, string $employeeId, bool $inExternalTxn = false): array
     {
         $db  = Database::getInstance();
         $pdo = $db->getConnection();
+        $ownTxn = !$inExternalTxn;
 
         try {
-            $pdo->beginTransaction();
+            if ($ownTxn) $pdo->beginTransaction();
 
             // Was this employee already charged? UNIQUE index enforces it but
             // we read upfront so we can return a helpful status without
@@ -40,7 +49,7 @@ class CardCredits
                 ['cid' => $companyId, 'eid' => $employeeId]
             );
             if ($existing) {
-                $pdo->commit();
+                if ($ownTxn) $pdo->commit();
                 $current = self::getBalance($companyId);
                 return ['charged' => false, 'balance' => $current, 'reason' => 'already_charged'];
             }
@@ -52,7 +61,7 @@ class CardCredits
             );
             $balance = (int) ($row['card_credits'] ?? 0);
             if ($balance < self::GENERATE_COST) {
-                $pdo->commit();
+                if ($ownTxn) $pdo->commit();
                 return ['charged' => false, 'balance' => $balance, 'reason' => 'insufficient'];
             }
 
@@ -70,13 +79,18 @@ class CardCredits
                 ['c' => $companyId, 'e' => $employeeId, 'd' => -self::GENERATE_COST, 'b' => $newBalance]
             );
 
-            $pdo->commit();
+            if ($ownTxn) $pdo->commit();
             return ['charged' => true, 'balance' => $newBalance, 'reason' => 'ok'];
         } catch (Throwable $e) {
-            if ($pdo->inTransaction()) $pdo->rollBack();
+            if ($ownTxn && $pdo->inTransaction()) $pdo->rollBack();
             // Duplicate key (raced generation) = already charged; treat as success.
             if (strpos($e->getMessage(), '1062') !== false || stripos($e->getMessage(), 'duplicate') !== false) {
                 return ['charged' => false, 'balance' => self::getBalance($companyId), 'reason' => 'already_charged'];
+            }
+            // Caller owns the transaction: re-throw so it can roll back the
+            // generated_cards row too (no logged-but-unbilled card).
+            if ($inExternalTxn) {
+                throw $e;
             }
             error_log('CardCredits::chargeForGenerate failed: ' . $e->getMessage());
             return ['charged' => false, 'balance' => self::getBalance($companyId), 'reason' => 'error'];

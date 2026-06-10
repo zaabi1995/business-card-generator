@@ -49,26 +49,39 @@ try {
         exit;
     }
 
-    // Log the generation
-    $entry = logGeneratedCard(
-        $employeeId,
-        $frontTemplateId,
-        $backTemplateId,
-        $frontUrl ? basename($frontUrl) : null,
-        $backUrl ? basename($backUrl) : null,
-        null,
-        $companyId
-    );
-
-    if (!$entry) {
-        throw new Exception('Failed to log generation to database');
-    }
-
-    // Charge 1 card credit on FIRST generation per employee (Cat S action 450).
-    // No-op on subsequent regenerations of the same employee thanks to the
-    // UNIQUE index on card_credit_ledger.
+    // Log the generation AND charge the credit as ONE atomic unit: if the
+    // charge hard-fails, the generated_cards row is rolled back too, so we
+    // never leave a logged-but-unbilled card (the UNIQUE ledger index makes
+    // the charge idempotent across the client's retries).
     require_once INCLUDES_DIR . '/CardCredits.php';
-    $creditResult = CardCredits::chargeForGenerate($companyId, $employeeId);
+    $db  = Database::getInstance();
+    $pdo = $db->getConnection();
+
+    $pdo->beginTransaction();
+    try {
+        $entry = logGeneratedCard(
+            $employeeId,
+            $frontTemplateId,
+            $backTemplateId,
+            $frontUrl ? basename($frontUrl) : null,
+            $backUrl ? basename($backUrl) : null,
+            null,
+            $companyId
+        );
+
+        if (!$entry) {
+            throw new Exception('Failed to log generation to database');
+        }
+
+        // Charge 1 card credit on FIRST generation per employee (Cat S action
+        // 450). No-op on regenerations thanks to the UNIQUE ledger index.
+        $creditResult = CardCredits::chargeForGenerate($companyId, $employeeId, true);
+
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        throw $e;
+    }
 
     // Update web paths and theme_mode if provided
     if ($entry && ($frontWebUrl || $backWebUrl || $themeMode)) {
