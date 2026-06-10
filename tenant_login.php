@@ -102,6 +102,42 @@ function tl_bucket_rmw(string $file, callable $mutator) {
     }
 }
 
+/**
+ * Take one OTP send slot for an identifier. Token bucket, per OWASP Forgot
+ * Password guidance: throttle abuse without ever locking a legitimate user
+ * out for a fixed window. Burst of TL_OTP_BURST sends, then one new send
+ * refills every TL_OTP_REFILL_SECS, with TL_OTP_COOLDOWN_SECS between
+ * consecutive sends. Cooldown is 45s while the UI countdown shows 50s, so
+ * the resend button can never race the server into a "please wait" error.
+ */
+const TL_OTP_BURST = 5;
+const TL_OTP_REFILL_SECS = 600;
+const TL_OTP_COOLDOWN_SECS = 45;
+function tl_otp_take_slot(string $deliveryId): array {
+    $file = '/tmp/cardify-otp-rate-' . hash('sha256', $deliveryId);
+    $now = time();
+    return tl_bucket_rmw($file, function ($d) use ($now) {
+        if (!isset($d['tokens'], $d['tokens_at'])) {
+            // Fresh bucket, or migration from the old fixed-window shape.
+            $d['tokens']    = TL_OTP_BURST;
+            $d['tokens_at'] = $now;
+        }
+        $d['tokens']    = min(TL_OTP_BURST, (float) $d['tokens'] + ($now - (int) $d['tokens_at']) / TL_OTP_REFILL_SECS);
+        $d['tokens_at'] = $now;
+        $cooldown = TL_OTP_COOLDOWN_SECS - ($now - (int) ($d['last'] ?? 0));
+        if ($cooldown > 0) {
+            return [$d, ['status' => 'cooldown', 'cooldown' => $cooldown]];
+        }
+        if ($d['tokens'] < 1) {
+            return [$d, ['status' => 'drained', 'secs' => (int) ceil((1 - $d['tokens']) * TL_OTP_REFILL_SECS)]];
+        }
+        $d['tokens'] -= 1;
+        $d['last']    = $now;
+        unset($d['send_fail'], $d['window_start'], $d['count']); // fresh attempt + drop legacy keys
+        return [$d, ['status' => 'ok']];
+    });
+}
+
 // PRG state: when a previous POST set up an OTP send, force the verify step
 // on the subsequent GET so the page visibly transitions and the back/forward
 // buttons don't replay the form submit.
@@ -168,34 +204,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
             } else {
                 $user = tl_lookup_user($identifier, $companyId);
                 $isRealUser = (bool) $user;
-                // Per-identifier rate limit: max 1 OTP per 60s and max 5/hour.
-                // The slot is consumed for real AND unknown identifiers alike:
-                // a uniform cooldown leaks nothing about account existence
-                // (OWASP: keep messages consistent for existent/non-existent
-                // accounts), while an explicit "wait Ns" beats silently
-                // pretending the code was sent (which is how a wedged Dardasha
-                // hid behind a fake 'Code sent' page on 9-10 Jun 2026).
-                $rateBucket = '/tmp/cardify-otp-rate-' . hash('sha256', $deliveryId);
-                $rateOutcome = tl_bucket_rmw($rateBucket, function ($d) use ($now) {
-                    if (!isset($d['last'], $d['window_start'], $d['count']) || $now - (int) $d['window_start'] > 3600) {
-                        $d = ['last' => 0, 'window_start' => $now, 'count' => 0];
-                    }
-                    $cooldown = 60 - ($now - (int) $d['last']);
-                    if ($cooldown > 0) {
-                        return [$d, ['status' => 'cooldown', 'cooldown' => $cooldown]];
-                    }
-                    if ((int) $d['count'] >= 5) {
-                        return [$d, ['status' => 'hourly', 'secs' => 3600 - ($now - (int) $d['window_start'])]];
-                    }
-                    $d['last']  = $now;
-                    $d['count'] = (int) $d['count'] + 1;
-                    unset($d['send_fail']); // fresh attempt, stale failure flag must not bleed in
-                    return [$d, ['status' => 'ok']];
-                });
+                // Per-identifier token bucket: burst of 5, +1 send every 10
+                // min, 45s between sends. The slot is consumed for real AND
+                // unknown identifiers alike: a uniform cooldown leaks nothing
+                // about account existence (OWASP: keep messages consistent for
+                // existent/non-existent accounts), while an explicit "wait Ns"
+                // beats silently pretending the code was sent (which is how a
+                // wedged Dardasha hid behind a fake 'Code sent' page on
+                // 9-10 Jun 2026).
+                $rateOutcome = tl_otp_take_slot($deliveryId);
                 if (($rateOutcome['status'] ?? '') === 'cooldown') {
                     $error = t('auth.tenant_resend_wait', ['s' => $rateOutcome['cooldown']]);
-                } elseif (($rateOutcome['status'] ?? '') === 'hourly') {
-                    $error = t('auth.tenant_err_hourly_limit', ['s' => max(60, $rateOutcome['secs'])]);
+                } elseif (($rateOutcome['status'] ?? '') === 'drained') {
+                    $error = t('auth.tenant_err_hourly_limit', ['s' => max(30, $rateOutcome['secs'])]);
                 }
                 unset($isRealUser);
             }
@@ -273,31 +294,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
         $step = 'request';
         $error = t('auth.tenant_err_session');
     } else {
-        // Same file-based throttle as the request step (1 per 60s, 5 per hour),
-        // now atomic: the cap check and the slot-consume happen under one lock.
+        // Same token bucket as the request step (burst 5, +1 per 10 min,
+        // 45s between sends), atomic under one lock.
         $rateBucket = '/tmp/cardify-otp-rate-' . hash('sha256', $deliveryId);
-        $now = time();
-        $rateOutcome = tl_bucket_rmw($rateBucket, function ($d) use ($now) {
-            if (!isset($d['last'], $d['window_start'], $d['count']) || $now - (int) $d['window_start'] > 3600) {
-                $d = ['last' => 0, 'window_start' => $now, 'count' => 0];
-            }
-            $cooldown = 60 - ($now - (int) $d['last']);
-            if ($cooldown > 0) {
-                return [$d, ['status' => 'cooldown', 'cooldown' => $cooldown]];
-            }
-            if ((int) $d['count'] >= 5) {
-                $secs = 3600 - ($now - (int) $d['window_start']);
-                return [$d, ['status' => 'hourly', 'secs' => $secs]];
-            }
-            $d['last']  = $now;
-            $d['count'] = (int) $d['count'] + 1;
-            unset($d['send_fail']); // fresh attempt, stale failure flag must not bleed in
-            return [$d, ['status' => 'ok']];
-        });
+        $rateOutcome = tl_otp_take_slot($deliveryId);
         if (($rateOutcome['status'] ?? '') === 'cooldown') {
             $error = t('auth.tenant_resend_wait', ['s' => $rateOutcome['cooldown']]);
-        } elseif (($rateOutcome['status'] ?? '') === 'hourly') {
-            $error = t('auth.tenant_err_hourly_limit', ['s' => max(60, $rateOutcome['secs'])]);
+        } elseif (($rateOutcome['status'] ?? '') === 'drained') {
+            $error = t('auth.tenant_err_hourly_limit', ['s' => max(30, $rateOutcome['secs'])]);
         } else {
             $_SESSION['tlogin_pending_verify'] = true;
             $_SESSION['tlogin_notice'] = $channel === 'email'
@@ -635,13 +639,13 @@ html[dir=rtl] .code{letter-spacing:8px;direction:ltr}
 <?php if ($step === 'verify'): ?>
 <script>
 (function () {
-  // 60s resend cooldown countdown. Mirrors the server-side 60s file throttle so
-  // the user isn't told "please wait" after clicking, the button just counts down.
+  // 50s resend countdown over a 45s server cooldown: when the button enables,
+  // the server is guaranteed to accept, never a "please wait" after clicking.
   var btn = document.getElementById('resend-btn');
   if (!btn) return;
   var label = btn.getAttribute('data-label');
   var waitTpl = btn.getAttribute('data-wait');
-  var left = 60;
+  var left = 50;
   function tick() {
     if (left <= 0) {
       btn.disabled = false;

@@ -67,7 +67,7 @@ return [
     'tenant_resend_btn'        => 'إعادة إرسال الرمز',
     'tenant_resend_in'         => 'إعادة الإرسال خلال :s ثانية',
     'tenant_resend_wait'       => 'يرجى الانتظار :s ثانية قبل طلب رمز جديد.',
-    'tenant_err_hourly_limit'  => 'تم بلوغ الحد الأقصى للرموز في الساعة. حاول بعد :s ثانية، أو راسل support@cardify.om.',
+    'tenant_err_hourly_limit'  => 'تم طلب رموز كثيرة. يتوفر رمز جديد خلال :s ثانية، أو راسل support@cardify.om.',
     'tenant_support'           => 'هل تواجه مشكلة؟ راسلنا على :email',
     'tenant_notice_wa'         => 'تم إرسال الرمز عبر واتساب.',
     'tenant_notice_email'      => 'تم إرسال الرمز إلى بريدك الإلكتروني.',

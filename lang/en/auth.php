@@ -67,7 +67,7 @@ return [
     'tenant_resend_btn'        => 'Resend code',
     'tenant_resend_in'         => 'Resend code in :s s',
     'tenant_resend_wait'       => 'Please wait :s s before requesting another code.',
-    'tenant_err_hourly_limit'  => 'Hourly code limit reached. Try again in :s s, or email support@cardify.om.',
+    'tenant_err_hourly_limit'  => 'Too many codes requested. A new code is available in :s s, or email support@cardify.om.',
     'tenant_support'           => 'Trouble signing in? Email :email',
     'tenant_notice_wa'         => 'Code sent via WhatsApp.',
     'tenant_notice_email'      => 'Code sent to your email.',

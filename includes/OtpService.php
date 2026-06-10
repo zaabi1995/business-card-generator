@@ -28,9 +28,15 @@ class OtpService
     public const MAX_ATTEMPTS = 5;
     public const CODE_LENGTH = 6;
 
-    public const RATE_PER_IDENTIFIER = 5;
+    // Backstops only: the tenant login throttles per-identifier with a token
+    // bucket (burst 5, +1 per 10 min) BEFORE reaching here, so these caps just
+    // bound abuse on paths without their own bucket. 12/hr covers the bucket's
+    // max first-hour throughput (~11); 60/day per IP covers an office NAT
+    // where many employees share one egress IP (10/day locked whole companies
+    // out after a Dardasha outage burned everyone's retries, 10 Jun 2026).
+    public const RATE_PER_IDENTIFIER = 12;
     public const RATE_PER_IDENTIFIER_WINDOW = 3600; // 1 hour
-    public const RATE_PER_IP = 10;
+    public const RATE_PER_IP = 60;
     public const RATE_PER_IP_WINDOW = 86400; // 1 day
 
     /**
