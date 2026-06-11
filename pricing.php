@@ -47,9 +47,9 @@ Seo::faqPage([
 ]);
 
 $waMsg   = $isAr ? 'مرحباً، أرغب بعرض توضيحي لكارديفاي' : 'Hi, I would like a demo of Cardify';
-// NOTE: the codebase has 3 different demo numbers (96898899100, 96899999100,
-// 96899899100). Grammar normalised to api.whatsapp.com per house rule; the
-// digits are LEFT as-is pending confirmation of the canonical line.
+// Cardify demo line = Anna's Dardasha line (96898899100 = DARDASHA_FROM, the
+// staffed line that auto-replies). BHD print-order links (bhd/, customize.php)
+// keep the separate BHD line 96899999100 on purpose.
 $waUrl   = 'https://api.whatsapp.com/send?phone=96898899100&text=' . rawurlencode($waMsg);
 $arrow   = $isAr ? 'left' : 'right';
 $regUrl  = ($isAr ? '/ar' : '') . '/company/register.php';

@@ -4,7 +4,7 @@
  *
  * Bilingual contact page with form + WhatsApp + email + embedded map.
  * Form submission routes to info@cardify.om via Mailer; CSRF guarded;
- * WhatsApp CTA deep-links into the BHD Anna line (+96899899100) with a
+ * WhatsApp CTA deep-links into the BHD Anna line (+96898899100) with a
  * prefilled bilingual intro message; map embed points to AK Tower,
  * Bousher, Muscat 133.
  */
@@ -121,7 +121,7 @@ Seo::breadcrumbs([
 ]);
 
 $waMsg   = $isAr ? 'مرحباً، لدي سؤال حول كارديفاي' : 'Hi, I have a question about Cardify';
-$waUrl   = 'https://wa.me/96898899100?text=' . rawurlencode($waMsg);
+$waUrl   = 'https://api.whatsapp.com/send?phone=96898899100&text=' . rawurlencode($waMsg);
 $mapUrl  = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode('AK Tower Bousher Muscat');
 $mapEmbed= 'https://www.google.com/maps?q=' . rawurlencode('AK Tower Bousher Muscat') . '&output=embed';
 ?>

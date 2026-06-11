@@ -358,7 +358,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             $cardifyDemoMsg = (currentLocale() === 'ar')
                                 ? 'مرحباً، أرغب بعرض توضيحي لكارديفاي لشركتي'
                                 : 'Hi, I would like a demo of Cardify for my company';
-                            $cardifyDemoUrl = 'https://api.whatsapp.com/send?phone=96899899100&text=' . rawurlencode($cardifyDemoMsg);
+                            $cardifyDemoUrl = 'https://api.whatsapp.com/send?phone=96898899100&text=' . rawurlencode($cardifyDemoMsg);
                         ?>
                         <a href="<?= htmlspecialchars($cardifyDemoUrl) ?>" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all text-lg">
                             <i class="fa-brands fa-whatsapp"></i>
