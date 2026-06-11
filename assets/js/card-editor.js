@@ -831,10 +831,13 @@ class CardEditor {
                 const _rtlSpec = `${fieldOptions.fontStyle || 'normal'} ${fieldOptions.fontWeight || 'normal'} ${fieldOptions.fontSize}px "${fieldOptions.fontFamily}"`;
                 if (document.fonts && typeof document.fonts.load === 'function') {
                     const _sample = String(options.text || '').slice(0, 16) || 'ابجد';
-                    Promise.resolve(document.fonts.load(_rtlSpec, _sample))
+                    const _rtlLoad = Promise.resolve(document.fonts.load(_rtlSpec, _sample))
                         .then(() => document.fonts.ready)
                         .then(_rebuildRtl)
                         .catch(() => setTimeout(_rebuildRtl, 150));
+                    // Track so exportPNGBlob can block until the real face
+                    // (and its rebuild) has been applied.
+                    (this._fontLoads = this._fontLoads || []).push(_rtlLoad);
                 } else {
                     setTimeout(_rebuildRtl, 80);
                 }
@@ -908,13 +911,36 @@ class CardEditor {
         this.canvas.add(textObj);
         this.canvas.requestRenderAll();
 
-        // Schedule a re-render to ensure font is applied after it loads
+        // Make sure the face is actually REQUESTED, then repaint once usable.
+        // canvas2D/Fabric drawing never triggers an @font-face download, so on
+        // a cold cache (typically mobile) the IText would keep the fallback
+        // serif forever and the blind 50ms timer repainted the same fallback.
+        // Track the promise so exportPNGBlob can block until every queued
+        // face is loaded before rasterising. NOTE: the auto-shrink and
+        // side-bearing math above already measured with whatever face was
+        // available, so callers should still preload template fonts BEFORE
+        // calling addTextField (see preloadTemplateFonts in auto_generate /
+        // batch_generate / generate_card_html); this guard is the safety net
+        // that keeps the wrong face out of the saved PNG.
         const canvas = this.canvas;
-        setTimeout(() => {
-            textObj.set('dirty', true);
-            textObj.setCoords();
-            canvas.requestRenderAll();
-        }, 50);
+        if (document.fonts && typeof document.fonts.load === 'function') {
+            const _ltrSpec = `${fieldOptions.fontStyle || 'normal'} ${fieldOptions.fontWeight || 'normal'} ${fieldOptions.fontSize}px "${fieldOptions.fontFamily}"`;
+            const _ltrLoad = Promise.resolve(document.fonts.load(_ltrSpec, String(options.text || ' ').slice(0, 32)))
+                .catch(() => {})
+                .then(() => {
+                    textObj.set('dirty', true);
+                    if (typeof textObj.initDimensions === 'function') textObj.initDimensions();
+                    textObj.setCoords();
+                    canvas.requestRenderAll();
+                });
+            (this._fontLoads = this._fontLoads || []).push(_ltrLoad);
+        } else {
+            setTimeout(() => {
+                textObj.set('dirty', true);
+                textObj.setCoords();
+                canvas.requestRenderAll();
+            }, 50);
+        }
 
         return textObj;
     }
@@ -1441,6 +1467,12 @@ class CardEditor {
         // RTL bitmap rebuilds a couple of frames to apply. Without this, a
         // generate path that exports too early bakes the fallback Arabic font.
         try {
+            // First: every face addTextField queued via document.fonts.load
+            // (fonts.ready alone is NOT enough — it resolves instantly when
+            // nothing is pending, and canvas drawing never REQUESTS a face).
+            if (this._fontLoads && this._fontLoads.length) {
+                await Promise.all(this._fontLoads);
+            }
             if (document.fonts && document.fonts.ready) { await document.fonts.ready; }
             await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
         } catch (e) {}
