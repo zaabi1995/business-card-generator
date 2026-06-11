@@ -975,13 +975,54 @@ function autoGenerator() {
             };
         },
         
+        // Per-template font preload: forces document.fonts.load(spec, sample)
+        // for every (family, weight, style) tuple the template uses. Without
+        // this, canvas2D never REQUESTS the @font-face (drawing doesn't
+        // trigger downloads, and document.fonts.ready resolves instantly
+        // when nothing is pending), so a cold-cache browser, typically a
+        // phone, bakes the fallback serif into the saved PNG while desktop
+        // looks fine off its warm cache. Mirrors batch_generate.php and
+        // generate_card_html.php, adapted to the already-parsed .fields.
+        async preloadTemplateFonts(template) {
+            if (!document.fonts || !template || !template.fields) return;
+            const fields = template.fields;
+            const tasks = [];
+            for (const key in fields) {
+                const f = fields[key];
+                if (!f || !f.enabled || !f.fontFamily) continue;
+                const w = f.fontWeight || 400;
+                const style = (f.italic === true || f.fontStyle === 'italic') ? 'italic' : 'normal';
+                const sample = String(f.detected_text || ' ');
+                const fam = String(f.fontFamily).trim();
+                // Queue BOTH the suffixed face ("Sora-Medium") AND the bare
+                // family ("Sora") so either path the renderer takes finds
+                // the right weight pre-loaded.
+                const bare = fam.replace(/-(Regular|Medium|Bold|Light|SemiBold|ExtraBold|Heavy|Black|Thin)(Italic)?$/, '');
+                const fams = new Set([fam, bare].filter(Boolean));
+                for (const family of fams) {
+                    const spec = `${style} ${w} 16px "${family}"`;
+                    tasks.push(document.fonts.load(spec, sample).catch(() => {}));
+                }
+            }
+            try { await Promise.all(tasks); await document.fonts.ready; } catch (e) {}
+        },
+
         async generateCard() {
             try {
                 if (!this.frontTemplate && !this.backTemplate) {
                     throw new Error('No active templates configured. Please set up templates first.');
                 }
-                
+
                 this.statusMessage = AUTOGEN_I18N.init_editor;
+
+                // Block rendering until every template font face is actually
+                // downloaded and usable (see preloadTemplateFonts above).
+                try {
+                    if (this.frontTemplate) await this.preloadTemplateFonts(this.frontTemplate);
+                    if (this.backTemplate)  await this.preloadTemplateFonts(this.backTemplate);
+                } catch (e) {
+                    console.warn('Template font preload error:', e);
+                }
                 
                 // Get canvas dimensions from template settings
                 const template = this.frontTemplate || this.backTemplate;
