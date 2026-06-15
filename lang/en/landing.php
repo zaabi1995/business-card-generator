@@ -15,6 +15,7 @@ return [
     'cta_request_demo' => 'Book a demo on WhatsApp',
     'hero_card_role'    => 'Chief Executive Officer',
     'hero_wallet_cta'   => 'Add to Apple Wallet',
+    'hero_wallet_cta_google' => 'Add to Google Wallet',
     'hero_brand_colour' => 'Brand colour',
     'hero_try_hint'     => 'Tap the card to type your name, pick a colour. It updates live.',
     'hero_company_demo' => 'BHD GROUP',

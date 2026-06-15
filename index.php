@@ -406,7 +406,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     $heroCo     = htmlspecialchars(t('landing.hero_company_demo'));
                 ?>
                 <div class="lg:col-span-6 relative mt-12 lg:mt-0"
-                     x-data="cardifyHero(<?= htmlspecialchars(json_encode(['c' => '#009bc1']), ENT_QUOTES) ?>)">
+                     x-data="cardifyHero(<?= htmlspecialchars(json_encode([
+                        'c' => '#009bc1',
+                        'demo' => ['i' => 'ali.demo', 'c' => 'showcase', 'lang' => (currentLocale() === 'ar' ? 'ar' : 'en')],
+                        'labels' => [
+                            'apple'  => t('landing.hero_wallet_cta'),
+                            'google' => t('landing.hero_wallet_cta_google'),
+                        ],
+                     ]), ENT_QUOTES) ?>)">
                     <div class="cf-hero-stage">
                         <!-- Live wallet pass (editable) -->
                         <div class="cf-pass cf-pass--live float-animation" :style="'--pass-c:'+color">
@@ -427,10 +434,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </template>
                         </div>
                         <p class="cf-try-hint"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> <?= htmlspecialchars(t('landing.hero_try_hint')) ?></p>
-                        <div class="cf-wallet-cta">
-                            <i class="fa-brands fa-apple" aria-hidden="true"></i>
-                            <?= htmlspecialchars(t('landing.hero_wallet_cta')) ?>
-                        </div>
+                        <a class="cf-wallet-btn" :href="walletHref" target="_blank" rel="noopener" :aria-label="walletLabel">
+                            <i :class="walletIcon" aria-hidden="true"></i>
+                            <span x-text="walletLabel"><?= htmlspecialchars(t('landing.hero_wallet_cta')) ?></span>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -441,10 +448,26 @@ require_once INCLUDES_DIR . '/ui-header.php';
     // Interactive hero pass: live brand colour + editable text. Plain global so
     // it is defined before deferred Alpine boots. No x-init (init() would double-run).
     function cardifyHero(seed) {
+        seed = seed || {};
+        var ua = (navigator.userAgent || '');
+        // Android -> Google Wallet; iOS + desktop -> Apple Wallet (Apple's pkpass
+        // opens in Safari; desktop is mostly iPhone owners). Real signed passes
+        // via the existing wallet endpoints for the public demo card.
+        var os = /Android/i.test(ua) ? 'google' : 'apple';
+        var d = seed.demo || {};
+        var labels = seed.labels || {};
+        var href = (os === 'google' ? '/wallet_google.php' : '/wallet_apple.php')
+            + '?i=' + encodeURIComponent(d.i || '')
+            + '&c=' + encodeURIComponent(d.c || '')
+            + '&lang=' + encodeURIComponent(d.lang || 'en');
         return {
-            color: (seed && seed.c) || '#009bc1',
+            color: seed.c || '#009bc1',
             colors: ['#009bc1', '#2563eb', '#7c3aed', '#0c1418', '#16a34a', '#e11d48'],
-            name: '', company: '', role: ''
+            name: '', company: '', role: '',
+            os: os,
+            walletHref: href,
+            walletLabel: (os === 'google' ? (labels.google || 'Add to Google Wallet') : (labels.apple || 'Add to Apple Wallet')),
+            walletIcon: (os === 'google' ? 'fa-solid fa-wallet' : 'fa-brands fa-apple')
         };
     }
     </script>

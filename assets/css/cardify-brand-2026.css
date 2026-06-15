@@ -161,6 +161,15 @@ h1, h2, h3, .font-display {
   background: var(--cf-50); padding: 8px 14px; border-radius: 999px; max-width: 320px; text-align: center;
 }
 .cf-try-hint i { color: var(--cf-500); }
+.cf-wallet-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  background: #0c1418; color: #fff; font-size: 15px; font-weight: 600;
+  text-decoration: none; padding: 12px 22px; border-radius: 999px;
+  box-shadow: 0 10px 26px -12px rgba(12,20,24,.6);
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+.cf-wallet-btn:hover { transform: translateY(-2px); background: #1a2731; box-shadow: 0 14px 30px -12px rgba(12,20,24,.7); }
+.cf-wallet-btn i { font-size: 17px; }
 
 /* ---- Restore responsive grid utilities missing from the prebuilt Tailwind ----
    `lg:grid-cols-5` / `lg:grid-cols-6` weren't compiled, so the footer fell back

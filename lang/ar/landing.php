@@ -14,6 +14,7 @@ return [
     'cta_request_demo' => 'احجز عرضاً عبر واتساب',
     'hero_card_role'    => 'الرئيس التنفيذي',
     'hero_wallet_cta'   => 'أضف إلى محفظة آبل',
+    'hero_wallet_cta_google' => 'أضف إلى محفظة جوجل',
     'hero_brand_colour' => 'لون العلامة',
     'hero_try_hint'     => 'انقر البطاقة لكتابة اسمك واختيار لون. تتحدّث مباشرةً.',
     'hero_company_demo' => 'مجموعة BHD',
