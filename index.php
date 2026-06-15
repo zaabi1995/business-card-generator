@@ -524,11 +524,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
             },
             // Reactive: the pass reflects the LIVE colour + typed details.
             get _q() {
-                return 'name=' + encodeURIComponent(this.name)
+                var q = 'name=' + encodeURIComponent(this.name)
                     + '&title=' + encodeURIComponent(this.role)
                     + '&company=' + encodeURIComponent(this.company)
                     + '&color=' + encodeURIComponent(this.color)
                     + '&lang=' + encodeURIComponent(this.lang);
+                // Once the demo card exists, the pass QR points to it.
+                if (this.cardUrl) { q += '&card=' + encodeURIComponent(this.cardUrl); }
+                return q;
             },
             get appleHref()  { return '/wallet_demo.php?platform=apple&'  + this._q; },
             get googleHref() { return '/wallet_demo.php?platform=google&' + this._q; },
@@ -1113,15 +1116,15 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
             <div class="mt-10 flex flex-wrap justify-center gap-6 text-white/70 text-sm">
                 <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-check-circle"></i>
+                    <i class="fa-solid fa-circle-check text-white"></i>
                     <span><?= htmlspecialchars(t('landing.cta_free_starter')) ?></span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-check-circle"></i>
+                    <i class="fa-solid fa-circle-check text-white"></i>
                     <span><?= htmlspecialchars(t('landing.cta_free_trial')) ?></span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-check-circle"></i>
+                    <i class="fa-solid fa-circle-check text-white"></i>
                     <span><?= htmlspecialchars(t('pricing.home_plans_from', ['amount' => $priceStarterFrom, 'currency' => $homeCurName])) ?></span>
                 </div>
             </div>

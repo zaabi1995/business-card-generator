@@ -50,8 +50,16 @@ if ($company === '') { $company = ($lang === 'ar') ? 'مجموعة BHD' : 'BHD G
 $color = (string)($_GET['color'] ?? '#009bc1');
 if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color)) { $color = '#009bc1'; }
 
-// Where the demo QR points (fixed, never user-controlled).
+// Where the QR points. Defaults to cardify.om; if a &card= URL is supplied it
+// must be a strict https://<sub>.cardify.om/... URL (host-validated to block
+// open-redirect / phishing in the signed pass), otherwise it is ignored.
 $qrTarget = 'https://cardify.om';
+$cardParam = (string)($_GET['card'] ?? '');
+if ($cardParam !== '') {
+    $p = parse_url($cardParam);
+    $okHost = !empty($p['host']) && preg_match('/^[a-z0-9-]+\.cardify\.om$/i', $p['host']);
+    if (($p['scheme'] ?? '') === 'https' && $okHost) { $qrTarget = $cardParam; }
+}
 
 // hex -> rgb + contrast foreground
 $hex = ltrim($color, '#');
