@@ -161,15 +161,21 @@ h1, h2, h3, .font-display {
   background: var(--cf-50); padding: 8px 14px; border-radius: 999px; max-width: 320px; text-align: center;
 }
 .cf-try-hint i { color: var(--cf-500); }
+.cf-wallet-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.cf-wallet-row--android { flex-direction: row-reverse; } /* native (Google) first on Android */
 .cf-wallet-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 9px;
-  background: #0c1418; color: #fff; font-size: 15px; font-weight: 600;
-  text-decoration: none; padding: 12px 22px; border-radius: 999px;
-  box-shadow: 0 10px 26px -12px rgba(12,20,24,.6);
-  transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+  font-size: 14.5px; font-weight: 600; text-decoration: none;
+  padding: 11px 20px; border-radius: 999px;
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease;
 }
-.cf-wallet-btn:hover { transform: translateY(-2px); background: #1a2731; box-shadow: 0 14px 30px -12px rgba(12,20,24,.7); }
-.cf-wallet-btn i { font-size: 17px; }
+.cf-wallet-btn i { font-size: 16px; }
+.cf-wallet-btn:hover { transform: translateY(-2px); }
+.cf-wallet-btn--apple { background: #0c1418; color: #fff; box-shadow: 0 10px 26px -12px rgba(12,20,24,.6); }
+.cf-wallet-btn--apple:hover { background: #1a2731; box-shadow: 0 14px 30px -12px rgba(12,20,24,.7); }
+.cf-wallet-btn--google { background: #fff; color: #1f2937; border: 1px solid var(--line, #e7ebea); box-shadow: 0 6px 18px -10px rgba(0,0,0,.25); }
+.cf-wallet-btn--google i { color: #4285f4; }
+.cf-wallet-btn--google:hover { border-color: #d0d7de; box-shadow: 0 12px 26px -12px rgba(0,0,0,.3); }
 
 /* ---- Restore responsive grid utilities missing from the prebuilt Tailwind ----
    `lg:grid-cols-5` / `lg:grid-cols-6` weren't compiled, so the footer fell back

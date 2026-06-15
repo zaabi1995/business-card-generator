@@ -434,10 +434,16 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </template>
                         </div>
                         <p class="cf-try-hint"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> <?= htmlspecialchars(t('landing.hero_try_hint')) ?></p>
-                        <a class="cf-wallet-btn" :href="walletHref" target="_blank" rel="noopener" :aria-label="walletLabel">
-                            <i :class="walletIcon" aria-hidden="true"></i>
-                            <span x-text="walletLabel"><?= htmlspecialchars(t('landing.hero_wallet_cta')) ?></span>
-                        </a>
+                        <div class="cf-wallet-row" :class="os === 'google' ? 'cf-wallet-row--android' : ''">
+                            <a class="cf-wallet-btn cf-wallet-btn--apple" :href="appleHref" target="_blank" rel="noopener" :aria-label="appleLabel">
+                                <i class="fa-brands fa-apple" aria-hidden="true"></i>
+                                <span x-text="appleLabel"><?= htmlspecialchars(t('landing.hero_wallet_cta')) ?></span>
+                            </a>
+                            <a class="cf-wallet-btn cf-wallet-btn--google" :href="googleHref" target="_blank" rel="noopener" :aria-label="googleLabel">
+                                <i class="fa-brands fa-google" aria-hidden="true"></i>
+                                <span x-text="googleLabel"><?= htmlspecialchars(t('landing.hero_wallet_cta_google')) ?></span>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -456,18 +462,18 @@ require_once INCLUDES_DIR . '/ui-header.php';
         var os = /Android/i.test(ua) ? 'google' : 'apple';
         var d = seed.demo || {};
         var labels = seed.labels || {};
-        var href = (os === 'google' ? '/wallet_google.php' : '/wallet_apple.php')
-            + '?i=' + encodeURIComponent(d.i || '')
+        var q = '?i=' + encodeURIComponent(d.i || '')
             + '&c=' + encodeURIComponent(d.c || '')
             + '&lang=' + encodeURIComponent(d.lang || 'en');
         return {
             color: seed.c || '#009bc1',
             colors: ['#009bc1', '#2563eb', '#7c3aed', '#0c1418', '#16a34a', '#e11d48'],
             name: '', company: '', role: '',
-            os: os,
-            walletHref: href,
-            walletLabel: (os === 'google' ? (labels.google || 'Add to Google Wallet') : (labels.apple || 'Add to Apple Wallet')),
-            walletIcon: (os === 'google' ? 'fa-solid fa-wallet' : 'fa-brands fa-apple')
+            os: os, // 'google' on Android, else 'apple' (controls which button shows first)
+            appleHref: '/wallet_apple.php' + q,
+            googleHref: '/wallet_google.php' + q,
+            appleLabel: labels.apple || 'Add to Apple Wallet',
+            googleLabel: labels.google || 'Add to Google Wallet'
         };
     }
     </script>
