@@ -438,29 +438,29 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <?php @include __DIR__ . '/views/partials/trust_logo_strip.php'; ?>
 
     <!-- ========== VALUE PROPOSITION BANNER ========== -->
-    <section class="py-12 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white">
+    <section class="py-12 bg-white border-b border-gray-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid md:grid-cols-3 gap-8 text-center">
                 <div class="flex flex-col items-center">
-                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
+                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4">
                         <i class="fa-solid fa-palette text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_design_title')) ?></h3>
-                    <p class="text-blue-100 text-sm"><?= htmlspecialchars(t('landing.vp_design_body')) ?></p>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('landing.vp_design_title')) ?></h3>
+                    <p class="text-gray-600 text-sm"><?= htmlspecialchars(t('landing.vp_design_body')) ?></p>
                 </div>
                 <div class="flex flex-col items-center">
-                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
+                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4">
                         <i class="fa-solid fa-print text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_print_title')) ?></h3>
-                    <p class="text-blue-100 text-sm"><?= htmlspecialchars(t('landing.vp_print_body')) ?></p>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('landing.vp_print_title')) ?></h3>
+                    <p class="text-gray-600 text-sm"><?= htmlspecialchars(t('landing.vp_print_body')) ?></p>
                 </div>
                 <div class="flex flex-col items-center">
-                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
+                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4">
                         <i class="fa-solid fa-gift text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_free_title')) ?></h3>
-                    <p class="text-blue-100 text-sm"><?= htmlspecialchars(t('landing.vp_free_body')) ?></p>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('landing.vp_free_title')) ?></h3>
+                    <p class="text-gray-600 text-sm"><?= htmlspecialchars(t('landing.vp_free_body')) ?></p>
                 </div>
             </div>
         </div>
@@ -496,8 +496,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <!-- Feature 2 - Print Integration -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
                     <div class="absolute -top-3 -right-3 px-2 py-1 bg-green-500 text-white text-xs font-bold rounded-full"><?= htmlspecialchars(t('landing.feat_badge_new')) ?></div>
-                    <div class="w-14 h-14 rounded-xl bg-green-100 flex items-center justify-center mb-6 group-hover:bg-green-600 transition-colors">
-                        <i class="fa-solid fa-print text-2xl text-green-600 group-hover:text-white transition-colors"></i>
+                    <div class="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
+                        <i class="fa-solid fa-print text-2xl text-blue-600 group-hover:text-white transition-colors"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.feat_print_title')) ?></h3>
                     <p class="text-gray-600 leading-relaxed">
@@ -507,8 +507,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Feature 3 - Bilingual -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
-                    <div class="w-14 h-14 rounded-xl bg-amber-100 flex items-center justify-center mb-6 group-hover:bg-amber-500 transition-colors">
-                        <i class="fa-solid fa-language text-2xl text-amber-600 group-hover:text-white transition-colors"></i>
+                    <div class="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
+                        <i class="fa-solid fa-language text-2xl text-blue-600 group-hover:text-white transition-colors"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.feat_lang_title')) ?></h3>
                     <p class="text-gray-600 leading-relaxed">
@@ -518,8 +518,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Feature 4 - Team Management -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
-                    <div class="w-14 h-14 rounded-xl bg-purple-100 flex items-center justify-center mb-6 group-hover:bg-purple-600 transition-colors">
-                        <i class="fa-solid fa-users text-2xl text-purple-600 group-hover:text-white transition-colors"></i>
+                    <div class="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
+                        <i class="fa-solid fa-users text-2xl text-blue-600 group-hover:text-white transition-colors"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.feat_team_title')) ?></h3>
                     <p class="text-gray-600 leading-relaxed">
@@ -529,8 +529,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Feature 5 - QR Tracking -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
-                    <div class="w-14 h-14 rounded-xl bg-pink-100 flex items-center justify-center mb-6 group-hover:bg-pink-600 transition-colors">
-                        <i class="fa-solid fa-qrcode text-2xl text-pink-600 group-hover:text-white transition-colors"></i>
+                    <div class="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
+                        <i class="fa-solid fa-qrcode text-2xl text-blue-600 group-hover:text-white transition-colors"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.feat_qr_title')) ?></h3>
                     <p class="text-gray-600 leading-relaxed">
@@ -540,8 +540,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Feature 6 - Self Service Portal -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
-                    <div class="w-14 h-14 rounded-xl bg-red-100 flex items-center justify-center mb-6 group-hover:bg-red-600 transition-colors">
-                        <i class="fa-solid fa-door-open text-2xl text-red-600 group-hover:text-white transition-colors"></i>
+                    <div class="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
+                        <i class="fa-solid fa-door-open text-2xl text-blue-600 group-hover:text-white transition-colors"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.feat_portal_title')) ?></h3>
                     <p class="text-gray-600 leading-relaxed">
@@ -584,7 +584,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Step 2 -->
                 <div class="relative text-center group">
-                    <div class="w-20 h-20 rounded-full bg-amber-500 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-amber-500/30 group-hover:scale-110 transition-transform">
+                    <div class="w-20 h-20 rounded-full bg-blue-600 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-600/30 group-hover:scale-110 transition-transform">
                         2
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.how_step2_title')) ?></h3>
@@ -598,7 +598,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Step 3 -->
                 <div class="text-center group">
-                    <div class="w-20 h-20 rounded-full bg-green-500 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-500/30 group-hover:scale-110 transition-transform">
+                    <div class="w-20 h-20 rounded-full bg-blue-600 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-600/30 group-hover:scale-110 transition-transform">
                         3
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.how_step3_title')) ?></h3>
