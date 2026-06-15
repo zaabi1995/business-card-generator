@@ -12,6 +12,55 @@
 
 ---
 
+## MANDATORY revisions from adversarial review (15 Jun 2026)
+
+Three parallel reviewers (reuse-correctness, security, product) verified this plan against the live code. Apply ALL of these; they override the task bodies below where they conflict.
+
+### Factual corrections (verified against live schema)
+- **`employees.customizations` does NOT exist** (only `custom_fields`, `hide_cardify_branding`). Add a migration FIRST: `database/migrations/120_employee_demo_meta.php` → `ALTER TABLE employees ADD COLUMN demo_meta JSON DEFAULT NULL`. Store `{brand_color, verified, source}` there. Replace every `customizations.brand_color` / `customizations.verified` in this plan with `demo_meta`.
+- **Email templates live in `lang/{en,ar}/emails.php`**, NOT `mail.php`. Keys are `<key>_subject` + `<key>_body` (e.g. existing `welcome_subject`). Add `instant_card_welcome_subject/_body` (+ `instant_card_colleague_subject/_body` for Task 7).
+- **`cardify_signup_leads` real column names:** `ip_address`, `user_agent` (not `ip`/`ua`). `id` + `source` are the only NOT NULL.
+- `addEmployee()` ignores a provided `id` (derives from email localpart) → use a **direct atomic INSERT** (next item), not `addEmployee`.
+- Dot-in-slug routing CONFIRMED safe: nginx `rewrite ^/([a-z0-9][a-z0-9_.-]*)/?$` allows dots; `digital_card.php` resolves by id. `ali.bhd.om` works.
+
+### Security (HIGH — must fix before ship)
+1. **Pass impersonation.** The pkpass currently puts the user-typed company in `organizationName` + has no demo marker, so anyone can mint a convincing "CEO, Big Bank" pass. FIX in `wallet_demo.php`: force `organizationName = 'Cardify'` (never user input); add a `backFields` entry `"Demo card — unverified. Made on cardify.om"`; the typed company stays only as a visible secondary field, not as the pass issuer.
+2. **Slug overwrite / collision.** `ali+tag@bhd.om` and `ali@bhd.om` must NOT collide-overwrite. In `emailToSlug`: strip `+tag` before `@`, collapse repeated dots, lowercase, cap 80. In `capture()`: **atomic upsert that refuses to overwrite a different email** —
+   ```php
+   // employees has UNIQUE(company_id, id). Atomic, race-safe, refuses cross-email overwrite.
+   $sql = "INSERT INTO employees (company_id,id,email,name_en,position_en,company_en,demo_meta,created_at)
+           VALUES (:cid,:slug,:email,:name,:pos,:comp,:meta,NOW())
+           ON DUPLICATE KEY UPDATE
+             name_en=IF(email=VALUES(email),VALUES(name_en),name_en),
+             position_en=IF(email=VALUES(email),VALUES(position_en),position_en),
+             company_en=IF(email=VALUES(email),VALUES(company_en),company_en),
+             demo_meta=IF(email=VALUES(email),VALUES(demo_meta),demo_meta),
+             updated_at=NOW()";
+   // then re-SELECT; if stored email != this email -> slug taken by someone else -> return error, do NOT email.
+   ```
+   Also confirm `UNIQUE(company_id, id)` exists on `employees` (add in migration 120 if missing).
+3. **QR open-redirect.** Task 6's `&card=` must be host-validated, not substring-matched:
+   ```php
+   $p = parse_url($card);
+   $okHost = isset($p['host']) && preg_match('/^[a-z0-9-]+\.cardify\.om$/i', $p['host']);
+   if (!$card || ($p['scheme']??'') !== 'https' || !$okHost) { $card = 'https://cardify.om'; }
+   ```
+
+### Security (MED)
+4. **Email header injection + spam.** Reject `name`/`company`/`title` containing `\r` or `\n`; reuse the `wallet_demo.php` control-char strip before emailing. Rate-limit per-email AND globally, not just per-IP: `RateLimiter::check('instant_card_email', strtolower($email), 3, 3600)` + `RateLimiter::check('instant_card_global','global',120,60)`. **Idempotent:** if a `cardify_signup_leads` row for this email with `status='pending'` exists within 60 min, return ok WITHOUT re-emailing.
+5. **CSRF for anonymous POST.** No session token for anon visitors → gate with `isSameOriginRequest()` (existing helper, functions.php ~L261); for logged-in users also `validateCSRFToken()`. `instant_card.php` is POST-only → `if ($_SERVER['REQUEST_METHOD']!=='POST'){http_response_code(405);exit;}`.
+6. **Token safety.** On verify (Task 8): confirm employee is under `DEMO_COMPANY_ID`, `demo_meta.verified` is still false, and the token's bound email matches before mutating; `EmployeeEditToken` already revokes prior tokens on mint + is single-use — assert it.
+7. **Admin-notify abuse (Task 7).** Rate-limit per company/day: `RateLimiter::check('instant_card_admin', $companyId, 5, 86400)`.
+8. **PII / indexing.** Demo cards MUST be `noindex`: in `digital_card.php`, when company slug is `demo`, send `header('X-Robots-Tag: noindex, nofollow')` + emit `<meta name="robots" content="noindex">`. Add `Disallow` for demo in robots logic. Hero form shows a one-line privacy note ("public demo card, deleted in 14 days if unverified"). Disposable-email block + `checkdnsrr($domain,'MX')` gate. Retention (Task 10): purge **unverified** demos after **14 days** (not 30); verified ones are exempt.
+
+### Product / UX
+9. **Edit path (the "auto-update on logo" promise).** Unverified users have no admin login. FIX: `verify_card.php` on success redirects to the existing employee self-edit page with a fresh `EmployeeEditToken` (`/<slug>/edit` magic-link surface) so they can upload a logo / edit, which auto-updates the card. Before verify, the card is read-only.
+10. **Wallet-button flow.** Two states: (a) BEFORE the visitor enters an email, the wallet buttons add the generic demo pass (current behaviour, QR → cardify.om); (b) AFTER a successful `instant_card.php` submit, the buttons switch to their personal card (QR → `demo.cardify.om/<slug>`). Make this explicit in the hero (a "Get my card" primary action does the POST; wallet buttons read the returned slug).
+11. **Analytics.** Log funnel milestones via `CardAnalytics::log($slug, DEMO_COMPANY_ID, 'instant_card_created'|'instant_card_verified', ...)` so created→verified→upgrade is measurable.
+12. **Slug length.** Keep Ali's `localpart.domain` format, but cap to 80 chars and collapse multi-dot (e.g. `first.last@company.co.uk` → `first.last.company.co.uk`, truncated if long).
+
+---
+
 ## Reused existing infrastructure (do NOT rebuild)
 - `extractEmailDomain()`, `isCommonEmailDomain()`, `findCompanyByDomain()` — `includes/functions.php`.
 - `createCompany()` / `addEmployee()` — `includes/functions.php` + `DatabaseAdapter` (addEmployee derives employee id from email localpart; demo uses an explicit slug instead, see Task 2).
