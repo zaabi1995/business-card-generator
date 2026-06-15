@@ -51,6 +51,24 @@ try {
     $employee = findEmployeeByEmail($employeeEmail, $company['id']);
     if (!$employee && strpos($employeeEmail, '@') === false) {
         $employee = findEmployeeById($employeeEmail, $company['id']);
+        // Domain-agnostic email-localpart fallback: covers the pretty
+        // /<localpart>.vcf short URL for employees whose id is a random hex
+        // (not the localpart). Mirrors index.php + digital_card.php so every
+        // public surface resolves the same token. (also matches . _ - variants)
+        if (!$employee) {
+            $local = strtolower($employeeEmail);
+            $dashed = str_replace(['.', '_'], '-', $local);
+            $employee = Database::getInstance()->fetchOne(
+                "SELECT * FROM employees
+                  WHERE company_id = :cid AND deleted_at IS NULL
+                    AND (
+                         LOWER(SUBSTRING_INDEX(email, '@', 1)) = :exact
+                      OR REPLACE(REPLACE(LOWER(SUBSTRING_INDEX(email, '@', 1)), '.', '-'), '_', '-') = :dashed
+                    )
+                  LIMIT 1",
+                ['cid' => $company['id'], 'exact' => $local, 'dashed' => $dashed]
+            ) ?: null;
+        }
     }
     if (!$employee) {
         $db = Database::getInstance();
