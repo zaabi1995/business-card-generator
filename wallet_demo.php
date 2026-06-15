@@ -50,6 +50,11 @@ if ($company === '') { $company = ($lang === 'ar') ? 'مجموعة BHD' : 'BHD G
 $color = (string)($_GET['color'] ?? '#009bc1');
 if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color)) { $color = '#009bc1'; }
 
+// Contact fields shown on the pass (display only; sanitise control chars).
+$phone = trim(mb_substr(preg_replace('/[^0-9+\-() ]/', '', (string)($_GET['phone'] ?? '')), 0, 24));
+$emailField = trim(mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', (string)($_GET['email'] ?? '')), 0, 60));
+if (strpos($emailField, '@') === false) { $emailField = ''; }
+
 // Where the QR points. Defaults to cardify.om; if a &card= URL is supplied it
 // must be a strict https://<sub>.cardify.om/... URL (host-validated to block
 // open-redirect / phishing in the signed pass), otherwise it is ignored.
@@ -74,8 +79,12 @@ if ($platform === 'google') {
         http_response_code(503); header('Content-Type: text/plain; charset=utf-8');
         exit("Google Wallet is not configured.\n");
     }
-    // Stable-ish per (name,color) so re-taps update the same object instead of erroring.
-    $oid = 'demo_' . substr(sha1($name . '|' . $title . '|' . $company . '|' . $color . '|' . $lang), 0, 24);
+    // Stable-ish per (name,color,contact) so re-taps update the same object.
+    $oid = 'demo_' . substr(sha1($name . '|' . $title . '|' . $company . '|' . $color . '|' . $phone . '|' . $emailField . '|' . $lang), 0, 24);
+    $gLabels = ($lang === 'ar') ? ['phone' => 'الهاتف', 'email' => 'البريد'] : ['phone' => 'Phone', 'email' => 'Email'];
+    $textModules = [];
+    if ($phone !== '')      { $textModules[] = ['id' => 'phone', 'header' => $gLabels['phone'], 'body' => $phone]; }
+    if ($emailField !== '') { $textModules[] = ['id' => 'email', 'header' => $gLabels['email'], 'body' => $emailField]; }
     $object = [
         'id'                => GoogleWalletPass::objectResourceId($oid),
         'classId'           => GoogleWalletPass::classResourceId(),
@@ -86,6 +95,7 @@ if ($platform === 'google') {
         'hexBackgroundColor'=> $color,
         'barcode'           => ['type' => 'QR_CODE', 'value' => $qrTarget, 'alternateText' => 'cardify.om'],
     ];
+    if ($textModules) { $object['textModulesData'] = $textModules; }
     $saveUrl = GoogleWalletPass::buildSaveUrl($object);
     header('Location: ' . $saveUrl, true, 302);
     exit;
@@ -110,8 +120,16 @@ $rle        = function (string $s) use ($isAr, $arBaked): string {
 
 $qr = ['format' => 'PKBarcodeFormatQR', 'message' => $qrTarget, 'messageEncoding' => 'iso-8859-1'];
 $L  = $isAr
-    ? ['card' => 'البطاقة الرقمية', 'demo' => 'بطاقة تجريبية', 'disc' => 'بطاقة تجريبية غير مُفعّلة، أُنشئت على cardify.om']
-    : ['card' => 'Digital Card', 'demo' => 'Demo card', 'disc' => 'Demo card, unverified. Made on cardify.om'];
+    ? ['card' => 'البطاقة الرقمية', 'demo' => 'بطاقة تجريبية', 'disc' => 'بطاقة تجريبية غير مُفعّلة، أُنشئت على cardify.om', 'phone' => 'الهاتف', 'email' => 'البريد الإلكتروني']
+    : ['card' => 'Digital Card', 'demo' => 'Demo card', 'disc' => 'Demo card, unverified. Made on cardify.om', 'phone' => 'Phone', 'email' => 'Email'];
+
+// Phone + email shown on the pass front (auxiliary row) and tappable on the back.
+$auxFields = [];
+if ($phone !== '')      { $auxFields[] = ['key' => 'phone', 'label' => $L['phone'], 'value' => $phone, 'textAlignment' => 'PKTextAlignmentNatural']; }
+if ($emailField !== '') { $auxFields[] = ['key' => 'email', 'label' => $L['email'], 'value' => $emailField, 'textAlignment' => 'PKTextAlignmentNatural']; }
+$backContact = [];
+if ($phone !== '')      { $backContact[] = ['key' => 'back_phone', 'label' => $L['phone'], 'value' => $phone, 'attributedValue' => '<a href="tel:' . htmlspecialchars(preg_replace('/[^\d+]/', '', $phone), ENT_QUOTES) . '">' . htmlspecialchars($phone, ENT_QUOTES) . '</a>']; }
+if ($emailField !== '') { $backContact[] = ['key' => 'back_email', 'label' => $L['email'], 'value' => $emailField, 'attributedValue' => '<a href="mailto:' . htmlspecialchars($emailField, ENT_QUOTES) . '">' . htmlspecialchars($emailField, ENT_QUOTES) . '</a>']; }
 
 $pass = [
     'formatVersion'      => 1,
@@ -133,12 +151,12 @@ $pass = [
         'headerFields'    => [],
         'primaryFields'   => $arBaked ? [] : [['key' => 'name', 'label' => '', 'value' => $rle($name), 'textAlignment' => 'PKTextAlignmentCenter']],
         'secondaryFields' => ($arBaked || $title === '') ? [] : [['key' => 'title', 'label' => '', 'value' => $rle($title), 'textAlignment' => 'PKTextAlignmentNatural']],
-        'auxiliaryFields' => [],
-        'backFields'      => [
-            ['key' => 'demo', 'label' => $L['demo'], 'value' => $L['disc']],
+        'auxiliaryFields' => $auxFields,
+        'backFields'      => array_merge($backContact, [
             ['key' => 'card', 'label' => $L['card'], 'value' => $qrTarget,
-             'attributedValue' => '<a href="' . htmlspecialchars($qrTarget, ENT_QUOTES) . '">cardify.om</a>'],
-        ],
+             'attributedValue' => '<a href="' . htmlspecialchars($qrTarget, ENT_QUOTES) . '">' . htmlspecialchars(parse_url($qrTarget, PHP_URL_HOST) ?: 'cardify.om', ENT_QUOTES) . '</a>'],
+            ['key' => 'demo', 'label' => $L['demo'], 'value' => $L['disc']],
+        ]),
     ],
 ];
 

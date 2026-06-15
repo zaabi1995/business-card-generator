@@ -452,26 +452,22 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </template>
                         </div>
                         <p class="cf-try-hint" x-show="!done"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> <?= htmlspecialchars(t('landing.hero_try_hint')) ?></p>
-                        <!-- Get my card: email -> instant demo card + verify email -->
-                        <form class="cf-getcard" @submit.prevent="submit()" x-show="!done">
-                            <button type="submit" class="cf-getcard-btn" :disabled="submitting">
-                                <span x-show="!submitting"><?= htmlspecialchars(t('landing.hero_getcard')) ?></span>
-                                <span x-show="submitting" x-cloak><?= htmlspecialchars(t('landing.hero_getcard_sending')) ?></span>
-                            </button>
-                        </form>
                         <p class="cf-getcard-err" x-show="errorMsg" x-text="errorMsg" x-cloak></p>
+                        <!-- ONE action: creates the demo card (+ verify email) then adds the pass to the wallet -->
+                        <div class="cf-wallet-row" x-cloak>
+                            <a class="cf-wallet-btn cf-wallet-btn--apple" x-show="platform !== 'google'" :href="appleHref" @click.prevent="addToWallet('apple')" :aria-label="appleLabel" :class="{'cf-wallet-btn--busy': submitting}">
+                                <i class="fa-brands fa-apple" aria-hidden="true" x-show="!submitting"></i>
+                                <span x-show="!submitting" x-text="appleLabel"><?= htmlspecialchars(t('landing.hero_wallet_cta')) ?></span>
+                                <span x-show="submitting" x-cloak><?= htmlspecialchars(t('landing.hero_getcard_sending')) ?></span>
+                            </a>
+                            <a class="cf-wallet-btn cf-wallet-btn--google" x-show="platform !== 'apple'" :href="googleHref" @click.prevent="addToWallet('google')" :aria-label="googleLabel" :class="{'cf-wallet-btn--busy': submitting}">
+                                <i class="fa-brands fa-google" aria-hidden="true" x-show="!submitting"></i>
+                                <span x-show="!submitting" x-text="googleLabel"><?= htmlspecialchars(t('landing.hero_wallet_cta_google')) ?></span>
+                                <span x-show="submitting" x-cloak><?= htmlspecialchars(t('landing.hero_getcard_sending')) ?></span>
+                            </a>
+                        </div>
                         <div class="cf-getcard-done" x-show="done" x-cloak>
                             <strong><?= htmlspecialchars(t('landing.hero_getcard_done')) ?></strong>
-                        </div>
-                        <div class="cf-wallet-row" x-cloak>
-                            <a class="cf-wallet-btn cf-wallet-btn--apple" x-show="platform !== 'google'" :href="appleHref" target="_blank" rel="noopener" :aria-label="appleLabel">
-                                <i class="fa-brands fa-apple" aria-hidden="true"></i>
-                                <span x-text="appleLabel"><?= htmlspecialchars(t('landing.hero_wallet_cta')) ?></span>
-                            </a>
-                            <a class="cf-wallet-btn cf-wallet-btn--google" x-show="platform !== 'apple'" :href="googleHref" target="_blank" rel="noopener" :aria-label="googleLabel">
-                                <i class="fa-brands fa-google" aria-hidden="true"></i>
-                                <span x-text="googleLabel"><?= htmlspecialchars(t('landing.hero_wallet_cta_google')) ?></span>
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -529,9 +525,17 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     + '&company=' + encodeURIComponent(this.company)
                     + '&color=' + encodeURIComponent(this.color)
                     + '&lang=' + encodeURIComponent(this.lang);
+                if (this.phone) { q += '&phone=' + encodeURIComponent(this.phone); }
+                if (this.email) { q += '&email=' + encodeURIComponent(this.email); }
                 // Once the demo card exists, the pass QR points to it.
                 if (this.cardUrl) { q += '&card=' + encodeURIComponent(this.cardUrl); }
                 return q;
+            },
+            // One action: create the demo card (+ verify email) THEN open the wallet pass.
+            async addToWallet(plat) {
+                if (!this.email || this.email.indexOf('@') === -1) { this.errorMsg = this.errText; return; }
+                if (!this.done) { await this.submit(); if (!this.done) { return; } }
+                window.location.href = (plat === 'google') ? this.googleHref : this.appleHref;
             },
             get appleHref()  { return '/wallet_demo.php?platform=apple&'  + this._q; },
             get googleHref() { return '/wallet_demo.php?platform=google&' + this._q; },
