@@ -74,6 +74,18 @@ if (file_exists(__DIR__ . '/includes/TenantHost.php')) {
                             $__emp = findEmployeeByEmail($__tok . '@' . $__co['email_domain'], $__co['id']);
                         }
                     }
+                    // Final fallback: match the token against the email
+                    // localpart directly, domain-agnostic. Covers employees
+                    // whose id is a random hex (not the localpart) AND companies
+                    // with no email_domain set, e.g. a one-person gmail card
+                    // (/jarwish9 -> jarwish9@gmail.com). class_exists guards the
+                    // DB call in case this fires before config loaded it.
+                    if (!$__emp && class_exists('Database')) {
+                        $__emp = Database::getInstance()->fetchOne(
+                            "SELECT * FROM employees WHERE company_id = :cid AND SUBSTRING_INDEX(LOWER(email), '@', 1) = :lp LIMIT 1",
+                            ['cid' => $__co['id'], 'lp' => strtolower($__tok)]
+                        );
+                    }
                     if (is_array($__emp) && !empty($__emp['id'])) {
                         $_GET['employee_id']  = $__emp['id'];
                         $_GET['company_slug'] = (string) TenantHost::slug();
