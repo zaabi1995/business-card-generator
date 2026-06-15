@@ -131,6 +131,37 @@ h1, h2, h3, .font-display {
 .cf-swatch--sel { outline: 3px solid #b9e3ee; outline-offset: 2px; }
 .cf-wallet-cta { font-size: 14px; font-weight: 600; color: #6b7280; display: flex; align-items: center; gap: 8px; }
 
+/* ---- Interactive hero: brand colour driven by a single --pass-c var ---- */
+.cf-pass--live {
+  background: linear-gradient(150deg,
+              var(--pass-c, var(--cf-500)) 0%,
+              color-mix(in srgb, var(--pass-c, var(--cf-500)) 40%, #04141b) 100%);
+  transition: background .45s ease;
+}
+.cf-pass--live:focus-within { animation-play-state: paused; } /* stop the bob while typing */
+.cf-pass__pen {
+  position: absolute; bottom: 24px; inset-inline-end: 24px;
+  width: 30px; height: 30px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.14); color: #fff; font-size: 12px; pointer-events: none;
+}
+.cf-edit {
+  outline: none; cursor: text; border-radius: 7px;
+  padding: 1px 5px; margin-inline: -5px;
+  transition: background .18s ease, box-shadow .18s ease;
+}
+.cf-edit:hover { background: rgba(255,255,255,.08); }
+.cf-edit:focus { background: rgba(255,255,255,.14); box-shadow: 0 0 0 2px rgba(255,255,255,.4); }
+.cf-swatch { border: 0; padding: 0; cursor: pointer; transition: transform .15s ease, outline-color .15s ease; }
+.cf-swatch:hover { transform: translateY(-2px); }
+.cf-swatch:focus-visible { outline: 2px solid var(--cf-500); outline-offset: 3px; }
+.cf-try-hint {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: var(--cf-700);
+  background: var(--cf-50); padding: 8px 14px; border-radius: 999px; max-width: 320px; text-align: center;
+}
+.cf-try-hint i { color: var(--cf-500); }
+
 /* ---- Restore responsive grid utilities missing from the prebuilt Tailwind ----
    `lg:grid-cols-5` / `lg:grid-cols-6` weren't compiled, so the footer fell back
    to md:grid-cols-2 and stacked 5 sections into 3 tall rows. This puts it back

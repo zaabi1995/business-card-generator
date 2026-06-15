@@ -399,31 +399,34 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                 </div>
 
-                <!-- Right Content - Wallet pass hero (design.md canonical) -->
+                <!-- Right Content - INTERACTIVE wallet pass hero (design.md canonical, live demo) -->
                 <?php
                     $heroIsAr   = (currentLocale() === 'ar');
                     $heroName   = $heroIsAr ? 'علي عدنان حيدر درويش' : 'Ali Adnan Haider Darwish';
-                    $heroCo     = $heroIsAr ? 'مجموعة BHD' : 'BHD GROUP';
+                    $heroCo     = htmlspecialchars(t('landing.hero_company_demo'));
                 ?>
-                <div class="lg:col-span-6 relative hidden lg:block">
+                <div class="lg:col-span-6 relative mt-12 lg:mt-0"
+                     x-data="cardifyHero(<?= htmlspecialchars(json_encode(['c' => '#009bc1']), ENT_QUOTES) ?>)">
                     <div class="cf-hero-stage">
-                        <!-- Wallet pass -->
-                        <div class="cf-pass float-animation">
+                        <!-- Live wallet pass (editable) -->
+                        <div class="cf-pass cf-pass--live float-animation" :style="'--pass-c:'+color">
                             <span class="cf-pass__live">LIVE</span>
-                            <div class="cf-pass__co"><?= htmlspecialchars($heroCo) ?></div>
-                            <h3 class="cf-pass__name"><?= htmlspecialchars($heroName) ?></h3>
-                            <p class="cf-pass__role"><?= htmlspecialchars(t('landing.hero_card_role')) ?></p>
+                            <span class="cf-pass__pen" aria-hidden="true"><i class="fa-solid fa-pen"></i></span>
+                            <div class="cf-pass__co cf-edit" contenteditable="true" spellcheck="false" @input="company=$event.target.innerText"><?= $heroCo ?></div>
+                            <h3 class="cf-pass__name cf-edit" contenteditable="true" spellcheck="false" @input="name=$event.target.innerText"><?= htmlspecialchars($heroName) ?></h3>
+                            <p class="cf-pass__role cf-edit" contenteditable="true" spellcheck="false" @input="role=$event.target.innerText"><?= htmlspecialchars(t('landing.hero_card_role')) ?></p>
                             <div class="cf-pass-qr" aria-hidden="true"></div>
                         </div>
-                        <!-- Brand-colour swatch picker -->
+                        <!-- Brand-colour swatch picker (live) -->
                         <div class="cf-swatches">
                             <span class="cf-swatches__lbl"><?= htmlspecialchars(t('landing.hero_brand_colour')) ?></span>
-                            <span class="cf-swatch" style="background:conic-gradient(red,orange,#eab308,#16a34a,#06b6d4,#2563eb,violet,red)"></span>
-                            <span class="cf-swatch" style="background:#2563eb"></span>
-                            <span class="cf-swatch" style="background:#111827"></span>
-                            <span class="cf-swatch cf-swatch--sel" style="background:#009bc1"></span>
-                            <span class="cf-swatch" style="background:#16a34a"></span>
+                            <template x-for="c in colors" :key="c">
+                                <button type="button" class="cf-swatch" :style="'background:'+c"
+                                        :class="{'cf-swatch--sel': color===c}" @click="color=c"
+                                        :aria-label="'<?= htmlspecialchars(t('landing.hero_brand_colour')) ?> '+c"></button>
+                            </template>
                         </div>
+                        <p class="cf-try-hint"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> <?= htmlspecialchars(t('landing.hero_try_hint')) ?></p>
                         <div class="cf-wallet-cta">
                             <i class="fa-brands fa-apple" aria-hidden="true"></i>
                             <?= htmlspecialchars(t('landing.hero_wallet_cta')) ?>
@@ -433,6 +436,18 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
         </div>
     </section>
+
+    <script>
+    // Interactive hero pass: live brand colour + editable text. Plain global so
+    // it is defined before deferred Alpine boots. No x-init (init() would double-run).
+    function cardifyHero(seed) {
+        return {
+            color: (seed && seed.c) || '#009bc1',
+            colors: ['#009bc1', '#2563eb', '#7c3aed', '#0c1418', '#16a34a', '#e11d48'],
+            name: '', company: '', role: ''
+        };
+    }
+    </script>
 
     <!-- ========== TRUST SIGNALS ========== -->
     <?php @include __DIR__ . '/views/partials/trust_logo_strip.php'; ?>

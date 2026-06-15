@@ -16,6 +16,8 @@ return [
     'hero_card_role'    => 'Chief Executive Officer',
     'hero_wallet_cta'   => 'Add to Apple Wallet',
     'hero_brand_colour' => 'Brand colour',
+    'hero_try_hint'     => 'Tap the card to type your name, pick a colour. It updates live.',
+    'hero_company_demo' => 'BHD GROUP',
 
     // Trust badges
     'trust_free_design' => 'Free until you print',
