@@ -110,9 +110,10 @@ class InstantCard
         $alreadyPending = (bool)$recent->fetchColumn();
 
         if (!$alreadyPending) {
-            $pdo->prepare("INSERT INTO cardify_signup_leads (email,source,locale,ip_address,user_agent,status,created_at)
-                           VALUES (:e,'hero_instant',:l,:ip,:ua,'pending',NOW())")
-                ->execute([':e' => $email, ':l' => $locale, ':ip' => $ip, ':ua' => substr((string)($in['ua'] ?? ''), 0, 512)]);
+            $leadId = function_exists('generateUUID') ? generateUUID() : bin2hex(random_bytes(16));
+            $pdo->prepare("INSERT INTO cardify_signup_leads (id,email,source,locale,ip_address,user_agent,status,created_at)
+                           VALUES (:id,:e,'hero_instant',:l,:ip,:ua,'pending',NOW())")
+                ->execute([':id' => $leadId, ':e' => $email, ':l' => $locale, ':ip' => $ip, ':ua' => substr((string)($in['ua'] ?? ''), 0, 512)]);
 
             if (class_exists('EmployeeEditToken') && class_exists('Mailer')) {
                 try {
