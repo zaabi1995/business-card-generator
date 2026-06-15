@@ -12,6 +12,9 @@ return [
     'hero_price_tag'   => 'تبدأ من 6 ريال عُماني للبطاقة. التصميم والمعاينة مجاناً.',
     'cta_start_free'   => 'ابدأ مجاناً',
     'cta_request_demo' => 'احجز عرضاً عبر واتساب',
+    'hero_card_role'    => 'الرئيس التنفيذي',
+    'hero_wallet_cta'   => 'أضف إلى محفظة آبل',
+    'hero_brand_colour' => 'لون العلامة',
 
     'trust_free_design' => 'مجاني حتى الطباعة',
     'trust_printed_by'  => 'تطبعها BHD في مسقط',

@@ -399,81 +399,34 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                 </div>
 
-                <!-- Right Content - Card Mockups -->
+                <!-- Right Content - Wallet pass hero (design.md canonical) -->
+                <?php
+                    $heroIsAr   = (currentLocale() === 'ar');
+                    $heroName   = $heroIsAr ? 'علي عدنان حيدر درويش' : 'Ali Adnan Haider Darwish';
+                    $heroCo     = $heroIsAr ? 'مجموعة BHD' : 'BHD GROUP';
+                ?>
                 <div class="lg:col-span-6 relative hidden lg:block">
-                    <div class="relative h-[500px]">
-                        <!-- Main Card -->
-                        <div class="float-animation absolute top-0 right-0 w-80 bg-white rounded-2xl card-shadow p-6 border border-gray-100">
-                            <div class="flex items-start gap-4">
-                                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
-                                    JD
-                                </div>
-                                <div class="flex-1">
-                                    <h3 class="font-bold text-gray-900 text-lg">John Doe</h3>
-                                    <p class="text-blue-600 text-sm font-semibold">Senior Developer</p>
-                                    <p class="text-gray-500 text-sm">TechCorp Inc.</p>
-                                </div>
-                            </div>
-                            <div class="mt-5 pt-5 border-t border-gray-100 space-y-3">
-                                <div class="flex items-center gap-3 text-sm text-gray-600">
-                                    <i class="fa-solid fa-envelope w-4 text-blue-500"></i>
-                                    <span>john.doe@techcorp.com</span>
-                                </div>
-                                <div class="flex items-center gap-3 text-sm text-gray-600">
-                                    <i class="fa-solid fa-phone w-4 text-blue-500"></i>
-                                    <span>+1 (555) 123-4567</span>
-                                </div>
-                                <div class="flex items-center gap-3 text-sm text-gray-600">
-                                    <i class="fa-solid fa-globe w-4 text-blue-500"></i>
-                                    <span>techcorp.com</span>
-                                </div>
-                            </div>
-                            <div class="mt-5 flex gap-2">
-                                <button class="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
-                                    <i class="fa-solid fa-address-book mr-2"></i>Save Contact
-                                </button>
-                                <button class="p-2.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition"
-                                        aria-label="<?= htmlspecialchars(t('common.show_qr')) ?>"
-                                        type="button">
-                                    <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
-                                </button>
-                            </div>
+                    <div class="cf-hero-stage">
+                        <!-- Wallet pass -->
+                        <div class="cf-pass float-animation">
+                            <span class="cf-pass__live">LIVE</span>
+                            <div class="cf-pass__co"><?= htmlspecialchars($heroCo) ?></div>
+                            <h3 class="cf-pass__name"><?= htmlspecialchars($heroName) ?></h3>
+                            <p class="cf-pass__role"><?= htmlspecialchars(t('landing.hero_card_role')) ?></p>
+                            <div class="cf-pass-qr" aria-hidden="true"></div>
                         </div>
-
-                        <!-- Secondary Card -->
-                        <div class="float-delayed absolute top-52 -left-4 w-72 bg-gradient-to-br from-amber-400 to-amber-500 rounded-2xl card-shadow p-6 text-white">
-                            <div class="flex items-start gap-4">
-                                <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold backdrop-blur-sm">
-                                    SM
-                                </div>
-                                <div class="flex-1">
-                                    <h3 class="font-bold text-lg">Sarah Miller</h3>
-                                    <p class="text-white/80 text-sm">Marketing Director</p>
-                                </div>
-                            </div>
-                            <div class="mt-4 pt-4 border-t border-white/20 space-y-2 text-sm text-white/90">
-                                <div class="flex items-center gap-3">
-                                    <i class="fa-solid fa-envelope w-4"></i>
-                                    <span>sarah@creativeco.com</span>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <i class="fa-solid fa-globe w-4"></i>
-                                    <span>creativeco.com</span>
-                                </div>
-                            </div>
+                        <!-- Brand-colour swatch picker -->
+                        <div class="cf-swatches">
+                            <span class="cf-swatches__lbl"><?= htmlspecialchars(t('landing.hero_brand_colour')) ?></span>
+                            <span class="cf-swatch" style="background:conic-gradient(red,orange,#eab308,#16a34a,#06b6d4,#2563eb,violet,red)"></span>
+                            <span class="cf-swatch" style="background:#2563eb"></span>
+                            <span class="cf-swatch" style="background:#111827"></span>
+                            <span class="cf-swatch cf-swatch--sel" style="background:#009bc1"></span>
+                            <span class="cf-swatch" style="background:#16a34a"></span>
                         </div>
-
-                        <!-- Small Card -->
-                        <div class="float-animation float-delay-2 absolute bottom-8 right-8 w-64 bg-white rounded-2xl card-shadow p-5 border border-gray-100">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-bold shadow-lg">
-                                    AK
-                                </div>
-                                <div>
-                                    <h3 class="font-bold text-gray-900">Alex Kim</h3>
-                                    <p class="text-gray-500 text-xs">CEO, StartupXYZ</p>
-                                </div>
-                            </div>
+                        <div class="cf-wallet-cta">
+                            <i class="fa-brands fa-apple" aria-hidden="true"></i>
+                            <?= htmlspecialchars(t('landing.hero_wallet_cta')) ?>
                         </div>
                     </div>
                 </div>

@@ -13,6 +13,9 @@ return [
     'hero_price_tag'   => 'From 6 OMR per card. Free to design and preview.',
     'cta_start_free'   => 'Start free',
     'cta_request_demo' => 'Book a demo on WhatsApp',
+    'hero_card_role'    => 'Chief Executive Officer',
+    'hero_wallet_cta'   => 'Add to Apple Wallet',
+    'hero_brand_colour' => 'Brand colour',
 
     // Trust badges
     'trust_free_design' => 'Free until you print',
