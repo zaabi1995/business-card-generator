@@ -33,7 +33,9 @@ if (!$emp || ($emp['company_id'] ?? '') !== InstantCard::DEMO_COMPANY_ID) {
 
 InstantCard::markVerified($emp['id']);
 
-// Hand them straight into editing (the verified link doubles as the edit link).
-$editUrl = EmployeeEditToken::buildUrl($t, InstantCard::DEMO_SLUG, (string)$emp['id']);
+// Hand them straight into editing. Pass NO employee slug: demo slugs are
+// multi-dot (ali.bhd.om) and not bare-routable, so buildUrl falls back to the
+// always-routable token form (/portal/employee-edit.php?token=...).
+$editUrl = EmployeeEditToken::buildUrl($t, InstantCard::DEMO_SLUG, null);
 header('Location: ' . $editUrl, true, 302);
 exit;
