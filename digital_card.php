@@ -345,6 +345,11 @@ function renderBranded404($company, $theme) {
     $accentColor = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#d4af37';
     $logoPath = ($theme && !empty($theme['logo_path'])) ? cardifyAssetUrl($theme['logo_path']) : '';
     $companyName = $company ? ($company['name'] ?? '') : '';
+    // Demo/instant cards: show the person's typed company (employee.company_en),
+    // not the shared `demo` tenant name, so the card reads as their own.
+    if (!empty($demoMeta) && !empty($employee['company_en'])) {
+        $companyName = $employee['company_en'];
+    }
     ?>
 <!DOCTYPE html>
 <html lang="en">
