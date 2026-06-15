@@ -196,4 +196,60 @@ class CardifyConvention
         }
         return $url;
     }
+
+    /**
+     * Path-reserved localparts that collide with real tenant routes
+     * (served before the bare-slug card resolver). Mirror of the JS
+     * CARDIFY_RESERVED_SLUGS in admin/auto_generate.php + admin/onboarding.php.
+     * A localpart in this set must be served as /card/<x>, not /<x>.
+     */
+    public static function shareReservedSlugs(): array
+    {
+        return [
+            'admin','api','login','logout','portal','assets','uploads','data','logs',
+            'includes','printshop','paymob','amwalpay','webhooks','install','cron',
+            'storage','vendor','card','vcf','vcard','wallet','wallet-apple','wallet-google',
+            'sitemap','robots','favicon','og','r','claim','preview','index','public',
+        ];
+    }
+
+    /**
+     * The ONE correct way to build a public E-Card share URL for an employee.
+     * Prefers the pretty email localpart (e.g. /jarwish9, resolved by the
+     * index.php localpart fallback even when the employee id is a random hex),
+     * and falls back to the always-resolvable canonical /card/<id> form when
+     * the localpart is missing, route-unsafe, or a reserved path.
+     *
+     * Use this EVERYWHERE a share URL is built server-side. Never derive a
+     * card URL from the employee NAME (a name slug matches neither the id nor
+     * the localpart and 404s to the request portal).
+     *
+     * @param string $companySlug  tenant slug
+     * @param array  $employee     employee row (needs 'id'; uses 'email' if present)
+     */
+    public static function employeeShareUrl(string $companySlug, array $employee): string
+    {
+        $base = 'https://' . $companySlug . '.cardify.om';
+        $id   = (string) ($employee['id'] ?? '');
+        $email = (string) ($employee['email'] ?? '');
+
+        $key = '';
+        if ($email !== '' && strpos($email, '@') !== false) {
+            $local = strtolower(substr($email, 0, strpos($email, '@')));
+            // nginx bare-token route only matches [a-z0-9][a-z0-9._-]*
+            if (preg_match('/^[a-z0-9][a-z0-9._-]*$/', $local)) {
+                $key = $local;
+            }
+        }
+        if ($key === '') {
+            $key = strtolower($id);
+        }
+        if ($key === '') {
+            return $base . '/';
+        }
+        if (in_array($key, self::shareReservedSlugs(), true)) {
+            return $base . '/card/' . rawurlencode($key);
+        }
+        return $base . '/' . rawurlencode($key);
+    }
 }

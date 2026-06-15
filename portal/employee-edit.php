@@ -41,11 +41,13 @@ if ($employee) {
 
         $company = $db->fetchOne("SELECT slug FROM companies WHERE id = :id", ['id' => $employee['company_id']]);
         $companySlug = $company['slug'] ?? '';
-        $empSlug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', (string) ($employee['name_en'] ?? 'card')));
-        $empSlug = trim($empSlug, '-');
-        $host = defined('APP_HOST') ? APP_HOST : 'cardify.om';
-        if ($companySlug && $empSlug) {
-            $publicCardUrl = getTenantCardUrl($companySlug, $empSlug);
+        // Build from the real employee row (id + email), never the name slug,
+        // which matches neither the id nor the localpart and 404s to the portal.
+        if (!class_exists('CardifyConvention')) {
+            require_once INCLUDES_DIR . '/CardifyConvention.php';
+        }
+        if ($companySlug) {
+            $publicCardUrl = CardifyConvention::employeeShareUrl($companySlug, $employee);
         }
 
         $departments = $db->fetchAll(

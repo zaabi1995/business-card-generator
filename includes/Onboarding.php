@@ -198,15 +198,37 @@ class Onboarding
         $companyName = $company['name'] ?? ($company['name_en'] ?? 'your company');
         $slug        = $company['slug'] ?? '';
         $firstEmp    = $data['first_employee'] ?? [];
-        $empSlug     = strtolower(preg_replace('/[^a-z0-9]+/i', '-', (string) ($firstEmp['name'] ?? 'card')));
         $host        = defined('APP_HOST') ? APP_HOST : 'cardify.om';
         // Tenant subdomain is the canonical URL; bare host is a fallback
         // only for unnamed tenants (should be impossible in practice).
         $tenantBase  = $slug ? 'https://' . $slug . '.' . $host : 'https://' . $host;
-        $cardUrl     = $slug
-            ? $tenantBase . '/' . trim($empSlug, '-')
-            : ('https://' . $host . '/card');
         $dashboardUrl = $tenantBase . '/admin/';
+
+        // Resolve the first employee's REAL card URL from the persisted row,
+        // never from the name slug (a name slug matches neither the id nor
+        // the email localpart and 404s to the request portal).
+        if (!class_exists('CardifyConvention')) {
+            require_once __DIR__ . '/CardifyConvention.php';
+        }
+        $emp = null;
+        $empEmail = strtolower(trim((string) ($firstEmp['email'] ?? '')));
+        if ($empEmail !== '') {
+            $emp = $db->fetchOne(
+                "SELECT id, email FROM employees WHERE company_id = :cid AND LOWER(email) = :em AND deleted_at IS NULL LIMIT 1",
+                ['cid' => $companyId, 'em' => $empEmail]
+            );
+        }
+        if (!$emp) {
+            $emp = $db->fetchOne(
+                "SELECT id, email FROM employees WHERE company_id = :cid AND deleted_at IS NULL ORDER BY created_at ASC LIMIT 1",
+                ['cid' => $companyId]
+            );
+        }
+        if ($emp && $slug) {
+            $cardUrl = CardifyConvention::employeeShareUrl($slug, $emp);
+        } else {
+            $cardUrl = $slug ? $dashboardUrl : ('https://' . $host . '/');
+        }
 
         $adminName  = $data['admin_name'] ?? ($firstEmp['name'] ?? $companyName);
         $adminEmail = $company['admin_email'] ?? ($firstEmp['email'] ?? '');
