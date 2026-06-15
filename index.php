@@ -408,7 +408,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="lg:col-span-6 relative mt-12 lg:mt-0"
                      x-data="cardifyHero(<?= htmlspecialchars(json_encode([
                         'c' => '#009bc1',
-                        'demo' => ['i' => 'ali.demo', 'c' => 'showcase', 'lang' => (currentLocale() === 'ar' ? 'ar' : 'en')],
+                        'lang' => (currentLocale() === 'ar' ? 'ar' : 'en'),
+                        'defaults' => [
+                            'name'    => $heroName,
+                            'title'   => t('landing.hero_card_role'),
+                            'company' => t('landing.hero_company_demo'),
+                        ],
                         'labels' => [
                             'apple'  => t('landing.hero_wallet_cta'),
                             'google' => t('landing.hero_wallet_cta_google'),
@@ -462,20 +467,26 @@ require_once INCLUDES_DIR . '/ui-header.php';
         var isAndroid = /Android/i.test(ua);
         var isApple = !isAndroid && /iPhone|iPad|iPod|Macintosh|Mac OS X/i.test(ua);
         var platform = isAndroid ? 'google' : (isApple ? 'apple' : 'other');
-        var d = seed.demo || {};
-        var labels = seed.labels || {};
-        var q = '?i=' + encodeURIComponent(d.i || '')
-            + '&c=' + encodeURIComponent(d.c || '')
-            + '&lang=' + encodeURIComponent(d.lang || 'en');
+        var df = seed.defaults || {};
         return {
             color: seed.c || '#009bc1',
             colors: ['#009bc1', '#2563eb', '#7c3aed', '#0c1418', '#16a34a', '#e11d48'],
-            name: '', company: '', role: '',
+            name: df.name || '', company: df.company || '', role: df.title || '',
+            lang: (seed.lang === 'ar' ? 'ar' : 'en'),
+            labels: seed.labels || {},
             platform: platform, // 'apple' | 'google' | 'other' (desktop)
-            appleHref: '/wallet_apple.php' + q,
-            googleHref: '/wallet_google.php' + q,
-            appleLabel: labels.apple || 'Add to Apple Wallet',
-            googleLabel: labels.google || 'Add to Google Wallet'
+            // Reactive: the pass reflects the LIVE colour + typed details.
+            get _q() {
+                return 'name=' + encodeURIComponent(this.name)
+                    + '&title=' + encodeURIComponent(this.role)
+                    + '&company=' + encodeURIComponent(this.company)
+                    + '&color=' + encodeURIComponent(this.color)
+                    + '&lang=' + encodeURIComponent(this.lang);
+            },
+            get appleHref()  { return '/wallet_demo.php?platform=apple&'  + this._q; },
+            get googleHref() { return '/wallet_demo.php?platform=google&' + this._q; },
+            get appleLabel()  { return this.labels.apple  || 'Add to Apple Wallet'; },
+            get googleLabel() { return this.labels.google || 'Add to Google Wallet'; }
         };
     }
     </script>
