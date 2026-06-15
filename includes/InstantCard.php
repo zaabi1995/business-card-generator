@@ -65,6 +65,8 @@ class InstantCard
         $name    = self::clean((string)($in['name'] ?? ''), 48);
         $title   = self::clean((string)($in['title'] ?? ''), 48);
         $company = self::clean((string)($in['company'] ?? ''), 40);
+        $phone   = preg_replace('/[^0-9+\-() ]/', '', (string)($in['phone'] ?? ''));
+        $phone   = trim(mb_substr($phone, 0, 24));
         $color   = preg_match('/^#[0-9a-fA-F]{6}$/', (string)($in['color'] ?? '')) ? $in['color'] : '#009bc1';
         $locale  = (($in['lang'] ?? 'en') === 'ar') ? 'ar' : 'en';
         if ($name === '')    { $name = $locale === 'ar' ? 'بطاقتي' : 'Your Name'; }
@@ -79,16 +81,19 @@ class InstantCard
 
         // Atomic, race-safe upsert that REFUSES to overwrite a row owned by a
         // different email/company (PK is employees.id, global). Re-check after.
-        $sql = "INSERT INTO employees (id,company_id,email,name_en,position_en,company_en,demo_meta,status,created_at)
-                VALUES (:id,:cid,:email,:name,:pos,:comp,:meta,'active',NOW())
+        $sql = "INSERT INTO employees (id,company_id,email,name_en,position_en,company_en,phone,mobile,demo_meta,status,created_at)
+                VALUES (:id,:cid,:email,:name,:pos,:comp,:phone,:mobile,:meta,'active',NOW())
                 ON DUPLICATE KEY UPDATE
                   name_en     = IF(email=VALUES(email) AND company_id=VALUES(company_id), VALUES(name_en), name_en),
                   position_en = IF(email=VALUES(email) AND company_id=VALUES(company_id), VALUES(position_en), position_en),
                   company_en  = IF(email=VALUES(email) AND company_id=VALUES(company_id), VALUES(company_en), company_en),
+                  phone       = IF(email=VALUES(email) AND company_id=VALUES(company_id), VALUES(phone), phone),
+                  mobile      = IF(email=VALUES(email) AND company_id=VALUES(company_id), VALUES(mobile), mobile),
                   demo_meta   = IF(email=VALUES(email) AND company_id=VALUES(company_id), VALUES(demo_meta), demo_meta)";
         $pdo->prepare($sql)->execute([
             ':id' => $slug, ':cid' => self::DEMO_COMPANY_ID, ':email' => $email,
-            ':name' => $name, ':pos' => $title, ':comp' => $company, ':meta' => $meta,
+            ':name' => $name, ':pos' => $title, ':comp' => $company,
+            ':phone' => $phone, ':mobile' => $phone, ':meta' => $meta,
         ]);
 
         $check = $pdo->prepare("SELECT company_id, email FROM employees WHERE id = :id");

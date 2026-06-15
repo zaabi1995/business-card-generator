@@ -19,9 +19,10 @@ return [
     'hero_try_hint'     => 'انقر البطاقة لكتابة اسمك واختيار لون. تتحدّث مباشرةً.',
     'hero_company_demo' => 'مجموعة BHD',
     'hero_email_ph'        => 'you@company.com',
+    'hero_phone_ph'        => 'الهاتف (اختياري)',
     'hero_getcard'         => 'احصل على بطاقتي',
     'hero_getcard_sending' => 'جارٍ إنشاء بطاقتك...',
-    'hero_getcard_done'    => 'تحقّق من بريدك لتفعيل بطاقتك والاحتفاظ بها:',
+    'hero_getcard_done'    => 'تحقّق من بريدك لتفعيل بطاقتك والاحتفاظ بها.',
     'hero_getcard_err'     => 'يرجى إدخال بريد عمل صحيح والمحاولة مجدداً.',
 
     'trust_free_design' => 'مجاني حتى الطباعة',

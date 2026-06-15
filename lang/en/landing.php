@@ -20,9 +20,10 @@ return [
     'hero_try_hint'     => 'Tap the card to type your name, pick a colour. It updates live.',
     'hero_company_demo' => 'BHD GROUP',
     'hero_email_ph'        => 'you@company.com',
+    'hero_phone_ph'        => 'Phone (optional)',
     'hero_getcard'         => 'Get my card',
     'hero_getcard_sending' => 'Creating your card...',
-    'hero_getcard_done'    => 'Check your inbox to verify and keep your card:',
+    'hero_getcard_done'    => 'Check your inbox to verify and keep your card.',
     'hero_getcard_err'     => 'Please enter a valid work email and try again.',
 
     // Trust badges

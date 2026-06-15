@@ -444,6 +444,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <form class="cf-getcard" @submit.prevent="submit()" x-show="!done">
                             <input type="email" class="cf-email-input" x-model="email" required :disabled="submitting"
                                    placeholder="<?= htmlspecialchars(t('landing.hero_email_ph')) ?>" aria-label="<?= htmlspecialchars(t('landing.hero_email_ph')) ?>" dir="ltr">
+                            <input type="tel" class="cf-email-input" x-model="phone" :disabled="submitting"
+                                   placeholder="<?= htmlspecialchars(t('landing.hero_phone_ph')) ?>" aria-label="<?= htmlspecialchars(t('landing.hero_phone_ph')) ?>" dir="ltr">
                             <button type="submit" class="cf-getcard-btn" :disabled="submitting">
                                 <span x-show="!submitting"><?= htmlspecialchars(t('landing.hero_getcard')) ?></span>
                                 <span x-show="submitting" x-cloak><?= htmlspecialchars(t('landing.hero_getcard_sending')) ?></span>
@@ -452,7 +454,6 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <p class="cf-getcard-err" x-show="errorMsg" x-text="errorMsg" x-cloak></p>
                         <div class="cf-getcard-done" x-show="done" x-cloak>
                             <strong><?= htmlspecialchars(t('landing.hero_getcard_done')) ?></strong>
-                            <a :href="cardUrl" x-text="cardUrl" target="_blank" rel="noopener"></a>
                         </div>
                         <div class="cf-wallet-row" x-cloak>
                             <a class="cf-wallet-btn cf-wallet-btn--apple" x-show="platform !== 'google'" :href="appleHref" target="_blank" rel="noopener" :aria-label="appleLabel">
@@ -491,14 +492,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
             labels: seed.labels || {},
             platform: platform, // 'apple' | 'google' | 'other' (desktop)
             // Get-my-card funnel state
-            email: '', submitting: false, done: false, cardUrl: '', errorMsg: '',
+            email: '', phone: '', submitting: false, done: false, cardUrl: '', errorMsg: '',
             errText: seed.errText || 'Please enter a valid work email and try again.',
             async submit() {
                 if (this.submitting || !this.email) { return; }
                 this.errorMsg = ''; this.submitting = true;
                 try {
                     const body = new URLSearchParams({
-                        email: this.email, name: this.name, title: this.role,
+                        email: this.email, phone: this.phone, name: this.name, title: this.role,
                         company: this.company, color: this.color, lang: this.lang
                     });
                     const r = await fetch('/instant_card.php', {

@@ -32,6 +32,7 @@ if (function_exists('isSameOriginRequest') && !isSameOriginRequest()) {
 
 $result = InstantCard::capture([
     'email'   => $_POST['email']   ?? '',
+    'phone'   => $_POST['phone']   ?? '',
     'name'    => $_POST['name']    ?? '',
     'title'   => $_POST['title']   ?? '',
     'company' => $_POST['company'] ?? '',
