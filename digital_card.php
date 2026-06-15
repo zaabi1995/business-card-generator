@@ -1066,6 +1066,10 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         }
         .cf-demo-banner a { color: #26b4d3; text-decoration: none; font-weight: 700; }
         .is-demo .card-top-controls { top: 56px; }   /* drop controls below the banner */
+        /* Top-align demo cards (the body centres compact cards, which left a big
+           gap above the demo card). Clear the absolute controls with padding. */
+        .is-demo { justify-content: flex-start; }
+        .is-demo .page-container { margin-top: 0; padding-top: 50px; }
         .demo-card-design {
             max-width: 360px; margin: 0 auto 8px; border-radius: 22px; padding: 26px 24px;
             color: #fff; position: relative; aspect-ratio: 1.66 / 1;
