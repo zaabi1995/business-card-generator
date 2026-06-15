@@ -115,8 +115,11 @@ h1, h2, h3, .font-display {
 }
 .cf-pass__role { margin-top: 6px; color: rgba(255,255,255,.85); font-size: 15px; }
 .cf-pass-qr {
-  width: 70px; height: 70px; border-radius: 12px; background: #fff; margin-top: 24px;
-  background-image: repeating-linear-gradient(45deg, var(--cf-900) 0 6px, #fff 6px 12px);
+  width: 78px; height: 78px; border-radius: 14px; background: #fff; margin-top: 24px;
+  background-image: url('/assets/images/hero-card-qr.svg');
+  background-repeat: no-repeat; background-position: center;
+  background-size: 60px 60px; /* ~9px white quiet-zone for scannability */
+  box-shadow: 0 8px 20px -10px rgba(0,0,0,.4);
 }
 .cf-swatches {
   display: flex; align-items: center; gap: 12px;
