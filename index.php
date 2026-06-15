@@ -894,9 +894,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </div>
 
                 <!-- Oman Business Directory -->
-                <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-8 border border-emerald-100">
+                <div class="bg-gradient-to-br from-blue-50 to-blue-50 rounded-2xl p-8 border border-blue-100">
                     <div class="flex items-center gap-3 mb-6">
-                        <div class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center">
+                        <div class="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center">
                             <i class="fa-solid fa-building-columns text-xl"></i>
                         </div>
                         <h3 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('landing.res_obi_title')) ?></h3>
@@ -913,19 +913,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             'muscat'       => '/companies/wilayat/muscat',
                             'dhofar'       => '/companies/wilayat/dhofar',
                         ] as $k => $href): ?>
-                            <a href="<?= htmlspecialchars($href) ?>" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-emerald-100 hover:text-emerald-700 transition font-medium border border-gray-100"><?= htmlspecialchars(t('landing.res_obi_' . $k)) ?></a>
+                            <a href="<?= htmlspecialchars($href) ?>" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition font-medium border border-gray-100"><?= htmlspecialchars(t('landing.res_obi_' . $k)) ?></a>
                         <?php endforeach; ?>
                     </div>
-                    <a href="/oman-business-index" class="inline-flex items-center gap-2 text-emerald-700 font-semibold hover:text-emerald-800">
+                    <a href="/oman-business-index" class="inline-flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-700">
                         <?= htmlspecialchars(t('landing.res_obi_cta')) ?>
                         <i class="fa-solid fa-arrow-right text-xs"></i>
                     </a>
                 </div>
 
                 <!-- Omani Logo Library -->
-                <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-8 border border-amber-100">
+                <div class="bg-gradient-to-br from-blue-50 to-blue-50 rounded-2xl p-8 border border-blue-100">
                     <div class="flex items-center gap-3 mb-6">
-                        <div class="w-12 h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center">
+                        <div class="w-12 h-12 rounded-xl bg-blue-500 text-white flex items-center justify-center">
                             <i class="fa-solid fa-bezier-curve text-xl"></i>
                         </div>
                         <h3 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('landing.res_logos_title')) ?></h3>
@@ -942,10 +942,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             ['k' => 'pin7', 'href' => '/companies/bank-dhofar'],
                             ['k' => 'pin8', 'href' => '/companies/sohar-international-bank'],
                         ] as $pin): ?>
-                            <a href="<?= htmlspecialchars($pin['href']) ?>" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-amber-100 hover:text-amber-700 transition font-medium border border-gray-100"><?= htmlspecialchars(t('landing.res_logos_' . $pin['k'])) ?></a>
+                            <a href="<?= htmlspecialchars($pin['href']) ?>" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition font-medium border border-gray-100"><?= htmlspecialchars(t('landing.res_logos_' . $pin['k'])) ?></a>
                         <?php endforeach; ?>
                     </div>
-                    <a href="/logos" class="inline-flex items-center gap-2 text-amber-700 font-semibold hover:text-amber-800">
+                    <a href="/logos" class="inline-flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-700">
                         <?= htmlspecialchars(t('landing.res_logos_cta')) ?>
                         <i class="fa-solid fa-arrow-right text-xs"></i>
                     </a>
@@ -956,26 +956,26 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="bg-gray-50 rounded-2xl p-8">
                 <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-lg bg-purple-600 text-white flex items-center justify-center">
+                        <div class="w-10 h-10 rounded-lg bg-blue-600 text-white flex items-center justify-center">
                             <i class="fa-solid fa-lightbulb"></i>
                         </div>
                         <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('landing.res_sol_heading')) ?></h3>
                     </div>
-                    <a href="/solutions" class="text-sm font-semibold text-purple-700 hover:text-purple-800"><?= htmlspecialchars(t('landing.res_sol_cta')) ?></a>
+                    <a href="/solutions" class="text-sm font-semibold text-blue-700 hover:text-blue-700"><?= htmlspecialchars(t('landing.res_sol_cta')) ?></a>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    <a href="/solutions/business-cards-oman-construction-companies" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Construction &amp; Contracting</a>
-                    <a href="/solutions/digital-business-cards-oil-gas-oman" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Oil &amp; Gas</a>
-                    <a href="/solutions/business-cards-oman-bank-employees" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Bank Employees</a>
-                    <a href="/solutions/business-cards-muscat-doctors-clinics" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Doctors &amp; Clinics</a>
-                    <a href="/solutions/business-cards-omani-law-firms" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Law Firms</a>
-                    <a href="/solutions/digital-cards-oman-real-estate-agents" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Real Estate</a>
-                    <a href="/solutions/qr-code-menu-muscat-restaurants" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Restaurants QR Menu</a>
-                    <a href="/solutions/bilingual-arabic-english-business-cards" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Bilingual AR/EN Cards</a>
-                    <a href="/solutions/nfc-business-cards-oman-executives" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">NFC for Executives</a>
-                    <a href="/solutions/business-cards-oman-government-employees" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Government Employees</a>
-                    <a href="/solutions/business-cards-oman-startups" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Startups</a>
-                    <a href="/solutions/salalah-tourism-business-cards" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Salalah Tourism</a>
+                    <a href="/solutions/business-cards-oman-construction-companies" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Construction &amp; Contracting</a>
+                    <a href="/solutions/digital-business-cards-oil-gas-oman" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Oil &amp; Gas</a>
+                    <a href="/solutions/business-cards-oman-bank-employees" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Bank Employees</a>
+                    <a href="/solutions/business-cards-muscat-doctors-clinics" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Doctors &amp; Clinics</a>
+                    <a href="/solutions/business-cards-omani-law-firms" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Law Firms</a>
+                    <a href="/solutions/digital-cards-oman-real-estate-agents" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Real Estate</a>
+                    <a href="/solutions/qr-code-menu-muscat-restaurants" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Restaurants QR Menu</a>
+                    <a href="/solutions/bilingual-arabic-english-business-cards" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Bilingual AR/EN Cards</a>
+                    <a href="/solutions/nfc-business-cards-oman-executives" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">NFC for Executives</a>
+                    <a href="/solutions/business-cards-oman-government-employees" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Government Employees</a>
+                    <a href="/solutions/business-cards-oman-startups" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Startups</a>
+                    <a href="/solutions/salalah-tourism-business-cards" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Salalah Tourism</a>
                 </div>
             </div>
         </div>

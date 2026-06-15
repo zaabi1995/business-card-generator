@@ -141,8 +141,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </p>
                 </div>
                 <div class="bg-white rounded-xl shadow-sm p-8 text-center">
-                    <div class="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-6">
-                        <i class="fa-solid fa-handshake text-2xl text-purple-600"></i>
+                    <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-6">
+                        <i class="fa-solid fa-handshake text-2xl text-blue-600"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('about.values_trust_title')) ?></h3>
                     <p class="text-gray-600">
