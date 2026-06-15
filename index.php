@@ -1114,7 +1114,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </a>
             </div>
 
-            <div class="mt-10 flex flex-wrap justify-center gap-6 text-white/70 text-sm">
+            <div class="mt-10 flex flex-wrap justify-center gap-6 text-white text-sm">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-circle-check text-white"></i>
                     <span><?= htmlspecialchars(t('landing.cta_free_starter')) ?></span>
