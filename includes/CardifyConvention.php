@@ -233,23 +233,23 @@ class CardifyConvention
         $id   = (string) ($employee['id'] ?? '');
         $email = (string) ($employee['email'] ?? '');
 
-        $key = '';
+        // Prefer the pretty bare localpart, but ONLY when nginx will actually
+        // route it: a single no-dot token (-> index.php bare resolver) or a
+        // single-dot first.last (-> digital_card). Multi-dot or otherwise odd
+        // localparts are not routed bare and must use the /card/<id> form.
         if ($email !== '' && strpos($email, '@') !== false) {
             $local = strtolower(substr($email, 0, strpos($email, '@')));
-            // nginx bare-token route only matches [a-z0-9][a-z0-9._-]*
-            if (preg_match('/^[a-z0-9][a-z0-9._-]*$/', $local)) {
-                $key = $local;
+            $routableBare = preg_match('/^[a-z0-9][a-z0-9_-]*$/', $local)
+                         || preg_match('/^[a-z0-9]+\.[a-z0-9]+$/', $local);
+            if ($routableBare && !in_array($local, self::shareReservedSlugs(), true)) {
+                return $base . '/' . rawurlencode($local);
             }
         }
-        if ($key === '') {
-            $key = strtolower($id);
+        // Canonical, always-resolvable fallback (id lookup + localpart fallback
+        // in digital_card.php; the /card/ route accepts any token).
+        if ($id !== '') {
+            return $base . '/card/' . rawurlencode(strtolower($id));
         }
-        if ($key === '') {
-            return $base . '/';
-        }
-        if (in_array($key, self::shareReservedSlugs(), true)) {
-            return $base . '/card/' . rawurlencode($key);
-        }
-        return $base . '/' . rawurlencode($key);
+        return $base . '/';
     }
 }
