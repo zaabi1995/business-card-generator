@@ -98,9 +98,11 @@ class InstantCard
             return ['ok' => false, 'error' => 'slug_taken'];
         }
 
+        // Multi-dot email slugs (ali.bhd.om) are not bare-routable per
+        // CardifyConvention; use the /card/<id> form which digital_card resolves.
         $cardUrl = function_exists('getTenantUrl')
-            ? getTenantUrl(self::DEMO_SLUG, '/' . $slug)
-            : 'https://demo.cardify.om/' . $slug;
+            ? getTenantUrl(self::DEMO_SLUG, '/card/' . $slug)
+            : 'https://demo.cardify.om/card/' . $slug;
 
         // Idempotent: don't re-email if a pending lead for this email exists in the last hour.
         $recent = $pdo->prepare("SELECT id FROM cardify_signup_leads
