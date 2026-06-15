@@ -1004,8 +1004,8 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
     
     <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
         <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
-                <i class="fa-solid fa-clone text-purple-600 text-xl"></i>
+            <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                <i class="fa-solid fa-clone text-blue-600 text-xl"></i>
             </div>
             <div>
                 <p class="text-3xl font-bold text-gray-900"><?php echo count($backTemplates); ?></p>
@@ -1032,8 +1032,8 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
     
     <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
         <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-                <i class="fa-solid fa-file-lines text-amber-600 text-xl"></i>
+            <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                <i class="fa-solid fa-file-lines text-blue-600 text-xl"></i>
             </div>
             <div>
                 <p class="text-3xl font-bold text-gray-900"><?php echo $generatedCount; ?></p>
@@ -1167,8 +1167,8 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
     
     <a href="share.php" class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md hover:border-purple-200 transition-all group">
         <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-purple-50 group-hover:bg-purple-100 flex items-center justify-center transition-colors">
-                <i class="fa-solid fa-share-nodes text-purple-600 text-xl"></i>
+            <div class="w-12 h-12 rounded-xl bg-blue-50 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
+                <i class="fa-solid fa-share-nodes text-blue-600 text-xl"></i>
             </div>
             <div>
                 <p class="font-semibold text-gray-900"><?= htmlspecialchars(t('dashboard.qa_share_title')) ?></p>
