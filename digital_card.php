@@ -169,6 +169,19 @@ try {
     // Load company theme
     $theme = loadCompanyTheme($company['id']);
 
+    // Instant/demo cards carry a per-employee brand colour + verified flag in
+    // demo_meta. Let the chosen colour override the (shared demo tenant) theme so
+    // each demo card shows the colour its owner picked in the homepage hero.
+    $demoMeta = (!empty($employee['demo_meta'])) ? json_decode((string)$employee['demo_meta'], true) : null;
+    $isDemoUnverified = false;
+    if (is_array($demoMeta)) {
+        if (!empty($demoMeta['brand_color']) && preg_match('/^#[0-9a-fA-F]{6}$/', (string)$demoMeta['brand_color'])) {
+            if (!is_array($theme)) { $theme = []; }
+            $theme['primary_color'] = $demoMeta['brand_color'];
+        }
+        $isDemoUnverified = empty($demoMeta['verified']);
+    }
+
     // Load latest generated card
     $db = Database::getInstance();
     $card = $db->fetchOne(
@@ -1041,6 +1054,12 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
     </style>
 </head>
 <body class="<?php echo $isDarkPage ? 'force-dark' : 'force-light'; ?>">
+    <?php if (!empty($isDemoUnverified)): $__demoAr = (($locale ?? 'en') === 'ar'); ?>
+    <div style="background:#0c1418;color:#fff;text-align:center;font:600 13px/1.4 -apple-system,'IBM Plex Sans Arabic',sans-serif;padding:9px 14px;display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap" dir="<?= $__demoAr ? 'rtl' : 'ltr' ?>">
+        <span><?= $__demoAr ? 'بطاقة تجريبية — فعّل بريدك للاحتفاظ بها وتخصيصها' : 'Demo card — verify your email to keep it and make it yours' ?></span>
+        <a href="https://cardify.om" style="color:#26b4d3;text-decoration:none;font-weight:700">cardify.om →</a>
+    </div>
+    <?php endif; ?>
     <div class="card-top-controls">
         <?php if ($themeToggleEnabled): ?>
         <!-- Theme toggle (visitor override, persisted via cookie, 7d) -->

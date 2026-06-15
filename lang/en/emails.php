@@ -11,6 +11,10 @@ return [
     'welcome_body'           => 'Your company account is ready. Finish the 5-minute setup to start issuing cards.',
     'welcome_cta'            => 'Finish setup',
 
+    'instant_card_welcome_subject' => 'Your Cardify card is live, :name',
+    'instant_card_welcome_body'    => 'Your digital business card is ready at :cardUrl. Verify your email to keep it, then upload your logo and make it your own. Unverified demo cards are removed after 14 days.',
+    'instant_card_welcome_cta'     => 'Verify and keep my card',
+
     'otp_subject'            => 'Your Cardify verification code',
     'otp_body'               => 'Your one-time code is :code. It expires in 10 minutes.',
 

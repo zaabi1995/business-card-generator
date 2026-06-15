@@ -418,6 +418,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             'apple'  => t('landing.hero_wallet_cta'),
                             'google' => t('landing.hero_wallet_cta_google'),
                         ],
+                        'errText' => t('landing.hero_getcard_err'),
                      ]), ENT_QUOTES) ?>)">
                     <div class="cf-hero-stage">
                         <!-- Live wallet pass (editable) -->
@@ -438,7 +439,21 @@ require_once INCLUDES_DIR . '/ui-header.php';
                                         :aria-label="'<?= htmlspecialchars(t('landing.hero_brand_colour')) ?> '+c"></button>
                             </template>
                         </div>
-                        <p class="cf-try-hint"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> <?= htmlspecialchars(t('landing.hero_try_hint')) ?></p>
+                        <p class="cf-try-hint" x-show="!done"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> <?= htmlspecialchars(t('landing.hero_try_hint')) ?></p>
+                        <!-- Get my card: email -> instant demo card + verify email -->
+                        <form class="cf-getcard" @submit.prevent="submit()" x-show="!done">
+                            <input type="email" class="cf-email-input" x-model="email" required :disabled="submitting"
+                                   placeholder="<?= htmlspecialchars(t('landing.hero_email_ph')) ?>" aria-label="<?= htmlspecialchars(t('landing.hero_email_ph')) ?>" dir="ltr">
+                            <button type="submit" class="cf-getcard-btn" :disabled="submitting">
+                                <span x-show="!submitting"><?= htmlspecialchars(t('landing.hero_getcard')) ?></span>
+                                <span x-show="submitting" x-cloak><?= htmlspecialchars(t('landing.hero_getcard_sending')) ?></span>
+                            </button>
+                        </form>
+                        <p class="cf-getcard-err" x-show="errorMsg" x-text="errorMsg" x-cloak></p>
+                        <div class="cf-getcard-done" x-show="done" x-cloak>
+                            <strong><?= htmlspecialchars(t('landing.hero_getcard_done')) ?></strong>
+                            <a :href="cardUrl" x-text="cardUrl" target="_blank" rel="noopener"></a>
+                        </div>
                         <div class="cf-wallet-row" x-cloak>
                             <a class="cf-wallet-btn cf-wallet-btn--apple" x-show="platform !== 'google'" :href="appleHref" target="_blank" rel="noopener" :aria-label="appleLabel">
                                 <i class="fa-brands fa-apple" aria-hidden="true"></i>
@@ -475,6 +490,28 @@ require_once INCLUDES_DIR . '/ui-header.php';
             lang: (seed.lang === 'ar' ? 'ar' : 'en'),
             labels: seed.labels || {},
             platform: platform, // 'apple' | 'google' | 'other' (desktop)
+            // Get-my-card funnel state
+            email: '', submitting: false, done: false, cardUrl: '', errorMsg: '',
+            errText: seed.errText || 'Please enter a valid work email and try again.',
+            async submit() {
+                if (this.submitting || !this.email) { return; }
+                this.errorMsg = ''; this.submitting = true;
+                try {
+                    const body = new URLSearchParams({
+                        email: this.email, name: this.name, title: this.role,
+                        company: this.company, color: this.color, lang: this.lang
+                    });
+                    const r = await fetch('/instant_card.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: body.toString()
+                    });
+                    const d = await r.json();
+                    if (d && d.ok) { this.done = true; this.cardUrl = d.cardUrl || ''; }
+                    else { this.errorMsg = this.errText; }
+                } catch (e) { this.errorMsg = this.errText; }
+                this.submitting = false;
+            },
             // Reactive: the pass reflects the LIVE colour + typed details.
             get _q() {
                 return 'name=' + encodeURIComponent(this.name)
