@@ -350,9 +350,9 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     <!-- html2canvas (fallback) -->
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     
-    <!-- Alpine.js with Collapse plugin -->
-    <script defer src="https://unpkg.com/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Alpine.js with Collapse plugin (self-hosted, pinned; collapse before core) -->
+    <script defer src="/assets/js/alpine-collapse-3.15.12.min.js"></script>
+    <script defer src="/assets/js/alpine-3.15.12.min.js"></script>
     
     <style>
         body { font-family: 'Inter', sans-serif; }

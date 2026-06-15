@@ -222,8 +222,8 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <?php $cardifyBrandVersion = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/css/cardify-brand-2026.css') ?: time(); ?>
     <link rel="stylesheet" href="<?php echo assetUrl('css/cardify-brand-2026.css'); ?>?v=<?php echo $cardifyBrandVersion; ?>"><?php /* Brand 2026: cyan remap + Sora display + view transitions. Loads last. */ ?>
     
-    <!-- Alpine.js -->
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Alpine.js (self-hosted, pinned; was unpkg @3.x.x render-path dependency) -->
+    <script defer src="/assets/js/alpine-3.15.12.min.js"></script>
     
     <style>
         /* Latin pages render in Plus Jakarta Sans (body) + Sora (display,

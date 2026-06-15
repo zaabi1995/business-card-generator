@@ -1500,8 +1500,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         </footer>
     </div>
     
-    <!-- Alpine.js for interactivity -->
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Alpine.js for interactivity (self-hosted, pinned) -->
+    <script defer src="/assets/js/alpine-3.15.12.min.js"></script>
     
     <!-- Fabric.js 7.x for card preview generation -->
     <script src="https://cdn.jsdelivr.net/npm/fabric@7.1.0/dist/index.min.js"></script>
