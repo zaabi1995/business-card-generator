@@ -4,6 +4,8 @@ The locked visual language for Cardify (cardify.om). This is the **elevation of 
 
 Direction: **Quiet Teal base + Wallet-Pass hero** (approved 15 Jun 2026). Reference rivals: CardSpace (premium restraint), CardPass (wallet-pass-as-hero, casual Arabic). Cardify wins on Arabic-first depth + Oman trust.
 
+**Builds on the existing brand layer** — do not replace it: `assets/css/cardify-brand-2026.css` already defines the cyan scale `--cf-50…--cf-900` (anchor `--cf-500: #009bc1`), remaps Tailwind `blue-*`→cyan on `.cardify-brand` pages, and sets Sora headings. Arabic loads as **IBM Plex Sans Arabic** (header `ui-header.php`), not Noto. The token names below map to the `--cf-*` scale; extend that file, don't fork it.
+
 ## Principles
 1. **One accent.** Teal is the only brand colour. Retire green (`#16a34a`) as a primary CTA. No multi-colour banding.
 2. **One hero object.** The wallet pass / digital card is the star on every key surface (CardPass lesson). No busy 3-card clusters, no placeholder "John Doe" — real Omani names + real client logos.
