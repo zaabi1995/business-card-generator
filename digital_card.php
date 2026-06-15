@@ -1056,13 +1056,36 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         [dir="rtl"] .bottom-buttons { margin-top: 6px; }
         [dir="rtl"] .wallet-buttons { margin-top: 6px; }
         [dir="rtl"] .social-links { margin-top: 8px; }
+
+        /* ---- Demo/instant card: banner, controls offset, styled card design ---- */
+        .cf-demo-banner {
+            background: #0c1418; color: #fff; text-align: center;
+            font: 600 12.5px/1.4 -apple-system, 'IBM Plex Sans Arabic', sans-serif;
+            padding: 9px 14px; display: flex; gap: 8px; align-items: center;
+            justify-content: center; flex-wrap: wrap; position: relative; z-index: 60;
+        }
+        .cf-demo-banner a { color: #26b4d3; text-decoration: none; font-weight: 700; }
+        .is-demo .card-top-controls { top: 56px; }   /* drop controls below the banner */
+        .demo-card-design {
+            max-width: 360px; margin: 0 auto 8px; border-radius: 22px; padding: 26px 24px;
+            color: #fff; position: relative; aspect-ratio: 1.66 / 1;
+            display: flex; flex-direction: column; justify-content: center;
+            background: linear-gradient(150deg, var(--dc), color-mix(in srgb, var(--dc) 42%, #04141b));
+            box-shadow: 0 30px 64px -28px rgba(0,0,0,.5);
+        }
+        .dcd-live { position: absolute; top: 18px; inset-inline-end: 20px; font-size: 11px; font-weight: 700; letter-spacing: .1em; background: rgba(255,255,255,.16); padding: 5px 10px; border-radius: 999px; }
+        .dcd-co { font-size: 12px; font-weight: 700; letter-spacing: .16em; opacity: .85; text-transform: uppercase; }
+        .dcd-name { font-size: 24px; font-weight: 800; line-height: 1.12; margin-top: 12px; }
+        .dcd-title { opacity: .85; margin-top: 4px; font-size: 15px; }
+        .dcd-contact { margin-top: 16px; display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; opacity: .92; }
+        .dcd-contact i { width: 15px; opacity: .8; font-size: 12px; }
     </style>
 </head>
-<body class="<?php echo $isDarkPage ? 'force-dark' : 'force-light'; ?>">
+<body class="<?php echo $isDarkPage ? 'force-dark' : 'force-light'; echo !empty($demoMeta) ? ' is-demo' : ''; ?>">
     <?php if (!empty($isDemoUnverified)): $__demoAr = (($locale ?? 'en') === 'ar'); ?>
-    <div style="background:#0c1418;color:#fff;text-align:center;font:600 13px/1.4 -apple-system,'IBM Plex Sans Arabic',sans-serif;padding:9px 14px;display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap" dir="<?= $__demoAr ? 'rtl' : 'ltr' ?>">
-        <span><?= $__demoAr ? 'بطاقة تجريبية — فعّل بريدك للاحتفاظ بها وتخصيصها' : 'Demo card — verify your email to keep it and make it yours' ?></span>
-        <a href="https://cardify.om" style="color:#26b4d3;text-decoration:none;font-weight:700">cardify.om →</a>
+    <div class="cf-demo-banner" dir="<?= $__demoAr ? 'rtl' : 'ltr' ?>">
+        <span><?= $__demoAr ? 'بطاقة تجريبية — فعّل بريدك للاحتفاظ بها' : 'Demo card — verify your email to keep it' ?></span>
+        <a href="https://cardify.om">cardify.om →</a>
     </div>
     <?php endif; ?>
     <div class="card-top-controls">
@@ -1109,6 +1132,24 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <?php if ($backImage): ?>
             <div class="tap-hint" id="tapHint"><?= htmlspecialchars(t('digitalcard.tap_to_flip')) ?></div>
             <?php endif; ?>
+        </div>
+        <?php elseif (!empty($demoMeta)):
+            // Demo/instant cards have no Fabric-generated card image; render a styled
+            // card design at the top so the page never shows an empty gap.
+            $__dcColor = (!empty($demoMeta['brand_color']) && preg_match('/^#[0-9a-fA-F]{6}$/', (string)$demoMeta['brand_color'])) ? $demoMeta['brand_color'] : ($accentColor ?: '#009bc1');
+            $__dcCompany = trim((string)($employee['company_en'] ?? $companyName));
+            $__dcPhone = trim((string)($employee['mobile'] ?? $employee['phone'] ?? ''));
+            $__dcEmail = trim((string)($employee['email'] ?? ''));
+        ?>
+        <div class="demo-card-design" style="--dc: <?= htmlspecialchars($__dcColor, ENT_QUOTES) ?>;">
+            <span class="dcd-live">LIVE</span>
+            <?php if ($__dcCompany !== ''): ?><div class="dcd-co"><?= htmlspecialchars($__dcCompany) ?></div><?php endif; ?>
+            <div class="dcd-name"><?= htmlspecialchars($name) ?></div>
+            <?php if ($position !== ''): ?><div class="dcd-title"><?= htmlspecialchars($position) ?></div><?php endif; ?>
+            <div class="dcd-contact">
+                <?php if ($__dcPhone !== ''): ?><div dir="ltr"><i class="fa-solid fa-phone"></i> <?= htmlspecialchars($__dcPhone) ?></div><?php endif; ?>
+                <?php if ($__dcEmail !== ''): ?><div dir="ltr"><i class="fa-solid fa-envelope"></i> <?= htmlspecialchars($__dcEmail) ?></div><?php endif; ?>
+            </div>
         </div>
         <?php endif; ?>
 
