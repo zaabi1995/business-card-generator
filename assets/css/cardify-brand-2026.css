@@ -152,6 +152,13 @@ h1, h2, h3, .font-display {
 }
 .cf-edit:hover { background: rgba(255,255,255,.08); }
 .cf-edit:focus { background: rgba(255,255,255,.14); box-shadow: 0 0 0 2px rgba(255,255,255,.4); }
+/* On-card editable contact lines (phone + email) */
+.cf-pass__contact { margin-top: 16px; display: flex; flex-direction: column; gap: 7px; }
+.cf-pass__line { display: flex; align-items: center; gap: 9px; font-size: 14px; color: rgba(255,255,255,.92); }
+.cf-pass__line i { font-size: 12px; opacity: .8; width: 15px; text-align: center; flex-shrink: 0; }
+.cf-pass__field { display: inline-block; min-width: 60px; }
+.cf-pass__field:empty::before { content: attr(data-ph); color: rgba(255,255,255,.5); }
+.cf-pass-qr { margin-top: 18px; }
 .cf-swatch { border: 0; padding: 0; cursor: pointer; transition: transform .15s ease, outline-color .15s ease; }
 .cf-swatch:hover { transform: translateY(-2px); }
 .cf-swatch:focus-visible { outline: 2px solid var(--cf-500); outline-offset: 3px; }
@@ -176,6 +183,28 @@ h1, h2, h3, .font-display {
 .cf-wallet-btn--google { background: #fff; color: #1f2937; border: 1px solid var(--line, #e7ebea); box-shadow: 0 6px 18px -10px rgba(0,0,0,.25); }
 .cf-wallet-btn--google i { color: #4285f4; }
 .cf-wallet-btn--google:hover { border-color: #d0d7de; box-shadow: 0 12px 26px -12px rgba(0,0,0,.3); }
+
+/* ---- Get-my-card funnel ---- */
+.cf-getcard { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 400px; }
+.cf-email-input {
+  flex: 1; min-width: 190px; padding: 12px 16px; border: 1px solid var(--line, #e7ebea);
+  border-radius: 12px; font-size: 15px; font-weight: 500; background: #fff; color: #0c1418;
+}
+.cf-email-input:focus { outline: none; border-color: var(--cf-500); box-shadow: 0 0 0 3px rgba(0,155,193,.15); }
+.cf-getcard-btn {
+  background: var(--cf-500); color: #fff; border: 0; border-radius: 12px; padding: 12px 22px;
+  font-size: 15px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  box-shadow: 0 8px 24px -8px rgba(0,155,193,.6); transition: transform .15s ease, background .15s ease;
+}
+.cf-getcard-btn:hover:not(:disabled) { transform: translateY(-2px); background: var(--cf-600); }
+.cf-getcard-btn:disabled { opacity: .6; cursor: default; }
+.cf-getcard-err { color: #dc2626; font-size: 13px; font-weight: 600; max-width: 400px; text-align: center; }
+.cf-getcard-done {
+  background: var(--cf-50); border: 1px solid var(--cf-100); border-radius: 14px;
+  padding: 14px 18px; max-width: 400px; text-align: center; font-size: 14px; color: var(--cf-900);
+}
+.cf-getcard-done strong { display: block; margin-bottom: 4px; }
+.cf-getcard-done a { color: var(--cf-600); font-weight: 700; word-break: break-all; text-decoration: none; }
 
 /* ---- Restore responsive grid utilities missing from the prebuilt Tailwind ----
    `lg:grid-cols-5` / `lg:grid-cols-6` weren't compiled, so the footer fell back

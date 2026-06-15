@@ -428,6 +428,18 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <div class="cf-pass__co cf-edit" contenteditable="true" spellcheck="false" @input="company=$event.target.innerText"><?= $heroCo ?></div>
                             <h3 class="cf-pass__name cf-edit" contenteditable="true" spellcheck="false" @input="name=$event.target.innerText"><?= htmlspecialchars($heroName) ?></h3>
                             <p class="cf-pass__role cf-edit" contenteditable="true" spellcheck="false" @input="role=$event.target.innerText"><?= htmlspecialchars(t('landing.hero_card_role')) ?></p>
+                            <div class="cf-pass__contact">
+                                <div class="cf-pass__line">
+                                    <i class="fa-solid fa-phone" aria-hidden="true"></i>
+                                    <span class="cf-edit cf-pass__field" contenteditable="true" spellcheck="false" dir="ltr"
+                                          data-ph="<?= htmlspecialchars(t('landing.hero_phone_ph')) ?>" @input="phone=$event.target.innerText"></span>
+                                </div>
+                                <div class="cf-pass__line">
+                                    <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+                                    <span class="cf-edit cf-pass__field" contenteditable="true" spellcheck="false" dir="ltr"
+                                          data-ph="<?= htmlspecialchars(t('landing.hero_email_ph')) ?>" @input="email=$event.target.innerText"></span>
+                                </div>
+                            </div>
                             <div class="cf-pass-qr" aria-hidden="true"></div>
                         </div>
                         <!-- Brand-colour swatch picker (live) -->
@@ -442,10 +454,6 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <p class="cf-try-hint" x-show="!done"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> <?= htmlspecialchars(t('landing.hero_try_hint')) ?></p>
                         <!-- Get my card: email -> instant demo card + verify email -->
                         <form class="cf-getcard" @submit.prevent="submit()" x-show="!done">
-                            <input type="email" class="cf-email-input" x-model="email" required :disabled="submitting"
-                                   placeholder="<?= htmlspecialchars(t('landing.hero_email_ph')) ?>" aria-label="<?= htmlspecialchars(t('landing.hero_email_ph')) ?>" dir="ltr">
-                            <input type="tel" class="cf-email-input" x-model="phone" :disabled="submitting"
-                                   placeholder="<?= htmlspecialchars(t('landing.hero_phone_ph')) ?>" aria-label="<?= htmlspecialchars(t('landing.hero_phone_ph')) ?>" dir="ltr">
                             <button type="submit" class="cf-getcard-btn" :disabled="submitting">
                                 <span x-show="!submitting"><?= htmlspecialchars(t('landing.hero_getcard')) ?></span>
                                 <span x-show="submitting" x-cloak><?= htmlspecialchars(t('landing.hero_getcard_sending')) ?></span>
@@ -495,7 +503,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
             email: '', phone: '', submitting: false, done: false, cardUrl: '', errorMsg: '',
             errText: seed.errText || 'Please enter a valid work email and try again.',
             async submit() {
-                if (this.submitting || !this.email) { return; }
+                if (this.submitting) { return; }
+                if (!this.email || this.email.indexOf('@') === -1) { this.errorMsg = this.errText; return; }
                 this.errorMsg = ''; this.submitting = true;
                 try {
                     const body = new URLSearchParams({
