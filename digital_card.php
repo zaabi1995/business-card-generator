@@ -1115,7 +1115,12 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         <!-- Employee Info -->
         <div class="employee-info">
             <div class="employee-name" role="heading" aria-level="1"><?php echo htmlspecialchars($name); ?></div>
-<!-- DBG company=[<?php echo htmlspecialchars((string)$companyName); ?>] demo=<?php echo htmlspecialchars(json_encode($demoMeta)); ?> empCo=[<?php echo htmlspecialchars((string)($employee['company_en'] ?? 'UNSET')); ?>] -->
+            <?php
+            // Demo/instant cards: render the person's typed company (not the shared
+            // `demo` tenant name). Applied here at display so it can't be clobbered
+            // by an earlier derivation of $companyName.
+            if (!empty($demoMeta) && !empty($employee['company_en'])) { $companyName = $employee['company_en']; }
+            ?>
             <?php if ($position || $companyName): ?>
             <div class="employee-title">
                 <?php
