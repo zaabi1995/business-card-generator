@@ -434,12 +434,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </template>
                         </div>
                         <p class="cf-try-hint"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> <?= htmlspecialchars(t('landing.hero_try_hint')) ?></p>
-                        <div class="cf-wallet-row" :class="os === 'google' ? 'cf-wallet-row--android' : ''">
-                            <a class="cf-wallet-btn cf-wallet-btn--apple" :href="appleHref" target="_blank" rel="noopener" :aria-label="appleLabel">
+                        <div class="cf-wallet-row" x-cloak>
+                            <a class="cf-wallet-btn cf-wallet-btn--apple" x-show="platform !== 'google'" :href="appleHref" target="_blank" rel="noopener" :aria-label="appleLabel">
                                 <i class="fa-brands fa-apple" aria-hidden="true"></i>
                                 <span x-text="appleLabel"><?= htmlspecialchars(t('landing.hero_wallet_cta')) ?></span>
                             </a>
-                            <a class="cf-wallet-btn cf-wallet-btn--google" :href="googleHref" target="_blank" rel="noopener" :aria-label="googleLabel">
+                            <a class="cf-wallet-btn cf-wallet-btn--google" x-show="platform !== 'apple'" :href="googleHref" target="_blank" rel="noopener" :aria-label="googleLabel">
                                 <i class="fa-brands fa-google" aria-hidden="true"></i>
                                 <span x-text="googleLabel"><?= htmlspecialchars(t('landing.hero_wallet_cta_google')) ?></span>
                             </a>
@@ -456,10 +456,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
     function cardifyHero(seed) {
         seed = seed || {};
         var ua = (navigator.userAgent || '');
-        // Android -> Google Wallet; iOS + desktop -> Apple Wallet (Apple's pkpass
-        // opens in Safari; desktop is mostly iPhone owners). Real signed passes
-        // via the existing wallet endpoints for the public demo card.
-        var os = /Android/i.test(ua) ? 'google' : 'apple';
+        // Show only the device-relevant wallet: Android -> Google, Apple
+        // (iPhone/iPad/Mac; iPadOS reports as Macintosh) -> Apple. Genuinely
+        // ambiguous desktop (Windows/Linux) -> show both so they can still pick.
+        var isAndroid = /Android/i.test(ua);
+        var isApple = !isAndroid && /iPhone|iPad|iPod|Macintosh|Mac OS X/i.test(ua);
+        var platform = isAndroid ? 'google' : (isApple ? 'apple' : 'other');
         var d = seed.demo || {};
         var labels = seed.labels || {};
         var q = '?i=' + encodeURIComponent(d.i || '')
@@ -469,7 +471,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             color: seed.c || '#009bc1',
             colors: ['#009bc1', '#2563eb', '#7c3aed', '#0c1418', '#16a34a', '#e11d48'],
             name: '', company: '', role: '',
-            os: os, // 'google' on Android, else 'apple' (controls which button shows first)
+            platform: platform, // 'apple' | 'google' | 'other' (desktop)
             appleHref: '/wallet_apple.php' + q,
             googleHref: '/wallet_google.php' + q,
             appleLabel: labels.apple || 'Add to Apple Wallet',
