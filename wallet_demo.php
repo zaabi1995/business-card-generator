@@ -174,9 +174,12 @@ foreach (['icon.png' => 29, 'icon@2x.png' => 58, 'icon@3x.png' => 87] as $fname 
         ?: $transparentPng;
     $apple->addAsset($fname, $png);
 }
-// logo.png (top-left of the pass) = the Cardify mark.
-foreach (['logo.png' => 50, 'logo@2x.png' => 100, 'logo@3x.png' => 150] as $fname => $px) {
-    $png = (is_readable($markPath) ? WalletImage::fitPng($markPath, $px, $px) : null);
+// logo.png (top-left of the pass) = the WHITE Cardify lockup on transparent, so
+// it sits cleanly on any pass colour (the coloured icon's white box looked clunky).
+$logoWhite = __DIR__ . '/assets/images/cardify-logo-white.png';
+$logoSrc   = is_readable($logoWhite) ? $logoWhite : $markPath;
+foreach (['logo.png' => [160, 40], 'logo@2x.png' => [320, 80], 'logo@3x.png' => [480, 120]] as $fname => $dim) {
+    $png = WalletImage::fitPng($logoSrc, $dim[0], $dim[1], false, true); // wide, left-aligned
     if ($png) { $apple->addAsset($fname, $png); }
 }
 // Baked Arabic strip (RTL name+title rendered as an image) when present.
