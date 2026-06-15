@@ -89,29 +89,48 @@ if (!AppleWalletPass::isEnabled()) {
     exit("Apple Wallet is not configured.\n");
 }
 
+$isAr = ($lang === 'ar');
+// Arabic: bake name+title into an RTL strip image, because PassKit renders
+// Arabic text fields LTR on non-Arabic devices (mirrors wallet_apple.php).
+// Fall back to Unicode RLE-wrapping if the baker is unavailable (GD missing).
+$bakedStrip = $isAr ? WalletImage::brandStripWithText($color, $name, $title) : [];
+$arBaked    = !empty($bakedStrip);
+$styleKey   = $arBaked ? 'storeCard' : 'eventTicket';
+$rle        = function (string $s) use ($isAr, $arBaked): string {
+    return ($isAr && !$arBaked && $s !== '') ? "\u{202B}" . $s . "\u{202C}" : $s;
+};
+
 $qr = ['format' => 'PKBarcodeFormatQR', 'message' => $qrTarget, 'messageEncoding' => 'iso-8859-1'];
+$L  = $isAr
+    ? ['card' => 'البطاقة الرقمية', 'demo' => 'بطاقة تجريبية', 'disc' => 'بطاقة تجريبية غير مُفعّلة، أُنشئت على cardify.om']
+    : ['card' => 'Digital Card', 'demo' => 'Demo card', 'disc' => 'Demo card, unverified. Made on cardify.om'];
+
 $pass = [
     'formatVersion'      => 1,
     'passTypeIdentifier' => APPLE_WALLET_PASS_TYPE_ID,
     'serialNumber'       => 'demo-' . substr(sha1($name . $title . $company . $color), 0, 16),
     'teamIdentifier'     => APPLE_WALLET_TEAM_ID,
-    'organizationName'   => $company !== '' ? $company : 'Cardify',
+    // Issuer is ALWAYS Cardify (never the user-typed company) so a demo card can
+    // never look like it was issued/authorised by a real organisation.
+    'organizationName'   => defined('APPLE_WALLET_ORG_NAME') ? APPLE_WALLET_ORG_NAME : 'Cardify',
+    // The typed company shows on the card FACE (next to the logo), as content, not issuer.
+    'logoText'           => $rle($company),
     'description'        => trim($name . ($company !== '' ? ', ' . $company : '')),
     'foregroundColor'    => $fg,
     'backgroundColor'    => $bgRgb,
     'labelColor'         => $fg,
     'barcodes'           => [$qr],
     'barcode'            => $qr,
-    'eventTicket'        => [
+    $styleKey            => [
         'headerFields'    => [],
-        'primaryFields'   => [['key' => 'name', 'label' => '', 'value' => $name, 'textAlignment' => 'PKTextAlignmentCenter']],
-        'secondaryFields' => ($title !== '') ? [['key' => 'title', 'label' => '', 'value' => $title, 'textAlignment' => 'PKTextAlignmentNatural']] : [],
+        'primaryFields'   => $arBaked ? [] : [['key' => 'name', 'label' => '', 'value' => $rle($name), 'textAlignment' => 'PKTextAlignmentCenter']],
+        'secondaryFields' => ($arBaked || $title === '') ? [] : [['key' => 'title', 'label' => '', 'value' => $rle($title), 'textAlignment' => 'PKTextAlignmentNatural']],
         'auxiliaryFields' => [],
-        'backFields'      => [[
-            'key' => 'card', 'label' => ($lang === 'ar') ? 'البطاقة الرقمية' : 'Digital Card',
-            'value' => $qrTarget,
-            'attributedValue' => '<a href="' . htmlspecialchars($qrTarget, ENT_QUOTES) . '">cardify.om</a>',
-        ]],
+        'backFields'      => [
+            ['key' => 'demo', 'label' => $L['demo'], 'value' => $L['disc']],
+            ['key' => 'card', 'label' => $L['card'], 'value' => $qrTarget,
+             'attributedValue' => '<a href="' . htmlspecialchars($qrTarget, ENT_QUOTES) . '">cardify.om</a>'],
+        ],
     ],
 ];
 
@@ -133,6 +152,10 @@ foreach (['icon.png' => 29, 'icon@2x.png' => 58, 'icon@3x.png' => 87] as $fname 
 foreach (['logo.png' => 50, 'logo@2x.png' => 100, 'logo@3x.png' => 150] as $fname => $px) {
     $png = (is_readable($markPath) ? WalletImage::fitPng($markPath, $px, $px) : null);
     if ($png) { $apple->addAsset($fname, $png); }
+}
+// Baked Arabic strip (RTL name+title rendered as an image) when present.
+if ($arBaked) {
+    foreach ($bakedStrip as $stripName => $stripBytes) { $apple->addAsset($stripName, $stripBytes); }
 }
 
 try {
