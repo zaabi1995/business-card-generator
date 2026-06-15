@@ -1115,6 +1115,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         <!-- Employee Info -->
         <div class="employee-info">
             <div class="employee-name" role="heading" aria-level="1"><?php echo htmlspecialchars($name); ?></div>
+<!-- DBG company=[<?php echo htmlspecialchars((string)$companyName); ?>] demo=<?php echo htmlspecialchars(json_encode($demoMeta)); ?> empCo=[<?php echo htmlspecialchars((string)($employee['company_en'] ?? 'UNSET')); ?>] -->
             <?php if ($position || $companyName): ?>
             <div class="employee-title">
                 <?php
