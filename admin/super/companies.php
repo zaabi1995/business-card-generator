@@ -22,41 +22,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     
     if ($action === 'update_company') {
-        $companyId = (int)$_POST['company_id'];
-        $company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $companyId]);
-        
+        // company id is a UUID string. Never cast to int, that yields 0 and
+        // matches no row, so the edit silently did nothing (live bug fixed here).
+        $companyId = trim($_POST['company_id'] ?? '');
+        $company = $companyId !== '' ? $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $companyId]) : null;
+
         if ($company) {
-            $updateData = [
-                'name' => sanitize($_POST['name']),
-                'slug' => sanitize($_POST['slug']),
-                'admin_email' => sanitizeEmail($_POST['admin_email']),
-                'status' => sanitize($_POST['status']),
-                'plan' => sanitize($_POST['plan']),
-                'updated_at' => date('Y-m-d H:i:s')
+            $data = [
+                'name'            => $_POST['name'] ?? '',
+                'slug'            => $_POST['slug'] ?? '',
+                'admin_email'     => $_POST['admin_email'] ?? '',
+                'status'          => sanitize($_POST['status'] ?? ''),
+                'plan'            => sanitize($_POST['plan'] ?? ''),
+                'currency'        => sanitize($_POST['currency'] ?? 'OMR'),
+                'billing_email'   => $_POST['billing_email'] ?? '',
+                'erp_client_name' => $_POST['erp_client_name'] ?? '',
             ];
-            
-            // Update password if provided
             if (!empty($_POST['new_password'])) {
-                $updateData['password_hash'] = password_hash($_POST['new_password'], PASSWORD_BCRYPT);
+                $data['password'] = $_POST['new_password']; // updateCompany hashes it
             }
-            
-            $db->update('companies', $updateData, 'id = :id', ['id' => $companyId]);
-            
-            AuditLog::logCompany('update', $companyId, $company, array_merge($company, $updateData));
-            
-            $message = 'Company updated successfully';
-            $messageType = 'success';
+
+            $result = DatabaseAdapter::updateCompany($companyId, $data);
+            if (!empty($result['success'])) {
+                AuditLog::logCompany('update', $companyId, $company, $result['company'] ?? null);
+                $message = 'Company updated successfully';
+                $messageType = 'success';
+            } else {
+                $message = $result['error'] ?? 'Failed to update company';
+                $messageType = 'error';
+            }
+        } else {
+            $message = 'Company not found';
+            $messageType = 'error';
         }
     } elseif ($action === 'delete_company') {
-        $companyId = (int)$_POST['company_id'];
-        $company = $db->fetchOne("SELECT * FROM companies WHERE id = :id", ['id' => $companyId]);
-        
-        if ($company) {
-            $db->delete('companies', 'id = :id', ['id' => $companyId]);
-            AuditLog::logCompany('delete', $companyId, $company, null);
-            
-            $message = 'Company deleted successfully';
-            $messageType = 'success';
+        // Soft-delete with a 30-day grace window (deactivate now, purge later),
+        // instead of an irreversible cascade. UUID id, never cast to int.
+        require_once INCLUDES_DIR . '/TenantDeletion.php';
+        $companyId = trim($_POST['company_id'] ?? '');
+        $company = $companyId !== '' ? $db->fetchOne("SELECT name FROM companies WHERE id = :id", ['id' => $companyId]) : null;
+
+        if (!$company) {
+            $message = 'Company not found';
+            $messageType = 'error';
+        } else {
+            $result = TenantDeletion::requestDelete($companyId, $_SESSION['user_id'] ?? null, 'Scheduled from super-admin companies list');
+            if (!empty($result['success'])) {
+                $message = 'Deletion scheduled for "' . $company['name'] . '". It is deactivated now and will be purged after '
+                    . date('M d, Y', strtotime($result['purge_after'])) . '. Cancel any time from the company page.';
+                $messageType = 'success';
+            } else {
+                $message = $result['error'] ?? 'Failed to schedule deletion';
+                $messageType = 'error';
+            }
         }
     } elseif ($action === 'create_company') {
         require_once INCLUDES_DIR . '/CardifyConvention.php';
@@ -100,6 +118,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'password_hash' => password_hash($_POST['password'], PASSWORD_BCRYPT),
                     'status' => sanitize($_POST['status']),
                     'plan' => sanitize($_POST['plan']),
+                    'currency' => sanitize($_POST['currency'] ?? 'OMR'),
+                    'billing_email' => sanitizeEmail($_POST['billing_email'] ?? ''),
+                    'erp_client_name' => trim($_POST['erp_client_name'] ?? ''),
                     'created_at' => date('Y-m-d H:i:s'),
                     'updated_at' => date('Y-m-d H:i:s')
                 ];
@@ -261,7 +282,8 @@ adminHeader('Companies Management', 'companies');
                 <?php foreach ($companies as $company): ?>
                 <tr class="bg-white border-b hover:bg-gray-50">
                     <td class="px-6 py-4">
-                        <div class="font-medium text-gray-900"><?php echo sanitize($company['name']); ?></div>
+                        <a href="company.php?id=<?php echo urlencode($company['id']); ?>"
+                           class="font-medium text-blue-700 hover:text-blue-900 hover:underline"><?php echo sanitize($company['name']); ?></a>
                         <div class="text-xs text-gray-500"><?php echo sanitize($company['slug']); ?></div>
                     </td>
                     <td class="px-6 py-4"><?php echo sanitize($company['admin_email']); ?></td>
@@ -291,7 +313,11 @@ adminHeader('Companies Management', 'companies');
                     <td class="px-6 py-4"><?php echo date('M d, Y', strtotime($company['created_at'])); ?></td>
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-2">
-                            <button onclick='openEditModal(<?php echo json_encode($company); ?>)' 
+                            <a href="company.php?id=<?php echo urlencode($company['id']); ?>"
+                               class="text-gray-600 hover:text-gray-900" title="View details (everything about this company)">
+                                <i class="fa-solid fa-circle-info"></i>
+                            </a>
+                            <button onclick='openEditModal(<?php echo json_encode($company); ?>)'
                                     class="text-blue-600 hover:text-blue-800" title="Edit">
                                 <i class="fa-solid fa-edit"></i>
                             </button>
@@ -317,8 +343,8 @@ adminHeader('Companies Management', 'companies');
                                 </button>
                             </form>
                             <?php endif; ?>
-                            <button onclick="confirmDelete(<?php echo $company['id']; ?>, '<?php echo sanitize($company['name']); ?>')"
-                                    class="text-red-600 hover:text-red-800" title="Delete">
+                            <button onclick="confirmDelete(<?php echo htmlspecialchars(json_encode($company['id']), ENT_QUOTES); ?>, <?php echo htmlspecialchars(json_encode($company['name']), ENT_QUOTES); ?>)"
+                                    class="text-red-600 hover:text-red-800" title="Schedule deletion">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
@@ -406,6 +432,29 @@ adminHeader('Companies Management', 'companies');
                         </select>
                     </div>
                 </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                        <select name="currency" id="companyCurrency"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="OMR">OMR</option>
+                            <option value="AED">AED</option>
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="SAR">SAR</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Billing Email</label>
+                        <input type="email" name="billing_email" id="companyBillingEmail"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ERP Client Name <span class="text-gray-400 font-normal">(BHD-ERP lookup override)</span></label>
+                    <input type="text" name="erp_client_name" id="companyErpClientName"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
             </div>
             <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
                 <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
@@ -419,15 +468,15 @@ adminHeader('Companies Management', 'companies');
 <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
         <div class="p-6">
-            <h3 class="text-lg font-semibold text-red-600 mb-2">Delete Company</h3>
-            <p class="text-gray-600">Are you sure you want to delete <strong id="deleteCompanyName"></strong>? This will also delete all employees and cards associated with this company. This action cannot be undone.</p>
+            <h3 class="text-lg font-semibold text-red-600 mb-2">Schedule deletion</h3>
+            <p class="text-gray-600">Schedule <strong id="deleteCompanyName"></strong> for deletion? The company is <strong>deactivated immediately</strong> (logins blocked) and permanently purged after a 30-day grace period. You can cancel any time before then from the company detail page.</p>
         </div>
         <form method="POST" class="p-6 border-t bg-gray-50 flex justify-end gap-3">
             <?php echo csrfField(); ?>
             <input type="hidden" name="action" value="delete_company">
             <input type="hidden" name="company_id" id="deleteCompanyId">
             <button type="button" onclick="closeDeleteModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
-            <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete Company</button>
+            <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Schedule deletion</button>
         </form>
     </div>
 </div>
@@ -443,6 +492,9 @@ function openEditModal(company) {
     document.getElementById('companyPassword').value = '';
     document.getElementById('companyStatus').value = company.status || 'active';
     document.getElementById('companyPlan').value = company.plan || 'free';
+    document.getElementById('companyCurrency').value = company.currency || 'OMR';
+    document.getElementById('companyBillingEmail').value = company.billing_email || '';
+    document.getElementById('companyErpClientName').value = company.erp_client_name || '';
     document.getElementById('passwordLabel').textContent = 'New Password';
     document.getElementById('passwordHint').textContent = 'Leave blank to keep current password';
     document.getElementById('companyPassword').removeAttribute('required');
@@ -459,6 +511,9 @@ function openCreateModal() {
     document.getElementById('companyPassword').value = '';
     document.getElementById('companyStatus').value = 'active';
     document.getElementById('companyPlan').value = 'free';
+    document.getElementById('companyCurrency').value = 'OMR';
+    document.getElementById('companyBillingEmail').value = '';
+    document.getElementById('companyErpClientName').value = '';
     document.getElementById('passwordLabel').textContent = 'Password';
     document.getElementById('passwordHint').textContent = 'Required for new company';
     document.getElementById('companyPassword').setAttribute('required', 'required');

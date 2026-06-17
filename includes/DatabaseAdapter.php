@@ -253,7 +253,12 @@ class DatabaseAdapter {
         if (isset($data['billing_email'])) {
             $updateData['billing_email'] = sanitizeEmail($data['billing_email']);
         }
-        
+
+        // Update ERP client name (per-company BHD-ERP client lookup override)
+        if (isset($data['erp_client_name'])) {
+            $updateData['erp_client_name'] = trim($data['erp_client_name']);
+        }
+
         // Update parent company
         if (isset($data['parent_company_id'])) {
             $parentId = $data['parent_company_id'] ?: null;
@@ -299,7 +304,86 @@ class DatabaseAdapter {
             return ['success' => false, 'error' => 'Failed to update company: ' . $e->getMessage()];
         }
     }
-    
+
+    /**
+     * Update a print order's lifecycle status (+ optional reason on cancel/reject).
+     * Super-admin / internal-provider use. Whitelists status values.
+     */
+    public static function updateOrderStatus($orderId, $status, $reason = null) {
+        if (!self::useDatabase()) {
+            return ['success' => false, 'error' => 'Database not available'];
+        }
+        $allowed = [
+            'pending', 'quote', 'quotation', 'accepted', 'confirmed', 'in_production',
+            'printing', 'in_progress', 'ready', 'shipped', 'delivered', 'completed',
+            'cancelled', 'rejected', 'on_hold',
+        ];
+        if (!in_array($status, $allowed, true)) {
+            return ['success' => false, 'error' => 'Invalid order status'];
+        }
+        $order = self::$db->fetchOne("SELECT id, status FROM print_orders WHERE id = :id", ['id' => $orderId]);
+        if (!$order) {
+            return ['success' => false, 'error' => 'Order not found'];
+        }
+        $update = ['status' => $status, 'updated_at' => date('Y-m-d H:i:s')];
+        if ($reason !== null && $reason !== ''
+            && in_array($status, ['cancelled', 'rejected'], true)
+            && self::$db->columnExists('print_orders', 'cancellation_reason')) {
+            $update['cancellation_reason'] = $reason;
+        }
+        try {
+            self::$db->update('print_orders', $update, 'id = :id', ['id' => $orderId]);
+            return ['success' => true, 'before' => $order['status'], 'after' => $status];
+        } catch (Exception $e) {
+            return ['success' => false, 'error' => 'Failed to update order: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Upsert a company_settings row (printer / WhatsApp / Odoo integration config).
+     * Only whitelisted columns are written.
+     */
+    public static function updateCompanySettings($companyId, array $settings) {
+        if (!self::useDatabase()) {
+            return ['success' => false, 'error' => 'Database not available'];
+        }
+        if (!$companyId) {
+            return ['success' => false, 'error' => 'Company ID required'];
+        }
+        $allowed = [
+            'printer_enabled', 'printer_name', 'printer_api', 'printer_api_key',
+            'whatsapp_enabled', 'whatsapp_token', 'notify_on_employee_edit',
+            'odoo_enabled', 'odoo_url', 'odoo_database', 'odoo_username', 'odoo_password',
+        ];
+        $clean = [];
+        foreach ($allowed as $col) {
+            if (array_key_exists($col, $settings)) {
+                $clean[$col] = $settings[$col];
+            }
+        }
+        if (empty($clean)) {
+            return ['success' => false, 'error' => 'No settings to update'];
+        }
+        $clean['updated_at'] = date('Y-m-d H:i:s');
+        try {
+            $existing = self::$db->fetchOne(
+                "SELECT id FROM company_settings WHERE company_id = :cid",
+                ['cid' => $companyId]
+            );
+            if ($existing) {
+                self::$db->update('company_settings', $clean, 'company_id = :cid', ['cid' => $companyId]);
+            } else {
+                $clean['id'] = generateUUID();
+                $clean['company_id'] = $companyId;
+                $clean['created_at'] = date('Y-m-d H:i:s');
+                self::$db->insert('company_settings', $clean);
+            }
+            return ['success' => true];
+        } catch (Exception $e) {
+            return ['success' => false, 'error' => 'Failed to update settings: ' . $e->getMessage()];
+        }
+    }
+
     // Employee functions
     public static function loadEmployees($companyId = null) {
         if (!self::useDatabase()) {
