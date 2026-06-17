@@ -52,4 +52,58 @@ class ColorContrast
         $dark  = min($la, $lb);
         return ($light + 0.05) / ($dark + 0.05);
     }
+
+    /**
+     * Guard a brand accent that is used BOTH as a button fill behind white
+     * text AND as a text/icon colour on a light card. A near-white accent
+     * (e.g. a logo's white background auto-picked as primary_color by the
+     * onboarding wizard) renders the Call / Save Contact buttons and section
+     * headers invisible.
+     *
+     * Only intervenes when the accent is clearly too light (contrast with
+     * white below $trigger); then darkens it along its own hue until it
+     * reaches $target, matching the readability of the platform default
+     * teal #009bc1 (ratio ~3.0 on white). Good brand colours, teal, navy,
+     * green, etc., pass through untouched so existing tenants don't shift.
+     *
+     * @param string $hex     Candidate accent, "#rrggbb" / "#rgb" / bare.
+     * @param float  $trigger Contrast-with-white below which we step in.
+     * @param float  $target  Contrast-with-white we darken up to.
+     * @return string         A safe "#rrggbb" accent (original when fine).
+     */
+    public static function safeAccent(string $hex, float $trigger = 2.5, float $target = 3.2): string
+    {
+        $clean = ltrim(trim($hex), '#');
+        if (strlen($clean) === 3) {
+            $clean = $clean[0] . $clean[0] . $clean[1] . $clean[1] . $clean[2] . $clean[2];
+        }
+        if (strlen($clean) !== 6 || !ctype_xdigit($clean)) {
+            return '#009bc1'; // unparseable, fall back to platform teal
+        }
+        if (self::ratio('#' . $clean, '#ffffff') >= $trigger) {
+            return '#' . $clean; // already readable, leave the brand colour alone
+        }
+
+        $r = hexdec(substr($clean, 0, 2));
+        $g = hexdec(substr($clean, 2, 2));
+        $b = hexdec(substr($clean, 4, 2));
+        // A near-white neutral grey has no hue worth preserving, anchor it to
+        // a calm slate so the result still looks deliberate, not muddy.
+        if (abs($r - $g) < 8 && abs($g - $b) < 8 && abs($r - $b) < 8) {
+            return '#334155';
+        }
+        for ($i = 0; $i < 40; $i++) {
+            $cur = sprintf('#%02x%02x%02x', $r, $g, $b);
+            if (self::ratio($cur, '#ffffff') >= $target) {
+                return $cur;
+            }
+            $r = (int) floor($r * 0.9);
+            $g = (int) floor($g * 0.9);
+            $b = (int) floor($b * 0.9);
+            if ($r + $g + $b === 0) {
+                return '#1f2937';
+            }
+        }
+        return sprintf('#%02x%02x%02x', $r, $g, $b);
+    }
 }

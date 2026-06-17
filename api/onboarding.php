@@ -140,6 +140,11 @@ function saveCompanyTheme($db, $companyId, $logoPath, $templateKey, $source) {
     ];
 
     $palette = $colors[$templateKey] ?? $colors['bhd-classic'];
+    // Some palettes (e.g. bhd-sky) carry a white primary for the card art;
+    // as a digital-card accent that hides every button behind white text.
+    // Clamp to a readable shade before persisting (no-op for dark brands).
+    require_once INCLUDES_DIR . '/ColorContrast.php';
+    $palette['primary'] = ColorContrast::safeAccent((string) $palette['primary']);
 
     try {
         $existing = $db->fetchOne("SELECT id FROM company_themes WHERE company_id = :id", ['id' => $companyId]);

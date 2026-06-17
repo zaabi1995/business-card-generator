@@ -156,6 +156,12 @@ try {
             $primaryColor = trim((string) ($logoBlob['dominant_color'] ?? ''))
                 ?: trim((string) ($state['data']['colors']['primary'] ?? ''))
                 ?: '#009bc1';
+            // The dominant colour is sampled client-side and on a logo with a
+            // white background it comes back near-white (e.g. #f1f6f8), which
+            // makes every accent-tinted button/header on the shared card
+            // invisible. Clamp to a readable shade before persisting.
+            require_once INCLUDES_DIR . '/ColorContrast.php';
+            $primaryColor = ColorContrast::safeAccent($primaryColor);
             $logoUrl = (string) ($logoBlob['url'] ?? '');
             $logoPath = null;
             if ($logoUrl !== '' && strncmp($logoUrl, 'data:image/', 11) === 0) {

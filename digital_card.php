@@ -25,6 +25,7 @@ try {
     require_once INCLUDES_DIR . '/Appointments.php';
     require_once INCLUDES_DIR . '/EmployeeSocials.php';
     require_once INCLUDES_DIR . '/CardAnalytics.php';
+    require_once INCLUDES_DIR . '/ColorContrast.php';
 
     /**
      * Normalize asset path, ensure uploaded/theme assets resolve from site root, not
@@ -243,6 +244,10 @@ try {
     // Theme mode from card means: 'dark' = dark card, so show LIGHT page. 'light' = light card, so show DARK page.
     $isDarkPage = ($themeMode === 'light'); // light card -> dark page
     $accentColor = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#d4af37';
+    // Guard against a near-white brand colour (e.g. a logo's white background
+    // auto-picked as primary_color) that would render the Call / Save Contact
+    // buttons and section headers invisible. No-op for readable brand colours.
+    $accentColor = ColorContrast::safeAccent($accentColor);
 
     // Visitor-facing dark mode toggle (migration 057). Default ON; owner can
     // disable per employee OR at the company level (admin > theme settings).
@@ -343,6 +348,10 @@ try {
  */
 function renderBranded404($company, $theme) {
     $accentColor = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#d4af37';
+    // Guard against a near-white brand colour (e.g. a logo's white background
+    // auto-picked as primary_color) that would render the Call / Save Contact
+    // buttons and section headers invisible. No-op for readable brand colours.
+    $accentColor = ColorContrast::safeAccent($accentColor);
     $logoPath = ($theme && !empty($theme['logo_path'])) ? cardifyAssetUrl($theme['logo_path']) : '';
     $companyName = $company ? ($company['name'] ?? '') : '';
     // Demo/instant cards: show the person's typed company (employee.company_en),
