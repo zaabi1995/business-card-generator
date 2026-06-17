@@ -193,14 +193,22 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
       }
     ?>
 
-    <!-- Font Awesome 7.2 Pro, self-hosted on design.bhd.om. Core first, then
-         each style in use (solid + regular + brands). ?v busts stale CF cache. -->
+    <!-- Font Awesome 7.2 Pro, self-hosted on design.bhd.om. Icons are not
+         needed for first paint, so load the CSS non-blocking (media=print
+         until onload) to keep 4 stylesheets off the critical path. The two
+         most-used woff2 faces stay preloaded. ?v busts stale CF cache. -->
     <link rel="preload" href="https://design.bhd.om/fa/v7.2.0/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="https://design.bhd.om/fa/v7.2.0/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css?v=7.2.0">
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css?v=7.2.0">
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/regular.min.css?v=7.2.0">
-    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css?v=7.2.0">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css?v=7.2.0" media="print" onload="this.onload=null;this.media='all'">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css?v=7.2.0" media="print" onload="this.onload=null;this.media='all'">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/regular.min.css?v=7.2.0" media="print" onload="this.onload=null;this.media='all'">
+    <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css?v=7.2.0" media="print" onload="this.onload=null;this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css?v=7.2.0">
+        <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css?v=7.2.0">
+        <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/regular.min.css?v=7.2.0">
+        <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css?v=7.2.0">
+    </noscript>
 
     <!-- Tailwind CSS (Local, render-critical) -->
     <?php $tailwindVersion = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/techwind/css/tailwind.min.css') ?: time(); ?>
@@ -336,8 +344,12 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <!-- BHD-Group shared design layer (design.bhd.om).
          Cardify keeps its own brand tokens + Tailwind theme; design.bhd.om
          adds Cmd+K palette + skeleton loaders as a complementary layer. -->
-    <link rel="stylesheet" href="https://design.bhd.om/cmdk.css" />
-    <link rel="stylesheet" href="https://design.bhd.om/skeleton.css" />
+    <link rel="stylesheet" href="https://design.bhd.om/cmdk.css" media="print" onload="this.onload=null;this.media='all'" />
+    <link rel="stylesheet" href="https://design.bhd.om/skeleton.css" media="print" onload="this.onload=null;this.media='all'" />
+    <noscript>
+        <link rel="stylesheet" href="https://design.bhd.om/cmdk.css" />
+        <link rel="stylesheet" href="https://design.bhd.om/skeleton.css" />
+    </noscript>
     <script src="https://design.bhd.om/cmdk.js" defer></script>
     <script>
       document.addEventListener('DOMContentLoaded', function () {
