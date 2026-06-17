@@ -54,6 +54,14 @@ if (!Auth::isSuperAdmin()) {
     redirectToCompanyAdmin();
 }
 
+// A super admin with no company context has no company dashboard to show,
+// this page would render the empty "complete your setup" onboarding nag.
+// Send them to their real home, the super-admin console.
+if (Auth::isSuperAdmin() && !getCurrentCompanyId()) {
+    header('Location: ' . getBasePath() . 'admin/super/');
+    exit;
+}
+
 $currentUser = Auth::getCurrentUser();
 $userRole = Auth::getCurrentRole();
 
