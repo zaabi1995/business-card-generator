@@ -228,7 +228,7 @@ if (isset($_GET['company_slug'])) {
 $brandName = 'Cardify';
 $tagline = 'Business Cards Made Simple';
 $pageTitle = 'Cardify, Digital & Printed Business Cards for the GCC';
-$pageDescription = 'Bilingual Arabic/English digital and printed business cards for teams across the Gulf: Oman (live), Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait (rolling out 2026). QR vCard save, Apple Wallet, NFC, bulk provisioning. Free to start.';
+$pageDescription = 'Bilingual Arabic/English digital & printed business cards for GCC teams. QR vCard, Apple Wallet, NFC. Free to start, Oman, UAE, Saudi & more.';
 // Self-canonicalize per locale (the AR home previously canonicalized to the EN
 // home, so Google never indexed it) + emit a full bilingual hreflang set
 // (ui-header's default only advertises en + x-default, never ar).
