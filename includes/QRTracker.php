@@ -4,8 +4,11 @@
  * Logs and analyzes QR code scans for employee business cards
  */
 class QRTracker {
-    
+
     private static $db = null;
+
+    /** Localhost + the VPS public IP: cron jobs, smoke tests, cache warmers. */
+    const SELF_IPS = ['127.0.0.1', '::1', '147.93.20.54'];
     
     /**
      * Initialize database connection
@@ -30,8 +33,7 @@ class QRTracker {
             return true;
         }
         // Self-traffic from the VPS + localhost (cron jobs, smoke tests, warmers).
-        $selfIps = ['127.0.0.1', '::1', '147.93.20.54'];
-        return in_array($ipAddress, $selfIps, true);
+        return in_array($ipAddress, self::SELF_IPS, true);
     }
 
     /**
@@ -58,7 +60,7 @@ class QRTracker {
         // every tenant's dashboard numbers and makes the analytics misleading.
         // Shared rule with CardAnalytics::log() via isBotOrSelfTraffic().
         if (self::isBotOrSelfTraffic($userAgent, $ipAddress)) {
-            $isSelf = in_array($ipAddress, ['127.0.0.1', '::1', '147.93.20.54'], true);
+            $isSelf = in_array($ipAddress, self::SELF_IPS, true);
             return [
                 'success' => false,
                 'error' => $isSelf ? 'self_traffic_filtered' : 'bot_filtered',
