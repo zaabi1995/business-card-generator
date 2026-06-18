@@ -57,11 +57,20 @@ class CardAnalytics
             return false;
         }
 
+        $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        $ip = self::getClientIP();
+
+        // Drop bot / script / cron / self-traffic BEFORE any DB write or Convex
+        // mirror, exactly like QRTracker::logScan(). Counting these inflates the
+        // card_events table and the live admin dashboard with fake views/clicks.
+        // Shared rule via QRTracker::isBotOrSelfTraffic() so the regex can't drift.
+        if (QRTracker::isBotOrSelfTraffic($ua, $ip)) {
+            return false;
+        }
+
         try {
             self::init();
 
-            $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
-            $ip = self::getClientIP();
             $device = self::parseUserAgent($ua);
             $geo = self::getGeoFromIP($ip);
             $referrer = $_SERVER['HTTP_REFERER'] ?? null;

@@ -15,7 +15,25 @@ class QRTracker {
             self::$db = Database::getInstance();
         }
     }
-    
+
+    /**
+     * True when the request is a bot / script / cron / self-traffic hit that
+     * must NOT be counted in any tenant-facing analytics counter. Single source
+     * of truth for the bot rules, shared by QRTracker::logScan() and
+     * CardAnalytics::log() so the regex never drifts between the two stores.
+     * Per CLAUDE.md feedback_cardify_analytics_must_filter_bots: filter at
+     * INSERT time, not read time, so the raw tables stay trustworthy.
+     */
+    public static function isBotOrSelfTraffic($userAgent, $ipAddress) {
+        $botUaPatterns = '/curl|wget|^got\b|HeadlessChrome|playwright|puppeteer|chrome-lighthouse|node-fetch|python-requests|axios|postman|insomnia|httpie|libwww|scrapy|fetch\\b|bot|spider|crawler|monitor|uptime|preview/i';
+        if ($userAgent === '' || $userAgent === null || preg_match($botUaPatterns, $userAgent)) {
+            return true;
+        }
+        // Self-traffic from the VPS + localhost (cron jobs, smoke tests, warmers).
+        $selfIps = ['127.0.0.1', '::1', '147.93.20.54'];
+        return in_array($ipAddress, $selfIps, true);
+    }
+
     /**
      * Log a QR code scan
      * @param string $employeeId Employee ID
@@ -38,17 +56,14 @@ class QRTracker {
         // FILTER BOTS / SCRIPTS / CRONS / SELF-TRAFFIC before any DB write.
         // These never represent a real card prospect; counting them inflates
         // every tenant's dashboard numbers and makes the analytics misleading.
-        // Per CLAUDE.md feedback_cardify_analytics_must_filter_bots: bots
-        // get filtered at INSERT time, not at read time, so the raw qr_scans
-        // table stays trustworthy for every future widget.
-        $botUaPatterns = '/curl|wget|^got\b|HeadlessChrome|playwright|puppeteer|chrome-lighthouse|node-fetch|python-requests|axios|postman|insomnia|httpie|libwww|scrapy|fetch\\b|bot|spider|crawler|monitor|uptime|preview/i';
-        if ($userAgent === '' || preg_match($botUaPatterns, $userAgent)) {
-            return ['success' => false, 'error' => 'bot_filtered', 'visitor_id' => $visitorId];
-        }
-        // Drop self-traffic from VPS + localhost (cron jobs, smoke tests).
-        $selfIps = ['127.0.0.1', '::1', '147.93.20.54'];
-        if (in_array($ipAddress, $selfIps, true)) {
-            return ['success' => false, 'error' => 'self_traffic_filtered', 'visitor_id' => $visitorId];
+        // Shared rule with CardAnalytics::log() via isBotOrSelfTraffic().
+        if (self::isBotOrSelfTraffic($userAgent, $ipAddress)) {
+            $isSelf = in_array($ipAddress, ['127.0.0.1', '::1', '147.93.20.54'], true);
+            return [
+                'success' => false,
+                'error' => $isSelf ? 'self_traffic_filtered' : 'bot_filtered',
+                'visitor_id' => $visitorId,
+            ];
         }
         
         // Get geolocation from IP (async-friendly, can be null)
