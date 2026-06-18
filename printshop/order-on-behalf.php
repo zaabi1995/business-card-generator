@@ -295,16 +295,27 @@ function orderForm() {
         },
 
         _designPriceFor(qty) {
+            // Mirror PrintShop::resolvePerCardFromTiers exactly: resolve a per-card
+            // rate from the highest applicable tier, THEN multiply by quantity.
+            // The object shape stores a per-card rate (per_card) or a tier total
+            // (price for that tier's quantity), NOT a flat per-order total.
             const tiers = this._resolveTiers();
-            let bestQty = 0, price = 0;
+            let bestQty = 0, perCard = null;
             for (const [tQty, val] of Object.entries(tiers)) {
                 const q = parseInt(tQty);
                 if (qty < q) continue;
                 if (q <= bestQty) continue;
                 bestQty = q;
-                price = (val && typeof val === 'object') ? parseFloat(val.price || 0) : parseFloat(val) * qty;
+                if (val && typeof val === 'object') {
+                    perCard = (val.per_card !== undefined && val.per_card !== null)
+                        ? parseFloat(val.per_card)
+                        : (q > 0 ? parseFloat(val.price || 0) / q : 0);
+                } else {
+                    perCard = parseFloat(val);
+                }
             }
-            return price;
+            if (perCard === null) perCard = parseFloat(shopPricing.per_card || 0.10);
+            return perCard * qty;
         },
 
         updatePrice() {
