@@ -368,7 +368,7 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
             { id: 'home',          label: isAr ? 'الرئيسية' : 'Home',           hint: isAr ? 'تنقل' : 'Navigate',  action: function () { location.href = '/'; } },
             { id: 'dashboard',     label: isAr ? 'لوحة التحكم' : 'Dashboard',    hint: isAr ? 'تنقل' : 'Navigate', action: function () { location.href = base + '/admin/'; } },
             { id: 'employees',     label: isAr ? 'الموظفون' : 'Employees',       hint: isAr ? 'تنقل' : 'Navigate', action: function () { location.href = base + '/admin/employees.php'; } },
-            { id: 'orders',        label: isAr ? 'طلبات الطباعة' : 'Print orders', hint: isAr ? 'تنقل' : 'Navigate', action: function () { location.href = base + '/admin/print-orders.php'; } },
+            { id: 'orders',        label: isAr ? 'طلبات الطباعة' : 'Print orders', hint: isAr ? 'تنقل' : 'Navigate', action: function () { location.href = base + '/admin/print_orders.php'; } },
             { id: 'analytics',     label: isAr ? 'التحليلات' : 'Analytics',       hint: isAr ? 'تنقل' : 'Navigate', action: function () { location.href = base + '/admin/analytics.php'; } },
             { id: 'live',          label: isAr ? 'التحليلات الحية' : 'Live analytics', hint: isAr ? 'تنقل' : 'Navigate', action: function () { location.href = base + '/admin/live-analytics.php'; } },
             { id: 'billing',       label: isAr ? 'الفواتير' : 'Billing',           hint: isAr ? 'تنقل' : 'Navigate', action: function () { location.href = base + '/admin/billing.php'; } },
