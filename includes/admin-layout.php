@@ -61,6 +61,7 @@ function getAdminNavItems() {
         ['name' => 'Dashboard',  'icon' => 'fa-solid fa-chart-pie',  'url' => $dashboardUrl,                          'key' => 'dashboard',  'matches' => ['customer-dashboard', 'growth', 'live-analytics']],
         ['name' => 'Employees',  'icon' => 'fa-solid fa-users',      'url' => $basePath . 'employees' . $ext,         'key' => 'employees',  'matches' => ['departments', 'analytics', 'employee']],
         ['name' => 'Orders',     'icon' => 'fa-solid fa-inbox',      'url' => $basePath . 'orders' . $ext,            'key' => 'orders',     'matches' => ['requests', 'print', 'appointments'], 'badge_count' => 'pending_requests'],
+        ['name' => 'Card Designs', 'icon' => 'fa-solid fa-id-card', 'url' => $basePath . 'templates' . $ext, 'key' => 'templates', 'matches' => []],
         ['name' => 'Print Tracking', 'icon' => 'fa-solid fa-clipboard-list', 'url' => $basePath . 'print-tracking' . $ext, 'key' => 'print-tracking', 'matches' => []],
         ['name' => 'Brand',      'icon' => 'fa-solid fa-palette',    'url' => $basePath . 'brand' . $ext,             'key' => 'brand',      'matches' => ['theme', 'custom-domains', 'nfc-tags', 'short-links']],
     ];
