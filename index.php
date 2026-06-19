@@ -945,9 +945,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <?php if ($excerpt): ?>
                         <p class="mt-3 text-gray-600 text-sm leading-relaxed"><?= htmlspecialchars($excerpt) ?></p>
                         <?php endif; ?>
-                        <a href="<?= htmlspecialchars($postUrl) ?>" class="mt-4 inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-semibold">
-                            Read more
-                            <i class="fa-solid fa-arrow-right text-xs"></i>
+                        <a href="<?= htmlspecialchars($postUrl) ?>" aria-label="<?= htmlspecialchars(t('blog.read_more') . ': ' . $post['title']) ?>" class="mt-4 inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-semibold">
+                            <?= htmlspecialchars(t('blog.read_more')) ?>
+                            <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
                         </a>
                     </div>
                 </article>
