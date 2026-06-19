@@ -174,7 +174,10 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <?php endif; ?>
     
     <!-- Preconnect to CDNs (parallel DNS+TLS) -->
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <!-- design.bhd.om serves the preloaded FA woff2 (crossorigin) + FA/cmdk/skeleton CSS (same-origin),
+         so open both connection pools early. Was a dead cdnjs preconnect (nothing loads from cdnjs). -->
+    <link rel="preconnect" href="https://design.bhd.om">
+    <link rel="preconnect" href="https://design.bhd.om" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 
     <?php if (!empty($lcpImage)): /* Per-page LCP preload (set $lcpImage before require to prioritize the hero). */ ?>
