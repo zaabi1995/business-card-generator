@@ -20,7 +20,7 @@ class CardPDFRenderer
      *   field right edge (x_pt + w_pt), matching Fabric + Arabic htmlbox
      *   (rule 47 convention: x = bbox LEFT edge).
      */
-    const RENDERER_VERSION = 17;
+    const RENDERER_VERSION = 18;
 
     /**
      * Render or fetch a cached vector PDF for one employee.
@@ -238,7 +238,9 @@ class CardPDFRenderer
         // still a clean RGB bleed+crop file (no CMYK/cut).
         $forPrint = ($profile === 'press');
         $tmpCmyk  = '';
-        if ($profile === 'press') {
+        // press = raster CMYK + cut; vector = clean content-stream CMYK on the
+        // vector card. Both want the tenant brand-colour map.
+        if (in_array($profile, ['press', 'vector'], true)) {
             $cmykCfg = self::pressCmykConfig($companyId, $companySlug, $tplFront, $tplBack);
             if (is_array($cmykCfg)) {
                 $tmpCmyk = tempnam(sys_get_temp_dir(), 'cpdfcmyk_') . '.json';
@@ -261,7 +263,7 @@ class CardPDFRenderer
              . ' 2>&1';
         // Press needs longer: the CMYK bg conversion + Ghostscript pass on the
         // 1200-DPI artwork takes more than the 30s a plain vector render needs.
-        $timeoutSecs = ($profile === 'press') ? 90 : 30;
+        $timeoutSecs = in_array($profile, ['press','vector'], true) ? 90 : 30;
         if (trim((string)@shell_exec('command -v timeout 2>/dev/null')) !== '') {
             $cmd = 'timeout ' . $timeoutSecs . ' ' . $cmd;
         }

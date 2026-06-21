@@ -359,6 +359,62 @@ def _pil_to_cmyk_pixmap(im, cfg):
     return fitz.Pixmap(fitz.csCMYK, im.width, im.height, cmyk8.tobytes(), False)
 
 
+def _pdf_to_cmyk_vector(doc, cfg):
+    """Rewrite RGB fill/stroke colour operators (rg/RG) in every page-content
+    and Form-XObject stream to DeviceCMYK (k/K), via the brand-keyed map. For a
+    VECTOR pdf each path is one flat colour, so this is exact + clean (no
+    halftone/anti-alias artefacts) - brand blue lands on C100 M90 Y0 K2, etc.
+    Greyscale (g/G) and images are left untouched (grey prints on K)."""
+    import re
+    rg_re = re.compile(rb'(?<![\d.\-])(\d*\.?\d+)\s+(\d*\.?\d+)\s+(\d*\.?\d+)\s+(rg|RG)(?![A-Za-z])')
+
+    def repl(m):
+        r, g, b = float(m.group(1)), float(m.group(2)), float(m.group(3))
+        op = m.group(4)
+        c, mm, y, k = _cmyk_for_rgb(int(round(r * 255)), int(round(g * 255)),
+                                    int(round(b * 255)), cfg)
+        kop = b'k' if op == b'rg' else b'K'
+        return ('%.4f %.4f %.4f %.4f ' % (c, mm, y, k)).encode() + kop
+
+    targets = set()
+    for page in doc:
+        for cx in page.get_contents():
+            targets.add(cx)
+    for xref in range(1, doc.xref_length()):
+        try:
+            t, v = doc.xref_get_key(xref, 'Subtype')
+            if t == 'name' and v == '/Form':
+                targets.add(xref)
+        except Exception:
+            pass
+    for xref in targets:
+        try:
+            s = doc.xref_stream(xref)
+        except Exception:
+            continue
+        ns = rg_re.sub(repl, s)
+        if ns != s:
+            try:
+                doc.update_stream(xref, ns)
+            except Exception:
+                pass
+
+
+def _finalize_vector_cmyk(out_path, cfg):
+    """Convert a vector card PDF to DeviceCMYK in place (content-stream colour
+    rewrite, no rasterising)."""
+    import os as _os
+    try:
+        doc = fitz.open(out_path)
+        _pdf_to_cmyk_vector(doc, cfg)
+        tmp = out_path + '.cmyk.pdf'
+        doc.save(tmp, garbage=3, deflate=True)
+        doc.close()
+        _os.replace(tmp, out_path)
+    except Exception as e:
+        print(f'WARN: vector cmyk convert failed: {e}', file=sys.stderr)
+
+
 def _png_to_cmyk_pixmap(png_path, cfg, bleed_pt=0.0, card_w_pt=0.0):
     """Build the CMYK bg pixmap. When bleed_pt/card_w_pt are given, the image is
     edge-extended by the bleed amount (replicate edge pixels) so a full-bleed
@@ -899,6 +955,10 @@ def render(template_path: str, employee_path: str, out_path: str,
 
     # Press (CMYK) config: present only for the per-card print download.
     cmyk_cfg = _load_cmyk_cfg(cmyk_cfg_path) if for_print else None
+    # Vector-CMYK: convert the finished vector card to DeviceCMYK via a clean
+    # content-stream colour rewrite (kept separate so the render stays RGB and
+    # one conversion pass handles both the source bg + the overlay text).
+    vector_cmyk_cfg = _load_cmyk_cfg(cmyk_cfg_path) if (vector_bg and not for_print) else None
 
     import_dir = template['import_dir']
     fonts_dir  = template.get('fonts_dir', os.path.join(import_dir, 'fonts'))
@@ -1296,6 +1356,8 @@ def render(template_path: str, employee_path: str, out_path: str,
     # (added via PyMuPDF, which Ghostscript would otherwise strip) survives.
     if cmyk_cfg:
         _finalize_press(out_path, cmyk_cfg, BLEED_PT)
+    if vector_cmyk_cfg:
+        _finalize_vector_cmyk(out_path, vector_cmyk_cfg)
 
     # Phase 7: embed vCard as a PDF attachment (Acrobat / Apple Mail "Add to Contacts").
     # Re-open the saved file, add the attachment, save to a sibling temp path,
