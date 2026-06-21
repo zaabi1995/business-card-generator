@@ -402,6 +402,18 @@ class WcHub
             'how_title'=>'How it works','how_body'=>'1 point for the right result, +2 for the exact score. Predict before kickoff. Top 3 on the final leaderboard win the cash prizes.',
             'empty'=>'Fixtures are loading. Check back shortly.','settings'=>'Settings','logout'=>'Log out','win'=>'win',
             'save_settings'=>'Save changes',
+            // streak + gamification
+            'streak'=>'Day streak','best_streak'=>'Best','checkin_today'=>'Check in today',
+            'checked_in'=>'Checked in','come_back'=>'Come back tomorrow to keep your streak',
+            'streak_hint'=>'Check in daily for +1 point. Reach a 7-day streak for a +5 bonus.',
+            'plus_one'=>'+1 point','plus_five_bonus'=>'7-day streak! +5 bonus',
+            'badges'=>'Badges','badges_earned'=>'earned',
+            'b_first_pred'=>'First prediction','b_first_pred_d'=>'Made your first pick',
+            'b_ten_preds'=>'Strategist','b_ten_preds_d'=>'Made 10 predictions',
+            'b_five_correct'=>'Sharpshooter','b_five_correct_d'=>'5 correct results',
+            'b_streak7'=>'On fire','b_streak7_d'=>'7-day check-in streak',
+            'b_referrer'=>'Recruiter','b_referrer_d'=>'Referred a friend',
+            'locked_badge'=>'Locked',
         ];
         $ar = [
             'predict'=>'التوقعات','matches'=>'المباريات','leaderboard'=>'المتصدرون',
@@ -412,8 +424,54 @@ class WcHub
             'how_title'=>'كيف تلعب','how_body'=>'نقطة واحدة للنتيجة الصحيحة، و+2 للنتيجة الدقيقة. توقّع قبل بداية المباراة. أفضل 3 في الترتيب النهائي يربحون الجوائز النقدية.',
             'empty'=>'يتم تحميل المباريات. عُد بعد قليل.','settings'=>'الإعدادات','logout'=>'خروج','win'=>'فوز',
             'save_settings'=>'حفظ التغييرات',
+            // streak + gamification
+            'streak'=>'سلسلة الأيام','best_streak'=>'الأفضل','checkin_today'=>'سجّل حضورك اليوم',
+            'checked_in'=>'تم تسجيل الحضور','come_back'=>'عُد غدًا للحفاظ على سلسلتك',
+            'streak_hint'=>'سجّل حضورك يوميًا لتربح نقطة. اصل إلى سلسلة 7 أيام لتربح 5 نقاط إضافية.',
+            'plus_one'=>'+1 نقطة','plus_five_bonus'=>'سلسلة 7 أيام! +5 نقاط',
+            'badges'=>'الأوسمة','badges_earned'=>'محققة',
+            'b_first_pred'=>'أول توقع','b_first_pred_d'=>'سجّلت أول توقع لك',
+            'b_ten_preds'=>'استراتيجي','b_ten_preds_d'=>'سجّلت 10 توقعات',
+            'b_five_correct'=>'قنّاص','b_five_correct_d'=>'5 نتائج صحيحة',
+            'b_streak7'=>'متّقد','b_streak7_d'=>'سلسلة حضور 7 أيام',
+            'b_referrer'=>'مُحفّز','b_referrer_d'=>'دعوت صديقًا',
+            'locked_badge'=>'مقفل',
         ];
         $lang = self::lang($lang);
         return $lang === 'ar' ? $ar : $en;
+    }
+
+    /**
+     * Derive earned/locked badges for a user from existing data only
+     * (wc_predictions + wc_users). No new heavy infra. Returns an ordered
+     * list of [key, icon, earned] for the strip; titles/desc come from
+     * pstrings (b_*). Honest: every threshold is computed live.
+     */
+    public static function badges(array $user): array
+    {
+        $db  = Database::getInstance();
+        $uid = (int)$user['id'];
+
+        $total   = (int)($db->fetchOne("SELECT COUNT(*) AS c FROM wc_predictions WHERE user_id=:u", ['u'=>$uid])['c'] ?? 0);
+        $correct = (int)($db->fetchOne("SELECT COUNT(*) AS c FROM wc_predictions WHERE user_id=:u AND scored=1 AND points>0", ['u'=>$uid])['c'] ?? 0);
+        $refs    = (int)($db->fetchOne("SELECT COUNT(*) AS c FROM wc_users WHERE referred_by=:u", ['u'=>$uid])['c'] ?? 0);
+        $streakBest = (int)($user['streak_best'] ?? 0);
+
+        return [
+            ['key'=>'first_pred',   'icon'=>'fa-flag-checkered', 'earned'=>$total >= 1],
+            ['key'=>'ten_preds',    'icon'=>'fa-chess-knight',   'earned'=>$total >= 10],
+            ['key'=>'five_correct', 'icon'=>'fa-bullseye',       'earned'=>$correct >= 5],
+            ['key'=>'streak7',      'icon'=>'fa-fire',           'earned'=>$streakBest >= 7],
+            ['key'=>'referrer',     'icon'=>'fa-user-plus',      'earned'=>$refs >= 1],
+        ];
+    }
+
+    /** Has this user already checked in on their local "today"? */
+    public static function checkedInToday(array $user): bool
+    {
+        $tzName = $user['tz'] ?: 'Asia/Muscat';
+        try { $tz = new DateTimeZone($tzName); } catch (Throwable $e) { $tz = new DateTimeZone('Asia/Muscat'); }
+        $today = (new DateTime('now', $tz))->format('Y-m-d');
+        return ($user['last_checkin'] ?? null) === $today;
     }
 }

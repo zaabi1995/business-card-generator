@@ -24,6 +24,13 @@ foreach ($myPredRows as $r) $myPred[$r['match_id']] = $r;
 $rank = (int)($db->fetchOne("SELECT COUNT(*)+1 AS r FROM wc_users WHERE status='active' AND points_cache > :p",
     ['p'=>(int)$user['points_cache']])['r'] ?? 1);
 
+// Gamification: streak state + earned badges (all derived from real data).
+$checkedToday = WcHub::checkedInToday($user);
+$streakCount  = (int)($user['streak_count'] ?? 0);
+$streakBest   = (int)($user['streak_best'] ?? 0);
+$badges       = WcHub::badges($user);
+$badgesEarned = count(array_filter($badges, fn($b)=>$b['earned']));
+
 // split
 $live=[]; $upcoming=[]; $results=[];
 foreach ($all as $m) {
@@ -131,6 +138,48 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
       <p class="text-sm text-slate-500"><?= fh($P['how_body']) ?></p>
     </div>
 
+    <!-- Daily streak widget -->
+    <div id="streak-card" class="rounded-2xl bg-white p-4 border border-slate-100">
+      <div class="flex items-center gap-3">
+        <span class="grid place-items-center w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 shrink-0">
+          <i class="fa-solid fa-fire text-xl"></i>
+        </span>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-baseline gap-2">
+            <span id="streak-num" class="text-2xl font-extrabold text-slate-900"><?= $streakCount ?></span>
+            <span class="text-sm font-semibold text-slate-500"><?= fh($P['streak']) ?></span>
+          </div>
+          <div class="text-[11px] text-slate-400"><?= fh($P['best_streak']) ?>: <span id="streak-best"><?= $streakBest ?></span></div>
+        </div>
+        <button id="checkin-btn" type="button"
+          class="btn rounded-xl px-4 py-2.5 text-sm font-bold text-white <?= $checkedToday?'bg-emerald-600':'bg-blue-600' ?>"
+          <?= $checkedToday?'disabled':'' ?>>
+          <?php if($checkedToday): ?><i class="fa-solid fa-circle-check"></i> <?= fh($P['checked_in']) ?>
+          <?php else: ?><i class="fa-solid fa-fire"></i> <?= fh($P['checkin_today']) ?><?php endif; ?>
+        </button>
+      </div>
+      <p id="streak-hint" class="text-xs text-slate-400 mt-2.5"><?= $checkedToday?fh($P['come_back']):fh($P['streak_hint']) ?></p>
+    </div>
+
+    <!-- Badges strip -->
+    <div class="rounded-2xl bg-white p-4 border border-slate-100">
+      <div class="flex items-center justify-between mb-3">
+        <div class="font-bold text-slate-800"><i class="fa-solid fa-medal text-amber-500"></i> <?= fh($P['badges']) ?></div>
+        <div class="text-xs text-slate-400"><span id="badges-earned"><?= $badgesEarned ?></span>/<?= count($badges) ?> <?= fh($P['badges_earned']) ?></div>
+      </div>
+      <div class="grid grid-cols-5 gap-2">
+        <?php foreach($badges as $b):
+          $title = $P['b_'.$b['key']] ?? $b['key']; $desc = $P['b_'.$b['key'].'_d'] ?? ''; ?>
+        <div class="text-center" title="<?= fh($title) ?> - <?= fh($b['earned']?$desc:$P['locked_badge']) ?>">
+          <span class="grid place-items-center w-12 h-12 mx-auto rounded-2xl <?= $b['earned']?'bg-amber-100 text-amber-500':'bg-slate-100 text-slate-300' ?>">
+            <i class="fa-solid <?= fh($b['icon']) ?> text-lg"></i>
+          </span>
+          <div class="text-[10px] leading-tight mt-1 <?= $b['earned']?'text-slate-600 font-semibold':'text-slate-300' ?>"><?= fh($title) ?></div>
+        </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+
     <?php if($live): ?><h2 class="font-bold text-slate-700"><i class="fa-solid fa-circle text-rose-500 text-[10px] align-middle"></i> <?= fh($P['live']) ?></h2>
       <div class="space-y-3"><?php foreach($live as $m) echo matchCard($m,$myPred,$tzObj,$nowUtc,$P,true); ?></div><?php endif; ?>
 
@@ -150,6 +199,30 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
   </main>
 
 <script>
+const T_CHECKED=<?= json_encode($P['checked_in']) ?>, T_COMEBACK=<?= json_encode($P['come_back']) ?>,
+      T_BONUS=<?= json_encode($P['plus_five_bonus']) ?>;
+(function(){
+  const btn=document.getElementById('checkin-btn'); if(!btn) return;
+  btn.addEventListener('click',async()=>{
+    btn.disabled=true; const o=btn.innerHTML; btn.innerHTML='…';
+    try{
+      const r=await fetch('/api/wc-checkin.php',{method:'POST',headers:{'Content-Type':'application/json'}});
+      const j=await r.json();
+      if(j.ok){
+        btn.classList.remove('bg-blue-600'); btn.classList.add('bg-emerald-600');
+        btn.innerHTML='<i class="fa-solid fa-circle-check"></i> '+T_CHECKED;
+        const sn=document.getElementById('streak-num'); if(sn&&j.streak!=null) sn.textContent=j.streak;
+        const sb=document.getElementById('streak-best'); if(sb&&j.best!=null) sb.textContent=j.best;
+        const hint=document.getElementById('streak-hint');
+        if(hint){
+          hint.textContent = j.milestone ? T_BONUS : T_COMEBACK;
+          hint.className = j.milestone ? 'text-xs text-amber-600 font-semibold mt-2.5' : 'text-xs text-slate-400 mt-2.5';
+        }
+        // points tile reflects the award after the next page load
+      } else { btn.innerHTML=o; btn.disabled=false; }
+    }catch(_){ btn.innerHTML=o; btn.disabled=false; }
+  });
+})();
 const T_SAVE=<?= json_encode($P['save']) ?>, T_SAVED=<?= json_encode($P['saved']) ?>;
 document.querySelectorAll('[data-match]').forEach(card=>{
   const picks=card.querySelectorAll('.pick-btn');
