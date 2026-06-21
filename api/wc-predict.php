@@ -43,4 +43,7 @@ if ($existing) {
     $data['user_id']=$user['id']; $data['match_id']=$matchId;
     $db->insert('wc_predictions', $data);
 }
-out(['ok'=>true,'pick'=>$pick,'pred_home'=>$ph,'pred_away'=>$pa]);
+// Recompute badges so the page can light up any newly-earned ones live.
+$earned = [];
+foreach (WcHub::badges($user) as $b) { if ($b['earned']) $earned[] = $b['key']; }
+out(['ok'=>true,'pick'=>$pick,'pred_home'=>$ph,'pred_away'=>$pa,'badges'=>$earned,'badges_earned'=>count($earned)]);

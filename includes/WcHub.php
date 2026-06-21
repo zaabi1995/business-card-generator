@@ -414,6 +414,9 @@ class WcHub
             'b_streak7'=>'On fire','b_streak7_d'=>'7-day check-in streak',
             'b_referrer'=>'Recruiter','b_referrer_d'=>'Referred a friend',
             'locked_badge'=>'Locked',
+            // XP / level HUD
+            'level'=>'Level','xp'=>'XP','to_next'=>'to next level','tap_badge'=>'Tap a badge to see how to earn it',
+            'newly_earned'=>'Badge unlocked','prize_pool'=>'Prize pool','your_run'=>'Your run','climbing'=>'Keep climbing',
         ];
         $ar = [
             'predict'=>'التوقعات','matches'=>'المباريات','leaderboard'=>'المتصدرون',
@@ -436,6 +439,9 @@ class WcHub
             'b_streak7'=>'متّقد','b_streak7_d'=>'سلسلة حضور 7 أيام',
             'b_referrer'=>'مُحفّز','b_referrer_d'=>'دعوت صديقًا',
             'locked_badge'=>'مقفل',
+            // XP / level HUD
+            'level'=>'المستوى','xp'=>'نقاط الخبرة','to_next'=>'للمستوى التالي','tap_badge'=>'اضغط على وسام لمعرفة كيفية كسبه',
+            'newly_earned'=>'تم فتح وسام','prize_pool'=>'مجموع الجوائز','your_run'=>'مسيرتك','climbing'=>'واصل التقدّم',
         ];
         $lang = self::lang($lang);
         return $lang === 'ar' ? $ar : $en;
@@ -463,6 +469,39 @@ class WcHub
             ['key'=>'five_correct', 'icon'=>'fa-bullseye',       'earned'=>$correct >= 5],
             ['key'=>'streak7',      'icon'=>'fa-fire',           'earned'=>$streakBest >= 7],
             ['key'=>'referrer',     'icon'=>'fa-user-plus',      'earned'=>$refs >= 1],
+        ];
+    }
+
+    /**
+     * Derive a game level + XP progress from a points total. Tiered thresholds
+     * (each tier costs more), so a level feels earned. Returns:
+     *   level    int   1-based level number
+     *   into     int   XP earned inside the current level
+     *   span     int   XP needed to clear the current level
+     *   pct      int   0-100 progress through the current level
+     *   floor    int   cumulative XP at the start of the current level
+     *   next     int   cumulative XP at the start of the next level
+     *   title    string a short rank name for the level band
+     */
+    public static function levelOf(int $points): array
+    {
+        $points = max(0, $points);
+        // Cost to clear level L (1-based): 10, 16, 22, 28 ... grows by 6 each level.
+        $cost = fn(int $l) => 10 + ($l - 1) * 6;
+        $level = 1; $floor = 0;
+        while ($points >= $floor + $cost($level)) {
+            $floor += $cost($level);
+            $level++;
+            if ($level > 999) break;
+        }
+        $span = $cost($level);
+        $into = $points - $floor;
+        $pct  = $span > 0 ? (int)round($into / $span * 100) : 0;
+        $titles = ['Rookie','Contender','Sharp','Pro','Veteran','Ace','Maestro','Legend'];
+        $title  = $titles[min($level - 1, count($titles) - 1)];
+        return [
+            'level' => $level, 'into' => $into, 'span' => $span, 'pct' => max(0, min(100, $pct)),
+            'floor' => $floor, 'next' => $floor + $span, 'title' => $title,
         ];
     }
 

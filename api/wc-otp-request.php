@@ -18,8 +18,15 @@ $in = json_decode(file_get_contents('php://input'), true) ?: [];
 $name  = trim((string)($in['name'] ?? ''));
 $phone = WhatsApp::normalizePhone((string)($in['phone'] ?? ''));
 $lang  = WcHub::lang((string)($in['language'] ?? 'en'));
-if ($name === '' || mb_strlen($name) > 120) out(['ok'=>false,'error'=>'err_name']);
 if (strlen($phone) < 8 || strlen($phone) > 15) out(['ok'=>false,'error'=>'err_phone']);
+
+// Phone-first flow: a known number logs straight in (OTP only). A new number
+// with no name yet gets the rest of the form revealed (no code sent yet).
+$known = Database::getInstance()->fetchOne(
+    "SELECT id, language FROM wc_users WHERE phone = :p AND status='active' LIMIT 1", ['p'=>$phone]);
+if (!$known && $name === '') out(['ok'=>true,'exists'=>false,'need_details'=>true]);
+if (!$known && mb_strlen($name) > 120) out(['ok'=>false,'error'=>'err_name']);
+if ($known) $lang = WcHub::lang($known['language'] ?? $lang);  // send the code in their language
 
 // Cloudflare Turnstile (only enforced if configured)
 if (defined('TURNSTILE_SECRET') && TURNSTILE_SECRET) {
@@ -61,5 +68,9 @@ $msg = [
   'ur' => "آپ کا Cardify ورلڈ کپ کوڈ *$code* ہے\n10 منٹ کے لیے کارآمد۔ کسی کے ساتھ شیئر نہ کریں۔",
 ][$lang] ?? "Your Cardify World Cup code is *$code*\nValid 10 minutes. Do not share it.";
 
-if (!WcHub::waSend($phone, $msg)) out(['ok'=>false,'error'=>'err_generic']);
-out(['ok'=>true,'masked'=>WcHub::maskPhone($phone)]);
+// Respond instantly, then send the WhatsApp code AFTER the response is flushed
+// (the Dardasha send takes a few seconds; the user should not wait for it).
+echo json_encode(['ok'=>true,'exists'=>(bool)$known,'masked'=>WcHub::maskPhone($phone)], JSON_UNESCAPED_UNICODE);
+if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+try { WcHub::waSend($phone, $msg); } catch (Throwable $e) { error_log('wc-otp send: '.$e->getMessage()); }
+exit;

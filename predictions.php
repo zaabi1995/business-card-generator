@@ -170,11 +170,11 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
       <div class="grid grid-cols-5 gap-2">
         <?php foreach($badges as $b):
           $title = $P['b_'.$b['key']] ?? $b['key']; $desc = $P['b_'.$b['key'].'_d'] ?? ''; ?>
-        <div class="text-center" title="<?= fh($title) ?> - <?= fh($b['earned']?$desc:$P['locked_badge']) ?>">
-          <span class="grid place-items-center w-12 h-12 mx-auto rounded-2xl <?= $b['earned']?'bg-amber-100 text-amber-500':'bg-slate-100 text-slate-300' ?>">
+        <div class="text-center badge-cell" data-badge="<?= fh($b['key']) ?>" data-earned="<?= $b['earned']?'1':'0' ?>" title="<?= fh($title) ?> - <?= fh($b['earned']?$desc:$P['locked_badge']) ?>">
+          <span class="badge-ic grid place-items-center w-12 h-12 mx-auto rounded-2xl transition-transform <?= $b['earned']?'bg-amber-100 text-amber-500':'bg-slate-100 text-slate-300' ?>">
             <i class="fa-solid <?= fh($b['icon']) ?> text-lg"></i>
           </span>
-          <div class="text-[10px] leading-tight mt-1 <?= $b['earned']?'text-slate-600 font-semibold':'text-slate-300' ?>"><?= fh($title) ?></div>
+          <div class="badge-lb text-[10px] leading-tight mt-1 <?= $b['earned']?'text-slate-600 font-semibold':'text-slate-300' ?>"><?= fh($title) ?></div>
         </div>
         <?php endforeach; ?>
       </div>
@@ -252,10 +252,25 @@ document.querySelectorAll('[data-match]').forEach(card=>{
         save.dataset.saved='1'; save.classList.remove('bg-blue-600'); save.classList.add('bg-emerald-600');
         save.innerHTML='<i class="fa-solid fa-circle-check"></i> '+T_SAVED;
         if(badge) badge.classList.remove('hidden');
+        if(j.badges) refreshBadges(j.badges, j.badges_earned);
       } else { save.textContent='!'; setTimeout(()=>save.textContent=o,1500); }
     }catch(_){ save.textContent='!'; setTimeout(()=>save.textContent=o,1500); }
     save.disabled=false;
   });
 });
+
+// Light up newly-earned badges live (no reload), with a little pop.
+function refreshBadges(earnedKeys, count){
+  const ec=document.getElementById('badges-earned'); if(ec) ec.textContent=count;
+  earnedKeys.forEach(key=>{
+    const cell=document.querySelector('.badge-cell[data-badge="'+key+'"]');
+    if(!cell || cell.dataset.earned==='1') return;
+    cell.dataset.earned='1';
+    const ic=cell.querySelector('.badge-ic'), lb=cell.querySelector('.badge-lb');
+    if(ic){ ic.classList.remove('bg-slate-100','text-slate-300'); ic.classList.add('bg-amber-100','text-amber-500');
+      ic.style.transform='scale(1.25)'; setTimeout(()=>{ic.style.transform='scale(1)';},220); }
+    if(lb){ lb.classList.remove('text-slate-300'); lb.classList.add('text-slate-600','font-semibold'); }
+  });
+}
 </script>
 </body></html>
