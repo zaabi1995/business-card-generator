@@ -581,7 +581,7 @@ class WcHub
         $serial = 'wc' . $uid . '-' . bin2hex(random_bytes(8));
         $token  = bin2hex(random_bytes(20));
         try {
-            $db->insert('wc_wallet_passes', ['user_id'=>$uid, 'serial'=>$serial, 'auth_token'=>$token, 'updated_tag'=>'0']);
+            $db->insert('wc_wallet_passes', ['user_id'=>$uid, 'serial'=>$serial, 'auth_token'=>$token, 'updated_tag'=>'0', 'platform'=>'apple']);
         } catch (Throwable $e) {
             // race: another request created it first
             $row = $db->fetchOne("SELECT serial, auth_token FROM wc_wallet_passes WHERE user_id=:u LIMIT 1", ['u'=>$uid]);

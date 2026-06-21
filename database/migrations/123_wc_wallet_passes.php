@@ -32,6 +32,30 @@ try {
     );
     echo "wc_wallet_passes ready\n";
 
+    // The table may pre-exist from an earlier schema (platform/auth_token char(32),
+    // no updated_tag/updated_at). Bring it up to spec, additively + idempotently.
+    $dbName = $pdo->query("SELECT DATABASE() AS db")->fetch(PDO::FETCH_ASSOC)['db'] ?? null;
+    $hasCol = function (string $col) use ($pdo, $dbName): bool {
+        $st = $pdo->prepare("SELECT COUNT(*) FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA=:db AND TABLE_NAME='wc_wallet_passes' AND COLUMN_NAME=:c");
+        $st->execute([':db'=>$dbName, ':c'=>$col]);
+        return (int)$st->fetchColumn() > 0;
+    };
+    if (!$hasCol('updated_tag')) {
+        $pdo->exec("ALTER TABLE wc_wallet_passes ADD COLUMN updated_tag VARCHAR(32) NOT NULL DEFAULT '0'");
+        echo "  + updated_tag\n";
+    }
+    if (!$hasCol('updated_at')) {
+        $pdo->exec("ALTER TABLE wc_wallet_passes ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+        echo "  + updated_at\n";
+    }
+    // Widen auth_token (40-hex tokens need >32 chars).
+    $pdo->exec("ALTER TABLE wc_wallet_passes MODIFY auth_token VARCHAR(64) NOT NULL");
+    // Make platform optional for apple-only WC passes (default apple if the column exists).
+    if ($hasCol('platform')) {
+        try { $pdo->exec("ALTER TABLE wc_wallet_passes MODIFY platform ENUM('apple','google') NOT NULL DEFAULT 'apple'"); } catch (Throwable $e) {}
+    }
+
     $pdo->exec(
         "CREATE TABLE IF NOT EXISTS wallet_device_registrations (
             id              INT AUTO_INCREMENT PRIMARY KEY,
