@@ -1348,6 +1348,24 @@ def render(template_path: str, employee_path: str, out_path: str,
     # PyMuPDF 1.27 removed linearization support entirely:
     # FzErrorArgument: Linearisation is no longer supported.
     # The flag is gone from the MuPDF build used by PyMuPDF >= 1.24.
+    # Trim crop: when the imported design is bleed-inclusive (e.g. Otech is
+    # 91x61mm but the real card is 90x55mm), crop each page's CropBox to the
+    # centred trim size so the output is the standard card size. No coordinate
+    # surgery, the central trim of the rendered art is exactly the card.
+    _trim = (vector_cmyk_cfg or {}).get('trim') if vector_cmyk_cfg else None
+    if _trim and _trim.get('w_mm') and _trim.get('h_mm'):
+        tw = float(_trim['w_mm']) * 72.0 / 25.4
+        th = float(_trim['h_mm']) * 72.0 / 25.4
+        for pg in out_doc:
+            r = pg.rect
+            ox = max(0.0, (r.width - tw) / 2.0)
+            oy = max(0.0, (r.height - th) / 2.0)
+            crop = fitz.Rect(ox, oy, ox + min(tw, r.width), oy + min(th, r.height))
+            try:
+                pg.set_cropbox(crop)
+            except Exception as e:
+                print(f'WARN: trim cropbox failed: {e}', file=sys.stderr)
+
     out_doc.save(out_path, garbage=4, deflate=True)
     out_doc.close()
 

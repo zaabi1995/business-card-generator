@@ -20,7 +20,7 @@ class CardPDFRenderer
      *   field right edge (x_pt + w_pt), matching Fabric + Arabic htmlbox
      *   (rule 47 convention: x = bbox LEFT edge).
      */
-    const RENDERER_VERSION = 18;
+    const RENDERER_VERSION = 19;
 
     /**
      * Render or fetch a cached vector PDF for one employee.
@@ -369,7 +369,11 @@ class CardPDFRenderer
         $seeds = [
             'otech' => [
                 'enabled'          => true,
-                'corner_radius_mm' => 1.5,
+                // Otech card = 90x55mm trim, 4.259mm rounded corners (per the
+                // Illustrator source). The imported design is 91x61mm bleed-
+                // inclusive, so the renderer crops to the centred 90x55 trim.
+                'corner_radius_mm' => 4.259,
+                'trim'             => ['w_mm' => 90, 'h_mm' => 55],
                 'cut_line_width_pt' => 0.5,
                 'colors' => [
                     // Deep Sea blue is the field + the dot-mesh/gradient texture,
