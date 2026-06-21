@@ -329,9 +329,21 @@ def _pil_to_cmyk_pixmap(im, cfg):
     return fitz.Pixmap(fitz.csCMYK, im.width, im.height, cmyk8.tobytes(), False)
 
 
-def _png_to_cmyk_pixmap(png_path, cfg):
+def _png_to_cmyk_pixmap(png_path, cfg, bleed_pt=0.0, card_w_pt=0.0):
+    """Build the CMYK bg pixmap. When bleed_pt/card_w_pt are given, the image is
+    edge-extended by the bleed amount (replicate edge pixels) so a full-bleed
+    design actually bleeds past the trim. The padding is sized so the trim
+    content still lands exactly on card_rect when the result is placed over the
+    full (bleed-expanded) page."""
     from PIL import Image
-    return _pil_to_cmyk_pixmap(Image.open(png_path), cfg)
+    im = Image.open(png_path).convert('RGB')
+    if bleed_pt > 0 and card_w_pt > 0:
+        import numpy as np
+        pad = int(round(bleed_pt * im.width / card_w_pt))
+        if pad > 0:
+            arr = np.pad(np.asarray(im), ((pad, pad), (pad, pad), (0, 0)), mode='edge')
+            im = Image.fromarray(arr)
+    return _pil_to_cmyk_pixmap(im, cfg)
 
 
 def _ensure_subdict(doc, owner, key):
@@ -961,9 +973,14 @@ def render(template_path: str, employee_path: str, out_path: str,
         if png_path and os.path.isfile(png_path):
             if cmyk_cfg:
                 # Press profile: bake the bg into DeviceCMYK with the tenant's
-                # exact brand values (flat blue -> C100 M90 Y0 K2, etc.).
-                page.insert_image(card_rect,
-                                  pixmap=_png_to_cmyk_pixmap(png_path, cmyk_cfg),
+                # exact brand values (flat blue -> C100 M90 Y0 K2, etc.) and
+                # edge-extend it into the 3mm bleed so a full-bleed design
+                # actually bleeds. Placed over the FULL page; the padding keeps
+                # the trim content aligned on card_rect.
+                page.insert_image(page.rect,
+                                  pixmap=_png_to_cmyk_pixmap(
+                                      png_path, cmyk_cfg,
+                                      bleed_pt=BLEED_PT, card_w_pt=card_rect.width),
                                   keep_proportion=False)
             else:
                 page.insert_image(card_rect, filename=png_path, keep_proportion=False)
