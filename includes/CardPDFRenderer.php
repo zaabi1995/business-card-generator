@@ -143,6 +143,10 @@ class CardPDFRenderer
         if (!is_dir($cacheDir)) @mkdir($cacheDir, 0775, true);
         $cachePath = $cacheDir . '/' . $sig . '.pdf';
         if (is_file($cachePath) && filesize($cachePath) > 1024) {
+            // A cache file written by a root CLI/cron render lands root:root 0640,
+            // so PHP-FPM (www) can't read it -> readfile() Permission denied ->
+            // truncated FastCGI response -> 502. Make it world-readable on hit.
+            if ((fileperms($cachePath) & 0044) !== 0044) @chmod($cachePath, 0644);
             return ['success' => true, 'path' => $cachePath, 'cached' => true];
         }
 
@@ -297,6 +301,9 @@ class CardPDFRenderer
             'theme_updated_at'    => $themeUpdatedAt,
         ]));
 
+        // World-readable so a root CLI/cron render's cache file is servable by
+        // PHP-FPM (www) on the next download (else readfile() -> 502).
+        @chmod($cachePath, 0644);
         return ['success' => true, 'path' => $cachePath, 'cached' => false];
     }
 
@@ -328,7 +335,7 @@ class CardPDFRenderer
         if ($tplFront === null && $tplBack === null && $companyId !== '') {
             try {
                 $rows = Database::getInstance()->fetchAll(
-                    "SELECT id, side, settings FROM templates
+                    "SELECT id, side, settings_json FROM templates
                       WHERE company_id = :c AND deleted_at IS NULL AND side IN ('front','back')
                       ORDER BY has_vector_source DESC, created_at DESC",
                     ['c' => $companyId]
@@ -339,10 +346,10 @@ class CardPDFRenderer
                 }
             } catch (Throwable $e) { /* fall through to seed */ }
         }
-        // 1. Per-template override (settings.print_cmyk).
+        // 1. Per-template override (settings_json.print_cmyk).
         foreach ([$tplFront, $tplBack] as $tpl) {
             if (!is_array($tpl)) continue;
-            $settings = $tpl['settings'] ?? null;
+            $settings = $tpl['settings_json'] ?? ($tpl['settings'] ?? null);
             if (is_string($settings)) $settings = json_decode($settings, true);
             if (is_array($settings) && isset($settings['print_cmyk'])
                 && is_array($settings['print_cmyk'])) {
