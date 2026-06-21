@@ -1256,6 +1256,7 @@ adminHeader(t('employees.page_title'), 'employees');
                             $__urlPath  = $__empSlug !== '' ? $__empSlug : urlencode($emp['id']);
                             $publicUrl  = 'https://' . ($company['slug'] ?? 'app') . '.' . $publicHost . '/' . $__urlPath;
                             $printReadyUrl = '/card-pdf.php?i=' . urlencode($emp['id']) . '&print=1';
+                            $cutSheetUrl   = '/card-sheet.php?i=' . urlencode($emp['id']);
                             ?>
                             <div class="flex items-center justify-end gap-1" x-data="{ showMenu: false, showMore: false }">
                                 <?php if ($latestCard && $frontUrl): ?>
@@ -1268,11 +1269,17 @@ adminHeader(t('employees.page_title'), 'employees');
                                     </button>
                                     <div x-show="showMenu" x-cloak
                                          class="absolute right-0 mt-1 w-60 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 text-left">
-                                        <!-- Admin-only clean press-ready file (no watermark) -->
+                                        <!-- Clean per-card print file (full font embed, no watermark) -->
                                         <a href="<?= htmlspecialchars($printReadyUrl, ENT_QUOTES) ?>"
                                            class="flex items-start gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                             <i class="fa-solid fa-file-pdf text-green-600 w-4 mt-0.5"></i>
-                                            <span>Print-ready PDF<span class="block text-[11px] text-gray-400"><?= $pressHasCmyk ? 'CMYK, 3mm bleed + cut line, fonts embedded, no watermark' : 'High-res, 3mm bleed + crop marks, fonts embedded, no watermark' ?></span></span>
+                                            <span>Print-ready PDF<span class="block text-[11px] text-gray-400">The card front + back, high-res, fonts embedded, no watermark</span></span>
+                                        </a>
+                                        <!-- A4 imposed cutting sheet (crop + cut lines + registration) -->
+                                        <a href="<?= htmlspecialchars($cutSheetUrl, ENT_QUOTES) ?>"
+                                           class="flex items-start gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                            <i class="fa-solid fa-scissors text-blue-600 w-4 mt-0.5"></i>
+                                            <span>A4 cutting sheet<span class="block text-[11px] text-gray-400">10-up A4 (front + back) with crop marks, cut lines + registration</span></span>
                                         </a>
                                         <hr class="my-1 border-gray-100">
                                         <?php if ($hasFrontPdf && $hasBackPdf): ?>
