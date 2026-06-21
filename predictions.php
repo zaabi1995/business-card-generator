@@ -5,6 +5,8 @@
  */
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/WcHub.php';
+require_once INCLUDES_DIR . '/AppleWalletPass.php';
+require_once INCLUDES_DIR . '/GoogleWalletPass.php';
 
 $user = WcHub::currentUser();
 if (!$user) { header('Location: https://wc.cardify.om/'); exit; }
@@ -208,6 +210,17 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
     <div class="flex items-center justify-center gap-1.5 text-[11px] text-amber-600 font-semibold mt-3">
       <i class="fa-solid fa-trophy"></i> <?= fh($P['prize_line']) ?>
     </div>
+    <?php $appleOn = AppleWalletPass::isEnabled(); $googleOn = GoogleWalletPass::isEnabled(); if($appleOn || $googleOn): ?>
+    <!-- Add the live pass straight from the page so it is one tap, updates daily -->
+    <div class="mt-3 flex flex-col sm:flex-row items-stretch gap-2">
+      <?php if($appleOn): ?>
+        <a href="/wc-wallet-apple" class="btn flex-1 inline-flex items-center justify-center gap-2.5 rounded-2xl px-4 py-3 font-bold text-white bg-slate-900 hover:bg-black text-sm shadow-sm"><i class="fa-brands fa-apple text-lg" aria-hidden="true"></i> <?= fh($P['add_apple'] ?? 'Add to Apple Wallet') ?></a>
+      <?php endif; ?>
+      <?php if($googleOn): ?>
+        <a href="/wc-wallet-google" class="btn flex-1 inline-flex items-center justify-center gap-2.5 rounded-2xl px-4 py-3 font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 text-sm shadow-sm"><i class="fa-brands fa-google text-lg" aria-hidden="true"></i> <?= fh($P['add_google'] ?? 'Add to Google Wallet') ?></a>
+      <?php endif; ?>
+    </div>
+    <?php endif; ?>
   </section>
 
   <main class="max-w-xl mx-auto px-5 py-5 space-y-5">
