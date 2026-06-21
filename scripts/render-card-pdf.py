@@ -413,6 +413,10 @@ def _finalize_press(out_path, cfg, bleed_pt):
             pw, ph = page.rect.width, page.rect.height
             x0, y0 = bleed_pt, bleed_pt
             x1, y1 = pw - bleed_pt, ph - bleed_pt
+            # clean_contents FIRST: it rebuilds Resources and drops anything the
+            # current content doesn't reference, so wiring CutCS/OCcut before it
+            # would strip them (MuPDF then errors 'cannot find CutCS').
+            page.clean_contents()
             res = _ensure_subdict(doc, page.xref, 'Resources')
             csd = _ensure_subdict(doc, res, 'ColorSpace')
             doc.xref_set_key(csd, 'CutCS', f'{cs} 0 R')
@@ -421,7 +425,6 @@ def _finalize_press(out_path, cfg, bleed_pt):
             path = _rounded_rect_ops(x0, y0, x1, y1, radius_pt)
             cut = ('q /OC /OCcut BDC /CutCS CS 1 SC %.3f w %s S EMC Q'
                    % (line_w, path)).encode()
-            page.clean_contents()
             cx = page.get_contents()[0]
             doc.update_stream(cx, doc.xref_stream(cx) + b'\n' + cut)
         tmp = out_path + '.cut.pdf'
