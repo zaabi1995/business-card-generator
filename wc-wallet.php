@@ -2,9 +2,11 @@
 /** wc.cardify.om/wc-wallet - Apple/Google Wallet pass (daily-updating). Placeholder until Phase 5. */
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/WcHub.php';
+require_once INCLUDES_DIR . '/GoogleWalletPass.php';
 $user = WcHub::currentUser();
 $lang = WcHub::lang($user['language'] ?? 'en');
 $dir = WcHub::isRtl($lang) ? 'rtl' : 'ltr';
+$googleWallet = $user && GoogleWalletPass::isEnabled();
 function wh($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 ?>
 <!DOCTYPE html><html lang="<?= wh($lang) ?>" dir="<?= wh($dir) ?>"><head>
@@ -23,8 +25,14 @@ function wh($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
   <div class="max-w-sm w-full bg-white rounded-3xl p-7 text-center shadow-2xl">
     <img src="/assets/images/logo.svg" alt="Cardify" class="h-7 w-auto mx-auto mb-4">
     <div class="mb-3"><i class="fa-light fa-ticket text-blue-600 text-4xl"></i></div>
-    <h1 class="text-xl font-bold mb-2 text-slate-900">Wallet pass coming soon</h1>
-    <p class="text-slate-500 text-sm mb-5">A live pass with today's matches and your points, updated daily, is on the way.</p>
-    <a href="<?= $user?'/predictions':'https://wc.cardify.om/' ?>" class="inline-block rounded-2xl px-5 py-3 font-bold text-white bg-blue-600">Back</a>
+    <h1 class="text-xl font-bold mb-2 text-slate-900">Your World Cup pass</h1>
+    <?php if($googleWallet): ?>
+      <p class="text-slate-500 text-sm mb-5">Save your points, rank and streak to Google Wallet. The Apple Wallet pass and live daily auto-refresh are on the way.</p>
+      <a href="/wc-wallet-google" class="inline-flex items-center justify-center gap-2 w-full rounded-2xl px-5 py-3 font-bold text-white bg-slate-900 mb-2.5"><i class="fa-brands fa-google"></i> Add to Google Wallet</a>
+      <a href="<?= $user?'/predictions':'https://wc.cardify.om/' ?>" class="inline-block text-sm font-semibold text-blue-700 px-5 py-2.5">Back</a>
+    <?php else: ?>
+      <p class="text-slate-500 text-sm mb-5">A live pass with today's matches and your points, updated daily, is on the way.</p>
+      <a href="<?= $user?'/predictions':'https://wc.cardify.om/' ?>" class="inline-block rounded-2xl px-5 py-3 font-bold text-white bg-blue-600">Back</a>
+    <?php endif; ?>
   </div>
 </body></html>

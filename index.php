@@ -51,6 +51,7 @@ if ($wcHost === 'wc.cardify.om') {
         '/leaderboard'    => 'wc-leaderboard.php',
         '/wc-settings'    => 'wc-settings.php',
         '/wc-wallet'      => 'wc-wallet.php',
+        '/wc-wallet-google' => 'wc-wallet-google.php',
     ];
     if (isset($wcMap[$wcPath])) { require __DIR__ . '/' . $wcMap[$wcPath]; exit; }
     if ($wcPath === '/wc-logout') {
