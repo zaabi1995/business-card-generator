@@ -1094,6 +1094,12 @@ def render(template_path: str, employee_path: str, out_path: str,
             # Static-text fields (decorations) carry their literal text in
             # the field spec; typed dynamic fields resolve from the employee.
             static_text = field.get('static_text')
+            # Vector-bg mode: ALL static text already lives in the vector
+            # source.pdf (kept, not redacted), so re-drawing it here would
+            # double-strike (e.g. "An Omantel Company"). Only the dynamic
+            # fields (which were redacted out) get redrawn.
+            if used_vector_bg and (field.get('render_in_bg') or static_text):
+                continue
             if static_text:
                 text = static_text
             else:
