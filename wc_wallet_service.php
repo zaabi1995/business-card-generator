@@ -32,9 +32,12 @@ $seg  = array_values(array_filter(explode('/', $rest), fn($s)=>$s!==''));
 $db = Database::getInstance();
 
 function wsAuthToken(): string {
-    $h = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-    if ($h === '' && function_exists('getallheaders')) {
-        foreach (getallheaders() as $k=>$v) { if (strtolower($k)==='authorization') { $h=$v; break; } }
+    $h = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+    if ($h === '') {
+        $hdrs = [];
+        if (function_exists('getallheaders')) { $hdrs = getallheaders(); }
+        elseif (function_exists('apache_request_headers')) { $hdrs = apache_request_headers(); }
+        foreach ($hdrs as $k=>$v) { if (strtolower($k)==='authorization') { $h=$v; break; } }
     }
     if (stripos($h, 'ApplePass ') === 0) return trim(substr($h, 10));
     return '';
