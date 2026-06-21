@@ -37,15 +37,19 @@ function uh($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate icon" href="/favicon.ico">
 <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/light.min.css">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif}</style>
 </head>
-<body class="min-h-[100dvh] grid place-items-center bg-[linear-gradient(160deg,#0a7d3c,#04331b)] p-6">
+<body class="min-h-[100dvh] grid place-items-center bg-slate-900 p-6">
   <div class="max-w-sm w-full bg-white rounded-3xl p-7 text-center shadow-2xl">
     <img src="/assets/images/logo.svg" alt="Cardify" class="h-7 w-auto mx-auto mb-4">
-    <div class="text-4xl mb-2"><?= $done ? '👋' : '⚠️' ?></div>
+    <div class="text-4xl mb-2"><?= $done ? '<i class="fa-light fa-circle-check text-emerald-500"></i>' : '<i class="fa-light fa-triangle-exclamation text-amber-500"></i>' ?></div>
     <h1 class="text-xl font-bold mb-2 text-slate-900"><?= uh($t) ?></h1>
     <p class="text-slate-500 text-sm mb-5"><?= uh($b) ?></p>
-    <a href="https://wc.cardify.om/" class="inline-block rounded-2xl px-5 py-3 font-bold text-white bg-cyan-600"><?= uh($done ? $msg[2] : 'Go to wc.cardify.om') ?></a>
+    <a href="https://wc.cardify.om/" class="inline-block rounded-2xl px-5 py-3 font-bold text-white bg-blue-600"><?= uh($done ? $msg[2] : 'Go to wc.cardify.om') ?></a>
   </div>
 </body></html>

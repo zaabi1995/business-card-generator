@@ -13,14 +13,18 @@ function wh($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate icon" href="/favicon.ico">
 <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/light.min.css">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif}</style></head>
-<body class="min-h-[100dvh] grid place-items-center bg-[linear-gradient(160deg,#0a7d3c,#04331b)] p-6">
+<body class="min-h-[100dvh] grid place-items-center bg-slate-900 p-6">
   <div class="max-w-sm w-full bg-white rounded-3xl p-7 text-center shadow-2xl">
     <img src="/assets/images/logo.svg" alt="Cardify" class="h-7 w-auto mx-auto mb-4">
-    <div class="text-4xl mb-2">🎟️</div>
+    <div class="mb-3"><i class="fa-light fa-ticket text-blue-600 text-4xl"></i></div>
     <h1 class="text-xl font-bold mb-2 text-slate-900">Wallet pass coming soon</h1>
     <p class="text-slate-500 text-sm mb-5">A live pass with today's matches and your points, updated daily, is on the way.</p>
-    <a href="<?= $user?'/predictions':'https://wc.cardify.om/' ?>" class="inline-block rounded-2xl px-5 py-3 font-bold text-white bg-cyan-600">Back</a>
+    <a href="<?= $user?'/predictions':'https://wc.cardify.om/' ?>" class="inline-block rounded-2xl px-5 py-3 font-bold text-white bg-blue-600">Back</a>
   </div>
 </body></html>

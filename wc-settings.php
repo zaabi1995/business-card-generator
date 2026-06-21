@@ -17,7 +17,7 @@ $tzList = ['Asia/Muscat'=>'Muscat (GMT+4)','Asia/Dubai'=>'Dubai (GMT+4)','Asia/R
     'America/New_York'=>'New York (GMT-5)','Europe/Madrid'=>'Madrid (GMT+1)','Asia/Jakarta'=>'Jakarta (GMT+7)'];
 if (!isset($tzList[$user['tz']])) $tzList[$user['tz']] = $user['tz'];
 function sh($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
-$inputCls='w-full px-4 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white text-base outline-none focus:border-cyan-600';
+$inputCls='w-full px-4 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white text-base outline-none focus:border-blue-600';
 ?>
 <!DOCTYPE html><html lang="<?= sh($lang) ?>" dir="<?= sh($dir) ?>"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -25,11 +25,15 @@ $inputCls='w-full px-4 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white 
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate icon" href="/favicon.ico">
 <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/light.min.css">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif}</style>
 </head>
 <body class="min-h-[100dvh] bg-slate-100">
-  <header class="bg-[linear-gradient(160deg,#0a7d3c,#04331b)] text-white">
+  <header class="bg-slate-900 text-white">
     <div class="max-w-md mx-auto px-5 py-4 flex items-center justify-between">
       <a href="/predictions"><img src="/assets/images/logo-light.svg" alt="Cardify" class="h-6 w-auto"></a>
       <a href="/predictions" class="text-sm text-emerald-50/90"><?= sh($P['predict']) ?></a>
@@ -55,7 +59,7 @@ $inputCls='w-full px-4 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white 
           <?php foreach ($tzList as $z=>$lbl): ?><option value="<?= sh($z) ?>" <?= $z===$user['tz']?'selected':'' ?>><?= sh($lbl) ?></option><?php endforeach; ?>
         </select>
       </div>
-      <button id="save" class="w-full rounded-2xl py-3.5 font-bold text-white bg-cyan-600"><?= sh($P['save']) ?></button>
+      <button id="save" class="w-full rounded-2xl py-3.5 font-bold text-white bg-blue-600"><?= sh($P['save']) ?></button>
     </div>
     <div class="flex items-center justify-between mt-5 text-sm">
       <a href="/u?t=<?= sh($user['unsub_token']) ?>" class="text-red-500 font-semibold">Unsubscribe</a>
@@ -73,7 +77,7 @@ $('save').addEventListener('click',async()=>{
       body:JSON.stringify({name:$('name').value,language:$('language').value,tz:$('tz').value})});
     const j=await r.json();
     m.className=(j.ok?'bg-emerald-50 text-emerald-700':'bg-red-50 text-red-600')+' mb-3 rounded-xl px-3.5 py-2.5 text-sm';
-    m.textContent=j.ok?'✓ Saved':'Could not save'; m.classList.remove('hidden');
+    m.textContent=j.ok?'Saved':'Could not save'; m.classList.remove('hidden');
     if(j.ok) setTimeout(()=>location.reload(),700);
   }catch(_){m.className='bg-red-50 text-red-600 mb-3 rounded-xl px-3.5 py-2.5 text-sm';m.textContent='Error';m.classList.remove('hidden');}
   b.disabled=false; b.textContent=o;

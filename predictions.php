@@ -47,7 +47,7 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
       <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
         <span><?= fh(kostr($m['kickoff_utc'],$tzObj)) ?></span>
         <?php if($finished): ?><span class="font-bold text-slate-500"><?= fh($P['results']) ?></span>
-        <?php elseif($isLocked): ?><span class="font-bold text-amber-500">🔒 <?= fh($P['locked']) ?></span><?php endif; ?>
+        <?php elseif($isLocked): ?><span class="font-bold text-amber-500"><i class="fa-solid fa-lock"></i> <?= fh($P['locked']) ?></span><?php endif; ?>
       </div>
       <div class="flex items-center justify-center gap-3 text-center mb-3">
         <div class="flex-1 font-semibold text-slate-800 text-[15px]"><?= fh($m['home']) ?></div>
@@ -70,7 +70,7 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
       <?php else: ?>
         <div class="grid grid-cols-3 gap-2 mb-2">
           <?php foreach(['home'=>$m['home'],'draw'=>$P['draw'],'away'=>$m['away']] as $k=>$labelv): ?>
-            <button type="button" data-pick="<?= $k ?>" class="pick-btn rounded-xl py-2 text-sm font-semibold border <?= $sel===$k?'bg-cyan-600 text-white border-cyan-600':'bg-slate-50 text-slate-700 border-slate-200' ?>"><?= fh($labelv) ?></button>
+            <button type="button" data-pick="<?= $k ?>" class="pick-btn rounded-xl py-2 text-sm font-semibold border <?= $sel===$k?'bg-blue-600 text-white border-blue-600':'bg-slate-50 text-slate-700 border-slate-200' ?>"><?= fh($labelv) ?></button>
           <?php endforeach; ?>
         </div>
         <div class="flex items-center justify-center gap-2 mb-2">
@@ -91,12 +91,16 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate icon" href="/favicon.ico">
 <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/light.min.css">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>tailwind.config={theme:{extend:{fontFamily:{sans:['IBM Plex Sans Arabic','system-ui','sans-serif']},colors:{cyan:{600:'#0086a8',700:'#036b87'}}}}}</script>
 <style>body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif}</style>
 </head>
 <body class="min-h-[100dvh] bg-slate-100">
-  <header class="bg-[linear-gradient(160deg,#0a7d3c,#04331b)] text-white">
+  <header class="bg-slate-900 text-white">
     <div class="max-w-xl mx-auto px-5 pt-4 pb-5">
       <div class="flex items-center justify-between">
         <a href="https://cardify.om"><img src="/assets/images/logo-light.svg" alt="Cardify" class="h-6 w-auto"></a>
@@ -114,7 +118,7 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
           <div class="text-2xl font-extrabold">#<?= $rank ?></div>
           <div class="text-[11px] uppercase tracking-wide text-emerald-50/70"><?= fh($P['rank']) ?></div>
         </div>
-        <div class="flex-1 text-right text-[11px] text-gold-200 leading-tight">🏆 <?= fh($P['prize_line']) ?></div>
+        <div class="flex-1 text-right text-[11px] text-amber-300 leading-tight"><i class="fa-light fa-trophy"></i> <?= fh($P['prize_line']) ?></div>
       </div>
     </div>
   </header>
@@ -125,7 +129,7 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
       <p class="text-sm text-slate-500"><?= fh($P['how_body']) ?></p>
     </div>
 
-    <?php if($live): ?><h2 class="font-bold text-slate-700">🔴 <?= fh($P['live']) ?></h2>
+    <?php if($live): ?><h2 class="font-bold text-slate-700"><i class="fa-solid fa-circle text-rose-500 text-[10px] align-middle"></i> <?= fh($P['live']) ?></h2>
       <div class="space-y-3"><?php foreach($live as $m) echo matchCard($m,$myPred,$tzObj,$nowUtc,$P,true); ?></div><?php endif; ?>
 
     <h2 class="font-bold text-slate-700"><?= fh($P['upcoming']) ?></h2>
@@ -147,8 +151,8 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
 document.querySelectorAll('[data-match]').forEach(card=>{
   const picks=card.querySelectorAll('.pick-btn');
   picks.forEach(b=>b.addEventListener('click',()=>{
-    picks.forEach(x=>x.className=x.className.replace('bg-cyan-600 text-white border-cyan-600','bg-slate-50 text-slate-700 border-slate-200'));
-    b.className=b.className.replace('bg-slate-50 text-slate-700 border-slate-200','bg-cyan-600 text-white border-cyan-600');
+    picks.forEach(x=>x.className=x.className.replace('bg-blue-600 text-white border-blue-600','bg-slate-50 text-slate-700 border-slate-200'));
+    b.className=b.className.replace('bg-slate-50 text-slate-700 border-slate-200','bg-blue-600 text-white border-blue-600');
     card.dataset.pick=b.dataset.pick;
   }));
   const save=card.querySelector('.save-btn');
@@ -157,14 +161,14 @@ document.querySelectorAll('[data-match]').forEach(card=>{
     let pick=card.dataset.pick||'';
     const ph=h&&h.value!==''?+h.value:null, pa=a&&a.value!==''?+a.value:null;
     if(ph!==null&&pa!==null) pick=ph===pa?'draw':(ph>pa?'home':'away');
-    if(!pick){save.textContent='⚠';setTimeout(()=>save.textContent=<?= json_encode($P['save']) ?>,1200);return;}
+    if(!pick){save.textContent='!';setTimeout(()=>save.textContent=<?= json_encode($P['save']) ?>,1200);return;}
     save.disabled=true; const o=save.textContent; save.textContent='…';
     try{
       const r=await fetch('/api/wc-predict.php',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({match_id:card.dataset.match,pick,pred_home:ph,pred_away:pa})});
       const j=await r.json();
-      save.textContent=j.ok?<?= json_encode($P['saved']) ?>+' ✓':'⚠';
-    }catch(_){save.textContent='⚠';}
+      save.textContent=j.ok?<?= json_encode($P['saved']) ?>:'!';
+    }catch(_){save.textContent='!';}
     save.disabled=false; setTimeout(()=>save.textContent=o,1600);
   });
 });
