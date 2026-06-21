@@ -20,7 +20,7 @@ class CardPDFRenderer
      *   field right edge (x_pt + w_pt), matching Fabric + Arabic htmlbox
      *   (rule 47 convention: x = bbox LEFT edge).
      */
-    const RENDERER_VERSION = 15;
+    const RENDERER_VERSION = 16;
 
     /**
      * Render or fetch a cached vector PDF for one employee.
@@ -55,7 +55,11 @@ class CardPDFRenderer
         if ($employeeId === '') {
             return ['success' => false, 'error' => 'empty employee id'];
         }
-        $profile = in_array($profile, ['web', 'print', 'sample'], true) ? $profile : 'web';
+        // 'press' = the clean per-card print download: print font-embed + 3mm
+        // bleed + crop marks + DeviceCMYK (exact tenant brand values) + a
+        // CutContour cut-line layer. 'print' stays RGB/no-bleed so the A4
+        // imposition slot math (imposition-vector.py) is unaffected.
+        $profile = in_array($profile, ['web', 'print', 'sample', 'press'], true) ? $profile : 'web';
 
         $db = Database::getInstance();
         $employee = $db->fetchOne(
@@ -212,12 +216,27 @@ class CardPDFRenderer
         // watermark overlay. The Python script accepts the watermark text as
         // a flag; profile=web is what render-card-pdf.py expects (it has no
         // 'sample' enum). Map sample → web internally + watermark text.
-        $pyProfile  = ($profile === 'sample') ? 'web' : $profile;
+        $pyProfile  = in_array($profile, ['sample'], true) ? 'web'
+                    : (($profile === 'press') ? 'print' : $profile);
         // Short watermark text on per-card pages (~85x55mm); long text gets
         // clipped after the -30deg rotation on this small canvas. The
         // imposition sheet (A4) uses the longer "SAMPLE - NOT FOR PRINT"
         // string since it has the room.
         $watermark  = ($profile === 'sample') ? 'SAMPLE' : '';
+
+        // Press profile: bleed + crop marks, plus a CMYK config sidecar when the
+        // tenant has a brand-colour map (seeded for known tenants, overridable
+        // via the front template's settings.print_cmyk). No config -> press is
+        // still a clean RGB bleed+crop file (no CMYK/cut).
+        $forPrint = ($profile === 'press');
+        $tmpCmyk  = '';
+        if ($profile === 'press') {
+            $cmykCfg = self::pressCmykConfig($companyId, $companySlug, $tplFront, $tplBack);
+            if (is_array($cmykCfg)) {
+                $tmpCmyk = tempnam(sys_get_temp_dir(), 'cpdfcmyk_') . '.json';
+                file_put_contents($tmpCmyk, json_encode($cmykCfg, JSON_UNESCAPED_UNICODE));
+            }
+        }
 
         $py  = trim((string)@shell_exec('command -v python3 2>/dev/null')) ?: 'python3';
         $cmd = escapeshellarg($py)
@@ -226,20 +245,26 @@ class CardPDFRenderer
              . ' --employee ' . escapeshellarg($tmpEmp)
              . ' --out '      . escapeshellarg($cachePath)
              . ' --profile '  . escapeshellarg($pyProfile)
+             . ($forPrint ? ' --for-print' : '')
+             . ($tmpCmyk !== '' ? ' --cmyk ' . escapeshellarg($tmpCmyk) : '')
              . ($watermark !== '' ? ' --watermark ' . escapeshellarg($watermark) : '')
              . ($tmpVcf !== '' ? ' --vcard ' . escapeshellarg($tmpVcf) : '')
              . ' 2>&1';
+        // Press needs longer: the CMYK bg conversion + Ghostscript pass on the
+        // 1200-DPI artwork takes more than the 30s a plain vector render needs.
+        $timeoutSecs = ($profile === 'press') ? 90 : 30;
         if (trim((string)@shell_exec('command -v timeout 2>/dev/null')) !== '') {
-            $cmd = 'timeout 30 ' . $cmd;
+            $cmd = 'timeout ' . $timeoutSecs . ' ' . $cmd;
         }
         $rc = 0; $out = [];
         exec($cmd, $out, $rc);
         @unlink($tmpTpl);
         @unlink($tmpEmp);
         if ($tmpVcf !== '') @unlink($tmpVcf);
+        if ($tmpCmyk !== '') @unlink($tmpCmyk);
 
         if ($rc === 124) {
-            error_log('CardPDFRenderer timed out after 30s');
+            error_log('CardPDFRenderer timed out after ' . $timeoutSecs . 's');
             return ['success' => false, 'error' => 'render timed out'];
         }
         if ($rc !== 0 || !is_file($cachePath) || filesize($cachePath) < 1024) {
@@ -273,6 +298,56 @@ class CardPDFRenderer
         ]));
 
         return ['success' => true, 'path' => $cachePath, 'cached' => false];
+    }
+
+    /**
+     * Resolve the CMYK press config (brand colour map + corner radius) for a
+     * company, or null when none is configured (press then stays RGB bleed+crop).
+     *
+     * Resolution order:
+     *   1. The front/back template's settings.print_cmyk JSON (data-driven,
+     *      editable per tenant without code).
+     *   2. A built-in seed for known tenants (Otech today).
+     *
+     * Config shape:
+     *   {
+     *     "enabled": true,
+     *     "corner_radius_mm": 1.5,          // rounded-corner cut radius
+     *     "cut_line_width_pt": 0.5,
+     *     "colors": [
+     *       {"rgb":[45,19,234], "cmyk":[100,90,0,2], "tol":30},   // Deep Sea
+     *       {"rgb":[255,120,0], "cmyk":[0,70,100,0], "tol":45}    // Gold Mountains
+     *     ]
+     *   }
+     */
+    private static function pressCmykConfig(
+        string $companyId, string $companySlug, ?array $tplFront, ?array $tplBack
+    ): ?array {
+        // 1. Per-template override (settings.print_cmyk).
+        foreach ([$tplFront, $tplBack] as $tpl) {
+            if (!is_array($tpl)) continue;
+            $settings = $tpl['settings'] ?? null;
+            if (is_string($settings)) $settings = json_decode($settings, true);
+            if (is_array($settings) && isset($settings['print_cmyk'])
+                && is_array($settings['print_cmyk'])) {
+                return $settings['print_cmyk'];
+            }
+        }
+
+        // 2. Built-in tenant seeds. Brand specs come from the tenant brand sheet;
+        //    Otech: Deep Sea (PANTONE 2736C) + Gold Mountains (PANTONE 151C).
+        $seeds = [
+            'otech' => [
+                'enabled'          => true,
+                'corner_radius_mm' => 1.5,
+                'cut_line_width_pt' => 0.5,
+                'colors' => [
+                    ['rgb' => [45, 19, 234], 'cmyk' => [100, 90, 0, 2], 'tol' => 30],
+                    ['rgb' => [255, 120, 0], 'cmyk' => [0, 70, 100, 0], 'tol' => 45],
+                ],
+            ],
+        ];
+        return $seeds[$companySlug] ?? null;
     }
 
     private static function pageSpec(?array $tpl, string $side): array

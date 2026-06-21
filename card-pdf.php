@@ -77,11 +77,13 @@ try {
     $ownsEmployee  = $callerCompany !== '' && $callerCompany === (string)($company['id'] ?? '');
 
     if (in_array($callerRole, ['print_shop', 'super_admin'], true)) {
-        // Print shop / super admin: always clean. Full embed when asked.
-        $profile = $wantsPrint ? 'print' : 'web';
+        // Print shop / super admin: always clean. 'press' when asked = full
+        // font embed + 3mm bleed + crop marks + DeviceCMYK (exact brand) +
+        // CutContour cut layer when the tenant has a press config.
+        $profile = $wantsPrint ? 'press' : 'web';
     } elseif ($wantsPrint && in_array($callerRole, $adminRoles, true) && $ownsEmployee) {
         // Tenant admin pulling the press-ready file for their own staff.
-        $profile = 'print';
+        $profile = 'press';
     } else {
         $profile = 'sample';
     }
@@ -90,7 +92,7 @@ try {
         try { QRTracker::logScan($employee['id'], $company['id']); } catch (Throwable $e) {}
         while (ob_get_level()) { ob_end_clean(); }
         $name = trim((string)($employee['name_en'] ?? $employee['name'] ?? '')) ?: 'Employee';
-        $suffix = ($profile === 'print') ? '-print-ready' : '';
+        $suffix = in_array($profile, ['print', 'press'], true) ? '-print-ready' : '';
         $downloadName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $name) . $suffix . '.pdf';
         if ($downloadName === $suffix . '.pdf') $downloadName = 'business-card' . $suffix . '.pdf';
         $mtime = filemtime($vector['path']);

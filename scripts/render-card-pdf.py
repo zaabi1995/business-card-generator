@@ -251,7 +251,189 @@ def _hex_to_rgb(hex_color) -> tuple:
         return (0, 0, 0)
 
 
-def _draw_crop_marks(page, card_rect, mark_len_pt=14.17, bleed_pt=8.5, line_width=0.71):
+# ---------------------------------------------------------------------------
+# CMYK + cut-line support (press profile). See CLAUDE.md "CMYK print pipeline".
+# When a --cmyk config is supplied, the press render emits DeviceCMYK with the
+# tenant's exact brand values (e.g. Otech blue -> C100 M90 Y0 K2, orange ->
+# C0 M70 Y100 K0), registration-black crop marks, and a "CutContour" spot-color
+# rounded-rect on its own OCG layer at the trim, matching the BHD reference.
+# ---------------------------------------------------------------------------
+
+def _load_cmyk_cfg(path):
+    if not path:
+        return None
+    try:
+        with open(path) as fh:
+            cfg = json.load(fh)
+        return cfg if cfg and cfg.get('enabled', True) else None
+    except Exception as e:
+        print(f'WARN: cmyk cfg load failed: {e}', file=sys.stderr)
+        return None
+
+
+def _cmyk_for_rgb(r, g, b, cfg):
+    """Map one RGB (0-255) to (c,m,y,k) floats 0-1. Brand colours within tol
+    snap to their EXACT spec CMYK; white -> paper; everything else converts via
+    the standard GCR formula (pure neutrals land K-only)."""
+    if cfg:
+        for col in cfg.get('colors', []):
+            cr, cg, cb = col['rgb']
+            tol = col.get('tol', 28)
+            if abs(r - cr) <= tol and abs(g - cg) <= tol and abs(b - cb) <= tol:
+                c, m, y, k = col['cmyk']
+                return (c / 100.0, m / 100.0, y / 100.0, k / 100.0)
+    if r > 250 and g > 250 and b > 250:
+        return (0.0, 0.0, 0.0, 0.0)
+    rf, gf, bf = r / 255.0, g / 255.0, b / 255.0
+    k = 1.0 - max(rf, gf, bf)
+    if k >= 0.999:
+        return (0.0, 0.0, 0.0, 1.0)
+    return ((1 - rf - k) / (1 - k), (1 - gf - k) / (1 - k), (1 - bf - k) / (1 - k), k)
+
+
+def _rgb01_to_cmyk(color, cfg):
+    """Convert a PyMuPDF RGB colour tuple (floats 0-1) to a CMYK tuple."""
+    r, g, b = [int(round(max(0.0, min(1.0, c)) * 255)) for c in color]
+    return _cmyk_for_rgb(r, g, b, cfg)
+
+
+def _pil_to_cmyk_pixmap(im, cfg):
+    """Vectorised RGB(A) PIL image -> DeviceCMYK fitz.Pixmap with brand keying.
+    Alpha is flattened onto white first (CMYK pixmaps carry no alpha)."""
+    import numpy as np
+    from PIL import Image
+    if im.mode in ('RGBA', 'LA') or (im.mode == 'P' and 'transparency' in im.info):
+        rgba = im.convert('RGBA')
+        bg = Image.new('RGB', im.size, (255, 255, 255))
+        bg.paste(rgba, mask=rgba.split()[-1])
+        im = bg
+    else:
+        im = im.convert('RGB')
+    arr = np.asarray(im).astype(np.float32)
+    R, G, B = arr[..., 0], arr[..., 1], arr[..., 2]
+    Rf, Gf, Bf = R / 255.0, G / 255.0, B / 255.0
+    K = 1.0 - np.maximum(np.maximum(Rf, Gf), Bf)
+    den = np.clip(1.0 - K, 1e-6, None)
+    C = (1 - Rf - K) / den
+    M = (1 - Gf - K) / den
+    Y = (1 - Bf - K) / den
+    white = (R > 250) & (G > 250) & (B > 250)
+    C[white] = M[white] = Y[white] = K[white] = 0.0
+    for col in (cfg.get('colors') or []):
+        cr, cg, cb = col['rgb']
+        tol = col.get('tol', 28)
+        cc, cm, cy, ck = col['cmyk']
+        mask = (np.abs(R - cr) <= tol) & (np.abs(G - cg) <= tol) & (np.abs(B - cb) <= tol)
+        C[mask], M[mask], Y[mask], K[mask] = cc / 100.0, cm / 100.0, cy / 100.0, ck / 100.0
+    cmyk8 = np.clip(np.stack([C, M, Y, K], -1) * 255.0, 0, 255).astype('uint8')
+    return fitz.Pixmap(fitz.csCMYK, im.width, im.height, cmyk8.tobytes(), False)
+
+
+def _png_to_cmyk_pixmap(png_path, cfg):
+    from PIL import Image
+    return _pil_to_cmyk_pixmap(Image.open(png_path), cfg)
+
+
+def _ensure_subdict(doc, owner, key):
+    """Resolve owner/key to a concrete (indirect) dict xref, creating it if
+    missing. Page Resources are usually indirect, so deep-path xref_set_key
+    fails ('path has indirects'); operate on a resolved xref instead."""
+    t, v = doc.xref_get_key(owner, key)
+    if t == 'xref':
+        return int(v.split()[0])
+    if t == 'dict':
+        nx = doc.get_new_xref()
+        doc.update_object(nx, v)
+        doc.xref_set_key(owner, key, f'{nx} 0 R')
+        return nx
+    nx = doc.get_new_xref()
+    doc.update_object(nx, '<< >>')
+    doc.xref_set_key(owner, key, f'{nx} 0 R')
+    return nx
+
+
+def _rounded_rect_ops(x0, y0, x1, y1, r):
+    """PDF path operators (user space, y-up) for a rounded rectangle."""
+    r = max(0.0, min(r, (x1 - x0) / 2.0, (y1 - y0) / 2.0))
+    k = 0.5523 * r
+    f = lambda v: '%.3f' % v
+    return ' '.join([
+        f'{f(x0 + r)} {f(y0)} m', f'{f(x1 - r)} {f(y0)} l',
+        f'{f(x1 - r + k)} {f(y0)} {f(x1)} {f(y0 + r - k)} {f(x1)} {f(y0 + r)} c',
+        f'{f(x1)} {f(y1 - r)} l',
+        f'{f(x1)} {f(y1 - r + k)} {f(x1 - r + k)} {f(y1)} {f(x1 - r)} {f(y1)} c',
+        f'{f(x0 + r)} {f(y1)} l',
+        f'{f(x0 + r - k)} {f(y1)} {f(x0)} {f(y1 - r + k)} {f(x0)} {f(y1 - r)} c',
+        f'{f(x0)} {f(y0 + r)} l',
+        f'{f(x0)} {f(y0 + r - k)} {f(x0 + r - k)} {f(y0)} {f(x0 + r)} {f(y0)} c', 'h',
+    ])
+
+
+def _finalize_press(out_path, cfg, bleed_pt):
+    """Two-step press finalisation on the already-saved PDF:
+      1. Ghostscript converts any residual RGB (the Arabic htmlbox text) to
+         DeviceCMYK, leaving the already-CMYK artwork untouched.
+      2. Inject a 'CutContour' spot-colour rounded-rect on its own OCG layer
+         at the trim boundary of every page (radius from cfg)."""
+    import subprocess
+    import os as _os
+    # --- 1. Ghostscript RGB -> CMYK (preserve existing CMYK + image res) ---
+    try:
+        gtmp = out_path + '.gs.pdf'
+        gs = subprocess.run([
+            'gs', '-dBATCH', '-dNOPAUSE', '-dSAFER', '-sDEVICE=pdfwrite',
+            '-dProcessColorModel=/DeviceCMYK', '-sColorConversionStrategy=CMYK',
+            '-dOverrideICC=false', '-dAutoRotatePages=/None',
+            '-dDownsampleColorImages=false', '-dDownsampleGrayImages=false',
+            '-dAutoFilterColorImages=false', '-dColorImageFilter=/FlateEncode',
+            '-dDownsampleMonoImages=false', f'-sOutputFile={gtmp}', out_path,
+        ], capture_output=True, timeout=90)
+        if gs.returncode == 0 and _os.path.isfile(gtmp) and _os.path.getsize(gtmp) > 1024:
+            _os.replace(gtmp, out_path)
+        else:
+            if _os.path.isfile(gtmp):
+                _os.remove(gtmp)
+            print(f'WARN: gs cmyk pass skipped rc={gs.returncode} {gs.stderr[:200]!r}',
+                  file=sys.stderr)
+    except Exception as e:
+        print(f'WARN: gs cmyk pass failed: {e}', file=sys.stderr)
+
+    # --- 2. Inject CutContour spot + OCG rounded-rect at trim, per page ---
+    try:
+        radius_pt = float(cfg.get('corner_radius_mm', 1.5)) * 72.0 / 25.4
+        line_w = float(cfg.get('cut_line_width_pt', 0.5))
+        doc = fitz.open(out_path)
+        ocg = doc.add_ocg('CutContour', on=True)
+        fn = doc.get_new_xref()
+        doc.update_object(fn, '<< /FunctionType 2 /Domain [0 1] /C0 [0 0 0 0] '
+                              '/C1 [0 1 0 0] /N 1 >>')
+        cs = doc.get_new_xref()
+        doc.update_object(cs, f'[ /Separation /CutContour /DeviceCMYK {fn} 0 R ]')
+        for page in doc:
+            pw, ph = page.rect.width, page.rect.height
+            x0, y0 = bleed_pt, bleed_pt
+            x1, y1 = pw - bleed_pt, ph - bleed_pt
+            res = _ensure_subdict(doc, page.xref, 'Resources')
+            csd = _ensure_subdict(doc, res, 'ColorSpace')
+            doc.xref_set_key(csd, 'CutCS', f'{cs} 0 R')
+            prp = _ensure_subdict(doc, res, 'Properties')
+            doc.xref_set_key(prp, 'OCcut', f'{ocg} 0 R')
+            path = _rounded_rect_ops(x0, y0, x1, y1, radius_pt)
+            cut = ('q /OC /OCcut BDC /CutCS CS 1 SC %.3f w %s S EMC Q'
+                   % (line_w, path)).encode()
+            page.clean_contents()
+            cx = page.get_contents()[0]
+            doc.update_stream(cx, doc.xref_stream(cx) + b'\n' + cut)
+        tmp = out_path + '.cut.pdf'
+        doc.save(tmp, garbage=3, deflate=True)
+        doc.close()
+        _os.replace(tmp, out_path)
+    except Exception as e:
+        print(f'WARN: cut-layer injection failed: {e}', file=sys.stderr)
+
+
+def _draw_crop_marks(page, card_rect, mark_len_pt=14.17, bleed_pt=8.5,
+                     line_width=0.71, color=(0, 0, 0)):
     """Draw 5mm crop marks at the four corners of card_rect.
 
     card_rect is the original card area before bleed expansion.
@@ -289,10 +471,10 @@ def _draw_crop_marks(page, card_rect, mark_len_pt=14.17, bleed_pt=8.5, line_widt
     for (hx0, hx1, vy0, vy1, cx, cy) in corners:
         # Horizontal stroke
         shape.draw_line(fitz.Point(hx0, cy), fitz.Point(hx1, cy))
-        shape.finish(color=(0, 0, 0), width=line_width, fill=None, closePath=False)
+        shape.finish(color=color, width=line_width, fill=None, closePath=False)
         # Vertical stroke
         shape.draw_line(fitz.Point(cx, vy0), fitz.Point(cx, vy1))
-        shape.finish(color=(0, 0, 0), width=line_width, fill=None, closePath=False)
+        shape.finish(color=color, width=line_width, fill=None, closePath=False)
     shape.commit()
 
 
@@ -537,7 +719,7 @@ def _draw_arabic_htmlbox(page, text, font_name, font_buf, x_pt, y_pt, w_pt,
 
 
 def _draw_qr_code(page, qr_spec: dict, employee: dict, template: dict,
-                   card_rect, for_print: bool) -> None:
+                   card_rect, for_print: bool, cmyk_cfg=None) -> None:
     """Render a styled QR code as PNG and insert it as an image onto the
     page. Honors qr_style.color (modules), bg_color (panel), eye_color
     (3 finder eyes), panel_radius_pct, panel_padding_px.
@@ -650,19 +832,28 @@ def _draw_qr_code(page, qr_spec: dict, employee: dict, template: dict,
         qr_y_pt += from_origin_pt
     rect = fitz.Rect(qr_x_pt, qr_y_pt, qr_x_pt + qr_size_pt, qr_y_pt + qr_size_pt)
 
-    # Insert as raster (alpha if rounded panel was applied)
-    buf = io.BytesIO()
-    img.save(buf, format='PNG')
-    page.insert_image(rect, stream=buf.getvalue(), keep_proportion=False)
+    # Insert as raster (alpha if rounded panel was applied). For the press
+    # (CMYK) profile, convert to a DeviceCMYK pixmap so the QR eyes/modules
+    # land on the tenant's exact brand values instead of an RGB approximation.
+    if cmyk_cfg:
+        page.insert_image(rect, pixmap=_pil_to_cmyk_pixmap(img, cmyk_cfg),
+                          keep_proportion=False)
+    else:
+        buf = io.BytesIO()
+        img.save(buf, format='PNG')
+        page.insert_image(rect, stream=buf.getvalue(), keep_proportion=False)
 
 
 def render(template_path: str, employee_path: str, out_path: str,
            vcard_path: str = '', profile: str = 'web', for_print: bool = False,
-           watermark: str = '') -> int:
+           watermark: str = '', cmyk_cfg_path: str = '') -> int:
     with open(template_path) as fh:
         template = json.load(fh)
     with open(employee_path) as fh:
         employee = json.load(fh)
+
+    # Press (CMYK) config: present only for the per-card print download.
+    cmyk_cfg = _load_cmyk_cfg(cmyk_cfg_path) if for_print else None
 
     import_dir = template['import_dir']
     fonts_dir  = template.get('fonts_dir', os.path.join(import_dir, 'fonts'))
@@ -765,7 +956,14 @@ def render(template_path: str, employee_path: str, out_path: str,
         )
         png_path = os.path.join(import_dir, png_rel) if png_rel else None
         if png_path and os.path.isfile(png_path):
-            page.insert_image(card_rect, filename=png_path, keep_proportion=False)
+            if cmyk_cfg:
+                # Press profile: bake the bg into DeviceCMYK with the tenant's
+                # exact brand values (flat blue -> C100 M90 Y0 K2, etc.).
+                page.insert_image(card_rect,
+                                  pixmap=_png_to_cmyk_pixmap(png_path, cmyk_cfg),
+                                  keep_proportion=False)
+            else:
+                page.insert_image(card_rect, filename=png_path, keep_proportion=False)
         else:
             # Fallback to SVG vector underlay if no PNG exists.
             svg_rel = page_spec.get('background_svg_path')
@@ -782,14 +980,18 @@ def render(template_path: str, employee_path: str, out_path: str,
                     pdf_doc.close()
 
         # Phase 12: draw crop marks outside the card boundary when --for-print.
+        # CMYK press files use registration black (C M Y K all on) so the marks
+        # appear on every plate.
         if for_print:
-            _draw_crop_marks(page, card_rect, bleed_pt=BLEED_PT)
+            _draw_crop_marks(page, card_rect, bleed_pt=BLEED_PT,
+                             color=((1, 1, 1, 1) if cmyk_cfg else (0, 0, 0)))
 
         # Layer 1b: QR code if the page spec has one enabled.
         qr_spec = page_spec.get('qr_code')
         if qr_spec and qr_spec.get('enabled'):
             try:
-                _draw_qr_code(page, qr_spec, employee, template, card_rect, for_print)
+                _draw_qr_code(page, qr_spec, employee, template, card_rect,
+                              for_print, cmyk_cfg)
             except Exception as e:
                 print(f'WARN: qr draw failed: {e}', file=sys.stderr)
 
@@ -949,12 +1151,15 @@ def render(template_path: str, employee_path: str, out_path: str,
                 except Exception:
                     pass
 
+            # Press profile: draw Latin text directly in CMYK so black lands
+            # K-only (not rich black) and brand-coloured text stays exact.
+            text_color = _rgb01_to_cmyk(color, cmyk_cfg) if cmyk_cfg else color
             page.insert_text(
                 fitz.Point(text_x, baseline_y),
                 text,
                 fontname=font_name,
                 fontsize=font_size,
-                color=color,
+                color=text_color,
             )
 
         # Layer 3: optional watermark stamp (last, so it overlays everything).
@@ -986,6 +1191,12 @@ def render(template_path: str, employee_path: str, out_path: str,
     # The flag is gone from the MuPDF build used by PyMuPDF >= 1.24.
     out_doc.save(out_path, garbage=4, deflate=True)
     out_doc.close()
+
+    # Press finalisation: convert residual RGB -> CMYK and inject the
+    # CutContour cut layer. Done before the vCard embed so the attachment
+    # (added via PyMuPDF, which Ghostscript would otherwise strip) survives.
+    if cmyk_cfg:
+        _finalize_press(out_path, cmyk_cfg, BLEED_PT)
 
     # Phase 7: embed vCard as a PDF attachment (Acrobat / Apple Mail "Add to Contacts").
     # Re-open the saved file, add the attachment, save to a sibling temp path,
@@ -1041,10 +1252,14 @@ def main():
     ap.add_argument('--watermark', default='',
                     help='Stamp the given text diagonally across the centre of every '
                          'page (e.g. "SAMPLE - NOT FOR PRINT"). Empty = no watermark.')
+    ap.add_argument('--cmyk', default='',
+                    help='Path to a CMYK press-config JSON (brand colour map + '
+                         'corner_radius_mm). Enables DeviceCMYK output + CutContour '
+                         'cut layer. Requires --for-print.')
     args = ap.parse_args()
     sys.exit(render(args.template, args.employee, args.out, args.vcard,
                     profile=args.profile, for_print=args.for_print,
-                    watermark=args.watermark))
+                    watermark=args.watermark, cmyk_cfg_path=args.cmyk))
 
 
 if __name__ == '__main__':
