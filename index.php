@@ -37,6 +37,18 @@ if (!file_exists($configFile)) {
 
 require_once $configFile;
 
+// wc.cardify.om — World Cup hub (powered by Cardify). Routed before the
+// tenant/landing logic. OTP + API endpoints under /api/ are served as
+// direct files; only the bare hub page is front-controlled here.
+$wcHost = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+if ($wcHost === 'wc.cardify.om') {
+    $wcPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    if ($wcPath === '/' || $wcPath === '' || $wcPath === '/world-cup') {
+        require __DIR__ . '/world-cup.php';
+        exit;
+    }
+}
+
 // Tenant subdomain check (e.g. ohb.cardify.om).
 // Convention across all tenants:
 //   <slug>.cardify.om/        -> portal.php  (employee Self-Service request form)

@@ -11,7 +11,7 @@ class TenantHost
 
     public static function reservedSubdomains(): array
     {
-        return ['www','mail','api','app','admin','docs','license','blog','shop','status','smtp','imap','pop','ftp','cdn','static'];
+        return ['www','mail','api','app','admin','docs','license','blog','shop','status','smtp','imap','pop','ftp','cdn','static','wc','predictions'];
     }
 
     public static function isTenantHost(): bool
