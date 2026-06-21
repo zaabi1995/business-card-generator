@@ -107,7 +107,7 @@ $nameEn = trim((string)($emp['name_en'] ?? '')) ?: 'Employee';
 $cardLabel = 'Business Cards - ' . $nameEn;
 $host = ($company['slug'] ?? 'app') . '.cardify.om';
 // Kanban thumbnail = the card front PNG (a real image, not the PDF sheet).
-$cardImageUrl = 'https://' . $host . '/card-image.php?i=' . rawurlencode($employeeId);
+$cardImageUrl = 'https://' . $host . '/card-image.php?i=' . rawurlencode($employeeId) . '&w=800';
 // Print-ready A4 cutting sheet (PDF) the production team downloads; kept on the
 // MO notes so it is one click away from the Kanban card.
 $sheetUrl = 'https://' . $host . '/card-sheet.php?i=' . rawurlencode($employeeId);

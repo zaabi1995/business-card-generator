@@ -60,7 +60,43 @@ if (!$fs || !is_file($fs)) {
 }
 
 $ext = strtolower(pathinfo($fs, PATHINFO_EXTENSION));
-header('Content-Type: ' . ($ext === 'jpg' || $ext === 'jpeg' ? 'image/jpeg' : 'image/png'));
+$mime = ($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : 'image/png';
+
+// Optional downscale (?w=NN, 80..2000) so the Kanban thumbnail loads light
+// instead of pulling the full ~3000px print PNG. Cached on disk per (file,
+// mtime, width); falls through to the original when GD is unavailable.
+$w = (int) ($_GET['w'] ?? 0);
+if ($w >= 80 && $w <= 2000 && function_exists('imagecreatetruecolor')) {
+    $cacheDir = __DIR__ . '/tmp/card-thumbs';
+    if (!is_dir($cacheDir)) { @mkdir($cacheDir, 0775, true); }
+    $key = sha1($fs . '|' . filemtime($fs) . '|' . $w) . '.png';
+    $cacheFs = $cacheDir . '/' . $key;
+    if (!is_file($cacheFs)) {
+        $src = $mime === 'image/jpeg' ? @imagecreatefromjpeg($fs) : @imagecreatefrompng($fs);
+        if ($src) {
+            $sw = imagesx($src); $sh = imagesy($src);
+            if ($sw > $w) {
+                $nh = (int) round($sh * ($w / $sw));
+                $dst = imagecreatetruecolor($w, $nh);
+                imagealphablending($dst, false);
+                imagesavealpha($dst, true);
+                imagecopyresampled($dst, $src, 0, 0, 0, 0, $w, $nh, $sw, $sh);
+                @imagepng($dst, $cacheFs, 6);
+                imagedestroy($dst);
+            }
+            imagedestroy($src);
+        }
+    }
+    if (is_file($cacheFs)) {
+        header('Content-Type: image/png');
+        header('Cache-Control: public, max-age=86400');
+        header('Content-Length: ' . filesize($cacheFs));
+        readfile($cacheFs);
+        exit;
+    }
+}
+
+header('Content-Type: ' . $mime);
 header('Cache-Control: public, max-age=86400');
 header('Content-Length: ' . filesize($fs));
 readfile($fs);
