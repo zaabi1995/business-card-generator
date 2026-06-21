@@ -357,6 +357,54 @@ class ERPSync {
     }
 
     /**
+     * "Bill this PO": raise ONE consolidated invoice in BHD-ERP for all unbilled
+     * production orders on a client + PO. Idempotent (the ERP marks the source
+     * orders converted so they can't be re-billed).
+     *
+     * @return array { success, message, data:{ invoiceNumber, invoiced, total } }
+     */
+    public static function createConsolidatedInvoice(string $clientName, string $poNumber): array
+    {
+        $settings = self::getSettings();
+        if (empty($settings['erp_api_url']) || empty($settings['erp_api_token'])) {
+            return ['success' => false, 'message' => 'ERP not configured'];
+        }
+        if ($clientName === '' || $poNumber === '') {
+            return ['success' => false, 'message' => 'clientName and poNumber are required'];
+        }
+
+        $apiUrl = rtrim($settings['erp_api_url'], '/') . '/api/admin/cardify/create-consolidated-invoice';
+        $ch = curl_init($apiUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode(['clientName' => $clientName, 'poNumber' => $poNumber]),
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $settings['erp_api_token'],
+            ],
+            CURLOPT_TIMEOUT        => 60,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+        $body     = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlErr) {
+            error_log("ERPSync::createConsolidatedInvoice cURL: $curlErr");
+            return ['success' => false, 'message' => "ERP connection failed: $curlErr"];
+        }
+        $data = json_decode($body, true);
+        if ($httpCode !== 200 || empty($data['success'])) {
+            $msg = $data['message'] ?? "ERP returned HTTP $httpCode";
+            error_log("ERPSync::createConsolidatedInvoice failed: $msg");
+            return ['success' => false, 'message' => $msg];
+        }
+        return ['success' => true, 'message' => $data['message'] ?? 'Invoiced', 'data' => $data];
+    }
+
+    /**
      * Retry backoff ladder in minutes, max attempts = count(). After
      * the final slot the retry row is marked 'exhausted' and manual
      * intervention is required.

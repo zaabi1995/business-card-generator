@@ -48,16 +48,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($qty <= 0) {
             $error = 'Enter a quantity greater than zero.';
         } else {
+            $unitPrice = (float)($_POST['unit_price'] ?? 0);
             $db->insert('company_print_pos', [
                 'id'              => generateUUID(),
                 'company_id'      => $companyId,
                 'po_number'       => trim((string)($_POST['po_number'] ?? '')) ?: null,
                 'quantity'        => $qty,
+                'unit_price'      => $unitPrice > 0 ? round($unitPrice, 4) : null,
                 'note'            => trim((string)($_POST['note'] ?? '')) ?: null,
                 'attachment_path' => pt_store_attachment($companyId, 'attachment') ?: null,
                 'created_by'      => $userId,
             ]);
             $message = 'PO added.';
+            }
+    } elseif ($action === 'bill_po') {
+        // Raise ONE consolidated invoice in BHD-ERP for all unbilled production
+        // orders on this PO (Layer 2). No double-billing (the ERP marks the
+        // source orders converted).
+        require_once INCLUDES_DIR . '/ERPSync.php';
+        $poNum  = trim((string)($_POST['po_number'] ?? ''));
+        $comp   = $db->fetchOne("SELECT name, erp_client_name FROM companies WHERE id = :c", ['c' => $companyId]);
+        $client = trim((string)($comp['erp_client_name'] ?? '')) ?: trim((string)($comp['name'] ?? ''));
+        if ($poNum === '' || $client === '') {
+            $error = 'Need a PO number and an ERP client to bill.';
+        } else {
+            $r = ERPSync::createConsolidatedInvoice($client, $poNum);
+            if (!empty($r['success'])) {
+                $n = (int)($r['data']['invoiced'] ?? 0);
+                $message = $n > 0
+                    ? ('Invoiced ' . $n . ' production order(s): ' . ($r['data']['invoiceNumber'] ?? ''))
+                    : 'Nothing new to bill on this PO (all production orders already invoiced).';
+            } else {
+                $error = 'Billing failed: ' . ($r['message'] ?? 'unknown error');
+            }
         }
     } elseif ($action === 'log_run') {
         $qty = max(0, (int)($_POST['quantity'] ?? 0));
@@ -120,6 +143,17 @@ adminHeader(t('print_tracking.title'), 'print-tracking');
             <button @click="runModal=true" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center gap-2">
                 <i class="fa-solid fa-print"></i><?= htmlspecialchars(t('print_tracking.log_run')) ?>
             </button>
+            <?php $primaryPo = ''; foreach ($pos as $p) { if (!empty($p['po_number'])) { $primaryPo = (string)$p['po_number']; break; } } ?>
+            <?php if ($primaryPo !== ''): ?>
+            <form method="post" onsubmit="return confirm('Raise one consolidated BHD invoice for all unbilled production orders on PO <?= htmlspecialchars($primaryPo, ENT_QUOTES) ?>?');">
+                <?= csrfField() ?>
+                <input type="hidden" name="action" value="bill_po">
+                <input type="hidden" name="po_number" value="<?= htmlspecialchars($primaryPo, ENT_QUOTES) ?>">
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium flex items-center gap-2">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>Bill this PO
+                </button>
+            </form>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -272,6 +306,11 @@ adminHeader(t('print_tracking.title'), 'print-tracking');
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('print_tracking.po_number')) ?></label>
                     <input type="text" name="po_number" placeholder="PO-2026-001" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Price per card (OMR, ex-VAT)</label>
+                    <input type="number" name="unit_price" min="0" step="0.0001" placeholder="0.040" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="text-xs text-gray-400 mt-1">Used when sending cards to print + billing the PO. 5% VAT is added by the ERP.</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('print_tracking.note')) ?></label>
