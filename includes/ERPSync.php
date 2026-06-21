@@ -290,6 +290,73 @@ class ERPSync {
     }
 
     /**
+     * "Send to Print": create a PRODUCTION-ONLY Sale Order + Manufacturing Order
+     * on the BHD-ERP production Kanban (no invoice, no payment, no JE). Billed
+     * later on a consolidated invoice per client PO.
+     *
+     * @return array { success, message, data:{ soNumber, manufacturingOrders[], quoteNumber } }
+     */
+    public static function createProductionOrder(array $args): array
+    {
+        $settings = self::getSettings();
+        if (empty($settings['erp_api_url']) || empty($settings['erp_api_token'])) {
+            return ['success' => false, 'message' => 'ERP not configured'];
+        }
+
+        $clientName = (string)($args['clientName'] ?? '');
+        if ($clientName === '') {
+            return ['success' => false, 'message' => 'No ERP client name for this company'];
+        }
+
+        $payload = [
+            'clientName'    => $clientName,
+            'orderRef'      => (string)($args['orderRef'] ?? ''),
+            'cardLabel'     => (string)($args['cardLabel'] ?? 'Business Cards'),
+            'quantity'      => (int)($args['quantity'] ?? 0),
+            'unitPrice'     => (float)($args['unitPrice'] ?? 0),
+            'unitCost'      => (float)($args['unitCost'] ?? 0),
+            'printReadyUrl' => (string)($args['printReadyUrl'] ?? ''),
+            'poNumber'      => (string)($args['poNumber'] ?? ''),
+            'productName'   => (string)($args['productName'] ?? ''),
+            'notes'         => (string)($args['notes'] ?? ''),
+        ];
+
+        $apiUrl = rtrim($settings['erp_api_url'], '/') . '/api/admin/cardify/create-production-order';
+        $ch = curl_init($apiUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload),
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $settings['erp_api_token'],
+            ],
+            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+        $body     = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlErr) {
+            error_log("ERPSync::createProductionOrder cURL: $curlErr");
+            return ['success' => false, 'message' => "ERP connection failed: $curlErr"];
+        }
+        $data = json_decode($body, true);
+        // 409 = idempotent (already created); treat as success.
+        if ($httpCode === 409) {
+            return ['success' => true, 'message' => 'Already on the Kanban', 'data' => $data ?? []];
+        }
+        if ($httpCode !== 200 || empty($data['success'])) {
+            $msg = $data['message'] ?? "ERP returned HTTP $httpCode";
+            error_log("ERPSync::createProductionOrder failed: $msg");
+            return ['success' => false, 'message' => $msg];
+        }
+        return ['success' => true, 'message' => $data['message'] ?? 'Sent to production', 'data' => $data];
+    }
+
+    /**
      * Retry backoff ladder in minutes, max attempts = count(). After
      * the final slot the retry row is marked 'exhausted' and manual
      * intervention is required.

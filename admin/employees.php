@@ -1282,6 +1282,14 @@ adminHeader(t('employees.page_title'), 'employees');
                                             <span>A4 cutting sheet<span class="block text-[11px] text-gray-400">10-up A4 (front + back) with crop marks, cut lines + registration</span></span>
                                         </a>
                                         <hr class="my-1 border-gray-100">
+                                        <!-- Send to BHD production Kanban (against the PO) -->
+                                        <a href="javascript:void(0)"
+                                           onclick="sendToPrint('<?= htmlspecialchars($emp['id'], ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($emp['name_en'] ?? 'Employee'), ENT_QUOTES) ?>')"
+                                           class="flex items-start gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50">
+                                            <i class="fa-solid fa-print text-green-600 w-4 mt-0.5"></i>
+                                            <span>Send to print<span class="block text-[11px] text-gray-400">Create a production job on BHD's Kanban (billed on the PO)</span></span>
+                                        </a>
+                                        <hr class="my-1 border-gray-100">
                                         <?php if ($hasFrontPdf && $hasBackPdf): ?>
                                         <a href="javascript:void(0)" onclick="downloadAsPDF('<?php echo $cardBaseUrl . str_replace('.png', '.pdf', $frontFilename); ?>', '<?php echo $cardBaseUrl . str_replace('.png', '.pdf', $backFilename); ?>', '<?php echo addslashes($emp['name_en'] ?? 'card'); ?>')"
                                            class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
@@ -2424,6 +2432,31 @@ async function downloadAsPDF(frontPdfUrl, backPdfUrl, employeeName) {
     } catch (error) {
         console.error('PDF download error:', error);
         alert('Error downloading PDF. Please try downloading individual files.');
+    }
+}
+
+async function sendToPrint(employeeId, employeeName) {
+    const qtyStr = window.prompt('Send ' + employeeName + "'s card to BHD production.\nHow many cards?", '100');
+    if (qtyStr === null) return;
+    const qty = parseInt(qtyStr, 10);
+    if (!(qty > 0)) { alert('Enter a quantity greater than 0.'); return; }
+    const csrf = (document.querySelector('input[name="csrf_token"]') || {}).value || '';
+    try {
+        const fd = new FormData();
+        fd.append('employee_id', employeeId);
+        fd.append('quantity', String(qty));
+        fd.append('csrf_token', csrf);
+        const res = await fetch('/admin/send-to-print.php', { method: 'POST', body: fd, credentials: 'same-origin' });
+        const data = await res.json();
+        if (data.success) {
+            const mo = (data.mos && data.mos[0]) ? data.mos[0].moNumber : '';
+            alert('✓ Sent to production.\n' + (data.soNumber ? ('Sale Order ' + data.soNumber + (mo ? ' / ' + mo : '')) : '') +
+                  '\nPO remaining: ' + (data.remaining ?? '—'));
+        } else {
+            alert('Could not send: ' + (data.message || 'unknown error'));
+        }
+    } catch (e) {
+        alert('Network error sending to print.');
     }
 }
 
