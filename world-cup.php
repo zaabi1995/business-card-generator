@@ -163,6 +163,7 @@ $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-slate-300 bg-white text
             <div class="flex flex-col gap-1.5"><label for="language" class="text-[13px] font-semibold text-slate-700"><?= h($S['f_language']) ?></label><select id="language" name="language" class="<?= $inputCls ?>"><?php foreach (WcHub::LANGS as $code => $native): ?><option value="<?= h($code) ?>" <?= $code===$lang?'selected':'' ?>><?= h($native) ?></option><?php endforeach; ?></select></div>
             <div class="flex flex-col gap-1.5"><label for="tz" class="text-[13px] font-semibold text-slate-700"><?= h($S['f_timezone']) ?></label><select id="tz" name="tz" class="<?= $inputCls ?>"><?php foreach ($tzList as $z => $labelz): ?><option value="<?= h($z) ?>" <?= $z===$tzGuess?'selected':'' ?>><?= h($labelz) ?></option><?php endforeach; ?></select></div>
           </div>
+          <div class="flex flex-col gap-1.5"><label for="notify" class="text-[13px] font-semibold text-slate-700"><?= h($rtl?'وقت التذكير اليومي':'Daily reminder time') ?></label><select id="notify" name="notify_hour" class="<?= $inputCls ?>"><?php for($hh=0;$hh<24;$hh++): ?><option value="<?= $hh ?>" <?= $hh===10?'selected':'' ?>><?= date('g:i A', mktime($hh,0,0,1,1,2026)) ?></option><?php endfor; ?></select></div>
           <p class="text-xs text-slate-400"><?= h($S['tz_detected']) ?></p>
           <?php if ($turnstileSite): ?><div class="cf-turnstile" data-sitekey="<?= h($turnstileSite) ?>" data-size="flexible"></div><?php endif; ?>
           <button id="btnGet" type="submit" class="btn w-full rounded-xl py-3.5 text-base font-semibold text-white bg-blue-600 hover:bg-blue-700"><?= h($T['join']) ?></button>
@@ -260,21 +261,21 @@ const $=id=>document.getElementById(id);
 function show(step){['step-form','step-otp','step-done'].forEach(s=>$(s).hidden=(s!==step));window.scrollTo({top:0,behavior:'smooth'});}
 function showErr(b,m){b.textContent=m;b.classList.remove('hidden');}
 function clearErr(b){b.classList.add('hidden');}
-let CURRENT={phone:'',name:'',language:'',tz:''};
+let CURRENT={phone:'',name:'',language:'',tz:'',notify_hour:10};
 $('signupForm').addEventListener('submit',async e=>{
   e.preventDefault(); clearErr($('err1'));
   const name=$('name').value.trim();
   if(!name){showErr($('err1'),STR.err_name);return;}
   if(!iti.isValidNumber()){showErr($('err1'),STR.err_phone);return;}
   const phone=iti.getNumber().replace('+','');
-  const language=$('language').value, tz=$('tz').value;
+  const language=$('language').value, tz=$('tz').value, notify_hour=parseInt($('notify').value,10)||10;
   const ts=(document.querySelector('[name=cf-turnstile-response]')||{}).value||'';
   const btn=$('btnGet'); btn.disabled=true; const orig=btn.textContent; btn.textContent=STR.sending;
   try{
     const r=await fetch('/api/wc-otp-request.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,phone,language,tz,turnstile:ts})});
     const j=await r.json();
     if(!j.ok){showErr($('err1'),STR[j.error]||STR.err_generic);btn.disabled=false;btn.textContent=orig;return;}
-    CURRENT={phone,name,language,tz}; $('maskTo').textContent=j.masked||('****'+phone.slice(-4));
+    CURRENT={phone,name,language,tz,notify_hour}; $('maskTo').textContent=j.masked||('****'+phone.slice(-4));
     show('step-otp'); $('otpGrid').children[0].focus();
   }catch(_){showErr($('err1'),STR.err_generic);}
   btn.disabled=false; btn.textContent=orig;

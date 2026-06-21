@@ -306,12 +306,13 @@ class WcHub
      * On a NEW signup with a valid referrer code, link the referrer and
      * award them +3 referral points (once per new referee).
      */
-    public static function upsertUser(string $phone, string $name, string $lang, string $tz, ?string $cc, ?string $leadId, ?string $referrerCode = null): array
+    public static function upsertUser(string $phone, string $name, string $lang, string $tz, ?string $cc, ?string $leadId, ?string $referrerCode = null, int $notifyHour = 10): array
     {
+        $notifyHour = max(0, min(23, $notifyHour));
         $db = Database::getInstance();
         $existing = $db->fetchOne("SELECT * FROM wc_users WHERE phone = :p LIMIT 1", ['p' => $phone]);
         if ($existing) {
-            $set = ['name'=>$name, 'language'=>$lang, 'tz'=>$tz, 'country'=>$cc, 'status'=>'active', 'verified_at'=>date('Y-m-d H:i:s')];
+            $set = ['name'=>$name, 'language'=>$lang, 'tz'=>$tz, 'country'=>$cc, 'status'=>'active', 'notify_hour'=>$notifyHour, 'verified_at'=>date('Y-m-d H:i:s')];
             if (empty($existing['ref_code'])) $set['ref_code'] = self::genRefCode();
             $db->update('wc_users', $set, 'id = :id', ['id' => $existing['id']]);
             return $db->fetchOne("SELECT * FROM wc_users WHERE id = :id", ['id' => $existing['id']]);
