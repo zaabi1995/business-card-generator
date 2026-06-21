@@ -257,14 +257,17 @@ class WcHub
         static $tok = null;
         if ($tok !== null) return $tok ?: null;
         $tok = '';
-        try {
-            $cmd = "mysql -uwacrm -p'XdbDAdX3crnDyF6m' wacrm -N -B -e "
-                 . "\"SELECT api_key FROM user WHERE email='kabir@bhd.om' LIMIT 1;\" 2>/dev/null";
-            foreach (explode("\n", trim((string)shell_exec($cmd))) as $l) {
-                $l = trim($l);
-                if ($l !== '' && strpos($l, 'Warning') === false) { $tok = $l; break; }
-            }
-        } catch (Throwable $e) { error_log('WcHub::kabirToken: '.$e->getMessage()); }
+        // PDO (shell_exec is disabled under PHP-FPM); Dardasha's token lives in wacrm.
+        foreach (['mysql:host=127.0.0.1;dbname=wacrm;charset=utf8mb4',
+                  'mysql:unix_socket=/tmp/mysql.sock;dbname=wacrm;charset=utf8mb4',
+                  'mysql:unix_socket=/var/lib/mysql/mysql.sock;dbname=wacrm;charset=utf8mb4'] as $dsn) {
+            try {
+                $pdo = new PDO($dsn, 'wacrm', 'XdbDAdX3crnDyF6m', [PDO::ATTR_TIMEOUT=>5, PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
+                $v = $pdo->query("SELECT api_key FROM user WHERE email='kabir@bhd.om' LIMIT 1")->fetchColumn();
+                if ($v) { $tok = (string)$v; break; }
+            } catch (Throwable $e) { /* try next dsn */ }
+        }
+        if ($tok === '') error_log('WcHub::kabirToken: could not resolve token');
         return $tok ?: null;
     }
 
