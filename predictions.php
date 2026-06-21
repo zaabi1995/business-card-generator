@@ -86,13 +86,13 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
       <?php else: ?>
         <div class="grid grid-cols-3 gap-2 mb-2">
           <?php foreach(['home'=>$m['home'],'draw'=>$P['draw'],'away'=>$m['away']] as $k=>$labelv): ?>
-            <button type="button" data-pick="<?= $k ?>" class="pick-btn rounded-xl py-2 text-sm font-semibold border <?= $sel===$k?'bg-blue-600 text-white border-blue-600':'bg-slate-50 text-slate-700 border-slate-200' ?>"><?= fh($labelv) ?></button>
+            <button type="button" data-pick="<?= $k ?>" aria-pressed="<?= $sel===$k?'true':'false' ?>" class="pick-btn rounded-xl py-2 text-sm font-semibold border <?= $sel===$k?'bg-blue-600 text-white border-blue-600':'bg-slate-50 text-slate-700 border-slate-200' ?>"><?= fh($labelv) ?></button>
           <?php endforeach; ?>
         </div>
         <div class="flex items-center justify-center gap-2 mb-2">
-          <input type="number" min="0" max="50" value="<?= fh($ph) ?>" class="exact-h w-14 text-center rounded-lg border border-slate-200 py-1.5" placeholder="-">
-          <span class="text-slate-300">-</span>
-          <input type="number" min="0" max="50" value="<?= fh($pa) ?>" class="exact-a w-14 text-center rounded-lg border border-slate-200 py-1.5" placeholder="-">
+          <input type="number" inputmode="numeric" min="0" max="50" value="<?= fh($ph) ?>" aria-label="<?= fh($m['home']).' '.fh($P['exact']) ?>" class="exact-h w-14 text-center rounded-lg border border-slate-200 py-1.5" placeholder="-">
+          <span class="text-slate-300" aria-hidden="true">-</span>
+          <input type="number" inputmode="numeric" min="0" max="50" value="<?= fh($pa) ?>" aria-label="<?= fh($m['away']).' '.fh($P['exact']) ?>" class="exact-a w-14 text-center rounded-lg border border-slate-200 py-1.5" placeholder="-">
           <span class="text-xs text-slate-400 ms-1"><?= fh($P['exact']) ?></span>
         </div>
         <button type="button" class="save-btn btn w-full rounded-xl py-2.5 text-sm font-bold text-white bg-blue-600"><?= fh($P['save']) ?></button>
@@ -106,13 +106,14 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
 <title><?= fh($P['predict']) ?> · Cardify</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
+<link rel="preconnect" href="https://design.bhd.om" crossorigin>
+<link rel="stylesheet" href="/assets/wc/wc.css?v=1">
 <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Outfit:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/light.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
-<script src="https://cdn.tailwindcss.com"></script>
-<script>tailwind.config={theme:{extend:{fontFamily:{sans:['Outfit','IBM Plex Sans Arabic','sans-serif']}}}}</script>
 <style>
   body{font-family:<?= WcHub::isRtl($lang)?"'Cairo','IBM Plex Sans Arabic',sans-serif":"'Outfit','IBM Plex Sans Arabic',sans-serif" ?>}
   /* ease-out-quart everywhere for a premium, weighty feel */
@@ -394,8 +395,9 @@ document.querySelectorAll('[data-match]').forEach(card=>{
     if(save && save.dataset.saved==='1'){ save.dataset.saved=''; save.classList.remove('bg-emerald-600'); save.classList.add('bg-blue-600'); save.textContent=T_SAVE; }
   }
   picks.forEach(b=>b.addEventListener('click',()=>{
-    picks.forEach(x=>x.className=x.className.replace('bg-blue-600 text-white border-blue-600','bg-slate-50 text-slate-700 border-slate-200'));
+    picks.forEach(x=>{x.className=x.className.replace('bg-blue-600 text-white border-blue-600','bg-slate-50 text-slate-700 border-slate-200');x.setAttribute('aria-pressed','false');});
     b.className=b.className.replace('bg-slate-50 text-slate-700 border-slate-200','bg-blue-600 text-white border-blue-600');
+    b.setAttribute('aria-pressed','true');
     card.dataset.pick=b.dataset.pick; dirty();
   }));
   card.querySelectorAll('.exact-h,.exact-a').forEach(i=>i.addEventListener('input',dirty));

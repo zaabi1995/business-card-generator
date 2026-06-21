@@ -24,13 +24,14 @@ $inputCls='w-full px-4 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white 
 <title><?= sh($P['settings']) ?> · Cardify</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
+<link rel="preconnect" href="https://design.bhd.om" crossorigin>
+<link rel="stylesheet" href="/assets/wc/wc.css?v=1">
 <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Outfit:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/light.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
-<script src="https://cdn.tailwindcss.com"></script>
-<script>tailwind.config={theme:{extend:{fontFamily:{sans:['Outfit','IBM Plex Sans Arabic','sans-serif']}}}}</script>
 <style>body{font-family:<?= WcHub::isRtl($lang)?"'Cairo','IBM Plex Sans Arabic',sans-serif":"'Outfit','IBM Plex Sans Arabic',sans-serif" ?>}.btn{transition:transform .16s cubic-bezier(.23,1,.32,1)}.btn:active{transform:scale(.97)}</style>
 </head>
 <body class="min-h-[100dvh] bg-[#f7f8fa] text-slate-900">
@@ -42,7 +43,7 @@ $inputCls='w-full px-4 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white 
   </header>
   <main class="max-w-md mx-auto px-5 py-6">
     <h1 class="text-xl font-bold text-slate-800 mb-4"><?= sh($P['settings']) ?></h1>
-    <div id="msg" class="hidden mb-3 rounded-xl px-3.5 py-2.5 text-sm"></div>
+    <div id="msg" role="status" aria-live="polite" class="hidden mb-3 rounded-xl px-3.5 py-2.5 text-sm"></div>
     <div class="bg-white rounded-3xl p-6 space-y-4 border border-slate-100">
       <div>
         <label class="block text-[13px] font-semibold text-slate-700 mb-1.5"><?= sh($S['f_name']) ?></label>
@@ -69,12 +70,13 @@ $inputCls='w-full px-4 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white 
       <button id="save" class="btn w-full rounded-2xl py-3.5 font-bold text-white bg-blue-600"><?= sh($P['save_settings']) ?></button>
     </div>
     <div class="flex items-center justify-between mt-5 text-sm">
-      <a href="/u?t=<?= sh($user['unsub_token']) ?>" class="text-red-500 font-semibold">Unsubscribe</a>
+      <a href="/u?t=<?= sh($user['unsub_token']) ?>" class="text-red-500 font-semibold"><?= sh($P['unsubscribe']) ?></a>
       <a href="/wc-logout" class="text-slate-500 font-semibold"><?= sh($P['logout']) ?></a>
     </div>
-    <p class="text-xs text-slate-400 mt-4">Phone: ****<?= sh(substr(preg_replace('/\D/','',$user['phone']),-4)) ?>. To use a different number, log out and sign in again with OTP.</p>
+    <p class="text-xs text-slate-400 mt-4"><?= sh($S['f_phone']) ?>: ****<?= sh(substr(preg_replace('/\D/','',$user['phone']),-4)) ?>. <?= sh($P['phone_note']) ?></p>
   </main>
 <script>
+const T_OK=<?= json_encode($P['saved_ok']) ?>, T_FAIL=<?= json_encode($P['save_fail']) ?>, T_ERR=<?= json_encode($P['err']) ?>;
 const $=id=>document.getElementById(id);
 $('save').addEventListener('click',async()=>{
   const b=$('save'); b.disabled=true; const o=b.textContent; b.textContent='…';
@@ -84,9 +86,9 @@ $('save').addEventListener('click',async()=>{
       body:JSON.stringify({name:$('name').value,language:$('language').value,tz:$('tz').value,notify_hour:parseInt($('notify_hour').value,10)})});
     const j=await r.json();
     m.className=(j.ok?'bg-emerald-50 text-emerald-700':'bg-red-50 text-red-600')+' mb-3 rounded-xl px-3.5 py-2.5 text-sm';
-    m.textContent=j.ok?'Saved':'Could not save'; m.classList.remove('hidden');
+    m.textContent=j.ok?T_OK:T_FAIL; m.classList.remove('hidden');
     if(j.ok) setTimeout(()=>location.reload(),700);
-  }catch(_){m.className='bg-red-50 text-red-600 mb-3 rounded-xl px-3.5 py-2.5 text-sm';m.textContent='Error';m.classList.remove('hidden');}
+  }catch(_){m.className='bg-red-50 text-red-600 mb-3 rounded-xl px-3.5 py-2.5 text-sm';m.textContent=T_ERR;m.classList.remove('hidden');}
   b.disabled=false; b.textContent=o;
 });
 </script>

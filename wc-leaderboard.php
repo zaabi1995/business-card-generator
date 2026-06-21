@@ -55,13 +55,14 @@ $prizes = ['$10,000','$5,000','$1,000']; $ranks=['1st','2nd','3rd'];
 <title><?= lh($P['leaderboard']) ?> · Cardify</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
+<link rel="preconnect" href="https://design.bhd.om" crossorigin>
+<link rel="stylesheet" href="/assets/wc/wc.css?v=1">
 <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Outfit:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/light.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
-<script src="https://cdn.tailwindcss.com"></script>
-<script>tailwind.config={theme:{extend:{fontFamily:{sans:['Outfit','IBM Plex Sans Arabic','sans-serif']}}}}</script>
 <style>
   body{font-family:<?= WcHub::isRtl($lang)?"'Cairo','IBM Plex Sans Arabic',sans-serif":"'Outfit','IBM Plex Sans Arabic',sans-serif" ?>}
   @keyframes riseIn{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:none}}
@@ -122,9 +123,19 @@ $prizes = ['$10,000','$5,000','$1,000']; $ranks=['1st','2nd','3rd'];
     <?php endif; ?>
 
     <!-- Full ladder from rank 4 down (top 3 already on the podium) -->
+    <?php $ladder = array_slice($top, 3); ?>
     <div class="bg-white rounded-2xl overflow-hidden border border-slate-100">
       <?php if(!$top): ?>
-        <div class="p-6 text-center text-slate-400 text-sm"><?= lh($P['empty']) ?></div>
+        <div class="p-8 text-center">
+          <span class="grid place-items-center w-12 h-12 mx-auto rounded-full bg-slate-100 text-slate-300 mb-3"><i class="fa-solid fa-ranking-star text-xl" aria-hidden="true"></i></span>
+          <p class="text-slate-400 text-sm"><?= lh($P['empty']) ?></p>
+        </div>
+      <?php elseif(!$ladder): ?>
+        <div class="p-8 text-center">
+          <span class="grid place-items-center w-12 h-12 mx-auto rounded-full bg-blue-50 text-blue-500 mb-3"><i class="fa-solid fa-bolt text-xl" aria-hidden="true"></i></span>
+          <p class="text-slate-500 text-sm font-semibold"><?= lh($lang==='ar'?'الترتيب يتشكّل الآن':'The table is just getting started') ?></p>
+          <p class="text-slate-400 text-xs mt-1"><?= lh($lang==='ar'?'توقّع لتصعد وتظهر هنا':'Make a prediction to climb and appear here.') ?></p>
+        </div>
       <?php else: foreach($top as $i=>$row): $r=$i+1; if($r<=3) continue;
         $me = $user && (int)$row['id']===(int)$user['id']; ?>
         <div class="ldr-row flex items-center gap-3 px-4 py-3 border-b border-slate-50 last:border-0 <?= $me?'bg-blue-50':'' ?>">

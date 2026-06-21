@@ -91,7 +91,7 @@ $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-slate-300 bg-white text
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title><?= h($S['kicker']) ?> on WhatsApp · Cardify</title>
+<title><?= h($S['kicker']) ?> <?= h($rtl?'على واتساب':'on WhatsApp') ?> · Cardify</title>
 <meta name="description" content="<?= h($S['hero_sub']) ?>">
 <meta property="og:title" content="<?= h($S['hero_title']) ?>"><meta property="og:description" content="<?= h($S['hero_sub']) ?>">
 <meta property="og:image" content="https://wc.cardify.om/assets/wc/og.jpg?v=4"><meta property="og:url" content="https://wc.cardify.om/"><meta property="og:type" content="website">
@@ -99,14 +99,14 @@ $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-slate-300 bg-white text
 <meta name="theme-color" content="#f7f8fa">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="alternate icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
+<link rel="preconnect" href="https://design.bhd.om" crossorigin>
+<link rel="stylesheet" href="/assets/wc/wc.css?v=1">
 <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Outfit:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/light.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.10.1/build/css/intlTelInput.css">
-<script src="https://cdn.tailwindcss.com"></script>
-<script>tailwind.config={theme:{extend:{fontFamily:{sans:['Outfit','IBM Plex Sans Arabic','sans-serif']}}}}</script>
 <?php if ($turnstileSite): ?><script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script><?php endif; ?>
 <style>
   :root{ --ease:cubic-bezier(0.23,1,0.32,1); }
@@ -175,15 +175,15 @@ $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-slate-300 bg-white text
         <div id="err2" class="hidden mb-3 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 px-3.5 py-2.5 text-sm"></div>
         <h2 class="text-lg font-bold tracking-tight"><?= h($S['otp_title']) ?></h2>
         <p class="text-slate-500 text-sm mt-1 mb-4"><?= h($S['otp_sub']) ?> <b id="maskTo" class="text-slate-700"></b></p>
-        <div id="otpGrid" dir="ltr" class="flex gap-2 justify-between"><?php for($i=0;$i<6;$i++): ?><input inputmode="numeric" maxlength="1" class="w-full text-center rounded-xl border border-slate-300 text-2xl font-bold py-3 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 outline-none"><?php endfor; ?></div>
+        <div id="otpGrid" dir="ltr" role="group" aria-label="<?= h($rtl?'رمز التحقق المكوّن من 6 أرقام':'6-digit verification code') ?>" class="flex gap-2 justify-between"><?php for($i=0;$i<6;$i++): ?><input inputmode="numeric" autocomplete="<?= $i===0?'one-time-code':'off' ?>" maxlength="1" aria-label="<?= h(($rtl?'الرقم ':'Digit ').($i+1)) ?>" class="w-full text-center rounded-xl border border-slate-300 text-2xl font-bold py-3 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 outline-none"><?php endfor; ?></div>
         <button id="btnVerify" type="button" class="btn mt-4 w-full rounded-xl py-3.5 text-base font-semibold text-white bg-blue-600 hover:bg-blue-700"><?= h($S['verify']) ?></button>
-        <div class="flex justify-between mt-3 text-sm"><a id="btnResend" class="text-blue-700 font-semibold cursor-pointer"><?= h($S['resend']) ?></a><a id="btnChange" class="text-slate-500 font-semibold cursor-pointer"><?= h($S['change']) ?></a></div>
+        <div class="flex justify-between mt-3 text-sm"><button type="button" id="btnResend" class="text-blue-700 font-semibold"><?= h($S['resend']) ?></button><button type="button" id="btnChange" class="text-slate-500 font-semibold"><?= h($S['change']) ?></button></div>
       </section>
       <section id="step-done" hidden class="bg-white rounded-2xl p-7 text-center border border-slate-200/70 diffuse">
         <span class="mx-auto w-12 h-12 grid place-items-center rounded-full bg-emerald-50 text-emerald-600 mb-3"><?= fa('fa-solid fa-check text-2xl') ?></span>
         <h2 class="text-xl font-bold tracking-tight mb-1.5"><?= h($S['success_title']) ?></h2>
         <p class="text-slate-500 mb-5"><?= h($S['success_sub']) ?></p>
-        <div class="space-y-2.5"><a href="/predictions" class="btn block w-full rounded-xl py-3.5 font-semibold text-white bg-blue-600"><?= h($S['go_predict']) ?></a><a id="btnInvite" class="btn block w-full rounded-xl py-3.5 font-semibold text-slate-700 bg-slate-100 cursor-pointer"><?= h($S['invite']) ?></a></div>
+        <div class="space-y-2.5"><a href="/predictions" class="btn block w-full rounded-xl py-3.5 font-semibold text-white bg-blue-600"><?= h($S['go_predict']) ?></a><button type="button" id="btnInvite" class="btn block w-full rounded-xl py-3.5 font-semibold text-slate-700 bg-slate-100"><?= h($S['invite']) ?></button></div>
       </section>
     </div>
   </section>
@@ -214,7 +214,7 @@ $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-slate-300 bg-white text
           </div>
         <?php endfor; ?>
       </div>
-      <a href="#top" class="btn block text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5"><?= h($T['joinpredict']) ?> →</a>
+      <a href="#top" class="btn inline-flex w-full items-center justify-center gap-2 text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5"><?= h($T['joinpredict']) ?> <?= fa(($rtl?'fa-solid fa-arrow-left':'fa-solid fa-arrow-right').' text-sm') ?></a>
     </div>
   </section>
 
