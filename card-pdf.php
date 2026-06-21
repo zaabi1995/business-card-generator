@@ -77,13 +77,13 @@ try {
     $ownsEmployee  = $callerCompany !== '' && $callerCompany === (string)($company['id'] ?? '');
 
     if (in_array($callerRole, ['print_shop', 'super_admin'], true)) {
-        // Print shop / super admin: always clean. 'press' when asked = full
-        // font embed + 3mm bleed + crop marks + DeviceCMYK (exact brand) +
-        // CutContour cut layer when the tenant has a press config.
-        $profile = $wantsPrint ? 'press' : 'web';
+        // Print shop / super admin: the clean per-card print file (full font
+        // embed, no watermark) - same as it always was. CMYK/cut lives on the
+        // separate A4 cutting sheet (card-sheet.php), not on the card preview.
+        $profile = $wantsPrint ? 'print' : 'web';
     } elseif ($wantsPrint && in_array($callerRole, $adminRoles, true) && $ownsEmployee) {
-        // Tenant admin pulling the press-ready file for their own staff.
-        $profile = 'press';
+        // Tenant admin pulling the print-ready file for their own staff.
+        $profile = 'print';
     } else {
         $profile = 'sample';
     }
