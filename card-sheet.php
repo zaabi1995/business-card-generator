@@ -101,7 +101,7 @@ try {
     // CMYK brand config (when configured): set the background fill to the EXACT
     // brand RGB so it converts to the same CMYK as the card edge (seamless), and
     // convert the sheet's own marks/fill to CMYK. Cards are already CMYK.
-    $cmykCfg = CardPDFRenderer::pressCmykConfigFor((string) $companyId, (string) ($company['slug'] ?? ''));
+    $cmykCfg = CardPDFRenderer::pressCmykConfigFor((string) ($company['id'] ?? ''), (string) ($company['slug'] ?? ''));
     $sheetBg = 'auto';
     $tmpCmyk = '';
     if (is_array($cmykCfg)) {
