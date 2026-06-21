@@ -62,9 +62,22 @@ $prizes = ['$10,000','$5,000','$1,000']; $ranks=['1st','2nd','3rd'];
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Outfit','IBM Plex Sans Arabic','sans-serif']}}}}</script>
-<style>body{font-family:<?= WcHub::isRtl($lang)?"'Cairo','IBM Plex Sans Arabic',sans-serif":"'Outfit','IBM Plex Sans Arabic',sans-serif" ?>}</style>
+<style>
+  body{font-family:<?= WcHub::isRtl($lang)?"'Cairo','IBM Plex Sans Arabic',sans-serif":"'Outfit','IBM Plex Sans Arabic',sans-serif" ?>}
+  @keyframes riseIn{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:none}}
+  .rise{animation:riseIn .5s cubic-bezier(.16,1,.3,1) both}
+  /* podium plinth gradients */
+  .plinth-1{background:linear-gradient(180deg,#fef3c7,#fcd34d)}
+  .plinth-2{background:linear-gradient(180deg,#f1f5f9,#cbd5e1)}
+  .plinth-3{background:linear-gradient(180deg,#ffedd5,#fdba74)}
+  .crown{filter:drop-shadow(0 2px 4px rgba(245,158,11,.4))}
+  @keyframes crownBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+  .crown{animation:crownBob 2.4s ease-in-out infinite}
+  .ldr-row{transition:background-color .15s}
+  @media (prefers-reduced-motion: reduce){.rise,.crown{animation:none}}
+</style>
 </head>
-<body class="min-h-[100dvh] bg-[#f7f8fa] text-slate-900">
+<body class="min-h-[100dvh] bg-[#f7f8fa] text-slate-900 pb-24">
   <header class="sticky top-0 z-30 bg-[#f7f8fa]/85 backdrop-blur border-b border-slate-200/70">
     <div class="max-w-xl mx-auto px-5 h-16 flex items-center justify-between">
       <a href="<?= $user?'/predictions':'https://wc.cardify.om/' ?>"><img src="/assets/images/logo.svg" alt="Cardify" class="h-7 w-auto"></a>
@@ -73,44 +86,74 @@ $prizes = ['$10,000','$5,000','$1,000']; $ranks=['1st','2nd','3rd'];
   </header>
 
   <main class="max-w-xl mx-auto px-5 py-6">
-    <div class="flex items-center gap-2.5 mb-4">
+    <div class="flex items-center gap-2.5 mb-1">
       <span class="grid place-items-center w-10 h-10 rounded-xl bg-amber-100 text-amber-500"><i class="fa-solid fa-trophy"></i></span>
       <h1 class="text-2xl font-extrabold text-slate-900"><?= lh($P['leaderboard']) ?></h1>
     </div>
-    <div class="grid grid-cols-3 gap-2 mb-5">
-      <?php for($i=0;$i<3;$i++):
-        $pod = $i===0?'bg-amber-50 border-amber-200':($i===1?'bg-slate-100 border-slate-200':'bg-orange-50 border-orange-100'); ?>
-        <div class="rounded-xl border <?= $pod ?> text-center py-2.5">
-          <div class="text-[11px] uppercase tracking-wide text-slate-400"><?= $ranks[$i] ?></div>
-          <div class="font-extrabold text-slate-900"><?= $prizes[$i] ?></div>
-        </div>
-      <?php endfor; ?>
-    </div>
+    <p class="text-xs text-slate-400 mb-5"><?= lh($P['prize_line']) ?></p>
 
-    <?php if($user && $myRank): ?>
-      <div class="rounded-2xl bg-blue-600 text-white px-4 py-3 mb-4 flex items-center justify-between">
-        <span class="font-semibold"><?= lh($P['you']) ?> · #<?= $myRank ?></span>
-        <span class="font-extrabold text-lg"><?= $myPts ?> <span class="text-xs font-normal"><?= lh($P['points']) ?></span></span>
+    <?php
+      // Podium order on the plinth: 2nd | 1st | 3rd. Pull the top 3 rows (may be fewer).
+      $podOrder = [1,0,2]; $heights=[null,'h-24','h-16','h-12']; // by display rank
+      $medalBg=[1=>'plinth-1',2=>'plinth-2',3=>'plinth-3'];
+      $medalIc=[1=>'text-amber-500',2=>'text-slate-400',3=>'text-orange-400'];
+    ?>
+    <?php if($top): ?>
+    <!-- Podium: real 3-stage stand, 2-1-3 layout, gold/silver/bronze + prize -->
+    <div class="rise grid grid-cols-3 gap-2 items-end mb-6">
+      <?php foreach($podOrder as $slot): $row=$top[$slot]??null; $r=$slot+1;
+        if(!$row){ echo '<div></div>'; continue; }
+        $me=$user && (int)$row['id']===(int)$user['id'];
+        $plinthH = $r===1?'h-24':($r===2?'h-20':'h-14'); ?>
+      <div class="text-center">
+        <?php if($r===1): ?><div class="crown text-amber-400 text-lg mb-0.5"><i class="fa-solid fa-crown"></i></div><?php endif; ?>
+        <div class="grid place-items-center w-12 h-12 mx-auto rounded-full bg-white border-2 <?= $r===1?'border-amber-300':($r===2?'border-slate-300':'border-orange-200') ?> shadow-sm mb-1.5">
+          <span class="font-extrabold <?= $medalIc[$r] ?> text-lg"><?= $r ?></span>
+        </div>
+        <div class="text-[13px] font-bold text-slate-800 leading-tight truncate px-0.5"><?= maskName($row['name'],$row['phone']) ?></div>
+        <div class="text-[11px] text-slate-400 mb-1.5"><?= (int)$row['pts'] ?> <?= lh($P['points']) ?></div>
+        <div class="<?= $medalBg[$r] ?> <?= $plinthH ?> rounded-t-xl flex flex-col items-center justify-start pt-2 <?= $me?'ring-2 ring-blue-500':'' ?>">
+          <div class="font-extrabold text-slate-900 text-sm"><?= $prizes[$r-1] ?></div>
+          <div class="text-[10px] uppercase tracking-wide text-slate-600/70"><?= $ranks[$r-1] ?></div>
+        </div>
       </div>
+      <?php endforeach; ?>
+    </div>
     <?php endif; ?>
 
+    <!-- Full ladder from rank 4 down (top 3 already on the podium) -->
     <div class="bg-white rounded-2xl overflow-hidden border border-slate-100">
       <?php if(!$top): ?>
         <div class="p-6 text-center text-slate-400 text-sm"><?= lh($P['empty']) ?></div>
-      <?php else: foreach($top as $i=>$row): $r=$i+1;
+      <?php else: foreach($top as $i=>$row): $r=$i+1; if($r<=3) continue;
         $me = $user && (int)$row['id']===(int)$user['id']; ?>
-        <div class="flex items-center gap-3 px-4 py-3 border-b border-slate-50 <?= $me?'bg-blue-50':'' ?>">
-          <div class="w-8 text-center font-bold <?= $r<=3?'text-amber-500 text-lg':'text-slate-400' ?>"><?= $r ?></div>
-          <div class="flex-1 text-slate-800 text-[15px]"><?= maskName($row['name'],$row['phone']) ?><?= $me?' · '.lh($P['you']):'' ?></div>
-          <div class="font-extrabold text-slate-900"><?= (int)$row['pts'] ?> <span class="text-[11px] font-normal text-slate-400"><?= lh($P['points']) ?></span></div>
+        <div class="ldr-row flex items-center gap-3 px-4 py-3 border-b border-slate-50 last:border-0 <?= $me?'bg-blue-50':'' ?>">
+          <div class="w-7 text-center font-bold text-slate-400 text-sm"><?= $r ?></div>
+          <div class="flex-1 min-w-0 text-slate-800 text-[15px] truncate"><?= maskName($row['name'],$row['phone']) ?><?= $me?' · '.lh($P['you']):'' ?></div>
+          <div class="font-extrabold text-slate-900 shrink-0"><?= (int)$row['pts'] ?> <span class="text-[11px] font-normal text-slate-400"><?= lh($P['points']) ?></span></div>
         </div>
       <?php endforeach; endif; ?>
     </div>
 
-    <div class="text-center pt-5 pb-6">
+    <div class="text-center pt-5 pb-2">
       <span class="inline-flex items-center gap-2 text-xs text-slate-400">
         <img src="/assets/images/logo.svg" class="h-3.5 w-auto opacity-60"> powered by Cardify
       </span>
     </div>
   </main>
+
+  <?php if($user && $myRank): ?>
+  <!-- Sticky YOU bar pinned to the bottom -->
+  <div class="fixed bottom-0 inset-x-0 z-30">
+    <div class="max-w-xl mx-auto px-4 pb-4">
+      <div class="rounded-2xl bg-blue-600 text-white px-4 py-3 flex items-center justify-between shadow-xl shadow-blue-600/30">
+        <span class="font-semibold inline-flex items-center gap-2">
+          <span class="grid place-items-center w-7 h-7 rounded-full bg-white/20 text-xs font-bold">#<?= $myRank ?></span>
+          <?= lh($P['you']) ?>
+        </span>
+        <span class="font-extrabold text-lg"><?= $myPts ?> <span class="text-xs font-normal text-white/80"><?= lh($P['points']) ?></span></span>
+      </div>
+    </div>
+  </div>
+  <?php endif; ?>
 </body></html>
