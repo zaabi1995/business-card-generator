@@ -7,7 +7,7 @@ require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/WhatsApp.php';
 require_once INCLUDES_DIR . '/WcHub.php';
 
-$lang = WcHub::lang($_GET['lang'] ?? (WcHub::detectCountry() === 'OM' ? 'en' : 'en'));
+$lang = WcHub::lang($_GET['lang'] ?? 'en');
 $S    = WcHub::strings($lang);
 $dir  = $S['dir'];
 $cc   = WcHub::detectCountry();
@@ -25,6 +25,7 @@ $tzList = [
 ];
 if (!isset($tzList[$tzGuess])) $tzGuess = 'Asia/Muscat';
 function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
+$inputCls = 'w-full px-4 py-3.5 rounded-xl border-[1.5px] border-slate-200 bg-white text-slate-900 text-base outline-none focus:border-cyan focus:ring-4 focus:ring-cyan/15 transition';
 ?>
 <!DOCTYPE html>
 <html lang="<?= h($lang) ?>" dir="<?= h($dir) ?>">
@@ -44,193 +45,146 @@ function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 <link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
 <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.10.1/build/css/intlTelInput.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  fontFamily: { sans: ['IBM Plex Sans Arabic','system-ui','-apple-system','sans-serif'] },
+  colors: { pitch:{DEFAULT:'#0a7d3c',deep:'#065a2b',dark:'#04331b'}, gold:'#ffd34d', gold2:'#f5b301', cyan:'#009bc1' },
+  keyframes: { fall:{ '0%':{transform:'translateY(-10vh) rotate(0)',opacity:'0'}, '12%':{opacity:'.9'}, '100%':{transform:'translateY(110vh) rotate(540deg)',opacity:'.15'} },
+    pop:{ '0%':{transform:'scale(.96)',opacity:'0'}, '100%':{transform:'scale(1)',opacity:'1'} } },
+  animation: { fall:'fall linear infinite', pop:'pop .35s ease both' },
+}}}
+</script>
 <?php if ($turnstileSite): ?><script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script><?php endif; ?>
 <style>
-:root{
-  --pitch1:#0a7d3c; --pitch2:#065a2b; --gold:#ffd34d; --gold2:#f5b301;
-  --cyan:#009bc1; --ink:#0b1d14; --card:#ffffff; --muted:#5b6b62;
-}
-*{box-sizing:border-box} html,body{margin:0;padding:0}
-body{
-  font-family:'IBM Plex Sans Arabic',system-ui,-apple-system,sans-serif;
-  color:var(--ink); background:#06351c;
-  min-height:100dvh; -webkit-font-smoothing:antialiased;
-}
-.wrap{position:relative; min-height:100dvh; overflow:hidden;
-  background:
-    radial-gradient(1200px 600px at 80% -10%, rgba(255,211,77,.18), transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, rgba(0,155,193,.18), transparent 60%),
-    linear-gradient(160deg,var(--pitch1),var(--pitch2) 55%,#04331b);
-}
-/* pitch stripes */
-.wrap::before{content:"";position:absolute;inset:0;opacity:.06;
-  background:repeating-linear-gradient(90deg,#fff 0 60px,transparent 60px 120px);pointer-events:none}
-.confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none}
-.confetti i{position:absolute;top:-12px;width:9px;height:14px;border-radius:2px;opacity:.0;
-  animation:fall linear infinite}
-@keyframes fall{0%{transform:translateY(-10vh) rotate(0);opacity:0}
-  10%{opacity:.9}100%{transform:translateY(110vh) rotate(540deg);opacity:.2}}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:18px 20px;position:relative;z-index:5}
-.brandlogo{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font-weight:700}
-.brandlogo img{height:26px;width:auto;filter:brightness(0) invert(1)}
-.langsel{display:flex;gap:6px;flex-wrap:wrap}
-.langsel a{font-size:13px;color:#dff3e6;text-decoration:none;padding:6px 10px;border-radius:999px;
-  border:1px solid rgba(255,255,255,.18)}
-.langsel a.active{background:#fff;color:var(--pitch2);font-weight:700;border-color:#fff}
-.main{position:relative;z-index:4;max-width:560px;margin:0 auto;padding:8px 20px 60px}
-.kicker{display:inline-flex;align-items:center;gap:8px;background:rgba(255,211,77,.16);
-  color:var(--gold);border:1px solid rgba(255,211,77,.35);padding:6px 14px;border-radius:999px;
-  font-weight:700;font-size:13px;letter-spacing:.3px;margin:14px 0 14px}
-h1{color:#fff;font-size:clamp(28px,7vw,40px);line-height:1.12;margin:0 0 12px;font-weight:700}
-.sub{color:#d6efdd;font-size:16px;line-height:1.6;margin:0 0 22px}
-.prize{display:flex;align-items:center;gap:10px;color:#04331b;background:linear-gradient(90deg,var(--gold),var(--gold2));
-  border-radius:14px;padding:12px 16px;font-weight:700;margin:0 0 22px;box-shadow:0 10px 30px rgba(245,179,1,.25)}
-.prize b{font-size:18px}
-.card{background:var(--card);border-radius:22px;padding:22px;box-shadow:0 30px 70px rgba(0,0,0,.35)}
-label{display:block;font-size:13px;font-weight:600;color:#33433b;margin:0 0 6px}
-.field{margin-bottom:16px}
-input[type=text],input[type=tel],select{width:100%;padding:14px 14px;border:1.5px solid #dde5e0;
-  border-radius:12px;font-size:16px;font-family:inherit;background:#fff;color:var(--ink);outline:none}
-input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 4px rgba(0,155,193,.14)}
-.hint{font-size:12px;color:var(--muted);margin-top:6px}
-.btn{width:100%;border:0;border-radius:14px;padding:16px;font-size:17px;font-weight:700;cursor:pointer;
-  color:#04331b;background:linear-gradient(90deg,var(--gold),var(--gold2));
-  box-shadow:0 12px 30px rgba(245,179,1,.35);transition:transform .08s}
-.btn:active{transform:translateY(1px)} .btn[disabled]{opacity:.6;cursor:default}
-.btn.alt{background:var(--cyan);color:#fff;box-shadow:0 12px 30px rgba(0,155,193,.3)}
-.otpgrid{display:flex;gap:8px;justify-content:space-between;margin:6px 0 4px;direction:ltr}
-.otpgrid input{width:100%;text-align:center;font-size:24px;font-weight:700;padding:14px 0;letter-spacing:0}
-.muted-row{display:flex;justify-content:space-between;margin-top:14px;font-size:14px}
-.muted-row a{color:var(--cyan);text-decoration:none;font-weight:600;cursor:pointer}
-.err{background:#fff2f2;color:#b3261e;border:1px solid #f3c6c2;border-radius:10px;padding:10px 12px;
-  font-size:14px;margin-bottom:12px;display:none}
-.success{text-align:center}
-.success .big{font-size:46px;margin:4px 0 8px}
-.success h2{font-size:24px;margin:0 0 8px;color:var(--ink)}
-.success p{color:var(--muted);margin:0 0 18px}
-.succ-actions{display:flex;flex-direction:column;gap:10px}
-.foot{position:relative;z-index:4;text-align:center;color:#bfe6cb;font-size:13px;padding:6px 20px 30px}
-.foot a{color:#fff;text-decoration:none;font-weight:600}
-.poweredpill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);
-  border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600}
-.poweredpill img{height:14px;filter:brightness(0) invert(1)}
-.iti{width:100%}.iti__selected-dial-code{font-weight:700}
-[hidden]{display:none!important}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif}
+  .iti{width:100%} .iti__selected-dial-code{font-weight:700}
+  .otp-in{width:100%;text-align:center}
+  [hidden]{display:none!important}
 </style>
 </head>
-<body>
-<div class="wrap">
-  <div class="confetti" id="confetti"></div>
-  <div class="top">
-    <a class="brandlogo" href="https://cardify.om"><img src="/assets/images/logo.svg" alt="Cardify"><span><?= h($S['brand']) ?></span></a>
-    <nav class="langsel">
+<body class="min-h-[100dvh] text-slate-900 bg-pitch-dark">
+<div class="relative min-h-[100dvh] overflow-hidden
+     bg-[radial-gradient(1200px_600px_at_80%_-10%,rgba(255,211,77,.18),transparent_60%),radial-gradient(900px_500px_at_-10%_110%,rgba(0,155,193,.18),transparent_60%),linear-gradient(160deg,#0a7d3c,#065a2b_55%,#04331b)]">
+  <!-- pitch stripes -->
+  <div class="pointer-events-none absolute inset-0 opacity-[.06] bg-[repeating-linear-gradient(90deg,#fff_0_60px,transparent_60px_120px)]"></div>
+  <!-- confetti -->
+  <div id="confetti" class="pointer-events-none absolute inset-0 overflow-hidden"></div>
+
+  <!-- top bar -->
+  <header class="relative z-10 flex items-center justify-between gap-3 px-5 py-4">
+    <a href="https://cardify.om" class="shrink-0"><img src="/assets/images/logo-light.svg" alt="Cardify" class="h-7 w-auto"></a>
+    <nav class="flex flex-wrap gap-1.5 justify-end">
       <?php foreach (WcHub::LANGS as $code => $native): ?>
-        <a href="?lang=<?= h($code) ?>" class="<?= $code===$lang?'active':'' ?>"><?= h($native) ?></a>
+        <a href="?lang=<?= h($code) ?>" class="text-[13px] px-3 py-1.5 rounded-full border <?= $code===$lang
+          ? 'bg-white text-pitch-deep font-bold border-white'
+          : 'text-emerald-50/90 border-white/20 hover:border-white/40' ?>"><?= h($native) ?></a>
       <?php endforeach; ?>
     </nav>
-  </div>
+  </header>
 
-  <main class="main">
-    <span class="kicker">⚽ <?= h($S['kicker']) ?></span>
-    <h1><?= h($S['hero_title']) ?></h1>
-    <p class="sub"><?= h($S['hero_sub']) ?></p>
-    <div class="prize">🏆 <span><?= h($S['win_title']) ?>: <b><?= h($S['win_sub']) ?></b></span></div>
+  <main class="relative z-10 mx-auto w-full max-w-xl px-5 pb-16">
+    <span class="inline-flex items-center gap-2 rounded-full bg-gold/15 text-gold border border-gold/35 px-3.5 py-1.5 text-[13px] font-bold tracking-wide mt-3">⚽ <?= h($S['kicker']) ?></span>
+    <h1 class="text-white font-bold leading-[1.12] mt-3 text-[clamp(28px,7vw,42px)]"><?= h($S['hero_title']) ?></h1>
+    <p class="text-emerald-50/90 text-base leading-relaxed mt-3"><?= h($S['hero_sub']) ?></p>
 
-    <!-- STEP 1: details -->
-    <section class="card" id="step-form">
-      <div class="err" id="err1"></div>
-      <form id="signupForm" autocomplete="on">
-        <div class="field">
-          <label for="name"><?= h($S['f_name']) ?></label>
-          <input type="text" id="name" name="name" maxlength="120" required>
+    <!-- prize banner -->
+    <div class="mt-5 rounded-2xl p-4 bg-[linear-gradient(90deg,#ffd34d,#f5b301)] text-pitch-dark shadow-[0_14px_40px_rgba(245,179,1,.3)]">
+      <div class="text-[13px] font-bold uppercase tracking-wide opacity-80 mb-2">🏆 <?= h($S['win_title']) ?></div>
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div class="rounded-xl bg-white/35 py-2.5"><div class="text-lg">🥇</div><div class="font-extrabold text-[clamp(15px,4.4vw,20px)]">$10,000</div></div>
+        <div class="rounded-xl bg-white/25 py-2.5"><div class="text-lg">🥈</div><div class="font-extrabold text-[clamp(15px,4.4vw,20px)]">$5,000</div></div>
+        <div class="rounded-xl bg-white/20 py-2.5"><div class="text-lg">🥉</div><div class="font-extrabold text-[clamp(15px,4.4vw,20px)]">$1,000</div></div>
+      </div>
+    </div>
+
+    <!-- STEP 1 -->
+    <section id="step-form" class="mt-5 bg-white rounded-3xl p-6 shadow-[0_30px_70px_rgba(0,0,0,.35)] animate-pop">
+      <div id="err1" class="hidden mb-3 rounded-xl bg-red-50 text-red-700 border border-red-200 px-3.5 py-2.5 text-sm"></div>
+      <form id="signupForm" autocomplete="on" class="space-y-4">
+        <div>
+          <label for="name" class="block text-[13px] font-semibold text-slate-700 mb-1.5"><?= h($S['f_name']) ?></label>
+          <input type="text" id="name" name="name" maxlength="120" required class="<?= $inputCls ?>">
         </div>
-        <div class="field">
-          <label for="phone"><?= h($S['f_phone']) ?></label>
-          <input type="tel" id="phone" name="phone" autocomplete="tel" required>
+        <div>
+          <label for="phone" class="block text-[13px] font-semibold text-slate-700 mb-1.5"><?= h($S['f_phone']) ?></label>
+          <input type="tel" id="phone" name="phone" autocomplete="tel" required class="<?= $inputCls ?>">
         </div>
-        <div class="field">
-          <label for="language"><?= h($S['f_language']) ?></label>
-          <select id="language" name="language">
-            <?php foreach (WcHub::LANGS as $code => $native): ?>
-              <option value="<?= h($code) ?>" <?= $code===$lang?'selected':'' ?>><?= h($native) ?></option>
-            <?php endforeach; ?>
-          </select>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="language" class="block text-[13px] font-semibold text-slate-700 mb-1.5"><?= h($S['f_language']) ?></label>
+            <select id="language" name="language" class="<?= $inputCls ?>">
+              <?php foreach (WcHub::LANGS as $code => $native): ?><option value="<?= h($code) ?>" <?= $code===$lang?'selected':'' ?>><?= h($native) ?></option><?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label for="tz" class="block text-[13px] font-semibold text-slate-700 mb-1.5"><?= h($S['f_timezone']) ?></label>
+            <select id="tz" name="tz" class="<?= $inputCls ?>">
+              <?php foreach ($tzList as $z => $labelz): ?><option value="<?= h($z) ?>" <?= $z===$tzGuess?'selected':'' ?>><?= h($labelz) ?></option><?php endforeach; ?>
+            </select>
+          </div>
         </div>
-        <div class="field">
-          <label for="tz"><?= h($S['f_timezone']) ?></label>
-          <select id="tz" name="tz">
-            <?php foreach ($tzList as $z => $labelz): ?>
-              <option value="<?= h($z) ?>" <?= $z===$tzGuess?'selected':'' ?>><?= h($labelz) ?></option>
-            <?php endforeach; ?>
-          </select>
-          <div class="hint">📍 <?= h($S['tz_detected']) ?></div>
-        </div>
-        <?php if ($turnstileSite): ?>
-          <div class="cf-turnstile" data-sitekey="<?= h($turnstileSite) ?>" data-size="flexible" style="margin-bottom:14px"></div>
-        <?php endif; ?>
-        <button class="btn" id="btnGet" type="submit"><?= h($S['get_code']) ?> →</button>
+        <p class="text-xs text-slate-500 -mt-1">📍 <?= h($S['tz_detected']) ?></p>
+        <?php if ($turnstileSite): ?><div class="cf-turnstile" data-sitekey="<?= h($turnstileSite) ?>" data-size="flexible"></div><?php endif; ?>
+        <button id="btnGet" type="submit" class="w-full rounded-2xl py-4 text-[17px] font-bold text-pitch-dark bg-[linear-gradient(90deg,#ffd34d,#f5b301)] shadow-[0_12px_30px_rgba(245,179,1,.35)] active:translate-y-px transition"><?= h($S['get_code']) ?> →</button>
       </form>
     </section>
 
-    <!-- STEP 2: otp -->
-    <section class="card" id="step-otp" hidden>
-      <div class="err" id="err2"></div>
-      <h2 style="margin:0 0 6px;font-size:20px"><?= h($S['otp_title']) ?></h2>
-      <p style="color:var(--muted);margin:0 0 16px;font-size:14px"><?= h($S['otp_sub']) ?> <b id="maskTo"></b></p>
-      <div class="otpgrid" id="otpGrid">
-        <input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1">
-        <input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1">
-        <input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1">
+    <!-- STEP 2 -->
+    <section id="step-otp" hidden class="mt-5 bg-white rounded-3xl p-6 shadow-[0_30px_70px_rgba(0,0,0,.35)] animate-pop">
+      <div id="err2" class="hidden mb-3 rounded-xl bg-red-50 text-red-700 border border-red-200 px-3.5 py-2.5 text-sm"></div>
+      <h2 class="text-xl font-bold mb-1"><?= h($S['otp_title']) ?></h2>
+      <p class="text-slate-500 text-sm mb-4"><?= h($S['otp_sub']) ?> <b id="maskTo"></b></p>
+      <div id="otpGrid" dir="ltr" class="flex gap-2 justify-between">
+        <?php for($i=0;$i<6;$i++): ?><input inputmode="numeric" maxlength="1" class="otp-in rounded-xl border-[1.5px] border-slate-200 text-2xl font-bold py-3.5 focus:border-cyan focus:ring-4 focus:ring-cyan/15 outline-none"><?php endfor; ?>
       </div>
-      <button class="btn alt" id="btnVerify" type="button" style="margin-top:14px"><?= h($S['verify']) ?></button>
-      <div class="muted-row">
-        <a id="btnResend"><?= h($S['resend']) ?></a>
-        <a id="btnChange"><?= h($S['change']) ?></a>
+      <button id="btnVerify" type="button" class="mt-4 w-full rounded-2xl py-4 text-[17px] font-bold text-white bg-cyan shadow-[0_12px_30px_rgba(0,155,193,.3)] active:translate-y-px transition"><?= h($S['verify']) ?></button>
+      <div class="flex justify-between mt-3.5 text-sm">
+        <a id="btnResend" class="text-cyan font-semibold cursor-pointer"><?= h($S['resend']) ?></a>
+        <a id="btnChange" class="text-cyan font-semibold cursor-pointer"><?= h($S['change']) ?></a>
       </div>
     </section>
 
-    <!-- STEP 3: success -->
-    <section class="card success" id="step-done" hidden>
-      <div class="big">🎉⚽</div>
-      <h2><?= h($S['success_title']) ?></h2>
-      <p><?= h($S['success_sub']) ?></p>
-      <div class="succ-actions">
-        <a class="btn" href="/predictions"><?= h($S['go_predict']) ?></a>
-        <a class="btn alt" href="/wc-wallet"><?= h($S['add_wallet']) ?></a>
-        <a class="btn" style="background:#25d366;color:#fff" id="btnInvite"><?= h($S['invite']) ?></a>
+    <!-- STEP 3 -->
+    <section id="step-done" hidden class="mt-5 bg-white rounded-3xl p-7 text-center shadow-[0_30px_70px_rgba(0,0,0,.35)] animate-pop">
+      <div class="text-5xl mb-2">🎉⚽</div>
+      <h2 class="text-2xl font-bold mb-1.5"><?= h($S['success_title']) ?></h2>
+      <p class="text-slate-500 mb-5"><?= h($S['success_sub']) ?></p>
+      <div class="space-y-2.5">
+        <a href="/predictions" class="block w-full rounded-2xl py-4 text-[17px] font-bold text-pitch-dark bg-[linear-gradient(90deg,#ffd34d,#f5b301)]"><?= h($S['go_predict']) ?></a>
+        <a href="/wc-wallet" class="block w-full rounded-2xl py-4 text-[17px] font-bold text-white bg-cyan"><?= h($S['add_wallet']) ?></a>
+        <a id="btnInvite" class="block w-full rounded-2xl py-4 text-[17px] font-bold text-white bg-[#25d366] cursor-pointer"><?= h($S['invite']) ?></a>
       </div>
     </section>
   </main>
 
-  <div class="foot">
-    <span class="poweredpill"><img src="/assets/images/logo.svg" alt=""> <?= h($S['brand']) ?></span>
-  </div>
+  <footer class="relative z-10 text-center pb-8 pt-1">
+    <span class="inline-flex items-center gap-2 rounded-full bg-white/12 border border-white/20 text-white px-3.5 py-1.5 text-xs font-semibold">
+      <img src="/assets/images/logo-light.svg" alt="" class="h-3.5 w-auto opacity-90"> <?= h($S['brand']) ?>
+    </span>
+  </footer>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.10.1/build/js/intlTelInputWithUtils.js"></script>
 <script>
 const STR = <?= json_encode($S, JSON_UNESCAPED_UNICODE) ?>;
 const INIT_COUNTRY = <?= json_encode(strtolower($cc ?: 'om')) ?>;
-// confetti
 (function(){const c=document.getElementById('confetti');const cols=['#ffd34d','#009bc1','#ff5d5d','#2ecc71','#fff'];
-for(let i=0;i<26;i++){const s=document.createElement('i');s.style.left=(Math.random()*100)+'%';
-s.style.background=cols[i%cols.length];s.style.animationDuration=(6+Math.random()*6)+'s';
-s.style.animationDelay=(-Math.random()*8)+'s';c.appendChild(s);}})();
+for(let i=0;i<26;i++){const s=document.createElement('i');
+s.className='absolute -top-3 w-[9px] h-[14px] rounded-[2px] animate-fall';
+s.style.left=(Math.random()*100)+'%';s.style.background=cols[i%cols.length];
+s.style.animationDuration=(6+Math.random()*6)+'s';s.style.animationDelay=(-Math.random()*8)+'s';c.appendChild(s);}})();
 
 const phoneEl=document.getElementById('phone');
 const iti=window.intlTelInput(phoneEl,{initialCountry:INIT_COUNTRY,separateDialCode:true,
-  countryOrder:['om','ae','sa','in','bd','pk','ph','eg','gb','us'],autoPlaceholder:'polite',
-  nationalMode:true});
-
+  countryOrder:['om','ae','sa','in','bd','pk','ph','eg','gb','us'],autoPlaceholder:'polite',nationalMode:true});
 const $=id=>document.getElementById(id);
 function show(step){['step-form','step-otp','step-done'].forEach(s=>$(s).hidden=(s!==step));}
-function showErr(box,msg){box.textContent=msg;box.style.display='block';}
-function clearErr(box){box.style.display='none';}
-
+function showErr(b,m){b.textContent=m;b.classList.remove('hidden');}
+function clearErr(b){b.classList.add('hidden');}
 let CURRENT={phone:'',name:'',language:'',tz:''};
 
-document.getElementById('signupForm').addEventListener('submit',async e=>{
+$('signupForm').addEventListener('submit',async e=>{
   e.preventDefault(); clearErr($('err1'));
   const name=$('name').value.trim();
   if(!name){showErr($('err1'),STR.err_name);return;}
@@ -238,21 +192,19 @@ document.getElementById('signupForm').addEventListener('submit',async e=>{
   const phone=iti.getNumber().replace('+','');
   const language=$('language').value, tz=$('tz').value;
   const ts=(document.querySelector('[name=cf-turnstile-response]')||{}).value||'';
-  const btn=$('btnGet'); btn.disabled=true; const orig=btn.textContent; btn.textContent=STR.sending;
+  const btn=$('btnGet'); btn.disabled=true; const orig=btn.innerHTML; btn.textContent=STR.sending;
   try{
     const r=await fetch('/api/wc-otp-request.php',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({name,phone,language,tz,turnstile:ts})});
     const j=await r.json();
-    if(!j.ok){showErr($('err1'),STR[j.error]||STR.err_generic);btn.disabled=false;btn.textContent=orig;return;}
+    if(!j.ok){showErr($('err1'),STR[j.error]||STR.err_generic);btn.disabled=false;btn.innerHTML=orig;return;}
     CURRENT={phone,name,language,tz};
     $('maskTo').textContent=j.masked||('****'+phone.slice(-4));
     show('step-otp'); $('otpGrid').children[0].focus();
   }catch(_){showErr($('err1'),STR.err_generic);}
-  btn.disabled=false; btn.textContent=orig;
+  btn.disabled=false; btn.innerHTML=orig;
 });
-
-// otp boxes
-const boxes=[...document.getElementById('otpGrid').children];
+const boxes=[...$('otpGrid').children];
 boxes.forEach((b,i)=>{
   b.addEventListener('input',()=>{b.value=b.value.replace(/\D/g,'');if(b.value&&i<5)boxes[i+1].focus();});
   b.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!b.value&&i>0)boxes[i-1].focus();});
@@ -273,16 +225,9 @@ async function verify(){
   }catch(_){showErr($('err2'),STR.err_generic);btn.disabled=false;}
 }
 $('btnVerify').addEventListener('click',verify);
-$('btnChange').addEventListener('click',()=>{show('step-form');});
-$('btnResend').addEventListener('click',async()=>{
-  clearErr($('err2'));
-  await fetch('/api/wc-otp-request.php',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({...CURRENT,turnstile:''})});
-});
-$('btnInvite')&&$('btnInvite').addEventListener('click',()=>{
-  const t=encodeURIComponent(STR.hero_title+' '+ 'https://wc.cardify.om');
-  window.open('https://api.whatsapp.com/send?text='+t,'_blank');
-});
+$('btnChange').addEventListener('click',()=>show('step-form'));
+$('btnResend').addEventListener('click',()=>fetch('/api/wc-otp-request.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...CURRENT,turnstile:''})}));
+$('btnInvite').addEventListener('click',()=>{const t=encodeURIComponent(STR.hero_title+' https://wc.cardify.om');window.open('https://api.whatsapp.com/send?text='+t,'_blank');});
 </script>
 </body>
 </html>

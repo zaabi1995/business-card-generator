@@ -47,6 +47,10 @@ if ($wcHost === 'wc.cardify.om') {
         require __DIR__ . '/world-cup.php';
         exit;
     }
+    if ($wcPath === '/u' || $wcPath === '/u/' || strpos($wcPath, '/u/') === 0) {
+        require __DIR__ . '/wc-unsub.php';
+        exit;
+    }
 }
 
 // Tenant subdomain check (e.g. ohb.cardify.om).

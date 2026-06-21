@@ -41,12 +41,15 @@ try {
     out(['ok'=>false,'error'=>'err_generic']);
 }
 
-// Best-effort branded welcome message (non-blocking).
+// Best-effort branded welcome message (non-blocking), with an unsubscribe link.
 try {
     $S = WcHub::strings($lang);
-    $welcome = ($lang==='ar' || $lang==='ur')
-        ? "⚽ {$S['success_title']}\n{$S['success_sub']}\nhttps://wc.cardify.om/predictions\n\n{$S['brand']}"
-        : "⚽ {$S['success_title']}\n{$S['success_sub']}\nPredict: https://wc.cardify.om/predictions\n\n{$S['brand']}";
+    $unsub = 'https://wc.cardify.om/u?t=' . urlencode($user['unsub_token'] ?? '');
+    $rtl = ($lang==='ar' || $lang==='ur');
+    $stop = $rtl ? "لإيقاف الإشعارات: {$unsub}" : "Stop notifications: {$unsub}";
+    $welcome = "⚽ {$S['success_title']}\n{$S['success_sub']}\n"
+        . ($rtl ? "" : "Predict: ") . "https://wc.cardify.om/predictions\n\n"
+        . "{$stop}\n{$S['brand']}";
     WhatsApp::sendMessage($phone, $welcome, ['bypassAntiBan'=>true]);
 } catch (Throwable $e) { /* ignore */ }
 
