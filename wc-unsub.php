@@ -34,7 +34,8 @@ function uh($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 <!DOCTYPE html><html lang="<?= uh($lang) ?>" dir="<?= uh($dir) ?>"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= uh($t) ?> · Cardify</title>
-<link rel="icon" href="/assets/images/cardify-icon-192.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
 <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif}</style>

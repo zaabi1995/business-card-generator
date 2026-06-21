@@ -22,7 +22,8 @@ $inputCls='w-full px-4 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white 
 <!DOCTYPE html><html lang="<?= sh($lang) ?>" dir="<?= sh($dir) ?>"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= sh($P['settings']) ?> · Cardify</title>
-<link rel="icon" href="/assets/images/cardify-icon-192.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
 <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif}</style>

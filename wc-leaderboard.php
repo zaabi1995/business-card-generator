@@ -30,7 +30,8 @@ $prizes = ['$10,000','$5,000','$1,000']; $medals=['🥇','🥈','🥉'];
 <!DOCTYPE html><html lang="<?= lh($lang) ?>" dir="<?= lh($dir) ?>"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title><?= lh($P['leaderboard']) ?> · Cardify</title>
-<link rel="icon" href="/assets/images/cardify-icon-192.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="/favicon.ico">
 <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif}</style>

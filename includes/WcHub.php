@@ -69,7 +69,7 @@ class WcHub
                 'brand' => 'powered by Cardify',
                 'kicker' => 'FIFA World Cup 2026',
                 'hero_title' => 'Your daily World Cup, on WhatsApp.',
-                'hero_sub' => 'Get every match with kickoff times in your timezone, predict the scores, climb the leaderboard, and win cash prizes. Free.',
+                'hero_sub' => 'Daily fixtures and results in your language and timezone, plus a free prediction game. Powered by Cardify.',
                 'f_name' => 'Your name',
                 'f_phone' => 'WhatsApp number',
                 'f_language' => 'Language',
@@ -100,7 +100,7 @@ class WcHub
                 'brand' => 'مدعوم من Cardify',
                 'kicker' => 'كأس العالم 2026',
                 'hero_title' => 'كأس العالم يوميًا، على واتساب.',
-                'hero_sub' => 'احصل على كل المباريات بمواعيدها بتوقيتك، توقّع النتائج، تصدّر لوحة المتصدرين، واربح جوائز نقدية. مجانًا.',
+                'hero_sub' => 'مباريات ونتائج يومية بلغتك وتوقيتك، مع لعبة توقعات مجانية. مدعوم من Cardify.',
                 'f_name' => 'اسمك',
                 'f_phone' => 'رقم واتساب',
                 'f_language' => 'اللغة',
@@ -131,7 +131,7 @@ class WcHub
                 'brand' => 'Cardify द्वारा संचालित',
                 'kicker' => 'फीफा विश्व कप 2026',
                 'hero_title' => 'आपका रोज़ का वर्ल्ड कप, WhatsApp पर।',
-                'hero_sub' => 'हर मैच अपने समयक्षेत्र में पाएं, स्कोर का अनुमान लगाएं, लीडरबोर्ड पर चढ़ें और नकद इनाम जीतें। मुफ़्त।',
+                'hero_sub' => 'आपकी भाषा और समयक्षेत्र में रोज़ के मैच और नतीजे, साथ में मुफ़्त भविष्यवाणी गेम। Cardify द्वारा संचालित।',
                 'f_name' => 'आपका नाम',
                 'f_phone' => 'WhatsApp नंबर',
                 'f_language' => 'भाषा',
@@ -162,7 +162,7 @@ class WcHub
                 'brand' => 'Cardify দ্বারা চালিত',
                 'kicker' => 'ফিফা বিশ্বকাপ ২০২৬',
                 'hero_title' => 'আপনার প্রতিদিনের বিশ্বকাপ, WhatsApp-এ।',
-                'hero_sub' => 'প্রতিটি ম্যাচ আপনার সময় অঞ্চলে পান, স্কোর অনুমান করুন, লিডারবোর্ডে উঠুন এবং নগদ পুরস্কার জিতুন। বিনামূল্যে।',
+                'hero_sub' => 'আপনার ভাষা ও সময় অঞ্চলে প্রতিদিনের ম্যাচ ও ফলাফল, সাথে ফ্রি প্রেডিকশন গেম। Cardify দ্বারা চালিত।',
                 'f_name' => 'আপনার নাম',
                 'f_phone' => 'WhatsApp নম্বর',
                 'f_language' => 'ভাষা',
@@ -193,7 +193,7 @@ class WcHub
                 'brand' => 'Cardify کے زیرِ اہتمام',
                 'kicker' => 'فیفا ورلڈ کپ 2026',
                 'hero_title' => 'آپ کا روزانہ ورلڈ کپ، واٹس ایپ پر۔',
-                'hero_sub' => 'ہر میچ اپنے ٹائم زون میں حاصل کریں، اسکور کا اندازہ لگائیں، لیڈر بورڈ پر چڑھیں اور نقد انعام جیتیں۔ مفت۔',
+                'hero_sub' => 'آپ کی زبان اور ٹائم زون میں روزانہ میچز اور نتائج، مفت پیشگوئی گیم کے ساتھ۔ Cardify کے زیرِ اہتمام۔',
                 'f_name' => 'آپ کا نام',
                 'f_phone' => 'واٹس ایپ نمبر',
                 'f_language' => 'زبان',
@@ -277,27 +277,43 @@ class WcHub
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($d), 4));
     }
 
-    /** Session login after a verified OTP. */
+    // Signed-cookie auth (robust across the front-controller and direct /api
+    // files; avoids PHP-session name/start-order issues with config.php).
+    private static function authSecret(): string
+    {
+        return hash('sha256', 'wc-auth-v1|' . (defined('DB_PASS') ? DB_PASS : 'x') . '|' . (defined('DB_NAME') ? DB_NAME : ''));
+    }
+
+    /** Issue the auth cookie after a verified OTP. Must run before output. */
     public static function login(array $user): void
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) @session_start();
-        $_SESSION['wc_uid'] = (int)$user['id'];
+        $uid = (int)$user['id'];
+        $exp = time() + 60 * 60 * 24 * 30; // 30 days
+        $sig = hash_hmac('sha256', "$uid.$exp", self::authSecret());
+        $val = "$uid.$exp.$sig";
+        $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+        setcookie('wc_auth', $val, ['expires'=>$exp,'path'=>'/','secure'=>$secure,'httponly'=>true,'samesite'=>'Lax']);
+        $_COOKIE['wc_auth'] = $val; // usable within the same request
     }
 
     /** The currently logged-in WC user row, or null. */
     public static function currentUser(): ?array
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) @session_start();
-        $uid = (int)($_SESSION['wc_uid'] ?? 0);
-        if ($uid <= 0) return null;
-        $u = Database::getInstance()->fetchOne("SELECT * FROM wc_users WHERE id = :id AND status != 'unsubscribed' LIMIT 1", ['id' => $uid]);
+        $val = (string)($_COOKIE['wc_auth'] ?? '');
+        $p = explode('.', $val);
+        if (count($p) !== 3) return null;
+        [$uid, $exp, $sig] = $p;
+        if (!ctype_digit($uid) || !ctype_digit($exp) || (int)$exp < time()) return null;
+        $expected = hash_hmac('sha256', "$uid.$exp", self::authSecret());
+        if (!hash_equals($expected, $sig)) return null;
+        $u = Database::getInstance()->fetchOne("SELECT * FROM wc_users WHERE id = :id AND status != 'unsubscribed' LIMIT 1", ['id' => (int)$uid]);
         return $u ?: null;
     }
 
     public static function logout(): void
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) @session_start();
-        unset($_SESSION['wc_uid']);
+        setcookie('wc_auth', '', ['expires'=>time()-3600,'path'=>'/']);
+        unset($_COOKIE['wc_auth']);
     }
 
     /** Predictions UI strings (en + ar full; hi/bn/ur fall back to en for now). */
