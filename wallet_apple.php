@@ -131,14 +131,6 @@ try {
     $fgColor    = $isDarkBg ? 'rgb(255, 255, 255)' : 'rgb(17, 24, 39)';
     $labelColor = $fgColor; // same hue as values; Apple sizes labels smaller for hierarchy
 
-    // For Arabic: bake the name+title into the strip image as shaped RTL graphics,
-    // because PassKit text fields won't render true RTL on a non-Arabic-language
-    // device. storeCard's taller strip (375x144) holds two lines; if rendering fails
-    // we fall back to eventTicket text fields. English always uses eventTicket text.
-    $bakedStrip = $isAr ? WalletImage::brandStripWithText($primaryHex, $nameRaw, $titleRaw) : [];
-    $arBaked    = !empty($bakedStrip);
-    $styleKey   = $arBaked ? 'storeCard' : 'eventTicket';
-
     // ---- Single-language pass in the site language ($lang) ----
     // storeCard MERGES secondaryFields + auxiliaryFields into ONE shared row, so
     // name + title + phone + email all competing there truncates the long title.
@@ -200,25 +192,7 @@ try {
         $headerFields[] = ['key' => 'tagline', 'label' => '', 'value' => $tagline, 'textAlignment' => $NAT];
     }
 
-    // FRONT. Two cases:
-    //  - Arabic baked: name + title are IN the strip image (perfect RTL), so the text
-    //    rows are empty and only phone/email sit below (storeCard).
-    //  - English (eventTicket): name (primary, centered over strip) + title (secondary,
-    //    own full-width row), phone/email (auxiliary, own row). eventTicket is the only
-    //    style that puts secondary + auxiliary on SEPARATE rows so the title never
-    //    truncates next to phone/email.
-    if ($arBaked) {
-        $primaryFields   = [];
-        $secondaryFields = [];
-    } else {
-        $primaryFields = [[
-            'key' => 'name', 'label' => '', 'value' => $nameDisp, 'textAlignment' => 'PKTextAlignmentCenter',
-        ]];
-        $secondaryFields = [];
-        if ($positionDisp !== '') {
-            $secondaryFields[] = ['key' => 'title', 'label' => '', 'value' => $positionDisp, 'textAlignment' => $NAT];
-        }
-    }
+    // Auxiliary contact fields (phone / email), shared by both layouts.
     $auxFields = [];
     if ($phone !== '') {
         $auxFields[] = ['key' => 'phone', 'label' => $L['phone'], 'value' => $phone, 'textAlignment' => $NAT];
@@ -232,13 +206,14 @@ try {
         $auxFields = array_reverse($auxFields);
     }
 
-    // Barcode WITHOUT altText so iOS draws no URL caption under the QR.
+    // Square QR, no altText so iOS draws no URL caption under it.
     $qr = [
         'format'          => 'PKBarcodeFormatQR',
         'message'         => $cardUrl,
         'messageEncoding' => 'iso-8859-1',
     ];
 
+    // Common pass head (style dict + style-specific assets added per branch below).
     $pass = [
         'formatVersion'       => 1,
         'passTypeIdentifier'  => APPLE_WALLET_PASS_TYPE_ID,
@@ -252,35 +227,15 @@ try {
         'barcodes'            => [$qr],
         'barcode'             => $qr, // legacy single-barcode key for older iOS
     ];
-    // Style is dynamic: Arabic-baked uses storeCard (taller strip holds the baked
-    // name+title, body = phone/email). English uses eventTicket (the only style with
-    // SEPARATE secondary + auxiliary rows, so the title never truncates next to
-    // phone/email). Both supply a strip image (no background) so it stays crisp.
-    $pass[$styleKey] = [
-        'headerFields'    => $headerFields,
-        'primaryFields'   => $primaryFields,
-        'secondaryFields' => $secondaryFields,
-        'auxiliaryFields' => $auxFields,
-        'backFields'      => $backFields,
-    ];
 
-    // ---- Build pass ----
-    $passObj = new AppleWalletPass($pass);
-
-    // Bundle the company logo. Apple requires a VALID PNG icon.png; a raw tenant
-    // logo can be SVG / JPEG / WebP / oversized, any of which makes iOS reject
-    // the pass with the opaque "Cannot add pass". WalletImage re-encodes to clean
-    // PNGs at Apple's expected sizes (icon = square; logo = wide, top-left).
-    // Icon (system contexts, often on white) = the original-colour logo.
+    // Resolve the tenant logo file (shared). Apple requires a VALID PNG icon.png; a raw
+    // tenant logo can be SVG / JPEG / WebP / oversized, any of which makes iOS reject the
+    // pass with the opaque "Cannot add pass", so WalletImage re-encodes to clean PNGs.
+    // logo_path is stored inconsistently across tenants: some flows save it WITH the
+    // 'uploads/' prefix (onboarding, apply_theme), others WITHOUT it (theme-builder), so
+    // try every sensible resolution or the wallet logo silently disappears.
     $iconFs = null;
     if ($theme && !empty($theme['logo_path'])) {
-        // logo_path is stored inconsistently across tenants: some flows save it
-        // WITH the 'uploads/' prefix (onboarding, apply_theme), others WITHOUT
-        // it (theme-builder e.g. 'companies/<id>/theme/logo_*.png'). Only trying
-        // BASE_DIR.'/'.path silently missed the no-prefix form -> the wallet
-        // fell back to a blank logo. Try every sensible resolution so the wallet
-        // logo never silently disappears. Mirrors the normalisation already done
-        // in TenantHost::theme() / EmployeeEditToken / admin-layout.
         $lp = ltrim((string) $theme['logo_path'], '/');
         $cands = [BASE_DIR . '/' . $lp, BASE_DIR . '/uploads/' . $lp];
         if (strpos($lp, 'uploads/') === 0) {
@@ -290,10 +245,9 @@ try {
             if (is_readable($c)) { $iconFs = $c; break; }
         }
     }
-    // Header logo can use a tenant REVERSE logo: a "<name>-dark.<ext>" sibling of
-    // logo_path (white text + brand accents, e.g. otech-logo-dark.png). If present
-    // it's used as-is on a dark brand (orange accents preserved); otherwise the
-    // plain logo is auto-knocked out to white.
+    // On a dark brand, prefer a "<name>-dark.<ext>" reverse logo (white text + brand
+    // accents, e.g. otech-logo-dark.png) if the tenant uploaded one; else the plain logo
+    // is auto-knocked out to white.
     $logoFs = $iconFs;
     $logoIsReverse = false;
     if ($iconFs && $isDarkBg) {
@@ -302,65 +256,167 @@ try {
             $logoFs = $darkCand;
             $logoIsReverse = true;
         } elseif (($__base = preg_replace('/\.[A-Za-z0-9]+$/', '', $iconFs))) {
-            // Reverse logo uploaded in a different format than the main logo
-            // (e.g. main .svg, light .png). Match <base>-dark.<anyext>.
             foreach (glob($__base . '-dark.*') ?: [] as $__g) {
                 if (is_readable($__g)) { $logoFs = $__g; $logoIsReverse = true; break; }
             }
         }
     }
+    $knock = $isDarkBg && !$logoIsReverse;
 
     // 1x1 transparent PNG, last-resort so the manifest always carries a valid icon.
     $transparentPng = base64_decode(
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
     );
 
-    // icon.png is REQUIRED (lock screen / notifications); always the colour logo.
-    foreach (['icon.png' => 29, 'icon@2x.png' => 58, 'icon@3x.png' => 87] as $fname => $px) {
-        $bytes = $iconFs ? WalletImage::fitPng($iconFs, $px, $px) : null;
-        $passObj->addAsset($fname, $bytes ?: $transparentPng);
-    }
-    // logo.png top-left on the brand header. Reverse logo used as-is; otherwise the
-    // plain logo is knocked out to white on a dark brand (only if it has alpha).
-    $knock = $isDarkBg && !$logoIsReverse;
-    foreach (['logo.png' => [160, 50], 'logo@2x.png' => [320, 100], 'logo@3x.png' => [480, 150]] as $fname => $dim) {
-        if (!$logoFs) {
-            continue;
-        }
-        $bytes = WalletImage::fitPng($logoFs, $dim[0], $dim[1], $knock, true); // left-aligned in canvas
-        if ($bytes) {
-            $passObj->addAsset($fname, $bytes);
-        }
+    // ---- Layout choice ----
+    // Poster generic (iOS 27 HIG) is the new full-art design. It degrades gracefully to
+    // a plain generic pass on older iOS via preferredStyleSchemes. Default OFF (legacy
+    // eventTicket stays live for tenants) until device-verified; flip the global on with
+    // APPLE_WALLET_POSTER_GENERIC=true in config. Per-request test override: ?poster=1|0.
+    $poster = defined('APPLE_WALLET_POSTER_GENERIC') && APPLE_WALLET_POSTER_GENERIC;
+    if (isset($_GET['poster'])) {
+        $poster = ($_GET['poster'] === '1' || strtolower((string) $_GET['poster']) === 'true');
     }
 
-    // Strip band. Arabic-baked: the SVG-rendered strip already holds the RTL name+title
-    // at storeCard dims (375x144). Otherwise (English / fallback): a plain dotted brand
-    // band at eventTicket dims (375x98), with optional per-tenant override at
-    // uploads/companies/<cid>/wallet-strip[@2x|@3x].png. Apple shows the strip CRISP.
-    if ($arBaked) {
-        foreach ($bakedStrip as $asset => $bytes) {
+    if ($poster) {
+        // ===== POSTER GENERIC (iOS 27 HIG) =====
+        // generic dict + a poster artwork.png + a square QR triggers the poster layout
+        // (full-art background, primary fields, footer field). preferredStyleSchemes
+        // validates the poster scheme and falls back to the designed generic type if the
+        // OS can't render it, so older iOS shows a clean plain-generic pass instead.
+        $pass['preferredStyleSchemes'] = ['posterGeneric'];
+        if ($companyNm !== '') {
+            $pass['logoText'] = $companyNm;
+        }
+
+        // Arabic bakes name+title into the artwork (true RTL on any device). English uses
+        // accessible text fields and leaves the artwork text-free (Apple: reserve images
+        // for visual content).
+        $artwork = WalletImage::brandArtwork(
+            $primaryHex,
+            $isAr ? $nameRaw  : '',
+            $isAr ? $titleRaw : '',
+            $isAr
+        );
+
+        if ($isAr && !empty($artwork)) {
+            $primaryFields   = [];
+            $secondaryFields = [];
+        } else {
+            $primaryFields = [[
+                'key' => 'name', 'label' => '', 'value' => $nameDisp, 'textAlignment' => $NAT,
+            ]];
+            $secondaryFields = [];
+            if ($positionDisp !== '') {
+                $secondaryFields[] = ['key' => 'title', 'label' => '', 'value' => $positionDisp, 'textAlignment' => $NAT];
+            }
+        }
+
+        $pass['generic'] = [
+            'headerFields'    => $headerFields,
+            'primaryFields'   => $primaryFields,
+            'secondaryFields' => $secondaryFields,
+            'auxiliaryFields' => $auxFields,
+            'backFields'      => $backFields,
+        ];
+
+        $passObj = new AppleWalletPass($pass);
+
+        // icon.png (HIG: 38pt square) for lock screen / Mail / Wallet chrome. Colour logo.
+        foreach (['icon.png' => 38, 'icon@2x.png' => 76, 'icon@3x.png' => 114] as $fname => $px) {
+            $bytes = $iconFs ? WalletImage::fitPng($iconFs, $px, $px) : null;
+            $passObj->addAsset($fname, $bytes ?: $transparentPng);
+        }
+        // primaryLogo.png (HIG: poster passes use primaryLogo, max 126x30) top-leading,
+        // plus logo.png so the older-iOS plain-generic fallback still shows a logo.
+        if ($logoFs) {
+            $logoSets = [
+                'primaryLogo.png'    => [126, 30], 'primaryLogo@2x.png' => [252, 60], 'primaryLogo@3x.png' => [378, 90],
+                'logo.png'           => [160, 50], 'logo@2x.png'        => [320, 100], 'logo@3x.png'        => [480, 150],
+            ];
+            foreach ($logoSets as $fname => $dim) {
+                $bytes = WalletImage::fitPng($logoFs, $dim[0], $dim[1], $knock, true);
+                if ($bytes) { $passObj->addAsset($fname, $bytes); }
+            }
+        }
+        // artwork.png (HIG: 358x448) full-bleed crisp poster background.
+        foreach ($artwork as $asset => $bytes) {
             $passObj->addAsset($asset, $bytes);
         }
     } else {
-        $cid = (string)($company['id'] ?? '');
-        foreach ([
-            'strip.png'    => [375, 98, 'wallet-strip.png'],
-            'strip@2x.png' => [750, 196, 'wallet-strip@2x.png'],
-            'strip@3x.png' => [1125, 294, 'wallet-strip@3x.png'],
-        ] as $asset => $info) {
-            [$sw, $shh, $override] = $info;
-            $bytes = null;
-            if ($cid !== '') {
-                $ov = BASE_DIR . '/uploads/companies/' . $cid . '/' . $override;
-                if (is_readable($ov)) {
-                    $bytes = @file_get_contents($ov);
-                }
+        // ===== LEGACY eventTicket / storeCard (pre-iOS-27 design) =====
+        // Arabic bakes name+title into a taller storeCard strip (true RTL); English uses
+        // eventTicket text fields (the only style with SEPARATE secondary + auxiliary rows
+        // so a long title never truncates next to phone/email). Both supply a strip image
+        // (no background) so it stays crisp.
+        $bakedStrip = $isAr ? WalletImage::brandStripWithText($primaryHex, $nameRaw, $titleRaw) : [];
+        $arBaked    = !empty($bakedStrip);
+        $styleKey   = $arBaked ? 'storeCard' : 'eventTicket';
+
+        if ($arBaked) {
+            $primaryFields   = [];
+            $secondaryFields = [];
+        } else {
+            $primaryFields = [[
+                'key' => 'name', 'label' => '', 'value' => $nameDisp, 'textAlignment' => 'PKTextAlignmentCenter',
+            ]];
+            $secondaryFields = [];
+            if ($positionDisp !== '') {
+                $secondaryFields[] = ['key' => 'title', 'label' => '', 'value' => $positionDisp, 'textAlignment' => $NAT];
             }
-            if ($bytes === null || $bytes === false || $bytes === '') {
-                $bytes = WalletImage::brandBackground($primaryHex, $sw, $shh);
+        }
+
+        $pass[$styleKey] = [
+            'headerFields'    => $headerFields,
+            'primaryFields'   => $primaryFields,
+            'secondaryFields' => $secondaryFields,
+            'auxiliaryFields' => $auxFields,
+            'backFields'      => $backFields,
+        ];
+
+        $passObj = new AppleWalletPass($pass);
+
+        // icon.png (HIG: 38pt square). Always the colour logo.
+        foreach (['icon.png' => 38, 'icon@2x.png' => 76, 'icon@3x.png' => 114] as $fname => $px) {
+            $bytes = $iconFs ? WalletImage::fitPng($iconFs, $px, $px) : null;
+            $passObj->addAsset($fname, $bytes ?: $transparentPng);
+        }
+        // logo.png top-left on the brand header.
+        if ($logoFs) {
+            foreach (['logo.png' => [160, 50], 'logo@2x.png' => [320, 100], 'logo@3x.png' => [480, 150]] as $fname => $dim) {
+                $bytes = WalletImage::fitPng($logoFs, $dim[0], $dim[1], $knock, true);
+                if ($bytes) { $passObj->addAsset($fname, $bytes); }
             }
-            if ($bytes) {
+        }
+
+        // Strip band. Arabic-baked: the SVG-rendered strip holds the RTL name+title at
+        // storeCard dims (375x144). Else a plain dotted brand band at eventTicket dims
+        // (375x98), with optional per-tenant override at uploads/companies/<cid>/.
+        if ($arBaked) {
+            foreach ($bakedStrip as $asset => $bytes) {
                 $passObj->addAsset($asset, $bytes);
+            }
+        } else {
+            $cid = (string)($company['id'] ?? '');
+            foreach ([
+                'strip.png'    => [375, 98, 'wallet-strip.png'],
+                'strip@2x.png' => [750, 196, 'wallet-strip@2x.png'],
+                'strip@3x.png' => [1125, 294, 'wallet-strip@3x.png'],
+            ] as $asset => $info) {
+                [$sw, $shh, $override] = $info;
+                $bytes = null;
+                if ($cid !== '') {
+                    $ov = BASE_DIR . '/uploads/companies/' . $cid . '/' . $override;
+                    if (is_readable($ov)) {
+                        $bytes = @file_get_contents($ov);
+                    }
+                }
+                if ($bytes === null || $bytes === false || $bytes === '') {
+                    $bytes = WalletImage::brandBackground($primaryHex, $sw, $shh);
+                }
+                if ($bytes) {
+                    $passObj->addAsset($asset, $bytes);
+                }
             }
         }
     }

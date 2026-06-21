@@ -222,6 +222,106 @@ class WalletImage
         return (count($out) === 3) ? $out : [];
     }
 
+    /**
+     * Poster-generic ARTWORK (iOS 27 HIG): a full-bleed brand background that Apple
+     * renders CRISP (unblurred) behind the pass fields. Base size 358x448 pt, plus
+     * @2x / @3x. Returns ['artwork.png'=>bytes,'artwork@2x.png'=>..,'artwork@3x.png'=>..]
+     * or [] on failure (caller falls back to legacy / no artwork).
+     *
+     * For Arabic ($rtl=true) the name + title are baked into the upper third as
+     * properly-shaped RTL text, because PassKit text fields won't render true RTL on a
+     * non-Arabic device. English passes pass empty $name/$title and use real (accessible)
+     * text fields instead, per Apple's "reserve images for visual content" guidance.
+     * The bottom ~28% is kept clear of important art: Apple lays a material strip + the
+     * square QR there on poster passes.
+     */
+    public static function brandArtwork(string $hex, string $name = '', string $title = '', bool $rtl = false): array
+    {
+        $sizes = [
+            'artwork.png'     => [358, 448],
+            'artwork@2x.png'  => [716, 896],
+            'artwork@3x.png'  => [1074, 1344],
+        ];
+
+        $rsvg = trim((string) @shell_exec('command -v rsvg-convert 2>/dev/null'));
+        if ($rsvg !== '') {
+            $svg = self::artworkSvg($hex, $name, $title, $rtl);
+            $tmpSvg = tempnam(sys_get_temp_dir(), 'wart_') . '.svg';
+            if (@file_put_contents($tmpSvg, $svg) !== false) {
+                $out = [];
+                foreach ($sizes as $asset => $dim) {
+                    $tmpPng = tempnam(sys_get_temp_dir(), 'warto_') . '.png';
+                    $rc = 1; $o = [];
+                    @exec(escapeshellarg($rsvg) . ' -w ' . $dim[0] . ' -h ' . $dim[1] . ' '
+                        . escapeshellarg($tmpSvg) . ' -o ' . escapeshellarg($tmpPng) . ' 2>/dev/null', $o, $rc);
+                    if ($rc === 0 && is_readable($tmpPng) && filesize($tmpPng) > 0) {
+                        $bytes = @file_get_contents($tmpPng);
+                        if ($bytes !== false && $bytes !== '') { $out[$asset] = $bytes; }
+                    }
+                    @unlink($tmpPng);
+                }
+                @unlink($tmpSvg);
+                if (count($out) === 3) { return $out; }
+            }
+        }
+
+        // GD fallback: gradient + halftone only (no shaped text), reusing brandBackground.
+        $out = [];
+        foreach ($sizes as $asset => $dim) {
+            $bytes = self::brandBackground($hex, $dim[0], $dim[1]);
+            if ($bytes) { $out[$asset] = $bytes; }
+        }
+        return (count($out) === 3) ? $out : [];
+    }
+
+    /** Build the poster artwork SVG (viewBox 358x448, scaled by rsvg at render time). */
+    private static function artworkSvg(string $hex, string $name, string $title, bool $rtl): string
+    {
+        $hx = ltrim($hex, '#');
+        if (strlen($hx) === 3) { $hx = $hx[0].$hx[0].$hx[1].$hx[1].$hx[2].$hx[2]; }
+        if (strlen($hx) !== 6) { $hx = '2d13ea'; }
+        $r = hexdec(substr($hx, 0, 2)); $g = hexdec(substr($hx, 2, 2)); $b = hexdec(substr($hx, 4, 2));
+        $darker = sprintf('#%02x%02x%02x', (int)($r * 0.58), (int)($g * 0.58), (int)($b * 0.58));
+        $lighter = sprintf('#%02x%02x%02x', (int)min(255, $r + 26), (int)min(255, $g + 26), (int)min(255, $b + 26));
+
+        $W = 358; $H = 448; $pad = 28;
+        $step = 26; $dotR = 3.2;
+
+        $svg  = '<?xml version="1.0" encoding="UTF-8"?>';
+        $svg .= '<svg xmlns="http://www.w3.org/2000/svg" width="' . $W . '" height="' . $H . '" viewBox="0 0 ' . $W . ' ' . $H . '">';
+        $svg .= '<defs>';
+        $svg .= '<linearGradient id="bg" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="' . $lighter . '"/><stop offset="0.55" stop-color="#' . $hx . '"/><stop offset="1" stop-color="' . $darker . '"/></linearGradient>';
+        $svg .= '<radialGradient id="glow" cx="0.5" cy="0.18" r="0.9"><stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/><stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/></radialGradient>';
+        $svg .= '<linearGradient id="foot" x1="0" y1="0.62" x2="0" y2="1"><stop offset="0" stop-color="' . $darker . '" stop-opacity="0"/><stop offset="1" stop-color="' . $darker . '" stop-opacity="0.55"/></linearGradient>';
+        $svg .= '<pattern id="dots" width="' . $step . '" height="' . $step . '" patternUnits="userSpaceOnUse" patternTransform="rotate(12)"><circle cx="' . ($step / 2) . '" cy="' . ($step / 2) . '" r="' . $dotR . '" fill="#ffffff" fill-opacity="0.09"/></pattern>';
+        $svg .= '</defs>';
+        $svg .= '<rect width="' . $W . '" height="' . $H . '" fill="url(#bg)"/>';
+        $svg .= '<rect width="' . $W . '" height="' . $H . '" fill="url(#dots)"/>';
+        $svg .= '<rect width="' . $W . '" height="' . $H . '" fill="url(#glow)"/>';
+        $svg .= '<rect width="' . $W . '" height="' . $H . '" fill="url(#foot)"/>';
+
+        // Arabic: bake the shaped RTL name + title into the upper third (clear of the
+        // bottom material strip + QR). English leaves this empty and uses text fields.
+        if ($rtl && $name !== '') {
+            $avail = $W - 2 * $pad;
+            $nlen = max(1, function_exists('mb_strlen') ? mb_strlen($name, 'UTF-8') : strlen($name));
+            $tlen = max(1, function_exists('mb_strlen') ? mb_strlen($title, 'UTF-8') : strlen($title));
+            $nameSize  = max(24, min(44, (int) floor($avail / ($nlen * 0.55))));
+            $titleSize = max(13, min(20, (int) floor($avail / max(1, $tlen) / 0.52)));
+            $esc = function (string $s): string {
+                return htmlspecialchars($s, ENT_QUOTES | ENT_XML1, 'UTF-8');
+            };
+            $nameY = 168; $titleY = $nameY + $nameSize + 8;
+            $svg .= '<text x="' . ($W - $pad) . '" y="' . $nameY . '" text-anchor="start" direction="rtl" font-family="Noto Naskh Arabic, Noto Sans Arabic, sans-serif" font-weight="700" font-size="' . $nameSize . '" fill="#ffffff">' . $esc($name) . '</text>';
+            if ($title !== '') {
+                $svg .= '<text x="' . ($W - $pad) . '" y="' . $titleY . '" text-anchor="start" direction="rtl" font-family="Noto Sans Arabic, sans-serif" font-size="' . $titleSize . '" fill="#ffffff" fill-opacity="0.9">' . $esc($title) . '</text>';
+            }
+        }
+
+        $svg .= '</svg>';
+        return $svg;
+    }
+
     /** True if the image has any meaningfully transparent pixels (sampled grid). */
     private static function hasTransparency($img): bool
     {
