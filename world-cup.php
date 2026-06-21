@@ -62,7 +62,7 @@ $rules = $rtl ? [
   'Top 3 receive $10,000 / $5,000 / $1,000, paid by bank transfer after identity verification.','Ties are broken by exact-score count, then earliest signup.',
 ];
 $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-white/12 bg-white/[0.04] text-white text-base outline-none placeholder:text-slate-500 focus:border-gold/60 focus:ring-4 focus:ring-gold/10 transition';
-$famH = $rtl ? "'Cairo','IBM Plex Sans Arabic',sans-serif" : "'Syne','IBM Plex Sans Arabic',sans-serif";
+$famH = $rtl ? "'Cairo','IBM Plex Sans Arabic',sans-serif" : "'Outfit','IBM Plex Sans Arabic',sans-serif";
 $famB = $rtl ? "'IBM Plex Sans Arabic','Cairo',sans-serif" : "'Outfit','IBM Plex Sans Arabic',sans-serif";
 ?>
 <!DOCTYPE html>
@@ -80,7 +80,7 @@ $famB = $rtl ? "'IBM Plex Sans Arabic','Cairo',sans-serif" : "'Outfit','IBM Plex
 <meta name="theme-color" content="#0a0a0f">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="alternate icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
-<link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Syne:wght@700;800&family=Outfit:wght@400;500;600;700&family=Cairo:wght@700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Outfit:wght@400;500;600;700;800&family=Cairo:wght@700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/light.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
