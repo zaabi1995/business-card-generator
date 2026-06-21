@@ -70,6 +70,20 @@ $printed = $db->fetchOne(
 );
 $ordered   = (int)($po['ordered'] ?? 0);
 $remaining = $ordered - (int)($printed['printed'] ?? 0);
+
+// Per-card selling price from the uploaded PO (data-driven): the unit_price
+// column, else parsed from the PO note ("@ 0.040 OMR"), else a safe default.
+$poRow = $db->fetchOne(
+    "SELECT unit_price, note FROM company_print_pos
+       WHERE company_id = :c AND po_number = :p ORDER BY created_at DESC LIMIT 1",
+    ['c' => $companyId, 'p' => (string)($po['po_number'] ?? '')]
+);
+$poUnitPrice = 0.0;
+if ($poRow && $poRow['unit_price'] !== null && (float)$poRow['unit_price'] > 0) {
+    $poUnitPrice = (float)$poRow['unit_price'];
+} elseif ($poRow && preg_match('/@\s*([0-9]*\.?[0-9]+)\s*OMR/i', (string)($poRow['note'] ?? ''), $m)) {
+    $poUnitPrice = (float)$m[1];
+}
 $poNumber  = (string)($po['po_number'] ?? '');
 
 if ($ordered <= 0) {
@@ -94,10 +108,10 @@ $cardLabel = 'Business Cards - ' . $nameEn;
 $printReadyUrl = 'https://' . ($company['slug'] ?? 'app') . '.cardify.om/card-sheet.php?i=' . urlencode($employeeId);
 $orderRef = 'CARDPROD-' . $employeeId . '-' . time();
 
-// Pricing: print-product price per card (OMR). Standard = 6.000 / 100 = 0.060.
-// Cost is the material cost for COGS (placeholder until refined per tenant).
-$unitPrice = 0.060;
-$unitCost  = 0.040;
+// Selling price per card (ex-VAT) straight from the client's PO; the ERP adds
+// 5% VAT on top. COGS is BOM-driven in the ERP, so the line cost is left 0.
+$unitPrice = $poUnitPrice > 0 ? $poUnitPrice : 0.040;
+$unitCost  = 0.0;
 
 $erp = ERPSync::createProductionOrder([
     'clientName'    => $clientName,
