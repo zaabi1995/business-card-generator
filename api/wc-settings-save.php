@@ -1,0 +1,21 @@
+<?php
+/** POST /api/wc-settings-save.php {name, language, tz} - update own prefs. */
+require_once __DIR__ . '/../config.php';
+require_once INCLUDES_DIR . '/WcHub.php';
+header('Content-Type: application/json; charset=utf-8');
+function out($a){ echo json_encode($a); exit; }
+
+$user = WcHub::currentUser();
+if (!$user) out(['ok'=>false,'error'=>'auth']);
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') out(['ok'=>false,'error'=>'method']);
+
+$in = json_decode(file_get_contents('php://input'), true) ?: [];
+$name = trim((string)($in['name'] ?? ''));
+$lang = WcHub::lang((string)($in['language'] ?? 'en'));
+$tz   = (string)($in['tz'] ?? 'Asia/Muscat');
+if ($name === '' || mb_strlen($name) > 120) out(['ok'=>false,'error'=>'name']);
+if (!in_array($tz, timezone_identifiers_list(), true)) $tz = 'Asia/Muscat';
+
+Database::getInstance()->update('wc_users',
+    ['name'=>$name,'language'=>$lang,'tz'=>$tz], 'id=:id', ['id'=>$user['id']]);
+out(['ok'=>true]);

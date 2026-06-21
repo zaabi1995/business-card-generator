@@ -36,6 +36,7 @@ try {
     $exists = $db->fetchOne("SELECT lead_id FROM wc_users WHERE phone = :p LIMIT 1", ['p'=>$phone]);
     $leadId = $exists['lead_id'] ?? WcHub::mirrorLead($phone, $name, $lang, $cc);
     $user = WcHub::upsertUser($phone, $name, $lang, $tz, $cc, $leadId);
+    WcHub::login($user);
 } catch (Throwable $e) {
     error_log('wc-otp-verify upsert failed: ' . $e->getMessage());
     out(['ok'=>false,'error'=>'err_generic']);

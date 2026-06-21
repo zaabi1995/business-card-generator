@@ -42,15 +42,24 @@ require_once $configFile;
 // direct files; only the bare hub page is front-controlled here.
 $wcHost = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
 if ($wcHost === 'wc.cardify.om') {
-    $wcPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-    if ($wcPath === '/' || $wcPath === '' || $wcPath === '/world-cup') {
-        require __DIR__ . '/world-cup.php';
-        exit;
+    $wcPath = rtrim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/', '/');
+    if ($wcPath === '' || $wcPath === '/world-cup') { require __DIR__ . '/world-cup.php'; exit; }
+    if ($wcPath === '/u' || strpos($wcPath, '/u/') === 0) { require __DIR__ . '/wc-unsub.php'; exit; }
+    $wcMap = [
+        '/predictions'    => 'predictions.php',
+        '/wc-leaderboard' => 'wc-leaderboard.php',
+        '/leaderboard'    => 'wc-leaderboard.php',
+        '/wc-settings'    => 'wc-settings.php',
+        '/wc-wallet'      => 'wc-wallet.php',
+    ];
+    if (isset($wcMap[$wcPath])) { require __DIR__ . '/' . $wcMap[$wcPath]; exit; }
+    if ($wcPath === '/wc-logout') {
+        require_once __DIR__ . '/includes/WcHub.php';
+        WcHub::logout();
+        header('Location: https://wc.cardify.om/'); exit;
     }
-    if ($wcPath === '/u' || $wcPath === '/u/' || strpos($wcPath, '/u/') === 0) {
-        require __DIR__ . '/wc-unsub.php';
-        exit;
-    }
+    // anything else on the wc host falls back to the hub
+    require __DIR__ . '/world-cup.php'; exit;
 }
 
 // Tenant subdomain check (e.g. ohb.cardify.om).

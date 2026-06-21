@@ -276,4 +276,52 @@ class WcHub
         $d[8] = chr((ord($d[8]) & 0x3f) | 0x80);
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($d), 4));
     }
+
+    /** Session login after a verified OTP. */
+    public static function login(array $user): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) @session_start();
+        $_SESSION['wc_uid'] = (int)$user['id'];
+    }
+
+    /** The currently logged-in WC user row, or null. */
+    public static function currentUser(): ?array
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) @session_start();
+        $uid = (int)($_SESSION['wc_uid'] ?? 0);
+        if ($uid <= 0) return null;
+        $u = Database::getInstance()->fetchOne("SELECT * FROM wc_users WHERE id = :id AND status != 'unsubscribed' LIMIT 1", ['id' => $uid]);
+        return $u ?: null;
+    }
+
+    public static function logout(): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) @session_start();
+        unset($_SESSION['wc_uid']);
+    }
+
+    /** Predictions UI strings (en + ar full; hi/bn/ur fall back to en for now). */
+    public static function pstrings(string $lang): array
+    {
+        $en = [
+            'predict'=>'Predictions','matches'=>'Matches','leaderboard'=>'Leaderboard',
+            'your_points'=>'Your points','rank'=>'Rank','upcoming'=>'Upcoming','live'=>'Live','results'=>'Results',
+            'pick_winner'=>'Who wins?','draw'=>'Draw','exact'=>'Exact score (optional, +2)','save'=>'Save pick',
+            'saved'=>'Saved','locked'=>'Locked','kickoff'=>'Kickoff','points'=>'pts','you'=>'You',
+            'prize_line'=>'Top 3 win $10,000 / $5,000 / $1,000','signin'=>'Sign in to predict',
+            'how_title'=>'How it works','how_body'=>'1 point for the right result, +2 for the exact score. Predict before kickoff. Top 3 on the final leaderboard win the cash prizes.',
+            'empty'=>'Fixtures are loading. Check back shortly.','settings'=>'Settings','logout'=>'Log out','win'=>'win',
+        ];
+        $ar = [
+            'predict'=>'التوقعات','matches'=>'المباريات','leaderboard'=>'المتصدرون',
+            'your_points'=>'نقاطك','rank'=>'الترتيب','upcoming'=>'القادمة','live'=>'مباشر','results'=>'النتائج',
+            'pick_winner'=>'من يفوز؟','draw'=>'تعادل','exact'=>'النتيجة الدقيقة (اختياري، +2)','save'=>'حفظ التوقع',
+            'saved'=>'تم الحفظ','locked'=>'مغلق','kickoff'=>'البداية','points'=>'نقطة','you'=>'أنت',
+            'prize_line'=>'أفضل 3 يربحون 10,000 / 5,000 / 1,000 دولار','signin'=>'سجّل للتوقع',
+            'how_title'=>'كيف تلعب','how_body'=>'نقطة واحدة للنتيجة الصحيحة، و+2 للنتيجة الدقيقة. توقّع قبل بداية المباراة. أفضل 3 في الترتيب النهائي يربحون الجوائز النقدية.',
+            'empty'=>'يتم تحميل المباريات. عُد بعد قليل.','settings'=>'الإعدادات','logout'=>'خروج','win'=>'فوز',
+        ];
+        $lang = self::lang($lang);
+        return $lang === 'ar' ? $ar : $en;
+    }
 }
