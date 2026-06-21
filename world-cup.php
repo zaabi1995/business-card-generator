@@ -94,8 +94,8 @@ $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-slate-300 bg-white text
 <title><?= h($S['kicker']) ?> on WhatsApp · Cardify</title>
 <meta name="description" content="<?= h($S['hero_sub']) ?>">
 <meta property="og:title" content="<?= h($S['hero_title']) ?>"><meta property="og:description" content="<?= h($S['hero_sub']) ?>">
-<meta property="og:image" content="https://wc.cardify.om/assets/wc/og.jpg?v=3"><meta property="og:url" content="https://wc.cardify.om/"><meta property="og:type" content="website">
-<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://wc.cardify.om/assets/wc/og.jpg?v=3">
+<meta property="og:image" content="https://wc.cardify.om/assets/wc/og.jpg?v=4"><meta property="og:url" content="https://wc.cardify.om/"><meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://wc.cardify.om/assets/wc/og.jpg?v=4">
 <meta name="theme-color" content="#f7f8fa">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="alternate icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
