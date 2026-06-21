@@ -27,15 +27,8 @@ $tzList = [
 if (!isset($tzList[$tzGuess])) $tzGuess = 'Asia/Muscat';
 function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
-// Clean line icons (no emoji). stroke=currentColor.
-$icon = [
- 'ball'  => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.2l3.6 2.6-1.4 4.3H9.8L8.4 9.8z"/><path d="M12 3v4.2M5.2 9.8l3.2 0M9.8 14.1L7.6 17.6M16.4 17.6l-2.2-3.5M18.8 9.8l-3.2 0"/></svg>',
- 'trophy'=> '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v4.5a5 5 0 01-10 0V4z"/><path d="M7 5.5H4.2V7a3 3 0 003 3M17 5.5h2.8V7a3 3 0 01-3 3"/><path d="M12 13.5V17M9 20h6M10 17.2h4"/></svg>',
- 'check' => '<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.1 3.1 6.8-6.8a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>',
- 'clock' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/></svg>',
- 'chart' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 5v14h16"/><path d="M8 15v-3M12 15V8M16 15v-5"/></svg>',
- 'wa'    => '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15l-1.4 5 5.1-1.3A10 10 0 1012 2zm0 18.2a8.2 8.2 0 01-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1112 20.2zm4.7-6.1c-.3-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 01-2-1.2 7.4 7.4 0 01-1.4-1.7c-.1-.3 0-.4.1-.5l.4-.5.3-.5v-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 00-.7.3 3 3 0 00-.9 2.2 5.2 5.2 0 001.1 2.7 11.9 11.9 0 004.6 4c.6.3 1.1.4 1.5.5a3.6 3.6 0 001.6.1c.5-.1 1.5-.6 1.7-1.2s.2-1.1.2-1.2-.2-.2-.5-.3z"/></svg>',
-];
+// FontAwesome 7 from design.bhd.om (no emoji, consistent across OS/browsers).
+function fa($cls){ return '<i class="'.$cls.'" aria-hidden="true"></i>'; }
 $T = [
   'signin' => $rtl ? 'تسجيل الدخول' : 'Sign in',
   'join'   => $rtl ? 'انضم مجانًا' : 'Join free',
@@ -98,6 +91,10 @@ $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-white text
 <link rel="alternate icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
 <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/light.min.css">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
+<link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.10.1/build/css/intlTelInput.css">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>tailwind.config={theme:{extend:{fontFamily:{sans:['IBM Plex Sans Arabic','system-ui','sans-serif']}}}}</script>
@@ -143,13 +140,13 @@ $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-white text
   <section class="max-w-6xl mx-auto px-5 pt-12 pb-10 grid lg:grid-cols-[1.05fr_0.95fr] gap-12 items-center">
     <div>
       <span class="rise inline-flex items-center gap-2 rounded-full bg-white border border-slate-200/80 text-slate-700 ps-2.5 pe-3 py-1.5 text-[13px] font-semibold shadow-sm" style="animation-delay:.02s">
-        <span class="ico text-blue-600 w-[18px] h-[18px]"><?= $icon['ball'] ?></span><?= h($S['kicker']) ?>
+        <?= fa('fa-solid fa-futbol text-blue-600 text-[16px]') ?><?= h($S['kicker']) ?>
       </span>
       <h1 class="rise mt-5 font-bold tracking-tight leading-[1.05] text-[clamp(32px,5.4vw,52px)]" style="animation-delay:.06s"><?= h($S['hero_title']) ?></h1>
       <p class="rise mt-4 text-slate-600 text-lg leading-relaxed max-w-[60ch]" style="animation-delay:.1s"><?= h($S['hero_sub']) ?></p>
       <div class="rise mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600" style="animation-delay:.14s">
         <?php foreach ([$T['trust1'],$T['trust2'],$T['trust3']] as $chip): ?>
-          <span class="inline-flex items-center gap-1.5"><span class="ico text-emerald-600 w-[18px] h-[18px]"><?= $icon['check'] ?></span><?= h($chip) ?></span>
+          <span class="inline-flex items-center gap-1.5"><?= fa('fa-solid fa-circle-check text-emerald-600 text-[15px]') ?><?= h($chip) ?></span>
         <?php endforeach; ?>
       </div>
     </div>
@@ -200,7 +197,7 @@ $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-white text
       </section>
 
       <section id="step-done" hidden class="bg-white rounded-2xl p-7 text-center border border-slate-200/70 diffuse">
-        <span class="ico mx-auto w-12 h-12 grid place-items-center rounded-full bg-emerald-50 text-emerald-600 mb-3"><span class="w-6 h-6 block"><?= $icon['check'] ?></span></span>
+        <span class="mx-auto w-12 h-12 grid place-items-center rounded-full bg-emerald-50 text-emerald-600 mb-3"><?= fa('fa-solid fa-check text-2xl') ?></span>
         <h2 class="text-xl font-bold tracking-tight mb-1.5"><?= h($S['success_title']) ?></h2>
         <p class="text-slate-500 mb-5"><?= h($S['success_sub']) ?></p>
         <div class="space-y-2.5">
@@ -216,11 +213,11 @@ $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-white text
     <div class="rounded-2xl bg-white border border-slate-200/70">
       <h2 class="px-6 sm:px-8 pt-6 text-sm font-semibold uppercase tracking-wide text-slate-400"><?= h($T['how']) ?></h2>
       <div class="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
-        <?php $steps=[[$icon['wa'],$T['how1'],$T['how1d']],[$icon['clock'],$T['how2'],$T['how2d']],[$icon['chart'],$T['how3'],$T['how3d']]];
+        <?php $steps=[['fa-brands fa-whatsapp',$T['how1'],$T['how1d']],['fa-light fa-clock',$T['how2'],$T['how2d']],['fa-light fa-chart-line',$T['how3'],$T['how3d']]];
         foreach ($steps as $i=>$st): ?>
           <div class="px-6 sm:px-8 py-6">
             <div class="flex items-center gap-2.5 text-blue-600">
-              <span class="ico w-5 h-5"><?= $st[0] ?></span>
+              <?= fa($st[0].' text-[19px]') ?>
               <span class="text-xs font-bold text-slate-300"><?= str_pad((string)($i+1),2,'0',STR_PAD_LEFT) ?></span>
             </div>
             <div class="mt-3 font-semibold text-slate-900"><?= h($st[1]) ?></div>
@@ -236,7 +233,7 @@ $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-white text
     <div class="rounded-2xl bg-white border border-slate-200/70 p-6 sm:p-8 grid lg:grid-cols-[1.2fr_1fr] gap-8 items-center">
       <div>
         <div class="flex items-center gap-2 text-slate-900">
-          <span class="ico w-5 h-5 text-blue-600"><?= $icon['trophy'] ?></span>
+          <?= fa('fa-light fa-trophy text-blue-600 text-[19px]') ?>
           <h2 class="text-xl font-bold tracking-tight"><?= h($T['league']) ?></h2>
         </div>
         <p class="mt-3 text-slate-600 leading-relaxed max-w-[60ch]"><?= h($T['leagued']) ?></p>
@@ -261,7 +258,7 @@ $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-white text
     <h2 class="text-base font-bold tracking-tight text-slate-900 mb-4"><?= h($T['rules_h']) ?></h2>
     <ul class="space-y-2.5">
       <?php foreach ($rules as $r): ?>
-        <li class="flex gap-2.5 text-sm text-slate-600 leading-relaxed"><span class="ico w-4 h-4 mt-1 text-slate-300 shrink-0"><?= $icon['check'] ?></span><?= h($r) ?></li>
+        <li class="flex gap-2.5 text-sm text-slate-600 leading-relaxed"><?= fa('fa-solid fa-check text-slate-300 text-[12px] mt-1 shrink-0') ?><?= h($r) ?></li>
       <?php endforeach; ?>
     </ul>
     <p class="mt-5 text-xs text-slate-400 leading-relaxed"><?= h($T['fifa']) ?></p>
