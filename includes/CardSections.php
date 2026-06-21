@@ -813,6 +813,47 @@ class CardSections
         return is_string($fallback) ? $fallback : '';
     }
 
+    /**
+     * Reduce a full name to first + family name (drop middle/father names).
+     * Arabic/Omani aware: keeps "Al/Ba/Bait/Abdul/Bin..." surname + given-name
+     * compounds together, so "Moosa Omer Al Amodi" -> "Moosa Al Amodi" but
+     * "Zubair Al Balushi" and "Abdul Malik Al-Alawi" stay intact. Works on
+     * both Latin and Arabic (separate "ال" token) scripts. Display only,
+     * never mutate the stored name (the vCard keeps the full legal name).
+     */
+    public static function displayShortName($full)
+    {
+        $full = trim(preg_replace('/\s+/u', ' ', (string)$full));
+        if ($full === '') return $full;
+        $t = explode(' ', $full);
+        $n = count($t);
+        if ($n <= 2) return $full; // already first + last
+
+        // connectors that glue a compound given-name or family-name together
+        static $conn = [
+            'al','el','bin','ben','ibn','bint','bnt','ba','bu','abu',
+            'abd','abdul','abdel','abdal','ata','ur','ul','bait','bayt','bani','bni',
+            'ال','آل','بن','بنت','ابن','أبو','ابو','عبد','بيت','بايت','بني',
+        ];
+        $isConn = function ($w) use ($conn) {
+            $lw = mb_strtolower(rtrim($w, '-'));
+            return in_array($lw, $conn, true) || preg_match('/^(al|el)-/i', $w);
+        };
+
+        // surname: take the last token, pull in a preceding connector ("Al", "Bait")
+        $sStart = $n - 1;
+        if ($sStart - 1 >= 1 && $isConn($t[$sStart - 1])) $sStart -= 1;
+
+        // first name: include a leading compound starter ("Abdul X", "Al X")
+        $fEnd = 0;
+        if ($n > 1 && $isConn($t[0]) && ($fEnd + 1) < $sStart) $fEnd = 1;
+
+        if ($fEnd >= $sStart) return $full; // tokens overlap on a short name
+        $first = implode(' ', array_slice($t, 0, $fEnd + 1));
+        $last  = implode(' ', array_slice($t, $sStart));
+        return $first . ' ' . $last;
+    }
+
     public static function loadServicesLocalized($employeeId, $locale)
     {
         $locale = in_array($locale, self::SUPPORTED_LOCALES, true) ? $locale : self::DEFAULT_LOCALE;

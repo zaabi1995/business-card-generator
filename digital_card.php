@@ -303,6 +303,8 @@ try {
     // Employee contact data, localized with EN fallback
     $name = CardSections::tColumn($employee, 'name', $locale);
     if (trim((string)$name) === '') $name = $employee['name'] ?? 'Employee';
+    // OTECH: show first + family name only on the digital card (vCard keeps full name)
+    if (($company['slug'] ?? '') === 'otech') $name = CardSections::displayShortName($name);
     $position = CardSections::tColumn($employee, 'position', $locale);
     if (trim((string)$position) === '') $position = $employee['position'] ?? $employee['job_title'] ?? '';
     $companyName = CardSections::tColumn($company, 'name', $locale);
