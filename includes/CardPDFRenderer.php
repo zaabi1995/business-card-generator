@@ -20,7 +20,7 @@ class CardPDFRenderer
      *   field right edge (x_pt + w_pt), matching Fabric + Arabic htmlbox
      *   (rule 47 convention: x = bbox LEFT edge).
      */
-    const RENDERER_VERSION = 16;
+    const RENDERER_VERSION = 17;
 
     /**
      * Render or fetch a cached vector PDF for one employee.
@@ -358,7 +358,10 @@ class CardPDFRenderer
                 'corner_radius_mm' => 1.5,
                 'cut_line_width_pt' => 0.5,
                 'colors' => [
-                    ['rgb' => [45, 19, 234], 'cmyk' => [100, 90, 0, 2], 'tol' => 30],
+                    // Deep Sea blue is the field + the dot-mesh/gradient texture,
+                    // so tint_family maps every blue shade to a tint of it (else
+                    // light blues convert to magenta = a pink mesh artifact).
+                    ['rgb' => [45, 19, 234], 'cmyk' => [100, 90, 0, 2], 'tol' => 30, 'tint_family' => true],
                     ['rgb' => [255, 120, 0], 'cmyk' => [0, 70, 100, 0], 'tol' => 45],
                 ],
             ],

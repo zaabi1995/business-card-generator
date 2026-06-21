@@ -319,6 +319,36 @@ def _pil_to_cmyk_pixmap(im, cfg):
     Y = (1 - Bf - K) / den
     white = (R > 250) & (G > 250) & (B > 250)
     C[white] = M[white] = Y[white] = K[white] = 0.0
+
+    maxc = np.maximum(np.maximum(R, G), B)
+    minc = np.minimum(np.minimum(R, G), B)
+    chroma = maxc - minc
+
+    # Tint-family colours: map the WHOLE hue family (the dot-mesh + gradients,
+    # not just the flat field) to TINTS of the brand colour. Naive RGB->CMYK
+    # pushes light blues to M>C, i.e. magenta/pink, so without this the solid
+    # field is right but the texture renders as a pink mesh. A tint of the brand
+    # CMYK keeps M<C, so every shade stays in-hue (matches the press reference).
+    for col in (cfg.get('colors') or []):
+        if not col.get('tint_family'):
+            continue
+        cr, cg, cb = col['rgb']
+        cc, cm, cy, ck = col['cmyk']
+        dom = int(np.argmax([cr, cg, cb]))                 # brand dominant channel
+        chroma_brand = float(max(cr, cg, cb) - min(cr, cg, cb))
+        if chroma_brand <= 0:
+            continue
+        chan = (R, G, B)[dom]
+        # In-family = brand's dominant channel is also this pixel's max channel,
+        # and the pixel is colourful enough (skip near-grey / white-text edges).
+        fam = (chan >= maxc) & (chroma > 18)
+        f = np.clip(chroma / chroma_brand, 0.0, 1.0)
+        C[fam] = (cc / 100.0) * f[fam]
+        M[fam] = (cm / 100.0) * f[fam]
+        Y[fam] = (cy / 100.0) * f[fam]
+        K[fam] = (ck / 100.0) * f[fam]
+
+    # Exact brand flats pinned LAST so the solid field hits spec precisely.
     for col in (cfg.get('colors') or []):
         cr, cg, cb = col['rgb']
         tol = col.get('tol', 28)
