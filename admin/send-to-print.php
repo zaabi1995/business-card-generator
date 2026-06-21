@@ -105,7 +105,12 @@ $clientName = trim((string)($company['erp_client_name'] ?? '')) ?: trim((string)
 
 $nameEn = trim((string)($emp['name_en'] ?? '')) ?: 'Employee';
 $cardLabel = 'Business Cards - ' . $nameEn;
-$printReadyUrl = 'https://' . ($company['slug'] ?? 'app') . '.cardify.om/card-sheet.php?i=' . urlencode($employeeId);
+$host = ($company['slug'] ?? 'app') . '.cardify.om';
+// Kanban thumbnail = the card front PNG (a real image, not the PDF sheet).
+$cardImageUrl = 'https://' . $host . '/card-image.php?i=' . rawurlencode($employeeId);
+// Print-ready A4 cutting sheet (PDF) the production team downloads; kept on the
+// MO notes so it is one click away from the Kanban card.
+$sheetUrl = 'https://' . $host . '/card-sheet.php?i=' . rawurlencode($employeeId);
 $orderRef = 'CARDPROD-' . $employeeId . '-' . time();
 
 // Selling price per card (ex-VAT) straight from the client's PO; the ERP adds
@@ -120,10 +125,10 @@ $erp = ERPSync::createProductionOrder([
     'quantity'      => $quantity,
     'unitPrice'     => $unitPrice,
     'unitCost'      => $unitCost,
-    'printReadyUrl' => $printReadyUrl,
+    'printReadyUrl' => $cardImageUrl,
     'poNumber'      => $poNumber,
     'productName'   => 'Business Card',
-    'notes'         => 'Cardify Send to Print',
+    'notes'         => 'Cardify Send to Print | sheet: ' . $sheetUrl,
 ]);
 
 if (empty($erp['success'])) {
