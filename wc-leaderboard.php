@@ -11,12 +11,35 @@ $P    = WcHub::pstrings($lang);
 $dir  = WcHub::isRtl($lang) ? 'rtl' : 'ltr';
 $db   = Database::getInstance();
 
-$top = $db->fetchAll("SELECT id, name, phone, points_cache FROM wc_users
-    WHERE status='active' ORDER BY points_cache DESC, verified_at ASC LIMIT 50");
-$myRank = null;
+// Prize race = knockout-stage points (Round of 32 onward), so late joiners start level.
+$KO = '2026-06-28 00:00:00';
+$top = $db->fetchAll(
+  "SELECT u.id, u.name, u.phone,
+          COALESCE(SUM(CASE WHEN m.kickoff_utc >= :ko THEN p.points ELSE 0 END),0) AS pts
+   FROM wc_users u
+   LEFT JOIN wc_predictions p ON p.user_id = u.id
+   LEFT JOIN wc_matches m ON m.espn_id = p.match_id
+   WHERE u.status='active'
+   GROUP BY u.id, u.name, u.phone
+   ORDER BY pts DESC, u.points_cache DESC, u.verified_at ASC
+   LIMIT 50", ['ko'=>$KO]);
+$myRank = null; $myPts = 0;
 if ($user) {
-    $myRank = (int)($db->fetchOne("SELECT COUNT(*)+1 AS r FROM wc_users WHERE status='active' AND points_cache > :p",
-        ['p'=>(int)$user['points_cache']])['r'] ?? 1);
+    foreach ($top as $idx=>$r) { if ((int)$r['id']===(int)$user['id']) { $myRank=$idx+1; $myPts=(int)$r['pts']; break; } }
+    if ($myRank === null) {
+        $mp = $db->fetchOne(
+          "SELECT COALESCE(SUM(CASE WHEN m.kickoff_utc >= :ko THEN p.points ELSE 0 END),0) AS pts
+           FROM wc_predictions p JOIN wc_matches m ON m.espn_id=p.match_id WHERE p.user_id=:u",
+          ['ko'=>$KO,'u'=>$user['id']]);
+        $myPts = (int)($mp['pts'] ?? 0);
+        $myRank = (int)($db->fetchOne(
+          "SELECT COUNT(*)+1 AS r FROM (
+             SELECT u.id, COALESCE(SUM(CASE WHEN m.kickoff_utc >= :ko THEN p.points ELSE 0 END),0) AS pts
+             FROM wc_users u LEFT JOIN wc_predictions p ON p.user_id=u.id
+             LEFT JOIN wc_matches m ON m.espn_id=p.match_id
+             WHERE u.status='active' GROUP BY u.id HAVING pts > :mp
+          ) t", ['ko'=>$KO,'mp'=>$myPts])['r'] ?? 1);
+    }
 }
 function lh($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 function maskName($name,$phone){
@@ -62,7 +85,7 @@ $prizes = ['$10,000','$5,000','$1,000']; $ranks=['1st','2nd','3rd'];
     <?php if($user && $myRank): ?>
       <div class="rounded-2xl bg-blue-600 text-white px-4 py-3 mb-4 flex items-center justify-between">
         <span class="font-semibold"><?= lh($P['you']) ?> · #<?= $myRank ?></span>
-        <span class="font-extrabold text-lg"><?= (int)$user['points_cache'] ?> <span class="text-xs font-normal"><?= lh($P['points']) ?></span></span>
+        <span class="font-extrabold text-lg"><?= $myPts ?> <span class="text-xs font-normal"><?= lh($P['points']) ?></span></span>
       </div>
     <?php endif; ?>
 
@@ -74,7 +97,7 @@ $prizes = ['$10,000','$5,000','$1,000']; $ranks=['1st','2nd','3rd'];
         <div class="flex items-center gap-3 px-4 py-3 border-b border-slate-50 <?= $me?'bg-blue-50':'' ?>">
           <div class="w-8 text-center font-bold <?= $r<=3?'text-amber-500 text-lg':'text-slate-400' ?>"><?= $r ?></div>
           <div class="flex-1 text-slate-800 text-[15px]"><?= maskName($row['name'],$row['phone']) ?><?= $me?' · '.lh($P['you']):'' ?></div>
-          <div class="font-extrabold text-slate-900"><?= (int)$row['points_cache'] ?> <span class="text-[11px] font-normal text-slate-400"><?= lh($P['points']) ?></span></div>
+          <div class="font-extrabold text-slate-900"><?= (int)$row['pts'] ?> <span class="text-[11px] font-normal text-slate-400"><?= lh($P['points']) ?></span></div>
         </div>
       <?php endforeach; endif; ?>
     </div>
