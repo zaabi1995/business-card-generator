@@ -16,6 +16,9 @@
 
 ob_start();
 set_error_handler(function ($severity, $message, $file, $line) {
+    // Respect the @ operator / error_reporting so a suppressed warning (e.g.
+    // @unlink on a not-yet-created file during auto-fit) doesn't become a fatal.
+    if (!(error_reporting() & $severity)) return false;
     throw new ErrorException($message, 0, $severity, $file, $line);
 });
 
@@ -115,7 +118,7 @@ try {
         $out = []; $rc = 0;
         exec($cmd, $out, $rc);
         if ($rc === 0 && is_file($outPath) && filesize($outPath) >= 1024) break;
-        @unlink($outPath);
+        if (is_file($outPath)) @unlink($outPath);
     }
     if ($rc !== 0 || !is_file($outPath) || filesize($outPath) < 1024) {
         error_log('card-sheet imposition failed rc=' . $rc . ' out=' . implode("\n", $out));
