@@ -248,6 +248,45 @@ class WcHub
         }
     }
 
+    /**
+     * Kabir's (96891117795) OWN Dardasha token. Token owns the line, so this is
+     * what makes WC messages send FROM Kabir (not Anna/Cupsbyaa). Cached.
+     */
+    public static function kabirToken(): ?string
+    {
+        static $tok = null;
+        if ($tok !== null) return $tok ?: null;
+        $tok = '';
+        try {
+            $cmd = "mysql -uwacrm -p'XdbDAdX3crnDyF6m' wacrm -N -B -e "
+                 . "\"SELECT api_key FROM user WHERE email='kabir@bhd.om' LIMIT 1;\" 2>/dev/null";
+            foreach (explode("\n", trim((string)shell_exec($cmd))) as $l) {
+                $l = trim($l);
+                if ($l !== '' && strpos($l, 'Warning') === false) { $tok = $l; break; }
+            }
+        } catch (Throwable $e) { error_log('WcHub::kabirToken: '.$e->getMessage()); }
+        return $tok ?: null;
+    }
+
+    /** Send a WhatsApp text FROM Kabir (96891117795) via the local Dardasha API. */
+    public static function waSend(string $to, string $text): bool
+    {
+        $tok = self::kabirToken();
+        if (!$tok) { error_log('WcHub::waSend: no Kabir token'); return false; }
+        $to = preg_replace('/\D/', '', $to);
+        $payload = json_encode([
+            'messageType'=>'text', 'requestType'=>'POST', 'token'=>$tok,
+            'from'=>'96891117795', 'to'=>$to, 'text'=>$text,
+        ]);
+        $ch = curl_init('http://127.0.0.1:3000/api/qr/rest/send_message');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER=>true, CURLOPT_POST=>true, CURLOPT_POSTFIELDS=>$payload,
+            CURLOPT_HTTPHEADER=>['Content-Type: application/json'], CURLOPT_TIMEOUT=>20,
+        ]);
+        $resp = (string)curl_exec($ch); curl_close($ch);
+        return strpos($resp, '"success":true') !== false;
+    }
+
     /** Generate a unique 8-char invite code. */
     public static function genRefCode(): string
     {

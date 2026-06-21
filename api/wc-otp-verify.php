@@ -52,7 +52,7 @@ try {
     $welcome = "⚽ {$S['success_title']}\n{$S['success_sub']}\n"
         . ($rtl ? "" : "Predict: ") . "https://wc.cardify.om/predictions\n\n"
         . "{$stop}\n{$S['brand']}";
-    WhatsApp::sendMessage($phone, $welcome, ['bypassAntiBan'=>true]);
+    WcHub::waSend($phone, $welcome); // from Kabir 96891117795
 } catch (Throwable $e) { /* ignore */ }
 
 out(['ok'=>true,'points'=>(int)($user['points_cache'] ?? 0),'ref'=>$user['ref_code'] ?? '']);
