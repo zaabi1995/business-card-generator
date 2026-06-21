@@ -141,9 +141,16 @@ if (($seg[1] ?? '') === 'passes' && $method === 'GET') {
     if (!$user) { http_response_code(404); exit; }
 
     require_once INCLUDES_DIR . '/AppleWalletPass.php';
-    require_once INCLUDES_DIR . '/WcWalletApple.php';
     if (!AppleWalletPass::isEnabled()) { http_response_code(503); exit; }
-    $bytes = WcWalletApple::build($user);
+    // Route by pass type: matches passes (serial wcm*) list the day's fixtures;
+    // player passes carry points/rank/streak.
+    if (WcHub::walletPassType($serial) === 'matches') {
+        require_once INCLUDES_DIR . '/WcWalletMatches.php';
+        $bytes = WcWalletMatches::build($user);
+    } else {
+        require_once INCLUDES_DIR . '/WcWalletApple.php';
+        $bytes = WcWalletApple::build($user);
+    }
     header('Content-Type: application/vnd.apple.pkpass');
     header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $lastMod) . ' GMT');
     header('Content-Length: ' . strlen($bytes));

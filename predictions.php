@@ -220,6 +220,9 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
         <a href="/wc-wallet-google" class="btn flex-1 inline-flex items-center justify-center gap-2.5 rounded-2xl px-4 py-3 font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 text-sm shadow-sm"><i class="fa-brands fa-google text-lg" aria-hidden="true"></i> <?= fh($P['add_google'] ?? 'Add to Google Wallet') ?></a>
       <?php endif; ?>
     </div>
+    <div class="text-center mt-2">
+      <a href="/wc-wallet" class="inline-flex items-center justify-center gap-1.5 text-[12px] font-semibold text-blue-700 hover:text-blue-800"><i class="fa-light fa-calendar-days" aria-hidden="true"></i> <?= fh($P['wallet_matches_label'] ?? 'Matches pass · today\'s fixtures') ?></a>
+    </div>
     <?php endif; ?>
   </section>
 

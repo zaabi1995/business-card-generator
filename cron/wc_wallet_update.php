@@ -16,6 +16,7 @@
 
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/WcHub.php';
+require_once INCLUDES_DIR . '/WcMatches.php';
 require_once INCLUDES_DIR . '/AppleWalletPushNotifier.php';
 
 $db = Database::getInstance();
@@ -26,7 +27,13 @@ if (!AppleWalletPushNotifier::isConfigured()) {
     exit(0);
 }
 
-$passes = $db->fetchAll("SELECT id, user_id, serial, updated_tag FROM wc_wallet_passes");
+// Older schemas may lack pass_type; treat its absence as 'player'.
+$hasType = (bool)$db->fetchOne(
+    "SELECT 1 AS x FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='wc_wallet_passes' AND COLUMN_NAME='pass_type'"
+);
+$cols = 'id, user_id, serial, updated_tag' . ($hasType ? ', pass_type' : '');
+$passes = $db->fetchAll("SELECT $cols FROM wc_wallet_passes");
 $log('passes=' . count($passes));
 
 $changed = 0; $pushedDevices = 0; $pruned = 0;
@@ -34,8 +41,14 @@ foreach ($passes as $p) {
     $user = $db->fetchOne("SELECT * FROM wc_users WHERE id=:id LIMIT 1", ['id'=>(int)$p['user_id']]);
     if (!$user) continue;
 
-    $state  = WcHub::walletState($user);
-    $newTag = WcHub::walletUpdateTag($state);
+    // Matches passes track the day's fixtures; player passes track points/streak.
+    $type = ($p['pass_type'] ?? null) === 'matches' || strpos((string)$p['serial'], 'wcm') === 0
+        ? 'matches' : 'player';
+    if ($type === 'matches') {
+        $newTag = WcMatches::updateTag(WcMatches::dayView($user));
+    } else {
+        $newTag = WcHub::walletUpdateTag(WcHub::walletState($user));
+    }
     if ($newTag === (string)$p['updated_tag']) {
         continue; // nothing moved for this user
     }

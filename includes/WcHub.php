@@ -407,6 +407,11 @@ class WcHub
             'wallet_have'=>'Save your points, rank, level and streak to your phone. The pass updates daily with your next match.',
             'wallet_soon'=>'A live pass with today\'s matches and your points, updated daily, is on the way.',
             'add_apple'=>'Add to Apple Wallet','add_google'=>'Add to Google Wallet',
+            'wallet_player_label'=>'Player pass · points, rank, streak',
+            'wallet_matches_label'=>'Matches pass · today\'s fixtures',
+            'wallet_matches_have'=>'Add the daily fixtures pass: today\'s World Cup matches in your timezone, plus yesterday\'s results. Updates every day.',
+            'add_apple_matches'=>'Add the Matches pass to Apple Wallet',
+            'add_google_matches'=>'Add the Matches pass to Google Wallet',
             'saved_ok'=>'Saved','save_fail'=>'Could not save','err'=>'Error',
             // streak + gamification
             'streak'=>'Day streak','best_streak'=>'Best','checkin_today'=>'Check in today',
@@ -438,6 +443,11 @@ class WcHub
             'wallet_have'=>'احفظ نقاطك وترتيبك ومستواك وسلسلتك على هاتفك. تُحدّث البطاقة يوميًا بمبارتك القادمة.',
             'wallet_soon'=>'بطاقة حية بمباريات اليوم ونقاطك، تُحدّث يوميًا، في الطريق إليك.',
             'add_apple'=>'أضف إلى Apple Wallet','add_google'=>'أضف إلى Google Wallet',
+            'wallet_player_label'=>'بطاقة اللاعب · النقاط والترتيب والسلسلة',
+            'wallet_matches_label'=>'بطاقة المباريات · مباريات اليوم',
+            'wallet_matches_have'=>'أضف بطاقة المباريات اليومية: مباريات كأس العالم اليوم بتوقيتك، مع نتائج الأمس. تُحدّث كل يوم.',
+            'add_apple_matches'=>'أضف بطاقة المباريات إلى Apple Wallet',
+            'add_google_matches'=>'أضف بطاقة المباريات إلى Google Wallet',
             'saved_ok'=>'تم الحفظ','save_fail'=>'تعذّر الحفظ','err'=>'خطأ',
             // streak + gamification
             'streak'=>'سلسلة الأيام','best_streak'=>'الأفضل','checkin_today'=>'سجّل حضورك اليوم',
@@ -582,24 +592,45 @@ class WcHub
     }
 
     /**
-     * Get (or lazily create) the wc_wallet_passes row for a user. Returns
-     * ['serial'=>..., 'auth_token'=>...]. One pass per user.
+     * Get (or lazily create) the wc_wallet_passes row for a user + pass type.
+     * Returns ['serial'=>..., 'auth_token'=>...]. One pass per (user, type):
+     *   'player'  - points/rank/level/streak/next match
+     *   'matches' - today's fixtures + yesterday's results
      */
-    public static function walletPassFor(int $uid): array
+    public static function walletPassFor(int $uid, string $type = 'player'): array
     {
+        $type = $type === 'matches' ? 'matches' : 'player';
         $db  = Database::getInstance();
-        $row = $db->fetchOne("SELECT serial, auth_token FROM wc_wallet_passes WHERE user_id=:u LIMIT 1", ['u'=>$uid]);
+        $row = $db->fetchOne(
+            "SELECT serial, auth_token FROM wc_wallet_passes WHERE user_id=:u AND pass_type=:t LIMIT 1",
+            ['u'=>$uid, 't'=>$type]
+        );
         if ($row) return $row;
-        $serial = 'wc' . $uid . '-' . bin2hex(random_bytes(8));
+        // Serial namespace encodes the type so the web service can route by serial.
+        $prefix = $type === 'matches' ? 'wcm' : 'wc';
+        $serial = $prefix . $uid . '-' . bin2hex(random_bytes(8));
         $token  = bin2hex(random_bytes(20));
         try {
-            $db->insert('wc_wallet_passes', ['user_id'=>$uid, 'serial'=>$serial, 'auth_token'=>$token, 'updated_tag'=>'0', 'platform'=>'apple']);
+            $db->insert('wc_wallet_passes', ['user_id'=>$uid, 'pass_type'=>$type, 'serial'=>$serial, 'auth_token'=>$token, 'updated_tag'=>'0', 'platform'=>'apple']);
         } catch (Throwable $e) {
             // race: another request created it first
-            $row = $db->fetchOne("SELECT serial, auth_token FROM wc_wallet_passes WHERE user_id=:u LIMIT 1", ['u'=>$uid]);
+            $row = $db->fetchOne(
+                "SELECT serial, auth_token FROM wc_wallet_passes WHERE user_id=:u AND pass_type=:t LIMIT 1",
+                ['u'=>$uid, 't'=>$type]
+            );
             if ($row) return $row;
             throw $e;
         }
         return ['serial'=>$serial, 'auth_token'=>$token];
+    }
+
+    /** Resolve a wc_wallet_passes serial's pass type ('player' default). */
+    public static function walletPassType(string $serial): string
+    {
+        if (strpos($serial, 'wcm') === 0) return 'matches';
+        $row = Database::getInstance()->fetchOne(
+            "SELECT pass_type FROM wc_wallet_passes WHERE serial=:s LIMIT 1", ['s'=>$serial]
+        );
+        return ($row && ($row['pass_type'] ?? '') === 'matches') ? 'matches' : 'player';
     }
 }
