@@ -62,7 +62,7 @@ $rules = $rtl ? [
   'Top 3 receive $10,000 / $5,000 / $1,000, paid by bank transfer after identity verification.','Ties are broken by exact-score count, then earliest signup.',
 ];
 $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-white/12 bg-white/[0.04] text-white text-base outline-none placeholder:text-slate-500 focus:border-gold/60 focus:ring-4 focus:ring-gold/10 transition';
-$famH = $rtl ? "'Cairo','IBM Plex Sans Arabic',sans-serif" : "'Outfit','IBM Plex Sans Arabic',sans-serif";
+$famH = $rtl ? "'Cairo','IBM Plex Sans Arabic',sans-serif" : "'Syne','Outfit','IBM Plex Sans Arabic',sans-serif";
 $famB = $rtl ? "'IBM Plex Sans Arabic','Cairo',sans-serif" : "'Outfit','IBM Plex Sans Arabic',sans-serif";
 ?>
 <!DOCTYPE html>
@@ -90,6 +90,7 @@ $famB = $rtl ? "'IBM Plex Sans Arabic','Cairo',sans-serif" : "'Outfit','IBM Plex
 <script>tailwind.config={theme:{extend:{colors:{gold:{DEFAULT:'#F2C14E',deep:'#D4950D',soft:'#FFE066'},ink:'#0a0a0f'}}}}</script>
 <?php if ($turnstileSite): ?><script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script><?php endif; ?>
 <style>
+  @font-face{font-family:'Syne';font-style:normal;font-weight:400 800;font-display:swap;src:url('/assets/wc/fonts/Syne-Variable.woff2') format('woff2');}
   :root{ --ease:cubic-bezier(0.23,1,0.32,1); }
   body{ font-family:<?= $famB ?>; background:#0a0a0f; color:#e2e8f0; }
   .display{ font-family:<?= $famH ?>; }
