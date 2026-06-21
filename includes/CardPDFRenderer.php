@@ -59,7 +59,11 @@ class CardPDFRenderer
         // bleed + crop marks + DeviceCMYK (exact tenant brand values) + a
         // CutContour cut-line layer. 'print' stays RGB/no-bleed so the A4
         // imposition slot math (imposition-vector.py) is unaffected.
-        $profile = in_array($profile, ['web', 'print', 'sample', 'press'], true) ? $profile : 'web';
+        // 'vector' = all-vector card: uses the original vector source.pdf as the
+        // background (designer sample redacted) + the full-font dynamic overlay,
+        // so type matches the design exactly and the file stays vector (clean
+        // CMYK-convertible). Used by the vector cutting sheet.
+        $profile = in_array($profile, ['web', 'print', 'sample', 'press', 'vector'], true) ? $profile : 'web';
 
         $db = Database::getInstance();
         $employee = $db->fetchOne(
@@ -221,7 +225,7 @@ class CardPDFRenderer
         // a flag; profile=web is what render-card-pdf.py expects (it has no
         // 'sample' enum). Map sample → web internally + watermark text.
         $pyProfile  = in_array($profile, ['sample'], true) ? 'web'
-                    : (($profile === 'press') ? 'print' : $profile);
+                    : (in_array($profile, ['press', 'vector'], true) ? 'print' : $profile);
         // Short watermark text on per-card pages (~85x55mm); long text gets
         // clipped after the -30deg rotation on this small canvas. The
         // imposition sheet (A4) uses the longer "SAMPLE - NOT FOR PRINT"
@@ -250,6 +254,7 @@ class CardPDFRenderer
              . ' --out '      . escapeshellarg($cachePath)
              . ' --profile '  . escapeshellarg($pyProfile)
              . ($forPrint ? ' --for-print' : '')
+             . ($profile === 'vector' ? ' --vector-bg' : '')
              . ($tmpCmyk !== '' ? ' --cmyk ' . escapeshellarg($tmpCmyk) : '')
              . ($watermark !== '' ? ' --watermark ' . escapeshellarg($watermark) : '')
              . ($tmpVcf !== '' ? ' --vcard ' . escapeshellarg($tmpVcf) : '')

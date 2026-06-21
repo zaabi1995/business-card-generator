@@ -891,7 +891,7 @@ def _draw_qr_code(page, qr_spec: dict, employee: dict, template: dict,
 
 def render(template_path: str, employee_path: str, out_path: str,
            vcard_path: str = '', profile: str = 'web', for_print: bool = False,
-           watermark: str = '', cmyk_cfg_path: str = '') -> int:
+           watermark: str = '', cmyk_cfg_path: str = '', vector_bg: bool = False) -> int:
     with open(template_path) as fh:
         template = json.load(fh)
     with open(employee_path) as fh:
@@ -961,7 +961,8 @@ def render(template_path: str, employee_path: str, out_path: str,
                     text_by_font.setdefault(_name, set()).update(_txt)
     subsetted_buffers = {}
 
-    for page_spec in template['pages']:
+    vec_src_path = os.path.join(import_dir, 'source.pdf') if vector_bg else ''
+    for page_idx, page_spec in enumerate(template['pages']):
         orig_w = page_spec['width_pt']
         orig_h = page_spec['height_pt']
         # Left-x of each LEFT-aligned English text field, so the matching Arabic
@@ -1000,7 +1001,49 @@ def render(template_path: str, employee_path: str, out_path: str,
             if page_spec.get('background_svg_path') else None
         )
         png_path = os.path.join(import_dir, png_rel) if png_rel else None
-        if png_path and os.path.isfile(png_path):
+
+        # Vector-bg mode: use the ORIGINAL vector source.pdf as the background
+        # (true vector artwork + embedded static text), with the designer's
+        # SAMPLE person redacted out, instead of the 1200-DPI raster. The
+        # dynamic-text overlay below then draws the real employee with the full
+        # fonts, so type matches the design exactly and the file stays vector.
+        used_vector_bg = False
+        if vec_src_path and os.path.isfile(vec_src_path):
+            import re as _re
+            m = _re.search(r'bg-page-(\d+)', str(png_rel or page_spec.get('background_svg_path') or ''))
+            src_pno = (int(m.group(1)) - 1) if m else page_idx
+            try:
+                vdoc = fitz.open(vec_src_path)
+                if 0 <= src_pno < vdoc.page_count:
+                    vp = vdoc[src_pno]
+                    # Redact only the DYNAMIC field regions (keep all vector
+                    # graphics + static text). fill=False so the artwork behind
+                    # the removed text shows through.
+                    for field in page_spec.get('fields', []):
+                        if field.get('render_in_bg') or field.get('static_text'):
+                            continue
+                        try:
+                            fx = float(field['x_pt']); fy = float(field['y_pt'])
+                            fw = float(field.get('w_pt') or 0) or 90.0
+                            ffs = float(field.get('font_size_pt') or 10)
+                        except Exception:
+                            continue
+                        vp.add_redact_annot(fitz.Rect(fx - 2, fy - 2,
+                                                      fx + fw + 8, fy + ffs * 1.6 + 2),
+                                            fill=False)
+                    try:
+                        vp.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE,
+                                            graphics=fitz.PDF_REDACT_LINE_ART_NONE)
+                    except Exception:
+                        vp.apply_redactions()
+                    page.show_pdf_page(card_rect, vdoc, pno=src_pno, keep_proportion=False)
+                    used_vector_bg = True
+            except Exception as e:
+                print(f'WARN: vector-bg failed, falling back to raster: {e}', file=sys.stderr)
+
+        if used_vector_bg:
+            pass
+        elif png_path and os.path.isfile(png_path):
             if cmyk_cfg:
                 # Press profile: bake the bg into DeviceCMYK with the tenant's
                 # exact brand values (flat blue -> C100 M90 Y0 K2, etc.) and
@@ -1306,10 +1349,15 @@ def main():
                     help='Path to a CMYK press-config JSON (brand colour map + '
                          'corner_radius_mm). Enables DeviceCMYK output + CutContour '
                          'cut layer. Requires --for-print.')
+    ap.add_argument('--vector-bg', action='store_true',
+                    help='Use the original vector source.pdf as the background '
+                         '(designer sample redacted) instead of the raster bg, '
+                         'for an all-vector card.')
     args = ap.parse_args()
     sys.exit(render(args.template, args.employee, args.out, args.vcard,
                     profile=args.profile, for_print=args.for_print,
-                    watermark=args.watermark, cmyk_cfg_path=args.cmyk))
+                    watermark=args.watermark, cmyk_cfg_path=args.cmyk,
+                    vector_bg=args.vector_bg))
 
 
 if __name__ == '__main__':
