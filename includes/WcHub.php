@@ -513,4 +513,81 @@ class WcHub
         $today = (new DateTime('now', $tz))->format('Y-m-d');
         return ($user['last_checkin'] ?? null) === $today;
     }
+
+    /**
+     * Live snapshot of a user's game state for a wallet pass: points, rank,
+     * level, streak and the next upcoming match. One source of truth for both
+     * the Apple-pass issuer and the daily cron, so the pushed pass always
+     * matches the website.
+     */
+    public static function walletState(array $user): array
+    {
+        $db   = Database::getInstance();
+        $pts  = (int)($user['points_cache'] ?? 0);
+        $rank = (int)($db->fetchOne(
+            "SELECT COUNT(*)+1 AS r FROM wc_users WHERE status='active' AND points_cache > :p",
+            ['p'=>$pts]
+        )['r'] ?? 1);
+        $lvl = self::levelOf($pts);
+
+        $next = $db->fetchOne(
+            "SELECT home, away, kickoff_utc FROM wc_matches
+             WHERE kickoff_utc > UTC_TIMESTAMP() AND (state IS NULL OR state <> 'post')
+             ORDER BY kickoff_utc ASC LIMIT 1"
+        );
+        $nextLabel = '-';
+        if ($next) {
+            $tzName = $user['tz'] ?: 'Asia/Muscat';
+            try { $tz = new DateTimeZone($tzName); } catch (Throwable $e) { $tz = new DateTimeZone('Asia/Muscat'); }
+            $ko = new DateTime($next['kickoff_utc'], new DateTimeZone('UTC'));
+            $ko->setTimezone($tz);
+            $nextLabel = $next['home'] . ' v ' . $next['away'] . ' · ' . $ko->format('D H:i');
+        }
+
+        return [
+            'points'     => $pts,
+            'rank'       => $rank,
+            'level'      => (int)$lvl['level'],
+            'level_title'=> (string)$lvl['title'],
+            'xp_into'    => (int)$lvl['into'],
+            'xp_span'    => (int)$lvl['span'],
+            'streak'     => (int)($user['streak_count'] ?? 0),
+            'next_match' => $nextLabel,
+        ];
+    }
+
+    /**
+     * A short content tag that changes whenever the pushable pass content
+     * changes. Apple's lastUpdated / serial-list flow compares this so a
+     * device only re-downloads a pass that actually moved.
+     */
+    public static function walletUpdateTag(array $state): string
+    {
+        return substr(sha1(json_encode([
+            $state['points'], $state['rank'], $state['level'],
+            $state['streak'], $state['next_match'],
+        ])), 0, 16);
+    }
+
+    /**
+     * Get (or lazily create) the wc_wallet_passes row for a user. Returns
+     * ['serial'=>..., 'auth_token'=>...]. One pass per user.
+     */
+    public static function walletPassFor(int $uid): array
+    {
+        $db  = Database::getInstance();
+        $row = $db->fetchOne("SELECT serial, auth_token FROM wc_wallet_passes WHERE user_id=:u LIMIT 1", ['u'=>$uid]);
+        if ($row) return $row;
+        $serial = 'wc' . $uid . '-' . bin2hex(random_bytes(8));
+        $token  = bin2hex(random_bytes(20));
+        try {
+            $db->insert('wc_wallet_passes', ['user_id'=>$uid, 'serial'=>$serial, 'auth_token'=>$token, 'updated_tag'=>'0']);
+        } catch (Throwable $e) {
+            // race: another request created it first
+            $row = $db->fetchOne("SELECT serial, auth_token FROM wc_wallet_passes WHERE user_id=:u LIMIT 1", ['u'=>$uid]);
+            if ($row) return $row;
+            throw $e;
+        }
+        return ['serial'=>$serial, 'auth_token'=>$token];
+    }
 }

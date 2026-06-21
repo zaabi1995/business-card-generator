@@ -45,6 +45,8 @@ if ($wcHost === 'wc.cardify.om') {
     $wcPath = rtrim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/', '/');
     if ($wcPath === '' || $wcPath === '/world-cup') { require __DIR__ . '/world-cup.php'; exit; }
     if ($wcPath === '/u' || strpos($wcPath, '/u/') === 0) { require __DIR__ . '/wc-unsub.php'; exit; }
+    // PassKit web service for the Apple Wallet pass (prefix match, Apple spec).
+    if (strpos($wcPath, '/wc-wallet/v1') === 0) { require __DIR__ . '/wc_wallet_service.php'; exit; }
     $wcMap = [
         '/predictions'    => 'predictions.php',
         '/wc-leaderboard' => 'wc-leaderboard.php',
@@ -52,6 +54,7 @@ if ($wcHost === 'wc.cardify.om') {
         '/wc-settings'    => 'wc-settings.php',
         '/wc-wallet'      => 'wc-wallet.php',
         '/wc-wallet-google' => 'wc-wallet-google.php',
+        '/wc-wallet-apple'  => 'wc_wallet_apple.php',
     ];
     if (isset($wcMap[$wcPath])) { require __DIR__ . '/' . $wcMap[$wcPath]; exit; }
     if ($wcPath === '/wc-logout') {
