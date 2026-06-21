@@ -321,8 +321,24 @@ class CardPDFRenderer
      *   }
      */
     private static function pressCmykConfig(
-        string $companyId, string $companySlug, ?array $tplFront, ?array $tplBack
+        string $companyId, string $companySlug, ?array $tplFront = null, ?array $tplBack = null
     ): ?array {
+        // When templates weren't supplied (e.g. a UI capability check), fetch the
+        // active front/back so settings.print_cmyk can still be read.
+        if ($tplFront === null && $tplBack === null && $companyId !== '') {
+            try {
+                $rows = Database::getInstance()->fetchAll(
+                    "SELECT id, side, settings FROM templates
+                      WHERE company_id = :c AND deleted_at IS NULL AND side IN ('front','back')
+                      ORDER BY has_vector_source DESC, created_at DESC",
+                    ['c' => $companyId]
+                );
+                foreach ($rows as $r) {
+                    if ($r['side'] === 'front' && $tplFront === null) $tplFront = $r;
+                    if ($r['side'] === 'back'  && $tplBack  === null) $tplBack  = $r;
+                }
+            } catch (Throwable $e) { /* fall through to seed */ }
+        }
         // 1. Per-template override (settings.print_cmyk).
         foreach ([$tplFront, $tplBack] as $tpl) {
             if (!is_array($tpl)) continue;
@@ -348,6 +364,16 @@ class CardPDFRenderer
             ],
         ];
         return $seeds[$companySlug] ?? null;
+    }
+
+    /**
+     * True when the 'press' download for this company produces DeviceCMYK with
+     * exact brand values + a CutContour cut layer (vs a plain RGB bleed file).
+     * Used by the admin UI to label the print-ready download accurately.
+     */
+    public static function companyHasPressCmyk(string $companyId, string $companySlug = ''): bool
+    {
+        return self::pressCmykConfig($companyId, $companySlug) !== null;
     }
 
     private static function pageSpec(?array $tpl, string $side): array

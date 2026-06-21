@@ -950,6 +950,13 @@ function findColumn($header, $possibleNames) {
 $basePath = getAdminBasePath();
 $ext = (defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php';
 
+// Does this tenant's press download produce CMYK + a cut layer? (vs RGB bleed)
+$pressHasCmyk = false;
+if (class_exists('CardPDFRenderer') || is_file(INCLUDES_DIR . '/CardPDFRenderer.php')) {
+    require_once INCLUDES_DIR . '/CardPDFRenderer.php';
+    $pressHasCmyk = CardPDFRenderer::companyHasPressCmyk((string)$companyId, (string)($_SESSION['company_slug'] ?? ''));
+}
+
 // Start admin layout
 adminHeader(t('employees.page_title'), 'employees');
 ?>
@@ -1265,7 +1272,7 @@ adminHeader(t('employees.page_title'), 'employees');
                                         <a href="<?= htmlspecialchars($printReadyUrl, ENT_QUOTES) ?>"
                                            class="flex items-start gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                             <i class="fa-solid fa-file-pdf text-green-600 w-4 mt-0.5"></i>
-                                            <span>Print-ready PDF<span class="block text-[11px] text-gray-400">High-res, fonts embedded, no watermark</span></span>
+                                            <span>Print-ready PDF<span class="block text-[11px] text-gray-400"><?= $pressHasCmyk ? 'CMYK, 3mm bleed + cut line, fonts embedded, no watermark' : 'High-res, 3mm bleed + crop marks, fonts embedded, no watermark' ?></span></span>
                                         </a>
                                         <hr class="my-1 border-gray-100">
                                         <?php if ($hasFrontPdf && $hasBackPdf): ?>

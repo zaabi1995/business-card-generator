@@ -346,7 +346,8 @@ const CARDIFY_RESERVED_SLUGS = new Set([
                 <i class="fa-solid fa-arrow-right"></i> <?= htmlspecialchars(t('autogen.continue')) ?>
             </a>
         </div>
-        <p class="text-xs text-gray-400"><?= htmlspecialchars(str_replace(':sec', '', t('autogen.redirecting_in'))) ?><span x-text="countdown"></span>
+        <?php $rdIn = explode(':sec', t('autogen.redirecting_in')); ?>
+        <p class="text-xs text-gray-400"><?= htmlspecialchars($rdIn[0]) ?><span x-text="countdown"></span><?= htmlspecialchars($rdIn[1] ?? '') ?>
             <button @click="cancelRedirect()" class="text-blue-500 hover:underline ml-1"><?= htmlspecialchars(t('autogen.stay_here')) ?></button>
         </p>
     </div>
@@ -510,7 +511,9 @@ function layoutGenerator() {
             return this.returnTo + '.php?' + p + '=1';
         },
         get cardPdfUrl() {
-            return this.baseUrl + '/card-pdf.php?i=' + encodeURIComponent(this.employeeId || '');
+            // print=1 -> clean press-ready file (CMYK + cut where configured,
+            // full font embed, bleed + crop marks, no watermark) for the owner.
+            return this.baseUrl + '/card-pdf.php?print=1&i=' + encodeURIComponent(this.employeeId || '');
         },
 
         selectLayout(id) {
@@ -793,7 +796,8 @@ function layoutGenerator() {
             </a>
         </div>
 
-        <p class="text-xs text-gray-400"><?= htmlspecialchars(str_replace(':sec', '', t('autogen.redirecting_auto'))) ?><span x-text="redirectCountdown"></span>&hellip;
+        <?php $rdAuto = explode(':sec', t('autogen.redirecting_auto')); ?>
+        <p class="text-xs text-gray-400"><?= htmlspecialchars($rdAuto[0]) ?><span x-text="redirectCountdown"></span><?= htmlspecialchars($rdAuto[1] ?? '') ?>&hellip;
             <button @click="cancelRedirect()" class="text-blue-500 hover:underline ml-1"><?= htmlspecialchars(t('autogen.stay_here')) ?></button>
         </p>
     </div>
@@ -872,7 +876,7 @@ function autoGenerator() {
             return this.returnTo + '.php?' + param + '=1';
         },
         get cardPdfUrl() {
-            return this.baseUrl + '/card-pdf.php?i=' + encodeURIComponent(this.employeeId || (this.employee && this.employee.id) || '');
+            return this.baseUrl + '/card-pdf.php?print=1&i=' + encodeURIComponent(this.employeeId || (this.employee && this.employee.id) || '');
         },
         copyCardUrl() {
             navigator.clipboard.writeText(this.cardShareUrl).then(() => {
