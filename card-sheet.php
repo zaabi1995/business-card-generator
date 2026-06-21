@@ -109,10 +109,11 @@ try {
              . ' --card ' . escapeshellarg($rendered['path'])
              . ' --paper ' . escapeshellarg($paper)
              . ' --rows ' . $r . ' --cols ' . $c
-             . ' --bleed-mm 0'                       // 'print' render is trim-sized (no bleed)
+             . ' --bleed-mm 1.5'                     // background bleed around each card
              . ' --all-pages'                        // front sheet + back sheet
              . ' --cut-radius-mm ' . $cutRadius
              . ' --reg-marks'
+             . ' --sheet-bg auto'                    // continuous card-colour background behind the grid
              . ' --out ' . escapeshellarg($outPath)
              . ' 2>&1';
         $out = []; $rc = 0;
