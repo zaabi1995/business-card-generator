@@ -55,33 +55,38 @@ $prizes = ['$10,000','$5,000','$1,000']; $ranks=['1st','2nd','3rd'];
 <title><?= lh($P['leaderboard']) ?> · Cardify</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate icon" href="/favicon.ico">
-<link rel="stylesheet" href="https://fonts.bhd.om/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Outfit:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/light.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
-<style>body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif}</style>
+<script>tailwind.config={theme:{extend:{fontFamily:{sans:['Outfit','IBM Plex Sans Arabic','sans-serif']}}}}</script>
+<style>body{font-family:<?= WcHub::isRtl($lang)?"'Cairo','IBM Plex Sans Arabic',sans-serif":"'Outfit','IBM Plex Sans Arabic',sans-serif" ?>}</style>
 </head>
-<body class="min-h-[100dvh] bg-slate-100">
-  <header class="bg-slate-900 text-white">
-    <div class="max-w-xl mx-auto px-5 pt-4 pb-6">
-      <div class="flex items-center justify-between">
-        <a href="<?= $user?'/predictions':'https://wc.cardify.om/' ?>"><img src="/assets/images/logo-light.svg" alt="Cardify" class="h-6 w-auto"></a>
-        <?php if($user): ?><a href="/predictions" class="text-sm text-emerald-50/90"><?= lh($P['predict']) ?></a><?php endif; ?>
-      </div>
-      <h1 class="text-2xl font-extrabold mt-4"><i class="fa-light fa-trophy"></i> <?= lh($P['leaderboard']) ?></h1>
-      <div class="grid grid-cols-3 gap-2 mt-3">
-        <?php for($i=0;$i<3;$i++): ?>
-          <div class="rounded-xl bg-white/10 border border-white/15 text-center py-2.5">
-            <div class="text-[11px] uppercase tracking-wide text-white/60"><?= $ranks[$i] ?></div><div class="font-extrabold"><?= $prizes[$i] ?></div>
-          </div>
-        <?php endfor; ?>
-      </div>
+<body class="min-h-[100dvh] bg-[#f7f8fa] text-slate-900">
+  <header class="sticky top-0 z-30 bg-[#f7f8fa]/85 backdrop-blur border-b border-slate-200/70">
+    <div class="max-w-xl mx-auto px-5 h-16 flex items-center justify-between">
+      <a href="<?= $user?'/predictions':'https://wc.cardify.om/' ?>"><img src="/assets/images/logo.svg" alt="Cardify" class="h-7 w-auto"></a>
+      <?php if($user): ?><a href="/predictions" class="text-sm font-semibold text-blue-700 px-3 py-2 rounded-lg hover:bg-white"><?= lh($P['predict']) ?></a><?php endif; ?>
     </div>
   </header>
 
-  <main class="max-w-xl mx-auto px-5 py-5">
+  <main class="max-w-xl mx-auto px-5 py-6">
+    <div class="flex items-center gap-2.5 mb-4">
+      <span class="grid place-items-center w-10 h-10 rounded-xl bg-amber-100 text-amber-500"><i class="fa-solid fa-trophy"></i></span>
+      <h1 class="text-2xl font-extrabold text-slate-900"><?= lh($P['leaderboard']) ?></h1>
+    </div>
+    <div class="grid grid-cols-3 gap-2 mb-5">
+      <?php for($i=0;$i<3;$i++):
+        $pod = $i===0?'bg-amber-50 border-amber-200':($i===1?'bg-slate-100 border-slate-200':'bg-orange-50 border-orange-100'); ?>
+        <div class="rounded-xl border <?= $pod ?> text-center py-2.5">
+          <div class="text-[11px] uppercase tracking-wide text-slate-400"><?= $ranks[$i] ?></div>
+          <div class="font-extrabold text-slate-900"><?= $prizes[$i] ?></div>
+        </div>
+      <?php endfor; ?>
+    </div>
+
     <?php if($user && $myRank): ?>
       <div class="rounded-2xl bg-blue-600 text-white px-4 py-3 mb-4 flex items-center justify-between">
         <span class="font-semibold"><?= lh($P['you']) ?> · #<?= $myRank ?></span>

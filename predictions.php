@@ -80,7 +80,7 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
           <input type="number" min="0" max="50" value="<?= fh($pa) ?>" class="exact-a w-14 text-center rounded-lg border border-slate-200 py-1.5" placeholder="-">
           <span class="text-xs text-slate-400 ms-1"><?= fh($P['exact']) ?></span>
         </div>
-        <button type="button" class="save-btn w-full rounded-xl py-2.5 text-sm font-bold text-white bg-emerald-600"><?= fh($P['save']) ?></button>
+        <button type="button" class="save-btn btn w-full rounded-xl py-2.5 text-sm font-bold text-white bg-blue-600"><?= fh($P['save']) ?></button>
       <?php endif; ?>
     </div>
     <?php return ob_get_clean();
@@ -91,36 +91,37 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
 <title><?= fh($P['predict']) ?> · Cardify</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate icon" href="/favicon.ico">
-<link rel="stylesheet" href="https://fonts.bhd.om/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Outfit:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/light.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
-<script>tailwind.config={theme:{extend:{fontFamily:{sans:['IBM Plex Sans Arabic','system-ui','sans-serif']},colors:{cyan:{600:'#0086a8',700:'#036b87'}}}}}</script>
-<style>body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif}</style>
+<script>tailwind.config={theme:{extend:{fontFamily:{sans:['Outfit','IBM Plex Sans Arabic','sans-serif']}}}}</script>
+<style>body{font-family:<?= WcHub::isRtl($lang)?"'Cairo','IBM Plex Sans Arabic',sans-serif":"'Outfit','IBM Plex Sans Arabic',sans-serif" ?>}.btn{transition:transform .16s cubic-bezier(.23,1,.32,1)}.btn:active{transform:scale(.97)}</style>
 </head>
-<body class="min-h-[100dvh] bg-slate-100">
-  <header class="bg-slate-900 text-white">
-    <div class="max-w-xl mx-auto px-5 pt-4 pb-5">
-      <div class="flex items-center justify-between">
-        <a href="https://cardify.om"><img src="/assets/images/logo-light.svg" alt="Cardify" class="h-6 w-auto"></a>
-        <div class="flex items-center gap-3 text-sm">
-          <a href="/wc-leaderboard" class="text-emerald-50/90"><?= fh($P['leaderboard']) ?></a>
-          <a href="/wc-settings" class="text-emerald-50/70"><?= fh($P['settings']) ?></a>
-        </div>
+<body class="min-h-[100dvh] bg-[#f7f8fa] text-slate-900">
+  <header class="sticky top-0 z-30 bg-[#f7f8fa]/85 backdrop-blur border-b border-slate-200/70">
+    <div class="max-w-xl mx-auto px-5 h-16 flex items-center justify-between">
+      <a href="https://wc.cardify.om/"><img src="/assets/images/logo.svg" alt="Cardify" class="h-7 w-auto"></a>
+      <div class="flex items-center gap-1 text-sm">
+        <a href="/wc-leaderboard" class="font-semibold text-blue-700 px-3 py-2 rounded-lg hover:bg-white"><?= fh($P['leaderboard']) ?></a>
+        <a href="/wc-settings" class="text-slate-500 hover:text-slate-900 px-2.5 py-2 rounded-lg hover:bg-white" aria-label="<?= fh($P['settings']) ?>"><i class="fa-light fa-gear text-base"></i></a>
       </div>
-      <div class="mt-4 flex items-center gap-3">
-        <div class="rounded-2xl bg-white/12 border border-white/20 px-4 py-3">
-          <div class="text-2xl font-extrabold"><?= (int)$user['points_cache'] ?></div>
-          <div class="text-[11px] uppercase tracking-wide text-emerald-50/70"><?= fh($P['your_points']) ?></div>
-        </div>
-        <div class="rounded-2xl bg-white/12 border border-white/20 px-4 py-3">
-          <div class="text-2xl font-extrabold">#<?= $rank ?></div>
-          <div class="text-[11px] uppercase tracking-wide text-emerald-50/70"><?= fh($P['rank']) ?></div>
-        </div>
-        <div class="flex-1 text-right text-[11px] text-amber-300 leading-tight"><i class="fa-light fa-trophy"></i> <?= fh($P['prize_line']) ?></div>
+    </div>
+  </header>
+
+  <header class="max-w-xl mx-auto px-5 pt-5">
+    <div class="flex items-center gap-3">
+      <div class="rounded-2xl bg-white border border-slate-200/70 shadow-sm px-4 py-3">
+        <div class="text-2xl font-extrabold text-slate-900"><?= (int)$user['points_cache'] ?></div>
+        <div class="text-[11px] uppercase tracking-wide text-slate-400"><?= fh($P['your_points']) ?></div>
       </div>
+      <div class="rounded-2xl bg-white border border-slate-200/70 shadow-sm px-4 py-3">
+        <div class="text-2xl font-extrabold text-slate-900">#<?= $rank ?></div>
+        <div class="text-[11px] uppercase tracking-wide text-slate-400"><?= fh($P['rank']) ?></div>
+      </div>
+      <div class="flex-1 text-right text-[11px] text-amber-600 font-medium leading-tight"><i class="fa-solid fa-trophy"></i> <?= fh($P['prize_line']) ?></div>
     </div>
   </header>
 

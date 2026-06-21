@@ -24,19 +24,20 @@ $inputCls='w-full px-4 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white 
 <title><?= sh($P['settings']) ?> · Cardify</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="alternate icon" href="/favicon.ico">
-<link rel="stylesheet" href="https://fonts.bhd.om/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Outfit:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/light.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
-<style>body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif}</style>
+<script>tailwind.config={theme:{extend:{fontFamily:{sans:['Outfit','IBM Plex Sans Arabic','sans-serif']}}}}</script>
+<style>body{font-family:<?= WcHub::isRtl($lang)?"'Cairo','IBM Plex Sans Arabic',sans-serif":"'Outfit','IBM Plex Sans Arabic',sans-serif" ?>}.btn{transition:transform .16s cubic-bezier(.23,1,.32,1)}.btn:active{transform:scale(.97)}</style>
 </head>
-<body class="min-h-[100dvh] bg-slate-100">
-  <header class="bg-slate-900 text-white">
-    <div class="max-w-md mx-auto px-5 py-4 flex items-center justify-between">
-      <a href="/predictions"><img src="/assets/images/logo-light.svg" alt="Cardify" class="h-6 w-auto"></a>
-      <a href="/predictions" class="text-sm text-emerald-50/90"><?= sh($P['predict']) ?></a>
+<body class="min-h-[100dvh] bg-[#f7f8fa] text-slate-900">
+  <header class="sticky top-0 z-30 bg-[#f7f8fa]/85 backdrop-blur border-b border-slate-200/70">
+    <div class="max-w-md mx-auto px-5 h-16 flex items-center justify-between">
+      <a href="/predictions"><img src="/assets/images/logo.svg" alt="Cardify" class="h-7 w-auto"></a>
+      <a href="/predictions" class="text-sm font-semibold text-blue-700 px-3 py-2 rounded-lg hover:bg-white"><?= sh($P['predict']) ?></a>
     </div>
   </header>
   <main class="max-w-md mx-auto px-5 py-6">
@@ -59,7 +60,7 @@ $inputCls='w-full px-4 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white 
           <?php foreach ($tzList as $z=>$lbl): ?><option value="<?= sh($z) ?>" <?= $z===$user['tz']?'selected':'' ?>><?= sh($lbl) ?></option><?php endforeach; ?>
         </select>
       </div>
-      <button id="save" class="w-full rounded-2xl py-3.5 font-bold text-white bg-blue-600"><?= sh($P['save']) ?></button>
+      <button id="save" class="btn w-full rounded-2xl py-3.5 font-bold text-white bg-blue-600"><?= sh($P['save_settings']) ?></button>
     </div>
     <div class="flex items-center justify-between mt-5 text-sm">
       <a href="/u?t=<?= sh($user['unsub_token']) ?>" class="text-red-500 font-semibold">Unsubscribe</a>

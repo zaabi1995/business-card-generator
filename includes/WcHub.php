@@ -400,6 +400,7 @@ class WcHub
             'prize_line'=>'Top 3 win $10,000 / $5,000 / $1,000','signin'=>'Sign in to predict',
             'how_title'=>'How it works','how_body'=>'1 point for the right result, +2 for the exact score. Predict before kickoff. Top 3 on the final leaderboard win the cash prizes.',
             'empty'=>'Fixtures are loading. Check back shortly.','settings'=>'Settings','logout'=>'Log out','win'=>'win',
+            'save_settings'=>'Save changes',
         ];
         $ar = [
             'predict'=>'التوقعات','matches'=>'المباريات','leaderboard'=>'المتصدرون',
@@ -409,6 +410,7 @@ class WcHub
             'prize_line'=>'أفضل 3 يربحون 10,000 / 5,000 / 1,000 دولار','signin'=>'سجّل للتوقع',
             'how_title'=>'كيف تلعب','how_body'=>'نقطة واحدة للنتيجة الصحيحة، و+2 للنتيجة الدقيقة. توقّع قبل بداية المباراة. أفضل 3 في الترتيب النهائي يربحون الجوائز النقدية.',
             'empty'=>'يتم تحميل المباريات. عُد بعد قليل.','settings'=>'الإعدادات','logout'=>'خروج','win'=>'فوز',
+            'save_settings'=>'حفظ التغييرات',
         ];
         $lang = self::lang($lang);
         return $lang === 'ar' ? $ar : $en;
