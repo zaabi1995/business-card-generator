@@ -43,10 +43,11 @@ foreach ($argv as $a) {
     if (strncmp($a, '--dpi=',     6) === 0) $DPI    = max(72, (int)substr($a, 6));
 }
 
-// Disk guard: never fill the volume.
-$free = @disk_free_space(BASE_DIR); $total = @disk_total_space(BASE_DIR);
-if ($free !== false && $total !== false && $total > 0 && ($free / $total) < 0.20) {
-    echo date('c') . " skip: disk free < 20%\n"; exit(0);
+// Disk guard: never fill the volume. Absolute floor (each preview is ~50-100KB),
+// not a percentage: on a large disk 15% free is still 50GB+, plenty of headroom.
+$free = @disk_free_space(BASE_DIR);
+if ($free !== false && $free < 3 * 1024 * 1024 * 1024) {
+    echo date('c') . " skip: disk free < 3GB\n"; exit(0);
 }
 
 $pdftoppm = trim((string)@shell_exec('command -v pdftoppm 2>/dev/null'));
