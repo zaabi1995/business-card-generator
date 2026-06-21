@@ -8,7 +8,8 @@ require_once INCLUDES_DIR . '/WcHub.php';
 
 $user = WcHub::currentUser();
 if (!$user) { header('Location: https://wc.cardify.om/'); exit; }
-$lang = WcHub::lang($user['language'] ?? 'en');
+$userLang = WcHub::lang($user['language'] ?? 'en');   // stored: drives the select default
+$lang = WcHub::lang($_GET['lang'] ?? $userLang);       // display: ?lang= may preview RTL
 $S = WcHub::strings($lang); $P = WcHub::pstrings($lang);
 $dir = WcHub::isRtl($lang) ? 'rtl' : 'ltr';
 $tzList = ['Asia/Muscat'=>'Muscat (GMT+4)','Asia/Dubai'=>'Dubai (GMT+4)','Asia/Riyadh'=>'Riyadh (GMT+3)',
@@ -52,7 +53,7 @@ $inputCls='w-full px-4 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white 
       <div>
         <label class="block text-[13px] font-semibold text-slate-700 mb-1.5"><?= sh($S['f_language']) ?></label>
         <select id="language" class="<?= $inputCls ?>">
-          <?php foreach (WcHub::LANGS as $code=>$native): ?><option value="<?= sh($code) ?>" <?= $code===$lang?'selected':'' ?>><?= sh($native) ?></option><?php endforeach; ?>
+          <?php foreach (WcHub::LANGS as $code=>$native): ?><option value="<?= sh($code) ?>" <?= $code===$userLang?'selected':'' ?>><?= sh($native) ?></option><?php endforeach; ?>
         </select>
       </div>
       <div>

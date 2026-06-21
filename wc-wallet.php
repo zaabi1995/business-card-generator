@@ -5,7 +5,7 @@ require_once INCLUDES_DIR . '/WcHub.php';
 require_once INCLUDES_DIR . '/GoogleWalletPass.php';
 require_once INCLUDES_DIR . '/AppleWalletPass.php';
 $user = WcHub::currentUser();
-$lang = WcHub::lang($user['language'] ?? 'en');
+$lang = WcHub::lang($_GET['lang'] ?? ($user['language'] ?? 'en'));
 $dir = WcHub::isRtl($lang) ? 'rtl' : 'ltr';
 $P    = WcHub::pstrings($lang);
 $rtl  = WcHub::isRtl($lang);

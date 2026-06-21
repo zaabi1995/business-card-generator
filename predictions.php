@@ -10,7 +10,8 @@ require_once INCLUDES_DIR . '/GoogleWalletPass.php';
 
 $user = WcHub::currentUser();
 if (!$user) { header('Location: https://wc.cardify.om/'); exit; }
-$lang = WcHub::lang($user['language'] ?? 'en');
+// Explicit ?lang= wins (preview / share / RTL check), else the user's setting.
+$lang = WcHub::lang($_GET['lang'] ?? ($user['language'] ?? 'en'));
 $P    = WcHub::pstrings($lang);
 $dir  = WcHub::isRtl($lang) ? 'rtl' : 'ltr';
 $tz   = $user['tz'] ?: 'Asia/Muscat';
