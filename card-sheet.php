@@ -98,6 +98,21 @@ try {
     // business-card corner for everyone else).
     $cutRadius = 1.5;
 
+    // CMYK brand config (when configured): set the background fill to the EXACT
+    // brand RGB so it converts to the same CMYK as the card edge (seamless), and
+    // convert the sheet's own marks/fill to CMYK. Cards are already CMYK.
+    $cmykCfg = CardPDFRenderer::pressCmykConfigFor((string) $companyId, (string) ($company['slug'] ?? ''));
+    $sheetBg = 'auto';
+    $tmpCmyk = '';
+    if (is_array($cmykCfg)) {
+        if (!empty($cmykCfg['colors'][0]['rgb']) && is_array($cmykCfg['colors'][0]['rgb'])) {
+            $sheetBg = implode(',', array_map('intval', $cmykCfg['colors'][0]['rgb']));
+        }
+        if (!empty($cmykCfg['corner_radius_mm'])) $cutRadius = (float) $cmykCfg['corner_radius_mm'];
+        $tmpCmyk = tempnam(sys_get_temp_dir(), 'sheetcmyk_') . '.json';
+        file_put_contents($tmpCmyk, json_encode($cmykCfg, JSON_UNESCAPED_UNICODE));
+    }
+
     $outDir = BASE_DIR . '/data/print-sheets';
     if (!is_dir($outDir)) @mkdir($outDir, 0775, true);
     $slug = preg_replace('/[^a-z0-9]+/i', '-', (string) $employee['id']);
@@ -118,7 +133,8 @@ try {
              . ' --all-pages'                        // front sheet + back sheet
              . ' --cut-radius-mm ' . $cutRadius
              . ' --reg-marks'
-             . ' --sheet-bg auto'                    // continuous card-colour background behind the grid
+             . ' --sheet-bg ' . escapeshellarg($sheetBg)   // brand colour (exact) or auto
+             . ($tmpCmyk !== '' ? ' --cmyk ' . escapeshellarg($tmpCmyk) : '')
              . ' --out ' . escapeshellarg($outPath)
              . ' 2>&1';
         $out = []; $rc = 0;
@@ -126,6 +142,7 @@ try {
         if ($rc === 0 && is_file($outPath) && filesize($outPath) >= 1024) break;
         if (is_file($outPath)) @unlink($outPath);
     }
+    if ($tmpCmyk !== '' && is_file($tmpCmyk)) @unlink($tmpCmyk);
     if ($rc !== 0 || !is_file($outPath) || filesize($outPath) < 1024) {
         error_log('card-sheet imposition failed rc=' . $rc . ' out=' . implode("\n", $out));
         http_response_code(500);

@@ -48,6 +48,54 @@ def _rounded_rect_ops(x0, y0, x1, y1, r):
     ])
 
 
+def _cmyk_for_rgb(r, g, b, cfg):
+    if cfg:
+        for col in cfg.get('colors', []):
+            cr, cg, cb = col['rgb']; tol = col.get('tol', 28)
+            if abs(r - cr) <= tol and abs(g - cg) <= tol and abs(b - cb) <= tol:
+                c, m, y, k = col['cmyk']
+                return (c / 100.0, m / 100.0, y / 100.0, k / 100.0)
+    if r > 250 and g > 250 and b > 250:
+        return (0.0, 0.0, 0.0, 0.0)
+    rf, gf, bf = r / 255.0, g / 255.0, b / 255.0
+    k = 1.0 - max(rf, gf, bf)
+    if k >= 0.999:
+        return (0.0, 0.0, 0.0, 1.0)
+    return ((1 - rf - k) / (1 - k), (1 - gf - k) / (1 - k), (1 - bf - k) / (1 - k), k)
+
+
+def _sheet_to_cmyk(doc, cfg):
+    """Rewrite RGB fill/stroke operators (rg/RG) in the sheet's own content
+    (background fill + marks) to DeviceCMYK; the imposed cards are already CMYK
+    XObjects (k operators) and are left untouched."""
+    import re
+    rg_re = re.compile(rb'(?<![\d.\-])(\d*\.?\d+)\s+(\d*\.?\d+)\s+(\d*\.?\d+)\s+(rg|RG)(?![A-Za-z])')
+
+    def repl(m):
+        r, g, b = float(m.group(1)), float(m.group(2)), float(m.group(3))
+        c, mm, y, k = _cmyk_for_rgb(int(round(r * 255)), int(round(g * 255)),
+                                    int(round(b * 255)), cfg)
+        kop = b'k' if m.group(4) == b'rg' else b'K'
+        return ('%.4f %.4f %.4f %.4f ' % (c, mm, y, k)).encode() + kop
+
+    targets = set()
+    for page in doc:
+        for cx in page.get_contents():
+            targets.add(cx)
+    for page in doc:
+        for cx in page.get_contents():
+            try:
+                s = doc.xref_stream(cx)
+            except Exception:
+                continue
+            ns = rg_re.sub(repl, s)
+            if ns != s:
+                try:
+                    doc.update_stream(cx, ns)
+                except Exception:
+                    pass
+
+
 def _ensure_subdict(doc, owner, key):
     t, v = doc.xref_get_key(owner, key)
     if t == 'xref':
@@ -119,8 +167,19 @@ def main():
     ap.add_argument('--reg-marks', action='store_true')
     ap.add_argument('--sheet-bg', default='none',
                     help="'auto' (sample the card), 'none', or 'R,G,B' (0-255).")
+    ap.add_argument('--cmyk', default='',
+                    help='Path to the CMYK brand-config JSON. Converts the sheet '
+                         "background + marks to DeviceCMYK (cards already CMYK).")
     ap.add_argument('--watermark', default='')
     args = ap.parse_args()
+    cmyk_cfg = None
+    if args.cmyk:
+        try:
+            import json as _json
+            with open(args.cmyk) as _fh:
+                cmyk_cfg = _json.load(_fh)
+        except Exception:
+            cmyk_cfg = None
 
     paper_w, paper_h = PAPER_PT[args.paper]
     margin = args.margin_mm * MM
@@ -223,7 +282,11 @@ def main():
         if cut_r > 0:
             cut_by_page[sheet_idx] = cut_rects
 
-    # 4. Cut lines on their own CutContour spot-colour OCG layer.
+    # 4. Sheet background + marks to CMYK (cards are already CMYK XObjects).
+    if cmyk_cfg:
+        _sheet_to_cmyk(out, cmyk_cfg)
+
+    # 5. Cut lines on their own CutContour spot-colour OCG layer.
     if cut_by_page:
         _inject_cut_layer(out, cut_by_page, cut_r)
 

@@ -77,22 +77,26 @@ try {
     $ownsEmployee  = $callerCompany !== '' && $callerCompany === (string)($company['id'] ?? '');
 
     if (in_array($callerRole, ['print_shop', 'super_admin'], true)) {
-        // Print shop / super admin: the clean per-card print file (full font
-        // embed, no watermark) - same as it always was. CMYK/cut lives on the
-        // separate A4 cutting sheet (card-sheet.php), not on the card preview.
-        $profile = $wantsPrint ? 'print' : 'web';
+        // Print shop / super admin: the all-vector CMYK print file (original
+        // vector artwork, fonts match the design, exact brand CMYK, no
+        // watermark). Falls back to the raster 'print' if vector is unavailable.
+        $profile = $wantsPrint ? 'vector' : 'web';
     } elseif ($wantsPrint && in_array($callerRole, $adminRoles, true) && $ownsEmployee) {
         // Tenant admin pulling the print-ready file for their own staff.
-        $profile = 'print';
+        $profile = 'vector';
     } else {
         $profile = 'sample';
     }
     $vector = CardPDFRenderer::render((string)$employee['id'], $profile);
+    if (empty($vector['success']) && $profile === 'vector') {
+        $profile = 'print';
+        $vector = CardPDFRenderer::render((string)$employee['id'], $profile);
+    }
     if (!empty($vector['success']) && is_file($vector['path'])) {
         try { QRTracker::logScan($employee['id'], $company['id']); } catch (Throwable $e) {}
         while (ob_get_level()) { ob_end_clean(); }
         $name = trim((string)($employee['name_en'] ?? $employee['name'] ?? '')) ?: 'Employee';
-        $suffix = in_array($profile, ['print', 'press'], true) ? '-print-ready' : '';
+        $suffix = in_array($profile, ['print', 'press', 'vector'], true) ? '-print-ready' : '';
         $downloadName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $name) . $suffix . '.pdf';
         if ($downloadName === $suffix . '.pdf') $downloadName = 'business-card' . $suffix . '.pdf';
         $mtime = filemtime($vector['path']);

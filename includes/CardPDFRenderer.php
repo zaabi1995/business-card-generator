@@ -393,6 +393,15 @@ class CardPDFRenderer
         return self::pressCmykConfig($companyId, $companySlug) !== null;
     }
 
+    /**
+     * Public accessor for the tenant CMYK brand config (or null). Used by the
+     * cutting sheet to colour-match its background fill + convert to CMYK.
+     */
+    public static function pressCmykConfigFor(string $companyId, string $companySlug = ''): ?array
+    {
+        return self::pressCmykConfig($companyId, $companySlug);
+    }
+
     private static function pageSpec(?array $tpl, string $side): array
     {
         if (!is_array($tpl)) {
