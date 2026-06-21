@@ -108,29 +108,37 @@ def _ensure_subdict(doc, owner, key):
 
 
 def _inject_cut_layer(doc, cut_by_page, radius_pt, line_w=0.5):
-    """Add a 'CutContour' OCG layer carrying the per-card rounded cut paths in a
-    real Separation spot colour (alternate = magenta preview)."""
-    ocg = doc.add_ocg('CutContour', on=True)
+    """Split the sheet into two named PDF layers (OCGs) so Illustrator/Acrobat
+    show them in the Layers panel: 'Artwork' (everything already drawn) and
+    'CutContour' (the per-card rounded cut paths, in a real Separation spot
+    colour). Both are added to /OCProperties/D/Order, which is what makes a
+    viewer surface them as top-level layers."""
+    # Order matters: add_ocg appends to /Order, so Artwork sits under CutContour.
+    art_ocg = doc.add_ocg('Artwork', on=True)
+    cut_ocg = doc.add_ocg('CutContour', on=True)
     fn = doc.get_new_xref()
     doc.update_object(fn, '<< /FunctionType 2 /Domain [0 1] /C0 [0 0 0 0] '
                           '/C1 [0 1 0 0] /N 1 >>')
     cs = doc.get_new_xref()
     doc.update_object(cs, f'[ /Separation /CutContour /DeviceCMYK {fn} 0 R ]')
     for pno, rects in cut_by_page.items():
-        if not rects:
-            continue
         page = doc[pno]
         page.clean_contents()
         res = _ensure_subdict(doc, page.xref, 'Resources')
         csd = _ensure_subdict(doc, res, 'ColorSpace')
         doc.xref_set_key(csd, 'CutCS', f'{cs} 0 R')
         prp = _ensure_subdict(doc, res, 'Properties')
-        doc.xref_set_key(prp, 'OCcut', f'{ocg} 0 R')
-        paths = ' '.join(_rounded_rect_ops(*r, radius_pt) for r in rects)
-        cut = ('q /OC /OCcut BDC /CutCS CS 1 SC %.3f w %s S EMC Q'
-               % (line_w, paths)).encode()
+        doc.xref_set_key(prp, 'OCart', f'{art_ocg} 0 R')
+        doc.xref_set_key(prp, 'OCcut', f'{cut_ocg} 0 R')
         cx = page.get_contents()[0]
-        doc.update_stream(cx, doc.xref_stream(cx) + b'\n' + cut)
+        body = doc.xref_stream(cx)
+        # Wrap ALL existing artwork in the Artwork layer, then add the cut layer.
+        new = b'/OC /OCart BDC\n' + body + b'\nEMC\n'
+        if rects:
+            paths = ' '.join(_rounded_rect_ops(*r, radius_pt) for r in rects)
+            new += ('q /OC /OCcut BDC /CutCS CS 1 SC %.3f w %s S EMC Q'
+                    % (line_w, paths)).encode()
+        doc.update_stream(cx, new)
 
 
 def _reg_target(shape, cx, cy, size=6.0):
