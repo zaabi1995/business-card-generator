@@ -250,7 +250,11 @@ def main():
                 cut_rects.append((x0, paper_h - (y0 + card_h),
                                   x0 + card_w, paper_h - y0))
                 # corner crop marks (5mm, just outside the card)
-                mark_len = 5 * MM; gap = 1 * MM
+                # Cap crop-mark length so they fit a tight gutter/margin without
+                # overlapping the neighbouring card (5mm ideal, shorter when packed).
+                gap = 0.8 * MM
+                mark_len = min(5 * MM, max(1.5 * MM, gutter / 2 - 0.3 * MM),
+                               max(1.5 * MM, margin - gap - 0.5 * MM))
                 cm = sheet.new_shape()
                 for (mx, my, dx, dy) in [
                     (x0, y0, -1, -1), (x0 + card_w, y0, +1, -1),

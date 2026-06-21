@@ -129,6 +129,7 @@ try {
              . ' --card ' . escapeshellarg($rendered['path'])
              . ' --paper ' . escapeshellarg($paper)
              . ' --rows ' . $r . ' --cols ' . $c
+             . ' --margin-mm 5 --gutter-mm 2'        // tight pack so 5x2 (10/A4) fits 90x55 cards
              . ' --bleed-mm 3'                       // 3mm background bleed past the card edges
              . ' --all-pages'                        // front sheet + back sheet
              . ' --cut-radius-mm ' . $cutRadius
