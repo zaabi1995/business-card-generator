@@ -248,25 +248,56 @@ class WcHub
         }
     }
 
-    /** Create or update a verified WC user. Returns the user row. */
-    public static function upsertUser(string $phone, string $name, string $lang, string $tz, ?string $cc, ?string $leadId): array
+    /** Generate a unique 8-char invite code. */
+    public static function genRefCode(): string
+    {
+        $db = Database::getInstance();
+        for ($i = 0; $i < 6; $i++) {
+            $code = substr(strtoupper(bin2hex(random_bytes(6))), 0, 8);
+            if (!$db->fetchOne("SELECT id FROM wc_users WHERE ref_code = :c", ['c'=>$code])) return $code;
+        }
+        return substr(strtoupper(bin2hex(random_bytes(8))), 0, 10);
+    }
+
+    /**
+     * Create or update a verified WC user. Returns the user row.
+     * On a NEW signup with a valid referrer code, link the referrer and
+     * award them +3 referral points (once per new referee).
+     */
+    public static function upsertUser(string $phone, string $name, string $lang, string $tz, ?string $cc, ?string $leadId, ?string $referrerCode = null): array
     {
         $db = Database::getInstance();
         $existing = $db->fetchOne("SELECT * FROM wc_users WHERE phone = :p LIMIT 1", ['p' => $phone]);
         if ($existing) {
-            $db->update('wc_users', [
-                'name' => $name, 'language' => $lang, 'tz' => $tz,
-                'country' => $cc, 'status' => 'active', 'verified_at' => date('Y-m-d H:i:s'),
-            ], 'id = :id', ['id' => $existing['id']]);
+            $set = ['name'=>$name, 'language'=>$lang, 'tz'=>$tz, 'country'=>$cc, 'status'=>'active', 'verified_at'=>date('Y-m-d H:i:s')];
+            if (empty($existing['ref_code'])) $set['ref_code'] = self::genRefCode();
+            $db->update('wc_users', $set, 'id = :id', ['id' => $existing['id']]);
             return $db->fetchOne("SELECT * FROM wc_users WHERE id = :id", ['id' => $existing['id']]);
         }
+
+        // Resolve referrer (must exist, active, and not the same phone).
+        $referrer = null;
+        $rc = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string)$referrerCode));
+        if ($rc !== '') {
+            $referrer = $db->fetchOne("SELECT id, phone FROM wc_users WHERE ref_code = :c AND status='active' LIMIT 1", ['c'=>$rc]);
+            if ($referrer && $referrer['phone'] === $phone) $referrer = null; // no self-referral
+        }
+
         $db->insert('wc_users', [
             'phone' => $phone, 'name' => $name, 'language' => $lang, 'tz' => $tz,
             'country' => $cc, 'status' => 'active', 'unsub_token' => bin2hex(random_bytes(16)),
+            'ref_code' => self::genRefCode(), 'referred_by' => $referrer['id'] ?? null,
             'lead_id' => $leadId, 'ip_address' => substr($_SERVER['REMOTE_ADDR'] ?? '', 0, 64),
             'verified_at' => date('Y-m-d H:i:s'),
         ]);
-        return $db->fetchOne("SELECT * FROM wc_users WHERE phone = :p LIMIT 1", ['p' => $phone]);
+        $user = $db->fetchOne("SELECT * FROM wc_users WHERE phone = :p LIMIT 1", ['p' => $phone]);
+
+        // Award the referrer +3 (bonus_points feeds points_cache + the prize race).
+        if ($referrer) {
+            $db->query("UPDATE wc_users SET bonus_points = bonus_points + 3,
+                        points_cache = points_cache + 3 WHERE id = :id", ['id'=>$referrer['id']]);
+        }
+        return $user;
     }
 
     private static function uuid(): string

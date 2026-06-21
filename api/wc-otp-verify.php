@@ -20,6 +20,7 @@ $phone = WhatsApp::normalizePhone((string)($in['phone'] ?? ''));
 $lang  = WcHub::lang((string)($in['language'] ?? 'en'));
 $tz    = (string)($in['tz'] ?? 'Asia/Muscat');
 $code  = trim((string)($in['code'] ?? ''));
+$ref   = substr(strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string)($in['ref'] ?? ''))), 0, 12);
 if (!in_array($tz, timezone_identifiers_list(), true)) $tz = 'Asia/Muscat';
 if ($name === '') out(['ok'=>false,'error'=>'err_name']);
 if (strlen($phone) < 8) out(['ok'=>false,'error'=>'err_phone']);
@@ -35,7 +36,7 @@ try {
     $db = Database::getInstance();
     $exists = $db->fetchOne("SELECT lead_id FROM wc_users WHERE phone = :p LIMIT 1", ['p'=>$phone]);
     $leadId = $exists['lead_id'] ?? WcHub::mirrorLead($phone, $name, $lang, $cc);
-    $user = WcHub::upsertUser($phone, $name, $lang, $tz, $cc, $leadId);
+    $user = WcHub::upsertUser($phone, $name, $lang, $tz, $cc, $leadId, $ref ?: null);
     WcHub::login($user);
 } catch (Throwable $e) {
     error_log('wc-otp-verify upsert failed: ' . $e->getMessage());
@@ -54,4 +55,4 @@ try {
     WhatsApp::sendMessage($phone, $welcome, ['bypassAntiBan'=>true]);
 } catch (Throwable $e) { /* ignore */ }
 
-out(['ok'=>true,'points'=>(int)($user['points_cache'] ?? 0)]);
+out(['ok'=>true,'points'=>(int)($user['points_cache'] ?? 0),'ref'=>$user['ref_code'] ?? '']);

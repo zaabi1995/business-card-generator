@@ -23,14 +23,14 @@ $leaders = [];
 try {
     $leaders = Database::getInstance()->fetchAll(
       "SELECT u.name, u.phone,
-              COALESCE(SUM(CASE WHEN m.kickoff_utc >= :ko THEN p.points ELSE 0 END),0) AS prize_points
+              COALESCE(SUM(CASE WHEN m.kickoff_utc >= :ko THEN p.points ELSE 0 END),0) + MAX(u.bonus_points) AS prize_points
        FROM wc_users u
        LEFT JOIN wc_predictions p ON p.user_id = u.id
        LEFT JOIN wc_matches m ON m.espn_id = p.match_id
        WHERE u.status='active'
        GROUP BY u.id, u.name, u.phone
        ORDER BY prize_points DESC, u.points_cache DESC, u.verified_at ASC
-       LIMIT 5", ['ko'=>WC_KNOCKOUT_START]);
+       LIMIT 10", ['ko'=>WC_KNOCKOUT_START]);
 } catch (Throwable $e) { $leaders = []; }
 
 $tzList = [
@@ -193,17 +193,21 @@ $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-slate-300 bg-white text
         <p class="mt-2 text-sm text-slate-500 leading-relaxed"><?= h($T['standsub']) ?></p>
       </div>
       <div class="mt-4 divide-y divide-slate-100">
-        <?php for ($i=0; $i<3; $i++): $row = $leaders[$i] ?? null; $top=($i===0); ?>
-          <div class="flex items-center gap-3 px-6 py-3.5 <?= $top?'bg-amber-50/70':'' ?>">
-            <div class="w-7 text-center font-extrabold <?= $top?'text-amber-500':'text-slate-300' ?>"><?= $i+1 ?></div>
+        <?php for ($i=0; $i<10; $i++): $row = $leaders[$i] ?? null; $top=($i===0); $podium=($i<3); ?>
+          <div class="flex items-center gap-3 px-6 py-3 <?= $top?'bg-amber-50/70':'' ?> hover:bg-slate-50/70 transition-colors">
+            <div class="w-7 text-center font-extrabold <?= $top?'text-amber-500 text-lg':($podium?'text-amber-400':'text-slate-300') ?>"><?= $i+1 ?></div>
             <div class="flex-1 min-w-0">
               <div class="text-[15px] truncate <?= $row?'text-slate-900':'text-slate-400' ?>">
-                <?= $row ? maskName($row['name'],$row['phone']) : h($T['open']) ?>
+                <?= $row ? maskName($row['name'],$row['phone']) : ($podium ? h($T['open']) : '<span class="text-slate-300">&mdash;</span>') ?>
                 <?php if($top): ?><span class="ms-1.5 inline-flex items-center gap-1 align-middle text-[11px] font-bold text-amber-600 bg-amber-100 rounded-full px-2 py-0.5"><?= fa('fa-solid fa-crown text-[10px]') ?><?= h($T['couldbe']) ?></span><?php endif; ?>
               </div>
               <?php if($row && (int)$row['prize_points']>0): ?><div class="text-xs text-slate-400"><?= (int)$row['prize_points'] ?> <?= h($T['pts']) ?></div><?php endif; ?>
             </div>
-            <div class="text-right font-extrabold tracking-tight <?= $top?'text-amber-600 text-lg':'text-slate-700' ?>"><?= $prizes[$i] ?></div>
+            <?php if($podium): ?>
+              <div class="text-right font-extrabold tracking-tight <?= $top?'text-amber-600 text-lg':'text-slate-700' ?>"><?= $prizes[$i] ?></div>
+            <?php elseif($row): ?>
+              <div class="text-right text-sm font-semibold text-slate-500"><?= (int)$row['prize_points'] ?> <?= h($T['pts']) ?></div>
+            <?php endif; ?>
           </div>
         <?php endfor; ?>
       </div>
@@ -248,6 +252,8 @@ $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-slate-300 bg-white text
 <script>
 const STR = <?= json_encode($S, JSON_UNESCAPED_UNICODE) ?>;
 const INIT_COUNTRY = <?= json_encode(strtolower($cc ?: 'om')) ?>;
+const REF = (new URLSearchParams(location.search).get('ref')||'').replace(/[^A-Za-z0-9]/g,'').slice(0,12);
+let MYREF = '';
 const phoneEl=document.getElementById('phone');
 const iti=window.intlTelInput(phoneEl,{initialCountry:INIT_COUNTRY,separateDialCode:true,countryOrder:['om','ae','sa','in','bd','pk','ph','eg','gb','us'],autoPlaceholder:'polite',nationalMode:true});
 const $=id=>document.getElementById(id);
@@ -285,16 +291,16 @@ async function verify(){
   if(code.length!==6){showErr($('err2'),STR.err_otp);return;}
   const btn=$('btnVerify'); btn.disabled=true;
   try{
-    const r=await fetch('/api/wc-otp-verify.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...CURRENT,code})});
+    const r=await fetch('/api/wc-otp-verify.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...CURRENT,code,ref:REF})});
     const j=await r.json();
     if(!j.ok){showErr($('err2'),STR[j.error]||STR.err_otp);btn.disabled=false;return;}
-    show('step-done');
+    MYREF=j.ref||''; show('step-done');
   }catch(_){showErr($('err2'),STR.err_generic);btn.disabled=false;}
 }
 $('btnVerify').addEventListener('click',verify);
 $('btnChange').addEventListener('click',()=>show('step-form'));
 $('btnResend').addEventListener('click',()=>fetch('/api/wc-otp-request.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...CURRENT,turnstile:''})}));
-$('btnInvite').addEventListener('click',()=>{const t=encodeURIComponent(STR.hero_title+' https://wc.cardify.om');window.open('https://api.whatsapp.com/send?text='+t,'_blank');});
+$('btnInvite').addEventListener('click',()=>{const link='https://wc.cardify.om/'+(MYREF?('?ref='+MYREF):'');const t=encodeURIComponent(STR.hero_title+'\n'+link);window.open('https://api.whatsapp.com/send?text='+t,'_blank');});
 </script>
 </body>
 </html>

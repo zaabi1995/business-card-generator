@@ -47,7 +47,8 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
       <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
         <span><?= fh(kostr($m['kickoff_utc'],$tzObj)) ?></span>
         <?php if($finished): ?><span class="font-bold text-slate-500"><?= fh($P['results']) ?></span>
-        <?php elseif($isLocked): ?><span class="font-bold text-amber-500"><i class="fa-solid fa-lock"></i> <?= fh($P['locked']) ?></span><?php endif; ?>
+        <?php elseif($isLocked): ?><span class="font-bold text-amber-500"><i class="fa-solid fa-lock"></i> <?= fh($P['locked']) ?></span>
+        <?php else: ?><span class="saved-badge <?= $pred?'':'hidden' ?> text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check"></i> <?= fh($P['saved']) ?></span><?php endif; ?>
       </div>
       <div class="flex items-center justify-center gap-3 text-center mb-3">
         <div class="flex-1 font-semibold text-slate-800 text-[15px]"><?= fh($m['home']) ?></div>
@@ -148,28 +149,38 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
   </main>
 
 <script>
+const T_SAVE=<?= json_encode($P['save']) ?>, T_SAVED=<?= json_encode($P['saved']) ?>;
 document.querySelectorAll('[data-match]').forEach(card=>{
   const picks=card.querySelectorAll('.pick-btn');
+  const save=card.querySelector('.save-btn');
+  const badge=card.querySelector('.saved-badge');
+  function dirty(){ // user changed something after a save -> show "save changes"
+    if(save && save.dataset.saved==='1'){ save.dataset.saved=''; save.classList.remove('bg-emerald-600'); save.classList.add('bg-blue-600'); save.textContent=T_SAVE; }
+  }
   picks.forEach(b=>b.addEventListener('click',()=>{
     picks.forEach(x=>x.className=x.className.replace('bg-blue-600 text-white border-blue-600','bg-slate-50 text-slate-700 border-slate-200'));
     b.className=b.className.replace('bg-slate-50 text-slate-700 border-slate-200','bg-blue-600 text-white border-blue-600');
-    card.dataset.pick=b.dataset.pick;
+    card.dataset.pick=b.dataset.pick; dirty();
   }));
-  const save=card.querySelector('.save-btn');
+  card.querySelectorAll('.exact-h,.exact-a').forEach(i=>i.addEventListener('input',dirty));
   if(save) save.addEventListener('click',async()=>{
     const h=card.querySelector('.exact-h'), a=card.querySelector('.exact-a');
     let pick=card.dataset.pick||'';
     const ph=h&&h.value!==''?+h.value:null, pa=a&&a.value!==''?+a.value:null;
     if(ph!==null&&pa!==null) pick=ph===pa?'draw':(ph>pa?'home':'away');
-    if(!pick){save.textContent='!';setTimeout(()=>save.textContent=<?= json_encode($P['save']) ?>,1200);return;}
+    if(!pick){const o=save.textContent;save.textContent='!';setTimeout(()=>save.textContent=o,1200);return;}
     save.disabled=true; const o=save.textContent; save.textContent='…';
     try{
       const r=await fetch('/api/wc-predict.php',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({match_id:card.dataset.match,pick,pred_home:ph,pred_away:pa})});
       const j=await r.json();
-      save.textContent=j.ok?<?= json_encode($P['saved']) ?>:'!';
-    }catch(_){save.textContent='!';}
-    save.disabled=false; setTimeout(()=>save.textContent=o,1600);
+      if(j.ok){
+        save.dataset.saved='1'; save.classList.remove('bg-blue-600'); save.classList.add('bg-emerald-600');
+        save.innerHTML='<i class="fa-solid fa-circle-check"></i> '+T_SAVED;
+        if(badge) badge.classList.remove('hidden');
+      } else { save.textContent='!'; setTimeout(()=>save.textContent=o,1500); }
+    }catch(_){ save.textContent='!'; setTimeout(()=>save.textContent=o,1500); }
+    save.disabled=false;
   });
 });
 </script>

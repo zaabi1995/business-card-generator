@@ -15,7 +15,7 @@ $db   = Database::getInstance();
 $KO = '2026-06-28 00:00:00';
 $top = $db->fetchAll(
   "SELECT u.id, u.name, u.phone,
-          COALESCE(SUM(CASE WHEN m.kickoff_utc >= :ko THEN p.points ELSE 0 END),0) AS pts
+          COALESCE(SUM(CASE WHEN m.kickoff_utc >= :ko THEN p.points ELSE 0 END),0) + MAX(u.bonus_points) AS pts
    FROM wc_users u
    LEFT JOIN wc_predictions p ON p.user_id = u.id
    LEFT JOIN wc_matches m ON m.espn_id = p.match_id
@@ -31,10 +31,10 @@ if ($user) {
           "SELECT COALESCE(SUM(CASE WHEN m.kickoff_utc >= :ko THEN p.points ELSE 0 END),0) AS pts
            FROM wc_predictions p JOIN wc_matches m ON m.espn_id=p.match_id WHERE p.user_id=:u",
           ['ko'=>$KO,'u'=>$user['id']]);
-        $myPts = (int)($mp['pts'] ?? 0);
+        $myPts = (int)($mp['pts'] ?? 0) + (int)($user['bonus_points'] ?? 0);
         $myRank = (int)($db->fetchOne(
           "SELECT COUNT(*)+1 AS r FROM (
-             SELECT u.id, COALESCE(SUM(CASE WHEN m.kickoff_utc >= :ko THEN p.points ELSE 0 END),0) AS pts
+             SELECT u.id, COALESCE(SUM(CASE WHEN m.kickoff_utc >= :ko THEN p.points ELSE 0 END),0) + MAX(u.bonus_points) AS pts
              FROM wc_users u LEFT JOIN wc_predictions p ON p.user_id=u.id
              LEFT JOIN wc_matches m ON m.espn_id=p.match_id
              WHERE u.status='active' GROUP BY u.id HAVING pts > :mp

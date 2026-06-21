@@ -36,7 +36,7 @@ foreach (array_keys($affected) as $uid) {
     $db->query(
         "UPDATE wc_users SET points_cache =
             (SELECT COALESCE(SUM(points),0) FROM wc_predictions WHERE user_id=:u1)
-            + IF(share_bonus_awarded,3,0)
+            + bonus_points
          WHERE id=:u2", ['u1'=>$uid, 'u2'=>$uid]);
 }
 echo "[wc_score] scored {$scoredPreds} predictions across ".count($affected)." users\n";
