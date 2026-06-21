@@ -178,9 +178,10 @@ def main():
                 y0 = oy + r * (card_h + gutter)
                 target = fitz.Rect(x0, y0, x0 + card_w, y0 + card_h)
                 sheet.show_pdf_page(target, src, pno=pno, keep_proportion=False)
-                # trim = card rect inset by the card's own bleed
-                cut_rects.append((x0 + bleed, paper_h - (y0 + card_h - bleed),
-                                  x0 + card_w - bleed, paper_h - (y0 + bleed)))
+                # Cut at the card edge (the card PDF is trim-sized); the
+                # background fill below provides the bleed past the edge.
+                cut_rects.append((x0, paper_h - (y0 + card_h),
+                                  x0 + card_w, paper_h - y0))
                 # corner crop marks (5mm, just outside the card)
                 mark_len = 5 * MM; gap = 1 * MM
                 cm = sheet.new_shape()

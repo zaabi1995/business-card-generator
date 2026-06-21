@@ -80,8 +80,13 @@ try {
     $rows  = max(1, min(10, (int) ($_GET['rows'] ?? 4)));
     $cols  = max(1, min(5,  (int) ($_GET['cols'] ?? 2)));
 
-    // Clean per-card print render (RGB, full font embed) - the source artwork.
-    $rendered = CardPDFRenderer::render((string) $employee['id'], 'print');
+    // All-vector per-card render (original vector source.pdf as bg, designer
+    // sample redacted, full-font overlay). Scalable + clean, type matches the
+    // design. Falls back to the raster 'print' render if vector is unavailable.
+    $rendered = CardPDFRenderer::render((string) $employee['id'], 'vector');
+    if (empty($rendered['success']) || empty($rendered['path']) || !is_file($rendered['path'])) {
+        $rendered = CardPDFRenderer::render((string) $employee['id'], 'print');
+    }
     if (empty($rendered['success']) || empty($rendered['path']) || !is_file($rendered['path'])) {
         http_response_code(503);
         header('Content-Type: text/plain; charset=utf-8');
@@ -109,7 +114,7 @@ try {
              . ' --card ' . escapeshellarg($rendered['path'])
              . ' --paper ' . escapeshellarg($paper)
              . ' --rows ' . $r . ' --cols ' . $c
-             . ' --bleed-mm 1.5'                     // background bleed around each card
+             . ' --bleed-mm 3'                       // 3mm background bleed past the card edges
              . ' --all-pages'                        // front sheet + back sheet
              . ' --cut-radius-mm ' . $cutRadius
              . ' --reg-marks'
