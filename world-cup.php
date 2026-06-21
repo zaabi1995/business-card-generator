@@ -183,7 +183,7 @@ $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-slate-300 bg-white text
         <span class="mx-auto w-12 h-12 grid place-items-center rounded-full bg-emerald-50 text-emerald-600 mb-3"><?= fa('fa-solid fa-check text-2xl') ?></span>
         <h2 class="text-xl font-bold tracking-tight mb-1.5"><?= h($S['success_title']) ?></h2>
         <p class="text-slate-500 mb-5"><?= h($S['success_sub']) ?></p>
-        <div class="space-y-2.5"><a href="/predictions" class="btn block w-full rounded-xl py-3.5 font-semibold text-white bg-blue-600"><?= h($S['go_predict']) ?></a><button type="button" id="btnInvite" class="btn block w-full rounded-xl py-3.5 font-semibold text-slate-700 bg-slate-100"><?= h($S['invite']) ?></button></div>
+        <div class="space-y-2.5"><a href="/predictions" class="btn block w-full rounded-xl py-3.5 font-semibold text-white bg-blue-600"><?= h($S['go_predict']) ?></a><a href="/wc-wallet" class="btn flex items-center justify-center gap-2 w-full rounded-xl py-3.5 font-semibold text-slate-900 bg-slate-100 hover:bg-slate-200"><i class="fa-brands fa-apple" aria-hidden="true"></i> <?= h($S['add_wallet']) ?></a><button type="button" id="btnInvite" class="btn block w-full rounded-xl py-3.5 font-semibold text-slate-700 bg-slate-100"><?= h($S['invite']) ?></button></div>
       </section>
     </div>
   </section>
