@@ -21,6 +21,7 @@ $lang  = WcHub::lang((string)($in['language'] ?? 'en'));
 $tz    = (string)($in['tz'] ?? 'Asia/Muscat');
 $code  = trim((string)($in['code'] ?? ''));
 $ref   = substr(strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string)($in['ref'] ?? ''))), 0, 12);
+$league = WcHub::normLeagueCode((string)($in['league'] ?? '')); // mini-league auto-join code
 $nhour = max(0, min(23, (int)($in['notify_hour'] ?? 10)));
 if (!in_array($tz, timezone_identifiers_list(), true)) $tz = 'Asia/Muscat';
 if (strlen($phone) < 8) out(['ok'=>false,'error'=>'err_phone']);
@@ -52,9 +53,19 @@ try {
     out(['ok'=>false,'error'=>'err_generic']);
 }
 
+// Auto-join a mini-league if the signup came from a friend's invite link
+// (wc.cardify.om/join?l=CODE). Idempotent; never blocks the signup response.
+$leagueJoined = '';
+if ($league !== '') {
+    try {
+        $res = WcHub::joinLeague((int)$user['id'], $league);
+        if ($res['ok'] && !empty($res['league'])) $leagueJoined = (string)$res['league']['code'];
+    } catch (Throwable $e) { error_log('wc-otp-verify league auto-join failed: ' . $e->getMessage()); }
+}
+
 // Respond instantly; send the welcome (new signups only) after flushing.
 $isNew = !$existing;
-echo json_encode(['ok'=>true,'points'=>(int)($user['points_cache'] ?? 0),'ref'=>$user['ref_code'] ?? ''], JSON_UNESCAPED_UNICODE);
+echo json_encode(['ok'=>true,'points'=>(int)($user['points_cache'] ?? 0),'ref'=>$user['ref_code'] ?? '','league_joined'=>$leagueJoined], JSON_UNESCAPED_UNICODE);
 if (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
 if ($isNew) {
     try {

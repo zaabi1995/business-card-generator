@@ -47,7 +47,14 @@ if ($wcHost === 'wc.cardify.om') {
     if ($wcPath === '/u' || strpos($wcPath, '/u/') === 0) { require __DIR__ . '/wc-unsub.php'; exit; }
     // PassKit web service for the Apple Wallet pass (prefix match, Apple spec).
     if (strpos($wcPath, '/wc-wallet/v1') === 0) { require __DIR__ . '/wc_wallet_service.php'; exit; }
+    // Mini-leagues: pretty share URL /wc-leagues/<code> -> the league board.
+    if (preg_match('#^/wc-leagues/([A-Za-z0-9]{4,12})$#', $wcPath, $lm)) {
+        $_GET['l'] = $lm[1]; require __DIR__ . '/wc-league.php'; exit;
+    }
     $wcMap = [
+        '/join'           => 'wc-join.php',
+        '/wc-leagues'     => 'wc-leagues.php',
+        '/wc-league'      => 'wc-league.php',
         '/predictions'    => 'predictions.php',
         '/wc-leaderboard' => 'wc-leaderboard.php',
         '/leaderboard'    => 'wc-leaderboard.php',

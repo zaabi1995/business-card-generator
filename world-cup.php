@@ -256,6 +256,10 @@ $inputCls = 'w-full px-3.5 py-3 rounded-xl border border-slate-300 bg-white text
 const STR = <?= json_encode($S, JSON_UNESCAPED_UNICODE) ?>;
 const INIT_COUNTRY = <?= json_encode(strtolower($cc ?: 'om')) ?>;
 const REF = (new URLSearchParams(location.search).get('ref')||'').replace(/[^A-Za-z0-9]/g,'').slice(0,12);
+// Mini-league invite: a friend's share link is wc.cardify.om/join?l=CODE, which
+// (when logged out) bounces here with ?l=CODE. Thread it through OTP verify so a
+// brand-new signup auto-joins the friend's league. This is the viral loop.
+const LCODE = (new URLSearchParams(location.search).get('l')||'').replace(/[^A-Za-z0-9]/g,'').slice(0,12).toUpperCase();
 let MYREF = '';
 const phoneEl=document.getElementById('phone');
 const iti=window.intlTelInput(phoneEl,{initialCountry:INIT_COUNTRY,separateDialCode:true,countryOrder:['om','ae','sa','in','bd','pk','ph','eg','gb','us'],autoPlaceholder:'polite',nationalMode:true});
@@ -303,10 +307,13 @@ async function verify(){
   if(code.length!==6){showErr($('err2'),STR.err_otp);return;}
   const btn=$('btnVerify'); btn.disabled=true;
   try{
-    const r=await fetch('/api/wc-otp-verify.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...CURRENT,code,ref:REF})});
+    const r=await fetch('/api/wc-otp-verify.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...CURRENT,code,ref:REF,league:LCODE})});
     const j=await r.json();
     if(!j.ok){showErr($('err2'),STR[j.error]||STR.err_otp);btn.disabled=false;return;}
-    MYREF=j.ref||''; show('step-done');
+    MYREF=j.ref||'';
+    // Auto-joined a friend's league during signup: take them straight to its board.
+    if(j.league_joined){ location.href='/wc-league?l='+encodeURIComponent(j.league_joined); return; }
+    show('step-done');
   }catch(_){showErr($('err2'),STR.err_generic);btn.disabled=false;}
 }
 $('btnVerify').addEventListener('click',verify);

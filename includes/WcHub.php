@@ -852,4 +852,286 @@ class WcHub
         $pct = $scored > 0 ? (int)round($correct / $scored * 100) : null;
         return ['scored'=>$scored, 'correct'=>$correct, 'pct'=>$pct];
     }
+
+    // ----------------------------------------------------------------------
+    // Mini-leagues (private friend groups with their own leaderboard).
+    // The viral loop: a member shares wc.cardify.om/join?l=CODE, a new person
+    // signs up and auto-joins. All boards rank on the SAME prize-race points as
+    // wc-leaderboard.php (knockout-stage points + bonus_points).
+    // ----------------------------------------------------------------------
+
+    public const LEAGUE_KO_START   = '2026-06-28 00:00:00'; // prize race anchor (KO round)
+    public const MAX_LEAGUES_OWNED  = 20;  // leagues a single user may create
+    public const MAX_LEAGUE_MEMBERS = 500; // members per league
+
+    /**
+     * Generate a short, human-friendly league code: 6 chars from an unambiguous
+     * alphabet (no 0/O/1/I), retried until unique. Mirrors genRefCode's intent
+     * but reads cleanly when shared by voice/WhatsApp.
+     */
+    public static function genLeagueCode(int $len = 6): string
+    {
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0 O 1 I
+        $db = Database::getInstance();
+        for ($try = 0; $try < 8; $try++) {
+            $code = '';
+            $bytes = random_bytes($len);
+            for ($i = 0; $i < $len; $i++) {
+                $code .= $alphabet[ord($bytes[$i]) % strlen($alphabet)];
+            }
+            if (!$db->fetchOne("SELECT id FROM wc_leagues WHERE code = :c", ['c'=>$code])) return $code;
+        }
+        // Extremely unlikely fallback: widen the code.
+        return self::genLeagueCode($len + 1);
+    }
+
+    /** Normalise a user-typed league code to the stored form. */
+    public static function normLeagueCode(string $code): string
+    {
+        return substr(strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code)), 0, 12);
+    }
+
+    /** Look up a league by its share code (case-insensitive). Null if none. */
+    public static function leagueByCode(string $code): ?array
+    {
+        $code = self::normLeagueCode($code);
+        if ($code === '') return null;
+        $row = Database::getInstance()->fetchOne("SELECT * FROM wc_leagues WHERE code = :c LIMIT 1", ['c'=>$code]);
+        return $row ?: null;
+    }
+
+    /** Current member count for a league. */
+    public static function leagueMemberCount(int $leagueId): int
+    {
+        return (int)(Database::getInstance()->fetchOne(
+            "SELECT COUNT(*) AS c FROM wc_league_members WHERE league_id = :l", ['l'=>$leagueId]
+        )['c'] ?? 0);
+    }
+
+    /** Is this user already a member of this league? */
+    public static function isLeagueMember(int $leagueId, int $userId): bool
+    {
+        return (bool)Database::getInstance()->fetchOne(
+            "SELECT id FROM wc_league_members WHERE league_id = :l AND user_id = :u LIMIT 1",
+            ['l'=>$leagueId, 'u'=>$userId]
+        );
+    }
+
+    /**
+     * Create a league owned by $ownerId and auto-join the owner as the first
+     * member. Caps leagues-per-user. Returns ['ok'=>bool,'league'=>row|null,
+     * 'error'=>key|null]. The UNIQUE code index keeps codes collision-free.
+     */
+    public static function createLeague(int $ownerId, string $name): array
+    {
+        $db = Database::getInstance();
+        $name = trim(preg_replace('/\s+/u', ' ', $name));
+        $name = mb_substr($name, 0, 60);
+        if ($name === '') return ['ok'=>false, 'league'=>null, 'error'=>'l_err_name'];
+
+        $owned = (int)($db->fetchOne(
+            "SELECT COUNT(*) AS c FROM wc_leagues WHERE owner_id = :o", ['o'=>$ownerId]
+        )['c'] ?? 0);
+        if ($owned >= self::MAX_LEAGUES_OWNED) return ['ok'=>false, 'league'=>null, 'error'=>'l_err_max'];
+
+        $code = self::genLeagueCode();
+        try {
+            $id = (int)$db->insert('wc_leagues', ['name'=>$name, 'code'=>$code, 'owner_id'=>$ownerId]);
+        } catch (Throwable $e) {
+            error_log('createLeague insert failed: ' . $e->getMessage());
+            return ['ok'=>false, 'league'=>null, 'error'=>'l_err_generic'];
+        }
+        // Owner auto-joins (idempotent by the unique member index).
+        try { $db->insert('wc_league_members', ['league_id'=>$id, 'user_id'=>$ownerId]); }
+        catch (Throwable $e) { /* already a member somehow: fine */ }
+
+        $row = $db->fetchOne("SELECT * FROM wc_leagues WHERE id = :id", ['id'=>$id]);
+        return ['ok'=>true, 'league'=>$row, 'error'=>null];
+    }
+
+    /**
+     * Add $userId to the league with $code. Idempotent: re-joining is a no-op
+     * success. Caps members per league. Returns ['ok'=>bool,'league'=>row|null,
+     * 'already'=>bool,'error'=>key|null].
+     */
+    public static function joinLeague(int $userId, string $code): array
+    {
+        $db = Database::getInstance();
+        $league = self::leagueByCode($code);
+        if (!$league) return ['ok'=>false, 'league'=>null, 'already'=>false, 'error'=>'l_err_notfound'];
+        $lid = (int)$league['id'];
+
+        if (self::isLeagueMember($lid, $userId)) {
+            return ['ok'=>true, 'league'=>$league, 'already'=>true, 'error'=>null];
+        }
+        if (self::leagueMemberCount($lid) >= self::MAX_LEAGUE_MEMBERS) {
+            return ['ok'=>false, 'league'=>$league, 'already'=>false, 'error'=>'l_err_full'];
+        }
+        try {
+            $db->insert('wc_league_members', ['league_id'=>$lid, 'user_id'=>$userId]);
+        } catch (Throwable $e) {
+            // Race: another request inserted the same membership first. The
+            // unique index makes that a clean idempotent success.
+            if (stripos($e->getMessage(), 'Duplicate') !== false || strpos($e->getMessage(), '1062') !== false) {
+                return ['ok'=>true, 'league'=>$league, 'already'=>true, 'error'=>null];
+            }
+            error_log('joinLeague insert failed: ' . $e->getMessage());
+            return ['ok'=>false, 'league'=>$league, 'already'=>false, 'error'=>'l_err_generic'];
+        }
+        return ['ok'=>true, 'league'=>$league, 'already'=>false, 'error'=>null];
+    }
+
+    /**
+     * The leagues a user belongs to, each with member_count and the user's rank
+     * inside it (prize-race points). Owned leagues first, newest joined next.
+     */
+    public static function userLeagues(int $userId): array
+    {
+        $db = Database::getInstance();
+        $rows = $db->fetchAll(
+            "SELECT l.*, lm.joined_at AS member_since
+             FROM wc_league_members lm
+             JOIN wc_leagues l ON l.id = lm.league_id
+             WHERE lm.user_id = :u
+             ORDER BY (l.owner_id = :u2) DESC, lm.joined_at DESC",
+            ['u'=>$userId, 'u2'=>$userId]
+        );
+        $out = [];
+        foreach ($rows as $l) {
+            $board = self::leagueBoard((int)$l['id']);
+            $myRank = null;
+            foreach ($board as $idx => $b) { if ((int)$b['id'] === $userId) { $myRank = $idx + 1; break; } }
+            $l['member_count'] = count($board);
+            $l['my_rank']      = $myRank;
+            $l['is_owner']     = ((int)$l['owner_id'] === $userId);
+            $out[] = $l;
+        }
+        return $out;
+    }
+
+    /**
+     * Ranked board for ONE league: only that league's members, scored on the
+     * SAME prize-race formula as wc-leaderboard.php (knockout-stage prediction
+     * points from LEAGUE_KO_START + the user's bonus_points). Returns rows of
+     * [id, name, phone, pts] ordered best-first. The deterministic tiebreak
+     * (points_cache, verified_at) matches the global board.
+     */
+    public static function leagueBoard(int $leagueId): array
+    {
+        return Database::getInstance()->fetchAll(
+            "SELECT u.id, u.name, u.phone,
+                    COALESCE(SUM(CASE WHEN m.kickoff_utc >= :ko THEN p.points ELSE 0 END),0)
+                      + MAX(u.bonus_points) AS pts
+             FROM wc_league_members lm
+             JOIN wc_users u ON u.id = lm.user_id AND u.status = 'active'
+             LEFT JOIN wc_predictions p ON p.user_id = u.id
+             LEFT JOIN wc_matches m ON m.espn_id = p.match_id
+             WHERE lm.league_id = :l
+             GROUP BY u.id, u.name, u.phone
+             ORDER BY pts DESC, u.points_cache DESC, u.verified_at ASC",
+            ['ko'=>self::LEAGUE_KO_START, 'l'=>$leagueId]
+        );
+    }
+
+    /** Build the shareable join link for a league code. */
+    public static function leagueShareUrl(string $code): string
+    {
+        return 'https://wc.cardify.om/join?l=' . rawurlencode(self::normLeagueCode($code));
+    }
+
+    /**
+     * Mini-league UI strings (en + ar full; hi/bn/ur fall back to en, per the
+     * pstrings convention). Kept separate so the leagues feature is self-
+     * contained.
+     */
+    public static function lstrings(string $lang): array
+    {
+        $en = [
+            'leagues'        => 'Mini-leagues',
+            'leagues_sub'    => 'Private leaderboards for you and your friends.',
+            'create'         => 'Create a league',
+            'create_cta'     => 'Create',
+            'create_hint'    => 'Name it, share the code, climb together.',
+            'l_name'         => 'League name',
+            'l_name_ph'      => 'e.g. The Office Cup',
+            'join_by_code'   => 'Join with a code',
+            'join_ph'        => 'Enter code',
+            'join_cta'       => 'Join',
+            'your_leagues'   => 'Your leagues',
+            'no_leagues'     => 'You are not in any league yet.',
+            'no_leagues_sub' => 'Create one and invite your friends, or join with a code.',
+            'members'        => 'members',
+            'member'         => 'member',
+            'your_rank'      => 'Your rank',
+            'owner'          => 'Owner',
+            'view_board'     => 'View board',
+            'invite_link'    => 'Invite link',
+            'copy'           => 'Copy',
+            'copied'         => 'Copied',
+            'share_wa'       => 'Share on WhatsApp',
+            'share_text'     => 'Join my World Cup mini-league on Cardify and beat my score',
+            'league_board'   => 'League board',
+            'back_leagues'   => 'Mini-leagues',
+            'board_empty'    => 'No members yet. Share the code to fill the board.',
+            'board_solo'     => 'You are the only one here. Invite friends to make it a race.',
+            'confirm_join'   => 'Join this league?',
+            'confirm_join_in'=> 'You will be added to',
+            'already_member' => 'You are already in this league.',
+            'go_board'       => 'Go to board',
+            'leagues_grow'   => 'Invite friends to grow your league',
+            'l_err_name'     => 'Please name your league.',
+            'l_err_max'      => 'You have reached the max number of leagues.',
+            'l_err_full'     => 'This league is full.',
+            'l_err_notfound' => 'No league found with that code.',
+            'l_err_generic'  => 'Something went wrong. Please try again.',
+            'l_err_auth'     => 'Sign in to use mini-leagues.',
+            'signin_join'    => 'Sign in to join',
+            'rank_label'     => 'Rank',
+            'pts_label'      => 'pts',
+        ];
+        $ar = [
+            'leagues'        => 'الدوريات المصغّرة',
+            'leagues_sub'    => 'لوحات صدارة خاصة لك ولأصدقائك.',
+            'create'         => 'أنشئ دوري',
+            'create_cta'     => 'إنشاء',
+            'create_hint'    => 'سمّه، شارك الرمز، وتنافسوا معًا.',
+            'l_name'         => 'اسم الدوري',
+            'l_name_ph'      => 'مثال: دوري المكتب',
+            'join_by_code'   => 'انضم برمز',
+            'join_ph'        => 'أدخل الرمز',
+            'join_cta'       => 'انضمام',
+            'your_leagues'   => 'دورياتك',
+            'no_leagues'     => 'لست في أي دوري بعد.',
+            'no_leagues_sub' => 'أنشئ دوري وادعُ أصدقاءك، أو انضم برمز.',
+            'members'        => 'أعضاء',
+            'member'         => 'عضو',
+            'your_rank'      => 'ترتيبك',
+            'owner'          => 'المالك',
+            'view_board'     => 'عرض اللوحة',
+            'invite_link'    => 'رابط الدعوة',
+            'copy'           => 'نسخ',
+            'copied'         => 'تم النسخ',
+            'share_wa'       => 'شارك على واتساب',
+            'share_text'     => 'انضم لدوري كأس العالم المصغّر على Cardify وتغلّب على نتيجتي',
+            'league_board'   => 'لوحة الدوري',
+            'back_leagues'   => 'الدوريات المصغّرة',
+            'board_empty'    => 'لا أعضاء بعد. شارك الرمز لملء اللوحة.',
+            'board_solo'     => 'أنت الوحيد هنا. ادعُ أصدقاءك لتبدأ المنافسة.',
+            'confirm_join'   => 'الانضمام لهذا الدوري؟',
+            'confirm_join_in'=> 'ستتم إضافتك إلى',
+            'already_member' => 'أنت بالفعل في هذا الدوري.',
+            'go_board'       => 'اذهب للوحة',
+            'leagues_grow'   => 'ادعُ أصدقاءك لتكبير دوريك',
+            'l_err_name'     => 'الرجاء تسمية دوريك.',
+            'l_err_max'      => 'لقد وصلت إلى الحد الأقصى لعدد الدوريات.',
+            'l_err_full'     => 'هذا الدوري ممتلئ.',
+            'l_err_notfound' => 'لا يوجد دوري بهذا الرمز.',
+            'l_err_generic'  => 'حدث خطأ. حاول مرة أخرى.',
+            'l_err_auth'     => 'سجّل الدخول لاستخدام الدوريات المصغّرة.',
+            'signin_join'    => 'سجّل الدخول للانضمام',
+            'rank_label'     => 'الترتيب',
+            'pts_label'      => 'نقطة',
+        ];
+        return self::lang($lang) === 'ar' ? $ar : $en;
+    }
 }

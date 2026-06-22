@@ -193,6 +193,7 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
     <div class="max-w-xl mx-auto px-5 h-16 flex items-center justify-between">
       <a href="https://wc.cardify.om/"><img src="/assets/images/logo.svg" alt="Cardify" class="h-7 w-auto"></a>
       <div class="flex items-center gap-1 text-sm">
+        <a href="/wc-leagues" class="font-semibold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg hover:bg-white"><?= fh(WcHub::lstrings($lang)['leagues']) ?></a>
         <a href="/wc-leaderboard" class="font-semibold text-blue-700 px-3 py-2 rounded-lg hover:bg-white"><?= fh($P['leaderboard']) ?></a>
         <a href="/wc-settings" class="text-slate-500 hover:text-slate-900 px-2.5 py-2 rounded-lg hover:bg-white" aria-label="<?= fh($P['settings']) ?>"><i class="fa-light fa-gear text-base"></i></a>
       </div>
@@ -258,6 +259,18 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
   </section>
 
   <main class="max-w-xl mx-auto px-5 py-5 space-y-5">
+    <?php $LS = WcHub::lstrings($lang); ?>
+    <!-- Mini-leagues: private friend boards. The retention + viral hook. -->
+    <a href="/wc-leagues" class="block rounded-2xl bg-white p-4 border border-slate-100 hover:border-blue-200 hover:shadow-sm transition">
+      <div class="flex items-center gap-3">
+        <span class="grid place-items-center w-11 h-11 rounded-xl bg-blue-50 text-blue-600 shrink-0"><i class="fa-solid fa-users-line text-lg"></i></span>
+        <div class="flex-1 min-w-0">
+          <div class="font-bold text-slate-800 leading-tight"><?= fh($LS['leagues']) ?></div>
+          <div class="text-[13px] text-slate-500"><?= fh($LS['leagues_sub']) ?></div>
+        </div>
+        <i class="fa-solid fa-chevron-<?= $dir==='rtl'?'left':'right' ?> text-slate-300 shrink-0"></i>
+      </div>
+    </a>
     <div class="rounded-2xl bg-white p-4 border border-slate-100">
       <div class="font-bold text-slate-800 mb-1"><?= fh($P['how_title']) ?></div>
       <p class="text-sm text-slate-500"><?= fh($P['how_body']) ?></p>

@@ -82,7 +82,7 @@ $prizes = ['$10,000','$5,000','$1,000']; $ranks=['1st','2nd','3rd'];
   <header class="sticky top-0 z-30 bg-[#f7f8fa]/85 backdrop-blur border-b border-slate-200/70">
     <div class="max-w-xl mx-auto px-5 h-16 flex items-center justify-between">
       <a href="<?= $user?'/predictions':'https://wc.cardify.om/' ?>"><img src="/assets/images/logo.svg" alt="Cardify" class="h-7 w-auto"></a>
-      <?php if($user): ?><a href="/predictions" class="text-sm font-semibold text-blue-700 px-3 py-2 rounded-lg hover:bg-white"><?= lh($P['predict']) ?></a><?php endif; ?>
+      <?php if($user): ?><div class="flex items-center gap-1 text-sm"><a href="/wc-leagues" class="font-semibold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg hover:bg-white"><?= lh(WcHub::lstrings($lang)['leagues']) ?></a><a href="/predictions" class="font-semibold text-blue-700 px-3 py-2 rounded-lg hover:bg-white"><?= lh($P['predict']) ?></a></div><?php endif; ?>
     </div>
   </header>
 
