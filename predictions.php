@@ -37,6 +37,10 @@ $badgesEarned = count(array_filter($badges, fn($b)=>$b['earned']));
 // Player level + XP progress, derived from the lifetime points total.
 $points = (int)$user['points_cache'];
 $lvl    = WcHub::levelOf($points);
+// HUD accuracy + the daily mission (both honest, derived from real data).
+$acc     = WcHub::accuracy($user);
+$mission = WcHub::dailyMission($user);
+$missionPct = $mission['total'] > 0 ? (int)round($mission['predicted'] / $mission['total'] * 100) : 0;
 $flame  = min(1.0 + $streakCount * 0.07, 1.6); // flame scale grows with streak, capped
 // 7-dot week tracker: how many of the last (up to 7) days are inside the current run.
 $weekFilled = min($streakCount, 7);
@@ -60,8 +64,12 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
     $finished = ($m['state']??'')==='post';
     $sel=$pred['pick']??''; $ph=$pred['pred_home']??''; $pa=$pred['pred_away']??'';
     $won = $finished && $pred && (int)($pred['points']??0)>0;
+    $boosted = $pred && (int)($pred['boosted']??0)===1;
     ob_start(); ?>
-    <div class="bg-white rounded-2xl p-4 shadow-sm border <?= $won?'border-emerald-200 win-card':'border-slate-100' ?>" data-match="<?= fh($id) ?>">
+    <div class="bg-white rounded-2xl p-4 shadow-sm border relative <?= $won?'border-emerald-200 win-card':($boosted?'border-amber-300':'border-slate-100') ?>" data-match="<?= fh($id) ?>" data-boosted="<?= $boosted?'1':'0' ?>" data-locked="<?= $isLocked?'1':'0' ?>">
+      <?php if($boosted): ?>
+      <span class="boost-badge absolute -top-2 end-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 text-white text-[10px] font-extrabold shadow-sm"><i class="fa-solid fa-bolt"></i> 2x</span>
+      <?php endif; ?>
       <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
         <span><?= fh(kostr($m['kickoff_utc'],$tzObj)) ?></span>
         <?php if($finished): ?><span class="font-bold text-slate-500"><?= fh($P['results']) ?></span>
@@ -99,6 +107,13 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
           <span class="text-xs text-slate-400 ms-1"><?= fh($P['exact']) ?></span>
         </div>
         <button type="button" class="save-btn btn w-full rounded-xl py-2.5 text-sm font-bold text-white bg-blue-600"><?= fh($P['save']) ?></button>
+        <!-- 2x Boost toggle: doubles points if this pick is right. One per matchday. -->
+        <div class="mt-2.5 flex items-center justify-between gap-2 <?= $pred?'':'opacity-50' ?>" data-boost-row>
+          <span class="text-[11px] text-slate-400 flex-1 min-w-0"><i class="fa-solid fa-bolt text-amber-400"></i> <?= fh($P['boost_hint']) ?></span>
+          <button type="button" role="switch" aria-checked="<?= $boosted?'true':'false' ?>" class="boost-btn btn inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold shrink-0 border <?= $boosted?'bg-amber-400 text-white border-amber-400':'bg-white text-amber-600 border-amber-200' ?>" <?= $pred?'':'disabled' ?>>
+            <i class="fa-solid fa-bolt"></i> <span class="boost-label"><?= $boosted?fh($P['boost_on']):fh($P['boost']) ?></span>
+          </button>
+        </div>
       <?php endif; ?>
     </div>
     <?php return ob_get_clean();
@@ -159,6 +174,18 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
   /* staggered card reveal */
   @keyframes riseIn{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:none}}
   .rise{animation:riseIn .5s cubic-bezier(.16,1,.3,1) both}
+  /* Daily Mission: fill bar grows on load; gold when complete */
+  .mission-fill{width:0;background:linear-gradient(90deg,#2563eb,#60a5fa);transition:width .9s cubic-bezier(.16,1,.3,1),background-color .3s}
+  .mission-fill.is-done{background:linear-gradient(90deg,#F2C14E,#fde68a)}
+  .mission-complete{background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%)}
+  @keyframes missionPop{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
+  .mission-pop{animation:missionPop .5s cubic-bezier(.16,1,.3,1)}
+  /* 2x Boost: badge breathes; toggle presses */
+  .boost-btn{transition:transform .14s cubic-bezier(.23,1,.32,1),background-color .18s,border-color .18s,color .18s}
+  .boost-btn:active{transform:scale(.95)}
+  @keyframes boostPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+  .boost-badge{animation:boostPulse 2.2s ease-in-out infinite}
+  @media (prefers-reduced-motion: reduce){.mission-fill,.boost-badge{animation:none;transition:none}}
 </style>
 </head>
 <body class="min-h-[100dvh] bg-[#f7f8fa] text-slate-900">
@@ -193,6 +220,9 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
             <span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-ranking-star text-white/70"></i>#<?= $rank ?></span>
             <?php if($streakCount>0): ?>
             <span class="inline-flex items-center gap-1"><i class="fa-solid fa-fire text-[#F2C14E]"></i><b><?= $streakCount ?></b></span>
+            <?php endif; ?>
+            <?php if($acc['pct']!==null): ?>
+            <span class="inline-flex items-center gap-1.5" title="<?= (int)$acc['correct'] ?>/<?= (int)$acc['scored'] ?>"><i class="fa-solid fa-bullseye text-white/70"></i><b><?= (int)$acc['pct'] ?>%</b> <?= fh($P['accuracy']) ?></span>
             <?php endif; ?>
           </div>
         </div>
@@ -231,6 +261,43 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
     <div class="rounded-2xl bg-white p-4 border border-slate-100">
       <div class="font-bold text-slate-800 mb-1"><?= fh($P['how_title']) ?></div>
       <p class="text-sm text-slate-500"><?= fh($P['how_body']) ?></p>
+    </div>
+
+    <!-- Daily Mission: predict all of today's matches for a one-time +5 -->
+    <?php $mDone = $mission['complete']; $mAwarded = $mission['awarded']; ?>
+    <div id="mission-card" class="rise rounded-2xl p-4 border <?= $mAwarded?'mission-complete border-amber-200':'bg-white border-slate-100' ?>"
+         data-total="<?= (int)$mission['total'] ?>" data-predicted="<?= (int)$mission['predicted'] ?>"
+         data-awarded="<?= $mAwarded?'1':'0' ?>" style="animation-delay:.03s">
+      <div class="flex items-center gap-3">
+        <span id="mission-ic" class="grid place-items-center w-12 h-12 rounded-2xl shrink-0 <?= $mAwarded?'bg-gradient-to-br from-amber-300 to-amber-400 text-white':'bg-blue-50 text-blue-600' ?>">
+          <i class="fa-solid <?= $mAwarded?'fa-trophy':'fa-bullseye-pointer' ?> text-xl"></i>
+        </span>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-bold text-slate-800 truncate"><?= fh($P['mission_title']) ?></span>
+            <span id="mission-reward" class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 <?= $mAwarded?'bg-amber-100 text-amber-700':'bg-amber-50 text-amber-600' ?>">
+              <i class="fa-solid fa-star"></i>+<?= (int)$mission['bonus'] ?>
+            </span>
+          </div>
+          <p id="mission-sub" class="text-xs text-slate-500 mt-0.5">
+            <?php if($mission['total']===0): ?><?= fh($P['mission_none']) ?>
+            <?php elseif($mAwarded): ?><span class="text-amber-600 font-semibold"><i class="fa-solid fa-circle-check"></i> <?= fh($P['mission_done_plus']) ?></span>
+            <?php else: ?><?= fh($P['mission_sub']) ?><?php endif; ?>
+          </p>
+        </div>
+      </div>
+      <?php if($mission['total']>0): ?>
+      <div class="mt-3">
+        <div class="flex items-center justify-between text-[11px] font-semibold mb-1.5">
+          <span id="mission-count" class="text-slate-500"><b class="text-slate-800"><?= (int)$mission['predicted'] ?></b> / <?= (int)$mission['total'] ?> <?= fh($P['mission_progress']) ?></span>
+          <span id="mission-pct" class="<?= $mDone?'text-amber-600':'text-blue-600' ?>"><?= (int)$missionPct ?>%</span>
+        </div>
+        <div class="mission-track h-2.5 rounded-full overflow-hidden bg-slate-100">
+          <div id="mission-fill" class="mission-fill h-full rounded-full <?= $mDone?'is-done':'' ?>" data-pct="<?= (int)$missionPct ?>"></div>
+        </div>
+        <?php if(!$mDone): ?><p class="text-[11px] text-slate-400 mt-2"><i class="fa-solid fa-arrow-down-long"></i> <?= fh($P['mission_go']) ?></p><?php endif; ?>
+      </div>
+      <?php endif; ?>
     </div>
 
     <!-- Daily streak widget -->
@@ -341,10 +408,13 @@ function countUp(el,from,to,ms){
     el.textContent=Math.round(from+(to-from)*e); if(k<1) requestAnimationFrame(step); })(t0);
 }
 
-// Animate the XP bar to its target on load.
+// Animate the XP bar + mission bar to their targets on load.
 window.addEventListener('load',()=>{
-  document.querySelectorAll('.xp-fill').forEach(f=>{ requestAnimationFrame(()=>{ f.style.width=(f.dataset.pct||0)+'%'; }); });
+  document.querySelectorAll('.xp-fill,.mission-fill').forEach(f=>{ requestAnimationFrame(()=>{ f.style.width=(f.dataset.pct||0)+'%'; }); });
 });
+
+const T_BOOST=<?= json_encode($P['boost']) ?>, T_BOOST_ON=<?= json_encode($P['boost_on']) ?>,
+      T_MISSION_DONE=<?= json_encode($P['mission_done_plus']) ?>, T_MISSION_PROG=<?= json_encode($P['mission_progress']) ?>;
 
 (function(){
   const btn=document.getElementById('checkin-btn'); if(!btn||btn.disabled) return;
@@ -435,7 +505,14 @@ document.querySelectorAll('[data-match]').forEach(card=>{
         setTimeout(()=>save.classList.remove('save-ok'),460);
         burstFrom(save,14);
         if(badge) badge.classList.remove('hidden');
+        // A saved pick unlocks this card's 2x Boost toggle.
+        const brow=card.querySelector('[data-boost-row]'), bbtn=card.querySelector('.boost-btn');
+        if(brow) brow.classList.remove('opacity-50');
+        if(bbtn) bbtn.disabled=false;
         if(j.badges) refreshBadges(j.badges, j.badges_earned);
+        if(j.mission) updateMission(j.mission, !!j.mission_award);
+        // Reflect any points moved by the mission bonus in the HUD.
+        if(j.points!=null){ const hp=document.getElementById('hud-points'); if(hp) countUp(hp,+hp.textContent||0,j.points,650); }
       } else { save.textContent='!'; setTimeout(()=>save.textContent=o,1500); }
     }catch(_){ save.textContent='!'; setTimeout(()=>save.textContent=o,1500); }
     save.disabled=false;
@@ -459,6 +536,81 @@ function refreshBadges(earnedKeys, count){
     }
     if(lb){ lb.classList.remove('text-slate-300'); lb.classList.add('text-slate-600','font-semibold'); }
   });
+}
+
+// Reflect the Daily Mission progress live as predictions are saved, and
+// celebrate the moment it completes (gold + confetti). Honest: the +5 award
+// itself is server-side (wc-predict.php / wc_daily_bonus), we only mirror it.
+function updateMission(mission, awardedNow){
+  const card=document.getElementById('mission-card'); if(!card||!mission) return;
+  const total=mission.total|0, done=mission.predicted|0;
+  card.dataset.predicted=done;
+  const pct = total>0 ? Math.round(done/total*100) : 0;
+  const fill=document.getElementById('mission-fill');
+  const cnt=document.getElementById('mission-count'), pctEl=document.getElementById('mission-pct');
+  if(cnt) cnt.innerHTML='<b class="text-slate-800">'+done+'</b> / '+total+' '+T_MISSION_PROG;
+  if(pctEl) pctEl.textContent=pct+'%';
+  if(fill){ fill.style.width=pct+'%'; if(mission.complete) fill.classList.add('is-done'); }
+  if(pctEl) pctEl.className = mission.complete ? 'text-amber-600' : 'text-blue-600';
+  if(awardedNow){
+    card.classList.remove('bg-white','border-slate-100');
+    card.classList.add('mission-complete','border-amber-200','mission-pop');
+    setTimeout(()=>card.classList.remove('mission-pop'),520);
+    const ic=document.getElementById('mission-ic');
+    if(ic){ ic.className='grid place-items-center w-12 h-12 rounded-2xl shrink-0 bg-gradient-to-br from-amber-300 to-amber-400 text-white';
+      ic.innerHTML='<i class="fa-solid fa-trophy text-xl"></i>'; }
+    const sub=document.getElementById('mission-sub');
+    if(sub) sub.innerHTML='<span class="text-amber-600 font-semibold"><i class="fa-solid fa-circle-check"></i> '+T_MISSION_DONE+'</span>';
+    const rw=document.getElementById('mission-reward'); if(rw){ rw.classList.remove('bg-amber-50'); rw.classList.add('bg-amber-100','text-amber-700'); }
+    burstFrom(card,26);
+    const hp=document.getElementById('hud-points');
+  }
+}
+
+// 2x Boost toggle: POST, enforce one-per-matchday client-side too (clear the
+// reported others), update the badge + card border. Server is the source of truth.
+(function(){
+  document.querySelectorAll('[data-match]').forEach(card=>{
+    const btn=card.querySelector('.boost-btn'); if(!btn) return;
+    btn.addEventListener('click',async()=>{
+      if(btn.disabled) return;
+      const turningOn = btn.getAttribute('aria-checked')!=='true';
+      btn.disabled=true; const o=btn.innerHTML; btn.innerHTML='<i class="fa-solid fa-bolt"></i> …';
+      try{
+        const r=await fetch('/api/wc-boost.php',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({match_id:card.dataset.match,on:turningOn})});
+        const j=await r.json();
+        if(j.ok){
+          setBoost(card, j.on);
+          // Clear any other cards the server unboosted for this matchday.
+          (j.cleared||[]).forEach(mid=>{ const c=document.querySelector('[data-match="'+mid+'"]'); if(c) setBoost(c,false); });
+          if(j.on) burstFrom(btn,12);
+        } else { btn.innerHTML=o; }
+      }catch(_){ btn.innerHTML=o; }
+      btn.disabled=false;
+    });
+  });
+})();
+
+function setBoost(card, on){
+  card.dataset.boosted=on?'1':'0';
+  const btn=card.querySelector('.boost-btn');
+  if(btn){
+    btn.setAttribute('aria-checked', on?'true':'false');
+    btn.className='boost-btn btn inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold shrink-0 border '+(on?'bg-amber-400 text-white border-amber-400':'bg-white text-amber-600 border-amber-200');
+    btn.innerHTML='<i class="fa-solid fa-bolt"></i> <span class="boost-label">'+(on?T_BOOST_ON:T_BOOST)+'</span>';
+  }
+  // top-corner 2x badge
+  let badge=card.querySelector('.boost-badge');
+  if(on && !badge){
+    badge=document.createElement('span');
+    badge.className='boost-badge absolute -top-2 end-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 text-white text-[10px] font-extrabold shadow-sm';
+    badge.innerHTML='<i class="fa-solid fa-bolt"></i> 2x';
+    card.appendChild(badge);
+    card.classList.remove('border-slate-100'); card.classList.add('border-amber-300');
+  } else if(!on && badge){
+    badge.remove(); card.classList.remove('border-amber-300'); card.classList.add('border-slate-100');
+  }
 }
 </script>
 </body></html>

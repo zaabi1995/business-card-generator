@@ -43,7 +43,26 @@ if ($existing) {
     $data['user_id']=$user['id']; $data['match_id']=$matchId;
     $db->insert('wc_predictions', $data);
 }
+// Daily Mission: if this save completed today's predictions, award the
+// one-time +5 (idempotent via wc_daily_bonus UNIQUE). Re-read the user so the
+// award and points reflect the just-saved prediction.
+$user    = WcHub::currentUser() ?: $user;
+$mission = WcHub::dailyMission($user);
+$award   = ['awarded'=>false];
+if ($mission['complete'] && !$mission['awarded']) {
+    $award = WcHub::awardDailyMission($user);
+    if ($award['awarded'] || $award['already']) { $mission['awarded'] = true; }
+    $user = WcHub::currentUser() ?: $user; // points_cache moved
+}
+
 // Recompute badges so the page can light up any newly-earned ones live.
 $earned = [];
 foreach (WcHub::badges($user) as $b) { if ($b['earned']) $earned[] = $b['key']; }
-out(['ok'=>true,'pick'=>$pick,'pred_home'=>$ph,'pred_away'=>$pa,'badges'=>$earned,'badges_earned'=>count($earned)]);
+
+out([
+    'ok'=>true, 'pick'=>$pick, 'pred_home'=>$ph, 'pred_away'=>$pa,
+    'badges'=>$earned, 'badges_earned'=>count($earned),
+    'mission'=>['total'=>$mission['total'],'predicted'=>$mission['predicted'],'complete'=>$mission['complete'],'awarded'=>$mission['awarded'],'bonus'=>$mission['bonus']],
+    'mission_award'=>!empty($award['awarded']),
+    'points'=>(int)$user['points_cache'],
+]);

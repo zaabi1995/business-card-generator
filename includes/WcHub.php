@@ -424,10 +424,24 @@ class WcHub
             'b_five_correct'=>'Sharpshooter','b_five_correct_d'=>'5 correct results',
             'b_streak7'=>'On fire','b_streak7_d'=>'7-day check-in streak',
             'b_referrer'=>'Recruiter','b_referrer_d'=>'Referred a friend',
+            'b_perfect_day'=>'Perfect Day','b_perfect_day_d'=>'All of a matchday\'s picks correct (2+ matches)',
+            'b_underdog'=>'Underdog','b_underdog_d'=>'Called a winner in a 3+ goal blowout',
+            'b_night_owl'=>'Night Owl','b_night_owl_d'=>'Predicted a match kicking off after midnight',
+            'b_sharpshooter2'=>'Sharpshooter II','b_sharpshooter2_d'=>'15 correct results',
             'locked_badge'=>'Locked',
             // XP / level HUD
             'level'=>'Level','xp'=>'XP','to_next'=>'to next level','tap_badge'=>'Tap a badge to see how to earn it',
             'newly_earned'=>'Badge unlocked','prize_pool'=>'Prize pool','your_run'=>'Your run','climbing'=>'Keep climbing',
+            'accuracy'=>'accuracy',
+            // Daily Mission
+            'mission_title'=>'Daily Mission','mission_sub'=>'Predict all of today\'s matches',
+            'mission_progress'=>'predicted today','mission_reward'=>'Reward',
+            'mission_done'=>'Mission complete','mission_done_plus'=>'Mission complete +5',
+            'mission_none'=>'No matches to predict today. Come back tomorrow.',
+            'mission_go'=>'Predict the rest below',
+            // Boost
+            'boost'=>'2x Boost','boost_on'=>'Boosted 2x','boost_hint'=>'Double the points if this pick is right. One boost per matchday.',
+            'boost_one'=>'Boost moved to this match','boost_locked'=>'Boost locks at kickoff',
         ];
         $ar = [
             'predict'=>'التوقعات','matches'=>'المباريات','leaderboard'=>'المتصدرون',
@@ -460,10 +474,24 @@ class WcHub
             'b_five_correct'=>'قنّاص','b_five_correct_d'=>'5 نتائج صحيحة',
             'b_streak7'=>'متّقد','b_streak7_d'=>'سلسلة حضور 7 أيام',
             'b_referrer'=>'مُحفّز','b_referrer_d'=>'دعوت صديقًا',
+            'b_perfect_day'=>'يوم مثالي','b_perfect_day_d'=>'كل توقعات يومٍ صحيحة (مباراتان فأكثر)',
+            'b_underdog'=>'المفاجأة','b_underdog_d'=>'توقّعت الفائز في مباراة بفارق 3 أهداف فأكثر',
+            'b_night_owl'=>'طائر الليل','b_night_owl_d'=>'توقّعت مباراة تبدأ بعد منتصف الليل',
+            'b_sharpshooter2'=>'قنّاص II','b_sharpshooter2_d'=>'15 نتيجة صحيحة',
             'locked_badge'=>'مقفل',
             // XP / level HUD
             'level'=>'المستوى','xp'=>'نقاط الخبرة','to_next'=>'للمستوى التالي','tap_badge'=>'اضغط على وسام لمعرفة كيفية كسبه',
             'newly_earned'=>'تم فتح وسام','prize_pool'=>'مجموع الجوائز','your_run'=>'مسيرتك','climbing'=>'واصل التقدّم',
+            'accuracy'=>'دقة',
+            // Daily Mission
+            'mission_title'=>'مهمة اليوم','mission_sub'=>'توقّع كل مباريات اليوم',
+            'mission_progress'=>'توقّعت اليوم','mission_reward'=>'المكافأة',
+            'mission_done'=>'اكتملت المهمة','mission_done_plus'=>'اكتملت المهمة +5',
+            'mission_none'=>'لا مباريات للتوقّع اليوم. عُد غدًا.',
+            'mission_go'=>'توقّع البقية في الأسفل',
+            // Boost
+            'boost'=>'مضاعفة 2x','boost_on'=>'مضاعَف 2x','boost_hint'=>'ضاعِف النقاط إذا صحّ هذا التوقع. مضاعفة واحدة لكل يوم.',
+            'boost_one'=>'تم نقل المضاعفة لهذه المباراة','boost_locked'=>'تُقفل المضاعفة عند البداية',
         ];
         $lang = self::lang($lang);
         return $lang === 'ar' ? $ar : $en;
@@ -485,12 +513,68 @@ class WcHub
         $refs    = (int)($db->fetchOne("SELECT COUNT(*) AS c FROM wc_users WHERE referred_by=:u", ['u'=>$uid])['c'] ?? 0);
         $streakBest = (int)($user['streak_best'] ?? 0);
 
+        // Perfect Day: a past matchday (anchor-tz day) where the user predicted
+        // >=2 finished matches and got ALL of them right. Derived live from
+        // joined finished predictions, grouped by the anchor-tz calendar day.
+        $perfectDay = false;
+        $rows = $db->fetchAll(
+            "SELECT m.kickoff_utc AS ko, p.points AS pts
+             FROM wc_predictions p JOIN wc_matches m ON m.espn_id = p.match_id
+             WHERE p.user_id=:u AND p.scored=1 AND m.state='post'", ['u'=>$uid]
+        );
+        if ($rows) {
+            $anchor = new DateTimeZone('America/New_York');
+            $byDay = [];
+            foreach ($rows as $r) {
+                try { $d = new DateTime((string)$r['ko'], new DateTimeZone('UTC')); }
+                catch (Throwable $e) { continue; }
+                $d->setTimezone($anchor);
+                $key = $d->format('Y-m-d');
+                if (!isset($byDay[$key])) $byDay[$key] = ['n'=>0, 'win'=>0];
+                $byDay[$key]['n']++;
+                if ((int)$r['pts'] > 0) $byDay[$key]['win']++;
+            }
+            foreach ($byDay as $d) {
+                if ($d['n'] >= 2 && $d['win'] === $d['n']) { $perfectDay = true; break; }
+            }
+        }
+
+        // Underdog: correctly picked the eventual winner in a match decided by a
+        // >=3-goal margin (a clear blowout the user called right). Real data.
+        $underdog = (bool)$db->fetchOne(
+            "SELECT p.id FROM wc_predictions p JOIN wc_matches m ON m.espn_id = p.match_id
+             WHERE p.user_id=:u AND p.scored=1 AND p.points>0 AND m.state='post'
+               AND ABS(CAST(m.home_score AS SIGNED) - CAST(m.away_score AS SIGNED)) >= 3
+               AND p.pick IN ('home','away') LIMIT 1", ['u'=>$uid]
+        );
+
+        // Night Owl: has a prediction on a match that kicks off 00:00-06:00 in
+        // the USER's local timezone. Compute the user-local hour from kickoff_utc.
+        $nightOwl = false;
+        $tzName = $user['tz'] ?: 'Asia/Muscat';
+        try { $utz = new DateTimeZone($tzName); } catch (Throwable $e) { $utz = new DateTimeZone('Asia/Muscat'); }
+        $koRows = $db->fetchAll(
+            "SELECT m.kickoff_utc AS ko FROM wc_predictions p JOIN wc_matches m ON m.espn_id = p.match_id
+             WHERE p.user_id=:u", ['u'=>$uid]
+        );
+        foreach ($koRows as $r) {
+            try { $d = new DateTime((string)$r['ko'], new DateTimeZone('UTC')); }
+            catch (Throwable $e) { continue; }
+            $d->setTimezone($utz);
+            $h = (int)$d->format('G');
+            if ($h >= 0 && $h < 6) { $nightOwl = true; break; }
+        }
+
         return [
             ['key'=>'first_pred',   'icon'=>'fa-flag-checkered', 'earned'=>$total >= 1],
             ['key'=>'ten_preds',    'icon'=>'fa-chess-knight',   'earned'=>$total >= 10],
             ['key'=>'five_correct', 'icon'=>'fa-bullseye',       'earned'=>$correct >= 5],
             ['key'=>'streak7',      'icon'=>'fa-fire',           'earned'=>$streakBest >= 7],
             ['key'=>'referrer',     'icon'=>'fa-user-plus',      'earned'=>$refs >= 1],
+            ['key'=>'perfect_day',  'icon'=>'fa-calendar-check', 'earned'=>$perfectDay],
+            ['key'=>'underdog',     'icon'=>'fa-horse',          'earned'=>$underdog],
+            ['key'=>'night_owl',    'icon'=>'fa-moon',           'earned'=>$nightOwl],
+            ['key'=>'sharpshooter2','icon'=>'fa-crosshairs',     'earned'=>$correct >= 15],
         ];
     }
 
@@ -632,5 +716,140 @@ class WcHub
             "SELECT pass_type FROM wc_wallet_passes WHERE serial=:s LIMIT 1", ['s'=>$serial]
         );
         return ($row && ($row['pass_type'] ?? '') === 'matches') ? 'matches' : 'player';
+    }
+
+    /**
+     * The user's local calendar "today" as a Y-m-d string in their own tz.
+     * This is the same day boundary the streak check-in uses, so the Daily
+     * Mission, the streak and the UI all agree on what "today" means.
+     */
+    public static function localToday(array $user): string
+    {
+        $tzName = $user['tz'] ?: 'Asia/Muscat';
+        try { $tz = new DateTimeZone($tzName); } catch (Throwable $e) { $tz = new DateTimeZone('Asia/Muscat'); }
+        return (new DateTime('now', $tz))->format('Y-m-d');
+    }
+
+    /**
+     * Daily Mission state: "predict all of today's matches". Today = the user's
+     * own local calendar day, so the fixtures shown match the predictions page.
+     * Only PRE-KICKOFF matches count toward the mission (a match that already
+     * kicked off can no longer be predicted, so it must not block completion).
+     *
+     * Returns:
+     *   total      int  today's predictable (pre-kickoff at page-load) matches
+     *   predicted  int  how many of those the user has a prediction on
+     *   complete   bool predicted >= total AND total > 0
+     *   awarded    bool the one-time +5 for today already landed (wc_daily_bonus)
+     *   bonus      int  the mission reward (5)
+     *   date       str  the user-local Y-m-d the mission is scoped to
+     */
+    public static function dailyMission(array $user, ?DateTime $now = null): array
+    {
+        $db   = Database::getInstance();
+        $uid  = (int)$user['id'];
+        $bonus = 5;
+        $tzName = $user['tz'] ?: 'Asia/Muscat';
+        try { $tz = new DateTimeZone($tzName); } catch (Throwable $e) { $tz = new DateTimeZone('Asia/Muscat'); }
+        $now    = $now ? (clone $now)->setTimezone(new DateTimeZone('UTC')) : new DateTime('now', new DateTimeZone('UTC'));
+        $today  = (clone $now)->setTimezone($tz)->format('Y-m-d');
+
+        // Today's window in the USER's tz, compared in UTC against kickoff_utc.
+        $start = new DateTime($today . ' 00:00:00', $tz);
+        $end   = (clone $start)->modify('+1 day');
+        $startUtc = (clone $start)->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+        $endUtc   = (clone $end)->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+        $nowUtc   = $now->format('Y-m-d H:i:s');
+
+        // Predictable today = kicks off today (user tz) AND still pre-kickoff.
+        $todayFx = $db->fetchAll(
+            "SELECT espn_id FROM wc_matches
+             WHERE kickoff_utc >= :a AND kickoff_utc < :b AND kickoff_utc > :n
+             ORDER BY kickoff_utc ASC",
+            ['a'=>$startUtc, 'b'=>$endUtc, 'n'=>$nowUtc]
+        );
+        $total = count($todayFx);
+
+        $predicted = 0;
+        if ($total > 0) {
+            $ids = array_column($todayFx, 'espn_id');
+            $in  = implode(',', array_fill(0, count($ids), '?'));
+            $params = array_merge([$uid], $ids);
+            $predicted = (int)($db->fetchOne(
+                "SELECT COUNT(*) AS c FROM wc_predictions
+                 WHERE user_id=? AND match_id IN ($in)", $params
+            )['c'] ?? 0);
+        }
+
+        $complete = $total > 0 && $predicted >= $total;
+        $awarded  = (bool)$db->fetchOne(
+            "SELECT id FROM wc_daily_bonus WHERE user_id=:u AND bonus_date=:d AND kind='daily_mission' LIMIT 1",
+            ['u'=>$uid, 'd'=>$today]
+        );
+
+        return [
+            'total'     => $total,
+            'predicted' => min($predicted, $total),
+            'complete'  => $complete,
+            'awarded'   => $awarded,
+            'bonus'     => $bonus,
+            'date'      => $today,
+        ];
+    }
+
+    /**
+     * Try to award the Daily Mission +5 for a user, ONCE per local day. The
+     * wc_daily_bonus UNIQUE(user_id, bonus_date, kind) index is the single
+     * atomic winner, so concurrent calls can only award once. Only awards when
+     * the mission is actually complete (all of today's pre-kickoff matches
+     * predicted). Award lands in bonus_points AND points_cache (survives the
+     * cron's points_cache recompute, exactly like the check-in bonus).
+     *
+     * Returns ['awarded'=>bool, 'already'=>bool, 'bonus'=>int, 'points'=>int].
+     */
+    public static function awardDailyMission(array $user): array
+    {
+        $db    = Database::getInstance();
+        $uid   = (int)$user['id'];
+        $m     = self::dailyMission($user);
+        $bonus = (int)$m['bonus'];
+        $points = (int)($user['points_cache'] ?? 0);
+
+        if (!$m['complete']) return ['awarded'=>false, 'already'=>false, 'bonus'=>$bonus, 'points'=>$points];
+
+        // Reserve the unique day row BEFORE awarding (the index is the lock).
+        try {
+            $db->insert('wc_daily_bonus', [
+                'user_id'=>$uid, 'bonus_date'=>$m['date'], 'kind'=>'daily_mission', 'points'=>$bonus,
+            ]);
+        } catch (Throwable $e) {
+            if (stripos($e->getMessage(), 'Duplicate') !== false || strpos($e->getMessage(), '1062') !== false) {
+                return ['awarded'=>false, 'already'=>true, 'bonus'=>$bonus, 'points'=>$points];
+            }
+            error_log('awardDailyMission reserve failed: ' . $e->getMessage());
+            return ['awarded'=>false, 'already'=>false, 'bonus'=>$bonus, 'points'=>$points];
+        }
+
+        // We won the day: award into bonus_points + points_cache.
+        $db->query(
+            "UPDATE wc_users SET bonus_points = bonus_points + :a, points_cache = points_cache + :b WHERE id=:id",
+            ['a'=>$bonus, 'b'=>$bonus, 'id'=>$uid]
+        );
+        return ['awarded'=>true, 'already'=>false, 'bonus'=>$bonus, 'points'=>$points + $bonus];
+    }
+
+    /**
+     * Prediction accuracy for the HUD: correct results / scored predictions.
+     * Returns ['scored'=>int, 'correct'=>int, 'pct'=>int|null]. pct is null
+     * when nothing has scored yet (UI hides it or shows a dash).
+     */
+    public static function accuracy(array $user): array
+    {
+        $db  = Database::getInstance();
+        $uid = (int)$user['id'];
+        $scored  = (int)($db->fetchOne("SELECT COUNT(*) AS c FROM wc_predictions WHERE user_id=:u AND scored=1", ['u'=>$uid])['c'] ?? 0);
+        $correct = (int)($db->fetchOne("SELECT COUNT(*) AS c FROM wc_predictions WHERE user_id=:u AND scored=1 AND points>0", ['u'=>$uid])['c'] ?? 0);
+        $pct = $scored > 0 ? (int)round($correct / $scored * 100) : null;
+        return ['scored'=>$scored, 'correct'=>$correct, 'pct'=>$pct];
     }
 }

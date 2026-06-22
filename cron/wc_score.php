@@ -2,7 +2,9 @@
 /**
  * cron/wc_score.php - score predictions for finished matches.
  * 1 point for the correct result (home/draw/away), +2 bonus for the exact
- * score. Recomputes points_cache (prediction points + share bonus).
+ * score. A boosted (2x) prediction that scores any points has its total
+ * DOUBLED (so a correct boosted pick = 2, a boosted exact score = 6).
+ * Recomputes points_cache (prediction points + share bonus).
  * Idempotent: only unscored predictions of finished matches are touched.
  */
 require_once __DIR__ . '/../config.php';
@@ -17,13 +19,17 @@ foreach ($finished as $m) {
     $hs = (int)$m['home_score']; $as = (int)$m['away_score'];
     $result = $hs === $as ? 'draw' : ($hs > $as ? 'home' : 'away');
     $preds = $db->fetchAll(
-        "SELECT id, user_id, pick, pred_home, pred_away FROM wc_predictions
+        "SELECT id, user_id, pick, pred_home, pred_away, boosted FROM wc_predictions
          WHERE match_id=:m AND scored=0", ['m'=>$m['espn_id']]);
     foreach ($preds as $p) {
         $pts = ($p['pick'] === $result) ? 1 : 0;
         if ($p['pred_home'] !== null && $p['pred_away'] !== null
             && (int)$p['pred_home'] === $hs && (int)$p['pred_away'] === $as) {
             $pts += 2; // exact-score bonus
+        }
+        // 2x Boost: double the total for a boosted prediction that scored.
+        if ((int)($p['boosted'] ?? 0) === 1 && $pts > 0) {
+            $pts *= 2;
         }
         $db->update('wc_predictions', ['points'=>$pts,'scored'=>1], 'id=:id', ['id'=>$p['id']]);
         $affected[(int)$p['user_id']] = true;
