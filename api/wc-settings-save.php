@@ -16,7 +16,8 @@ $tz   = (string)($in['tz'] ?? 'Asia/Muscat');
 if ($name === '' || mb_strlen($name) > 120) out(['ok'=>false,'error'=>'name']);
 if (!in_array($tz, timezone_identifiers_list(), true)) $tz = 'Asia/Muscat';
 $nhour = max(0, min(23, (int)($in['notify_hour'] ?? ($user['notify_hour'] ?? 10))));
+$nresults = !empty($in['notify_results']) ? 1 : 0;
 
 Database::getInstance()->update('wc_users',
-    ['name'=>$name,'language'=>$lang,'tz'=>$tz,'notify_hour'=>$nhour], 'id=:id', ['id'=>$user['id']]);
+    ['name'=>$name,'language'=>$lang,'tz'=>$tz,'notify_hour'=>$nhour,'notify_results'=>$nresults], 'id=:id', ['id'=>$user['id']]);
 out(['ok'=>true]);

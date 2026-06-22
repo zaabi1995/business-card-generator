@@ -57,7 +57,7 @@ $T = [
   'micro'  => $rtl ? 'نرسل رمز تأكيد على واتساب. نستخدم رقمك فقط لتحديثات كأس العالم.' : "We send a WhatsApp code to confirm. Your number is used only for World Cup updates.",
   'how'    => $rtl ? 'كيف يعمل' : 'How it works',
   'how1'=>$rtl?'سجّل برقم واتساب':'Sign up with WhatsApp','how1d'=>$rtl?'تأكيد سريع برمز لمرة واحدة.':'A quick one-time code confirms it is you.',
-  'how2'=>$rtl?'مباريات يوميًا الساعة 10':'Daily matches at 10am','how2d'=>$rtl?'المواعيد والنتائج بلغتك وتوقيتك.':'Fixtures and results in your language and timezone.',
+  'how2'=>$rtl?'مباريات يوميًا الساعة 10':'Daily matches at 10am','how2d'=>$rtl?'المواعيد والنتائج بلغتك وتوقيتك، والنتيجة النهائية تصلك لحظة انتهاء كل مباراة.':'Fixtures and results in your language and timezone, plus the full-time score the moment each match ends.',
   'how3'=>$rtl?'توقّع وتصدّر':'Predict and climb','how3d'=>$rtl?'النقاط حسب توقعاتك، تصدّر اللوحة.':'Earn points for correct calls, rise up the table.',
   'stand'  => $rtl ? 'الترتيب المباشر' : 'Live standings',
   'standsub'=> $rtl ? 'تصدّر الترتيب بنهاية البطولة واربح 10,000 دولار. سباق الجوائز يبدأ من دور الـ32، فالجميع يبدأ من نقطة واحدة، لم يفت الأوان.' : 'Top the table by the final and win $10,000. The prize race runs across the knockout rounds, so everyone starts level, it is not too late.',

@@ -68,6 +68,18 @@ $inputCls='w-full px-4 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white 
           <?php $uh=(int)($user['notify_hour'] ?? 10); for($hh=0;$hh<24;$hh++): ?><option value="<?= $hh ?>" <?= $hh===$uh?'selected':'' ?>><?= date('g:i A', mktime($hh,0,0,1,1,2026)) ?></option><?php endfor; ?>
         </select>
       </div>
+      <div class="flex items-start justify-between gap-3 pt-1">
+        <div class="min-w-0">
+          <label for="notify_results" class="block text-[13px] font-semibold text-slate-700"><?= sh($P['notify_results']) ?></label>
+          <p class="text-xs text-slate-400 mt-0.5"><?= sh($P['notify_results_hint']) ?></p>
+        </div>
+        <?php $nr = (int)($user['notify_results'] ?? 1) === 1; ?>
+        <button type="button" id="notify_results" role="switch" aria-checked="<?= $nr?'true':'false' ?>"
+          data-on="<?= $nr?'1':'0' ?>"
+          class="btn shrink-0 mt-0.5 relative inline-flex h-7 w-12 items-center rounded-full transition-colors <?= $nr?'bg-blue-600':'bg-slate-300' ?>">
+          <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform <?= $nr?'translate-x-6':'translate-x-1' ?>"></span>
+        </button>
+      </div>
       <button id="save" class="btn w-full rounded-2xl py-3.5 font-bold text-white bg-blue-600"><?= sh($P['save_settings']) ?></button>
     </div>
     <div class="flex items-center justify-between mt-5 text-sm">
@@ -79,12 +91,20 @@ $inputCls='w-full px-4 py-3 rounded-xl border-[1.5px] border-slate-200 bg-white 
 <script>
 const T_OK=<?= json_encode($P['saved_ok']) ?>, T_FAIL=<?= json_encode($P['save_fail']) ?>, T_ERR=<?= json_encode($P['err']) ?>;
 const $=id=>document.getElementById(id);
+const nrBtn=$('notify_results');
+nrBtn.addEventListener('click',()=>{
+  const on=nrBtn.dataset.on!=='1'; nrBtn.dataset.on=on?'1':'0';
+  nrBtn.setAttribute('aria-checked',on?'true':'false');
+  nrBtn.classList.toggle('bg-blue-600',on); nrBtn.classList.toggle('bg-slate-300',!on);
+  const knob=nrBtn.querySelector('span');
+  knob.classList.toggle('translate-x-6',on); knob.classList.toggle('translate-x-1',!on);
+});
 $('save').addEventListener('click',async()=>{
   const b=$('save'); b.disabled=true; const o=b.textContent; b.textContent='…';
   const m=$('msg');
   try{
     const r=await fetch('/api/wc-settings-save.php',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name:$('name').value,language:$('language').value,tz:$('tz').value,notify_hour:parseInt($('notify_hour').value,10)})});
+      body:JSON.stringify({name:$('name').value,language:$('language').value,tz:$('tz').value,notify_hour:parseInt($('notify_hour').value,10),notify_results:nrBtn.dataset.on==='1'?1:0})});
     const j=await r.json();
     m.className=(j.ok?'bg-emerald-50 text-emerald-700':'bg-red-50 text-red-600')+' mb-3 rounded-xl px-3.5 py-2.5 text-sm';
     m.textContent=j.ok?T_OK:T_FAIL; m.classList.remove('hidden');
