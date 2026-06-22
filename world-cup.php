@@ -319,7 +319,7 @@ async function verify(){
 $('btnVerify').addEventListener('click',verify);
 $('btnChange').addEventListener('click',()=>show('step-form'));
 $('btnResend').addEventListener('click',()=>fetch('/api/wc-otp-request.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...CURRENT,turnstile:''})}));
-$('btnInvite').addEventListener('click',()=>{const link='https://wc.cardify.om/'+(MYREF?('?ref='+MYREF):'');const t=encodeURIComponent(STR.hero_title+'\n'+link);window.open('https://api.whatsapp.com/send?text='+t,'_blank');});
+$('btnInvite').addEventListener('click',()=>{const link='https://wc.cardify.om/'+(MYREF?('?ref='+MYREF):'');const t=encodeURIComponent(STR.invite_share+'\n'+link);window.open('https://api.whatsapp.com/send?text='+t,'_blank');});
 </script>
 </body>
 </html>
