@@ -6,6 +6,9 @@ module.exports = {
     './wc-leaderboard.php',
     './wc-settings.php',
     './wc-wallet.php',
+    './wc-leagues.php',
+    './wc-league.php',
+    './wc-join.php',
   ],
   theme: {
     extend: {
@@ -21,6 +24,9 @@ module.exports = {
     'bg-slate-100', 'text-slate-300', 'text-slate-600', 'font-semibold',
     'bg-slate-50', 'text-slate-700', 'border-slate-200',
     'border-blue-600', 'text-amber-600',
+    // Mini-leagues: gradient avatar tile + WhatsApp share + copy-confirm swap.
+    'from-blue-500', 'to-blue-700', 'bg-[#25D366]',
+    '!bg-emerald-100', '!text-emerald-600',
   ],
   corePlugins: { preflight: true },
 };

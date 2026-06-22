@@ -57,7 +57,7 @@ $prizes = ['$10,000','$5,000','$1,000']; $ranks=['1st','2nd','3rd'];
 <link rel="alternate icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
 <link rel="preconnect" href="https://design.bhd.om" crossorigin>
-<link rel="stylesheet" href="/assets/wc/wc.css?v=1">
+<link rel="stylesheet" href="/assets/wc/wc.css?v=2">
 <link rel="stylesheet" href="https://fonts.bhd.om/css2?family=Outfit:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css">
 <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/light.min.css">
