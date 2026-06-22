@@ -215,14 +215,14 @@ function matchCard($m,$myPred,$tzObj,$nowUtc,$P,$locked=null){
         </div>
         <div class="flex-1 min-w-0">
           <div class="text-lg font-extrabold leading-tight"><?= fh($lvl['title']) ?></div>
-          <div class="flex items-center gap-3 text-white/85 text-[13px] mt-0.5">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-white/85 text-[13px] mt-1">
             <span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-star text-[#F2C14E]"></i><b id="hud-points"><?= $points ?></b> <?= fh($P['points']) ?></span>
             <span class="inline-flex items-center gap-1.5"><i class="fa-solid fa-ranking-star text-white/70"></i>#<?= $rank ?></span>
             <?php if($streakCount>0): ?>
             <span class="inline-flex items-center gap-1"><i class="fa-solid fa-fire text-[#F2C14E]"></i><b><?= $streakCount ?></b></span>
             <?php endif; ?>
             <?php if($acc['pct']!==null): ?>
-            <span class="inline-flex items-center gap-1.5" title="<?= (int)$acc['correct'] ?>/<?= (int)$acc['scored'] ?>"><i class="fa-solid fa-bullseye text-white/70"></i><b><?= (int)$acc['pct'] ?>%</b> <?= fh($P['accuracy']) ?></span>
+            <span class="inline-flex items-center gap-1.5 whitespace-nowrap" title="<?= (int)$acc['correct'] ?>/<?= (int)$acc['scored'] ?>"><i class="fa-solid fa-bullseye text-white/70"></i><b><?= (int)$acc['pct'] ?>%</b> <?= fh($P['accuracy']) ?></span>
             <?php endif; ?>
           </div>
         </div>
