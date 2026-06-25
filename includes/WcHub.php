@@ -253,9 +253,14 @@ class WcHub
         }
     }
 
+    /** The WC campaign WhatsApp SENDER line. Kabir (96891117795) went INACTIVE
+     *  (blocked from volume), switched to the Anna line on 25 Jun 2026. */
+    public const WC_SENDER = '96898899100';
+
     /**
-     * Kabir's (96891117795) OWN Dardasha token. Token owns the line, so this is
-     * what makes WC messages send FROM Kabir (not Anna/Cupsbyaa). Cached.
+     * The SENDER line's OWN Dardasha token, resolved BY NUMBER (token owns the
+     * line, so this is what makes WC messages send FROM the right number, not
+     * Cupsbyaa). Requires the line to be ACTIVE. Cached.
      */
     public static function kabirToken(): ?string
     {
@@ -268,23 +273,26 @@ class WcHub
                   'mysql:unix_socket=/var/lib/mysql/mysql.sock;dbname=wacrm;charset=utf8mb4'] as $dsn) {
             try {
                 $pdo = new PDO($dsn, 'wacrm', 'XdbDAdX3crnDyF6m', [PDO::ATTR_TIMEOUT=>5, PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
-                $v = $pdo->query("SELECT api_key FROM user WHERE email='kabir@bhd.om' LIMIT 1")->fetchColumn();
+                $st = $pdo->prepare("SELECT u.api_key FROM user u JOIN instance i ON i.uid=u.uid "
+                    . "WHERE i.number=? AND i.status='ACTIVE' AND u.api_key IS NOT NULL LIMIT 1");
+                $st->execute([self::WC_SENDER]);
+                $v = $st->fetchColumn();
                 if ($v) { $tok = (string)$v; break; }
             } catch (Throwable $e) { /* try next dsn */ }
         }
-        if ($tok === '') error_log('WcHub::kabirToken: could not resolve token');
+        if ($tok === '') error_log('WcHub::kabirToken: could not resolve token for ' . self::WC_SENDER);
         return $tok ?: null;
     }
 
-    /** Send a WhatsApp text FROM Kabir (96891117795) via the local Dardasha API. */
+    /** Send a WhatsApp text FROM the WC sender line via the local Dardasha API. */
     public static function waSend(string $to, string $text): bool
     {
         $tok = self::kabirToken();
-        if (!$tok) { error_log('WcHub::waSend: no Kabir token'); return false; }
+        if (!$tok) { error_log('WcHub::waSend: no sender token'); return false; }
         $to = preg_replace('/\D/', '', $to);
         $payload = json_encode([
             'messageType'=>'text', 'requestType'=>'POST', 'token'=>$tok,
-            'from'=>'96891117795', 'to'=>$to, 'text'=>$text,
+            'from'=>self::WC_SENDER, 'to'=>$to, 'text'=>$text,
         ]);
         $ch = curl_init('http://127.0.0.1:3000/api/qr/rest/send_message');
         curl_setopt_array($ch, [
