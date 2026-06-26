@@ -181,6 +181,10 @@ foreach ($pending as $m) {
     $predByUser = [];
     foreach ($predRows as $pr) { $predByUser[(int)$pr['user_id']] = $pr; }
 
+    // Mark the match announced BEFORE sending: a mid-run kill, flock overlap, or
+    // a 503-that-still-delivered must never re-announce it to everyone (at-most-once).
+    $db->update('wc_matches', ['result_notified'=>1], 'espn_id=:e', ['e'=>$espn]);
+
     $sent = 0; $fail = 0;
     foreach ($recipients as $u) {
         $uid  = (int)$u['id'];
@@ -198,8 +202,6 @@ foreach ($pending as $m) {
         usleep(4000000);
     }
 
-    // Mark the match announced AFTER attempting all sends (idempotent: once).
-    $db->update('wc_matches', ['result_notified'=>1], 'espn_id=:e', ['e'=>$espn]);
     $matchesDone++;
     $totalSent += $sent; $totalFail += $fail;
     echo "[wc_results] {$m['home']} {$m['home_score']}-{$m['away_score']} {$m['away']}: sent {$sent}, failed {$fail}\n";
