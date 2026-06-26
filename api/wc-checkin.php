@@ -59,10 +59,29 @@ if ($last === $yesterday)      { $streak = $prevStreak + 1; }  // continued
 else                           { $streak = 1; }               // first day or broken streak
 $best  = max((int)$user['streak_best'], $streak);
 
-// 3) Award. +1 always; +5 once when the streak first hits 7.
+// 3) Award. +1 always; +5 ONE-TIME-EVER the first time the streak reaches 7.
+// A broken+rebuilt 7-streak must NOT re-pay the milestone. A permanent
+// wc_daily_bonus row (kind='streak7') is the lifetime marker. The check-in
+// winner path runs at most once per user per day, so check-then-insert is safe.
 $award = 1;
 $milestone = false;
-if ($streak === 7) { $award += 5; $milestone = true; }
+if ($streak === 7) {
+    $had = $db->fetchOne(
+        "SELECT 1 FROM wc_daily_bonus WHERE user_id=:u AND kind='streak7' LIMIT 1",
+        ['u'=>$uid]);
+    if (!$had) {
+        try {
+            $db->insert('wc_daily_bonus',
+                ['user_id'=>$uid, 'bonus_date'=>$today, 'kind'=>'streak7', 'points'=>5]);
+            $award += 5; $milestone = true;
+        } catch (Throwable $e) {
+            // Lost a same-day race for the marker: keep the +1, skip the milestone.
+            if (stripos($e->getMessage(),'Duplicate')===false && strpos($e->getMessage(),'1062')===false) {
+                error_log('wc-checkin streak7 marker failed: ' . $e->getMessage());
+            }
+        }
+    }
+}
 
 $db->update('wc_users', [
     'streak_count' => $streak,
