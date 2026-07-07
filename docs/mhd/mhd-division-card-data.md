@@ -28,3 +28,20 @@ Shared constants (all MHD LLC / ITICS divisions), VERBATIM:
 ## Field split (per Ali): office Tel/Fax = per-division FIXED (baked per template). Per-person dynamic = name/position/subtitle (ALL EN+AR) + mobile + email.
 ## OCR numbers (Office Products, Infra&BS, EEP, Consumer) = re-confirm against art before print. Others exact from live text layer.
 ## Drive roots: MHD Visiting Card 1hwgPtWaodmpzThf4Jqfz9EqpYDgWHeI9; All Cards Print File 1YtLtCDQZLcBaDp2PPP0Im2SkNYQcUz0c (~300 per-employee Data Set N.ai).
+
+## GROUP B verified layouts (Drive vector cards, extracted 7 Jul) - trim 90x55mm = 255.1x155.9pt
+Full per-span field maps in tool-results/bmghxgp3j.txt. Buildable = Logistics, Consumer, Automotive(Imran). EEP = needs artwork.
+
+**Logistics** (BUILDABLE 2-sided EN+AR, cleanest) src 14_Zcj8cWeZhPTYhMl3QNJ-s9w6q_Bm5W:
+- Logo: MHD LOGISTICS L.L.C + label "LOGISTICS". NO ITICS banner. Entity EN "Mohsin Haider Darwish Logistics L.L.C." / AR "محسن حيدر درويش اللوجستية ش.م.م."
+- Address: P.O. Box 112, Postal Code 111, Muscat (DIFFERENT from ITICS 880/112). Web www.mhdlogistics.com. NO Tel/Fax line (mobile+email only). Person: name, title, mobile, email, web.
+- Colors navy #0f1f5c, blue #0662ae. Fonts FrutigerLTStd + FrutigerLTArabic.
+
+**Consumer** (BUILDABLE, ENGLISH FRONT ONLY - no Arabic back in artwork) src 1b8WdLYFWHrtAxssIQtjHNxyMEMcVViJ3:
+- ITICS banner ("INFRASTRUCTURE, TECHNOLOGY, INDUSTRIAL & CONSUMER SOLUTIONS"). Entity "Mohsin Haider Darwish for Consumer Services W.L.L" (BAHRAIN). Address Office 1967, Building 1565, Road 1722, Block 317, Manama, Kingdom of Bahrain. Tel/Fax +973 placeholder 00000000 (per-person real). NO division line/website/PO-box on the card.
+
+**Automotive** (BUILDABLE 2-sided, = the "Imran Safdar Khan" card) src 1VjgKC.. "Print-Imran Safdar Khan - Engineering Products.ai" (MIS-TITLED, it's the Automotive/Construction-Equip card):
+- Banner EN "AUTOMOTIVE, CONSTRUCTION EQUIPMENT & RENEWABLE ENERGY" / AR "السيارات، معدات البناء والطاقة المتجددة". Entity = PARENT "Mohsin Haider Darwish L.L.C." (CR 1001990, NOT Heavy Equipment LLC). Address P.O. Box 880/112 Ruwi. Tel +968 26841087 (Direct), person Mob. Division line "Construction Equipment" / "معدات البناء". Web mhdoman.com.
+- The NEW "Automotive & Heavy Equipment LLC" (CR 1429946, Tel 24732500/Fax 24793256) has ONLY a letterhead -> NEEDS-ARTWORK if that entity's card is wanted.
+
+**EEP** (eep@mhd.co.om, Muhammed Shaheer) = NEEDS-ARTWORK: only a flat "Confirmation mhd card.jpg" proof (200pcs, 90x55mm, 300gsm) + ITICS letterhead. Rebuild from JPG or reuse ITICS template w/ eep@ contact block.
