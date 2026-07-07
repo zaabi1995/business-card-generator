@@ -43,16 +43,33 @@ back), and per-person text fields. Division is just a TEXT LINE on the card
 (e.g. "Consumer Division / Mohsin Haider Darwish L.L.C." or "MHD Infrastructure
 Services L.L.C."), NOT a different logo/layout.
 
-- **Canonical master:** `docs/mhd/mhd-group-card-master.pdf` (was `ITICS-VC.pdf`,
-  sent 4 May 2025). 6 pages = 3 employees x (EN front + AR back), CLEAN (no pen
-  annotations), print-ready, bilingual. This is Cardify's exact front(EN)+back(AR)
-  model. Use ONE employee's EN+AR pair (e.g. Sanju Varghese, pages 1-2) as the
-  template; redact person data to dynamic fields via the import pipeline.
 - Per-person variable fields: name_en/ar, title_en/ar, subtitle_en/ar (e.g.
   "Mobile Devices Sales"), division/entity line_en/ar, mobile, tel, fax, email.
-- Implication: import the master ONCE into parent `mhd`; every department shares
-  the same template pair. The division dropdown sets routing + the division/entity
-  text line. **Task 4 (per-division import loop) is eliminated.**
-- Other archive artwork seen (all the SAME design): KKDURAI draft.final.pdf,
-  business card.pdf (17 Jun 2026), Business Card 27 Sept 23.pdf, Menon Old VC New
-  draft.pdf. Confirms one unified design across years + divisions.
+- Implication: ONE template pair (front EN + back AR) covers every division; the
+  division dropdown sets routing + the division/entity text line. **Task 4
+  (per-division import loop) is eliminated.**
+
+## CORRECTION (2026-07-07): NO importable clean master exists in the archive
+Classified every candidate card PDF (pdffonts/pdfimages/pdfinfo). **All are
+FLATTENED RASTER proofs** with the card text baked into pixels; the only live
+fonts present are correction annotations. Cardify's import pipeline
+(parse_card_pdf.py) needs a live text layer to auto-place dynamic fields, so NONE
+import cleanly.
+- `mhd-group-card-master.pdf` (ITICS-VC) = 72 ppi JPEG, 6pp, screen export - looks
+  clean but is low-res + no text -> unusable for print AND unimportable.
+- KKDURAI-final 150ppi, Sample-BusCard 254ppi, ipd-vishal 411ppi = raster proofs.
+- Best available raster = ipd-vishal (411 ppi) / Sample-BusCard (254 ppi), but
+  both have a specific person's data baked in.
+**Decision needed (Ali):** (1) get the real print-ready SOURCE from BHD's design
+team (InDesign/AI/press PDF with live text + brand font + logo asset - lives on
+the design workstation, not email), OR (2) rebuild the MHD ITICS card natively as
+a Cardify template (logo+banner as bg, define text fields) - needs the brand font
++ logo SVG from the design team. Option 1 is fastest to print-fidelity; option 2
+is self-contained. "Import proofs now" is NOT viable - the proofs are raster.
+
+## Existing MHD-tenant employees (already in Cardify, 33 total)
+tech-comm 12, office-products 7, consumer 6, infrastructure 5, logistics 5,
+building-materials 4, itics 2, healthcare 1; parent `mhd` + automotive = 0. Real
+people (match the mail sweep). "Fold into parent" must decide: migrate these into
+`mhd` or keep division tenants + span them. mhd.cardify.om/portal returns 200 and
+already renders a department picker UI.
