@@ -73,7 +73,7 @@ class CardPDFRenderer
         $employee = $db->fetchOne(
             'SELECT id, name_en, name_ar, position_en, position_ar,
                     mobile, phone, email, website,
-                    address_en, address_ar,
+                    address_en, address_ar, department_id,
                     company_id, updated_at
                FROM employees WHERE id = :id LIMIT 1',
             ['id' => $employeeId]
