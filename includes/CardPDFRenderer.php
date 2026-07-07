@@ -50,11 +50,15 @@ class CardPDFRenderer
      *              never do.
      *   Cache key differs per profile so all three can coexist on disk.
      */
-    public static function render(string $employeeId, string $profile = 'web'): array
+    public static function render(string $employeeId, string $profile = 'web', array $opts = []): array
     {
         if ($employeeId === '') {
             return ['success' => false, 'error' => 'empty employee id'];
         }
+        // include_qr defaults true; when explicitly false the QR is suppressed in
+        // this render (MHD portal "no QR" tickbox). Cache key differs so the
+        // with-QR and without-QR PDFs coexist on disk.
+        $noQr = array_key_exists('include_qr', $opts) && !$opts['include_qr'];
         // 'press' = the clean per-card print download: print font-embed + 3mm
         // bleed + crop marks + DeviceCMYK (exact tenant brand values) + a
         // CutContour cut-line layer. 'print' stays RGB/no-bleed so the A4
@@ -142,6 +146,7 @@ class CardPDFRenderer
             $employee['updated_at']  ?? '',
             is_array($theme) ? ($theme['updated_at'] ?? '') : '',
             $profile,
+            $noQr ? 'noqr' : 'qr',
         ]));
         $cacheDir = BASE_DIR . '/tmp/pdf-vector';
         if (!is_dir($cacheDir)) @mkdir($cacheDir, 0775, true);
@@ -257,6 +262,7 @@ class CardPDFRenderer
              . ' --profile '  . escapeshellarg($pyProfile)
              . ($forPrint ? ' --for-print' : '')
              . ($profile === 'vector' ? ' --vector-bg' : '')
+             . ($noQr ? ' --no-qr' : '')
              . ($tmpCmyk !== '' ? ' --cmyk ' . escapeshellarg($tmpCmyk) : '')
              . ($watermark !== '' ? ' --watermark ' . escapeshellarg($watermark) : '')
              . ($tmpVcf !== '' ? ' --vcard ' . escapeshellarg($tmpVcf) : '')

@@ -947,7 +947,8 @@ def _draw_qr_code(page, qr_spec: dict, employee: dict, template: dict,
 
 def render(template_path: str, employee_path: str, out_path: str,
            vcard_path: str = '', profile: str = 'web', for_print: bool = False,
-           watermark: str = '', cmyk_cfg_path: str = '', vector_bg: bool = False) -> int:
+           watermark: str = '', cmyk_cfg_path: str = '', vector_bg: bool = False,
+           no_qr: bool = False) -> int:
     with open(template_path) as fh:
         template = json.load(fh)
     with open(employee_path) as fh:
@@ -1139,9 +1140,9 @@ def render(template_path: str, employee_path: str, out_path: str,
             _draw_crop_marks(page, card_rect, bleed_pt=BLEED_PT,
                              color=((1, 1, 1, 1) if cmyk_cfg else (0, 0, 0)))
 
-        # Layer 1b: QR code if the page spec has one enabled.
+        # Layer 1b: QR code if the page spec has one enabled (unless suppressed).
         qr_spec = page_spec.get('qr_code')
-        if qr_spec and qr_spec.get('enabled'):
+        if qr_spec and qr_spec.get('enabled') and not no_qr:
             try:
                 _draw_qr_code(page, qr_spec, employee, template, card_rect,
                               for_print, cmyk_cfg)
@@ -1435,6 +1436,8 @@ def main():
                     help='Path to a CMYK press-config JSON (brand colour map + '
                          'corner_radius_mm). Enables DeviceCMYK output + CutContour '
                          'cut layer. Requires --for-print.')
+    ap.add_argument('--no-qr', action='store_true',
+                    help='Suppress the QR code even if the template has one enabled')
     ap.add_argument('--vector-bg', action='store_true',
                     help='Use the original vector source.pdf as the background '
                          '(designer sample redacted) instead of the raster bg, '
@@ -1443,7 +1446,7 @@ def main():
     sys.exit(render(args.template, args.employee, args.out, args.vcard,
                     profile=args.profile, for_print=args.for_print,
                     watermark=args.watermark, cmyk_cfg_path=args.cmyk,
-                    vector_bg=args.vector_bg))
+                    vector_bg=args.vector_bg, no_qr=args.no_qr))
 
 
 if __name__ == '__main__':
