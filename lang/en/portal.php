@@ -179,4 +179,5 @@ return [
     'primary_tap_whatsapp' => 'Open WhatsApp',
     'primary_tap_call'  => 'Dial phone',
     'primary_tap_hint'  => 'What the big button on your public card does.',
+    'include_qr'        => 'Include QR code on the card',
 ];

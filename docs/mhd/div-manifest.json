@@ -1,0 +1,37 @@
+[
+ {
+  "slug": "itics",
+  "division_en": "",
+  "division_ar": ""
+ },
+ {
+  "slug": "ipd",
+  "division_en": "Industrial Products Division",
+  "division_ar": "حلول المنتجات الصناعية"
+ },
+ {
+  "slug": "tech-comm",
+  "division_en": "Technology & Communications",
+  "division_ar": "التكنولوجيا والاتصالات"
+ },
+ {
+  "slug": "healthcare",
+  "division_en": "Healthcare Division",
+  "division_ar": "رعاية صحية"
+ },
+ {
+  "slug": "office-products",
+  "division_en": "Office Products Division",
+  "division_ar": "حلول المنتجات المكتبية"
+ },
+ {
+  "slug": "infrastructure",
+  "division_en": "Infrastructure & Building Systems",
+  "division_ar": "البنية التحتية ونظم البناء"
+ },
+ {
+  "slug": "building-materials",
+  "division_en": "Building Materials Division",
+  "division_ar": "مواد البناء"
+ }
+]

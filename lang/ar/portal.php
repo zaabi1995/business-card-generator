@@ -179,4 +179,5 @@ return [
     'primary_tap_whatsapp' => 'فتح واتساب',
     'primary_tap_call'  => 'الاتصال',
     'primary_tap_hint'  => 'ما يفعله الزر الكبير على بطاقتك العامة.',
+    'include_qr'        => 'إضافة رمز QR على البطاقة',
 ];
