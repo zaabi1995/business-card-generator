@@ -38,4 +38,10 @@ return [
     'field_front_template' => 'استبدال قالب الواجهة',
     'field_back_template'  => 'استبدال قالب الظهر',
     'side_override_hint'   => 'يُعطّل قالب الزوج أعلاه لهذه الجهة. اتركه فارغاً للوراثة.',
+    'routing_heading'          => 'توجيه الإرسال من البوابة',
+    'field_responsible_email'  => 'البريد المسؤول',
+    'responsible_email_hint'   => 'عند إرسال بطاقة من هذا القسم، تُرسل نسخة إلى هذا البريد.',
+    'field_cc_emails'          => 'عناوين نسخة إضافية',
+    'cc_emails_hint'           => 'اختياري، مفصولة بفواصل. تُنسخ أيضاً في كل إرسال.',
+    'include_qr_default_label' => 'تضمين رمز QR على البطاقات افتراضياً',
 ];

@@ -1139,6 +1139,11 @@ class CardEditor {
         // Remove existing QR
         this.removeField('qr_code');
 
+        // MHD portal "no QR" tickbox: when include is explicitly false, leave the
+        // QR off entirely (field already removed above) so preview + export match
+        // the print PDF rendered with --no-qr.
+        if (options.include === false) return null;
+
         const size = options.size || 100;
 
         try {

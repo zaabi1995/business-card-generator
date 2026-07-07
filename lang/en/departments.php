@@ -39,4 +39,10 @@ return [
     'field_front_template' => 'Front template override',
     'field_back_template'  => 'Back template override',
     'side_override_hint'   => 'Overrides the pair above for one side if set. Leave blank to inherit.',
+    'routing_heading'          => 'Portal Send routing',
+    'field_responsible_email'  => 'Responsible email',
+    'responsible_email_hint'   => 'When someone sends a card from this department, a copy is CC\'d here.',
+    'field_cc_emails'          => 'Additional CC emails',
+    'cc_emails_hint'           => 'Optional, comma-separated. Also copied on every Send.',
+    'include_qr_default_label' => 'Include QR code on cards by default',
 ];

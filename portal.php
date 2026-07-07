@@ -73,7 +73,7 @@ if ($db->isConnected()) {
     }
     
     $departments = $db->fetchAll(
-        "SELECT id, name, slug, template_pair_id, portal_passcode FROM departments WHERE company_id = :id ORDER BY name",
+        "SELECT id, name, slug, template_pair_id, portal_passcode, responsible_email, cc_emails, include_qr_default FROM departments WHERE company_id = :id ORDER BY name",
         ['id' => $companyId]
     );
     
@@ -413,9 +413,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
             }
             
             $db->insert('card_requests', $insertData);
-            
+
             $success = true;
-            
+
+            // MHD-style email-on-send: when the chosen department routes to a
+            // responsible mailbox, generate the print-ready card and email it to
+            // the employee + that mailbox + BHD sales. Notification-copy, no gate.
+            $sendDept = null;
+            foreach ($departments as $d) {
+                if (($d['id'] ?? '') === ($formData['department_id'] ?? '')) { $sendDept = $d; break; }
+            }
+            if ($sendDept && !empty($sendDept['responsible_email'])) {
+                try {
+                    require_once INCLUDES_DIR . '/CardPDFRenderer.php';
+                    require_once INCLUDES_DIR . '/MhdMailer.php';
+                    // Upsert an employee from the request so it renders on the
+                    // department's card template. id = email localpart.
+                    $lp = strtolower(explode('@', $formData['email'])[0]);
+                    $empId = preg_replace('/[^a-z0-9._-]/', '', $lp) ?: substr(md5($formData['email']), 0, 12);
+                    // Mobile: the "+968" prefix is baked on the card, so store digits only.
+                    $mob = preg_replace('/^\+?968[\s-]*/', '', trim($formData['mobile'] ?: $formData['phone']));
+                    $empData = [
+                        'company_id'   => $companyId,
+                        'name_en'      => $formData['name_en'],  'name_ar'     => $formData['name_ar'],
+                        'position_en'  => $formData['position_en'], 'position_ar' => $formData['position_ar'],
+                        'mobile'       => $mob,                   'email'        => $formData['email'],
+                        'department_id'=> $formData['department_id'] ?: null, 'status' => 'active',
+                    ];
+                    if ($db->fetchOne("SELECT id FROM employees WHERE id = :id", ['id' => $empId])) {
+                        $db->update('employees', $empData, 'id = :id', ['id' => $empId]);
+                    } else {
+                        $db->insert('employees', ['id' => $empId] + $empData);
+                    }
+                    $includeQr = !empty($_POST['include_qr']);
+                    $pdf = CardPDFRenderer::render($empId, 'print', ['include_qr' => $includeQr]);
+                    if (!empty($pdf['success']) && is_file($pdf['path'])) {
+                        $cc = array_values(array_filter(array_map('trim', explode(',', (string)($sendDept['cc_emails'] ?? '')))));
+                        MhdMailer::sendCard([
+                            'employee_email'    => $formData['email'],
+                            'employee_name'     => $employeeName ?? ($formData['name_en'] ?: $formData['name_ar']),
+                            'division_name'     => $sendDept['name'] ?? '',
+                            'responsible_email' => $sendDept['responsible_email'],
+                            'cc_emails'         => $cc,
+                            'pdf_path'          => $pdf['path'],
+                            'include_qr'        => $includeQr,
+                        ]);
+                    }
+                } catch (Throwable $e) {
+                    error_log('[portal mhd-send] ' . $e->getMessage());
+                }
+            }
+
             // Send confirmation email to employee
             $employeeName = $formData['name_en'] ?: $formData['name_ar'];
             Mailer::sendTemplate($formData['email'], 'request_submitted', [
@@ -1352,6 +1400,16 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     </div>
                     <?php endforeach; ?>
 
+                    <!-- QR code toggle -->
+                    <div class="pt-4 border-t border-gray-200">
+                        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                            <input type="checkbox" name="include_qr" id="include_qr" value="1" checked
+                                   onchange="if(typeof generatePreview==='function' && document.getElementById('submitSection').style.display!=='none'){ generatePreview(); }"
+                                   class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span><?= htmlspecialchars(t('portal.include_qr')) ?></span>
+                        </label>
+                    </div>
+
                     <!-- Step 1: Generate Preview Button -->
                     <div class="pt-4 border-t border-gray-200" id="generatePreviewSection">
                         <button type="button" id="generatePreviewBtn" onclick="generatePreview()"
@@ -1834,6 +1892,9 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 // so the QR is dynamic per person. Lock it against user movement
                 // on the portal preview (designer is the only place to reposition).
                 if (key === 'qr_code') {
+                    // Honor the "Include QR code" tickbox: skip the QR entirely when off.
+                    var __qrEl = document.getElementById('include_qr');
+                    if (__qrEl && !__qrEl.checked) { continue; }
                     const vcfUrl = getVcfUrl(data.email);
                     try {
                         const qrObj = await editor.addQRCode(vcfUrl, {

@@ -22,6 +22,18 @@ $companySlug = $company['slug'] ?? '';
 $message = null;
 $messageType = 'success';
 
+// Routing-email helpers for the portal Send flow (single responsible + CC list).
+function dept_clean_email($e) {
+    $e = trim((string)$e);
+    return ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) ? $e : null;
+}
+function dept_clean_cc($s) {
+    $out = array_filter(array_map('trim', explode(',', (string)$s)), function ($e) {
+        return filter_var($e, FILTER_VALIDATE_EMAIL);
+    });
+    return $out ? implode(',', array_values(array_unique($out))) : null;
+}
+
 // Get departments with template pair info
 $departments = $db->fetchAll(
     "SELECT d.*, 
@@ -101,6 +113,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'description' => $description,
                 'portal_slug' => $slug,
                 'access_code' => $portalPasscode ?: null,
+                'responsible_email' => dept_clean_email($_POST['responsible_email'] ?? ''),
+                'cc_emails' => dept_clean_cc($_POST['cc_emails'] ?? ''),
+                'include_qr_default' => !empty($_POST['include_qr_default']) ? 1 : 0,
                 'created_at' => date('Y-m-d H:i:s')
             ];
             
@@ -169,7 +184,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'template_pair_id' => $templatePairId ?: null,
                 'front_template_id' => $frontSafe,
                 'back_template_id'  => $backSafe,
-                'access_code' => $portalPasscode ?: null
+                'access_code' => $portalPasscode ?: null,
+                'responsible_email' => dept_clean_email($_POST['responsible_email'] ?? ''),
+                'cc_emails' => dept_clean_cc($_POST['cc_emails'] ?? ''),
+                'include_qr_default' => !empty($_POST['include_qr_default']) ? 1 : 0
             ];
 
             $db->update('departments', $updateData, 'id = :id AND company_id = :company_id', [
@@ -219,13 +237,13 @@ foreach ($departments as $dept) {
 adminHeader(t('departments.page_title'), 'departments');
 ?>
 
-<div x-data="{ showModal: false, editMode: false, formData: { id: '', name: '', description: '', portal_slug: '', template_pair_id: '', front_template_id: '', back_template_id: '', access_code: '' } }">
+<div x-data="{ showModal: false, editMode: false, formData: { id: '', name: '', description: '', portal_slug: '', template_pair_id: '', front_template_id: '', back_template_id: '', access_code: '', responsible_email: '', cc_emails: '', include_qr_default: true } }">
     <!-- Page Header Actions -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
             <p class="text-gray-600"><?= htmlspecialchars(t('departments.count', ['n' => count($departments)])) ?></p>
         </div>
-        <button @click="showModal = true; editMode = false; formData = { id: '', name: '', description: '', portal_slug: '', template_pair_id: '', front_template_id: '', back_template_id: '', access_code: '' }"
+        <button @click="showModal = true; editMode = false; formData = { id: '', name: '', description: '', portal_slug: '', template_pair_id: '', front_template_id: '', back_template_id: '', access_code: '', responsible_email: '', cc_emails: '', include_qr_default: true }"
                 class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2">
             <i class="fa-solid fa-plus"></i>
             <span><?= htmlspecialchars(t('departments.add_department')) ?></span>
@@ -251,7 +269,7 @@ adminHeader(t('departments.page_title'), 'departments');
                     </div>
                     <div class="flex items-center gap-1">
                         <button 
-                            @click="showModal = true; editMode = true; formData = { id: '<?php echo $dept['id']; ?>', name: '<?php echo addslashes($dept['name']); ?>', description: '<?php echo addslashes($dept['description'] ?? ''); ?>', portal_slug: '<?php echo addslashes($dept['portal_slug'] ?? ''); ?>', template_pair_id: '<?php echo $dept['template_pair_id'] ?? ''; ?>', front_template_id: '<?php echo $dept['front_template_id'] ?? ''; ?>', back_template_id: '<?php echo $dept['back_template_id'] ?? ''; ?>', access_code: '<?php echo addslashes($dept['access_code'] ?? ''); ?>' }"
+                            @click="showModal = true; editMode = true; formData = { id: '<?php echo $dept['id']; ?>', name: '<?php echo addslashes($dept['name']); ?>', description: '<?php echo addslashes($dept['description'] ?? ''); ?>', portal_slug: '<?php echo addslashes($dept['portal_slug'] ?? ''); ?>', template_pair_id: '<?php echo $dept['template_pair_id'] ?? ''; ?>', front_template_id: '<?php echo $dept['front_template_id'] ?? ''; ?>', back_template_id: '<?php echo $dept['back_template_id'] ?? ''; ?>', access_code: '<?php echo addslashes($dept['access_code'] ?? ''); ?>', responsible_email: '<?php echo addslashes($dept['responsible_email'] ?? ''); ?>', cc_emails: '<?php echo addslashes($dept['cc_emails'] ?? ''); ?>', include_qr_default: <?php echo !empty($dept['include_qr_default']) ? 'true' : 'false'; ?> }"
                             class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         >
                             <i class="fa-solid fa-pen-to-square"></i>
@@ -424,6 +442,31 @@ adminHeader(t('departments.page_title'), 'departments');
                     </div>
                 </div>
                 
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <p class="text-sm font-semibold text-gray-700 mb-3"><?= htmlspecialchars(t('departments.routing_heading')) ?></p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('departments.field_responsible_email')) ?></label>
+                            <input type="email" name="responsible_email" x-model="formData.responsible_email"
+                                   class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                                   placeholder="dept@company.com">
+                            <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('departments.responsible_email_hint')) ?></p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('departments.field_cc_emails')) ?></label>
+                            <input type="text" name="cc_emails" x-model="formData.cc_emails"
+                                   class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                                   placeholder="a@company.com, b@company.com">
+                            <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('departments.cc_emails_hint')) ?></p>
+                        </div>
+                    </div>
+                    <label class="flex items-center gap-2 mt-4 text-sm text-gray-700">
+                        <input type="checkbox" name="include_qr_default" value="1" x-model="formData.include_qr_default"
+                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span><?= htmlspecialchars(t('departments.include_qr_default_label')) ?></span>
+                    </label>
+                </div>
+
                 <div class="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-100">
                     <button type="button" @click="showModal = false" class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium transition-colors">
                         <?= htmlspecialchars(t('departments.cancel')) ?>
