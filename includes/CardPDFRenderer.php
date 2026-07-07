@@ -89,22 +89,42 @@ class CardPDFRenderer
         );
         $companyName = is_array($company) ? ($company['name'] ?? '') : '';
         $companySlug = is_array($company) ? ($company['slug'] ?? '') : '';
-        // Prefer a vector-capable (uploaded/imported) template over any
+        // Department-specific template (e.g. MHD, where each division has its
+        // own card): if the employee's department pins a template pair, use that
+        // pair's sides. This must win over the company-wide newest-template pick
+        // so a multi-division tenant renders each employee on their division card.
+        $tplFront = null; $tplBack = null;
+        if (!empty($employee['department_id'])) {
+            $dept = $db->fetchOne(
+                "SELECT template_pair_id FROM departments WHERE id = :d AND deleted_at IS NULL LIMIT 1",
+                ['d' => $employee['department_id']]
+            );
+            $pairId = is_array($dept) ? ($dept['template_pair_id'] ?? null) : null;
+            if (!empty($pairId)) {
+                $tplFront = $db->fetchOne("SELECT * FROM templates WHERE pair_id = :p AND side = 'front' AND is_active = 1 LIMIT 1", ['p' => $pairId]);
+                $tplBack  = $db->fetchOne("SELECT * FROM templates WHERE pair_id = :p AND side = 'back'  AND is_active = 1 LIMIT 1", ['p' => $pairId]);
+            }
+        }
+        // Fallback: prefer a vector-capable (uploaded/imported) template over any
         // non-vector seed. Without `has_vector_source DESC` a leftover seed
         // template (e.g. "BHD Classic", created AFTER the real upload) wins on
         // created_at and the renderer falls back to the generic raster layout.
-        $tplFront = $db->fetchOne(
-            "SELECT * FROM templates
-              WHERE company_id = :cid AND side = 'front' AND is_active = 1
-              ORDER BY has_vector_source DESC, created_at DESC LIMIT 1",
-            ['cid' => $companyId]
-        );
-        $tplBack = $db->fetchOne(
-            "SELECT * FROM templates
-              WHERE company_id = :cid AND side = 'back' AND is_active = 1
-              ORDER BY has_vector_source DESC, created_at DESC LIMIT 1",
-            ['cid' => $companyId]
-        );
+        if (!is_array($tplFront)) {
+            $tplFront = $db->fetchOne(
+                "SELECT * FROM templates
+                  WHERE company_id = :cid AND side = 'front' AND is_active = 1
+                  ORDER BY has_vector_source DESC, created_at DESC LIMIT 1",
+                ['cid' => $companyId]
+            );
+        }
+        if (!is_array($tplBack)) {
+            $tplBack = $db->fetchOne(
+                "SELECT * FROM templates
+                  WHERE company_id = :cid AND side = 'back' AND is_active = 1
+                  ORDER BY has_vector_source DESC, created_at DESC LIMIT 1",
+                ['cid' => $companyId]
+            );
+        }
         if (!is_array($tplFront) && !is_array($tplBack)) {
             return ['success' => false, 'error' => 'no active templates'];
         }
