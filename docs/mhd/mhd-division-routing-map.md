@@ -34,3 +34,25 @@ sales@bhdoman.com (Hamid Hussain handles MHD), info@bhdoman.com, accounts@bhdoma
 
 ## Cardify design status (verified 2026-07-07): 0 of 10 MHD tenants have a real
 ## card design imported. All templates are the auto-seeded BHD Classic placeholder.
+
+## Design inventory (verified 2026-07-07 by rendering archive PDFs)
+**MHD uses ONE group card design, not per-division artwork.** The card is the
+"MHD ITICS" bilingual design: MHD+ITICS logo lockup, red/blue geometric banner
+"INFRASTRUCTURE, TECHNOLOGY, INDUSTRIAL & CONSUMER SOLUTIONS" (AR mirror on the
+back), and per-person text fields. Division is just a TEXT LINE on the card
+(e.g. "Consumer Division / Mohsin Haider Darwish L.L.C." or "MHD Infrastructure
+Services L.L.C."), NOT a different logo/layout.
+
+- **Canonical master:** `docs/mhd/mhd-group-card-master.pdf` (was `ITICS-VC.pdf`,
+  sent 4 May 2025). 6 pages = 3 employees x (EN front + AR back), CLEAN (no pen
+  annotations), print-ready, bilingual. This is Cardify's exact front(EN)+back(AR)
+  model. Use ONE employee's EN+AR pair (e.g. Sanju Varghese, pages 1-2) as the
+  template; redact person data to dynamic fields via the import pipeline.
+- Per-person variable fields: name_en/ar, title_en/ar, subtitle_en/ar (e.g.
+  "Mobile Devices Sales"), division/entity line_en/ar, mobile, tel, fax, email.
+- Implication: import the master ONCE into parent `mhd`; every department shares
+  the same template pair. The division dropdown sets routing + the division/entity
+  text line. **Task 4 (per-division import loop) is eliminated.**
+- Other archive artwork seen (all the SAME design): KKDURAI draft.final.pdf,
+  business card.pdf (17 Jun 2026), Business Card 27 Sept 23.pdf, Menon Old VC New
+  draft.pdf. Confirms one unified design across years + divisions.
