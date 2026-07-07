@@ -180,4 +180,6 @@ return [
     'primary_tap_call'  => 'Dial phone',
     'primary_tap_hint'  => 'What the big button on your public card does.',
     'include_qr'        => 'Include QR code on the card',
+    'position_en_2'     => 'Sub-title / 2nd line (English)',
+    'position_ar_2'     => 'Sub-title / 2nd line (Arabic)',
 ];

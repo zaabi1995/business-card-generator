@@ -249,6 +249,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
         'name_ar' => trim($_POST['name_ar'] ?? ''),
         'position_en' => trim($_POST['position_en'] ?? ''),
         'position_ar' => trim($_POST['position_ar'] ?? ''),
+        'position_en_2' => trim($_POST['position_en_2'] ?? ''),
+        'position_ar_2' => trim($_POST['position_ar_2'] ?? ''),
         'phone' => trim($_POST['phone'] ?? ''),
         'phone_ar' => trim($_POST['phone_ar'] ?? ''),
         'mobile' => trim($_POST['mobile'] ?? ''),
@@ -433,12 +435,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                     $empId = preg_replace('/[^a-z0-9._-]/', '', $lp) ?: substr(md5($formData['email']), 0, 12);
                     // Mobile: the "+968" prefix is baked on the card, so store digits only.
                     $mob = preg_replace('/^\+?968[\s-]*/', '', trim($formData['mobile'] ?: $formData['phone']));
+                    // Arabic-Indic mobile for the back (front stays Western digits).
+                    $mobAr = strtr($mob, '0123456789', '٠١٢٣٤٥٦٧٨٩');
                     $empData = [
-                        'company_id'   => $companyId,
-                        'name_en'      => $formData['name_en'],  'name_ar'     => $formData['name_ar'],
-                        'position_en'  => $formData['position_en'], 'position_ar' => $formData['position_ar'],
-                        'mobile'       => $mob,                   'email'        => $formData['email'],
-                        'department_id'=> $formData['department_id'] ?: null, 'status' => 'active',
+                        'company_id'    => $companyId,
+                        'name_en'       => $formData['name_en'],       'name_ar'       => $formData['name_ar'],
+                        'position_en'   => $formData['position_en'],   'position_ar'   => $formData['position_ar'],
+                        'position_en_2' => $formData['position_en_2'], 'position_ar_2' => $formData['position_ar_2'],
+                        'mobile'        => $mob,                       'mobile_ar'     => $mobAr,
+                        'email'         => $formData['email'],
+                        'department_id' => $formData['department_id'] ?: null, 'status' => 'active',
                     ];
                     if ($db->fetchOne("SELECT id FROM employees WHERE id = :id", ['id' => $empId])) {
                         $db->update('employees', $empData, 'id = :id', ['id' => $empId]);
@@ -1196,7 +1202,29 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                                class="form-input rtl-input">
                     </div>
                     <?php endif; ?>
-                    
+
+                    <!-- Sub-title / second position line (English) -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.position_en_2')) ?></label>
+                        <input type="text" name="position_en_2" id="position_en_2"
+                               value="<?php echo htmlspecialchars($formData['position_en_2'] ?? ''); ?>"
+                               placeholder="Corporate Sales"
+                               class="form-input">
+                    </div>
+                    <!-- Sub-title / second position line (Arabic) -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <?= htmlspecialchars(t('portal.position_ar_2')) ?>
+                            <button type="button" class="ml-2 text-xs text-blue-600 hover:text-blue-700" onclick="translateField('position_en_2', 'position_ar_2', 'position')">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> <?= htmlspecialchars(t('portal.ai_translate')) ?>
+                            </button>
+                        </label>
+                        <input type="text" name="position_ar_2" id="position_ar_2"
+                               value="<?php echo htmlspecialchars($formData['position_ar_2'] ?? ''); ?>"
+                               placeholder="مبيعات الشركات"
+                               class="form-input rtl-input">
+                    </div>
+
                     <!-- Department -->
                     <?php if (!empty($departments)): ?>
                     <div>
@@ -1381,7 +1409,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                          designer without needing a code change per new field. -->
                     <?php
                     $handledKeys = [
-                        'name_en','name_ar','position_en','position_ar',
+                        'name_en','name_ar','position_en','position_ar','position_en_2','position_ar_2',
                         'phone','phone_ar','mobile','mobile_ar','fax','fax_ar',
                         'email','website','website_ar',
                         'address','address_en','address_ar','address_2_ar',
