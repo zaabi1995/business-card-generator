@@ -906,6 +906,16 @@ class CardEditor {
         textObj.fieldKey = key;
         textObj.fieldType = 'text';
         textObj.textAlignValue = textAlign; // Store for later retrieval
+        // Stash the offset between the field's stored bbox LEFT/TOP (x,y) and
+        // the Fabric anchor (left,top). Right/center-aligned fields anchor
+        // their `left` at x+width (or x+width/2) plus any side-bearing nudge,
+        // so getFieldPosition MUST subtract this offset to recover the stored
+        // left-edge x on save. Without it, every Save added `width` to x and
+        // the render path (which reads x as the left edge, rule 47) pushed the
+        // text right by a full field width. Drag-safe: the offset is constant,
+        // so field.left - offset tracks a moved field correctly.
+        textObj._anchorOffsetX = Number(fieldOptions.left) - Number(options.x != null ? options.x : 50);
+        textObj._anchorOffsetY = Number(fieldOptions.top) - Number(options.y != null ? options.y : 50);
 
         this.fields[key] = textObj;
         this.canvas.add(textObj);
@@ -1075,6 +1085,11 @@ class CardEditor {
             lockScalingY: true,
         });
         img._isRtlText = true;
+        // Same offset stash as the LTR path so getFieldPosition recovers the
+        // stored bbox x,y on Save (the RTL bitmap's left is x+width-runWidth
+        // and its top is y-padY, both offset from the stored coords).
+        img._anchorOffsetX = left - x;
+        img._anchorOffsetY = top - y;
         img._rtlText = text;
         return img;
     }
@@ -1483,11 +1498,17 @@ class CardEditor {
         const field = this.fields[key];
         if (!field) return null;
         
+        // Recover the STORED bbox left-edge (x) / top (y) by removing the
+        // anchor offset applied at creation. Right/center text fields anchor
+        // their Fabric `left` at x+width(/2); RTL bitmaps offset both left and
+        // top. Returning raw field.left here is what corrupted saved templates
+        // (x grew by width on every Save). Falls back to 0 offset for fields
+        // created without the stash (qr_code, legacy).
         const result = {
-            x: field.left,
-            y: field.top
+            x: field.left - (field._anchorOffsetX || 0),
+            y: field.top - (field._anchorOffsetY || 0)
         };
-        
+
         if (field.fieldType === 'qr') {
             result.size = field.getScaledWidth();
         } else {
