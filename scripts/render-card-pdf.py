@@ -1235,6 +1235,30 @@ def render(template_path: str, employee_path: str, out_path: str,
             # HarfBuzz shapes from base codepoints + GSUB correctly in both cases.
             # Reshaper path remains only for fonts without base+GSUB (rare).
             if _is_arabic(raw_text) and _font_can_harfbuzz_arabic(font_name, font_buf):
+                # Auto-shrink Arabic to fit the field width, mirroring the Fabric
+                # browser path (_buildRtlTextImage steps the size down until the
+                # shaped run fits field.width). Without this the vector print
+                # renders Arabic at the raw detected size, which is LARGER than
+                # the generated digital card AND overflows the htmlbox on long
+                # titles, clipping the last word (e.g. dropping "الشركات" from
+                # the ITHCA job title). Measure with the same HarfBuzz advance the
+                # htmlbox uses; 0.5pt steps + 70% floor match the Fabric quantum.
+                _ar_w = float(field.get('w_pt', 0) or 0)
+                if _ar_w > 0 and not static_text:
+                    _ar_floor = font_size * float(field.get('shrink_floor_pct', 70)) / 100.0
+                    _ar_steps = 0
+                    while _ar_steps < 120 and font_size > _ar_floor:
+                        _ar_m = _shaped_width_pt(font_buf, raw_text, font_size)
+                        if _ar_m is None:
+                            try:
+                                _ar_m = fitz.Font(fontbuffer=font_buf).text_length(
+                                    raw_text, fontsize=font_size)
+                            except Exception:
+                                break  # can't measure -> leave size unchanged
+                        if _ar_m <= _ar_w:
+                            break
+                        font_size -= 0.5
+                        _ar_steps += 1
                 _ar_left = (en_left_x.get(field_key[:-3])
                             if field_key.endswith('_ar') else None)
                 _draw_arabic_htmlbox(

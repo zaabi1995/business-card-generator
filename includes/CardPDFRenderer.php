@@ -20,7 +20,7 @@ class CardPDFRenderer
      *   field right edge (x_pt + w_pt), matching Fabric + Arabic htmlbox
      *   (rule 47 convention: x = bbox LEFT edge).
      */
-    const RENDERER_VERSION = 20;
+    const RENDERER_VERSION = 21;
 
     /**
      * Render or fetch a cached vector PDF for one employee.
