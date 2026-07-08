@@ -170,9 +170,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
         $error = t('auth.tenant_err_enter_id');
     } else {
         $isEmail = filter_var($identifier, FILTER_VALIDATE_EMAIL) !== false;
+        // Bare-username login: an identifier that is neither an email nor a
+        // phone (e.g. "ali.zaabi") is resolved against THIS tenant's users by
+        // email localpart, so an admin can sign in with just their username.
+        // Delivers via WhatsApp when the account has a phone, else email. An
+        // unknown username falls through to the same generic "code sent" page
+        // as an unknown email/phone (no account-enumeration signal).
+        $usernameNoop = false;
+        if (!$isEmail && tl_normalize_phone($identifier) === ''
+                && preg_match('/^[a-zA-Z0-9._%+\-]{2,64}$/', $identifier)) {
+            $uu = Database::getInstance()->fetchOne(
+                "SELECT email, phone FROM users
+                   WHERE company_id = :c
+                     AND LOWER(SUBSTRING_INDEX(email, '@', 1)) = LOWER(:lp)
+                   LIMIT 1",
+                ['c' => $companyId, 'lp' => $identifier]
+            );
+            if ($uu) {
+                $uphone = tl_normalize_phone((string) ($uu['phone'] ?? ''));
+                if ($uphone !== '' && strlen($uphone) >= 8) {
+                    $identifier = (string) $uu['phone'];
+                } elseif (!empty($uu['email'])) {
+                    $identifier = (string) $uu['email'];
+                    $isEmail = true;
+                }
+            } else {
+                $usernameNoop = true; // unknown username -> silent generic path
+            }
+        }
         $channel = $isEmail ? 'email' : 'whatsapp';
         $deliveryId = $isEmail ? strtolower($identifier) : tl_normalize_phone($identifier);
-        if (!$isEmail && strlen($deliveryId) < 8) {
+        if ($usernameNoop) {
+            // Stable, non-revealing delivery id so rate-limiting stays
+            // consistent; $user resolves to false below and nothing is sent.
+            $deliveryId = 'user:' . strtolower($identifier);
+        }
+        if (!$isEmail && !$usernameNoop && strlen($deliveryId) < 8) {
             $error = t('auth.tenant_err_phone_invalid');
         } else {
             // IP-based pre-lookup rate limit (anti-enumeration). Without this,
