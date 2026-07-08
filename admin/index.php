@@ -2153,6 +2153,28 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                                         </div>
                                         <div class="grid grid-cols-2 gap-2 mt-2">
                                             <div>
+                                                <label class="text-xs text-gray-500 block mb-0.5">Module shape</label>
+                                                <select :value="(field.qr_style && field.qr_style.module_shape) || 'square'"
+                                                        @change="updateQRStyle('module_shape', $event.target.value)"
+                                                        class="w-full px-2 py-1 bg-white border border-gray-200 rounded text-xs text-gray-900">
+                                                    <option value="square">Square (classic)</option>
+                                                    <option value="dots">Dots (circular)</option>
+                                                    <option value="rounded">Rounded</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-500 block mb-0.5">Eye shape</label>
+                                                <select :value="(field.qr_style && field.qr_style.eye_shape) || 'square'"
+                                                        @change="updateQRStyle('eye_shape', $event.target.value)"
+                                                        class="w-full px-2 py-1 bg-white border border-gray-200 rounded text-xs text-gray-900">
+                                                    <option value="square">Square</option>
+                                                    <option value="rounded">Rounded</option>
+                                                    <option value="circle">Circle</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-2 mt-2">
+                                            <div>
                                                 <label class="text-xs text-gray-500 block mb-0.5">Panel padding (src px)</label>
                                                 <input type="number" :value="(field.qr_style && field.qr_style.panel_padding_px) || 0"
                                                        @input="updateQRStyle('panel_padding_px', parseInt($event.target.value) || 0)"
@@ -3864,6 +3886,7 @@ if ($currentRole !== 'super_admin' && !empty($companySlug)):
                         mode: 'real_qr_styled', color: '#000000', bg_color: '#ffffff',
                         eye_color: null, border_color: null, border_width_px: 0,
                         has_border: false, border_radius_pct: 0,
+                        module_shape: 'square', eye_shape: 'square',
                         panel_padding_px: 0, panel_radius_pct: 0, qr_px_width: 600
                     };
                 }

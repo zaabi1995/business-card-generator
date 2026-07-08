@@ -893,14 +893,54 @@ def _draw_qr_code(page, qr_spec: dict, employee: dict, template: dict,
                 return True
         return False
 
+    # module_shape styles data modules (square | dots | rounded); eye_shape
+    # styles the 3 finder patterns (square | rounded | circle). Defaults keep
+    # the classic sharp square QR so untouched cards render exactly as before.
+    # MUST mirror _generateQRCode in assets/js/card-editor.js (rule 24: the
+    # print PDF has to match the browser preview).
+    module_shape = style.get('module_shape', 'square') or 'square'
+    eye_shape = style.get('eye_shape', 'square') or 'square'
+
+    def draw_cell(r, c, shape, fill):
+        x0, y0 = c * module_px, r * module_px
+        x1, y1 = x0 + module_px, y0 + module_px
+        if shape == 'dots':
+            draw.ellipse([x0, y0, x1 - 1, y1 - 1], fill=fill)
+        elif shape == 'rounded':
+            draw.rounded_rectangle([x0, y0, x1 - 1, y1 - 1],
+                                   radius=int(module_px * 0.35), fill=fill)
+        else:
+            draw.rectangle([x0, y0, x1, y1], fill=fill)
+
+    def draw_styled_eye(r0, c0):
+        ex, ey = c0 * module_px, r0 * module_px
+
+        def part(px, py, sz, fill):
+            if eye_shape == 'circle':
+                draw.ellipse([px, py, px + sz - 1, py + sz - 1], fill=fill)
+            else:  # rounded
+                draw.rounded_rectangle([px, py, px + sz - 1, py + sz - 1],
+                                       radius=int(sz * 0.28), fill=fill)
+
+        part(ex, ey, module_px * 7, eye_rgb)                                   # outer 7x7
+        part(ex + module_px, ey + module_px, module_px * 5, bg_rgb)            # knockout 5x5
+        part(ex + module_px * 2, ey + module_px * 2, module_px * 3, eye_rgb)   # pupil 3x3
+
     for r in range(n):
         for c in range(n):
             if not matrix[r][c]:
                 continue
-            x0, y0 = c * module_px, r * module_px
-            x1, y1 = x0 + module_px, y0 + module_px
-            fill = eye_rgb if in_eye(r, c) else fg_rgb
-            draw.rectangle([x0, y0, x1, y1], fill=fill)
+            is_eye = in_eye(r, c)
+            if is_eye and eye_shape != 'square':
+                continue  # painted as one shape below
+            shape = 'square' if is_eye else module_shape
+            fill = eye_rgb if is_eye else fg_rgb
+            draw_cell(r, c, shape, fill)
+
+    if eye_shape != 'square':
+        draw_styled_eye(0, 0)
+        draw_styled_eye(0, n - 7)
+        draw_styled_eye(n - 7, 0)
 
     # Optional rounded panel: paste QR onto a larger padded panel
     padding = int(style.get('panel_padding_px', 0)) * module_px // 4

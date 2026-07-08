@@ -1312,36 +1312,105 @@ class CardEditor {
                     ctx.fillRect(borderPx, borderPx, innerSize, innerSize);
                 }
 
-                // Modules. Finder patterns are the 7x7 blocks in the top-left,
-                // top-right, and bottom-left corners; they get the sampled
-                // eye_color when present so brand-styled QRs that use a
-                // distinct accent on the eyes stay faithful.
+                // Module + eye shape. `module_shape` styles the data modules
+                // (square | dots | rounded); `eye_shape` styles the 3 finder
+                // patterns (square | rounded | circle). Defaults reproduce the
+                // classic sharp black-square QR so untouched cards are unchanged.
+                const moduleShape = s.module_shape || 'square';
+                const eyeShape = s.eye_shape || 'square';
+
+                // Finder patterns are the 7x7 blocks in the top-left, top-right,
+                // and bottom-left corners; they get the sampled eye_color when
+                // present so brand-styled QRs that use a distinct accent on the
+                // eyes stay faithful.
                 const _inEye = (row, col) => {
-                    if (!eyeColor) return false;
                     if (row < 7 && col < 7) return true;                                    // top-left
                     if (row < 7 && col >= moduleCount - 7) return true;                     // top-right
                     if (row >= moduleCount - 7 && col < 7) return true;                     // bottom-left
                     return false;
                 };
+                const eyeFill = eyeColor || moduleColor;
                 const moduleOriginX = borderPx + panelPx;
                 const moduleOriginY = borderPx + panelPx;
-                for (let row = 0; row < moduleCount; row++) {
-                    for (let col = 0; col < moduleCount; col++) {
-                        if (qr.isDark(row, col)) {
-                            ctx.fillStyle = _inEye(row, col) ? eyeColor : moduleColor;
-                            // Snap each module's edges to integer pixels so an
-                            // adjacent dark module begins exactly where this one
-                            // ends. cellSize is fractional, so drawing at
-                            // fractional coords anti-aliases the shared edge and
-                            // leaves faint light seams -> a "woven" texture on
-                            // the QR. Rounding start+end removes the seams.
-                            const mx0 = Math.round(moduleOriginX + col * cellSize);
-                            const my0 = Math.round(moduleOriginY + row * cellSize);
-                            const mx1 = Math.round(moduleOriginX + (col + 1) * cellSize);
-                            const my1 = Math.round(moduleOriginY + (row + 1) * cellSize);
-                            ctx.fillRect(mx0, my0, mx1 - mx0, my1 - my0);
+
+                // Draw one data/eye cell in the requested shape. `dots` inscribes
+                // a circle, `rounded` a rounded square; both keep quiet gaps that
+                // scan reliably at error-correction M. Square snaps to integer
+                // pixels (adjacent modules share an exact edge -> no faint seams);
+                // dots/rounded draw at fractional coords so the curve stays smooth.
+                const drawCell = (row, col, shape, fill) => {
+                    ctx.fillStyle = fill;
+                    if (shape === 'square') {
+                        const mx0 = Math.round(moduleOriginX + col * cellSize);
+                        const my0 = Math.round(moduleOriginY + row * cellSize);
+                        const mx1 = Math.round(moduleOriginX + (col + 1) * cellSize);
+                        const my1 = Math.round(moduleOriginY + (row + 1) * cellSize);
+                        ctx.fillRect(mx0, my0, mx1 - mx0, my1 - my0);
+                        return;
+                    }
+                    const x = moduleOriginX + col * cellSize;
+                    const y = moduleOriginY + row * cellSize;
+                    if (shape === 'dots') {
+                        ctx.beginPath();
+                        ctx.arc(x + cellSize / 2, y + cellSize / 2, cellSize / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else { // rounded
+                        const r = cellSize * 0.35;
+                        if (typeof ctx.roundRect === 'function') {
+                            ctx.beginPath();
+                            ctx.roundRect(x, y, cellSize, cellSize, r);
+                            ctx.fill();
+                        } else {
+                            ctx.fillRect(x, y, cellSize, cellSize);
                         }
                     }
+                };
+
+                // Draw a unified styled finder eye (outer ring + centre pupil)
+                // as concentric rounded/circular shapes. Used only when eyeShape
+                // is not 'square' so the finders read as a designed mark rather
+                // than dotted-apart modules (dotted finders hurt scan reliability).
+                const drawStyledEye = (r0, c0) => {
+                    const ex = moduleOriginX + c0 * cellSize;
+                    const ey = moduleOriginY + r0 * cellSize;
+                    const part = (x, y, sz, fill) => {
+                        ctx.fillStyle = fill;
+                        if (eyeShape === 'circle') {
+                            ctx.beginPath();
+                            ctx.arc(x + sz / 2, y + sz / 2, sz / 2, 0, Math.PI * 2);
+                            ctx.fill();
+                        } else { // rounded
+                            const r = sz * 0.28;
+                            if (typeof ctx.roundRect === 'function') {
+                                ctx.beginPath();
+                                ctx.roundRect(x, y, sz, sz, r);
+                                ctx.fill();
+                            } else {
+                                ctx.fillRect(x, y, sz, sz);
+                            }
+                        }
+                    };
+                    part(ex, ey, cellSize * 7, eyeFill);                              // outer 7x7
+                    part(ex + cellSize, ey + cellSize, cellSize * 5, bgColor);        // knockout 5x5
+                    part(ex + cellSize * 2, ey + cellSize * 2, cellSize * 3, eyeFill);// pupil 3x3
+                };
+
+                for (let row = 0; row < moduleCount; row++) {
+                    for (let col = 0; col < moduleCount; col++) {
+                        if (!qr.isDark(row, col)) continue;
+                        const isEye = _inEye(row, col);
+                        // Styled eyes are painted as one shape after the loop.
+                        if (isEye && eyeShape !== 'square') continue;
+                        // Eye modules stay square (crisp finder) even when data
+                        // modules are dotted/rounded, unless a styled eye is used.
+                        const shape = isEye ? 'square' : moduleShape;
+                        drawCell(row, col, shape, isEye ? eyeFill : moduleColor);
+                    }
+                }
+                if (eyeShape !== 'square') {
+                    drawStyledEye(0, 0);
+                    drawStyledEye(0, moduleCount - 7);
+                    drawStyledEye(moduleCount - 7, 0);
                 }
 
                 resolve(canvas.toDataURL('image/png'));
