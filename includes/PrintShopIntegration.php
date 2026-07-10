@@ -655,9 +655,14 @@ class PrintShopIntegration {
     }
 
     /**
-     * Send email notification for order status update
+     * Send email notification for order status update.
+     * Public because Payment::confirmPrintOrder calls it directly on the
+     * online-payment callback; calling a private method cross-class threw a
+     * fatal Error (not an Exception) that the surrounding try/catch could not
+     * catch, so every online Paymob print-order callback 500'd after marking
+     * the order paid (customer status email never sent).
      */
-    private static function sendStatusUpdateEmail($orderId, $status, $trackingNumber = null) {
+    public static function sendStatusUpdateEmail($orderId, $status, $trackingNumber = null) {
         // Skip notification for pending status
         if ($status === 'pending') {
             return;

@@ -650,13 +650,16 @@ class Payment {
             error_log("ERPSync (online) exception for order {$orderId}: " . $e->getMessage());
         }
 
-        // Send notifications
+        // Send notifications. Catch Throwable, not just Exception: the order is
+        // already marked paid + ERP-synced above, so a notification failure must
+        // never bubble a fatal out of the payment callback (that would 500 the
+        // Paymob webhook and trigger pointless retries).
         try {
             if (file_exists(INCLUDES_DIR . '/PrintShopIntegration.php')) {
                 require_once INCLUDES_DIR . '/PrintShopIntegration.php';
                 PrintShopIntegration::sendStatusUpdateEmail($orderId, 'confirmed', null);
             }
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             error_log("Payment notification failed for order {$orderId}: " . $e->getMessage());
         }
     }
