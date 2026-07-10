@@ -788,7 +788,10 @@ class PrintShopIntegration {
             $companyId = $orderData['company_id'] ?? null;
             $company = null;
             if ($companyId) {
-                $stmt = $pdo->prepare("SELECT name_en, admin_email FROM companies WHERE id = ?");
+                // `companies` has `name` (no `name_en`). Selecting name_en threw
+                // "Unknown column" and the customer NEVER got an order
+                // confirmation email (the throw is caught + swallowed below).
+                $stmt = $pdo->prepare("SELECT name, admin_email FROM companies WHERE id = ?");
                 $stmt->execute([$companyId]);
                 $company = $stmt->fetch(PDO::FETCH_ASSOC);
             }
@@ -811,8 +814,8 @@ class PrintShopIntegration {
                 return;
             }
             
-            $recipientName = $orderData['shipping_name'] ?? ($company['name_en'] ?? 'Customer');
-            $companyName = $company['name_en'] ?? 'Your Company';
+            $recipientName = $orderData['shipping_name'] ?? ($company['name'] ?? 'Customer');
+            $companyName = $company['name'] ?? 'Your Company';
             $shopName = $printShop['name'] ?? 'Print Shop';
             $shopLocation = $printShop ? implode(', ', array_filter([$printShop['city'], $printShop['country']])) : '';
             

@@ -281,8 +281,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
         }
     }
     
-    // Validate name
-    if (!$error && empty($formData['name_en'])) {
+    // Validate name only when the template exposes a name field. If the
+    // imported card baked the name as a static decoration, no name_en input
+    // is rendered, so requiring it here would reject every submission for a
+    // field the visitor could never fill (matches the client-side guard).
+    if (!$error && !empty($enabledFields['name_en']) && empty($formData['name_en'])) {
         $error = 'Name (English) is required.';
     }
     
@@ -1729,7 +1732,13 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 return;
             }
         }
-        if (!nameEn) {
+        // Only block on a missing name when the template actually exposes a
+        // name field. When an imported card baked the name as a static/
+        // decoration (no name_en input rendered), document.getElementById
+        // returns null and requiring it created a hard dead-end: the portal
+        // showed no name field yet refused to preview. Guard on existence.
+        const nameInput = document.getElementById('name_en');
+        if (nameInput && !nameEn) {
             alert(<?= json_encode(t('portal.enter_name_first')) ?>);
             return;
         }

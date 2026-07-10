@@ -189,13 +189,16 @@ class Onboarding
             require_once __DIR__ . '/Notifier.php';
         }
         $db = Database::getInstance();
+        // NOTE: the `companies` table has `name` + `name_ar` only, NO `name_en`.
+        // Selecting name_en threw "Unknown column" and the whole welcome
+        // dispatch (email + WhatsApp) silently failed for every new signup.
         $company = $db->fetchOne(
-            "SELECT id, name, name_en, name_ar, slug, admin_email, phone FROM companies WHERE id = :id",
+            "SELECT id, name, name_ar, slug, admin_email, phone FROM companies WHERE id = :id",
             ['id' => $companyId]
         );
         if (!$company) return;
 
-        $companyName = $company['name'] ?? ($company['name_en'] ?? 'your company');
+        $companyName = $company['name'] ?? 'your company';
         $slug        = $company['slug'] ?? '';
         $firstEmp    = $data['first_employee'] ?? [];
         $host        = defined('APP_HOST') ? APP_HOST : 'cardify.om';

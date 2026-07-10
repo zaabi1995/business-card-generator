@@ -135,7 +135,9 @@ $saveUrl = getAdminBasePath() . 'onboarding-save' . ((defined('COMPANY_ADMIN_BAS
 $dashboardUrl = getAdminBasePath() . 'index' . ((defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php');
 $printUrl     = getAdminBasePath() . 'print' . ((defined('COMPANY_ADMIN_BASE') || !empty($_SESSION['company_slug'])) ? '' : '.php');
 
-adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding');
+// Suppress the generic layout title bar: the wizard renders its own centered
+// hero with the same title just below, which produced a duplicate <h1>.
+adminHeader(t('onboarding.welcome_title', ['name' => $companyName]), 'onboarding', false);
 ?>
 <style>
     .wizard-step[x-cloak] { display: none !important; }

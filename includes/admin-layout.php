@@ -120,7 +120,7 @@ function getPendingRequestsCount() {
     }
 }
 
-function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
+function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $showTitleBar = true) {
     global $currentUser, $brandName;
     
     // Redirect print shop users to their dashboard - they shouldn't access admin pages
@@ -713,10 +713,12 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard') {
     <div class="overflow-y-auto lg:ml-64 pt-16">
         <main>
             <div class="px-4 sm:px-6 lg:px-8 pt-6">
+<?php if ($showTitleBar): ?>
                 <!-- Page title -->
                 <div class="mb-6 pb-4 border-b border-gray-200/80">
                     <h1 class="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl"><?php echo htmlspecialchars($pageTitle); ?></h1>
                 </div>
+<?php endif; ?>
 <?php
 }
 

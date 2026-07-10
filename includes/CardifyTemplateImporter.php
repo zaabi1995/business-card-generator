@@ -109,13 +109,21 @@ class CardifyTemplateImporter
             if (!in_array($textAlign, ['left', 'center', 'right'], true)) $textAlign = 'left';
             $originX   = $textAlign;  // origin tracks alignment
 
+            // render_in_bg means "skip drawing, the pixels are baked in the bg
+            // PNG". That is only true when the PARSER actually baked this text.
+            // A field the parser REDACTED from the bg (parser render_in_bg=false,
+            // e.g. it detected a name as dynamic) has NO baked copy: if the AI /
+            // user then marks it static, drawing must stay ON (render_in_bg=false)
+            // or the text renders nowhere (bg copy removed AND skipped). This was
+            // the "imported name vanishes on the card" bug. Only keep the baked-
+            // skip when the final binding is static AND the parser baked it.
+            $parserBakedInBg = !empty($f['render_in_bg']);
+            $renderInBg = $isStatic && $parserBakedInBg;
+
             $out[$key] = [
                 'enabled'       => true,
                 'is_static'     => $isStatic,
-                // Mirror is_static onto render_in_bg so render-card-pdf.py
-                // and the Fabric renderers skip baked-in decorations
-                // instead of double-striking on top of the bg PNG/SVG.
-                'render_in_bg'  => $isStatic,
+                'render_in_bg'  => $renderInBg,
                 'label'         => $label,
                 'detected_text' => $f['detected_text'] ?? '',
                 'x'             => (int)($f['x_px'] ?? 0),

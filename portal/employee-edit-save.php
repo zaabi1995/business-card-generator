@@ -161,7 +161,7 @@ try {
             $canSend = RateLimiter::check($gateKey, $ip, 1, 300);
             if ($optedIn && $canSend) {
                 $company = $db->fetchOne(
-                    "SELECT id, name, name_en, slug, admin_email FROM companies WHERE id = :id",
+                    "SELECT id, name, slug, admin_email FROM companies WHERE id = :id",
                     ['id' => $employee['company_id']]
                 );
                 $adminEmail = $company['admin_email'] ?? '';
