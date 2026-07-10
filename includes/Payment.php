@@ -632,6 +632,24 @@ class Payment {
             ['pid' => $payment['id'], 'id' => $orderId]
         );
 
+        // Sync the paid order to BHD-ERP (Quote -> Invoice -> Payment). Online
+        // Paymob payments used to skip this: only the print shop's manual
+        // "mark paid" fired ERPSync, so a customer who paid online never got an
+        // ERP invoice. recordPayment is idempotent on orderNumber (409 = safe),
+        // so a later manual mark-paid double-firing is harmless.
+        try {
+            require_once INCLUDES_DIR . '/ERPSync.php';
+            if (ERPSync::isEnabled()) {
+                $ref  = $payment['paymob_transaction_id'] ?? $payment['id'] ?? '';
+                $sync = ERPSync::recordPayment((int)$orderId, 'online', (string)$ref, 'Paid online via Paymob', '');
+                if (empty($sync['success'])) {
+                    error_log("ERPSync (online) failed for order {$orderId}: " . ($sync['message'] ?? 'unknown'));
+                }
+            }
+        } catch (Exception $e) {
+            error_log("ERPSync (online) exception for order {$orderId}: " . $e->getMessage());
+        }
+
         // Send notifications
         try {
             if (file_exists(INCLUDES_DIR . '/PrintShopIntegration.php')) {
