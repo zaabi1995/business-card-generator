@@ -444,4 +444,58 @@ class WhatsApp {
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
+
+    /**
+     * Send a login/verification code via the official Meta WhatsApp Cloud API
+     * authentication template (bhd_login_code). Preferred over the Baileys line
+     * for OTPs: official, unbannable, needs no 24h window. Same return shape as
+     * sendMessage. Requires WACLOUD_TOKEN + WACLOUD_PHONE_ID in config.php.
+     */
+    public static function sendAuthCode($phoneNumber, $code) {
+        if (!defined('WACLOUD_TOKEN') || !defined('WACLOUD_PHONE_ID')
+            || !WACLOUD_TOKEN || !WACLOUD_PHONE_ID) {
+            return ['success' => false, 'error' => 'wacloud not configured'];
+        }
+        $to = preg_replace('/[^0-9]/', '', (string) $phoneNumber);
+        if (strlen($to) === 8) { $to = '968' . $to; }
+        if ($to === '') { return ['success' => false, 'error' => 'invalid phone']; }
+        $code = (string) $code;
+        $payload = json_encode([
+            'messaging_product' => 'whatsapp',
+            'to' => $to,
+            'type' => 'template',
+            'template' => [
+                'name' => 'bhd_login_code',
+                'language' => ['code' => 'en'],
+                'components' => [
+                    ['type' => 'body', 'parameters' => [['type' => 'text', 'text' => $code]]],
+                    ['type' => 'button', 'sub_type' => 'url', 'index' => '0',
+                     'parameters' => [['type' => 'text', 'text' => $code]]],
+                ],
+            ],
+        ]);
+        $ch = curl_init('https://graph.facebook.com/v21.0/' . WACLOUD_PHONE_ID . '/messages');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . WACLOUD_TOKEN,
+            ],
+            CURLOPT_TIMEOUT => 15,
+        ]);
+        $response = curl_exec($ch);
+        $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($response === false || $http < 200 || $http >= 300) {
+            return ['success' => false, 'error' => 'graph http ' . $http];
+        }
+        $data = json_decode($response, true);
+        $mid = $data['messages'][0]['id'] ?? null;
+        return $mid
+            ? ['success' => true, 'error' => null, 'messageId' => $mid]
+            : ['success' => false, 'error' => 'no message id'];
+    }
+
 }

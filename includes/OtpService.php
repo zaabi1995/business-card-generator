@@ -156,7 +156,15 @@ class OtpService
 
     private static function deliverWhatsApp(string $phone, string $code): bool
     {
-        if (!class_exists('WhatsApp') || !WhatsApp::isEnabled()) return false;
+        if (!class_exists('WhatsApp')) return false;
+        // Official Cloud API authentication template first (unbannable,
+        // no 24h window); fall back to the Baileys line only if Cloud is
+        // unconfigured or errors.
+        if (method_exists('WhatsApp', 'sendAuthCode')) {
+            $cloud = WhatsApp::sendAuthCode($phone, $code);
+            if (is_array($cloud) && !empty($cloud['success'])) return true;
+        }
+        if (!WhatsApp::isEnabled()) return false;
         $body = self::renderTemplate('otp.whatsapp', $code);
         // OTPs are transactional, bypass Dardasha's anti-ban throttle so the
         // user gets the code in ~500ms instead of 5-10s. EN auto-bypasses
