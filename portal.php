@@ -436,8 +436,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                     // department's card template. id = email localpart.
                     $lp = strtolower(explode('@', $formData['email'])[0]);
                     $empId = preg_replace('/[^a-z0-9._-]/', '', $lp) ?: substr(md5($formData['email']), 0, 12);
-                    // Mobile: the "+968" prefix is baked on the card, so store digits only.
-                    $mob = preg_replace('/^\+?968[\s-]*/', '', trim($formData['mobile'] ?: $formData['phone']));
+                    // Mobile: the country prefix is baked on the card ("+968",
+                    // or "+973" on the Bahrain Consumer card), so store digits only.
+                    $mob = preg_replace('/^\+?9(68|73)[\s-]*/', '', trim($formData['mobile'] ?: $formData['phone']));
                     // Arabic-Indic mobile for the back (front stays Western digits).
                     $mobAr = strtr($mob, '0123456789', '٠١٢٣٤٥٦٧٨٩');
                     $empData = [

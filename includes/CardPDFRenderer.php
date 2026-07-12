@@ -95,6 +95,7 @@ class CardPDFRenderer
         // pair's sides. This must win over the company-wide newest-template pick
         // so a multi-division tenant renders each employee on their division card.
         $tplFront = null; $tplBack = null;
+        $deptPinned = false;
         if (!empty($employee['department_id'])) {
             $dept = $db->fetchOne(
                 "SELECT template_pair_id FROM departments WHERE id = :d AND deleted_at IS NULL LIMIT 1",
@@ -104,13 +105,17 @@ class CardPDFRenderer
             if (!empty($pairId)) {
                 $tplFront = $db->fetchOne("SELECT * FROM templates WHERE pair_id = :p AND side = 'front' AND is_active = 1 LIMIT 1", ['p' => $pairId]);
                 $tplBack  = $db->fetchOne("SELECT * FROM templates WHERE pair_id = :p AND side = 'back'  AND is_active = 1 LIMIT 1", ['p' => $pairId]);
+                // A pinned pair is authoritative for BOTH sides: a single-sided
+                // pair (e.g. MHD Consumer, front only) renders one page and must
+                // never borrow the missing side from an unrelated template.
+                $deptPinned = is_array($tplFront) || is_array($tplBack);
             }
         }
         // Fallback: prefer a vector-capable (uploaded/imported) template over any
         // non-vector seed. Without `has_vector_source DESC` a leftover seed
         // template (e.g. "BHD Classic", created AFTER the real upload) wins on
         // created_at and the renderer falls back to the generic raster layout.
-        if (!is_array($tplFront)) {
+        if (!is_array($tplFront) && !$deptPinned) {
             $tplFront = $db->fetchOne(
                 "SELECT * FROM templates
                   WHERE company_id = :cid AND side = 'front' AND is_active = 1
@@ -118,7 +123,7 @@ class CardPDFRenderer
                 ['cid' => $companyId]
             );
         }
-        if (!is_array($tplBack)) {
+        if (!is_array($tplBack) && !$deptPinned) {
             $tplBack = $db->fetchOne(
                 "SELECT * FROM templates
                   WHERE company_id = :cid AND side = 'back' AND is_active = 1
