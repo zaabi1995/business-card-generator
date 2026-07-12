@@ -73,7 +73,7 @@ if ($db->isConnected()) {
     }
     
     $departments = $db->fetchAll(
-        "SELECT id, name, slug, template_pair_id, portal_passcode, responsible_email, cc_emails, include_qr_default FROM departments WHERE company_id = :id ORDER BY name",
+        "SELECT id, name, slug, template_pair_id, portal_passcode, responsible_email, cc_emails, include_qr_default FROM departments WHERE company_id = :id AND portal_enabled = 1 ORDER BY name",
         ['id' => $companyId]
     );
     

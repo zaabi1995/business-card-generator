@@ -59,6 +59,10 @@ class CardPDFRenderer
         // this render (MHD portal "no QR" tickbox). Cache key differs so the
         // with-QR and without-QR PDFs coexist on disk.
         $noQr = array_key_exists('include_qr', $opts) && !$opts['include_qr'];
+        // Explicit include_qr=true must DRAW the QR even when the template's
+        // qr_code slot ships enabled=false (MHD slots default off; the tickbox
+        // is the opt-in). Forced below onto each page's qr spec.
+        $forceQr = array_key_exists('include_qr', $opts) && (bool)$opts['include_qr'];
         // 'press' = the clean per-card print download: print font-embed + 3mm
         // bleed + crop marks + DeviceCMYK (exact tenant brand values) + a
         // CutContour cut-line layer. 'print' stays RGB/no-bleed so the A4
@@ -172,7 +176,7 @@ class CardPDFRenderer
             $employee['updated_at']  ?? '',
             is_array($theme) ? ($theme['updated_at'] ?? '') : '',
             $profile,
-            $noQr ? 'noqr' : 'qr',
+            $noQr ? 'noqr' : ($forceQr ? 'qrf' : 'qr'),
         ]));
         $cacheDir = BASE_DIR . '/tmp/pdf-vector';
         if (!is_dir($cacheDir)) @mkdir($cacheDir, 0775, true);
@@ -225,6 +229,12 @@ class CardPDFRenderer
         $pages = [];
         if (is_array($tplFront)) $pages[] = self::pageSpec($tplFront, 'front');
         if (is_array($tplBack))  $pages[] = self::pageSpec($tplBack,  'back');
+        if ($forceQr) {
+            foreach ($pages as &$ps) {
+                if (is_array($ps['qr_code'] ?? null)) $ps['qr_code']['enabled'] = true;
+            }
+            unset($ps);
+        }
         $template = [
             'import_dir'         => $importDir,
             'fonts_dir'          => $fontsDir,
