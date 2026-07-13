@@ -20,4 +20,19 @@ check('garbage returns null', ScanParser::extractJson('sorry, no card visible'),
 $empty = ScanParser::emptyParsed();
 check('empty shape has phones array', $empty['phones'], []);
 check('empty shape has name_en', $empty['name_en'], '');
+
+$dirty = [
+    'name_en' => str_repeat('A', 600),
+    'evil_key' => 'x',
+    'phones' => [['number' => 99887766, 'type' => 'mobile', 'junk' => 1], 'not-an-array'],
+    'emails' => ['a@b.om', ['nested']],
+    'confidence' => 'high',
+];
+$clean = ScanParser::sanitizeDraft($dirty);
+check('sanitize drops junk keys', isset($clean['evil_key']), false);
+check('sanitize caps oversize string', mb_strlen($clean['name_en']), 500);
+check('sanitize normalizes phones shape', $clean['phones'], [['number' => '99887766', 'type' => 'mobile']]);
+check('sanitize drops non-string emails', $clean['emails'], ['a@b.om']);
+check('sanitize forces confidence array', $clean['confidence'], []);
+check('sanitize fills missing keys', $clean['website'], '');
 echo "ALL PASS\n";

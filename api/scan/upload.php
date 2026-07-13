@@ -53,60 +53,83 @@ if (!move_uploaded_file($_FILES['image']['tmp_name'], $dest)) {
 @chmod($dest, 0644);
 $relPath = 'uploads/scans/' . $ctx['employee_id'] . '/' . $fname;
 
+// The device draft is untrusted client JSON: sanitize to the canonical
+// parse shape (unknown keys dropped, strings capped, phones/emails bounded)
+// before it can reach the prompt or be stored verbatim on refine failure.
 $draft = null;
 if (!empty($_POST['draft'])) {
     $d = json_decode($_POST['draft'], true);
-    if (is_array($d)) $draft = $d;
+    if (is_array($d) && $d !== []) $draft = ScanParser::sanitizeDraft($d);
 }
 
-$refined = ScanParser::refine($dest, $draft);
-$parsed = $refined['success'] ? $refined['parsed'] : ($draft ?: ScanParser::emptyParsed());
-$status = $refined['success'] ? 'refined' : ($draft ? 'parsed' : 'failed');
-$shadowId = ShadowProfileService::upsertFromParsed($parsed);
+// From here on the photo is on disk; any failure must still answer JSON
+// and must not leave an orphaned file behind.
+try {
+    $refined = ScanParser::refine($dest, $draft);
+    $parsed = $refined['success'] ? $refined['parsed'] : ($draft ?: ScanParser::emptyParsed());
+    $status = $refined['success'] ? 'refined' : ($draft ? 'parsed' : 'failed');
+    $shadowId = ShadowProfileService::upsertFromParsed($parsed);
 
-$db = Database::getInstance();
-$deviceUuid = substr(trim($_POST['device_uuid'] ?? ''), 0, 64) ?: null;
+    $db = Database::getInstance();
+    $deviceUuid = substr(trim($_POST['device_uuid'] ?? ''), 0, 64) ?: null;
 
-// Offline sync idempotency: same device_uuid for this employee updates the
-// existing scan rather than duplicating it (backed by the scans table's
-// uniq_emp_device unique key on (employee_id, device_uuid)).
-$existing = $deviceUuid ? $db->fetchOne(
-    "SELECT id FROM scans WHERE employee_id = :e AND device_uuid = :d",
-    ['e' => $ctx['employee_id'], 'd' => $deviceUuid]
-) : null;
-
-$fields = [
-    'employee_id' => $ctx['employee_id'],
-    'company_id' => $ctx['company_id'],
-    'device_uuid' => $deviceUuid,
-    'image_path' => $relPath,
-    'parsed' => json_encode($parsed, JSON_UNESCAPED_UNICODE),
-    'parse_tier' => $refined['success'] ? 3 : (int)($_POST['parse_tier'] ?? 0),
-    'status' => $status,
-    'tags' => substr(trim($_POST['tags'] ?? ''), 0, 500) ?: null,
-    'met_where' => substr(trim($_POST['met_where'] ?? ''), 0, 255) ?: null,
-    'met_at' => preg_match('/^\d{4}-\d{2}-\d{2}$/', $_POST['met_at'] ?? '') ? $_POST['met_at'] : null,
-    'shadow_profile_id' => $shadowId,
-];
-
-if ($existing) {
-    $scanId = updateScan($db, (int)$existing['id'], $fields);
-} else {
-    try {
-        $scanId = (int)$db->insert('scans', $fields);
-    } catch (\PDOException $e) {
-        // Duplicate-key race on uniq_emp_device: a concurrent resubmit for
-        // the same device_uuid (flaky network retry) landed its INSERT
-        // first. Re-look-up and fall through to the update path, same
-        // retry-once pattern as ShadowProfileService::upsertFromParsed().
-        if ($deviceUuid === null || (string)$e->getCode() !== '23000') throw $e;
-        $existing = $db->fetchOne(
-            "SELECT id FROM scans WHERE employee_id = :e AND device_uuid = :d",
-            ['e' => $ctx['employee_id'], 'd' => $deviceUuid]
-        );
-        if (!$existing) throw $e;
-        $scanId = updateScan($db, (int)$existing['id'], $fields);
+    $metAt = null;
+    if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $_POST['met_at'] ?? '', $m)
+        && checkdate((int)$m[2], (int)$m[3], (int)$m[1])) {
+        $metAt = $m[0];
     }
+
+    // Offline sync idempotency: same device_uuid for this employee updates the
+    // existing scan rather than duplicating it (backed by the scans table's
+    // uniq_emp_device unique key on (employee_id, device_uuid)).
+    $existing = $deviceUuid ? $db->fetchOne(
+        "SELECT id, image_path FROM scans WHERE employee_id = :e AND device_uuid = :d",
+        ['e' => $ctx['employee_id'], 'd' => $deviceUuid]
+    ) : null;
+
+    $fields = [
+        'employee_id' => $ctx['employee_id'],
+        'company_id' => $ctx['company_id'],
+        'device_uuid' => $deviceUuid,
+        'image_path' => $relPath,
+        'parsed' => json_encode($parsed, JSON_UNESCAPED_UNICODE),
+        // Bounded to the TINYINT range the column expects; a huge client
+        // value must never throw under strict sql_mode.
+        'parse_tier' => $refined['success'] ? 3 : max(0, min(3, (int)($_POST['parse_tier'] ?? 0))),
+        'status' => $status,
+        'tags' => substr(trim($_POST['tags'] ?? ''), 0, 500) ?: null,
+        'met_where' => substr(trim($_POST['met_where'] ?? ''), 0, 255) ?: null,
+        'met_at' => $metAt,
+        'shadow_profile_id' => $shadowId,
+    ];
+
+    if ($existing) {
+        $scanId = updateScan($db, (int)$existing['id'], $fields, $existing['image_path'] ?? null);
+    } else {
+        try {
+            $scanId = (int)$db->insert('scans', $fields);
+        } catch (\PDOException $e) {
+            // Duplicate-key race on uniq_emp_device: a concurrent resubmit for
+            // the same device_uuid (flaky network retry) landed its INSERT
+            // first. Re-look-up and fall through to the update path, same
+            // retry-once pattern as ShadowProfileService::upsertFromParsed().
+            if ($deviceUuid === null || (string)$e->getCode() !== '23000') throw $e;
+            $existing = $db->fetchOne(
+                "SELECT id, image_path FROM scans WHERE employee_id = :e AND device_uuid = :d",
+                ['e' => $ctx['employee_id'], 'd' => $deviceUuid]
+            );
+            if (!$existing) throw $e;
+            $scanId = updateScan($db, (int)$existing['id'], $fields, $existing['image_path'] ?? null);
+        }
+    }
+} catch (\Throwable $e) {
+    // Photo cleanup contract: never keep a file for a scan row that was
+    // never written, and always answer JSON even on unexpected failure.
+    @unlink($dest);
+    error_log('[scan/upload] ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'server_error']);
+    exit;
 }
 
 echo json_encode(['success' => true, 'scan' => [
@@ -116,12 +139,20 @@ echo json_encode(['success' => true, 'scan' => [
     'image_url' => '/' . $relPath,
 ]], JSON_UNESCAPED_UNICODE);
 
-function updateScan(Database $db, int $scanId, array $fields): int {
+function updateScan(Database $db, int $scanId, array $fields, ?string $oldImagePath): int {
     $db->getConnection()->prepare(
         "UPDATE scans SET image_path=?, parsed=?, parse_tier=?, status=?, shadow_profile_id=? WHERE id=?"
     )->execute([
         $fields['image_path'], $fields['parsed'], $fields['parse_tier'],
         $fields['status'], $fields['shadow_profile_id'], $scanId,
     ]);
+    // The resynced photo replaced the old one; drop the orphan. Path guard is
+    // belt-and-braces: only delete inside uploads/scans/, never a traversal.
+    if ($oldImagePath !== null && $oldImagePath !== '' && $oldImagePath !== $fields['image_path']
+        && strpos($oldImagePath, 'uploads/scans/') === 0
+        && strpos($oldImagePath, '..') === false) {
+        $old = __DIR__ . '/../../' . $oldImagePath;
+        if (is_file($old)) @unlink($old);
+    }
     return $scanId;
 }

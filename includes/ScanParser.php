@@ -19,6 +19,42 @@ class ScanParser {
         ];
     }
 
+    // Sanitizes an untrusted device-side draft parse to the canonical shape:
+    // unknown keys dropped, strings capped, phones/emails bounded and forced
+    // to their expected structures. Used by the upload endpoint when refine()
+    // fails and the draft becomes the stored parse; reusable by later tasks.
+    public static function sanitizeDraft(array $draft): array {
+        $clean = array_merge(self::emptyParsed(), array_intersect_key($draft, self::emptyParsed()));
+        foreach (['name_en', 'name_ar', 'title_en', 'title_ar', 'company_en', 'company_ar',
+                  'website', 'address_en', 'address_ar'] as $k) {
+            $clean[$k] = self::capString($clean[$k]);
+        }
+        $phones = [];
+        if (is_array($clean['phones'])) {
+            foreach (array_slice($clean['phones'], 0, 10) as $p) {
+                if (!is_array($p)) continue;
+                $phones[] = [
+                    'number' => self::capString($p['number'] ?? ''),
+                    'type'   => self::capString($p['type'] ?? ''),
+                ];
+            }
+        }
+        $clean['phones'] = $phones;
+        $emails = [];
+        if (is_array($clean['emails'])) {
+            foreach (array_slice($clean['emails'], 0, 10) as $e) {
+                if (is_scalar($e)) $emails[] = self::capString($e);
+            }
+        }
+        $clean['emails'] = $emails;
+        $clean['confidence'] = is_array($clean['confidence']) ? $clean['confidence'] : [];
+        return $clean;
+    }
+
+    private static function capString($v): string {
+        return mb_substr(is_scalar($v) ? (string)$v : '', 0, 500);
+    }
+
     public static function extractJson(string $modelText): ?array {
         if (preg_match('/```(?:json)?\s*(\{.*\})\s*```/s', $modelText, $m)) {
             $modelText = $m[1];
