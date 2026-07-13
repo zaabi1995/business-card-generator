@@ -252,4 +252,132 @@ class CardifyConvention
         }
         return $base . '/';
     }
+
+    /**
+     * Resolve a URL path token (employee UUID, full email, or email
+     * localpart) to an employee row scoped to a company. THE canonical
+     * lookup: mirrors the 3-tier resolution digital_card.php uses for
+     * /{slug}/card/{id} and bare-token routes, so any caller that needs
+     * "what employee does this token mean" gets identical behaviour to
+     * the public card page instead of a re-implemented, drifting copy.
+     *
+     *   1. token contains '@'      -> exact email match, no status gate
+     *      (a stale/inactive employee still resolves on an exact email
+     *      hit, matching digital_card.php's current behaviour)
+     *   2. exact id match          -> no status gate (same reason)
+     *   3. localpart fallback      -> status='active' AND deleted_at IS
+     *      NULL, matches dotted/underscored/dashed variants of the same
+     *      localpart (e.g. "jarwish9", "ahmed.balushi", "ahmed-balushi")
+     *
+     * @param string        $token
+     * @param string        $companyId
+     * @param Database|null $db
+     * @return array|null
+     */
+    public static function resolveEmployeeToken(string $token, string $companyId, $db = null): ?array
+    {
+        $token = trim($token);
+        if ($token === '' || $companyId === '') {
+            return null;
+        }
+        if ($db === null && class_exists('Database')) {
+            $db = Database::getInstance();
+        }
+        if (!$db || !method_exists($db, 'fetchOne')) {
+            return null;
+        }
+
+        if (strpos($token, '@') !== false) {
+            return $db->fetchOne(
+                "SELECT * FROM employees WHERE company_id = :cid AND LOWER(email) = :email",
+                ['cid' => $companyId, 'email' => strtolower($token)]
+            ) ?: null;
+        }
+
+        $employee = $db->fetchOne(
+            "SELECT * FROM employees WHERE id = :id AND company_id = :cid",
+            ['id' => $token, 'cid' => $companyId]
+        ) ?: null;
+        if ($employee) {
+            return $employee;
+        }
+
+        try {
+            $localLower = strtolower($token);
+            $localDashed = str_replace(['.', '_'], '-', $localLower);
+            return $db->fetchOne(
+                "SELECT * FROM employees
+                 WHERE company_id = :cid
+                   AND status = 'active'
+                   AND deleted_at IS NULL
+                   AND (
+                        LOWER(SUBSTRING_INDEX(email, '@', 1)) = LOWER(:exact)
+                     OR REPLACE(REPLACE(LOWER(SUBSTRING_INDEX(email, '@', 1)), '.', '-'), '_', '-') = LOWER(:dashed)
+                   )
+                 LIMIT 1",
+                ['cid' => $companyId, 'exact' => $localLower, 'dashed' => $localDashed]
+            ) ?: null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Pure mapping: employee + company row -> the canonical parsed-card
+     * shape shared with the Scan feature (see ScanParser::emptyParsed()
+     * and ScanVcf::build()). No DB, no I/O, so it is unit-testable
+     * directly, see tests/php/resolve_card_test.php.
+     *
+     * Phone numbers are E.164-normalised via Phone::normalize() (default
+     * +968); a number that cannot be coerced is passed through verbatim
+     * rather than dropped, so a scan still gets a usable digit string.
+     * Empty phone/email fields are skipped entirely, not emitted blank.
+     *
+     * @param array $employee
+     * @param array $company
+     * @return array
+     */
+    public static function employeeToScanCard(array $employee, array $company): array
+    {
+        require_once __DIR__ . '/Phone.php';
+
+        $e164 = function ($raw) {
+            $raw = trim((string) $raw);
+            if ($raw === '') {
+                return '';
+            }
+            $normalized = Phone::normalize($raw);
+            return $normalized ?? $raw;
+        };
+
+        $phones = [];
+        foreach ([['mobile', 'mobile'], ['phone', 'work'], ['fax', 'fax']] as $spec) {
+            [$field, $type] = $spec;
+            $raw = trim((string) ($employee[$field] ?? ''));
+            if ($raw === '') {
+                continue;
+            }
+            $phones[] = ['number' => $e164($raw), 'type' => $type];
+        }
+
+        $email = trim((string) ($employee['email'] ?? ''));
+        $companyEn = trim((string) ($employee['company_en'] ?? ''));
+        if ($companyEn === '') {
+            $companyEn = (string) ($company['name'] ?? '');
+        }
+
+        return [
+            'name_en'    => (string) ($employee['name_en'] ?? ''),
+            'name_ar'    => (string) ($employee['name_ar'] ?? ''),
+            'title_en'   => (string) ($employee['position_en'] ?? ''),
+            'title_ar'   => (string) ($employee['position_ar'] ?? ''),
+            'company_en' => $companyEn,
+            'company_ar' => (string) ($employee['company_ar'] ?? ''),
+            'phones'     => $phones,
+            'emails'     => $email !== '' ? [$email] : [],
+            'website'    => (string) ($employee['website'] ?? ''),
+            'address_en' => (string) ($employee['address_en'] ?? ''),
+            'address_ar' => (string) ($employee['address_ar'] ?? ''),
+        ];
+    }
 }

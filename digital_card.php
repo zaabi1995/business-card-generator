@@ -21,6 +21,7 @@ set_error_handler(function($severity, $message, $file, $line) {
 try {
     require_once __DIR__ . '/config.php';
     require_once INCLUDES_DIR . '/QRTracker.php';
+    require_once INCLUDES_DIR . '/CardifyConvention.php';
     require_once INCLUDES_DIR . '/CardSections.php';
     require_once INCLUDES_DIR . '/Appointments.php';
     require_once INCLUDES_DIR . '/EmployeeSocials.php';
@@ -88,31 +89,9 @@ try {
     // (e.g. /jarwish9 or /firstname.lastname). The nginx tenant rewrite routes
     // both single tokens and dotted localparts here, so we try all three in
     // turn: explicit UUID → full email → localpart (with `.`/`_`/`-` variants).
-    $employee = null;
-    if (strpos($employeeId, '@') !== false) {
-        $employee = findEmployeeByEmail($employeeId, $company['id']);
-    } else {
-        $employee = findEmployeeById($employeeId, $company['id']);
-        if (!$employee) {
-            try {
-                $__db = Database::getInstance();
-                $localLower = strtolower($employeeId);
-                $localDashed = str_replace(['.', '_'], '-', $localLower);
-                $employee = $__db->fetchOne(
-                    "SELECT * FROM employees
-                     WHERE company_id = :cid
-                       AND status = 'active'
-                       AND deleted_at IS NULL
-                       AND (
-                            LOWER(SUBSTRING_INDEX(email, '@', 1)) = LOWER(:exact)
-                         OR REPLACE(REPLACE(LOWER(SUBSTRING_INDEX(email, '@', 1)), '.', '-'), '_', '-') = LOWER(:dashed)
-                       )
-                     LIMIT 1",
-                    ['cid' => $company['id'], 'exact' => $localLower, 'dashed' => $localDashed]
-                ) ?: null;
-            } catch (Exception $__e) { /* fall through */ }
-        }
-    }
+    // Shared with api/scan/resolve-card.php so both surfaces resolve a token
+    // to an employee identically instead of drifting apart.
+    $employee = CardifyConvention::resolveEmployeeToken($employeeId, $company['id']);
     // Fall back to the latest pending/approved card_request so a freshly
     // submitted request still resolves to an E-Card page; the actual VCF
     // download button below also honours this fallback.
