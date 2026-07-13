@@ -1,11 +1,10 @@
 <?php
 // 131_scan_module.php: tables for the Cardify Scan module (app rolodex + claim loop)
-require_once __DIR__ . '/../../includes/Database.php';
-
-$db = Database::getInstance();
-$pdo = $db->getConnection();
+require_once __DIR__ . '/../../config.php';
 
 try {
+    $pdo = Database::getInstance()->getConnection();
+
     $pdo->exec("CREATE TABLE IF NOT EXISTS shadow_profiles (
         id INT AUTO_INCREMENT PRIMARY KEY,
         phone_primary VARCHAR(32) NULL,
@@ -58,7 +57,7 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
     echo "Migration 131 OK\n";
-} catch (Exception $e) {
+} catch (Throwable $e) {
     echo "Migration 131 failed: " . $e->getMessage() . "\n";
     exit(1);
 }
