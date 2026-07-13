@@ -4,7 +4,7 @@
  *
  * Query: q, tag, limit (default 50, max 100), offset (default 0).
  * Response: {success, scans: [{id, parsed, tags, met_at, met_where, status,
- * image_url, created_at}], total}.
+ * image_url, image_back_url, created_at}], total}.
  */
 require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
@@ -45,7 +45,7 @@ if ($tag !== '') {
 
 try {
     $rows = $db->fetchAll(
-        "SELECT id, parsed, tags, met_at, met_where, status, image_path, created_at
+        "SELECT id, parsed, tags, met_at, met_where, status, image_path, image_path_back, created_at
          FROM scans WHERE $where ORDER BY created_at DESC LIMIT $limit OFFSET $offset", $params);
     $count = $db->fetchOne("SELECT COUNT(*) c FROM scans WHERE $where", $params);
 } catch (\Throwable $e) {
@@ -64,6 +64,7 @@ $scans = array_map(function ($r) {
         'met_where' => $r['met_where'],
         'status' => $r['status'],
         'image_url' => $r['image_path'] ? '/' . $r['image_path'] : null,
+        'image_back_url' => $r['image_path_back'] ? '/' . $r['image_path_back'] : null,
         'created_at' => $r['created_at'],
     ];
 }, $rows);

@@ -42,7 +42,7 @@ try {
     // computed in the same statement so both come from one NOW() evaluation.
     $now = $db->fetchOne("SELECT NOW() n, DATE_SUB(NOW(), INTERVAL 1 SECOND) n1");
     $rows = $db->fetchAll(
-        "SELECT id, device_uuid, parsed, tags, met_at, met_where, status, image_path, created_at, updated_at
+        "SELECT id, device_uuid, parsed, tags, met_at, met_where, status, image_path, image_path_back, created_at, updated_at
          FROM scans WHERE $where ORDER BY updated_at ASC LIMIT 500", $params);
 
     $scans = array_map(function ($r) {
@@ -55,6 +55,7 @@ try {
             'met_where' => $r['met_where'],
             'status' => $r['status'],
             'image_url' => $r['image_path'] ? '/' . $r['image_path'] : null,
+            'image_back_url' => $r['image_path_back'] ? '/' . $r['image_path_back'] : null,
             'created_at' => $r['created_at'],
             'updated_at' => $r['updated_at'],
         ];

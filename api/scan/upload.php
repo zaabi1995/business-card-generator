@@ -2,9 +2,10 @@
 /**
  * POST /api/scan/upload.php, business card photo (+ optional device draft) -> parsed contact
  *
- * Body: multipart, image (file, required), draft (JSON string, optional),
- * device_uuid, parse_tier, met_where, met_at, tags (all optional).
- * Response: {success, scan: {id, parsed, status, image_url}}.
+ * Body: multipart, image (file, required), image_back (file, optional),
+ * draft (JSON string, optional), device_uuid, parse_tier, met_where,
+ * met_at, tags (all optional).
+ * Response: {success, scan: {id, parsed, status, image_url, image_back_url}}.
  */
 require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
@@ -35,6 +36,22 @@ if (!isset($extMap[$mime]) || $_FILES['image']['size'] > 10 * 1024 * 1024) {
     exit;
 }
 
+// Back-side photo is optional but follows the same rules as the front.
+$mimeBack = null;
+if (!empty($_FILES['image_back'])) {
+    if ($_FILES['image_back']['error'] !== UPLOAD_ERR_OK) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Back image upload failed, error code ' . $_FILES['image_back']['error']]);
+        exit;
+    }
+    $mimeBack = $finfo->file($_FILES['image_back']['tmp_name']);
+    if (!isset($extMap[$mimeBack]) || $_FILES['image_back']['size'] > 10 * 1024 * 1024) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Back image: JPEG/PNG/WebP up to 10MB only']);
+        exit;
+    }
+}
+
 // $ctx['employee_id'] is a VARCHAR(36) UUID string, used verbatim as the
 // upload directory name, never cast to int.
 $dir = __DIR__ . '/../../uploads/scans/' . $ctx['employee_id'];
@@ -52,6 +69,22 @@ if (!move_uploaded_file($_FILES['image']['tmp_name'], $dest)) {
 }
 @chmod($dest, 0644);
 $relPath = 'uploads/scans/' . $ctx['employee_id'] . '/' . $fname;
+
+// Store the back-side photo in the same directory, same naming scheme.
+$destBack = null;
+$relPathBack = null;
+if ($mimeBack !== null) {
+    $fnameBack = bin2hex(random_bytes(12)) . '.' . $extMap[$mimeBack];
+    $destBack = $dir . '/' . $fnameBack;
+    if (!move_uploaded_file($_FILES['image_back']['tmp_name'], $destBack)) {
+        @unlink($dest);
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Store failed']);
+        exit;
+    }
+    @chmod($destBack, 0644);
+    $relPathBack = 'uploads/scans/' . $ctx['employee_id'] . '/' . $fnameBack;
+}
 
 // The device draft is untrusted client JSON: sanitize to the canonical
 // parse shape (unknown keys dropped, strings capped, phones/emails bounded)
@@ -90,7 +123,7 @@ try {
     // existing scan rather than duplicating it (backed by the scans table's
     // uniq_emp_device unique key on (employee_id, device_uuid)).
     $existing = $deviceUuid ? $db->fetchOne(
-        "SELECT id, image_path FROM scans WHERE employee_id = :e AND device_uuid = :d",
+        "SELECT id, image_path, image_path_back FROM scans WHERE employee_id = :e AND device_uuid = :d",
         ['e' => $ctx['employee_id'], 'd' => $deviceUuid]
     ) : null;
 
@@ -99,6 +132,9 @@ try {
         'company_id' => $ctx['company_id'],
         'device_uuid' => $deviceUuid,
         'image_path' => $relPath,
+        // Only replace the back image when a new one was uploaded, otherwise
+        // keep whatever the row already had (resync often only sends front).
+        'image_path_back' => $relPathBack !== null ? $relPathBack : ($existing['image_path_back'] ?? null),
         'parsed' => json_encode($parsed, JSON_UNESCAPED_UNICODE),
         // Bounded to the TINYINT range the column expects; a huge client
         // value must never throw under strict sql_mode.
@@ -111,7 +147,7 @@ try {
     ];
 
     if ($existing) {
-        $scanId = updateScan($db, (int)$existing['id'], $fields, $existing['image_path'] ?? null);
+        $scanId = updateScan($db, (int)$existing['id'], $fields, $existing['image_path'] ?? null, $existing['image_path_back'] ?? null);
     } else {
         try {
             $scanId = (int)$db->insert('scans', $fields);
@@ -122,17 +158,18 @@ try {
             // retry-once pattern as ShadowProfileService::upsertFromParsed().
             if ($deviceUuid === null || (string)$e->getCode() !== '23000') throw $e;
             $existing = $db->fetchOne(
-                "SELECT id, image_path FROM scans WHERE employee_id = :e AND device_uuid = :d",
+                "SELECT id, image_path, image_path_back FROM scans WHERE employee_id = :e AND device_uuid = :d",
                 ['e' => $ctx['employee_id'], 'd' => $deviceUuid]
             );
             if (!$existing) throw $e;
-            $scanId = updateScan($db, (int)$existing['id'], $fields, $existing['image_path'] ?? null);
+            $scanId = updateScan($db, (int)$existing['id'], $fields, $existing['image_path'] ?? null, $existing['image_path_back'] ?? null);
         }
     }
 } catch (\Throwable $e) {
     // Photo cleanup contract: never keep a file for a scan row that was
     // never written, and always answer JSON even on unexpected failure.
     @unlink($dest);
+    if ($destBack !== null) @unlink($destBack);
     error_log('[scan/upload] ' . $e->getMessage());
     http_response_code(500);
     echo json_encode(['success' => false, 'error' => 'server_error']);
@@ -144,22 +181,28 @@ echo json_encode(['success' => true, 'scan' => [
     'parsed' => $parsed,
     'status' => $status,
     'image_url' => '/' . $relPath,
+    'image_back_url' => $fields['image_path_back'] ? '/' . $fields['image_path_back'] : null,
 ]], JSON_UNESCAPED_UNICODE);
 
-function updateScan(Database $db, int $scanId, array $fields, ?string $oldImagePath): int {
+function updateScan(Database $db, int $scanId, array $fields, ?string $oldImagePath, ?string $oldImagePathBack = null): int {
     $db->getConnection()->prepare(
-        "UPDATE scans SET image_path=?, parsed=?, parse_tier=?, status=?, shadow_profile_id=? WHERE id=?"
+        "UPDATE scans SET image_path=?, image_path_back=?, parsed=?, parse_tier=?, status=?, shadow_profile_id=? WHERE id=?"
     )->execute([
-        $fields['image_path'], $fields['parsed'], $fields['parse_tier'],
+        $fields['image_path'], $fields['image_path_back'], $fields['parsed'], $fields['parse_tier'],
         $fields['status'], $fields['shadow_profile_id'], $scanId,
     ]);
-    // The resynced photo replaced the old one; drop the orphan. Path guard is
-    // belt-and-braces: only delete inside uploads/scans/, never a traversal.
-    if ($oldImagePath !== null && $oldImagePath !== '' && $oldImagePath !== $fields['image_path']
-        && strpos($oldImagePath, 'uploads/scans/') === 0
-        && strpos($oldImagePath, '..') === false) {
-        $old = __DIR__ . '/../../' . $oldImagePath;
+    // The resynced photo replaced the old one; drop the orphan(s). Path guard
+    // is belt-and-braces: only delete inside uploads/scans/, never a traversal.
+    unlinkOldScanImage($oldImagePath, $fields['image_path']);
+    unlinkOldScanImage($oldImagePathBack, $fields['image_path_back']);
+    return $scanId;
+}
+
+function unlinkOldScanImage(?string $oldPath, ?string $newPath): void {
+    if ($oldPath !== null && $oldPath !== '' && $oldPath !== $newPath
+        && strpos($oldPath, 'uploads/scans/') === 0
+        && strpos($oldPath, '..') === false) {
+        $old = __DIR__ . '/../../' . $oldPath;
         if (is_file($old)) @unlink($old);
     }
-    return $scanId;
 }
