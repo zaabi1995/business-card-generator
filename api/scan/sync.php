@@ -2,10 +2,19 @@
 /**
  * POST /api/scan/sync.php, pull-based sync endpoint for the mobile app
  *
- * Body: {since: "YYYY-MM-DD HH:MM:SS"|null} -> {success, scans: [...], server_time}
+ * Body: {since: "YYYY-MM-DD HH:MM:SS"|null} -> {success, scans: [...],
+ * server_time, has_more, next_since}
  * The app pulls all changes since its last sync; pushes happen through upload.php
  * (idempotent via device_uuid) and update.php. This completes the offline-first
  * contract the mobile app builds against.
+ *
+ * Clients MUST resume from next_since, not server_time. server_time stays in
+ * the response for compatibility only. When has_more is true, next_since is
+ * the last returned row's updated_at (page again immediately); otherwise it is
+ * the snapshot minus 1 second. The 1-second overlap is intentional: updated_at
+ * is DATETIME (1s resolution) and the WHERE is strict >, so a row written in
+ * the same second as the snapshot would be lost with a bare cursor. Overlapped
+ * rows are re-sent next sync and the client upserts idempotently by id.
  */
 require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
@@ -29,7 +38,9 @@ try {
         $where .= " AND updated_at > :s";
         $params['s'] = $since;
     }
-    $now = $db->fetchOne("SELECT NOW() n");
+    // n = snapshot for server_time (compat), n1 = snapshot minus 1 second,
+    // computed in the same statement so both come from one NOW() evaluation.
+    $now = $db->fetchOne("SELECT NOW() n, DATE_SUB(NOW(), INTERVAL 1 SECOND) n1");
     $rows = $db->fetchAll(
         "SELECT id, device_uuid, parsed, tags, met_at, met_where, status, image_path, created_at, updated_at
          FROM scans WHERE $where ORDER BY updated_at ASC LIMIT 500", $params);
@@ -49,7 +60,19 @@ try {
         ];
     }, $rows);
 
-    echo json_encode(['success' => true, 'scans' => $scans, 'server_time' => $now['n']], JSON_UNESCAPED_UNICODE);
+    // Exactly a full page means the window may hold more rows than LIMIT;
+    // hand back the last row's updated_at so the client pages through the
+    // remainder instead of skipping it when it resumes from a snapshot time.
+    $hasMore = count($rows) === 500;
+    $nextSince = $hasMore ? end($rows)['updated_at'] : $now['n1'];
+
+    echo json_encode([
+        'success' => true,
+        'scans' => $scans,
+        'server_time' => $now['n'],
+        'has_more' => $hasMore,
+        'next_since' => $nextSince,
+    ], JSON_UNESCAPED_UNICODE);
 } catch (\Throwable $e) {
     error_log('[scan/sync] ' . $e->getMessage());
     http_response_code(500);
