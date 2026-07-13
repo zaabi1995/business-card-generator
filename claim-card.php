@@ -15,7 +15,8 @@
  *
  * GET  ?t=<token>                 -> preview + claim CTA (or "already
  *                                     claimed" state, or 404 for a bad
- *                                     token).
+ *                                     token, or the terminal "messages
+ *                                     stopped" screen if opted out).
  * GET  ?t=<token>&optout=1        -> confirmation screen only, does NOT
  *                                     mutate state (state-changing GET
  *                                     endpoints get prefetched by link
@@ -97,6 +98,14 @@ if ($isOptOutRequest) {
     }
 
     renderOptOutConfirm($token, generateCSRFToken());
+    exit;
+}
+
+// Opted-out is terminal on EVERY path, not just ?optout=1: a plain
+// GET ?t=<token> for an opted-out profile must never show the card
+// preview or claim button again (the API already 404s such tokens).
+if ($alreadyOptedOut) {
+    renderOptOutDone();
     exit;
 }
 
@@ -233,7 +242,7 @@ $optOutUrl = 'claim-card.php?t=' . urlencode($token) . '&optout=1';
 
         <div class="mt-6 text-center text-xs text-gray-400 space-y-1">
             <div>
-                <?= $isOptOutRequest ? '' : '' ?>Made with
+                Made with
                 <a href="/" class="text-[#009bc1] font-medium">Cardify</a>
                 &middot; BHD Printing &amp; Designing
             </div>
@@ -251,7 +260,9 @@ $optOutUrl = 'claim-card.php?t=' . urlencode($token) . '&optout=1';
     <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/brands.min.css?v=7.2.0">
 
 <?php if (!$claimed): ?>
-    <script>
+    <?php /* SecurityHeaders' CSP nonce keeps this inline script alive
+             once the policy is promoted from report-only to enforcing. */ ?>
+    <script nonce="<?= htmlspecialchars(SecurityHeaders::nonce(), ENT_QUOTES) ?>">
     (function () {
         var container = document.querySelector('[data-token]');
         var token = container ? container.getAttribute('data-token') : '';

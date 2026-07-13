@@ -19,6 +19,7 @@ require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ShadowProfileService.php';
 require_once INCLUDES_DIR . '/OtpService.php';
 require_once INCLUDES_DIR . '/RateLimiter.php';
+require_once INCLUDES_DIR . '/UrlSafety.php';
 
 header('Content-Type: application/json');
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -31,7 +32,10 @@ try {
     $body = json_decode(file_get_contents('php://input'), true) ?: [];
     $token = trim((string)($body['token'] ?? ''));
     $action = (string)($body['action'] ?? '');
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    // Proxy-aware client IP (CF-Connecting-IP first): behind Cloudflare,
+    // REMOTE_ADDR is the edge node, which would collapse every visitor
+    // into a shared rate-limit bucket.
+    $ip = getClientIp();
 
     // findByToken regex-validates the 43-char shape itself; opted_out
     // profiles are treated as not-found so a stale/shared link can't be
@@ -69,6 +73,14 @@ try {
     }
 
     if ($action === 'verify') {
+        // 10 verifies per 15 minutes per token+IP: defense-in-depth on top
+        // of OtpService's per-code attempt cap (5), whose read-then-update
+        // counter is racy under parallel requests. RateLimiter's atomic
+        // INSERT..ON DUPLICATE KEY counter isn't.
+        if (!RateLimiter::check('scan_claim_verify:' . $token, $ip, 10, 900)) {
+            echo json_encode(['success' => false, 'error' => 'rate_limited']);
+            exit;
+        }
         $code = trim((string)($body['code'] ?? ''));
         $r = OtpService::verify($phone, $code, 'scan_claim');
         if (empty($r['ok'])) {
