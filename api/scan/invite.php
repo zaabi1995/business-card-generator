@@ -50,20 +50,34 @@ try {
     $inviter = $db->fetchOne(
         "SELECT name_en, name_ar FROM employees WHERE id = :i", ['i' => $ctx['employee_id']]
     );
-    $inviterName = ($inviter['name_en'] ?? '') !== ''
-        ? $inviter['name_en']
-        : (($inviter['name_ar'] ?? '') !== '' ? $inviter['name_ar'] : 'A Cardify user');
+    $rawName = ($inviter['name_en'] ?? '') !== ''
+        ? (string)$inviter['name_en']
+        : (string)($inviter['name_ar'] ?? '');
+    // Employee names are self-editable and land in a business-identity
+    // message to a third party: strip newlines/tabs and WhatsApp markdown
+    // control chars, collapse whitespace, cap length.
+    $inviterName = str_replace(["\r", "\n", "\t", '*', '_', '~', '`'], ' ', $rawName);
+    $inviterName = trim(preg_replace('/\s+/u', ' ', $inviterName));
+    $inviterName = trim(function_exists('mb_substr')
+        ? mb_substr($inviterName, 0, 60, 'UTF-8')
+        : substr($inviterName, 0, 60));
+    if ($inviterName === '') { $inviterName = 'A Cardify user'; }
 
+    // NOTE: claim.php already exists as an unrelated lead-capture page;
+    // the scan claim page lives at claim-card.php. The system_settings
+    // scan_claim_base_url override stays the primary source.
     $baseRow = $db->fetchOne("SELECT setting_value FROM system_settings WHERE setting_key = 'scan_claim_base_url'");
-    $base = $baseRow ? $baseRow['setting_value'] : 'https://cardify.om/claim.php?t=';
+    $base = $baseRow ? $baseRow['setting_value'] : 'https://cardify.om/claim-card.php?t=';
     $claimUrl = $base . $row['claim_token'];
 
     // Atomic claim of the one-invite slot BEFORE sending, so a race between
     // two employees inviting the same shadow profile cannot double-send:
-    // only one UPDATE finds invite_sent_at still NULL and flips it.
+    // only one UPDATE finds invite_sent_at still NULL and flips it. The
+    // claimed_at IS NULL condition mirrors the pre-check so a profile
+    // claimed between the SELECT and this UPDATE can never be invited.
     $stmt = $db->getConnection()->prepare(
         "UPDATE shadow_profiles SET invite_sent_at = NOW(), invited_by_employee_id = ?
-         WHERE id = ? AND invite_sent_at IS NULL AND opted_out = 0"
+         WHERE id = ? AND invite_sent_at IS NULL AND opted_out = 0 AND claimed_at IS NULL"
     );
     $stmt->execute([$ctx['employee_id'], (int)$row['id']]);
     if (!$stmt->rowCount()) { echo json_encode(['success' => false, 'error' => 'already_invited']); exit; }
@@ -72,6 +86,10 @@ try {
         [$inviterName, $claimUrl], 'ar');
 
     if (!$result['success']) {
+        error_log('[scan/invite] send failed error=' . $result['error']
+            . ' shadow_profile_id=' . (int)$row['id']
+            . ' scan_id=' . $scanId
+            . ' employee_id=' . $ctx['employee_id']);
         // Roll the slot back so a transient send failure can be retried;
         // only this request's own slot is reset, never one a successful
         // send already claimed.
