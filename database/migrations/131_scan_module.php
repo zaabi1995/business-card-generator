@@ -12,9 +12,9 @@ try {
         best_parsed LONGTEXT NULL,
         claim_token CHAR(43) NOT NULL,
         claimed_at DATETIME NULL,
-        claimed_company_id INT NULL,
+        claimed_company_id VARCHAR(36) NULL,
         invite_sent_at DATETIME NULL,
-        invited_by_employee_id INT NULL,
+        invited_by_employee_id VARCHAR(36) NULL,
         opted_out TINYINT(1) NOT NULL DEFAULT 0,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -25,8 +25,8 @@ try {
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS scans (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        employee_id INT NOT NULL,
-        company_id INT NOT NULL,
+        employee_id VARCHAR(36) NOT NULL,
+        company_id VARCHAR(36) NOT NULL,
         device_uuid VARCHAR(64) NULL,
         image_path VARCHAR(255) NULL,
         raw_text TEXT NULL,
@@ -46,7 +46,7 @@ try {
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS scan_api_tokens (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        employee_id INT NOT NULL,
+        employee_id VARCHAR(36) NOT NULL,
         token_hash CHAR(64) NOT NULL,
         label VARCHAR(100) NULL,
         revoked TINYINT(1) NOT NULL DEFAULT 0,
