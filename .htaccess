@@ -244,6 +244,8 @@ Options -Indexes
     RewriteRule ^api/linkedin/callback\.php$ - [L]  # Allow LinkedIn OAuth callback
     RewriteRule ^api/linkedin/connect-company\.php$ - [L]  # Allow LinkedIn org-page OAuth callback
     RewriteRule ^api/print-ready\.php$ - [L]  # Allow print-ready PDF generator API
+    RewriteRule ^api/scan/login\.php$ - [L]  # Allow Cardify Scan mobile login API
+    RewriteRule ^api/scan/ - [L]  # Allow Cardify Scan mobile API (bearer-token gated in PHP; upload/list/update/delete/vcf/invite/sync/claim-otp land in Tasks 5-11)
 
     # --- Omani Logo Library --- (mirrors docs/logos-nginx-rewrites.conf)
     RewriteRule ^logos/?$                      logos.php?view=hub     [L,QSA]

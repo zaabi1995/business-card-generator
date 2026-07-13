@@ -26,11 +26,26 @@ class ScanAuth {
         return $token;
     }
 
+    // Authorization header with fallbacks: some FPM/Apache setups drop
+    // HTTP_AUTHORIZATION or rename it REDIRECT_HTTP_AUTHORIZATION after a
+    // rewrite. Same three-tier pattern as wsAuthToken() in
+    // wc_wallet_service.php, which hit this trap first.
+    private static function getAuthorizationHeader(): string {
+        $h = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+        if ($h === '') {
+            $hdrs = [];
+            if (function_exists('getallheaders')) { $hdrs = getallheaders(); }
+            elseif (function_exists('apache_request_headers')) { $hdrs = apache_request_headers(); }
+            foreach ($hdrs as $k => $v) { if (strtolower($k) === 'authorization') { $h = $v; break; } }
+        }
+        return $h;
+    }
+
     // Validates the Authorization header. On success returns
     // ['employee_id' => string, 'company_id' => string]; on failure sends
     // 401 JSON and exits.
     public static function requireEmployee(): array {
-        $header = isset($_SERVER['HTTP_AUTHORIZATION']) ? $_SERVER['HTTP_AUTHORIZATION'] : '';
+        $header = self::getAuthorizationHeader();
         if (stripos($header, 'Bearer ') !== 0) {
             self::deny();
         }
@@ -39,9 +54,15 @@ class ScanAuth {
             self::deny();
         }
         $db = Database::getInstance();
+        // Status filters mirror Auth::unifiedLogin's employee login query
+        // (e.status = 'active' AND c.status = 'active'): a deactivated
+        // employee or suspended company loses API access immediately,
+        // even with a valid unrevoked token.
         $row = $db->fetchOne(
             "SELECT t.employee_id, e.company_id
-             FROM scan_api_tokens t JOIN employees e ON e.id = t.employee_id
+             FROM scan_api_tokens t
+             JOIN employees e ON e.id = t.employee_id AND e.status = 'active'
+             JOIN companies c ON c.id = e.company_id AND c.status = 'active'
              WHERE t.token_hash = :h AND t.revoked = 0",
             ['h' => self::hashToken($token)]
         );
