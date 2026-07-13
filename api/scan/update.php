@@ -12,6 +12,11 @@ require_once INCLUDES_DIR . '/ScanParser.php';
 require_once INCLUDES_DIR . '/ShadowProfileService.php';
 
 header('Content-Type: application/json');
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'error' => 'POST only']);
+    exit;
+}
 $ctx = ScanAuth::requireEmployee();
 $body = json_decode(file_get_contents('php://input'), true) ?: [];
 $id = (int)($body['id'] ?? 0);
