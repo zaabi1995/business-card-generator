@@ -23,11 +23,15 @@ class WhatsAppCloud {
                 return ['type' => 'text', 'text' => (string)$p];
             }, $bodyParams)];
         }
+        $template = ['name' => $templateName, 'language' => ['code' => $lang]];
+        // Meta rejects a zero-param template call when 'components' is present
+        // but empty; only send the key when there is at least one component.
+        if ($components) { $template['components'] = $components; }
         $payload = json_encode([
             'messaging_product' => 'whatsapp',
             'to' => ltrim($toE164, '+'),
             'type' => 'template',
-            'template' => ['name' => $templateName, 'language' => ['code' => $lang], 'components' => $components],
+            'template' => $template,
         ]);
 
         $ch = curl_init(self::GRAPH_URL . $phoneId . '/messages');
