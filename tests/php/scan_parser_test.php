@@ -35,4 +35,12 @@ check('sanitize normalizes phones shape', $clean['phones'], [['number' => '99887
 check('sanitize drops non-string emails', $clean['emails'], ['a@b.om']);
 check('sanitize forces confidence array', $clean['confidence'], []);
 check('sanitize fills missing keys', $clean['website'], '');
+
+// refine() success path now routes model output through sanitizeDraft;
+// an off-shape model reply must come out canonical, not stored verbatim.
+$offShape = ScanParser::extractJson('{"name_en": {"x":1}, "phones": ["raw"], "junk": 1}');
+$refined = ScanParser::sanitizeDraft($offShape);
+check('sanitize flattens object name_en', $refined['name_en'], '');
+check('sanitize drops junk key from model output', isset($refined['junk']), false);
+check('sanitize drops non-array phone entries', $refined['phones'], []);
 echo "ALL PASS\n";

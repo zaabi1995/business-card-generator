@@ -124,7 +124,7 @@ class ScanParser {
             error_log('[ScanParser] unparseable model output: ' . substr($text, 0, 300));
             return ['success' => false, 'parsed' => null, 'error' => 'unparseable'];
         }
-        return ['success' => true, 'parsed' => array_merge(self::emptyParsed(), $json), 'error' => null];
+        return ['success' => true, 'parsed' => self::sanitizeDraft($json), 'error' => null];
     }
 
     private static function getApiKey(): ?string {
