@@ -65,7 +65,14 @@ if (!empty($_POST['draft'])) {
 // From here on the photo is on disk; any failure must still answer JSON
 // and must not leave an orphaned file behind.
 try {
-    $refined = ScanParser::refine($dest, $draft);
+    // Parsing is device-first by product decision (13 Jul 2026): when the app
+    // supplies a device-parsed draft, the server stores it as-is and never
+    // calls an AI API. Server refine only runs for draftless uploads AND only
+    // when explicitly enabled via system_settings scan_server_refine = 'on'.
+    $refined = ['success' => false, 'parsed' => null, 'error' => 'refine_disabled'];
+    if (!$draft && ScanParser::serverRefineEnabled()) {
+        $refined = ScanParser::refine($dest, null);
+    }
     $parsed = $refined['success'] ? $refined['parsed'] : ($draft ?: ScanParser::emptyParsed());
     $status = $refined['success'] ? 'refined' : ($draft ? 'parsed' : 'failed');
     $shadowId = ShadowProfileService::upsertFromParsed($parsed);

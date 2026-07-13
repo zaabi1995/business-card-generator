@@ -10,6 +10,20 @@ class ScanParser {
     const MODEL = 'claude-haiku-4-5-20251001';
     const API_URL = 'https://api.anthropic.com/v1/messages';
 
+    // Device-first parsing (product decision 13 Jul 2026): the server never
+    // calls an AI API unless this kill-switch is explicitly turned on. No row
+    // or any value other than 'on' means OFF.
+    public static function serverRefineEnabled(): bool {
+        try {
+            $row = Database::getInstance()->fetchOne(
+                "SELECT setting_value FROM system_settings WHERE setting_key = 'scan_server_refine'"
+            );
+            return $row && $row['setting_value'] === 'on';
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
     public static function emptyParsed(): array {
         return [
             'name_en' => '', 'name_ar' => '', 'title_en' => '', 'title_ar' => '',
