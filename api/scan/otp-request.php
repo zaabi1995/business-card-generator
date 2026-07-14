@@ -26,6 +26,10 @@ require_once INCLUDES_DIR . '/RateLimiter.php';
 require_once INCLUDES_DIR . '/UrlSafety.php';
 require_once INCLUDES_DIR . '/Phone.php';
 require_once INCLUDES_DIR . '/WhatsApp.php';
+// OtpService::deliverEmail() is guarded by class_exists('Mailer'); the claim
+// flow only ever used the WhatsApp channel so it never loaded Mailer. Without
+// this, an email OTP silently returns delivery_failed.
+require_once INCLUDES_DIR . '/Mailer.php';
 
 header('Content-Type: application/json');
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
