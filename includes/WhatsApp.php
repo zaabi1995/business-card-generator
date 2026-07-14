@@ -465,7 +465,7 @@ class WhatsApp {
             'to' => $to,
             'type' => 'template',
             'template' => [
-                'name' => 'bhd_login_code',
+                'name' => 'cardify_login_code',
                 'language' => ['code' => 'en'],
                 'components' => [
                     ['type' => 'body', 'parameters' => [['type' => 'text', 'text' => $code]]],
@@ -493,9 +493,48 @@ class WhatsApp {
         }
         $data = json_decode($response, true);
         $mid = $data['messages'][0]['id'] ?? null;
-        return $mid
-            ? ['success' => true, 'error' => null, 'messageId' => $mid]
-            : ['success' => false, 'error' => 'no message id'];
+        if ($mid) {
+            self::erpRecordAuthEvent($to, $mid, $code);
+            return ['success' => true, 'error' => null, 'messageId' => $mid];
+        }
+        return ['success' => false, 'error' => 'no message id'];
+    }
+
+    /**
+     * Tell BHD-ERP a login code went out, so it appears in erp.bhd.om/chat
+     * alongside everything else the business sent this person. Cardify
+     * Graph-sends its own OTP and never touches the ERP, and Meta refuses the
+     * message_echoes subscription (1929002 Invalid Permissions), so the ERP
+     * cannot learn about this send any other way: we report it.
+     *
+     * The ERP stores the code ENCRYPTED and surfaces it only through an
+     * OWNER-gated, audited reveal. Best-effort: 1s timeout, errors swallowed,
+     * because logging must never be able to break a customer's login.
+     */
+    private static function erpRecordAuthEvent($to, $wamid, $code) {
+        if (!defined('ERP_RECORD_AUTH_URL') || !defined('ERP_INGEST_SECRET')
+            || !ERP_RECORD_AUTH_URL || !ERP_INGEST_SECRET) {
+            return;
+        }
+        $ch = curl_init(ERP_RECORD_AUTH_URL);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_TIMEOUT => 1,
+            CURLOPT_CONNECTTIMEOUT => 1,
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'X-BHD-ERP-Ingest-Secret: ' . ERP_INGEST_SECRET,
+            ],
+            CURLOPT_POSTFIELDS => json_encode([
+                'to' => $to,
+                'wamid' => $wamid,
+                'product' => 'Cardify',
+                'code' => $code,
+            ]),
+        ]);
+        @curl_exec($ch);
+        @curl_close($ch);
     }
 
 }
