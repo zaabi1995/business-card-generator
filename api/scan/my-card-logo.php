@@ -11,6 +11,15 @@ require_once INCLUDES_DIR . '/ScanAuth.php';
 header('Content-Type: application/json');
 $ctx = ScanAuth::requireEmployee();
 
+// Clear branch: remove the card's logo (no file needed).
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['clear'])) {
+    $db = Database::getInstance();
+    $theme = $db->fetchOne("SELECT id FROM company_themes WHERE company_id = :cid", ['cid' => $ctx['company_id']]);
+    if ($theme) { $db->update('company_themes', ['logo_path' => null], 'id = :id', ['id' => $theme['id']]); }
+    echo json_encode(['success' => true, 'logo_url' => null]);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_FILES['logo'])) {
     http_response_code(400); echo json_encode(['success' => false, 'error' => 'POST a logo file']); exit;
 }

@@ -31,6 +31,19 @@ if ($active) {
         echo json_encode(['success' => false, 'error' => 'invalid_receipt']);
         exit;
     }
+    // Bind this Apple original transaction to ONE account so a valid JWS cannot
+    // be replayed to unlock Pro on multiple accounts.
+    $otid = (string)($payload['originalTransactionId'] ?? '');
+    if ($otid !== '') {
+        $owner = $db->fetchOne("SELECT employee_id FROM scan_pro_receipts WHERE original_transaction_id = :o", ['o' => $otid]);
+        if ($owner && (string)$owner['employee_id'] !== (string)$ctx['employee_id']) {
+            echo json_encode(['success' => false, 'error' => 'receipt_in_use']);
+            exit;
+        }
+        $db->getConnection()
+           ->prepare("INSERT INTO scan_pro_receipts (original_transaction_id, employee_id, updated_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE employee_id = VALUES(employee_id), updated_at = NOW()")
+           ->execute([$otid, $ctx['employee_id']]);
+    }
     // Trust the receipt's own expiry (bounded to <=40d rolling so a lapse is
     // caught even if the app stops reporting), never a client-supplied window.
     $recvExp = (int)($payload['expiresDate'] ?? 0) / 1000;
