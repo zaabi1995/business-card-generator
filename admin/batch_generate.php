@@ -39,10 +39,10 @@ try {
     
     // Convert legacy field positions
     if ($frontTemplate && isset($frontTemplate['fields'])) {
-        $frontTemplate['fields'] = convertLegacyFieldPositions($frontTemplate['fields']);
+        $frontTemplate['fields'] = convertLegacyFieldPositions($frontTemplate['fields'], 1050, 600, $frontTemplate['settings']['fields_format'] ?? null);
     }
     if ($backTemplate && isset($backTemplate['fields'])) {
-        $backTemplate['fields'] = convertLegacyFieldPositions($backTemplate['fields']);
+        $backTemplate['fields'] = convertLegacyFieldPositions($backTemplate['fields'], 1050, 600, $backTemplate['settings']['fields_format'] ?? null);
     }
     
     // Load department templates (keyed by department_id)
@@ -79,7 +79,7 @@ try {
                 ];
                 // Convert legacy field positions
                 if (isset($deptTemplates['front']['fields'])) {
-                    $deptTemplates['front']['fields'] = convertLegacyFieldPositions($deptTemplates['front']['fields']);
+                    $deptTemplates['front']['fields'] = convertLegacyFieldPositions($deptTemplates['front']['fields'], 1050, 600, $deptTemplates['front']['settings']['fields_format'] ?? null);
                 }
             }
             
@@ -94,7 +94,7 @@ try {
                 ];
                 // Convert legacy field positions
                 if (isset($deptTemplates['back']['fields'])) {
-                    $deptTemplates['back']['fields'] = convertLegacyFieldPositions($deptTemplates['back']['fields']);
+                    $deptTemplates['back']['fields'] = convertLegacyFieldPositions($deptTemplates['back']['fields'], 1050, 600, $deptTemplates['back']['settings']['fields_format'] ?? null);
                 }
             }
             

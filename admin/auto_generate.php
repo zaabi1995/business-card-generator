@@ -148,10 +148,10 @@ if (!empty($employee['department_id'])) {
 
 // Convert legacy field positions
 if ($frontTemplate && isset($frontTemplate['fields'])) {
-    $frontTemplate['fields'] = convertLegacyFieldPositions($frontTemplate['fields']);
+    $frontTemplate['fields'] = convertLegacyFieldPositions($frontTemplate['fields'], 1050, 600, $frontTemplate['settings']['fields_format'] ?? null);
 }
 if ($backTemplate && isset($backTemplate['fields'])) {
-    $backTemplate['fields'] = convertLegacyFieldPositions($backTemplate['fields']);
+    $backTemplate['fields'] = convertLegacyFieldPositions($backTemplate['fields'], 1050, 600, $backTemplate['settings']['fields_format'] ?? null);
 }
 
 $hasTemplates = $frontTemplate || $backTemplate;
