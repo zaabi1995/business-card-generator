@@ -54,6 +54,14 @@ class AppleStoreKitVerify {
         }
         if (openssl_x509_verify($pems[$n - 1], $root) !== 1) return null;
 
+        // 1b) Leaf cert must be within its validity window (openssl_x509_verify
+        //     checks signatures only, not dates).
+        $leafInfo = openssl_x509_parse($pems[0]);
+        if (!is_array($leafInfo)) return null;
+        $now2 = time();
+        if (isset($leafInfo['validFrom_time_t']) && $now2 < (int)$leafInfo['validFrom_time_t']) return null;
+        if (isset($leafInfo['validTo_time_t']) && $now2 > (int)$leafInfo['validTo_time_t']) return null;
+
         // 2) Signature over "h64.p64" with the leaf public key.
         $leaf = openssl_pkey_get_public($pems[0]);
         if ($leaf === false) return null;
