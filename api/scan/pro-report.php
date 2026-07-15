@@ -35,14 +35,18 @@ if ($active) {
     // be replayed to unlock Pro on multiple accounts.
     $otid = (string)($payload['originalTransactionId'] ?? '');
     if ($otid !== '') {
+        // Atomic claim: the FIRST account to report this receipt owns it
+        // (INSERT IGNORE is a no-op for a later account); we then re-read the
+        // owner and reject anyone else. No check-then-write race, and no
+        // re-binding (which previously let two accounts share one receipt).
+        $db->getConnection()
+           ->prepare("INSERT IGNORE INTO scan_pro_receipts (original_transaction_id, employee_id, updated_at) VALUES (?, ?, NOW())")
+           ->execute([$otid, $ctx['employee_id']]);
         $owner = $db->fetchOne("SELECT employee_id FROM scan_pro_receipts WHERE original_transaction_id = :o", ['o' => $otid]);
         if ($owner && (string)$owner['employee_id'] !== (string)$ctx['employee_id']) {
             echo json_encode(['success' => false, 'error' => 'receipt_in_use']);
             exit;
         }
-        $db->getConnection()
-           ->prepare("INSERT INTO scan_pro_receipts (original_transaction_id, employee_id, updated_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE employee_id = VALUES(employee_id), updated_at = NOW()")
-           ->execute([$otid, $ctx['employee_id']]);
     }
     // Trust the receipt's own expiry (bounded to <=40d rolling so a lapse is
     // caught even if the app stops reporting), never a client-supplied window.

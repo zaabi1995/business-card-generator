@@ -74,6 +74,11 @@ class AppleStoreKitVerify {
         if (!is_array($payload)) return null;
         if (($payload['bundleId'] ?? '') !== self::BUNDLE_ID) return null;
         if (!in_array($payload['productId'] ?? '', $allowedProductIds, true)) return null;
+        // Production only: Sandbox/TestFlight receipts are signed by the SAME
+        // Apple Root CA-G3 chain and would otherwise grant free Pro. Flip
+        // CARDIFY_ALLOW_SANDBOX_RECEIPTS in config for pre-launch sandbox tests.
+        $allowSandbox = defined('CARDIFY_ALLOW_SANDBOX_RECEIPTS') && CARDIFY_ALLOW_SANDBOX_RECEIPTS;
+        if (($payload['environment'] ?? '') !== 'Production' && !$allowSandbox) return null;
         $exp = (int)($payload['expiresDate'] ?? 0); // milliseconds
         if ($exp <= 0 || ($exp / 1000) <= time()) return null;
         return $payload;

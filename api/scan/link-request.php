@@ -26,7 +26,11 @@ $db = Database::getInstance();
 // Per-account budget so a signed-in user cannot enumerate accounts by probing.
 $ip = getClientIp();
 if (!RateLimiter::check('scan_link_actor:' . $ctx['employee_id'], $ip, 12, 3600)
-    || !RateLimiter::check('scan_link_request:' . $identifier, $ip, 5, 900)) {
+    || !RateLimiter::check('scan_link_request:' . $identifier, $ip, 5, 900)
+    // IP-independent ceilings ('global' key): a spoofed client IP cannot mint a
+    // fresh counter, so these caps hold no matter how the source IP is forged.
+    || !RateLimiter::check('scan_link_actor_g:' . $ctx['employee_id'], 'global', 20, 3600)
+    || !RateLimiter::check('scan_link_id_g:' . $identifier, 'global', 5, 3600)) {
     http_response_code(429); echo json_encode(['success' => false, 'error' => 'rate_limited']); exit; }
 // (b) already have this TYPE linked (to a different value) -> would overwrite.
 if (linkAccountHasType($db, $ctx['employee_id'], $isEmail, $identifier)) {
@@ -36,5 +40,5 @@ $owner = linkFindOwner($db, $identifier, $isEmail);
 if ($owner !== null && $owner !== (string)$ctx['employee_id']) {
     echo json_encode(['success' => false, 'error' => 'identifier_taken']); exit; }
 $res = OtpService::send($identifier, $channel, 'scan_link');
-if (empty($res['success'])) { echo json_encode(['success' => false, 'error' => $res['error'] ?? 'delivery_failed']); exit; }
+if (empty($res['ok'])) { echo json_encode(['success' => false, 'error' => $res['error'] ?? 'delivery_failed']); exit; }
 echo json_encode(['success' => true, 'channel' => $channel, 'identifier_masked' => $masked]);

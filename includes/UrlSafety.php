@@ -186,22 +186,62 @@ function isAllowedRedirectHost(string $dest, array $allowedHttpsHosts): ?string
  */
 function getClientIp(): string
 {
-    $candidates = [
-        'HTTP_CF_CONNECTING_IP',
-        'HTTP_X_FORWARDED_FOR',
-        'HTTP_X_REAL_IP',
-        'HTTP_CLIENT_IP',
-        'REMOTE_ADDR',
-    ];
-    foreach ($candidates as $k) {
-        if (!empty($_SERVER[$k])) {
-            $ip = trim(explode(',', $_SERVER[$k])[0]);
-            if (filter_var($ip, FILTER_VALIDATE_IP)) {
-                return $ip;
+    $remote = $_SERVER['REMOTE_ADDR'] ?? '';
+    // Only honour Cloudflare / proxy client-IP headers when the request truly
+    // reached us THROUGH Cloudflare (REMOTE_ADDR is a CF edge). A caller hitting
+    // the public origin directly could otherwise set CF-Connecting-IP to forge
+    // any client IP and defeat every rate limit. Direct hits use REMOTE_ADDR.
+    if (isCloudflareIp($remote)) {
+        foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP'] as $k) {
+            if (!empty($_SERVER[$k])) {
+                $ip = trim(explode(',', $_SERVER[$k])[0]);
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip;
+                }
             }
         }
     }
+    if (filter_var($remote, FILTER_VALIDATE_IP)) {
+        return $remote;
+    }
     return '0.0.0.0';
+}
+
+/**
+ * True if $ip falls in a published Cloudflare edge range (v4 + v6).
+ * Source: https://www.cloudflare.com/ips/ (stable; refresh if CF changes it).
+ */
+function isCloudflareIp(string $ip): bool
+{
+    if ($ip === '') return false;
+    static $v4 = [
+        '173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22',
+        '141.101.64.0/18', '108.162.192.0/18', '190.93.240.0/20', '188.114.96.0/20',
+        '197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13',
+        '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22',
+    ];
+    static $v6 = [
+        '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32',
+        '2405:8100::/32', '2a06:98c0::/29', '2c0f:f248::/32',
+    ];
+    $bin = @inet_pton($ip);
+    if ($bin === false) return false;
+    $ranges = strlen($bin) === 4 ? $v4 : $v6;
+    foreach ($ranges as $cidr) {
+        [$net, $bits] = explode('/', $cidr);
+        $netBin = @inet_pton($net);
+        if ($netBin === false || strlen($netBin) !== strlen($bin)) continue;
+        $bits = (int) $bits;
+        $bytes = intdiv($bits, 8);
+        $rem = $bits % 8;
+        if ($bytes > 0 && strncmp($bin, $netBin, $bytes) !== 0) continue;
+        if ($rem > 0) {
+            $m = 0xff << (8 - $rem) & 0xff;
+            if ((ord($bin[$bytes]) & $m) !== (ord($netBin[$bytes]) & $m)) continue;
+        }
+        return true;
+    }
+    return false;
 }
 
 /**
