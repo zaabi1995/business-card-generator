@@ -278,6 +278,11 @@ class CardifyTemplateImporter
             'customHeight'  => $heightMm,
             'customUnit'    => 'mm',
             'dpi'           => 300,
+            // Parser coordinates are absolute 300-DPI pixels. Mark them so the
+            // render callers skip convertLegacyFieldPositions' legacy percentage
+            // heuristic, which otherwise misreads a real pixel field whose x AND
+            // y are both <=100 (e.g. name_ar at 84,90) as a percentage.
+            'fields_format' => 'px',
             'width_pt'      => $widthPt,
             'height_pt'     => $heightPt,
             'qr_area'       => $page['qr_area'] ?? null,
