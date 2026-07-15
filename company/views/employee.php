@@ -11,6 +11,7 @@ require_once INCLUDES_DIR . '/Currency.php';
 require_once INCLUDES_DIR . '/CardSections.php';
 require_once INCLUDES_DIR . '/Appointments.php';
 require_once INCLUDES_DIR . '/EmployeeSocials.php';
+require_once INCLUDES_DIR . '/CardifyConvention.php';
 
 $employeeId = $_SESSION['employee_id'] ?? $_SESSION['user_id'] ?? null;
 $message = null;
@@ -627,7 +628,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <p class="text-sm text-gray-500">Appears below your contact buttons when someone scans your QR.</p>
                 </div>
                 <?php if (!empty($company['slug']) && !empty($employee['id'])): ?>
-                <a href="<?php echo htmlspecialchars(getTenantUrl($company['slug'], '/card/' . $employee['id'])); ?>" target="_blank" class="text-sm text-blue-600 hover:underline">Preview &rarr;</a>
+                <a href="<?php echo htmlspecialchars(CardifyConvention::employeeShareUrl($company['slug'], $employee)); ?>" target="_blank" class="text-sm text-blue-600 hover:underline">Preview &rarr;</a>
                 <?php endif; ?>
             </div>
 

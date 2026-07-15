@@ -78,7 +78,12 @@ try {
         parse_str($__qs, $__qsParams);
         unset($__qsParams['company_slug'], $__qsParams['employee_id']);
         $__qsOut = http_build_query($__qsParams);
-        $__target = getTenantUrl($companySlug, '/card/' . rawurlencode($employeeId))
+        // Resolve to the pretty bare share URL when the token routes bare;
+        // employeeShareUrl falls back to /card/<id> for non-routable localparts.
+        $__redirEmp = CardifyConvention::resolveEmployeeToken($employeeId, $company['id']);
+        $__target = ($__redirEmp
+                ? CardifyConvention::employeeShareUrl($companySlug, $__redirEmp)
+                : getTenantUrl($companySlug, '/card/' . rawurlencode($employeeId)))
             . ($__qsOut ? '?' . $__qsOut : '');
         header('Location: ' . $__target, true, 301);
         exit;
@@ -401,8 +406,14 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         $__ogScheme = ((($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')) ? 'https' : 'http';
         $__ogHost   = $_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') ? APP_HOST : 'cardify.om');
         $__ogImage  = $frontImage ? ((strpos($frontImage, 'http') === 0) ? $frontImage : ($__ogScheme . '://' . $__ogHost . '/' . ltrim($frontImage, '/'))) : '';
+        // Canonical = the pretty bare share URL (e.g. /sami.alismaili), never
+        // the /card/<id> form, so shares + previews normalize to one URL.
+        $__shareUrl = (class_exists('CardifyConvention') && !empty($company['slug']))
+            ? CardifyConvention::employeeShareUrl($company['slug'], $employee)
+            : ($__ogScheme . '://' . $__ogHost . strtok($_SERVER['REQUEST_URI'] ?? '/', '?'));
     ?>
-    <meta property="og:url" content="<?php echo htmlspecialchars($__ogScheme . '://' . $__ogHost . strtok($_SERVER['REQUEST_URI'] ?? '/', '?'), ENT_QUOTES); ?>">
+    <link rel="canonical" href="<?php echo htmlspecialchars($__shareUrl, ENT_QUOTES); ?>">
+    <meta property="og:url" content="<?php echo htmlspecialchars($__shareUrl, ENT_QUOTES); ?>">
     <?php if ($__ogImage): ?>
     <meta property="og:image" content="<?php echo htmlspecialchars($__ogImage, ENT_QUOTES); ?>">
     <meta name="twitter:card" content="summary_large_image">

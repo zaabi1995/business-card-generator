@@ -7,6 +7,7 @@ require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/AuditLog.php';
 require_once INCLUDES_DIR . '/admin-layout.php';
+require_once INCLUDES_DIR . '/CardifyConvention.php';
 
 Auth::requireRole('super_admin');
 
