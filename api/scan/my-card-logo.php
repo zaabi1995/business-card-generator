@@ -10,12 +10,14 @@ require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
 header('Content-Type: application/json');
 $ctx = ScanAuth::requireEmployee();
+require_once __DIR__ . '/_ratelimit.php';
+scanRateLimit($ctx, 'my_card_logo', 120);
 
-// Company logo is company-scoped: only the company admin (or a solo company)
-// may change it, else one employee re-logos every colleague's card.
+// Company logo is company-scoped: on a MANAGED company only the admin / super-
+// admin may change it. Soft 200 + brand_locked flag (same contract as
+// my-card.php) so the app treats it as a lock, not a hard error.
 require_once __DIR__ . '/_brand_guard.php';
 if (!scanCanEditBrand(Database::getInstance(), $ctx['employee_id'])) {
-    http_response_code(403);
     echo json_encode(['success' => false, 'error' => 'brand_locked']);
     exit;
 }

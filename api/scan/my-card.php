@@ -34,6 +34,9 @@ if ($method !== 'GET' && $method !== 'POST') {
 }
 
 $ctx = ScanAuth::requireEmployee();
+require_once __DIR__ . '/_ratelimit.php';
+scanRateLimit($ctx, 'my_card', 600);
+require_once __DIR__ . '/_brand_guard.php';
 
 try {
     $db = Database::getInstance();
@@ -197,6 +200,9 @@ try {
         'secondary_color'  => $theme['secondary_color'] ?? null,
         'logo_url'         => $logoUrl,
         'dark_mode'        => (int) ($employee['card_dark_mode_toggle'] ?? 1) === 1,
+        // Lets the app grey out the colour/logo editors for a managed-tenant
+        // employee instead of only failing on save.
+        'can_edit_brand'   => scanCanEditBrand($db, $employeeId),
     ];
 
     $slug = (string) ($company['slug'] ?? '');
