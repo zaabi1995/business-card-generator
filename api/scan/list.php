@@ -11,6 +11,8 @@ require_once INCLUDES_DIR . '/ScanAuth.php';
 
 header('Content-Type: application/json');
 $ctx = ScanAuth::requireEmployee();
+require_once __DIR__ . '/_ratelimit.php';
+scanRateLimit($ctx, 'list', 1200);
 $db = Database::getInstance();
 
 // LIMIT/OFFSET are interpolated directly (PDO can't bind them as query

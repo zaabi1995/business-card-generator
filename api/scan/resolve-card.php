@@ -49,7 +49,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 // Bearer-token gate keeps this from being an open cardify.om scraper; only
 // the authenticated Scan mobile app may resolve card URLs.
-ScanAuth::requireEmployee();
+$ctx = ScanAuth::requireEmployee();
+require_once __DIR__ . '/_ratelimit.php';
+scanRateLimit($ctx, 'resolve', 240);
 
 $body = json_decode(file_get_contents('php://input'), true) ?: [];
 $rawUrl = trim((string) ($body['url'] ?? ''));

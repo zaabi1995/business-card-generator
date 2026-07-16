@@ -14,6 +14,8 @@ require_once INCLUDES_DIR . '/ShadowProfileService.php';
 
 header('Content-Type: application/json');
 $ctx = ScanAuth::requireEmployee();
+require_once __DIR__ . '/_ratelimit.php';
+scanRateLimit($ctx, 'upload', 240);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_FILES['image'])) {
     http_response_code(400);

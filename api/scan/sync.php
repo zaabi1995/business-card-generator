@@ -27,6 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $ctx = ScanAuth::requireEmployee();
+require_once __DIR__ . '/_ratelimit.php';
+scanRateLimit($ctx, 'sync', 1200);
 $body = json_decode(file_get_contents('php://input'), true) ?: [];
 
 try {

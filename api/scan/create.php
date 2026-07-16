@@ -16,6 +16,8 @@ require_once INCLUDES_DIR . '/ShadowProfileService.php';
 
 header('Content-Type: application/json');
 $ctx = ScanAuth::requireEmployee();
+require_once __DIR__ . '/_ratelimit.php';
+scanRateLimit($ctx, 'create', 600);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(400);
