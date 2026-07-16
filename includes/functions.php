@@ -855,8 +855,17 @@ function getEmployeeTemplates($employee, $companyId = null) {
                     ['e' => $employee['id'], 'p' => $pFront['pair_id']]
                 );
             }
+            // Normalize to the SAME shape DatabaseAdapter::loadTemplates emits
+            // (fields + settings + backgroundImage) so generate_card_html reads
+            // fields_format (px trap), the card dimensions, and the background.
             $pFront['fields'] = json_decode($pFront['fields_json'] ?? '', true) ?? [];
-            if ($pBack) $pBack['fields'] = json_decode($pBack['fields_json'] ?? '', true) ?? [];
+            $pFront['settings'] = json_decode($pFront['settings_json'] ?? '', true) ?: null;
+            $pFront['backgroundImage'] = $pFront['background_image_path'] ?? '';
+            if ($pBack) {
+                $pBack['fields'] = json_decode($pBack['fields_json'] ?? '', true) ?? [];
+                $pBack['settings'] = json_decode($pBack['settings_json'] ?? '', true) ?: null;
+                $pBack['backgroundImage'] = $pBack['background_image_path'] ?? '';
+            }
             return ['front' => $pFront, 'back' => $pBack, 'source' => 'personal'];
         }
     }
