@@ -838,6 +838,28 @@ function getActiveBackTemplate($companyId = null) {
 function getEmployeeTemplates($employee, $companyId = null) {
     $companyId = $companyId ?? getCurrentCompanyId();
     $db = Database::getInstance();
+
+    // Prefer the employee own ACTIVE personal design (card_designs wallet). No
+    // active design -> falls through to the department/company path below, so
+    // rendering is unchanged until a person activates a personal design.
+    if (!empty($employee['id'])) {
+        $pFront = $db->fetchOne(
+            "SELECT * FROM card_designs WHERE employee_id = :e AND is_active = 1 AND side = 'front' ORDER BY updated_at DESC LIMIT 1",
+            ['e' => $employee['id']]
+        );
+        if ($pFront) {
+            $pBack = null;
+            if (!empty($pFront['pair_id'])) {
+                $pBack = $db->fetchOne(
+                    "SELECT * FROM card_designs WHERE employee_id = :e AND pair_id = :p AND side = 'back' AND is_active = 1 LIMIT 1",
+                    ['e' => $employee['id'], 'p' => $pFront['pair_id']]
+                );
+            }
+            $pFront['fields'] = json_decode($pFront['fields_json'] ?? '', true) ?? [];
+            if ($pBack) $pBack['fields'] = json_decode($pBack['fields_json'] ?? '', true) ?? [];
+            return ['front' => $pFront, 'back' => $pBack, 'source' => 'personal'];
+        }
+    }
     
     // Check if employee has a department with a custom template
     if (!empty($employee['department_id'])) {
