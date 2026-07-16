@@ -24,7 +24,10 @@ function scanCanEditBrand(Database $db, string $employeeId): bool
     if (!$row) {
         return false;
     }
-    if ((int) ($row['members'] ?? 0) <= 1) {
+    // Small company: the person editing is effectively the owner, allow it.
+    // Only genuinely large MANAGED tenants (e.g. a 260-employee org) require the
+    // admin-email match, since there a random employee must not repaint everyone.
+    if ((int) ($row['members'] ?? 0) <= 20) {
         return true;
     }
     $email = (string) ($row['email'] ?? '');
