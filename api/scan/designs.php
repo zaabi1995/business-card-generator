@@ -124,6 +124,13 @@ try {
 
     if ($action === 'activate') {
         $id = trim((string) ($body['id'] ?? ''));
+        // Empty id = deactivate all -> the card falls back to the company brand.
+        if ($id === '') {
+            $db->getConnection()->prepare("UPDATE card_designs SET is_active = 0 WHERE employee_id = :e")->execute([':e' => $emp]);
+            $invalidateRender();
+            echo json_encode(['success' => true]);
+            exit;
+        }
         $owned = $db->fetchOne("SELECT pair_id FROM card_designs WHERE id = :id AND employee_id = :e", ['id' => $id, 'e' => $emp]);
         if (!$owned) {
             http_response_code(404);
