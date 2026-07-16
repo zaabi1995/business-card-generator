@@ -22,6 +22,13 @@ header('Content-Type: application/json');
 $ctx = ScanAuth::requireEmployee();
 require_once __DIR__ . '/_ratelimit.php';
 scanRateLimit($ctx, 'designs', 600);
+require_once INCLUDES_DIR . '/CardRenderer.php';
+// A design change flips which layout renders, so drop this employee's
+// cached PNG; the public card + wallet regenerate from the active design.
+$invalidateRender = function () use ($ctx) {
+    try { CardRenderer::invalidateForEmployee($ctx['employee_id'], 'card_designs_change'); }
+    catch (\Throwable $e) { error_log('[scan/designs] invalidate: ' . $e->getMessage()); }
+};
 
 $db = Database::getInstance();
 $emp = $ctx['employee_id'];
@@ -90,6 +97,7 @@ try {
             $db->getConnection()->prepare(
                 "UPDATE card_designs SET " . implode(', ', $sets) . " WHERE id = :id AND employee_id = :e"
             )->execute($params);
+            $invalidateRender();
             echo json_encode(['success' => true, 'id' => $id]);
             exit;
         }
@@ -109,6 +117,7 @@ try {
             'settings_json' => $settings,
             'is_active' => 0,
         ]);
+        $invalidateRender();
         echo json_encode(['success' => true, 'id' => $newId]);
         exit;
     }
@@ -130,6 +139,7 @@ try {
             $db->getConnection()->prepare("UPDATE card_designs SET is_active = 1 WHERE id = :id AND employee_id = :e")
                ->execute([':id' => $id, ':e' => $emp]);
         }
+        $invalidateRender();
         echo json_encode(['success' => true]);
         exit;
     }
@@ -138,6 +148,7 @@ try {
         $id = trim((string) ($body['id'] ?? ''));
         $db->getConnection()->prepare("DELETE FROM card_designs WHERE id = :id AND employee_id = :e")
            ->execute([':id' => $id, ':e' => $emp]);
+        $invalidateRender();
         echo json_encode(['success' => true]);
         exit;
     }
