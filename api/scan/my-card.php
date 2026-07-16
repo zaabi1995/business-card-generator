@@ -146,7 +146,12 @@ try {
         // web theme editor writes. NEVER trust the posted hex: run it through
         // ColorContrast::safeAccent() first (unparseable -> platform teal;
         // too-light -> darkened to a readable accent).
+        $brandLocked = false;
         if (array_key_exists('primary_color', $body)) {
+            require_once __DIR__ . '/_brand_guard.php';
+            $canBrand = scanCanEditBrand($db, $employeeId);
+            $brandLocked = !$canBrand;
+            if ($canBrand) {
             $safe = ColorContrast::safeAccent((string) $body['primary_color']);
             $existingTheme = $db->fetchOne(
                 "SELECT id FROM company_themes WHERE company_id = :cid", ['cid' => $companyId]
@@ -166,9 +171,10 @@ try {
             require_once INCLUDES_DIR . '/CardRenderer.php';
             try { CardRenderer::invalidateForCompany((string) $companyId, 'scan-my-card-theme'); }
             catch (\Throwable $e) { error_log('[scan/my-card] invalidate: ' . $e->getMessage()); }
+            }
         }
 
-        echo json_encode(['success' => true]);
+        echo json_encode(['success' => true, 'brand_locked' => $brandLocked]);
         exit;
     }
 

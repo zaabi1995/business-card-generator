@@ -11,6 +11,15 @@ require_once INCLUDES_DIR . '/ScanAuth.php';
 header('Content-Type: application/json');
 $ctx = ScanAuth::requireEmployee();
 
+// Company logo is company-scoped: only the company admin (or a solo company)
+// may change it, else one employee re-logos every colleague's card.
+require_once __DIR__ . '/_brand_guard.php';
+if (!scanCanEditBrand(Database::getInstance(), $ctx['employee_id'])) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'brand_locked']);
+    exit;
+}
+
 // Clear branch: remove the card's logo (no file needed).
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['clear'])) {
     $db = Database::getInstance();
