@@ -177,6 +177,19 @@ try {
             }
         }
 
+        // Wallet pass auto-update: the card changed, so bump the pass version
+        // and notify every Wallet device registered to it (empty push -> Wallet
+        // pulls the new pass). Best-effort; never fails the save.
+        try {
+            require_once INCLUDES_DIR . '/ScanPassService.php';
+            require_once INCLUDES_DIR . '/ApnsProvider.php';
+            $regs = ScanPassService::onCardChanged((string) $employeeId);
+            if ($regs) {
+                // Empty-payload push per device; Wallet then pulls the new pass.
+                apnsProvider()->pushPassUpdates(APPLE_WALLET_PASS_TYPE_ID, $regs);
+            }
+        } catch (\Throwable $e) { error_log('[scan/my-card] wallet push: ' . $e->getMessage()); }
+
         echo json_encode(['success' => true, 'brand_locked' => $brandLocked]);
         exit;
     }

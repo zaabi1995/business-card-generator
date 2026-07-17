@@ -74,6 +74,9 @@ try {
         $company = findCompanyById($employee['company_id']);
     }
     $theme = $company ? loadCompanyTheme($company['id']) : null;
+    require_once INCLUDES_DIR . '/ScanPassService.php';
+    $passInfo = ScanPassService::getOrCreateForEmployee((string)$employee['id'], (string)($company['id'] ?? ($employee['company_id'] ?? '')));
+    $walletApex = function_exists('cardifyApexHost') ? cardifyApexHost() : 'cardify.om';
 
     // Pass language follows the CARDIFY SITE language (passed as ?lang=en|ar by the
     // button), NOT the device locale. One deterministic single-language pass.
@@ -217,7 +220,9 @@ try {
     $pass = [
         'formatVersion'       => 1,
         'passTypeIdentifier'  => APPLE_WALLET_PASS_TYPE_ID,
-        'serialNumber'        => (string)$employee['id'],
+        'serialNumber'        => $passInfo['serial'],
+        'webServiceURL'       => 'https://' . $walletApex . '/wallet',
+        'authenticationToken' => $passInfo['token'],
         'teamIdentifier'      => APPLE_WALLET_TEAM_ID,
         'organizationName'    => defined('APPLE_WALLET_ORG_NAME') ? APPLE_WALLET_ORG_NAME : 'Cardify',
         'description'         => trim($name . ($companyNm !== '' ? ', ' . $companyNm : '')),
