@@ -59,3 +59,17 @@ Passes added to Wallet BEFORE this change have serialNumber = employee id and NO
 webServiceURL/authenticationToken, so they CANNOT become updatable by a backend
 change alone. Users must re-add the card (a new, update-enabled pass). Do not
 claim old passes auto-update.
+
+## Token encryption at rest (added 17 Jul 2026)
+PassKit embeds the CLEAR authenticationToken in every regenerated pass.json, so
+a one-way hash is impossible. Tokens are therefore AES-256-GCM encrypted at rest:
+- format `v<keyVersion>:<base64url(nonce||ciphertext||tag)>`, 12-byte nonce per value.
+- key: `data/wallet/token_key.bin` (0600 www:www, outside the DB, outside git,
+  nginx 404s the directory - verified). Env: APPLE_WALLET_TOKEN_KEY_PATH.
+- key VERSIONS supported (`.v2` etc) so rotation never invalidates issued passes.
+- a keyed HMAC column (`auth_token_hmac`) makes request auth a constant-time
+  compare that NEVER decrypts.
+- missing key => fail closed (throw), never silent plaintext.
+Migration: `php wallet_encrypt_tokens.php --dry-run|--apply|--verify`. --apply
+mysqldumps scan_passes first and round-trip-checks each value before writing.
+Rollback: `mysql <db> < /root/backups/cardify/scan_passes-preencrypt-<ts>.sql`.

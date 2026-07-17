@@ -16,6 +16,8 @@
  * per-pass token with hash_equals (constant time). Tokens are never logged. Serial -> employee ownership is decided
  * server-side; the client never supplies it. Tokens are never logged.
  */
+require_once __DIR__ . '/SecretBox.php';
+
 class ScanPassService
 {
     public static function ensureSchema(): void
@@ -27,7 +29,8 @@ class ScanPassService
                 employee_id VARCHAR(64) NOT NULL,
                 company_id VARCHAR(64) NOT NULL,
                 serial_number VARCHAR(64) NOT NULL UNIQUE,
-                auth_token VARCHAR(64) NOT NULL,
+                auth_token VARCHAR(255) NOT NULL,
+                auth_token_hmac CHAR(64) NULL,
                 version INT NOT NULL DEFAULT 1,
                 last_modified DATETIME NOT NULL,
                 revoked TINYINT(1) NOT NULL DEFAULT 0,
@@ -36,6 +39,11 @@ class ScanPassService
                 KEY idx_serial (serial_number)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
+        // Additive for databases created before token encryption.
+        try {
+            $db->getConnection()->exec("ALTER TABLE scan_passes ADD COLUMN IF NOT EXISTS auth_token_hmac CHAR(64) NULL");
+            $db->getConnection()->exec("ALTER TABLE scan_passes MODIFY auth_token VARCHAR(255) NOT NULL");
+        } catch (Throwable $e) { /* already applied */ }
         $db->getConnection()->exec(
             "CREATE TABLE IF NOT EXISTS scan_pass_registrations (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -59,15 +67,22 @@ class ScanPassService
         $db = Database::getInstance();
         $row = $db->fetchOne("SELECT * FROM scan_passes WHERE employee_id = :e", ['e' => $employeeId]);
         if ($row) {
-            return ['serial' => $row['serial_number'], 'token' => $row['auth_token'], 'version' => (int)$row['version'], 'row' => $row];
+            // PassKit requires the CLEAR token in every regenerated pass.json,
+            // so it is decrypted here (never logged, never returned elsewhere).
+            return ['serial' => $row['serial_number'], 'token' => SecretBox::decrypt((string) $row['auth_token']),
+                    'version' => (int)$row['version'], 'row' => $row];
         }
         $serial = bin2hex(random_bytes(16));
         $token = bin2hex(random_bytes(24));
         $now = date('Y-m-d H:i:s');
+        // Encrypted at rest; the keyed HMAC lets authorize() verify in constant
+        // time without ever decrypting. Fails closed if the key is unavailable.
         $db->getConnection()->prepare(
-            "INSERT INTO scan_passes (employee_id, company_id, serial_number, auth_token, version, last_modified, revoked, created_at)
-             VALUES (:e, :c, :s, :h, 1, :m, 0, :m2)"
-        )->execute(['e' => $employeeId, 'c' => $companyId, 's' => $serial, 'h' => $token, 'm' => $now, 'm2' => $now]);
+            "INSERT INTO scan_passes (employee_id, company_id, serial_number, auth_token, auth_token_hmac, version, last_modified, revoked, created_at)
+             VALUES (:e, :c, :s, :h, :hm, 1, :m, 0, :m2)"
+        )->execute(['e' => $employeeId, 'c' => $companyId, 's' => $serial,
+                    'h' => SecretBox::encrypt($token), 'hm' => SecretBox::hmac($token),
+                    'm' => $now, 'm2' => $now]);
         $row = $db->fetchOne("SELECT * FROM scan_passes WHERE serial_number = :s", ['s' => $serial]);
         return ['serial' => $serial, 'token' => $token, 'version' => 1, 'row' => $row];
     }
@@ -83,7 +98,22 @@ class ScanPassService
     {
         $row = self::findBySerial($serial);
         if (!$row) return false;
-        return hash_equals((string)$row['auth_token'], $token);
+        // Preferred path: constant-time compare of a keyed HMAC. No decryption
+        // happens on the request path at all.
+        if (!empty($row['auth_token_hmac'])) {
+            try {
+                return hash_equals((string) $row['auth_token_hmac'], SecretBox::hmac($token));
+            } catch (Throwable $e) {
+                return false; // key unavailable -> fail closed
+            }
+        }
+        // Transitional: rows not yet migrated still hold a plaintext token.
+        $stored = (string) $row['auth_token'];
+        if (SecretBox::isEncrypted($stored)) {
+            try { return hash_equals(SecretBox::decrypt($stored), $token); }
+            catch (Throwable $e) { return false; }
+        }
+        return hash_equals($stored, $token);
     }
 
     public static function register(string $serial, string $deviceLibraryId, string $pushToken, string $environment): string
