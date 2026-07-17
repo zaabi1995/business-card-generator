@@ -111,3 +111,6 @@ convex/node_modules/
 !/storage/logos/verified/.gitkeep
 !/storage/logos/pending/.gitkeep
 !/storage/og/logos/.gitkeep
+
+# runtime-generated OG images
+storage/og/
