@@ -56,10 +56,10 @@ class TokenApnsProvider implements ApnsProvider
 
     public function pushPassUpdates(string $passTypeId, array $regs): array
     {
-        // Requires: APPLE_WALLET_APNS_KEY_PATH (.p8) OR the pass-type push cert,
+        // Requires: APPLE_WALLET_PUSH_CERT_PATH (.p8) OR the pass-type push cert,
         // APPLE_WALLET_APNS_KEY_ID, APPLE_WALLET_TEAM_ID. Topic = $passTypeId.
         // Not activated without the credential; fail closed rather than pretend.
-        if (!defined('APPLE_WALLET_APNS_KEY_PATH') || !is_readable(APPLE_WALLET_APNS_KEY_PATH)) {
+        if (!defined('APPLE_WALLET_PUSH_CERT_PATH') || !is_readable(APPLE_WALLET_PUSH_CERT_PATH)) {
             $out = [];
             foreach ($regs as $r) { $out[] = ['device_library_id' => $r['device_library_id'], 'result' => 'error']; }
             error_log('[wallet/apns] production APNs credential not configured; push skipped');
@@ -78,6 +78,6 @@ class TokenApnsProvider implements ApnsProvider
 function apnsProvider(): ApnsProvider
 {
     if (defined('WALLET_APNS_MOCK') && WALLET_APNS_MOCK) return new MockApnsProvider();
-    if (defined('APPLE_WALLET_APNS_KEY_PATH') && is_readable(APPLE_WALLET_APNS_KEY_PATH)) return new TokenApnsProvider(true);
+    if (defined('APPLE_WALLET_PUSH_CERT_PATH') && is_readable(APPLE_WALLET_PUSH_CERT_PATH)) return new TokenApnsProvider(true);
     return new MockApnsProvider();
 }
