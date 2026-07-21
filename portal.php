@@ -1693,13 +1693,13 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         </button>
                     </div>
                     </div><!-- /#issueFields -->
-                </form>
 
                         <div class="issue-nav">
                             <button type="button" class="issue-back" id="issueBack" hidden>&larr; <span><?= htmlspecialchars(t('portal.issue_back')) ?></span></button>
                             <button type="button" class="issue-next" id="issueNext"><span id="issueNextLabel"><?= htmlspecialchars(t('portal.issue_continue')) ?></span> <span aria-hidden="true">&rarr;</span></button>
                             <span class="issue-enter" id="issueEnter"><?= htmlspecialchars(t('portal.issue_enter_hint')) ?> <b>Enter</b></span>
                         </div>
+                </form>
                     </section><!-- /.issue-flow -->
                 </div><!-- /.issue-grid -->
             </div><!-- /.issuance -->
@@ -2810,11 +2810,22 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         let sealed = false;
         form.addEventListener('submit', function(e){
-            if (sealed || reduceMotion) return; // let the POST proceed (PNG already captured by the earlier listener)
+            if (sealed || reduceMotion) return; // let the POST proceed (PNG captured below)
             if (!previewGenerated) return;      // the earlier guard will handle it
             e.preventDefault();
+            // Capture the design here explicitly so it never depends on
+            // listener execution order. The delayed form.submit() below
+            // bypasses submit listeners, so the hidden inputs must be set now.
+            try {
+                if (frontEditor && typeof frontEditor.exportPNG === 'function') {
+                    document.getElementById('preview_front_input').value = frontEditor.exportPNG(1);
+                }
+                if (backEditor && typeof backEditor.exportPNG === 'function') {
+                    document.getElementById('preview_back_input').value = backEditor.exportPNG(1);
+                }
+            } catch (err) { /* submit without preview image */ }
             const seal = document.getElementById('issueSeal');
-            if (seal) seal.classList.add('on');
+            if (seal) { seal.classList.add('on'); seal.setAttribute('aria-hidden', 'false'); }
             setTimeout(function(){ sealed = true; form.submit(); }, 750);
         });
 
