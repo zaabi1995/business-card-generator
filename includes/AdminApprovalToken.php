@@ -73,7 +73,7 @@ class AdminApprovalToken
         $affected = $db->update(
             'admin_approval_tokens',
             ['used_at' => date('Y-m-d H:i:s')],
-            'token = :tok AND used_at IS NULL',
+            'token = :tok AND used_at IS NULL AND expires_at > NOW()',
             ['tok' => $token]
         );
 
@@ -97,5 +97,20 @@ class AdminApprovalToken
         $_SESSION['user_company_id'] = $row['company_id'];
         $_SESSION['user_role'] = 'admin';
         $_SESSION['user_email'] = $row['admin_email'] ?? null;
+
+        if (empty($row['company_slug']) || empty($row['company_name'])) {
+            $db = Database::getInstance();
+            $company = $db->fetchOne(
+                'SELECT slug, name FROM companies WHERE id = :cid LIMIT 1',
+                ['cid' => $row['company_id']]
+            );
+            if ($company) {
+                $row['company_slug'] = $row['company_slug'] ?? $company['slug'];
+                $row['company_name'] = $row['company_name'] ?? $company['name'];
+            }
+        }
+
+        $_SESSION['company_slug'] = $row['company_slug'] ?? null;
+        $_SESSION['company_name'] = $row['company_name'] ?? null;
     }
 }
