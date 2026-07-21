@@ -122,7 +122,47 @@ function approveRequestChain(array $request, array $company, string $companyId, 
             'quantity' => $quantityRequested
         ];
 
-        // print order placement added in a later task when $sendToPrint
+        // Place the BHD print order (200 pcs) when the admin chose "send to
+        // print". Idempotent: never re-place if this request already has one.
+        // Non-fatal: a print-order failure must not undo the approval.
+        $printOrderId = null;
+        $printOrderNumber = null;
+        if ($sendToPrint && empty($request['print_order_id'])) {
+            try {
+                require_once INCLUDES_DIR . '/PrintShopIntegration.php';
+                $host = defined('APP_HOST') ? APP_HOST : 'cardify.om';
+                $abs = function ($p) use ($host) {
+                    $p = trim((string)$p);
+                    if ($p === '') return '';
+                    return strpos($p, 'http') === 0 ? $p : 'https://' . $host . '/' . ltrim($p, '/');
+                };
+                $order = PrintShopIntegration::createOrder([
+                    'print_shop_id'  => 2, // BHD Printing & Designing (internal provider)
+                    'company_id'     => $companyId,
+                    'employee_id'    => $employeeId,
+                    'quantity'       => $quantityRequested,
+                    'card_front_url' => $abs($request['preview_front_path'] ?? $request['preview_front'] ?? ''),
+                    'card_back_url'  => $abs($request['preview_back_path'] ?? $request['preview_back'] ?? ''),
+                    'payment_status' => 'pending',
+                ]);
+                if (!empty($order['success']) && !empty($order['order_id'])) {
+                    $printOrderId = $order['order_id'];
+                    $row = $db->fetchOne(
+                        "SELECT order_number FROM print_orders WHERE id = :oid",
+                        ['oid' => $printOrderId]
+                    );
+                    $printOrderNumber = $row['order_number'] ?? null;
+                    $db->query(
+                        "UPDATE card_requests SET print_order_id = :oid WHERE id = :rid",
+                        ['oid' => $printOrderId, 'rid' => $request['id']]
+                    );
+                } else {
+                    error_log('approveRequestChain: print order not placed: ' . ($order['error'] ?? 'unknown'));
+                }
+            } catch (Throwable $e) {
+                error_log('approveRequestChain print order error: ' . $e->getMessage());
+            }
+        }
 
         return [
             'success' => true,
@@ -131,6 +171,8 @@ function approveRequestChain(array $request, array $company, string $companyId, 
             'quantity' => $quantityRequested,
             'error' => null,
             'send_to_print' => $sendToPrint,
+            'print_order_id' => $printOrderId,
+            'print_order_number' => $printOrderNumber,
         ];
     } catch (Exception $e) {
         error_log("Error approving request: " . $e->getMessage());

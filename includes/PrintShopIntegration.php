@@ -447,8 +447,29 @@ class PrintShopIntegration {
             if (!$order) return;
             
             $to = $settings['shop_email'];
+
+            // BHD (internal provider, shop 2) production orders go to the
+            // printing inbox with the print-ready sheet attached so the
+            // press can print straight from the email.
+            $attachments = [];
+            if ((int)($order['print_shop_id'] ?? 0) === 2) {
+                $to = defined('BHD_PRODUCTION_EMAIL') ? BHD_PRODUCTION_EMAIL : 'info@bhdoman.com';
+                if (!empty($order['employee_id'])) {
+                    try {
+                        require_once INCLUDES_DIR . '/CardPDFRenderer.php';
+                        $pdf = CardPDFRenderer::render((string)$order['employee_id'], 'print');
+                        if (!empty($pdf['success']) && !empty($pdf['path']) && is_file($pdf['path'])) {
+                            $safeName = preg_replace('/[^A-Za-z0-9_-]+/', '_', $order['employee_name'] ?: 'card');
+                            $attachments[] = ['path' => $pdf['path'], 'name' => $safeName . '-print-ready.pdf'];
+                        }
+                    } catch (Throwable $e) {
+                        error_log('BHD print-ready attach failed for order ' . $orderId . ': ' . $e->getMessage());
+                    }
+                }
+            }
+
             if (empty($to)) return;
-            
+
             require_once INCLUDES_DIR . '/Currency.php';
             $formattedTotal = Currency::format($order['total'] ?? 0, $order['currency'] ?? 'OMR');
             
@@ -471,7 +492,7 @@ class PrintShopIntegration {
                 'shipping_country' => $order['shipping_country'] ?? '',
                 'express' => !empty($order['express_delivery']) ? 'Yes (Express)' : 'Standard',
                 'notes' => $order['notes'] ?? 'None'
-            ]);
+            ], $attachments);
             
         } catch (Exception $e) {
             error_log("Failed to send print shop notification for order #$orderId: " . $e->getMessage());
