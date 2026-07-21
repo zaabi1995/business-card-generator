@@ -464,16 +464,28 @@ class ERPSync {
         $data = json_decode($body, true);
 
         if ($httpCode === 200 || $httpCode === 409) {
+            // The invoice/SO/delivery exist. On a 'payment' trigger the ERP also
+            // records the payment and closes AR; if that step failed it returns
+            // paymentRecordingFailed so AR stays open and needs manual reconcile.
+            $payFailed = !empty($data['paymentRecordingFailed']);
+            $syncStatus = $payFailed ? 'invoiced_unpaid' : 'invoiced';
+            $syncErr = $payFailed
+                ? 'Invoice created but ERP payment not recorded; AR still open, manual reconciliation needed'
+                : null;
+            if ($payFailed) {
+                error_log("ERPSync::convertQuoteToInvoice order $orderId: invoice created but ERP payment recording FAILED (AR open)");
+            }
             $stmt = $db->getConnection()->prepare("UPDATE print_orders SET
                 erp_invoice_id            = :inv_id,
                 erp_invoice_number        = :inv_num,
                 invoice_number            = :inv_num2,
                 erp_order_id              = :so_id,
                 delivery_note_external_id = :dn_id,
+                erp_payment_id            = :pay_id,
                 invoice_issued_at         = NOW(),
-                erp_sync_status           = 'invoiced',
+                erp_sync_status           = :sync_status,
                 erp_last_sync             = NOW(),
-                erp_sync_error            = NULL
+                erp_sync_error            = :sync_err
                 WHERE id = :id");
             $stmt->execute([
                 'inv_id'  => $data['invoiceId'] ?? null,
@@ -481,6 +493,9 @@ class ERPSync {
                 'inv_num2' => $data['invoiceNumber'] ?? null,
                 'so_id'   => $data['salesOrderId'] ?? null,
                 'dn_id'   => $data['deliveryNoteId'] ?? null,
+                'pay_id'  => $data['paymentId'] ?? null,
+                'sync_status' => $syncStatus,
+                'sync_err' => $syncErr,
                 'id'      => $orderId,
             ]);
             return ['success' => true, 'message' => 'Quote converted in ERP', 'data' => $data];
