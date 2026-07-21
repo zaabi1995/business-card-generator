@@ -147,6 +147,15 @@ try {
         exit;
     }
 
+    // Token-authenticated magic-link pages self-authenticate via
+    // AdminApprovalToken and must bypass the login gate (like login above).
+    // They call verify()/startAdminSession() themselves and show a neutral
+    // expired page for any invalid or missing token.
+    if ($page === 'approve-request' || $page === 'one-tap-approve') {
+        include __DIR__ . '/' . $pageMap[$page];
+        exit;
+    }
+
     // Check if user is logged in
     if (!Auth::isLoggedIn()) {
         header('Location: ' . getTenantUrl($companySlug, '/admin/login'));

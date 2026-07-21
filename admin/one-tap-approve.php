@@ -188,12 +188,13 @@ if ($r['success'] && $r['employee_id']) {
     exit;
 }
 
+error_log('one-tap approve failed: ' . ($r['error'] ?? 'unknown'));
 http_response_code(500);
 aat_message_page(
     'Approval failed - Cardify',
     "\xE2\x9A\xA0", // warning
     'We could not complete the approval',
-    'Please try again from the admin dashboard. ' . ($r['error'] ?? ''),
+    'Please try again from the admin dashboard.',
     'تعذر إتمام الموافقة',
     'يرجى المحاولة مرة أخرى من لوحة التحكم',
     getTenantUrl($_SESSION['company_slug'] ?? null, '/admin/requests'),

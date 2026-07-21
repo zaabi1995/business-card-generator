@@ -141,9 +141,6 @@ if (!function_exists('aat_message_page')) {
         ?string $linkUrl = null,
         string $linkLabel = ''
     ): void {
-        if (class_exists('SecurityHeaders') && !headers_sent()) {
-            // no-op, headers already sent by caller; guard only
-        }
         aat_page_open($pageTitle);
         ?>
         <div class="card center">
