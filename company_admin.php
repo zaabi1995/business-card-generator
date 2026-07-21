@@ -77,6 +77,8 @@ try {
         'departments' => 'admin/departments.php',
         'requests' => 'admin/requests.php',
         'generated' => 'admin/generated.php',
+        'approve-request' => 'admin/approve-request.php',
+        'one-tap-approve' => 'admin/one-tap-approve.php',
         'batch_generate' => 'admin/batch_generate.php',
         'auto_generate' => 'admin/auto_generate.php',
         'get_templates' => 'admin/get_templates.php',
