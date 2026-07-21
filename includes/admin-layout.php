@@ -11,6 +11,13 @@ if (!class_exists('Auth')) {
 if (!class_exists('Impersonation')) {
     require_once __DIR__ . '/Impersonation.php';
 }
+// TenantHost decides "am I on a tenant subdomain?" which drives the whole
+// super-admin nav split. Admin pages have no autoloader, so without this
+// require class_exists('TenantHost') is false and every admin page falls
+// back to the apex nav (leaking the cross-tenant block onto tenants).
+if (!class_exists('TenantHost') && is_file(__DIR__ . '/TenantHost.php')) {
+    require_once __DIR__ . '/TenantHost.php';
+}
 
 /**
  * Get the admin base path - company-specific or global
@@ -117,8 +124,11 @@ function getAdminNavItems() {
             // they get the same single-company nav a company admin gets, PLUS
             // the tenant-scoped super tools, PLUS a one-click door back to the
             // global console (so nothing is buried). No cross-tenant block.
+            // The console lives on the APEX, so this must be an absolute apex
+            // URL, not host-relative (which would stay on this subdomain).
+            $apexSuperUrl = 'https://' . (defined('APP_HOST') ? APP_HOST : 'cardify.om') . '/admin/super/';
             array_splice($items, 1, 0, [
-                ['name' => 'Global console', 'icon' => 'fa-solid fa-arrow-up-right-from-square', 'url' => $superBasePath, 'key' => 'global-console'],
+                ['name' => 'Global console', 'icon' => 'fa-solid fa-arrow-up-right-from-square', 'url' => $apexSuperUrl, 'key' => 'global-console'],
             ]);
             $items[] = ['name' => 'Billing', 'icon' => 'fa-solid fa-credit-card', 'url' => $basePath . 'billing' . $ext, 'key' => 'billing', 'matches' => ['payment-history']];
             $settingsItems[] = ['name' => 'Plans', 'icon' => 'fa-solid fa-tags', 'url' => $basePath . 'plans' . $ext, 'key' => 'plans'];
@@ -563,7 +573,7 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
                 <i class="fa-solid fa-user-shield text-amber-500 flex-shrink-0"></i>
                 <span class="truncate">You are viewing <strong><?= htmlspecialchars($__tenantLabel) ?></strong> as a Super Admin. Changes here affect this company only.</span>
             </span>
-            <a href="<?= htmlspecialchars(getBasePath() . 'admin/super/', ENT_QUOTES) ?>" class="flex-shrink-0 inline-flex items-center gap-1.5 font-semibold text-amber-800 hover:text-amber-900 whitespace-nowrap">
+            <a href="<?= htmlspecialchars('https://' . (defined('APP_HOST') ? APP_HOST : 'cardify.om') . '/admin/super/', ENT_QUOTES) ?>" class="flex-shrink-0 inline-flex items-center gap-1.5 font-semibold text-amber-800 hover:text-amber-900 whitespace-nowrap">
                 <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i><span class="hidden sm:inline">Exit to global console</span><span class="sm:hidden">Exit</span>
             </a>
         </div>

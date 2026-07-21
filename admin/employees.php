@@ -1121,6 +1121,11 @@ adminHeader(t('employees.page_title'), 'employees');
         .cf-face img { max-width:100%; max-height:100%; border-radius:.5rem; box-shadow:0 6px 18px -6px rgba(15,23,42,.35); }
         .cf-back { transform:rotateY(180deg); }
         @media (prefers-reduced-motion: reduce) { .cf-inner { transition:none; } }
+        /* RTL: the built Tailwind has no logical-inset utilities, so flip the
+           corner-pinned badge / sample star / flip button by hand. */
+        [dir="rtl"] .cf-badge { left:auto; right:.625rem; }
+        [dir="rtl"] .cf-sample { right:auto; left:.625rem; }
+        [dir="rtl"] .cf-flipbtn { right:auto; left:.25rem; }
     </style>
 
     <?php if (!empty($employees) && $__ready === 0): ?>
@@ -1212,13 +1217,15 @@ adminHeader(t('employees.page_title'), 'employees');
         $printReadyUrl = '/card-pdf.php?i=' . urlencode($emp['id']) . '&print=1';
         $cutSheetUrl   = '/card-sheet.php?i=' . urlencode($emp['id']);
         ?>
-        <div x-show="matchesSearch('<?php echo addslashes($emp['email'] ?? ''); ?>', '<?php echo addslashes($emp['name_en'] ?? ''); ?>', '<?php echo addslashes($emp['name_ar'] ?? ''); ?>', '<?php echo addslashes($emp['department_id'] ?? ''); ?>', <?php echo $cardCount > 0 ? 'true' : 'false'; ?>)"
+        <div x-data="{ showMenu:false, showMore:false }"
+             x-show="matchesSearch('<?php echo addslashes($emp['email'] ?? ''); ?>', '<?php echo addslashes($emp['name_en'] ?? ''); ?>', '<?php echo addslashes($emp['name_ar'] ?? ''); ?>', '<?php echo addslashes($emp['department_id'] ?? ''); ?>', <?php echo $cardCount > 0 ? 'true' : 'false'; ?>)"
+             :class="(showMenu || showMore) ? 'relative z-30' : ''"
              class="group bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col">
 
             <!-- Card hero -->
             <div class="relative rounded-t-2xl bg-gradient-to-br from-slate-50 to-slate-100 p-4">
                 <!-- Status badge (over the stage, does not flip) -->
-                <div class="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5">
+                <div class="cf-badge absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5">
                     <?php if ($printedQty > 0): ?>
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700"><i class="fa-solid fa-print text-[9px]"></i><?= number_format($printedQty) ?></span>
                     <?php elseif ($latestCard && $frontUrl): ?>
@@ -1228,16 +1235,16 @@ adminHeader(t('employees.page_title'), 'employees');
                     <?php endif; ?>
                     <?php if ($cardCount > 1): ?><span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/80 text-gray-500 border border-gray-200">v<?= (int)$cardCount ?></span><?php endif; ?>
                 </div>
-                <?php if ($isSample): ?><span class="absolute top-2.5 right-2.5 z-10 text-amber-500" title="<?= htmlspecialchars(t('employees.status_sample') ?? 'Company sample') ?>"><i class="fa-solid fa-star"></i></span><?php endif; ?>
+                <?php if ($isSample): ?><span class="cf-sample absolute top-2.5 right-2.5 z-10 text-amber-500" title="<?= htmlspecialchars(t('employees.status_sample') ?? 'Company sample') ?>"><i class="fa-solid fa-star"></i></span><?php endif; ?>
 
                 <?php if ($latestCard && $frontUrl): ?>
                 <div class="cf-stage relative w-full" style="aspect-ratio: 1.75/1;" x-data="{ flip:false }">
                     <div class="cf-inner" :class="flip ? 'cf-on' : ''">
-                        <div class="cf-face cf-front"><img src="<?php echo $frontUrl; ?>" alt="<?= htmlspecialchars(t('employees.card_front') ?? 'Front') ?>" loading="lazy"></div>
-                        <?php if ($backUrl): ?><div class="cf-face cf-back"><img src="<?php echo $backUrl; ?>" alt="<?= htmlspecialchars(t('employees.card_back') ?? 'Back') ?>" loading="lazy"></div><?php endif; ?>
+                        <div class="cf-face cf-front"><img src="<?php echo $frontUrl; ?>" alt="<?= htmlspecialchars(($emp['name_en'] ?? 'Card') . ' - ' . (t('employees.card_front') ?? 'front')) ?>" loading="lazy"></div>
+                        <?php if ($backUrl): ?><div class="cf-face cf-back"><img src="<?php echo $backUrl; ?>" alt="<?= htmlspecialchars(($emp['name_en'] ?? 'Card') . ' - ' . (t('employees.card_back') ?? 'back')) ?>" loading="lazy"></div><?php endif; ?>
                     </div>
                     <?php if ($backUrl): ?>
-                    <button type="button" @click="flip = !flip" class="absolute bottom-1 right-1 z-10 w-7 h-7 rounded-full bg-white/90 shadow border border-gray-200 text-gray-600 hover:text-blue-600 flex items-center justify-center transition-colors active:scale-95" title="<?= htmlspecialchars(t('employees.flip_card') ?? 'Flip') ?>">
+                    <button type="button" @click="flip = !flip" :aria-pressed="flip ? 'true' : 'false'" aria-label="<?= htmlspecialchars(t('employees.flip_card') ?? 'Flip card') ?>" class="cf-flipbtn absolute bottom-1 right-1 z-10 w-7 h-7 rounded-full bg-white/90 shadow border border-gray-200 text-gray-600 hover:text-blue-600 flex items-center justify-center transition-colors active:scale-95" title="<?= htmlspecialchars(t('employees.flip_card') ?? 'Flip') ?>">
                         <i class="fa-solid fa-rotate text-xs" :class="flip ? 'fa-flip-horizontal' : ''"></i>
                     </button>
                     <?php endif; ?>
@@ -1278,8 +1285,9 @@ adminHeader(t('employees.page_title'), 'employees');
                 <?php endif; ?>
             </div>
 
-            <!-- Actions footer -->
-            <div class="px-4 pb-4 pt-3 mt-3 border-t border-gray-100 flex items-center gap-1.5" x-data="{ showMenu: false, showMore: false }">
+            <!-- Actions footer (menu state lives on the tile root so an open
+                 menu can elevate the whole tile above neighbouring cards) -->
+            <div class="px-4 pb-4 pt-3 mt-3 border-t border-gray-100 flex items-center gap-1.5">
                 <?php if ($latestCard && $frontUrl): ?>
                 <a href="<?= htmlspecialchars($publicUrl, ENT_QUOTES) ?>" target="_blank" rel="noopener"
                    class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
@@ -1296,6 +1304,7 @@ adminHeader(t('employees.page_title'), 'employees');
                 <!-- Download dropdown -->
                                 <div class="relative">
                                     <button @click="showMenu = !showMenu; showMore = false" @click.outside="showMenu = false"
+                                            :aria-expanded="showMenu ? 'true' : 'false'" aria-label="Download card"
                                             class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                             title="Download card">
                                         <i class="fa-solid fa-download"></i>
@@ -1371,6 +1380,7 @@ adminHeader(t('employees.page_title'), 'employees');
                                 <!-- Overflow menu: lower-frequency actions -->
                                 <div class="relative">
                                     <button @click="showMore = !showMore; showMenu = false" @click.outside="showMore = false"
+                                            :aria-expanded="showMore ? 'true' : 'false'" aria-label="More actions"
                                             class="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
                                             title="More actions">
                                         <i class="fa-solid fa-ellipsis-vertical"></i>
