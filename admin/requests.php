@@ -389,7 +389,7 @@ $adminBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() 
                                 
                                 <?php if (($req['quantity_requested'] ?? 1) > 1): ?>
                                 <span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
-                                    <i class="fa-solid fa-layer-group mr-1"></i><?php echo (int)$req['quantity_requested']; ?> sets
+                                    <i class="fa-solid fa-layer-group mr-1"></i><?php echo (int)$req['quantity_requested']; ?> pcs
                                 </span>
                                 <?php endif; ?>
                                 

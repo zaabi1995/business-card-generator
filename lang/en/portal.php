@@ -28,10 +28,11 @@ return [
 
     // Request form
     'request_notes_ph'  => 'e.g., Promoted to new position, ran out of cards, etc.',
-    'quantity_label'    => 'Number of Card Sets Needed',
+    'quantity_label'    => 'Quantity',
     'quantity_1'        => '1 set (standard)',
-    'quantity_n'        => ':n sets',
-    'quantity_hint'     => 'Each set typically contains 100 cards',
+    'quantity_n'        => ':n pcs',
+    'quantity_200'      => '200 pcs (standard)',
+    'quantity_hint'     => 'Choose how many cards you need printed',
 
     // Form fields
     'full_name_en'      => 'Full Name (English)',

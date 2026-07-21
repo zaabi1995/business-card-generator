@@ -292,7 +292,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
     // Get request type and notes from form
     $requestType = $_POST['request_type'] ?? 'new';
     $requestNotes = trim($_POST['request_notes'] ?? '');
-    $quantityRequested = max(1, (int)($_POST['quantity_requested'] ?? 1));
+    $defaultQty = (int)($company['default_order_qty'] ?? 200);
+    $quantityRequested = max(1, (int)($_POST['quantity_requested'] ?? $defaultQty));
     
     // Check if email already exists as employee - determine request type
     $existingEmployee = null;
@@ -406,12 +407,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                 $insertData['employee_id'] = $existingEmployee['id'];
             }
             
-            // Add preview URLs if provided
+            // Add preview URLs if provided. Persist to both the display
+            // columns (preview_front/back) and the path columns (used by
+            // the admin approval flow + approval email) so the design
+            // preview is never missing on one side.
             if (!empty($previewFront)) {
                 $insertData['preview_front'] = $previewFront;
+                $insertData['preview_front_path'] = $previewFront;
             }
             if (!empty($previewBack)) {
                 $insertData['preview_back'] = $previewBack;
+                $insertData['preview_back_path'] = $previewBack;
             }
             if (!empty($previewFront) || !empty($previewBack)) {
                 $insertData['preview_generated_at'] = date('Y-m-d H:i:s');
@@ -1143,10 +1149,10 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                             <?= htmlspecialchars(t('portal.quantity_label')) ?>
                         </label>
                         <select name="quantity_requested" id="quantity_requested" class="form-input">
-                            <option value="1"><?= htmlspecialchars(t('portal.quantity_1')) ?></option>
-                            <option value="2"><?= htmlspecialchars(str_replace(':n', '2', t('portal.quantity_n'))) ?></option>
-                            <option value="3"><?= htmlspecialchars(str_replace(':n', '3', t('portal.quantity_n'))) ?></option>
-                            <option value="5"><?= htmlspecialchars(str_replace(':n', '5', t('portal.quantity_n'))) ?></option>
+                            <option value="100"><?= htmlspecialchars(str_replace(':n', '100', t('portal.quantity_n'))) ?></option>
+                            <option value="200" selected><?= htmlspecialchars(t('portal.quantity_200')) ?></option>
+                            <option value="500"><?= htmlspecialchars(str_replace(':n', '500', t('portal.quantity_n'))) ?></option>
+                            <option value="1000"><?= htmlspecialchars(str_replace(':n', '1000', t('portal.quantity_n'))) ?></option>
                         </select>
                         <p class="mt-1 text-xs text-gray-500"><?= htmlspecialchars(t('portal.quantity_hint')) ?></p>
                     </div>
