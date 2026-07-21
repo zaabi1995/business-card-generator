@@ -373,7 +373,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
         // Get preview URLs if generated client-side
         $previewFront = trim($_POST['preview_front'] ?? '');
         $previewBack = trim($_POST['preview_back'] ?? '');
-        
+
+        // The client captures the rendered card as a data URL. Data-URI
+        // images are stripped by many mail clients, so decode it, verify the
+        // real MIME, and host it as a file; store the file path. A plain
+        // URL/path is kept as-is. Returns '' on any problem (non-fatal).
+        $resolvePreview = function (string $val, string $side) use ($companyId, $requestId) {
+            if ($val === '') return '';
+            if (strpos($val, 'data:image/') !== 0) return $val; // already a path/URL
+            if (!preg_match('#^data:image/(png|jpeg);base64,#', $val)) return '';
+            $bytes = base64_decode(substr($val, strpos($val, ',') + 1), true);
+            if ($bytes === false || strlen($bytes) < 64 || strlen($bytes) > 3 * 1024 * 1024) return '';
+            $realMime = (new finfo(FILEINFO_MIME_TYPE))->buffer($bytes);
+            $ext = ['image/png' => 'png', 'image/jpeg' => 'jpg'][$realMime] ?? '';
+            if ($ext === '') return '';
+            $dir = BASE_DIR . '/uploads/companies/' . $companyId . '/requests';
+            if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) return '';
+            $rel = 'uploads/companies/' . $companyId . '/requests/' . $requestId . '-' . $side . '.' . $ext;
+            if (@file_put_contents(BASE_DIR . '/' . $rel, $bytes) === false) return '';
+            return $rel;
+        };
+        $previewFront = $resolvePreview($previewFront, 'front');
+        $previewBack = $resolvePreview($previewBack, 'back');
+
         try {
             $insertData = [
                 'id' => $requestId,
@@ -521,9 +543,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                     $frontAbsUrl = 'https://' . (defined('APP_HOST') ? APP_HOST : 'cardify.om') . '/' . ltrim($previewPath, '/');
                 }
 
+                // Build the design block only when a preview exists, so the
+                // email never shows a broken-image icon.
+                $designPreviewHtml = $frontAbsUrl
+                    ? '<p style="text-align:center;margin:16px 0;"><img src="' . htmlspecialchars($frontAbsUrl, ENT_QUOTES) . '" alt="Card design" style="max-width:320px;width:100%;border-radius:8px;border:1px solid #e5e7eb;"></p>'
+                    : '';
+
                 Mailer::sendTemplate($adminEmail, 'admin_new_request', [
                     'employee_name' => $employeeName,
                     'company_name' => $companyName,
+                    'design_preview_html' => $designPreviewHtml,
                     'name_en' => $formData['name_en'],
                     'name_ar' => $formData['name_ar'],
                     'position_en' => $formData['position_en'],
@@ -2075,6 +2104,17 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     alert('Please generate a preview first before submitting.');
                     return false;
                 }
+                // Capture the rendered card design so the admin sees it in
+                // the notification email and on the approval page. Non-fatal:
+                // a capture failure just submits without the preview image.
+                try {
+                    if (frontEditor && typeof frontEditor.exportPNG === 'function') {
+                        document.getElementById('preview_front_input').value = frontEditor.exportPNG(1);
+                    }
+                    if (backEditor && typeof backEditor.exportPNG === 'function') {
+                        document.getElementById('preview_back_input').value = backEditor.exportPNG(1);
+                    }
+                } catch (err) { /* submit without preview image */ }
             });
         }
     });

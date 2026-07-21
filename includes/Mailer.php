@@ -864,7 +864,12 @@ HTML;
      */
     private static function replacePlaceholders($text, $data) {
         foreach ($data as $key => $value) {
-            $text = str_replace('{{' . $key . '}}', htmlspecialchars($value ?? ''), $text);
+            // Keys ending in _html carry pre-sanitized HTML (the caller must
+            // escape any dynamic parts itself); everything else is escaped.
+            $safe = (substr($key, -5) === '_html')
+                ? (string)($value ?? '')
+                : htmlspecialchars($value ?? '');
+            $text = str_replace('{{' . $key . '}}', $safe, $text);
         }
         return $text;
     }
@@ -1051,7 +1056,7 @@ HTML
 <h2>New Business Card Request</h2>
 <p>A new business card request has been submitted and requires your review.</p>
 
-<p style="text-align:center;"><img src="{{design_front_url}}" alt="Card design" style="max-width:320px;width:100%;border-radius:8px;border:1px solid #e5e7eb;"></p>
+{{design_preview_html}}
 
 <div class="info-box">
     <strong>Employee Details:</strong>
