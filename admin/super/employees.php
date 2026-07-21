@@ -23,7 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     
     if ($action === 'update_employee') {
-        $employeeId = (int)$_POST['employee_id'];
+        // employee ids are VARCHAR (email localpart / slug), never ints.
+        $employeeId = trim((string)($_POST['employee_id'] ?? ''));
         $employee = $db->fetchOne("SELECT * FROM employees WHERE id = :id", ['id' => $employeeId]);
         
         if ($employee) {
@@ -52,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageType = 'success';
         }
     } elseif ($action === 'delete_employee') {
-        $employeeId = (int)$_POST['employee_id'];
+        $employeeId = trim((string)($_POST['employee_id'] ?? ''));
         $employee = $db->fetchOne("SELECT * FROM employees WHERE id = :id", ['id' => $employeeId]);
         
         if ($employee) {
@@ -63,10 +64,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageType = 'success';
         }
     } elseif ($action === 'reset_password') {
-        $employeeId = (int)$_POST['employee_id'];
+        $employeeId = trim((string)($_POST['employee_id'] ?? ''));
         $newPassword = $_POST['new_password'];
-        
-        if ($employeeId && $newPassword) {
+
+        if ($employeeId !== '' && $newPassword) {
             $employee = $db->fetchOne("SELECT * FROM employees WHERE id = :id", ['id' => $employeeId]);
             if ($employee) {
                 $db->update('employees', 
@@ -85,7 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Filters
 $search = $_GET['search'] ?? '';
-$companyFilter = (int)($_GET['company_id'] ?? 0);
+// company ids are VARCHAR slugs (e.g. "otech7010-rfq..."), never ints.
+// Casting to (int) silently zeroed the filter for every slug-id company.
+$companyFilter = trim((string)($_GET['company_id'] ?? ''));
 $statusFilter = $_GET['status'] ?? '';
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 25;
@@ -148,6 +151,13 @@ adminHeader('Employees Management' . ($selectedCompanyName ? " - {$selectedCompa
 </div>
 <?php endif; ?>
 
+<!-- This is the global fleet directory. Card design + generation + printing
+     live in each company's own hub; use "Open hub" to jump there. -->
+<div class="mb-6 rounded-lg border border-blue-100 bg-blue-50 p-3.5 flex items-start gap-2.5 text-sm text-blue-800">
+    <i class="fa-solid fa-circle-info mt-0.5 text-blue-500"></i>
+    <span>This is the cross-company directory for oversight (who is active, who has cards, who has a password). To design, generate or print a card, open that person's company hub.</span>
+</div>
+
 <!-- Breadcrumb if filtering by company -->
 <?php if ($companyFilter && $selectedCompanyName): ?>
 <div class="mb-4">
@@ -171,7 +181,7 @@ adminHeader('Employees Management' . ($selectedCompanyName ? " - {$selectedCompa
         <select name="company_id" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
             <option value="">All Companies</option>
             <?php foreach ($companies as $c): ?>
-            <option value="<?php echo $c['id']; ?>" <?php echo $companyFilter == $c['id'] ? 'selected' : ''; ?>>
+            <option value="<?php echo htmlspecialchars((string)$c['id'], ENT_QUOTES); ?>" <?php echo $companyFilter === (string)$c['id'] ? 'selected' : ''; ?>>
                 <?php echo sanitize($c['name']); ?>
             </option>
             <?php endforeach; ?>
@@ -209,10 +219,10 @@ adminHeader('Employees Management' . ($selectedCompanyName ? " - {$selectedCompa
         <div class="text-sm text-gray-500">With Cards</div>
         <div class="text-2xl font-semibold text-blue-600">
             <?php 
-            $withCardsQuery = "SELECT COUNT(DISTINCT e.id) as c FROM employees e 
-                              INNER JOIN generated_cards gc ON gc.employee_id = e.id 
-                              " . ($companyFilter ? "WHERE e.company_id = {$companyFilter}" : "");
-            echo $db->fetchOne($withCardsQuery)['c'] ?? 0; 
+            $withCardsQuery = "SELECT COUNT(DISTINCT e.id) as c FROM employees e
+                              INNER JOIN generated_cards gc ON gc.employee_id = e.id
+                              " . ($companyFilter !== '' ? "WHERE e.company_id = :company_id" : "");
+            echo $db->fetchOne($withCardsQuery, $companyFilter !== '' ? ['company_id' => $companyFilter] : [])['c'] ?? 0;
             ?>
         </div>
     </div>
@@ -278,21 +288,27 @@ adminHeader('Employees Management' . ($selectedCompanyName ? " - {$selectedCompa
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-2">
-                            <button onclick='openEditModal(<?php echo json_encode($emp); ?>)' 
-                                    class="text-blue-600 hover:text-blue-800" title="Edit">
-                                <i class="fa-solid fa-edit"></i>
-                            </button>
-                            <button onclick='openPasswordModal(<?php echo $emp['id']; ?>, "<?php echo sanitize($emp['name_en'] ?? $emp['email']); ?>")' 
-                                    class="text-purple-600 hover:text-purple-800" title="Reset Password">
-                                <i class="fa-solid fa-key"></i>
-                            </button>
                             <?php if ($emp['company_slug']): ?>
-                            <a href="<?php echo htmlspecialchars(getTenantUrl($emp['company_slug'], '/card/' . $emp['id'])); ?>" target="_blank"
+                            <!-- Primary: jump into this person's company hub where
+                                 cards are designed / generated / printed. -->
+                            <a href="<?php echo htmlspecialchars(getTenantUrl($emp['company_slug'], '/admin/employees'), ENT_QUOTES); ?>" target="_blank" rel="noopener"
+                               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors" title="Open in company hub">
+                                <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>Open hub
+                            </a>
+                            <a href="<?php echo htmlspecialchars(getTenantUrl($emp['company_slug'], '/card/' . $emp['id']), ENT_QUOTES); ?>" target="_blank" rel="noopener"
                                class="text-green-600 hover:text-green-800" title="View Card">
                                 <i class="fa-solid fa-id-card"></i>
                             </a>
                             <?php endif; ?>
-                            <button onclick="confirmDelete(<?php echo $emp['id']; ?>, '<?php echo sanitize($emp['name_en'] ?? $emp['email']); ?>')" 
+                            <button onclick='openEditModal(<?php echo htmlspecialchars(json_encode($emp), ENT_QUOTES); ?>)'
+                                    class="text-blue-600 hover:text-blue-800" title="Edit">
+                                <i class="fa-solid fa-edit"></i>
+                            </button>
+                            <button onclick="openPasswordModal(<?php echo htmlspecialchars(json_encode((string)$emp['id']), ENT_QUOTES); ?>, <?php echo htmlspecialchars(json_encode($emp['name_en'] ?? $emp['email']), ENT_QUOTES); ?>)"
+                                    class="text-purple-600 hover:text-purple-800" title="Reset Password">
+                                <i class="fa-solid fa-key"></i>
+                            </button>
+                            <button onclick="confirmDelete(<?php echo htmlspecialchars(json_encode((string)$emp['id']), ENT_QUOTES); ?>, <?php echo htmlspecialchars(json_encode($emp['name_en'] ?? $emp['email']), ENT_QUOTES); ?>)"
                                     class="text-red-600 hover:text-red-800" title="Delete">
                                 <i class="fa-solid fa-trash"></i>
                             </button>

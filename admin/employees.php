@@ -975,60 +975,91 @@ adminHeader(t('employees.page_title'), 'employees');
 <?php endif; ?>
 
 <div x-data="employeeManager()">
-    <!-- Page Header Actions -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-            <p class="text-gray-600"><?= htmlspecialchars(t('employees.team_members_count', ['n' => count($employees)])) ?></p>
+    <!-- Context header + primary actions -->
+    <?php
+    // Live counts so the admin always knows the state of THIS company at a
+    // glance: total people, how many have a ready card, how many still need one.
+    $__total = count($employees);
+    $__ready = 0;
+    foreach ($employees as $__e) { if (!empty($cardsByEmployee[$__e['id']])) { $__ready++; } }
+    $__toGen = $__total - $__ready;
+    $employeesWithoutCards = $__toGen; // kept for downstream references
+    $__companyName = $company['name'] ?? (defined('SITE_NAME') ? SITE_NAME : 'Your team');
+    $__bulkInviteCount = count(array_filter($employees, function($__e) { return ($__e['status'] ?? 'active') === 'active' && (!empty($__e['mobile']) || !empty($__e['phone']) || !empty($__e['email'])); }));
+    ?>
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+        <!-- Workspace context: which company + card readiness -->
+        <div class="min-w-0">
+            <h2 class="text-xl font-bold text-gray-900 truncate flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:var(--tbrand)"></span>
+                <?= htmlspecialchars($__companyName) ?>
+            </h2>
+            <p class="text-sm text-gray-500 mt-1">
+                <?= htmlspecialchars(t('employees.team_members_count', ['n' => $__total])) ?>
+                <?php if ($__total > 0): ?>
+                <span class="mx-1.5 text-gray-300">·</span>
+                <span class="inline-flex items-center gap-1 text-green-600 font-medium"><i class="fa-solid fa-circle-check text-[11px]"></i><?= (int)$__ready ?> <?= htmlspecialchars(t('employees.ctx_ready')) ?></span>
+                <?php if ($__toGen > 0): ?>
+                <span class="mx-1.5 text-gray-300">·</span>
+                <span class="inline-flex items-center gap-1 text-amber-600 font-medium"><i class="fa-solid fa-wand-magic-sparkles text-[11px]"></i><?= (int)$__toGen ?> <?= htmlspecialchars(t('employees.ctx_to_generate')) ?></span>
+                <?php endif; ?>
+                <?php endif; ?>
+            </p>
         </div>
-        <div class="flex items-center gap-3">
-            <?php if (!empty($employees)): ?>
-            <?php
-            // Count employees without generated cards
-            $employeesWithoutCards = 0;
-            foreach ($employees as $emp) {
-                if (empty($cardsByEmployee[$emp['id']])) {
-                    $employeesWithoutCards++;
-                }
-            }
-            ?>
-            <?php if ($employeesWithoutCards > 0): ?>
-            <a href="batch-auto-generate.php" class="px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium flex items-center gap-2" title="<?= htmlspecialchars(t('employees.generate_all_tooltip')) ?>">
+
+        <!-- Actions: ONE loud primary (+ Add), a contextual Generate-all, and
+             everything else folded into a single More menu (was 7 buttons). -->
+        <div class="flex items-center gap-2 flex-wrap">
+            <?php if (!empty($employees) && $__toGen > 0): ?>
+            <a href="batch-auto-generate.php" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white shadow-sm shadow-amber-200 transition-colors active:scale-[0.98]" title="<?= htmlspecialchars(t('employees.generate_all_tooltip')) ?>">
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
-                <span class="hidden sm:inline"><?= htmlspecialchars(t('employees.generate_all', ['n' => $employeesWithoutCards])) ?></span>
+                <span><?= htmlspecialchars(t('employees.generate_all', ['n' => $__toGen])) ?></span>
             </a>
             <?php endif; ?>
-            <a href="batch_generate.php" class="px-4 py-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium flex items-center gap-2" title="<?= htmlspecialchars(t('employees.bulk_regenerate_tooltip')) ?>">
-                <i class="fa-solid fa-rotate"></i>
-                <span class="hidden sm:inline"><?= htmlspecialchars(t('employees.bulk_regenerate')) ?></span>
-            </a>
-            <a href="?action=export" class="px-4 py-2 bg-gray-50 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium flex items-center gap-2">
-                <i class="fa-solid fa-file-export"></i>
-                <span class="hidden sm:inline"><?= htmlspecialchars(t('employees.export_csv')) ?></span>
-            </a>
-            <a href="?action=export_xlsx" class="px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium flex items-center gap-2">
-                <i class="fa-solid fa-file-excel"></i>
-                <span class="hidden sm:inline"><?= htmlspecialchars(t('employees.export_excel')) ?></span>
-            </a>
-            <?php endif; ?>
-            <?php $__bulkInviteCount = count(array_filter($employees, function($__e) { return ($__e['status'] ?? 'active') === 'active' && (!empty($__e['mobile']) || !empty($__e['phone']) || !empty($__e['email'])); })); ?>
-            <?php if ($__bulkInviteCount >= 5): ?>
-            <form method="POST" class="inline"
-                  onsubmit="return confirm(<?= htmlspecialchars(json_encode(t('employees.bulk_invites_confirm', ['n' => $__bulkInviteCount])), ENT_QUOTES) ?>)">
-                <?= csrfField() ?>
-                <input type="hidden" name="action" value="bulk_send_edit_invites">
-                <button type="submit"
-                        class="px-4 py-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium flex items-center gap-2"
-                        title="<?= htmlspecialchars(t('employees.bulk_invites_tooltip')) ?>">
-                    <i class="fa-solid fa-paper-plane"></i>
-                    <span class="hidden sm:inline"><?= htmlspecialchars(t('employees.send_edit_link_all', ['n' => $__bulkInviteCount])) ?></span>
+
+            <?php if (!empty($employees)): ?>
+            <!-- More menu (import / export / bulk regenerate / bulk invite) -->
+            <div x-data="{ openMore:false }" class="relative">
+                <button @click="openMore=!openMore" @click.outside="openMore=false" type="button"
+                        class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">
+                    <i class="fa-solid fa-ellipsis"></i>
+                    <span class="hidden sm:inline"><?= htmlspecialchars(t('employees.more_actions')) ?></span>
                 </button>
-            </form>
-            <?php endif; ?>
-            <button @click="showImportModal = true" class="px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium flex items-center gap-2">
-                <i class="fa-solid fa-file-import"></i>
-                <span class="hidden sm:inline"><?= htmlspecialchars(t('employees.import_csv')) ?></span>
+                <div x-show="openMore" x-cloak
+                     x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                     class="absolute right-0 mt-1 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-1 z-30 text-left">
+                    <button @click="showImportModal=true; openMore=false" type="button" class="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        <i class="fa-solid fa-file-import text-green-600 w-4"></i><?= htmlspecialchars(t('employees.import_csv')) ?>
+                    </button>
+                    <a href="?action=export" class="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        <i class="fa-solid fa-file-csv text-gray-500 w-4"></i><?= htmlspecialchars(t('employees.export_csv')) ?>
+                    </a>
+                    <a href="?action=export_xlsx" class="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        <i class="fa-solid fa-file-excel text-green-600 w-4"></i><?= htmlspecialchars(t('employees.export_excel')) ?>
+                    </a>
+                    <hr class="my-1 border-gray-100">
+                    <a href="batch_generate.php" class="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" title="<?= htmlspecialchars(t('employees.bulk_regenerate_tooltip')) ?>">
+                        <i class="fa-solid fa-rotate text-purple-500 w-4"></i><?= htmlspecialchars(t('employees.bulk_regenerate')) ?>
+                    </a>
+                    <?php if ($__bulkInviteCount >= 5): ?>
+                    <form method="POST" onsubmit="return confirm(<?= htmlspecialchars(json_encode(t('employees.bulk_invites_confirm', ['n' => $__bulkInviteCount])), ENT_QUOTES) ?>)">
+                        <?= csrfField() ?>
+                        <input type="hidden" name="action" value="bulk_send_edit_invites">
+                        <button type="submit" class="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" title="<?= htmlspecialchars(t('employees.bulk_invites_tooltip')) ?>">
+                            <i class="fa-solid fa-paper-plane text-purple-500 w-4"></i><?= htmlspecialchars(t('employees.send_edit_link_all', ['n' => $__bulkInviteCount])) ?>
+                        </button>
+                    </form>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php else: ?>
+            <button @click="showImportModal = true" type="button" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">
+                <i class="fa-solid fa-file-import text-green-600"></i>
+                <span><?= htmlspecialchars(t('employees.import_csv')) ?></span>
             </button>
-            <button @click="openAddModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2">
+            <?php endif; ?>
+
+            <button @click="openAddModal()" type="button" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-semibold shadow-sm active:scale-[0.98]">
                 <i class="fa-solid fa-plus"></i>
                 <span><?= htmlspecialchars(t('employees.add_employee')) ?></span>
             </button>
@@ -1080,187 +1111,189 @@ adminHeader(t('employees.page_title'), 'employees');
         </div>
     </div>
 
-    <!-- Employees Table -->
-    <!-- Wrapper has NO overflow clipping so per-row dropdowns (download / more)
-         can escape the table on every breakpoint. Horizontal scroll wrapper was
-         removed because hidden md/lg columns make the table fit at mobile widths,
-         and we'd rather lose horizontal scroll than clip the row actions menu. -->
-    <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div>
-            <table class="w-full">
-                <thead class="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm"><?= htmlspecialchars(t('employees.col_employee')) ?></th>
-                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm hidden lg:table-cell"><?= htmlspecialchars(t('employees.col_position')) ?></th>
-                        <th class="text-left px-6 py-4 text-gray-600 font-semibold text-sm hidden md:table-cell"><?= htmlspecialchars(t('employees.col_department')) ?></th>
-                        <th class="text-center px-6 py-4 text-gray-600 font-semibold text-sm"><?= htmlspecialchars(t('employees.col_card_preview')) ?></th>
-                        <th class="text-center px-6 py-4 text-gray-600 font-semibold text-sm hidden sm:table-cell"><?= htmlspecialchars(t('employees.col_qr_scans')) ?></th>
-                        <th class="text-right px-6 py-4 text-gray-600 font-semibold text-sm"><?= htmlspecialchars(t('employees.col_actions')) ?></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    <?php foreach ($employees as $emp): ?>
-                    <?php 
-                    $deptName = '-';
-                    if (!empty($emp['department_id']) && DatabaseAdapter::useDatabase()) {
-                        $dept = $db->fetchOne("SELECT name FROM departments WHERE id = :id", ['id' => $emp['department_id']]);
-                        $deptName = $dept ? sanitize($dept['name']) : '-';
-                    }
-                    
-                    // Get employee's cards
-                    $empCards = $cardsByEmployee[$emp['id']] ?? [];
-                    $latestCard = !empty($empCards) ? $empCards[0] : null; // First is latest
-                    $cardCount = count($empCards);
-                    
-                    // Card paths (from database: frontPath/backPath contain full relative path like "card_front_xxx.png")
-                    $frontFile = $latestCard['frontPath'] ?? null;
-                    $backFile = $latestCard['backPath'] ?? null;
-                    
-                    // Extract just filename from path if it contains directory
-                    $frontFilename = $frontFile ? basename($frontFile) : null;
-                    $backFilename = $backFile ? basename($backFile) : null;
-                    
-                    $cardBaseUrl = getBasePath() . 'uploads/companies/' . $companyId . '/cards/';
-                    $frontUrl = $frontFilename ? $cardBaseUrl . $frontFilename : null;
-                    $backUrl = $backFilename ? $cardBaseUrl . $backFilename : null;
-                    
-                    // Check for PDF
-                    $cardsDir = getCompanyCardsDir($companyId);
-                    $hasFrontPdf = $frontFilename && file_exists($cardsDir . '/' . str_replace('.png', '.pdf', $frontFilename));
-                    $hasBackPdf = $backFilename && file_exists($cardsDir . '/' . str_replace('.png', '.pdf', $backFilename));
-                    
-                    // Check if this is the sample card
-                    $isSample = $frontFilename && $backFilename && 
-                                $currentSampleFront === 'companies/' . $companyId . '/cards/' . $frontFilename &&
-                                $currentSampleBack === 'companies/' . $companyId . '/cards/' . $backFilename;
-                    ?>
-                    <tr 
-                        class="hover:bg-gray-50 transition-colors"
-                        x-show="matchesSearch('<?php echo addslashes($emp['email'] ?? ''); ?>', '<?php echo addslashes($emp['name_en'] ?? ''); ?>', '<?php echo addslashes($emp['name_ar'] ?? ''); ?>', '<?php echo addslashes($emp['department_id'] ?? ''); ?>', <?php echo $cardCount > 0 ? 'true' : 'false'; ?>)"
-                    >
-                        <td class="px-6 py-4">
-                            <?php 
-                            // Prepare employee detail data for modal
-                            $empRequests = $cardRequestsByEmail[$emp['email']] ?? [];
-                            $empPrintOrders = $printOrdersByEmployee[$emp['id']] ?? [];
-                            $totalPrinted = array_sum(array_column($empPrintOrders, 'quantity'));
-                            $lastPrintDate = !empty($empPrintOrders) ? $empPrintOrders[0]['created_at'] : null;
-                            
-                            $empDetailData = [
-                                'employee' => $emp,
-                                'cards' => $empCards,
-                                'requests' => $empRequests,
-                                'printOrders' => $empPrintOrders,
-                                'totalPrinted' => $totalPrinted,
-                                'lastPrintDate' => $lastPrintDate,
-                                'department' => $deptName,
-                                'latestCardUrl' => $frontUrl,
-                                'latestCardBackUrl' => $backUrl
-                            ];
-                            ?>
-                            <?php $empDetailUrl = $basePath . 'employee' . $ext . '?id=' . urlencode($emp['id']); ?>
-                            <a href="<?= htmlspecialchars($empDetailUrl, ENT_QUOTES) ?>" class="flex items-center gap-3 cursor-pointer group">
-                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm group-hover:ring-2 group-hover:ring-blue-300 transition-all">
-                                    <?php echo strtoupper(substr($emp['name_en'] ?? 'E', 0, 2)); ?>
-                                </div>
-                                <div>
-                                    <p class="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors"><?php echo sanitize($emp['name_en'] ?? ''); ?></p>
-                                    <p class="text-gray-500 text-sm"><?php echo sanitize($emp['email'] ?? ''); ?></p>
-                                    <?php $printedQty = (int)($printedByEmployee[$emp['id']] ?? 0); if ($printedQty > 0): ?>
-                                    <span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-green-50 text-green-700">
-                                        <i class="fa-solid fa-print text-[10px]"></i><?= number_format($printedQty) ?> <?= htmlspecialchars(t('employees.printed_label')) ?>
-                                    </span>
-                                    <?php endif; ?>
-                                </div>
-                            </a>
-                        </td>
-                        <td class="px-6 py-4 hidden lg:table-cell">
-                            <p class="text-gray-900"><?php echo sanitize($emp['position_en'] ?? '-'); ?></p>
-                            <?php if (!empty($emp['position_ar'])): ?>
-                            <p class="text-gray-500 text-sm" dir="rtl"><?php echo sanitize($emp['position_ar']); ?></p>
-                            <?php endif; ?>
-                        </td>
-                        <td class="px-6 py-4 hidden md:table-cell">
-                            <?php if ($deptName !== '-'): ?>
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                                <?php echo $deptName; ?>
-                            </span>
-                            <?php else: ?>
-                            <span class="text-gray-400">-</span>
-                            <?php endif; ?>
-                        </td>
-                        <!-- Card Preview Column -->
-                        <td class="px-6 py-4">
-                            <?php if ($latestCard && $frontUrl): ?>
-                            <div class="flex items-center justify-center gap-2">
-                                <!-- Front thumbnail -->
-                                <a href="<?php echo $frontUrl; ?>" target="_blank" class="relative group">
-                                    <img src="<?php echo $frontUrl; ?>" alt="Front" class="w-16 h-10 object-cover rounded border border-gray-200 shadow-sm">
-                                    <span class="absolute -top-1 -left-1 w-4 h-4 bg-blue-500 text-white text-[8px] font-bold rounded flex items-center justify-center">F</span>
-                                    <?php if ($isSample): ?>
-                                    <span class="absolute -top-1 -right-1 text-amber-500"><i class="fa-solid fa-star text-xs"></i></span>
-                                    <?php endif; ?>
-                                </a>
-                                <!-- Back thumbnail -->
-                                <?php if ($backUrl): ?>
-                                <a href="<?php echo $backUrl; ?>" target="_blank" class="relative group">
-                                    <img src="<?php echo $backUrl; ?>" alt="Back" class="w-16 h-10 object-cover rounded border border-gray-200 shadow-sm">
-                                    <span class="absolute -top-1 -left-1 w-4 h-4 bg-green-500 text-white text-[8px] font-bold rounded flex items-center justify-center">B</span>
-                                </a>
-                                <?php endif; ?>
-                                <!-- Card info -->
-                                <div class="text-xs text-gray-500 ml-1 hidden xl:block">
-                                    <?php if ($cardCount > 1): ?>
-                                    <span class="text-blue-600 font-medium">v<?php echo $cardCount; ?></span>
-                                    <?php endif; ?>
-                                    <div class="text-[10px]"><?php echo date('M j', strtotime($latestCard['generatedAt'] ?? 'now')); ?></div>
-                                </div>
-                            </div>
-                            <?php else: ?>
-                            <div class="flex items-center justify-center">
-                                <a href="auto_generate.php?employee_id=<?php echo $emp['id']; ?>&return=employees" 
-                                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-medium transition-colors">
-                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                    Generate Card
-                                </a>
-                            </div>
-                            <?php endif; ?>
-                        </td>
-                        <td class="px-6 py-4 text-center hidden sm:table-cell">
-                            <?php 
-                            $scanCount = (int)($emp['total_scans'] ?? 0);
-                            if ($scanCount > 0): 
-                            ?>
-                            <a href="analytics.php?employee=<?php echo urlencode($emp['id']); ?>" 
-                               class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-full text-sm font-medium transition-colors">
-                                <i class="fa-solid fa-chart-line text-xs"></i>
-                                <?php echo number_format($scanCount); ?>
-                            </a>
-                            <?php else: ?>
-                            <span class="text-gray-400 text-sm">0</span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <?php
-                            $publicHost = defined('APP_HOST') ? APP_HOST : 'cardify.om';
-                            // Prefer the clean /<email-localpart> URL so shared
-                            // links match the employee's identity (e.g.
-                            // /jarwish9) instead of the long internal UUID.
-                            // index.php on tenant subdomains resolves bare slugs
-                            // to the employee whose email localpart matches.
-                            $__empEmail = strtolower((string)($emp['email'] ?? ''));
-                            $__atPos    = strpos($__empEmail, '@');
-                            $__empSlug  = $__atPos > 0
-                                ? preg_replace('/[^a-z0-9._-]/', '', substr($__empEmail, 0, $__atPos))
-                                : '';
-                            $__urlPath  = $__empSlug !== '' ? $__empSlug : urlencode($emp['id']);
-                            $publicUrl  = 'https://' . ($company['slug'] ?? 'app') . '.' . $publicHost . '/' . $__urlPath;
-                            $printReadyUrl = '/card-pdf.php?i=' . urlencode($emp['id']) . '&print=1';
-                            $cutSheetUrl   = '/card-sheet.php?i=' . urlencode($emp['id']);
-                            ?>
-                            <div class="flex items-center justify-end gap-1" x-data="{ showMenu: false, showMore: false }">
-                                <?php if ($latestCard && $frontUrl): ?>
-                                <!-- Download dropdown -->
+    <!-- Card flip signature interaction: the physical business card turns to
+         reveal its back. Pure CSS, disabled under reduced-motion. -->
+    <style>
+        .cf-stage { perspective: 1200px; }
+        .cf-inner { position:absolute; inset:0; transform-style:preserve-3d; transition:transform .6s cubic-bezier(.77,0,.175,1); }
+        .cf-inner.cf-on { transform:rotateY(180deg); }
+        .cf-face { position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; display:flex; align-items:center; justify-content:center; }
+        .cf-face img { max-width:100%; max-height:100%; border-radius:.5rem; box-shadow:0 6px 18px -6px rgba(15,23,42,.35); }
+        .cf-back { transform:rotateY(180deg); }
+        @media (prefers-reduced-motion: reduce) { .cf-inner { transition:none; } }
+    </style>
+
+    <?php if (!empty($employees) && $__ready === 0): ?>
+    <!-- Guided next step: team is added but no card exists yet. -->
+    <div class="mb-6 rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+        <div class="w-11 h-11 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="font-semibold text-gray-900"><?= htmlspecialchars(t('employees.guided_title')) ?></p>
+            <p class="text-sm text-gray-600 mt-0.5"><?= htmlspecialchars(t('employees.guided_body')) ?></p>
+        </div>
+        <a href="batch-auto-generate.php" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition-colors active:scale-[0.98] flex-shrink-0">
+            <i class="fa-solid fa-wand-magic-sparkles"></i><?= htmlspecialchars(t('employees.generate_all', ['n' => $__toGen])) ?>
+        </a>
+    </div>
+    <?php endif; ?>
+
+    <?php if (empty($employees)): ?>
+    <!-- Empty workspace hero (promoted out of the old broken colspan table cell) -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-14 text-center">
+        <div class="max-w-sm mx-auto">
+            <div class="w-16 h-16 mx-auto mb-5 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center">
+                <i class="fa-solid fa-id-card text-2xl"></i>
+            </div>
+            <p class="text-gray-900 font-bold text-lg mb-1"><?= htmlspecialchars(t('employees.no_employees')) ?></p>
+            <p class="text-sm text-gray-500 mb-6"><?= htmlspecialchars(t('employees.no_employees_body')) ?></p>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <?php if (!empty($adminEmail)): ?>
+                <button @click="openAddMyself(<?php echo htmlspecialchars(json_encode(['name_en' => $adminName, 'email' => $adminEmail]), ENT_QUOTES); ?>)"
+                        class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm active:scale-[0.98]">
+                    <i class="fa-solid fa-user-plus"></i><?= htmlspecialchars(t('employees.add_myself_first')) ?>
+                </button>
+                <?php endif; ?>
+                <button @click="openAddModal()"
+                        class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium transition-colors">
+                    <i class="fa-solid fa-plus"></i><?= htmlspecialchars(t('employees.add_an_employee')) ?>
+                </button>
+            </div>
+        </div>
+    </div>
+    <?php else: ?>
+    <!-- Employees grid: each person is a business-card tile, the card is the hero -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
+        <?php foreach ($employees as $emp): ?>
+        <?php
+        $deptName = '-';
+        if (!empty($emp['department_id']) && DatabaseAdapter::useDatabase()) {
+            $dept = $db->fetchOne("SELECT name FROM departments WHERE id = :id", ['id' => $emp['department_id']]);
+            $deptName = $dept ? sanitize($dept['name']) : '-';
+        }
+
+        // Get employee's cards
+        $empCards = $cardsByEmployee[$emp['id']] ?? [];
+        $latestCard = !empty($empCards) ? $empCards[0] : null; // First is latest
+        $cardCount = count($empCards);
+
+        // Card paths (frontPath/backPath contain a full relative path like "card_front_xxx.png")
+        $frontFile = $latestCard['frontPath'] ?? null;
+        $backFile = $latestCard['backPath'] ?? null;
+        $frontFilename = $frontFile ? basename($frontFile) : null;
+        $backFilename = $backFile ? basename($backFile) : null;
+
+        $cardBaseUrl = getBasePath() . 'uploads/companies/' . $companyId . '/cards/';
+        $frontUrl = $frontFilename ? $cardBaseUrl . $frontFilename : null;
+        $backUrl = $backFilename ? $cardBaseUrl . $backFilename : null;
+
+        // Check for PDF
+        $cardsDir = getCompanyCardsDir($companyId);
+        $hasFrontPdf = $frontFilename && file_exists($cardsDir . '/' . str_replace('.png', '.pdf', $frontFilename));
+        $hasBackPdf = $backFilename && file_exists($cardsDir . '/' . str_replace('.png', '.pdf', $backFilename));
+
+        // Is this the company's chosen sample card?
+        $isSample = $frontFilename && $backFilename &&
+                    $currentSampleFront === 'companies/' . $companyId . '/cards/' . $frontFilename &&
+                    $currentSampleBack === 'companies/' . $companyId . '/cards/' . $backFilename;
+
+        $empDetailUrl = $basePath . 'employee' . $ext . '?id=' . urlencode($emp['id']);
+        $printedQty = (int)($printedByEmployee[$emp['id']] ?? 0);
+        $scanCount = (int)($emp['total_scans'] ?? 0);
+
+        // Public share URL (clean /<email-localpart> when possible).
+        $publicHost = defined('APP_HOST') ? APP_HOST : 'cardify.om';
+        $__empEmail = strtolower((string)($emp['email'] ?? ''));
+        $__atPos    = strpos($__empEmail, '@');
+        $__empSlug  = $__atPos > 0 ? preg_replace('/[^a-z0-9._-]/', '', substr($__empEmail, 0, $__atPos)) : '';
+        $__urlPath  = $__empSlug !== '' ? $__empSlug : urlencode($emp['id']);
+        $publicUrl  = 'https://' . ($company['slug'] ?? 'app') . '.' . $publicHost . '/' . $__urlPath;
+        $printReadyUrl = '/card-pdf.php?i=' . urlencode($emp['id']) . '&print=1';
+        $cutSheetUrl   = '/card-sheet.php?i=' . urlencode($emp['id']);
+        ?>
+        <div x-show="matchesSearch('<?php echo addslashes($emp['email'] ?? ''); ?>', '<?php echo addslashes($emp['name_en'] ?? ''); ?>', '<?php echo addslashes($emp['name_ar'] ?? ''); ?>', '<?php echo addslashes($emp['department_id'] ?? ''); ?>', <?php echo $cardCount > 0 ? 'true' : 'false'; ?>)"
+             class="group bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col">
+
+            <!-- Card hero -->
+            <div class="relative rounded-t-2xl bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+                <!-- Status badge (over the stage, does not flip) -->
+                <div class="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5">
+                    <?php if ($printedQty > 0): ?>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700"><i class="fa-solid fa-print text-[9px]"></i><?= number_format($printedQty) ?></span>
+                    <?php elseif ($latestCard && $frontUrl): ?>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-green-100 text-green-700"><i class="fa-solid fa-circle-check text-[9px]"></i><?= htmlspecialchars(t('employees.status_ready')) ?></span>
+                    <?php else: ?>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-200 text-gray-600"><i class="fa-regular fa-circle text-[9px]"></i><?= htmlspecialchars(t('employees.status_no_card')) ?></span>
+                    <?php endif; ?>
+                    <?php if ($cardCount > 1): ?><span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/80 text-gray-500 border border-gray-200">v<?= (int)$cardCount ?></span><?php endif; ?>
+                </div>
+                <?php if ($isSample): ?><span class="absolute top-2.5 right-2.5 z-10 text-amber-500" title="<?= htmlspecialchars(t('employees.status_sample') ?? 'Company sample') ?>"><i class="fa-solid fa-star"></i></span><?php endif; ?>
+
+                <?php if ($latestCard && $frontUrl): ?>
+                <div class="cf-stage relative w-full" style="aspect-ratio: 1.75/1;" x-data="{ flip:false }">
+                    <div class="cf-inner" :class="flip ? 'cf-on' : ''">
+                        <div class="cf-face cf-front"><img src="<?php echo $frontUrl; ?>" alt="<?= htmlspecialchars(t('employees.card_front') ?? 'Front') ?>" loading="lazy"></div>
+                        <?php if ($backUrl): ?><div class="cf-face cf-back"><img src="<?php echo $backUrl; ?>" alt="<?= htmlspecialchars(t('employees.card_back') ?? 'Back') ?>" loading="lazy"></div><?php endif; ?>
+                    </div>
+                    <?php if ($backUrl): ?>
+                    <button type="button" @click="flip = !flip" class="absolute bottom-1 right-1 z-10 w-7 h-7 rounded-full bg-white/90 shadow border border-gray-200 text-gray-600 hover:text-blue-600 flex items-center justify-center transition-colors active:scale-95" title="<?= htmlspecialchars(t('employees.flip_card') ?? 'Flip') ?>">
+                        <i class="fa-solid fa-rotate text-xs" :class="flip ? 'fa-flip-horizontal' : ''"></i>
+                    </button>
+                    <?php endif; ?>
+                </div>
+                <?php else: ?>
+                <!-- No card yet: dashed placeholder + the loud primary action -->
+                <div class="relative w-full flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-300 bg-white/40" style="aspect-ratio: 1.75/1;">
+                    <a href="auto_generate.php?employee_id=<?php echo $emp['id']; ?>&return=employees"
+                       class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors active:scale-[0.98]">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i><?= htmlspecialchars(t('employees.generate_card') ?? 'Generate card') ?>
+                    </a>
+                    <span class="text-[11px] text-gray-400"><?= htmlspecialchars(t('employees.generate_hint') ?? 'One click, bilingual front + back') ?></span>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Identity -->
+            <div class="px-4 pt-3.5 flex-1">
+                <a href="<?= htmlspecialchars($empDetailUrl, ENT_QUOTES) ?>" class="flex items-start gap-3 group/id">
+                    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0 mt-0.5">
+                        <?php echo strtoupper(substr($emp['name_en'] ?? 'E', 0, 2)); ?>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="font-semibold text-gray-900 truncate group-hover/id:text-blue-600 transition-colors"><?php echo sanitize($emp['name_en'] ?? ''); ?></p>
+                        <?php if (!empty($emp['name_ar'])): ?><p class="text-gray-500 text-sm truncate" dir="rtl"><?php echo sanitize($emp['name_ar']); ?></p><?php endif; ?>
+                        <p class="text-gray-500 text-[13px] truncate mt-0.5"><?php echo sanitize($emp['position_en'] ?? $emp['email'] ?? ''); ?></p>
+                    </div>
+                </a>
+                <?php if ($deptName !== '-' || $scanCount > 0): ?>
+                <div class="flex items-center flex-wrap gap-1.5 mt-3">
+                    <?php if ($deptName !== '-'): ?>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700"><?php echo $deptName; ?></span>
+                    <?php endif; ?>
+                    <?php if ($scanCount > 0): ?>
+                    <a href="analytics.php?employee=<?php echo urlencode($emp['id']); ?>" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"><i class="fa-solid fa-chart-line text-[9px]"></i><?php echo number_format($scanCount); ?></a>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Actions footer -->
+            <div class="px-4 pb-4 pt-3 mt-3 border-t border-gray-100 flex items-center gap-1.5" x-data="{ showMenu: false, showMore: false }">
+                <?php if ($latestCard && $frontUrl): ?>
+                <a href="<?= htmlspecialchars($publicUrl, ENT_QUOTES) ?>" target="_blank" rel="noopener"
+                   class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+                    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i><?= htmlspecialchars(t('employees.view_card') ?? 'View card') ?>
+                </a>
+                <?php else: ?>
+                <a href="auto_generate.php?employee_id=<?php echo $emp['id']; ?>&return=employees"
+                   class="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors active:scale-[0.98]">
+                    <i class="fa-solid fa-wand-magic-sparkles text-xs"></i><?= htmlspecialchars(t('employees.generate_card') ?? 'Generate') ?>
+                </a>
+                <?php endif; ?>
+
+                <?php if ($latestCard && $frontUrl): ?>
+                <!-- Download dropdown -->
                                 <div class="relative">
                                     <button @click="showMenu = !showMenu; showMore = false" @click.outside="showMenu = false"
                                             class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -1405,37 +1438,10 @@ adminHeader(t('employees.page_title'), 'employees');
                                     </div>
                                 </div>
                             </div>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                    
-                    <?php if (empty($employees)): ?>
-                    <tr>
-                        <td colspan="5" class="px-6 py-12 text-center">
-                            <div class="max-w-sm mx-auto">
-                                <i class="fa-solid fa-id-card text-4xl text-gray-300 mb-4"></i>
-                                <p class="text-gray-700 font-semibold mb-1"><?= htmlspecialchars(t('employees.no_employees')) ?></p>
-                                <p class="text-sm text-gray-500 mb-6"><?= htmlspecialchars(t('employees.no_employees_body')) ?></p>
-                                <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                                    <?php if (!empty($adminEmail)): ?>
-                                    <button @click="openAddMyself(<?php echo htmlspecialchars(json_encode(['name_en' => $adminName, 'email' => $adminEmail]), ENT_QUOTES); ?>)"
-                                            class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm shadow-blue-200">
-                                        <i class="fa-solid fa-user-plus"></i><?= htmlspecialchars(t('employees.add_myself_first')) ?>
-                                    </button>
-                                    <?php endif; ?>
-                                    <button @click="openAddModal()"
-                                            class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium transition-colors">
-                                        <i class="fa-solid fa-plus"></i><?= htmlspecialchars(t('employees.add_an_employee')) ?>
-                                    </button>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+            </div>
+        <?php endforeach; ?>
     </div>
+    <?php endif; ?>
 
     <!-- Add/Edit Modal -->
     <div x-show="showModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4" @keydown.escape.window="showModal = false">

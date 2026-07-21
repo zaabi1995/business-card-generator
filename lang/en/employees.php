@@ -69,4 +69,20 @@ return [
     'bulk_invites_tooltip' => 'WhatsApp + email each employee a personal link to update their card details.',
     'bulk_invites_confirm' => 'Send a personal edit-link to all :n active employees? They will receive a WhatsApp message and email with a link to update their card.',
     'bulk_invites_result'  => 'Sent :sent invite(s). Skipped :skipped.',
+
+    // Card-hub redesign (Jul 2026)
+    'ctx_ready'            => 'ready',
+    'ctx_to_generate'     => 'to generate',
+    'more_actions'        => 'More',
+    'guided_title'        => 'Your team is added. Now make their cards.',
+    'guided_body'         => 'One click generates a bilingual front and back for everyone who still needs a card.',
+    'status_ready'        => 'Ready',
+    'status_no_card'      => 'No card',
+    'status_sample'       => 'Company sample',
+    'card_front'          => 'Card front',
+    'card_back'           => 'Card back',
+    'flip_card'           => 'Flip to back',
+    'generate_card'       => 'Generate card',
+    'generate_hint'       => 'One click, bilingual front + back',
+    'view_card'           => 'View card',
 ];
