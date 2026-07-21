@@ -1051,6 +1051,8 @@ HTML
 <h2>New Business Card Request</h2>
 <p>A new business card request has been submitted and requires your review.</p>
 
+<p style="text-align:center;"><img src="{{design_front_url}}" alt="Card design" style="max-width:320px;width:100%;border-radius:8px;border:1px solid #e5e7eb;"></p>
+
 <div class="info-box">
     <strong>Employee Details:</strong>
     <table>
@@ -1062,14 +1064,18 @@ HTML
         <tr><td>Phone</td><td>{{phone}}</td></tr>
         <tr><td>Mobile</td><td>{{mobile}}</td></tr>
         <tr><td>Department</td><td>{{department}}</td></tr>
+        <tr><td>Quantity</td><td>{{quantity}} pcs</td></tr>
     </table>
 </div>
 
 <p style="text-align: center;">
-    <a href="{{admin_url}}" class="btn">Review Request</a>
+    <a href="{{approve_url}}" class="btn">Approve &amp; Send to Print</a>
+</p>
+<p style="text-align: center;">
+    <a href="{{review_url}}">Review the design first</a>
 </p>
 
-<p>Please log in to your admin dashboard to approve or reject this request.</p>
+<p>This is a secure single-use approval link.</p>
 HTML
             ],
             

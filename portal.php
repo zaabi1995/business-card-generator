@@ -9,6 +9,7 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Mailer.php';
 require_once INCLUDES_DIR . '/TenantHost.php';
+require_once INCLUDES_DIR . '/AdminApprovalToken.php';
 
 // Get company slug and optional department slug from URL. When the
 // request lands on a tenant subdomain (ohb.cardify.om/portal), pull
@@ -504,7 +505,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                 }
                 
                 $adminUrl = getTenantUrl($companySlug, '/admin/requests');
-                
+
+                // Magic-link approval, the admin approves straight from the
+                // email without logging in first. Token is scoped to this
+                // company + request so a leaked link can't touch anything else.
+                $approvalToken = AdminApprovalToken::mint($companyId, $requestId, $adminEmail);
+                $approveUrl = getTenantUrl($companySlug, '/admin/one-tap-approve?t=' . urlencode($approvalToken));
+                $reviewUrl = getTenantUrl($companySlug, '/admin/approve-request?t=' . urlencode($approvalToken));
+
+                // Absolute design preview URL (APP_HOST, never HTTP_HOST) so
+                // the image loads from a mail client with no session/cookies.
+                $frontAbsUrl = '';
+                $previewPath = $insertData['preview_front_path'] ?? $insertData['preview_front'] ?? '';
+                if (!empty($previewPath)) {
+                    $frontAbsUrl = 'https://' . (defined('APP_HOST') ? APP_HOST : 'cardify.om') . '/' . ltrim($previewPath, '/');
+                }
+
                 Mailer::sendTemplate($adminEmail, 'admin_new_request', [
                     'employee_name' => $employeeName,
                     'company_name' => $companyName,
@@ -516,6 +532,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                     'phone' => $formData['phone'],
                     'mobile' => $formData['mobile'],
                     'department' => $deptName,
+                    'quantity' => $quantityRequested,
+                    'design_front_url' => $frontAbsUrl,
+                    'approve_url' => $approveUrl,
+                    'review_url' => $reviewUrl,
                     'admin_url' => $adminUrl
                 ]);
             }
