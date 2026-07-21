@@ -78,12 +78,12 @@ function getAdminNavItems() {
     // analytics, requests, print, theme, etc.) still map to the new
     // sections so highlight-on-current-page keeps working.
     $items = [
-        ['name' => 'Dashboard',  'icon' => 'fa-solid fa-chart-pie',  'url' => $dashboardUrl,                          'key' => 'dashboard',  'matches' => ['customer-dashboard', 'growth', 'live-analytics']],
-        ['name' => 'Employees',  'icon' => 'fa-solid fa-users',      'url' => $basePath . 'employees' . $ext,         'key' => 'employees',  'matches' => ['departments', 'analytics', 'employee']],
-        ['name' => 'Orders',     'icon' => 'fa-solid fa-inbox',      'url' => $basePath . 'orders' . $ext,            'key' => 'orders',     'matches' => ['requests', 'print', 'appointments'], 'badge_count' => 'pending_requests'],
-        ['name' => 'Card Designs', 'icon' => 'fa-solid fa-id-card', 'url' => $basePath . 'templates' . $ext, 'key' => 'templates', 'matches' => []],
-        ['name' => 'Print Tracking', 'icon' => 'fa-solid fa-clipboard-list', 'url' => $basePath . 'print-tracking' . $ext, 'key' => 'print-tracking', 'matches' => []],
-        ['name' => 'Brand',      'icon' => 'fa-solid fa-palette',    'url' => $basePath . 'brand' . $ext,             'key' => 'brand',      'matches' => ['theme', 'custom-domains', 'nfc-tags', 'short-links']],
+        ['name' => t('admin.nav_dashboard'),  'icon' => 'fa-solid fa-chart-pie',  'url' => $dashboardUrl,                          'key' => 'dashboard',  'matches' => ['customer-dashboard', 'growth', 'live-analytics']],
+        ['name' => t('admin.nav_employees'),  'icon' => 'fa-solid fa-users',      'url' => $basePath . 'employees' . $ext,         'key' => 'employees',  'matches' => ['departments', 'analytics', 'employee']],
+        ['name' => t('admin.nav_orders'),     'icon' => 'fa-solid fa-inbox',      'url' => $basePath . 'orders' . $ext,            'key' => 'orders',     'matches' => ['requests', 'print', 'appointments'], 'badge_count' => 'pending_requests'],
+        ['name' => t('admin.nav_card_designs'), 'icon' => 'fa-solid fa-id-card', 'url' => $basePath . 'templates' . $ext, 'key' => 'templates', 'matches' => []],
+        ['name' => t('admin.nav_print_tracking'), 'icon' => 'fa-solid fa-clipboard-list', 'url' => $basePath . 'print-tracking' . $ext, 'key' => 'print-tracking', 'matches' => []],
+        ['name' => t('admin.nav_brand'),      'icon' => 'fa-solid fa-palette',    'url' => $basePath . 'brand' . $ext,             'key' => 'brand',      'matches' => ['theme', 'custom-domains', 'nfc-tags', 'short-links']],
     ];
     
     // Add settings dropdown items
@@ -97,29 +97,29 @@ function getAdminNavItems() {
     if ($isGlobalSuper) {
         $superBasePath = getBasePath() . 'admin/super/';
         array_splice($items, 1, 0, [
-            ['name' => 'Companies', 'icon' => 'fa-solid fa-building', 'url' => $superBasePath . 'companies.php', 'key' => 'companies'],
-            ['name' => 'Employees', 'icon' => 'fa-solid fa-users-gear', 'url' => $superBasePath . 'employees.php', 'key' => 'all-employees'],
-            ['name' => 'Print Shops', 'icon' => 'fa-solid fa-store', 'url' => $superBasePath . 'print_shops.php', 'key' => 'print_shops'],
-            ['name' => 'Blog Posts', 'icon' => 'fa-solid fa-pen-nib', 'url' => $superBasePath . 'blog.php', 'key' => 'blog'],
-            ['name' => 'LinkedIn Carousels', 'icon' => 'fa-brands fa-linkedin', 'url' => $superBasePath . 'linkedin-carousels.php', 'key' => 'linkedin-carousels'],
-            ['name' => 'Plans', 'icon' => 'fa-solid fa-tags', 'url' => $basePath . 'plans' . $ext, 'key' => 'plans'],
-            ['name' => 'Subscriptions', 'icon' => 'fa-solid fa-credit-card', 'url' => $superBasePath . 'subscriptions.php', 'key' => 'subscriptions'],
-            ['name' => 'Referrals', 'icon' => 'fa-solid fa-share-nodes', 'url' => $superBasePath . 'referrals.php', 'key' => 'referrals'],
-            ['name' => 'Audit Logs', 'icon' => 'fa-solid fa-clipboard-list', 'url' => $basePath . 'audit-logs' . $ext, 'key' => 'audit-logs'],
-            ['name' => 'Email Logs', 'icon' => 'fa-solid fa-envelope', 'url' => $superBasePath . 'email_logs.php', 'key' => 'email-logs']
+            ['name' => t('admin.nav_companies'), 'icon' => 'fa-solid fa-building', 'url' => $superBasePath . 'companies.php', 'key' => 'companies'],
+            ['name' => t('admin.nav_employees'), 'icon' => 'fa-solid fa-users-gear', 'url' => $superBasePath . 'employees.php', 'key' => 'all-employees'],
+            ['name' => t('admin.nav_print_shops'), 'icon' => 'fa-solid fa-store', 'url' => $superBasePath . 'print_shops.php', 'key' => 'print_shops'],
+            ['name' => t('admin.nav_blog'), 'icon' => 'fa-solid fa-pen-nib', 'url' => $superBasePath . 'blog.php', 'key' => 'blog'],
+            ['name' => t('admin.nav_linkedin'), 'icon' => 'fa-brands fa-linkedin', 'url' => $superBasePath . 'linkedin-carousels.php', 'key' => 'linkedin-carousels'],
+            ['name' => t('admin.nav_plans'), 'icon' => 'fa-solid fa-tags', 'url' => $basePath . 'plans' . $ext, 'key' => 'plans'],
+            ['name' => t('admin.nav_subscriptions'), 'icon' => 'fa-solid fa-credit-card', 'url' => $superBasePath . 'subscriptions.php', 'key' => 'subscriptions'],
+            ['name' => t('admin.nav_referrals'), 'icon' => 'fa-solid fa-share-nodes', 'url' => $superBasePath . 'referrals.php', 'key' => 'referrals'],
+            ['name' => t('admin.nav_audit_logs'), 'icon' => 'fa-solid fa-clipboard-list', 'url' => $basePath . 'audit-logs' . $ext, 'key' => 'audit-logs'],
+            ['name' => t('admin.nav_email_logs'), 'icon' => 'fa-solid fa-envelope', 'url' => $superBasePath . 'email_logs.php', 'key' => 'email-logs']
         ]);
-        $settingsItems[] = ['name' => 'Account Settings', 'icon' => 'fa-solid fa-user-gear', 'url' => $superBasePath . 'settings.php', 'key' => 'account-settings'];
-        $settingsItems[] = ['name' => 'Email Settings', 'icon' => 'fa-solid fa-envelope-circle-check', 'url' => $superBasePath . 'email_settings.php', 'key' => 'email-settings'];
-        $settingsItems[] = ['name' => 'Print Settings', 'icon' => 'fa-solid fa-print', 'url' => $basePath . 'print_settings' . $ext, 'key' => 'print'];
-        $settingsItems[] = ['name' => 'Print Orders', 'icon' => 'fa-solid fa-box', 'url' => $basePath . 'print_orders' . $ext, 'key' => 'print_orders'];
-        $settingsItems[] = ['name' => 'WhatsApp API', 'icon' => 'fa-brands fa-whatsapp', 'url' => $basePath . 'whatsapp_settings' . $ext, 'key' => 'whatsapp'];
-        $settingsItems[] = ['name' => 'Bulk Claim', 'icon' => 'fa-solid fa-wand-magic-sparkles', 'url' => $basePath . 'bulk-claim' . $ext, 'key' => 'bulk-claim'];
+        $settingsItems[] = ['name' => t('admin.nav_account_settings'), 'icon' => 'fa-solid fa-user-gear', 'url' => $superBasePath . 'settings.php', 'key' => 'account-settings'];
+        $settingsItems[] = ['name' => t('admin.nav_email_settings'), 'icon' => 'fa-solid fa-envelope-circle-check', 'url' => $superBasePath . 'email_settings.php', 'key' => 'email-settings'];
+        $settingsItems[] = ['name' => t('admin.nav_print_settings'), 'icon' => 'fa-solid fa-print', 'url' => $basePath . 'print_settings' . $ext, 'key' => 'print'];
+        $settingsItems[] = ['name' => t('admin.nav_print_orders'), 'icon' => 'fa-solid fa-box', 'url' => $basePath . 'print_orders' . $ext, 'key' => 'print_orders'];
+        $settingsItems[] = ['name' => t('admin.nav_whatsapp'), 'icon' => 'fa-brands fa-whatsapp', 'url' => $basePath . 'whatsapp_settings' . $ext, 'key' => 'whatsapp'];
+        $settingsItems[] = ['name' => t('admin.nav_bulk_claim'), 'icon' => 'fa-solid fa-wand-magic-sparkles', 'url' => $basePath . 'bulk-claim' . $ext, 'key' => 'bulk-claim'];
         $settingsItems[] = ['name' => t('admin.nav_erp_settings'), 'icon' => 'fa-solid fa-plug', 'url' => $basePath . 'odoo_settings' . $ext, 'key' => 'odoo'];
-        $settingsItems[] = ['name' => 'Updates', 'icon' => 'fa-solid fa-download', 'url' => $basePath . 'updates' . $ext, 'key' => 'updates'];
+        $settingsItems[] = ['name' => t('admin.nav_updates'), 'icon' => 'fa-solid fa-download', 'url' => $basePath . 'updates' . $ext, 'key' => 'updates'];
     } else {
         // Company admin AND super_admin-on-a-tenant: identical single-company nav.
-        $items[] = ['name' => 'Billing',  'icon' => 'fa-solid fa-credit-card', 'url' => $basePath . 'billing' . $ext,  'key' => 'billing',  'matches' => ['payment-history']];
-        $items[] = ['name' => 'Settings', 'icon' => 'fa-solid fa-gear',        'url' => $basePath . 'settings' . $ext, 'key' => 'settings'];
+        $items[] = ['name' => t('admin.nav_billing'),  'icon' => 'fa-solid fa-credit-card', 'url' => $basePath . 'billing' . $ext,  'key' => 'billing',  'matches' => ['payment-history']];
+        $items[] = ['name' => t('admin.nav_settings'), 'icon' => 'fa-solid fa-gear',        'url' => $basePath . 'settings' . $ext, 'key' => 'settings'];
     }
     
     return ['main' => $items, 'settings' => $settingsItems];
@@ -598,12 +598,12 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
                     // so the chip is neutral (brand dot, plain "Admin") there;
                     // the "Super Admin" identity only shows on the apex console.
                     $__wsName = $__isSuper && !$__onTenant
-                        ? 'All companies'
+                        ? t('admin.chip_all_companies')
                         : ($tBrandName ?: ($brandName ?: 'Workspace'));
-                    $__roleLabel = ($__isSuper && !$__onTenant) ? 'Super Admin' : 'Admin';
+                    $__roleLabel = ($__isSuper && !$__onTenant) ? t('admin.chip_role_super') : t('admin.chip_role_admin');
                     ?>
                     <div class="hidden md:flex items-center gap-2 mr-4 lg:mr-6 pl-3 pr-3.5 py-1.5 rounded-xl border border-gray-200 bg-gray-50/80 max-w-[16rem]"
-                         title="<?= htmlspecialchars('Signed in as ' . $userName . ' · ' . $__roleLabel, ENT_QUOTES) ?>">
+                         title="<?= htmlspecialchars(t('admin.chip_signed_in_as', ['name' => $userName]) . ' · ' . $__roleLabel, ENT_QUOTES) ?>">
                         <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background:var(--tbrand)"></span>
                         <span class="min-w-0 leading-tight">
                             <span class="block text-[13px] font-semibold text-gray-900 truncate"><?= htmlspecialchars($__wsName) ?></span>
@@ -726,7 +726,7 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
                             <button @click="settingsOpen = !settingsOpen" type="button"
                                     class="flex items-center px-3 py-2.5 w-full text-sm font-medium text-gray-700 rounded-lg transition-colors group hover:bg-gray-50 hover:text-gray-900">
                                 <i class="fa-solid fa-cog w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0"></i>
-                                <span class="flex-1 ml-3 text-left whitespace-nowrap">Settings</span>
+                                <span class="flex-1 ml-3 text-left whitespace-nowrap"><?= htmlspecialchars(t('admin.nav_settings_group')) ?></span>
                                 <i class="fa-solid fa-chevron-down text-xs transition-transform text-gray-400" :class="settingsOpen ? 'rotate-180' : ''"></i>
                             </button>
                             <ul x-show="settingsOpen" x-cloak class="py-1 space-y-1">
@@ -747,11 +747,11 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
                     <div class="pt-3 space-y-1">
                         <a href="<?php echo $basePath; ?>" class="flex items-center px-3 py-2.5 text-sm font-medium text-gray-700 rounded-lg transition-colors hover:bg-gray-50 hover:text-gray-900 group">
                             <i class="fa-solid fa-house w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0"></i>
-                            <span class="ml-3">Back to Website</span>
+                            <span class="ml-3"><?= htmlspecialchars(t('admin.nav_back_to_website')) ?></span>
                         </a>
                         <a href="<?php echo $basePath; ?>logout.php" class="flex items-center px-3 py-2.5 text-sm font-medium text-gray-700 rounded-lg transition-colors hover:bg-red-50 hover:text-red-600 group">
                             <i class="fa-solid fa-right-from-bracket w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors flex-shrink-0"></i>
-                            <span class="ml-3">Sign Out</span>
+                            <span class="ml-3"><?= htmlspecialchars(t('admin.nav_sign_out')) ?></span>
                         </a>
                     </div>
                 </div>

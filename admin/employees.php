@@ -1095,18 +1095,18 @@ adminHeader(t('employees.page_title'), 'employees');
             </select>
             <?php endif; ?>
             <select x-model="filterCardStatus" class="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                <option value="all">All cards</option>
-                <option value="with_card">Has card</option>
-                <option value="no_card">No card yet</option>
+                <option value="all"><?= htmlspecialchars(t('employees.filter_all_cards')) ?></option>
+                <option value="with_card"><?= htmlspecialchars(t('employees.filter_has_card')) ?></option>
+                <option value="no_card"><?= htmlspecialchars(t('employees.filter_no_card')) ?></option>
             </select>
             <select onchange="window.location.href = '?sort=' + this.value + (window.location.search.match(/&?dept=[^&]+/) ? window.location.search.match(/&?dept=[^&]+/)[0] : '')" class="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
-                <option value="created_desc"<?= $sortParam==='created_desc'?' selected':'' ?>>Recently added</option>
-                <option value="created_asc"<?= $sortParam==='created_asc'?' selected':'' ?>>Oldest first</option>
-                <option value="name_asc"<?= $sortParam==='name_asc'?' selected':'' ?>>Name A→Z</option>
-                <option value="name_desc"<?= $sortParam==='name_desc'?' selected':'' ?>>Name Z→A</option>
-                <option value="name_ar_asc"<?= $sortParam==='name_ar_asc'?' selected':'' ?>>الاسم (أ→ي)</option>
-                <option value="position_asc"<?= $sortParam==='position_asc'?' selected':'' ?>>Position A→Z</option>
-                <option value="email_asc"<?= $sortParam==='email_asc'?' selected':'' ?>>Email A→Z</option>
+                <option value="created_desc"<?= $sortParam==='created_desc'?' selected':'' ?>><?= htmlspecialchars(t('employees.sort_recently_added')) ?></option>
+                <option value="created_asc"<?= $sortParam==='created_asc'?' selected':'' ?>><?= htmlspecialchars(t('employees.sort_oldest')) ?></option>
+                <option value="name_asc"<?= $sortParam==='name_asc'?' selected':'' ?>><?= htmlspecialchars(t('employees.sort_name_az')) ?></option>
+                <option value="name_desc"<?= $sortParam==='name_desc'?' selected':'' ?>><?= htmlspecialchars(t('employees.sort_name_za')) ?></option>
+                <option value="name_ar_asc"<?= $sortParam==='name_ar_asc'?' selected':'' ?>><?= htmlspecialchars(t('employees.sort_name_ar')) ?></option>
+                <option value="position_asc"<?= $sortParam==='position_asc'?' selected':'' ?>><?= htmlspecialchars(t('employees.sort_position')) ?></option>
+                <option value="email_asc"<?= $sortParam==='email_asc'?' selected':'' ?>><?= htmlspecialchars(t('employees.sort_email')) ?></option>
             </select>
         </div>
     </div>
@@ -1304,9 +1304,9 @@ adminHeader(t('employees.page_title'), 'employees');
                 <!-- Download dropdown -->
                                 <div class="relative">
                                     <button @click="showMenu = !showMenu; showMore = false" @click.outside="showMenu = false"
-                                            :aria-expanded="showMenu ? 'true' : 'false'" aria-label="Download card"
+                                            :aria-expanded="showMenu ? 'true' : 'false'" aria-label="<?= htmlspecialchars(t('employees.dl_title')) ?>"
                                             class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                            title="Download card">
+                                            title="<?= htmlspecialchars(t('employees.dl_title')) ?>">
                                         <i class="fa-solid fa-download"></i>
                                     </button>
                                     <div x-show="showMenu" x-cloak
@@ -1315,40 +1315,40 @@ adminHeader(t('employees.page_title'), 'employees');
                                         <a href="<?= htmlspecialchars($printReadyUrl, ENT_QUOTES) ?>"
                                            class="flex items-start gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                             <i class="fa-solid fa-file-pdf text-green-600 w-4 mt-0.5"></i>
-                                            <span>Print-ready PDF<span class="block text-[11px] text-gray-400">The card front + back, high-res, fonts embedded, no watermark</span></span>
+                                            <span><?= htmlspecialchars(t('employees.dl_print_ready')) ?><span class="block text-[11px] text-gray-400"><?= htmlspecialchars(t('employees.dl_print_ready_desc')) ?></span></span>
                                         </a>
                                         <!-- A4 imposed cutting sheet (crop + cut lines + registration) -->
                                         <a href="<?= htmlspecialchars($cutSheetUrl, ENT_QUOTES) ?>"
                                            class="flex items-start gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                             <i class="fa-solid fa-scissors text-blue-600 w-4 mt-0.5"></i>
-                                            <span>A4 cutting sheet<span class="block text-[11px] text-gray-400">10-up A4 (front + back) with crop marks, cut lines + registration</span></span>
+                                            <span><?= htmlspecialchars(t('employees.dl_a4_sheet')) ?><span class="block text-[11px] text-gray-400"><?= htmlspecialchars(t('employees.dl_a4_sheet_desc')) ?></span></span>
                                         </a>
                                         <hr class="my-1 border-gray-100">
-                                        <!-- Send to BHD production Kanban (against the PO) -->
+                                        <!-- Send to production Kanban (against the PO) -->
                                         <a href="javascript:void(0)"
                                            onclick="sendToPrint('<?= htmlspecialchars($emp['id'], ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($emp['name_en'] ?? 'Employee'), ENT_QUOTES) ?>')"
                                            class="flex items-start gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50">
                                             <i class="fa-solid fa-print text-green-600 w-4 mt-0.5"></i>
-                                            <span>Send to print<span class="block text-[11px] text-gray-400">Create a production job on BHD's Kanban (billed on the PO)</span></span>
+                                            <span><?= htmlspecialchars(t('employees.dl_send_print')) ?><span class="block text-[11px] text-gray-400"><?= htmlspecialchars(t('employees.dl_send_print_desc')) ?></span></span>
                                         </a>
                                         <hr class="my-1 border-gray-100">
                                         <?php if ($hasFrontPdf && $hasBackPdf): ?>
                                         <a href="javascript:void(0)" onclick="downloadAsPDF('<?php echo $cardBaseUrl . str_replace('.png', '.pdf', $frontFilename); ?>', '<?php echo $cardBaseUrl . str_replace('.png', '.pdf', $backFilename); ?>', '<?php echo addslashes($emp['name_en'] ?? 'card'); ?>')"
                                            class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                            <i class="fa-solid fa-file-pdf text-red-500 w-4"></i> Download PDF (preview)
+                                            <i class="fa-solid fa-file-pdf text-red-500 w-4"></i> <?= htmlspecialchars(t('employees.dl_pdf_preview')) ?>
                                         </a>
                                         <?php endif; ?>
                                         <a href="javascript:void(0)" onclick="downloadAsPNGs('<?php echo $frontUrl; ?>', '<?php echo $backUrl; ?>', '<?php echo addslashes($emp['name_en'] ?? 'card'); ?>')"
                                            class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                            <i class="fa-solid fa-images text-blue-500 w-4"></i> Download PNGs
+                                            <i class="fa-solid fa-images text-blue-500 w-4"></i> <?= htmlspecialchars(t('employees.dl_pngs')) ?>
                                         </a>
                                         <hr class="my-1 border-gray-100">
                                         <a href="<?php echo $frontUrl; ?>" download class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                            <i class="fa-solid fa-image text-gray-400 w-4"></i> Front only
+                                            <i class="fa-solid fa-image text-gray-400 w-4"></i> <?= htmlspecialchars(t('employees.dl_front_only')) ?>
                                         </a>
                                         <?php if ($backUrl): ?>
                                         <a href="<?php echo $backUrl; ?>" download class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                            <i class="fa-solid fa-image text-gray-400 w-4"></i> Back only
+                                            <i class="fa-solid fa-image text-gray-400 w-4"></i> <?= htmlspecialchars(t('employees.dl_back_only')) ?>
                                         </a>
                                         <?php endif; ?>
                                     </div>
@@ -1357,14 +1357,14 @@ adminHeader(t('employees.page_title'), 'employees');
                                 <!-- Order a print run -->
                                 <a href="order_print.php?employee=<?php echo $emp['id']; ?>&card_front=<?php echo urlencode($frontUrl ?? ''); ?>&card_back=<?php echo urlencode($backUrl ?? ''); ?>"
                                    class="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                                   title="Order a print run">
+                                   title="<?= htmlspecialchars(t('employees.act_order_print')) ?>">
                                     <i class="fa-solid fa-print"></i>
                                 </a>
                                 <?php else: ?>
                                 <!-- Generate if no card yet -->
                                 <a href="auto_generate.php?employee_id=<?php echo $emp['id']; ?>&return=employees"
                                    class="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                                   title="Generate card">
+                                   title="<?= htmlspecialchars(t('employees.act_generate_title')) ?>">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                                 </a>
                                 <?php endif; ?>
@@ -1373,16 +1373,16 @@ adminHeader(t('employees.page_title'), 'employees');
                                 <button
                                     @click='openEditModal(<?php echo htmlspecialchars(json_encode($emp), ENT_QUOTES); ?>)'
                                     class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                    title="Edit details">
+                                    title="<?= htmlspecialchars(t('employees.edit_details') ?? 'Edit details') ?>">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
 
                                 <!-- Overflow menu: lower-frequency actions -->
                                 <div class="relative">
                                     <button @click="showMore = !showMore; showMenu = false" @click.outside="showMore = false"
-                                            :aria-expanded="showMore ? 'true' : 'false'" aria-label="More actions"
+                                            :aria-expanded="showMore ? 'true' : 'false'" aria-label="<?= htmlspecialchars(t('employees.act_more')) ?>"
                                             class="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-                                            title="More actions">
+                                            title="<?= htmlspecialchars(t('employees.act_more')) ?>">
                                         <i class="fa-solid fa-ellipsis-vertical"></i>
                                     </button>
                                     <div x-show="showMore" x-cloak
@@ -1391,19 +1391,19 @@ adminHeader(t('employees.page_title'), 'employees');
                                         <!-- View public card -->
                                         <a href="<?= htmlspecialchars($publicUrl, ENT_QUOTES) ?>" target="_blank" rel="noopener"
                                            class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                            <i class="fa-solid fa-arrow-up-right-from-square text-indigo-500 w-4"></i> View public card
+                                            <i class="fa-solid fa-arrow-up-right-from-square text-indigo-500 w-4"></i> <?= htmlspecialchars(t('employees.act_view_public')) ?>
                                         </a>
                                         <!-- Copy public link -->
                                         <button type="button"
                                                 onclick="navigator.clipboard.writeText('<?= addslashes($publicUrl) ?>').then(()=>{const i=this.querySelector('i');const c=i.className;i.className='fa-solid fa-check text-green-600 w-4';setTimeout(()=>i.className=c,1500)})"
                                                 class="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                            <i class="fa-solid fa-share-nodes text-indigo-500 w-4"></i> Copy public link
+                                            <i class="fa-solid fa-share-nodes text-indigo-500 w-4"></i> <?= htmlspecialchars(t('employees.act_copy_public')) ?>
                                         </button>
                                         <hr class="my-1 border-gray-100">
                                         <!-- Regenerate card -->
                                         <a href="auto_generate.php?employee_id=<?php echo $emp['id']; ?>&return=employees&regenerate=1"
                                            class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                            <i class="fa-solid fa-rotate text-purple-500 w-4"></i> Regenerate card
+                                            <i class="fa-solid fa-rotate text-purple-500 w-4"></i> <?= htmlspecialchars(t('employees.act_regenerate')) ?>
                                         </a>
                                         <?php if (!$isSample && $frontFilename && $backFilename): ?>
                                         <!-- Set as company sample -->
@@ -1413,7 +1413,7 @@ adminHeader(t('employees.page_title'), 'employees');
                                             <input type="hidden" name="sample_front" value="companies/<?php echo $companyId; ?>/cards/<?php echo $frontFilename; ?>">
                                             <input type="hidden" name="sample_back" value="companies/<?php echo $companyId; ?>/cards/<?php echo $backFilename; ?>">
                                             <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                                <i class="fa-regular fa-star text-amber-500 w-4"></i> Set as company sample
+                                                <i class="fa-regular fa-star text-amber-500 w-4"></i> <?= htmlspecialchars(t('employees.act_set_sample')) ?>
                                             </button>
                                         </form>
                                         <?php endif; ?>
@@ -1437,12 +1437,12 @@ adminHeader(t('employees.page_title'), 'employees');
                                         </form>
                                         <hr class="my-1 border-gray-100">
                                         <!-- Delete employee -->
-                                        <form method="post" onsubmit="return confirm('Are you sure you want to delete this employee and their cards?')">
+                                        <form method="post" onsubmit="return confirm(<?= htmlspecialchars(json_encode(t('employees.act_delete_confirm')), ENT_QUOTES) ?>)">
                                             <?php echo csrfField(); ?>
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="id" value="<?php echo sanitize($emp['id']); ?>">
                                             <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                                                <i class="fa-solid fa-trash-can w-4"></i> Delete employee
+                                                <i class="fa-solid fa-trash-can w-4"></i> <?= htmlspecialchars(t('employees.act_delete')) ?>
                                             </button>
                                         </form>
                                     </div>
