@@ -124,6 +124,22 @@ try {
         file_put_contents($tmpCmyk, json_encode($cmykCfg, JSON_UNESCAPED_UNICODE));
     }
 
+    // The magenta rounded CutContour (round-corner die line) is a per-client
+    // option, OFF by default (plain straight guillotine cut). Add &round=1 for
+    // clients whose cards are die-cut with rounded corners.
+    $roundCut = (($_GET['round'] ?? '') === '1');
+
+    // Bleed-tile mode: the finished cards butt together and each card's design
+    // bleeds `inset` mm past every cut line (no flat colour margin), so 5x2 = 10
+    // fit an A4. Used for RASTER designs, whose PDF page IS the artwork with no
+    // baked bleed - we cut ~1mm INTO the design so its background reaches the cut
+    // (override with ?inset=<mm>). Vector print PDFs keep their existing,
+    // size-stable flat-background geometry so a tenant's finished card size never
+    // changes underneath them.
+    $bleedTile = ($rasterTmp !== '');
+    $trimInset = isset($_GET['inset']) ? (float) $_GET['inset'] : 1.0;
+    $trimInset = max(0.3, min(4.0, $trimInset));
+
     $outDir = BASE_DIR . '/data/print-sheets';
     if (!is_dir($outDir)) @mkdir($outDir, 0775, true);
     $slug = preg_replace('/[^a-z0-9]+/i', '-', (string) $employee['id']);
@@ -131,7 +147,7 @@ try {
 
     $py = trim((string) @shell_exec('command -v python3 2>/dev/null')) ?: 'python3';
     $timeoutPrefix = (trim((string) @shell_exec('command -v timeout 2>/dev/null')) !== '') ? 'timeout 60 ' : '';
-    // Densest-first layouts that fit a landscape card on portrait A4.
+    // Densest-first layouts that fit a landscape card on portrait A4 (10-up first).
     $layouts = $autoFit ? [[5, 2], [4, 2], [4, 1], [3, 2], [3, 1], [2, 2], [2, 1], [1, 1]] : [[$rows, $cols]];
     $out = []; $rc = -1;
     foreach ($layouts as [$r, $c]) {
@@ -140,12 +156,15 @@ try {
              . ' --card ' . escapeshellarg($rendered['path'])
              . ' --paper ' . escapeshellarg($paper)
              . ' --rows ' . $r . ' --cols ' . $c
-             . ' --margin-mm 5 --gutter-mm 2'        // tight pack so 5x2 (10/A4) fits 90x55 cards
-             . ' --bleed-mm 3'                       // 3mm background bleed past the card edges
+             . ' --margin-mm 5'
              . ' --all-pages'                        // front sheet + back sheet
-             . ' --cut-radius-mm ' . $cutRadius
              . ' --reg-marks'
-             . ' --sheet-bg ' . escapeshellarg($sheetBg)   // brand colour (exact) or auto
+             . ' --sheet-bg ' . escapeshellarg($sheetBg)   // brand colour / safety underlay
+             . ($bleedTile
+                 ? ' --trim-inset-mm ' . escapeshellarg((string) $trimInset)
+                   . ($roundCut ? ' --round-cut --cut-radius-mm ' . escapeshellarg((string) $cutRadius) : '')
+                 : ' --gutter-mm 2 --bleed-mm 3'
+                   . ($roundCut ? ' --cut-radius-mm ' . escapeshellarg((string) $cutRadius) : ''))
              . ($tmpCmyk !== '' ? ' --cmyk ' . escapeshellarg($tmpCmyk) : '')
              . ' --out ' . escapeshellarg($outPath)
              . ' 2>&1';

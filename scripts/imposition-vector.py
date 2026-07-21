@@ -173,6 +173,15 @@ def main():
     ap.add_argument('--all-pages', action='store_true')
     ap.add_argument('--cut-radius-mm', type=float, default=0.0)
     ap.add_argument('--reg-marks', action='store_true')
+    ap.add_argument('--trim-inset-mm', type=float, default=0.0,
+                    help='Bleed-tile mode: how much of the card PDF page is bleed '
+                         'to cut off. Trims butt (no gutter), art bleeds inset mm '
+                         'past every cut line, marks are ticks in the sheet margin. '
+                         '0 = legacy flat-background + gutter mode.')
+    ap.add_argument('--round-cut', action='store_true',
+                    help='Draw the magenta rounded CutContour spot line (rounded '
+                         'die-cut corners). Off by default so the sheet has no red '
+                         'cut line for straight-guillotine clients.')
     ap.add_argument('--sheet-bg', default='none',
                     help="'auto' (sample the card), 'none', or 'R,G,B' (0-255).")
     ap.add_argument('--cmyk', default='',
@@ -200,18 +209,10 @@ def main():
     card_w = src[0].rect.width
     card_h = src[0].rect.height
 
-    # Pack cards tightly (card + gutter) and centre the block on the sheet,
-    # instead of spreading them into big slots. This leaves room around the
-    # grid for the background bleed + marks.
-    block_w = args.cols * card_w + (args.cols - 1) * gutter
-    block_h = args.rows * card_h + (args.rows - 1) * gutter
-    if block_w > paper_w - 2 * margin or block_h > paper_h - 2 * margin:
-        raise SystemExit(
-            f"grid {block_w:.1f}x{block_h:.1f} doesn't fit inside the margins")
-    ox = (paper_w - block_w) / 2.0
-    oy = (paper_h - block_h) / 2.0
+    inset = args.trim_inset_mm * MM
 
-    # Background fill colour (continuous bleed behind the whole grid).
+    # Background fill colour (continuous bleed behind the whole grid, or the
+    # bleed-tile safety underlay).
     bg = None
     if args.sheet_bg == 'auto':
         bg = _sample_card_bg(src)
@@ -222,6 +223,105 @@ def main():
                 bg = tuple(min(1.0, max(0.0, p / 255.0)) for p in parts)
         except Exception:
             bg = None
+
+    # Legacy flat-background + gutter geometry (only when NOT bleed-tiling).
+    if inset <= 0:
+        # Pack cards tightly (card + gutter) and centre the block on the sheet.
+        block_w = args.cols * card_w + (args.cols - 1) * gutter
+        block_h = args.rows * card_h + (args.rows - 1) * gutter
+        if block_w > paper_w - 2 * margin or block_h > paper_h - 2 * margin:
+            raise SystemExit(
+                f"grid {block_w:.1f}x{block_h:.1f} doesn't fit inside the margins")
+        ox = (paper_w - block_w) / 2.0
+        oy = (paper_h - block_h) / 2.0
+
+    # ----- Bleed-tile mode (full-bleed cards, design cut to the edge) ----------
+    # The card PDF page already carries `inset` mm of bleed on every side (a
+    # vector print PDF = trim + 3mm; a raster design cut 1mm into the art).
+    # Finished cards butt together (one guillotine cut serves two rows/cols),
+    # each card's art bleeds `inset` past its cut line, and cut guides are ticks
+    # in the white sheet margin - so the design itself reaches the edge and no
+    # flat colour margin is printed.
+    if inset > 0:
+        trim_w = card_w - 2 * inset
+        trim_h = card_h - 2 * inset
+        if trim_w <= 1 or trim_h <= 1:
+            raise SystemExit('trim inset too large for the card size')
+        block_w = args.cols * trim_w
+        block_h = args.rows * trim_h
+        if block_w > paper_w - 2 * margin or block_h > paper_h - 2 * margin:
+            raise SystemExit(
+                f"grid {block_w:.1f}x{block_h:.1f} doesn't fit inside the margins")
+        ox = (paper_w - block_w) / 2.0
+        oy = (paper_h - block_h) / 2.0
+        out = fitz.open()
+        cut_by_page = {}
+        for sheet_idx, pno in enumerate(pages):
+            sheet = out.new_page(width=paper_w, height=paper_h)
+            cut_rects = []
+            # Safety underlay so any sub-pixel gap at a seam is the card colour,
+            # never white. The bleeding art draws on top, so this never shows as
+            # a flat margin.
+            if bg is not None:
+                bgs = sheet.new_shape()
+                bgs.draw_rect(fitz.Rect(ox - inset, oy - inset,
+                                        ox + block_w + inset, oy + block_h + inset))
+                bgs.finish(color=None, fill=bg)
+                bgs.commit()
+            # Cards: art placed at trim +/- inset so it bleeds past every cut.
+            for r in range(args.rows):
+                for c in range(args.cols):
+                    tx0 = ox + c * trim_w
+                    ty0 = oy + r * trim_h
+                    art = fitz.Rect(tx0 - inset, ty0 - inset,
+                                    tx0 + trim_w + inset, ty0 + trim_h + inset)
+                    sheet.show_pdf_page(art, src, pno=pno, keep_proportion=False)
+                    cut_rects.append((tx0, paper_h - (ty0 + trim_h),
+                                      tx0 + trim_w, paper_h - ty0))
+            # Cut ticks in the sheet margin, aligned to every trim gridline. The
+            # guillotine cuts full lines across the sheet, so edge ticks suffice
+            # and nothing is drawn over the artwork.
+            tick_len = 3.0 * MM
+            gap = inset + 1.0 * MM
+            ticks = sheet.new_shape()
+            for i in range(args.cols + 1):
+                x = ox + i * trim_w
+                ticks.draw_line(fitz.Point(x, oy - gap), fitz.Point(x, oy - gap - tick_len))
+                ticks.draw_line(fitz.Point(x, oy + block_h + gap), fitz.Point(x, oy + block_h + gap + tick_len))
+            for j in range(args.rows + 1):
+                y = oy + j * trim_h
+                ticks.draw_line(fitz.Point(ox - gap, y), fitz.Point(ox - gap - tick_len, y))
+                ticks.draw_line(fitz.Point(ox + block_w + gap, y), fitz.Point(ox + block_w + gap + tick_len, y))
+            ticks.finish(color=REG, width=0.4)
+            ticks.commit()
+            if args.reg_marks:
+                rs = sheet.new_shape()
+                for cx, cy in [(paper_w / 2, margin / 2), (paper_w / 2, paper_h - margin / 2),
+                               (margin / 2, paper_h / 2), (paper_w - margin / 2, paper_h / 2)]:
+                    _reg_target(rs, cx, cy)
+                rs.finish(color=REG, width=0.4)
+                rs.commit()
+            if args.watermark:
+                try:
+                    fs = max(48.0, paper_w * 0.18)
+                    cx, cy = paper_w / 2.0, paper_h / 2.0
+                    font = fitz.Font('Helvetica-Bold')
+                    tw_w = fitz.get_text_length(args.watermark, fontname='Helvetica-Bold', fontsize=fs)
+                    tw = fitz.TextWriter(sheet.rect, color=(0.7, 0.7, 0.7), opacity=0.18)
+                    tw.append(fitz.Point(cx - tw_w / 2, cy + fs / 3), args.watermark, fontsize=fs, font=font)
+                    tw.write_text(sheet, morph=(fitz.Point(cx, cy), fitz.Matrix(-30)))
+                except Exception:
+                    pass
+            # Rounded magenta CutContour only when explicitly requested.
+            if args.round_cut and cut_r > 0:
+                cut_by_page[sheet_idx] = cut_rects
+        if cmyk_cfg:
+            _sheet_to_cmyk(out, cmyk_cfg)
+        if cut_by_page:
+            _inject_cut_layer(out, cut_by_page, cut_r)
+        out.save(args.out, garbage=3, deflate=True)
+        return
+    # ----- end bleed-tile mode -------------------------------------------------
 
     out = fitz.open()
     cut_by_page = {}
