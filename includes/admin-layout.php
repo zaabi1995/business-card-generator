@@ -89,58 +89,35 @@ function getAdminNavItems() {
     // Add settings dropdown items
     $settingsItems = [];
     
-    // Super admin items
-    if ($role === 'super_admin') {
+    // Cross-tenant super console: APEX ONLY. Inside a tenant subdomain a
+    // super_admin gets the EXACT company-admin nav (Ali's instruction: "same
+    // page as them, no need to see other companies and employees"), so the
+    // whole super block is gated on $isGlobalSuper and super-on-tenant simply
+    // falls through to the company-admin branch below.
+    if ($isGlobalSuper) {
         $superBasePath = getBasePath() . 'admin/super/';
-
-        if ($isGlobalSuper) {
-            // APEX (cardify.om): the full cross-tenant console. This is the
-            // ONLY place the global "Employees" / Companies / Print Shops
-            // block belongs. Note the label is plain "Employees" now (not
-            // "All Employees") because there is no competing per-company
-            // "Employees" item on the apex to disambiguate against.
-            array_splice($items, 1, 0, [
-                ['name' => 'Companies', 'icon' => 'fa-solid fa-building', 'url' => $superBasePath . 'companies.php', 'key' => 'companies'],
-                ['name' => 'Employees', 'icon' => 'fa-solid fa-users-gear', 'url' => $superBasePath . 'employees.php', 'key' => 'all-employees'],
-                ['name' => 'Print Shops', 'icon' => 'fa-solid fa-store', 'url' => $superBasePath . 'print_shops.php', 'key' => 'print_shops'],
-                ['name' => 'Blog Posts', 'icon' => 'fa-solid fa-pen-nib', 'url' => $superBasePath . 'blog.php', 'key' => 'blog'],
-                ['name' => 'LinkedIn Carousels', 'icon' => 'fa-brands fa-linkedin', 'url' => $superBasePath . 'linkedin-carousels.php', 'key' => 'linkedin-carousels'],
-                ['name' => 'Plans', 'icon' => 'fa-solid fa-tags', 'url' => $basePath . 'plans' . $ext, 'key' => 'plans'],
-                ['name' => 'Subscriptions', 'icon' => 'fa-solid fa-credit-card', 'url' => $superBasePath . 'subscriptions.php', 'key' => 'subscriptions'],
-                ['name' => 'Referrals', 'icon' => 'fa-solid fa-share-nodes', 'url' => $superBasePath . 'referrals.php', 'key' => 'referrals'],
-                ['name' => 'Audit Logs', 'icon' => 'fa-solid fa-clipboard-list', 'url' => $basePath . 'audit-logs' . $ext, 'key' => 'audit-logs'],
-                ['name' => 'Email Logs', 'icon' => 'fa-solid fa-envelope', 'url' => $superBasePath . 'email_logs.php', 'key' => 'email-logs']
-            ]);
-            $settingsItems[] = ['name' => 'Account Settings', 'icon' => 'fa-solid fa-user-gear', 'url' => $superBasePath . 'settings.php', 'key' => 'account-settings'];
-            $settingsItems[] = ['name' => 'Email Settings', 'icon' => 'fa-solid fa-envelope-circle-check', 'url' => $superBasePath . 'email_settings.php', 'key' => 'email-settings'];
-            $settingsItems[] = ['name' => 'Print Settings', 'icon' => 'fa-solid fa-print', 'url' => $basePath . 'print_settings' . $ext, 'key' => 'print'];
-            $settingsItems[] = ['name' => 'Print Orders', 'icon' => 'fa-solid fa-box', 'url' => $basePath . 'print_orders' . $ext, 'key' => 'print_orders'];
-            $settingsItems[] = ['name' => 'WhatsApp API', 'icon' => 'fa-brands fa-whatsapp', 'url' => $basePath . 'whatsapp_settings' . $ext, 'key' => 'whatsapp'];
-            $settingsItems[] = ['name' => 'Bulk Claim', 'icon' => 'fa-solid fa-wand-magic-sparkles', 'url' => $basePath . 'bulk-claim' . $ext, 'key' => 'bulk-claim'];
-            $settingsItems[] = ['name' => t('admin.nav_erp_settings'), 'icon' => 'fa-solid fa-plug', 'url' => $basePath . 'odoo_settings' . $ext, 'key' => 'odoo'];
-            $settingsItems[] = ['name' => 'Updates', 'icon' => 'fa-solid fa-download', 'url' => $basePath . 'updates' . $ext, 'key' => 'updates'];
-        } else {
-            // TENANT subdomain: a super_admin here is managing ONE company, so
-            // they get the same single-company nav a company admin gets, PLUS
-            // the tenant-scoped super tools, PLUS a one-click door back to the
-            // global console (so nothing is buried). No cross-tenant block.
-            // The console lives on the APEX, so this must be an absolute apex
-            // URL, not host-relative (which would stay on this subdomain).
-            $apexSuperUrl = 'https://' . (defined('APP_HOST') ? APP_HOST : 'cardify.om') . '/admin/super/';
-            array_splice($items, 1, 0, [
-                ['name' => 'Global console', 'icon' => 'fa-solid fa-arrow-up-right-from-square', 'url' => $apexSuperUrl, 'key' => 'global-console'],
-            ]);
-            $items[] = ['name' => 'Billing', 'icon' => 'fa-solid fa-credit-card', 'url' => $basePath . 'billing' . $ext, 'key' => 'billing', 'matches' => ['payment-history']];
-            $settingsItems[] = ['name' => 'Plans', 'icon' => 'fa-solid fa-tags', 'url' => $basePath . 'plans' . $ext, 'key' => 'plans'];
-            $settingsItems[] = ['name' => 'Audit Logs', 'icon' => 'fa-solid fa-clipboard-list', 'url' => $basePath . 'audit-logs' . $ext, 'key' => 'audit-logs'];
-            $settingsItems[] = ['name' => 'Print Settings', 'icon' => 'fa-solid fa-print', 'url' => $basePath . 'print_settings' . $ext, 'key' => 'print'];
-            $settingsItems[] = ['name' => 'Print Orders', 'icon' => 'fa-solid fa-box', 'url' => $basePath . 'print_orders' . $ext, 'key' => 'print_orders'];
-            $settingsItems[] = ['name' => 'WhatsApp API', 'icon' => 'fa-brands fa-whatsapp', 'url' => $basePath . 'whatsapp_settings' . $ext, 'key' => 'whatsapp'];
-            $settingsItems[] = ['name' => t('admin.nav_erp_settings'), 'icon' => 'fa-solid fa-plug', 'url' => $basePath . 'odoo_settings' . $ext, 'key' => 'odoo'];
-        }
+        array_splice($items, 1, 0, [
+            ['name' => 'Companies', 'icon' => 'fa-solid fa-building', 'url' => $superBasePath . 'companies.php', 'key' => 'companies'],
+            ['name' => 'Employees', 'icon' => 'fa-solid fa-users-gear', 'url' => $superBasePath . 'employees.php', 'key' => 'all-employees'],
+            ['name' => 'Print Shops', 'icon' => 'fa-solid fa-store', 'url' => $superBasePath . 'print_shops.php', 'key' => 'print_shops'],
+            ['name' => 'Blog Posts', 'icon' => 'fa-solid fa-pen-nib', 'url' => $superBasePath . 'blog.php', 'key' => 'blog'],
+            ['name' => 'LinkedIn Carousels', 'icon' => 'fa-brands fa-linkedin', 'url' => $superBasePath . 'linkedin-carousels.php', 'key' => 'linkedin-carousels'],
+            ['name' => 'Plans', 'icon' => 'fa-solid fa-tags', 'url' => $basePath . 'plans' . $ext, 'key' => 'plans'],
+            ['name' => 'Subscriptions', 'icon' => 'fa-solid fa-credit-card', 'url' => $superBasePath . 'subscriptions.php', 'key' => 'subscriptions'],
+            ['name' => 'Referrals', 'icon' => 'fa-solid fa-share-nodes', 'url' => $superBasePath . 'referrals.php', 'key' => 'referrals'],
+            ['name' => 'Audit Logs', 'icon' => 'fa-solid fa-clipboard-list', 'url' => $basePath . 'audit-logs' . $ext, 'key' => 'audit-logs'],
+            ['name' => 'Email Logs', 'icon' => 'fa-solid fa-envelope', 'url' => $superBasePath . 'email_logs.php', 'key' => 'email-logs']
+        ]);
+        $settingsItems[] = ['name' => 'Account Settings', 'icon' => 'fa-solid fa-user-gear', 'url' => $superBasePath . 'settings.php', 'key' => 'account-settings'];
+        $settingsItems[] = ['name' => 'Email Settings', 'icon' => 'fa-solid fa-envelope-circle-check', 'url' => $superBasePath . 'email_settings.php', 'key' => 'email-settings'];
+        $settingsItems[] = ['name' => 'Print Settings', 'icon' => 'fa-solid fa-print', 'url' => $basePath . 'print_settings' . $ext, 'key' => 'print'];
+        $settingsItems[] = ['name' => 'Print Orders', 'icon' => 'fa-solid fa-box', 'url' => $basePath . 'print_orders' . $ext, 'key' => 'print_orders'];
+        $settingsItems[] = ['name' => 'WhatsApp API', 'icon' => 'fa-brands fa-whatsapp', 'url' => $basePath . 'whatsapp_settings' . $ext, 'key' => 'whatsapp'];
+        $settingsItems[] = ['name' => 'Bulk Claim', 'icon' => 'fa-solid fa-wand-magic-sparkles', 'url' => $basePath . 'bulk-claim' . $ext, 'key' => 'bulk-claim'];
+        $settingsItems[] = ['name' => t('admin.nav_erp_settings'), 'icon' => 'fa-solid fa-plug', 'url' => $basePath . 'odoo_settings' . $ext, 'key' => 'odoo'];
+        $settingsItems[] = ['name' => 'Updates', 'icon' => 'fa-solid fa-download', 'url' => $basePath . 'updates' . $ext, 'key' => 'updates'];
     } else {
-        // Billing (Payment History is a sub-tab inside billing.php now).
-        // Settings holds admin users / integrations / account preferences.
+        // Company admin AND super_admin-on-a-tenant: identical single-company nav.
         $items[] = ['name' => 'Billing',  'icon' => 'fa-solid fa-credit-card', 'url' => $basePath . 'billing' . $ext,  'key' => 'billing',  'matches' => ['payment-history']];
         $items[] = ['name' => 'Settings', 'icon' => 'fa-solid fa-gear',        'url' => $basePath . 'settings' . $ext, 'key' => 'settings'];
     }
@@ -559,26 +536,6 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
 </head>
 <body class="bg-gray-50"<?php echo Impersonation::isActive() ? ' data-impersonating="true"' : ''; ?>>
     <?php Impersonation::renderBanner(); ?>
-    <?php
-    // Super-admin-viewing-a-tenant banner. A super_admin on a tenant subdomain
-    // is a visitor with power: the chrome shows the tenant's own logo + colors,
-    // so without this they cannot tell they are NOT that company's own admin.
-    // Skip when a formal impersonation session is already showing its banner.
-    if ($__superOnTenant && !(class_exists('Impersonation') && Impersonation::isActive())):
-        $__tenantLabel = $tBrandName ?: ($brandName ?? 'this company');
-    ?>
-    <div class="w-full bg-amber-50 border-b border-amber-200 text-amber-900 text-sm">
-        <div class="max-w-full px-4 lg:px-6 py-2 flex items-center justify-between gap-3">
-            <span class="flex items-center gap-2 min-w-0">
-                <i class="fa-solid fa-user-shield text-amber-500 flex-shrink-0"></i>
-                <span class="truncate">You are viewing <strong><?= htmlspecialchars($__tenantLabel) ?></strong> as a Super Admin. Changes here affect this company only.</span>
-            </span>
-            <a href="<?= htmlspecialchars('https://' . (defined('APP_HOST') ? APP_HOST : 'cardify.om') . '/admin/super/', ENT_QUOTES) ?>" class="flex-shrink-0 inline-flex items-center gap-1.5 font-semibold text-amber-800 hover:text-amber-900 whitespace-nowrap">
-                <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i><span class="hidden sm:inline">Exit to global console</span><span class="sm:hidden">Exit</span>
-            </a>
-        </div>
-    </div>
-    <?php endif; ?>
     <!-- Page Loader (auto-hides via CSS after 1s even without JS).
          When the tenant has a logo, we show it in a brand-coloured ring
          (matches portal-loader). Otherwise, fall back to the abstract
@@ -636,16 +593,18 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
 
                     <?php
                     // Workspace chip: the always-on answer to "which company am I
-                    // managing and who am I signed in as". Amber ring when a
-                    // super_admin is visiting a tenant (matches the banner).
+                    // managing and who am I signed in as". Inside a tenant a
+                    // super_admin is treated exactly like that company's admin,
+                    // so the chip is neutral (brand dot, plain "Admin") there;
+                    // the "Super Admin" identity only shows on the apex console.
                     $__wsName = $__isSuper && !$__onTenant
                         ? 'All companies'
                         : ($tBrandName ?: ($brandName ?: 'Workspace'));
-                    $__roleLabel = $__isSuper ? 'Super Admin' : 'Company Admin';
+                    $__roleLabel = ($__isSuper && !$__onTenant) ? 'Super Admin' : 'Admin';
                     ?>
-                    <div class="hidden md:flex items-center gap-2 mr-4 lg:mr-6 pl-3 pr-3.5 py-1.5 rounded-xl border <?= $__superOnTenant ? 'border-amber-300 bg-amber-50' : 'border-gray-200 bg-gray-50/80' ?> max-w-[16rem]"
+                    <div class="hidden md:flex items-center gap-2 mr-4 lg:mr-6 pl-3 pr-3.5 py-1.5 rounded-xl border border-gray-200 bg-gray-50/80 max-w-[16rem]"
                          title="<?= htmlspecialchars('Signed in as ' . $userName . ' · ' . $__roleLabel, ENT_QUOTES) ?>">
-                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 <?= $__superOnTenant ? 'bg-amber-400' : '' ?>" <?= $__superOnTenant ? '' : 'style="background:var(--tbrand)"' ?>></span>
+                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background:var(--tbrand)"></span>
                         <span class="min-w-0 leading-tight">
                             <span class="block text-[13px] font-semibold text-gray-900 truncate"><?= htmlspecialchars($__wsName) ?></span>
                             <span class="block text-[11px] text-gray-500 truncate"><?= htmlspecialchars($userName) ?> · <?= htmlspecialchars($__roleLabel) ?></span>
