@@ -290,6 +290,118 @@ class ERPSync {
     }
 
     /**
+     * Create an ERP QUOTE for a print order the moment BHD is engaged (on
+     * approve). No invoice, no payment, no JE. Books against the company's
+     * ERP client (Oman Housing Bank for OHB). Idempotent on the order number
+     * (the ERP returns 409 with the existing quote). Non-fatal by design so
+     * a quote failure never blocks the approval.
+     *
+     * @return array { success, message, data?:{ quoteId, quoteNumber } }
+     */
+    public static function createQuote(int $orderId): array
+    {
+        if (!self::isEnabled()) {
+            return ['success' => false, 'message' => 'ERP sync disabled'];
+        }
+        $settings = self::getSettings();
+        $db = Database::getInstance();
+        $order = $db->fetchOne("
+            SELECT po.*, c.name AS company_name, c.erp_client_name
+            FROM print_orders po
+            LEFT JOIN companies c ON po.company_id = c.id
+            WHERE po.id = :id
+        ", ['id' => $orderId]);
+
+        if (!$order) {
+            return ['success' => false, 'message' => "Order $orderId not found"];
+        }
+        // Idempotent locally: never double-quote a print order.
+        if (!empty($order['erp_quote_id'])) {
+            return ['success' => true, 'message' => 'Quote already exists', 'data' => ['quoteId' => $order['erp_quote_id']]];
+        }
+
+        $qty = (int)($order['quantity'] ?? 0);
+        $paper = ucfirst($order['paper_type'] ?? 'standard');
+        $finish = ucfirst(str_replace('_', ' ', $order['finish'] ?? 'standard'));
+        $description = "Business Cards x {$qty} ({$paper}, {$finish}), Order {$order['order_number']}";
+
+        // Company override (OHB = Oman Housing Bank S.A.O.G.) then settings then name.
+        $clientName = !empty($order['erp_client_name'])
+            ? $order['erp_client_name']
+            : (!empty($settings['erp_client_name']) ? $settings['erp_client_name'] : $order['company_name']);
+        if (empty($clientName)) {
+            return ['success' => false, 'message' => 'Cannot quote: no ERP client name configured'];
+        }
+
+        $amount = (float)$order['total'];
+        $unit = $qty > 0 ? round($amount / $qty, 3) : $amount;
+        $payload = [
+            'clientName'  => $clientName,
+            'orderNumber' => $order['order_number'],
+            'amount'      => $amount, // gross; the ERP backs out 5% VAT
+            'description' => $description,
+            'currency'    => $order['currency'] ?? 'OMR',
+            'items'       => [[
+                'itemName' => $description,
+                'quantity' => $qty ?: 1,
+                'price'    => $unit,
+            ]],
+        ];
+
+        $apiUrl = rtrim($settings['erp_api_url'], '/') . '/api/admin/cardify/create-quote';
+        $token  = $settings['erp_api_token'];
+
+        $ch = curl_init($apiUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload),
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $token,
+            ],
+            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+        $body = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlErr) {
+            error_log("ERPSync::createQuote cURL error for order $orderId: $curlErr");
+            return ['success' => false, 'message' => "ERP connection failed: $curlErr"];
+        }
+
+        $data = json_decode($body, true);
+
+        // 200 (created) and 409 (already exists) both carry quoteId/quoteNumber.
+        if ($httpCode === 200 || $httpCode === 409) {
+            $quoteId = $data['quoteId'] ?? null;
+            $quoteNumber = $data['quoteNumber'] ?? null;
+            if ($quoteId) {
+                $stmt = $db->getConnection()->prepare("UPDATE print_orders SET
+                    erp_quote_id     = :qid,
+                    quotation_number = :qnum,
+                    erp_sync_status  = 'quoted',
+                    erp_last_sync    = NOW(),
+                    erp_sync_error   = NULL
+                    WHERE id = :id");
+                $stmt->execute(['qid' => $quoteId, 'qnum' => $quoteNumber, 'id' => $orderId]);
+            }
+            return ['success' => true, 'message' => 'Quote created in ERP', 'data' => ['quoteId' => $quoteId, 'quoteNumber' => $quoteNumber]];
+        }
+
+        $errMsg = $data['message'] ?? "HTTP $httpCode";
+        error_log("ERPSync::createQuote failed for order $orderId: $errMsg");
+        $db->query(
+            "UPDATE print_orders SET erp_sync_status = 'quote_failed', erp_sync_error = :e WHERE id = :id",
+            ['e' => $errMsg, 'id' => $orderId]
+        );
+        return ['success' => false, 'message' => "ERP quote failed: $errMsg"];
+    }
+
+    /**
      * "Send to Print": create a PRODUCTION-ONLY Sale Order + Manufacturing Order
      * on the BHD-ERP production Kanban (no invoice, no payment, no JE). Billed
      * later on a consolidated invoice per client PO.

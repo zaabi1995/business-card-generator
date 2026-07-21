@@ -156,6 +156,16 @@ function approveRequestChain(array $request, array $company, string $companyId, 
                         "UPDATE card_requests SET print_order_id = :oid WHERE id = :rid",
                         ['oid' => $printOrderId, 'rid' => $request['id']]
                     );
+
+                    // Open an ERP quote against the company's ERP client
+                    // (Oman Housing Bank for OHB) the moment BHD is engaged.
+                    // Non-fatal: a quote failure must not undo the approval.
+                    try {
+                        require_once INCLUDES_DIR . '/ERPSync.php';
+                        ERPSync::createQuote((int)$printOrderId);
+                    } catch (Throwable $e) {
+                        error_log('approveRequestChain ERP quote error: ' . $e->getMessage());
+                    }
                 } else {
                     error_log('approveRequestChain: print order not placed: ' . ($order['error'] ?? 'unknown'));
                 }
