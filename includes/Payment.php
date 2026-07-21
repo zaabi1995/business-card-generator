@@ -658,7 +658,7 @@ class Payment {
                     error_log("ERPSync (online) failed for order {$orderId}: " . ($sync['message'] ?? 'unknown'));
                 }
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             error_log("ERPSync (online) exception for order {$orderId}: " . $e->getMessage());
         }
 

@@ -496,6 +496,56 @@ class ERPSync {
     }
 
     /**
+     * Self-heal: re-attempt any print order stuck at erp_sync_status
+     * 'quote_failed' or 'invoice_failed' (transient ERP outage, expired token,
+     * timeout). createQuote / convertQuoteToInvoice are idempotent, so this is
+     * safe to run on a cron. Returns counts; the caller alerts on persistent
+     * failures.
+     *
+     * @return array { success, data:{ quotes:int, invoices:int, still_failed:int } }
+     */
+    public static function backfillFailedSyncs(int $limit = 50): array
+    {
+        if (!self::isEnabled()) {
+            return ['success' => false, 'message' => 'ERP sync disabled'];
+        }
+        $db = Database::getInstance();
+        $limit = max(1, min(200, $limit));
+        $out = ['quotes' => 0, 'invoices' => 0, 'still_failed' => 0];
+
+        // 1) Orders that never got an ERP quote -> retry createQuote.
+        $qf = $db->fetchAll(
+            "SELECT id FROM print_orders
+             WHERE erp_sync_status = 'quote_failed' AND (erp_quote_id IS NULL OR erp_quote_id = '')
+             ORDER BY updated_at DESC LIMIT " . (int)$limit
+        );
+        foreach ($qf as $o) {
+            $r = self::createQuote((int)$o['id']);
+            if (!empty($r['success'])) { $out['quotes']++; } else { $out['still_failed']++; }
+        }
+
+        // 2) Orders whose quote never converted -> retry with the correct
+        // trigger (paid orders take the payment path, others the PO path).
+        $inf = $db->fetchAll(
+            "SELECT id, payment_status FROM print_orders
+             WHERE erp_sync_status = 'invoice_failed'
+               AND (erp_invoice_id IS NULL OR erp_invoice_id = '')
+               AND erp_quote_id IS NOT NULL AND erp_quote_id != ''
+             ORDER BY updated_at DESC LIMIT " . (int)$limit
+        );
+        foreach ($inf as $o) {
+            $trigger = (($o['payment_status'] ?? '') === 'paid') ? 'payment' : 'po';
+            $r = self::convertQuoteToInvoice((int)$o['id'], $trigger);
+            if (!empty($r['success'])) { $out['invoices']++; } else { $out['still_failed']++; }
+        }
+
+        if ($out['still_failed'] > 0) {
+            error_log("ERPSync backfill: {$out['still_failed']} order(s) still failing ERP sync");
+        }
+        return ['success' => true, 'data' => $out];
+    }
+
+    /**
      * "Send to Print": create a PRODUCTION-ONLY Sale Order + Manufacturing Order
      * on the BHD-ERP production Kanban (no invoice, no payment, no JE). Billed
      * later on a consolidated invoice per client PO.
