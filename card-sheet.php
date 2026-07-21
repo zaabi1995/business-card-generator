@@ -87,10 +87,21 @@ try {
     if (empty($rendered['success']) || empty($rendered['path']) || !is_file($rendered['path'])) {
         $rendered = CardPDFRenderer::render((string) $employee['id'], 'print');
     }
+    // Raster fallback: templates imported from an uploaded image (has_vector_
+    // source=0, e.g. OHB) can't produce a vector PDF, so build a card-sized
+    // 2-page PDF from the saved Fabric render PNGs. The imposition step tiles
+    // whatever single-card PDF it's given, so a raster card images the same.
+    $rasterTmp = '';
+    if (empty($rendered['success']) || empty($rendered['path']) || !is_file($rendered['path'])) {
+        $rasterTmp = cardsheet_build_raster_card_pdf($employee, $company);
+        if ($rasterTmp !== '') {
+            $rendered = ['success' => true, 'path' => $rasterTmp];
+        }
+    }
     if (empty($rendered['success']) || empty($rendered['path']) || !is_file($rendered['path'])) {
         http_response_code(503);
         header('Content-Type: text/plain; charset=utf-8');
-        echo 'Card PDF unavailable (vector source missing)';
+        echo 'Card PDF unavailable (no card generated yet)';
         exit;
     }
 
@@ -144,6 +155,7 @@ try {
         if (is_file($outPath)) @unlink($outPath);
     }
     if ($tmpCmyk !== '' && is_file($tmpCmyk)) @unlink($tmpCmyk);
+    if ($rasterTmp !== '' && is_file($rasterTmp)) @unlink($rasterTmp); // consumed by imposition
     if ($rc !== 0 || !is_file($outPath) || filesize($outPath) < 1024) {
         error_log('card-sheet imposition failed rc=' . $rc . ' out=' . implode("\n", $out));
         http_response_code(500);
@@ -171,4 +183,83 @@ try {
     header('Content-Type: text/plain; charset=utf-8');
     echo 'Server error';
     exit;
+}
+
+/**
+ * Raster fallback: build a card-sized 2-page PDF (front, back) from the saved
+ * Fabric render PNGs for a template that has no vector source. Returns the tmp
+ * PDF path, or '' on failure. The imposition step tiles this exactly like the
+ * vector card PDF.
+ */
+function cardsheet_build_raster_card_pdf(array $employee, array $company): string
+{
+    try {
+        $db  = Database::getInstance();
+        $cid = (string) ($company['id'] ?? '');
+        $eid = (string) ($employee['id'] ?? '');
+        if ($cid === '' || $eid === '') return '';
+
+        // Latest saved card PNGs for this employee.
+        $row = $db->fetchOne(
+            "SELECT front_file_path, back_file_path FROM generated_cards
+             WHERE employee_id = :e AND front_file_path IS NOT NULL AND front_file_path <> ''
+             ORDER BY generated_at DESC LIMIT 1",
+            ['e' => $eid]
+        );
+        if (!$row || empty($row['front_file_path'])) return '';
+
+        $cardsDir = function_exists('getCompanyCardsDir') ? getCompanyCardsDir($cid) : (BASE_DIR . '/uploads/companies/' . $cid . '/cards');
+        $front = $cardsDir . '/' . basename((string) $row['front_file_path']);
+        $back  = !empty($row['back_file_path']) ? $cardsDir . '/' . basename((string) $row['back_file_path']) : '';
+        if (!is_file($front)) return '';
+        if ($back !== '' && !is_file($back)) $back = '';
+
+        // Physical card size from the template settings (mm); default 85x55.
+        [$wMm, $hMm] = cardsheet_card_mm($db, $cid);
+
+        $outPath = tempnam(sys_get_temp_dir(), 'rastercard_') . '.pdf';
+        $py = trim((string) @shell_exec('command -v python3 2>/dev/null')) ?: 'python3';
+        $cmd = escapeshellarg($py) . ' ' . escapeshellarg(BASE_DIR . '/scripts/raster-card-pdf.py')
+             . ' --front ' . escapeshellarg($front)
+             . ($back !== '' ? ' --back ' . escapeshellarg($back) : '')
+             . ' --width-mm ' . escapeshellarg((string) $wMm)
+             . ' --height-mm ' . escapeshellarg((string) $hMm)
+             . ' --out ' . escapeshellarg($outPath)
+             . ' 2>&1';
+        $out = []; $rc = 0;
+        exec($cmd, $out, $rc);
+        if ($rc !== 0 || !is_file($outPath) || filesize($outPath) < 512) {
+            error_log('cardsheet raster fallback failed rc=' . $rc . ' out=' . implode("\n", $out));
+            if (is_file($outPath)) @unlink($outPath);
+            return '';
+        }
+        return $outPath;
+    } catch (Throwable $e) {
+        error_log('cardsheet raster fallback error: ' . $e->getMessage());
+        return '';
+    }
+}
+
+/** Card trim size in mm from the front template's settings_json (default 85x55). */
+function cardsheet_card_mm(Database $db, string $companyId): array
+{
+    $wMm = 85.0; $hMm = 55.0;
+    try {
+        $tpl = $db->fetchOne(
+            "SELECT settings_json FROM templates
+             WHERE company_id = :c AND deleted_at IS NULL AND side = 'front'
+             ORDER BY has_vector_source DESC, created_at DESC LIMIT 1",
+            ['c' => $companyId]
+        );
+        $s = $tpl ? (json_decode((string) ($tpl['settings_json'] ?? ''), true) ?: []) : [];
+        $w = (float) ($s['customWidth'] ?? 0);
+        $h = (float) ($s['customHeight'] ?? 0);
+        $unit = strtolower((string) ($s['customUnit'] ?? 'mm'));
+        if ($w > 0 && $h > 0) {
+            $toMm = $unit === 'pt' ? (25.4 / 72.0) : ($unit === 'in' ? 25.4 : 1.0);
+            $wMm = $w * $toMm;
+            $hMm = $h * $toMm;
+        }
+    } catch (Throwable $e) { /* defaults */ }
+    return [round($wMm, 3), round($hMm, 3)];
 }
