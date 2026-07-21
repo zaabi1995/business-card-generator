@@ -6,7 +6,7 @@
  * failures persist, so a silent ERP-sync breakage surfaces instead of hiding.
  *
  * Suggested crontab (every 15 min):
- *   */15 * * * * /www/server/php/83/bin/php /www/wwwroot/cardify.om/scripts/erp-sync-backfill.php >> /var/log/cardify-erp-backfill.log 2>&1
+ *   0,15,30,45 * * * * /www/server/php/83/bin/php /www/wwwroot/cardify.om/scripts/erp-sync-backfill.php >> /var/log/cardify-erp-backfill.log 2>&1
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/ERPSync.php';
