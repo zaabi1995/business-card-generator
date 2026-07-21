@@ -216,6 +216,18 @@ class PrintShopBilling {
             ['path' => $relativePath, 'num' => $poNumber, 'id' => $orderId]
         );
 
+        // Attaching a PO raises the invoice + sales order + delivery note from
+        // the approve-time ERP quote (on credit, AR open). Non-fatal.
+        try {
+            require_once INCLUDES_DIR . '/ERPSync.php';
+            $ord = $db->fetchOne("SELECT erp_quote_id FROM print_orders WHERE id = :id", ['id' => $orderId]);
+            if (!empty($ord['erp_quote_id'])) {
+                ERPSync::convertQuoteToInvoice((int)$orderId, 'po');
+            }
+        } catch (Throwable $e) {
+            error_log('uploadPO ERP convert error for order ' . $orderId . ': ' . $e->getMessage());
+        }
+
         return ['po_file_path' => $relativePath, 'po_number' => $poNumber];
     }
 

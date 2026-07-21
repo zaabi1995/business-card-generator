@@ -402,6 +402,100 @@ class ERPSync {
     }
 
     /**
+     * Convert the print order's existing ERP quote into an Invoice + Sales
+     * Order + Delivery Note. trigger 'po' invoices on credit (AR stays open,
+     * margin-gated); trigger 'payment' raises the documents for an online-paid
+     * order. Idempotent (the ERP returns 409 with the existing ids). Non-fatal.
+     *
+     * @return array { success, message, data?:{ invoiceId, invoiceNumber, salesOrderId, deliveryNoteId } }
+     */
+    public static function convertQuoteToInvoice(int $orderId, string $trigger = 'po'): array
+    {
+        if (!self::isEnabled()) {
+            return ['success' => false, 'message' => 'ERP sync disabled'];
+        }
+        $settings = self::getSettings();
+        $db = Database::getInstance();
+        $order = $db->fetchOne(
+            "SELECT id, order_number, erp_quote_id, erp_invoice_id FROM print_orders WHERE id = :id",
+            ['id' => $orderId]
+        );
+        if (!$order) {
+            return ['success' => false, 'message' => "Order $orderId not found"];
+        }
+        if (empty($order['erp_quote_id'])) {
+            return ['success' => false, 'message' => 'No ERP quote to convert'];
+        }
+        // Idempotent locally: already invoiced.
+        if (!empty($order['erp_invoice_id'])) {
+            return ['success' => true, 'message' => 'Already invoiced', 'data' => ['invoiceId' => $order['erp_invoice_id']]];
+        }
+
+        $payload = [
+            'orderNumber' => $order['order_number'],
+            'trigger'     => $trigger === 'payment' ? 'payment' : 'po',
+        ];
+
+        $apiUrl = rtrim($settings['erp_api_url'], '/') . '/api/admin/cardify/convert-quote';
+        $token  = $settings['erp_api_token'];
+
+        $ch = curl_init($apiUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload),
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $token,
+            ],
+            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+        $body = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlErr) {
+            error_log("ERPSync::convertQuoteToInvoice cURL error for order $orderId: $curlErr");
+            return ['success' => false, 'message' => "ERP connection failed: $curlErr"];
+        }
+
+        $data = json_decode($body, true);
+
+        if ($httpCode === 200 || $httpCode === 409) {
+            $stmt = $db->getConnection()->prepare("UPDATE print_orders SET
+                erp_invoice_id            = :inv_id,
+                erp_invoice_number        = :inv_num,
+                invoice_number            = :inv_num2,
+                erp_order_id              = :so_id,
+                delivery_note_external_id = :dn_id,
+                invoice_issued_at         = NOW(),
+                erp_sync_status           = 'invoiced',
+                erp_last_sync             = NOW(),
+                erp_sync_error            = NULL
+                WHERE id = :id");
+            $stmt->execute([
+                'inv_id'  => $data['invoiceId'] ?? null,
+                'inv_num' => $data['invoiceNumber'] ?? null,
+                'inv_num2' => $data['invoiceNumber'] ?? null,
+                'so_id'   => $data['salesOrderId'] ?? null,
+                'dn_id'   => $data['deliveryNoteId'] ?? null,
+                'id'      => $orderId,
+            ]);
+            return ['success' => true, 'message' => 'Quote converted in ERP', 'data' => $data];
+        }
+
+        $errMsg = $data['message'] ?? "HTTP $httpCode";
+        error_log("ERPSync::convertQuoteToInvoice failed for order $orderId: $errMsg");
+        $db->query(
+            "UPDATE print_orders SET erp_sync_status = 'invoice_failed', erp_sync_error = :e WHERE id = :id",
+            ['e' => $errMsg, 'id' => $orderId]
+        );
+        return ['success' => false, 'message' => "ERP convert failed: $errMsg"];
+    }
+
+    /**
      * "Send to Print": create a PRODUCTION-ONLY Sale Order + Manufacturing Order
      * on the BHD-ERP production Kanban (no invoice, no payment, no JE). Billed
      * later on a consolidated invoice per client PO.

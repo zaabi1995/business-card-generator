@@ -641,7 +641,19 @@ class Payment {
             require_once INCLUDES_DIR . '/ERPSync.php';
             if (ERPSync::isEnabled()) {
                 $ref  = $payment['paymob_transaction_id'] ?? $payment['id'] ?? '';
-                $sync = ERPSync::recordPayment((int)$orderId, 'online', (string)$ref, 'Paid online via Paymob', '');
+                // If the order already carries an approve-time ERP quote,
+                // convert THAT quote to invoice + sales order + delivery note.
+                // Do not call recordPayment here: it is idempotent on the
+                // Cardify:{orderNumber} marker the quote already wrote, so it
+                // would 409 and skip the invoice (or mint a second quote).
+                // Closing AR / the payment JE for this converted-invoice path
+                // is the ERP record-payment-reuse follow-up.
+                $ord = $db->fetchOne("SELECT erp_quote_id FROM print_orders WHERE id = :id", ['id' => $orderId]);
+                if (!empty($ord['erp_quote_id'])) {
+                    $sync = ERPSync::convertQuoteToInvoice((int)$orderId, 'payment');
+                } else {
+                    $sync = ERPSync::recordPayment((int)$orderId, 'online', (string)$ref, 'Paid online via Paymob', '');
+                }
                 if (empty($sync['success'])) {
                     error_log("ERPSync (online) failed for order {$orderId}: " . ($sync['message'] ?? 'unknown'));
                 }
