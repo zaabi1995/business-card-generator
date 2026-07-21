@@ -8,6 +8,7 @@ requireAdmin();
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/admin-layout.php';
 require_once INCLUDES_DIR . '/Mailer.php';
+require_once INCLUDES_DIR . '/RequestApproval.php';
 
 $db = Database::getInstance();
 $companyId = getCurrentCompanyId();
@@ -46,104 +47,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($request) {
             switch ($action) {
                 case 'approve':
-                    // Get request type (new, update, reprint)
-                    $requestType = $request['request_type'] ?? 'new';
-                    $quantityRequested = max(1, (int)($request['quantity_requested'] ?? 1));
-                    
-                    // Check if employee already exists with this email
-                    $existingEmployee = findEmployeeByEmail($request['email'], $companyId);
-                    
-                    $employeeData = [
-                        'email' => $request['email'],
-                        'name_en' => $request['name_en'],
-                        'name_ar' => $request['name_ar'],
-                        'position_en' => $request['position_en'],
-                        'position_ar' => $request['position_ar'],
-                        'phone' => $request['phone'],
-                        'phone_ar' => $request['phone_ar'],
-                        'mobile' => $request['mobile'],
-                        'mobile_ar' => $request['mobile_ar'],
-                        'website' => $request['website'],
-                        'website_ar' => $request['website_ar'],
-                        'address_en' => $request['address_en'],
-                        'address_2_en' => $request['address_2_en'] ?? '',
-                        'address_ar' => $request['address_ar'],
-                        'address_2_ar' => $request['address_2_ar'] ?? '',
-                        'company_en' => $request['company_en'] ?: ($company['name_en'] ?? $companyName),
-                        'company_ar' => $request['company_ar'] ?: ($company['name_ar'] ?? ''),
-                        'department_id' => $request['department_id'],
-                        'photo' => $request['photo'],
-                        'status' => 'active'
-                    ];
-                    
-                    $employeeId = null;
-                    $result = ['success' => false];
-                    $statusMsg = '';
-                    
-                    if ($existingEmployee) {
-                        // Employee exists
-                        $employeeId = $existingEmployee['id'];
-                        
-                        if ($requestType === 'reprint') {
-                            // Reprint request - don't update employee info, just generate cards
-                            $result = ['success' => true, 'id' => $employeeId];
-                            $statusMsg = 'Reprint approved';
-                        } else {
-                            // Update request - update employee info
-                            try {
-                                $updateData = array_filter($employeeData, fn($v) => !empty($v));
-                                unset($updateData['email']); // Don't update email
-                                
-                                if (!empty($updateData)) {
-                                    $db->update('employees', $updateData, 'id = :id', ['id' => $employeeId]);
-                                }
-                                $result = ['success' => true, 'id' => $employeeId];
-                                $statusMsg = 'Employee updated';
-                            } catch (Exception $e) {
-                                $result = ['success' => false, 'error' => $e->getMessage()];
-                            }
-                        }
+                    $approval = approveRequestChain($request, $company, $companyId, $_SESSION['user_id'] ?? null, false);
+
+                    if ($approval['success'] && $approval['employee_id']) {
+                        $message = "Request approved! {$approval['status_msg']}. Redirecting to generate cards...";
+                        $messageType = 'success';
+
+                        // Redirect to batch generate with this employee pre-selected
+                        $redirectBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() . 'admin/';
+                        header('Location: ' . $redirectBase . 'batch_generate?employee_id=' . urlencode($approval['employee_id']) . '&auto_generate=1&send_email=1');
+                        exit;
                     } else {
-                        // Create new employee
-                        $result = addEmployee($employeeData, $companyId);
-                        if ($result['success']) {
-                            $employeeId = $result['id'];
-                            $statusMsg = 'Employee created';
-                        }
-                    }
-                    
-                    if ($result['success'] && $employeeId) {
-                        try {
-                            // Update request status
-                            $db->query(
-                                "UPDATE card_requests SET status = 'approved', employee_id = :eid, reviewed_at = NOW(), reviewed_by = :uid WHERE id = :id",
-                                ['id' => $requestId, 'eid' => $employeeId, 'uid' => $_SESSION['user_id'] ?? null]
-                            );
-                            
-                            // Store approval info for card generation
-                            $_SESSION['pending_card_generation'] = [
-                                'request_id' => $requestId,
-                                'employee_id' => $employeeId,
-                                'email' => $request['email'],
-                                'name' => $request['name_en'] ?: $request['name_ar'],
-                                'request_type' => $requestType,
-                                'quantity' => $quantityRequested
-                            ];
-                            
-                            $message = "Request approved! {$statusMsg}. Redirecting to generate cards...";
-                            $messageType = 'success';
-                            
-                            // Redirect to batch generate with this employee pre-selected
-                            $redirectBase = defined('COMPANY_ADMIN_BASE') ? COMPANY_ADMIN_BASE : getBasePath() . 'admin/';
-                            header('Location: ' . $redirectBase . 'batch_generate?employee_id=' . urlencode($employeeId) . '&auto_generate=1&send_email=1');
-                            exit;
-                        } catch (Exception $e) {
-                            error_log("Error approving request: " . $e->getMessage());
-                            $message = 'Error updating request status.';
-                            $messageType = 'error';
-                        }
-                    } else {
-                        $message = 'Failed to process employee: ' . ($result['error'] ?? 'Unknown error');
+                        $message = 'Failed to process employee: ' . ($approval['error'] ?? 'Unknown error');
                         $messageType = 'error';
                     }
                     break;
