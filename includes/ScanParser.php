@@ -1,14 +1,14 @@
 <?php
 /**
  * ScanParser: refines a business card photo (plus optional on-device draft)
- * into structured contact JSON via the Anthropic Messages API.
+ * into structured contact JSON via OpenRouter (Claude Haiku 4.5).
  */
 require_once __DIR__ . '/Database.php';
 
 class ScanParser {
 
-    const MODEL = 'claude-haiku-4-5-20251001';
-    const API_URL = 'https://api.anthropic.com/v1/messages';
+    const MODEL = 'anthropic/claude-haiku-4.5';
+    const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
     // Device-first parsing (product decision 13 Jul 2026): the server never
     // calls an AI API unless this kill-switch is explicitly turned on. No row
@@ -102,11 +102,10 @@ class ScanParser {
             'messages' => [[
                 'role' => 'user',
                 'content' => [
-                    ['type' => 'image', 'source' => [
-                        'type' => 'base64', 'media_type' => $mime,
-                        'data' => base64_encode(file_get_contents($imagePath)),
-                    ]],
                     ['type' => 'text', 'text' => $prompt],
+                    ['type' => 'image_url', 'image_url' => [
+                        'url' => 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($imagePath)),
+                    ]],
                 ],
             ]],
         ]);
@@ -119,8 +118,9 @@ class ScanParser {
             CURLOPT_TIMEOUT => 45,
             CURLOPT_HTTPHEADER => [
                 'Content-Type: application/json',
-                'x-api-key: ' . $apiKey,
-                'anthropic-version: 2023-06-01',
+                'Authorization: Bearer ' . $apiKey,
+                'HTTP-Referer: https://cardify.om',
+                'X-Title: Cardify Scan',
             ],
         ]);
         $resp = curl_exec($ch);
@@ -132,7 +132,7 @@ class ScanParser {
             return ['success' => false, 'parsed' => null, 'error' => 'api_error_' . $code];
         }
         $data = json_decode($resp, true);
-        $text = $data['content'][0]['text'] ?? '';
+        $text = $data['choices'][0]['message']['content'] ?? '';
         $json = self::extractJson($text);
         if (!$json) {
             error_log('[ScanParser] unparseable model output: ' . substr($text, 0, 300));
@@ -142,8 +142,8 @@ class ScanParser {
     }
 
     private static function getApiKey(): ?string {
-        if (defined('ANTHROPIC_API_KEY') && ANTHROPIC_API_KEY !== '') {
-            return ANTHROPIC_API_KEY;
+        if (defined('OPENROUTER_API_KEY') && OPENROUTER_API_KEY !== '') {
+            return OPENROUTER_API_KEY;
         }
         return null;
     }
