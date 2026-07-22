@@ -153,15 +153,13 @@ interface Panel {
       order.innerHTML =
         '<div><b id="issueOrderQty">' + esc(DEFAULT_QTY) + '</b> <span class="u">' +
         esc(I18.lot_unit) + '</span></div><div class="lot">' + esc(I18.lot_note) + '</div>';
-      buckets[key].forEach((b) => fields.appendChild(b));
+      // Review, then submit: every confirm block except the submit button, then
+      // the summary + lot recap, then the submit button last.
       const submit = document.getElementById('submitSection');
-      if (submit && submit.parentNode === fields) {
-        fields.insertBefore(summary, submit);
-        fields.insertBefore(order, submit);
-      } else {
-        fields.appendChild(summary);
-        fields.appendChild(order);
-      }
+      buckets[key].forEach((b) => { if (b !== submit) fields.appendChild(b); });
+      fields.appendChild(summary);
+      fields.appendChild(order);
+      if (submit) fields.appendChild(submit);
     } else {
       buckets[key].forEach((b) => fields.appendChild(b));
     }
@@ -179,6 +177,12 @@ interface Panel {
     panels.push({ key, panel, err });
   });
   form.appendChild(stepsWrap);
+
+  // Put the nav (Back / Continue) after the step panels so the primary action
+  // sits below the current question, not above it. On mobile it stays a sticky
+  // bottom bar regardless, so this only reorders the desktop flow.
+  const navBar = issuance.querySelector('.issue-nav');
+  if (navBar) form.appendChild(navBar);
 
   let step = 0;
   let reached = 0;
