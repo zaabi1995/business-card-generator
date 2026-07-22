@@ -438,7 +438,10 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         // shared card lost its preview. Absolutize against the current host.
         $__ogScheme = ((($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')) ? 'https' : 'http';
         $__ogHost   = $_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') ? APP_HOST : 'cardify.om');
-        $__ogImage  = $frontImage ? ((strpos($frontImage, 'http') === 0) ? $frontImage : ($__ogScheme . '://' . $__ogHost . '/' . ltrim($frontImage, '/'))) : '';
+        // Prefer the printed card front; for a photo-led card with no card image
+        // fall back to the profile photo so the WhatsApp/link preview still shows.
+        $__ogSrc    = $frontImage ?: ($photoUrl ?? '');
+        $__ogImage  = $__ogSrc ? ((strpos($__ogSrc, 'http') === 0) ? $__ogSrc : ($__ogScheme . '://' . $__ogHost . '/' . ltrim($__ogSrc, '/'))) : '';
         // Canonical = the pretty bare share URL (e.g. /sami.alismaili), never
         // the /card/<id> form, so shares + previews normalize to one URL.
         $__shareUrl = (class_exists('CardifyConvention') && !empty($company['slug']))
