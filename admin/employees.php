@@ -1600,6 +1600,12 @@ adminHeader(t('employees.page_title'), 'employees');
                         <input type="hidden" name="phone_ar" :value="toArabicNumerals(formData.phone || '')">
                     </div>
                     <?php endif; ?>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Fax</label>
+                        <input type="text" name="fax" x-model="formData.fax" placeholder="+968 2XXX XXXX"
+                               class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                    </div>
                 </div>
 
                 <?php
@@ -2455,7 +2461,7 @@ function employeeManager() {
                 id: '', email: '', department_id: '', name_en: '', name_ar: '',
                 position_en: '', position_ar: '', phone: '', phone_ar: '', mobile: '', mobile_ar: '',
                 company_en: '', company_ar: '', website: '', website_ar: '', address_en: '', address_ar: '',
-                qr_redirect_url: '', photo: '', card_page_layout: 'auto',
+                qr_redirect_url: '', photo: '', card_page_layout: 'auto', fax: '',
                 field_overrides: {}
             };
             this.qrRedirectEnabled = false;
@@ -2472,7 +2478,7 @@ function employeeManager() {
                 id: '', email: prefill.email || '', department_id: '', name_en: prefill.name_en || '',
                 name_ar: '', position_en: '', position_ar: '', phone: '', phone_ar: '', mobile: '', mobile_ar: '',
                 company_en: '', company_ar: '', website: '', website_ar: '', address_en: '', address_ar: '',
-                qr_redirect_url: '', photo: '', card_page_layout: 'auto',
+                qr_redirect_url: '', photo: '', card_page_layout: 'auto', fax: '',
                 field_overrides: {}
             };
             this.qrRedirectEnabled = false;

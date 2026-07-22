@@ -303,6 +303,7 @@ try {
         $phone = '';
     }
     $email = $employee['email'] ?? '';
+    $fax = $employee['fax'] ?? '';
     $website = $company['website'] ?? '';
     $address = $company['address'] ?? '';
 
@@ -1305,6 +1306,13 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <a href="<?php echo htmlspecialchars($cardClickUrl('click_mobile', 'tel:' . $mobile)); ?>" class="contact-row">
                 <span class="contact-icon"><i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i></span>
                 <span class="contact-value" dir="ltr"><?php echo htmlspecialchars($mobile); ?></span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($fax): ?>
+            <a href="<?php echo htmlspecialchars($cardClickUrl('click_fax', 'tel:' . preg_replace('/[^0-9+]/', '', $fax))); ?>" class="contact-row">
+                <span class="contact-icon"><i class="fa-solid fa-fax" aria-hidden="true"></i></span>
+                <span class="contact-value" dir="ltr"><?php echo htmlspecialchars($fax); ?></span>
             </a>
             <?php endif; ?>
 
