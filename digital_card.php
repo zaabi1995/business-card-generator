@@ -742,6 +742,13 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        /* Addresses are long: let them wrap in full instead of truncating. */
+        .contact-value.wrap {
+            overflow: visible;
+            text-overflow: clip;
+            white-space: normal;
+            line-height: 1.35;
+        }
 
         /* Social Links — branded pills, mobile + desktop friendly */
         .social-links {
@@ -1346,7 +1353,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <?php if ($address): ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('click_map', 'https://maps.google.com/?q=' . urlencode($address))); ?>" class="contact-row" target="_blank" rel="noopener">
                 <span class="contact-icon"><i class="fa-solid fa-location-dot" aria-hidden="true"></i></span>
-                <span class="contact-value"><?php echo htmlspecialchars($address); ?></span>
+                <span class="contact-value wrap"><?php echo htmlspecialchars($address); ?></span>
             </a>
             <?php endif; ?>
         </div>
