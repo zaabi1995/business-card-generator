@@ -1382,7 +1382,7 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <?php if ($email): ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('save_contact', $vcfUrl)); ?>" class="bottom-btn btn-save" download><?= htmlspecialchars(t('digitalcard.btn_save_contact')) ?></a>
             <?php endif; ?>
-            <?php if (!$isPendingPreview): // printed-card PDF only exists after approval ?>
+            <?php if (!$isPendingPreview && $frontImage): // PDF is the printed-card design; hide when there is no card (e.g. photo-led vCard) ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('download_pdf', $pdfUrl)); ?>" class="bottom-btn btn-pdf" download><?= htmlspecialchars(t('digitalcard.btn_download_pdf')) ?></a>
             <?php endif; ?>
             <button class="bottom-btn btn-share" onclick="shareCard()"><?= htmlspecialchars(t('digitalcard.btn_share')) ?></button>
