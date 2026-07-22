@@ -303,9 +303,18 @@ try {
         $phone = '';
     }
     $email = $employee['email'] ?? '';
-    $fax = $employee['fax'] ?? '';
-    $website = $company['website'] ?? '';
-    $address = $company['address'] ?? '';
+    // Fax / website / address come from the EMPLOYEE first. `companies` has no
+    // bare `address` / `website` column (only default_address_en / default_website
+    // / default_fax), so the old $company['address'] / $company['website'] reads
+    // were always empty. Fall back to the company-wide default when the employee
+    // has none. Address is locale-aware.
+    $fax = trim((string)($employee['fax'] ?? ''));
+    if ($fax === '') $fax = trim((string)($company['default_fax'] ?? ''));
+    $website = trim((string)($employee['website'] ?? ''));
+    if ($website === '') $website = trim((string)($company['default_website'] ?? ''));
+    $address = trim((string)($isRtl ? ($employee['address_ar'] ?? '') : ($employee['address_en'] ?? '')));
+    if ($address === '') $address = trim((string)($employee['address_en'] ?? ''));
+    if ($address === '') $address = trim((string)($company['default_address_en'] ?? ''));
 
     // Phone for WhatsApp (strip + and non-digits)
     $waPhone = preg_replace('/[^0-9]/', '', $mobile ?: $phone);
