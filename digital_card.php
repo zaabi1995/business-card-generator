@@ -284,6 +284,26 @@ try {
     $locale = CardSections::resolveLocale();
     $isRtl = CardSections::isRtl($locale);
 
+    // ---- Optional per-tenant THIRD language (opt-in) -------------------
+    // A company can add ONE extra card language on top of EN/AR. Field
+    // values live in generic *_l3 columns (CardSections reads them via
+    // locale 'l3', EN fallback); chrome uses the real ISO code's lang files.
+    // Zero effect on any tenant that has not configured a third language.
+    $thirdCode  = trim((string)($company['ecard_third_lang'] ?? ''));
+    $thirdLabel = trim((string)($company['ecard_third_lang_label'] ?? ''));
+    $thirdRtl   = (int)($company['ecard_third_lang_rtl'] ?? 0) === 1;
+    $isThird = false;
+    if ($thirdCode !== '' && $thirdLabel !== '') {
+        $want = $_GET['lang'] ?? ($_COOKIE['cardify_lang_v3'] ?? '');
+        if ($want === $thirdCode) {
+            $isThird = true;
+            $locale  = 'l3';        // CardSections reads *_l3 columns
+            $isRtl   = $thirdRtl;
+            if (class_exists('I18n')) { I18n::allow($thirdCode, $thirdRtl); I18n::setLocale($thirdCode); }
+        }
+    }
+    $htmlLang = $isThird ? $thirdCode : ($isRtl ? 'ar' : 'en');
+
     // Employee contact data, localized with EN fallback
     $name = CardSections::tColumn($employee, 'name', $locale);
     if (trim((string)$name) === '') $name = $employee['name'] ?? 'Employee';
@@ -292,6 +312,8 @@ try {
     $position = CardSections::tColumn($employee, 'position', $locale);
     if (trim((string)$position) === '') $position = $employee['position'] ?? $employee['job_title'] ?? '';
     $companyName = CardSections::tColumn($company, 'name', $locale);
+    // Company name has no *_l3 column; use the employee's company_l3 for the 3rd language.
+    if ($isThird && !empty($employee['company_l3'])) $companyName = $employee['company_l3'];
     if (trim((string)$companyName) === '') $companyName = $company['name'] ?? '';
     $phone = $employee['phone'] ?? '';
     $mobile = $employee['mobile'] ?? '';
@@ -310,10 +332,10 @@ try {
     // has none. Address is locale-aware.
     $fax = trim((string)($employee['fax'] ?? ''));
     if ($fax === '') $fax = trim((string)($company['default_fax'] ?? ''));
-    $website = trim((string)($employee['website'] ?? ''));
+    // Locale-aware (en / ar / l3 third language), all with an EN fallback.
+    $website = trim((string) CardSections::tColumn($employee, 'website', $locale));
     if ($website === '') $website = trim((string)($company['default_website'] ?? ''));
-    $address = trim((string)($isRtl ? ($employee['address_ar'] ?? '') : ($employee['address_en'] ?? '')));
-    if ($address === '') $address = trim((string)($employee['address_en'] ?? ''));
+    $address = trim((string) CardSections::tColumn($employee, 'address', $locale));
     if ($address === '') $address = trim((string)($company['default_address_en'] ?? ''));
 
     // Phone for WhatsApp (strip + and non-digits)
@@ -421,9 +443,12 @@ unset($__qs['lang'], $__qs['company_slug'], $__qs['employee_id']);
 $__qBase = $__qs ? ('?' . http_build_query($__qs) . '&') : '?';
 $switchEnUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=en', ENT_QUOTES);
 $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTES);
+$switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
+    ? htmlspecialchars($__currentPath . $__qBase . 'lang=' . rawurlencode($thirdCode), ENT_QUOTES)
+    : '';
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo $isRtl ? 'ar' : 'en'; ?>"<?php echo $isRtl ? ' dir="rtl"' : ''; ?>>
+<html lang="<?php echo htmlspecialchars($htmlLang, ENT_QUOTES); ?>"<?php echo $isRtl ? ' dir="rtl"' : ''; ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -1198,10 +1223,15 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <svg class="theme-icon theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
         </button>
         <?php endif; ?>
-        <?php if ($ecardBilingual): ?>
+        <?php if ($ecardBilingual || $switchThirdUrl !== ''): ?>
         <nav class="lang-switcher" aria-label="Language">
-            <a href="<?php echo $switchEnUrl; ?>" class="<?php echo $locale === 'en' ? 'active' : ''; ?>" hreflang="en">EN</a>
-            <a href="<?php echo $switchArUrl; ?>" class="<?php echo $locale === 'ar' ? 'active' : ''; ?>" hreflang="ar">عربي</a>
+            <a href="<?php echo $switchEnUrl; ?>" class="<?php echo (!$isThird && $locale === 'en') ? 'active' : ''; ?>" hreflang="en">EN</a>
+            <?php if ($ecardBilingual): ?>
+            <a href="<?php echo $switchArUrl; ?>" class="<?php echo (!$isThird && $locale === 'ar') ? 'active' : ''; ?>" hreflang="ar">عربي</a>
+            <?php endif; ?>
+            <?php if ($switchThirdUrl !== ''): ?>
+            <a href="<?php echo $switchThirdUrl; ?>" class="<?php echo $isThird ? 'active' : ''; ?>" hreflang="<?php echo htmlspecialchars($thirdCode, ENT_QUOTES); ?>"><?php echo htmlspecialchars($thirdLabel); ?></a>
+            <?php endif; ?>
         </nav>
         <?php endif; ?>
     </div>
