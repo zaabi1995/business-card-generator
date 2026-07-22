@@ -1474,7 +1474,10 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     </div>
                     <?php endif; ?>
 
-                    <!-- Sub-title / second position line (English) -->
+                    <!-- Sub-title / second position line (English). Gated by the
+                         template like every other field: only shown when the design
+                         actually has a position_en_2 slot (OHB does not, so it hides). -->
+                    <?php if (!empty($enabledFields['position_en_2'])): ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.position_en_2')) ?></label>
                         <input type="text" name="position_en_2" id="position_en_2"
@@ -1482,7 +1485,9 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                                placeholder="Corporate Sales"
                                class="form-input">
                     </div>
+                    <?php endif; ?>
                     <!-- Sub-title / second position line (Arabic) -->
+                    <?php if (!empty($enabledFields['position_ar_2'])): ?>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             <?= htmlspecialchars(t('portal.position_ar_2')) ?>
@@ -1495,6 +1500,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                                placeholder="مبيعات الشركات"
                                class="form-input rtl-input">
                     </div>
+                    <?php endif; ?>
 
                     <!-- Department -->
                     <?php if (!empty($departments)): ?>
