@@ -180,6 +180,51 @@ class CardPresets
      * onto the active template pair, and bake every employee's full card.
      * Returns ['ok'=>bool, 'employees'=>int, 'error'=>?string].
      */
+    /**
+     * Render ONE employee's card via a named preset and bake it into
+     * generated_cards, so the public card page / wallet / OG all show the design
+     * the user picked in the app. Same file layout + row shape as apply(). Returns
+     * true on success. Called from my-card.php and card-render.php.
+     */
+    public static function applyForEmployee(array $company, ?array $theme, array $emp, string $presetId): bool
+    {
+        if (!self::exists($presetId)) return false;
+        $db = Database::getInstance();
+        $cid = (string) $company['id'];
+        $cardsDir = function_exists('getCompanyCardsDir')
+            ? getCompanyCardsDir($cid)
+            : UPLOADS_DIR . '/companies/' . $cid . '/cards';
+        if (!is_dir($cardsDir)) @mkdir($cardsDir, 0755, true);
+        $brand  = self::employeeBrand($company, $theme, $emp);
+        $design = self::designBrand($company, $theme);
+        $stamp  = date('Ymd_His');
+        $u  = substr(md5($emp['id'] . $stamp . mt_rand()), 0, 13);
+        $fn = 'card_front_' . $stamp . '_' . $u . '.png';
+        $bn = 'card_back_'  . $stamp . '_' . $u . '.png';
+        $okF = self::render($brand, $presetId, 'front', $cardsDir . '/' . $fn);
+        $okB = self::render($design, $presetId, 'back',  $cardsDir . '/' . $bn);
+        if (!$okF) return false;
+        $existing = $db->fetchOne(
+            'SELECT id FROM generated_cards WHERE company_id = :c AND employee_id = :e',
+            ['c' => $cid, 'e' => $emp['id']]
+        );
+        if (is_array($existing)) {
+            $db->query(
+                'UPDATE generated_cards SET front_file_path = :f, back_file_path = :b,
+                   front_web_path = NULL, back_web_path = NULL, generated_at = NOW() WHERE id = :id',
+                ['f' => $fn, 'b' => ($okB ? $bn : null), 'id' => $existing['id']]
+            );
+        } else {
+            $db->insert('generated_cards', [
+                'id' => function_exists('generateUUID') ? generateUUID() : bin2hex(random_bytes(16)),
+                'company_id' => $cid, 'employee_id' => $emp['id'],
+                'front_file_path' => $fn, 'back_file_path' => ($okB ? $bn : null),
+                'generated_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+        return true;
+    }
+
     public static function apply(string $companyId, string $presetId): array
     {
         if (!self::exists($presetId)) return ['ok' => false, 'error' => 'unknown_preset'];

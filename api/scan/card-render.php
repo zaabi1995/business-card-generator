@@ -58,19 +58,18 @@ try {
             echo json_encode(['success' => false, 'error' => 'invalid_preset']);
             exit;
         }
-        $db->update('employees', ['card_template_id' => $preset], ['id' => $employee['id']]);
+        $db->update('employees', ['card_template_id' => $preset], 'id = :id AND company_id = :cid',
+            ['id' => $employee['id'], 'cid' => $employee['company_id']]);
         $employee['card_template_id'] = $preset;
         // Bust the public-render cache so the web card follows the same choice.
         require_once INCLUDES_DIR . '/CardRenderer.php';
         try { CardRenderer::invalidateForEmployee((string) $employee['id']); } catch (Throwable $e) {}
     }
 
-    // Which preset to render: the employee's chosen one, else a sensible default.
-    $presetId = (string) ($employee['card_template_id'] ?? '');
-    if (!CardPresets::exists($presetId)) {
-        $ids = array_keys(CardPresets::all());
-        $presetId = (string) ($ids[0] ?? '0');
-    }
+    // Which preset to render: the employee's chosen one, else a sensible default
+    // for a preview only (we do NOT overwrite their public card with a default).
+    $chosen = CardPresets::exists((string) ($employee['card_template_id'] ?? ''));
+    $presetId = $chosen ? (string) $employee['card_template_id'] : (string) (array_keys(CardPresets::all())[0] ?? '0');
 
     // Render (cached) front + back with this employee's data + company brand.
     $brand = CardPresets::employeeBrand($company, $theme, $employee);
@@ -91,6 +90,14 @@ try {
     };
     $frontPath = $renderSide('front');
     $backPath  = $renderSide('back');
+
+    // Bake the preset into generated_cards (the shared cache the public card page,
+    // wallet + OG read) via the SAME helper my-card.php uses, so every surface
+    // matches. Only when the employee actually chose a preset - never a default.
+    if ($chosen) {
+        try { CardPresets::applyForEmployee($company, $theme, $employee, $presetId); }
+        catch (Throwable $e) { error_log('card-render bake: ' . $e->getMessage()); }
+    }
 
     echo json_encode([
         'success'   => true,

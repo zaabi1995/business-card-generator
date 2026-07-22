@@ -190,6 +190,21 @@ try {
             }
         } catch (\Throwable $e) { error_log('[scan/my-card] wallet push: ' . $e->getMessage()); }
 
+        // Bake the app-chosen preset into the shared render cache so the public
+        // cardify.om card, Apple Wallet pass and OG image all show the same design
+        // (and follow any name/phone/colour edit). No-op unless a named preset.
+        require_once INCLUDES_DIR . '/CardPresets.php';
+        $freshEmp = $db->fetchOne('SELECT * FROM employees WHERE id = :id', ['id' => $employeeId]);
+        if (is_array($freshEmp) && CardPresets::exists(trim((string)($freshEmp['card_template_id'] ?? '')))) {
+            $freshTheme = $db->fetchOne('SELECT * FROM company_themes WHERE company_id = :cid LIMIT 1', ['cid' => $companyId]);
+            try {
+                CardPresets::applyForEmployee($company, is_array($freshTheme) ? $freshTheme : null,
+                    $freshEmp, trim((string) $freshEmp['card_template_id']));
+            } catch (Throwable $e) {
+                error_log('my-card applyForEmployee: ' . $e->getMessage());
+            }
+        }
+
         echo json_encode(['success' => true, 'brand_locked' => $brandLocked]);
         exit;
     }
