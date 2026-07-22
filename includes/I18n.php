@@ -150,6 +150,21 @@ class I18n
     }
 
     /**
+     * Register an extra runtime locale (e.g. a tenant's opt-in third card
+     * language). Additive only: existing en/ar behaviour is untouched, so
+     * this is safe to call per-request without affecting other pages/tenants.
+     * After allow(), setLocale($code) and t(..., $code) work; missing keys
+     * still fall back to the default (en) locale.
+     */
+    public static function allow(string $code, bool $rtl = false): void
+    {
+        $code = trim($code);
+        if ($code === '') return;
+        if (!in_array($code, self::$supported, true)) self::$supported[] = $code;
+        if ($rtl && !in_array($code, self::$rtlLocales, true)) self::$rtlLocales[] = $code;
+    }
+
+    /**
      * t('admin.dashboard.title', ['name' => 'Ali'])
      * Splits on first dot, treats first segment as file/namespace.
      * Returns the key itself if translation is missing (so untranslated strings surface loudly in QA).
