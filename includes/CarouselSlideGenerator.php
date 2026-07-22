@@ -4,13 +4,13 @@
  * Turns a blog post into a structured 7-slide JSON payload via Claude.
  */
 class CarouselSlideGenerator {
-    private const MODEL = 'claude-sonnet-4-6';
+    private const MODEL = 'anthropic/claude-sonnet-4.5';
     private const MAX_RETRIES = 1;
 
     public static function generate(array $post): array {
-        $apiKey = defined('ANTHROPIC_API_KEY') ? ANTHROPIC_API_KEY : getenv('ANTHROPIC_API_KEY');
+        $apiKey = defined('OPENROUTER_API_KEY') ? OPENROUTER_API_KEY : getenv('OPENROUTER_API_KEY');
         if (!$apiKey) {
-            throw new RuntimeException('ANTHROPIC_API_KEY not configured');
+            throw new RuntimeException('OPENROUTER_API_KEY not configured');
         }
 
         $systemPrompt = self::systemPrompt();
@@ -144,27 +144,20 @@ Output schema additions:
         $payload = [
             'model' => self::MODEL,
             'max_tokens' => 1500,
-            'system' => $system,
             'messages' => [
+                ['role' => 'system', 'content' => $system],
                 ['role' => 'user', 'content' => $user],
             ],
         ];
 
-        // Auto-detect auth mode: OAuth tokens use Bearer + oauth beta header;
-        // Console API keys use x-api-key.
-        $isOAuth = (strpos($apiKey, 'sk-ant-oat') === 0);
         $headers = [
-            'anthropic-version: 2023-06-01',
             'content-type: application/json',
+            'Authorization: Bearer ' . $apiKey,
+            'HTTP-Referer: https://cardify.om',
+            'X-Title: Cardify',
         ];
-        if ($isOAuth) {
-            $headers[] = 'Authorization: Bearer ' . $apiKey;
-            $headers[] = 'anthropic-beta: oauth-2025-04-20';
-        } else {
-            $headers[] = 'x-api-key: ' . $apiKey;
-        }
 
-        $ch = curl_init('https://api.anthropic.com/v1/messages');
+        $ch = curl_init('https://openrouter.ai/api/v1/chat/completions');
         curl_setopt_array($ch, [
             CURLOPT_POST => true,
             CURLOPT_RETURNTRANSFER => true,
@@ -178,7 +171,7 @@ Output schema additions:
         if ($err) throw new RuntimeException("Claude cURL error: $err");
         if ($code !== 200) throw new RuntimeException("Claude HTTP $code: " . substr($res, 0, 400));
         $data = json_decode($res, true);
-        $text = $data['content'][0]['text'] ?? '';
+        $text = $data['choices'][0]['message']['content'] ?? '';
         if (!$text) throw new RuntimeException("Claude empty response: " . substr($res, 0, 400));
         return $text;
     }
