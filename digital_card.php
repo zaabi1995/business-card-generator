@@ -341,6 +341,15 @@ try {
     // Phone for WhatsApp (strip + and non-digits)
     $waPhone = preg_replace('/[^0-9]/', '', $mobile ?: $phone);
 
+    // Optional per-tenant control of the TOP action buttons (Call/WhatsApp/Email).
+    // Empty (default) = show all = current behaviour for every tenant. A comma
+    // list (e.g. 'whatsapp') restricts to those buttons; a single button then
+    // fills the row (.action-btn flex:1). Contact rows below are unaffected.
+    $heroActions = array_filter(array_map('trim', explode(',', strtolower((string)($company['ecard_hero_actions'] ?? '')))));
+    $showHeroAction = function ($k) use ($heroActions) {
+        return empty($heroActions) || in_array($k, $heroActions, true);
+    };
+
     // Logo path
     $logoPath = ($theme && !empty($theme['logo_path'])) ? cardifyAssetUrl($theme['logo_path']) : '';
 
@@ -1321,15 +1330,15 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
 
         <!-- Action Buttons -->
         <div class="action-buttons">
-            <?php if ($mobile || $phone): ?>
+            <?php if (($mobile || $phone) && $showHeroAction('call')): ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl($mobile ? 'click_mobile' : 'click_phone', 'tel:' . ($mobile ?: $phone))); ?>" class="action-btn btn-call"><?= htmlspecialchars(t('digitalcard.btn_call')) ?></a>
             <?php endif; ?>
 
-            <?php if ($waPhone): ?>
+            <?php if ($waPhone && $showHeroAction('whatsapp')): ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('click_whatsapp', 'https://api.whatsapp.com/send?phone=' . $waPhone)); ?>" class="action-btn btn-whatsapp" target="_blank" rel="noopener"><?= htmlspecialchars(t('digitalcard.btn_whatsapp')) ?></a>
             <?php endif; ?>
 
-            <?php if ($email): ?>
+            <?php if ($email && $showHeroAction('email')): ?>
             <a href="<?php echo htmlspecialchars($cardClickUrl('click_email', 'mailto:' . $email)); ?>" class="action-btn btn-email"><?= htmlspecialchars(t('digitalcard.btn_email')) ?></a>
             <?php endif; ?>
         </div>
