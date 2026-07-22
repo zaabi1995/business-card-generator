@@ -170,6 +170,8 @@ class CardRenderer
         if ($presetId === '') return null;
         require_once INCLUDES_DIR . '/CardPresets.php';
         if (!CardPresets::exists($presetId)) return null;
+        // A managed brand keeps the company card; a personal preset never wins.
+        if (!empty($theme['managed'])) return null;
 
         // An explicit, deliberate web design (Fabric fields_json) still wins.
         try {

@@ -189,6 +189,9 @@ class CardPresets
     public static function applyForEmployee(array $company, ?array $theme, array $emp, string $presetId): bool
     {
         if (!self::exists($presetId)) return false;
+        // A managed brand is locked: a personal preset never overrides the
+        // company's designed card (only the admin/super-admin sets that brand).
+        if (!empty($theme['managed'])) return false;
         $db = Database::getInstance();
         $cid = (string) $company['id'];
         $cardsDir = function_exists('getCompanyCardsDir')
