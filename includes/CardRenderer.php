@@ -60,6 +60,13 @@ class CardRenderer
             error_log('CardRenderer theme lookup: ' . $e->getMessage());
         }
 
+        // Preset bridge: when the employee's card design is a named preset
+        // (the app's design editor sets employees.card_template_id), render it
+        // with the same engine (CardPresets/render-preset.py) the app displays,
+        // so the public card matches the app. An explicit web design still wins.
+        $presetCtx = self::presetContext($db, $employee, $company, $theme);
+        if ($presetCtx !== null) return $presetCtx;
+
         $cardRow = $db->fetchOne(
             'SELECT * FROM generated_cards
               WHERE employee_id = :eid AND company_id = :cid
@@ -151,6 +158,63 @@ class CardRenderer
      * 5 May 2026 on Otech: bg PNG was Poppler-fixed but cards/ folder still
      * held PyMuPDF-era PNGs and digital_card.php served them.
      */
+    /**
+     * Render the employee's card via a named PRESET (CardPresets/render-preset.py)
+     * when they have one and no explicit active web fields_json design overrides it.
+     * Returns the same shape as forEmployee(), or null to fall through to the
+     * normal (generated_cards) pipeline. Cached per employee+preset+brand+data.
+     */
+    private static function presetContext($db, array $employee, array $company, ?array $theme): ?array
+    {
+        $presetId = trim((string)($employee['card_template_id'] ?? ''));
+        if ($presetId === '') return null;
+        require_once INCLUDES_DIR . '/CardPresets.php';
+        if (!CardPresets::exists($presetId)) return null;
+
+        // An explicit, deliberate web design (Fabric fields_json) still wins.
+        try {
+            $active = $db->fetchOne(
+                "SELECT id FROM card_designs WHERE employee_id = :eid AND is_active = 1
+                   AND fields_json IS NOT NULL AND fields_json <> '' LIMIT 1",
+                ['eid' => $employee['id']]
+            );
+            if (is_array($active)) return null;
+        } catch (Throwable $e) {
+            // card_designs may be absent on a very old schema; ignore and render.
+        }
+
+        $brand = CardPresets::employeeBrand($company, $theme, $employee);
+        $dir = UPLOADS_DIR . '/companies/' . $company['id'] . '/app-cards';
+        if (!is_dir($dir)) @mkdir($dir, 0755, true);
+        $ver = substr(md5(json_encode(
+            [$presetId, $brand, ($theme['updated_at'] ?? ''), ($theme['logo_path'] ?? '')],
+            JSON_UNESCAPED_UNICODE
+        )), 0, 10);
+        $frontFile = $dir . '/' . $employee['id'] . '_' . $ver . '_front.png';
+        $backFile  = $dir . '/' . $employee['id'] . '_' . $ver . '_back.png';
+        if (!is_file($frontFile) || filesize($frontFile) < 256) CardPresets::render($brand, $presetId, 'front', $frontFile);
+        if (!is_file($backFile)  || filesize($backFile)  < 256) CardPresets::render($brand, $presetId, 'back', $backFile);
+        $frontFs = (is_file($frontFile) && filesize($frontFile) >= 256) ? $frontFile : null;
+        if ($frontFs === null) return null; // render failed -> normal pipeline
+        $backFs = (is_file($backFile) && filesize($backFile) >= 256) ? $backFile : null;
+        $rel = '/uploads/companies/' . $company['id'] . '/app-cards/';
+        return [
+            'employee'      => $employee,
+            'company'       => $company,
+            'theme'         => $theme,
+            'card'          => null,
+            'front_fs'      => $frontFs,
+            'back_fs'       => $backFs,
+            'front_url'     => imageUrl($rel . basename($frontFile)),
+            'back_url'      => $backFs ? imageUrl($rel . basename($backFile)) : null,
+            'is_fresh'      => true,
+            'signature'     => 'preset:' . $presetId . ':' . $ver,
+            'card_width_mm' => 92.62,
+            'card_height_mm'=> 59.93,
+            'aspect_ratio'  => 1.545,
+        ];
+    }
+
     public static function invalidateForCompany(string $companyId, ?string $reason = null): int
     {
         if ($companyId === '') return 0;
