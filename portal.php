@@ -622,12 +622,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     <meta name="twitter:description" content="<?= htmlspecialchars($__ogDesc) ?>">
     <meta name="twitter:image" content="<?= htmlspecialchars($__ogImage) ?>">
     
-    <!-- Google Fonts -->
+    <!-- Webfonts (fonts.bhd.om, never Google) -->
     <link rel="preconnect" href="https://fonts.bhd.om">
     <link rel="preconnect" href="https://fonts.bhd.om" crossorigin>
     <link href="https://fonts.bhd.om/css2?family=Inter:wght@300;400;500;600;700;800&family=Cairo:wght@300;400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
-    <!-- Issuance redesign (Concept B): editorial serif for institutional gravity, served from fonts.bhd.om -->
-    <link href="https://fonts.bhd.om/css2?family=Playfair+Display:wght@600;700;800&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Cardify portal redesign: Sora display face (Latin), Tajawal covers Arabic display, served from fonts.bhd.om -->
+    <link href="https://fonts.bhd.om/css2?family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
 
     <?php
     // Imported PDF templates can reference any number of font families
@@ -892,121 +892,178 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         }
     </style>
 
-    <!-- Issuance redesign (Concept B): gold OHB "the card that fills" flow. Scoped under .issuance so no other Cardify page is touched. -->
+    <!-- Cardify portal redesign: clean cyan "watch your card fill" flow, mobile-first. Scoped under .issuance. -->
     <style>
     .issuance{
-        --gold-deep:#8f6410;--gold:#c39528;--gold-lite:#e4bf55;--plate-a:#e0b53d;--plate-b:#b8851a;
-        --ink:#171512;--ink-soft:#57503f;--cream:#f7f1e2;--line:#e0d6bd;--err:#a23b2f;
+        --brand:#009bc1;--brand-600:#0086a6;--brand-700:#00708c;
+        --brand-050:#e9f6fa;--brand-100:#cfeaf1;--brand-200:#a7d9e6;
+        --ink:#0f172a;--ink-soft:#475569;--ink-faint:#8a97a8;
+        --line:#e4e9ef;--line-soft:#eef2f6;--surface:#fff;--err:#dc2626;
+        --r:14px;--r-lg:20px;--r-pill:999px;
+        --shadow:0 1px 2px rgba(15,23,42,.04),0 18px 40px -22px rgba(2,60,80,.42);
+        --ease:cubic-bezier(.2,.8,.3,1);
         color:var(--ink);
+        font-family:'IBM Plex Sans Arabic','Inter',system-ui,-apple-system,sans-serif;
     }
-    .issuance .serif{font-family:'Playfair Display',Georgia,serif}
-    [dir=rtl] .issuance .serif{font-family:'Amiri','Playfair Display',serif}
+    .issuance .display{font-family:'Sora','IBM Plex Sans Arabic',system-ui,sans-serif;letter-spacing:-.02em}
+    [dir=rtl] .issuance .display{font-family:'Tajawal','IBM Plex Sans Arabic',sans-serif;letter-spacing:0}
     [lang="ar"] .issuance{letter-spacing:0}
 
     /* fixed reading-direction progress ribbon */
-    .issue-ribbon{position:fixed;top:0;left:0;right:0;height:3px;background:var(--line);z-index:60}
+    .issue-ribbon{position:fixed;top:0;left:0;right:0;height:3px;background:var(--line-soft);z-index:60}
     .issue-ribbon i{position:absolute;top:0;bottom:0;inset-inline-start:0;width:0;
-        background:linear-gradient(90deg,var(--gold),var(--gold-deep));
-        transition:width .45s cubic-bezier(.5,.05,.2,1)}
-    [dir=rtl] .issue-ribbon i{background:linear-gradient(270deg,var(--gold),var(--gold-deep))}
+        background:linear-gradient(90deg,var(--brand),var(--brand-700));box-shadow:0 0 10px rgba(0,155,193,.5);
+        transition:width .5s var(--ease)}
+    [dir=rtl] .issue-ribbon i{background:linear-gradient(270deg,var(--brand),var(--brand-700))}
 
-    .issue-grid{display:grid;grid-template-columns:1fr;gap:28px;align-items:start}
-    @media(min-width:920px){.issue-grid{grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:48px}}
+    .issue-grid{display:grid;grid-template-columns:1fr;gap:20px;align-items:start}
+    @media(min-width:920px){.issue-grid{grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:52px}}
 
-    /* perpetual card panel */
-    .issue-card-hold{order:-1}
-    @media(min-width:920px){.issue-card-hold{order:1;position:sticky;top:96px}}
-    .issue-card-label{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
-        color:var(--gold-deep);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    /* --- live card panel: stays visible so you watch the card fill --- */
+    .issue-card-hold{order:-1;position:sticky;top:74px;z-index:30;padding:10px 0;margin:-6px 0 2px;
+        background:linear-gradient(180deg,rgba(249,250,251,.96),rgba(249,250,251,.72));backdrop-filter:blur(6px)}
+    @media(min-width:920px){.issue-card-hold{order:1;top:96px;padding:0;margin:0;background:none;backdrop-filter:none}}
+    .issue-card-label{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+        color:var(--brand-700);margin-bottom:10px;display:flex;align-items:center;gap:8px}
     [dir=rtl] .issue-card-label{letter-spacing:0}
-    .issue-card-label::before{content:"";width:24px;height:2px;background:var(--gold);flex:none}
-    .issue-card-stack{display:flex;flex-direction:column;gap:14px}
-    .issue-card-stack .canvas-preview-wrapper{box-shadow:0 26px 60px -30px rgba(120,86,10,.6)}
-    .issue-card-fallback{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+    .issue-card-label::before{content:"";width:22px;height:2px;background:var(--brand);border-radius:2px;flex:none}
+    .issue-card-label .live-dot{width:7px;height:7px;border-radius:50%;background:var(--brand);
+        margin-inline-start:auto;animation:livepulse 2.4s var(--ease) infinite}
+    @keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(0,155,193,.5)}70%{box-shadow:0 0 0 7px rgba(0,155,193,0)}100%{box-shadow:0 0 0 0 rgba(0,155,193,0)}}
+    .issue-card-stack{display:flex;flex-direction:column;gap:12px}
+    .issue-card-stack .canvas-preview-wrapper{border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+    .issue-card-fallback{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;box-shadow:var(--shadow)}
     .issue-card-fallback img{display:block;width:100%}
-    .issue-card-note{margin-top:14px;font-size:12.5px;color:var(--ink-soft);display:flex;align-items:flex-start;gap:8px}
-    .issue-card-note i{color:var(--gold-deep);font-style:normal;margin-top:1px}
+    .issue-card-note{margin-top:12px;font-size:12.5px;color:var(--ink-soft);display:flex;align-items:flex-start;gap:8px}
+    .issue-card-note i{color:var(--brand-700);font-style:normal;margin-top:1px}
+    @media(max-width:919px){
+        .issue-card-note{display:none}
+        .issue-card-stack{max-width:340px;margin-inline:auto}
+        .issue-card-stack .canvas-preview-wrapper:nth-child(2){display:none} /* front only on mobile */
+    }
 
     /* flow panel + question steps */
-    .issue-flow{min-height:60vh}
-    .issue-intro{margin-bottom:22px}
-    .issue-intro h2{font-size:clamp(24px,4.4vw,34px);line-height:1.08;font-weight:800}
-    .issue-intro p{margin-top:8px;color:var(--ink-soft);font-size:14.5px;max-width:46ch}
-    .issue-domain{margin-top:10px;font-size:12.5px;color:var(--gold-deep);display:flex;align-items:center;gap:7px}
+    .issue-flow{min-height:56vh}
+    .issue-intro{margin-bottom:18px}
+    .issue-intro h2{font-size:clamp(25px,5vw,36px);line-height:1.05;font-weight:800}
+    .issue-intro p{margin-top:8px;color:var(--ink-soft);font-size:15px;max-width:46ch}
+    .issue-domain{margin-top:12px;font-size:12.5px;color:var(--brand-700);display:inline-flex;align-items:center;gap:7px;
+        background:var(--brand-050);border:1px solid var(--brand-100);padding:6px 12px;border-radius:999px;font-weight:600}
 
-    .issue-err-box{border:1px solid #e7b7af;background:#fbecea;border-radius:12px;padding:12px 15px;
+    /* segmented progress pips (clickable back to completed steps) */
+    .issue-pips{display:flex;align-items:center;gap:7px;margin-bottom:22px;padding:0}
+    .issue-pip{height:6px;flex:1;min-width:20px;border:none;padding:0;border-radius:999px;background:var(--line);
+        transition:background .35s var(--ease),transform .12s var(--ease);cursor:default}
+    .issue-pip.done{background:var(--brand)}
+    .issue-pip.current{background:linear-gradient(90deg,var(--brand),var(--brand-200))}
+    .issue-pip.clickable{cursor:pointer}
+    .issue-pip.clickable:hover{transform:scaleY(1.5)}
+
+    .issue-err-box{border:1px solid #f3c7c1;background:#fdecea;border-radius:12px;padding:12px 15px;
         margin-bottom:20px;color:var(--err);font-size:13.5px;display:flex;gap:10px;align-items:flex-start}
 
     .q{display:none}
-    .q.active{display:block;animation:qin .35s cubic-bezier(.5,.05,.2,1)}
-    @keyframes qin{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
-    [dir=rtl] .q.active{animation-name:qin-rtl}
-    @keyframes qin-rtl{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
-    .q-kicker{font-size:12px;font-weight:600;color:var(--gold-deep);margin-bottom:8px;
-        font-variant-numeric:tabular-nums}
-    .q-title{font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:clamp(21px,3.4vw,28px);
-        line-height:1.14;margin-bottom:6px}
-    [dir=rtl] .q-title{font-family:'Amiri','Playfair Display',serif}
-    .q-help{font-size:13.5px;color:var(--ink-soft);margin-bottom:18px;max-width:44ch}
+    .q.active{display:block;animation:qin .4s var(--ease)}
+    @keyframes qin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+    .q-kicker{font-size:12px;font-weight:700;color:var(--brand-700);margin-bottom:8px;text-transform:uppercase;
+        letter-spacing:.02em;font-variant-numeric:tabular-nums}
+    [dir=rtl] .q-kicker{letter-spacing:0}
+    .q-title{font-family:'Sora','IBM Plex Sans Arabic',sans-serif;font-weight:700;font-size:clamp(21px,4vw,28px);
+        line-height:1.14;margin-bottom:6px;letter-spacing:-.01em}
+    [dir=rtl] .q-title{font-family:'Tajawal','IBM Plex Sans Arabic',sans-serif;letter-spacing:0}
+    .q-help{font-size:14px;color:var(--ink-soft);margin-bottom:18px;max-width:46ch;line-height:1.5}
     .q-fields{display:flex;flex-direction:column;gap:16px}
     .q-fields > div{margin:0}
 
-    /* editorial restyle of the existing inputs, without changing markup/ids/names */
-    .issuance .form-input{background:#fff;border:1px solid var(--line);border-radius:10px;font-size:15px;color:var(--ink)}
-    .issuance .form-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(195,149,40,.16)}
+    /* restyle the existing inputs to the Cardify system, without changing markup/ids/names */
+    .issuance .form-input{background:var(--surface);border:1.5px solid var(--line);border-radius:11px;font-size:15px;
+        color:var(--ink);padding:12px 14px;transition:border-color .15s,box-shadow .15s}
+    .issuance .form-input:focus{border-color:var(--brand);box-shadow:0 0 0 4px rgba(0,155,193,.14)}
+    .issuance textarea.form-input{min-height:78px}
     .issuance label{color:var(--ink)}
+    .issuance .auto-filled{background:var(--brand-050)!important;border-color:var(--brand-200)!important}
+    /* recolor legacy blue/green accents inside the flow to brand cyan */
+    .issuance .text-blue-600{color:var(--brand-600)!important}
+    .issuance .hover\:text-blue-700:hover{color:var(--brand-700)!important}
+    .issuance #existingEmployeeNotice{background:var(--brand-050)!important;border-color:var(--brand-100)!important}
+    .issuance #existingEmployeeNotice .text-blue-800{color:var(--brand-700)!important}
+    .issuance input[type=checkbox],.issuance input[type=radio]{accent-color:var(--brand)}
+    .issuance #requestTypeSection label{transition:border-color .15s,background .15s}
+    .issuance #requestTypeSection label:hover{border-color:var(--brand-200);background:var(--brand-050)}
 
     /* review step */
-    .issue-summary{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden;margin:6px 0 16px}
-    .issue-summary .r{display:flex;justify-content:space-between;gap:14px;padding:11px 15px;
-        border-bottom:1px solid var(--line);font-size:13.5px}
+    .issue-summary{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);overflow:hidden;
+        margin:6px 0 16px;box-shadow:var(--shadow)}
+    .issue-summary .r{display:flex;justify-content:space-between;gap:14px;padding:12px 16px;
+        border-bottom:1px solid var(--line-soft);font-size:13.5px}
     .issue-summary .r:last-child{border-bottom:none}
     .issue-summary .r span{color:var(--ink-soft)}
     .issue-summary .r b{font-weight:600;text-align:end;max-width:60%;overflow-wrap:anywhere}
-    .issue-order{border:1.5px solid var(--gold-lite);border-radius:12px;
-        background:linear-gradient(180deg,#fff,var(--cream));padding:15px 17px;margin-bottom:16px;
+    .issue-order{border:1.5px solid var(--brand-100);border-radius:var(--r);
+        background:linear-gradient(180deg,#fff,var(--brand-050));padding:16px 18px;margin-bottom:16px;
         display:flex;align-items:center;justify-content:space-between;gap:14px}
-    .issue-order b{font-family:'Playfair Display',Georgia,serif;font-size:28px;color:var(--gold-deep);line-height:1}
+    .issue-order b{font-family:'Sora',sans-serif;font-size:30px;font-weight:800;color:var(--brand-700);line-height:1}
+    [dir=rtl] .issue-order b{font-family:'Tajawal',sans-serif}
     .issue-order .u{font-size:12.5px;color:var(--ink-soft)}
     .issue-order .lot{text-align:end;font-size:12.5px;color:var(--ink-soft);max-width:16ch}
 
     /* nav */
-    .issue-nav{display:flex;align-items:center;gap:12px;margin-top:26px}
-    .issue-next{border:none;border-radius:999px;padding:13px 26px;font:inherit;font-weight:600;font-size:15px;
-        color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--gold),var(--gold-deep));
-        box-shadow:0 12px 24px -12px rgba(143,100,16,.8);display:inline-flex;align-items:center;gap:10px;
-        transition:transform .12s}
-    .issue-next:hover{transform:translateY(-1px)}
-    .issue-back{border:none;background:none;color:var(--ink-soft);font:inherit;font-weight:600;font-size:13.5px;
-        cursor:pointer;padding:10px}
+    .issue-nav{display:flex;align-items:center;gap:12px;margin-top:24px}
+    @media(max-width:919px){
+        .issue-nav{position:sticky;bottom:0;margin:20px -16px 0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+            background:linear-gradient(180deg,rgba(255,255,255,0),#fff 36%);border-top:1px solid var(--line-soft)}
+    }
+    .issue-next{border:none;border-radius:var(--r-pill);padding:14px 28px;font:inherit;font-weight:600;font-size:15px;
+        color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--brand),var(--brand-700));
+        box-shadow:0 14px 26px -12px rgba(0,134,166,.9);display:inline-flex;align-items:center;gap:10px;
+        transition:transform .12s var(--ease),box-shadow .2s var(--ease)}
+    .issue-next:hover{transform:translateY(-1px);box-shadow:0 18px 30px -12px rgba(0,134,166,.9)}
+    .issue-next:active{transform:translateY(0) scale(.985)}
+    @media(max-width:919px){.issue-next{flex:1;justify-content:center}}
+    .issue-back{border:none;background:none;color:var(--ink-soft);font:inherit;font-weight:600;font-size:14px;
+        cursor:pointer;padding:11px 8px;border-radius:10px;transition:color .15s}
     .issue-back:hover{color:var(--ink)}
     .issue-back[hidden]{display:none}
-    .issue-enter{margin-inline-start:auto;font-size:11.5px;color:var(--ink-soft)}
+    .issue-enter{margin-inline-start:auto;font-size:11.5px;color:var(--ink-faint)}
     .issue-enter b{background:#fff;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-weight:600}
+    @media(max-width:919px){.issue-enter{display:none}}
     /* the old two-button preview/submit controls are driven by the step machine now */
     .issuance #generatePreviewSection{display:none !important}
     .issuance #submitSection{display:block !important}
     .issuance #submitSection > button[type="button"]{display:none}
+    .issuance #submitRequestBtn{width:100%;border:none;border-radius:var(--r-pill);padding:15px 26px;font-weight:700;
+        font-size:15.5px;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--brand),var(--brand-700));
+        box-shadow:0 16px 30px -12px rgba(0,134,166,.9);transition:transform .12s var(--ease)}
+    .issuance #submitRequestBtn:hover{transform:translateY(-1px)}
+    .issuance #submitRequestBtn:active{transform:scale(.99)}
+    .issuance #submitSection .bg-green-50{background:var(--brand-050)!important;border-color:var(--brand-100)!important}
+    .issuance #submitSection .text-green-800,.issuance #submitSection .text-green-700{color:var(--brand-700)!important}
 
-    /* the official seal press on submit */
-    .issue-seal{position:fixed;inset:0;z-index:80;background:rgba(23,21,18,.55);backdrop-filter:blur(4px);
+    /* the Cardify "issuing your card" seal on submit */
+    .issue-seal{position:fixed;inset:0;z-index:80;background:rgba(2,32,44,.55);backdrop-filter:blur(5px);
         display:none;place-items:center;padding:22px}
-    .issue-seal.on{display:grid}
-    .issue-seal-card{background:var(--cream);border:1px solid var(--gold-lite);border-radius:20px;
-        max-width:410px;width:100%;padding:34px 26px;text-align:center}
-    .issue-stamp{width:110px;height:110px;margin:0 auto 10px;color:var(--gold-deep)}
-    .issue-seal.on .issue-stamp{animation:press .5s cubic-bezier(.2,.8,.2,1) .1s both}
-    @keyframes press{0%{transform:scale(2.3) rotate(-18deg);opacity:0}
-        60%{transform:scale(.92) rotate(-10deg);opacity:1}100%{transform:scale(1) rotate(-8deg);opacity:1}}
-    .issue-seal-card h3{font-family:'Playfair Display',Georgia,serif;font-size:21px;font-weight:800;margin-bottom:6px}
-    [dir=rtl] .issue-seal-card h3{font-family:'Amiri','Playfair Display',serif}
-    .issue-seal-card p{color:var(--ink-soft);font-size:13.5px}
+    .issue-seal.on{display:grid;animation:sealbg .3s ease}
+    @keyframes sealbg{from{opacity:0}to{opacity:1}}
+    .issue-seal-card{background:#fff;border:1px solid var(--brand-100);border-radius:var(--r-lg);
+        max-width:400px;width:100%;padding:36px 28px;text-align:center;box-shadow:0 40px 80px -30px rgba(2,60,80,.6)}
+    .issue-stamp{width:96px;height:96px;margin:0 auto 16px;display:grid;place-items:center;border-radius:50%;
+        background:linear-gradient(135deg,var(--brand),var(--brand-700));color:#fff;
+        box-shadow:0 18px 34px -14px rgba(0,134,166,.9)}
+    .issue-stamp svg{width:46px;height:46px}
+    .issue-stamp .chk{stroke-dasharray:48;stroke-dashoffset:48}
+    .issue-seal.on .issue-stamp{animation:pop .5s var(--ease) both}
+    .issue-seal.on .issue-stamp .chk{animation:draw .5s var(--ease) .18s both}
+    @keyframes pop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+    @keyframes draw{to{stroke-dashoffset:0}}
+    .issue-seal-card h3{font-family:'Sora',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px;color:var(--ink)}
+    [dir=rtl] .issue-seal-card h3{font-family:'Tajawal',sans-serif}
+    .issue-seal-card p{color:var(--ink-soft);font-size:14px}
 
     @media(prefers-reduced-motion:reduce){
         .issue-ribbon i{transition:none}
         .q.active{animation:none}
-        .issue-seal.on .issue-stamp{animation:none}
-        .issue-next{transition:none}
+        .issue-seal.on .issue-stamp,.issue-seal.on .issue-stamp .chk{animation:none;stroke-dashoffset:0}
+        .issue-next,.issue-back,.issue-card-label .live-dot,.issue-pip{transition:none;animation:none}
     }
     </style>
 </head>
@@ -1030,7 +1087,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         ?>
                         <img src="<?php echo imageUrl($logoPath); ?>" alt="<?php echo htmlspecialchars($companyName); ?>" class="h-10 w-auto rounded-xl flex-shrink-0">
                         <?php else: ?>
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style="background:linear-gradient(135deg,#009bc1,#00708c)">
                             <?php echo strtoupper(substr($companyName, 0, 2)); ?>
                         </div>
                         <?php endif; ?>
@@ -1077,10 +1134,10 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             <?php elseif ($passcodeRequired && !$passcodeVerified): ?>
             <!-- Passcode Entry Form -->
             <div class="max-w-sm mx-auto bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-6 text-white text-center">
+                <div class="px-6 py-6 text-white text-center" style="background:linear-gradient(90deg,#0086a6,#00708c)">
                     <i class="fa-solid fa-lock text-4xl mb-3"></i>
                     <h2 class="text-xl font-bold"><?= htmlspecialchars(t('cardportal.access_code_h2')) ?></h2>
-                    <p class="text-blue-100 text-sm mt-1">
+                    <p class="text-sm mt-1" style="color:#cfeaf1">
                         <?php if ($passcodeType === 'department'): ?>
                             <?= htmlspecialchars(t('cardportal.access_code_dept', ['name' => $selectedDepartment['name']])) ?>
                         <?php else: ?>
@@ -1120,7 +1177,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                                    data-index="3">
                         </div>
                     </div>
-                    <button type="submit" class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors">
+                    <button type="submit" class="w-full px-6 py-3 text-white font-semibold rounded-lg transition-colors" style="background:#0086a6">
                         <i class="fa-solid fa-unlock mr-2"></i>
                         <?= htmlspecialchars(t('cardportal.access_portal_btn')) ?>
                     </button>
@@ -1202,16 +1259,16 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             <?php elseif ($success): ?>
             <!-- Success Message -->
             <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fa-solid fa-check text-green-600 text-2xl"></i>
+                <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style="background:#e9f6fa">
+                    <i class="fa-solid fa-check text-2xl" style="color:#009bc1"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('cardportal.request_submitted_h2')) ?></h2>
                 <p class="text-gray-600 mb-6">
                     <?= htmlspecialchars(t('cardportal.request_submitted_body')) ?>
                 </p>
-                <div class="bg-blue-50 rounded-lg p-4 text-left inline-block">
-                    <h3 class="font-semibold text-blue-900 mb-2"><?= htmlspecialchars(t('cardportal.whats_next')) ?></h3>
-                    <ul class="text-sm text-blue-800 space-y-1">
+                <div class="rounded-lg p-4 text-left inline-block" style="background:#e9f6fa">
+                    <h3 class="font-semibold mb-2" style="color:#00708c"><?= htmlspecialchars(t('cardportal.whats_next')) ?></h3>
+                    <ul class="text-sm space-y-1" style="color:#0086a6">
                         <li><i class="fa-solid fa-envelope mr-2"></i><?= htmlspecialchars(t('cardportal.next_email')) ?></li>
                         <li><i class="fa-solid fa-clock mr-2"></i><?= htmlspecialchars(t('cardportal.next_review')) ?></li>
                         <li><i class="fa-solid fa-id-card mr-2"></i><?= htmlspecialchars(t('cardportal.next_generate')) ?></li>
@@ -1219,7 +1276,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     </ul>
                 </div>
                 <p class="mt-6">
-                    <a href="<?php echo getTenantUrl($companySlug, '/portal'); ?>" class="text-blue-600 hover:text-blue-700 font-medium">
+                    <a href="<?php echo getTenantUrl($companySlug, '/portal'); ?>" class="font-medium" style="color:#0086a6">
                         <i class="fa-solid fa-arrow-left mr-1"></i> <?= htmlspecialchars(t('cardportal.submit_another')) ?>
                     </a>
                 </p>
@@ -1229,16 +1286,6 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             <!-- Issuance flow (Concept B redesign). A single <form id="cardRequestForm">
                  still submits every field; the multi-step is client-side progressive
                  disclosure over the SAME fields, so the PHP handler is unchanged. -->
-            <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-              <symbol id="ohbseal" viewBox="0 0 100 100">
-                <polygon points="50,3 79,15 91,44 91,56 79,85 50,97 21,85 9,56 9,44 21,15" fill="none" stroke="currentColor" stroke-width="4"/>
-                <polygon points="50,11 74,21 84,45 84,55 74,79 50,89 26,79 16,55 16,45 26,21" fill="none" stroke="currentColor" stroke-width="1.6"/>
-                <path d="M35 60 L50 42 L65 60 Z" fill="none" stroke="currentColor" stroke-width="3"/>
-                <rect x="40" y="55" width="20" height="12" fill="none" stroke="currentColor" stroke-width="2.4"/>
-                <circle cx="43" cy="70" r="3.2" fill="currentColor"/><circle cx="50" cy="70" r="3.2" fill="currentColor"/><circle cx="57" cy="70" r="3.2" fill="currentColor"/>
-              </symbol>
-            </defs></svg>
-
             <div class="issuance" id="issuance">
                 <div class="issue-ribbon" aria-hidden="true"><i id="issueRibbon"></i></div>
 
@@ -1252,7 +1299,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 <div class="issue-grid">
                     <!-- Perpetual card: the existing Fabric live preview IS the card that fills -->
                     <aside class="issue-card-hold">
-                        <div class="issue-card-label"><span id="previewTitle"><?= htmlspecialchars(t('portal.issue_card_label')) ?></span></div>
+                        <div class="issue-card-label"><span id="previewTitle"><?= htmlspecialchars(t('portal.issue_card_label')) ?></span><span class="live-dot" aria-hidden="true"></span></div>
                         <?php if ($showPreview && ($activeFrontTemplate || $activeBackTemplate)): ?>
                         <div class="issue-card-stack" id="generatedPreview">
                             <div class="canvas-preview-wrapper rounded-lg border border-gray-200 relative">
@@ -1279,7 +1326,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <!-- Flow: the question steps -->
                     <section class="issue-flow">
                         <div class="issue-intro">
-                            <h2 class="serif"><?= htmlspecialchars(t('cardportal.request_form_h2')) ?></h2>
+                            <h2 class="display"><?= htmlspecialchars(t('cardportal.request_form_h2')) ?></h2>
                             <p><?= htmlspecialchars(t('cardportal.request_form_sub')) ?></p>
                             <?php if ($companyDomain): ?>
                             <p class="issue-domain"><i class="fa-solid fa-shield-halved"></i><?= htmlspecialchars(t('cardportal.domain_restricted', ['domain' => $companyDomain])) ?></p>
@@ -1704,11 +1751,15 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 </div><!-- /.issue-grid -->
             </div><!-- /.issuance -->
 
-            <!-- Official seal press on submit -->
+            <!-- Cardify "issuing your card" seal on submit -->
             <div class="issue-seal" id="issueSeal" aria-hidden="true">
                 <div class="issue-seal-card">
-                    <div class="issue-stamp"><svg width="110" height="110"><use href="#ohbseal"/></svg></div>
-                    <h3 class="serif"><?= htmlspecialchars(t('portal.issue_sealing')) ?></h3>
+                    <div class="issue-stamp">
+                        <svg viewBox="0 0 52 52" fill="none" aria-hidden="true">
+                            <path class="chk" d="M14 27 L23 36 L39 18" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="display"><?= htmlspecialchars(t('portal.issue_sealing')) ?></h3>
                     <p><?= htmlspecialchars(t('portal.issue_sealing_sub')) ?></p>
                 </div>
             </div>
@@ -1731,7 +1782,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/'), ENT_QUOTES, 'UTF-8') ?>" class="hover:text-gray-700">Home</a>
                         <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/admin/login'), ENT_QUOTES, 'UTF-8') ?>" class="hover:text-gray-700">Admin Login</a>
                         <span class="text-gray-300">|</span>
-                        <span>Powered by <a href="<?php echo getBasePath(); ?>" class="text-blue-600 hover:underline">Cardify</a></span>
+                        <span>Powered by <a href="<?php echo getBasePath(); ?>" class="hover:underline" style="color:#0086a6">Cardify</a></span>
                     </div>
                 </div>
             </div>
@@ -1761,6 +1812,22 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     let frontEditor = null;
     let backEditor = null;
     let previewGenerated = false;
+
+    // Bridge the Fabric preview + shared state to the TypeScript step machine
+    // (assets/js/portal-issuance.js). Getters read the live editor refs, which
+    // are reassigned after async init, so the machine always sees the current
+    // instances. previewGenerated stays in sync with the inline submit guard.
+    window.__cardifyPortalBridge = {
+        get frontEditor() { return frontEditor; },
+        get backEditor() { return backEditor; },
+        frontTemplate: frontTemplate,
+        backTemplate: backTemplate,
+        renderCardWithEditor: function (editor, template, data, side) { return renderCardWithEditor(editor, template, data, side); },
+        scaleCanvasToFit: function (id, intrinsic) { return scaleCanvasToFit(id, intrinsic); },
+        get previewGenerated() { return previewGenerated; },
+        set previewGenerated(v) { previewGenerated = v; },
+        companyName: companyName
+    };
     
     // Scale canvas to fit its wrapper container
     function scaleCanvasToFit(canvasId) {
@@ -2529,17 +2596,14 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     });
     </script>
 
-    <!-- Issuance step machine (Concept B). Progressive disclosure over the SAME
-         single form: it only moves the existing field blocks into question panels
-         and drives the live Fabric preview. No field is renamed or removed. -->
+    <!-- Cardify portal step machine: server config + i18n injected here; the engine
+         is authored in TypeScript (assets/ts/portal-issuance.ts) and compiled to
+         assets/js/portal-issuance.js with esbuild, committed so the server needs no build. -->
     <script>
-    (function(){
-        const issuance = document.getElementById('issuance');
-        if (!issuance) return; // only the request-form view has the flow
-
-        const I18 = <?= json_encode([
-            'step_of'   => t('portal.issue_step_of'),
-            'sec'       => [
+    window.CardifyPortal = {
+        i18n: <?= json_encode([
+            'step_of' => t('portal.issue_step_of'),
+            'sec'     => [
                 'identity' => t('portal.issue_sec_identity'),
                 'name'     => t('portal.issue_sec_name'),
                 'role'     => t('portal.issue_sec_role'),
@@ -2547,7 +2611,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 'photo'    => t('portal.issue_sec_photo'),
                 'confirm'  => t('portal.issue_sec_confirm'),
             ],
-            'title'     => [
+            'title'   => [
                 'identity' => t('portal.issue_q_identity'),
                 'name'     => t('portal.issue_q_name'),
                 'role'     => t('portal.issue_q_role'),
@@ -2555,7 +2619,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 'photo'    => t('portal.issue_q_photo'),
                 'confirm'  => t('portal.issue_q_confirm'),
             ],
-            'help'      => [
+            'help'    => [
                 'identity' => t('portal.issue_h_identity'),
                 'name'     => t('portal.issue_h_name'),
                 'role'     => t('portal.issue_h_role'),
@@ -2563,7 +2627,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 'photo'    => t('portal.issue_h_photo'),
                 'confirm'  => t('portal.issue_h_confirm'),
             ],
-            'sum'       => [
+            'sum'     => [
                 'email'      => t('portal.issue_sum_email'),
                 'name'       => t('portal.issue_sum_name'),
                 'title'      => t('portal.issue_sum_title'),
@@ -2578,262 +2642,14 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             'err_name'    => t('portal.enter_name_first'),
             'err_domain'  => t('cardportal.email_domain_hint', ['domain' => ':domain']),
             'continue'    => t('portal.issue_continue'),
-        ]) ?>;
-        const REQ_DOMAIN = <?= json_encode($companyDomain ?: '') ?>;
-
-        const form = document.getElementById('cardRequestForm');
-        const host = document.getElementById('issueFields');
-        if (!form || !host) return;
-
-        // Which step each field name belongs to.
-        const STEP_ORDER = ['identity','name','role','contact','photo','confirm'];
-        const STEP_NAMES = {
-            identity: ['email'],
-            name:     ['name_en','name_ar'],
-            role:     ['position_en','position_ar','position_en_2','position_ar_2','department_id'],
-            contact:  ['phone','mobile','fax','website','phone_ar','mobile_ar','website_ar','fax_ar',
-                       'address_en','address_2_en','address_ar','address_2_ar','company_en','company_ar'],
-            photo:    ['photo'],
-            confirm:  [],
-        };
-        const CONFIRM_IDS = ['qrToggleBlock','requestTypeSection','requestNotesSection','quantitySection','submitSection'];
-        const nameToStep = {};
-        Object.keys(STEP_NAMES).forEach(k => STEP_NAMES[k].forEach(n => { nameToStep[n] = k; }));
-
-        // Bucket the existing field blocks.
-        const buckets = {}; STEP_ORDER.forEach(k => buckets[k] = []);
-        Array.from(host.children).forEach(block => {
-            const id = block.id || '';
-            if (id === 'generatePreviewSection') { block.style.display = 'none'; return; }
-            let target;
-            if (CONFIRM_IDS.indexOf(id) !== -1) {
-                target = 'confirm';
-            } else {
-                const ctrl = block.querySelector('[name]');
-                const nm = ctrl ? ctrl.getAttribute('name') : '';
-                target = nameToStep[nm] || 'contact';
-            }
-            buckets[target].push(block);
-        });
-
-        const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-        const stepOf = (n, total) => I18.step_of.replace(':n', n).replace(':total', total);
-
-        // Which steps actually have content (confirm always shows).
-        const activeKeys = STEP_ORDER.filter(k => k === 'confirm' || buckets[k].length);
-        const TOTAL = activeKeys.length;
-
-        // Build the panels inside the form so every field still submits.
-        const stepsWrap = document.createElement('div');
-        stepsWrap.id = 'issueSteps';
-        const panels = [];
-        activeKeys.forEach((key, idx) => {
-            const panel = document.createElement('div');
-            panel.className = 'q';
-            panel.setAttribute('data-key', key);
-            const kicker = document.createElement('div');
-            kicker.className = 'q-kicker';
-            kicker.textContent = stepOf(idx + 1, TOTAL) + ' · ' + I18.sec[key];
-            const title = document.createElement('div');
-            title.className = 'q-title';
-            title.textContent = I18.title[key];
-            const help = document.createElement('div');
-            help.className = 'q-help';
-            help.textContent = I18.help[key];
-            const fields = document.createElement('div');
-            fields.className = 'q-fields';
-
-            if (key === 'confirm') {
-                const summary = document.createElement('div');
-                summary.className = 'issue-summary'; summary.id = 'issueSummary';
-                const order = document.createElement('div');
-                order.className = 'issue-order';
-                order.innerHTML = '<div><b id="issueOrderQty">200</b> <span class="u">' + esc(I18.lot_unit) +
-                    '</span></div><div class="lot">' + esc(I18.lot_note) + '</div>';
-                // append confirm blocks, then place summary + order right before submit
-                buckets[key].forEach(b => fields.appendChild(b));
-                const submit = document.getElementById('submitSection');
-                if (submit && submit.parentNode === fields) {
-                    fields.insertBefore(summary, submit);
-                    fields.insertBefore(order, submit);
-                } else {
-                    fields.appendChild(summary); fields.appendChild(order);
-                }
-            } else {
-                buckets[key].forEach(b => fields.appendChild(b));
-            }
-
-            const err = document.createElement('div');
-            err.className = 'q-err';
-            err.style.cssText = 'color:#a23b2f;font-size:12.5px;margin-top:12px;display:none';
-
-            panel.appendChild(kicker); panel.appendChild(title);
-            if (I18.help[key]) panel.appendChild(help);
-            panel.appendChild(fields); panel.appendChild(err);
-            stepsWrap.appendChild(panel);
-            panels.push({ key, panel, err });
-        });
-        form.appendChild(stepsWrap);
-
-        const ribbon  = document.getElementById('issueRibbon');
-        const backBtn = document.getElementById('issueBack');
-        const nextBtn = document.getElementById('issueNext');
-        const enterEl = document.getElementById('issueEnter');
-        let step = 0;
-
-        function clearErr(i){ if(panels[i]){ panels[i].err.style.display='none'; } }
-        function setErr(i, msg){ if(panels[i]){ panels[i].err.textContent = msg; panels[i].err.style.display='block'; } }
-
-        function show(i){
-            step = i;
-            panels.forEach((p, idx) => p.panel.classList.toggle('active', idx === i));
-            if (ribbon) ribbon.style.width = (TOTAL > 1 ? (i/(TOTAL-1))*100 : 100) + '%';
-            const last = i === TOTAL - 1;
-            if (backBtn) backBtn.hidden = i === 0;
-            if (nextBtn) nextBtn.style.display = last ? 'none' : 'inline-flex';
-            if (enterEl) enterEl.style.visibility = last ? 'hidden' : 'visible';
-            if (last) { previewGenerated = true; buildSummary(); }
-            // focus the first control of this panel
-            const ctrl = panels[i].panel.querySelector('input:not([type=hidden]),select,textarea');
-            if (ctrl) setTimeout(() => { try { ctrl.focus(); } catch(e){} }, 60);
-            scheduleLivePreview();
-        }
-
-        function validate(i){
-            const key = activeKeys[i];
-            clearErr(i);
-            if (key === 'identity') {
-                const e = document.getElementById('email');
-                const v = e ? e.value.trim() : '';
-                if (!v) { setErr(i, I18.err_email); return false; }
-                if (REQ_DOMAIN) {
-                    const at = v.lastIndexOf('@');
-                    const dom = at >= 0 ? v.slice(at+1).toLowerCase() : '';
-                    if (dom !== REQ_DOMAIN.toLowerCase()) { setErr(i, I18.err_domain.replace(':domain', REQ_DOMAIN)); return false; }
-                }
-            }
-            if (key === 'name') {
-                const n = document.getElementById('name_en');
-                if (n && !n.value.trim()) { setErr(i, I18.err_name); return false; }
-            }
-            return true;
-        }
-
-        function next(){ if (!validate(step)) return; if (step < TOTAL - 1) show(step + 1); }
-        function back(){ if (step > 0) show(step - 1); }
-        if (nextBtn) nextBtn.addEventListener('click', next);
-        if (backBtn) backBtn.addEventListener('click', back);
-
-        // Full keyboard support: Enter advances (never on a textarea, and never
-        // implicitly submits the form on a non-final step).
-        form.addEventListener('keydown', function(e){
-            if (e.key !== 'Enter') return;
-            const t = e.target;
-            if (t && t.tagName === 'TEXTAREA') return;
-            if (step < TOTAL - 1) { e.preventDefault(); next(); }
-            else { e.preventDefault(); } // final step: submit is an explicit click
-        });
-
-        // ---- summary on the review step ----
-        const val = id => { const e = document.getElementById(id); return e ? e.value.trim() : ''; };
-        function departmentText(){
-            const sel = document.getElementById('department_id');
-            if (sel && sel.value) return (sel.options[sel.selectedIndex] || {}).text || '';
-            const hid = document.querySelector('input[type=hidden][name="department_id"]');
-            if (hid) { const box = hid.parentElement.querySelector('.bg-gray-100'); if (box) return box.textContent.trim(); }
-            return '';
-        }
-        function buildSummary(){
-            const rows = [];
-            const push = (label, v) => { if (v) rows.push([label, v]); };
-            push(I18.sum.email, val('email'));
-            push(I18.sum.name, [val('name_en'), val('name_ar')].filter(Boolean).join(' · '));
-            push(I18.sum.title, [val('position_en'), val('position_ar')].filter(Boolean).join(' · '));
-            push(I18.sum.department, departmentText());
-            push(I18.sum.mobile, val('mobile') || val('phone'));
-            const ph = document.getElementById('photo');
-            if (ph && ph.files && ph.files.length) push(I18.sum.photo, I18.photo_added);
-            const box = document.getElementById('issueSummary');
-            if (box) box.innerHTML = rows.map(r => '<div class="r"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>').join('');
-            const q = document.getElementById('quantity_requested');
-            const oq = document.getElementById('issueOrderQty');
-            if (oq) oq.textContent = q ? q.value : '200';
-        }
-
-        // ---- live preview: drive the existing Fabric editors from the fields ----
-        function collectFormData(){
-            const d = {};
-            form.querySelectorAll('input[name], textarea[name], select[name]').forEach(el => {
-                const ty = (el.type || '').toLowerCase();
-                if (ty === 'file' || ty === 'checkbox' || ty === 'radio' || ty === 'hidden') return;
-                d[el.name] = el.value || '';
-            });
-            if (!d.company_en) d.company_en = companyName;
-            return d;
-        }
-        let liveBusy = false, liveQueued = false, liveTimer = null;
-        async function renderLive(){
-            if (typeof frontEditor === 'undefined' && typeof backEditor === 'undefined') { previewGenerated = true; return; }
-            if (!frontEditor && !backEditor) { previewGenerated = true; return; }
-            if (liveBusy) { liveQueued = true; return; }
-            liveBusy = true;
-            const data = collectFormData();
-            try {
-                if (frontEditor && typeof frontTemplate !== 'undefined' && frontTemplate) {
-                    await renderCardWithEditor(frontEditor, frontTemplate, data, 'front');
-                    const fl = document.getElementById('frontLoading'); if (fl) fl.style.display = 'none';
-                }
-                if (backEditor && typeof backTemplate !== 'undefined' && backTemplate) {
-                    await renderCardWithEditor(backEditor, backTemplate, data, 'back');
-                    const bl = document.getElementById('backLoading'); if (bl) bl.style.display = 'none';
-                }
-                previewGenerated = true;
-                requestAnimationFrame(() => requestAnimationFrame(() => {
-                    if (typeof scaleCanvasToFit === 'function') {
-                        scaleCanvasToFit('previewFrontCanvas');
-                        scaleCanvasToFit('previewBackCanvas');
-                    }
-                }));
-            } catch (e) { console.warn('live preview failed:', e); }
-            liveBusy = false;
-            if (liveQueued) { liveQueued = false; renderLive(); }
-        }
-        window.scheduleLivePreview = function(){ clearTimeout(liveTimer); liveTimer = setTimeout(renderLive, 380); };
-
-        form.addEventListener('input', window.scheduleLivePreview);
-        form.addEventListener('change', function(e){
-            window.scheduleLivePreview();
-            if (e.target && e.target.id === 'photo') buildSummary();
-        });
-
-        // ---- the official seal press on submit ----
-        const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        let sealed = false;
-        form.addEventListener('submit', function(e){
-            if (sealed || reduceMotion) return; // let the POST proceed (PNG captured below)
-            if (!previewGenerated) return;      // the earlier guard will handle it
-            e.preventDefault();
-            // Capture the design here explicitly so it never depends on
-            // listener execution order. The delayed form.submit() below
-            // bypasses submit listeners, so the hidden inputs must be set now.
-            try {
-                if (frontEditor && typeof frontEditor.exportPNG === 'function') {
-                    document.getElementById('preview_front_input').value = frontEditor.exportPNG(1);
-                }
-                if (backEditor && typeof backEditor.exportPNG === 'function') {
-                    document.getElementById('preview_back_input').value = backEditor.exportPNG(1);
-                }
-            } catch (err) { /* submit without preview image */ }
-            const seal = document.getElementById('issueSeal');
-            if (seal) { seal.classList.add('on'); seal.setAttribute('aria-hidden', 'false'); }
-            setTimeout(function(){ sealed = true; form.submit(); }, 750);
-        });
-
-        // Boot: first panel, and kick a first live render once Fabric settles.
-        show(0);
-        setTimeout(renderLive, 700);
-    })();
+        ]) ?>,
+        reqDomain: <?= json_encode($companyDomain ?: '') ?>,
+        defaultQty: <?= (int)($company['default_order_qty'] ?? 200) ?>
+    };
     </script>
+    <!-- confetti for the cyan "issued" seal (self-hosted, gated on reduced-motion) -->
+    <script src="<?php echo getBasePath(); ?>assets/js/canvas-confetti.min.js"></script>
+    <script src="<?php echo getBasePath(); ?>assets/js/portal-issuance.js?v=<?= @filemtime(__DIR__ . '/assets/js/portal-issuance.js') ?: '1' ?>"></script>
 
     <!-- Page Loader Script - consistent with main site -->
     <script>
