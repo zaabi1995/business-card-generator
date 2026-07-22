@@ -460,6 +460,17 @@ class DatabaseAdapter {
     }
 
     /**
+     * Whitelist the per-employee digital-card layout switch.
+     * 'auto'  = photo-led when a photo exists, else the printed card (default)
+     * 'card'  = always the printed business card
+     * 'photo' = always the profile-photo vCard layout (initials fallback)
+     */
+    private static function normalizeCardPageLayout($raw) {
+        $s = strtolower(trim((string)$raw));
+        return in_array($s, ['auto', 'card', 'photo'], true) ? $s : 'auto';
+    }
+
+    /**
      * Server-side gate for the "hide Made with Cardify footer" flag.
      *
      * Retained from the tier model. Cardify's policy is that branding
@@ -567,6 +578,16 @@ class DatabaseAdapter {
             $employee['password_hash'] = $data['password_hash'];
         }
 
+        // Profile photo (stored relative path, e.g. uploads/companies/<cid>/photos/x.jpg)
+        // + per-employee digital-card layout switch. The whitelist arrays above
+        // silently DROP any key not listed, so these must be added explicitly.
+        if (isset($data['photo']) && self::$db->columnExists('employees', 'photo')) {
+            $employee['photo'] = trim((string)$data['photo']);
+        }
+        if (isset($data['card_page_layout']) && self::$db->columnExists('employees', 'card_page_layout')) {
+            $employee['card_page_layout'] = self::normalizeCardPageLayout($data['card_page_layout']);
+        }
+
         try {
             self::$db->insert('employees', $employee);
 
@@ -646,7 +667,17 @@ class DatabaseAdapter {
             'hide_cardify_branding' => self::resolveHideCardifyBranding($data['hide_cardify_branding'] ?? 0, $companyId),
             'updated_at' => date('Y-m-d H:i:s')
         ];
-        
+
+        // Only touch `photo` when the caller explicitly submits it (new upload,
+        // or an empty string to clear it). Absent = leave the current photo
+        // untouched, so a plain field edit never wipes the picture.
+        if (isset($data['photo']) && self::$db->columnExists('employees', 'photo')) {
+            $updateData['photo'] = trim((string)$data['photo']);
+        }
+        if (isset($data['card_page_layout']) && self::$db->columnExists('employees', 'card_page_layout')) {
+            $updateData['card_page_layout'] = self::normalizeCardPageLayout($data['card_page_layout']);
+        }
+
         try {
             $where = 'id = :id';
             $whereParams = ['id' => $id];

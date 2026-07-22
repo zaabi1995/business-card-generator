@@ -120,4 +120,15 @@ return [
     'edit_details'        => 'Edit details',
     'act_delete'          => 'Delete employee',
     'act_delete_confirm'  => 'Are you sure you want to delete this employee and their cards?',
+
+    // Profile photo + card-page layout
+    'photo_section_title' => 'Profile photo & card layout',
+    'photo_label'         => 'Upload photo',
+    'photo_hint'          => 'Add a photo to show a profile-style card page (photo, then details and buttons) instead of the printed card. JPEG, PNG, GIF or WebP, up to 5MB.',
+    'photo_remove'        => 'Remove photo',
+    'layout_label'        => 'Card page layout',
+    'layout_auto'         => 'Automatic (photo if added, otherwise the card)',
+    'layout_card'         => 'Business card (always show the printed card)',
+    'layout_photo'        => 'Profile photo (always show the photo layout)',
+    'layout_hint'         => 'Controls what leads the shared card page. Default keeps the printed card until a photo is added.',
 ];

@@ -318,6 +318,29 @@ try {
     // hero + Save/Download/Share buttons can paint before those queries run.
     $socialLinks = EmployeeSocials::loadForEmployee($employee['id']);
 
+    // ---- Profile-photo (vCard) layout -------------------------------------
+    // Per-employee switch (employees.card_page_layout):
+    //   'auto'  = photo-led when a photo exists, else the printed card (default,
+    //             so existing cards with no photo are unchanged)
+    //   'card'  = always the printed business card (opt a person out)
+    //   'photo' = always the photo-led layout (initials fallback if no photo)
+    // When photo-led, the printed card is still reachable behind a small
+    // "View business card" reveal so it is never lost.
+    $photoUrl = !empty($employee['photo']) ? cardifyAssetUrl($employee['photo']) : '';
+    $cardLayout = strtolower(trim((string)($employee['card_page_layout'] ?? 'auto')));
+    if (!in_array($cardLayout, ['auto', 'card', 'photo'], true)) $cardLayout = 'auto';
+    $leadWithPhoto = ($cardLayout === 'photo') || ($cardLayout === 'auto' && $photoUrl !== '');
+    // Initials fallback for a forced photo layout with no photo on file.
+    $initials = '';
+    if ($leadWithPhoto && $photoUrl === '') {
+        $__nm = trim((string)$name) !== '' ? trim((string)$name) : trim((string)($employee['name_en'] ?? ''));
+        $__pp = preg_split('/\s+/', $__nm, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        if ($__pp) {
+            $initials = mb_strtoupper(mb_substr($__pp[0], 0, 1));
+            if (count($__pp) > 1) $initials .= mb_strtoupper(mb_substr($__pp[count($__pp) - 1], 0, 1));
+        }
+    }
+
 } catch (Throwable $e) {
     while (ob_get_level()) { ob_end_clean(); }
     http_response_code(500);
@@ -554,6 +577,55 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             margin-top: 4px;
             transition: opacity 0.5s;
         }
+
+        /* Profile photo (vCard) hero */
+        .avatar-hero {
+            display: flex;
+            justify-content: center;
+            margin: 4px auto 10px;
+        }
+        .avatar-photo {
+            width: 124px;
+            height: 124px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid <?php echo $isDarkPage ? 'rgba(255,255,255,0.14)' : '#ffffff'; ?>;
+            box-shadow: <?php echo $isDarkPage ? '0 6px 24px rgba(0,0,0,0.4)' : '0 4px 20px rgba(0,0,0,0.15)'; ?>;
+            background: <?php echo $isDarkPage ? '#1a1a1a' : '#f0f0f0'; ?>;
+        }
+        .avatar-initials {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 44px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        /* "View business card" reveal shown under the photo */
+        .view-card-toggle {
+            max-width: 352px;
+            margin: 0 auto 10px;
+            text-align: center;
+        }
+        .view-card-summary {
+            list-style: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 999px;
+            color: <?php echo $isDarkPage ? '#bbb' : '#555'; ?>;
+            background: <?php echo $isDarkPage ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'; ?>;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.2s var(--ease-out), transform 0.15s var(--ease-out);
+        }
+        .view-card-summary::-webkit-details-marker { display: none; }
+        .view-card-summary:active { transform: scale(0.97); }
+        .view-card-toggle[open] .view-card-summary { margin-bottom: 8px; }
 
         /* Employee Info */
         .employee-info {
@@ -1121,8 +1193,23 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
         </div>
         <?php endif; ?>
 
+        <?php if ($leadWithPhoto): ?>
+        <!-- Profile photo hero (vCard layout) -->
+        <div class="avatar-hero">
+            <?php if ($photoUrl !== ''): ?>
+            <img class="avatar-photo" src="<?php echo htmlspecialchars($photoUrl); ?>" alt="<?php echo htmlspecialchars($name); ?>" loading="eager">
+            <?php else: ?>
+            <div class="avatar-photo avatar-initials" style="background: <?php echo htmlspecialchars($accentColor, ENT_QUOTES); ?>;"><?php echo $initials !== '' ? htmlspecialchars($initials) : '<i class="fa-solid fa-user"></i>'; ?></div>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
         <!-- Flippable Card -->
         <?php if ($frontImage): ?>
+        <?php if ($leadWithPhoto): ?>
+        <details class="view-card-toggle">
+            <summary class="view-card-summary"><i class="fa-solid fa-id-card" aria-hidden="true"></i> <?= htmlspecialchars(t('digitalcard.view_card')) ?></summary>
+        <?php endif; ?>
         <div class="card-flip-container<?php echo $backImage ? '' : ' no-back'; ?>" id="cardFlip">
             <div class="card-flip-inner" id="cardInner" style="--card-aspect: <?php echo htmlspecialchars($cardAspectCss, ENT_QUOTES); ?>;">
                 <div class="card-face">
@@ -1138,7 +1225,10 @@ $switchArUrl = htmlspecialchars($__currentPath . $__qBase . 'lang=ar', ENT_QUOTE
             <div class="tap-hint" id="tapHint"><?= htmlspecialchars(t('digitalcard.tap_to_flip')) ?></div>
             <?php endif; ?>
         </div>
-        <?php elseif (!empty($demoMeta)):
+        <?php if ($leadWithPhoto): ?>
+        </details>
+        <?php endif; ?>
+        <?php elseif (!empty($demoMeta) && !$leadWithPhoto):
             // Demo/instant cards have no Fabric-generated card image; render a styled
             // card design at the top so the page never shows an empty gap.
             $__dcColor = (!empty($demoMeta['brand_color']) && preg_match('/^#[0-9a-fA-F]{6}$/', (string)$demoMeta['brand_color'])) ? $demoMeta['brand_color'] : ($accentColor ?: '#009bc1');

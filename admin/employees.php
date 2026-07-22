@@ -182,11 +182,57 @@ $needsField = function (string $key) use ($activeFieldKeys): bool {
     return isset($activeFieldKeys[$key]);
 };
 
+/**
+ * Store an uploaded employee profile photo and return its relative path
+ * (uploads/companies/<cid>/photos/<file>), or null on any invalid upload.
+ * MIME is detected from the file contents, extension derived from the
+ * verified MIME (never the client filename) - matches portal.php + the
+ * project file-upload rule.
+ */
+function saveEmployeePhotoUpload(array $file, $companyId): ?string {
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) return null;
+    if (($file['size'] ?? 0) > 5 * 1024 * 1024) return null; // 5MB cap
+    $mimeToExt = [
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/gif'  => 'gif',
+        'image/webp' => 'webp',
+    ];
+    $realMime = '';
+    if (class_exists('finfo')) {
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $realMime = (string) $finfo->file($file['tmp_name']);
+    }
+    if (!isset($mimeToExt[$realMime])) return null;
+    $uploadDir = getCompanyUploadsPath($companyId) . '/photos';
+    if (!is_dir($uploadDir)) { @mkdir($uploadDir, 0755, true); }
+    $ext = $mimeToExt[$realMime];
+    $filename = 'emp_' . uniqid() . '.' . $ext;
+    $targetPath = $uploadDir . '/' . $filename;
+    if (!move_uploaded_file($file['tmp_name'], $targetPath)) return null;
+    @chmod($targetPath, 0644);
+    return 'uploads/companies/' . $companyId . '/photos/' . $filename;
+}
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
     $action = $_POST['action'] ?? '';
-    
+
+    // Employee profile photo (optional). A new upload replaces the current
+    // photo, the "remove" checkbox clears it, otherwise the hidden `photo`
+    // field carries the existing path through unchanged so a routine field
+    // edit never wipes the picture.
+    if (in_array($action, ['add', 'update'], true)) {
+        if (!empty($_POST['remove_photo'])) {
+            $_POST['photo'] = '';
+        } elseif (isset($_FILES['photo_file']) && ($_FILES['photo_file']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+            $savedPhoto = saveEmployeePhotoUpload($_FILES['photo_file'], $companyId);
+            if ($savedPhoto !== null) { $_POST['photo'] = $savedPhoto; }
+            // Invalid upload: keep the hidden current value, don't lose the photo.
+        }
+    }
+
     switch ($action) {
         case 'add':
             $billing = new Billing();
@@ -1461,10 +1507,13 @@ adminHeader(t('employees.page_title'), 'employees');
                 <h3 class="text-xl font-bold text-gray-900" x-text="editingEmployee ? 'Edit Employee' : 'Add New Employee'"></h3>
             </div>
             
-            <form method="post" class="p-6">
+            <form method="post" class="p-6" enctype="multipart/form-data">
                 <?php echo csrfField(); ?>
                 <input type="hidden" name="action" :value="editingEmployee ? 'update' : 'add'">
                 <input type="hidden" name="id" x-model="formData.id">
+                <!-- Current stored photo path; kept so 'update' keeps the photo
+                     unless a new one is uploaded or it is removed. -->
+                <input type="hidden" name="photo" x-model="formData.photo">
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -1696,6 +1745,53 @@ adminHeader(t('employees.page_title'), 'employees');
                     </div>
                     <!-- Always POST a canonical 0/1 so unchecking persists -->
                     <input type="hidden" name="card_dark_mode_toggle" :value="cardDarkModeToggle ? '1' : '0'">
+                </div>
+
+                <!-- Profile photo + digital-card layout -->
+                <div class="mt-4 p-4 rounded-xl bg-gray-50 border border-gray-100">
+                    <h4 class="text-sm font-bold text-gray-900 flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-id-badge text-gray-500"></i>
+                        <?= htmlspecialchars(t('employees.photo_section_title')) ?>
+                    </h4>
+                    <div class="flex items-start gap-4">
+                        <!-- Avatar preview -->
+                        <div class="shrink-0">
+                            <template x-if="photoDisplayUrl() && !removePhoto">
+                                <img :src="photoDisplayUrl()" alt=""
+                                     class="w-20 h-20 rounded-full object-cover border border-gray-200 bg-white">
+                            </template>
+                            <template x-if="!photoDisplayUrl() || removePhoto">
+                                <div class="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
+                                    <i class="fa-solid fa-user text-2xl"></i>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <label class="block text-xs font-semibold text-gray-700 mb-1"><?= htmlspecialchars(t('employees.photo_label')) ?></label>
+                            <input type="file" name="photo_file" accept="image/jpeg,image/png,image/gif,image/webp"
+                                   @change="onPhotoSelected($event)"
+                                   class="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                            <p class="mt-1 text-xs text-gray-500"><?= htmlspecialchars(t('employees.photo_hint')) ?></p>
+                            <label class="mt-2 inline-flex items-center gap-2 cursor-pointer select-none"
+                                   x-show="formData.photo || newPhotoPreview">
+                                <input type="checkbox" name="remove_photo" value="1" x-model="removePhoto"
+                                       @change="if (removePhoto) { newPhotoPreview = ''; }"
+                                       class="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500">
+                                <span class="text-xs font-semibold text-red-600"><?= htmlspecialchars(t('employees.photo_remove')) ?></span>
+                            </label>
+                        </div>
+                    </div>
+                    <!-- Layout switch -->
+                    <div class="mt-4">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1"><?= htmlspecialchars(t('employees.layout_label')) ?></label>
+                        <select name="card_page_layout" x-model="formData.card_page_layout"
+                                class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20">
+                            <option value="auto"><?= htmlspecialchars(t('employees.layout_auto')) ?></option>
+                            <option value="card"><?= htmlspecialchars(t('employees.layout_card')) ?></option>
+                            <option value="photo"><?= htmlspecialchars(t('employees.layout_photo')) ?></option>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500"><?= htmlspecialchars(t('employees.layout_hint')) ?></p>
+                    </div>
                 </div>
 
                 <!-- Viral "Made with Cardify" footer; Cardify branding always renders per company policy. -->
@@ -2157,6 +2253,25 @@ function employeeManager() {
         qrRedirectEnabled: false,
         cardDarkModeToggle: true,
         hideCardifyBranding: false,
+        newPhotoPreview: '',
+        removePhoto: false,
+
+        // Local object-URL preview when a new photo file is picked.
+        onPhotoSelected(e) {
+            const f = e.target.files && e.target.files[0];
+            if (!f) { this.newPhotoPreview = ''; return; }
+            this.removePhoto = false;
+            this.newPhotoPreview = URL.createObjectURL(f);
+        },
+        // Resolve the stored relative path to a servable URL (mirrors the
+        // cardifyAssetUrl helper on the public card page). New picks win.
+        photoDisplayUrl() {
+            if (this.newPhotoPreview) return this.newPhotoPreview;
+            const p = (this.formData.photo || '').trim();
+            if (!p) return '';
+            if (/^(https?:)?\/\//i.test(p) || p[0] === '/') return p;
+            return p.indexOf('uploads/') === 0 ? '/' + p : '/uploads/' + p;
+        },
 
         // AI translate state. Same /api/translate.php endpoint the customer
         // portal uses, same UX (button shows spinner + 'Translating...', target
@@ -2340,12 +2455,14 @@ function employeeManager() {
                 id: '', email: '', department_id: '', name_en: '', name_ar: '',
                 position_en: '', position_ar: '', phone: '', phone_ar: '', mobile: '', mobile_ar: '',
                 company_en: '', company_ar: '', website: '', website_ar: '', address_en: '', address_ar: '',
-                qr_redirect_url: '',
+                qr_redirect_url: '', photo: '', card_page_layout: 'auto',
                 field_overrides: {}
             };
             this.qrRedirectEnabled = false;
             this.cardDarkModeToggle = true;
             this.hideCardifyBranding = false;
+            this.newPhotoPreview = '';
+            this.removePhoto = false;
             this.showModal = true;
         },
 
@@ -2355,12 +2472,14 @@ function employeeManager() {
                 id: '', email: prefill.email || '', department_id: '', name_en: prefill.name_en || '',
                 name_ar: '', position_en: '', position_ar: '', phone: '', phone_ar: '', mobile: '', mobile_ar: '',
                 company_en: '', company_ar: '', website: '', website_ar: '', address_en: '', address_ar: '',
-                qr_redirect_url: '',
+                qr_redirect_url: '', photo: '', card_page_layout: 'auto',
                 field_overrides: {}
             };
             this.qrRedirectEnabled = false;
             this.cardDarkModeToggle = true;
             this.hideCardifyBranding = false;
+            this.newPhotoPreview = '';
+            this.removePhoto = false;
             this.showModal = true;
         },
 
@@ -2369,8 +2488,12 @@ function employeeManager() {
             this.formData = {
                 ...employee,
                 qr_redirect_url: employee.qr_redirect_url || '',
+                photo: employee.photo || '',
+                card_page_layout: employee.card_page_layout || 'auto',
                 field_overrides: this._loadOverrides(employee.field_overrides),
             };
+            this.newPhotoPreview = '';
+            this.removePhoto = false;
             this.qrRedirectEnabled = !!(employee.qr_redirect_url && employee.qr_redirect_url.trim());
             // DB stores 0/1; treat missing as 1 (default-on for existing rows)
             this.cardDarkModeToggle = employee.card_dark_mode_toggle === undefined || employee.card_dark_mode_toggle === null
@@ -2389,7 +2512,14 @@ function employeeManager() {
             this.showDetailModal = false;
             this.editingEmployee = true;
             const emp = this.detailData.employee || {};
-            this.formData = { ...emp, qr_redirect_url: emp.qr_redirect_url || '' };
+            this.formData = {
+                ...emp,
+                qr_redirect_url: emp.qr_redirect_url || '',
+                photo: emp.photo || '',
+                card_page_layout: emp.card_page_layout || 'auto',
+            };
+            this.newPhotoPreview = '';
+            this.removePhoto = false;
             this.qrRedirectEnabled = !!(emp.qr_redirect_url && String(emp.qr_redirect_url).trim());
             this.cardDarkModeToggle = emp.card_dark_mode_toggle === undefined || emp.card_dark_mode_toggle === null
                 ? true

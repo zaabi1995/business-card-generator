@@ -8,6 +8,7 @@ return [
 
     // Chrome
     'tap_to_flip'          => 'Tap card to flip',
+    'view_card'            => 'View business card',
     'switch_dark'          => 'Switch to dark mode',
     'switch_light'         => 'Switch to light mode',
     'alt_card_front'       => 'Card Front',
