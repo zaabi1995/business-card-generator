@@ -24,6 +24,10 @@ return [
     'pay_now'               => 'ادفع الآن',
     'pay_deposit'           => 'ادفع عربون :pct%',
     'paymob_hint'           => 'فيزا أو أومان نت أو Apple Pay عبر Paymob الآمن',
+    'pay_with_apple_pay'    => 'ادفع عبر Apple Pay',
+    'pay_by_card'           => 'ادفع بالبطاقة',
+    'pay_secure_page'       => 'ادفع عبر صفحتنا الآمنة',
+    'or'                    => 'أو',
 
     'charge_credit'         => 'تحميل الحساب الآجل',
     'available'             => 'المتاح',

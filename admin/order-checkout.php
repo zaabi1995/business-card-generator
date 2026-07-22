@@ -189,6 +189,63 @@ adminHeader(t('order.checkout_title'), 'print');
     <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
         <h2 class="text-lg font-semibold mb-4"><i class="fa-solid fa-credit-card mr-2 text-gray-400"></i><?= htmlspecialchars(t('order.payment_options')) ?></h2>
 
+        <?php
+        // Inline checkout config (Apple Pay native + Paymob Pixel card). Additive:
+        // the hosted "secure page" form below is unchanged and always available.
+        $__ccToken   = generateCSRFToken();
+        $__intentUrl = getBasePath() . 'admin/paymob-intent.php?purpose=print_order&order=' . $orderId . '&csrf=' . urlencode($__ccToken);
+        $__amountStr = number_format((float)($order['total'] ?? 0), 3, '.', '');
+        $__successUrl = getBasePath() . 'admin/order-checkout.php?order=' . $orderId . '&payment=success';
+        $__hostedUrl  = getBasePath() . 'admin/order-checkout.php?order=' . $orderId . '&hosted=1';
+        ?>
+        <!-- Inline quick pay: Apple Pay (native; works in Chrome via QR handoff) + Pixel card -->
+        <div id="inlinePay" class="mb-5">
+            <!-- Apple Pay (native), shown only where Apple Pay is usable -->
+            <div data-ap="wrap" hidden class="mb-3">
+                <apple-pay-button data-ap="button" role="button" aria-label="<?= htmlspecialchars(t('order.pay_with_apple_pay')) ?>"
+                        buttonstyle="black" type="plain"
+                        style="--apple-pay-button-width:100%;--apple-pay-button-height:48px;--apple-pay-button-border-radius:12px;display:block;width:100%;height:48px;"></apple-pay-button>
+                <p data-ap="status" hidden role="status" aria-live="polite" class="mt-2 text-sm text-center text-gray-500 data-[tone=error]:text-red-600"></p>
+                <div class="flex items-center gap-3 my-4" aria-hidden="true">
+                    <span class="h-px flex-1 bg-gray-200"></span>
+                    <span class="text-xs text-gray-400 uppercase"><?= htmlspecialchars(t('order.or')) ?></span>
+                    <span class="h-px flex-1 bg-gray-200"></span>
+                </div>
+            </div>
+
+            <!-- Pay by card: loads the Pixel SDK + mounts the card form in place on tap -->
+            <button type="button" data-checkout="trigger"
+                    class="w-full text-white py-3 px-6 rounded-xl font-medium transition flex items-center justify-center gap-2 hover:brightness-95"
+                    style="background:#009bc1;">
+                <i class="fa-solid fa-credit-card"></i>
+                <span><?= htmlspecialchars(t('order.pay_by_card')) ?></span>
+                <i class="fa-solid fa-chevron-down text-xs opacity-80"></i>
+            </button>
+
+            <div data-checkout="skeleton" hidden class="mt-4 animate-pulse" aria-hidden="true">
+                <div class="h-3 w-24 bg-gray-200 rounded mb-3"></div>
+                <div class="h-12 bg-gray-100 rounded-xl mb-3"></div>
+                <div class="grid grid-cols-2 gap-3 mb-3"><div class="h-12 bg-gray-100 rounded-xl"></div><div class="h-12 bg-gray-100 rounded-xl"></div></div>
+                <div class="h-12 rounded-xl mt-4" style="background:#bde8f2;"></div>
+            </div>
+            <div id="paymob-elements" data-checkout="mount" hidden class="mt-4"></div>
+            <p data-checkout="status" hidden role="status" aria-live="polite" class="mt-3 text-sm text-center text-gray-600 data-[tone=error]:text-red-600"></p>
+            <div data-checkout="retry" hidden class="text-center mt-3">
+                <a href="#payForm" class="text-sm text-gray-500 hover:text-gray-700 underline underline-offset-4"><?= htmlspecialchars(t('order.pay_secure_page')) ?></a>
+            </div>
+            <div data-checkout="fallback" hidden class="text-center mt-3">
+                <a href="#payForm" class="text-sm text-gray-500 hover:text-gray-700 underline underline-offset-4"><?= htmlspecialchars(t('order.pay_secure_page')) ?></a>
+            </div>
+            <p class="mt-3 text-xs text-gray-400 text-center flex items-center justify-center gap-1.5"><i class="fa-solid fa-lock"></i> <?= htmlspecialchars(t('order.paymob_hint')) ?></p>
+        </div>
+
+        <!-- Divider before the always-available hosted (secure page) option -->
+        <div class="flex items-center gap-3 my-5" aria-hidden="true">
+            <span class="h-px flex-1 bg-gray-200"></span>
+            <span class="text-xs text-gray-400 uppercase"><?= htmlspecialchars(t('order.pay_secure_page')) ?></span>
+            <span class="h-px flex-1 bg-gray-200"></span>
+        </div>
+
         <!-- Pay Now / Deposit -->
         <form method="POST" class="mb-4" id="payForm">
             <?= csrfField() ?>
@@ -337,5 +394,34 @@ adminHeader(t('order.checkout_title'), 'print');
         </form>
     </div>
 </div>
+
+<?php if ($order['payment_status'] !== 'paid'): ?>
+<script>
+  // Hard fallback: order-checkout.php?order=..&hosted=1 auto-submits the hosted form.
+  (function(){ try { var p = new URLSearchParams(location.search); if (p.get('hosted') === '1') { var f = document.getElementById('payForm'); if (f) { var d = document.getElementById('depositPctInput'); if (d) d.value = '0'; f.submit(); } } } catch(e){} })();
+  window.__cardifyNativeAP = {
+    intentUrl: <?= json_encode($__intentUrl) ?>,
+    apiBase: 'https://oman.paymob.com',
+    appleMerchantId: 'merchant.om.bhd',
+    appleIntegrationId: 48389,
+    merchantName: 'Cardify',
+    amount: <?= json_encode($__amountStr) ?>,
+    currency: 'OMR',
+    countryCode: 'OM',
+    successUrl: <?= json_encode($__successUrl) ?>,
+    hostedFallbackUrl: <?= json_encode($__hostedUrl) ?>
+  };
+  window.__cardifyCheckout = {
+    intentUrl: <?= json_encode($__intentUrl) ?>,
+    successUrl: <?= json_encode($__successUrl) ?>,
+    hostedFallbackUrl: <?= json_encode($__hostedUrl) ?>,
+    paymentMethods: ['card'],
+    autoStart: false,
+    sdkUrl: 'https://cdn.jsdelivr.net/npm/paymob-pixel@latest/main.js'
+  };
+</script>
+<script src="<?= getBasePath() ?>assets/js/paymob-apple-pay.js?v=<?= @filemtime(__DIR__ . '/../assets/js/paymob-apple-pay.js') ?: time() ?>"></script>
+<script src="<?= getBasePath() ?>assets/js/paymob-pixel.js?v=<?= @filemtime(__DIR__ . '/../assets/js/paymob-pixel.js') ?: time() ?>"></script>
+<?php endif; ?>
 
 <?php adminFooter(); ?>

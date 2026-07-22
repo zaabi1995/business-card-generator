@@ -24,6 +24,10 @@ return [
     'pay_now'               => 'Pay now',
     'pay_deposit'           => 'Pay :pct% deposit',
     'paymob_hint'           => 'Card, OmanNet, or Apple Pay via Paymob Secure Checkout',
+    'pay_with_apple_pay'    => 'Pay with Apple Pay',
+    'pay_by_card'           => 'Pay by card',
+    'pay_secure_page'       => 'Pay on our secure page',
+    'or'                    => 'or',
 
     'charge_credit'         => 'Charge to credit account',
     'available'             => 'Available',

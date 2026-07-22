@@ -284,7 +284,13 @@ class Payment {
             'checkout_url' => $checkoutUrl,
             'payment_url' => $checkoutUrl, // Alias for backward compat with Billing.php
             'special_reference' => $specialReference,
-            'transaction_id' => $specialReference // Alias for backward compat
+            'transaction_id' => $specialReference, // Alias for backward compat
+            // Exposed for the INLINE Apple Pay + Pixel card flow (admin/paymob-intent.php).
+            // These are the same keypair already embedded in $checkoutUrl above, surfaced
+            // so the browser can drive the Pixel/Apple Pay element itself. Additive: the
+            // hosted-redirect callers ignore these keys.
+            'public_key' => $publicKey,
+            'client_secret' => $clientSecret,
         ];
     }
 

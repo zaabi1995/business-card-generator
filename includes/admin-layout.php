@@ -293,7 +293,13 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
     
     <!-- Flag Icons CSS for country/phone dropdowns -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css">
-    
+
+    <!-- Apple Pay JS SDK: registers <apple-pay-button> + (in non-Safari) installs
+         window.ApplePaySession with the QR handoff. Loaded async so it never blocks
+         paint; used by the inline checkout on order-checkout.php + card-credits.php. -->
+    <link rel="preconnect" href="https://applepay.cdn-apple.com" crossorigin>
+    <script async src="https://applepay.cdn-apple.com/jsapi/1.latest/apple-pay-sdk.js" crossorigin data-apple-pay-sdk></script>
+
     <!-- Myriad Pro (licensed, self-hosted OTF). Weight mapping:
          300 = Light, 400 = Regular, 600 = SemiBold, 700 = Bold. -->
     <style>

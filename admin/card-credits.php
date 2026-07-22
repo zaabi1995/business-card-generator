@@ -133,7 +133,7 @@ adminHeader(t('card_credits.page_title'), 'billing');
                 <?php elseif ($savePct > 0): ?>
                 <span class="absolute top-2 right-2 rtl:left-2 rtl:right-auto bg-green-50 text-green-700 border border-green-200 text-xs px-2 py-0.5 rounded-full"><?= htmlspecialchars(t('card_credits.save_pct', ['pct' => $savePct])) ?></span>
                 <?php endif; ?>
-                <input type="radio" name="bundle" value="<?= $i ?>" required class="sr-only peer">
+                <input type="radio" name="bundle" value="<?= $i ?>" required class="sr-only peer"<?= $b['recommended'] ? ' checked' : '' ?>>
                 <div class="peer-checked:border-blue-500">
                     <p class="text-xs uppercase tracking-wide text-gray-500 mb-1"><?= htmlspecialchars(t('card_credits.' . $b['label_key'])) ?></p>
                     <p class="text-3xl font-extrabold text-gray-900"><?= number_format($b['count']) ?></p>
@@ -194,9 +194,53 @@ adminHeader(t('card_credits.page_title'), 'billing');
             };
           }
         </script>
-        <div class="mt-6 flex justify-end">
-            <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow transition">
+        <!-- Inline quick pay: Apple Pay (native; Chrome via QR handoff) + Pixel card.
+             Bound to the currently selected bundle; the amount tracks the radio. -->
+        <div id="inlinePay" class="mt-8 max-w-md mx-auto">
+            <div data-ap="wrap" hidden class="mb-3">
+                <apple-pay-button data-ap="button" role="button" aria-label="<?= htmlspecialchars(t('order.pay_with_apple_pay')) ?>"
+                        buttonstyle="black" type="plain"
+                        style="--apple-pay-button-width:100%;--apple-pay-button-height:48px;--apple-pay-button-border-radius:12px;display:block;width:100%;height:48px;"></apple-pay-button>
+                <p data-ap="status" hidden role="status" aria-live="polite" class="mt-2 text-sm text-center text-gray-500 data-[tone=error]:text-red-600"></p>
+                <div class="flex items-center gap-3 my-4" aria-hidden="true">
+                    <span class="h-px flex-1 bg-gray-200"></span>
+                    <span class="text-xs text-gray-400 uppercase"><?= htmlspecialchars(t('order.or')) ?></span>
+                    <span class="h-px flex-1 bg-gray-200"></span>
+                </div>
+            </div>
+            <button type="button" data-checkout="trigger"
+                    class="w-full text-white py-3 px-6 rounded-xl font-medium transition flex items-center justify-center gap-2 hover:brightness-95"
+                    style="background:#009bc1;">
                 <i class="fa-solid fa-credit-card"></i>
+                <span><?= htmlspecialchars(t('order.pay_by_card')) ?></span>
+                <i class="fa-solid fa-chevron-down text-xs opacity-80"></i>
+            </button>
+            <div data-checkout="skeleton" hidden class="mt-4 animate-pulse" aria-hidden="true">
+                <div class="h-3 w-24 bg-gray-200 rounded mb-3"></div>
+                <div class="h-12 bg-gray-100 rounded-xl mb-3"></div>
+                <div class="grid grid-cols-2 gap-3 mb-3"><div class="h-12 bg-gray-100 rounded-xl"></div><div class="h-12 bg-gray-100 rounded-xl"></div></div>
+                <div class="h-12 rounded-xl mt-4" style="background:#bde8f2;"></div>
+            </div>
+            <div id="paymob-elements" data-checkout="mount" hidden class="mt-4"></div>
+            <p data-checkout="status" hidden role="status" aria-live="polite" class="mt-3 text-sm text-center text-gray-600 data-[tone=error]:text-red-600"></p>
+            <div data-checkout="retry" hidden class="text-center mt-3">
+                <a href="#ccCheckout" class="text-sm text-gray-500 hover:text-gray-700 underline underline-offset-4"><?= htmlspecialchars(t('order.pay_secure_page')) ?></a>
+            </div>
+            <div data-checkout="fallback" hidden class="text-center mt-3">
+                <a href="#ccCheckout" class="text-sm text-gray-500 hover:text-gray-700 underline underline-offset-4"><?= htmlspecialchars(t('order.pay_secure_page')) ?></a>
+            </div>
+        </div>
+
+        <!-- Divider before the always-available hosted (secure page) option -->
+        <div class="flex items-center gap-3 my-6 max-w-md mx-auto" aria-hidden="true">
+            <span class="h-px flex-1 bg-gray-200"></span>
+            <span class="text-xs text-gray-400 uppercase"><?= htmlspecialchars(t('order.pay_secure_page')) ?></span>
+            <span class="h-px flex-1 bg-gray-200"></span>
+        </div>
+
+        <div class="mt-6 flex justify-center">
+            <button type="submit" id="ccCheckout" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow transition">
+                <i class="fa-solid fa-building-columns"></i>
                 <?= htmlspecialchars(t('card_credits.checkout_btn')) ?>
             </button>
         </div>
@@ -248,4 +292,77 @@ adminHeader(t('card_credits.page_title'), 'billing');
         <?php endif; ?>
     </section>
 </div>
+<?php
+// Inline checkout config (Apple Pay native + Paymob Pixel card) for card credits.
+// Additive: the hosted "Checkout" button above is unchanged and always works.
+$__ccToken = generateCSRFToken();
+$__ccBase  = getBasePath() . 'admin/paymob-intent.php?purpose=card_order&csrf=' . urlencode($__ccToken);
+// Default = the pre-checked recommended bundle, so the widgets have a valid amount on load.
+$__ccDefault = $BUNDLES[1];
+foreach ($BUNDLES as $b) { if (!empty($b['recommended'])) { $__ccDefault = $b; break; } }
+$__ccDefaultCount = (int) $__ccDefault['count'];
+$__ccDefaultAmt   = number_format($__ccDefault['count'] * $__ccDefault['price_per'], 3, '.', '');
+$__ccDefaultUrl   = $__ccBase . '&count=' . $__ccDefaultCount;
+$__ccSuccess      = getBasePath() . 'admin/card-credits.php';
+?>
+<script>
+  window.__cardifyNativeAP = {
+    intentUrl: <?= json_encode($__ccDefaultUrl) ?>,
+    apiBase: 'https://oman.paymob.com',
+    appleMerchantId: 'merchant.om.bhd',
+    appleIntegrationId: 48389,
+    merchantName: 'Cardify',
+    amount: <?= json_encode($__ccDefaultAmt) ?>,
+    currency: 'OMR',
+    countryCode: 'OM',
+    successUrl: <?= json_encode($__ccSuccess) ?>,
+    hostedFallbackUrl: '#ccCheckout'
+  };
+  window.__cardifyCheckout = {
+    intentUrl: <?= json_encode($__ccDefaultUrl) ?>,
+    successUrl: <?= json_encode($__ccSuccess) ?>,
+    hostedFallbackUrl: '#ccCheckout',
+    paymentMethods: ['card'],
+    autoStart: false,
+    sdkUrl: 'https://cdn.jsdelivr.net/npm/paymob-pixel@latest/main.js'
+  };
+</script>
+<script src="<?= getBasePath() ?>assets/js/paymob-apple-pay.js?v=<?= @filemtime(__DIR__ . '/../assets/js/paymob-apple-pay.js') ?: time() ?>"></script>
+<script src="<?= getBasePath() ?>assets/js/paymob-pixel.js?v=<?= @filemtime(__DIR__ . '/../assets/js/paymob-pixel.js') ?: time() ?>"></script>
+<script>
+  // Keep the inline widgets' amount in sync with the selected bundle.
+  (function () {
+    var base = <?= json_encode($__ccBase) ?>;
+    var counts = <?= json_encode(array_map(static fn($b) => (int)$b['count'], $BUNDLES)) ?>;
+    var tiers = <?= json_encode(array_map(static fn($b) => ['count' => (int)$b['count'], 'price' => (float)$b['price_per']], $BUNDLES)) ?>;
+    var lastUrl = <?= json_encode($__ccDefaultUrl) ?>; // matches the default config, so no double-bootstrap on load
+    function priceFor(c) { var p = tiers[0].price; tiers.forEach(function (t) { if (c >= t.count) p = t.price; }); return p; }
+    function currentCount() {
+      var sel = document.querySelector('input[name="bundle"]:checked');
+      if (!sel) return 0;
+      if (sel.value === 'custom') {
+        var raw = document.querySelector('input[name="custom_count"]');
+        var n = raw ? parseInt(raw.value, 10) : 0;
+        if (!n) n = 0;
+        return Math.max(10, Math.min(5000, n));
+      }
+      var idx = parseInt(sel.value, 10);
+      return counts[idx] || 0;
+    }
+    function apply() {
+      var c = currentCount();
+      if (!c) return;
+      var url = base + '&count=' + c;
+      if (url === lastUrl) return;
+      lastUrl = url;
+      var amount = (c * priceFor(c)).toFixed(3);
+      if (window.__cardifyAP) window.__cardifyAP.reconfigure({ intentUrl: url, amount: amount });
+      if (window.__cardifyPixel) window.__cardifyPixel.reconfigure({ intentUrl: url, amountLabel: 'Pay ' + amount + ' OMR' });
+    }
+    document.addEventListener('change', function (e) { if (e.target && e.target.name === 'bundle') apply(); });
+    var cc = document.querySelector('input[name="custom_count"]');
+    if (cc) cc.addEventListener('input', apply);
+  })();
+</script>
+
 <?php adminFooter(); ?>
