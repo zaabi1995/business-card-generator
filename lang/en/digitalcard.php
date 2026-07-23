@@ -21,6 +21,7 @@ return [
     'btn_save_contact'     => 'Save Contact',
     'btn_download_pdf'     => 'Download PDF',
     'btn_share'            => 'Share',
+    'btn_open_app'         => 'Open in Cardify app',
 
     // Sections
     'section_about'        => 'About',

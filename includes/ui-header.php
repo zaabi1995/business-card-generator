@@ -455,6 +455,7 @@ if (!function_exists('renderNavigation')) {
             ['href' => $basePath . '#features', 'label' => function_exists('t') ? t('footer.link_features') : 'Features'],
             ['href' => $basePath . '#pricing', 'label' => function_exists('t') ? t('footer.link_pricing') : 'Pricing'],
             ['href' => $basePath . 'tools', 'label' => function_exists('t') ? t('footer.link_all_tools') : 'Free Tools'],
+            ['href' => $basePath . 'app', 'label' => (class_exists('I18n') && I18n::getLocale() === 'ar') ? 'التطبيق' : 'Mobile App'],
             ['href' => $basePath . 'logos', 'label' => function_exists('t') ? t('footer.link_logos') : 'Logo Library'],
             ['href' => $basePath . 'oman-business-index', 'label' => function_exists('t') ? t('footer.link_oman_index') : 'Oman Business Index'],
             ['href' => $basePath . 'blog', 'label' => function_exists('t') ? t('footer.link_blog') : 'Blog'],

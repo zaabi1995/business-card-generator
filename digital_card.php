@@ -483,6 +483,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             : ($__ogScheme . '://' . $__ogHost . strtok($_SERVER['REQUEST_URI'] ?? '/', '?'));
     ?>
     <link rel="canonical" href="<?php echo htmlspecialchars($__shareUrl, ENT_QUOTES); ?>">
+    <meta name="apple-itunes-app" content="app-id=6790749589, app-argument=<?php echo htmlspecialchars('https://cardify.om/app/open?url=' . rawurlencode($__shareUrl), ENT_QUOTES); ?>">
     <meta property="og:url" content="<?php echo htmlspecialchars($__shareUrl, ENT_QUOTES); ?>">
     <?php if ($__ogImage): ?>
     <meta property="og:image" content="<?php echo htmlspecialchars($__ogImage, ENT_QUOTES); ?>">
@@ -1425,6 +1426,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             <a href="<?php echo htmlspecialchars($cardClickUrl('download_pdf', $pdfUrl)); ?>" class="bottom-btn btn-pdf" download><?= htmlspecialchars(t('digitalcard.btn_download_pdf')) ?></a>
             <?php endif; ?>
             <button class="bottom-btn btn-share" onclick="shareCard()"><?= htmlspecialchars(t('digitalcard.btn_share')) ?></button>
+            <a href="/app/open?url=<?= rawurlencode($__shareUrl) ?>" class="bottom-btn btn-app"><?= htmlspecialchars(t('digitalcard.btn_open_app')) ?></a>
         </div>
 
         <?php
