@@ -37,7 +37,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <?= $isAr ? 'فتح البطاقة في التطبيق' : 'Open card in the app' ?>
                         </a>
                     <?php endif; ?>
-                    <a href="<?= htmlspecialchars($appStoreUrl, ENT_QUOTES) ?>" class="inline-flex items-center gap-3 rounded-2xl bg-gray-950 text-white px-6 py-4 font-bold hover:bg-black transition-colors">
+                    <a href="<?= htmlspecialchars($appStoreUrl, ENT_QUOTES) ?>" class="inline-flex items-center gap-3 rounded-2xl px-6 py-4 font-bold transition-colors" style="background:#101828;color:#fff">
                         <i class="fa-brands fa-apple text-xl" aria-hidden="true"></i>
                         <span><span class="block uppercase tracking-wider opacity-70" style="font-size:10px"><?= $isAr ? 'حمّله من' : 'Download on the' ?></span>App Store</span>
                     </a>
