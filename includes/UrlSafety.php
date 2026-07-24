@@ -89,6 +89,41 @@ function canonicalHostFromUrl(string $url): string
 }
 
 /**
+ * Accept only HTTPS URLs on cardify.om or one of its subdomains.
+ *
+ * Credentials, explicit ports, malformed hosts, and fragments are rejected or
+ * removed to match the native app's link policy.
+ */
+function normalizeCardifyUrl(string $value): ?string
+{
+    $value = trim($value);
+    if ($value === '' || !filter_var($value, FILTER_VALIDATE_URL)) {
+        return null;
+    }
+    $parts = parse_url($value);
+    if (!is_array($parts)
+        || strtolower((string) ($parts['scheme'] ?? '')) !== 'https'
+        || isset($parts['user'])
+        || isset($parts['pass'])
+        || isset($parts['port'])) {
+        return null;
+    }
+    $host = canonicalHost((string) ($parts['host'] ?? ''));
+    if ($host !== 'cardify.om' && !str_ends_with($host, '.cardify.om')) {
+        return null;
+    }
+    $path = (string) ($parts['path'] ?? '/');
+    if ($path === '' || $path[0] !== '/') {
+        $path = '/' . $path;
+    }
+    $normalized = 'https://' . $host . $path;
+    if (isset($parts['query']) && $parts['query'] !== '') {
+        $normalized .= '?' . $parts['query'];
+    }
+    return $normalized;
+}
+
+/**
  * Returns true if $host (already canonicalised or raw) is on the shortener
  * blocklist. Call on parse_url()'d hosts.
  */

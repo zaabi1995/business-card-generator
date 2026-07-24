@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/UrlSafety.php';
 $isAr = (class_exists('I18n') && I18n::getLocale() === 'ar') || (($_GET['lang'] ?? '') === 'ar');
 $pageTitle = $isAr ? 'تطبيق Cardify لأجهزة iPhone' : 'Cardify for iPhone';
 $pageDescription = $isAr
@@ -8,7 +9,7 @@ $pageDescription = $isAr
     : 'Scan business cards, save contacts, and share your digital card from the native Cardify app.';
 $canonicalUrl = 'https://cardify.om/app';
 $showNavigation = true;
-$openUrl = trim((string) ($_GET['url'] ?? ''));
+$openUrl = normalizeCardifyUrl((string) ($_GET['url'] ?? '')) ?? '';
 $nativeUrl = $openUrl !== '' ? 'cardifyscan://app/open?url=' . rawurlencode($openUrl) : 'cardifyscan://';
 $appStoreUrl = 'https://apps.apple.com/app/id6790749589';
 require_once INCLUDES_DIR . '/ui-header.php';
