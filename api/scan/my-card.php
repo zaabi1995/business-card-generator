@@ -7,6 +7,7 @@
  * design) and grab the Apple Wallet pass URL, without the web admin.
  *
  * GET  -> {success, card:{ ...canonical parsed shape, design:{...},
+ *          render?:{front_url,back_url,aspect_ratio,signature},
  *          public_url, qr_url, wallet_pass_url }}
  * POST -> {success} after a partial update of the editable fields + design.
  *
@@ -253,6 +254,79 @@ try {
         ? getTenantUrl($slug, '/wallet_apple.php') . '?i=' . rawurlencode((string) $employee['id'])
             . '&c=' . rawurlencode($slug) . '&lang=en'
         : null;
+
+    try {
+        require_once INCLUDES_DIR . '/CardRenderer.php';
+        $renderContext = CardRenderer::forEmployee((string) $employeeId);
+        if (is_array($renderContext)) {
+            $absoluteCardifyUrl = static function ($filePath, $candidate): ?string {
+                $rootPath = realpath(BASE_DIR);
+                $resolvedPath = is_string($filePath) && $filePath !== ''
+                    ? realpath($filePath)
+                    : false;
+                if ($rootPath !== false && $resolvedPath !== false) {
+                    $rootPath = rtrim(str_replace('\\', '/', $rootPath), '/');
+                    $resolvedPath = str_replace('\\', '/', $resolvedPath);
+                    if (strpos($resolvedPath, $rootPath . '/') === 0) {
+                        $relativePath = ltrim(substr($resolvedPath, strlen($rootPath)), '/');
+                        $segments = array_map('rawurlencode', explode('/', $relativePath));
+                        return 'https://' . cardifyApexHost() . '/' . implode('/', $segments);
+                    }
+                }
+
+                $candidate = trim((string) $candidate);
+                $parts = $candidate !== '' ? parse_url($candidate) : false;
+                if (!is_array($parts)
+                    || strtolower((string) ($parts['scheme'] ?? '')) !== 'https'
+                    || empty($parts['host'])
+                    || isset($parts['user'])
+                    || isset($parts['pass'])
+                    || isset($parts['port'])
+                    || isset($parts['fragment'])
+                ) {
+                    return null;
+                }
+                $host = strtolower(rtrim((string) $parts['host'], '.'));
+                $apex = strtolower(rtrim(cardifyApexHost(), '.'));
+                $suffix = '.' . $apex;
+                if ($host !== $apex
+                    && (strlen($host) <= strlen($suffix)
+                        || substr($host, -strlen($suffix)) !== $suffix)
+                ) {
+                    return null;
+                }
+                return $candidate;
+            };
+
+            $frontUrl = $absoluteCardifyUrl(
+                $renderContext['front_fs'] ?? null,
+                $renderContext['front_url'] ?? null
+            );
+            $backUrl = $absoluteCardifyUrl(
+                $renderContext['back_fs'] ?? null,
+                $renderContext['back_url'] ?? null
+            );
+            $aspect = $renderContext['aspect_ratio'] ?? null;
+            $signature = trim((string) ($renderContext['signature'] ?? ''));
+            if ($frontUrl !== null
+                && (is_int($aspect) || is_float($aspect))
+                && is_finite((float) $aspect)
+                && (float) $aspect > 0
+                && (float) $aspect <= 10
+                && $signature !== ''
+                && strlen($signature) <= 256
+            ) {
+                $card['render'] = [
+                    'front_url'    => $frontUrl,
+                    'back_url'     => $backUrl,
+                    'aspect_ratio' => (float) $aspect,
+                    'signature'    => $signature,
+                ];
+            }
+        }
+    } catch (\Throwable $e) {
+        error_log('[scan/my-card] render lookup: ' . $e->getMessage());
+    }
 
     echo json_encode(['success' => true, 'card' => $card], JSON_UNESCAPED_UNICODE);
     exit;
