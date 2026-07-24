@@ -9,7 +9,7 @@
  * GET  -> {success, card:{ ...canonical parsed shape, design:{...},
  *          render?:{front_url,back_url,aspect_ratio,signature},
  *          public_url, qr_url, wallet_pass_url }}
- * POST -> {success} after a partial update of the editable fields + design.
+ * POST -> {success, brand_locked, card:{...}} after a partial update.
  *
  * The canonical card shape is CardifyConvention::employeeToScanCard() (the same
  * mapping resolve-card.php / vcf return). Persistence reuses the exact web-editor
@@ -210,8 +210,13 @@ try {
             }
         }
 
-        echo json_encode(['success' => true, 'brand_locked' => $brandLocked]);
-        exit;
+        $employee = $db->fetchOne(
+            "SELECT * FROM employees WHERE id = :id AND company_id = :cid",
+            ['id' => $employeeId, 'cid' => $companyId]
+        );
+        if (!$employee) {
+            throw new RuntimeException('Updated employee could not be refetched');
+        }
     }
 
     // ---- GET ----
@@ -328,7 +333,11 @@ try {
         error_log('[scan/my-card] render lookup: ' . $e->getMessage());
     }
 
-    echo json_encode(['success' => true, 'card' => $card], JSON_UNESCAPED_UNICODE);
+    $response = ['success' => true, 'card' => $card];
+    if ($method === 'POST') {
+        $response['brand_locked'] = $brandLocked;
+    }
+    echo json_encode($response, JSON_UNESCAPED_UNICODE);
     exit;
 
 } catch (\Throwable $e) {

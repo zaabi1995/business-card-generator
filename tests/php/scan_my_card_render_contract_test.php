@@ -37,5 +37,13 @@ myCardRenderCheck(
         && strpos($myCard, "\$_SERVER['HTTP_HOST']") === false
 );
 
+myCardRenderCheck(
+    'POST refetches and returns the same freshly rendered canonical card while preserving brand lock state',
+    substr_count($myCard, 'SELECT * FROM employees WHERE id = :id AND company_id = :cid') >= 2
+        && strpos($myCard, "['success' => true, 'brand_locked' => \$brandLocked]") === false
+        && strpos($myCard, "\$response = ['success' => true, 'card' => \$card]") !== false
+        && strpos($myCard, "\$response['brand_locked'] = \$brandLocked") !== false
+);
+
 echo $failures === 0 ? "ALL PASS\n" : "$failures FAILED\n";
 exit($failures === 0 ? 0 : 1);
