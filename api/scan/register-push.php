@@ -123,14 +123,28 @@ try {
     }
 
     if ($unregister) {
-        $connection->prepare(
+        $legacyDelete = $connection->prepare(
             'DELETE FROM push_tokens
              WHERE employee_id = :employee_id AND token = :token'
-        )->execute([
+        );
+        $legacyDelete->execute([
             'employee_id' => $ctx['employee_id'],
             'token' => $token,
         ]);
-        echo json_encode(['success' => true, 'revoked' => true]);
+        $legacyRevoked = $legacyDelete->rowCount() === 1;
+
+        if (!$legacyRevoked) {
+            $legacyExists = $connection->prepare(
+                'SELECT 1 FROM push_tokens
+                 WHERE token = :token
+                 LIMIT 1'
+            );
+            $legacyExists->execute(['token' => $token]);
+            $legacyStillExists = (bool) $legacyExists->fetchColumn();
+            $legacyRevoked = !$legacyStillExists;
+        }
+
+        echo json_encode(['success' => true, 'revoked' => $legacyRevoked]);
         exit;
     } else {
         $revocationSecretHash = $hasRevocationSecret

@@ -142,10 +142,41 @@ pushRegistrationCheck(
     ) !== false
 );
 pushRegistrationCheck(
-    'authenticated legacy unregister returns idempotent revoked true',
+    'authenticated unregister reports a matched employee delete as revoked',
     strpos(
         $registerPush,
-        "echo json_encode(['success' => true, 'revoked' => true]);"
+        '$legacyRevoked = $legacyDelete->rowCount() === 1;'
+    ) !== false
+);
+pushRegistrationCheck(
+    'authenticated unregister reports an absent token as idempotently revoked',
+    strpos($registerPush, '$legacyRevoked = !$legacyStillExists;') !== false
+        && strpos(
+            $registerPush,
+            "'revoked' => \$legacyRevoked"
+        ) !== false
+);
+pushRegistrationCheck(
+    'authenticated unregister reports another employee token as not revoked',
+    strpos($registerPush, 'if (!$legacyRevoked)') !== false
+        && preg_match(
+            '/SELECT 1 FROM push_tokens\s+WHERE token = :token\s+LIMIT 1/',
+            $registerPush
+        ) === 1
+        && strpos(
+            $registerPush,
+            '$legacyStillExists = (bool) $legacyExists->fetchColumn();'
+        ) !== false
+        && strpos(
+            $registerPush,
+            '$legacyRevoked = !$legacyStillExists;'
+        ) !== false
+);
+pushRegistrationCheck(
+    'authenticated unregister returns the exact boolean revocation result',
+    strpos(
+        $registerPush,
+        "echo json_encode(['success' => true, 'revoked' => \$legacyRevoked]);"
     ) !== false
 );
 pushRegistrationCheck(
@@ -191,7 +222,7 @@ pushRegistrationCheck(
 );
 pushRegistrationCheck(
     'all push token lookups rely on the binary-collated column equality',
-    substr_count($registerPush, 'token = :token') === 3
+    substr_count($registerPush, 'token = :token') === 4
         && strpos($registerPush, 'BINARY token') === false
 );
 
