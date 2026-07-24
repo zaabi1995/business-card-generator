@@ -205,3 +205,4 @@ Format: `YYYY-MM-DD HH:MM | #NNN | sha | outcome`
 2026-04-24 02:20 | #591 | 1bded00 | ColorContrast helper (luminance/readableOn/ratio) + CardLayouts data bag: textOnPrimary + textOnSecondary auto-computed from theme. Per-layout adoption split to 859.
 2026-04-24 02:35 | #592 | 08ffa48 | GoogleFonts::getCuratedFonts() 20-font shortlist + getFontsGrouped() 8-bucket full list. UI wiring split to 860.
 2026-04-24 16:00 | #593 | d9166a3 | Template editor color picker defaults field.fill to brandPrimary (from company_themes.primary_color) and renders 4 one-click swatches: brand primary, brand secondary, near-black, white. Alpine state brandPrimary + brandSecondary injected.
+2026-07-24 04:51 | #APP-001 | 247ea42 | Native app integration: immutable accounts, verified OTP identity, tenant-safe account deletion, signed StoreKit entitlements, deterministic sync paging, company directory search, and Universal Links.
