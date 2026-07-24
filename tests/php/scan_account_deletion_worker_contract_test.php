@@ -173,6 +173,7 @@ deletionWorkerCheck(
 deletionWorkerCheck(
     'cleanup worker has a committed five-minute schedule',
     strpos($schedule, '*/5 * * * * www ') !== false
+        && strpos($schedule, 'TMPDIR=/tmp') !== false
         && strpos(
             $schedule,
             '/scripts/process-scan-account-deletions.php'
@@ -188,6 +189,7 @@ deletionWorkerCheck(
         && strpos($deploy, 'install -o root -g root -m 0644') !== false
         && strpos($deploy, 'cmp -s') !== false
         && strpos($deploy, 'runuser -u www') !== false
+        && strpos($deploy, 'env TMPDIR=/tmp') !== false
         && strpos($deploy, '/www/server/php/83/bin/php') !== false
         && strpos($deploy, '/usr/bin/flock') !== false
         && strpos($deploy, '/usr/bin/logger') !== false

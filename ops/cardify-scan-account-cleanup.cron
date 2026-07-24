@@ -1,4 +1,5 @@
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+TMPDIR=/tmp
 
 */5 * * * * www /usr/bin/flock -n /tmp/cardify-scan-account-cleanup.cron.lock /www/server/php/83/bin/php /www/wwwroot/cardify.om/scripts/process-scan-account-deletions.php 2>&1 | /usr/bin/logger -t cardify-scan-account-cleanup

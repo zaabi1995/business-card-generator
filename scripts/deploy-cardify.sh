@@ -56,6 +56,7 @@ install_scan_account_cleanup_cron() {
   }
   for required_binary in \
     /www/server/php/83/bin/php \
+    /usr/bin/env \
     /usr/bin/flock \
     /usr/bin/logger; do
     [ -x "$required_binary" ] || {
@@ -77,9 +78,10 @@ install_scan_account_cleanup_cron() {
     return 1
   }
   if command -v runuser >/dev/null 2>&1; then
-    runuser -u www -- "$cron_php" "$worker" >/dev/null || return 1
+    runuser -u www -- /usr/bin/env TMPDIR=/tmp \
+      "$cron_php" "$worker" >/dev/null || return 1
   else
-    su -s /bin/sh -c "$cron_php $worker" www >/dev/null || return 1
+    su -s /bin/sh -c "TMPDIR=/tmp $cron_php $worker" www >/dev/null || return 1
   fi
   systemctl reload cron 2>/dev/null \
     || systemctl reload crond 2>/dev/null \
