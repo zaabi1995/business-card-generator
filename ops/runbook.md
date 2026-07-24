@@ -213,6 +213,41 @@ tail -f /var/log/cardify-disk-alert.log
 /usr/local/bin/rollback-cardify.sh <sha>
 ```
 
+### Account deletion cleanup scheduler
+
+The deployment script installs
+`ops/cardify-scan-account-cleanup.cron` at
+`/etc/cron.d/cardify-scan-account-cleanup`, then runs the worker as `www`.
+For the first release containing this scheduler, refresh the root deployment
+wrapper after the code has been pulled, then run it once more:
+
+```bash
+install -o root -g root -m 0755 \
+  /www/wwwroot/cardify.om/ops/deploy-cardify.sh \
+  /usr/local/bin/deploy-cardify.sh
+/usr/local/bin/deploy-cardify.sh
+cmp -s \
+  /www/wwwroot/cardify.om/ops/cardify-scan-account-cleanup.cron \
+  /etc/cron.d/cardify-scan-account-cleanup
+runuser -u www -- /www/server/php/83/bin/php \
+  /www/wwwroot/cardify.om/scripts/process-scan-account-deletions.php
+systemctl status cron --no-pager || systemctl status crond --no-pager
+journalctl -t cardify-scan-account-cleanup -n 50 --no-pager
+mysql cardify -e "
+  SELECT status, COUNT(*) AS rows_pending
+  FROM scan_account_delete_files
+  WHERE status IN ('failed', 'waiting_reference', 'quarantined')
+  GROUP BY status;
+"
+```
+
+The worker runs every five minutes, skips overlapping executions with local
+and database locks, and purges completed deletion replay tombstones after 30
+days. Canonical files that are still referenced remain retryable as
+`waiting_reference`. Unsafe legacy paths retain hash-only `quarantined`
+evidence for operations review and are never automatically unlinked or purged
+with replay tombstones.
+
 ---
 
 ## 10. Post-incident

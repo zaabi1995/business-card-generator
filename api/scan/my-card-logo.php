@@ -9,7 +9,7 @@
 require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
 header('Content-Type: application/json');
-$ctx = ScanAuth::requireEmployee();
+$ctx = ScanAuth::requireEmployeeMutation();
 require_once __DIR__ . '/_ratelimit.php';
 scanRateLimit($ctx, 'my_card_logo', 120);
 

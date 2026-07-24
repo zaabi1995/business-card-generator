@@ -74,6 +74,31 @@ try {
     );
     if ($account !== null) {
         $accountId = (string) $account['account_id'];
+        $releaseAccountLock = ScanAuth::acquireAccountMutationLock($accountId);
+        $freshAccount = ScanIdentity::findAccountByIdentifier(
+            $db,
+            $identifier,
+            $identifierType
+        );
+        if (
+            $freshAccount === null
+            || !hash_equals(
+                $accountId,
+                (string) ($freshAccount['account_id'] ?? '')
+            )
+        ) {
+            $releaseAccountLock();
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'account_unavailable']);
+            exit;
+        }
+        $employee = ScanIdentity::primaryEmployee($db, $accountId);
+        if ($employee === null) {
+            $releaseAccountLock();
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'account_unavailable']);
+            exit;
+        }
         $linked = ScanIdentity::linkVerifiedIdentifier(
             $db,
             $accountId,
@@ -82,6 +107,7 @@ try {
             'scan_login_otp'
         );
         if (empty($linked['success'])) {
+            $releaseAccountLock();
             http_response_code(409);
             echo json_encode([
                 'success' => false,
@@ -89,20 +115,17 @@ try {
             ]);
             exit;
         }
-        $employee = ScanIdentity::primaryEmployee($db, $accountId);
-        if ($employee === null) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'account_unavailable']);
-            exit;
-        }
+        $token = ScanAuth::issueToken(
+            (string) $employee['employee_id'],
+            'mobile',
+            $accountId
+        );
+        $releaseAccountLock();
         echo json_encode([
             'success' => true,
-            'token' => ScanAuth::issueToken(
-                (string) $employee['employee_id'],
-                'mobile',
-                $accountId
-            ),
+            'token' => $token,
             'employee_id' => (string) $employee['employee_id'],
+            'account_id' => $accountId,
             'is_new' => false,
         ]);
         exit;
@@ -117,6 +140,7 @@ try {
     if ($startedTransaction) {
         $pdo->beginTransaction();
     }
+    $releaseProvisionedAccountLock = null;
     try {
         $companyResult = createCompany(
             $displayName,
@@ -159,13 +183,29 @@ try {
             'otp_signup',
             'owner'
         );
+        $releaseProvisionedAccountLock =
+            ScanAuth::acquireAccountMutationLock($accountId);
+        $provisionedMembership = ScanIdentity::membershipForEmployee(
+            $db,
+            $accountId,
+            $employeeId
+        );
+        if ($provisionedMembership === null) {
+            throw new RuntimeException('account_membership_unavailable');
+        }
         $token = ScanAuth::issueToken($employeeId, 'mobile', $accountId);
         if ($startedTransaction) {
             $pdo->commit();
         }
+        $releaseProvisionedAccountLock();
+        $releaseProvisionedAccountLock = null;
     } catch (Throwable $provisionError) {
         if ($startedTransaction && $pdo->inTransaction()) {
             $pdo->rollBack();
+        }
+        if (is_callable($releaseProvisionedAccountLock)) {
+            $releaseProvisionedAccountLock();
+            $releaseProvisionedAccountLock = null;
         }
         error_log('[scan/otp-verify] provisioning: ' . $provisionError->getMessage());
         $existing = ScanIdentity::findAccountByIdentifier(
@@ -174,23 +214,50 @@ try {
             $identifierType
         );
         if ($existing !== null) {
+            $existingAccountId = (string) $existing['account_id'];
+            $releaseAccountLock = ScanAuth::acquireAccountMutationLock(
+                $existingAccountId
+            );
+            $freshExisting = ScanIdentity::findAccountByIdentifier(
+                $db,
+                $identifier,
+                $identifierType
+            );
+            if (
+                $freshExisting === null
+                || !hash_equals(
+                    $existingAccountId,
+                    (string) ($freshExisting['account_id'] ?? '')
+                )
+            ) {
+                $releaseAccountLock();
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'account_create_failed',
+                ]);
+                exit;
+            }
             $employee = ScanIdentity::primaryEmployee(
                 $db,
-                (string) $existing['account_id']
+                $existingAccountId
             );
             if ($employee !== null) {
+                $token = ScanAuth::issueToken(
+                    (string) $employee['employee_id'],
+                    'mobile',
+                    $existingAccountId
+                );
+                $releaseAccountLock();
                 echo json_encode([
                     'success' => true,
-                    'token' => ScanAuth::issueToken(
-                        (string) $employee['employee_id'],
-                        'mobile',
-                        (string) $existing['account_id']
-                    ),
+                    'token' => $token,
                     'employee_id' => (string) $employee['employee_id'],
+                    'account_id' => $existingAccountId,
                     'is_new' => false,
                 ]);
                 exit;
             }
+            $releaseAccountLock();
         }
 
         echo json_encode(['success' => false, 'error' => 'account_create_failed']);
@@ -201,6 +268,7 @@ try {
         'success' => true,
         'token' => $token,
         'employee_id' => $employeeId,
+        'account_id' => $accountId,
         'is_new' => true,
     ]);
 } catch (Throwable $e) {

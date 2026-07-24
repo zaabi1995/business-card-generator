@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$ctx = ScanAuth::requireEmployee();
+$ctx = ScanAuth::requireEmployeeMutation();
 require_once __DIR__ . '/_ratelimit.php';
 scanRateLimit($ctx, 'switch_company', 120);
 
@@ -79,5 +79,6 @@ echo json_encode([
     'success' => true,
     'token' => $token,
     'employee_id' => $targetEmployeeId,
+    'account_id' => $accountId,
     'company_id' => (string) $target['company_id'],
 ]);

@@ -12,7 +12,7 @@ require_once INCLUDES_DIR . '/ScanParser.php';
 require_once INCLUDES_DIR . '/RateLimiter.php';
 require_once INCLUDES_DIR . '/UrlSafety.php';
 header('Content-Type: application/json');
-$ctx = ScanAuth::requireEmployee();
+$ctx = ScanAuth::requireEmployeeMutation();
 
 // Pro gate: account must currently be Pro (Apple OR web).
 $db = Database::getInstance();

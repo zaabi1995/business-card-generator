@@ -58,29 +58,67 @@ class ScanAuth {
     // HTTP_AUTHORIZATION or rename it REDIRECT_HTTP_AUTHORIZATION after a
     // rewrite. Same three-tier pattern as wsAuthToken() in
     // wc_wallet_service.php, which hit this trap first.
-    private static function getAuthorizationHeader(): string {
-        $h = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
-        if ($h === '') {
-            $hdrs = [];
-            if (function_exists('getallheaders')) { $hdrs = getallheaders(); }
-            elseif (function_exists('apache_request_headers')) { $hdrs = apache_request_headers(); }
-            foreach ($hdrs as $k => $v) { if (strtolower($k) === 'authorization') { $h = $v; break; } }
+    private static function getAuthorizationHeader(
+        ?array $server = null,
+        ?array $headers = null
+    ): string {
+        $server = $server ?? $_SERVER;
+        $header = $server['HTTP_AUTHORIZATION']
+            ?? $server['REDIRECT_HTTP_AUTHORIZATION']
+            ?? '';
+        if (!is_string($header)) {
+            $header = '';
         }
-        return $h;
+        if ($header === '') {
+            if ($headers === null) {
+                if (function_exists('getallheaders')) {
+                    $headers = getallheaders();
+                } elseif (function_exists('apache_request_headers')) {
+                    $headers = apache_request_headers();
+                }
+            }
+            foreach (is_array($headers) ? $headers : [] as $name => $value) {
+                if (
+                    strtolower((string) $name) === 'authorization'
+                    && is_string($value)
+                ) {
+                    $header = $value;
+                    break;
+                }
+            }
+        }
+        return $header;
+    }
+
+    private static function presentedBearerToken(
+        ?array $server = null,
+        ?array $headers = null
+    ): ?string {
+        $header = self::getAuthorizationHeader($server, $headers);
+        if (stripos($header, 'Bearer ') !== 0) {
+            return null;
+        }
+        $token = trim(substr($header, 7));
+        return $token === '' ? null : $token;
+    }
+
+    public static function presentedBearerTokenHash(
+        ?array $server = null,
+        ?array $headers = null
+    ): ?string {
+        $token = self::presentedBearerToken($server, $headers);
+        return $token === null ? null : self::hashToken($token);
     }
 
     // Validates the Authorization header. On success returns
     // ['employee_id' => string, 'company_id' => string]; on failure sends
     // 401 JSON and exits.
     public static function requireEmployee(): array {
-        $header = self::getAuthorizationHeader();
-        if (stripos($header, 'Bearer ') !== 0) {
+        $token = self::presentedBearerToken();
+        if ($token === null) {
             self::deny();
         }
-        $token = trim(substr($header, 7));
-        if ($token === '') {
-            self::deny();
-        }
+        $tokenHash = self::hashToken($token);
         $db = Database::getInstance();
         // Status filters mirror Auth::unifiedLogin's employee login query
         // (e.status = 'active' AND c.status = 'active'): a deactivated
@@ -110,7 +148,7 @@ class ScanAuth {
               AND u.status = 'active'
              WHERE t.token_hash = :h
                AND t.revoked = 0",
-            ['h' => self::hashToken($token)]
+            ['h' => $tokenHash]
         );
         if (!$row) {
             self::deny();
@@ -126,13 +164,80 @@ class ScanAuth {
         }
         $db->getConnection()->prepare(
             "UPDATE scan_api_tokens SET last_used_at = NOW() WHERE token_hash = ?"
-        )->execute([self::hashToken($token)]);
+        )->execute([$tokenHash]);
         return [
             'account_id' => $accountId,
             'employee_id' => (string) $row['employee_id'],
             'company_id' => (string) $row['company_id'],
             'is_super_admin' => $isSuperAdmin,
+            'token_hash' => $tokenHash,
         ];
+    }
+
+    public static function requireEmployeeMutation(): array {
+        $initial = self::requireEmployee();
+        self::acquireAccountMutationLock((string) $initial['account_id']);
+        $fresh = self::requireEmployee();
+        if (!hash_equals(
+            (string) $initial['account_id'],
+            (string) $fresh['account_id']
+        )) {
+            self::deny();
+        }
+        return $fresh;
+    }
+    public static function acquireAccountMutationLock(string $accountId): callable {
+        $accountId = trim($accountId);
+        if ($accountId === '') {
+            self::deny();
+        }
+        $db = Database::getInstance();
+        $pdo = $db->getConnection();
+        $lockName = 'cardify_scan:'
+            . substr(hash('sha256', $accountId), 0, 48);
+        try {
+            $statement = $pdo->prepare('SELECT GET_LOCK(?, 15)');
+            $statement->execute([$lockName]);
+            $acquired = (int) $statement->fetchColumn() === 1;
+        } catch (Throwable $e) {
+            error_log('[scan/auth] account mutation lock: ' . $e->getMessage());
+            $acquired = false;
+        }
+        if (!$acquired) {
+            self::unavailable();
+        }
+        $released = false;
+        $releaseLock = static function () use (
+            $pdo,
+            $lockName,
+            &$released
+        ): void {
+            if ($released) {
+                return;
+            }
+            $released = true;
+            try {
+                $release = $pdo->prepare('SELECT RELEASE_LOCK(?)');
+                $release->execute([$lockName]);
+            } catch (Throwable $e) {
+                error_log(
+                    '[scan/auth] account mutation unlock: '
+                    . $e->getMessage()
+                );
+            }
+        };
+        register_shutdown_function($releaseLock);
+        return $releaseLock;
+    }
+
+    private static function unavailable(): void {
+        http_response_code(503);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'error' => 'account_mutation_busy',
+        ]);
+        exit;
     }
 
     private static function deny() {

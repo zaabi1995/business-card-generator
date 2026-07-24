@@ -13,7 +13,7 @@ require_once INCLUDES_DIR . '/ScanParser.php';
 require_once INCLUDES_DIR . '/ShadowProfileService.php';
 
 header('Content-Type: application/json');
-$ctx = ScanAuth::requireEmployee();
+$ctx = ScanAuth::requireEmployeeMutation();
 require_once __DIR__ . '/_ratelimit.php';
 scanRateLimit($ctx, 'upload', 240);
 

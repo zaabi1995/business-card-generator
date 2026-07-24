@@ -127,6 +127,7 @@ try {
         'success' => true,
         'token' => ScanAuth::issueToken($employeeId, 'mobile', $accountId),
         'employee_id' => $employeeId,
+        'account_id' => $accountId,
     ]);
 } catch (Throwable $e) {
     error_log('[scan/signup] ' . $e->getMessage());

@@ -19,7 +19,10 @@ require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
 
 header('Content-Type: application/json');
-$ctx = ScanAuth::requireEmployee();
+$method = $_SERVER['REQUEST_METHOD'];
+$ctx = $method === 'POST'
+    ? ScanAuth::requireEmployeeMutation()
+    : ScanAuth::requireEmployee();
 require_once __DIR__ . '/_ratelimit.php';
 scanRateLimit($ctx, 'designs', 600);
 require_once INCLUDES_DIR . '/CardRenderer.php';
@@ -35,7 +38,7 @@ $emp = $ctx['employee_id'];
 $company = $ctx['company_id'];
 
 // ---- GET: list this employee's wallet ----
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+if ($method === 'GET') {
     try {
         $rows = $db->fetchAll(
             "SELECT id, name, side, pair_id, source, is_active, background_image_path,
@@ -53,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+if ($method !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'method_not_allowed']);
     exit;

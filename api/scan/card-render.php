@@ -25,7 +25,7 @@ if ($method !== 'GET' && $method !== 'POST') {
     exit;
 }
 
-$ctx = ScanAuth::requireEmployee();
+$ctx = ScanAuth::requireEmployeeMutation();
 require_once __DIR__ . '/_ratelimit.php';
 scanRateLimit($ctx, 'card_render', 600);
 

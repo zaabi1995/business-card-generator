@@ -61,23 +61,53 @@ try {
             ]);
             exit;
         }
-        $employee = ScanIdentity::primaryEmployee(
+        $accountId = (string) $account['account_id'];
+        $releaseAccountLock = ScanAuth::acquireAccountMutationLock($accountId);
+        $freshAccount = ScanIdentity::findAccountByIdentifier(
             $db,
-            (string) $account['account_id']
+            $email,
+            'email'
         );
-        if ($employee === null) {
+        if (
+            $freshAccount === null
+            || !hash_equals(
+                $accountId,
+                (string) ($freshAccount['account_id'] ?? '')
+            )
+        ) {
+            $releaseAccountLock();
             http_response_code(403);
             echo json_encode(['success' => false, 'error' => 'account_unavailable']);
             exit;
         }
+        $freshHash = (string) ($freshAccount['password_hash'] ?? '');
+        if ($freshHash === '' || !password_verify($password, $freshHash)) {
+            $releaseAccountLock();
+            http_response_code(401);
+            echo json_encode(['success' => false, 'error' => 'invalid_credentials']);
+            exit;
+        }
+        $employee = ScanIdentity::primaryEmployee(
+            $db,
+            $accountId
+        );
+        if ($employee === null) {
+            $releaseAccountLock();
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'account_unavailable']);
+            exit;
+        }
+        $token = ScanAuth::issueToken(
+            (string) $employee['employee_id'],
+            'mobile',
+            $accountId
+        );
+        $releaseAccountLock();
         echo json_encode([
             'success' => true,
-            'token' => ScanAuth::issueToken(
-                (string) $employee['employee_id'],
-                'mobile',
-                (string) $account['account_id']
-            ),
+            'token' => $token,
             'employee_id' => (string) $employee['employee_id'],
+            'account_id' => $accountId,
         ]);
         exit;
     }
@@ -137,14 +167,29 @@ try {
             false,
             'legacy_password_proof'
         );
+        $releaseAccountLock = ScanAuth::acquireAccountMutationLock($accountId);
+        $membership = ScanIdentity::membershipForEmployee(
+            $db,
+            $accountId,
+            (string) $legacy['id']
+        );
+        if ($membership === null) {
+            $releaseAccountLock();
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'account_unavailable']);
+            exit;
+        }
+        $token = ScanAuth::issueToken(
+            (string) $legacy['id'],
+            'mobile',
+            $accountId
+        );
+        $releaseAccountLock();
         echo json_encode([
             'success' => true,
-            'token' => ScanAuth::issueToken(
-                (string) $legacy['id'],
-                'mobile',
-                $accountId
-            ),
+            'token' => $token,
             'employee_id' => (string) $legacy['id'],
+            'account_id' => $accountId,
         ]);
         exit;
     }
@@ -164,20 +209,54 @@ try {
     }
 
     $matched = $matchedEmployees[$accountId];
+    $releaseAccountLock = ScanAuth::acquireAccountMutationLock($accountId);
+    $membership = ScanIdentity::membershipForEmployee(
+        $db,
+        $accountId,
+        (string) $matched['employee_id']
+    );
+    $freshLegacy = $db->fetchOne(
+        "SELECT e.password_hash
+         FROM employees e
+         JOIN companies c
+           ON c.id = e.company_id
+          AND c.status = 'active'
+         WHERE e.id = :employee_id
+           AND e.status = 'active'
+           AND e.deleted_at IS NULL
+         LIMIT 1",
+        ['employee_id' => (string) $matched['employee_id']]
+    );
+    if ($membership === null || !is_array($freshLegacy)) {
+        $releaseAccountLock();
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'account_unavailable']);
+        exit;
+    }
+    $freshHash = (string) ($freshLegacy['password_hash'] ?? '');
+    if ($freshHash === '' || !password_verify($password, $freshHash)) {
+        $releaseAccountLock();
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'invalid_credentials']);
+        exit;
+    }
     $db->update(
         'scan_accounts',
-        ['password_hash' => $matched['password_hash']],
+        ['password_hash' => $freshHash],
         'id = :account_id',
         ['account_id' => $accountId]
     );
+    $token = ScanAuth::issueToken(
+        (string) $matched['employee_id'],
+        'mobile',
+        $accountId
+    );
+    $releaseAccountLock();
     echo json_encode([
         'success' => true,
-        'token' => ScanAuth::issueToken(
-            (string) $matched['employee_id'],
-            'mobile',
-            $accountId
-        ),
+        'token' => $token,
         'employee_id' => (string) $matched['employee_id'],
+        'account_id' => $accountId,
     ]);
 } catch (Throwable $e) {
     error_log('[scan/login] ' . $e->getMessage());

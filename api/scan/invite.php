@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'error' => 'POST only']);
     exit;
 }
-$ctx = ScanAuth::requireEmployee();
+$ctx = ScanAuth::requireEmployeeMutation();
 $body = json_decode(file_get_contents('php://input'), true) ?: [];
 $scanId = (int)($body['scan_id'] ?? 0);
 

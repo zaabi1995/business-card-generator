@@ -16,7 +16,7 @@ require_once INCLUDES_DIR . '/WhatsApp.php';
 require_once INCLUDES_DIR . '/Mailer.php';
 require_once __DIR__ . '/_link_common.php';
 header('Content-Type: application/json');
-$ctx = ScanAuth::requireEmployee();
+$ctx = ScanAuth::requireEmployeeMutation();
 $body = json_decode(file_get_contents('php://input'), true) ?: [];
 $raw = trim((string)($body['identifier'] ?? ''));
 if ($raw === '') { echo json_encode(['success' => false, 'error' => 'identifier_required']); exit; }

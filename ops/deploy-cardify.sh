@@ -18,11 +18,85 @@ git pull --ff-only origin main
 AFTER=$(git rev-parse HEAD)
 PHP_BIN="/www/server/php/83/bin/php"
 [ -x "$PHP_BIN" ] || PHP_BIN="$(command -v php || echo /usr/bin/php)"
+scan_cleanup_cron_backup=""
+scan_cleanup_cron_had_previous=0
+restore_scan_account_cleanup_cron() {
+  cron_target="/etc/cron.d/cardify-scan-account-cleanup"
+  [ -n "$scan_cleanup_cron_backup" ] || return 0
+  if [ "$scan_cleanup_cron_had_previous" -eq 1 ]; then
+    install -o root -g root -m 0644 \
+      "$scan_cleanup_cron_backup" "$cron_target"
+  else
+    rm -f "$cron_target"
+  fi
+  [ -z "$scan_cleanup_cron_backup" ] \
+    || rm -f "$scan_cleanup_cron_backup"
+  systemctl reload cron 2>/dev/null \
+    || systemctl reload crond 2>/dev/null \
+    || true
+}
+discard_scan_account_cleanup_cron_backup() {
+  [ -z "$scan_cleanup_cron_backup" ] \
+    || rm -f "$scan_cleanup_cron_backup"
+  scan_cleanup_cron_backup=""
+}
+install_scan_account_cleanup_cron() {
+  cron_source="$PWD/ops/cardify-scan-account-cleanup.cron"
+  cron_target="/etc/cron.d/cardify-scan-account-cleanup"
+  worker="$PWD/scripts/process-scan-account-deletions.php"
+  cron_php="/www/server/php/83/bin/php"
+  [ -f "$cron_source" ] || return 0
+  [ -f "$worker" ] || {
+    echo "Account cleanup worker is missing."
+    return 1
+  }
+  [ "$(id -u)" -eq 0 ] || {
+    echo "Root is required to install the account cleanup schedule."
+    return 1
+  }
+  for required_binary in \
+    /www/server/php/83/bin/php \
+    /usr/bin/flock \
+    /usr/bin/logger; do
+    [ -x "$required_binary" ] || {
+      echo "Required cleanup binary is missing: $required_binary"
+      return 1
+    }
+  done
+  scan_cleanup_cron_backup=$(mktemp) || return 1
+  if [ -f "$cron_target" ]; then
+    cp -p "$cron_target" "$scan_cleanup_cron_backup" || return 1
+    scan_cleanup_cron_had_previous=1
+  else
+    scan_cleanup_cron_had_previous=0
+  fi
+  install -o root -g root -m 0644 \
+    "$cron_source" "$cron_target" || return 1
+  cmp -s "$cron_source" "$cron_target" || {
+    echo "Account cleanup schedule verification failed."
+    return 1
+  }
+  if command -v runuser >/dev/null 2>&1; then
+    runuser -u www -- "$cron_php" "$worker" >/dev/null || return 1
+  else
+    su -s /bin/sh -c "$cron_php $worker" www >/dev/null || return 1
+  fi
+  systemctl reload cron 2>/dev/null \
+    || systemctl reload crond 2>/dev/null \
+    || true
+  echo "Account cleanup schedule installed and worker verified."
+}
 if [ "$BEFORE" = "$AFTER" ]; then
   if ! "$PHP_BIN" ops/run-pending-migrations.php; then
     echo "Pre-flight: database migration check failed."
     exit 4
   fi
+  if ! install_scan_account_cleanup_cron; then
+    restore_scan_account_cleanup_cron || true
+    echo "Account cleanup schedule installation failed."
+    exit 5
+  fi
+  discard_scan_account_cleanup_cron_backup
   echo "No code changes, migration check complete."
   exit 0
 fi
@@ -148,5 +222,15 @@ if [ "$smoke_fail" -gt 0 ]; then
   exit 3
 fi
 echo "Post-flight OK (5/5 URLs healthy)"
-
+if ! install_scan_account_cleanup_cron; then
+  restore_scan_account_cleanup_cron || true
+  echo "Account cleanup schedule installation failed. Rolling back."
+  git reset --hard "$BEFORE" >/dev/null
+  find . -type f ! -user www -exec chown www:www {} + 2>/dev/null || true
+  systemctl reload php8.3-fpm 2>/dev/null \
+    || systemctl reload php-fpm 2>/dev/null \
+    || true
+  exit 5
+fi
+discard_scan_account_cleanup_cron_backup
 echo "Deploy complete."

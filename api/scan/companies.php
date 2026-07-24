@@ -98,6 +98,7 @@ usort($companies, static function (array $left, array $right): int {
 
 echo json_encode([
     'success' => true,
+    'account_id' => $accountId,
     'active_company_id' => $activeCompanyId,
     'is_super_admin' => $isSuperAdmin,
     'companies' => $companies,

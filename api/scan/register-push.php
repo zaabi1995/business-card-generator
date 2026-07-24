@@ -2,9 +2,11 @@
 /**
  * POST /api/scan/register-push.php
  *
- * Registration and legacy unregister require ScanAuth. New clients may supply
- * a client-generated revocation secret during registration, then use the same
- * secret to revoke that exact push token after logout without a bearer token.
+ * Registration and account-bound unregister require ScanAuth. New clients may
+ * supply a client-generated revocation secret during registration, then use
+ * the same secret to revoke that exact push token after logout. Upgrade cleanup
+ * may use the high-entropy Expo token itself to revoke only unprotected legacy
+ * rows that predate revocation secrets.
  */
 require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
@@ -40,6 +42,14 @@ if (array_key_exists('unregister', $body) && !is_bool($body['unregister'])) {
     exit;
 }
 $unregister = $body['unregister'] ?? false;
+if (
+    array_key_exists('legacy_unregister', $body)
+    && !is_bool($body['legacy_unregister'])
+) {
+    echo json_encode(['success' => false, 'error' => 'invalid_legacy_unregister']);
+    exit;
+}
+$legacyUnregister = $body['legacy_unregister'] ?? false;
 
 $platform = null;
 if (array_key_exists('platform', $body)) {
@@ -76,7 +86,15 @@ if ($hasRevocationSecret) {
     }
 }
 
-$guestRevocation = $unregister && $hasRevocationSecret;
+$secretGuestRevocation = $unregister && $hasRevocationSecret;
+$legacyGuestRevocation = $unregister
+    && $legacyUnregister
+    && !$hasRevocationSecret;
+if ($legacyUnregister && !$legacyGuestRevocation) {
+    echo json_encode(['success' => false, 'error' => 'invalid_legacy_unregister']);
+    exit;
+}
+$guestRevocation = $secretGuestRevocation || $legacyGuestRevocation;
 $ctx = null;
 if ($guestRevocation) {
     $ip = function_exists('getClientIp')
@@ -89,22 +107,31 @@ if ($guestRevocation) {
     }
 }
 if (!$guestRevocation) {
-    $ctx = ScanAuth::requireEmployee();
+$ctx = ScanAuth::requireEmployeeMutation();
 }
 
 try {
     $connection = Database::getInstance()->getConnection();
 
     if ($guestRevocation) {
-        $delete = $connection->prepare(
-            'DELETE FROM push_tokens
-             WHERE token = :token
-               AND revocation_secret_hash = :revocation_secret_hash'
-        );
-        $delete->execute([
-            'token' => $token,
-            'revocation_secret_hash' => hash('sha256', $revocationSecret),
-        ]);
+        if ($legacyGuestRevocation) {
+            $delete = $connection->prepare(
+                'DELETE FROM push_tokens
+                 WHERE token = :token
+                   AND revocation_secret_hash IS NULL'
+            );
+            $delete->execute(['token' => $token]);
+        } else {
+            $delete = $connection->prepare(
+                'DELETE FROM push_tokens
+                 WHERE token = :token
+                   AND revocation_secret_hash = :revocation_secret_hash'
+            );
+            $delete->execute([
+                'token' => $token,
+                'revocation_secret_hash' => hash('sha256', $revocationSecret),
+            ]);
+        }
         $revoked = $delete->rowCount() === 1;
 
         if (!$revoked) {

@@ -22,7 +22,7 @@ $basePushMigration = (string) file_get_contents(
 
 pushRegistrationCheck(
     'push registration remains POST-only with authenticated legacy paths',
-    strpos($registerPush, "ScanAuth::requireEmployee()") !== false
+    strpos($registerPush, "ScanAuth::requireEmployeeMutation()") !== false
         && strpos($registerPush, "\$_SERVER['REQUEST_METHOD'] !== 'POST'") !== false
         && strpos($registerPush, 'if (!$guestRevocation)') !== false
 );
@@ -57,7 +57,10 @@ pushRegistrationCheck(
     'guest secret revocation is parsed before auth and rate limited by IP',
     strpos($registerPush, "require_once INCLUDES_DIR . '/RateLimiter.php'") !== false
         && strpos($registerPush, "require_once INCLUDES_DIR . '/UrlSafety.php'") !== false
-        && strpos($registerPush, '$guestRevocation = $unregister && $hasRevocationSecret;')
+        && strpos(
+            $registerPush,
+            '$secretGuestRevocation = $unregister && $hasRevocationSecret;'
+        )
             !== false
         && strpos(
             $registerPush,
@@ -133,6 +136,23 @@ pushRegistrationCheck(
         && strpos($registerPush, 'SELECT 1 FROM push_tokens') !== false
         && strpos($registerPush, '$revoked = !$stillExists;') !== false
         && strpos($registerPush, "'revoked' => \$revoked") !== false
+);
+pushRegistrationCheck(
+    'legacy token capability can delete only unprotected upgrade rows',
+    strpos($registerPush, '$legacyGuestRevocation') !== false
+        && strpos($registerPush, 'legacy_unregister') !== false
+        && preg_match(
+            '/DELETE FROM push_tokens\s+WHERE token = :token\s+AND revocation_secret_hash IS NULL/',
+            $registerPush
+        ) === 1
+);
+pushRegistrationCheck(
+    'legacy token capability is rate limited and cannot include a secret',
+    strpos($registerPush, "'scan_push_revoke'") !== false
+        && strpos(
+            $registerPush,
+            '$legacyUnregister && !$legacyGuestRevocation'
+        ) !== false
 );
 pushRegistrationCheck(
     'registration returns no revocation secret and remains response compatible',
@@ -222,7 +242,7 @@ pushRegistrationCheck(
 );
 pushRegistrationCheck(
     'all push token lookups rely on the binary-collated column equality',
-    substr_count($registerPush, 'token = :token') === 4
+    substr_count($registerPush, 'token = :token') === 5
         && strpos($registerPush, 'BINARY token') === false
 );
 
