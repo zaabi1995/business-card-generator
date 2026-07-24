@@ -27,6 +27,7 @@ class ScanAuth {
         string $label = 'mobile',
         ?string $accountId = null
     ): string {
+        self::sendPrivateNoStoreHeaders();
         $db = Database::getInstance();
         if ($accountId === null) {
             $membership = $db->fetchOne(
@@ -111,6 +112,7 @@ class ScanAuth {
         ?array $server = null,
         ?array $headers = null
     ): ?string {
+        self::sendPrivateNoStoreHeaders();
         $token = self::presentedBearerToken($server, $headers);
         return $token === null ? null : self::hashToken($token);
     }

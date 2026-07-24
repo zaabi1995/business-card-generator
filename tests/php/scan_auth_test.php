@@ -29,6 +29,14 @@ check(
         && preg_match(
             '/function requireEmployee\\(\\): array\\s*\\{\\s*self::sendPrivateNoStoreHeaders\\(\\);/',
             $source
+        ) === 1
+        && preg_match(
+            '/function issueToken\\([\\s\\S]*?\\): string \\{\\s*self::sendPrivateNoStoreHeaders\\(\\);/',
+            $source
+        ) === 1
+        && preg_match(
+            '/function presentedBearerTokenHash\\([\\s\\S]*?\\): \\?string \\{\\s*self::sendPrivateNoStoreHeaders\\(\\);/',
+            $source
         ) === 1,
     true
 );
