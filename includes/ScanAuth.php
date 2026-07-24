@@ -6,6 +6,11 @@ require_once __DIR__ . '/ScanIdentity.php';
 
 class ScanAuth {
 
+    private static function sendPrivateNoStoreHeaders(): void {
+        header('Cache-Control: no-store, private');
+        header('Pragma: no-cache');
+    }
+
     public static function generateToken(): string {
         return rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
     }
@@ -114,6 +119,7 @@ class ScanAuth {
     // ['employee_id' => string, 'company_id' => string]; on failure sends
     // 401 JSON and exits.
     public static function requireEmployee(): array {
+        self::sendPrivateNoStoreHeaders();
         $token = self::presentedBearerToken();
         if ($token === null) {
             self::deny();

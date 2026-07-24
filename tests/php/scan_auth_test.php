@@ -21,4 +21,15 @@ $token2 = ScanAuth::generateToken();
 check('tokens are not repeated', $token === $token2, false);
 check('different tokens hash differently', ScanAuth::hashToken($token) === ScanAuth::hashToken($token2), false);
 
+$source = file_get_contents(__DIR__ . '/../../includes/ScanAuth.php');
+check(
+    'authenticated API responses are private and never cached',
+    strpos($source, "header('Cache-Control: no-store, private')") !== false
+        && strpos($source, "header('Pragma: no-cache')") !== false
+        && preg_match(
+            '/function requireEmployee\\(\\): array\\s*\\{\\s*self::sendPrivateNoStoreHeaders\\(\\);/',
+            $source
+        ) === 1,
+    true
+);
 echo "ALL PASS\n";
