@@ -2,10 +2,11 @@
 /**
  * POST /api/scan/register-push.php, register an Expo push token for a device
  *
- * Body: {token, platform} -> {success}. Bearer-auth (ScanAuth). Upserts on the
- * unique token, so a token that moves to a different employee (shared device,
- * re-login) is re-pointed rather than duplicated. Infrastructure only: the
- * SEND side (server -> device) is out of scope here.
+ * Body: {token, platform, unregister?} -> {success}. Bearer-auth (ScanAuth).
+ * A boolean unregister removes the current employee's matching token. Normal
+ * requests upsert on the unique token, so a token that moves to a different
+ * employee (shared device, re-login) is re-pointed rather than duplicated.
+ * Infrastructure only: the SEND side (server -> device) is out of scope here.
  */
 require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
@@ -21,6 +22,7 @@ $ctx = ScanAuth::requireEmployee();
 $body = json_decode(file_get_contents('php://input'), true) ?: [];
 $token = trim((string)($body['token'] ?? ''));
 $platform = substr(trim((string)($body['platform'] ?? '')), 0, 20) ?: null;
+$unregister = ($body['unregister'] ?? false) === true;
 
 if ($token === '' || strlen($token) > 255) {
     echo json_encode(['success' => false, 'error' => 'invalid_token']);
@@ -29,14 +31,20 @@ if ($token === '' || strlen($token) > 255) {
 
 try {
     $db = Database::getInstance();
-    $db->getConnection()->prepare(
-        "INSERT INTO push_tokens (employee_id, token, platform)
-         VALUES (:e, :t, :p)
-         ON DUPLICATE KEY UPDATE
-            employee_id = VALUES(employee_id),
-            platform = VALUES(platform),
-            updated_at = CURRENT_TIMESTAMP"
-    )->execute(['e' => $ctx['employee_id'], 't' => $token, 'p' => $platform]);
+    if ($unregister) {
+        $db->getConnection()->prepare(
+            'DELETE FROM push_tokens WHERE employee_id = :e AND token = :t'
+        )->execute(['e' => $ctx['employee_id'], 't' => $token]);
+    } else {
+        $db->getConnection()->prepare(
+            "INSERT INTO push_tokens (employee_id, token, platform)
+             VALUES (:e, :t, :p)
+             ON DUPLICATE KEY UPDATE
+                employee_id = VALUES(employee_id),
+                platform = VALUES(platform),
+                updated_at = CURRENT_TIMESTAMP"
+        )->execute(['e' => $ctx['employee_id'], 't' => $token, 'p' => $platform]);
+    }
 } catch (\Throwable $e) {
     error_log('[scan/register-push] ' . $e->getMessage());
     http_response_code(500);
