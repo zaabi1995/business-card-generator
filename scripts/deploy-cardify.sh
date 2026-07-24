@@ -3,27 +3,32 @@
 # (Cat T actions 465 + 466).
 #
 # Flow:
-#   1. git pull — note BEFORE + AFTER.
+#   1. git pull, note BEFORE + AFTER.
 #   2. Pre-flight: php -l on every changed .php file, rollback on fail.
-#   3. Scoped chown/chmod + safety-net sweep.
-#   4. php-fpm reload to clear OPcache.
-#   5. Post-flight: HTTP smoke 5 URLs, rollback + FPM re-reload on fail.
+#   3. Run all pending database migrations in numeric order.
+#   4. Scoped chown/chmod + safety-net sweep.
+#   5. php-fpm reload to clear OPcache.
+#   6. Post-flight: HTTP smoke 5 URLs, rollback + FPM re-reload on fail.
 
-set -uo pipefail
+set -euo pipefail
 cd /www/wwwroot/cardify.om
 
 BEFORE=$(git rev-parse HEAD)
-git pull origin main
+git pull --ff-only origin main
 AFTER=$(git rev-parse HEAD)
+PHP_BIN="/www/server/php/83/bin/php"
+[ -x "$PHP_BIN" ] || PHP_BIN="$(command -v php || echo /usr/bin/php)"
 if [ "$BEFORE" = "$AFTER" ]; then
-  echo "No changes — nothing to deploy."
+  if ! "$PHP_BIN" ops/run-pending-migrations.php; then
+    echo "Pre-flight: database migration check failed."
+    exit 4
+  fi
+  echo "No code changes, migration check complete."
   exit 0
 fi
 echo "Pulled $BEFORE..$AFTER"
 
 # --- Pre-flight: php -l on every changed .php file ---
-PHP_BIN="/www/server/php/83/bin/php"
-[ -x "$PHP_BIN" ] || PHP_BIN="$(command -v php || echo /usr/bin/php)"
 errs=0
 while IFS= read -r f; do
   [ -f "$f" ] || continue
@@ -44,6 +49,14 @@ if [ "$errs" -gt 0 ]; then
   exit 2
 fi
 echo "Pre-flight OK (no lint errors)"
+
+# --- Schema-first: apply every pending migration before activating new code ---
+if ! "$PHP_BIN" ops/run-pending-migrations.php; then
+  echo "Pre-flight: database migration failed. Rolling back code to $BEFORE."
+  git reset --hard "$BEFORE" >/dev/null
+  echo "Deploy aborted. Review the migration error before retrying."
+  exit 4
+fi
 
 # --- Scoped perms fix on changed files ---
 git diff --name-only --diff-filter=ACMR "$BEFORE" "$AFTER" | while read -r f; do

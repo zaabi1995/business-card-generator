@@ -3,27 +3,32 @@
 # (Cat T actions 465 + 466).
 #
 # Flow:
-#   1. git pull — note BEFORE + AFTER.
+#   1. git pull, note BEFORE + AFTER.
 #   2. Pre-flight: php -l on every changed .php file, rollback on fail.
-#   3. Scoped chown/chmod + safety-net sweep.
-#   4. php-fpm reload to clear OPcache.
-#   5. Post-flight: HTTP smoke 5 URLs, rollback + FPM re-reload on fail.
+#   3. Run all pending database migrations in numeric order.
+#   4. Scoped chown/chmod + safety-net sweep.
+#   5. php-fpm reload to clear OPcache.
+#   6. Post-flight: HTTP smoke 5 URLs, rollback + FPM re-reload on fail.
 
-set -uo pipefail
+set -euo pipefail
 cd /www/wwwroot/cardify.om
 
 BEFORE=$(git rev-parse HEAD)
-git pull origin main
+git pull --ff-only origin main
 AFTER=$(git rev-parse HEAD)
+PHP_BIN="/www/server/php/83/bin/php"
+[ -x "$PHP_BIN" ] || PHP_BIN="$(command -v php || echo /usr/bin/php)"
 if [ "$BEFORE" = "$AFTER" ]; then
-  echo "No changes — nothing to deploy."
+  if ! "$PHP_BIN" ops/run-pending-migrations.php; then
+    echo "Pre-flight: database migration check failed."
+    exit 4
+  fi
+  echo "No code changes, migration check complete."
   exit 0
 fi
 echo "Pulled $BEFORE..$AFTER"
 
 # --- Pre-flight: php -l on every changed .php file ---
-PHP_BIN="/www/server/php/83/bin/php"
-[ -x "$PHP_BIN" ] || PHP_BIN="$(command -v php || echo /usr/bin/php)"
 errs=0
 while IFS= read -r f; do
   [ -f "$f" ] || continue
@@ -45,15 +50,41 @@ if [ "$errs" -gt 0 ]; then
 fi
 echo "Pre-flight OK (no lint errors)"
 
+# --- Schema-first: apply every pending migration before activating new code ---
+if ! "$PHP_BIN" ops/run-pending-migrations.php; then
+  echo "Pre-flight: database migration failed. Rolling back code to $BEFORE."
+  git reset --hard "$BEFORE" >/dev/null
+  echo "Deploy aborted. Review the migration error before retrying."
+  exit 4
+fi
+
 # --- Scoped perms fix on changed files ---
 git diff --name-only --diff-filter=ACMR "$BEFORE" "$AFTER" | while read -r f; do
   [ -f "$f" ] || continue
   chown www:www "$f" 2>/dev/null || true
-  chmod 644 "$f" 2>/dev/null || true
+  case "$f" in *.sh) chmod 755 "$f" 2>/dev/null || true ;; *) chmod 644 "$f" 2>/dev/null || true ;; esac
 done
 find . -type f ! -user www -exec chown www:www {} + 2>/dev/null || true
-find . -type f ! -perm 644 ! -name .user.ini -exec chmod 644 {} + 2>/dev/null || true
+find . -type f ! -perm 644 ! -name .user.ini ! -name "*.sh" -exec chmod 644 {} + 2>/dev/null || true
+find . -type f -name "*.sh" ! -perm 755 -exec chmod 755 {} + 2>/dev/null || true
 find . -type d ! -perm 755 -exec chmod 755 {} + 2>/dev/null || true
+
+# Ensure cache dirs exist with correct ownership; some are created on
+# demand by PHP and end up root-owned if they're written from a CLI
+# script (extract-template-fonts, backfill-vector-source, etc).
+for d in tmp/pdf-vector tmp/pdf-cards data/print-sheets; do
+  [ -d "$d" ] || mkdir -p "$d"
+  chown -R www:www "$d" 2>/dev/null || true
+  chmod -R u+rwX,g+rwX "$d" 2>/dev/null || true
+done
+# Keep wallet signing material locked (the sweep above loosens dirs to 755 /
+# files to 644; the Apple PEM + Google service-account JSON must stay readable
+# only by www). HTTP access is already denied by the nginx extension conf.
+if [ -d data/wallet ]; then
+  chown -R www:www data/wallet 2>/dev/null || true
+  chmod 700 data/wallet 2>/dev/null || true
+  find data/wallet -type f -exec chmod 600 {} + 2>/dev/null || true
+fi
 echo "Perms OK"
 
 systemctl reload php8.3-fpm 2>/dev/null || systemctl reload php-fpm 2>/dev/null || true
