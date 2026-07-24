@@ -112,44 +112,43 @@ try {
         ? $name
         : ($isEmail ? emailLocalName($identifier) : 'My Card');
     $randomPassword = bin2hex(random_bytes(24));
-    $companyResult = createCompany(
-        $displayName,
-        $isEmail ? $identifier : '',
-        $randomPassword
-    );
-    if (empty($companyResult['success'])) {
-        error_log(
-            '[scan/otp-verify] createCompany: '
-            . ($companyResult['error'] ?? 'unknown')
-        );
-        echo json_encode(['success' => false, 'error' => 'account_create_failed']);
-        exit;
+    $pdo = $db->getConnection();
+    $startedTransaction = !$pdo->inTransaction();
+    if ($startedTransaction) {
+        $pdo->beginTransaction();
     }
-
-    $companyId = (string) $companyResult['company']['id'];
-    $employeeData = [
-        'name_en' => $displayName,
-        'status' => 'active',
-        'company_en' => $displayName,
-        'skip_invite' => true,
-    ];
-    if ($isEmail) {
-        $employeeData['email'] = $identifier;
-    } else {
-        $employeeData['mobile'] = $identifier;
-    }
-    $employeeResult = addEmployee($employeeData, $companyId);
-    if (empty($employeeResult['success'])) {
-        error_log(
-            '[scan/otp-verify] addEmployee: '
-            . ($employeeResult['error'] ?? 'unknown')
-        );
-        echo json_encode(['success' => false, 'error' => 'account_create_failed']);
-        exit;
-    }
-
-    $employeeId = (string) $employeeResult['id'];
     try {
+        $companyResult = createCompany(
+            $displayName,
+            $isEmail ? $identifier : '',
+            $randomPassword
+        );
+        if (empty($companyResult['success'])) {
+            throw new RuntimeException(
+                'createCompany: ' . ($companyResult['error'] ?? 'unknown')
+            );
+        }
+
+        $companyId = (string) $companyResult['company']['id'];
+        $employeeData = [
+            'name_en' => $displayName,
+            'status' => 'active',
+            'company_en' => $displayName,
+            'skip_invite' => true,
+        ];
+        if ($isEmail) {
+            $employeeData['email'] = $identifier;
+        } else {
+            $employeeData['mobile'] = $identifier;
+        }
+        $employeeResult = addEmployee($employeeData, $companyId);
+        if (empty($employeeResult['success'])) {
+            throw new RuntimeException(
+                'addEmployee: ' . ($employeeResult['error'] ?? 'unknown')
+            );
+        }
+
+        $employeeId = (string) $employeeResult['id'];
         $accountId = ScanIdentity::createAccountForEmployee(
             $db,
             $employeeId,
@@ -160,22 +159,15 @@ try {
             'otp_signup',
             'owner'
         );
-    } catch (Throwable $identityError) {
-        error_log('[scan/otp-verify] identity: ' . $identityError->getMessage());
-        try {
-            $db->query('DELETE FROM employees WHERE id = :employee_id', [
-                'employee_id' => $employeeId,
-            ]);
-            $db->query('DELETE FROM company_themes WHERE company_id = :company_id', [
-                'company_id' => $companyId,
-            ]);
-            $db->query('DELETE FROM companies WHERE id = :company_id', [
-                'company_id' => $companyId,
-            ]);
-        } catch (Throwable $cleanupError) {
-            error_log('[scan/otp-verify] cleanup: ' . $cleanupError->getMessage());
+        $token = ScanAuth::issueToken($employeeId, 'mobile', $accountId);
+        if ($startedTransaction) {
+            $pdo->commit();
         }
-
+    } catch (Throwable $provisionError) {
+        if ($startedTransaction && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('[scan/otp-verify] provisioning: ' . $provisionError->getMessage());
         $existing = ScanIdentity::findAccountByIdentifier(
             $db,
             $identifier,
@@ -207,7 +199,7 @@ try {
 
     echo json_encode([
         'success' => true,
-        'token' => ScanAuth::issueToken($employeeId, 'mobile', $accountId),
+        'token' => $token,
         'employee_id' => $employeeId,
         'is_new' => true,
     ]);

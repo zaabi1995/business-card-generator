@@ -135,15 +135,15 @@ class CardifyConvention
         $local = preg_replace('/\.+/', '.', $local) ?? '';
         $local = trim($local, '.');
         // Length cap to keep URLs manageable
-        if (strlen($local) > 60) {
-            $local = substr($local, 0, 60);
+        if (strlen($local) > 36) {
+            $local = substr($local, 0, 36);
         }
         return $local;
     }
 
     /**
      * Derive a unique employee id from an email and resolve collisions
-     * against the existing employees of the same company.
+     * against the globally unique employees.id primary key.
      *
      * @param string             $email
      * @param string             $companyId
@@ -168,8 +168,8 @@ class CardifyConvention
         $candidate = $base;
         $n = 1;
         while (true) {
-            $sql = 'SELECT id FROM employees WHERE id = :i AND company_id = :c';
-            $params = ['i' => $candidate, 'c' => $companyId];
+            $sql = 'SELECT id FROM employees WHERE id = :i';
+            $params = ['i' => $candidate];
             if ($excludeEmployeeId) {
                 $sql .= ' AND id <> :ex';
                 $params['ex'] = $excludeEmployeeId;
@@ -180,7 +180,8 @@ class CardifyConvention
                 return $candidate;
             }
             $n++;
-            $candidate = $base . $n;
+            $suffix = (string) $n;
+            $candidate = substr($base, 0, 36 - strlen($suffix)) . $suffix;
         }
     }
 

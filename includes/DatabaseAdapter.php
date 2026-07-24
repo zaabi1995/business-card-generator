@@ -495,6 +495,15 @@ class DatabaseAdapter {
         }
     }
 
+    private static function isEmployeePrimaryKeyCollision(Throwable $error): bool {
+        if (!($error instanceof PDOException)) {
+            return false;
+        }
+        $driverCode = (int)($error->errorInfo[1] ?? 0);
+        return $driverCode === 1062
+            && preg_match('/\bPRIMARY\b/i', $error->getMessage()) === 1;
+    }
+
     /**
      * Validate & normalize a Dynamic QR redirect URL.
      * Returns null for empty/invalid input. Only http(s) URLs accepted.
@@ -590,7 +599,27 @@ class DatabaseAdapter {
         }
 
         try {
-            self::$db->insert('employees', $employee);
+            $primaryCollisionRetries = 0;
+            while (true) {
+                try {
+                    self::$db->insert('employees', $employee);
+                    break;
+                } catch (Throwable $insertError) {
+                    if (
+                        $emailLc === ''
+                        || $primaryCollisionRetries >= 2
+                        || !self::isEmployeePrimaryKeyCollision($insertError)
+                    ) {
+                        throw $insertError;
+                    }
+                    $primaryCollisionRetries++;
+                    $employee['id'] = CardifyConvention::employeeIdFromEmail(
+                        $emailLc,
+                        $companyId,
+                        self::$db
+                    );
+                }
+            }
 
             // Auto-mint edit token + dispatch invite unless the caller
             // explicitly opted out (e.g., demo seeder, quiet bulk loads).
@@ -624,7 +653,7 @@ class DatabaseAdapter {
             }
 
             return ['success' => true, 'id' => $employee['id'], 'employee' => $employee];
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             return ['success' => false, 'error' => 'Failed to save employee: ' . $e->getMessage()];
         }
     }

@@ -23,6 +23,7 @@ function source(string $path): string
 
 $scanAuth = source($root . '/includes/ScanAuth.php');
 $scanIdentity = source($root . '/includes/ScanIdentity.php');
+$databaseAdapter = source($root . '/includes/DatabaseAdapter.php');
 $companies = source($root . '/api/scan/companies.php');
 $switchCompany = source($root . '/api/scan/switch-company.php');
 $linkVerify = source($root . '/api/scan/link-verify.php');
@@ -121,6 +122,21 @@ contractCheck(
     'OTP login no longer selects an account from editable profile PII',
     strpos($otpVerify, 'findActiveEmployee') === false
         && strpos($otpVerify, 'findAccountByIdentifier') !== false
+);
+contractCheck(
+    'OTP account provisioning is atomic through token issuance',
+    preg_match(
+        '/beginTransaction\\(\\).*createCompany\\(.*addEmployee\\(.*'
+            . 'createAccountForEmployee\\(.*issueToken\\(.*commit\\(\\)/s',
+        $otpVerify
+    ) === 1
+        && strpos($otpVerify, '$pdo->rollBack()') !== false
+);
+contractCheck(
+    'employee primary-key races retry only the global ID allocation',
+    strpos($databaseAdapter, 'isEmployeePrimaryKeyCollision') !== false
+        && strpos($databaseAdapter, '$primaryCollisionRetries >= 2') !== false
+        && strpos($databaseAdapter, 'CardifyConvention::employeeIdFromEmail') !== false
 );
 contractCheck(
     'password login resolves an account and denies ambiguous legacy proof',
