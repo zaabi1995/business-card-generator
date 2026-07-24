@@ -152,7 +152,11 @@ try {
         $brandLocked = false;
         if (array_key_exists('primary_color', $body)) {
             require_once __DIR__ . '/_brand_guard.php';
-            $canBrand = scanCanEditBrand($db, $employeeId);
+            $canBrand = scanCanEditBrand(
+                $db,
+                (string) $ctx['account_id'],
+                $employeeId
+            );
             $brandLocked = !$canBrand;
             if ($canBrand) {
             $safe = ColorContrast::safeAccent((string) $body['primary_color']);
@@ -230,7 +234,11 @@ try {
         'dark_mode'        => (int) ($employee['card_dark_mode_toggle'] ?? 1) === 1,
         // Lets the app grey out the colour/logo editors for a managed-tenant
         // employee instead of only failing on save.
-        'can_edit_brand'   => scanCanEditBrand($db, $employeeId),
+        'can_edit_brand'   => scanCanEditBrand(
+            $db,
+            (string) $ctx['account_id'],
+            $employeeId
+        ),
     ];
 
     $slug = (string) ($company['slug'] ?? '');

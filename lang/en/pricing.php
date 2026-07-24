@@ -5,13 +5,13 @@ return [
 
     'hero_eyebrow' => 'Simple pricing',
     'hero_heading' => 'Free platform, pay only for prints.',
-    'hero_sub'     => 'No subscriptions. No hidden fees. Unlimited employees, unlimited templates, unlimited digital cards and QR shares. You pay only when you order physical prints.',
+    'hero_sub'     => 'No subscription is required for the web platform. Unlimited employees, templates, digital cards, and QR shares stay free. Physical prints are pay per order, while optional Cardify Pro mobile features are billed separately through the App Store.',
 
     // Platform (free forever) block
     'platform_badge'  => 'Free Forever',
     'platform_name'   => 'Platform Access',
     'platform_price'  => 'OMR 0',
-    'platform_sub'    => 'No credit card, no trial, no expiry.',
+    'platform_sub'    => 'No credit card, trial, or expiry for the web platform.',
     'platform_f1'     => 'Unlimited employees',
     'platform_f2'     => 'Unlimited templates',
     'platform_f3'     => 'Digital cards + QR codes',
@@ -53,7 +53,7 @@ return [
     // FAQ
     'faq_h'  => 'Common questions',
     'faq_q1' => 'Do I need to pay anything to use Cardify?',
-    'faq_a1' => 'No. The platform is free forever. You only pay when you order printed cards. Digital cards, QR sharing, email signatures, WhatsApp share, and analytics are all free, for every team size.',
+    'faq_a1' => 'No payment is required for the web platform. You pay when you order printed cards. Optional Cardify Pro features in the native app, including cloud backup and enhanced scanning, use separate App Store billing.',
     'faq_q2' => 'Is there a limit on employees or templates?',
     'faq_a2' => 'No limit on either. Add as many employees as you need, design as many templates as you need, at no extra fee.',
     'faq_q3' => 'How do I order printed cards?',
@@ -67,14 +67,14 @@ return [
 
     // Closing
     'closing_h'    => 'Start your first card in 2 minutes',
-    'closing_b'    => 'Free forever. No credit card. Order prints only when you want to.',
+    'closing_b'    => 'The web platform stays free. No credit card required. Order prints only when you want to.',
     'closing_cta'  => 'Start Free',
     'closing_cta2' => 'Talk on WhatsApp',
 
     // index.php home #pricing section
     'home_kicker'   => 'Simple pricing',
     'home_headline' => 'Free platform, pay only for prints',
-    'home_subhead'  => 'No subscriptions. Unlimited everything. You only pay when you order physical prints.',
-    'home_footnote' => 'No subscription, no setup fee, no minimum order. Print prices are set by each verified Omani print shop and shown to you before you confirm.',
+    'home_subhead'  => 'No subscription is required for the web platform. You only pay when you order physical prints.',
+    'home_footnote' => 'No web-platform subscription, setup fee, or minimum order. Optional Cardify Pro mobile features use separate App Store billing. Print prices are shown before you confirm.',
     'home_plans_from' => 'Prints from :amount :currency',
 ];

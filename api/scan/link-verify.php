@@ -1,36 +1,97 @@
 <?php
 /**
- * POST /api/scan/link-verify.php {identifier, code}. Auth'd: verify the OTP and
- * ATTACH the email/phone to the current account (only if the matching column is
- * empty, never overwriting an existing one, and never claiming another account's
- * identifier). Bearer-auth. -> {success, email, phone}
+ * POST /api/scan/link-verify.php {identifier, code}
+ *
+ * Verifies an OTP and attaches the login alias to the immutable scan account.
+ * Card profile email and phone fields are separate editable content.
  */
 require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
 require_once INCLUDES_DIR . '/OtpService.php';
 require_once INCLUDES_DIR . '/Phone.php';
 require_once __DIR__ . '/_link_common.php';
+
 header('Content-Type: application/json');
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'error' => 'POST only']);
+    exit;
+}
+
 $ctx = ScanAuth::requireEmployee();
-$body = json_decode(file_get_contents('php://input'), true) ?: [];
-$raw = trim((string)($body['identifier'] ?? ''));
-$code = trim((string)($body['code'] ?? ''));
-if ($raw === '' || $code === '') { echo json_encode(['success' => false, 'error' => 'identifier_and_code_required']); exit; }
+require_once __DIR__ . '/_ratelimit.php';
+scanRateLimit($ctx, 'link_verify', 60);
+
+$body = json_decode((string) file_get_contents('php://input'), true);
+if (!is_array($body)) {
+    $body = [];
+}
+$raw = trim((string) ($body['identifier'] ?? ''));
+$code = trim((string) ($body['code'] ?? ''));
+if ($raw === '' || $code === '') {
+    echo json_encode([
+        'success' => false,
+        'error' => 'identifier_and_code_required',
+    ]);
+    exit;
+}
+
 [$identifier, $isEmail] = linkParseIdentifier($raw);
-if ($identifier === null) { echo json_encode(['success' => false, 'error' => 'invalid_identifier']); exit; }
+if ($identifier === null) {
+    echo json_encode(['success' => false, 'error' => 'invalid_identifier']);
+    exit;
+}
+
 $verify = OtpService::verify($identifier, $code, 'scan_link');
-if (empty($verify['success'])) { echo json_encode(['success' => false, 'error' => $verify['error'] ?? 'invalid_code']); exit; }
+if (empty($verify['ok'])) {
+    echo json_encode([
+        'success' => false,
+        'error' => $verify['error'] ?? 'invalid_code',
+    ]);
+    exit;
+}
+
 $db = Database::getInstance();
-// Re-check both guards after the OTP (state may have changed since request).
-if (linkAccountHasType($db, $ctx['employee_id'], $isEmail, $identifier)) {
-    echo json_encode(['success' => false, 'error' => $isEmail ? 'already_have_email' : 'already_have_phone']); exit; }
+$accountId = (string) $ctx['account_id'];
+if (linkAccountHasType($db, $accountId, $isEmail, $identifier)) {
+    echo json_encode([
+        'success' => false,
+        'error' => $isEmail ? 'already_have_email' : 'already_have_phone',
+    ]);
+    exit;
+}
+
 $owner = linkFindOwner($db, $identifier, $isEmail);
-if ($owner !== null && $owner !== (string)$ctx['employee_id']) {
-    echo json_encode(['success' => false, 'error' => 'identifier_taken']); exit; }
-$col = $isEmail ? 'email' : 'mobile';
-$db->getConnection()->prepare("UPDATE employees SET $col = ? WHERE id = ?")->execute([$identifier, $ctx['employee_id']]);
-$row = $db->fetchOne("SELECT email, mobile, phone FROM employees WHERE id = :id", ['id' => $ctx['employee_id']]) ?: [];
-echo json_encode(['success' => true,
-    'email' => !empty($row['email']) ? $row['email'] : null,
-    'phone' => !empty($row['mobile']) ? $row['mobile'] : (!empty($row['phone']) ? $row['phone'] : null),
+if ($owner !== null && !hash_equals($accountId, $owner)) {
+    echo json_encode(['success' => false, 'error' => 'identifier_taken']);
+    exit;
+}
+
+try {
+    $linked = ScanIdentity::linkVerifiedIdentifier(
+        $db,
+        $accountId,
+        $identifier,
+        $isEmail ? 'email' : 'phone',
+        'scan_link_otp'
+    );
+} catch (Throwable $e) {
+    error_log('[scan/link-verify] ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'link_failed']);
+    exit;
+}
+if (empty($linked['success'])) {
+    echo json_encode([
+        'success' => false,
+        'error' => $linked['error'] ?? 'link_failed',
+    ]);
+    exit;
+}
+
+$identifiers = ScanIdentity::linkedIdentifiers($db, $accountId);
+echo json_encode([
+    'success' => true,
+    'email' => $identifiers['email'],
+    'phone' => $identifiers['phone'],
 ], JSON_UNESCAPED_UNICODE);

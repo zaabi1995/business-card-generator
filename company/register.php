@@ -10,6 +10,7 @@ require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/Mailer.php';
 require_once INCLUDES_DIR . '/Referral.php';
+require_once INCLUDES_DIR . '/ScanClaimTicket.php';
 
 // Redirect if already logged in
 if (Auth::isLoggedIn()) {
@@ -19,14 +20,33 @@ if (Auth::isLoggedIn()) {
 
 $error = null;
 $info = null;
-$prefillEmail = $_GET['email'] ?? '';
-$prefillName = $_GET['name'] ?? '';
+$claimTicket = trim((string) ($_POST['claim_ticket'] ?? $_GET['claim_ticket'] ?? ''));
+if ($claimTicket !== '') {
+    header('Cache-Control: private, no-store');
+    header('Referrer-Policy: no-referrer');
+}
+$claimPreview = null;
+if ($claimTicket !== '') {
+    try {
+        $claimPreview = ScanClaimTicket::findValid(Database::getInstance(), $claimTicket);
+    } catch (Throwable $e) {
+        error_log('[register] claim ticket lookup failed: ' . $e->getMessage());
+    }
+}
+$claimParsed = $claimPreview
+    ? (json_decode((string) ($claimPreview['best_parsed'] ?? ''), true) ?: [])
+    : [];
+$prefillEmail = $claimPreview['email_primary'] ?? ($_GET['email'] ?? '');
+$prefillName = $claimParsed['name_en'] ?? ($_GET['name'] ?? '');
+if ($claimTicket !== '' && !$claimPreview) {
+    $error = 'This claim verification has expired. Return to your card and request a new code.';
+}
 $isBusinessDomain = false;
 $suggestedSlug = '';
 $existingCompany = null;
 
 // Capture referral source (e.g. ref=bhd from BHD landing page)
-$refSource = $_GET['ref'] ?? null;
+$refSource = $claimPreview ? 'scan_claim' : ($_GET['ref'] ?? null);
 if ($refSource) {
     $_SESSION['pending_referral'] = preg_replace('/[^a-z0-9_\-]/i', '', $refSource);
 }
@@ -164,7 +184,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validation
     require_once INCLUDES_DIR . '/Recaptcha.php';
     $captcha = Recaptcha::verify((string) ($_POST['recaptcha_token'] ?? ''), 'signup');
-    if (empty($captcha['ok'])) {
+    if ($claimTicket !== '' && !$claimPreview) {
+        $error = 'This claim verification has expired. Return to your card and request a new code.';
+    } elseif (empty($captcha['ok'])) {
         $error = t('register.err_captcha');
     } elseif (empty($name)) {
         $error = t('register.err_company_required');
@@ -178,6 +200,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($existsCheck['exists']) {
             $error = t('register.err_email_exists');
         } else {
+            $claimRegistration = null;
+            $claimDb = null;
+            if ($claimTicket !== '') {
+                try {
+                    $claimDb = Database::getInstance();
+                    $claimRegistration = ScanClaimTicket::lockForRegistration($claimDb, $claimTicket);
+                    if (!$claimRegistration) {
+                        $error = 'This claim verification has expired. Return to your card and request a new code.';
+                    }
+                } catch (Throwable $e) {
+                    if ($claimDb instanceof Database) {
+                        ScanClaimTicket::rollBackClaimTransaction($claimDb);
+                    }
+                    error_log('[register] claim ticket lock failed: ' . $e->getMessage());
+                    $error = t('register.err_invalid_request');
+                }
+            }
+
+            if (!$error) {
             // Determine slug based on email domain
             $isBusinessDomain = isBusinessEmailDomain($email);
             
@@ -206,11 +247,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($phone !== '') {
                         $employeeData['phone'] = $phone;
                     }
-                    $empResult = addEmployee($employeeData, $existingCompany['id']);
-                    if ($empResult['success'] ?? false) {
-                        $info = t('register.info_join_submitted', ['name' => htmlspecialchars($existingCompany['name'])]);
-                        // Don't redirect - show message
-                    } else {
+                    try {
+                        $empResult = addEmployee($employeeData, $existingCompany['id']);
+                        if ($empResult['success'] ?? false) {
+                            if ($claimRegistration && $claimDb instanceof Database) {
+                                ScanClaimTicket::completeRegistration(
+                                    $claimDb,
+                                    $claimRegistration,
+                                    (string) $existingCompany['id'],
+                                    !empty($empResult['id']) ? (string) $empResult['id'] : null
+                                );
+                            }
+                            $info = t('register.info_join_submitted', ['name' => htmlspecialchars($existingCompany['name'])]);
+                            // Don't redirect - show message
+                        } else {
+                            if ($claimDb instanceof Database) {
+                                ScanClaimTicket::rollBackClaimTransaction($claimDb);
+                            }
+                            $error = t('register.err_join_failed');
+                        }
+                    } catch (Throwable $e) {
+                        if ($claimDb instanceof Database) {
+                            ScanClaimTicket::rollBackClaimTransaction($claimDb);
+                        }
+                        error_log('[register] claimed employee creation failed: ' . $e->getMessage());
                         $error = t('register.err_join_failed');
                     }
                 }
@@ -247,9 +307,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
 
-                    // Create user record for the admin
-                    $userResult = Auth::createUser($email, $password, $userName ?: $name, 'company', $company['id']);
+                    // Create the admin before consuming a claim ticket. When a claim
+                    // is present, its transaction rolls both records back on failure.
+                    $userResult = [];
+                    try {
+                        $userResult = Auth::createUser(
+                            $email,
+                            $password,
+                            $userName ?: $name,
+                            'company',
+                            $company['id']
+                        );
+                        if (empty($userResult['user_id'])) {
+                            throw new RuntimeException('Admin user creation failed');
+                        }
+                        if ($claimRegistration && $claimDb instanceof Database) {
+                            ScanClaimTicket::completeRegistration(
+                                $claimDb,
+                                $claimRegistration,
+                                (string) $company['id']
+                            );
+                        }
+                    } catch (Throwable $e) {
+                        if ($claimDb instanceof Database) {
+                            ScanClaimTicket::rollBackClaimTransaction($claimDb);
+                        }
+                        error_log('[register] claimed company creation failed: ' . $e->getMessage());
+                        $error = t('register.err_create_failed');
+                    }
 
+                    if (!$error) {
                     // Best-effort: attach phone to the user row so admin-side prompts
                     // and per-user notifications can target it. Column may not exist
                     // on legacy installs, silently ignore.
@@ -374,8 +461,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
                     exit;
+                    }
+                } else {
+                    if ($claimDb instanceof Database) {
+                        ScanClaimTicket::rollBackClaimTransaction($claimDb);
+                    }
+                    $error = $result['error'] ?? t('register.err_create_failed');
                 }
-                $error = $result['error'] ?? t('register.err_create_failed');
+            }
             }
         }
     }
@@ -467,6 +560,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <!-- Registration Form -->
                 <form method="POST" id="register-form" class="mt-10 space-y-6" <?php echo $info ? 'style="display:none;"' : ''; ?>>
                 <input type="hidden" name="recaptcha_token" id="recaptcha_token" value="">
+                <?php if ($claimTicket !== ''): ?>
+                    <input type="hidden" name="claim_ticket" value="<?= htmlspecialchars($claimTicket, ENT_QUOTES) ?>">
+                <?php endif; ?>
                     <?php echo csrfField(); ?>
                     <div>
                         <label for="admin_email" class="block text-sm font-medium text-gray-900">

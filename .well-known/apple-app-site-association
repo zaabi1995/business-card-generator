@@ -5,7 +5,8 @@
         "appIDs": ["F436258VA2.om.cardify.scan"],
         "components": [
           { "/": "/app/open", "comment": "Open a shared Cardify card in the native app" },
-          { "/": "/app/open/*", "comment": "Open a shared Cardify card in the native app" }
+          { "/": "/app/open/*", "comment": "Open a shared Cardify card in the native app" },
+          { "/": "/company/card/*", "comment": "Open a Cardify company card in the native app" }
         ]
       }
     ]

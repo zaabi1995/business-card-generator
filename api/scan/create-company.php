@@ -29,11 +29,10 @@ scanRateLimit($ctx, 'create_company', 12);
 try {
     $db = Database::getInstance();
 
-    // The caller's own identity carries into the new company's employee row so
-    // the card is not blank (name + contact), and login keeps working via their
-    // existing credential (copied hash, never a new/guessable password).
+    // Profile content carries into the new card, while account credentials and
+    // verified aliases come only from the immutable scan account.
     $me = $db->fetchOne(
-        "SELECT name_en, name_ar, email, mobile, mobile_ar, phone, phone_ar, password_hash
+        "SELECT name_en, name_ar, email, mobile, mobile_ar, phone, phone_ar
          FROM employees WHERE id = :id",
         ['id' => $ctx['employee_id']]
     );
@@ -42,7 +41,25 @@ try {
         echo json_encode(['success' => false, 'error' => 'employee_not_found']);
         exit;
     }
-    $email = strtolower(trim((string) ($me['email'] ?? '')));
+    $profileEmail = strtolower(trim((string) ($me['email'] ?? '')));
+    $account = $db->fetchOne(
+        "SELECT password_hash
+         FROM scan_accounts
+         WHERE id = :account_id AND status = 'active'
+         LIMIT 1",
+        ['account_id' => $ctx['account_id']]
+    );
+    if (!is_array($account)) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'account_unavailable']);
+        exit;
+    }
+    $linkedIdentifiers = ScanIdentity::linkedIdentifiers(
+        $db,
+        (string) $ctx['account_id']
+    );
+    $loginEmail = (string) ($linkedIdentifiers['email'] ?? '');
+    $accountPasswordHash = (string) ($account['password_hash'] ?? '');
 
     $body = json_decode((string) file_get_contents('php://input'), true);
     if (!is_array($body)) { $body = []; }
@@ -56,16 +73,17 @@ try {
     }
 
     // Anti-abuse: cap how many companies one identity may own from the app.
-    if ($email !== '') {
-        $owned = $db->fetchOne(
-            "SELECT COUNT(*) AS n FROM companies WHERE LOWER(TRIM(admin_email)) = :e AND status = 'active'",
-            ['e' => $email]
-        );
-        if (((int) ($owned['n'] ?? 0)) >= 20) {
-            http_response_code(429);
-            echo json_encode(['success' => false, 'error' => 'company_limit_reached']);
-            exit;
-        }
+    $owned = $db->fetchOne(
+        "SELECT COUNT(*) AS n
+         FROM scan_account_memberships m
+         JOIN companies c ON c.id = m.company_id AND c.status = 'active'
+         WHERE m.account_id = :account_id",
+        ['account_id' => $ctx['account_id']]
+    );
+    if (((int) ($owned['n'] ?? 0)) >= 20) {
+        http_response_code(429);
+        echo json_encode(['success' => false, 'error' => 'company_limit_reached']);
+        exit;
     }
 
     // createCompany needs a plaintext to hash onto the companies row; the caller
@@ -73,7 +91,16 @@ try {
     // seed a random one, then (below) overwrite companies.password_hash with the
     // caller's existing hash so their known password logs into this company too.
     $seedPw = bin2hex(random_bytes(18));
-    $companyResult = createCompany($companyName, $email !== '' ? $email : ('user_' . substr(md5($ctx['employee_id']), 0, 10) . '@cardify.local'), $seedPw, null, $slug !== '' ? $slug : null);
+    $adminEmail = $loginEmail !== ''
+        ? $loginEmail
+        : ('scan_' . substr(hash('sha256', (string) $ctx['account_id']), 0, 12) . '@cardify.local');
+    $companyResult = createCompany(
+        $companyName,
+        $adminEmail,
+        $seedPw,
+        null,
+        $slug !== '' ? $slug : null
+    );
     if (empty($companyResult['success']) || empty($companyResult['company']['id'])) {
         // Surface slug-taken / reserved so the app can ask for another abbreviation.
         $err = (string) ($companyResult['error'] ?? 'company_create_failed');
@@ -88,21 +115,26 @@ try {
 
     // Reuse the caller's login credential for the new company's web admin so
     // their email + known password authenticates everywhere (no orphan password).
-    if (!empty($me['password_hash'])) {
+    if ($accountPasswordHash !== '') {
         try {
-            $db->update('companies', ['password_hash' => $me['password_hash']], 'id = :id', ['id' => $companyId]);
+            $db->update(
+                'companies',
+                ['password_hash' => $accountPasswordHash],
+                'id = :id',
+                ['id' => $companyId]
+            );
         } catch (Throwable $e) { /* non-fatal: app auth uses the employee row */ }
     }
 
     $empResult = addEmployee([
         'name_en'       => (string) ($me['name_en'] ?? ''),
         'name_ar'       => (string) ($me['name_ar'] ?? ''),
-        'email'         => $email,
+        'email'         => $profileEmail,
         'mobile'        => (string) ($me['mobile'] ?? ''),
         'mobile_ar'     => (string) ($me['mobile_ar'] ?? ''),
         'phone'         => (string) ($me['phone'] ?? ''),
         'phone_ar'      => (string) ($me['phone_ar'] ?? ''),
-        'password_hash' => (string) ($me['password_hash'] ?? ''),
+        'password_hash' => $accountPasswordHash,
         'status'        => 'active',
         'company_en'    => $companyName,
         'skip_invite'   => true,
@@ -119,10 +151,49 @@ try {
         exit;
     }
     $employeeId = (string) $empResult['id'];
+    $attached = ScanIdentity::attachEmployee(
+        $db,
+        (string) $ctx['account_id'],
+        $employeeId,
+        'created_company',
+        'owner'
+    );
+    if (empty($attached['success'])) {
+        error_log(
+            '[scan/create-company] membership: '
+            . ($attached['error'] ?? 'unknown')
+        );
+        try {
+            $db->query('DELETE FROM employees WHERE id = :employee_id', [
+                'employee_id' => $employeeId,
+            ]);
+            $db->query('DELETE FROM company_themes WHERE company_id = :company_id', [
+                'company_id' => $companyId,
+            ]);
+            $db->query('DELETE FROM companies WHERE id = :company_id', [
+                'company_id' => $companyId,
+            ]);
+        } catch (Throwable $rollbackError) {
+            error_log(
+                '[scan/create-company] membership rollback: '
+                . $rollbackError->getMessage()
+            );
+        }
+        http_response_code(409);
+        echo json_encode([
+            'success' => false,
+            'error' => $attached['error'] ?? 'membership_conflict',
+        ]);
+        exit;
+    }
 
     echo json_encode([
         'success'     => true,
-        'token'       => ScanAuth::issueToken($employeeId),
+        'token'       => ScanAuth::issueToken(
+            $employeeId,
+            'mobile',
+            (string) $ctx['account_id']
+        ),
         'employee_id' => $employeeId,
         'company_id'  => $companyId,
         'slug'        => $newSlug,

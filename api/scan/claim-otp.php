@@ -20,8 +20,10 @@ require_once INCLUDES_DIR . '/ShadowProfileService.php';
 require_once INCLUDES_DIR . '/OtpService.php';
 require_once INCLUDES_DIR . '/RateLimiter.php';
 require_once INCLUDES_DIR . '/UrlSafety.php';
+require_once INCLUDES_DIR . '/ScanClaimTicket.php';
 
 header('Content-Type: application/json');
+header('Cache-Control: no-store');
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'POST only']);
@@ -88,23 +90,23 @@ try {
             exit;
         }
 
-        // Guard mirrors the earlier already_claimed check to close the race
-        // where two verify calls for the same profile land concurrently:
-        // only the first UPDATE (claimed_at IS NULL) actually flips it.
-        Database::getInstance()->getConnection()->prepare(
-            "UPDATE shadow_profiles SET claimed_at = NOW() WHERE id = ? AND claimed_at IS NULL"
-        )->execute([(int)$profile['id']]);
+        $claimTicket = ScanClaimTicket::issue(
+            Database::getInstance(),
+            (int) $profile['id'],
+            (string) $phone
+        );
 
         $parsed = json_decode((string)($profile['best_parsed'] ?? ''), true) ?: [];
         // Real signup entry point is /company/register.php (verified: no
         // register.php/signup.php exists at the repo root). It only reads
         // ?email=, ?name=, ?ref= on GET (phone/company have no GET prefill,
         // company creation collects them on the form itself), so only those
-        // three are forwarded here, not the full brief-assumed param set.
+        // three are forwarded here with the one-time registration ticket.
         $qs = http_build_query([
-            'ref'   => 'scan_claim',
-            'name'  => $parsed['name_en'] ?? '',
+            'ref' => 'scan_claim',
+            'name' => $parsed['name_en'] ?? '',
             'email' => $profile['email_primary'] ?? '',
+            'claim_ticket' => $claimTicket,
         ]);
         echo json_encode(['success' => true, 'redirect' => '/company/register.php?' . $qs]);
         exit;

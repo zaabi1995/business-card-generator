@@ -12,7 +12,7 @@
  * as the web signup:
  *   - createCompany()            includes/functions.php -> DatabaseAdapter::createCompany
  *   - addEmployee()              includes/functions.php -> DatabaseAdapter::addEmployee
- *   - Auth::emailExists()        includes/Auth.php (users + employees + company admin_email)
+ *   - ScanIdentity              immutable account + login alias
  * When company_name is omitted we attach the person to a lightweight
  * personal company named after them, so a solo user needs no employer.
  */
@@ -20,7 +20,6 @@ require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
 require_once INCLUDES_DIR . '/RateLimiter.php';
 require_once INCLUDES_DIR . '/UrlSafety.php';
-require_once INCLUDES_DIR . '/Auth.php';
 
 header('Content-Type: application/json');
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -59,10 +58,8 @@ try {
         exit;
     }
 
-    // Reject an email already known to any account type (user, employee, or
-    // company admin). Same canonical check the web signup uses.
-    $exists = Auth::emailExists($email);
-    if (!empty($exists['exists'])) {
+    $db = Database::getInstance();
+    if (ScanIdentity::findAccountByIdentifier($db, $email, 'email') !== null) {
         echo json_encode(['success' => false, 'error' => 'email_taken']);
         exit;
     }
@@ -81,10 +78,11 @@ try {
 
     // Create the employee (active, own password, no invite email: the app
     // already hands the user a token below).
+    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
     $empResult = addEmployee([
         'name_en'       => $name,
         'email'         => $email,
-        'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+        'password_hash' => $passwordHash,
         'status'        => 'active',
         'company_en'    => $companyName,
         'skip_invite'   => true,
@@ -95,10 +93,39 @@ try {
         exit;
     }
     $employeeId = (string) $empResult['id'];
+    try {
+        $accountId = ScanIdentity::createAccountForEmployee(
+            $db,
+            $employeeId,
+            $passwordHash,
+            null,
+            null,
+            false,
+            'password_signup',
+            'owner'
+        );
+    } catch (Throwable $identityError) {
+        error_log('[scan/signup] identity: ' . $identityError->getMessage());
+        try {
+            $db->query('DELETE FROM employees WHERE id = :employee_id', [
+                'employee_id' => $employeeId,
+            ]);
+            $db->query('DELETE FROM company_themes WHERE company_id = :company_id', [
+                'company_id' => $companyId,
+            ]);
+            $db->query('DELETE FROM companies WHERE id = :company_id', [
+                'company_id' => $companyId,
+            ]);
+        } catch (Throwable $cleanupError) {
+            error_log('[scan/signup] cleanup: ' . $cleanupError->getMessage());
+        }
+        echo json_encode(['success' => false, 'error' => 'account_create_failed']);
+        exit;
+    }
 
     echo json_encode([
         'success' => true,
-        'token' => ScanAuth::issueToken($employeeId),
+        'token' => ScanAuth::issueToken($employeeId, 'mobile', $accountId),
         'employee_id' => $employeeId,
     ]);
 } catch (Throwable $e) {

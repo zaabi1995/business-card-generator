@@ -17,7 +17,11 @@ scanRateLimit($ctx, 'my_card_logo', 120);
 // admin may change it. Soft 200 + brand_locked flag (same contract as
 // my-card.php) so the app treats it as a lock, not a hard error.
 require_once __DIR__ . '/_brand_guard.php';
-if (!scanCanEditBrand(Database::getInstance(), $ctx['employee_id'])) {
+if (!scanCanEditBrand(
+    Database::getInstance(),
+    (string) $ctx['account_id'],
+    (string) $ctx['employee_id']
+)) {
     echo json_encode(['success' => false, 'error' => 'brand_locked']);
     exit;
 }

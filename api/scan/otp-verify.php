@@ -1,27 +1,9 @@
 <?php
 /**
- * POST /api/scan/otp-verify.php, passwordless login/signup step 2.
+ * POST /api/scan/otp-verify.php {identifier, code, name?}
  *
- * Body: {identifier, code, name?}
- *   -> {success:true, token, employee_id, is_new:bool}
- *
- * Verifies the 6-digit OTP (purpose 'scan_login') issued by
- * api/scan/otp-request.php. On a bad/expired code returns 401 invalid_code.
- *
- * On success:
- *   - Find an ACTIVE employee (in an ACTIVE company) whose email matches the
- *     identifier (email case) OR whose mobile/phone normalises to the
- *     identifier (phone case). Found -> issue a token, is_new=false.
- *   - Not found -> passwordless signup: create a personal company + one active
- *     employee (email set for an email identifier, mobile set for a phone),
- *     via the same createCompany()/addEmployee() path signup.php uses, with a
- *     random password (never used, the app authenticates by token). is_new=true.
- *
- * Idempotent-ish: two racing verifies re-run the lookup after each other, so
- * the second finds the just-created employee instead of duplicating it.
- *
- * Reuses: OtpService, ScanAuth::issueToken, Phone::normalize, createCompany,
- * addEmployee, getClientIp.
+ * A verified login alias resolves directly to an immutable scan account.
+ * Editable employee profile contacts never select an existing account.
  */
 require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
@@ -38,18 +20,21 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
-    $body = json_decode(file_get_contents('php://input'), true) ?: [];
-    $raw = trim((string)($body['identifier'] ?? ''));
-    $code = trim((string)($body['code'] ?? ''));
-    $name = trim((string)($body['name'] ?? ''));
+    $body = json_decode((string) file_get_contents('php://input'), true);
+    if (!is_array($body)) {
+        $body = [];
+    }
+    $raw = trim((string) ($body['identifier'] ?? ''));
+    $code = trim((string) ($body['code'] ?? ''));
+    $name = trim((string) ($body['name'] ?? ''));
     if ($raw === '' || $code === '') {
-        echo json_encode(['success' => false, 'error' => 'identifier_and_code_required']);
+        echo json_encode([
+            'success' => false,
+            'error' => 'identifier_and_code_required',
+        ]);
         exit;
     }
 
-    $ip = getClientIp();
-
-    // Resolve the same canonical identifier the request step used.
     $isEmail = strpos($raw, '@') !== false;
     if ($isEmail) {
         $identifier = strtolower($raw);
@@ -57,16 +42,17 @@ try {
             echo json_encode(['success' => false, 'error' => 'invalid_identifier']);
             exit;
         }
+        $identifierType = 'email';
     } else {
         $identifier = Phone::normalize($raw);
         if ($identifier === null) {
             echo json_encode(['success' => false, 'error' => 'invalid_identifier']);
             exit;
         }
+        $identifierType = 'phone';
     }
 
-    // Defense-in-depth on top of OtpService's per-code attempt cap (5), whose
-    // read-then-update counter is racy; RateLimiter's counter is atomic.
+    $ip = getClientIp();
     if (!RateLimiter::check('scan_otp_verify:' . $identifier, $ip, 10, 900)) {
         http_response_code(429);
         echo json_encode(['success' => false, 'error' => 'rate_limited']);
@@ -81,135 +67,161 @@ try {
     }
 
     $db = Database::getInstance();
-
-    // 1) Try to find an existing active employee in an active company.
-    $employeeId = findActiveEmployee($db, $identifier, $isEmail);
-
-    if ($employeeId !== null) {
+    $account = ScanIdentity::findAccountByIdentifier(
+        $db,
+        $identifier,
+        $identifierType
+    );
+    if ($account !== null) {
+        $accountId = (string) $account['account_id'];
+        $linked = ScanIdentity::linkVerifiedIdentifier(
+            $db,
+            $accountId,
+            $identifier,
+            $identifierType,
+            'scan_login_otp'
+        );
+        if (empty($linked['success'])) {
+            http_response_code(409);
+            echo json_encode([
+                'success' => false,
+                'error' => $linked['error'] ?? 'identity_conflict',
+            ]);
+            exit;
+        }
+        $employee = ScanIdentity::primaryEmployee($db, $accountId);
+        if ($employee === null) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'account_unavailable']);
+            exit;
+        }
         echo json_encode([
             'success' => true,
-            'token' => ScanAuth::issueToken($employeeId),
-            'employee_id' => $employeeId,
+            'token' => ScanAuth::issueToken(
+                (string) $employee['employee_id'],
+                'mobile',
+                $accountId
+            ),
+            'employee_id' => (string) $employee['employee_id'],
             'is_new' => false,
         ]);
         exit;
     }
 
-    // 2) Passwordless signup: personal company + one active employee.
-    $displayName = $name !== '' ? $name : ($isEmail ? emailLocalName($identifier) : 'My Card');
-    $companyName = $displayName;
-    // Random password, never surfaced. The app authenticates by bearer token;
-    // the user can set a real password later via the normal flow if desired.
-    $randomPassword = bin2hex(random_bytes(16));
-    $adminEmail = $isEmail ? $identifier : '';
-
-    $companyResult = createCompany($companyName, $adminEmail, $randomPassword);
+    $displayName = $name !== ''
+        ? $name
+        : ($isEmail ? emailLocalName($identifier) : 'My Card');
+    $randomPassword = bin2hex(random_bytes(24));
+    $companyResult = createCompany(
+        $displayName,
+        $isEmail ? $identifier : '',
+        $randomPassword
+    );
     if (empty($companyResult['success'])) {
-        error_log('[scan/otp-verify] createCompany: ' . ($companyResult['error'] ?? 'unknown'));
+        error_log(
+            '[scan/otp-verify] createCompany: '
+            . ($companyResult['error'] ?? 'unknown')
+        );
         echo json_encode(['success' => false, 'error' => 'account_create_failed']);
         exit;
     }
-    $companyId = $companyResult['company']['id'];
 
-    $empData = [
-        'name_en'       => $displayName,
-        'status'        => 'active',
-        'company_en'    => $companyName,
-        'skip_invite'   => true,
+    $companyId = (string) $companyResult['company']['id'];
+    $employeeData = [
+        'name_en' => $displayName,
+        'status' => 'active',
+        'company_en' => $displayName,
+        'skip_invite' => true,
     ];
     if ($isEmail) {
-        $empData['email'] = $identifier;
-        // Give the passwordless account a random hash so it exists but cannot
-        // be logged into by guessing; the app uses the token, not a password.
-        $empData['password_hash'] = password_hash($randomPassword, PASSWORD_DEFAULT);
+        $employeeData['email'] = $identifier;
     } else {
-        $empData['mobile'] = $identifier;
+        $employeeData['mobile'] = $identifier;
     }
-
-    $empResult = addEmployee($empData, $companyId);
-    if (empty($empResult['success'])) {
-        // A concurrent verify may have created the employee first: re-run the
-        // lookup so the loser of the race still logs into the same account.
-        $employeeId = findActiveEmployee($db, $identifier, $isEmail);
-        if ($employeeId !== null) {
-            echo json_encode([
-                'success' => true,
-                'token' => ScanAuth::issueToken($employeeId),
-                'employee_id' => $employeeId,
-                'is_new' => false,
-            ]);
-            exit;
-        }
-        error_log('[scan/otp-verify] addEmployee: ' . ($empResult['error'] ?? 'unknown'));
+    $employeeResult = addEmployee($employeeData, $companyId);
+    if (empty($employeeResult['success'])) {
+        error_log(
+            '[scan/otp-verify] addEmployee: '
+            . ($employeeResult['error'] ?? 'unknown')
+        );
         echo json_encode(['success' => false, 'error' => 'account_create_failed']);
         exit;
     }
 
-    $employeeId = (string) $empResult['id'];
+    $employeeId = (string) $employeeResult['id'];
+    try {
+        $accountId = ScanIdentity::createAccountForEmployee(
+            $db,
+            $employeeId,
+            null,
+            $identifier,
+            $identifierType,
+            true,
+            'otp_signup',
+            'owner'
+        );
+    } catch (Throwable $identityError) {
+        error_log('[scan/otp-verify] identity: ' . $identityError->getMessage());
+        try {
+            $db->query('DELETE FROM employees WHERE id = :employee_id', [
+                'employee_id' => $employeeId,
+            ]);
+            $db->query('DELETE FROM company_themes WHERE company_id = :company_id', [
+                'company_id' => $companyId,
+            ]);
+            $db->query('DELETE FROM companies WHERE id = :company_id', [
+                'company_id' => $companyId,
+            ]);
+        } catch (Throwable $cleanupError) {
+            error_log('[scan/otp-verify] cleanup: ' . $cleanupError->getMessage());
+        }
+
+        $existing = ScanIdentity::findAccountByIdentifier(
+            $db,
+            $identifier,
+            $identifierType
+        );
+        if ($existing !== null) {
+            $employee = ScanIdentity::primaryEmployee(
+                $db,
+                (string) $existing['account_id']
+            );
+            if ($employee !== null) {
+                echo json_encode([
+                    'success' => true,
+                    'token' => ScanAuth::issueToken(
+                        (string) $employee['employee_id'],
+                        'mobile',
+                        (string) $existing['account_id']
+                    ),
+                    'employee_id' => (string) $employee['employee_id'],
+                    'is_new' => false,
+                ]);
+                exit;
+            }
+        }
+
+        echo json_encode(['success' => false, 'error' => 'account_create_failed']);
+        exit;
+    }
+
     echo json_encode([
         'success' => true,
-        'token' => ScanAuth::issueToken($employeeId),
+        'token' => ScanAuth::issueToken($employeeId, 'mobile', $accountId),
         'employee_id' => $employeeId,
         'is_new' => true,
     ]);
-} catch (\Throwable $e) {
+} catch (Throwable $e) {
     error_log('[scan/otp-verify] ' . $e->getMessage());
     http_response_code(500);
     echo json_encode(['success' => false, 'error' => 'server_error']);
-    exit;
 }
 
-/**
- * Find an active employee (in an active company) by email or by a phone that
- * normalises to $identifier. Returns the employee id (string) or null.
- */
-function findActiveEmployee($db, string $identifier, bool $isEmail): ?string
-{
-    if ($isEmail) {
-        $row = $db->fetchOne(
-            "SELECT e.id
-             FROM employees e JOIN companies c ON c.id = e.company_id
-             WHERE e.email = :email AND e.status = 'active' AND c.status = 'active'
-             ORDER BY e.created_at ASC LIMIT 1",
-            ['email' => $identifier]
-        );
-        return $row ? (string)$row['id'] : null;
-    }
-
-    // Phone: narrow by the last 8 digits (the Omani subscriber number), then
-    // confirm each candidate by re-normalising its stored mobile/phone. Stored
-    // values vary in format ('71616161', '+968 7161 6161', ...), so an exact
-    // string match would miss them.
-    $digits = preg_replace('/\D/', '', $identifier);
-    $tail = strlen($digits) >= 8 ? substr($digits, -8) : $digits;
-    // Distinct placeholders: PDO emulated-prepares are OFF, so reusing one
-    // named placeholder twice raises HY093.
-    $rows = $db->fetchAll(
-        "SELECT e.id, e.mobile, e.phone
-         FROM employees e JOIN companies c ON c.id = e.company_id
-         WHERE e.status = 'active' AND c.status = 'active'
-           AND ( (e.mobile <> '' AND e.mobile LIKE :m)
-              OR (e.phone  <> '' AND e.phone  LIKE :p) )
-         ORDER BY e.created_at ASC",
-        ['m' => '%' . $tail, 'p' => '%' . $tail]
-    );
-    foreach ($rows as $r) {
-        foreach (['mobile', 'phone'] as $col) {
-            if (!empty($r[$col]) && Phone::normalize($r[$col]) === $identifier) {
-                return (string)$r['id'];
-            }
-        }
-    }
-    return null;
-}
-
-/**
- * Friendly display name from an email local part (ali.adnan -> Ali Adnan).
- */
 function emailLocalName(string $email): string
 {
-    $local = substr($email, 0, strpos($email, '@') ?: strlen($email));
+    $separator = strpos($email, '@');
+    $local = substr($email, 0, $separator === false ? strlen($email) : $separator);
     $local = str_replace(['.', '_', '-', '+'], ' ', $local);
-    $local = trim(preg_replace('/\s+/', ' ', $local));
+    $local = trim((string) preg_replace('/\s+/', ' ', $local));
     return $local !== '' ? ucwords($local) : 'My Card';
 }

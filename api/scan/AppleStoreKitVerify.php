@@ -1,10 +1,8 @@
 <?php
 /**
- * Verifies a StoreKit 2 JWSTransaction (the signed representation from
- * Transaction.jwsRepresentation): ES256 signature over the payload, an x5c
- * certificate chain rooted in the pinned Apple Root CA - G3, and the expected
- * bundleId / productId / unexpired window. Returns the decoded payload on
- * success, null on ANY failure. No third-party crypto libs; openssl only.
+ * Verifies StoreKit 2 transaction and renewal-info JWS values: ES256 signature
+ * over the payload, an x5c certificate chain rooted in the pinned Apple Root
+ * CA - G3, and the expected app, product, and environment claims.
  */
 class AppleStoreKitVerify {
     const ROOT_PEM   = __DIR__ . '/certs/AppleRootCA-G3.pem';
@@ -34,7 +32,8 @@ class AppleStoreKitVerify {
         return "-----BEGIN CERTIFICATE-----\n" . chunk_split($b64der, 64, "\n") . "-----END CERTIFICATE-----\n";
     }
 
-    public static function verify(string $jws, array $allowedProductIds): ?array {
+    private static function verifySignedPayload(string $jws): ?array {
+        if (strlen($jws) < 32 || strlen($jws) > 65536) return null;
         $parts = explode('.', $jws);
         if (count($parts) !== 3) return null;
         [$h64, $p64, $s64] = $parts;
@@ -69,18 +68,49 @@ class AppleStoreKitVerify {
         if ($der === null) return null;
         if (openssl_verify($h64 . '.' . $p64, $der, $leaf, OPENSSL_ALGO_SHA256) !== 1) return null;
 
-        // 3) Claims.
         $payload = json_decode(self::b64url($p64), true);
         if (!is_array($payload)) return null;
+        return $payload;
+    }
+
+    private static function environmentAllowed(array $payload): bool {
+        $allowSandbox = defined('CARDIFY_ALLOW_SANDBOX_RECEIPTS')
+            && CARDIFY_ALLOW_SANDBOX_RECEIPTS;
+        return ($payload['environment'] ?? '') === 'Production'
+            || ($allowSandbox && ($payload['environment'] ?? '') === 'Sandbox');
+    }
+
+    public static function verify(string $jws, array $allowedProductIds): ?array {
+        return self::verifyTransaction($jws, $allowedProductIds, true);
+    }
+
+    public static function verifyTransaction(
+        string $jws,
+        array $allowedProductIds,
+        bool $requireUnexpired = true
+    ): ?array {
+        $payload = self::verifySignedPayload($jws);
+        if ($payload === null) return null;
         if (($payload['bundleId'] ?? '') !== self::BUNDLE_ID) return null;
         if (!in_array($payload['productId'] ?? '', $allowedProductIds, true)) return null;
-        // Production only: Sandbox/TestFlight receipts are signed by the SAME
-        // Apple Root CA-G3 chain and would otherwise grant free Pro. Flip
-        // CARDIFY_ALLOW_SANDBOX_RECEIPTS in config for pre-launch sandbox tests.
-        $allowSandbox = defined('CARDIFY_ALLOW_SANDBOX_RECEIPTS') && CARDIFY_ALLOW_SANDBOX_RECEIPTS;
-        if (($payload['environment'] ?? '') !== 'Production' && !$allowSandbox) return null;
-        $exp = (int)($payload['expiresDate'] ?? 0); // milliseconds
-        if ($exp <= 0 || ($exp / 1000) <= time()) return null;
+        if (!self::environmentAllowed($payload)) return null;
+        if (trim((string) ($payload['originalTransactionId'] ?? '')) === '') return null;
+        if (!empty($payload['revocationDate'])) return null;
+        $expiresDate = (int) ($payload['expiresDate'] ?? 0);
+        if ($expiresDate <= 0) return null;
+        if ($requireUnexpired && ($expiresDate / 1000) <= time()) return null;
+        return $payload;
+    }
+
+    public static function verifyRenewalInfo(
+        string $jws,
+        array $allowedProductIds
+    ): ?array {
+        $payload = self::verifySignedPayload($jws);
+        if ($payload === null) return null;
+        if (!self::environmentAllowed($payload)) return null;
+        if (trim((string) ($payload['originalTransactionId'] ?? '')) === '') return null;
+        if (!in_array($payload['productId'] ?? '', $allowedProductIds, true)) return null;
         return $payload;
     }
 }

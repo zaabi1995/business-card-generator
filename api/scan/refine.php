@@ -16,12 +16,21 @@ $ctx = ScanAuth::requireEmployee();
 
 // Pro gate: account must currently be Pro (Apple OR web).
 $db = Database::getInstance();
-$row = $db->fetchOne("SELECT scan_pro_until FROM employees WHERE id = :id", ['id' => $ctx['employee_id']]) ?: [];
-if (empty($row['scan_pro_until']) || strtotime($row['scan_pro_until']) <= time()) {
+$row = $db->fetchOne(
+    "SELECT valid_until
+     FROM scan_account_entitlements
+     WHERE account_id = :account_id
+       AND entitlement = 'scan_pro'
+       AND status = 'active'
+       AND valid_until > NOW()
+     LIMIT 1",
+    ['account_id' => $ctx['account_id']]
+) ?: [];
+if (empty($row['valid_until'])) {
     http_response_code(402); echo json_encode(['success' => false, 'error' => 'pro_required']); exit;
 }
 // Bounded: AI calls cost money.
-if (!RateLimiter::check('scan_refine:' . $ctx['employee_id'], getClientIp(), 30, 3600)) {
+if (!RateLimiter::check('scan_refine:' . $ctx['account_id'], getClientIp(), 30, 3600)) {
     http_response_code(429); echo json_encode(['success' => false, 'error' => 'rate_limited']); exit;
 }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {

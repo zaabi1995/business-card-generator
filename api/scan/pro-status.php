@@ -11,9 +11,18 @@ header('Content-Type: application/json');
 $ctx = ScanAuth::requireEmployee();
 $db = Database::getInstance();
 $row = $db->fetchOne(
-    "SELECT email, mobile, phone, scan_pro_until, scan_pro_source FROM employees WHERE id = :id",
-    ['id' => $ctx['employee_id']]
+    "SELECT valid_until AS scan_pro_until, source AS scan_pro_source
+     FROM scan_account_entitlements
+     WHERE account_id = :account_id
+       AND entitlement = 'scan_pro'
+       AND status = 'active'
+     LIMIT 1",
+    ['account_id' => $ctx['account_id']]
 ) ?: [];
+$identifiers = ScanIdentity::linkedIdentifiers(
+    $db,
+    (string) $ctx['account_id']
+);
 $until = $row['scan_pro_until'] ?? null;
 $pro = $until !== null && strtotime($until) > time();
 echo json_encode([
@@ -21,6 +30,6 @@ echo json_encode([
     'pro'     => $pro,
     'until'   => $pro ? $until : null,
     'source'  => $pro ? ($row['scan_pro_source'] ?? null) : null,
-    'email'   => !empty($row['email']) ? $row['email'] : null,
-    'phone'   => !empty($row['mobile']) ? $row['mobile'] : (!empty($row['phone']) ? $row['phone'] : null),
+    'email'   => $identifiers['email'],
+    'phone'   => $identifiers['phone'],
 ], JSON_UNESCAPED_UNICODE);

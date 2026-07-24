@@ -62,14 +62,27 @@ if ($rawUrl === '') {
 }
 
 try {
+    $scheme = strtolower((string) (parse_url($rawUrl, PHP_URL_SCHEME) ?? ''));
     $host = strtolower((string) (parse_url($rawUrl, PHP_URL_HOST) ?? ''));
     // Strip a trailing dot (DNS root) and any port suffix parse_url may have
     // left attached to a malformed host string.
     $host = rtrim($host, '.');
 
-    if (!in_array($host, ['cardify.om', 'www.cardify.om'], true)) {
+    $tenantSlug = null;
+    if ($scheme !== 'https') {
         echo json_encode(['success' => false, 'error' => 'not_a_cardify_card']);
         exit;
+    }
+    if (!in_array($host, ['cardify.om', 'www.cardify.om'], true)) {
+        if (!preg_match('/^([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)\\.cardify\\.om$/', $host, $hostMatch)) {
+            echo json_encode(['success' => false, 'error' => 'not_a_cardify_card']);
+            exit;
+        }
+        $tenantSlug = strtolower((string) $hostMatch[1]);
+        if (in_array($tenantSlug, CardifyConvention::reservedSlugs(), true)) {
+            echo json_encode(['success' => false, 'error' => 'not_a_cardify_card']);
+            exit;
+        }
     }
 
     $path = (string) (parse_url($rawUrl, PHP_URL_PATH) ?? '');
@@ -82,7 +95,25 @@ try {
     $company = null;
     $employee = null;
 
-    if (strcasecmp($path, '/qr.php') === 0) {
+    if ($tenantSlug !== null) {
+        $segments = array_values(array_filter(explode('/', $path), function ($s) {
+            return $s !== '';
+        }));
+        $company = findCompanyBySlug($tenantSlug);
+        if ($company && count($segments) === 1) {
+            $employee = CardifyConvention::resolveEmployeeToken(
+                rawurldecode($segments[0]),
+                $company['id'],
+                $db
+            );
+        } elseif ($company && count($segments) === 2 && strcasecmp($segments[0], 'card') === 0) {
+            $employee = CardifyConvention::resolveEmployeeToken(
+                rawurldecode($segments[1]),
+                $company['id'],
+                $db
+            );
+        }
+    } elseif (strcasecmp($path, '/qr.php') === 0) {
         // Printed-card QR. Mirrors qr.php's own two lookup shapes exactly.
         $i = trim((string) ($q['i'] ?? ''));
         $c = trim((string) ($q['c'] ?? $q['company'] ?? ''));
@@ -142,7 +173,11 @@ try {
     if (!$company || !$employee) {
         // Host matched but nothing on this path resolves, distinct from a
         // host that never looked like a Cardify card URL at all.
-        $recognizedShape = strcasecmp($path, '/qr.php') === 0
+        $recognizedShape = ($tenantSlug !== null
+                && isset($segments)
+                && (count($segments) === 1
+                    || (count($segments) === 2 && strcasecmp($segments[0], 'card') === 0)))
+            || strcasecmp($path, '/qr.php') === 0
             || strcasecmp($path, '/vcf.php') === 0
             || (isset($segments) && (count($segments) === 2 || count($segments) === 3));
         echo json_encode(['success' => false, 'error' => $recognizedShape ? 'not_found' : 'not_a_cardify_card']);

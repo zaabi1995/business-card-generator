@@ -56,6 +56,21 @@ class ScanPassService
                 KEY idx_reg_serial (serial_number)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
+        $db->getConnection()->exec(
+            "CREATE TABLE IF NOT EXISTS scan_pass_changes (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                serial_number VARCHAR(64) NOT NULL,
+                changed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                KEY idx_scan_pass_change_serial (serial_number, id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        );
+    }
+
+    private static function recordChange(string $serial): void
+    {
+        Database::getInstance()->getConnection()->prepare(
+            "INSERT INTO scan_pass_changes (serial_number, changed_at) VALUES (:serial, NOW())"
+        )->execute(['serial' => $serial]);
     }
 
     /** Get the pass row for an employee, creating it (serial + token) if absent.
@@ -84,6 +99,7 @@ class ScanPassService
                     'h' => SecretBox::encrypt($token), 'hm' => SecretBox::hmac($token),
                     'm' => $now, 'm2' => $now]);
         $row = $db->fetchOne("SELECT * FROM scan_passes WHERE serial_number = :s", ['s' => $serial]);
+        self::recordChange($serial);
         return ['serial' => $serial, 'token' => $token, 'version' => 1, 'row' => $row];
     }
 
@@ -154,23 +170,36 @@ class ScanPassService
     {
         self::ensureSchema();
         $db = Database::getInstance();
-        $regs = $db->fetchAll(
-            "SELECT p.serial_number, p.last_modified, p.version
-             FROM scan_pass_registrations r JOIN scan_passes p ON p.serial_number = r.serial_number
-             WHERE r.device_library_id = :d AND p.revoked = 0",
-            ['d' => $deviceLibraryId]
-        );
-        $since = $sinceTag !== null && $sinceTag !== '' ? strtotime($sinceTag) : 0;
-        $serials = [];
-        $maxTs = $since;
-        foreach ($regs as $r) {
-            $ts = strtotime($r['last_modified']);
-            if ($ts > $since) {
-                $serials[] = $r['serial_number'];
-                if ($ts > $maxTs) $maxTs = $ts;
-            }
+        $since = $sinceTag !== null && ctype_digit($sinceTag) ? (int) $sinceTag : 0;
+        if ($since > 0) {
+            $regs = $db->fetchAll(
+                "SELECT p.serial_number, MAX(ch.id) AS change_id
+                 FROM scan_pass_registrations r
+                 JOIN scan_passes p ON p.serial_number = r.serial_number
+                 JOIN scan_pass_changes ch ON ch.serial_number = p.serial_number
+                 WHERE r.device_library_id = :device_id
+                   AND ch.id > :since_id
+                 GROUP BY p.serial_number",
+                ['device_id' => $deviceLibraryId, 'since_id' => $since]
+            );
+        } else {
+            $regs = $db->fetchAll(
+                "SELECT p.serial_number, COALESCE(MAX(ch.id), 0) AS change_id
+                 FROM scan_pass_registrations r
+                 JOIN scan_passes p ON p.serial_number = r.serial_number
+                 LEFT JOIN scan_pass_changes ch ON ch.serial_number = p.serial_number
+                 WHERE r.device_library_id = :device_id
+                 GROUP BY p.serial_number",
+                ['device_id' => $deviceLibraryId]
+            );
         }
-        return ['serialNumbers' => $serials, 'lastUpdated' => (string) ($maxTs ?: time())];
+        $serials = [];
+        $lastUpdated = $since;
+        foreach ($regs as $r) {
+            $serials[] = (string) $r['serial_number'];
+            $lastUpdated = max($lastUpdated, (int) ($r['change_id'] ?? 0));
+        }
+        return ['serialNumbers' => $serials, 'lastUpdated' => (string) $lastUpdated];
     }
 
     /** Card changed: bump version + last_modified, return the devices to notify.
@@ -186,6 +215,7 @@ class ScanPassService
         $db->getConnection()->prepare(
             "UPDATE scan_passes SET version = version + 1, last_modified = :m WHERE id = :id"
         )->execute(['m' => $now, 'id' => $pass['id']]);
+        self::recordChange((string) $pass['serial_number']);
         return $db->fetchAll(
             "SELECT push_token, environment, device_library_id FROM scan_pass_registrations WHERE serial_number = :s",
             ['s' => $pass['serial_number']]
@@ -196,8 +226,15 @@ class ScanPassService
     {
         self::ensureSchema();
         $db = Database::getInstance();
+        $pass = $db->fetchOne(
+            "SELECT serial_number FROM scan_passes WHERE employee_id = :employee_id",
+            ['employee_id' => $employeeId]
+        );
         $db->getConnection()->prepare("UPDATE scan_passes SET revoked = 1, last_modified = :m WHERE employee_id = :e")
             ->execute(['m' => date('Y-m-d H:i:s'), 'e' => $employeeId]);
+        if ($pass) {
+            self::recordChange((string) $pass['serial_number']);
+        }
     }
 
     /** Remove a dead registration (called when APNs reports the token invalid). */
@@ -214,6 +251,8 @@ class ScanPassService
         $pass = $db->fetchOne("SELECT serial_number FROM scan_passes WHERE employee_id = :e", ['e' => $employeeId]);
         if ($pass) {
             $db->getConnection()->prepare("DELETE FROM scan_pass_registrations WHERE serial_number = :s")
+                ->execute(['s' => $pass['serial_number']]);
+            $db->getConnection()->prepare("DELETE FROM scan_pass_changes WHERE serial_number = :s")
                 ->execute(['s' => $pass['serial_number']]);
         }
         $db->getConnection()->prepare("DELETE FROM scan_passes WHERE employee_id = :e")->execute(['e' => $employeeId]);

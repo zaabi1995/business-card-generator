@@ -6,9 +6,10 @@
  * the in-app "Team" directory: no schema change, the data already lives on
  * employees + company_themes. Bearer-auth.
  *
- * Query: ?limit (default 200, max 500), ?offset, ?since=<datetime> for delta
+ * Query: ?limit (default 200, max 500), ?offset, ?q, ?since=<datetime> for delta
  *   (returns only colleagues changed at/after `since`, for cheap re-sync).
- * Response: {success, company:{id,name,slug}, contacts:[...], total}
+ * Response: {success, company:{id,name,slug}, contacts:[...], total,
+ *   offset, limit, has_more}
  */
 require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
@@ -54,6 +55,22 @@ $since = trim($_GET['since'] ?? '');
 if ($since !== '') {
     $where .= " AND updated_at >= :since";
     $params['since'] = date('Y-m-d H:i:s', strtotime($since) ?: 0);
+}
+$query = trim((string) ($_GET['q'] ?? ''));
+if ($query !== '') {
+    $where .= " AND (
+        name_en LIKE :query_name_en
+        OR name_ar LIKE :query_name_ar
+        OR position_en LIKE :query_position_en
+        OR position_ar LIKE :query_position_ar
+        OR email LIKE :query_email
+    )";
+    $queryPattern = '%' . mb_substr($query, 0, 120) . '%';
+    $params['query_name_en'] = $queryPattern;
+    $params['query_name_ar'] = $queryPattern;
+    $params['query_position_en'] = $queryPattern;
+    $params['query_position_ar'] = $queryPattern;
+    $params['query_email'] = $queryPattern;
 }
 
 try {
@@ -108,4 +125,7 @@ echo json_encode([
     'company'  => ['id' => (string) $company['id'], 'name' => (string) $company['name'], 'slug' => $slug],
     'contacts' => $contacts,
     'total'    => (int) $count['c'],
+    'offset'   => $offset,
+    'limit'    => $limit,
+    'has_more' => $offset + count($contacts) < (int) $count['c'],
 ], JSON_UNESCAPED_UNICODE);

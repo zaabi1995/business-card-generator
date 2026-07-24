@@ -60,16 +60,22 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
     </section>
     <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
-        <div class="grid md:grid-cols-3 gap-5">
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             <?php
             $features = $isAr ? [
-                ['camera', 'مسح أصلي وسريع', 'التقاط أمام وخلف البطاقة، قراءة QR، ومراجعة البيانات قبل الحفظ.'],
-                ['arrows-rotate', 'مزامنة حقيقية', 'البطاقات والتصاميم والفريق والتحليلات تستخدم نفس حساب cardify.om.'],
-                ['wallet', 'بطاقتك في Wallet', 'شارك بطاقتك الرقمية وأضفها إلى Apple Wallet من التطبيق.'],
+                ['camera', 'مسح أصلي مع مراجعة', 'التقط وجهي البطاقة واقرأ QR وأكّد النوع والبيانات قبل الحفظ.'],
+                ['wave-square', 'قارئ وكاتب NFC', 'اقرأ الوسوم القريبة أو اكتب رابط بطاقتك وبيانات التواصل على وسم NFC.'],
+                ['vault', 'خزنة خاصة على الجهاز', 'احتفظ ببطاقات الدفع والولاء والهوية محليًا مع حماية للصور الحساسة.'],
+                ['address-book', 'جهات اتصال أذكى', 'اعرض بطاقات كارديفاي وجهات اتصال آيفون معًا ورتّب التكرارات وأخطاء الأرقام.'],
+                ['wallet', 'مشاركة وApple Wallet', 'شارك بطاقتك عبر QR أو الرابط أو vCard أو NFC وأضفها إلى Apple Wallet.'],
+                ['arrows-rotate', 'حساب واحد ومزامنة حقيقية', 'البطاقات والتصاميم والفريق والتحليلات تستخدم نفس حساب cardify.om.'],
             ] : [
-                ['camera', 'Fast native scanning', 'Capture both sides, read QR codes, and review every field before saving.'],
-                ['arrows-rotate', 'Real account sync', 'Cards, designs, teams, and analytics use the same cardify.om account.'],
-                ['wallet', 'Your card in Wallet', 'Share your digital card and add it to Apple Wallet from the app.'],
+                ['camera', 'Native scanning with review', 'Capture both sides, read QR codes, then confirm the card type and every field before saving.'],
+                ['wave-square', 'NFC reader and writer', 'Read nearby tags or write your card link and contact details to an NFC tag.'],
+                ['vault', 'Private on-device Vault', 'Keep payment, loyalty, and ID cards locally with protection for sensitive photos.'],
+                ['address-book', 'Smarter contacts', 'See Cardify cards and iPhone contacts together, then tidy duplicates and number issues.'],
+                ['wallet', 'Sharing and Apple Wallet', 'Share by QR, link, vCard, or NFC, and add your digital card to Apple Wallet.'],
+                ['arrows-rotate', 'One account, real sync', 'Cards, designs, teams, and analytics use the same cardify.om account.'],
             ];
             foreach ($features as [$icon, $title, $body]): ?>
                 <article class="rounded-3xl bg-white border border-gray-100 p-7 shadow-sm">
@@ -78,6 +84,27 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <p class="text-gray-600 leading-relaxed"><?= htmlspecialchars($body) ?></p>
                 </article>
             <?php endforeach; ?>
+        </div>
+        <div class="mt-10 rounded-3xl p-8 sm:p-10 text-white overflow-hidden relative" style="background:linear-gradient(135deg,#009bc1,#824598)">
+            <div class="relative grid lg:grid-cols-[1fr_auto] gap-8 items-center">
+                <div class="max-w-3xl">
+                    <p class="text-sm font-bold uppercase tracking-widest text-white/70 mb-3">
+                        <?= $isAr ? 'التطبيق والموقع، معًا' : 'The app and website, together' ?>
+                    </p>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold mb-4">
+                        <?= $isAr ? 'حدّث مرة واحدة، وشارك النسخة الأحدث في كل مكان.' : 'Update once, share the latest version everywhere.' ?>
+                    </h2>
+                    <p class="text-lg leading-relaxed text-white/85">
+                        <?= $isAr
+                            ? 'عدّل بطاقتك وتصميمك وفريقك على التطبيق أو cardify.om. تفتح روابط QR وNFC البطاقة الرقمية الصحيحة، وتبقى صلاحيات الحساب والشركات والاشتراك موحّدة.'
+                            : 'Edit your card, design, and team in the app or on cardify.om. QR and NFC links open the right live digital card, while account, company, and subscription access stays consistent.' ?>
+                    </p>
+                </div>
+                <a href="/login.php" class="inline-flex items-center justify-center gap-3 rounded-2xl bg-white text-gray-950 px-6 py-4 font-bold hover:bg-gray-50 transition-colors">
+                    <i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i>
+                    <?= $isAr ? 'فتح حسابي على الويب' : 'Open my web account' ?>
+                </a>
+            </div>
         </div>
     </section>
 </main>

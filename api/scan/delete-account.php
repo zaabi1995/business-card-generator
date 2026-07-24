@@ -1,25 +1,14 @@
 <?php
 /**
- * POST /api/scan/delete-account.php  {confirm:true}
- * -> Permanently delete the signed-in person's Cardify account and ALL their
- * data. Required by App Store Guideline 5.1.1(v): an app that supports account
- * creation must also let the user DELETE the account (not merely deactivate).
- * This is a hard delete, there is no recovery.
+ * POST /api/scan/delete-account.php {confirm:true}
  *
- * Strategy (self-maintaining as the schema grows): sweep every table that has
- * an `employee_id` column and remove this employee's rows (scans, tokens, push
- * tokens, card designs, card sub-records, ...), delete the employee row itself,
- * then, if their company is left with no other active employees (a personal /
- * solo company), delete the company and everything scoped to it.
- *
- * Bearer-authenticated (ScanAuth), rate limited, requires an explicit confirm.
- * Response: {success, account_deleted, company_deleted}
+ * Permanently removes only the authenticated immutable scan account and its
+ * native-app data. Company, employee, and linked web-user records are preserved.
  */
 require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
 
 header('Content-Type: application/json');
-
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'POST only']);
@@ -28,10 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $ctx = ScanAuth::requireEmployee();
 require_once __DIR__ . '/_ratelimit.php';
-scanRateLimit($ctx, 'delete_account', 20);
+scanRateLimit($ctx, 'delete_account', 5, 86400);
 
-// Two-step: the app shows a destructive confirmation, and the endpoint refuses
-// to run without an explicit confirm so a stray call can never wipe an account.
 $body = json_decode((string) file_get_contents('php://input'), true);
 if (!is_array($body) || empty($body['confirm'])) {
     http_response_code(422);
@@ -40,70 +27,111 @@ if (!is_array($body) || empty($body['confirm'])) {
 }
 
 try {
-    $db  = Database::getInstance();
-    $me  = (string) $ctx['employee_id'];
-    $cid = (string) ($ctx['company_id'] ?? '');
-
-    // 1) Delete this employee's rows from every table keyed by employee_id
-    //    (except the employees table itself, removed explicitly in step 2).
-    $empTables = $db->fetchAll(
-        "SELECT table_name AS t FROM information_schema.columns
-         WHERE table_schema = DATABASE() AND column_name = 'employee_id'
-           AND table_name <> 'employees'"
+    $db = Database::getInstance();
+    $pdo = $db->getConnection();
+    $accountId = (string) $ctx['account_id'];
+    $account = $db->fetchOne(
+        "SELECT id, user_id
+         FROM scan_accounts
+         WHERE id = :account_id
+         LIMIT 1",
+        ['account_id' => $accountId]
     );
-    foreach ((array) $empTables as $row) {
-        $t = preg_replace('/[^a-zA-Z0-9_]/', '', (string) ($row['t'] ?? ''));
-        if ($t === '') continue;
-        try {
-            $db->query("DELETE FROM `$t` WHERE employee_id = :me", ['me' => $me]);
-        } catch (Throwable $e) {
-            error_log("[delete-account] $t: " . $e->getMessage());
+    if (!is_array($account)) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'account_not_found']);
+        exit;
+    }
+
+    $memberships = $db->fetchAll(
+        "SELECT employee_id
+         FROM scan_account_memberships
+         WHERE account_id = :account_id
+         ORDER BY created_at ASC",
+        ['account_id' => $accountId]
+    );
+    $employeeIds = [];
+    foreach ($memberships as $membership) {
+        $employeeId = trim((string) ($membership['employee_id'] ?? ''));
+        if ($employeeId !== '') {
+            $employeeIds[$employeeId] = true;
         }
     }
 
-    // 2) Delete the account (employee) row itself.
-    $db->query('DELETE FROM employees WHERE id = :me', ['me' => $me]);
-
-    // 3) If the company now has no other active employees it was a personal /
-    //    solo company: delete the company and everything scoped to it.
-    $companyDeleted = false;
-    if ($cid !== '') {
-        $rest = $db->fetchOne(
-            "SELECT COUNT(*) AS n FROM employees
-             WHERE company_id = :cid AND (status IS NULL OR status <> 'deleted')",
-            ['cid' => $cid]
-        );
-        if (((int) ($rest['n'] ?? 0)) === 0) {
-            $coTables = $db->fetchAll(
-                "SELECT table_name AS t FROM information_schema.columns
-                 WHERE table_schema = DATABASE() AND column_name = 'company_id'
-                   AND table_name <> 'companies'"
+    $pdo->beginTransaction();
+    try {
+        foreach (array_keys($employeeIds) as $employeeId) {
+            $passes = $db->fetchAll(
+                "SELECT serial_number
+                 FROM scan_passes
+                 WHERE employee_id = :employee_id",
+                ['employee_id' => $employeeId]
             );
-            foreach ((array) $coTables as $row) {
-                $t = preg_replace('/[^a-zA-Z0-9_]/', '', (string) ($row['t'] ?? ''));
-                if ($t === '') continue;
-                try {
-                    $db->query("DELETE FROM `$t` WHERE company_id = :cid", ['cid' => $cid]);
-                } catch (Throwable $e) {
-                    error_log("[delete-account co] $t: " . $e->getMessage());
+            foreach ($passes as $pass) {
+                $serialNumber = (string) ($pass['serial_number'] ?? '');
+                if ($serialNumber === '') {
+                    continue;
                 }
+                $pdo->prepare(
+                    'DELETE FROM scan_pass_registrations WHERE serial_number = ?'
+                )->execute([$serialNumber]);
+                $pdo->prepare(
+                    'DELETE FROM scan_pass_changes WHERE serial_number = ?'
+                )->execute([$serialNumber]);
             }
-            try {
-                $db->query('DELETE FROM companies WHERE id = :cid', ['cid' => $cid]);
-                $companyDeleted = true;
-            } catch (Throwable $e) {
-                error_log('[delete-account co-row]: ' . $e->getMessage());
-            }
+
+            $pdo->prepare('DELETE FROM scan_claim_tickets WHERE claimed_employee_id = ?')
+                ->execute([$employeeId]);
+            $pdo->prepare('DELETE FROM push_tokens WHERE employee_id = ?')
+                ->execute([$employeeId]);
+            $pdo->prepare('DELETE FROM card_designs WHERE employee_id = ?')
+                ->execute([$employeeId]);
+            $pdo->prepare('DELETE FROM scans WHERE employee_id = ?')
+                ->execute([$employeeId]);
+            $pdo->prepare('DELETE FROM scan_passes WHERE employee_id = ?')
+                ->execute([$employeeId]);
+            $pdo->prepare(
+                'UPDATE employees
+                 SET scan_pro_until = NULL, scan_pro_source = NULL
+                 WHERE id = ?'
+            )->execute([$employeeId]);
         }
+
+        $pdo->prepare('DELETE FROM scan_pro_receipts WHERE account_id = ?')
+            ->execute([$accountId]);
+        $pdo->prepare('DELETE FROM scan_account_entitlements WHERE account_id = ?')
+            ->execute([$accountId]);
+        $pdo->prepare('DELETE FROM scan_api_tokens WHERE account_id = ?')
+            ->execute([$accountId]);
+        $pdo->prepare('DELETE FROM scan_account_identifiers WHERE account_id = ?')
+            ->execute([$accountId]);
+        $pdo->prepare('DELETE FROM scan_identity_user_link_audit WHERE account_id = ?')
+            ->execute([$accountId]);
+        $pdo->prepare(
+            'DELETE FROM scan_identity_migration_audit
+             WHERE canonical_account_id = ? OR merged_account_id = ?'
+        )->execute([$accountId, $accountId]);
+        $pdo->prepare('DELETE FROM scan_account_memberships WHERE account_id = ?')
+            ->execute([$accountId]);
+        $pdo->prepare('DELETE FROM scan_accounts WHERE id = ?')
+            ->execute([$accountId]);
+        $pdo->commit();
+    } catch (Throwable $deleteError) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $deleteError;
     }
 
     echo json_encode([
-        'success'         => true,
+        'success' => true,
         'account_deleted' => true,
-        'company_deleted' => $companyDeleted,
+        'companies_preserved' => true,
+        'employees_preserved' => true,
+        'web_user_preserved' => !empty($account['user_id']),
     ]);
 } catch (Throwable $e) {
-    error_log('[delete-account] ' . $e->getMessage());
+    error_log('[scan/delete-account] ' . $e->getMessage());
     http_response_code(500);
     echo json_encode(['success' => false, 'error' => 'server_error']);
 }
