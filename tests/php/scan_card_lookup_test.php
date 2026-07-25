@@ -39,6 +39,12 @@ $other = [
 
 lookupCheck('exact email matches', ScanCardLookup::employeeMatches($ali, ['ali@bhd.om'], []));
 lookupCheck('normalized phone matches', ScanCardLookup::employeeMatches($ali, [], ['+96871616161']));
+lookupCheck('generic office phone never identifies an employee', !ScanCardLookup::employeeMatches([
+    'id' => 'emp-office',
+    'email' => 'office-person@example.om',
+    'mobile' => '91234567',
+    'phone' => '+968 7161 6161',
+], [], ['+96871616161']));
 lookupCheck('name alone never matches', !ScanCardLookup::employeeMatches($ali, [], []));
 lookupCheck('unrelated employee does not match', !ScanCardLookup::employeeMatches(
     $other,

@@ -76,11 +76,9 @@ class ScanCardLookup
         if ($employeeEmail !== null && in_array($employeeEmail, $emails, true)) {
             return true;
         }
-        foreach (['mobile', 'phone'] as $field) {
-            $employeePhone = self::normalizePhone($employee[$field] ?? '');
-            if ($employeePhone !== null && in_array($employeePhone, $phones, true)) {
-                return true;
-            }
+        $employeeMobile = self::normalizePhone($employee['mobile'] ?? '');
+        if ($employeeMobile !== null && in_array($employeeMobile, $phones, true)) {
+            return true;
         }
         return false;
     }

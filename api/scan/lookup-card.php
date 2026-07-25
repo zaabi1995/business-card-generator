@@ -3,7 +3,7 @@
  * POST /api/scan/lookup-card.php
  *
  * Finds one active Cardify profile from exact personal email or normalized
- * phone identifiers extracted from a scanned card. Name-only lookup is never
+ * mobile identifiers extracted from a scanned card. Name-only lookup is never
  * accepted. Ambiguous identifiers return no profile data.
  */
 require_once __DIR__ . '/../../config.php';
@@ -42,16 +42,12 @@ try {
         $params[$key] = $email;
     }
     $cleanMobile = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(mobile, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '')";
-    $cleanPhone = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '')";
     foreach ($phones as $index => $phone) {
         $digits = preg_replace('/\D/', '', $phone);
         $tail = substr((string) $digits, -8);
         $mobileKey = 'lookup_mobile_' . $index;
-        $phoneKey = 'lookup_phone_' . $index;
-        $where[] = '(' . $cleanMobile . ' LIKE :' . $mobileKey
-            . ' OR ' . $cleanPhone . ' LIKE :' . $phoneKey . ')';
+        $where[] = $cleanMobile . ' LIKE :' . $mobileKey;
         $params[$mobileKey] = '%' . $tail;
-        $params[$phoneKey] = '%' . $tail;
     }
 
     $db = Database::getInstance();
