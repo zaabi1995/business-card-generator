@@ -103,6 +103,35 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $pendingCount = count(ScanCategorizer::pending($pdo, 1000));
 
+$scanners = $pdo->query(
+    "SELECT s.employee_id,
+            COUNT(*) AS scans,
+            SUM(s.category IS NOT NULL) AS categorised,
+            MAX(s.created_at) AS last_scan,
+            e.name_en, e.name_ar, e.email,
+            c.name AS company_name
+     FROM scans s
+     LEFT JOIN employees e ON e.id = s.employee_id
+     LEFT JOIN companies c ON c.id = s.company_id
+     GROUP BY s.employee_id, e.name_en, e.name_ar, e.email, c.name
+     ORDER BY scans DESC
+     LIMIT 100"
+)->fetchAll(PDO::FETCH_ASSOC);
+
+// What each scanner actually collects, so the table can say "mostly finance"
+// rather than only how many cards they took.
+$mixRows = $pdo->query(
+    "SELECT employee_id, COALESCE(category, '__none') AS category, COUNT(*) AS n
+     FROM scans
+     GROUP BY employee_id, COALESCE(category, '__none')"
+)->fetchAll(PDO::FETCH_ASSOC);
+$mix = [];
+foreach ($mixRows as $row) {
+    $mix[$row['employee_id']][$row['category']] = (int)$row['n'];
+}
+
+
+
 function intel_label(?string $category): string
 {
     if ($category === null || $category === '' || $category === '__none') return 'Uncategorised';
@@ -136,7 +165,7 @@ adminHeader('Scan Intelligence', 'scan-intelligence');
       ['Scans', (int)($totals['total'] ?? 0), 'All cards scanned, every tenant'],
       ['Categorised', (int)($totals['categorised'] ?? 0), 'Has a business activity'],
       ['Awaiting AI', $pendingCount, 'Weak or missing category'],
-      ['Companies', (int)($totals['companies'] ?? 0), 'Tenants with scans'],
+      ['Scanners', (int)($totals['scanners'] ?? 0), 'People collecting cards'],
     ];
     foreach ($tiles as [$label, $value, $hint]): ?>
       <div class="bg-white rounded-2xl border border-gray-200 p-5">
@@ -191,6 +220,68 @@ adminHeader('Scan Intelligence', 'scan-intelligence');
         <?php endforeach; ?>
       </div>
     <?php endif; ?>
+  </div>
+
+  <!-- Who is scanning -->
+  <div class="bg-white rounded-2xl border border-gray-200">
+    <div class="p-5 border-b border-gray-100">
+      <h2 class="text-base font-semibold text-gray-900">Who is scanning</h2>
+      <p class="text-xs text-gray-500">Every person collecting cards, what they collect, and when they last scanned.</p>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-500">
+          <tr>
+            <th class="text-left px-4 py-3 font-medium">Person</th>
+            <th class="text-left px-4 py-3 font-medium">Tenant</th>
+            <th class="text-left px-4 py-3 font-medium">Scans</th>
+            <th class="text-left px-4 py-3 font-medium">Categorised</th>
+            <th class="text-left px-4 py-3 font-medium">Mostly</th>
+            <th class="text-left px-4 py-3 font-medium">Last scan</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <?php if (!$scanners): ?>
+            <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">Nobody has scanned yet.</td></tr>
+          <?php endif; ?>
+          <?php foreach ($scanners as $sc):
+            $nameEn = trim((string)($sc['name_en'] ?? ''));
+            $nameAr = trim((string)($sc['name_ar'] ?? ''));
+            $primary = $nameEn ?: ($nameAr ?: ($sc['email'] ?? $sc['employee_id']));
+            $rowMix = $mix[$sc['employee_id']] ?? [];
+            arsort($rowMix);
+            $topCategory = null;
+            foreach ($rowMix as $cat => $n) {
+                if ($cat !== '__none') { $topCategory = [$cat, $n]; break; }
+            }
+          ?>
+            <tr class="hover:bg-gray-50">
+              <td class="px-4 py-3">
+                <div class="font-medium text-gray-900"><?= htmlspecialchars((string)$primary) ?></div>
+                <?php if ($nameEn && $nameAr && $nameEn !== $nameAr): ?>
+                  <div class="text-sm text-gray-600" dir="rtl"><?= htmlspecialchars($nameAr) ?></div>
+                <?php endif; ?>
+                <div class="text-xs text-gray-400"><?= htmlspecialchars((string)($sc['email'] ?? '')) ?></div>
+              </td>
+              <td class="px-4 py-3 text-xs text-gray-500"><?= htmlspecialchars((string)($sc['company_name'] ?? '-')) ?></td>
+              <td class="px-4 py-3 tabular-nums text-gray-900"><?= number_format((int)$sc['scans']) ?></td>
+              <td class="px-4 py-3 tabular-nums text-gray-500"><?= number_format((int)$sc['categorised']) ?></td>
+              <td class="px-4 py-3">
+                <?php if ($topCategory): ?>
+                  <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700">
+                    <?= htmlspecialchars(intel_label($topCategory[0])) ?>
+                  </span>
+                  <span class="ml-1 text-xs text-gray-400 tabular-nums"><?= (int)$topCategory[1] ?></span>
+                <?php else: ?>
+                  <span class="text-xs text-gray-400">-</span>
+                <?php endif; ?>
+              </td>
+              <td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap"><?= htmlspecialchars((string)$sc['last_scan']) ?></td>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Every scan -->
