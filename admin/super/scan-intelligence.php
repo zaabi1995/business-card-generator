@@ -10,7 +10,7 @@
  * The source is shown on every row so a wrong category can be traced to whoever
  * decided it instead of being argued about.
  */
-require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/admin-layout.php';
 require_once INCLUDES_DIR . '/ScanCategorizer.php';
@@ -233,16 +233,35 @@ adminHeader('Scan Intelligence', 'scan-intelligence');
           <?php endif; ?>
           <?php foreach ($rows as $r):
             $parsed = json_decode((string)$r['parsed'], true) ?: [];
-            $person = intel_field($parsed, 'name_en', 'name_ar');
-            $company = intel_field($parsed, 'company_en', 'company_ar');
+            // Bilingual by design: an Omani card prints the name in BOTH
+            // scripts on purpose, so show both instead of picking one.
+            $personEn = trim((string)($parsed['name_en'] ?? ''));
+            $personAr = trim((string)($parsed['name_ar'] ?? ''));
+            $companyEn = trim((string)($parsed['company_en'] ?? ''));
+            $companyAr = trim((string)($parsed['company_ar'] ?? ''));
+            $titleEn = trim((string)($parsed['title_en'] ?? ''));
+            $titleAr = trim((string)($parsed['title_ar'] ?? ''));
+            $person = $personEn ?: $personAr;
+            $company = $companyEn ?: $companyAr;
             $conf = $r['category_confidence'] !== null ? (float)$r['category_confidence'] : null;
           ?>
             <tr class="hover:bg-gray-50">
               <td class="px-4 py-3">
                 <div class="font-medium text-gray-900"><?= htmlspecialchars($person ?: '-') ?></div>
-                <div class="text-xs text-gray-400"><?= htmlspecialchars(intel_field($parsed, 'title_en', 'title_ar')) ?></div>
+                <?php if ($personEn && $personAr && $personEn !== $personAr): ?>
+                  <div class="text-sm text-gray-600" dir="rtl"><?= htmlspecialchars($personAr) ?></div>
+                <?php endif; ?>
+                <div class="text-xs text-gray-400"><?= htmlspecialchars($titleEn ?: $titleAr) ?></div>
+                <?php if ($titleEn && $titleAr && $titleEn !== $titleAr): ?>
+                  <div class="text-xs text-gray-400" dir="rtl"><?= htmlspecialchars($titleAr) ?></div>
+                <?php endif; ?>
               </td>
-              <td class="px-4 py-3 text-gray-700"><?= htmlspecialchars($company ?: '-') ?></td>
+              <td class="px-4 py-3 text-gray-700">
+                <div><?= htmlspecialchars($company ?: '-') ?></div>
+                <?php if ($companyEn && $companyAr && $companyEn !== $companyAr): ?>
+                  <div class="text-xs text-gray-500" dir="rtl"><?= htmlspecialchars($companyAr) ?></div>
+                <?php endif; ?>
+              </td>
               <td class="px-4 py-3">
                 <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium <?= $r['category'] ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-100 text-gray-500' ?>">
                   <?= htmlspecialchars(intel_label($r['category'])) ?>
