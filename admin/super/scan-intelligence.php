@@ -23,11 +23,19 @@ $pdo = $db->getConnection();
 $notice = null;
 $noticeKind = 'success';
 
+// This POST spends real OpenRouter credit, so it carries the same CSRF guard as
+// every other super-admin write.
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && !validateCSRFToken($_POST['csrf_token'] ?? '')) {
+    die('Invalid request');
+}
+
 // Run a refine batch on demand. POST + redirect so a refresh cannot re-run it.
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') === 'categorize') {
     $result = ScanCategorizer::refineBatch($pdo, 20);
     if (!empty($result['errors'])) {
-        $notice = 'Categorisation failed: ' . htmlspecialchars(implode('; ', $result['errors']));
+        // NOT escaped here: the value is escaped once at the render site. Doing
+        // it in both places printed raw &amp;quot; entities in the banner.
+        $notice = 'Categorisation failed: ' . implode('; ', $result['errors']);
         $noticeKind = 'error';
     } else {
         $notice = sprintf(
@@ -37,7 +45,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') ==
     }
     $_SESSION['scan_intel_notice'] = $notice;
     $_SESSION['scan_intel_notice_kind'] = $noticeKind;
-    header('Location: ' . getAdminBasePath() . 'scan-intelligence.php');
+    // HARD: this page lives in admin/super/, but getAdminBasePath() returns the
+    // TENANT admin base (/admin/). Redirecting there 404s, so every AI run
+    // dead-ended on a missing page and the operator never saw the result even
+    // though the batch had already been charged and written. Keep the current
+    // filters too, or the redirect silently resets the view.
+    $back = getBasePath() . 'admin/super/scan-intelligence.php';
+    $keep = array_filter([
+        'category' => (string)($_POST['back_category'] ?? ''),
+        'source'   => (string)($_POST['back_source'] ?? ''),
+        'q'        => (string)($_POST['back_q'] ?? ''),
+    ], static fn($v) => $v !== '');
+    if ($keep) $back .= '?' . http_build_query($keep);
+    header('Location: ' . $back);
     exit;
 }
 if (!empty($_SESSION['scan_intel_notice'])) {
@@ -65,8 +85,17 @@ if ($filterSource !== '') {
     $params[':src'] = $filterSource;
 }
 if ($search !== '') {
-    $where[] = '(s.parsed LIKE :q OR s.tags LIKE :q OR s.met_where LIKE :q)';
-    $params[':q'] = '%' . $search . '%';
+    // THREE placeholders, not one reused three times: this connection runs with
+    // ATTR_EMULATE_PREPARES = 0, and a native prepare rejects a repeated named
+    // parameter with "Invalid parameter number". The search box 500'd on every
+    // query before this.
+    // ESCAPE as well, or searching for "_" matches any character and "%"
+    // returns the whole table.
+    $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
+    $where[] = "(s.parsed LIKE :q1 ESCAPE '\\\\'"
+             . " OR s.tags LIKE :q2 ESCAPE '\\\\'"
+             . " OR s.met_where LIKE :q3 ESCAPE '\\\\')";
+    $params[':q1'] = $params[':q2'] = $params[':q3'] = '%' . $escaped . '%';
 }
 $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
 
@@ -101,7 +130,8 @@ $stmt = $pdo->prepare(
 $stmt->execute($params);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$pendingCount = count(ScanCategorizer::pending($pdo, 1000));
+$pendingCapped = false;
+$pendingCount = ScanCategorizer::pendingCount($pdo, 500, $pendingCapped);
 
 $scanners = $pdo->query(
     "SELECT s.employee_id,
@@ -137,15 +167,6 @@ function intel_label(?string $category): string
     if ($category === null || $category === '' || $category === '__none') return 'Uncategorised';
     return ucwords(str_replace('_', ' ', $category));
 }
-function intel_field(array $parsed, string ...$keys): string
-{
-    foreach ($keys as $key) {
-        $value = trim((string)($parsed[$key] ?? ''));
-        if ($value !== '') return $value;
-    }
-    return '';
-}
-
 adminHeader('Scan Intelligence', 'scan-intelligence');
 ?>
 <div class="p-4 sm:p-6 space-y-6">
@@ -164,12 +185,14 @@ adminHeader('Scan Intelligence', 'scan-intelligence');
     $tiles = [
       ['Scans', (int)($totals['total'] ?? 0), 'All cards scanned, every tenant'],
       ['Categorised', (int)($totals['categorised'] ?? 0), 'Has a business activity'],
-      ['Awaiting AI', $pendingCount, 'Weak or missing category'],
+      // "500+" rather than a confidently wrong exact number once the scan
+      // count outgrows the cap.
+      ['Awaiting AI', $pendingCapped ? number_format($pendingCount) . '+' : $pendingCount, 'Weak or missing category'],
       ['Scanners', (int)($totals['scanners'] ?? 0), 'People collecting cards'],
     ];
     foreach ($tiles as [$label, $value, $hint]): ?>
       <div class="bg-white rounded-2xl border border-gray-200 p-5">
-        <div class="text-3xl font-semibold text-gray-900 tabular-nums"><?= number_format($value) ?></div>
+        <div class="text-3xl font-semibold text-gray-900 tabular-nums"><?= is_string($value) ? htmlspecialchars($value) : number_format($value) ?></div>
         <div class="mt-1 text-sm font-medium text-gray-700"><?= htmlspecialchars($label) ?></div>
         <div class="text-xs text-gray-400"><?= htmlspecialchars($hint) ?></div>
       </div>
@@ -184,7 +207,12 @@ adminHeader('Scan Intelligence', 'scan-intelligence');
         <p class="text-xs text-gray-500">A human decision is never overwritten by the device or the model.</p>
       </div>
       <form method="post" class="shrink-0">
+        <?= csrfField() ?>
         <input type="hidden" name="action" value="categorize">
+        <?php // Carry the current view through the redirect. ?>
+        <input type="hidden" name="back_category" value="<?= htmlspecialchars($filterCategory) ?>">
+        <input type="hidden" name="back_source" value="<?= htmlspecialchars($filterSource) ?>">
+        <input type="hidden" name="back_q" value="<?= htmlspecialchars($search) ?>">
         <button type="submit"
           class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
           <?= $pendingCount === 0 ? 'disabled' : '' ?>>
@@ -210,7 +238,13 @@ adminHeader('Scan Intelligence', 'scan-intelligence');
     <?php else: $max = max(array_column($breakdown, 'n')) ?: 1; ?>
       <div class="space-y-2">
         <?php foreach ($breakdown as $b): ?>
-          <a href="?category=<?= urlencode($b['category']) ?>" class="flex items-center gap-3 group">
+          <?php // Keep the other active filters, or clicking a bar silently
+                // widened the result set the operator was looking at. ?>
+          <a href="?<?= htmlspecialchars(http_build_query(array_filter([
+                'category' => $b['category'],
+                'source'   => $filterSource,
+                'q'        => $search,
+             ], static fn($v) => (string)$v !== ''))) ?>" class="flex items-center gap-3 group">
             <span class="w-40 shrink-0 text-sm text-gray-700 group-hover:text-indigo-600 truncate"><?= htmlspecialchars(intel_label($b['category'])) ?></span>
             <span class="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
               <span class="block h-full bg-indigo-500" style="width: <?= (int)round(($b['n'] / $max) * 100) ?>%"></span>
@@ -247,7 +281,9 @@ adminHeader('Scan Intelligence', 'scan-intelligence');
           <?php foreach ($scanners as $sc):
             $nameEn = trim((string)($sc['name_en'] ?? ''));
             $nameAr = trim((string)($sc['name_ar'] ?? ''));
-            $primary = $nameEn ?: ($nameAr ?: ($sc['email'] ?? $sc['employee_id']));
+            // A scan can carry no employee at all (guest / pre-account rows).
+            // Falling through to a null employee_id printed a blank Person cell.
+            $primary = $nameEn ?: ($nameAr ?: (trim((string)($sc['email'] ?? '')) ?: (trim((string)($sc['employee_id'] ?? '')) ?: 'Unknown scanner')));
             $rowMix = $mix[$sc['employee_id']] ?? [];
             arsort($rowMix);
             $topCategory = null;
@@ -294,7 +330,7 @@ adminHeader('Scan Intelligence', 'scan-intelligence');
           <option value="">All activities</option>
           <option value="__none" <?= $filterCategory === '__none' ? 'selected' : '' ?>>Uncategorised</option>
           <?php foreach (ScanCategorizer::CATEGORIES as $cat): ?>
-            <option value="<?= $cat ?>" <?= $filterCategory === $cat ? 'selected' : '' ?>><?= htmlspecialchars(intel_label($cat)) ?></option>
+            <option value="<?= htmlspecialchars($cat) ?>" <?= $filterCategory === $cat ? 'selected' : '' ?>><?= htmlspecialchars(intel_label($cat)) ?></option>
           <?php endforeach; ?>
         </select>
         <select name="source" class="px-3 py-2 rounded-xl border border-gray-200 text-sm">

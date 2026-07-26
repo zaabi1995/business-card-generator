@@ -50,6 +50,27 @@ class ScanCategorizer
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * How many candidates the model could ACTUALLY act on.
+     *
+     * count(pending()) over-reported: a scan with no company, title or website
+     * is a permanent candidate (describe() returns null, refineBatch skips it,
+     * nothing ever changes its category_source), so the "Awaiting AI" tile could
+     * never reach zero and the button stayed lit with nothing to do. Capped so a
+     * large table does not pay for an unbounded fetch on every page view;
+     * $cappedAt tells the caller to render "500+" instead of a wrong exact number.
+     */
+    public static function pendingCount(PDO $pdo, int $cap = 500, ?bool &$cappedAt = null): int
+    {
+        $rows = self::pending($pdo, $cap);
+        $cappedAt = count($rows) >= $cap;
+        $n = 0;
+        foreach ($rows as $row) {
+            if (self::describe($row) !== null) $n++;
+        }
+        return $n;
+    }
+
     /** Only the fields that describe the BUSINESS, never the person's contacts. */
     private static function describe(array $row): ?array
     {
