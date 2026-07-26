@@ -901,6 +901,19 @@ class CardEditor {
             } catch (e) {}
         }
 
+        // Match-print baseline (opt-in, preview surfaces only). Fabric anchors a
+        // text object by its box TOP and adds ~0.16*fontSize of internal leading
+        // above the glyphs, so with top=field.y the glyphs sit lower than the
+        // PDF print renderer, which places glyph-top ~= field.y (baseline =
+        // field.y + ascender*fontSize). That made the static tel/fax digits ride
+        // ~1 leading below the baked "+968" in the live preview (the print PDF
+        // was correct). Shift the top up by that leading so the preview baseline
+        // matches the printed card. Uses the post-auto-shrink fontSize. Gated so
+        // the interactive template editor + digital card keep their own anchor.
+        if (options.matchPrintBaseline) {
+            fieldOptions.top = Number(fieldOptions.top) - Number(fieldOptions.fontSize || 16) * 0.16;
+        }
+
         const TextCtor = this.fabricRef.IText;
         const textObj = new TextCtor(options.text || key, fieldOptions);
         textObj.fieldKey = key;

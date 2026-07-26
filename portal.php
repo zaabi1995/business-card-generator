@@ -2272,7 +2272,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         originX: field.originX || (field.textAlign === 'right' ? 'right'
                                  : (field.textAlign === 'center' ? 'center' : 'left')),
                         originY: field.originY || 'top',
-                        selectable: false
+                        selectable: false,
+                        matchPrintBaseline: true
                     });
                     if (editor.fields[key]) {
                         editor.fields[key].set({ selectable: false, evented: false,
@@ -2343,9 +2344,10 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     fill: field.fill || field.color || '#333333',
                     textAlign: textAlign,
                     originX: originX,
-                    originY: field.originY || 'top'
+                    originY: field.originY || 'top',
+                    matchPrintBaseline: true
                 });
-                
+
                 // Make fields non-selectable for preview
                 if (editor.fields[key]) {
                     editor.fields[key].set({ selectable: false, evented: false });
