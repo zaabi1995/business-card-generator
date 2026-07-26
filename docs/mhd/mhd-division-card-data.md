@@ -4,7 +4,14 @@ Shared constants (all MHD LLC / ITICS divisions), VERBATIM:
 - Entity EN: **Mohsin Haider Darwish L.L.C.** / AR: **محسن حيدر درويش ش.م.م.**
 - Address: **P.O. Box 880, Postal Code 112, Ruwi, Muscat, Sultanate of Oman**
 - Banner EN: **INFRASTRUCTURE, TECHNOLOGY, INDUSTRIAL & CONSUMER SOLUTIONS** / AR: **حلول البنية التحتية، التكنولوجية، الصناعية والاستهلاكية**
-- Website: **www.mhdoman.com** · Logo lockup: **MHD ITICS** · C.R. 1001990
+- Website: **www.mhditics.com** · Logo lockup: **MHD ITICS** · C.R. 1001990
+  - CORRECTED 26 Jul 2026 (Ali). The original artwork baked `www.mhdoman.com` on all
+    seven Group A cards, but MHD's own signature block uses `www.mhditics.com`. Swapped
+    in `mhd-card-clean-bg.pdf` (both pages) via `scripts/mhd/fix-www-mhditics.py`, then
+    all four shared backgrounds rebuilt with `build_ga_bgs.py`. Group B is unchanged:
+    Automotive/Consumer/EEP keep mhdoman.com, Logistics keeps mhdlogistics.com.
+    The line is baked artwork, not a field, so it does NOT appear in the PDF text layer,
+    verify it by eye on a render, never with pdftotext.
 
 ## GROUP A - share the ITICS card design (my clean bg works; only division-line + office tel/fax differ)
 | Cardify dept | Division-line EN | Division-line AR | Tel1 +968 | Tel2 +968 | Fax +968 |
