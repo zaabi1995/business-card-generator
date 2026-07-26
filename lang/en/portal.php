@@ -37,6 +37,7 @@ return [
     // Form fields
     'full_name_en'      => 'Full Name (English)',
     'full_name_ar'      => 'Full Name (Arabic)',
+    'translating'       => 'Translating…',
     'ai_translate'      => 'AI Translate',
     'position_en'       => 'Position/Title (English)',
     'position_ar'       => 'Position/Title (Arabic)',

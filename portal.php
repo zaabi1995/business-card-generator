@@ -812,6 +812,23 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+        /* The AI Translate buttons sit in the field label, not on the input, so
+           they need their own busy state rather than .translate-btn's. */
+        .spinner { animation: spin 1s linear infinite; display: inline-block; }
+        button.is-translating { opacity: 0.75; cursor: progress; }
+        .is-translating-target {
+            background-image: linear-gradient(90deg,
+                rgba(59,130,246,0) 0%, rgba(59,130,246,0.14) 50%, rgba(59,130,246,0) 100%);
+            background-size: 220% 100%;
+            animation: translateSweep 1.1s linear infinite;
+        }
+        @keyframes translateSweep {
+            from { background-position: 120% 0; }
+            to   { background-position: -120% 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .spinner, .is-translating-target { animation: none; }
+        }
         .input-with-btn {
             position: relative;
         }
@@ -2609,17 +2626,32 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         if (isTranslating[targetId]) return;
         isTranslating[targetId] = true;
         
-        // Find the translate button and show loading
-        const btn = targetEl.parentElement.querySelector('.translate-btn');
+        // Find the translate button and show loading.
+        // NOT parentElement.querySelector('.translate-btn'): these buttons live
+        // in the field's LABEL and never carried that class, so btn was always
+        // null and this whole loading block was dead code. Match on the onclick
+        // instead; the quotes stop 'position_ar' matching 'position_ar_2'.
+        const btn = document.querySelector('button[onclick*="\'' + targetId + '\'"]');
         if (btn) {
-            btn.innerHTML = '<i class="fa-solid fa-spinner spinner"></i>';
+            if (!btn.dataset.idleLabel) btn.dataset.idleLabel = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner spinner"></i> '
+                          + <?= json_encode(t('portal.translating')) ?>;
             btn.disabled = true;
+            btn.classList.add('is-translating');
         }
+        targetEl.classList.add('is-translating-target');
+        targetEl.setAttribute('placeholder', <?= json_encode(t('portal.translating')) ?>);
         
+        // The endpoint round-trips an LLM and measured 16.3s live, so the wait
+        // is long enough that a hung request would otherwise leave the button
+        // disabled for good. Abort at 45s and let finally restore it.
+        const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        const killer = ctrl ? setTimeout(function () { ctrl.abort(); }, 45000) : null;
         try {
             const response = await fetch(translateApiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                signal: ctrl ? ctrl.signal : undefined,
                 body: JSON.stringify({
                     text: sourceText,
                     target: 'ar',
@@ -2646,13 +2678,22 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             }
         } catch (error) {
             console.error('Translation error:', error);
-            showToast('Translation failed. Please try again.', 'error');
+            showToast(error && error.name === 'AbortError'
+                ? 'Translation timed out. Please try again.'
+                : 'Translation failed. Please try again.', 'error');
         } finally {
+            if (killer) clearTimeout(killer);
             isTranslating[targetId] = false;
             if (btn) {
-                btn.innerHTML = '<i class="fa-solid fa-language"></i>';
+                // Restore the label we captured, not a hardcoded icon: these
+                // buttons read "AI Translate" with a wand, and the old code
+                // would have silently swapped that for a bare globe.
+                btn.innerHTML = btn.dataset.idleLabel;
                 btn.disabled = false;
+                btn.classList.remove('is-translating');
             }
+            targetEl.classList.remove('is-translating-target');
+            targetEl.removeAttribute('placeholder');
         }
     }
     
