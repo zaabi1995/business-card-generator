@@ -95,6 +95,17 @@ if ($db->isConnected()) {
     }
 }
 
+// Tenants whose divisions each carry their OWN card template (MHD) cannot be served
+// by a generic form: the fields, the office numbers, the entity and the website all
+// change with the division. For those, the division is step 1 and the form is built
+// from it. Everyone else keeps the plain form with an optional department dropdown.
+$divisionsWithTemplates = 0;
+foreach ($departments as $__d) {
+    if (!empty($__d['template_pair_id'])) { $divisionsWithTemplates++; }
+}
+$divisionRequired = $divisionsWithTemplates >= 2;
+$divisionPickerRequired = $divisionRequired && !$selectedDepartment;
+
 // Check for passcode protection (department passcode takes precedence when viewing department portal)
 $portalPasscode = null;
 $passcodeType = null; // 'department' or 'company'
@@ -289,7 +300,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
     if (!$error && !empty($enabledFields['name_en']) && empty($formData['name_en'])) {
         $error = 'Name (English) is required.';
     }
-    
+
+    // When each division has its own card, a request with no division would be
+    // rendered on whatever company-wide template happens to be newest, i.e. the
+    // wrong card, and would route to no division mailbox. Refuse it.
+    if (!$error && $divisionRequired && empty($formData['department_id'])) {
+        $error = t('portal.division_required');
+    }
+
     // Get request type and notes from form
     $requestType = $_POST['request_type'] ?? 'new';
     $requestNotes = trim($_POST['request_notes'] ?? '');
@@ -1282,6 +1300,33 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 </p>
             </div>
             
+            <?php elseif ($divisionPickerRequired): ?>
+            <!-- Step 1: division. Each division owns its card template, so the form
+                 cannot be built until we know which one. Every tile routes to
+                 /portal/{slug}, where the fields come from that division's template. -->
+            <div class="max-w-3xl mx-auto">
+                <?php if ($error): ?>
+                <div class="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span class="text-sm"><?php echo htmlspecialchars($error); ?></span>
+                </div>
+                <?php endif; ?>
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('portal.division_pick_h2')) ?></h2>
+                    <p class="text-gray-600 mt-2"><?= htmlspecialchars(t('portal.division_pick_sub')) ?></p>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <?php foreach ($departments as $dept): ?>
+                    <?php if (empty($dept['slug'])) continue; ?>
+                    <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/portal/' . $dept['slug']), ENT_QUOTES, 'UTF-8') ?>"
+                       class="group flex items-center justify-between gap-3 bg-white border border-gray-200 rounded-xl px-5 py-4 hover:border-blue-400 hover:shadow-sm transition-all">
+                        <span class="font-semibold text-gray-900"><?= htmlspecialchars($dept['name']) ?></span>
+                        <i class="fa-solid fa-arrow-right text-gray-300 group-hover:text-blue-500 transition-colors"></i>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
             <?php else: ?>
             <!-- Issuance flow (Concept B redesign). A single <form id="cardRequestForm">
                  still submits every field; the multi-step is client-side progressive
