@@ -2273,7 +2273,15 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                                  : (field.textAlign === 'center' ? 'center' : 'left')),
                         originY: field.originY || 'top',
                         selectable: false,
-                        matchPrintBaseline: true
+                        matchPrintBaseline: true,
+                        // Static decorations (tel/fax digits, entity, division line)
+                        // are fixed, design-fitting values; the print renderer draws
+                        // them at their design size (no Latin shrink). Frutiger is a
+                        // hair wider than the source font, so the Fabric auto-shrink
+                        // was squeezing the tel/fax digits to ~92% and they read
+                        // smaller than the baked "+968". Keep static text full-size to
+                        // match the print (the width guard stops any clip).
+                        autoShrink: false
                     });
                     if (editor.fields[key]) {
                         editor.fields[key].set({ selectable: false, evented: false,
