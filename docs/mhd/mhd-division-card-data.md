@@ -26,10 +26,20 @@ Mined `/www/vmail/bhdoman.com/{info,sales,purchase,accounts}` signature blocks a
   different from the IBS letterhead. So a per-division baked tel/fax is an
   approximation of what MHD actually prints. Branch staff are the clearest case:
   Madhu Pillai (Nizwa) signs 25412213 for both office and fax.
-- **CANONICAL TRIM = 90 x 55mm.** `ITICS Business Card.ai` is 92 x 57mm (1mm bleed all
-  round), `ACERE - Business Card.ai` is exactly 90 x 55mm (no bleed). Everything else
-  in Drive is an A4 gang sheet; deriving a trim from cell PITCH is what produced the
-  wrong Logistics (95.62 x 52.57mm) and Consumer (127.76 x 62.79mm) templates.
+- **TRIM SIZES, all measured off MHD's own production files, 26 Jul 2026:**
+
+  | Card | Trim | Source |
+  |---|---|---|
+  | ITICS family | 90 x 55mm (artwork 92 x 57, 1mm bleed) | `ITICS Business Card.ai` page box 260.79 x 161.57pt |
+  | ACERE / Automotive | 90 x 55mm, no bleed | `ACERE - Business Card.ai` page box 255.12 x 155.91pt |
+  | Consumer | 90 x 55mm (artwork 92 x 57) | cell on `MHD Consumer Services W.L.L V CARD 2025.ai`, x 167.18-427.97, bottom band flush to the bleed edge |
+  | **Logistics** | **90 x 50mm** | **crop marks** in `MHD-Logistics/VC/*.ai`: verticals x 34.48 / 289.60 = 255.12pt = 90.00mm, horizontals y 38.85 / 180.58 = 141.73pt = 50.00mm |
+
+  Everything except the two masters is an A4 gang sheet. Reading a trim off cell
+  PITCH is what produced the wrong Logistics (95.62 x 52.57mm, that is the
+  271.28 x 150.24pt pitch) and Consumer (127.76 x 62.79mm) templates. The Logistics
+  sheet carries real crop marks, so measure those, never the pitch. Extract them by
+  filtering `page.get_drawings()` for strokes with one dimension under 1.5pt.
 - **Website counts across MHD signatures**: mhditics.com 1926, mhdoman.com 919,
   mhdacere.com 182. ITICS family -> mhditics.com (applied). The ACERE card master
   bakes mhdoman.com, so Automotive stays on mhdoman.com despite mhdacere.com in
