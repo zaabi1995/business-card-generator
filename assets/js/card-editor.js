@@ -911,7 +911,8 @@ class CardEditor {
         // matches the printed card. Uses the post-auto-shrink fontSize. Gated so
         // the interactive template editor + digital card keep their own anchor.
         if (options.matchPrintBaseline) {
-            fieldOptions.top = Number(fieldOptions.top) - Number(fieldOptions.fontSize || 16) * 0.16;
+            const _blf = (typeof options.baselineFactor === 'number') ? options.baselineFactor : 0.16;
+            fieldOptions.top = Number(fieldOptions.top) - Number(fieldOptions.fontSize || 16) * _blf;
         }
 
         const TextCtor = this.fabricRef.IText;

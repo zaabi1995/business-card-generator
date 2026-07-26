@@ -2274,6 +2274,12 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         originY: field.originY || 'top',
                         selectable: false,
                         matchPrintBaseline: true,
+                        // Static decorations sit next to baked labels (the tel/fax
+                        // digits ride the baked "+968"). Fabric's box-top leading is
+                        // a bit more than the generic 0.16, so a slightly stronger
+                        // nudge lands the digit glyph-top on the baked prefix (source
+                        // design: both are FrutigerLTStd-Roman 6.79pt, same line).
+                        baselineFactor: 0.27,
                         // Static decorations (tel/fax digits, entity, division line)
                         // are fixed, design-fitting values; the print renderer draws
                         // them at their design size (no Latin shrink). Frutiger is a
