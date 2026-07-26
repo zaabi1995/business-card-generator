@@ -626,7 +626,24 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
+    <?php
+    // The portal is the tenant's own page, so it wears the tenant's icon when
+    // one is set. Same resolver ui-header.php uses (TenantHost::theme() also
+    // derives a favicon from the logo when favicon_path is empty), instead of
+    // hardcoding the Cardify mark on every tenant.
+    $__portalFav = null;
+    if (class_exists('TenantHost')) {
+        try { $__portalFav = TenantHost::theme()['favicon'] ?? null; } catch (Throwable $e) { $__portalFav = null; }
+    }
+    if (!empty($__portalFav)):
+        $__favType = preg_match('/\.svg(\?|$)/i', $__portalFav) ? 'image/svg+xml'
+                   : (preg_match('/\.ico(\?|$)/i', $__portalFav) ? 'image/x-icon' : 'image/png');
+    ?>
+    <link rel="icon" href="<?= htmlspecialchars($__portalFav, ENT_QUOTES) ?>" type="<?= $__favType ?>">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($__portalFav, ENT_QUOTES) ?>">
+    <?php else: ?>
     <link rel="icon" href="<?php echo getBasePath(); ?>favicon.svg" type="image/svg+xml">
+    <?php endif; ?>
 
     <meta name="description" content="<?= htmlspecialchars($__ogDesc) ?>">
     <meta property="og:type" content="website">
