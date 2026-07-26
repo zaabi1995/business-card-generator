@@ -49,6 +49,7 @@ return [
     'division_required' => 'Please choose your division before submitting.',
     'phone_label'       => 'Phone Number',
     'mobile_label'      => 'Mobile Number',
+    'mobile_cc_hint'    => 'Digits only. The country code is already printed on the card.',
     'website_label'     => 'Website',
     'address_en'        => 'Address (English)',
     'address_ar'        => 'Address (Arabic)',

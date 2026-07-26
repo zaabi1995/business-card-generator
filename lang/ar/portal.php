@@ -49,6 +49,7 @@ return [
     'division_required' => 'يرجى اختيار القسم قبل الإرسال.',
     'phone_label'       => 'رقم الهاتف',
     'mobile_label'      => 'رقم الجوّال',
+    'mobile_cc_hint'    => 'الأرقام فقط. رمز الدولة مطبوع على البطاقة مسبقاً.',
     'website_label'     => 'الموقع',
     'address_en'        => 'العنوان (إنجليزي)',
     'address_ar'        => 'العنوان (عربي)',

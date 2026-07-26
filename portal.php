@@ -1612,8 +1612,11 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.mobile_label')) ?></label>
                         <input type="tel" name="mobile" id="mobile"
                                value="<?php echo htmlspecialchars($formData['mobile'] ?? ''); ?>"
-                               placeholder="+968 9876 5432"
+                               placeholder="<?= $divisionRequired ? '98765432' : '+968 9876 5432' ?>"
                                class="form-input">
+                        <?php if ($divisionRequired): ?>
+                        <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars(t('portal.mobile_cc_hint')) ?></p>
+                        <?php endif; ?>
                     </div>
                     <?php endif; ?>
                     
@@ -1705,13 +1708,15 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     </div>
                     <?php endif; ?>
 
-                    <!-- Mobile (Arabic) -->
+                    <!-- Mobile (Arabic): derived from the mobile above, never typed.
+                         Kept as a rendered text input (display:none, NOT type=hidden)
+                         because the issuance step machine drops hidden inputs from the
+                         live-preview payload, so a type=hidden field would leave the
+                         Arabic back of the card blank. -->
                     <?php if (!empty($enabledFields['mobile_ar'])): ?>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2"><?= htmlspecialchars(t('portal.mobile_ar_label')) ?></label>
-                        <input type="text" name="mobile_ar" id="mobile_ar"
+                    <div style="display:none" aria-hidden="true">
+                        <input type="text" name="mobile_ar" id="mobile_ar" tabindex="-1"
                                value="<?php echo htmlspecialchars($formData['mobile_ar'] ?? ''); ?>"
-                               placeholder="٩٦٨+ ٩٨٧٦ ٥٤٣٢"
                                class="form-input rtl-input">
                     </div>
                     <?php endif; ?>
@@ -2421,10 +2426,42 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         targetEl.value = converted;
     }
     
+    // Tenants whose artwork bakes the country code next to the "Mob:" label
+    // (MHD: +968, and +973 on the Bahrain Consumer card) must not receive it
+    // again from the form, or the card prints it twice. Same gate as the
+    // division picker: divisions carrying their own template pair.
+    const BAKED_CC = <?= $divisionRequired ? 'true' : 'false' ?>;
+
+    // Normalise to bare digits. The artwork prints an 8-digit number with no
+    // separator, and syncArabicPhone reorders space-delimited groups for RTL,
+    // so a spaced entry would convert to a transposed Arabic number.
+    function normaliseBakedMobile(el) {
+        if (!el) return;
+        const before = el.value;
+        const after = before.replace(/^\s*(?:\+|00)?9(?:68|73)\s*/, '').replace(/\D/g, '');
+        if (after !== before) {
+            const atEnd = el.selectionStart === before.length;
+            el.value = after;
+            if (atEnd) { try { el.setSelectionRange(after.length, after.length); } catch (e) {} }
+        }
+    }
+
+    function wireMobileAutoFormat() {
+        const mob = document.getElementById('mobile');
+        if (!mob) return;
+        const apply = function () {
+            if (BAKED_CC) normaliseBakedMobile(mob);
+            syncArabicPhone('mobile', 'mobile_ar');
+        };
+        mob.addEventListener('input', apply);
+        mob.addEventListener('blur', apply);
+        apply();
+    }
+
     // Initialize on page load (for pre-filled values)
     document.addEventListener('DOMContentLoaded', function() {
         syncArabicPhone('phone', 'phone_ar');
-        syncArabicPhone('mobile', 'mobile_ar');
+        wireMobileAutoFormat();
         
         // Initialize request type toggle
         initRequestTypeToggle();
