@@ -906,6 +906,24 @@ class CardEditor {
         textObj.fieldKey = key;
         textObj.fieldType = 'text';
         textObj.textAlignValue = textAlign; // Store for later retrieval
+
+        // Fabric 7.x IText can compute a line width a hair short of the real
+        // glyph run (per-char advances miss kerning / the last glyph's right
+        // side-bearing) and then CLIPS its own trailing glyph(s): "Mohsin
+        // Haider Darwish L.L.C." -> "...L.L.", "Engagement" -> "Engagemen".
+        // Widen the object to the accurate whole-string canvas2D measurement so
+        // nothing is clipped. Only ever INCREASES width, so left-anchored fields
+        // reveal their tail and right/center anchors keep their edge. Must run
+        // AFTER initDimensions (which resets width back to the short value).
+        const _fitWidth = () => {
+            try {
+                const probe = (this._measCtx || (this._measCtx = document.createElement('canvas').getContext('2d')));
+                probe.font = `${fieldOptions.fontStyle || 'normal'} ${fieldOptions.fontWeight || 'normal'} ${textObj.fontSize}px "${textObj.fontFamily}", sans-serif`;
+                const full = probe.measureText(String(options.text || '')).width;
+                if (full > 0 && full > textObj.width) { textObj.width = full + 3; textObj.setCoords(); }
+            } catch (e) { /* measurement best-effort */ }
+        };
+        _fitWidth();
         // Stash the offset between the field's stored bbox LEFT/TOP (x,y) and
         // the Fabric anchor (left,top). Right/center-aligned fields anchor
         // their `left` at x+width (or x+width/2) plus any side-bearing nudge,
@@ -940,6 +958,7 @@ class CardEditor {
                 .then(() => {
                     textObj.set('dirty', true);
                     if (typeof textObj.initDimensions === 'function') textObj.initDimensions();
+                    _fitWidth(); // re-widen with the now-loaded face so it can't clip its tail
                     textObj.setCoords();
                     canvas.requestRenderAll();
                 });
@@ -947,6 +966,7 @@ class CardEditor {
         } else {
             setTimeout(() => {
                 textObj.set('dirty', true);
+                _fitWidth();
                 textObj.setCoords();
                 canvas.requestRenderAll();
             }, 50);
