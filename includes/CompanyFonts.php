@@ -238,13 +238,26 @@ class CompanyFonts
                 // weight/style detection. Register under BOTH the canonical name
                 // (e.g. "Arsenica-Antiqua") AND the bare base ("Arsenica") so
                 // legacy fields_json that stored only the base resolves too.
-                $canonical = $manifest[$name]['family'] ?? $desc['family'];
-                $baseFamily = preg_replace('/[-_\s](Antiqua|Regular|Medium|Bold|Light|Thin|Book|Black|SemiBold|ExtraBold|ExtraLight|Italic|Oblique).*$/i', '', $canonical);
-                foreach (array_unique([$canonical, $baseFamily, $desc['family']]) as $fam) {
+                $ment      = $manifest[$name] ?? [];
+                $canonical = $ment['family'] ?? $desc['family'];
+                // Trust the manifest's weight/style when present: filename
+                // parsing mis-reads faces like "FrutigerLTArabic-55Roman"
+                // (digit-prefixed weight tokens) and "FrutigerLTStd-Roman"
+                // ("Roman" is not a weight keyword), so describeFile flattens
+                // them all to 400 and mangles the family. The manifest is the
+                // source of truth the importer wrote from the real font tables.
+                $weight = isset($ment['weight']) ? (int)$ment['weight'] : $desc['weight'];
+                $style  = $ment['style'] ?? $desc['style'];
+                // The raw filename stem (minus any subset prefix) is a valid
+                // family alias: a field may reference a specific face by its
+                // exact file name (e.g. fontFamily="FrutigerLTStd-Black").
+                $stem = preg_replace('/^[A-Z]{6}\+/', '', pathinfo($name, PATHINFO_FILENAME));
+                $baseFamily = preg_replace('/[-_\s](Antiqua|Regular|Roman|Medium|Bold|Light|Thin|Book|Black|SemiBold|ExtraBold|ExtraLight|Italic|Oblique|\d+\w+).*$/i', '', $canonical);
+                foreach (array_unique([$canonical, $stem, $baseFamily, $desc['family']]) as $fam) {
                     if (!$fam) continue;
                     $byFamily[$fam][] = [
-                        'weight' => $desc['weight'],
-                        'style'  => $desc['style'],
+                        'weight' => $weight,
+                        'style'  => $style,
                         'file'   => $rel,
                         'ext'    => $desc['ext'],
                     ];

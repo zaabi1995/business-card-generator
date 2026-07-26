@@ -673,11 +673,33 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     // (Sora, Lato, Work Sans, etc). Without these loaded the Fabric preview
     // falls back to Arial and the design looks completely wrong.
     $importedFonts = [];
+    $importTokens  = [];
     foreach ([$activeFrontTemplate, $activeBackTemplate] as $tpl) {
-        if ($tpl && !empty($tpl['settings']['fonts_used'])) {
+        if (!$tpl) continue;
+        if (!empty($tpl['settings']['fonts_used'])) {
             foreach ($tpl['settings']['fonts_used'] as $fam) {
                 $fam = trim((string)$fam);
                 if ($fam !== '') $importedFonts[$fam] = true;
+            }
+        }
+        // Also collect the EXACT fontFamily each enabled field asks for. A
+        // field can reference a specific face (e.g. "FrutigerLTStd-Black" for
+        // the name) that settings.fonts_used ("FrutigerLTStd") does not list,
+        // so without this the dynamic text fell back to a system sans while the
+        // baked static text was the real imported face.
+        if (!empty($tpl['fields']) && is_array($tpl['fields'])) {
+            foreach ($tpl['fields'] as $f) {
+                if (!is_array($f) || empty($f['enabled'])) continue;
+                $ff = trim((string)($f['fontFamily'] ?? ''));
+                if ($ff !== '') $importedFonts[$ff] = true;
+            }
+        }
+        // Derive the import-dir token(s) that hold the licensed font files from
+        // the template's background + source paths (uploads/templates/imports/<token>/...),
+        // so the font registry scans them (MHD's Frutiger lives there, not in the library).
+        foreach ([$tpl['backgroundImage'] ?? '', $tpl['originalPdf'] ?? ''] as $p) {
+            if (preg_match('#uploads/templates/imports/([^/]+)/#', (string)$p, $mm)) {
+                $importTokens[$mm[1]] = true;
             }
         }
     }
@@ -718,7 +740,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     $registryCss = CompanyFonts::fontFaceCss(
         realpath(__DIR__),
         $companyId,
-        array_keys($importedFonts)
+        array_keys($importedFonts),
+        array_keys($importTokens)
     );
     if ($registryCss) {
         echo "<style id=\"cardify-font-registry\">\n" . $registryCss . "</style>\n";
