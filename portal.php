@@ -2212,24 +2212,32 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 if (field.is_static) {
                     const txt = (field.detected_text || '').trim();
                     if (!txt) continue;
-                    const t = new fabric.Text(txt, {
-                        left: field.x || 0,
-                        top: field.y || 0,
+                    // Same path as the dynamic fields below, not a bare
+                    // fabric.Text. That anchored on field.x and then applied
+                    // originX to it, so a right-aligned static hung its RIGHT
+                    // edge on the box's LEFT edge, and Arabic missed the RTL
+                    // shaping bitmap entirely. addTextField does the
+                    // x + width anchoring and routes RTL correctly.
+                    editor.addTextField(key, {
+                        text: txt,
+                        x: field.x,
+                        y: field.y,
+                        width: field.width,
                         fontSize: field.fontSize || 14,
                         fontFamily: field.fontFamily || 'Inter',
                         fontWeight: field.fontWeight || 'normal',
                         fontStyle: field.italic ? 'italic' : 'normal',
                         fill: field.fill || field.color || '#222',
                         textAlign: field.textAlign || 'left',
-                        originX: field.originX || 'left',
+                        originX: field.originX || (field.textAlign === 'right' ? 'right'
+                                 : (field.textAlign === 'center' ? 'center' : 'left')),
                         originY: field.originY || 'top',
-                        selectable: false,
-                        evented: false,
-                        hasControls: false,
-                        hasBorders: false,
-                        hoverCursor: 'default',
+                        selectable: false
                     });
-                    editor.canvas.add(t);
+                    if (editor.fields[key]) {
+                        editor.fields[key].set({ selectable: false, evented: false,
+                                                 hasControls: false, hasBorders: false });
+                    }
                     continue;
                 }
 
