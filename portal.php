@@ -1315,7 +1315,8 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     <h2 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('portal.division_pick_h2')) ?></h2>
                     <p class="text-gray-600 mt-2"><?= htmlspecialchars(t('portal.division_pick_sub')) ?></p>
                 </div>
-                <div class="grid gap-3 sm:grid-cols-2">
+                <!-- inline grid: the compiled Tailwind build here has no sm:grid-cols-2 -->
+                <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
                     <?php foreach ($departments as $dept): ?>
                     <?php if (empty($dept['slug'])) continue; ?>
                     <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/portal/' . $dept['slug']), ENT_QUOTES, 'UTF-8') ?>"
