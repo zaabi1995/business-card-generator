@@ -1933,7 +1933,13 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         // template itself. On MHD Automotive that was 1063 against an assumed
         // 1050, so the card rendered 1.2% oversized and the wrapper sliced the
         // bottom line off every preview.
-        const intrinsic = canvas.width || arguments[1] || 1050;
+        //
+        // style.width, NOT canvas.width: with retina scaling on, Fabric sets the
+        // backing store to CSS width x devicePixelRatio, so canvas.width is double
+        // on a 2x display and the card would render at half size there. style.width
+        // stays in the CSS pixels the transform actually operates in.
+        const cssWidth = parseFloat(canvas.style.width) || 0;
+        const intrinsic = cssWidth || arguments[1] || canvas.width || 1050;
         const scale = wrapperWidth / intrinsic;
 
         // Apply transform scale to canvas container
