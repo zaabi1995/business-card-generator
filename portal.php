@@ -1899,16 +1899,24 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
         // Force reflow
         void wrapper.offsetHeight;
         
-        // Get wrapper width (wrapper now uses aspect-ratio CSS, so it has correct dimensions)
-        const wrapperWidth = wrapper.offsetWidth;
-        
+        // clientWidth, not offsetWidth: the wrapper carries a 1px border, so
+        // offsetWidth is 2px wider than the box the canvas actually has to fit
+        // inside, and the wrapper clips (overflow:hidden).
+        const wrapperWidth = wrapper.clientWidth || wrapper.offsetWidth;
+
         // Skip if hidden
         if (wrapperWidth <= 0) {
             console.log('Wrapper width is 0, skipping scale for', canvasId);
             return;
         }
-        
-        const intrinsic = arguments[1] || 1050;
+
+        // The Fabric canvas is the source of truth for the intrinsic width. The
+        // caller passes getTemplateDimensions(), which falls back to 1050 for any
+        // template without customWidth, while CardEditor sizes the canvas from the
+        // template itself. On MHD Automotive that was 1063 against an assumed
+        // 1050, so the card rendered 1.2% oversized and the wrapper sliced the
+        // bottom line off every preview.
+        const intrinsic = canvas.width || arguments[1] || 1050;
         const scale = wrapperWidth / intrinsic;
 
         // Apply transform scale to canvas container
