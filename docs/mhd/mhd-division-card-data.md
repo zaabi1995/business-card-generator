@@ -13,6 +13,32 @@ Shared constants (all MHD LLC / ITICS divisions), VERBATIM:
     The line is baked artwork, not a field, so it does NOT appear in the PDF text layer,
     verify it by eye on a render, never with pdftotext.
 
+## SOURCE-VERIFIED, 26 Jul 2026 (BHD mail + Drive artwork)
+Mined `/www/vmail/bhdoman.com/{info,sales,purchase,accounts}` signature blocks and
+`Drive > BHD > MHD`. What each source is actually good for:
+- **Division letterheads** (`Drive > BHD > MHD > ITICS > <Division>.jpg`) carry the
+  DIVISION's main tel/fax. Verified: Infrastructure & Building Systems 24732300 /
+  24732505 / ibs@; Office Products 24837752 / 24830946 / opd@; Industrial Products
+  24837752 / 24830946 / ipd@. These match the cards (IPD's card additionally carries
+  24835500 as Tel1, which the letterhead does not show).
+- **Card masters** carry the PERSON's direct line, not the division's. `ITICS Business
+  Card.ai` (Ravishankar, Infrastructure) reads Tel 24732315 / Fax 24792505, both
+  different from the IBS letterhead. So a per-division baked tel/fax is an
+  approximation of what MHD actually prints. Branch staff are the clearest case:
+  Madhu Pillai (Nizwa) signs 25412213 for both office and fax.
+- **CANONICAL TRIM = 90 x 55mm.** `ITICS Business Card.ai` is 92 x 57mm (1mm bleed all
+  round), `ACERE - Business Card.ai` is exactly 90 x 55mm (no bleed). Everything else
+  in Drive is an A4 gang sheet; deriving a trim from cell PITCH is what produced the
+  wrong Logistics (95.62 x 52.57mm) and Consumer (127.76 x 62.79mm) templates.
+- **Website counts across MHD signatures**: mhditics.com 1926, mhdoman.com 919,
+  mhdacere.com 182. ITICS family -> mhditics.com (applied). The ACERE card master
+  bakes mhdoman.com, so Automotive stays on mhdoman.com despite mhdacere.com in
+  signatures, confirm with MHD before changing it.
+- **Consumer has NO email line by design.** `MHD Consumer Services W.L.L V CARD
+  2025.ai` gives every Bahrain card name / title / entity / address / Mob+Tel+Fax
+  (+973) and no email at all. The Cardify template reproduces the artwork correctly,
+  this is a question for MHD, not a bug to patch.
+
 ## GROUP A - share the ITICS card design (my clean bg works; only division-line + office tel/fax differ)
 | Cardify dept | Division-line EN | Division-line AR | Tel1 +968 | Tel2 +968 | Fax +968 |
 |---|---|---|---|---|---|
@@ -22,7 +48,18 @@ Shared constants (all MHD LLC / ITICS divisions), VERBATIM:
 | Healthcare | HEALTHCARE | رعاية صحية | 24835500 | 24831599 | 24830946 |
 | Office Products | OFFICE PRODUCTS DIVISION | حلول المنتجات المكتبية | 24837752 | — | 24830946 |
 | Infrastructure & Building Systems | INFRASTRUCTURE & BUILDING SYSTEMS | البنية التحتية ونظم البناء | 24732300 (OCR) | — | 24732505 (OCR) |
-| Building Materials | (NO standalone card - folded into Infrastructure & Building Systems; confirm with MHD) | | | | |
+| Building Materials | Building Materials Division | مواد البناء | 24794655 | — | **24792505** |
+
+**Building Materials is a real division** (no standalone artwork in Drive, but staff
+exist and sign as it). Verified 26 Jul 2026 from 5 distinct people in BHD's mail
+(Hafizur Rehman Siddiqui 71557238, plus mobiles 92958751 / 71557622 / 79451199 /
+71557609): office **24794655**, fax **24792505**, on every one of 182 matches.
+The template previously baked fax `24798662`, which is the **CONSUMER division's**
+fax (Muhammed Suhail, eep@mhd.co.om) and appears in zero Building Materials
+signatures. It entered through the unsourced hardcoded row in `build_templates.py`.
+Corrected in the live template 26 Jul 2026. Coordinators who cover both Building
+Materials and Industrial Products sign office 24788933 instead, so 24794655 is the
+Building Materials line proper.
 
 ## GROUP B - SEPARATE brand/design (own logo, NO ITICS banner; each needs its own card imported)
 | Cardify dept | Division-line EN | Division-line AR | Entity | Tel +968 | Fax +968 | Logo | Website | Notes |

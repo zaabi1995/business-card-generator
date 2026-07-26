@@ -487,7 +487,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['portal_passcode'])) 
                     // or "+973" on the Bahrain Consumer card), so store digits only.
                     $mob = preg_replace('/^\+?9(68|73)[\s-]*/', '', trim($formData['mobile'] ?: $formData['phone']));
                     // Arabic-Indic mobile for the back (front stays Western digits).
-                    $mobAr = strtr($mob, '0123456789', '٠١٢٣٤٥٦٧٨٩');
+                    // Array form, NOT strtr($s, '0123456789', '٠١٢٣٤٥٦٧٨٩'): the
+                    // three-argument strtr maps BYTE for byte, and each Arabic-Indic
+                    // digit is two bytes, so that form emits mojibake, not digits.
+                    $mobAr = strtr($mob, ['0'=>'٠','1'=>'١','2'=>'٢','3'=>'٣','4'=>'٤',
+                                          '5'=>'٥','6'=>'٦','7'=>'٧','8'=>'٨','9'=>'٩']);
                     $empData = [
                         'company_id'    => $companyId,
                         'name_en'       => $formData['name_en'],       'name_ar'       => $formData['name_ar'],
