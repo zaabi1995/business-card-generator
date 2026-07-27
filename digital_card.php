@@ -722,7 +722,11 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         }
         .action-btn:active { opacity: 0.85; transform: scale(0.97); }
         .btn-call { background: <?php echo htmlspecialchars($accentColor); ?>; }
-        .btn-whatsapp { background: #25d366; }
+        /* WhatsApp brand green with white text measures 1.98:1, far under the
+           4.5:1 AA needs at 13px/600 (this does not qualify as large text).
+           Darkened to a green from the same family that reaches 5.34:1; the
+           icon and label carry the brand recognition. */
+        .btn-whatsapp { background: #0f7b43; }
         .btn-email {
             <?php if ($isDarkPage): ?>
             background: rgba(255,255,255,0.1);
@@ -1014,6 +1018,11 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         .card-section { max-width: 400px; margin: 24px auto 0; padding: 20px; border-radius: 14px;
             <?php if ($isDarkPage): ?>background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);<?php else: ?>background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.06);<?php endif; ?>
         }
+        /* Arabic glyphs JOIN, and letter-spacing breaks the joins apart. The
+           iOS app already zeroes it for Arabic in components/ui/Text.tsx; the
+           web never applied the same rule to these headers. */
+        html[lang="ar"] .card-section h3, html[dir="rtl"] .card-section h3,
+        html[lang="ar"] .offer-badge, html[dir="rtl"] .offer-badge { letter-spacing: 0; }
         .card-section h3 { font-size: 13px; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 700; margin-bottom: 12px; color: <?php echo htmlspecialchars($accentColor); ?>; }
         .section-bio { font-size: 14px; line-height: 1.6; <?php echo $isDarkPage ? 'color:#ccc;' : 'color:#333;'; ?> }
         .service-row { display: flex; gap: 12px; padding: 10px 0; <?php echo $isDarkPage ? 'border-bottom: 1px solid rgba(255,255,255,0.06);' : 'border-bottom: 1px solid #f0f0f0;'; ?> }
@@ -1146,7 +1155,12 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             text-decoration: none;
             padding: 2px 8px;
             border-radius: 999px;
-            color: <?php echo $isDarkPage ? '#bbb' : '#555'; ?>;
+            /* The pill background is rgba(0,0,0,.06) and does NOT follow the
+               page theme, so it stays light in dark mode. #bbb on it measured
+               1.56:1, leaving the INACTIVE language (the one you tap to switch)
+               unreadable. The surface is light in both modes, so the ink is
+               too: 6.08:1. */
+            color: #555;
             transition: background 0.15s var(--ease-out), color 0.15s var(--ease-out);
         }
         .lang-switcher a.active {
@@ -1501,6 +1515,14 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
                  is also a different KIND of action: save/download/share act on
                  this page, this one hands off to the native app, which is what
                  the Wallet row below already does. Same shape as that row. */ ?>
+        <?php /* Deliberately NOT wrapped in $cardClickUrl(), unlike every other
+                 CTA on this page. That helper routes the tap through
+                 card_click.php and 302s to the destination, and iOS evaluates a
+                 universal link on the INITIAL navigation, never on a redirect
+                 target, so adding tracking here would silently stop the app from
+                 opening and put us back where we started. If this click ever
+                 needs a metric, fire navigator.sendBeacon() on click and leave
+                 the href alone. */ ?>
         <div class="app-open-row">
             <a href="https://cardify.om/app/open?url=<?= rawurlencode($__shareUrl) ?>" class="app-open-btn">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
