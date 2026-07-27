@@ -708,6 +708,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             margin: 0 auto 10px;
         }
         .action-btn {
+            min-height: 44px;
             flex: 1;
             padding: 10px 8px;
             border-radius: 10px;
@@ -746,6 +747,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             <?php endif; ?>
         }
         .contact-row {
+            min-height: 44px;
             display: flex;
             align-items: center;
             padding: 10px 16px;
@@ -945,6 +947,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             flex-direction: row;
         }
         .wallet-buttons .wallet-btn {
+            min-height: 44px;
             flex: 1;
             padding: 10px 14px;
             border-radius: 10px;
@@ -1312,7 +1315,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         <details class="view-card-toggle">
             <summary class="view-card-summary"><i class="fa-solid fa-id-card" aria-hidden="true"></i> <?= htmlspecialchars(t('digitalcard.view_card')) ?></summary>
         <?php endif; ?>
-        <div class="card-flip-container<?php echo $backImage ? '' : ' no-back'; ?>" id="cardFlip">
+        <div class="card-flip-container<?php echo $backImage ? '' : ' no-back'; ?>" id="cardFlip"<?php echo $backImage ? ' role="button" tabindex="0" aria-label="' . htmlspecialchars(t('digitalcard.tap_to_flip'), ENT_QUOTES) . '"' : ''; ?>>
             <div class="card-flip-inner" id="cardInner" style="--card-aspect: <?php echo htmlspecialchars($cardAspectCss, ENT_QUOTES); ?>;">
                 <div class="card-face">
                     <img src="<?php echo htmlspecialchars($frontImage); ?>" alt="<?= htmlspecialchars(t('digitalcard.alt_card_front')) ?>" loading="lazy">
@@ -1477,7 +1480,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
                  this page, this one hands off to the native app, which is what
                  the Wallet row below already does. Same shape as that row. */ ?>
         <div class="app-open-row">
-            <a href="/app/open?url=<?= rawurlencode($__shareUrl) ?>" class="app-open-btn">
+            <a href="https://cardify.om/app/open?url=<?= rawurlencode($__shareUrl) ?>" class="app-open-btn">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <rect x="3" y="5" width="18" height="14" rx="3" stroke="currentColor" stroke-width="1.9"/>
                     <path d="M7 10.5h4.5M7 14h7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
@@ -2205,9 +2208,18 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
 
         // Only wire the flip handler when a back face is actually present
         if (cardFlip && cardInner && !cardFlip.classList.contains('no-back')) {
-            cardFlip.addEventListener('click', function() {
+            const doFlip = function() {
                 cardInner.classList.toggle('flipped');
                 if (tapHint) tapHint.style.opacity = '0';
+            };
+            cardFlip.addEventListener('click', doFlip);
+            // Same control, keyboard path. Without this the back face is
+            // unreachable for keyboard and switch-control users.
+            cardFlip.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+                    e.preventDefault();
+                    doFlip();
+                }
             });
         }
 
