@@ -275,6 +275,7 @@ Options -Indexes
     RewriteRule ^sitemap-logos\.xml$           sitemap.php?part=logos [L,QSA]
 
     # Allow rewritten logo API .php targets (Apache re-runs rules after internal rewrite).
+    RewriteRule ^api/my-card-(request|verify)\.php$ - [L]  # Allow "get my card" OTP endpoints (public by design, OTP-gated + rate limited in PHP)
     RewriteRule ^api/logos/(list|show|sectors|stats)\.php$ - [L]
 
     # Admin-only: block direct access to pending uploads (served via PHP endpoint).
