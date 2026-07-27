@@ -2,41 +2,699 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["F436258VA2.om.cardify.scan"],
+        "appIDs": [
+          "F436258VA2.om.cardify.scan"
+        ],
         "comment": "Order matters: components are matched top-down and the first match wins. The excludes therefore have to sit ABOVE the person-slug rule, or an asset path containing a dot would be claimed by it.",
         "components": [
-          { "/": "/app/open", "comment": "Open a shared Cardify card in the native app" },
-          { "/": "/app/open/*", "comment": "Open a shared Cardify card in the native app" },
-          { "/": "/company/card/*", "comment": "Open a Cardify company card in the native app" },
-
-          { "/": "/api/*", "exclude": true, "comment": "API endpoints are never a card" },
-          { "/": "/assets/*", "exclude": true },
-          { "/": "/storage/*", "exclude": true },
-          { "/": "/uploads/*", "exclude": true },
-          { "/": "/admin*", "exclude": true },
-          { "/": "/.well-known/*", "exclude": true },
-          { "/": "/*.php", "exclude": true, "comment": "login.php and friends" },
-          { "/": "/*.css", "exclude": true },
-          { "/": "/*.js", "exclude": true },
-          { "/": "/*.json", "exclude": true },
-          { "/": "/*.xml", "exclude": true, "comment": "sitemaps" },
-          { "/": "/*.txt", "exclude": true, "comment": "robots.txt" },
-          { "/": "/*.ico", "exclude": true },
-          { "/": "/*.png", "exclude": true },
-          { "/": "/*.jpg", "exclude": true },
-          { "/": "/*.jpeg", "exclude": true },
-          { "/": "/*.svg", "exclude": true },
-          { "/": "/*.webp", "exclude": true },
-          { "/": "/*.gif", "exclude": true },
-          { "/": "/*.pdf", "exclude": true },
-          { "/": "/*.vcf", "exclude": true, "comment": "vCard downloads must stay in the browser" },
-
-          { "/": "/*.*", "comment": "A person's card: firstname.lastname. Every marketing route on cardify.om is [a-z0-9-]+ with no dot, so this cannot capture one." }
+          {
+            "/": "/app/open",
+            "comment": "Open a shared Cardify card in the native app"
+          },
+          {
+            "/": "/app/open/*",
+            "comment": "Open a shared Cardify card in the native app"
+          },
+          {
+            "/": "/company/card/*",
+            "comment": "Open a Cardify company card in the native app"
+          },
+          {
+            "/": "/*/*",
+            "exclude": true,
+            "comment": "Multi-segment paths are never a person slug. Critically this keeps /{slug}/edit?t=<token>, the employee self-edit magic link, in the browser where it can be redeemed."
+          },
+          {
+            "/": "/*.php",
+            "exclude": true,
+            "comment": "login.php and friends"
+          },
+          {
+            "/": "/*.css",
+            "exclude": true
+          },
+          {
+            "/": "/*.js",
+            "exclude": true
+          },
+          {
+            "/": "/*.json",
+            "exclude": true
+          },
+          {
+            "/": "/*.xml",
+            "exclude": true,
+            "comment": "sitemaps"
+          },
+          {
+            "/": "/*.txt",
+            "exclude": true,
+            "comment": "robots.txt"
+          },
+          {
+            "/": "/*.ico",
+            "exclude": true
+          },
+          {
+            "/": "/*.png",
+            "exclude": true
+          },
+          {
+            "/": "/*.jpg",
+            "exclude": true
+          },
+          {
+            "/": "/*.jpeg",
+            "exclude": true
+          },
+          {
+            "/": "/*.svg",
+            "exclude": true
+          },
+          {
+            "/": "/*.webp",
+            "exclude": true
+          },
+          {
+            "/": "/*.gif",
+            "exclude": true
+          },
+          {
+            "/": "/*.pdf",
+            "exclude": true
+          },
+          {
+            "/": "/*.vcf",
+            "exclude": true,
+            "comment": "vCard downloads must stay in the browser"
+          },
+          {
+            "/": "/*.html",
+            "exclude": true
+          },
+          {
+            "/": "/*.htm",
+            "exclude": true
+          },
+          {
+            "/": "/*.mp4",
+            "exclude": true
+          },
+          {
+            "/": "/*.webm",
+            "exclude": true
+          },
+          {
+            "/": "/*.md",
+            "exclude": true
+          },
+          {
+            "/": "/*.jsonl",
+            "exclude": true
+          },
+          {
+            "/": "/*.mjs",
+            "exclude": true
+          },
+          {
+            "/": "/*.map",
+            "exclude": true
+          },
+          {
+            "/": "/*.ts",
+            "exclude": true
+          },
+          {
+            "/": "/*.tsx",
+            "exclude": true
+          },
+          {
+            "/": "/*.py",
+            "exclude": true
+          },
+          {
+            "/": "/*.sh",
+            "exclude": true
+          },
+          {
+            "/": "/*.sql",
+            "exclude": true
+          },
+          {
+            "/": "/*.log",
+            "exclude": true
+          },
+          {
+            "/": "/*.pem",
+            "exclude": true
+          },
+          {
+            "/": "/*.ttf",
+            "exclude": true
+          },
+          {
+            "/": "/*.woff",
+            "exclude": true
+          },
+          {
+            "/": "/*.woff2",
+            "exclude": true
+          },
+          {
+            "/": "/*.webmanifest",
+            "exclude": true
+          },
+          {
+            "/": "/*.zip",
+            "exclude": true
+          },
+          {
+            "/": "/*.csv",
+            "exclude": true
+          },
+          {
+            "/": "/about",
+            "exclude": true
+          },
+          {
+            "/": "/about/*",
+            "exclude": true
+          },
+          {
+            "/": "/admin",
+            "exclude": true
+          },
+          {
+            "/": "/admin/*",
+            "exclude": true
+          },
+          {
+            "/": "/api",
+            "exclude": true
+          },
+          {
+            "/": "/api/*",
+            "exclude": true
+          },
+          {
+            "/": "/app",
+            "exclude": true
+          },
+          {
+            "/": "/app/*",
+            "exclude": true
+          },
+          {
+            "/": "/ar",
+            "exclude": true
+          },
+          {
+            "/": "/ar/*",
+            "exclude": true
+          },
+          {
+            "/": "/blog",
+            "exclude": true
+          },
+          {
+            "/": "/blog/*",
+            "exclude": true
+          },
+          {
+            "/": "/careers",
+            "exclude": true
+          },
+          {
+            "/": "/careers/*",
+            "exclude": true
+          },
+          {
+            "/": "/claim",
+            "exclude": true
+          },
+          {
+            "/": "/claim/*",
+            "exclude": true
+          },
+          {
+            "/": "/companies",
+            "exclude": true
+          },
+          {
+            "/": "/companies/*",
+            "exclude": true
+          },
+          {
+            "/": "/company",
+            "exclude": true
+          },
+          {
+            "/": "/company/*",
+            "exclude": true
+          },
+          {
+            "/": "/contact",
+            "exclude": true
+          },
+          {
+            "/": "/contact/*",
+            "exclude": true
+          },
+          {
+            "/": "/cookies",
+            "exclude": true
+          },
+          {
+            "/": "/cookies/*",
+            "exclude": true
+          },
+          {
+            "/": "/cron",
+            "exclude": true
+          },
+          {
+            "/": "/cron/*",
+            "exclude": true
+          },
+          {
+            "/": "/data",
+            "exclude": true
+          },
+          {
+            "/": "/data/*",
+            "exclude": true
+          },
+          {
+            "/": "/database",
+            "exclude": true
+          },
+          {
+            "/": "/database/*",
+            "exclude": true
+          },
+          {
+            "/": "/design",
+            "exclude": true
+          },
+          {
+            "/": "/design/*",
+            "exclude": true
+          },
+          {
+            "/": "/design-showcase",
+            "exclude": true
+          },
+          {
+            "/": "/design-showcase/*",
+            "exclude": true
+          },
+          {
+            "/": "/docs",
+            "exclude": true
+          },
+          {
+            "/": "/docs/*",
+            "exclude": true
+          },
+          {
+            "/": "/downloads",
+            "exclude": true
+          },
+          {
+            "/": "/downloads/*",
+            "exclude": true
+          },
+          {
+            "/": "/faq",
+            "exclude": true
+          },
+          {
+            "/": "/faq/*",
+            "exclude": true
+          },
+          {
+            "/": "/gcc",
+            "exclude": true
+          },
+          {
+            "/": "/gcc/*",
+            "exclude": true
+          },
+          {
+            "/": "/gcc-business-index",
+            "exclude": true
+          },
+          {
+            "/": "/gcc-business-index/*",
+            "exclude": true
+          },
+          {
+            "/": "/get-started",
+            "exclude": true
+          },
+          {
+            "/": "/get-started/*",
+            "exclude": true
+          },
+          {
+            "/": "/includes",
+            "exclude": true
+          },
+          {
+            "/": "/includes/*",
+            "exclude": true
+          },
+          {
+            "/": "/industries",
+            "exclude": true
+          },
+          {
+            "/": "/industries/*",
+            "exclude": true
+          },
+          {
+            "/": "/install",
+            "exclude": true
+          },
+          {
+            "/": "/install/*",
+            "exclude": true
+          },
+          {
+            "/": "/intro",
+            "exclude": true
+          },
+          {
+            "/": "/intro/*",
+            "exclude": true
+          },
+          {
+            "/": "/logo-claim",
+            "exclude": true
+          },
+          {
+            "/": "/logo-claim/*",
+            "exclude": true
+          },
+          {
+            "/": "/logo-download",
+            "exclude": true
+          },
+          {
+            "/": "/logo-download/*",
+            "exclude": true
+          },
+          {
+            "/": "/logo-takedown",
+            "exclude": true
+          },
+          {
+            "/": "/logo-takedown/*",
+            "exclude": true
+          },
+          {
+            "/": "/logos",
+            "exclude": true
+          },
+          {
+            "/": "/logos/*",
+            "exclude": true
+          },
+          {
+            "/": "/logs",
+            "exclude": true
+          },
+          {
+            "/": "/logs/*",
+            "exclude": true
+          },
+          {
+            "/": "/media-kit",
+            "exclude": true
+          },
+          {
+            "/": "/media-kit/*",
+            "exclude": true
+          },
+          {
+            "/": "/oman-business-index",
+            "exclude": true
+          },
+          {
+            "/": "/oman-business-index/*",
+            "exclude": true
+          },
+          {
+            "/": "/press",
+            "exclude": true
+          },
+          {
+            "/": "/press/*",
+            "exclude": true
+          },
+          {
+            "/": "/press-kit",
+            "exclude": true
+          },
+          {
+            "/": "/press-kit/*",
+            "exclude": true
+          },
+          {
+            "/": "/printshop",
+            "exclude": true
+          },
+          {
+            "/": "/printshop/*",
+            "exclude": true
+          },
+          {
+            "/": "/privacy",
+            "exclude": true
+          },
+          {
+            "/": "/privacy/*",
+            "exclude": true
+          },
+          {
+            "/": "/r",
+            "exclude": true
+          },
+          {
+            "/": "/r/*",
+            "exclude": true
+          },
+          {
+            "/": "/s",
+            "exclude": true
+          },
+          {
+            "/": "/s/*",
+            "exclude": true
+          },
+          {
+            "/": "/scripts",
+            "exclude": true
+          },
+          {
+            "/": "/scripts/*",
+            "exclude": true
+          },
+          {
+            "/": "/security",
+            "exclude": true
+          },
+          {
+            "/": "/security/*",
+            "exclude": true
+          },
+          {
+            "/": "/share",
+            "exclude": true
+          },
+          {
+            "/": "/share/*",
+            "exclude": true
+          },
+          {
+            "/": "/solutions",
+            "exclude": true
+          },
+          {
+            "/": "/solutions/*",
+            "exclude": true
+          },
+          {
+            "/": "/storage",
+            "exclude": true
+          },
+          {
+            "/": "/storage/*",
+            "exclude": true
+          },
+          {
+            "/": "/terms",
+            "exclude": true
+          },
+          {
+            "/": "/terms/*",
+            "exclude": true
+          },
+          {
+            "/": "/tests",
+            "exclude": true
+          },
+          {
+            "/": "/tests/*",
+            "exclude": true
+          },
+          {
+            "/": "/tools",
+            "exclude": true
+          },
+          {
+            "/": "/tools/*",
+            "exclude": true
+          },
+          {
+            "/": "/vendor",
+            "exclude": true
+          },
+          {
+            "/": "/vendor/*",
+            "exclude": true
+          },
+          {
+            "/": "/login",
+            "exclude": true
+          },
+          {
+            "/": "/login/*",
+            "exclude": true
+          },
+          {
+            "/": "/logout",
+            "exclude": true
+          },
+          {
+            "/": "/logout/*",
+            "exclude": true
+          },
+          {
+            "/": "/signup",
+            "exclude": true
+          },
+          {
+            "/": "/signup/*",
+            "exclude": true
+          },
+          {
+            "/": "/register",
+            "exclude": true
+          },
+          {
+            "/": "/register/*",
+            "exclude": true
+          },
+          {
+            "/": "/pricing",
+            "exclude": true
+          },
+          {
+            "/": "/pricing/*",
+            "exclude": true
+          },
+          {
+            "/": "/my-card",
+            "exclude": true
+          },
+          {
+            "/": "/my-card/*",
+            "exclude": true
+          },
+          {
+            "/": "/assets",
+            "exclude": true
+          },
+          {
+            "/": "/assets/*",
+            "exclude": true
+          },
+          {
+            "/": "/uploads",
+            "exclude": true
+          },
+          {
+            "/": "/uploads/*",
+            "exclude": true
+          },
+          {
+            "/": "/sitemap",
+            "exclude": true
+          },
+          {
+            "/": "/sitemap/*",
+            "exclude": true
+          },
+          {
+            "/": "/robots",
+            "exclude": true
+          },
+          {
+            "/": "/robots/*",
+            "exclude": true
+          },
+          {
+            "/": "/favicon",
+            "exclude": true
+          },
+          {
+            "/": "/favicon/*",
+            "exclude": true
+          },
+          {
+            "/": "/wallet",
+            "exclude": true
+          },
+          {
+            "/": "/wallet/*",
+            "exclude": true
+          },
+          {
+            "/": "/portal",
+            "exclude": true
+          },
+          {
+            "/": "/portal/*",
+            "exclude": true
+          },
+          {
+            "/": "/webhooks",
+            "exclude": true
+          },
+          {
+            "/": "/webhooks/*",
+            "exclude": true
+          },
+          {
+            "/": "/amwalpay",
+            "exclude": true
+          },
+          {
+            "/": "/amwalpay/*",
+            "exclude": true
+          },
+          {
+            "/": "/*",
+            "comment": "A candidate card slug. Everything the site itself owns is excluded above; components match top-down, first match wins."
+          }
         ]
       }
     ]
   },
   "webcredentials": {
-    "apps": ["F436258VA2.om.cardify.scan"]
+    "apps": [
+      "F436258VA2.om.cardify.scan"
+    ]
   }
 }

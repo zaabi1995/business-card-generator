@@ -66,17 +66,31 @@ class ShadowProfileService {
 
     private static function applyUpdate(Database $db, int $id, string $json, ?string $phone, ?string $email): int {
         try {
+            // OVERWRITE, not COALESCE. COALESCE only ever FILLED a null, so once
+            // a mis-OCR'd number was stored it was permanent: a later, better
+            // scan could never correct it, and the claim OTP kept going to the
+            // stranger whose number was first recorded. IF(? IS NULL, keep, new)
+            // preserves the "don't clobber with nothing" intent while allowing a
+            // real correction. Each identifier is bound TWICE: this connection
+            // runs with emulated prepares off, where reusing one placeholder
+            // throws HY093.
             $db->getConnection()->prepare(
-                "UPDATE shadow_profiles SET best_parsed = ?, phone_primary = COALESCE(phone_primary, ?), email_primary = COALESCE(email_primary, ?) WHERE id = ?"
-            )->execute([$json, $phone, $email, $id]);
+                "UPDATE shadow_profiles SET best_parsed = ?, "
+                . "phone_primary = IF(? IS NULL, phone_primary, ?), "
+                . "email_primary = IF(? IS NULL, email_primary, ?) WHERE id = ?"
+            )->execute([$json, $phone, $phone, $email, $email, $id]);
         } catch (\PDOException $e) {
-            // Cross-collision: the COALESCE fill tried to copy a phone or
-            // email that already belongs to a DIFFERENT shadow profile.
-            // Keep the matched row, refresh best_parsed only.
+            // The corrected identifier already belongs to a DIFFERENT profile.
+            // Keeping the stale row here reproduced the exact wrong-recipient
+            // outcome, so hand the parse to the profile that genuinely owns the
+            // identifier and return THAT id.
             if ((string)$e->getCode() !== '23000') throw $e;
+            $owner = self::findExisting($db, $phone, $email);
+            $targetId = ($owner && (int)$owner['id'] !== $id) ? (int)$owner['id'] : $id;
             $db->getConnection()->prepare(
                 "UPDATE shadow_profiles SET best_parsed = ? WHERE id = ?"
-            )->execute([$json, $id]);
+            )->execute([$json, $targetId]);
+            return $targetId;
         }
         return $id;
     }

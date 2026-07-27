@@ -67,11 +67,21 @@ if (array_key_exists('met_where', $body)) {
 // DATE column. An invalid met_at is skipped, not nulled out, so a bad date
 // doesn't clobber a previously good one when other fields are being edited
 // in the same request.
-if (array_key_exists('met_at', $body)
-    && preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', (string)$body['met_at'], $m)
-    && checkdate((int)$m[2], (int)$m[3], (int)$m[1])) {
-    $sets[] = 'met_at = ?';
-    $vals[] = $m[0];
+// An EXPLICIT empty value clears the column. Without this branch the whole
+// condition failed for '' and met_at was simply omitted from the UPDATE, so
+// clearing "met on" never reached the server and the next pull put the old
+// date straight back on the device. A non-empty but invalid date is still
+// skipped rather than nulled, preserving the intent described above.
+if (array_key_exists('met_at', $body)) {
+    $raw = trim((string)$body['met_at']);
+    if ($raw === '') {
+        $sets[] = 'met_at = ?';
+        $vals[] = null;
+    } elseif (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $raw, $m)
+        && checkdate((int)$m[2], (int)$m[3], (int)$m[1])) {
+        $sets[] = 'met_at = ?';
+        $vals[] = $m[0];
+    }
 }
 if (!$sets) {
     echo json_encode(['success' => false, 'error' => 'nothing_to_update']);
