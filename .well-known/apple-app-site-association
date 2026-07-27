@@ -685,6 +685,46 @@
             "exclude": true
           },
           {
+            "/": "/bhd",
+            "exclude": true
+          },
+          {
+            "/": "/bhd/*",
+            "exclude": true
+          },
+          {
+            "/": "/status",
+            "exclude": true
+          },
+          {
+            "/": "/status/*",
+            "exclude": true
+          },
+          {
+            "/": "/feed",
+            "exclude": true
+          },
+          {
+            "/": "/feed/*",
+            "exclude": true
+          },
+          {
+            "/": "/changelog",
+            "exclude": true
+          },
+          {
+            "/": "/changelog/*",
+            "exclude": true
+          },
+          {
+            "/": "/case-studies",
+            "exclude": true
+          },
+          {
+            "/": "/case-studies/*",
+            "exclude": true
+          },
+          {
             "/": "/*",
             "comment": "A candidate card slug. Everything the site itself owns is excluded above; components match top-down, first match wins."
           }
