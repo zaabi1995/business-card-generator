@@ -883,6 +883,48 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             border: 1px solid #ddd;
             <?php endif; ?>
         }
+        /* The app hand-off. Peer of the Wallet row, not of the utility row:
+           full width, accent-tinted rather than another neutral, so it reads as
+           the one action that leaves this page. */
+        .app-open-row {
+            max-width: 400px;
+            margin: 10px auto 0;
+        }
+        .app-open-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            min-height: 44px;            /* Apple's touch minimum */
+            padding: 11px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            text-decoration: none;
+            cursor: pointer;
+            white-space: nowrap;         /* never wrap the label again */
+            transition: transform 0.16s var(--ease-out), opacity 0.16s var(--ease-out);
+<?php if ($isDarkPage): ?>
+            background: color-mix(in srgb, <?php echo htmlspecialchars($accentColor); ?> 22%, transparent);
+            color: #fff;
+            border: 1px solid color-mix(in srgb, <?php echo htmlspecialchars($accentColor); ?> 45%, transparent);
+<?php else: ?>
+            /* Tinted from the tenant accent, so it is on-brand on every card
+               without hardcoding a colour. */
+            background: color-mix(in srgb, <?php echo htmlspecialchars($accentColor); ?> 8%, #fff);
+            color: <?php echo htmlspecialchars($accentColor); ?>;
+            border: 1px solid color-mix(in srgb, <?php echo htmlspecialchars($accentColor); ?> 28%, #fff);
+<?php endif; ?>
+        }
+        .app-open-btn:active { opacity: 0.85; transform: scale(0.97); }
+        @media (prefers-reduced-motion: reduce) {
+            .app-open-btn { transition: none; }
+            .app-open-btn:active { transform: none; }
+        }
+        .app-open-btn svg { flex-shrink: 0; }
+
         .btn-pdf {
             <?php if ($isDarkPage): ?>
             background: rgba(255,255,255,0.12);
@@ -1426,7 +1468,22 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             <a href="<?php echo htmlspecialchars($cardClickUrl('download_pdf', $pdfUrl)); ?>" class="bottom-btn btn-pdf" download><?= htmlspecialchars(t('digitalcard.btn_download_pdf')) ?></a>
             <?php endif; ?>
             <button class="bottom-btn btn-share" onclick="shareCard()"><?= htmlspecialchars(t('digitalcard.btn_share')) ?></button>
-            <a href="/app/open?url=<?= rawurlencode($__shareUrl) ?>" class="bottom-btn btn-app"><?= htmlspecialchars(t('digitalcard.btn_open_app')) ?></a>
+        </div>
+
+        <?php /* Its own row, not a fourth item in the utility row above.
+                 Four buttons inside a 400px rail gave each ~90px, which is why
+                 this label wrapped to three lines and read as broken text. It
+                 is also a different KIND of action: save/download/share act on
+                 this page, this one hands off to the native app, which is what
+                 the Wallet row below already does. Same shape as that row. */ ?>
+        <div class="app-open-row">
+            <a href="/app/open?url=<?= rawurlencode($__shareUrl) ?>" class="app-open-btn">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="14" rx="3" stroke="currentColor" stroke-width="1.9"/>
+                    <path d="M7 10.5h4.5M7 14h7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+                </svg>
+                <span><?= htmlspecialchars(t('digitalcard.btn_open_app')) ?></span>
+            </a>
         </div>
 
         <?php
