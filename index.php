@@ -1200,7 +1200,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <li><a href="#features" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_features')) ?></a></li>
                         <li><a href="#pricing" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_pricing')) ?></a></li>
                         <li><a href="#resources" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_all_tools')) ?></a></li>
-                        <li><a href="<?php echo getBasePath(); ?>app" class="text-gray-400 hover:text-white transition-colors">iPhone app</a></li>
+                        <li><a href="<?php echo getBasePath(); ?>app" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_app')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>company/register.php" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('header.get_started_free')) ?></a></li>
                     </ul>
                 </div>

@@ -29,6 +29,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
 .app-feature-icon{background:#e6f5f9;color:#009bc1}
 .app-cta-onbrand{color:#0d1b21}
 .app-heading{color:#101828}
+/* The purge/subset tailwind build on this site omits these too. Same bug class
+   as the four above, found by diffing every class on this page against the six
+   loaded stylesheets rather than only checking the ones already suspected. */
+.rounded-3xl{border-radius:1.5rem}
+.p-7{padding:1.75rem}
+.pb-20{padding-bottom:5rem}
+.pb-24{padding-bottom:6rem}
+.gap-14{gap:3.5rem}
+.mt-auto{margin-top:auto}
+.opacity-70{opacity:.7}
+.text-white\/70{color:rgba(255,255,255,.7)}
+.text-white\/85{color:rgba(255,255,255,.85)}
+@media (min-width:640px){.sm\:p-10{padding:2.5rem}.sm\:text-6xl{font-size:3.75rem;line-height:1}}
 /* .hidden sm:block never showed this at any width. Hide it below 640px only. */
 .app-phone-2{display:block}
 @media (max-width:639px){.app-phone-2{display:none}}

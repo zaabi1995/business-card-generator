@@ -1124,7 +1124,25 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             border-radius: 999px;
             backdrop-filter: blur(8px);
         }
+        .theme-toggle::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+        }
+        /* ~20px tall. Grow the hit area vertically to 44px without moving
+           anything; kept inside the link's own width so two adjacent language
+           links can never overlap each other's target. */
+        .lang-switcher a::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 44px;
+            transform: translateY(-50%);
+        }
         .lang-switcher a {
+            position: relative;
             text-decoration: none;
             padding: 2px 8px;
             border-radius: 999px;
@@ -1138,7 +1156,11 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
 
         /* Visitor-facing theme toggle (sun/moon), sits alongside the language switcher. */
         .theme-toggle {
-            position: static;
+            /* Was 32x32, under Apple's 44px minimum. This is a round button, so
+               raising min-height would paint it as an ellipse. Expand the hit
+               area with a pseudo-element instead: 32 + 6 on every side = 44,
+               with no visual change at all. */
+            position: relative;
             width: 32px;
             height: 32px;
             display: inline-flex;

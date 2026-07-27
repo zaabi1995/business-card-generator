@@ -14,6 +14,7 @@ return [
     'link_pricing'     => 'Pricing',
     'link_blog'        => 'Blog',
     'link_faq'         => 'FAQ',
+    'link_app'         => 'iPhone app',
 
     // Free Tools
     'col_free_tools'   => 'Free tools',

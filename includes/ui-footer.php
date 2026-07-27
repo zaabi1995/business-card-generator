@@ -37,7 +37,7 @@ elseif (!empty($minimalFooter)):
                         <li><a href="<?= $bp ?>#pricing" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_pricing')) ?></a></li>
                         <li><a href="<?= $bp ?>blog" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_blog')) ?></a></li>
                         <li><a href="<?= $bp ?>faq" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_faq')) ?></a></li>
-                        <li><a href="<?= $bp ?>app" class="text-gray-400 hover:text-white transition-colors">iPhone app</a></li>
+                        <li><a href="<?= $bp ?>app" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_app')) ?></a></li>
                     </ul>
                 </div>
                 <div>
