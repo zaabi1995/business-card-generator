@@ -11,6 +11,7 @@ require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
 require_once INCLUDES_DIR . '/ScanParser.php';
 require_once INCLUDES_DIR . '/ShadowProfileService.php';
+require_once INCLUDES_DIR . '/ScanCategorizer.php';
 
 header('Content-Type: application/json');
 $ctx = ScanAuth::requireEmployeeMutation();
@@ -167,6 +168,12 @@ try {
             $scanId = updateScan($db, (int)$existing['id'], $fields, $existing['image_path'] ?? null, $existing['image_path_back'] ?? null);
         }
     }
+
+    // See create.php: the on-device guess, applied once for both paths and
+    // never over a 'user' or 'server' category.
+    \ScanCategorizer::applyDeviceCategory(
+        $db->getConnection(), $scanId, \ScanCategorizer::deviceCategory($_POST)
+    );
 } catch (\Throwable $e) {
     // Photo cleanup contract: never keep a file for a scan row that was
     // never written, and always answer JSON even on unexpected failure.
@@ -187,11 +194,17 @@ echo json_encode(['success' => true, 'scan' => [
 ]], JSON_UNESCAPED_UNICODE);
 
 function updateScan(Database $db, int $scanId, array $fields, ?string $oldImagePath, ?string $oldImagePathBack = null): int {
+    // tags / met_where / met_at are written here too, matching create.php's
+    // photo-less update. Omitting them meant a resync of an already-uploaded row
+    // (dirty=2 with a server_id) silently dropped an edit to those three fields,
+    // and the next pull then wiped them on the device as well.
     $db->getConnection()->prepare(
-        "UPDATE scans SET image_path=?, image_path_back=?, parsed=?, parse_tier=?, status=?, shadow_profile_id=? WHERE id=?"
+        "UPDATE scans SET image_path=?, image_path_back=?, parsed=?, parse_tier=?, status=?, "
+        . "tags=?, met_where=?, met_at=?, shadow_profile_id=? WHERE id=?"
     )->execute([
         $fields['image_path'], $fields['image_path_back'], $fields['parsed'], $fields['parse_tier'],
-        $fields['status'], $fields['shadow_profile_id'], $scanId,
+        $fields['status'], $fields['tags'], $fields['met_where'], $fields['met_at'],
+        $fields['shadow_profile_id'], $scanId,
     ]);
     // The resynced photo replaced the old one; drop the orphan(s). Path guard
     // is belt-and-braces: only delete inside uploads/scans/, never a traversal.

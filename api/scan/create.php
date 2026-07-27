@@ -13,6 +13,7 @@ require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
 require_once INCLUDES_DIR . '/ScanParser.php';
 require_once INCLUDES_DIR . '/ShadowProfileService.php';
+require_once INCLUDES_DIR . '/ScanCategorizer.php';
 
 header('Content-Type: application/json');
 $ctx = ScanAuth::requireEmployeeMutation();
@@ -69,6 +70,7 @@ try {
         'shadow_profile_id' => $shadowId,
     ];
 
+
     if ($existing) {
         // Photo-less update: never clears an existing image_path (a text resync
         // must not wipe a photo the row already has on the server).
@@ -99,6 +101,15 @@ try {
             $scanId = (int)$existing['id'];
         }
     }
+
+    // The phone already categorised this card offline (lib/cardCategory.ts), so
+    // this row never needs the paid OpenRouter refine. One call for both the
+    // insert and the resync paths: the guard inside is a plain write on a fresh
+    // row (source NULL) and refuses to demote a 'user' or 'server' category on
+    // an existing one.
+    \ScanCategorizer::applyDeviceCategory(
+        $db->getConnection(), $scanId, \ScanCategorizer::deviceCategory($body)
+    );
 } catch (\Throwable $e) {
     error_log('[scan/create] ' . $e->getMessage());
     http_response_code(500);

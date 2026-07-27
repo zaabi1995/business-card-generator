@@ -31,6 +31,56 @@ class ScanCategorizer
     /** Weak enough to be worth a second opinion. */
     private const REFINE_BELOW = 0.45;
 
+
+    /**
+     * The ON-DEVICE category off a request body, or null when the client sent
+     * none / sent something not in our vocabulary.
+     *
+     * lib/cardCategory.ts scores the same 24 categories offline, instantly and
+     * for free. Until this existed the app computed a guess and threw it away,
+     * so every card arrived uncategorised and was billed to the OpenRouter
+     * refine (by_device was 0 on the admin dashboard, permanently). The
+     * allowlist is CATEGORIES itself, never a second hardcoded copy, so the two
+     * cannot drift.
+     */
+    public static function deviceCategory(array $src): ?array
+    {
+        $cat = trim((string)($src['category'] ?? ''));
+        if ($cat === '' || !in_array($cat, self::CATEGORIES, true)) return null;
+        // A confidence outside 0..1 means the client is confused about the
+        // scale; drop the whole guess rather than store a number the refine
+        // threshold would then compare against nonsensically.
+        if (!isset($src['category_confidence'])) return null;
+        $conf = (float)$src['category_confidence'];
+        if (!is_finite($conf) || $conf < 0.0 || $conf > 1.0) return null;
+        return ['category' => $cat, 'confidence' => round($conf, 3)];
+    }
+
+    /**
+     * Writes a device guess onto an EXISTING row, never over a better source.
+     *
+     * Same guard as the server refine: a category set by a human ('user') or
+     * already refined by the model ('server') outranks a fresh device guess, so
+     * a routine resync of an old card cannot demote it back to a lexicon match.
+     */
+    public static function applyDeviceCategory(PDO $pdo, int $scanId, ?array $guess): void
+    {
+        if ($guess === null) return;
+        $pdo->prepare(
+            "UPDATE scans
+                SET category = :cat,
+                    category_source = 'device',
+                    category_confidence = :conf,
+                    category_at = NOW()
+              WHERE id = :id
+                AND (category_source IS NULL OR category_source = 'device')"
+        )->execute([
+            ':cat' => $guess['category'],
+            ':conf' => $guess['confidence'],
+            ':id' => $scanId,
+        ]);
+    }
+
     public static function pending(PDO $pdo, int $limit = self::BATCH): array
     {
         $stmt = $pdo->prepare(
