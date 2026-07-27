@@ -3,10 +3,35 @@
     "details": [
       {
         "appIDs": ["F436258VA2.om.cardify.scan"],
+        "comment": "Order matters: components are matched top-down and the first match wins. The excludes therefore have to sit ABOVE the person-slug rule, or an asset path containing a dot would be claimed by it.",
         "components": [
           { "/": "/app/open", "comment": "Open a shared Cardify card in the native app" },
           { "/": "/app/open/*", "comment": "Open a shared Cardify card in the native app" },
-          { "/": "/company/card/*", "comment": "Open a Cardify company card in the native app" }
+          { "/": "/company/card/*", "comment": "Open a Cardify company card in the native app" },
+
+          { "/": "/api/*", "exclude": true, "comment": "API endpoints are never a card" },
+          { "/": "/assets/*", "exclude": true },
+          { "/": "/storage/*", "exclude": true },
+          { "/": "/uploads/*", "exclude": true },
+          { "/": "/admin*", "exclude": true },
+          { "/": "/.well-known/*", "exclude": true },
+          { "/": "/*.php", "exclude": true, "comment": "login.php and friends" },
+          { "/": "/*.css", "exclude": true },
+          { "/": "/*.js", "exclude": true },
+          { "/": "/*.json", "exclude": true },
+          { "/": "/*.xml", "exclude": true, "comment": "sitemaps" },
+          { "/": "/*.txt", "exclude": true, "comment": "robots.txt" },
+          { "/": "/*.ico", "exclude": true },
+          { "/": "/*.png", "exclude": true },
+          { "/": "/*.jpg", "exclude": true },
+          { "/": "/*.jpeg", "exclude": true },
+          { "/": "/*.svg", "exclude": true },
+          { "/": "/*.webp", "exclude": true },
+          { "/": "/*.gif", "exclude": true },
+          { "/": "/*.pdf", "exclude": true },
+          { "/": "/*.vcf", "exclude": true, "comment": "vCard downloads must stay in the browser" },
+
+          { "/": "/*.*", "comment": "A person's card: firstname.lastname. Every marketing route on cardify.om is [a-z0-9-]+ with no dot, so this cannot capture one." }
         ]
       }
     ]
