@@ -1354,7 +1354,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         <div class="card-flip-container<?php echo $backImage ? '' : ' no-back'; ?>" id="cardFlip"<?php echo $backImage ? ' role="button" tabindex="0" aria-label="' . htmlspecialchars(t('digitalcard.tap_to_flip'), ENT_QUOTES) . '"' : ''; ?>>
             <div class="card-flip-inner" id="cardInner" style="--card-aspect: <?php echo htmlspecialchars($cardAspectCss, ENT_QUOTES); ?>;">
                 <div class="card-face">
-                    <img src="<?php echo htmlspecialchars($frontImage); ?>" alt="<?= htmlspecialchars(t('digitalcard.alt_card_front')) ?>" loading="lazy">
+                    <img src="<?php echo htmlspecialchars($frontImage); ?>" alt="<?= htmlspecialchars(t('digitalcard.alt_card_front')) ?>" fetchpriority="high" decoding="async">
                 </div>
                 <?php if ($backImage): ?>
                 <div class="card-face card-back-face">
