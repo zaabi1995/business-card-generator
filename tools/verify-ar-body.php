@@ -1,0 +1,142 @@
+<?php
+/**
+ * Gate: every /ar/ URL in the ArTwins map must serve an ARABIC BODY.
+ *
+ * verify-ar-twins.php proves the map and the nginx rewrite table agree, which
+ * is a statement about which URLs exist. It is silent on what they SAY. Two
+ * URLs passed it while serving English prose under an Arabic header: /ar/blog
+ * (Arabic chrome over 7,302 Latin characters of English post titles) and
+ * /ar/get-started (an entirely English landing body). Both were a second
+ * English URL wearing a translated navbar, which is a duplicate, not a
+ * translation.
+ *
+ * The instrument that catches them is the Arabic SHARE of the page's letters,
+ * never a raw Arabic count. Chrome alone contributes ~663 Arabic characters to
+ * any Cardify page, so any count-based floor is satisfied by the header and
+ * says nothing about the body. Measured live: real twins 0.73-0.96, the two
+ * impostors 0.13 and 0.24. The threshold below sits in the empty band between
+ * those two populations.
+ *
+ * Usage:
+ *   php tools/verify-ar-body.php            # gate every mapped /ar/ URL
+ *   php tools/verify-ar-body.php --selftest # prove the gate can fail
+ *
+ * Exit 0 = every Arabic twin is genuinely in Arabic. Exit 1 = at least one is
+ * not, or the gate could not measure, which is also a failure.
+ */
+
+require_once __DIR__ . '/../includes/ArTwins.php';
+
+const MIN_ARABIC_SHARE = 0.55;
+
+/** Arabic share of the letters in a rendered HTML body, script/style stripped. */
+function arabicShare(string $html): array
+{
+    $body = preg_replace('#<(script|style|noscript)\b[^>]*>.*?</\1>#is', ' ', $html) ?? $html;
+    $body = preg_replace('#<[^>]+>#s', ' ', $body) ?? $body;
+    $body = html_entity_decode($body, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+    // Arabic block + Arabic Supplement + Extended-A + presentation forms.
+    $ar = preg_match_all('/[\x{0600}-\x{06FF}\x{0750}-\x{077F}\x{08A0}-\x{08FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}]/u', $body);
+    $la = preg_match_all('/[A-Za-z]/u', $body);
+    $tot = $ar + $la;
+    return ['ar' => $ar, 'la' => $la, 'share' => $tot > 0 ? $ar / $tot : 0.0];
+}
+
+function fetch(string $url): ?string
+{
+    // Unique query string so Cloudflare cannot answer from cache: the gate
+    // must measure what the origin renders today, not what it rendered when
+    // the edge last filled. nginx matches on path, so the rewrite still fires.
+    $bust = $url . (strpos($url, '?') === false ? '?' : '&') . '_gate=' . bin2hex(random_bytes(6));
+    $ch = curl_init($bust);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => false,
+        CURLOPT_TIMEOUT        => 20,
+        CURLOPT_USERAGENT      => 'cardify-ar-body-gate/1.0',
+        CURLOPT_HTTPHEADER     => ['Cache-Control: no-cache', 'Pragma: no-cache'],
+    ]);
+    $body = curl_exec($ch);
+    $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+    if ($code !== 200 || !is_string($body) || $body === '') {
+        echo "  HTTP {$code} (expected 200)\n";
+        return null;
+    }
+    return $body;
+}
+
+// --- Self-test: a gate that cannot fail is not a gate ---------------------
+if (in_array('--selftest', $argv, true)) {
+    $fixtures = [
+        // [label, html, must the gate reject it?]
+        ['English body under Arabic chrome (the /ar/get-started shape)',
+         '<html><body><nav>الرئيسية التسعير تواصل معنا الشركات المدونة</nav>'
+         . '<h1>Get started with Cardify</h1><p>' . str_repeat('Create your first digital business card in under two minutes. ', 40)
+         . '</p></body></html>', true],
+        ['English post titles under Arabic chrome (the /ar/blog shape)',
+         '<html><body><nav>الرئيسية التسعير تواصل معنا الشركات المدونة</nav>'
+         . str_repeat('<a>How NFC business cards work in Oman</a> ', 60) . '</body></html>', true],
+        ['A genuinely translated page',
+         '<html><body><nav>الرئيسية التسعير</nav><h1>عن كارديفاي</h1><p>'
+         . str_repeat('كارديفاي منصّة بطاقات أعمال رقمية ومطبوعة مقرّها مسقط في سلطنة عُمان. ', 30)
+         . '</p></body></html>', false],
+        ['Arabic chrome alone with an empty body (must not pass on chrome)',
+         '<html><body><nav>الرئيسية التسعير تواصل معنا الشركات المدونة</nav>'
+         . str_repeat('<a>Pricing</a> <a>Companies</a> <a>Blog</a> <a>Contact</a> <a>About</a> ', 25)
+         . '</body></html>', true],
+    ];
+    $bad = 0;
+    foreach ($fixtures as [$label, $html, $mustReject]) {
+        $m = arabicShare($html);
+        $rejected = $m['share'] < MIN_ARABIC_SHARE;
+        $ok = ($rejected === $mustReject);
+        printf("  [%s] %-58s share=%.3f (ar=%d la=%d) rejected=%s expected=%s\n",
+            $ok ? 'ok' : 'BAD', substr($label, 0, 58), $m['share'], $m['ar'], $m['la'],
+            $rejected ? 'yes' : 'no', $mustReject ? 'yes' : 'no');
+        if (!$ok) $bad++;
+    }
+    echo $bad === 0
+        ? "\nSELFTEST PASS: the gate rejects all three English shapes and accepts the translated one.\n"
+        : "\nSELFTEST FAILED: {$bad} fixture(s) graded wrong. Do not trust this gate.\n";
+    exit($bad === 0 ? 0 : 1);
+}
+
+// --- Live gate -------------------------------------------------------------
+$paths = ArTwins::paths();
+if (!$paths) {
+    echo "FAIL: ArTwins map is empty, this gate would pass on nothing.\n";
+    exit(1);
+}
+
+$fail = [];
+$rows = [];
+foreach ($paths as $p) {
+    $url = ArTwins::ar($p);
+    echo "checking {$url}\n";
+    $html = fetch($url);
+    if ($html === null) { $fail[] = [$url, null]; continue; }
+    $m = arabicShare($html);
+    $rows[] = [$url, $m];
+    if ($m['share'] < MIN_ARABIC_SHARE) $fail[] = [$url, $m];
+}
+
+echo "\n" . str_pad('URL', 46) . "  share    ar     latin\n";
+foreach ($rows as [$url, $m]) {
+    printf("%-46s  %.3f  %6d  %6d%s\n", $url, $m['share'], $m['ar'], $m['la'],
+        $m['share'] < MIN_ARABIC_SHARE ? '   <-- ENGLISH BODY' : '');
+}
+
+if ($fail) {
+    echo "\nGATE FAILED: " . count($fail) . " /ar/ URL(s) below the "
+       . MIN_ARABIC_SHARE . " Arabic-share floor, or unfetchable.\n";
+    echo "An /ar/ URL that serves English body copy is a duplicate of its English\n"
+       . "twin. Either translate the body, or 301 it to the canonical and drop it\n"
+       . "from ArTwins::PATHS, the nginx rewrite table and the sitemaps.\n";
+    exit(1);
+}
+
+echo "\nPASS: all " . count($rows) . " Arabic twins serve an Arabic body "
+   . "(floor " . MIN_ARABIC_SHARE . ").\n";
+exit(0);

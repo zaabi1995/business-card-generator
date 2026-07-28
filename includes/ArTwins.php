@@ -33,6 +33,12 @@
  * fails if either step is missing:
  *   - add the EN path here
  *   - add the matching `rewrite ^/ar/<path>/?$ /<file>.php?lang=ar last;`
+ *
+ * That gate proves the URL EXISTS. tools/verify-ar-body.php proves it is in
+ * Arabic: it fetches every path below and fails any whose Arabic letter share
+ * falls under 0.55. Run both before adding an entry here. The paragraph above
+ * used to be the only thing enforcing the share rule, and a rule that lives
+ * only in a comment is not a gate.
  */
 class ArTwins
 {
