@@ -120,7 +120,7 @@ $basePath = getBasePath();
             transform: translateY(-8px) scale(1.02);
         }
         .step-card.active {
-            border-color: #2563eb;
+            border-color: #009bc1;
             box-shadow: 0 25px 50px -12px rgba(37, 99, 235, 0.25);
         }
         
@@ -203,7 +203,7 @@ $basePath = getBasePath();
             right: -2rem;
             width: 4rem;
             height: 2px;
-            background: linear-gradient(to right, #2563eb, transparent);
+            background: linear-gradient(to right, #009bc1, transparent);
         }
         
         /* Omani flag colors accent */

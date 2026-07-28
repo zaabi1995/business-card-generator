@@ -28,7 +28,7 @@ $brandSwatches = [
     ['name' => 'blue-300', 'hex' => '#93c5fd', 'bg' => 'bg-blue-300', 'text' => 'text-gray-900', 'use' => 'Illustration fill'],
     ['name' => 'blue-400', 'hex' => '#60a5fa', 'bg' => 'bg-blue-400', 'text' => 'text-white',    'use' => 'Secondary emphasis'],
     ['name' => 'blue-500', 'hex' => '#3b82f6', 'bg' => 'bg-blue-500', 'text' => 'text-white',    'use' => 'Hover tint on CTAs'],
-    ['name' => 'blue-600', 'hex' => '#2563eb', 'bg' => 'bg-blue-600', 'text' => 'text-white',    'use' => 'Primary / CTA / link'],
+    ['name' => 'blue-600', 'hex' => '#009bc1', 'bg' => 'bg-blue-600', 'text' => 'text-white',    'use' => 'Primary / CTA / link'],
     ['name' => 'blue-700', 'hex' => '#1d4ed8', 'bg' => 'bg-blue-700', 'text' => 'text-white',    'use' => 'Hover / pressed'],
     ['name' => 'blue-800', 'hex' => '#1e40af', 'bg' => 'bg-blue-800', 'text' => 'text-white',    'use' => 'Heading accent'],
     ['name' => 'blue-900', 'hex' => '#1e3a8a', 'bg' => 'bg-blue-900', 'text' => 'text-white',    'use' => 'Deep brand / footer'],
@@ -58,7 +58,7 @@ $semantic = [
     ['name' => 'success', 'hex' => '#16a34a', 'bg' => 'bg-green-600', 'chip' => 'bg-green-50 text-green-700',   'desc' => 'Paid, live, published'],
     ['name' => 'warning', 'hex' => '#d97706', 'bg' => 'bg-amber-600', 'chip' => 'bg-amber-50 text-amber-700',   'desc' => 'Pending review, draft'],
     ['name' => 'danger',  'hex' => '#dc2626', 'bg' => 'bg-red-600',   'chip' => 'bg-red-50 text-red-700',       'desc' => 'Failed, blocked, error'],
-    ['name' => 'info',    'hex' => '#2563eb', 'bg' => 'bg-blue-600',  'chip' => 'bg-blue-50 text-blue-700',     'desc' => 'Neutral info, brand'],
+    ['name' => 'info',    'hex' => '#009bc1', 'bg' => 'bg-blue-600',  'chip' => 'bg-blue-50 text-blue-700',     'desc' => 'Neutral info, brand'],
 ];
 
 $spacing = [
@@ -162,17 +162,17 @@ require_once INCLUDES_DIR . '/ui-header.php';
     transition: all .15s;
     cursor: pointer;
   }
-  .swatch-copy:hover { border-color: #2563eb; color: #2563eb; }
+  .swatch-copy:hover { border-color: #009bc1; color: #009bc1; }
   .swatch-copy.copied { border-color: #16a34a; color: #16a34a; }
-  .anchor-link:hover { color: #2563eb; }
-  .sticky-toc a.active { color: #2563eb; font-weight: 600; }
+  .anchor-link:hover { color: #009bc1; }
+  .sticky-toc a.active { color: #009bc1; font-weight: 600; }
   [x-cloak] { display: none !important; }
   @keyframes toastIn {
     from { opacity: 0; transform: translateY(8px) translateX(-50%); }
     to   { opacity: 1; transform: translateY(0) translateX(-50%); }
   }
   .toast-in { animation: toastIn .18s ease-out; }
-  .otp-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.15); outline: none; }
+  .otp-input:focus { border-color: #009bc1; box-shadow: 0 0 0 3px rgba(0,155,193,.15); outline: none; }
   /* shimmer skeleton */
   @keyframes shimmer {
     0% { background-position: -500px 0 }
@@ -340,7 +340,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <section id="colors" class="scroll-mt-24 space-y-6">
           <header>
             <h2 class="text-2xl md:text-3xl font-extrabold text-gray-900">Color system</h2>
-            <p class="mt-1 text-sm text-gray-500 max-w-prose">Click any chip to copy the hex or Tailwind class. Cardify blue (<code class="font-mono text-xs text-blue-700">#2563eb</code>) is the primary brand color; amber is reserved for the logo accent.</p>
+            <p class="mt-1 text-sm text-gray-500 max-w-prose">Click any chip to copy the hex or Tailwind class. Cardify cyan (<code class="font-mono text-xs" style="color:#067a98">#009bc1</code>) is the primary brand color; amber is reserved for the logo accent.</p>
           </header>
 
           <div>
@@ -718,7 +718,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
               <p class="mt-1 text-sm text-gray-500">Larger shadow. Used for pop-overs, hero highlights, and modals.</p>
             </div>
             <!-- Digital business card preview -->
-            <div class="md:col-span-2 rounded-2xl overflow-hidden shadow-xl max-w-md mx-auto w-full" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);">
+            <div class="md:col-span-2 rounded-2xl overflow-hidden shadow-xl max-w-md mx-auto w-full" style="background: linear-gradient(135deg, #009bc1 0%, #1d4ed8 100%);">
               <div class="p-6 text-white">
                 <div class="flex items-center gap-4">
                   <div class="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">A</div>
@@ -1136,7 +1136,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="rounded-2xl border border-red-200 bg-red-50/50 p-6">
               <h3 class="text-lg font-bold text-red-700 inline-flex items-center gap-2"><i class="fa-solid fa-circle-xmark"></i> Don't</h3>
               <ul class="mt-3 space-y-2 text-sm text-gray-700 list-disc pl-5">
-                <li>Don't mix <code class="font-mono text-xs">#2563eb</code> with other blues (no teal, no cyan).</li>
+                <li>Don't mix <code class="font-mono text-xs">#009bc1</code> with other blues (no teal, no cyan).</li>
                 <li>Don't use sharp <code class="font-mono text-xs">rounded</code> or fully square corners on interactive surfaces.</li>
                 <li>Don't fabricate phone numbers or prices in mocks, use the real sample data in this showcase.</li>
                 <li>Don't ship emoji in UI copy. Use Font Awesome icons instead.</li>

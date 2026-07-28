@@ -33,7 +33,7 @@ if (!$theme) {
     $db->insert('company_themes', [
         'id' => $themeId,
         'company_id' => $companyId,
-        'primary_color' => '#2563eb',
+        'primary_color' => '#009bc1',
         'secondary_color' => '#0f3460'
     ]);
     $theme = $db->fetchOne("SELECT * FROM company_themes WHERE id = :id", ['id' => $themeId]);
@@ -42,7 +42,7 @@ if (!$theme) {
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
-    $primaryColor = $_POST['primary_color'] ?? '#2563eb';
+    $primaryColor = $_POST['primary_color'] ?? '#009bc1';
     $secondaryColor = $_POST['secondary_color'] ?? '#0f3460';
     $headerText = $_POST['header_text'] ?? '';
     $footerText = $_POST['footer_text'] ?? '';
@@ -274,9 +274,9 @@ adminHeader('Branding & E-Card Settings', 'theme');
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Primary Color</label>
                     <div class="flex items-center gap-3">
-                        <input type="color" name="primary_color" value="<?php echo sanitize($theme['primary_color'] ?? '#2563eb'); ?>" 
+                        <input type="color" name="primary_color" value="<?php echo sanitize($theme['primary_color'] ?? '#009bc1'); ?>" 
                                class="w-16 h-12 rounded-lg cursor-pointer border border-gray-200">
-                        <input type="text" value="<?php echo sanitize($theme['primary_color'] ?? '#2563eb'); ?>" readonly
+                        <input type="text" value="<?php echo sanitize($theme['primary_color'] ?? '#009bc1'); ?>" readonly
                                class="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-mono text-sm">
                     </div>
                     <p class="text-xs text-gray-500 mt-2">Used for buttons, links, and accents</p>
@@ -298,7 +298,7 @@ adminHeader('Branding & E-Card Settings', 'theme');
             <div class="mt-6 p-4 rounded-xl bg-gray-50 border border-gray-200">
                 <p class="text-sm font-medium text-gray-700 mb-3">Preview</p>
                 <div class="flex items-center gap-4">
-                    <div class="px-4 py-2 rounded-lg text-white text-sm font-medium" style="background-color: <?php echo sanitize($theme['primary_color'] ?? '#2563eb'); ?>">
+                    <div class="px-4 py-2 rounded-lg text-white text-sm font-medium" style="background-color: <?php echo sanitize($theme['primary_color'] ?? '#009bc1'); ?>">
                         Primary Button
                     </div>
                     <div class="px-4 py-2 rounded-lg text-white text-sm font-medium" style="background-color: <?php echo sanitize($theme['secondary_color'] ?? '#0f3460'); ?>">

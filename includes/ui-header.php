@@ -324,7 +324,7 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
             margin-top: 8px;
             font-size: 20px;
             font-weight: 700;
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            background: linear-gradient(135deg, #009bc1 0%, #067a98 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;

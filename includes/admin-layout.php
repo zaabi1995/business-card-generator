@@ -185,10 +185,16 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
     // Tenant theme: look up primary/secondary from company_themes so every
     // admin page gets the tenant's brand colors (buttons, focus rings, nav
     // accents, page-loader gradient). Cardify default when no row exists.
-    $tBrand    = '#2563eb';
-    $tBrand2   = '#1d4ed8';
+    // Cardify brand cyan. Was #2563eb/#1d4ed8, the retired indigo pair, which
+    // repainted every blue utility across every admin page plus the PWA
+    // theme-color for any company with no company_themes row. One real tenant
+    // was rendering it, and any future signup that skips onboarding or finishes
+    // without a logo would have too, because saveCompanyTheme() only writes the
+    // row when a logo exists.
+    $tBrand    = '#009bc1';
+    $tBrand2   = '#067a98';
     $tBrandInk = '#ffffff';
-    $tBrandRing= 'rgba(37,99,235,.35)';
+    $tBrandRing= 'rgba(0,155,193,.35)';
     try {
         $_cid = $_SESSION['company_id'] ?? null;
         if ($_cid && class_exists('Database') && class_exists('DatabaseAdapter') && DatabaseAdapter::useDatabase()) {
@@ -487,7 +493,7 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
             margin-top: 8px;
             font-size: 20px;
             font-weight: 700;
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            background: linear-gradient(135deg, #009bc1 0%, #067a98 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
