@@ -118,6 +118,13 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </article>
             <?php endforeach; ?>
         </div>
+        <!-- Internal link to the scanner surface. Without it that page is an
+             orphan: nothing on the site pointed at it, and a page no page
+             links to is a page crawlers reach late and rank low. -->
+        <p class="mt-8 text-center text-gray-600">
+            <?= $isAr ? 'تفاصيل القراءة الضوئية للبطاقات العربية والإنجليزية على الجهاز: ' : 'How the on-device Arabic and English card recognition works: ' ?>
+            <a href="<?= $isAr ? '/ar/business-card-scanner' : '/business-card-scanner' ?>" class="font-semibold" style="color:#009bc1"><?= $isAr ? 'ماسح بطاقات العمل' : 'the business card scanner' ?></a>
+        </p>
         <div class="mt-10 rounded-3xl p-8 sm:p-10 text-white overflow-hidden relative" style="background:linear-gradient(135deg,#009bc1,#824598)">
             <div class="relative grid lg:grid-cols-[1fr_auto] gap-8 items-center">
                 <div class="max-w-3xl">

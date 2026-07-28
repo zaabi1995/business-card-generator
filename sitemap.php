@@ -144,6 +144,7 @@ if ($part === 'static') {
         ['/cookies',      'yearly',  '0.4'],
         ['/print-shops',  'weekly',  '0.8'],
         ['/app',          'monthly', '0.8'],
+        ['/business-card-scanner', 'monthly', '0.8'],
         ['/industries',              'monthly', '0.85'],
         ['/press-kit',               'monthly', '0.85'],
         ['/gcc/saudi-arabia',        'monthly', '0.9'],

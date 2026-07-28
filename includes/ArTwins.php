@@ -52,6 +52,7 @@ class ArTwins
         '/',
         '/about',
         '/app',
+        '/business-card-scanner',
         '/careers',
         '/case-studies',
         '/changelog',
