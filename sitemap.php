@@ -208,24 +208,23 @@ if ($part === 'static') {
 
 } elseif ($part === 'directory') {
     // Flagship + directory hubs (indexes, sector hubs, wilayat hubs), NOT individual companies.
+    // Map-backed hubs: smUrl emits both twins with their alternates.
     smUrl("{$baseUrl}/oman-business-index",    $today, 'monthly', '0.9');
-    smUrl("{$baseUrl}/ar/oman-business-index", $today, 'monthly', '0.8');
-    // Both twins (EN + AR) come out of smUrl automatically via the ArTwins map.
     smUrl("{$baseUrl}/gcc-business-index",     $today, 'weekly',  '0.95');
     smUrl("{$baseUrl}/companies",              $today, 'weekly',  '0.9');
-    smUrl("{$baseUrl}/ar/companies",           $today, 'weekly',  '0.8');
 
+    // Parameterised hubs cannot live in the map, so they go through
+    // smUrlBilingual(), which emits the same EN/AR/x-default alternate block.
+    // Listing the two sides as bare smUrl() calls (what this did before) put
+    // 34 /ar/ URLs in the sitemap with no alternates at all, contradicting the
+    // reciprocal tags the pages themselves emit.
     if ($db) {
         try {
             foreach ($db->fetchAll("SELECT DISTINCT sector FROM om_companies ORDER BY sector ASC") as $s) {
-                $slug = $s['sector'];
-                smUrl("{$baseUrl}/companies/sector/{$slug}",    $today, 'weekly', '0.7');
-                smUrl("{$baseUrl}/ar/companies/sector/{$slug}", $today, 'weekly', '0.6');
+                smUrlBilingual("/companies/sector/{$s['sector']}", $today, 'weekly', '0.7');
             }
             foreach ($db->fetchAll("SELECT DISTINCT wilayat FROM om_companies ORDER BY wilayat ASC") as $w) {
-                $slug = $w['wilayat'];
-                smUrl("{$baseUrl}/companies/wilayat/{$slug}",    $today, 'weekly', '0.7');
-                smUrl("{$baseUrl}/ar/companies/wilayat/{$slug}", $today, 'weekly', '0.6');
+                smUrlBilingual("/companies/wilayat/{$w['wilayat']}", $today, 'weekly', '0.7');
             }
         } catch (Throwable $e) { /* table may not exist */ }
     }
