@@ -708,6 +708,11 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             margin: 0 auto 10px;
         }
         .action-btn {
+            /* min-height alone does NOT centre the label: on a block element the
+               extra height is added BELOW the text line, which left Call /
+               WhatsApp / Email sitting high in their pills. The sibling
+               .wallet-btn was already inline-flex, which is why only this row
+               looked wrong. */
             min-height: 44px;
             flex: 1;
             padding: 10px 8px;
@@ -717,7 +722,9 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             font-weight: 600;
             text-decoration: none;
             color: white;
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: transform 0.16s var(--ease-out), opacity 0.16s var(--ease-out);
         }
         .action-btn:active { opacity: 0.85; transform: scale(0.97); }
