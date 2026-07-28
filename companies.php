@@ -833,7 +833,7 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                 <?= escq(t('companies.heading')) ?>
             </h1>
             <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                <?= escq(t('companies.subheading', ['count' => $totalCount ?: 2414])) ?>
+                <?= escq(t('companies.subheading', ['count' => $totalCount])) ?>
             </p>
         </div>
 
