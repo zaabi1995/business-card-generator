@@ -67,8 +67,13 @@ try {
 
         // Cap a free-text string to a sane column length. TEXT columns
         // (addresses) get more room than VARCHAR ones.
+        // mb_substr, NOT substr: byte truncation splits a multi-byte character
+        // in half, and the resulting invalid UTF-8 makes json_encode() return
+        // false further down, which this endpoint echoes as an EMPTY 200 body.
+        // That bricks the employee's own My Card and My details screens. A
+        // mixed title like CEO - الرئيس التنفيذي lands on the boundary easily.
         $cap = function ($v, int $max = 255): string {
-            return substr(trim((string) $v), 0, $max);
+            return mb_substr(trim((string) $v), 0, $max, 'UTF-8');
         };
 
         // Contact fields go through the SAME helper the web editor uses
@@ -98,6 +103,10 @@ try {
             'qr_redirect_url'       => $employee['qr_redirect_url'] ?? null,
             'card_dark_mode_toggle' => $employee['card_dark_mode_toggle'] ?? 1,
             'hide_cardify_branding' => $employee['hide_cardify_branding'] ?? 0,
+            // Seeded like every other column: updateEmployee() writes
+            // trim($data['fax'] ?? ''), so omitting it BLANKED the fax on
+            // every save from the app that did not happen to send one.
+            'fax'                   => $employee['fax'] ?? '',
         ];
 
         // Editable contact fields. title_* map onto the position_* columns
@@ -339,7 +348,21 @@ try {
     if ($method === 'POST') {
         $response['brand_locked'] = $brandLocked;
     }
-    echo json_encode($response, JSON_UNESCAPED_UNICODE);
+    // json_encode returns FALSE on invalid UTF-8, and echoing that emits an
+    // empty body with HTTP 200, which the app cannot parse and cannot recover
+    // from. $cap() no longer produces such values, but a row corrupted before
+    // that fix would still hit this. Fail loudly instead of silently.
+    $encoded = json_encode($response, JSON_UNESCAPED_UNICODE);
+    if ($encoded === false) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error'   => 'card_encoding_failed',
+            'detail'  => json_last_error_msg(),
+        ]);
+        exit;
+    }
+    echo $encoded;
     exit;
 
 } catch (\Throwable $e) {
