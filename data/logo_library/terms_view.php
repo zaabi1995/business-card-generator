@@ -2,7 +2,12 @@
 /** @var bool $isAr; @var string $title; */
 $pageTitle       = $title;
 $pageDescription = t('logos.terms_meta_desc');
-$canonicalUrl    = 'https://cardify.om/logos/terms';
+require_once INCLUDES_DIR . '/ArTwins.php';
+// Canonical follows the SERVED locale: an Arabic page that
+// canonicalises to its English twin asks to be dropped.
+$canonicalUrl    = (!empty($isAr) && ArTwins::arPath('/logos/terms') !== null)
+    ? 'https://cardify.om' . ArTwins::arPath('/logos/terms')
+    : 'https://cardify.om/logos/terms';
 $bodyClass       = 'bg-white';
 $showNavigation  = true;
 $metaRobots      = 'index,follow';

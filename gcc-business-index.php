@@ -244,9 +244,7 @@ $extraHead =
       '<script type="application/ld+json">' . json_encode($faqLd,     JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<script type="application/ld+json">' . json_encode($crumbLd,   JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<script type="application/ld+json">' . json_encode($datasetLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
-    . '<script type="application/ld+json">' . json_encode($orgLd,     JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
-    . '<link rel="alternate" hreflang="en" href="https://cardify.om/gcc-business-index">'
-    . '<link rel="alternate" hreflang="x-default" href="https://cardify.om/gcc-business-index">';
+    . '<script type="application/ld+json">' . json_encode($orgLd,     JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 
 function gccEsc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 

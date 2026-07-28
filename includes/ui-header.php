@@ -101,6 +101,31 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <?php if (!empty($metaRobots)): ?>
     <meta name="robots" content="<?php echo htmlspecialchars($metaRobots); ?>">
     <?php endif; ?>
+    <?php
+    // Locale correction on the canonical, derived from the SERVED path and
+    // never from the requested locale. Eleven Arabic twins (/ar/about,
+    // /ar/logos, /ar/tools ...) hardcoded their English URL here, so every one
+    // of them asked Google to treat the Arabic page as a duplicate of the
+    // English one and drop it, while the head directly below told Google the
+    // pair was reciprocal. Only the exact same page is rewritten (same
+    // normalised path), so paginated and parameterised canonicals keep their
+    // query string.
+    if (!empty($canonicalUrl)) {
+        require_once __DIR__ . '/ArTwins.php';
+        $servedPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        if (ArTwins::isArabic($servedPath)) {
+            $arPath   = ArTwins::arPath($servedPath);
+            $canParts = parse_url($canonicalUrl);
+            $canPath  = $canParts['path'] ?? '/';
+            if ($arPath !== null
+                && strpos($canPath, '/ar/') !== 0 && $canPath !== '/ar'
+                && ArTwins::normalise($canPath) === ArTwins::normalise($servedPath)) {
+                $canonicalUrl = ArTwins::SITE . $arPath
+                    . (isset($canParts['query']) && $canParts['query'] !== '' ? '?' . $canParts['query'] : '');
+            }
+        }
+    }
+    ?>
     <?php if (!empty($canonicalUrl)): ?>
     <link rel="canonical" href="<?php echo htmlspecialchars($canonicalUrl); ?>">
     <?php

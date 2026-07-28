@@ -61,6 +61,8 @@ class ArTwins
         '/faq',
         '/gcc-business-index',
         '/logos',
+        '/logos/press',
+        '/logos/terms',
         '/oman-business-index',
         '/press-kit',
         '/pricing',
@@ -70,6 +72,20 @@ class ArTwins
         '/status',
         '/terms',
         '/tools',
+    ];
+
+    /**
+     * EN path PREFIXES whose children nginx serves in both languages through a
+     * parameterised rewrite, e.g. /companies/{slug}, /logos/{sector},
+     * /case-studies/{slug}. They cannot be enumerated in PATHS (the set is a
+     * database, not a list), but a switcher that ignored them would suppress
+     * itself on the 5,000 highest-volume URLs on the site. Keep 1:1 with the
+     * `rewrite ^/ar/<prefix>/...` block in the nginx conf.
+     */
+    private const AR_SUBTREES = [
+        '/companies',
+        '/logos',
+        '/case-studies',
     ];
 
     /** All EN paths with an Arabic twin. */
@@ -160,5 +176,24 @@ class ArTwins
             $out .= '<link rel="alternate" hreflang="' . $hrefLang . '" href="' . htmlspecialchars($hrefUrl, ENT_QUOTES) . '">';
         }
         return $out;
+    }
+
+    /**
+     * Relative AR URL for a path, or null when no Arabic URL exists.
+     *
+     * Covers both populations: the enumerated twins in PATHS and the
+     * parameterised children under AR_SUBTREES. Returning null is the point,
+     * callers use it to render nothing rather than to invent a URL.
+     */
+    public static function arPath(string $urlOrPath): ?string
+    {
+        $p = self::normalise($urlOrPath);
+        if (in_array($p, self::PATHS, true)) {
+            return $p === '/' ? '/ar/' : '/ar' . $p;
+        }
+        foreach (self::AR_SUBTREES as $prefix) {
+            if (strpos($p, $prefix . '/') === 0) return '/ar' . $p;
+        }
+        return null;
     }
 }

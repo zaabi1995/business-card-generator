@@ -43,7 +43,7 @@ $src = file_get_contents($conf);
 // retirement look like an orphan Arabic URL and fail the gate for doing the
 // right thing.
 $live = [];
-if (preg_match_all('#^\s*rewrite\s+\^/ar(/[a-z0-9-]*)?/\?\$\s+\S+\s+last\s*;#mi', $src, $m)) {
+if (preg_match_all('#^\s*rewrite\s+\^/ar((?:/[a-z0-9-]+)*)/\?\$\s+\S+\s+last\s*;#mi', $src, $m)) {
     foreach ($m[1] as $seg) {
         $live[] = ($seg === '' || $seg === null) ? '/' : $seg;
     }

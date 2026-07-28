@@ -645,7 +645,7 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
 
                     <!-- Language Switcher -->
                     <span class="hidden sm:inline-flex mr-2">
-                        <?php require INCLUDES_DIR . '/lang-switcher.php'; ?>
+                        <?php $cardifyLangSwitchMode = 'query'; ?><?php require INCLUDES_DIR . '/lang-switcher.php'; ?>
                     </span>
 
                     <!-- User dropdown -->

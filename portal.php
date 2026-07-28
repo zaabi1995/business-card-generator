@@ -1183,7 +1183,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     </div>
                     <div class="flex items-center gap-2 flex-shrink-0">
                         <?php if (function_exists('currentLocale') && file_exists(INCLUDES_DIR . '/lang-switcher.php')): ?>
-                            <?php require INCLUDES_DIR . '/lang-switcher.php'; ?>
+                            <?php $cardifyLangSwitchMode = 'query'; ?><?php require INCLUDES_DIR . '/lang-switcher.php'; ?>
                         <?php endif; ?>
                         <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/admin/login'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-2 px-3 sm:px-4 py-2 text-sm text-gray-600 hover:text-gray-900 font-medium" title="<?= htmlspecialchars(t('portal.admin_login')) ?>">
                             <i class="fa-solid fa-lock"></i><span class="hidden sm:inline"><?= htmlspecialchars(t('portal.admin_login')) ?></span>
