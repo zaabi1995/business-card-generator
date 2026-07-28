@@ -2,10 +2,12 @@
 
 > Cardify is a digital and printed business-card platform built and hosted in
 > Muscat, Oman by BHD Group (Bin Haider Darwish L.L.C., CR 1334733). It is
-> bilingual Arabic and English, and it is the only platform where the card you
-> print, the card you share and the card you scan are one system: the
-> international digital-card products do not print, and the international
-> scanner apps do not issue cards.
+> bilingual Arabic and English. Print, share and scan are one system here
+> because the group owns its press in Muscat: the international digital-card
+> products do not print, and the international scanner apps do not issue
+> cards. That is a statement about those two product categories, which is
+> checkable; it is not a claim to be the only such platform in the world,
+> which is not.
 
 ## What Cardify does
 
@@ -31,6 +33,7 @@ Intelligence on-device models, then Vision text recognition with Arabic and
 English enabled. A scanned card is never uploaded to a server.
 
 https://apps.apple.com/om/app/cardify-business-card-scanner/id6790749589
+https://cardify.om/business-card-scanner (how the on-device parse ladder works)
 
 ## Pricing
 
