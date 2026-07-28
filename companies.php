@@ -16,6 +16,7 @@
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/LogoLibrary.php'; // shouldUseDarkVariantOnLight + helpers used by every view branch
+require_once INCLUDES_DIR . '/ArTwins.php';
 
 $db = Database::getInstance();
 $view = $_GET['view'] ?? 'index';
@@ -313,23 +314,19 @@ if ($company) {
     $extraHead = '<script type="application/ld+json">' . json_encode($orgLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
                . '<script type="application/ld+json">' . json_encode($crumbLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
                . ($imageLd ? '<script type="application/ld+json">' . json_encode($imageLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' : '')
-               . '<link rel="alternate" hreflang="en" href="' . $baseUrl . '/companies/' . $company['slug'] . '">'
-               . '<link rel="alternate" hreflang="ar" href="' . $baseUrl . '/ar/companies/' . $company['slug'] . '">'
-               . '<link rel="alternate" hreflang="x-default" href="' . $baseUrl . '/companies/' . $company['slug'] . '">';
+               . ArTwins::pairLinks('/companies/' . $company['slug']);
 } elseif ($hubSector) {
     $secLabel = labelOf($hubSector, $SECTORS, $isAr);
     $pageTitle = t('companies.hub_sector_page_title', ['label' => $secLabel]);
     $pageDescription = t('companies.hub_sector_page_desc', ['count' => $totalCount, 'label' => $secLabel]);
     $canonicalUrl = $baseUrl . $basePrefix . '/sector/' . $hubSector;
-    $extraHead = '<link rel="alternate" hreflang="en" href="' . $baseUrl . '/companies/sector/' . $hubSector . '">'
-               . '<link rel="alternate" hreflang="ar" href="' . $baseUrl . '/ar/companies/sector/' . $hubSector . '">';
+    $extraHead = ArTwins::pairLinks('/companies/sector/' . $hubSector);
 } elseif ($hubWilayat) {
     $wilLabel = labelOf($hubWilayat, $WILAYATS, $isAr);
     $pageTitle = t('companies.hub_wilayat_page_title', ['label' => $wilLabel]);
     $pageDescription = t('companies.hub_wilayat_page_desc', ['count' => $totalCount, 'label' => $wilLabel]);
     $canonicalUrl = $baseUrl . $basePrefix . '/wilayat/' . $hubWilayat;
-    $extraHead = '<link rel="alternate" hreflang="en" href="' . $baseUrl . '/companies/wilayat/' . $hubWilayat . '">'
-               . '<link rel="alternate" hreflang="ar" href="' . $baseUrl . '/ar/companies/wilayat/' . $hubWilayat . '">';
+    $extraHead = ArTwins::pairLinks('/companies/wilayat/' . $hubWilayat);
 } else {
     $pageTitle = t('companies.index_title');
     $pageDescription = t('companies.index_desc');
@@ -341,8 +338,7 @@ if ($company) {
         'url' => $baseUrl . '/companies',
     ];
     $extraHead = '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
-               . '<link rel="alternate" hreflang="en" href="' . $baseUrl . '/companies">'
-               . '<link rel="alternate" hreflang="ar" href="' . $baseUrl . '/ar/companies">';
+               . ArTwins::pairLinks('/companies');
 }
 $suppressDefaultHreflang = true;
 require_once INCLUDES_DIR . '/ui-header.php';

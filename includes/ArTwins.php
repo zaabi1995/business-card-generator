@@ -22,6 +22,13 @@
  * exactly the chrome floor and are deliberately absent: an /ar/ URL that
  * serves English body copy is a duplicate, not a translation.
  *
+ * The right instrument is the Arabic share of the AR page's LETTERS, not a
+ * raw Arabic character count. A count above the chrome floor passed both
+ * /ar/blog (chrome Arabic over 7,302 Latin characters of English post titles)
+ * and /ar/get-started (an entirely English landing body); the share caught
+ * them at 0.13 and 0.24 against 0.73-0.96 for every real twin. Both now 301
+ * to their English canonical instead of standing as a second English URL.
+ *
  * Adding an Arabic page is a two-step change, and tools/verify-ar-twins.php
  * fails if either step is missing:
  *   - add the EN path here
@@ -39,7 +46,6 @@ class ArTwins
         '/',
         '/about',
         '/app',
-        '/blog',
         '/careers',
         '/case-studies',
         '/changelog',
@@ -47,7 +53,6 @@ class ArTwins
         '/contact',
         '/faq',
         '/gcc-business-index',
-        '/get-started',
         '/logos',
         '/oman-business-index',
         '/press-kit',
@@ -122,5 +127,31 @@ class ArTwins
             return [['en', $en], ['x-default', $en]];
         }
         return [['en', $en], ['ar', $ar], ['x-default', $en]];
+    }
+
+    /**
+     * Force the bilingual set for a PARAMETERISED path whose Arabic twin is
+     * known live but which cannot be enumerated in PATHS, e.g.
+     * /companies/{slug}, /companies/sector/{slug}. Callers building their own
+     * $extraHead use this instead of hand-writing the three link tags, which
+     * is how three of companies.php's four branches shipped without an
+     * x-default while the fourth had one.
+     */
+    public static function pairTags(string $enPath): array
+    {
+        $p  = '/' . ltrim($enPath, '/');
+        $en = self::SITE . $p;
+        $ar = self::SITE . '/ar' . $p;
+        return [['en', $en], ['ar', $ar], ['x-default', $en]];
+    }
+
+    /** pairTags() rendered as <link> markup, for $extraHead strings. */
+    public static function pairLinks(string $enPath): string
+    {
+        $out = '';
+        foreach (self::pairTags($enPath) as [$hrefLang, $hrefUrl]) {
+            $out .= '<link rel="alternate" hreflang="' . $hrefLang . '" href="' . htmlspecialchars($hrefUrl, ENT_QUOTES) . '">';
+        }
+        return $out;
     }
 }

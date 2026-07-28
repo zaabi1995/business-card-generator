@@ -32,12 +32,18 @@ if (!is_file($conf)) {
 }
 $src = file_get_contents($conf);
 
-// Collect the /ar/ paths nginx actually serves. Only single-segment hub
+// Collect the /ar/ paths nginx actually SERVES. Only single-segment hub
 // rewrites, which is what the map covers; parameterised children such as
-// ^/ar/blog/([a-z0-9-]+)/?$ are intentionally skipped, they inherit their
-// parent's language and are not separate twins.
+// ^/ar/companies/sector/([a-z0-9-]+)/?$ inherit their parent's language and
+// are not separate twins.
+//
+// The trailing `last` is part of the match on purpose. A rule ending in
+// `permanent` is a RETIREMENT (an /ar/ URL that served an English body, now
+// 301'd to its canonical), not a twin; counting those would make every
+// retirement look like an orphan Arabic URL and fail the gate for doing the
+// right thing.
 $live = [];
-if (preg_match_all('#^\s*rewrite\s+\^/ar(/[a-z0-9-]*)?/\?\$#mi', $src, $m)) {
+if (preg_match_all('#^\s*rewrite\s+\^/ar(/[a-z0-9-]*)?/\?\$\s+\S+\s+last\s*;#mi', $src, $m)) {
     foreach ($m[1] as $seg) {
         $live[] = ($seg === '' || $seg === null) ? '/' : $seg;
     }
