@@ -29,10 +29,15 @@ $isAr = $lang === 'ar';
 if (class_exists('I18n')) { I18n::setLocale($lang); }
 
 // Sector + wilayat content libraries (populated by content agents)
-$SECTOR_CONTENT  = is_file(__DIR__ . '/data/company_content/sectors.php')
-    ? (require __DIR__ . '/data/company_content/sectors.php') : [];
-$WILAYAT_CONTENT = is_file(__DIR__ . '/data/company_content/wilayats.php')
-    ? (require __DIR__ . '/data/company_content/wilayats.php') : [];
+// Arabic pages MUST read the Arabic libraries. Falling back to the English
+// file here is what made 2,536 /ar/companies/ URLs serve an English body
+// under an Arabic shell (ledger bhd-r6-45): an untranslated key now renders
+// nothing rather than English.
+$_ccSuffix = $isAr ? '_ar' : '';
+$_secFile  = __DIR__ . '/data/company_content/sectors' . $_ccSuffix . '.php';
+$_wilFile  = __DIR__ . '/data/company_content/wilayats' . $_ccSuffix . '.php';
+$SECTOR_CONTENT  = is_file($_secFile) ? (require $_secFile) : [];
+$WILAYAT_CONTENT = is_file($_wilFile) ? (require $_wilFile) : [];
 
 $baseUrl = 'https://cardify.om';
 $basePrefix = $isAr ? '/ar/companies' : '/companies';
@@ -442,10 +447,12 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                 $wilKey   = $company['wilayat'];
                 $secBlock = $SECTOR_CONTENT[$secKey] ?? null;
                 $wilBlock = $WILAYAT_CONTENT[$wilKey] ?? null;
-                $secLabelEn = labelOf($secKey, $SECTORS, false);
-                $wilLabelEn = labelOf($wilKey, $WILAYATS, false);
-                $sizeTextEn = $company['size_bucket'] === 'large' ? 'large' : 'medium';
-                $displayName = $company['name_en'];
+                $secLabelEn = labelOf($secKey, $SECTORS, $isAr);
+                $wilLabelEn = labelOf($wilKey, $WILAYATS, $isAr);
+                $sizeTextEn = $company['size_bucket'] === 'large'
+                    ? ($isAr ? t('companies.size_large') : 'large')
+                    : ($isAr ? t('companies.size_medium') : 'medium');
+                $displayName = $isAr ? ($company['name_ar'] ?: $company['name_en']) : $company['name_en'];
 
                 // Detect sovereign / ministerial / authority entities. They
                 // are state-sector bodies, none of them "roll out business
@@ -485,11 +492,10 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                 } elseif ($isSovereign) {
                     // Sovereign entity with no curated summary yet, keep it
                     // factual and minimal. No commercial-sector boilerplate.
-                    $aboutParas[] = sprintf(
-                        '%s is a state-sector entity of the Sultanate of Oman, classified under %s in %s governorate.',
-                        $displayName, $secLabelEn, $wilLabelEn
-                    );
-                    $aboutParas[] = 'This page displays the logo as indexed in the Omani Logo Library. The mark remains the property of the Sultanate of Oman and its representing body.';
+                    $aboutParas[] = t('companies.about_sovereign', [
+                        'name' => $displayName, 'sector' => $secLabelEn, 'wilayat' => $wilLabelEn,
+                    ]);
+                    $aboutParas[] = t('companies.about_logo_note');
                 } else {
                     if ($secBlock && !empty($secBlock['what_they_do'])) {
                         $aboutParas[] = str_replace(['{company}', '{name}'], $displayName, $secBlock['what_they_do']);
@@ -498,17 +504,14 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                         $aboutParas[] = $secBlock['team_reality'];
                     }
                     if ($wilBlock && !empty($wilBlock['snapshot'])) {
-                        $aboutParas[] = sprintf(
-                            '%s is based in %s. %s',
-                            $displayName,
-                            $wilLabelEn,
-                            $wilBlock['snapshot']
-                        );
+                        $aboutParas[] = t('companies.about_based_in', [
+                            'name' => $displayName, 'wilayat' => $wilLabelEn,
+                        ]) . ' ' . $wilBlock['snapshot'];
                     }
-                    $aboutParas[] = sprintf(
-                        '%s is listed as a %s enterprise on the MoCIIP public register of the Sultanate of Oman, classified under the %s sector in %s governorate.',
-                        $displayName, $sizeTextEn, $secLabelEn, $wilLabelEn
-                    );
+                    $aboutParas[] = t('companies.about_register_line', [
+                        'name' => $displayName, 'size' => $sizeTextEn,
+                        'sector' => $secLabelEn, 'wilayat' => $wilLabelEn,
+                    ]);
                 }
             ?>
 

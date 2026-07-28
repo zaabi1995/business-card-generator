@@ -122,6 +122,38 @@ foreach ($paths as $p) {
     if ($m['share'] < MIN_ARABIC_SHARE) $fail[] = [$url, $m];
 }
 
+// --- Sampled population: the parameterised /ar/companies/{slug} route ------
+// ArTwins::PATHS holds ~23 literal URLs. The company tree is 2,502 URLs that
+// no literal map can enumerate, and it was exactly this population that served
+// an English body under an Arabic shell (ledger bhd-r6-45). The gate now draws
+// a random sample of it on every run, so the population it guards is the
+// population at risk.
+$sampleN = 12;
+foreach ($argv as $a) {
+    if (strpos($a, '--sample=') === 0) $sampleN = max(0, (int) substr($a, 9));
+}
+if ($sampleN > 0) {
+    require_once __DIR__ . '/../config.php';
+    $db = Database::getInstance();
+    $slugs = $db->fetchAll(
+        "SELECT slug FROM om_companies WHERE slug IS NOT NULL AND slug <> '' ORDER BY RAND() LIMIT ?",
+        [$sampleN]
+    );
+    if (!$slugs) {
+        echo "FAIL: could not sample om_companies, the company tree would go unchecked.\n";
+        exit(1);
+    }
+    foreach ($slugs as $r) {
+        $url = 'https://cardify.om/ar/companies/' . $r['slug'];
+        echo "checking {$url}\n";
+        $html = fetch($url);
+        if ($html === null) { $fail[] = [$url, null]; continue; }
+        $m = arabicShare($html);
+        $rows[] = [$url, $m];
+        if ($m['share'] < MIN_ARABIC_SHARE) $fail[] = [$url, $m];
+    }
+}
+
 echo "\n" . str_pad('URL', 46) . "  share    ar     latin\n";
 foreach ($rows as [$url, $m]) {
     printf("%-46s  %.3f  %6d  %6d%s\n", $url, $m['share'], $m['ar'], $m['la'],
