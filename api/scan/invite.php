@@ -31,6 +31,28 @@ $scanId = (int)($body['scan_id'] ?? 0);
 
 try {
     $db = Database::getInstance();
+
+    // Company-level switch, checked BEFORE the scan is even looked up.
+    //
+    // This endpoint sends an unsolicited WhatsApp to someone who was SCANNED,
+    // from the company's own line, once per person and unrecallable. Whether
+    // that is allowed is the company's policy call, so it is OFF unless an
+    // admin turns it on. LEFT JOIN, because a company with no settings row at
+    // all must read as disabled rather than as missing; the column is NOT NULL
+    // DEFAULT 0, so silence always means no.
+    //
+    // Server-side on purpose: hiding the button in a client is not a control.
+    $gate = $db->fetchOne(
+        "SELECT cs.scan_invite_enabled
+         FROM employees e
+         LEFT JOIN company_settings cs ON cs.company_id = e.company_id
+         WHERE e.id = :e",
+        ['e' => $ctx['employee_id']]
+    );
+    if ((int) ($gate['scan_invite_enabled'] ?? 0) !== 1) {
+        echo json_encode(['success' => false, 'error' => 'invite_disabled']);
+        exit;
+    }
     $row = $db->fetchOne(
         "SELECT s.id AS scan_id, sp.* FROM scans s
          JOIN shadow_profiles sp ON sp.id = s.shadow_profile_id

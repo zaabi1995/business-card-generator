@@ -55,6 +55,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             : 'Error: ' . ($result['error'] ?? 'Unknown error');
         $messageType = $result['success'] ? 'success' : 'error';
 
+    } elseif ($action === 'toggle_scan_invite') {
+        // Per-COMPANY, unlike the settings above it, which are global config.
+        // Governs api/scan/invite.php: one unsolicited WhatsApp to a person who
+        // was scanned, once ever, unrecallable. Off unless deliberately enabled.
+        $on = isset($_POST['scan_invite_enabled']) ? 1 : 0;
+        $cid = getCurrentCompanyId();
+        $res = $cid
+            ? DatabaseAdapter::updateCompanySettings($cid, ['scan_invite_enabled' => $on])
+            : ['success' => false, 'error' => 'No company in session'];
+        $message = !empty($res['success'])
+            ? ($on ? 'Scan invites enabled for this company.' : 'Scan invites disabled.')
+            : 'Error: ' . ($res['error'] ?? 'Unknown error');
+        $messageType = !empty($res['success']) ? 'success' : 'error';
+
     } elseif ($action === 'test') {
         // Get super admin phone from users table
         $adminUser = $db->fetchOne(
@@ -79,6 +93,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $settings = WhatsApp::getSettings();
+// Per-company row backing the Cardify Scan invite switch below. A company
+// with no settings row reads as disabled, matching the server-side gate in
+// api/scan/invite.php.
+$companySettings = [];
+if ($cidForSettings = getCurrentCompanyId()) {
+    $companySettings = $db->fetchOne(
+        "SELECT scan_invite_enabled FROM company_settings WHERE company_id = :cid",
+        ["cid" => $cidForSettings]
+    ) ?: [];
+}
 
 adminHeader('WhatsApp Settings', 'whatsapp');
 ?>
@@ -110,6 +134,40 @@ adminHeader('WhatsApp Settings', 'whatsapp');
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" name="enabled" value="1" <?php echo ($settings['enabled'] ?? false) ? 'checked' : ''; ?>
+                           onchange="this.form.submit()" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                </label>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Scan app: one-time claim invite (PER COMPANY) -->
+<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+    <div class="p-4 border-b border-gray-100">
+        <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+            <i class="fa-light fa-address-card text-gray-400"></i>
+            Cardify Scan, claim invites
+        </h3>
+    </div>
+    <div class="p-4">
+        <form method="POST">
+            <?php echo csrfField(); ?>
+            <input type="hidden" name="action" value="toggle_scan_invite">
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <p class="font-medium text-gray-900">Let employees WhatsApp a scanned contact</p>
+                    <p class="text-sm text-gray-500">
+                        When an employee scans someone's card, they can send that person
+                        <strong>one</strong> WhatsApp inviting them to claim a free Cardify card.
+                        One message per person, ever. It cannot be recalled, it goes to someone
+                        who did not ask to hear from you, and it is sent from your company's
+                        number. Off by default.
+                    </p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input type="checkbox" name="scan_invite_enabled" value="1"
+                           <?php echo !empty($companySettings['scan_invite_enabled']) ? 'checked' : ''; ?>
                            onchange="this.form.submit()" class="sr-only peer">
                     <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                 </label>

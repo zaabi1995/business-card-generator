@@ -353,6 +353,7 @@ class DatabaseAdapter {
         $allowed = [
             'printer_enabled', 'printer_name', 'printer_api', 'printer_api_key',
             'whatsapp_enabled', 'whatsapp_token', 'notify_on_employee_edit',
+            'scan_invite_enabled',
             'odoo_enabled', 'odoo_url', 'odoo_database', 'odoo_username', 'odoo_password',
         ];
         $clean = [];
