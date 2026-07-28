@@ -47,11 +47,28 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Bearer-token gate keeps this from being an open cardify.om scraper; only
-// the authenticated Scan mobile app may resolve card URLs.
-$ctx = ScanAuth::requireEmployeeMutation();
+// Auth is OPTIONAL here, deliberately.
+//
+// This used to require a bearer token, described as keeping the endpoint from
+// being an open cardify.om scraper. It never did that: every field it returns
+// is already served, unauthenticated, as HTML at the very URL being resolved,
+// so a scraper simply fetches the page. What the gate actually blocked was the
+// product's most important moment, a person who was sent a colleague's card,
+// tapped it, and landed in the app with no account. They were shown a sign-in
+// wall for a page anyone can read in a browser.
+//
+// So: a signed-in app gets the generous per-account budget as before, and an
+// anonymous caller gets a much tighter IP-keyed one. The rate limiter already
+// keys on (action, account_id or 'anon', client IP), and getClientIp is
+// CF-gated, so a spoofed IP cannot multiply the anonymous budget.
 require_once __DIR__ . '/_ratelimit.php';
-scanRateLimit($ctx, 'resolve', 240);
+$ctx = [];
+if (ScanAuth::presentedBearerTokenHash() !== null) {
+    $ctx = ScanAuth::requireEmployeeMutation();
+    scanRateLimit($ctx, 'resolve', 240);
+} else {
+    scanRateLimit($ctx, 'resolve_anon', 40);
+}
 
 $body = json_decode(file_get_contents('php://input'), true) ?: [];
 $rawUrl = trim((string) ($body['url'] ?? ''));

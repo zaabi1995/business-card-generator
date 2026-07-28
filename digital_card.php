@@ -1029,7 +1029,8 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
            iOS app already zeroes it for Arabic in components/ui/Text.tsx; the
            web never applied the same rule to these headers. */
         html[lang="ar"] .card-section h3, html[dir="rtl"] .card-section h3,
-        html[lang="ar"] .offer-badge, html[dir="rtl"] .offer-badge { letter-spacing: 0; }
+        html[lang="ar"] .offer-badge, html[dir="rtl"] .offer-badge,
+        html[lang="ar"] .viral-link, html[dir="rtl"] .viral-link { letter-spacing: 0; }
         .card-section h3 { font-size: 13px; letter-spacing: 0.6px; text-transform: uppercase; font-weight: 700; margin-bottom: 12px; color: <?php echo htmlspecialchars($accentColor); ?>; }
         .section-bio { font-size: 14px; line-height: 1.6; <?php echo $isDarkPage ? 'color:#ccc;' : 'color:#333;'; ?> }
         .service-row { display: flex; gap: 12px; padding: 10px 0; <?php echo $isDarkPage ? 'border-bottom: 1px solid rgba(255,255,255,0.06);' : 'border-bottom: 1px solid #f0f0f0;'; ?> }
@@ -1162,12 +1163,14 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             text-decoration: none;
             padding: 2px 8px;
             border-radius: 999px;
-            /* The pill background is rgba(0,0,0,.06) and does NOT follow the
-               page theme, so it stays light in dark mode. #bbb on it measured
-               1.56:1, leaving the INACTIVE language (the one you tap to switch)
-               unreadable. The surface is light in both modes, so the ink is
-               too: 6.08:1. */
-            color: #555;
+            /* Theme-aware, and it must stay that way. A previous pass hardcoded
+               this to #555 on a report that the pill "stays light in dark mode".
+               It does not: the pill is rgba(0,0,0,.06) over the BODY gradient,
+               so in dark mode it composites to rgb(24,24,43). Measured both ways:
+               #555 on that = 2.33:1 (fail), #bbb = 9.04:1. In light mode the pill
+               is rgb(221,223,226): #555 = 5.57:1, #bbb = 1.43:1 (fail). Each ink
+               is correct for exactly one theme, so the ternary is the fix. */
+            color: <?php echo $isDarkPage ? '#bbb' : '#555'; ?>;
             transition: background 0.15s var(--ease-out), color 0.15s var(--ease-out);
         }
         .lang-switcher a.active {
@@ -1218,7 +1221,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             display: inline-flex;
             align-items: center;
             gap: 7px;
-            min-height: 40px;
+            min-height: 44px;
             padding: 9px 16px;
             font-size: 12.5px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1256,7 +1259,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         }
         @media (max-width: 420px) {
             .cardify-viral-footer { padding: 6px 12px 4px; }
-            .cardify-viral-footer .viral-link { font-size: 12px; width: 100%; justify-content: center; min-height: 40px; }
+            .cardify-viral-footer .viral-link { font-size: 12px; width: 100%; justify-content: center; min-height: 44px; }
         }
 
         /* Noto Sans Arabic has much taller line-leading than the Latin stack, so
