@@ -80,7 +80,8 @@ return [
     // Resources section (action 516)
     'res_kicker'         => 'Free for everyone',
     'res_headline'       => 'Free tools, business directory, and logo library',
-    'res_subhead'        => 'Generate vCard QRs and email signatures, browse 2,500+ Omani enterprises in the public directory, and download official logos as SVG or PNG. All free, no sign-up.',
+    'res_subhead'        => 'Generate vCard QRs and email signatures, browse :companies Omani enterprises in the public directory, and download official logos as SVG or PNG. All free, no sign-up.',
+    'res_subhead_nc'     => 'Generate vCard QRs and email signatures, browse Omani enterprises in the public directory, and download official logos as SVG or PNG. All free, no sign-up.',
     'res_tools_title'    => 'Free tools',
     'res_tools_sub'      => 'Generate what you need in seconds, no sign-up required.',
     'res_tools_cta'      => 'Browse all free tools',
@@ -106,7 +107,8 @@ return [
 
     // Logo Library card (Apr 2026 SEO push)
     'res_logos_title'    => 'Omani Logo Library',
-    'res_logos_sub'      => 'Download official logos of 2,500+ Omani companies as SVG, PNG or WebP. Free for editorial, design, and presentation use.',
+    'res_logos_sub'      => 'Download official logos of :logos Omani companies as SVG, PNG or WebP. Free for editorial, design, and presentation use.',
+    'res_logos_sub_nc'   => 'Download official Omani company logos as SVG, PNG or WebP. Free for editorial, design, and presentation use.',
     'res_logos_cta'      => 'Browse the logo library',
     'res_logos_pin1'     => 'BHD Group',
     'res_logos_pin2'     => 'Bank Muscat',

@@ -51,7 +51,19 @@ if (file_exists(__DIR__ . '/includes/TenantHost.php')) {
         if ($reqPath === '/login' || $reqPath === '/login/') {
             require __DIR__ . '/tenant_login.php';
         } else {
-            // Default: employee request portal
+            // Default: employee request portal. A bare single-token path that
+            // is NOT the canonical "/" or "/portal" reaches here only as a
+            // soft-404 fallback (mistyped/old card link, scanner probing
+            // /wp-admin, etc.). The portal still renders so a real visitor can
+            // request a card, but tell search engines NOT to index these
+            // arbitrary URLs, else Google indexes infinite junk paths per
+            // tenant as soft-404s. (BHD loop audit iter 13, 3 Jun 2026.)
+            $canonicalPortal = ($reqPath === '/' || $reqPath === ''
+                || $reqPath === '/portal' || $reqPath === '/portal/'
+                || preg_match('~^/portal/[a-z0-9-]+/?$~i', $reqPath));
+            if (!$canonicalPortal && !headers_sent()) {
+                header('X-Robots-Tag: noindex, nofollow', true);
+            }
             require __DIR__ . '/portal.php';
         }
         exit;
@@ -174,7 +186,16 @@ $brandName = 'Cardify';
 $tagline = 'Business Cards Made Simple';
 $pageTitle = 'Cardify, Digital & Printed Business Cards for the GCC';
 $pageDescription = 'Bilingual Arabic/English digital and printed business cards for teams across the Gulf: Oman (live), Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait (rolling out 2026). QR vCard save, Apple Wallet, NFC, bulk provisioning. Free to start.';
-$canonicalUrl = 'https://cardify.om/';
+// Self-canonicalize per locale (the AR home previously canonicalized to the EN
+// home, so Google never indexed it) + emit a full bilingual hreflang set
+// (ui-header's default only advertises en + x-default, never ar).
+$canonicalUrl = (function_exists('currentLocale') && currentLocale() === 'ar')
+    ? 'https://cardify.om/ar/'
+    : 'https://cardify.om/';
+$suppressDefaultHreflang = true;
+$homeHreflang = '<link rel="alternate" hreflang="en" href="https://cardify.om/">'
+              . '<link rel="alternate" hreflang="ar" href="https://cardify.om/ar/">'
+              . '<link rel="alternate" hreflang="x-default" href="https://cardify.om/">';
 $bodyClass = 'bg-white';
 
 // Homepage pricing: compute display strings in the visitor's currency once,
@@ -236,7 +257,7 @@ $siteLd = [
 ];
 $homeJsonLd = '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES) . '</script>';
 
-$extraHead = $homeJsonLd . '<style>
+$extraHead = $homeHreflang . $homeJsonLd . '<style>
     .hero-gradient { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #fffbeb 100%); }
     .card-shadow { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); }
     .float-animation { animation: float 6s ease-in-out infinite; }
@@ -828,6 +849,28 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <?php endif; ?>
 
     <!-- ========== FREE TOOLS & DIRECTORIES (SEO HUB) ========== -->
+    <?php
+        // r6-51: published counts are derived at render time, never hardcoded.
+        // The directory count and the logo count are DIFFERENT populations:
+        // om_companies rows vs rows whose logo_status is indexed/verified.
+        // If either query fails we drop the number from the sentence rather than ship a stale one.
+        $resCompaniesCount = null;
+        $resLogosCount = null;
+        try {
+            if (isset($db) && $db->isConnected()) {
+                $r = $db->fetchOne("SELECT COUNT(*) c FROM om_companies");
+                if ($r && isset($r['c'])) $resCompaniesCount = (int) $r['c'];
+                $r = $db->fetchOne("SELECT COUNT(*) c FROM om_companies WHERE logo_status IN ('indexed','verified')");
+                if ($r && isset($r['c'])) $resLogosCount = (int) $r['c'];
+            }
+        } catch (Throwable $e) { /* leave both null: render the count-free copy */ }
+        $resSubhead = $resCompaniesCount !== null
+            ? t('landing.res_subhead', ['companies' => number_format($resCompaniesCount)])
+            : t('landing.res_subhead_nc');
+        $resLogosSub = $resLogosCount !== null
+            ? t('landing.res_logos_sub', ['logos' => number_format($resLogosCount)])
+            : t('landing.res_logos_sub_nc');
+    ?>
     <section id="resources" class="py-16 lg:py-24 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12">
@@ -836,7 +879,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <?= htmlspecialchars(t('landing.res_headline')) ?>
                 </h2>
                 <p class="text-lg text-gray-600 max-w-3xl mx-auto">
-                    <?= htmlspecialchars(t('landing.res_subhead')) ?>
+                    <?= htmlspecialchars($resSubhead) ?>
                 </p>
             </div>
 
@@ -911,15 +954,15 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         </div>
                         <h3 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('landing.res_logos_title')) ?></h3>
                     </div>
-                    <p class="text-gray-600 mb-6"><?= htmlspecialchars(t('landing.res_logos_sub')) ?></p>
+                    <p class="text-gray-600 mb-6"><?= htmlspecialchars($resLogosSub) ?></p>
                     <div class="grid grid-cols-2 gap-2 mb-6">
                         <?php foreach ([
                             ['k' => 'pin1', 'href' => '/companies/bhd-group'],
                             ['k' => 'pin2', 'href' => '/companies/bank-muscat'],
                             ['k' => 'pin3', 'href' => '/companies/oq'],
-                            ['k' => 'pin4', 'href' => '/companies/asyad'],
-                            ['k' => 'pin5', 'href' => '/companies/omantel'],
-                            ['k' => 'pin6', 'href' => '/companies/ooredoo-oman'],
+                            ['k' => 'pin4', 'href' => '/companies/asyad-group'],
+                            ['k' => 'pin5', 'href' => '/companies/oman-telecommunication'],
+                            ['k' => 'pin6', 'href' => '/companies/ooredoo-01-0d1b'],
                             ['k' => 'pin7', 'href' => '/companies/bank-dhofar'],
                             ['k' => 'pin8', 'href' => '/companies/sohar-international-bank'],
                         ] as $pin): ?>
