@@ -1163,16 +1163,19 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             text-decoration: none;
             padding: 2px 8px;
             border-radius: 999px;
-            /* Theme-aware, and it must stay that way. A previous pass hardcoded
-               this to #555 on a report that the pill "stays light in dark mode".
-               It does not: the pill is rgba(0,0,0,.06) over the BODY gradient,
-               so in dark mode it composites to rgb(24,24,43). Measured both ways:
-               #555 on that = 2.33:1 (fail), #bbb = 9.04:1. In light mode the pill
-               is rgb(221,223,226): #555 = 5.57:1, #bbb = 1.43:1 (fail). Each ink
-               is correct for exactly one theme, so the ternary is the fix. */
-            color: <?php echo $isDarkPage ? '#bbb' : '#555'; ?>;
+            /* Driven by the BODY CLASS below, not by PHP. The theme toggle swaps
+               body.force-light/force-dark client-side WITHOUT reloading, so a
+               colour baked in from $isDarkPage goes stale the moment the user
+               taps it. Measured: the pill is rgba(0,0,0,.06) over the body
+               gradient, so it composites to rgb(24,24,43) dark / rgb(221,223,226)
+               light. #555 = 2.33:1 dark but 5.57:1 light; #bbb = 9.04:1 dark but
+               1.43:1 light. Each ink is right for exactly one theme, and only a
+               class-driven rule tracks a client-side toggle. */
+            color: #555;
             transition: background 0.15s var(--ease-out), color 0.15s var(--ease-out);
         }
+        body.force-light .lang-switcher a { color: #555; }
+        body.force-dark  .lang-switcher a { color: #bbb; }
         .lang-switcher a.active {
             background: <?php echo $isDarkPage ? '#fff' : '#1a1a2e'; ?>;
             color: <?php echo $isDarkPage ? '#1a1a2e' : '#fff'; ?>;
