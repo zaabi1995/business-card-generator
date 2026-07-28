@@ -13,6 +13,24 @@
 set -euo pipefail
 cd /www/wwwroot/cardify.om
 
+# --- Pre-flight 0: the working tree must be clean BEFORE anything runs ---
+# On 28 Jul 2026 fifteen live SEO fixes existed ONLY as uncommitted edits in
+# this directory. `git pull --ff-only` below aborts on them, and every failure
+# path in this script rolls back with `git reset --hard`, which deletes them
+# silently. A fix that lives only on the box is one bad deploy from gone.
+# `git status --porcelain` reports all four shapes of dirty: unstaged edits,
+# staged changes, deletions, and untracked non-ignored files.
+dirty=$(git status --porcelain)
+if [ -n "$dirty" ]; then
+  echo "Pre-flight: the working tree is dirty. Refusing to deploy."
+  echo "$dirty"
+  echo
+  echo "These changes exist nowhere else. Commit and push them, or discard"
+  echo "them deliberately, before deploying. Do not stash and forget."
+  exit 6
+fi
+echo "Pre-flight OK (working tree clean)"
+
 BEFORE=$(git rev-parse HEAD)
 git pull --ff-only origin main
 AFTER=$(git rev-parse HEAD)
