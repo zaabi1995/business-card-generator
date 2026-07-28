@@ -104,16 +104,19 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <?php if (!empty($canonicalUrl)): ?>
     <link rel="canonical" href="<?php echo htmlspecialchars($canonicalUrl); ?>">
     <?php
-    // Default hreflang: every EN canonical page advertises itself as the
-    // English and default-language version so Google won't treat it as a
-    // country-silo. Pages that ship a real Arabic variant override this by
-    // emitting full hreflang inside $extraHead (and should use $suppressDefaultHreflang=true
-    // to avoid a duplicate self-referential en tag).
+    // hreflang comes from the ArTwins map, never from $canonicalUrl itself.
+    // Self-referencing was the bug: on /ar/pricing this block emitted
+    // hreflang="en" AND x-default pointing at the Arabic URL, i.e. it told
+    // Google the Arabic page was the English one, while /pricing never named
+    // /ar/pricing at all, so the pair had no return tag in either direction.
+    // Both twins now emit the identical set. Pages that build their own full
+    // hreflang in $extraHead still opt out with $suppressDefaultHreflang.
     if (empty($suppressDefaultHreflang)):
+        require_once __DIR__ . '/ArTwins.php';
+        foreach (ArTwins::tags($canonicalUrl) as [$hrefLang, $hrefUrl]):
     ?>
-    <link rel="alternate" hreflang="en" href="<?php echo htmlspecialchars($canonicalUrl); ?>">
-    <link rel="alternate" hreflang="x-default" href="<?php echo htmlspecialchars($canonicalUrl); ?>">
-    <?php endif; ?>
+    <link rel="alternate" hreflang="<?php echo htmlspecialchars($hrefLang); ?>" href="<?php echo htmlspecialchars($hrefUrl); ?>">
+    <?php endforeach; endif; ?>
     <?php endif; ?>
     <?php if (defined('GOOGLE_SITE_VERIFICATION') && GOOGLE_SITE_VERIFICATION): ?>
     <meta name="google-site-verification" content="<?= GOOGLE_SITE_VERIFICATION ?>">

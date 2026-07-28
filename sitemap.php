@@ -25,16 +25,48 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
  */
 function smX($s) { return htmlspecialchars((string) $s, ENT_XML1 | ENT_QUOTES, 'UTF-8'); }
 
+require_once __DIR__ . '/includes/ArTwins.php';
+
 /**
  * Render a single <url> entry.
+ *
+ * When the path is in the ArTwins map BOTH twins are emitted, each carrying
+ * the same xhtml:link alternate set as the page head. A caller therefore
+ * cannot list one side and forget the other, which is how /pricing shipped
+ * with no /ar/pricing entry while /ar/oman-business-index was hand-listed on
+ * its own line, and the sitemap can no longer contradict the tags.
+ *
+ * Repeat <loc>s are dropped: the directory section already calls this once
+ * per twin, and a duplicated <loc> inside one urlset is an invalid sitemap.
  */
 function smUrl($loc, $lastmod, $changefreq = 'monthly', $priority = '0.5') {
-    echo "    <url>\n";
-    echo "        <loc>" . smX($loc) . "</loc>\n";
-    echo "        <lastmod>{$lastmod}</lastmod>\n";
-    echo "        <changefreq>{$changefreq}</changefreq>\n";
-    echo "        <priority>{$priority}</priority>\n";
-    echo "    </url>\n";
+    static $seen = [];
+
+    $emit = function ($url) use ($lastmod, $changefreq, $priority, &$seen) {
+        if (isset($seen[$url])) return;
+        $seen[$url] = true;
+        $twinEn = ArTwins::en($url);
+        $twinAr = ArTwins::ar($url);
+        echo "    <url>\n";
+        echo "        <loc>" . smX($url) . "</loc>\n";
+        echo "        <lastmod>{$lastmod}</lastmod>\n";
+        echo "        <changefreq>{$changefreq}</changefreq>\n";
+        echo "        <priority>{$priority}</priority>\n";
+        if ($twinAr !== null) {
+            echo "        <xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"" . smX($twinEn) . "\" />\n";
+            echo "        <xhtml:link rel=\"alternate\" hreflang=\"ar\" href=\"" . smX($twinAr) . "\" />\n";
+            echo "        <xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"" . smX($twinEn) . "\" />\n";
+        }
+        echo "    </url>\n";
+    };
+
+    $twin = ArTwins::ar($loc);
+    if ($twin !== null) {
+        $emit(ArTwins::en($loc));
+        $emit($twin);
+        return;
+    }
+    $emit($loc);
 }
 
 /**
@@ -111,6 +143,7 @@ if ($part === 'static') {
         ['/security',     'yearly',  '0.4'],
         ['/cookies',      'yearly',  '0.4'],
         ['/print-shops',  'weekly',  '0.8'],
+        ['/app',          'monthly', '0.8'],
         ['/industries',              'monthly', '0.85'],
         ['/press-kit',               'monthly', '0.85'],
         ['/gcc/saudi-arabia',        'monthly', '0.9'],
@@ -177,8 +210,8 @@ if ($part === 'static') {
     // Flagship + directory hubs (indexes, sector hubs, wilayat hubs), NOT individual companies.
     smUrl("{$baseUrl}/oman-business-index",    $today, 'monthly', '0.9');
     smUrl("{$baseUrl}/ar/oman-business-index", $today, 'monthly', '0.8');
+    // Both twins (EN + AR) come out of smUrl automatically via the ArTwins map.
     smUrl("{$baseUrl}/gcc-business-index",     $today, 'weekly',  '0.95');
-    // /ar/gcc-business-index not yet published, English-only flagship for now.
     smUrl("{$baseUrl}/companies",              $today, 'weekly',  '0.9');
     smUrl("{$baseUrl}/ar/companies",           $today, 'weekly',  '0.8');
 

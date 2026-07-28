@@ -22,19 +22,21 @@ class Seo
     public const BRAND = 'Cardify';
     public const PUBLISHER_LOGO = 'https://cardify.om/assets/images/logo.svg';
 
-    /** Emit hreflang + canonical tags for a path that exists in both /path (EN) and /ar/path (AR). */
+    /**
+     * Emit canonical + hreflang for a path. Alternates come from the ArTwins
+     * map rather than from concatenating '/ar' onto the path: the old version
+     * asserted an Arabic twin for EVERY caller, including paths whose /ar/ URL
+     * 404s, which is an hreflang aimed at nothing.
+     */
     public static function hreflang(string $path): void
     {
-        $path = '/' . ltrim($path, '/');
-        $en = self::SITE . ($path === '/' ? '/' : $path);
-        // /ar/foo for non-root; /ar/ for root.
-        $ar = self::SITE . '/ar' . ($path === '/' ? '/' : $path);
+        require_once __DIR__ . '/ArTwins.php';
         $current = (($_SERVER['REQUEST_SCHEME'] ?? 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? 'cardify.om') . ($_SERVER['REQUEST_URI'] ?? $path));
 
         echo '<link rel="canonical" href="' . htmlspecialchars($current, ENT_QUOTES) . "\">\n";
-        echo '<link rel="alternate" hreflang="en" href="' . htmlspecialchars($en, ENT_QUOTES) . "\">\n";
-        echo '<link rel="alternate" hreflang="ar" href="' . htmlspecialchars($ar, ENT_QUOTES) . "\">\n";
-        echo '<link rel="alternate" hreflang="x-default" href="' . htmlspecialchars($en, ENT_QUOTES) . "\">\n";
+        foreach (ArTwins::tags($path) as [$hrefLang, $hrefUrl]) {
+            echo '<link rel="alternate" hreflang="' . $hrefLang . '" href="' . htmlspecialchars($hrefUrl, ENT_QUOTES) . "\">\n";
+        }
     }
 
     /** Publisher/brand once per page. */
