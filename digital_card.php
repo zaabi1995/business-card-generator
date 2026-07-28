@@ -1163,14 +1163,16 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             text-decoration: none;
             padding: 2px 8px;
             border-radius: 999px;
-            /* Driven by the BODY CLASS below, not by PHP. The theme toggle swaps
-               body.force-light/force-dark client-side WITHOUT reloading, so a
-               colour baked in from $isDarkPage goes stale the moment the user
-               taps it. Measured: the pill is rgba(0,0,0,.06) over the body
-               gradient, so it composites to rgb(24,24,43) dark / rgb(221,223,226)
-               light. #555 = 2.33:1 dark but 5.57:1 light; #bbb = 9.04:1 dark but
-               1.43:1 light. Each ink is right for exactly one theme, and only a
-               class-driven rule tracks a client-side toggle. */
+            /* Class-driven, which also covers the optimistic pre-reload frame.
+               CORRECTION to an earlier comment here: the theme toggle DOES
+               reload (see the handler near the end of this file), so a
+               $isDarkPage-baked colour is NOT left stale; the class swap is
+               only for instant feedback while the reload lands. The pair below
+               is still the better form because it is also right during that
+               frame. Measured: the pill is rgba(0,0,0,.06) over the body
+               gradient, compositing to rgb(24,24,43) dark / rgb(221,223,226)
+               light. #555 = 5.57:1 light but 2.33:1 dark; #bbb = 9.04:1 dark but
+               1.43:1 light. Each ink is right for exactly one theme. */
             color: #555;
             transition: background 0.15s var(--ease-out), color 0.15s var(--ease-out);
         }
