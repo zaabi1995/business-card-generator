@@ -22,7 +22,7 @@ $canonicalUrl    = 'https://cardify.om/press-kit';
 $showNavigation  = true;
 
 $db = Database::getInstance();
-$companiesCount = 2414;
+$companiesCount = 0;   // real value comes from the query below; never hardcode a public stat
 $logosCount     = 79;
 try {
     $r = $db->fetchOne("SELECT COUNT(*) c FROM om_companies");

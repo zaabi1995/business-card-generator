@@ -72,7 +72,7 @@ function obiEscq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8')
 
 // --- Live aggregate stats (safe fallbacks if DB is unreachable) ---
 $stats = [
-    'total'          => 2414,
+    'total'          => (int) (Database::getInstance()->fetchOne("SELECT COUNT(*) c FROM om_companies")['c'] ?? 0),
     'large_count'    => 0,
     'medium_count'   => 0,
     'sector_count'   => count($SECTORS),

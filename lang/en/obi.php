@@ -1,7 +1,7 @@
 <?php
 return [
     // Meta
-    'page_title' => 'Oman Business Index 2026: 2,414 Largest Enterprises | Cardify',
+    'page_title' => 'Oman Business Index 2026: 2,500+ Largest Enterprises | Cardify',
     'page_desc'  => 'Free public directory of the :count largest & medium enterprises in Oman, classified by sector and governorate, sourced from MoCIIP.',
 
     // Hero

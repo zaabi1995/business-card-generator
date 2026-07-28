@@ -28,7 +28,7 @@ return [
     'col_directory'    => 'Directory & data',
     'link_gcc_index'   => 'GCC Business Index',
     'link_oman_index'  => 'Oman Business Index',
-    'link_browse_companies' => 'Browse 2,414 companies',
+    'link_browse_companies' => 'Browse 2,500+ companies',
     'link_logos'       => 'Omani Logo Library',
     'link_solutions'   => 'All solutions',
 

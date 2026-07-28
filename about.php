@@ -4,6 +4,13 @@
  */
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/PlatformStats.php';
+
+// Real, DB-derived figures. Until 28 Jul 2026 these four tiles were
+// hardcoded marketing round-numbers that overstated the truth by up to
+// two orders of magnitude, and they had been indexed. Never hardcode a
+// public number on this page again: read it from the database.
+$stats = PlatformStats::all();
 
 $brandName = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 $pageTitle = t('about.page_title');
@@ -47,20 +54,20 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="bg-gradient-to-br from-blue-100 to-blue-50 rounded-2xl p-8">
                     <div class="grid grid-cols-2 gap-6 text-center">
                         <div class="bg-white rounded-xl p-6 shadow-sm">
-                            <div class="text-3xl font-bold text-blue-600 mb-2">10K+</div>
-                            <div class="text-gray-500 text-sm"><?= htmlspecialchars(t('about.stats_users')) ?></div>
+                            <div class="text-3xl font-bold text-blue-600 mb-2"><?= number_format($stats['directory']) ?></div>
+                            <div class="text-gray-500 text-sm"><?= htmlspecialchars(t('about.stats_directory')) ?></div>
                         </div>
                         <div class="bg-white rounded-xl p-6 shadow-sm">
-                            <div class="text-3xl font-bold text-blue-600 mb-2">500+</div>
+                            <div class="text-3xl font-bold text-blue-600 mb-2"><?= number_format($stats['companies']) ?></div>
                             <div class="text-gray-500 text-sm"><?= htmlspecialchars(t('about.stats_companies')) ?></div>
                         </div>
                         <div class="bg-white rounded-xl p-6 shadow-sm">
-                            <div class="text-3xl font-bold text-blue-600 mb-2">50K+</div>
+                            <div class="text-3xl font-bold text-blue-600 mb-2"><?= number_format($stats['cards']) ?></div>
                             <div class="text-gray-500 text-sm"><?= htmlspecialchars(t('about.stats_cards')) ?></div>
                         </div>
                         <div class="bg-white rounded-xl p-6 shadow-sm">
-                            <div class="text-3xl font-bold text-blue-600 mb-2">99.9%</div>
-                            <div class="text-gray-500 text-sm"><?= htmlspecialchars(t('about.stats_uptime')) ?></div>
+                            <div class="text-3xl font-bold text-blue-600 mb-2"><?= number_format($stats['events']) ?></div>
+                            <div class="text-gray-500 text-sm"><?= htmlspecialchars(t('about.stats_scans')) ?></div>
                         </div>
                     </div>
                 </div>

@@ -114,3 +114,7 @@ convex/node_modules/
 
 # runtime-generated OG images
 storage/og/
+
+# Local pitch-video masters (33MB, referenced by nothing on the site).
+# They live on the box only so the deploy clean-tree assert stays green.
+promo/cardify-yc-demo*.mp4

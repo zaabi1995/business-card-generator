@@ -1,0 +1,61 @@
+# Cardify
+
+> Cardify is a digital and printed business-card platform built and hosted in
+> Muscat, Oman by BHD Group (Bin Haider Darwish L.L.C., CR 1334733). It is
+> bilingual Arabic and English, and it is the only platform where the card you
+> print, the card you share and the card you scan are one system: the
+> international digital-card products do not print, and the international
+> scanner apps do not issue cards.
+
+## What Cardify does
+
+- Digital business cards on a company subdomain, with QR vCard, Apple Wallet and Google Wallet passes, and NFC
+- Printed business cards produced by BHD Printing & Designing, the group's own ISO 9001:2015 certified press in Muscat
+- A free iOS card scanner that reads Arabic and English cards entirely on the device
+- Company admin for teams: employee cards, brand lock, per-division templates, print ordering
+- Card analytics: views, QR scans, saves
+
+## The Oman Business Index
+
+Cardify maintains an open directory of more than 2,500 Omani companies and their logos,
+used to pre-fill company details when a card is created. It is, as far as we
+know, the largest structured public index of Omani company identities.
+
+## The scanner
+
+Cardify: Business Card Scanner, free on the iOS App Store, released 26 July
+2026, iOS 16.4 or later, Arabic and English.
+
+Parsing runs in three stages, all on the device: QR code first, then Apple
+Intelligence on-device models, then Vision text recognition with Arabic and
+English enabled. A scanned card is never uploaded to a server.
+
+https://apps.apple.com/om/app/cardify-business-card-scanner/id6790749589
+
+## Pricing
+
+- The digital platform is free to use.
+- Printed cards: Standard OMR 6.000 per 100, Premium OMR 8.000 per 100, Luxury OMR 15.000 per 100.
+- NFC cards: OMR 25.000 per card.
+
+## Scale
+
+Live counts are published on https://cardify.om/about and are read from the
+platform database on each page load. They are deliberately not restated here:
+a static file cannot track a moving counter, and a stale number in an
+AI-readable file is worse than no number at all.
+
+## Facts
+
+- Operated by: BHD Group (Bin Haider Darwish L.L.C.)
+- Commercial Registration: 1334733
+- Location: HM Tower, Ground Floor, Bousher, Muscat, Oman
+- Languages: Arabic, English
+- Platforms: Web, iOS
+
+## Links
+
+- [Cardify](https://cardify.om/)
+- [Pricing](https://cardify.om/pricing)
+- [About](https://cardify.om/about)
+- [BHD Group, the parent company](https://bhd.om/cardify/)

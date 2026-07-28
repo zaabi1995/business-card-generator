@@ -105,7 +105,7 @@ return [
     'res_tool_nfc_title'   => 'NFC business card guide',
     'res_tool_nfc_sub'     => 'How tap-to-share works, step by step',
     'res_obi_title'      => 'Oman Business Index',
-    'res_obi_sub'        => 'Free public directory of the 2,414 largest enterprises in Oman, sourced from MoCIIP.',
+    'res_obi_sub'        => 'Free public directory of the 2,500+ largest enterprises in Oman, sourced from MoCIIP.',
     'res_obi_oil_gas'    => 'Oil & gas',
     'res_obi_construction' => 'Construction',
     'res_obi_finance'    => 'Finance & banking',

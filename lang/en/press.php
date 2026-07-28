@@ -33,7 +33,7 @@ return [
     'datasets_intro'      => "Everything below is public, free, and built to be referenced. CC-BY 4.0 where marked; nominative fair use for individual trademarks in the logo library.",
 
     'ds_oman_title'       => 'Oman Business Index',
-    'ds_oman_sub'         => '2,414 companies, sector + wilayat + CR metadata. English and Arabic.',
+    'ds_oman_sub'         => '2,500+ companies, sector + wilayat + CR metadata. English and Arabic.',
     'ds_cc'               => 'CC-BY 4.0',
     'ds_fairuse'          => 'Fair use per entry',
     'btn_view_page'       => 'View page',

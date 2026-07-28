@@ -1,7 +1,7 @@
 <?php
 return [
     'page_title'      => "About Cardify, Oman's Business Card Platform",
-    'page_desc'       => 'Cardify helps Omani businesses create stunning digital and printed business cards. Serving 500+ companies across the Sultanate of Oman.',
+    'page_desc'       => 'Cardify helps Omani businesses create stunning digital and printed business cards. Trusted by companies across the Sultanate of Oman.',
     'hero_h1'         => 'About :brand',
     'hero_sub'        => 'Transforming the way professionals connect through modern digital business cards.',
 
@@ -11,6 +11,8 @@ return [
     'story_p2'        => 'We set out to create a platform that makes sharing professional information seamless, sustainable, and always up-to-date. What began as a solution for our own team has grown into a comprehensive platform used by thousands of professionals.',
     'story_p3'        => 'Based in Muscat, Oman, we combine local business understanding with modern technology to deliver a product that truly serves professionals.',
 
+    'stats_directory' => 'Omani companies indexed',
+    'stats_scans'     => 'Card views & scans',
     'stats_users'     => 'Active users',
     'stats_companies' => 'Companies',
     'stats_cards'     => 'Cards created',

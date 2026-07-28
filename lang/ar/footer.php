@@ -28,7 +28,7 @@ return [
     'col_directory'    => 'الأدلّة والبيانات',
     'link_gcc_index'   => 'مؤشّر أعمال الخليج',
     'link_oman_index'  => 'مؤشّر الأعمال العُماني',
-    'link_browse_companies' => 'تصفّح 2,414 شركة',
+    'link_browse_companies' => 'تصفّح 2,500+ شركة',
     'link_logos'       => 'مكتبة الشعارات العُمانية',
     'link_solutions'   => 'جميع الحلول',
 
