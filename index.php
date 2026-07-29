@@ -1182,9 +1182,16 @@ HTML;
 {
   "@context": "https://schema.org",
   "@type": "Organization",
+  "@id": "https://cardify.om/#organization",
   "name": "Cardify",
   "alternateName": ["Cardify Oman", "Cardify GCC"],
   "url": "https://cardify.om",
+  "parentOrganization": { "@id": "https://bhd.om/#organization" },
+  "identifier": [
+    { "@type": "PropertyValue", "name": "Commercial Registration", "value": "1334733" },
+    { "@type": "PropertyValue", "name": "VAT Identification Number", "value": "OM1100019343" }
+  ],
+  "vatID": "OM1100019343",
   "logo": "https://cardify.om/assets/images/logo.svg",
   "description": "Business-identity platform for the Gulf: digital and printed business cards, public logo libraries, and the GCC Business Index. Built in Oman, expanding across Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait through 2026.",
   "address": {
@@ -1319,7 +1326,7 @@ HTML;
   "name": "Cardify Business Card Platform",
   "image": "https://cardify.om/assets/images/cardify-og.png",
   "description": "SaaS for creating, managing, and printing branded digital + printed business cards for teams in Oman.",
-  "brand": { "@type": "Brand", "name": "Cardify" },
+  "brand": { "@type": "Brand", "name": "Cardify", "@id": "https://cardify.om/#brand" },
   "offers": {
     "@type": "AggregateOffer",
     "priceCurrency": "OMR",

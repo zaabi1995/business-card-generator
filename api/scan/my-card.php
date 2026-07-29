@@ -202,9 +202,39 @@ try {
         // previously baked PNG until someone re-opened the web editor. Employees
         // with an app preset escaped it only because applyForEmployee re-renders
         // as a side effect.
+        // ONLY when something will actually re-bake afterwards.
+        //
+        // invalidateForEmployee NULLs generated_cards.*_path. It does not delete
+        // the PNG and it does not re-render. digital_card.php reads those columns
+        // directly and gates the whole card block on `if ($frontImage)`, so a
+        // NULLed row does not show a STALE card, it shows NO card. For a classic
+        // Fabric-designed employee nothing can re-bake server-side, so invalidating
+        // them turns a slightly-out-of-date image into a blank one, which is worse
+        // than the problem it was meant to fix. Measured: only 7 of 45 active
+        // template companies have has_vector_source, so 84% had no safety net.
+        //
+        // Employees on an app preset are already handled: CardPresets::
+        // applyForEmployee re-bakes in this same request. Vector companies
+        // self-heal via scripts/warm-card-previews.php on cron. Everyone else
+        // keeps the image they have until the Fabric editor regenerates it.
         require_once INCLUDES_DIR . '/CardRenderer.php';
-        try { CardRenderer::invalidateForEmployee((string) $employeeId, 'scan-my-card-details'); }
-        catch (\Throwable $e) { error_log('[scan/my-card] invalidate employee: ' . $e->getMessage()); }
+        try {
+            $canRebake = $db->fetchOne(
+                "SELECT 1 AS ok
+                 FROM templates
+                 WHERE company_id = :cid
+                   AND has_vector_source = 1
+                   AND is_active = 1
+                   AND deleted_at IS NULL
+                 LIMIT 1",
+                ['cid' => $companyId]
+            );
+            if (!empty($canRebake)) {
+                CardRenderer::invalidateForEmployee((string) $employeeId, 'scan-my-card-details');
+            }
+        } catch (\Throwable $e) {
+            error_log('[scan/my-card] invalidate employee: ' . $e->getMessage());
+        }
 
         // Wallet pass auto-update: the card changed, so bump the pass version
         // and notify every Wallet device registered to it (empty push -> Wallet

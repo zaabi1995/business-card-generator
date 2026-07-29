@@ -186,15 +186,10 @@ $mapEmbed= 'https://www.google.com/maps?q=' . rawurlencode('AK Tower Bousher Mus
                     </div>
                     <h2 class="font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('contact.card_social_h')) ?></h2>
                     <div class="flex gap-3">
-                        <a href="https://instagram.com/cardify.om" target="_blank" rel="noopener"
+                        <a href="https://instagram.com/cardifyom" target="_blank" rel="noopener"
                            aria-label="Instagram"
                            class="w-10 h-10 rounded-lg bg-gray-100 hover:bg-pink-600 hover:text-white flex items-center justify-center transition">
                             <i class="fa-brands fa-instagram text-gray-600"></i>
-                        </a>
-                        <a href="https://www.linkedin.com/company/cardify-om" target="_blank" rel="noopener"
-                           aria-label="LinkedIn"
-                           class="w-10 h-10 rounded-lg bg-gray-100 hover:bg-blue-700 hover:text-white flex items-center justify-center transition">
-                            <i class="fa-brands fa-linkedin-in text-gray-600"></i>
                         </a>
                     </div>
                 </div>

@@ -327,7 +327,6 @@ $orgLd = [
     'url'         => 'https://cardify.om',
     'logo'        => 'https://cardify.om/assets/images/cardify-logo.png',
     'sameAs'      => [
-        'https://www.linkedin.com/company/cardify-om',
     ],
     'address'     => [
         '@type'          => 'PostalAddress',

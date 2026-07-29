@@ -45,14 +45,25 @@ class Seo
         self::emit([
             '@context' => 'https://schema.org',
             '@type' => 'Organization',
+            '@id' => self::SITE . '/#organization',
             'name' => self::BRAND,
             'url' => self::SITE,
-            'logo' => self::PUBLISHER_LOGO,
-            'sameAs' => [
-                'https://www.instagram.com/cardify.om',
-                'https://twitter.com/cardify_om',
-                'https://www.linkedin.com/company/cardify-om',
+            // Ownership was one-way: bhd.om named Cardify a subOrganization,
+            // Cardify named no parent, so the edge did not resolve from here.
+            'parentOrganization' => ['@id' => 'https://bhd.om/#organization'],
+            'identifier' => [
+                ['@type' => 'PropertyValue', 'name' => 'Commercial Registration', 'value' => '1334733'],
+                ['@type' => 'PropertyValue', 'name' => 'VAT Identification Number', 'value' => 'OM1100019343'],
             ],
+            'vatID' => 'OM1100019343',
+            'logo' => self::PUBLISHER_LOGO,
+            // Live-probed 29 Jul 2026 (redirects followed, desktop UA):
+            //   https://instagram.com/cardifyom              -> 200
+            //   https://twitter.com/cardify_om               -> 404
+            //   https://www.linkedin.com/company/cardify-om  -> 404
+            // sameAs is a checkable identity assertion, so a 404 in it is
+            // worse than an omission. Only the surviving profile ships.
+            'sameAs' => ['https://instagram.com/cardifyom'],
             'contactPoint' => [
                 '@type' => 'ContactPoint',
                 'contactType' => 'customer support',

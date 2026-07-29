@@ -53,6 +53,11 @@ $orgLd = [
         'availableLanguage' => ['en', 'ar'],
     ],
     'sameAs' => ['https://instagram.com/cardifyom'],
+    // Same entity as the homepage node, so it carries the same @id and the
+    // same parent edge. Two unlinked Organization nodes for one company read
+    // as two companies.
+    '@id' => 'https://cardify.om/#organization',
+    'parentOrganization' => ['@id' => 'https://bhd.om/#organization'],
 ];
 
 $datasetsLd = [
