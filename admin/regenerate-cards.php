@@ -165,6 +165,10 @@ if ($run && $pdftoppm !== '') {
             null, $cid);
         $regenerated[] = $emp;
     }
+    // One line per batch. This is what finally showed the offset advancing.
+    error_log('[regenerate] batch end: processed=' . $processed
+        . ' regen=' . count($regenerated) . ' skip=' . count($skipped)
+        . ' fail=' . count($failed) . ' offset=' . $offset);
 }
 } catch (\Throwable $e) {
     // Never a blank 500: say what broke, and keep whatever the batch achieved.
