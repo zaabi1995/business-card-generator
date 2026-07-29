@@ -20,18 +20,32 @@ foreach (BlogSlugRedirects::all() as $o => $n) { echo "$o $n\n"; }
 fails=0
 while read -r old new; do
   [ -z "$old" ] && continue
-  for prefix in "/blog" "/ar/blog"; do
-    url="$BASE$prefix/$old"
-    code=$(curl -s -o /dev/null -A "$UA" -w '%{http_code}' "$url")
-    loc=$(curl -s -o /dev/null -A "$UA" -D - "$url" 2>/dev/null | tr -d '\r' | awk 'tolower($1)=="location:"{print $2}')
-    want="$BASE$prefix/$new"
-    if [ "$code" = "301" ] && [ "$loc" = "$want" ]; then
-      echo "  OK   $prefix/$old -> $new"
-    else
-      echo "  FAIL $prefix/$old code=$code location=${loc:-none} want=301 $want"
-      fails=$((fails + 1))
-    fi
-  done
+
+  # EN: one hop, straight to the successor.
+  url="$BASE/blog/$old"
+  code=$(curl -s -o /dev/null -A "$UA" -w '%{http_code}' "$url")
+  loc=$(curl -s -o /dev/null -A "$UA" -D - "$url" 2>/dev/null | tr -d '\r' | awk 'tolower($1)=="location:"{print $2}')
+  want="$BASE/blog/$new"
+  if [ "$code" = "301" ] && [ "$loc" = "$want" ]; then
+    echo "  OK   /blog/$old -> $new"
+  else
+    echo "  FAIL /blog/$old code=$code location=${loc:-none} want=301 $want"
+    fails=$((fails + 1))
+  fi
+
+  # AR: nginx retired /ar/blog wholesale, so this is TWO hops by design,
+  # /ar/blog/<old> -> /blog/<old> -> /blog/<new>. Assert the whole chain ends
+  # on the live post rather than pretending the first hop is the fix: the
+  # earlier version of this script asserted an AR target PHP can never emit
+  # and reported 12 failures against working redirects.
+  achain=$(curl -s -o /dev/null -A "$UA" -L -w '%{url_effective} %{http_code}' "$BASE/ar/blog/$old")
+  if [ "$achain" = "$BASE/blog/$new 200" ]; then
+    echo "  OK   /ar/blog/$old ->(2 hops) $new"
+  else
+    echo "  FAIL /ar/blog/$old chain=[$achain] want=[$BASE/blog/$new 200]"
+    fails=$((fails + 1))
+  fi
+
   tcode=$(curl -s -o /dev/null -A "$UA" -w '%{http_code}' "$BASE/blog/$new")
   if [ "$tcode" != "200" ]; then
     echo "  FAIL target /blog/$new code=$tcode want=200"

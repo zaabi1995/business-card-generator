@@ -78,12 +78,19 @@ if ($db->tableExists('blog_posts')) {
                 }
             }
         } else {
-            // A retired slug gets its successor, not a 404. The redirect stays
-            // inside the current language tree so /ar/blog/<old> does not dump
-            // an Arabic reader onto the English post.
+            // A retired slug gets its successor, not a 404.
+            //
+            // Always the EN tree, deliberately: nginx retired /ar/blog wholesale
+            // (`rewrite ^/ar/blog/([a-z0-9-]+)/?$ /blog/$1 permanent`, because the
+            // post bodies are English at a 0.13 Arabic letter share), so an AR
+            // request is already on /blog by the time PHP runs and a
+            // language-preserving branch here would be dead code that reads like
+            // a fix. /ar/blog/<old> therefore costs two hops and lands on the
+            // live EN post; collapsing that to one would mean duplicating this
+            // map in nginx, which is how the two got out of step in the first place.
             $moved = BlogSlugRedirects::target(strtolower($postSlug));
             if ($moved !== null) {
-                header('Location: ' . $blogBase . '/' . $moved, true, 301);
+                header('Location: https://cardify.om/blog/' . $moved, true, 301);
                 exit;
             }
             // Unknown slug, return proper 404 so Google doesn't index a fallback listing
