@@ -899,6 +899,27 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         /* The app hand-off. Peer of the Wallet row, not of the utility row:
            full width, accent-tinted rather than another neutral, so it reads as
            the one action that leaves this page. */
+        /* Shown when a card has no baked image. 111 of 399 active employees are
+           in that state: their design is a classic Fabric one, which only the
+           web editor can regenerate, so the page had a hole where the hero
+           belongs. This is deliberately a clean identity panel rather than a
+           fake print proof, so nobody mistakes it for their artwork. */
+        .card-fallback {
+            width: 100%;
+            aspect-ratio: 1.75 / 1;
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 6px;
+            padding: 20px;
+            box-sizing: border-box;
+            border: 1px solid <?php echo $isDarkPage ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'; ?>;
+            background: <?php echo $isDarkPage ? 'rgba(255,255,255,0.04)' : '#fff'; ?>;
+        }
+        .card-fallback-name { font-size: 17px; font-weight: 700; }
+        .card-fallback-title { font-size: 13px; opacity: 0.75; }
+        .card-fallback-rule { width: 34px; height: 3px; border-radius: 2px; margin-top: 4px; }
         .app-open-row {
             max-width: 400px;
             margin: 10px auto 0;
@@ -1361,6 +1382,15 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         <?php endif; ?>
 
         <!-- Flippable Card -->
+        <?php if (!$frontImage): ?>
+        <div class="card-fallback" role="img" aria-label="<?= htmlspecialchars($name ?: t('digitalcard.alt_card_front'), ENT_QUOTES) ?>">
+            <div class="card-fallback-name"><?= htmlspecialchars($name) ?></div>
+            <?php if (!empty($position)): ?>
+            <div class="card-fallback-title"><?= htmlspecialchars($position) ?></div>
+            <?php endif; ?>
+            <div class="card-fallback-rule" style="background: <?php echo htmlspecialchars($accentColor, ENT_QUOTES); ?>"></div>
+        </div>
+        <?php endif; ?>
         <?php if ($frontImage): ?>
         <?php if ($leadWithPhoto): ?>
         <details class="view-card-toggle">
