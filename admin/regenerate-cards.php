@@ -30,6 +30,13 @@
  * still needs the editor rather than silently doing nothing.
  */
 
+// This page 500'd once with NO trace anywhere: nginx logged nothing and PHP's
+// error_log is unset server-wide, so a fatal here vanishes silently. Give it
+// somewhere to land and let the page report its own failure instead of dying
+// blank, so the next problem is diagnosable rather than guessed at.
+@ini_set('log_errors', '1');
+@ini_set('error_log', __DIR__ . '/../logs/regenerate-cards.log');
+
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/CardPDFRenderer.php';
@@ -49,6 +56,18 @@ $run       = isset($_GET['run']) && $_GET['run'] === '1';
 $allTenants = $isSuper && isset($_GET['all']) && $_GET['all'] === '1';
 $scopeSlug = trim((string)($_GET['company'] ?? ''));
 $limit     = max(0, (int)($_GET['limit'] ?? 0));
+$offset    = max(0, (int)($_GET['offset'] ?? 0));
+// Cumulative tallies carried across batches so the page can report the whole run.
+$accDone   = max(0, (int)($_GET['done'] ?? 0));
+$accSkip   = max(0, (int)($_GET['skip'] ?? 0));
+$accFail   = max(0, (int)($_GET['fail'] ?? 0));
+
+// Seconds of work per request. Rendering a PDF and rasterising it takes about a
+// second per employee, so a full run is minutes long: far past the gateway
+// timeout, which is what made the first version answer HTTP 500 instead of
+// doing the job. Each request now does a slice and hands the rest to the next.
+$BUDGET = 20.0;
+$startedAt = microtime(true);
 
 $pdftoppm = trim((string)@shell_exec('command -v pdftoppm 2>/dev/null'));
 $DPI = 150;
@@ -75,8 +94,17 @@ $regenerated = [];
 $skipped     = [];
 $failed      = [];
 
+$total     = count($roster);
+$batch     = array_slice($roster, $offset);
+$processed = 0;
+$outOfTime = false;
+
+$runError = null;
+try {
 if ($run && $pdftoppm !== '') {
-    foreach ($roster as $emp) {
+    foreach ($batch as $emp) {
+        if (microtime(true) - $startedAt > $BUDGET) { $outOfTime = true; break; }
+        $processed++;
         $eid = (string)$emp['id'];
         $cid = (string)$emp['company_id'];
 
@@ -122,6 +150,12 @@ if ($run && $pdftoppm !== '') {
             null, $cid);
         $regenerated[] = $emp;
     }
+}
+} catch (\Throwable $e) {
+    // Never a blank 500: say what broke, and keep whatever the batch achieved.
+    $runError = get_class($e) . ': ' . $e->getMessage()
+              . ' @ ' . basename($e->getFile()) . ':' . $e->getLine();
+    error_log('[regenerate-cards] ' . $runError);
 }
 
 $title = 'Regenerate cards';
@@ -178,7 +212,41 @@ $title = 'Regenerate cards';
   <?php endif; ?>
 </div>
 
-<?php if (!$run): ?>
+<?php if ($runError): ?>
+  <div class="panel" style="border-inline-start:3px solid #c0261b">
+    <strong>The run stopped with an error.</strong>
+    <p class="sub" style="margin:8px 0 0">
+      Anything already regenerated is saved, and every card not regenerated is
+      untouched. Nothing was removed.
+    </p>
+    <pre style="white-space:pre-wrap;font-size:12px;background:#f4f4f6;padding:10px;border-radius:8px;margin-top:10px"><?= htmlspecialchars($runError) ?></pre>
+  </div>
+<?php endif; ?>
+
+<?php if (empty($roster)): ?>
+  <div class="panel" style="border-inline-start:3px solid var(--warn)">
+    <strong>Nothing in scope.</strong>
+    <p class="sub" style="margin:8px 0 12px">
+      <?php if (!$allTenants && $isSuper): ?>
+        You are signed in as a super admin, and the company attached to your own
+        session has no active employees, so there was nothing to rebuild. The
+        employees live under the individual tenants. Widen the scope:
+      <?php elseif (!$allTenants): ?>
+        This company has no active employees.
+      <?php else: ?>
+        No active employees were found in any company.
+      <?php endif; ?>
+    </p>
+    <?php if ($isSuper && !$allTenants): ?>
+      <div class="row">
+        <a class="btn primary" href="?all=1">Show every company</a>
+        <a class="btn" href="?company=ithca">Or pick one, e.g. ithca</a>
+      </div>
+    <?php endif; ?>
+  </div>
+<?php endif; ?>
+
+<?php if (!$run && !empty($roster)): ?>
   <div class="panel">
     <div class="row">
       <a class="btn primary" href="?run=1<?= $scopeSlug !== '' ? '&amp;company=' . urlencode($scopeSlug) : '' ?><?= $allTenants ? '&amp;all=1' : '' ?>">
@@ -190,14 +258,41 @@ $title = 'Regenerate cards';
     </div>
     <p class="sub" style="margin:12px 0 0">This is a dry run. Nothing has changed.</p>
   </div>
-<?php else: ?>
+<?php elseif ($run && !empty($roster)):
+  $doneNow = $accDone + count($regenerated);
+  $skipNow = $accSkip + count($skipped);
+  $failNow = $accFail + count($failed);
+  $nextOffset = $offset + $processed;
+  $more = $nextOffset < $total;
+  $nextUrl = '?run=1'
+      . ($allTenants ? '&all=1' : '')
+      . ($scopeSlug !== '' ? '&company=' . urlencode($scopeSlug) : '')
+      . ($limit ? '&limit=' . (int)$limit : '')
+      . '&offset=' . $nextOffset
+      . '&done=' . $doneNow . '&skip=' . $skipNow . '&fail=' . $failNow;
+  $pct = $total > 0 ? min(100, round(100 * $nextOffset / $total)) : 100;
+?>
+  <?php if ($more): ?>
+    <meta http-equiv="refresh" content="1;url=<?= htmlspecialchars($nextUrl, ENT_QUOTES) ?>">
+  <?php endif; ?>
   <div class="panel">
-    <strong>Done.</strong>
-    <span class="tag ok"><?= count($regenerated) ?> regenerated</span>
-    <span class="tag skip"><?= count($skipped) ?> left untouched</span>
-    <?php if ($failed): ?><span class="tag skip"><?= count($failed) ?> failed</span><?php endif; ?>
-    <p class="sub" style="margin:12px 0 0">
-      Every card not regenerated still shows exactly what it showed before.
+    <strong><?= $more ? 'Working…' : 'Done.' ?></strong>
+    <span class="tag ok"><?= $doneNow ?> regenerated</span>
+    <span class="tag skip"><?= $skipNow ?> left untouched</span>
+    <?php if ($failNow): ?><span class="tag skip"><?= $failNow ?> failed</span><?php endif; ?>
+    <div style="margin-top:12px;height:8px;border-radius:6px;background:#f4f4f6;overflow:hidden">
+      <div style="height:100%;width:<?= (int)$pct ?>%;background:var(--brand)"></div>
+    </div>
+    <p class="sub" style="margin:10px 0 0">
+      <?= (int)$nextOffset ?> of <?= (int)$total ?> checked.
+      <?php if ($more): ?>
+        This runs in short batches because a full pass takes minutes, far longer
+        than a web request is allowed to live. It continues on its own; leave the
+        tab open. <a href="<?= htmlspecialchars($nextUrl, ENT_QUOTES) ?>">Continue now</a>
+        if it stalls.
+      <?php else: ?>
+        Every card not regenerated still shows exactly what it showed before.
+      <?php endif; ?>
     </p>
   </div>
 
