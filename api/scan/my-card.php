@@ -380,9 +380,23 @@ try {
     // accepts that population.
     $response['can_manage_web'] = false;
     try {
+        // Mirror tenant_login.php's ACTUAL predicate rather than approximating
+        // it. That file matches a user by email (line 61) OR by normalised phone
+        // (line 68), and BOTH are scoped by company_id. Joining on email alone
+        // was wrong twice over: it hid the row from anyone whose web login is
+        // matched by phone, and it would have claimed access for a same-email
+        // user belonging to a DIFFERENT company.
+        $norm = "REPLACE(REPLACE(REPLACE(u.phone, '+', ''), ' ', ''), '-', '')";
         $webUser = $db->fetchOne(
-            "SELECT u.id FROM users u
-             JOIN employees e ON e.email = u.email
+            "SELECT u.id
+             FROM employees e
+             JOIN users u
+               ON u.company_id = e.company_id
+              AND (
+                    (e.email <> '' AND LOWER(u.email) = LOWER(e.email))
+                 OR (e.mobile <> '' AND {$norm} = REPLACE(REPLACE(REPLACE(e.mobile, '+', ''), ' ', ''), '-', ''))
+                 OR (e.phone  <> '' AND {$norm} = REPLACE(REPLACE(REPLACE(e.phone,  '+', ''), ' ', ''), '-', ''))
+              )
              WHERE e.id = :eid LIMIT 1",
             ['eid' => $employeeId]
         );
