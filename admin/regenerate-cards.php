@@ -56,11 +56,26 @@ $run       = isset($_GET['run']) && $_GET['run'] === '1';
 $allTenants = $isSuper && isset($_GET['all']) && $_GET['all'] === '1';
 $scopeSlug = trim((string)($_GET['company'] ?? ''));
 $limit     = max(0, (int)($_GET['limit'] ?? 0));
-$offset    = max(0, (int)($_GET['offset'] ?? 0));
-// Cumulative tallies carried across batches so the page can report the whole run.
-$accDone   = max(0, (int)($_GET['done'] ?? 0));
-$accSkip   = max(0, (int)($_GET['skip'] ?? 0));
-$accFail   = max(0, (int)($_GET['fail'] ?? 0));
+// Progress lives in a state FILE, not in the query string.
+//
+// The first version carried offset and every tally through ~10 auto-refreshes
+// as URL parameters. A single hop dropping one parameter silently resets the
+// whole run, which is exactly what a real run did: it reported 0 regenerated
+// while 274 employees went unaccounted for, in neither the done nor the skipped
+// column. Server-side state cannot be lost by a redirect, an entity-escaped
+// ampersand, or a browser that rewrites the refresh target.
+$scopeKey  = md5(($allTenants ? 'all' : (string)$myCompanyId) . '|' . $scopeSlug . '|' . $limit);
+$stateFile = dirname(__DIR__) . '/logs/regen-state-' . $scopeKey . '.json';
+$state     = ['offset' => 0, 'done' => 0, 'skip' => 0, 'fail' => 0, 'started' => time()];
+if (isset($_GET['reset'])) { @unlink($stateFile); }
+elseif (is_file($stateFile)) {
+    $prev = json_decode((string)@file_get_contents($stateFile), true);
+    if (is_array($prev)) $state = $prev + $state;
+}
+$offset  = (int)$state['offset'];
+$accDone = (int)$state['done'];
+$accSkip = (int)$state['skip'];
+$accFail = (int)$state['fail'];
 
 // Seconds of work per request. Rendering a PDF and rasterising it takes about a
 // second per employee, so a full run is minutes long: far past the gateway
@@ -264,12 +279,19 @@ $title = 'Regenerate cards';
   $failNow = $accFail + count($failed);
   $nextOffset = $offset + $processed;
   $more = $nextOffset < $total;
+  // Write progress BEFORE rendering the refresh, so a browser that reloads
+  // early, or a user who reopens the page, resumes instead of restarting.
+  @file_put_contents($stateFile, json_encode([
+      'offset' => $nextOffset, 'done' => $doneNow, 'skip' => $skipNow,
+      'fail' => $failNow, 'started' => $state['started'] ?? time(),
+  ]));
+  if (!$more) { @unlink($stateFile); }
+  // Scope only. Everything else is in the state file, so this URL cannot
+  // carry the run's progress off a cliff.
   $nextUrl = '?run=1'
       . ($allTenants ? '&all=1' : '')
       . ($scopeSlug !== '' ? '&company=' . urlencode($scopeSlug) : '')
-      . ($limit ? '&limit=' . (int)$limit : '')
-      . '&offset=' . $nextOffset
-      . '&done=' . $doneNow . '&skip=' . $skipNow . '&fail=' . $failNow;
+      . ($limit ? '&limit=' . (int)$limit : '');
   $pct = $total > 0 ? min(100, round(100 * $nextOffset / $total)) : 100;
 ?>
   <?php if ($more): ?>
