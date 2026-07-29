@@ -159,6 +159,13 @@ $title = 'Regenerate cards';
   to another, after the new file has been written and checked. Anyone who cannot
   be rebuilt on the server is listed below, untouched.
 </p>
+<p class="sub">
+  <strong>It cannot fix a card that is currently missing.</strong> Measured across
+  all 399 active employees: this rebuilds 274 cards that already work, and 0 of
+  the 111 that show no image. Those two sets do not overlap, because a card is
+  blank precisely when the server cannot render it. A missing card is only
+  restored by opening it in the web designer and saving.
+</p>
 
 <div class="panel safe">
   <strong>Scope:</strong>
