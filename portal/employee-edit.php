@@ -177,6 +177,9 @@ $pageTitle = t('portal.edit_my_details');
               'website' => $employee['website'],
               'photo' => $employee['photo'] ?? '',
               'preferred_contact_action' => $employee['preferred_contact_action'] ?? 'save_contact',
+              // Without this the new layout select binds to undefined and
+              // silently saves nothing.
+              'card_page_layout' => $employee['card_page_layout'] ?? 'auto',
           ],
           'socials' => $existingSocials,
           'customFields' => (object) $customFieldValues,
@@ -251,6 +254,20 @@ $pageTitle = t('portal.edit_my_details');
                     </template>
                     <input type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="handlePhotoInput($event)">
                 </label>
+            </div>
+            <!-- What leads the page. Was admin-only, so a person could upload a
+                 photo but not decide whether their page showed it or the printed
+                 card. The printed card is always still reachable behind a small
+                 reveal, so choosing the photo never hides it. -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.layout_label')) ?></label>
+                <select x-model="data.card_page_layout" @change="save()" class="form-input"
+                        aria-label="<?= htmlspecialchars(t('portal.layout_label')) ?>">
+                    <option value="auto"><?= htmlspecialchars(t('portal.layout_auto')) ?></option>
+                    <option value="photo"><?= htmlspecialchars(t('portal.layout_photo')) ?></option>
+                    <option value="card"><?= htmlspecialchars(t('portal.layout_card')) ?></option>
+                </select>
+                <p class="mt-1 text-xs text-gray-400"><?= htmlspecialchars(t('portal.layout_hint')) ?></p>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= htmlspecialchars(t('portal.first_name')) ?></label>

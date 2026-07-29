@@ -228,4 +228,10 @@ return [
     'issue_photo_added' => 'Added',
     'issue_lot_unit'    => 'pieces, standard staff lot',
     'issue_lot_note'    => 'One box, delivered to your branch.',
+    'layout_label' => 'What your page shows first',
+    'layout_auto' => 'Automatic (photo if you have one)',
+    'layout_photo' => 'My photo',
+    'layout_card' => 'My business card',
+    'layout_hint' => 'Your printed card stays available either way, behind a small link.',
+
 ];
