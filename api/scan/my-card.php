@@ -125,6 +125,17 @@ try {
             'address_en' => ['address_en', 1000],
             'address_ar' => ['address_ar', 1000],
         ];
+        // Whether this person's public page leads with their PHOTO or with the
+        // printed card. Settable from the web self-edit and the admin console;
+        // the app could not reach it at all, so someone using only the phone had
+        // no say in what their own link shows. Validated, never free text.
+        if (array_key_exists('card_page_layout', $body)) {
+            $wantLayout = strtolower(trim((string) $body['card_page_layout']));
+            if (in_array($wantLayout, ['auto', 'card', 'photo'], true)) {
+                $merged['card_page_layout'] = $wantLayout;
+            }
+        }
+
         foreach ($strMap as $in => [$col, $max]) {
             if (array_key_exists($in, $body)) {
                 $merged[$col] = $cap($body[$in], $max);
@@ -408,6 +419,21 @@ try {
     // The app cannot know this on its own, so the server says. Same lesson as
     // the apex password wall: a link out is only done when the destination
     // accepts that population.
+    // The app needs the current layout to show the right option selected, and
+    // the photo so it can say whether choosing "my photo" will actually show one.
+    $response['card_page_layout'] = (string) ($employee['card_page_layout'] ?? 'auto');
+    // cardifyAssetUrl returns a site-relative path. absoluteCardifyUrl is a
+    // two-argument CLOSURE scoped to the render block above, not a function, so
+    // calling it here would have fatalled the whole GET. Build the absolute form
+    // the same way the rest of this endpoint does.
+    $response['photo_url'] = '';
+    if (!empty($employee['photo'])) {
+        $rel = cardifyAssetUrl($employee['photo']);
+        $response['photo_url'] = (strpos($rel, 'http') === 0)
+            ? $rel
+            : 'https://' . cardifyApexHost() . '/' . ltrim($rel, '/');
+    }
+
     $response['can_manage_web'] = false;
     try {
         // Mirror tenant_login.php's ACTUAL predicate rather than approximating
