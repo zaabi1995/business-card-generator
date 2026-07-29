@@ -335,7 +335,25 @@ if ($company) {
 } else {
     $pageTitle = t('companies.index_title');
     $pageDescription = t('companies.index_desc');
-    $canonicalUrl = $baseUrl . $basePrefix;
+    // r6-64: pages 2..N used to canonicalise to page 1, which told Google the
+    // deeper pages were duplicates and cut the only crawl path to the 5,004
+    // company pages below them. A paginated page is its own canonical. Search
+    // and filter results are NOT: they are a slice of the same set and keep
+    // pointing at page 1, which is what rel=canonical is actually for.
+    $isFilteredView = ($q !== '' || $filterSector !== '' || $filterWilayat !== '');
+    $pageSuffix = (!$isFilteredView && $page > 1) ? '?page=' . $page : '';
+    $canonicalUrl = $baseUrl . $basePrefix . $pageSuffix;
+    $lastPage = max(1, (int) ceil($totalCount / $perPage));
+    $seqHead = '';
+    if (!$isFilteredView) {
+        if ($page > 1) {
+            $seqHead .= '<link rel="prev" href="' . $baseUrl . $basePrefix
+                     . ($page > 2 ? '?page=' . ($page - 1) : '') . '">';
+        }
+        if ($page < $lastPage) {
+            $seqHead .= '<link rel="next" href="' . $baseUrl . $basePrefix . '?page=' . ($page + 1) . '">';
+        }
+    }
     $siteLd = [
         '@context' => 'https://schema.org',
         '@type' => 'WebSite',
@@ -343,7 +361,10 @@ if ($company) {
         'url' => $baseUrl . '/companies',
     ];
     $extraHead = '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
-               . ArTwins::pairLinks('/companies');
+               . $seqHead
+               // The hreflang pair carries the SAME page as the canonical,
+               // otherwise page 2 advertises page 1 as its own translation.
+               . ArTwins::pairLinks('/companies' . $pageSuffix);
 }
 $suppressDefaultHreflang = true;
 require_once INCLUDES_DIR . '/ui-header.php';
