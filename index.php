@@ -37,44 +37,6 @@ if (!file_exists($configFile)) {
 
 require_once $configFile;
 
-// wc.cardify.om — World Cup hub (powered by Cardify). Routed before the
-// tenant/landing logic. OTP + API endpoints under /api/ are served as
-// direct files; only the bare hub page is front-controlled here.
-$wcHost = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
-if ($wcHost === 'wc.cardify.om') {
-    $wcPath = rtrim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/', '/');
-    if ($wcPath === '' || $wcPath === '/world-cup') { require __DIR__ . '/world-cup.php'; exit; }
-    if ($wcPath === '/u' || strpos($wcPath, '/u/') === 0) { require __DIR__ . '/wc-unsub.php'; exit; }
-    // PassKit web service for the Apple Wallet pass (prefix match, Apple spec).
-    if (strpos($wcPath, '/wc-wallet/v1') === 0) { require __DIR__ . '/wc_wallet_service.php'; exit; }
-    // Mini-leagues: pretty share URL /wc-leagues/<code> -> the league board.
-    if (preg_match('#^/wc-leagues/([A-Za-z0-9]{4,12})$#', $wcPath, $lm)) {
-        $_GET['l'] = $lm[1]; require __DIR__ . '/wc-league.php'; exit;
-    }
-    $wcMap = [
-        '/join'           => 'wc-join.php',
-        '/wc-leagues'     => 'wc-leagues.php',
-        '/wc-league'      => 'wc-league.php',
-        '/predictions'    => 'predictions.php',
-        '/wc-leaderboard' => 'wc-leaderboard.php',
-        '/leaderboard'    => 'wc-leaderboard.php',
-        '/wc-settings'    => 'wc-settings.php',
-        '/wc-wallet'      => 'wc-wallet.php',
-        '/wc-wallet-google' => 'wc-wallet-google.php',
-        '/wc-wallet-apple'  => 'wc_wallet_apple.php',
-        '/wc-wallet-apple-matches'  => 'wc_wallet_apple_matches.php',
-        '/wc-wallet-google-matches' => 'wc-wallet-google-matches.php',
-    ];
-    if (isset($wcMap[$wcPath])) { require __DIR__ . '/' . $wcMap[$wcPath]; exit; }
-    if ($wcPath === '/wc-logout') {
-        require_once __DIR__ . '/includes/WcHub.php';
-        WcHub::logout();
-        header('Location: https://wc.cardify.om/'); exit;
-    }
-    // anything else on the wc host falls back to the hub
-    require __DIR__ . '/world-cup.php'; exit;
-}
-
 // Tenant subdomain check (e.g. ohb.cardify.om).
 // Convention across all tenants:
 //   <slug>.cardify.om/        -> portal.php  (employee Self-Service request form)
@@ -89,63 +51,38 @@ if (file_exists(__DIR__ . '/includes/TenantHost.php')) {
         if ($reqPath === '/login' || $reqPath === '/login/') {
             require __DIR__ . '/tenant_login.php';
         } else {
-            // A bare single-token path (e.g. /ali or /first.last) is the
-            // printed-card / share target: resolve it to that employee's
-            // digital card. This mirrors the documented convention
-            // "<slug>.cardify.om/<email-localpart> -> digital_card.php" which
-            // the /card/<id> nginx rewrite handles for the dotted form but
-            // which never fired for the no-dot form (it fell through to the
-            // request portal). Only falls back to the portal when no employee
-            // matches, preserving the soft-404 behaviour for mistyped links.
-            $__tok = trim($reqPath, '/');
-            $__servedCard = false;
-            if ($__tok !== '' && strpos($__tok, '/') === false
-                && $__tok !== 'portal' && $__tok !== 'login'
-                && !preg_match('~\.(php|html?|css|js|png|jpe?g|gif|svg|webp|ico|pdf|txt|json|xml|map|woff2?|ttf|otf|webmanifest|eot|mp4|webm|mov|wav|mp3|csv)$~i', $__tok)
-                && function_exists('findCompanyBySlug') && function_exists('findEmployeeById')) {
-                $__co = findCompanyBySlug((string) TenantHost::slug());
-                if (is_array($__co) && !empty($__co['id'])) {
-                    $__emp = findEmployeeById($__tok, $__co['id']);
-                    if (!$__emp && function_exists('findEmployeeByEmail')) {
-                        $__emp = findEmployeeByEmail($__tok, $__co['id']);
-                        if (!$__emp && !empty($__co['email_domain'])) {
-                            $__emp = findEmployeeByEmail($__tok . '@' . $__co['email_domain'], $__co['id']);
-                        }
-                    }
-                    // Final fallback: match the token against the email
-                    // localpart directly, domain-agnostic. Covers employees
-                    // whose id is a random hex (not the localpart) AND companies
-                    // with no email_domain set, e.g. a one-person gmail card
-                    // (/jarwish9 -> jarwish9@gmail.com). class_exists guards the
-                    // DB call in case this fires before config loaded it.
-                    if (!$__emp && class_exists('Database')) {
-                        $__emp = Database::getInstance()->fetchOne(
-                            "SELECT * FROM employees WHERE company_id = :cid AND SUBSTRING_INDEX(LOWER(email), '@', 1) = :lp LIMIT 1",
-                            ['cid' => $__co['id'], 'lp' => strtolower($__tok)]
-                        );
-                    }
-                    if (is_array($__emp) && !empty($__emp['id'])) {
-                        $_GET['employee_id']  = $__emp['id'];
-                        $_GET['company_slug'] = (string) TenantHost::slug();
+            // Default: employee request portal. A bare single-token path that
+            // is NOT the canonical "/" or "/portal" reaches here only as a
+            // soft-404 fallback (mistyped/old card link, scanner probing
+            // /wp-admin, etc.). The portal still renders so a real visitor can
+            // request a card, but tell search engines NOT to index these
+            // arbitrary URLs, else Google indexes infinite junk paths per
+            // tenant as soft-404s. (BHD loop audit iter 13, 3 Jun 2026.)
+            $canonicalPortal = ($reqPath === '/' || $reqPath === ''
+                || $reqPath === '/portal' || $reqPath === '/portal/'
+                || preg_match('~^/portal/[a-z0-9-]+/?$~i', $reqPath));
+            // A bare single-token path (/akamariz) is an employee card URL:
+            // the email localpart. nginx routes dotted localparts (/first.last)
+            // straight to digital_card.php but sends single tokens here, so
+            // resolve them the same way before falling back to the portal.
+            // Without this every employee whose localpart has no dot lands on
+            // the request form instead of their own card.
+            if (!$canonicalPortal && preg_match('~^/([a-z0-9][a-z0-9_-]*)/?$~i', $reqPath, $__cardTok)) {
+                $__convFile = __DIR__ . '/includes/CardifyConvention.php';
+                if (file_exists($__convFile)) {
+                    require_once $__convFile;
+                    $__tenantCo = findCompanyBySlug((string) TenantHost::slug());
+                    if ($__tenantCo && CardifyConvention::resolveEmployeeToken($__cardTok[1], $__tenantCo['id'])) {
+                        $_GET['employee_id'] = $__cardTok[1];
                         require __DIR__ . '/digital_card.php';
-                        $__servedCard = true;
+                        exit;
                     }
                 }
             }
-            if (!$__servedCard) {
-                // Canonical portal paths stay indexable; arbitrary junk paths
-                // (mistyped/old card links, scanner probes) render the portal
-                // but tell search engines NOT to index them, else Google
-                // indexes infinite junk paths per tenant as soft-404s.
-                // (BHD loop audit iter 13, 3 Jun 2026.)
-                $canonicalPortal = ($reqPath === '/' || $reqPath === ''
-                    || $reqPath === '/portal' || $reqPath === '/portal/'
-                    || preg_match('~^/portal/[a-z0-9-]+/?$~i', $reqPath));
-                if (!$canonicalPortal && !headers_sent()) {
-                    header('X-Robots-Tag: noindex, nofollow', true);
-                }
-                require __DIR__ . '/portal.php';
+            if (!$canonicalPortal && !headers_sent()) {
+                header('X-Robots-Tag: noindex, nofollow', true);
             }
+            require __DIR__ . '/portal.php';
         }
         exit;
     }
@@ -266,7 +203,7 @@ if (isset($_GET['company_slug'])) {
 $brandName = 'Cardify';
 $tagline = 'Business Cards Made Simple';
 $pageTitle = 'Cardify, Digital & Printed Business Cards for the GCC';
-$pageDescription = 'Bilingual Arabic/English digital & printed business cards for GCC teams. QR vCard, Apple Wallet, NFC. Free to start, Oman, UAE, Saudi & more.';
+$pageDescription = 'Bilingual Arabic/English digital and printed business cards for teams across the Gulf: Oman (live), Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait (rolling out 2026). QR vCard save, Apple Wallet, NFC, bulk provisioning. Free to start.';
 // Self-canonicalize per locale (the AR home previously canonicalized to the EN
 // home, so Google never indexed it) + emit a full bilingual hreflang set
 // (ui-header's default only advertises en + x-default, never ar).
@@ -300,8 +237,6 @@ $fmt = function ($omr) use ($homeCur) {
 };
 // Tier-based subscription pricing was removed Apr 2026. Platform is free forever,
 // revenue comes from per-order print products (see lang/en/pricing.php and /pricing).
-// Cheapest printed-card tier (Standard, OMR 6 / 100 cards) for the home "prints from" trust line.
-$priceStarterFrom = $fmt(6);
 
 // Latest blog posts for homepage SEO (internal links + freshness signal)
 $latestPosts = [];
@@ -341,7 +276,7 @@ $siteLd = [
 $homeJsonLd = '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES) . '</script>';
 
 $extraHead = $homeHreflang . $homeJsonLd . '<style>
-    .hero-gradient { background: linear-gradient(135deg, #e6f5f9 0%, #ffffff 55%, #f0fbfd 100%); }
+    .hero-gradient { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #fffbeb 100%); }
     .card-shadow { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); }
     .float-animation { animation: float 6s ease-in-out infinite; }
     @keyframes float {
@@ -359,7 +294,6 @@ $navLinks = [
     ['href' => '#features',                             'label' => function_exists('t') ? t('footer.link_features')   : 'Features'],
     ['href' => '#pricing',                              'label' => function_exists('t') ? t('footer.link_pricing')    : 'Pricing'],
     ['href' => getBasePath() . 'tools',                 'label' => function_exists('t') ? t('footer.link_all_tools')  : 'Free Tools'],
-    ['href' => getBasePath() . 'app',                   'label' => (class_exists('I18n') && I18n::getLocale() === 'ar') ? 'التطبيق' : 'Mobile App'],
     ['href' => getBasePath() . 'oman-business-index',   'label' => function_exists('t') ? t('footer.link_oman_index') : 'Oman Business Index'],
     ['href' => getBasePath() . 'blog',                  'label' => function_exists('t') ? t('footer.link_blog')       : 'Blog'],
 ];
@@ -382,7 +316,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="lg:col-span-6 text-center lg:text-left">
                     <!-- Badge -->
                     <div class="inline-flex items-center gap-2 py-1 pl-1 pr-4 mb-6 text-sm bg-white border border-gray-200 rounded-full shadow-sm">
-                        <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 font-semibold text-xs px-3 py-1 rounded-full"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> <?= htmlspecialchars(t('landing.hero_badge_loc')) ?></span>
+                        <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 font-semibold text-xs px-3 py-1 rounded-full"><span>🇴🇲</span> <?= htmlspecialchars(t('landing.hero_badge_loc')) ?></span>
                         <span class="font-medium text-gray-700"><?= htmlspecialchars(t('landing.hero_badge_copy')) ?></span>
                     </div>
 
@@ -409,7 +343,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             $cardifyDemoMsg = (currentLocale() === 'ar')
                                 ? 'مرحباً، أرغب بعرض توضيحي لكارديفاي لشركتي'
                                 : 'Hi, I would like a demo of Cardify for my company';
-                            $cardifyDemoUrl = 'https://api.whatsapp.com/send?phone=96898899100&text=' . rawurlencode($cardifyDemoMsg);
+                            $cardifyDemoUrl = 'https://wa.me/96899899100?text=' . rawurlencode($cardifyDemoMsg);
                         ?>
                         <a href="<?= htmlspecialchars($cardifyDemoUrl) ?>" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 px-7 py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all text-lg">
                             <i class="fa-brands fa-whatsapp"></i>
@@ -438,75 +372,81 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
                 </div>
 
-                <!-- Right Content - INTERACTIVE wallet pass hero (design.md canonical, live demo) -->
-                <?php
-                    $heroIsAr   = (currentLocale() === 'ar');
-                    $heroName   = $heroIsAr ? 'علي عدنان حيدر درويش' : 'Ali Adnan Haider Darwish';
-                    $heroCo     = htmlspecialchars(t('landing.hero_company_demo'));
-                ?>
-                <div class="lg:col-span-6 relative mt-12 lg:mt-0"
-                     x-data="cardifyHero(<?= htmlspecialchars(json_encode([
-                        'c' => '#009bc1',
-                        'lang' => (currentLocale() === 'ar' ? 'ar' : 'en'),
-                        'defaults' => [
-                            'name'    => $heroName,
-                            'title'   => t('landing.hero_card_role'),
-                            'company' => t('landing.hero_company_demo'),
-                        ],
-                        'labels' => [
-                            'apple'  => t('landing.hero_wallet_cta'),
-                            'google' => t('landing.hero_wallet_cta_google'),
-                        ],
-                        'errText' => t('landing.hero_getcard_err'),
-                     ]), ENT_QUOTES) ?>)">
-                    <div class="cf-hero-stage">
-                        <!-- Live wallet pass (editable) -->
-                        <div class="cf-pass cf-pass--live float-animation" :style="'--pass-c:'+color">
-                            <span class="cf-pass__live">LIVE</span>
-                            <span class="cf-pass__pen" aria-hidden="true"><i class="fa-solid fa-pen"></i></span>
-                            <div class="cf-pass__co cf-edit" contenteditable="true" spellcheck="false" @input="company=$event.target.innerText"><?= $heroCo ?></div>
-                            <h3 class="cf-pass__name cf-edit" contenteditable="true" spellcheck="false" @input="name=$event.target.innerText"><?= htmlspecialchars($heroName) ?></h3>
-                            <p class="cf-pass__role cf-edit" contenteditable="true" spellcheck="false" @input="role=$event.target.innerText"><?= htmlspecialchars(t('landing.hero_card_role')) ?></p>
-                            <div class="cf-pass__contact">
-                                <div class="cf-pass__line">
-                                    <i class="fa-solid fa-phone" aria-hidden="true"></i>
-                                    <span class="cf-edit cf-pass__field" contenteditable="true" spellcheck="false" dir="ltr"
-                                          data-ph="<?= htmlspecialchars(t('landing.hero_phone_ph')) ?>" @input="phone=$event.target.innerText"></span>
+                <!-- Right Content - Card Mockups -->
+                <div class="lg:col-span-6 relative hidden lg:block">
+                    <div class="relative h-[500px]">
+                        <!-- Main Card -->
+                        <div class="float-animation absolute top-0 right-0 w-80 bg-white rounded-2xl card-shadow p-6 border border-gray-100">
+                            <div class="flex items-start gap-4">
+                                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                                    JD
                                 </div>
-                                <div class="cf-pass__line">
-                                    <i class="fa-solid fa-envelope" aria-hidden="true"></i>
-                                    <span class="cf-edit cf-pass__field" contenteditable="true" spellcheck="false" dir="ltr"
-                                          data-ph="<?= htmlspecialchars(t('landing.hero_email_ph')) ?>" @input="email=$event.target.innerText"></span>
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-gray-900 text-lg">John Doe</h3>
+                                    <p class="text-blue-600 text-sm font-semibold">Senior Developer</p>
+                                    <p class="text-gray-500 text-sm">TechCorp Inc.</p>
                                 </div>
                             </div>
-                            <div class="cf-pass-qr" aria-hidden="true"></div>
+                            <div class="mt-5 pt-5 border-t border-gray-100 space-y-3">
+                                <div class="flex items-center gap-3 text-sm text-gray-600">
+                                    <i class="fa-solid fa-envelope w-4 text-blue-500"></i>
+                                    <span>john.doe@techcorp.com</span>
+                                </div>
+                                <div class="flex items-center gap-3 text-sm text-gray-600">
+                                    <i class="fa-solid fa-phone w-4 text-blue-500"></i>
+                                    <span>+1 (555) 123-4567</span>
+                                </div>
+                                <div class="flex items-center gap-3 text-sm text-gray-600">
+                                    <i class="fa-solid fa-globe w-4 text-blue-500"></i>
+                                    <span>techcorp.com</span>
+                                </div>
+                            </div>
+                            <div class="mt-5 flex gap-2">
+                                <button class="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
+                                    <i class="fa-solid fa-address-book mr-2"></i>Save Contact
+                                </button>
+                                <button class="p-2.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition"
+                                        aria-label="<?= htmlspecialchars(t('common.show_qr')) ?>"
+                                        type="button">
+                                    <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+                                </button>
+                            </div>
                         </div>
-                        <!-- Brand-colour swatch picker (live) -->
-                        <div class="cf-swatches">
-                            <span class="cf-swatches__lbl"><?= htmlspecialchars(t('landing.hero_brand_colour')) ?></span>
-                            <template x-for="c in colors" :key="c">
-                                <button type="button" class="cf-swatch" :style="'background:'+c"
-                                        :class="{'cf-swatch--sel': color===c}" @click="color=c"
-                                        :aria-label="'<?= htmlspecialchars(t('landing.hero_brand_colour')) ?> '+c"></button>
-                            </template>
+
+                        <!-- Secondary Card -->
+                        <div class="float-delayed absolute top-52 -left-4 w-72 bg-gradient-to-br from-amber-400 to-amber-500 rounded-2xl card-shadow p-6 text-white">
+                            <div class="flex items-start gap-4">
+                                <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold backdrop-blur-sm">
+                                    SM
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-lg">Sarah Miller</h3>
+                                    <p class="text-white/80 text-sm">Marketing Director</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-white/20 space-y-2 text-sm text-white/90">
+                                <div class="flex items-center gap-3">
+                                    <i class="fa-solid fa-envelope w-4"></i>
+                                    <span>sarah@creativeco.com</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <i class="fa-solid fa-globe w-4"></i>
+                                    <span>creativeco.com</span>
+                                </div>
+                            </div>
                         </div>
-                        <p class="cf-try-hint" x-show="!done"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> <?= htmlspecialchars(t('landing.hero_try_hint')) ?></p>
-                        <p class="cf-getcard-err" x-show="errorMsg" x-text="errorMsg" x-cloak></p>
-                        <!-- ONE action: creates the demo card (+ verify email) then adds the pass to the wallet -->
-                        <div class="cf-wallet-row" x-cloak>
-                            <a class="cf-wallet-btn cf-wallet-btn--apple" x-show="platform !== 'google'" :href="appleHref" @click.prevent="addToWallet('apple')" :aria-label="appleLabel" :class="{'cf-wallet-btn--busy': submitting}">
-                                <i class="fa-brands fa-apple" aria-hidden="true" x-show="!submitting"></i>
-                                <span x-show="!submitting" x-text="appleLabel"><?= htmlspecialchars(t('landing.hero_wallet_cta')) ?></span>
-                                <span x-show="submitting" x-cloak><?= htmlspecialchars(t('landing.hero_getcard_sending')) ?></span>
-                            </a>
-                            <a class="cf-wallet-btn cf-wallet-btn--google" x-show="platform !== 'apple'" :href="googleHref" @click.prevent="addToWallet('google')" :aria-label="googleLabel" :class="{'cf-wallet-btn--busy': submitting}">
-                                <i class="fa-brands fa-google" aria-hidden="true" x-show="!submitting"></i>
-                                <span x-show="!submitting" x-text="googleLabel"><?= htmlspecialchars(t('landing.hero_wallet_cta_google')) ?></span>
-                                <span x-show="submitting" x-cloak><?= htmlspecialchars(t('landing.hero_getcard_sending')) ?></span>
-                            </a>
-                        </div>
-                        <div class="cf-getcard-done" x-show="done" x-cloak>
-                            <strong><?= htmlspecialchars(t('landing.hero_getcard_done')) ?></strong>
+
+                        <!-- Small Card -->
+                        <div class="float-animation float-delay-2 absolute bottom-8 right-8 w-64 bg-white rounded-2xl card-shadow p-5 border border-gray-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-bold shadow-lg">
+                                    AK
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-gray-900">Alex Kim</h3>
+                                    <p class="text-gray-500 text-xs">CEO, StartupXYZ</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -514,110 +454,40 @@ require_once INCLUDES_DIR . '/ui-header.php';
         </div>
     </section>
 
-    <script>
-    // Interactive hero pass: live brand colour + editable text. Plain global so
-    // it is defined before deferred Alpine boots. No x-init (init() would double-run).
-    function cardifyHero(seed) {
-        seed = seed || {};
-        var ua = (navigator.userAgent || '');
-        // Show only the device-relevant wallet: Android -> Google, Apple
-        // (iPhone/iPad/Mac; iPadOS reports as Macintosh) -> Apple. Genuinely
-        // ambiguous desktop (Windows/Linux) -> show both so they can still pick.
-        var isAndroid = /Android/i.test(ua);
-        var isApple = !isAndroid && /iPhone|iPad|iPod|Macintosh|Mac OS X/i.test(ua);
-        var platform = isAndroid ? 'google' : (isApple ? 'apple' : 'other');
-        var df = seed.defaults || {};
-        return {
-            color: seed.c || '#009bc1',
-            colors: ['#009bc1', '#2563eb', '#7c3aed', '#0c1418', '#16a34a', '#e11d48'],
-            name: df.name || '', company: df.company || '', role: df.title || '',
-            lang: (seed.lang === 'ar' ? 'ar' : 'en'),
-            labels: seed.labels || {},
-            platform: platform, // 'apple' | 'google' | 'other' (desktop)
-            // Get-my-card funnel state
-            email: '', phone: '', submitting: false, done: false, cardUrl: '', errorMsg: '',
-            errText: seed.errText || 'Please enter a valid work email and try again.',
-            async submit() {
-                if (this.submitting) { return; }
-                if (!this.email || this.email.indexOf('@') === -1) { this.errorMsg = this.errText; return; }
-                this.errorMsg = ''; this.submitting = true;
-                try {
-                    const body = new URLSearchParams({
-                        email: this.email, phone: this.phone, name: this.name, title: this.role,
-                        company: this.company, color: this.color, lang: this.lang
-                    });
-                    const r = await fetch('/instant_card.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: body.toString()
-                    });
-                    const d = await r.json();
-                    if (d && d.ok) { this.done = true; this.cardUrl = d.cardUrl || ''; }
-                    else { this.errorMsg = this.errText; }
-                } catch (e) { this.errorMsg = this.errText; }
-                this.submitting = false;
-            },
-            // Reactive: the pass reflects the LIVE colour + typed details.
-            get _q() {
-                var q = 'name=' + encodeURIComponent(this.name)
-                    + '&title=' + encodeURIComponent(this.role)
-                    + '&company=' + encodeURIComponent(this.company)
-                    + '&color=' + encodeURIComponent(this.color)
-                    + '&lang=' + encodeURIComponent(this.lang);
-                if (this.phone) { q += '&phone=' + encodeURIComponent(this.phone); }
-                if (this.email) { q += '&email=' + encodeURIComponent(this.email); }
-                // Once the demo card exists, the pass QR points to it.
-                if (this.cardUrl) { q += '&card=' + encodeURIComponent(this.cardUrl); }
-                return q;
-            },
-            // One action: create the demo card (+ verify email) THEN open the wallet pass.
-            async addToWallet(plat) {
-                if (!this.email || this.email.indexOf('@') === -1) { this.errorMsg = this.errText; return; }
-                if (!this.done) { await this.submit(); if (!this.done) { return; } }
-                window.location.href = (plat === 'google') ? this.googleHref : this.appleHref;
-            },
-            get appleHref()  { return '/wallet_demo.php?platform=apple&'  + this._q; },
-            get googleHref() { return '/wallet_demo.php?platform=google&' + this._q; },
-            get appleLabel()  { return this.labels.apple  || 'Add to Apple Wallet'; },
-            get googleLabel() { return this.labels.google || 'Add to Google Wallet'; }
-        };
-    }
-    </script>
-
     <!-- ========== TRUST SIGNALS ========== -->
     <?php @include __DIR__ . '/views/partials/trust_logo_strip.php'; ?>
 
     <!-- ========== VALUE PROPOSITION BANNER ========== -->
-    <section class="py-12 bg-white border-b border-gray-100">
+    <section class="py-12 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid md:grid-cols-3 gap-8 text-center">
                 <div class="flex flex-col items-center">
-                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4">
+                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
                         <i class="fa-solid fa-palette text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('landing.vp_design_title')) ?></h3>
-                    <p class="text-gray-600 text-sm"><?= htmlspecialchars(t('landing.vp_design_body')) ?></p>
+                    <h3 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_design_title')) ?></h3>
+                    <p class="text-blue-100 text-sm"><?= htmlspecialchars(t('landing.vp_design_body')) ?></p>
                 </div>
                 <div class="flex flex-col items-center">
-                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4">
+                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
                         <i class="fa-solid fa-print text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('landing.vp_print_title')) ?></h3>
-                    <p class="text-gray-600 text-sm"><?= htmlspecialchars(t('landing.vp_print_body')) ?></p>
+                    <h3 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_print_title')) ?></h3>
+                    <p class="text-blue-100 text-sm"><?= htmlspecialchars(t('landing.vp_print_body')) ?></p>
                 </div>
                 <div class="flex flex-col items-center">
-                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4">
+                    <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
                         <i class="fa-solid fa-gift text-2xl"></i>
                     </div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('landing.vp_free_title')) ?></h3>
-                    <p class="text-gray-600 text-sm"><?= htmlspecialchars(t('landing.vp_free_body')) ?></p>
+                    <h3 class="text-lg font-bold mb-2"><?= htmlspecialchars(t('landing.vp_free_title')) ?></h3>
+                    <p class="text-blue-100 text-sm"><?= htmlspecialchars(t('landing.vp_free_body')) ?></p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- ========== FEATURES SECTION (Flowbite Style) ========== -->
-    <section id="features" class="py-12 lg:py-16 bg-gray-50">
+    <section id="features" class="py-16 lg:py-24 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="mx-auto max-w-2xl text-center mb-16">
@@ -646,8 +516,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <!-- Feature 2 - Print Integration -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
                     <div class="absolute -top-3 -right-3 px-2 py-1 bg-green-500 text-white text-xs font-bold rounded-full"><?= htmlspecialchars(t('landing.feat_badge_new')) ?></div>
-                    <div class="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
-                        <i class="fa-solid fa-print text-2xl text-blue-600 group-hover:text-white transition-colors"></i>
+                    <div class="w-14 h-14 rounded-xl bg-green-100 flex items-center justify-center mb-6 group-hover:bg-green-600 transition-colors">
+                        <i class="fa-solid fa-print text-2xl text-green-600 group-hover:text-white transition-colors"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.feat_print_title')) ?></h3>
                     <p class="text-gray-600 leading-relaxed">
@@ -657,8 +527,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Feature 3 - Bilingual -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
-                    <div class="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
-                        <i class="fa-solid fa-language text-2xl text-blue-600 group-hover:text-white transition-colors"></i>
+                    <div class="w-14 h-14 rounded-xl bg-amber-100 flex items-center justify-center mb-6 group-hover:bg-amber-500 transition-colors">
+                        <i class="fa-solid fa-language text-2xl text-amber-600 group-hover:text-white transition-colors"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.feat_lang_title')) ?></h3>
                     <p class="text-gray-600 leading-relaxed">
@@ -668,8 +538,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Feature 4 - Team Management -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
-                    <div class="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
-                        <i class="fa-solid fa-users text-2xl text-blue-600 group-hover:text-white transition-colors"></i>
+                    <div class="w-14 h-14 rounded-xl bg-purple-100 flex items-center justify-center mb-6 group-hover:bg-purple-600 transition-colors">
+                        <i class="fa-solid fa-users text-2xl text-purple-600 group-hover:text-white transition-colors"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.feat_team_title')) ?></h3>
                     <p class="text-gray-600 leading-relaxed">
@@ -679,8 +549,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Feature 5 - QR Tracking -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
-                    <div class="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
-                        <i class="fa-solid fa-qrcode text-2xl text-blue-600 group-hover:text-white transition-colors"></i>
+                    <div class="w-14 h-14 rounded-xl bg-pink-100 flex items-center justify-center mb-6 group-hover:bg-pink-600 transition-colors">
+                        <i class="fa-solid fa-qrcode text-2xl text-pink-600 group-hover:text-white transition-colors"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.feat_qr_title')) ?></h3>
                     <p class="text-gray-600 leading-relaxed">
@@ -690,8 +560,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Feature 6 - Self Service Portal -->
                 <div class="relative bg-white rounded-2xl p-8 shadow-lg shadow-gray-200/60 border border-gray-100 hover:shadow-xl transition-shadow group">
-                    <div class="w-14 h-14 rounded-xl bg-blue-100 flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
-                        <i class="fa-solid fa-door-open text-2xl text-blue-600 group-hover:text-white transition-colors"></i>
+                    <div class="w-14 h-14 rounded-xl bg-red-100 flex items-center justify-center mb-6 group-hover:bg-red-600 transition-colors">
+                        <i class="fa-solid fa-door-open text-2xl text-red-600 group-hover:text-white transition-colors"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.feat_portal_title')) ?></h3>
                     <p class="text-gray-600 leading-relaxed">
@@ -703,7 +573,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <!-- ========== HOW IT WORKS (Techwind Style) ========== -->
-    <section id="how-it-works" class="py-12 lg:py-16 bg-white">
+    <section id="how-it-works" class="py-16 lg:py-24 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
             <div class="max-w-2xl mx-auto text-center mb-16">
@@ -734,7 +604,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Step 2 -->
                 <div class="relative text-center group">
-                    <div class="w-20 h-20 rounded-full bg-blue-600 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-600/30 group-hover:scale-110 transition-transform">
+                    <div class="w-20 h-20 rounded-full bg-amber-500 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-amber-500/30 group-hover:scale-110 transition-transform">
                         2
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.how_step2_title')) ?></h3>
@@ -748,7 +618,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Step 3 -->
                 <div class="text-center group">
-                    <div class="w-20 h-20 rounded-full bg-blue-600 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-600/30 group-hover:scale-110 transition-transform">
+                    <div class="w-20 h-20 rounded-full bg-green-500 text-white text-3xl font-bold flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-500/30 group-hover:scale-110 transition-transform">
                         3
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3"><?= htmlspecialchars(t('landing.how_step3_title')) ?></h3>
@@ -767,7 +637,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <!-- ========== SCREENSHOT SECTION (Techwind Style) ========== -->
-    <section class="py-12 lg:py-16 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 overflow-hidden">
+    <section class="py-16 lg:py-24 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 overflow-hidden">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid lg:grid-cols-2 gap-12 items-center">
                 <!-- Content -->
@@ -822,7 +692,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <!-- ========== PRICING SECTION ========== -->
-    <section id="pricing" class="py-12 lg:py-16 bg-gradient-to-b from-gray-50 to-white px-4">
+    <section id="pricing" class="py-16 lg:py-24 bg-gradient-to-b from-gray-50 to-white px-4">
         <div class="max-w-6xl mx-auto">
             <!-- Section Header -->
             <div class="text-center mb-12">
@@ -835,8 +705,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
 
             <!-- Platform (free forever) card -->
-            <article class="relative bg-white rounded-3xl p-8 lg:p-10 ring-1 ring-gray-200/70 shadow-xl mb-10">
-                <span class="inline-flex items-center px-4 py-1 mb-6 bg-green-600 text-white text-xs font-bold rounded-full uppercase tracking-wider shadow-sm">
+            <article class="relative bg-white rounded-3xl px-8 pt-12 pb-8 lg:px-10 lg:pt-14 lg:pb-10 ring-1 ring-gray-200/70 shadow-xl mb-10">
+                <span class="absolute -top-3 left-8 px-4 py-1 bg-green-600 text-white text-xs font-bold rounded-full uppercase tracking-wider whitespace-nowrap shadow-md z-10">
                     <?= htmlspecialchars(t('pricing.platform_badge')) ?>
                 </span>
                 <div class="grid lg:grid-cols-2 gap-8 items-center">
@@ -905,10 +775,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <!-- ========== TESTIMONIALS SECTION (Flowbite Style) ========== -->
-    <section id="testimonials" class="py-12 lg:py-16 bg-gray-50">
+    <section id="testimonials" class="py-16 lg:py-24 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
-            <div class="max-w-2xl mx-auto text-center mb-12">
+            <div class="max-w-2xl mx-auto text-center mb-16">
                 <p class="text-sm font-semibold uppercase tracking-wider text-blue-600 mb-3"><?= htmlspecialchars(t('testimonials.kicker')) ?></p>
                 <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-gray-900 mb-4">
                     <?= htmlspecialchars(t('testimonials.headline')) ?>
@@ -951,7 +821,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
     <!-- ========== FROM THE BLOG (SEO internal linking) ========== -->
     <?php if (!empty($latestPosts)): ?>
-    <section class="py-12 lg:py-16 bg-white">
+    <section class="py-16 lg:py-24 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-end justify-between mb-10 flex-wrap gap-4">
                 <div>
@@ -985,8 +855,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <p class="mt-3 text-gray-600 text-sm leading-relaxed"><?= htmlspecialchars($excerpt) ?></p>
                         <?php endif; ?>
                         <a href="<?= htmlspecialchars($postUrl) ?>" class="mt-4 inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-semibold">
-                            <?= htmlspecialchars(t('blog.read_more')) ?><span class="sr-only">: <?= htmlspecialchars($post['title']) ?></span>
-                            <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
+                            Read more
+                            <i class="fa-solid fa-arrow-right text-xs"></i>
                         </a>
                     </div>
                 </article>
@@ -997,7 +867,29 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <?php endif; ?>
 
     <!-- ========== FREE TOOLS & DIRECTORIES (SEO HUB) ========== -->
-    <section id="resources" class="py-12 lg:py-16 bg-white">
+    <?php
+        // r6-51: published counts are derived at render time, never hardcoded.
+        // The directory count and the logo count are DIFFERENT populations:
+        // om_companies rows vs rows whose logo_status is indexed/verified.
+        // If either query fails we drop the number from the sentence rather than ship a stale one.
+        $resCompaniesCount = null;
+        $resLogosCount = null;
+        try {
+            if (isset($db) && $db->isConnected()) {
+                $r = $db->fetchOne("SELECT COUNT(*) c FROM om_companies");
+                if ($r && isset($r['c'])) $resCompaniesCount = (int) $r['c'];
+                $r = $db->fetchOne("SELECT COUNT(*) c FROM om_companies WHERE logo_status IN ('indexed','verified')");
+                if ($r && isset($r['c'])) $resLogosCount = (int) $r['c'];
+            }
+        } catch (Throwable $e) { /* leave both null: render the count-free copy */ }
+        $resSubhead = $resCompaniesCount !== null
+            ? t('landing.res_subhead', ['companies' => number_format($resCompaniesCount)])
+            : t('landing.res_subhead_nc');
+        $resLogosSub = $resLogosCount !== null
+            ? t('landing.res_logos_sub', ['logos' => number_format($resLogosCount)])
+            : t('landing.res_logos_sub_nc');
+    ?>
+    <section id="resources" class="py-16 lg:py-24 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-12">
                 <span class="inline-block text-sm font-semibold text-blue-600 uppercase tracking-wider mb-3"><?= htmlspecialchars(t('landing.res_kicker')) ?></span>
@@ -1005,7 +897,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     <?= htmlspecialchars(t('landing.res_headline')) ?>
                 </h2>
                 <p class="text-lg text-gray-600 max-w-3xl mx-auto">
-                    <?= htmlspecialchars(t('landing.res_subhead')) ?>
+                    <?= htmlspecialchars($resSubhead) ?>
                 </p>
             </div>
 
@@ -1044,9 +936,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </div>
 
                 <!-- Oman Business Directory -->
-                <div class="bg-gradient-to-br from-blue-50 to-blue-50 rounded-2xl p-8 border border-blue-100">
+                <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-8 border border-emerald-100">
                     <div class="flex items-center gap-3 mb-6">
-                        <div class="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center">
                             <i class="fa-solid fa-building-columns text-xl"></i>
                         </div>
                         <h3 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('landing.res_obi_title')) ?></h3>
@@ -1063,24 +955,24 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             'muscat'       => '/companies/wilayat/muscat',
                             'dhofar'       => '/companies/wilayat/dhofar',
                         ] as $k => $href): ?>
-                            <a href="<?= htmlspecialchars($href) ?>" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition font-medium border border-gray-100"><?= htmlspecialchars(t('landing.res_obi_' . $k)) ?></a>
+                            <a href="<?= htmlspecialchars($href) ?>" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-emerald-100 hover:text-emerald-700 transition font-medium border border-gray-100"><?= htmlspecialchars(t('landing.res_obi_' . $k)) ?></a>
                         <?php endforeach; ?>
                     </div>
-                    <a href="/oman-business-index" class="inline-flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-700">
+                    <a href="/oman-business-index" class="inline-flex items-center gap-2 text-emerald-700 font-semibold hover:text-emerald-800">
                         <?= htmlspecialchars(t('landing.res_obi_cta')) ?>
                         <i class="fa-solid fa-arrow-right text-xs"></i>
                     </a>
                 </div>
 
                 <!-- Omani Logo Library -->
-                <div class="bg-gradient-to-br from-blue-50 to-blue-50 rounded-2xl p-8 border border-blue-100">
+                <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-8 border border-amber-100">
                     <div class="flex items-center gap-3 mb-6">
-                        <div class="w-12 h-12 rounded-xl bg-blue-500 text-white flex items-center justify-center">
+                        <div class="w-12 h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center">
                             <i class="fa-solid fa-bezier-curve text-xl"></i>
                         </div>
                         <h3 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('landing.res_logos_title')) ?></h3>
                     </div>
-                    <p class="text-gray-600 mb-6"><?= htmlspecialchars(t('landing.res_logos_sub')) ?></p>
+                    <p class="text-gray-600 mb-6"><?= htmlspecialchars($resLogosSub) ?></p>
                     <div class="grid grid-cols-2 gap-2 mb-6">
                         <?php foreach ([
                             ['k' => 'pin1', 'href' => '/companies/bhd-group'],
@@ -1092,10 +984,10 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             ['k' => 'pin7', 'href' => '/companies/bank-dhofar'],
                             ['k' => 'pin8', 'href' => '/companies/sohar-international-bank'],
                         ] as $pin): ?>
-                            <a href="<?= htmlspecialchars($pin['href']) ?>" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition font-medium border border-gray-100"><?= htmlspecialchars(t('landing.res_logos_' . $pin['k'])) ?></a>
+                            <a href="<?= htmlspecialchars($pin['href']) ?>" class="text-sm px-3 py-2 rounded-lg bg-white text-gray-700 hover:bg-amber-100 hover:text-amber-700 transition font-medium border border-gray-100"><?= htmlspecialchars(t('landing.res_logos_' . $pin['k'])) ?></a>
                         <?php endforeach; ?>
                     </div>
-                    <a href="/logos" class="inline-flex items-center gap-2 text-blue-700 font-semibold hover:text-blue-700">
+                    <a href="/logos" class="inline-flex items-center gap-2 text-amber-700 font-semibold hover:text-amber-800">
                         <?= htmlspecialchars(t('landing.res_logos_cta')) ?>
                         <i class="fa-solid fa-arrow-right text-xs"></i>
                     </a>
@@ -1106,36 +998,36 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="bg-gray-50 rounded-2xl p-8">
                 <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-lg bg-blue-600 text-white flex items-center justify-center">
+                        <div class="w-10 h-10 rounded-lg bg-purple-600 text-white flex items-center justify-center">
                             <i class="fa-solid fa-lightbulb"></i>
                         </div>
                         <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('landing.res_sol_heading')) ?></h3>
                     </div>
-                    <a href="/solutions" class="text-sm font-semibold text-blue-700 hover:text-blue-700"><?= htmlspecialchars(t('landing.res_sol_cta')) ?></a>
+                    <a href="/solutions" class="text-sm font-semibold text-purple-700 hover:text-purple-800"><?= htmlspecialchars(t('landing.res_sol_cta')) ?></a>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    <a href="/solutions/business-cards-oman-construction-companies" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Construction &amp; Contracting</a>
-                    <a href="/solutions/digital-business-cards-oil-gas-oman" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Oil &amp; Gas</a>
-                    <a href="/solutions/business-cards-oman-bank-employees" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Bank Employees</a>
-                    <a href="/solutions/business-cards-muscat-doctors-clinics" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Doctors &amp; Clinics</a>
-                    <a href="/solutions/business-cards-omani-law-firms" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Law Firms</a>
-                    <a href="/solutions/digital-cards-oman-real-estate-agents" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Real Estate</a>
-                    <a href="/solutions/qr-code-menu-muscat-restaurants" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Restaurants QR Menu</a>
-                    <a href="/solutions/bilingual-arabic-english-business-cards" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Bilingual AR/EN Cards</a>
-                    <a href="/solutions/nfc-business-cards-oman-executives" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">NFC for Executives</a>
-                    <a href="/solutions/business-cards-oman-government-employees" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Government Employees</a>
-                    <a href="/solutions/business-cards-oman-startups" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Startups</a>
-                    <a href="/solutions/salalah-tourism-business-cards" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-blue-700 hover:shadow transition border border-gray-100">Salalah Tourism</a>
+                    <a href="/solutions/business-cards-oman-construction-companies" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Construction &amp; Contracting</a>
+                    <a href="/solutions/digital-business-cards-oil-gas-oman" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Oil &amp; Gas</a>
+                    <a href="/solutions/business-cards-oman-bank-employees" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Bank Employees</a>
+                    <a href="/solutions/business-cards-muscat-doctors-clinics" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Doctors &amp; Clinics</a>
+                    <a href="/solutions/business-cards-omani-law-firms" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Law Firms</a>
+                    <a href="/solutions/digital-cards-oman-real-estate-agents" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Real Estate</a>
+                    <a href="/solutions/qr-code-menu-muscat-restaurants" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Restaurants QR Menu</a>
+                    <a href="/solutions/bilingual-arabic-english-business-cards" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Bilingual AR/EN Cards</a>
+                    <a href="/solutions/nfc-business-cards-oman-executives" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">NFC for Executives</a>
+                    <a href="/solutions/business-cards-oman-government-employees" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Government Employees</a>
+                    <a href="/solutions/business-cards-oman-startups" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Startups</a>
+                    <a href="/solutions/salalah-tourism-business-cards" class="p-3 bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-purple-700 hover:shadow transition border border-gray-100">Salalah Tourism</a>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- ========== CTA SECTION (Flowbite Style) ========== -->
-    <section class="py-12 lg:py-16 bg-gradient-to-br from-blue-600 to-indigo-700">
+    <section class="py-16 lg:py-24 bg-gradient-to-br from-blue-600 to-indigo-700">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white text-sm font-medium mb-6">
-                <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                <span>🇴🇲</span>
                 <span><?= htmlspecialchars(t('landing.cta_supporting')) ?></span>
             </div>
 
@@ -1157,27 +1049,28 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 </a>
             </div>
 
-            <div class="mt-10 flex flex-wrap justify-center gap-6 text-white text-sm">
+            <div class="mt-10 flex flex-wrap justify-center gap-6 text-white/70 text-sm">
                 <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-circle-check text-white"></i>
+                    <i class="fa-solid fa-check-circle"></i>
                     <span><?= htmlspecialchars(t('landing.cta_free_starter')) ?></span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-circle-check text-white"></i>
+                    <i class="fa-solid fa-check-circle"></i>
                     <span><?= htmlspecialchars(t('landing.cta_free_trial')) ?></span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-circle-check text-white"></i>
+                    <i class="fa-solid fa-check-circle"></i>
                     <span><?= htmlspecialchars(t('pricing.home_plans_from', ['amount' => $priceStarterFrom, 'currency' => $homeCurName])) ?></span>
                 </div>
             </div>
+            </p>
         </div>
     </section>
 
     <!-- ========== FOOTER ========== -->
     <footer id="contact" class="bg-gray-900 text-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
                 <!-- Brand -->
                 <div class="lg:col-span-1">
                     <div class="flex items-center gap-3 mb-6">
@@ -1195,20 +1088,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Product Links -->
                 <div>
-                    <h4 class="font-bold text-lg mb-4"><?= htmlspecialchars(t('footer.col_product')) ?></h4>
-                    <ul class="space-y-2">
+                    <h4 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_product')) ?></h4>
+                    <ul class="space-y-3">
                         <li><a href="#features" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_features')) ?></a></li>
                         <li><a href="#pricing" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_pricing')) ?></a></li>
                         <li><a href="#resources" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_all_tools')) ?></a></li>
-                        <li><a href="<?php echo getBasePath(); ?>app" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_app')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>company/register.php" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('header.get_started_free')) ?></a></li>
                     </ul>
                 </div>
 
                 <!-- Free Tools -->
                 <div>
-                    <h4 class="font-bold text-lg mb-4"><?= htmlspecialchars(t('footer.col_free_tools')) ?></h4>
-                    <ul class="space-y-2">
+                    <h4 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_free_tools')) ?></h4>
+                    <ul class="space-y-3">
                         <li><a href="<?php echo getBasePath(); ?>tools/vcard-qr-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_vcard_qr')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>tools/email-signature-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_email_sig')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>tools/whatsapp-qr-generator" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_whatsapp_qr')) ?></a></li>
@@ -1219,8 +1111,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Directory & Solutions -->
                 <div>
-                    <h4 class="font-bold text-lg mb-4"><?= htmlspecialchars(t('footer.col_directory')) ?></h4>
-                    <ul class="space-y-2">
+                    <h4 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_directory')) ?></h4>
+                    <ul class="space-y-3">
                         <li><a href="<?php echo getBasePath(); ?>oman-business-index" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_oman_index')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>companies" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_browse_companies')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>companies/sector/oil-gas" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_ind_oil')) ?></a></li>
@@ -1232,8 +1124,8 @@ require_once INCLUDES_DIR . '/ui-header.php';
 
                 <!-- Company + Legal -->
                 <div>
-                    <h4 class="font-bold text-lg mb-4"><?= htmlspecialchars(t('footer.col_company')) ?></h4>
-                    <ul class="space-y-2">
+                    <h4 class="font-bold text-lg mb-6"><?= htmlspecialchars(t('footer.col_company')) ?></h4>
+                    <ul class="space-y-3">
                         <li><a href="<?php echo getBasePath(); ?>about" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_about')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>blog" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_blog')) ?></a></li>
                         <li><a href="<?php echo getBasePath(); ?>careers" class="text-gray-400 hover:text-white transition-colors"><?= htmlspecialchars(t('footer.link_careers')) ?></a></li>
@@ -1245,7 +1137,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
 
             <!-- Bottom Bar -->
-            <div class="pt-6 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
                 <p class="text-gray-500 text-sm">
                     <?= htmlspecialchars(t('footer.copyright', ['year' => date('Y'), 'brand' => $brandName])) ?>
                 </p>
@@ -1440,9 +1332,5 @@ HTML;
 </script>
 
 <?php
-    // The homepage owns its footer (above); ui-footer runs for scripts only.
-    // Explicit so ui-footer no longer has to guess "is this the homepage?"
-    // by script name (which also matched every other */index.php page).
-    $skipFooter = true;
     require INCLUDES_DIR . '/ui-footer.php';
     ?>

@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 
+Disallow: /tools/verify-
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/

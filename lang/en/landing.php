@@ -13,18 +13,6 @@ return [
     'hero_price_tag'   => 'From 6 OMR per card. Free to design and preview.',
     'cta_start_free'   => 'Start free',
     'cta_request_demo' => 'Book a demo on WhatsApp',
-    'hero_card_role'    => 'Chief Executive Officer',
-    'hero_wallet_cta'   => 'Add to Apple Wallet',
-    'hero_wallet_cta_google' => 'Add to Google Wallet',
-    'hero_brand_colour' => 'Brand colour',
-    'hero_try_hint'     => 'Tap the card to type your name, pick a colour. It updates live.',
-    'hero_company_demo' => 'BHD GROUP',
-    'hero_email_ph'        => 'you@company.com',
-    'hero_phone_ph'        => 'Phone (optional)',
-    'hero_getcard'         => 'Get my card',
-    'hero_getcard_sending' => 'Creating your card...',
-    'hero_getcard_done'    => 'Check your inbox to verify and keep your card.',
-    'hero_getcard_err'     => 'Please enter a valid work email and try again.',
 
     // Trust badges
     'trust_free_design' => 'Free until you print',
@@ -92,7 +80,8 @@ return [
     // Resources section (action 516)
     'res_kicker'         => 'Free for everyone',
     'res_headline'       => 'Free tools, business directory, and logo library',
-    'res_subhead'        => 'Generate vCard QRs and email signatures, browse 2,500+ Omani enterprises in the public directory, and download official logos as SVG or PNG. All free, no sign-up.',
+    'res_subhead'        => 'Generate vCard QRs and email signatures, browse :companies Omani enterprises in the public directory, and download official logos as SVG or PNG. All free, no sign-up.',
+    'res_subhead_nc'     => 'Generate vCard QRs and email signatures, browse Omani enterprises in the public directory, and download official logos as SVG or PNG. All free, no sign-up.',
     'res_tools_title'    => 'Free tools',
     'res_tools_sub'      => 'Generate what you need in seconds, no sign-up required.',
     'res_tools_cta'      => 'Browse all free tools',
@@ -105,7 +94,7 @@ return [
     'res_tool_nfc_title'   => 'NFC business card guide',
     'res_tool_nfc_sub'     => 'How tap-to-share works, step by step',
     'res_obi_title'      => 'Oman Business Index',
-    'res_obi_sub'        => 'Free public directory of the 2,500+ largest enterprises in Oman, sourced from MoCIIP.',
+    'res_obi_sub'        => 'Free public directory of the 2,414 largest enterprises in Oman, sourced from MoCIIP.',
     'res_obi_oil_gas'    => 'Oil & gas',
     'res_obi_construction' => 'Construction',
     'res_obi_finance'    => 'Finance & banking',
@@ -118,7 +107,8 @@ return [
 
     // Logo Library card (Apr 2026 SEO push)
     'res_logos_title'    => 'Omani Logo Library',
-    'res_logos_sub'      => 'Download official logos of 2,500+ Omani companies as SVG, PNG or WebP. Free for editorial, design, and presentation use.',
+    'res_logos_sub'      => 'Download official logos of :logos Omani companies as SVG, PNG or WebP. Free for editorial, design, and presentation use.',
+    'res_logos_sub_nc'   => 'Download official Omani company logos as SVG, PNG or WebP. Free for editorial, design, and presentation use.',
     'res_logos_cta'      => 'Browse the logo library',
     'res_logos_pin1'     => 'BHD Group',
     'res_logos_pin2'     => 'Bank Muscat',

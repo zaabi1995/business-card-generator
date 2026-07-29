@@ -1,4 +1,5 @@
 <?php
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 /**
  * Gate: every /ar/ URL in the ArTwins map must serve an ARABIC BODY.
  *

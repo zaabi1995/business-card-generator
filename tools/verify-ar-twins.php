@@ -1,4 +1,5 @@
 <?php
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 /**
  * Gate: the ArTwins map and the nginx /ar/ rewrite table must agree, exactly.
  *

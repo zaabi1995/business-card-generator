@@ -193,6 +193,19 @@ try {
             }
         }
 
+        // The employee's own details just changed, so the baked card PNG is stale.
+        //
+        // Only the brand-colour branch above invalidated anything, and only for
+        // the whole company. An employee on a classic web-designed card who
+        // fixed their job title in the app saw the TEXT update everywhere while
+        // the pictured card kept the old title, because CardRenderer served the
+        // previously baked PNG until someone re-opened the web editor. Employees
+        // with an app preset escaped it only because applyForEmployee re-renders
+        // as a side effect.
+        require_once INCLUDES_DIR . '/CardRenderer.php';
+        try { CardRenderer::invalidateForEmployee((string) $employeeId, 'scan-my-card-details'); }
+        catch (\Throwable $e) { error_log('[scan/my-card] invalidate employee: ' . $e->getMessage()); }
+
         // Wallet pass auto-update: the card changed, so bump the pass version
         // and notify every Wallet device registered to it (empty push -> Wallet
         // pulls the new pass). Best-effort; never fails the save.
@@ -352,6 +365,32 @@ try {
     // empty body with HTTP 200, which the app cannot parse and cannot recover
     // from. $cap() no longer produces such values, but a row corrupted before
     // that fix would still hit this. Fail loudly instead of silently.
+    // Can this person actually use the web admin?
+    //
+    // Settings offers a "Manage on the web" row that lands on the tenant's
+    // login.php -> tenant_login.php OTP flow, and that flow authenticates
+    // strictly against the `users` table. Measured on live data: 382 of 399
+    // active employees have no users row, so 96% of the people the button
+    // targets cannot get in. Worse, the OTP page returns the same "code sent"
+    // screen either way (deliberate anti-enumeration), so the tap LOOKS like it
+    // worked and then nothing arrives.
+    //
+    // The app cannot know this on its own, so the server says. Same lesson as
+    // the apex password wall: a link out is only done when the destination
+    // accepts that population.
+    $response['can_manage_web'] = false;
+    try {
+        $webUser = $db->fetchOne(
+            "SELECT u.id FROM users u
+             JOIN employees e ON e.email = u.email
+             WHERE e.id = :eid LIMIT 1",
+            ['eid' => $employeeId]
+        );
+        $response['can_manage_web'] = !empty($webUser);
+    } catch (\Throwable $e) {
+        error_log('[scan/my-card] can_manage_web: ' . $e->getMessage());
+    }
+
     $encoded = json_encode($response, JSON_UNESCAPED_UNICODE);
     if ($encoded === false) {
         http_response_code(500);
