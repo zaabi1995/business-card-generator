@@ -852,7 +852,17 @@ def _draw_qr_code(page, qr_spec: dict, employee: dict, template: dict,
     base = template.get('base_url', 'https://cardify.om/')
     if not base.endswith('/'):
         base += '/'
-    qr_data = f'{base}qr.php?c={slug}&e={email}' if slug and email else base
+    # An employee with no email used to fall through to the bare base URL, i.e.
+    # a printed card whose QR opens the Cardify homepage and identifies nobody.
+    # qr.php also accepts ?i=<employee id>, which keeps scan tracking and
+    # resolves to the right card.
+    emp_id = str(employee.get('id', '') or '')
+    if slug and email:
+        qr_data = f'{base}qr.php?c={slug}&e={email}'
+    elif emp_id:
+        qr_data = f'{base}qr.php?i={emp_id}'
+    else:
+        qr_data = base
 
     # Generate the QR matrix
     qr = qrcode.QRCode(
