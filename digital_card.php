@@ -1382,7 +1382,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         <?php endif; ?>
 
         <!-- Flippable Card -->
-        <?php if (!$frontImage): ?>
+        <?php if (!$frontImage && !$leadWithPhoto): ?>
         <div class="card-fallback" role="img" aria-label="<?= htmlspecialchars($name ?: t('digitalcard.alt_card_front'), ENT_QUOTES) ?>">
             <div class="card-fallback-name"><?= htmlspecialchars($name) ?></div>
             <?php if (!empty($position)): ?>
