@@ -8,6 +8,7 @@
  */
 require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/BlogSlugRedirects.php';
 
 $lang  = ($_GET['lang'] ?? '') === 'ar' ? 'ar' : 'en';
 $isAr  = $lang === 'ar';
@@ -77,6 +78,14 @@ if ($db->tableExists('blog_posts')) {
                 }
             }
         } else {
+            // A retired slug gets its successor, not a 404. The redirect stays
+            // inside the current language tree so /ar/blog/<old> does not dump
+            // an Arabic reader onto the English post.
+            $moved = BlogSlugRedirects::target(strtolower($postSlug));
+            if ($moved !== null) {
+                header('Location: ' . $blogBase . '/' . $moved, true, 301);
+                exit;
+            }
             // Unknown slug, return proper 404 so Google doesn't index a fallback listing
             http_response_code(404);
             header('Cache-Control: no-store');
