@@ -186,19 +186,19 @@ $countries = [
         'registrar_name' => 'Ministry of Commerce, Industry & Investment Promotion (MoCIIP)',
         'registrar_url'  => 'https://business.gov.om',
         'registry_name'  => 'Oman Commercial Registry',
-        'company_count_approx' => '2,414 indexed (full CR: ~260,000)',
-        'hero_headline'  => 'Digital business cards for Oman, live since 2024, powering 2,414 indexed companies',
+        'company_count_approx' => '{OBI} indexed (full CR: ~260,000)',
+        'hero_headline'  => 'Digital business cards for Oman, live since 2024, powering {OBI} indexed companies',
         'hero_sub'       => 'Cardify is based in Oman. The Omani Logo Library and Oman Business Index are both live with verified CR data. Start using bilingual EN/AR digital business cards today, used by teams from Muscat to Salalah to Sohar.',
         'sectors'        => ['Oil & Gas', 'Banking (CBO)', 'Finance & Insurance', 'Real Estate', 'Logistics', 'Tourism', 'Government & Defense', 'Construction'],
         'majors'         => ['PDO', 'OQ', 'Bank Muscat', 'Asyad', 'Ominvest', 'NBO', 'Sohar International', 'Orpic'],
         'value_props'    => [
-            '2,414 Omani companies already in the index, free data download',
+            '{OBI} Omani companies already in the index, free data download',
             'Bilingual Arabic/English, tuned for CBO / MoCIIP compliance',
             'Used by bankers, oil & gas, government, and SMEs across all governorates',
             'Per-seat OMR pricing with Paymob integration for local payments',
         ],
         'faq' => [
-            ['q' => 'Is the Oman Business Index live?', 'a' => 'Yes. 2,414 companies with real CR data, directly from MoCIIP, refreshed monthly. Free download in CSV.'],
+            ['q' => 'Is the Oman Business Index live?', 'a' => 'Yes. {OBI} companies with real CR data, directly from MoCIIP, refreshed on a rolling quarterly cadence against the live MoCIIP register. Free download in CSV.'],
             ['q' => 'Does Cardify work with Omani banks?', 'a' => 'Yes. Bank Muscat, NBO, Sohar International, Bank Dhofar, and ahlibank all have team members using Cardify. Talk to us for enterprise rollouts.'],
         ],
     ],
@@ -216,6 +216,29 @@ if (!isset($countries[$slug])) {
 }
 
 $c = $countries[$slug];
+
+// r6-35 / r6-92: the Oman Business Index size is a moving number and its refresh
+// cadence is stated once, in lang/{en,ar}/obi.php. Every count here is a {OBI}
+// placeholder resolved from the same table the index page counts, at render time.
+// If the query cannot run we say 'thousands of' rather than ship a stale figure.
+if ($slug === 'oman') {
+    $obiCount = null;
+    try {
+        if (isset($db) && $db->isConnected()) {
+            $r = $db->fetchOne("SELECT COUNT(*) c FROM om_companies");
+            if ($r && isset($r['c'])) $obiCount = (int) $r['c'];
+        }
+    } catch (Throwable $e) { /* leave null */ }
+    $obiText = $obiCount !== null ? number_format($obiCount) : 'thousands of';
+    $subObi = function ($v) use ($obiText) {
+        return is_array($v) ? array_map(fn($x) => is_string($x) ? str_replace('{OBI}', $obiText, $x) : $x, $v)
+                            : (is_string($v) ? str_replace('{OBI}', $obiText, $v) : $v);
+    };
+    $c['company_count_approx'] = $subObi($c['company_count_approx']);
+    $c['hero_headline']        = $subObi($c['hero_headline']);
+    $c['value_props']          = $subObi($c['value_props']);
+    foreach ($c['faq'] as $i => $q) { $c['faq'][$i]['a'] = $subObi($q['a']); }
+}
 $canonicalUrl    = 'https://cardify.om/gcc/' . $slug;
 $pageTitle       = $c['hero_headline'] . ' | Cardify';
 $pageDescription = mb_substr(strip_tags($c['hero_sub']), 0, 190);
