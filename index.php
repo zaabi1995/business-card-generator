@@ -1164,6 +1164,8 @@ HTML;
 {
   "@context": "https://schema.org",
   "@type": "Organization",
+  "@id": "https://cardify.om/#organization",
+  "parentOrganization": {"@id": "https://bhd.om/#organization"},
   "name": "Cardify",
   "alternateName": ["Cardify Oman", "Cardify GCC"],
   "url": "https://cardify.om",

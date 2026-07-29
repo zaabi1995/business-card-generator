@@ -36,6 +36,8 @@ $esc = fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 $orgLd = [
     '@context' => 'https://schema.org',
     '@type'    => 'Organization',
+    '@id'      => 'https://cardify.om/#organization',
+    'parentOrganization' => ['@id' => 'https://bhd.om/#organization'],
     'name'     => 'Cardify',
     'url'      => 'https://cardify.om/',
     'logo'     => 'https://cardify.om/assets/images/logo.svg',

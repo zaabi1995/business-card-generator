@@ -21,6 +21,8 @@ class Seo
     public const SITE = 'https://cardify.om';
     public const BRAND = 'Cardify';
     public const PUBLISHER_LOGO = 'https://cardify.om/assets/images/logo.svg';
+    /** BHD Group's canonical Organization node. Cardify is one of its companies. */
+    public const PARENT_ORG = 'https://bhd.om/#organization';
 
     /** Emit hreflang + canonical tags for a path that exists in both /path (EN) and /ar/path (AR). */
     public static function hreflang(string $path): void
@@ -43,9 +45,13 @@ class Seo
         self::emit([
             '@context' => 'https://schema.org',
             '@type' => 'Organization',
+            '@id' => self::SITE . '/#organization',
             'name' => self::BRAND,
             'url' => self::SITE,
             'logo' => self::PUBLISHER_LOGO,
+            // r6-59: ownership was one-way. bhd.om claims Cardify as a subOrganization;
+            // without this the child never points back and the graph does not resolve.
+            'parentOrganization' => ['@id' => self::PARENT_ORG],
             'sameAs' => [
                 'https://www.instagram.com/cardify.om',
                 'https://twitter.com/cardify_om',
@@ -123,7 +129,9 @@ class Seo
             'url' => $url,
             'publisher' => [
                 '@type' => 'Organization',
+                '@id' => self::SITE . '/#organization',
                 'name' => self::BRAND,
+                'url' => self::SITE,
                 'logo' => [
                     '@type' => 'ImageObject',
                     'url' => self::PUBLISHER_LOGO,
