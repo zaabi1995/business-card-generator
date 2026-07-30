@@ -8,13 +8,21 @@ require_once __DIR__ . '/Currency.php';
 
 $currentCurrency = Currency::getUserCurrency();
 $all = Currency::supportedCurrencies();
+// Currency names are content, so they must follow the page language. On /ar/
+// the English names used to sit inside an RTL menu untranslated.
+$__curNames = function (string $code) use ($all): string {
+    $localised = function_exists('t') ? t('currency.names.' . $code) : '';
+    return ($localised !== '' && $localised !== 'currency.names.' . $code) ? $localised : ($all[$code] ?? $code);
+};
+$__curAria = function_exists('t') ? t('currency.aria_select') : 'Select currency';
+if ($__curAria === 'currency.aria_select') { $__curAria = 'Select currency'; }
 ?>
 <?php $__isRtl = function_exists('currentDir') && currentDir() === 'rtl'; ?>
 <div class="relative" x-data="{ open: false }" @click.away="open = false">
     <button type="button"
             @click="open = !open"
             class="cardify-currency-pill inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Select currency">
+            aria-label="<?= htmlspecialchars($__curAria) ?>">
         <span class="font-mono"><?= htmlspecialchars($currentCurrency) ?></span>
         <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -32,7 +40,8 @@ $all = Currency::supportedCurrencies();
                 onclick="cardifySetCurrency('<?= htmlspecialchars($code) ?>')">
             <div>
                 <span class="font-mono font-semibold text-gray-900"><?= htmlspecialchars($code) ?></span>
-                <span class="text-gray-500 ml-2"><?= htmlspecialchars($name) ?></span>
+                <?php /* margin-inline-start, not ml-2: the compiled tailwind.min.css has no .ms-2 rule, so the utility class would be a silent no-op. */ ?>
+                <span class="text-gray-500" style="margin-inline-start:0.5rem"><?= htmlspecialchars($__curNames($code)) ?></span>
             </div>
             <?php if ($code === $currentCurrency): ?>
             <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

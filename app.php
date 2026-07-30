@@ -3,9 +3,9 @@ require_once __DIR__ . '/config.php';
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/UrlSafety.php';
 $isAr = (class_exists('I18n') && I18n::getLocale() === 'ar') || (($_GET['lang'] ?? '') === 'ar');
-$pageTitle = $isAr ? 'تطبيق Cardify لأجهزة iPhone' : 'Cardify for iPhone';
+$pageTitle = $isAr ? 'تطبيق كارديفاي لأجهزة iPhone: امسح البطاقات وشاركها' : 'Cardify for iPhone';
 $pageDescription = $isAr
-    ? 'امسح بطاقات العمل، احفظ جهات الاتصال، وشارك بطاقتك الرقمية من تطبيق Cardify الأصلي.'
+    ? 'تطبيق كارديفاي الأصلي لأجهزة iPhone: امسح بطاقات العمل بالعربية والإنجليزية على جهازك، احفظ جهات الاتصال في دفترك، وشارك بطاقتك الرقمية برمز QR أو NFC.'
     : 'Scan business cards, save contacts, and share your digital card from the native Cardify app.';
 $canonicalUrl = 'https://cardify.om/app';
 $showNavigation = true;

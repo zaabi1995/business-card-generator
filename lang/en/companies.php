@@ -36,6 +36,8 @@ return [
 
     // Company profile
     'company_page_title'         => ':name, Oman Business Index | Cardify',
+    'company_page_title_mid'     => ':name | Oman Business Index',
+    'company_page_title_short'   => ':name | Cardify',
     'company_page_desc_fallback' => ':name, :sector enterprise in :wilayat governorate, Oman. Profile from the Cardify business index.',
     'breadcrumb_home'            => 'Home',
     'breadcrumb_obi'             => 'Oman Business Index',

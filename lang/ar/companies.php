@@ -36,6 +36,10 @@ return [
 
     // Company profile
     'company_page_title'         => ':name, دليل الشركات العمانية | كارديفاي',
+    // Fallbacks for long legal names: the name is the query term, so the fixed
+    // tail gives way before the name is ever truncated.
+    'company_page_title_mid'     => ':name | دليل الشركات العمانية',
+    'company_page_title_short'   => ':name | كارديفاي',
     'company_page_desc_fallback' => ':name, :sector في :wilayat، عُمان. كيف يستخدم فريقها كارديفاي لبطاقات العمل الرقمية والمطبوعة.',
     'breadcrumb_home'            => 'الرئيسية',
     'breadcrumb_obi'             => 'دليل الشركات العمانية',

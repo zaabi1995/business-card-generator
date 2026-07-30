@@ -219,9 +219,10 @@ $lastUpdatedIso   = date('c', $lastUpdatedTs);
 $baseUrl         = 'https://cardify.om';
 $pageTitle       = t('obi.page_title');
 $pageDescription = t('obi.page_desc', ['count' => $totalFmt]);
-// Ensure under 155 chars; trim if needed.
-if (strlen($pageDescription) > 155) {
-    $pageDescription = substr($pageDescription, 0, 152) . '...';
+// Ensure under 165 chars; trim if needed. Must be mb-safe: byte-level substr()
+// cuts an Arabic string mid-codepoint and publishes a replacement character.
+if (mb_strlen($pageDescription, 'UTF-8') > 165) {
+    $pageDescription = mb_substr($pageDescription, 0, 162, 'UTF-8') . '…';
 }
 $canonicalUrl    = $baseUrl . '/oman-business-index';
 $ogType          = 'website';

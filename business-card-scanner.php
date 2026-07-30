@@ -29,7 +29,7 @@ $pageTitle = $isAr
     ? 'ماسح بطاقات العمل: قراءة عربية وإنجليزية على الجهاز | Cardify'
     : 'Business Card Scanner: Arabic & English, On-Device | Cardify';
 $pageDescription = $isAr
-    ? 'ماسح بطاقات عمل مجاني لأجهزة iPhone يقرأ البطاقات العربية والإنجليزية على جهازك نفسه، دون رفع صورة البطاقة إلى أي خادم. ومن التطبيق نفسه تُصدر بطاقتك الرقمية وتطبعها.'
+    ? 'ماسح بطاقات عمل مجاني لأجهزة iPhone يقرأ البطاقات العربية والإنجليزية على جهازك، دون رفع صورة البطاقة إلى أي خادم. ومن التطبيق نفسه تُصدر بطاقتك وتطبعها.'
     : 'A free iPhone business card scanner that reads Arabic and English cards entirely on the device, with no card image ever uploaded. The same app issues and prints your own card.';
 $canonicalUrl = 'https://cardify.om/business-card-scanner';
 $showNavigation = true;

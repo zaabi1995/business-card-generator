@@ -213,7 +213,14 @@ if ($company) {
     $displayName = $isAr ? ($company['name_ar'] ?: $company['name_en']) : $company['name_en'];
     $secLabel = labelOf($company['sector'], $SECTORS, $isAr);
     $wilLabel = labelOf($company['wilayat'], $WILAYATS, $isAr);
-    $pageTitle = t('companies.company_page_title', ['name' => $displayName]);
+    require_once INCLUDES_DIR . '/seo_title.php';
+    // Longest form first; seo_pick_title() drops to a shorter tail rather than
+    // cutting the company name, which is what anyone searches for.
+    $pageTitle = seo_pick_title([
+        t('companies.company_page_title',       ['name' => $displayName]),
+        t('companies.company_page_title_mid',   ['name' => $displayName]),
+        t('companies.company_page_title_short', ['name' => $displayName]),
+    ], 'Cardify');
 
     // Per-company unique meta description (Google dedupes near-identical descriptions).
     // Priority: curated summary (first ~160 chars) → sector "what_they_do" personalised → factual fallback.

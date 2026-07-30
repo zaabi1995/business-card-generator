@@ -92,7 +92,12 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
         } catch (e) {}
       })();
     </script>
-    <title><?php echo htmlspecialchars($pageTitle); ?><?php echo (stripos($pageTitle, $brandName) === false) ? ' | ' . $brandName : ''; ?></title>
+    <?php
+      require_once __DIR__ . '/seo_title.php';
+      // One composed title for <title>, og:title and twitter:title.
+      $renderedTitle = seo_compose_title((string) ($pageTitle ?? 'Cardify'), $brandName);
+    ?>
+    <title><?php echo htmlspecialchars($renderedTitle); ?></title>
     <meta name="description" content="<?php echo htmlspecialchars($pageDescription); ?>">
     <link rel="alternate" type="application/rss+xml" title="Cardify Blog" href="<?= function_exists('getBasePath') ? getBasePath() : '/' ?>feed">
     <?php if (!empty($metaAuthor)): ?>
@@ -150,7 +155,7 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <!-- Open Graph -->
     <meta property="og:site_name" content="Cardify">
     <meta property="og:type" content="<?= htmlspecialchars($ogType ?? 'website') ?>">
-    <meta property="og:title" content="<?= htmlspecialchars($pageTitle ?? 'Cardify') ?>">
+    <meta property="og:title" content="<?= htmlspecialchars($renderedTitle) ?>">
     <meta property="og:description" content="<?= htmlspecialchars($pageDescription ?? 'Create, manage, and print professional business cards for your team in Oman.') ?>">
     <?php if (!empty($canonicalUrl)): ?>
     <meta property="og:url" content="<?= htmlspecialchars($canonicalUrl) ?>">
@@ -165,7 +170,7 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="<?= htmlspecialchars($pageTitle ?? 'Cardify') ?>">
+    <meta name="twitter:title" content="<?= htmlspecialchars($renderedTitle) ?>">
     <meta name="twitter:description" content="<?= htmlspecialchars($pageDescription ?? 'Create, manage, and print professional business cards for your team in Oman.') ?>">
     <meta name="twitter:image" content="<?= htmlspecialchars($ogImage ?? getBaseUrl() . 'assets/images/cardify-og.png') ?>">
 
