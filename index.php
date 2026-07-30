@@ -280,6 +280,9 @@ try {
 $siteLd = [
     '@context' => 'https://schema.org',
     '@type' => 'WebSite',
+    // r6-95: the per-page WebPage nodes point isPartOf at this @id, so it has
+    // to exist or every dateModified hangs off an unresolved reference.
+    '@id' => 'https://cardify.om/#website',
     'name' => 'Cardify',
     'alternateName' => 'Cardify GCC',
     'url' => 'https://cardify.om/',
