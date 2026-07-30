@@ -45,6 +45,18 @@ class Freshness
         if (!$mtime) {
             return null;
         }
-        return gmdate('j F Y', $mtime);
+        $en = gmdate('j F Y', $mtime);
+        // An Arabic page carrying an English month name is the same
+        // half-translated surface r6-74 was raised for, one line further down.
+        if (function_exists('currentLocale') && currentLocale() === 'ar') {
+            $months = [
+                'January' => 'يناير', 'February' => 'فبراير', 'March' => 'مارس',
+                'April' => 'أبريل', 'May' => 'مايو', 'June' => 'يونيو',
+                'July' => 'يوليو', 'August' => 'أغسطس', 'September' => 'سبتمبر',
+                'October' => 'أكتوبر', 'November' => 'نوفمبر', 'December' => 'ديسمبر',
+            ];
+            return strtr($en, $months);
+        }
+        return $en;
     }
 }
