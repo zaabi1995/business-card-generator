@@ -3,6 +3,7 @@ return [
     'tagline'          => 'Business cards for your whole team. Design once, generate for everyone, print from local Omani shops.',
     'copyright'        => '© :year :brand. All rights reserved.',
     'made_oman'        => 'Made in Oman',
+    'last_updated'     => 'Last updated :date',
     'minimal_copyright'=> '© :year :brand. Made in Oman.',
     'minimal_privacy'  => 'Privacy',
     'minimal_terms'    => 'Terms',

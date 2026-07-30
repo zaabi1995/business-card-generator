@@ -4,6 +4,12 @@ $currentPage = basename($_SERVER['SCRIPT_NAME'] ?? '', '.php');
 $bp = function_exists('getBasePath') ? getBasePath() : '/';
 $bn = defined('SITE_NAME') ? SITE_NAME : 'Cardify';
 
+// r6-95: freshness. Both the visible line and the schema dateModified come
+// from the mtime of the file that produced this page, never from today.
+require_once __DIR__ . '/Freshness.php';
+$freshIso     = Freshness::isoDate();
+$freshDisplay = Freshness::displayDate();
+
 // Pages that own their footer entirely (e.g. branded company portals) can
 // set $skipFooter = true; before including this file. Scripts below still run.
 if (!empty($skipFooter)):
@@ -12,7 +18,7 @@ elseif (!empty($minimalFooter)):
 ?>
     <footer class="border-t border-gray-200 bg-white mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-gray-500">
-            <p><?= htmlspecialchars(t('footer.minimal_copyright', ['year' => date('Y'), 'brand' => $bn])) ?></p>
+            <p><?= htmlspecialchars(t('footer.minimal_copyright', ['year' => date('Y'), 'brand' => $bn])) ?><?php if ($freshIso): ?> <span class="text-gray-400"><?= htmlspecialchars(t('footer.last_updated', ['date' => $freshDisplay])) ?></span><?php endif; ?></p>
             <div class="flex items-center gap-5">
                 <a href="<?= $bp ?>privacy" class="hover:text-gray-700"><?= htmlspecialchars(t('footer.minimal_privacy')) ?></a>
                 <a href="<?= $bp ?>terms" class="hover:text-gray-700"><?= htmlspecialchars(t('footer.minimal_terms')) ?></a>
@@ -90,10 +96,31 @@ elseif (!empty($minimalFooter)):
             <div class="pt-6 border-t border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-gray-500">
                 <p><?= htmlspecialchars(t('footer.copyright', ['year' => date('Y'), 'brand' => $bn])) ?></p>
                 <p><?= htmlspecialchars(t('footer.made_oman')) ?></p>
+                <?php if ($freshIso): ?>
+                <p><time datetime="<?= htmlspecialchars($freshIso) ?>"><?= htmlspecialchars(t('footer.last_updated', ['date' => $freshDisplay])) ?></time></p>
+                <?php endif; ?>
             </div>
         </div>
     </footer>
 <?php endif; ?>
+
+<?php
+// r6-95: the machine-readable half of the same fact. A visible line a parser
+// cannot bind to a URL is not a freshness signal, so the date is emitted on a
+// WebPage node keyed to this page's own canonical.
+if (empty($skipFooter) && $freshIso) {
+    $__canon = $GLOBALS['canonicalUrl'] ?? ('https://cardify.om' . strtok($_SERVER['REQUEST_URI'] ?? '/', '?'));
+    echo '<script type="application/ld+json">' . json_encode([
+        '@context'     => 'https://schema.org',
+        '@type'        => 'WebPage',
+        '@id'          => $__canon . '#webpage',
+        'url'          => $__canon,
+        'dateModified' => $freshIso,
+        'isPartOf'     => ['@id' => 'https://cardify.om/#website'],
+        'publisher'    => ['@id' => 'https://cardify.om/#organization'],
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>' . "\n";
+}
+?>
 
 <?php
 // Breadcrumb JSON-LD (all pages except homepage).

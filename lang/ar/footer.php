@@ -3,6 +3,7 @@ return [
     'tagline'          => 'بطاقات عمل لكل فريقك. صمّم مرّة، أنشئ للجميع، اطبع من مطابع عُمانية.',
     'copyright'        => '© :year :brand. جميع الحقوق محفوظة.',
     'made_oman'        => 'صُنع في عُمان',
+    'last_updated'     => 'آخر تحديث: :date',
     'minimal_copyright'=> '© :year :brand. صُنع في عُمان.',
     'minimal_privacy'  => 'الخصوصية',
     'minimal_terms'    => 'الشروط',
