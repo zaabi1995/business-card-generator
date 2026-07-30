@@ -21,6 +21,15 @@ $basePath = getBasePath();
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
     <meta name="description" content="<?php echo htmlspecialchars($pageDescription); ?>">
     <link rel="canonical" href="<?php echo htmlspecialchars($canonicalUrl); ?>">
+<?php
+    // r6-101: /intro was the only one of 503 URLs with zero hreflang tags. It has
+    // no Arabic twin, so ArTwins returns the honest en + x-default self-pair
+    // rather than a fabricated /ar/intro that would 404.
+    require_once __DIR__ . '/includes/ArTwins.php';
+    foreach (ArTwins::tags('/intro') as [$hrefLang, $hrefUrl]) {
+        echo '    <link rel="alternate" hreflang="' . $hrefLang . '" href="' . htmlspecialchars($hrefUrl, ENT_QUOTES) . "\">\n";
+    }
+?>
     <meta property="og:type" content="website">
     <meta property="og:title" content="<?php echo htmlspecialchars($pageTitle); ?>">
     <meta property="og:description" content="<?php echo htmlspecialchars($pageDescription); ?>">
@@ -1137,16 +1146,16 @@ $basePath = getBasePath();
                 <div>
                     <h4 class="text-white font-semibold mb-4">Company</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="<?php echo $basePath; ?>about.php" class="hover:text-white transition-colors">About</a></li>
-                        <li><a href="<?php echo $basePath; ?>contact.php" class="hover:text-white transition-colors">Contact</a></li>
-                        <li><a href="<?php echo $basePath; ?>careers.php" class="hover:text-white transition-colors">Careers</a></li>
+                        <li><a href="<?php echo $basePath; ?>about" class="hover:text-white transition-colors">About</a></li>
+                        <li><a href="<?php echo $basePath; ?>contact" class="hover:text-white transition-colors">Contact</a></li>
+                        <li><a href="<?php echo $basePath; ?>careers" class="hover:text-white transition-colors">Careers</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="text-white font-semibold mb-4">Legal</h4>
                     <ul class="space-y-2 text-sm">
-                        <li><a href="<?php echo $basePath; ?>privacy.php" class="hover:text-white transition-colors">Privacy Policy</a></li>
-                        <li><a href="<?php echo $basePath; ?>terms.php" class="hover:text-white transition-colors">Terms of Service</a></li>
+                        <li><a href="<?php echo $basePath; ?>privacy" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="<?php echo $basePath; ?>terms" class="hover:text-white transition-colors">Terms of Service</a></li>
                     </ul>
                 </div>
             </div>

@@ -21,7 +21,7 @@ return [
     'btn_save_contact'     => 'حفظ جهة الاتصال',
     'btn_download_pdf'     => 'تنزيل PDF',
     'btn_share'            => 'مشاركة',
-    'btn_open_app'         => 'فتح في تطبيق Cardify',
+    'btn_open_app'         => 'فتح في تطبيق كارديفاي',
 
     // الأقسام
     'section_about'        => 'نبذة',

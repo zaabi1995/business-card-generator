@@ -29,6 +29,17 @@ if ($search || !empty($filters)) {
 // Get featured shops
 $featuredShops = PrintShop::getFeatured(3);
 
+// r6-101: this public, crawlable page linked straight into /admin/order_print.php,
+// a robots-blocked URL that 302s to login. Signed-out visitors now get the login
+// door with a return path, and every ordering CTA carries rel=nofollow so no
+// crawler (AI ones included, which robots.txt does not block per r6-61) spends
+// budget on an admin redirect chain.
+$orderHref = static function ($shopId) {
+    $target = getBasePath() . 'admin/order_print.php?shop=' . (int)$shopId;
+    if (Auth::isLoggedIn()) return htmlspecialchars($target, ENT_QUOTES);
+    return htmlspecialchars(getBasePath() . 'login.php?redirect=' . urlencode($target), ENT_QUOTES);
+};
+
 // Get unique countries for filter
 $countries = [];
 try {
@@ -143,7 +154,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         </div>
                     </div>
                     <div class="px-6 py-4 bg-amber-50 border-t border-amber-100">
-                        <a href="<?php echo getBasePath(); ?>admin/order_print.php?shop=<?php echo $shop['id']; ?>"
+                        <a href="<?php echo $orderHref($shop['id']); ?>" rel="nofollow"
                            class="block w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-center rounded-lg font-medium transition-colors">
                             <?= htmlspecialchars(t('printshops.order_now')) ?>
                         </a>
@@ -231,7 +242,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
 
                     <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center gap-3">
-                        <a href="<?php echo getBasePath(); ?>admin/order_print.php?shop=<?php echo $shop['id']; ?>"
+                        <a href="<?php echo $orderHref($shop['id']); ?>" rel="nofollow"
                            class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-center rounded-lg font-medium transition-colors">
                             <?= htmlspecialchars(t('printshops.select_shop')) ?>
                         </a>

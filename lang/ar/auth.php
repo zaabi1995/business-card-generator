@@ -52,7 +52,7 @@ return [
     'trust_realtime'       => 'تحديثات فوريّة',
 
     // Tenant subdomain OTP login (e.g. ohb.cardify.om/login)
-    'tenant_powered_by'        => 'مدعوم بواسطة Cardify',
+    'tenant_powered_by'        => 'مدعوم بواسطة كارديفاي',
     'tenant_subtitle'          => 'سنرسل رمزاً لمرة واحدة إلى هاتفك أو بريدك الإلكتروني.',
     'tenant_phone_label'       => 'رقم الهاتف',
     'tenant_email_label'       => 'البريد الإلكتروني',

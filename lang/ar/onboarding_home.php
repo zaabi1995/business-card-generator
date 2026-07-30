@@ -2,7 +2,7 @@
 return [
     // Page titles
     'page_title_bhd'        => 'مرحباً، إعداد عميل BHD',
-    'page_title_general'    => 'ابدأ مع Cardify',
+    'page_title_general'    => 'ابدأ مع كارديفاي',
 
     // Templates (BHD set)
     'tpl_classic_name'      => 'BHD كلاسيك',
