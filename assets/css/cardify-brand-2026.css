@@ -128,7 +128,11 @@ h1, h2, h3, .font-display {
   box-shadow: 0 12px 34px -18px rgba(0,0,0,.28);
 }
 .cf-swatches__lbl { font-size: 12px; font-weight: 600; color: #6b7280; margin-inline-end: 4px; }
-.cf-swatch { width: 34px; height: 34px; border-radius: 10px; display: inline-block; }
+/* r6-100: 34px of visible swatch inside a 44x44 hit area. The padding is the
+   touch surface; background-clip keeps the swatch's own colour at 34px. */
+.cf-swatch { width: 34px; height: 34px; border-radius: 10px; display: inline-block;
+             padding: 5px; box-sizing: content-box; background-clip: content-box;
+             background-origin: content-box; }
 .cf-swatch--sel { outline: 3px solid #b9e3ee; outline-offset: 2px; }
 .cf-wallet-cta { font-size: 14px; font-weight: 600; color: #6b7280; display: flex; align-items: center; gap: 8px; }
 

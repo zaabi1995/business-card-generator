@@ -1,7 +1,7 @@
 <?php
 return [
     // Index view
-    'index_title'          => 'دليل الشركات العمانية, أكبر 2,500+ شركة | Cardify',
+    'index_title'          => 'دليل الشركات العمانية, أكبر 2,500+ شركة | كارديفاي',
     'index_desc'           => 'دليل عام مجاني لأكبر 2,500+ شركة كبيرة ومتوسطة في سلطنة عُمان، مصنفة حسب القطاع والمحافظة. بيانات من السجل التجاري العام لوزارة التجارة.',
     'heading'              => 'دليل الشركات العمانية',
     'subheading'           => 'دليل عام مجاني لأكبر :count شركة كبيرة ومتوسطة في سلطنة عُمان.',
@@ -24,8 +24,8 @@ return [
     'hub_wilayat_heading'     => 'الشركات في :label',
     'hub_sector_subheading'   => ':count شركة في قطاع :label بسلطنة عُمان ضمن دليل كارديفاي.',
     'hub_wilayat_subheading'  => ':count شركة تعمل في محافظة :label ضمن دليل كارديفاي.',
-    'hub_sector_page_title'   => ':label في عُمان, دليل الشركات | Cardify',
-    'hub_wilayat_page_title'  => 'شركات في :label, دليل الشركات العمانية | Cardify',
+    'hub_sector_page_title'   => ':label في عُمان, دليل الشركات | كارديفاي',
+    'hub_wilayat_page_title'  => 'شركات في :label, دليل الشركات العمانية | كارديفاي',
     'hub_sector_page_desc'    => 'قائمة بأكبر :count شركة في قطاع :label بسلطنة عُمان. جزء من دليل كارديفاي.',
     'hub_wilayat_page_desc'   => 'قائمة بأكبر :count شركة في محافظة :label بسلطنة عُمان.',
     'logos_eyebrow'           => 'شعارات',
@@ -35,7 +35,7 @@ return [
     'governorate_label_word'  => 'محافظة',
 
     // Company profile
-    'company_page_title'         => ':name, دليل الشركات العمانية | Cardify',
+    'company_page_title'         => ':name, دليل الشركات العمانية | كارديفاي',
     'company_page_desc_fallback' => ':name, :sector في :wilayat، عُمان. كيف يستخدم فريقها كارديفاي لبطاقات العمل الرقمية والمطبوعة.',
     'breadcrumb_home'            => 'الرئيسية',
     'breadcrumb_obi'             => 'دليل الشركات العمانية',

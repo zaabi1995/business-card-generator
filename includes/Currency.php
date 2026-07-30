@@ -515,7 +515,7 @@ class Currency {
      * Include this in your page head
      */
     public static function getFlagIconsCss() {
-        return '<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css">';
+        return '<link rel="stylesheet" href="/assets/vendor/flag-icons/css/flag-icons.min.css">';
     }
     
     /**

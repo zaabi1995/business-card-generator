@@ -775,3 +775,42 @@ html[dir="rtl"] td.text-left,  html[dir="rtl"] th.text-left  { text-align: right
 
 /* Breadcrumbs and separators that use chevrons, swap direction */
 html[dir="rtl"] .fa-chevron-right.breadcrumb-sep { transform: scaleX(-1); }
+
+/* ---------------------------------------------------------------------------
+   r6-100: tap targets. Every control sized to its glyph gets a 44x44 hit area.
+   The visual size is unchanged; only the touchable box grows, so nothing in
+   the layout shifts.
+   --------------------------------------------------------------------------- */
+.cardify-lang-switch,
+.cardify-currency-pill {
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Small icon-only and inline controls in the chrome: grow the box, keep the ink. */
+.cardify-nav a,
+.cardify-nav button,
+.cardify-footer a,
+.cardify-footer button {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+}
+
+/* An anchor whose line-box is shorter than the finger it is tapped with. */
+a.cardify-tap,
+button.cardify-tap {
+  position: relative;
+}
+a.cardify-tap::after,
+button.cardify-tap::after {
+  content: "";
+  position: absolute;
+  inset-block: 50%;
+  inset-inline: 0;
+  block-size: 44px;
+  transform: translateY(-50%);
+}

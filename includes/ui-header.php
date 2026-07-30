@@ -169,14 +169,23 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <meta name="twitter:description" content="<?= htmlspecialchars($pageDescription ?? 'Create, manage, and print professional business cards for your team in Oman.') ?>">
     <meta name="twitter:image" content="<?= htmlspecialchars($ogImage ?? getBaseUrl() . 'assets/images/cardify-og.png') ?>">
 
-    <?php if (defined('GA_MEASUREMENT_ID') && GA_MEASUREMENT_ID): ?>
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=<?= GA_MEASUREMENT_ID ?>"></script>
+    <?php /* r6-100: gtag/js is 478KB decoded, the heaviest resource on the site.
+             It no longer leads the critical path: it is fetched after load, and a
+             malformed measurement id is refused rather than shipped as a beacon
+             that aborts on every page. */ ?>
+    <?php if (defined('GA_MEASUREMENT_ID') && preg_match('/^G-[A-Z0-9]{6,}$/', (string) GA_MEASUREMENT_ID)): ?>
+    <!-- Google Analytics (deferred to after load) -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', '<?= GA_MEASUREMENT_ID ?>');
+      addEventListener('load', function () {
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=<?= GA_MEASUREMENT_ID ?>';
+        document.head.appendChild(s);
+      }, { once: true });
     </script>
     <?php endif; ?>
 
@@ -250,8 +259,8 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     <link rel="stylesheet" href="/assets/flowbite/app.css?v=<?php echo $flowbiteCssVersion; ?>">
 
     <!-- Flag Icons CSS, only needed on forms with phone/country selectors; non-blocking -->
-    <link rel="preload" as="style" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css"></noscript>
+    <link rel="preload" as="style" href="/assets/vendor/flag-icons/css/flag-icons.min.css" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="/assets/vendor/flag-icons/css/flag-icons.min.css"></noscript>
     
     <!-- Custom Overrides -->
     <?php $cardifyOverridesVersion = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/assets/css/cardify-overrides.css') ?: time(); ?>

@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__) . '/includes/LogoThumb.php'; // r6-100: display-size logo derivatives
 /**
  * Omani Logo Library, Hub view.
  * Uses canonical Cardify chrome (ui-header / ui-footer) + Techwind Tailwind
@@ -207,8 +208,8 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                        style="--brand-bg: <?= logos_esc($fbg) ?>"
                        title="<?= logos_esc($f['name_en']) ?>">
                         <div class="aspect-[5/3] flex items-center justify-center p-3 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100 transition-colors duration-200 group-hover:bg-[var(--brand-bg)] group-hover:bg-none">
-                            <img src="<?= logos_esc($fsrc) ?>" alt="<?= logos_esc($f['name_en']) ?>"
-                                 loading="lazy"
+                            <img src="<?= logos_esc(logo_thumb($fsrc, 256)) ?>" alt="<?= logos_esc($f['name_en']) ?>"
+                                 loading="lazy" width="256" height="256"
                                  class="max-h-[80%] max-w-[85%] w-auto h-auto object-contain object-center transition-transform duration-200 group-hover:scale-105">
                         </div>
                         <div class="px-2.5 py-1.5">
@@ -427,8 +428,8 @@ function logos_esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8
                    data-logo='<?= htmlspecialchars(json_encode($_quickJson, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), ENT_QUOTES, "UTF-8") ?>'>
                     <div class="aspect-square flex items-center justify-center p-3 sm:p-4 md:p-5 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100 transition-colors duration-200 group-hover:bg-[var(--brand-bg)] group-hover:bg-none">
                         <?php if ($src): ?>
-                            <img src="<?= logos_esc($src) ?>" alt="<?= logos_esc($r['name_en']) ?>"
-                                 loading="lazy"
+                            <img src="<?= logos_esc(logo_thumb($src, 256)) ?>" alt="<?= logos_esc($r['name_en']) ?>"
+                                 loading="lazy" width="256" height="256"
                                  class="max-h-[70%] max-w-[80%] w-auto h-auto object-contain object-center transition-transform duration-200 group-hover:scale-105">
                         <?php else: ?>
                             <div class="text-gray-300 text-2xl font-bold">

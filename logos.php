@@ -10,6 +10,7 @@
  *   /ar/logos[...]           → same with lang=ar
  */
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/includes/LogoThumb.php';   // r6-100: display-size logo derivatives
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/LogoLibrary.php';
 

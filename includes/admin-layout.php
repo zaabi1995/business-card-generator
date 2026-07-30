@@ -299,7 +299,7 @@ function adminHeader($pageTitle = 'Dashboard', $currentPage = 'dashboard', $show
     <link rel="stylesheet" href="/assets/flowbite/app.css?v=<?php echo $flowbiteCssVersion; ?>">
     
     <!-- Flag Icons CSS for country/phone dropdowns -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css">
+    <link rel="stylesheet" href="/assets/vendor/flag-icons/css/flag-icons.min.css">
 
     <!-- Apple Pay JS SDK: registers <apple-pay-button> + (in non-Safari) installs
          window.ApplePaySession with the QR handoff. Loaded async so it never blocks

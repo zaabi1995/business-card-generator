@@ -69,7 +69,7 @@ return [
     'legal_attribution'   => 'مُحدَّث جزئياً من مصادر عامة مثل 2oman.net.',
 
     // Sector view
-    'sector_meta_title'   => 'شعارات شركات :sector في عُمان، تنزيل SVG و PNG | Cardify',
+    'sector_meta_title'   => 'شعارات شركات :sector في عُمان، تنزيل SVG و PNG | كارديفاي',
     'sector_meta_desc'    => 'تصفّح :count من شعارات شركات :sector العمانية. أرشيف عام مفهرس، قابل للبحث، متاح للتنزيل بصيغ SVG و PNG.',
     'sector_badge'        => 'قطاع',
     'sector_h1'           => 'شعارات :sector',
