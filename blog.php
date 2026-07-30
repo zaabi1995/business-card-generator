@@ -133,7 +133,9 @@ if ($singlePost) {
         ],
         'publisher' => [
             '@type' => 'Organization',
+            '@id' => 'https://cardify.om/#organization',
             'name' => 'Cardify',
+            'url' => 'https://cardify.om',
             'logo' => [
                 '@type' => 'ImageObject',
                 'url' => 'https://cardify.om/assets/images/logo.svg',

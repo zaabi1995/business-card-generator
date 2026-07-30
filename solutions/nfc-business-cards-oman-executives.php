@@ -4,6 +4,7 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/Seo.php';
 
 $pageTitle = 'NFC Business Cards for Oman Executives, Cardify';
 $pageDescription = 'Metal, wood or premium matte-black NFC cards for Oman C-suite. Tap to share, no app required. Delivered to Muscat, Sohar, Salalah within 3 working days.';
@@ -21,20 +22,14 @@ $breadcrumbJsonLd = [
         ['@type' => 'ListItem', 'position' => 3, 'name' => 'NFC Business Cards for Oman Executives', 'item' => $canonicalUrl],
     ],
 ];
-$articleJsonLd = [
-    '@context' => 'https://schema.org',
-    '@type' => 'Article',
-    'headline' => 'NFC Business Cards for Oman Executives',
-    'description' => $pageDescription,
-    'mainEntityOfPage' => $canonicalUrl,
-    'author' => ['@type' => 'Organization', 'name' => $brandName],
-    'publisher' => [
-        '@type' => 'Organization',
-        'name' => $brandName,
-        'logo' => ['@type' => 'ImageObject', 'url' => 'https://cardify.om/assets/images/logo.svg', 'creditText' => 'Cardify', 'copyrightNotice' => '© Cardify', 'license' => 'https://cardify.om/terms'],
-    ],
-    'inLanguage' => 'en-OM',
-];
+$articleJsonLd = Seo::articleNode(
+    __FILE__,
+    'NFC Business Cards for Oman Executives',
+    $pageDescription,
+    $canonicalUrl,
+    $ogImage ?? null,
+    'en-OM'
+);
 $extraHead = '<script type="application/ld+json">' . json_encode($breadcrumbJsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<script type="application/ld+json">' . json_encode($articleJsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 

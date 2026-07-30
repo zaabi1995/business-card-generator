@@ -4,6 +4,7 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/Seo.php';
 
 $pageTitle = 'Business Cards for Oman Trade Fairs (OIF, OFEX, IDEX Oman), Cardify';
 $pageDescription = 'Never run out of cards at OCEC. Digital cards with event mode, tag scans by booth, capture leads, export to CRM. Built for OIF, OFEX, Oman Food, IDEX Oman.';
@@ -21,20 +22,14 @@ $breadcrumbJsonLd = [
         ['@type' => 'ListItem', 'position' => 3, 'name' => 'Oman Trade Fairs', 'item' => $canonicalUrl],
     ],
 ];
-$articleJsonLd = [
-    '@context' => 'https://schema.org',
-    '@type' => 'Article',
-    'headline' => 'Business Cards for Oman Trade Fairs (OIF, OFEX, IDEX Oman)',
-    'description' => $pageDescription,
-    'mainEntityOfPage' => $canonicalUrl,
-    'author' => ['@type' => 'Organization', 'name' => $brandName],
-    'publisher' => [
-        '@type' => 'Organization',
-        'name' => $brandName,
-        'logo' => ['@type' => 'ImageObject', 'url' => 'https://cardify.om/assets/images/logo.svg', 'creditText' => 'Cardify', 'copyrightNotice' => '© Cardify', 'license' => 'https://cardify.om/terms'],
-    ],
-    'inLanguage' => 'en-OM',
-];
+$articleJsonLd = Seo::articleNode(
+    __FILE__,
+    'Business Cards for Oman Trade Fairs (OIF, OFEX, IDEX Oman)',
+    $pageDescription,
+    $canonicalUrl,
+    $ogImage ?? null,
+    'en-OM'
+);
 $extraHead = '<script type="application/ld+json">' . json_encode($breadcrumbJsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<script type="application/ld+json">' . json_encode($articleJsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 

@@ -4,6 +4,7 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once INCLUDES_DIR . '/Auth.php';
+require_once INCLUDES_DIR . '/Seo.php';
 
 $pageTitle = 'Digital Business Cards for Oman Real Estate Agents, Cardify';
 $pageDescription = 'Agents covering Al Mouj, Muscat Hills, Madinat Al Irfan, Sultan Haitham City. Instant property deep-links, MoH-registered agent ID, bilingual. Start free.';
@@ -21,20 +22,14 @@ $breadcrumbJsonLd = [
         ['@type' => 'ListItem', 'position' => 3, 'name' => 'Digital Cards for Real Estate Agents', 'item' => $canonicalUrl],
     ],
 ];
-$articleJsonLd = [
-    '@context' => 'https://schema.org',
-    '@type' => 'Article',
-    'headline' => 'Digital Business Cards for Oman Real Estate Agents',
-    'description' => $pageDescription,
-    'mainEntityOfPage' => $canonicalUrl,
-    'author' => ['@type' => 'Organization', 'name' => $brandName],
-    'publisher' => [
-        '@type' => 'Organization',
-        'name' => $brandName,
-        'logo' => ['@type' => 'ImageObject', 'url' => 'https://cardify.om/assets/images/logo.svg', 'creditText' => 'Cardify', 'copyrightNotice' => '© Cardify', 'license' => 'https://cardify.om/terms'],
-    ],
-    'inLanguage' => 'en-OM',
-];
+$articleJsonLd = Seo::articleNode(
+    __FILE__,
+    'Digital Business Cards for Oman Real Estate Agents',
+    $pageDescription,
+    $canonicalUrl,
+    $ogImage ?? null,
+    'en-OM'
+);
 $extraHead = '<script type="application/ld+json">' . json_encode($breadcrumbJsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>'
     . '<script type="application/ld+json">' . json_encode($articleJsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
 

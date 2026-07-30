@@ -163,6 +163,102 @@ class Seo
         self::emit($data);
     }
 
+    /**
+     * The canonical publisher node. Every Article, NewsArticle and BlogPosting
+     * on the estate must reference this shape.
+     *
+     * r6-88: 57 publisher nodes carried a name and a logo but no url, so none of
+     * them resolved to the entity they were publishing on behalf of. url and @id
+     * are not optional here.
+     */
+    public static function publisherNode(): array
+    {
+        return [
+            '@type' => 'Organization',
+            '@id' => self::SITE . '/#organization',
+            'name' => self::BRAND,
+            'url' => self::SITE,
+            'logo' => [
+                '@type' => 'ImageObject',
+                'url' => self::PUBLISHER_LOGO,
+                'creditText' => self::BRAND,
+                'copyrightNotice' => '© ' . date('Y') . ' ' . self::BRAND,
+                'license' => self::SITE . '/terms',
+            ],
+        ];
+    }
+
+    /**
+     * Build the Article node for a standalone content page (/solutions/*).
+     *
+     * r6-88: these 20 pages each hand-rolled an Article with no datePublished,
+     * no image and a publisher with no url. This is the one place that shape is
+     * defined. $sourceFile is the page's own __FILE__: datePublished comes from
+     * the recorded git-add date for it, dateModified from its mtime, so a page
+     * cannot be edited into staleness (r6-95).
+     *
+     * Returns the node rather than echoing it, because these pages assemble
+     * $extraHead as a string before the header is included.
+     */
+    public static function articleNode(
+        string $sourceFile,
+        string $title,
+        string $description,
+        string $url,
+        ?string $imageUrl = null,
+        string $inLanguage = 'en-OM'
+    ): array {
+        $node = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Article',
+            'headline' => $title,
+            'description' => $description,
+            'url' => $url,
+            'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $url],
+            'author' => ['@type' => 'Organization', '@id' => self::SITE . '/#organization', 'name' => self::BRAND, 'url' => self::SITE],
+            'publisher' => self::publisherNode(),
+            'image' => [
+                '@type' => 'ImageObject',
+                'url' => $imageUrl ?: self::SITE . '/assets/images/cardify-og.png',
+                'creditText' => self::BRAND,
+                'copyrightNotice' => '© ' . date('Y') . ' ' . self::BRAND,
+                'license' => self::SITE . '/terms',
+            ],
+            'inLanguage' => $inLanguage,
+        ];
+        $published = self::publishedDate($sourceFile);
+        if ($published) $node['datePublished'] = $published;
+        $mtime = @filemtime($sourceFile);
+        if ($mtime) $node['dateModified'] = date('Y-m-d', $mtime);
+        return $node;
+    }
+
+    /** Recorded git-add date for a page, or null when the page is not listed. */
+    public static function publishedDate(string $sourceFile): ?string
+    {
+        static $map = null;
+        if ($map === null) {
+            $file = __DIR__ . '/seo-published-dates.php';
+            $map = is_file($file) ? (array)require $file : [];
+        }
+        $root = realpath(__DIR__ . '/..');
+        $real = realpath($sourceFile) ?: $sourceFile;
+        $key = ($root && strpos($real, $root . '/') === 0) ? substr($real, strlen($root) + 1) : basename($real);
+        return $map[$key] ?? null;
+    }
+
+    /** Render one or more JSON-LD nodes as script tags, for $extraHead assembly. */
+    public static function ldScript(array ...$nodes): string
+    {
+        $out = '';
+        foreach ($nodes as $node) {
+            $out .= '<script type="application/ld+json">'
+                . json_encode($node, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+                . '</script>';
+        }
+        return $out;
+    }
+
     /** Product schema for a pricing plan / tier. */
     public static function product(string $name, string $description, string $priceOMR, ?string $url = null): void
     {
