@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/PlatformStats.php';
 /**
  * Interactive Introduction & Onboarding Page
  * An interactive journey explaining how Cardify works
@@ -1081,7 +1082,7 @@ $basePath = getBasePath();
                     <span class="text-white/80">In Under 5 Minutes</span>
                 </h2>
                 <p class="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-                    Omani companies trust Cardify for their business cards.
+                    <?= htmlspecialchars(number_format(PlatformStats::all()['companies'])) ?> Omani companies trust Cardify for their business cards.
                     It's completely free to start, no credit card required.
                 </p>
                 

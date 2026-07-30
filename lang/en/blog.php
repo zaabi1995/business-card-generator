@@ -11,7 +11,7 @@ return [
     'min_read'           => ':n min read',
     'share_article'      => 'Share this article:',
     'cta_h3'             => 'Ready to create your business cards?',
-    'cta_body'           => 'Join 500+ Omani companies using Cardify. Free to start.',
+    'cta_body'           => ':companies Omani companies use Cardify. Free to start.',
     'cta_button'         => 'Get started free',
     'related_articles'   => 'Related articles',
     'coming_soon_h2'     => 'Blog coming soon',

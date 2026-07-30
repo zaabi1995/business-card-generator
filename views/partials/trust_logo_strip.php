@@ -8,6 +8,9 @@ if (!defined('INCLUDES_DIR')) { http_response_code(404); exit; }
 if (!class_exists('TrustLogos')) {
     require_once __DIR__ . '/../../includes/TrustLogos.php';
 }
+if (!class_exists('PlatformStats')) {
+    require_once __DIR__ . '/../../includes/PlatformStats.php';
+}
 $__trustLogos = TrustLogos::recent(12);
 if (empty($__trustLogos)) return;
 $__isAr = function_exists('currentLocale') && currentLocale() === 'ar';
@@ -16,7 +19,10 @@ $__dir  = $__isAr ? 'rtl' : 'ltr';
 <section class="trust-logo-strip py-8 bg-gray-50 border-y border-gray-100" dir="<?= $__dir ?>">
     <div class="max-w-6xl mx-auto px-4">
         <p class="text-center text-xs uppercase tracking-widest text-gray-500 mb-5">
-            <?= htmlspecialchars(t('trust.headline', ['n' => count($__trustLogos)])) ?>
+            <?= htmlspecialchars(t('trust.headline', [
+                'shown' => number_format(count($__trustLogos)),
+                'total' => number_format(PlatformStats::all()['companies']),
+            ])) ?>
         </p>
         <div class="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 opacity-70">
             <?php foreach ($__trustLogos as $c): $label = $__isAr && !empty($c['name_ar']) ? $c['name_ar'] : $c['name_en']; ?>

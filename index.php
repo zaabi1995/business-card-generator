@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/PlatformStats.php';
 /**
  * Cardify - Business Cards Made Simple
  * SaaS Landing Page
@@ -1048,7 +1049,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <?= htmlspecialchars(t('landing.cta_title')) ?>
             </h2>
             <p class="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
-                <?= htmlspecialchars(t('landing.cta_sub')) ?>
+                <?= htmlspecialchars(t('landing.cta_sub', ['companies' => number_format(PlatformStats::all()['companies'])])) ?>
             </p>
 
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
