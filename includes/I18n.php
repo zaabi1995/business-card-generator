@@ -195,8 +195,12 @@ class I18n
         }
 
         if (!empty($params) && is_string($value)) {
-            foreach ($params as $k => $v) {
-                $value = str_replace(':' . $k, (string) $v, $value);
+            // Longest placeholder first: ':large' is a prefix of ':largePct', so a
+            // naive pass would rewrite ':largePct' into '1,027Pct'.
+            $keys = array_keys($params);
+            usort($keys, static fn($a, $b) => strlen((string) $b) <=> strlen((string) $a));
+            foreach ($keys as $k) {
+                $value = str_replace(':' . $k, (string) $params[$k], $value);
             }
         }
         return is_string($value) ? $value : $key;
