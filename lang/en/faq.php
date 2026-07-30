@@ -17,7 +17,7 @@ return [
 
     // Getting started, 4
     'gs1_q' => 'What is Cardify?',
-    'gs1_a' => "Cardify is Oman's leading digital and printed business card platform. Professionals and companies design, create and share bilingual cards from one dashboard, digital or printed.",
+    'gs1_a' => "Cardify is an Omani digital and printed business card platform, built in Muscat and bilingual Arabic and English. Professionals and companies design, create and share bilingual cards from one dashboard, digital or printed.",
     'gs2_q' => 'How do I sign up?',
     'gs2_a' => 'Visit the get-started page, enter your company details, and create your account in under two minutes. No credit card needed, you can design your first card free.',
     'gs3_q' => 'Is Cardify free to use?',

@@ -1,7 +1,7 @@
 <?php
 return [
     'page_title'          => 'Careers at Cardify, Join Our Team in Oman',
-    'page_desc'           => "Join Oman's leading business card platform. View open positions in development, design, sales, and more at Cardify.",
+    'page_desc'           => "Join the Omani team building Cardify, a bilingual digital and printed business card platform in Muscat. View open positions in development, design, sales, and more at Cardify.",
     'single_page_title'   => ':title, Careers at Cardify',
     'single_page_desc'    => 'Apply for :title at Cardify in :location, Oman.',
     'back_to_careers'     => 'Back to Careers',
