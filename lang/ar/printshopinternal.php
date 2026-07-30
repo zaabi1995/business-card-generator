@@ -52,7 +52,7 @@ return [
     // Clients list
     'clients_title'         => ':shop, العملاء',
     'clients_heading'       => 'العملاء',
-    'clients_subheading'    => 'تصفّح كل شركات Cardify وتصرّف نيابة عنهم: ضع طلبات، أنشئ أوراق طباعة تجريبية.',
+    'clients_subheading'    => 'تصفّح كل شركات كارديفاي وتصرّف نيابة عنهم: ضع طلبات، أنشئ أوراق طباعة تجريبية.',
     'search_placeholder'    => 'ابحث بالاسم أو المعرّف,',
     'no_clients'            => 'لا توجد نتائج.',
     'col_company'           => 'الشركة',

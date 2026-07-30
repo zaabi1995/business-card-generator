@@ -1,7 +1,7 @@
 <?php
 return [
     'page_title'              => 'التسجيل برمز OTP',
-    'headline'                => 'أنشئ حسابك في Cardify',
+    'headline'                => 'أنشئ حسابك في كارديفاي',
     'subhead'                 => 'ثلاث حقول ورمز واحد ودخول فوري. لا حاجة لكلمة مرور.',
     'company_name'            => 'اسم الشركة',
     'admin_name'              => 'اسمك',

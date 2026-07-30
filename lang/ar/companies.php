@@ -16,17 +16,17 @@ return [
     'browse_by_sector'     => 'تصفح حسب القطاع',
     'browse_by_governorate'=> 'تصفح حسب المحافظة',
     'about_directory'      => 'عن هذا الدليل',
-    'about_body_p1'        => 'دليل Cardify للشركات العمانية هو دليل مجاني ثنائي اللغة للشركات الكبيرة والمتوسطة المسجلة في سلطنة عُمان. البيانات مشتقة من السجل العام لوزارة التجارة والصناعة وترويج الاستثمار، مع إضافة تصنيف قطاعي وجغرافي من Cardify.',
-    'about_body_p2'        => 'لا تدعي Cardify وجود أي علاقة تجارية مع الشركات المدرجة. إذا كنت تمثل إحدى هذه الشركات وترغب في التعديل أو الإزالة، يرجى التواصل معنا.',
+    'about_body_p1'        => 'دليل كارديفاي للشركات العمانية هو دليل مجاني ثنائي اللغة للشركات الكبيرة والمتوسطة المسجلة في سلطنة عُمان. البيانات مشتقة من السجل العام لوزارة التجارة والصناعة وترويج الاستثمار، مع إضافة تصنيف قطاعي وجغرافي من كارديفاي.',
+    'about_body_p2'        => 'لا تدعي كارديفاي وجود أي علاقة تجارية مع الشركات المدرجة. إذا كنت تمثل إحدى هذه الشركات وترغب في التعديل أو الإزالة، يرجى التواصل معنا.',
 
     // Hub (sector / wilayat)
     'hub_sector_heading'      => 'شركات :label في عُمان',
     'hub_wilayat_heading'     => 'الشركات في :label',
-    'hub_sector_subheading'   => ':count شركة في قطاع :label بسلطنة عُمان ضمن دليل Cardify.',
-    'hub_wilayat_subheading'  => ':count شركة تعمل في محافظة :label ضمن دليل Cardify.',
+    'hub_sector_subheading'   => ':count شركة في قطاع :label بسلطنة عُمان ضمن دليل كارديفاي.',
+    'hub_wilayat_subheading'  => ':count شركة تعمل في محافظة :label ضمن دليل كارديفاي.',
     'hub_sector_page_title'   => ':label في عُمان, دليل الشركات | Cardify',
     'hub_wilayat_page_title'  => 'شركات في :label, دليل الشركات العمانية | Cardify',
-    'hub_sector_page_desc'    => 'قائمة بأكبر :count شركة في قطاع :label بسلطنة عُمان. جزء من دليل Cardify.',
+    'hub_sector_page_desc'    => 'قائمة بأكبر :count شركة في قطاع :label بسلطنة عُمان. جزء من دليل كارديفاي.',
     'hub_wilayat_page_desc'   => 'قائمة بأكبر :count شركة في محافظة :label بسلطنة عُمان.',
     'logos_eyebrow'           => 'شعارات',
     'logos_available'         => ':count شعار :label متوفر',
@@ -36,7 +36,7 @@ return [
 
     // Company profile
     'company_page_title'         => ':name, دليل الشركات العمانية | Cardify',
-    'company_page_desc_fallback' => ':name, :sector في :wilayat، عُمان. كيف يستخدم فريقها Cardify لبطاقات العمل الرقمية والمطبوعة.',
+    'company_page_desc_fallback' => ':name, :sector في :wilayat، عُمان. كيف يستخدم فريقها كارديفاي لبطاقات العمل الرقمية والمطبوعة.',
     'breadcrumb_home'            => 'الرئيسية',
     'breadcrumb_obi'             => 'دليل الشركات العمانية',
     'about_sovereign'            => ':name جهة حكومية في سلطنة عُمان، مصنفة ضمن :sector في محافظة :wilayat.',
@@ -45,8 +45,8 @@ return [
     'about_register_line'        => ':name مسجلة كمنشأة :size في السجل التجاري العام لوزارة التجارة والصناعة وترويج الاستثمار بسلطنة عُمان، ضمن قطاع :sector في محافظة :wilayat.',
     'about_heading'              => 'نبذة عن :name',
     'visit_website'              => 'زيارة الموقع الرسمي',
-    'how_cardify_fits'           => 'كيف تخدم Cardify فرق :name',
-    'cardify_fit_default'        => 'تساعد Cardify فرق الشركات مثل هذه على إطلاق بطاقات عمل رقمية موحدة ومُصممة حسب الهوية البصرية، مع رموز QR تحفظ جهات الاتصال مباشرة في الهاتف، وحقول ثنائية اللغة، وطباعة من مطابع عُمانية محلية.',
+    'how_cardify_fits'           => 'كيف تخدم كارديفاي فرق :name',
+    'cardify_fit_default'        => 'تساعد كارديفاي فرق الشركات مثل هذه على إطلاق بطاقات عمل رقمية موحدة ومُصممة حسب الهوية البصرية، مع رموز QR تحفظ جهات الاتصال مباشرة في الهاتف، وحقول ثنائية اللغة، وطباعة من مطابع عُمانية محلية.',
     'start_free_for'             => 'ابدأ مجاناً لفريق :name',
     'try_qr_tool'                => 'جرّب أداة رمز QR المجانية',
     'quick_facts'                => 'معلومات سريعة',
@@ -66,6 +66,6 @@ return [
 
     // Logo SEO
     'logo_title_en'   => 'شعار :name, تنزيل :formats:verified | مكتبة الشعارات العمانية',
-    'logo_desc_en'    => 'حمّل شعار :name بصيغة :formats من مكتبة الشعارات العمانية على Cardify. مفهرس للتعريف والبحث فقط. :sector، :wilayat.',
+    'logo_desc_en'    => 'حمّل شعار :name بصيغة :formats من مكتبة الشعارات العمانية على كارديفاي. مفهرس للتعريف والبحث فقط. :sector، :wilayat.',
     'verified_tag'    => ' (موثَّق)',
 ];
