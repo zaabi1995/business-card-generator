@@ -59,7 +59,9 @@ $collisions = 0;
 foreach ($rii as $f) {
     if ($f->getExtension() !== 'php') continue;
     $p = $f->getPathname();
-    if (preg_match('#/(node_modules|vendor|\.claude|\.worktrees|cache|tmp|logs|storage)/#', $p)) continue;
+    // Relative to BASE_DIR, else a checkout living under /tmp skips its own whole tree.
+    $rel = ltrim(str_replace(BASE_DIR, '', $p), '/');
+    if (preg_match('#(^|/)(node_modules|vendor|\.claude|\.worktrees|cache|tmp|logs|storage)/#', $rel)) continue;
     $src = file_get_contents($p);
     if (!preg_match_all("/\bt\(\s*'[^']+'\s*,\s*\[(.*?)\]\s*\)/s", $src, $m)) continue;
     foreach ($m[1] as $arr) {
