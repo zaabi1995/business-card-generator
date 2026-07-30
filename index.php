@@ -245,7 +245,7 @@ $siteLd = [
     'alternateName' => 'Cardify GCC',
     'url' => 'https://cardify.om/',
     'inLanguage' => ['en', 'ar'],
-    'publisher' => ['@type' => 'Organization', 'name' => 'Cardify'],
+    'publisher' => ['@type' => 'Organization', '@id' => 'https://cardify.om/#organization', 'name' => 'Cardify', 'url' => 'https://cardify.om'],
     'potentialAction' => [
         '@type' => 'SearchAction',
         'target' => [
