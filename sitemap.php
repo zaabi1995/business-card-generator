@@ -144,6 +144,15 @@ if ($part === 'static') {
         ['/cookies',      'yearly',  '0.4'],
         ['/print-shops',  'weekly',  '0.8'],
         ['/app',          'monthly', '0.8'],
+        // These four were body-translated, nginx-routed and hreflang-tagged,
+        // and named in ArTwins::PATHS, yet listed in no sitemap at all, in
+        // either language. /pricing is the highest commercial-intent page on
+        // the site. tools/verify-ar-twins.php now fails if a PATHS entry is
+        // missing here, so the list cannot drift out of the map again.
+        ['/pricing',      'monthly', '0.9'],
+        ['/case-studies', 'monthly', '0.8'],
+        ['/changelog',    'weekly',  '0.5'],
+        ['/status',       'daily',   '0.4'],
         ['/business-card-scanner', 'monthly', '0.8'],
         ['/industries',              'monthly', '0.85'],
         ['/press-kit',               'monthly', '0.85'],

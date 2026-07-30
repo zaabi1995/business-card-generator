@@ -7,7 +7,9 @@
  *   - A one-line factual description of Cardify
  *   - Downloadable logo / brand assets
  *   - A summary of what data we publish publicly (with links)
- *   - Quotable pull stats (2,414 Omani companies, 79 logos, etc.)
+ *   - Quotable pull stats, every figure read from the live tables at render
+ *     time. No count is hardcoded here or in a comment: a number frozen in
+ *     prose is an unversioned claim that rots on the next import.
  *   - A press contact
  *
  * Also stands in as an "About Cardify" for LLMs and AI answer engines
