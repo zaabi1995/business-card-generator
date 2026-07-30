@@ -2,7 +2,7 @@
 /**
  * Cardify, Oman Business Index 2026 (Landing Page)
  *
- * Flagship press-ready landing page. Presents the 2,414 Omani enterprises
+ * Flagship press-ready landing page. Presents the Omani enterprises
  * as a curated, research-grade index. Purpose: backlink magnet / press hook
  * (Oman Observer, Times of Oman, Muscat Daily, LinkedIn citations).
  *

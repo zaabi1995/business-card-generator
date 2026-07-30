@@ -377,6 +377,8 @@ if (!DatabaseAdapter::useDatabase()) {
     }
 }
 $minimalFooter = true; // compact footer for auth page
+$canonicalUrl = 'https://cardify.om/reset-password';
+$metaRobots   = 'noindex,follow';
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
     <div class="flex flex-col justify-center items-center px-6 pt-8 mx-auto min-h-screen">

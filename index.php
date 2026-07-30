@@ -200,6 +200,20 @@ if (isset($_GET['company_slug'])) {
     exit;
 }
 
+// r16-103 guard. index.php is reachable through the single-token catch-all
+// rewrite and through ANY specific rewrite that fails to match (a deploy window,
+// a truncated rewrite file, an edge divergence). Until now it emitted
+// canonical=https://cardify.om/ unconditionally, so a fall-through published the
+// homepage body under the homepage canonical: a silent soft-duplicate on
+// /pricing, /about, /status, /changelog and /case-studies, plus on every unknown
+// single-token path. Never publish a homepage canonical for a path that is not a
+// homepage path. Self-canonicalise and noindex instead, so the failure is
+// visible to the gate and to Search Console rather than merged away.
+$__r16103Path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$__r16103Norm = rtrim($__r16103Path, '/');
+if ($__r16103Norm === '') { $__r16103Norm = '/'; }
+$__r16103IsHome = in_array($__r16103Norm, ['/', '/index.php', '/ar', '/ar/index.php'], true);
+
 // Brand name
 $brandName = 'Cardify';
 $tagline = 'Business Cards Made Simple';
@@ -211,6 +225,12 @@ $pageDescription = t('landing.meta_desc');
 $canonicalUrl = (function_exists('currentLocale') && currentLocale() === 'ar')
     ? 'https://cardify.om/ar/'
     : 'https://cardify.om/';
+if (!$__r16103IsHome) {
+    // Fall-through: the body is the homepage but the URL is not.
+    $canonicalUrl = 'https://cardify.om' . $__r16103Path;
+    $metaRobots   = 'noindex, follow';
+    if (!headers_sent()) { header('X-Robots-Tag: noindex, follow', true); }
+}
 $suppressDefaultHreflang = true;
 $homeHreflang = '<link rel="alternate" hreflang="en" href="https://cardify.om/">'
               . '<link rel="alternate" hreflang="ar" href="https://cardify.om/ar/">'

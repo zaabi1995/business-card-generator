@@ -2,7 +2,8 @@
 /**
  * Cardify Oman Business Index
  *
- * Free public directory of 2,414 large/medium Omani enterprises
+ * Free public directory of the large/medium Omani enterprises held in
+ * om_companies. The size is counted at render time, never stated here.
  * sourced from the MoCIIP public register. Utility-first content;
  * footer CTA nudges employees to create a Cardify digital card.
  *

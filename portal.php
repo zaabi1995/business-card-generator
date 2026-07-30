@@ -625,6 +625,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,follow">
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
     <?php
     // The portal is the tenant's own page, so it wears the tenant's icon when

@@ -131,6 +131,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } // end CSRF else
 }
 ?>
+<?php
+$canonicalUrl = 'https://cardify.om/login';
+$metaRobots   = 'noindex,follow';
+?>
 <?php require_once INCLUDES_DIR . '/ui-header.php'; ?>
     <div class="flex min-h-full">
         <!-- Left Side - Form -->

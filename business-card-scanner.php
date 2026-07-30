@@ -154,7 +154,7 @@ $e = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
             <p class="text-gray-600 leading-relaxed mb-4">
                 <?= $isAr
                     ? 'تطبيقات مسح البطاقات العالمية تُدخل بطاقة غيرك إلى هاتفك ثم تتوقّف عند هذا الحدّ: لا تُصدر لك بطاقة، ولا تطبع شيئاً. ومنصّات البطاقات الرقمية العالمية تُصدر بطاقة ولا تطبعها. في المقابل، Cardify جزء من مجموعة BHD التي تملك مطبعتها في مسقط والحاصلة على شهادة ISO 9001:2015، فالبطاقة التي تمسحها والبطاقة التي تشاركها والبطاقة التي تُطبع لك واحدة.'
-                    : 'The international scanner apps bring somebody else\'s card into your phone and stop there: they do not issue you a card and they cannot print one. The international digital-card platforms issue a card and do not print it. Cardify sits inside BHD Group, which owns its ISO 9001:2015 certified press in Muscat, so the card you scan, the card you share and the card that gets printed for you are the same system.' ?>
+                    : 'The international scanner apps bring somebody else\'s card into your phone and stop there: they do not issue you a card and they cannot print one. The international digital-card platforms issue a card and do not print it. Cardify sits inside BHD Group, which owns its press with a quality system documented to ISO 9001:2015 in Muscat, so the card you scan, the card you share and the card that gets printed for you are the same system.' ?>
             </p>
             <p class="text-gray-600 leading-relaxed">
                 <?= $isAr

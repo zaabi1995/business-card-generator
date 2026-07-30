@@ -12,7 +12,7 @@
 ## What Cardify does
 
 - Digital business cards on a company subdomain, with QR vCard, Apple Wallet and Google Wallet passes, and NFC
-- Printed business cards produced by BHD Printing & Designing, the group's own ISO 9001:2015 certified press in Muscat
+- Printed business cards produced by BHD Printing & Designing, the group's own press, whose quality system is documented to ISO 9001:2015, in Muscat
 - A free iOS card scanner that reads Arabic and English cards entirely on the device
 - Company admin for teams: employee cards, brand lock, per-division templates, print ordering
 - Card analytics: views, QR scans, saves

@@ -231,6 +231,7 @@ $t = $isRtl
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?php echo htmlspecialchars($t['subhead']); ?>">
+    <meta name="robots" content="noindex,follow">
     <title><?php echo htmlspecialchars($t['title']); ?></title>
     <link rel="icon" href="/favicon.ico">
     <?php if ($isRtl): ?>
