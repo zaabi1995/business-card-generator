@@ -215,7 +215,11 @@ class Seo
             'description' => $description,
             'url' => $url,
             'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $url],
-            'author' => ['@type' => 'Organization', '@id' => self::SITE . '/#organization', 'name' => self::BRAND, 'url' => self::SITE],
+            // A REFERENCE, not a second definition. Author and publisher are the
+            // same entity here, and spelling the payload out twice would define
+            // #organization twice on one page with two different bodies, which
+            // is the r6-56 defect wearing a different hat.
+            'author' => ['@id' => self::SITE . '/#organization'],
             'publisher' => self::publisherNode(),
             'image' => [
                 '@type' => 'ImageObject',
