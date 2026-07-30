@@ -429,7 +429,7 @@
   flex-shrink: 0;
   font-size: 0.75rem;
 }
-.cardify-tick--accent { color: #009bc1; }
+.cardify-tick--accent { color: #00718c; }
 .cardify-tick--gold { color: #fbbf24; }
 
 .cardify-plan-cta {
@@ -450,8 +450,8 @@
   color: #374151;
 }
 .cardify-plan-cta--ghost:hover {
-  border-color: #009bc1;
-  color: #009bc1;
+  border-color: #00718c;
+  color: #00718c;
 }
 .cardify-plan-cta--primary {
   background: #009bc1;
@@ -506,22 +506,22 @@
   transition: color .15s ease;
 }
 .cardify-dl-btn:hover {
-  border-color: #009bc1;
+  border-color: #00718c;
   color: #007fa0;
   background: #f0fafd;
 }
-.cardify-dl-btn:hover i { color: #009bc1; }
+.cardify-dl-btn:hover i { color: #00718c; }
 .cardify-dl-btn:active { transform: translateY(1px); }
 .cardify-dl-btn:focus-visible {
   outline: none;
-  border-color: #009bc1;
+  border-color: #00718c;
   box-shadow: 0 0 0 3px rgba(0, 155, 193, 0.2);
 }
 
 .cardify-dl-btn--primary {
   background: #009bc1;
   color: #ffffff;
-  border-color: #009bc1;
+  border-color: #00718c;
   box-shadow: 0 4px 12px rgba(0, 155, 193, 0.28);
 }
 .cardify-dl-btn--primary i { color: rgba(255, 255, 255, 0.85); }
@@ -556,7 +556,7 @@
   transition: color .15s ease;
 }
 .cardify-logo-meta-link i { font-size: 10px; opacity: .75; }
-.cardify-logo-meta-link:hover { color: #009bc1; }
+.cardify-logo-meta-link:hover { color: #00718c; }
 .cardify-logo-meta-link--flag { color: #9ca3af; }
 .cardify-logo-meta-link--flag:hover { color: #e11d48; }
 .cardify-logo-meta-sep { color: #d1d5db; user-select: none; }
@@ -715,8 +715,8 @@ html[dir="rtl"] .border-r { border-right: 0 !important; border-left-width:  1px 
     line-height: 1;
 }
 .cardify-lang-switch:hover {
-    color: #009bc1;
-    border-color: #009bc1;
+    color: #00718c;
+    border-color: #00718c;
     background: rgba(0, 155, 193, 0.05);
 }
 .cardify-lang-switch i,
@@ -733,8 +733,8 @@ html[dir="rtl"] .cardify-lang-switch { font-family: "IBM Plex Sans Arabic", "Int
     transition: all 150ms ease-out;
 }
 .cardify-currency-pill:hover {
-    color: #009bc1;
-    border-color: #009bc1;
+    color: #00718c;
+    border-color: #00718c;
     background: rgba(0, 155, 193, 0.05);
 }
 html[dir="rtl"] .cardify-currency-pill { font-family: "IBM Plex Sans Arabic", "Inter", sans-serif; }

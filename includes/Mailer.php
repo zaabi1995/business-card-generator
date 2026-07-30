@@ -460,7 +460,7 @@ class Mailer {
         
         /* Header */
         .email-header {
-            background-color: #009bc1; /* solid fallback: gradients are dropped by many mail clients */
+            background-color: #00718c; /* solid fallback: gradients are dropped by many mail clients */
             background-image: linear-gradient(135deg, #007a9c 0%, #009bc1 50%, #2bb6d4 100%);
             padding: 32px 40px;
             text-align: center;
@@ -504,7 +504,7 @@ class Mailer {
             padding: 14px 32px;
             /* Solid color FIRST so the button is never invisible when a client
                drops the gradient (white text on a dropped gradient = blank box). */
-            background-color: #009bc1;
+            background-color: #00718c;
             background-image: linear-gradient(135deg, #009bc1 0%, #007a9c 100%);
             color: #ffffff !important;
             text-decoration: none;
@@ -1130,7 +1130,7 @@ HTML
 
 <div class="info-box">
     <strong>Your Portal URL:</strong><br>
-    <a href="{{portal_url}}" style="color: #009bc1;">{{portal_url}}</a><br>
+    <a href="{{portal_url}}" style="color: #00718c;">{{portal_url}}</a><br>
     <small>Share this with employees so they can request their cards.</small>
 </div>
 
@@ -1601,7 +1601,7 @@ HTML
 
 <div class="info-box">
     <strong>Or let employees request their own cards:</strong><br>
-    Share your portal link: <a href="{{portal_url}}" style="color: #009bc1;">{{portal_url}}</a>
+    Share your portal link: <a href="{{portal_url}}" style="color: #00718c;">{{portal_url}}</a>
 </div>
 
 <p>Questions? Just reply to this email.</p>
@@ -1635,7 +1635,7 @@ HTML
 
 <div class="info-box">
     <strong>Need help?</strong><br>
-    Reply to this email or reach us on WhatsApp at <a href="https://api.whatsapp.com/send?phone=96898899100" style="color: #009bc1;">+968 9889 9100</a>.
+    Reply to this email or reach us on WhatsApp at <a href="https://api.whatsapp.com/send?phone=96898899100" style="color: #00718c;">+968 9889 9100</a>.
 </div>
 
 <p>Best regards,<br>The {{site_name}} Team</p>

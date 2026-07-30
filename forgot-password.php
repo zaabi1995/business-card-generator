@@ -30,7 +30,7 @@ $extraHead = <<<HTML
             transition: all 0.15s ease;
         }
         .form-input:focus {
-            border-color: #009bc1;
+            border-color: #00718c;
             box-shadow: 0 0 0 3px rgba(0, 155, 193, 0.12);
         }
         .form-input::placeholder {
@@ -194,7 +194,7 @@ function sendNoAccountEmail($email) {
     $ifEmployee      = t('forgot.noacc_if_employee');
     $employeeMsg     = t('forgot.noacc_employee_msg');
     $needHelp        = t('forgot.noacc_need_help');
-    $contactLink     = '<a href="' . htmlspecialchars($contactUrl) . '" style="color: #009bc1;">' . t('forgot.noacc_contact_link') . '</a>';
+    $contactLink     = '<a href="' . htmlspecialchars($contactUrl) . '" style="color: #00718c;">' . t('forgot.noacc_contact_link') . '</a>';
     $contactMsg      = t('forgot.noacc_contact_msg', ['contactlink' => $contactLink]);
     $security        = t('forgot.noacc_security');
     $securityMsg     = t('forgot.noacc_security_msg');

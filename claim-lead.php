@@ -312,7 +312,7 @@ $isAr   = ($locale === 'ar');
 
         <div class="mt-6 text-center text-xs text-gray-400">
             <?= $isAr ? 'صُنع بواسطة' : 'Made with' ?>
-            <a href="/" class="text-[#009bc1] font-medium">Cardify</a>
+            <a href="/" class="text-[#00718c] font-medium">Cardify</a>
             &middot; BHD Printing &amp; Designing
         </div>
     </div>

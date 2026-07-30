@@ -12,7 +12,7 @@ foreach ($changedFields as $f) {
 }
 $body = <<<HTML
 <div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1f2937;">
-  <h2 style="color:#009bc1;margin-bottom:8px;">A team member updated their details</h2>
+  <h2 style="color:#00718c;margin-bottom:8px;">A team member updated their details</h2>
   <p>Hi {$adminName},</p>
   <p><strong>{$employeeName}</strong> on {$companyName} just edited their card from the self-service portal.</p>
   <p><strong>Fields changed:</strong></p>

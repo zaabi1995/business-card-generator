@@ -18,7 +18,7 @@ foreach ($changedFields as $f) {
 }
 $body = <<<HTML
 <div dir="rtl" style="font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1f2937;">
-  <h2 style="color:#009bc1;margin-bottom:8px;">قام أحد أعضاء الفريق بتحديث بياناته</h2>
+  <h2 style="color:#00718c;margin-bottom:8px;">قام أحد أعضاء الفريق بتحديث بياناته</h2>
   <p>مرحباً {$adminName}،</p>
   <p>قام <strong>{$employeeName}</strong> في {$companyName} للتوّ بتعديل بطاقته من البوّابة الذاتية.</p>
   <p><strong>الحقول المعدّلة:</strong></p>

@@ -41,7 +41,7 @@
 .cardify-toast__icon { font-size: 1rem; margin-top: 0.125rem; flex-shrink: 0; }
 .cardify-toast[data-variant="success"] .cardify-toast__icon { color: #16a34a; }
 .cardify-toast[data-variant="error"]   .cardify-toast__icon { color: #dc2626; }
-.cardify-toast[data-variant="info"]    .cardify-toast__icon { color: #009bc1; }
+.cardify-toast[data-variant="info"]    .cardify-toast__icon { color: #00718c; }
 .cardify-toast[data-variant="warn"]    .cardify-toast__icon { color: #f59e0b; }
 .cardify-toast__body { flex: 1; min-width: 0; }
 .cardify-toast__title { font-weight: 600; color: #0f172a; }
@@ -52,7 +52,7 @@
     padding: 0.25rem 0.625rem;
     border-radius: 0.5rem;
     font-weight: 600;
-    color: #009bc1;
+    color: #00718c;
     cursor: pointer;
 }
 .cardify-toast__action:hover { background: rgba(0, 155, 193, 0.08); }

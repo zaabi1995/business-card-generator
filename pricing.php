@@ -66,7 +66,7 @@ $products = [
     .pr-card { display: flex; flex-direction: column; transition: transform .3s cubic-bezier(.4,0,.2,1), box-shadow .3s cubic-bezier(.4,0,.2,1); }
     .pr-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -12px rgba(0,0,0,.12); }
     .pr-feat { display: flex; align-items: flex-start; gap: .625rem; color: #374151; font-size: .95rem; padding: .375rem 0; }
-    .pr-feat i { color: #16a34a; margin-top: .25rem; flex-shrink: 0; }
+    .pr-feat i { color: #15803d; margin-top: .25rem; flex-shrink: 0; }
     .pr-highlight { box-shadow: 0 20px 40px -12px rgba(124, 58, 237, .25); }
 </style>
 

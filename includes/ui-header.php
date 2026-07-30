@@ -228,8 +228,8 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
          needed for first paint, so load the CSS non-blocking (media=print
          until onload) to keep 4 stylesheets off the critical path. The two
          most-used woff2 faces stay preloaded. ?v busts stale CF cache. -->
-    <link rel="preload" href="https://design.bhd.om/fa/v7.2.0/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="https://design.bhd.om/fa/v7.2.0/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="https://design.bhd.om/fa/v7.2.0/webfonts/fa-brands-400.woff2?c=2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="https://design.bhd.om/fa/v7.2.0/webfonts/fa-solid-900.woff2?c=2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/fontawesome.min.css?v=7.2.0" media="print" onload="this.onload=null;this.media='all'">
     <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/solid.min.css?v=7.2.0" media="print" onload="this.onload=null;this.media='all'">
     <link rel="stylesheet" href="https://design.bhd.om/fa/v7.2.0/css/regular.min.css?v=7.2.0" media="print" onload="this.onload=null;this.media='all'">
@@ -417,6 +417,12 @@ $cardifyOgLocale = ($cardifyLocale === 'ar') ? 'ar_OM' : 'en_US';
     </script>
 </head>
 <body class="bg-gray-50 text-gray-900 antialiased<?php echo $cardifyIsMarketing ? ' cardify-brand' : ''; ?> <?php echo $bodyClass; ?>" <?php echo $bodyAttributes; ?>>
+<style>
+html { scroll-padding-top: 5rem; }
+.cardify-skip-link { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+.cardify-skip-link:focus { position: fixed; top: 0.5rem; inset-inline-start: 0.5rem; z-index: 10000; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; clip-path: none; white-space: normal; padding: 0.75rem 1.25rem; background: #ffffff; color: #00718c; font-weight: 700; border-radius: 0.5rem; box-shadow: 0 4px 16px rgba(0,0,0,.25); outline: 3px solid #00718c; outline-offset: 2px; }
+</style>
+<a class="cardify-skip-link" href="#main-content"><?php echo (class_exists('I18n') && I18n::isRtl()) ? 'تخطَّ إلى المحتوى' : 'Skip to main content'; ?></a>
 <?php if (defined('SHOW_STAGE_BANNER') && SHOW_STAGE_BANNER): /* Cat T action 468 staging banner */ ?>
 <div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#fbbf24;color:#111827;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;padding:4px 12px;text-align:center;border-bottom:2px solid #b45309;">
   <strong>STAGING</strong> · <?= defined('APP_HOST') ? htmlspecialchars(APP_HOST) : 'stage' ?> · not production data · Paymob sandbox
@@ -597,4 +603,6 @@ if (isset($showNavigation) && $showNavigation === true) {
         'links' => $navLinks ?? null
     ]);
 }
+
+echo '<div id="main-content" tabindex="-1"></div>';
 ?>

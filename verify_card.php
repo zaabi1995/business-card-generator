@@ -26,8 +26,8 @@ if (!$emp || ($emp['company_id'] ?? '') !== InstantCard::DEMO_COMPANY_ID) {
     echo '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
        . '<title>Cardify</title><body style="font-family:system-ui,sans-serif;background:#f7f8f7;color:#0c1418;'
        . 'display:grid;place-items:center;min-height:100dvh;margin:0;padding:24px;text-align:center">'
-       . '<div><h1 style="color:#009bc1;margin:0 0 12px">Cardify</h1><p style="max-width:30em">'
-       . htmlspecialchars($msg) . '</p><p><a href="https://cardify.om" style="color:#009bc1;font-weight:600">cardify.om</a></p></div>';
+       . '<div><h1 style="color:#00718c;margin:0 0 12px">Cardify</h1><p style="max-width:30em">'
+       . htmlspecialchars($msg) . '</p><p><a href="https://cardify.om" style="color:#00718c;font-weight:600">cardify.om</a></p></div>';
     exit;
 }
 

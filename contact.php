@@ -55,12 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <p style="margin:0 0 12px;font-size:13px;color:#8c8fa3;text-transform:uppercase;letter-spacing:.8px">Subject</p>
 <p style="margin:0 0 24px;font-size:16px;color:#1a1a2e;font-weight:600">{$safeSubject}</p>
 <p style="margin:0 0 6px;font-size:13px;color:#8c8fa3;text-transform:uppercase;letter-spacing:.8px">From</p>
-<p style="margin:0 0 24px;font-size:16px"><strong>{$safeName}</strong> &lt;<a href="mailto:{$safeEmail}" style="color:#009bc1">{$safeEmail}</a>&gt;</p>
+<p style="margin:0 0 24px;font-size:16px"><strong>{$safeName}</strong> &lt;<a href="mailto:{$safeEmail}" style="color:#00718c">{$safeEmail}</a>&gt;</p>
 <p style="margin:0 0 6px;font-size:13px;color:#8c8fa3;text-transform:uppercase;letter-spacing:.8px">Message</p>
 <div style="background:#f8f9fb;border-left:3px solid #009bc1;padding:16px 20px;border-radius:0 6px 6px 0;color:#2d2d3f;font-size:15px;line-height:1.6">{$safeMessage}</div>
 </td></tr>
 <tr><td style="padding:20px 40px;text-align:center;color:#8c8fa3;font-size:12px;background:#fafbfc;border-radius:0 0 8px 8px">
-Sent from the Cardify contact form on <a href="https://cardify.om" style="color:#009bc1">cardify.om</a>
+Sent from the Cardify contact form on <a href="https://cardify.om" style="color:#00718c">cardify.om</a>
 </td></tr></table></td></tr></table></body></html>
 HTMLEMAIL;
 

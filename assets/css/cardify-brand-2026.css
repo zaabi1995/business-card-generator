@@ -14,7 +14,8 @@
   --cf-200: #80cbde;
   --cf-300: #4db7d1;
   --cf-400: #26a6c7;
-  --cf-500: #009bc1; /* Cardify / BHD cyan, the brand anchor */
+  --cf-500: #009bc1; /* Cardify / BHD cyan, fills and gradients only */
+  --cf-ink: #00718c; /* text + white-on-brand CTAs, 5.6:1 on white */
   --cf-600: #0086a6;
   --cf-700: #00708c;
   --cf-800: #005b73;
@@ -43,8 +44,8 @@ h1, h2, h3, .font-display {
 /* ---- Backgrounds ---- */
 .cardify-brand .bg-blue-50  { background-color: var(--cf-50); }
 .cardify-brand .bg-blue-100 { background-color: var(--cf-100); }
-.cardify-brand .bg-blue-500 { background-color: var(--cf-500); }
-.cardify-brand .bg-blue-600 { background-color: var(--cf-500); }
+.cardify-brand .bg-blue-500 { background-color: var(--cf-ink); }
+.cardify-brand .bg-blue-600 { background-color: var(--cf-ink); }
 .cardify-brand .bg-blue-700 { background-color: var(--cf-600); }
 .cardify-brand .bg-blue-800 { background-color: var(--cf-700); }
 .cardify-brand .bg-blue-500\/10 { background-color: rgb(0 155 193 / 0.10); }
@@ -52,13 +53,13 @@ h1, h2, h3, .font-display {
 .cardify-brand .bg-blue-500\/30 { background-color: rgb(0 155 193 / 0.30); }
 .cardify-brand .hover\:bg-blue-50:hover  { background-color: var(--cf-50); }
 .cardify-brand .hover\:bg-blue-700:hover { background-color: var(--cf-600); }
-.cardify-brand .group:hover .group-hover\:bg-blue-600 { background-color: var(--cf-500); }
+.cardify-brand .group:hover .group-hover\:bg-blue-600 { background-color: var(--cf-ink); }
 
 /* ---- Text ---- */
 .cardify-brand .text-blue-100 { color: var(--cf-100); }
 .cardify-brand .text-blue-400 { color: var(--cf-300); }
-.cardify-brand .text-blue-500 { color: var(--cf-500); }
-.cardify-brand .text-blue-600 { color: var(--cf-500); }
+.cardify-brand .text-blue-500 { color: var(--cf-ink); }
+.cardify-brand .text-blue-600 { color: var(--cf-ink); }
 .cardify-brand .text-blue-700 { color: var(--cf-600); }
 .cardify-brand .text-blue-800 { color: var(--cf-700); }
 
@@ -167,7 +168,7 @@ h1, h2, h3, .font-display {
   font-size: 13px; font-weight: 600; color: var(--cf-700);
   background: var(--cf-50); padding: 8px 14px; border-radius: 999px; max-width: 320px; text-align: center;
 }
-.cf-try-hint i { color: var(--cf-500); }
+.cf-try-hint i { color: var(--cf-ink); }
 .cf-wallet-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .cf-wallet-row--android { flex-direction: row-reverse; } /* native (Google) first on Android */
 .cf-wallet-btn {
@@ -192,7 +193,7 @@ h1, h2, h3, .font-display {
 }
 .cf-email-input:focus { outline: none; border-color: var(--cf-500); box-shadow: 0 0 0 3px rgba(0,155,193,.15); }
 .cf-getcard-btn {
-  background: var(--cf-500); color: #fff; border: 0; border-radius: 12px; padding: 12px 22px;
+  background: var(--cf-ink); color: #fff; border: 0; border-radius: 12px; padding: 12px 22px;
   font-size: 15px; font-weight: 600; cursor: pointer; white-space: nowrap;
   box-shadow: 0 8px 24px -8px rgba(0,155,193,.6); transition: transform .15s ease, background .15s ease;
 }

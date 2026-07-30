@@ -44,6 +44,60 @@ function arabicShare(string $html): array
     return ['ar' => $ar, 'la' => $la, 'share' => $tot > 0 ? $ar / $tot : 0.0];
 }
 
+/**
+ * r6-74: an Arabic BODY says nothing about the Arabic HEAD. cardify.om/ar/
+ * passed this gate for weeks while serving an English <title>, an English
+ * meta description and an English og:title, which are the three highest-weight
+ * fields a search engine and a language model both read first. Measure each
+ * head field on its own: a single field is far too short for a share floor to
+ * be meaningful, so the test is "does this field contain any Arabic at all",
+ * which is exactly the failure that shipped.
+ *
+ * Returns [fieldName => ['text' => ..., 'ar' => n, 'la' => n]] for the fields
+ * that are present. A missing title is itself a failure and is reported as
+ * such by the caller.
+ */
+function headShare(string $html): array
+{
+    $out = [];
+    $grabs = [
+        'title'          => '#<title[^>]*>(.*?)</title>#is',
+        'description'    => '#<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']*)#is',
+        'og:title'       => '#<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']*)#is',
+        'og:description' => '#<meta[^>]+property=["\']og:description["\'][^>]+content=["\']([^"\']*)#is',
+        'h1'             => '#<h1[^>]*>(.*?)</h1>#is',
+    ];
+    foreach ($grabs as $name => $re) {
+        if (!preg_match($re, $html, $m)) continue;
+        $txt = html_entity_decode(strip_tags($m[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $txt = trim(preg_replace('/\s+/u', ' ', $txt) ?? $txt);
+        if ($txt === '') continue;
+        $out[$name] = [
+            'text' => $txt,
+            'ar'   => preg_match_all('/[\x{0600}-\x{06FF}\x{0750}-\x{077F}\x{08A0}-\x{08FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}]/u', $txt),
+            'la'   => preg_match_all('/[A-Za-z]/u', $txt),
+        ];
+    }
+    return $out;
+}
+
+/**
+ * Head-field verdict for one /ar/ URL: the list of fields that carry Latin
+ * letters and no Arabic at all, plus a flag for a missing title.
+ */
+function headFailures(string $html): array
+{
+    $f = headShare($html);
+    $bad = [];
+    if (!isset($f['title'])) $bad[] = 'title (absent)';
+    foreach ($f as $name => $m) {
+        if ($m['ar'] === 0 && $m['la'] > 0) {
+            $bad[] = $name . ' ("' . mb_substr($m['text'], 0, 48) . '")';
+        }
+    }
+    return $bad;
+}
+
 function fetch(string $url): ?string
 {
     // Unique query string so Cloudflare cannot answer from cache: the gate
@@ -98,8 +152,47 @@ if (in_array('--selftest', $argv, true)) {
             $rejected ? 'yes' : 'no', $mustReject ? 'yes' : 'no');
         if (!$ok) $bad++;
     }
+    // --- head-field arms (r6-74) -------------------------------------------
+    $headFixtures = [
+        ['English title + English meta on an Arabic body (the shipped /ar/ shape)',
+         '<html><head><title>Cardify, Digital &amp; Printed Business Cards for the GCC</title>'
+         . '<meta name="description" content="Bilingual digital and printed business cards.">'
+         . '</head><body><h1>عن كارديفاي</h1></body></html>',
+         ['title', 'description']],
+        ['English og:title only',
+         '<html><head><title>كارديفاي، بطاقات أعمال</title>'
+         . '<meta property="og:title" content="A powerful dashboard at your fingertips">'
+         . '</head><body></body></html>',
+         ['og:title']],
+        ['Fully Arabic head (must pass)',
+         '<html><head><title>كارديفاي، بطاقات أعمال رقمية</title>'
+         . '<meta name="description" content="بطاقات أعمال رقمية ومطبوعة لفرق العمل.">'
+         . '<meta property="og:title" content="كارديفاي">'
+         . '</head><body><h1>لوحة تحكم متكاملة بين يديك</h1></body></html>',
+         []],
+        ['Bilingual title with an Arabic segment (must pass, this is the live shape)',
+         '<html><head><title>كارديفاي، بطاقات أعمال رقمية ومطبوعة | Cardify</title>'
+         . '</head><body></body></html>',
+         []],
+        ['No title at all (must fail: a missing field is not a passing field)',
+         '<html><head><meta name="description" content="وصف عربي سليم"></head><body></body></html>',
+         ['title (absent)']],
+    ];
+    foreach ($headFixtures as [$label, $html, $expect]) {
+        $got = headFailures($html);
+        $gotNames = array_map(function ($x) { return explode(' (', $x)[0]; }, $got);
+        $expNames = array_map(function ($x) { return explode(' (', $x)[0]; }, $expect);
+        sort($gotNames); sort($expNames);
+        $ok = $gotNames === $expNames;
+        printf("  [%s] %-58s head-failures=%s expected=%s\n",
+            $ok ? 'ok' : 'BAD', substr($label, 0, 58),
+            $gotNames ? implode(',', $gotNames) : 'none',
+            $expNames ? implode(',', $expNames) : 'none');
+        if (!$ok) $bad++;
+    }
+
     echo $bad === 0
-        ? "\nSELFTEST PASS: the gate rejects all three English shapes and accepts the translated one.\n"
+        ? "\nSELFTEST PASS: body arms and head arms all graded correctly.\n"
         : "\nSELFTEST FAILED: {$bad} fixture(s) graded wrong. Do not trust this gate.\n";
     exit($bad === 0 ? 0 : 1);
 }
@@ -112,6 +205,7 @@ if (!$paths) {
 }
 
 $fail = [];
+$headFail = [];
 $rows = [];
 foreach ($paths as $p) {
     $url = ArTwins::ar($p);
@@ -119,8 +213,10 @@ foreach ($paths as $p) {
     $html = fetch($url);
     if ($html === null) { $fail[] = [$url, null]; continue; }
     $m = arabicShare($html);
-    $rows[] = [$url, $m];
+    $hb = headFailures($html);
+    $rows[] = [$url, $m, $hb];
     if ($m['share'] < MIN_ARABIC_SHARE) $fail[] = [$url, $m];
+    if ($hb) { $headFail[] = [$url, $hb]; }
 }
 
 // --- Sampled population: the parameterised /ar/companies/{slug} route ------
@@ -150,18 +246,28 @@ if ($sampleN > 0) {
         $html = fetch($url);
         if ($html === null) { $fail[] = [$url, null]; continue; }
         $m = arabicShare($html);
-        $rows[] = [$url, $m];
+        $hb = headFailures($html);
+        $rows[] = [$url, $m, $hb];
         if ($m['share'] < MIN_ARABIC_SHARE) $fail[] = [$url, $m];
+        if ($hb) { $headFail[] = [$url, $hb]; }
     }
 }
 
 echo "\n" . str_pad('URL', 46) . "  share    ar     latin\n";
-foreach ($rows as [$url, $m]) {
+foreach ($rows as [$url, $m, $hb]) {
     printf("%-46s  %.3f  %6d  %6d%s\n", $url, $m['share'], $m['ar'], $m['la'],
-        $m['share'] < MIN_ARABIC_SHARE ? '   <-- ENGLISH BODY' : '');
+        $m['share'] < MIN_ARABIC_SHARE ? '   <-- ENGLISH BODY' : ($hb ? '   <-- ENGLISH HEAD' : ''));
 }
 
-if ($fail) {
+if ($headFail) {
+    echo "\nHEAD FIELDS IN ENGLISH on " . count($headFail) . " /ar/ URL(s):\n";
+    foreach ($headFail as [$url, $bad]) {
+        echo "  {$url}\n";
+        foreach ($bad as $b) echo "      {$b}\n";
+    }
+}
+
+if ($fail || $headFail) {
     echo "\nGATE FAILED: " . count($fail) . " /ar/ URL(s) below the "
        . MIN_ARABIC_SHARE . " Arabic-share floor, or unfetchable.\n";
     echo "An /ar/ URL that serves English body copy is a duplicate of its English\n"
@@ -171,5 +277,6 @@ if ($fail) {
 }
 
 echo "\nPASS: all " . count($rows) . " Arabic twins serve an Arabic body "
-   . "(floor " . MIN_ARABIC_SHARE . ").\n";
+   . "(floor " . MIN_ARABIC_SHARE . ") AND an Arabic title, meta description, "
+   . "og:title, og:description and h1 wherever those fields are present.\n";
 exit(0);

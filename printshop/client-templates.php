@@ -82,7 +82,7 @@ printshopHeader($company['name'] . ' , Designs', 'clients');
             <?= csrfField() ?>
             <input type="hidden" name="action" value="apply_preset">
             <input type="hidden" name="preset" value="<?= htmlspecialchars($p['id']) ?>">
-            <button type="submit" class="px-4 py-2 rounded-lg bg-[#009bc1] hover:bg-[#0089ab] text-white text-sm font-semibold whitespace-nowrap">Apply</button>
+            <button type="submit" class="px-4 py-2 rounded-lg bg-[#00718c] hover:bg-[#005b73] text-white text-sm font-semibold whitespace-nowrap">Apply</button>
           </form>
         </div>
       </div>

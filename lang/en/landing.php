@@ -133,4 +133,16 @@ return [
     'cta_see_how'        => 'See How It Works',
     'cta_free_starter'   => '100% Free Platform',
     'cta_free_trial'     => 'Pay Only When You Print',
+    // r6-74: the AR home shipped an English title, meta description and one
+    // English H2. Head fields and the dashboard block now route through t().
+    'meta_title'         => 'Cardify, Digital & Printed Business Cards for the GCC',
+    'meta_desc'          => 'Bilingual Arabic/English digital and printed business cards for teams across the Gulf: Oman, Saudi Arabia, UAE, Qatar, Bahrain and Kuwait. QR vCard save, Apple Wallet, NFC, bulk provisioning. Free to start.',
+    'dash_kicker'        => 'Dashboard Preview',
+    'dash_headline'      => 'A powerful dashboard at your fingertips',
+    'dash_body'          => 'Manage all your digital business cards from one intuitive interface. Track performance, update information, and share instantly.',
+    'dash_b1'            => 'Real-time analytics and engagement metrics',
+    'dash_b2'            => 'One-click sharing to multiple platforms',
+    'dash_b3'            => 'Instant updates across all shared cards',
+    'dash_b4'            => 'Team management with role-based permissions',
+    'dash_cta'           => 'Try Dashboard Free',
 ];

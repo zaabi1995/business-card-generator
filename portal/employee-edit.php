@@ -161,7 +161,7 @@ $pageTitle = t('portal.edit_my_details');
     <style>
         body { font-family: <?= $isAr ? "'IBM Plex Sans Arabic'" : "system-ui,-apple-system,'Segoe UI'" ?>,sans-serif; background:#f5f7fb; }
         .form-input { width:100%; padding:0.625rem 0.875rem; border:1px solid #e2e8f0; border-radius:0.5rem; background:#fff; font-size:0.95rem; }
-        .form-input:focus { outline:none; border-color:#009bc1; box-shadow:0 0 0 3px rgba(0,155,193,0.15); }
+        .form-input:focus { outline:none; border-color:#00718c; box-shadow:0 0 0 3px rgba(0,155,193,0.15); }
     </style>
 </head>
 <body class="min-h-screen"
@@ -203,7 +203,7 @@ $pageTitle = t('portal.edit_my_details');
                :class="savingState === 'saved' ? 'text-green-600' : ''"
                x-text="statusText()"></p>
             <?php if ($scanStats['periodScans'] > 0 || $scanStats['totalScans'] > 0): ?>
-                <div class="inline-flex items-center gap-2 mt-3 px-3 py-1.5 rounded-full bg-[#009bc1]/10 text-[#007a99] text-xs font-medium">
+                <div class="inline-flex items-center gap-2 mt-3 px-3 py-1.5 rounded-full bg-[#00718c]/10 text-[#007a99] text-xs font-medium">
                     <i class="fa-solid fa-chart-line"></i>
                     <span><?= htmlspecialchars(t('portal.stats_month', ['n' => $scanStats['periodScans']])) ?></span>
                     <?php if ($scanStats['totalScans'] > $scanStats['periodScans']): ?>
@@ -232,7 +232,7 @@ $pageTitle = t('portal.edit_my_details');
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2"><?= htmlspecialchars(t('portal.photo')) ?></label>
                 <label class="block border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition hover:border-[#009bc1]"
-                       :class="photoDragActive ? 'border-[#009bc1] bg-[#009bc1]/5' : 'border-gray-200'"
+                       :class="photoDragActive ? 'border-[#009bc1] bg-[#00718c]/5' : 'border-gray-200'"
                        @dragover.prevent="photoDragActive = true"
                        @dragleave.prevent="photoDragActive = false"
                        @drop.prevent="handlePhotoDrop($event)">
@@ -352,7 +352,7 @@ $pageTitle = t('portal.edit_my_details');
             <div class="pt-4 border-t border-gray-100">
                 <div class="flex items-center justify-between mb-2">
                     <label class="text-sm font-medium text-gray-700"><?= htmlspecialchars(t('portal.social_links')) ?></label>
-                    <button type="button" @click="addSocial()" class="text-xs font-semibold text-[#009bc1] hover:text-[#007a99]">
+                    <button type="button" @click="addSocial()" class="text-xs font-semibold text-[#00718c] hover:text-[#007a99]">
                         <i class="fa-solid fa-plus mr-1"></i><?= htmlspecialchars(t('portal.social_add')) ?>
                     </button>
                 </div>
@@ -399,7 +399,7 @@ $pageTitle = t('portal.edit_my_details');
                 <textarea x-model="note" rows="2" maxlength="255" class="form-input text-sm"
                           :placeholder="<?= htmlspecialchars(json_encode(t('portal.reprint_note_ph')), ENT_QUOTES) ?>"></textarea>
                 <button type="button" @click="submit()"
-                        class="mt-2 px-4 py-2 bg-[#009bc1] hover:bg-[#007a99] text-white text-xs font-semibold rounded-lg">
+                        class="mt-2 px-4 py-2 bg-[#00718c] hover:bg-[#005b73] text-white text-xs font-semibold rounded-lg">
                     <?= htmlspecialchars(t('portal.reprint_submit')) ?>
                 </button>
             </div>
@@ -429,7 +429,7 @@ $pageTitle = t('portal.edit_my_details');
                          class="w-60 h-60 rounded-lg bg-white border border-gray-200 p-2">
                     <code class="text-xs text-gray-700 break-all text-center" dir="ltr"><?= htmlspecialchars($publicCardUrl) ?></code>
                     <button type="button" @click="copyUrl()"
-                            class="text-xs font-semibold text-[#009bc1] hover:text-[#007a99]">
+                            class="text-xs font-semibold text-[#00718c] hover:text-[#007a99]">
                         <span x-text="copied ? <?= htmlspecialchars(json_encode(t('onboarding.copied'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?> : <?= htmlspecialchars(json_encode(t('portal.nfc_copy_url'), JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?>"></span>
                     </button>
                 </div>
@@ -468,7 +468,7 @@ $pageTitle = t('portal.edit_my_details');
             </div>
             <a href="/card-pdf.php?i=<?= htmlspecialchars(urlencode($employee['id'])) ?>"
                download
-               class="px-4 py-2 bg-[#009bc1] hover:bg-[#007a99] text-white text-xs font-semibold rounded-lg whitespace-nowrap">
+               class="px-4 py-2 bg-[#00718c] hover:bg-[#005b73] text-white text-xs font-semibold rounded-lg whitespace-nowrap">
                 <?= htmlspecialchars(t('portal.download_pdf_cta')) ?>
             </a>
         </div>
@@ -482,14 +482,14 @@ $pageTitle = t('portal.edit_my_details');
              ]), ENT_QUOTES) ?>)">
             <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
-                    <i class="fa-solid fa-share-nodes text-2xl text-[#009bc1]"></i>
+                    <i class="fa-solid fa-share-nodes text-2xl text-[#00718c]"></i>
                     <div>
                         <p class="text-sm font-semibold text-gray-900"><?= htmlspecialchars(t('portal.share_title')) ?></p>
                         <p class="text-xs text-gray-500"><?= htmlspecialchars(t('portal.share_hint')) ?></p>
                     </div>
                 </div>
                 <button type="button" @click="share()"
-                        class="px-4 py-2 bg-[#009bc1] hover:bg-[#007a99] text-white text-xs font-semibold rounded-lg whitespace-nowrap">
+                        class="px-4 py-2 bg-[#00718c] hover:bg-[#005b73] text-white text-xs font-semibold rounded-lg whitespace-nowrap">
                     <?= htmlspecialchars(t('portal.share_cta')) ?>
                 </button>
             </div>

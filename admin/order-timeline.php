@@ -134,13 +134,13 @@ adminHeader('Order tracking', 'orders');
     .otl-step:last-child:before { display: none; }
     .otl-dot { position: absolute; left: 2px; top: 2px; width: 18px; height: 18px; border-radius: 50%;
         background: #fff; border: 2px solid #cbd5e1; display: flex; align-items: center; justify-content: center; }
-    .otl-step.done .otl-dot { background: #009bc1; border-color: #009bc1; }
+    .otl-step.done .otl-dot { background: #009bc1; border-color: #00718c; }
     .otl-step.done .otl-dot:after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #fff; }
     .otl-label { font-weight: 600; color: #0f172a; font-size: 15px; }
     .otl-step:not(.done) .otl-label { color: #94a3b8; }
     .otl-meta { color: #475569; font-size: 13px; margin-top: 2px; }
     .otl-when { color: #94a3b8; font-size: 12px; margin-top: 1px; }
-    .otl-link { display: inline-block; margin-top: 4px; font-size: 13px; color: #009bc1; text-decoration: none; }
+    .otl-link { display: inline-block; margin-top: 4px; font-size: 13px; color: #00718c; text-decoration: none; }
     .otl-empty { color: #64748b; padding: 24px 0; }
 </style>
 <div class="otl-wrap">

@@ -120,7 +120,7 @@ $basePath = getBasePath();
             transform: translateY(-8px) scale(1.02);
         }
         .step-card.active {
-            border-color: #009bc1;
+            border-color: #00718c;
             box-shadow: 0 25px 50px -12px rgba(37, 99, 235, 0.25);
         }
         

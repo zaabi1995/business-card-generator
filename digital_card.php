@@ -1268,7 +1268,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
         .cardify-viral-footer .viral-logo {
             display: inline-flex;
             align-items: center;
-            color: #009bc1; /* Cardify / BHD brand blue */
+            color: #00718c; /* Cardify / BHD brand blue */
             opacity: 0.78;
             transition: opacity 0.18s ease;
         }
@@ -1277,7 +1277,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             border-color: rgba(0,155,193,0.35);
             background: <?php echo $isDarkPage ? 'rgba(0,155,193,0.08)' : 'rgba(0,155,193,0.06)'; ?>;
         }
-        .cardify-viral-footer .viral-link:hover strong { color: #009bc1; }
+        .cardify-viral-footer .viral-link:hover strong { color: #00718c; }
         .cardify-viral-footer .viral-link:hover .viral-logo { opacity: 1; }
         .cardify-viral-footer .viral-link:focus-visible {
             outline: 2px solid #009bc1;

@@ -84,11 +84,11 @@ $extraHead = <<<HTML
             transition: all 0.15s ease;
         }
         .form-input:focus {
-            border-color: #009bc1;
+            border-color: #00718c;
             box-shadow: 0 0 0 3px rgba(0, 155, 193, 0.12);
         }
         .form-input::placeholder {
-            color: #9ca3af;
+            color: #6b7280;
         }
     </style>
 HTML;

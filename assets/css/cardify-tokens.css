@@ -29,6 +29,12 @@
     --cardify-primary-800: #005b73;
     --cardify-primary-900: #004559;
 
+    /* Text/CTA ink. #009bc1 and #0086a6 are fill-only: 2.9:1 and 3.4:1 on
+       white, both WCAG AA failures for text and for white-on-brand CTAs.
+       #00718c is 5.6:1 both ways, so ink is what every link, label and
+       primary button uses. Never use primary-500/600 for text. */
+    --cardify-ink: #00718c;
+
     --cardify-accent-50:   #f4ecf6;
     --cardify-accent-100:  #dfc5e6;
     --cardify-accent-200:  #ca9ed6;
@@ -72,8 +78,8 @@
     --cardify-text:         var(--cardify-gray-900);
     --cardify-text-muted:   var(--cardify-gray-500);
     --cardify-text-subtle:  var(--cardify-gray-400);
-    --cardify-link:         var(--cardify-primary-600);
-    --cardify-link-hover:   var(--cardify-primary-700);
+    --cardify-link:         var(--cardify-ink);
+    --cardify-link-hover:   var(--cardify-primary-800);
 
     /* -----------------------------------------------------------------
        Spacing scale, 4px base, 8/12/16/24/32/48/64/96.

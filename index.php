@@ -202,8 +202,8 @@ if (isset($_GET['company_slug'])) {
 // Brand name
 $brandName = 'Cardify';
 $tagline = 'Business Cards Made Simple';
-$pageTitle = 'Cardify, Digital & Printed Business Cards for the GCC';
-$pageDescription = 'Bilingual Arabic/English digital and printed business cards for teams across the Gulf: Oman (live), Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait (rolling out 2026). QR vCard save, Apple Wallet, NFC, bulk provisioning. Free to start.';
+$pageTitle = t('landing.meta_title');
+$pageDescription = t('landing.meta_desc');
 // Self-canonicalize per locale (the AR home previously canonicalized to the EN
 // home, so Google never indexed it) + emit a full bilingual hreflang set
 // (ui-header's default only advertises en + x-default, never ar).
@@ -277,6 +277,19 @@ $homeJsonLd = '<script type="application/ld+json">' . json_encode($siteLd, JSON_
 
 $extraHead = $homeHreflang . $homeJsonLd . '<style>
     .hero-gradient { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #fffbeb 100%); }
+    /* r6-80: the measured desktop shift was the mock-card column being
+       re-centred when the Sora swap grew the text column 28px. Anchor the
+       columns to the top and commit the text column height up front.
+       Written here because lg:items-start is absent from the prebuilt
+       tailwind.min.css this page loads, so the utility class was inert. */
+    @media (min-width: 1024px) {
+      .hero-grid { align-items: start; }
+      .hero-reserve { min-height: 780px; }
+      /* measured post-swap heights at 1440px, so a reflow has room */
+      .hero-h1    { min-height: 240px; }
+      .hero-sub   { min-height: 168px; }
+      .hero-trust { min-height: 76px; }
+    }
     .card-shadow { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); }
     .float-animation { animation: float 6s ease-in-out infinite; }
     @keyframes float {
@@ -311,9 +324,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
     <!-- ========== HERO SECTION (Flowbite Style) ========== -->
     <section class="hero-gradient pt-28 lg:pt-36 pb-16 lg:pb-24 overflow-hidden">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            <div class="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center hero-grid">
                 <!-- Left Content -->
-                <div class="lg:col-span-6 text-center lg:text-left">
+                <div class="lg:col-span-6 text-center lg:text-left hero-reserve">
                     <!-- Badge -->
                     <div class="inline-flex items-center gap-2 py-1 pl-1 pr-4 mb-6 text-sm bg-white border border-gray-200 rounded-full shadow-sm">
                         <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 font-semibold text-xs px-3 py-1 rounded-full"><span>🇴🇲</span> <?= htmlspecialchars(t('landing.hero_badge_loc')) ?></span>
@@ -321,14 +334,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
 
                     <!-- Headline -->
-                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-gray-900 mb-6">
+                    <h1 class="hero-h1 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-gray-900 mb-6">
                         <?= htmlspecialchars(t('landing.hero_h1_line1')) ?>
                         <span class="text-blue-600 block"><?= htmlspecialchars(t('landing.hero_h1_line2')) ?></span>
                         <span class="text-gray-500 text-3xl sm:text-4xl lg:text-5xl"><?= htmlspecialchars(t('landing.hero_h1_line3')) ?></span>
                     </h1>
 
                     <!-- Subheadline -->
-                    <p class="text-lg lg:text-xl text-gray-600 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                    <p class="hero-sub text-lg lg:text-xl text-gray-600 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
                         <?= htmlspecialchars(t('landing.hero_subhead')) ?>
                         <strong class="text-gray-900"><?= htmlspecialchars(t('landing.hero_price_tag')) ?></strong>
                     </p>
@@ -352,7 +365,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                     </div>
 
                     <!-- Trust Badges -->
-                    <div class="flex flex-wrap items-center justify-center lg:justify-start gap-3 text-sm">
+                    <div class="hero-trust flex flex-wrap items-center justify-center lg:justify-start gap-3 text-sm">
                         <div class="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-full">
                             <i class="fa-solid fa-circle-check"></i>
                             <span><?= htmlspecialchars(t('landing.trust_free_design')) ?></span>
@@ -644,36 +657,36 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <div class="text-white">
                     <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-white/80 bg-white/10 rounded-full uppercase tracking-wide">
                         <i class="fa-solid fa-desktop"></i>
-                        Dashboard Preview
+                        <?= htmlspecialchars(t('landing.dash_kicker')) ?>
                     </span>
                     <h2 class="text-3xl sm:text-4xl font-extrabold mb-6">
-                        A powerful dashboard at your fingertips
+                        <?= htmlspecialchars(t('landing.dash_headline')) ?>
                     </h2>
                     <p class="text-lg text-blue-100 mb-8 leading-relaxed">
-                        Manage all your digital business cards from one intuitive interface. Track performance, update information, and share instantly.
+                        <?= htmlspecialchars(t('landing.dash_body')) ?>
                     </p>
                     
                     <ul class="space-y-4 mb-8">
                         <li class="flex items-start gap-3">
                             <i class="fa-solid fa-circle-check text-green-400 mt-1"></i>
-                            <span class="text-blue-100">Real-time analytics and engagement metrics</span>
+                            <span class="text-blue-100"><?= htmlspecialchars(t('landing.dash_b1')) ?></span>
                         </li>
                         <li class="flex items-start gap-3">
                             <i class="fa-solid fa-circle-check text-green-400 mt-1"></i>
-                            <span class="text-blue-100">One-click sharing to multiple platforms</span>
+                            <span class="text-blue-100"><?= htmlspecialchars(t('landing.dash_b2')) ?></span>
                         </li>
                         <li class="flex items-start gap-3">
                             <i class="fa-solid fa-circle-check text-green-400 mt-1"></i>
-                            <span class="text-blue-100">Instant updates across all shared cards</span>
+                            <span class="text-blue-100"><?= htmlspecialchars(t('landing.dash_b3')) ?></span>
                         </li>
                         <li class="flex items-start gap-3">
                             <i class="fa-solid fa-circle-check text-green-400 mt-1"></i>
-                            <span class="text-blue-100">Team management with role-based permissions</span>
+                            <span class="text-blue-100"><?= htmlspecialchars(t('landing.dash_b4')) ?></span>
                         </li>
                     </ul>
 
                     <a href="<?php echo getBasePath(); ?>company/register.php" class="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors">
-                        Try Dashboard Free
+                        <?= htmlspecialchars(t('landing.dash_cta')) ?>
                         <i class="fa-solid fa-arrow-right"></i>
                     </a>
                 </div>

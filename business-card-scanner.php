@@ -136,7 +136,7 @@ $e = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid sm:grid-cols-2 gap-8">
             <?php foreach ($features as [$icon, $t, $d]): ?>
             <div class="bg-white rounded-2xl p-7 shadow-sm border border-gray-100">
-                <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style="background:#e6f5f9;color:#009bc1">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style="background:#e6f5f9;color:#00718c">
                     <i class="fa-solid <?= $e($icon) ?> text-xl" aria-hidden="true"></i>
                 </div>
                 <h2 class="text-xl font-bold mb-3" style="color:#101828"><?= $e($t) ?></h2>
@@ -176,7 +176,7 @@ $e = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
                 <?php endforeach; ?>
             </div>
             <div class="mt-10 text-center">
-                <a href="<?= $isAr ? '/ar/app' : '/app' ?>" class="font-semibold" style="color:#009bc1">
+                <a href="<?= $isAr ? '/ar/app' : '/app' ?>" class="font-semibold" style="color:#00718c">
                     <?= $isAr ? 'كل ما يفعله التطبيق' : 'Everything the app does' ?> &rarr;
                 </a>
             </div>

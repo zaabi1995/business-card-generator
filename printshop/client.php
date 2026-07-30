@@ -73,7 +73,7 @@ printshopHeader($company['name'] . ' , ' . $shop['name'], 'clients');
             <p class="text-sm text-gray-500">/<?= sanitize($company['slug']) ?> &middot; <?= count($employees) ?> employees &middot; <?= count($designs) ?> designs</p>
         </div>
         <a href="client-templates.php?company=<?= urlencode($companyId) ?>"
-           class="inline-flex items-center gap-2 px-4 py-2 bg-[#009bc1] hover:bg-[#0089ab] text-white rounded-lg text-sm font-medium shadow-sm">
+           class="inline-flex items-center gap-2 px-4 py-2 bg-[#00718c] hover:bg-[#005b73] text-white rounded-lg text-sm font-medium shadow-sm">
             <i class="fa-solid fa-id-card"></i> Apply a design
         </a>
         <button type="button" onclick="document.getElementById('newDesignModal').showModal()"

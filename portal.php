@@ -780,7 +780,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             transition: all 0.15s ease;
         }
         .form-input:focus {
-            border-color: #009bc1;
+            border-color: #00718c;
             box-shadow: 0 0 0 3px rgba(0, 155, 193, 0.12);
         }
         .form-input::placeholder {
@@ -1339,7 +1339,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
             <!-- Success Message -->
             <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
                 <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style="background:#e9f6fa">
-                    <i class="fa-solid fa-check text-2xl" style="color:#009bc1"></i>
+                    <i class="fa-solid fa-check text-2xl" style="color:#00718c"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-gray-900 mb-2"><?= htmlspecialchars(t('cardportal.request_submitted_h2')) ?></h2>
                 <p class="text-gray-600 mb-6">
@@ -1347,7 +1347,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                 </p>
                 <div class="rounded-lg p-4 text-left inline-block" style="background:#e9f6fa">
                     <h3 class="font-semibold mb-2" style="color:#00708c"><?= htmlspecialchars(t('cardportal.whats_next')) ?></h3>
-                    <ul class="text-sm space-y-1" style="color:#0086a6">
+                    <ul class="text-sm space-y-1" style="color:#00718c">
                         <li><i class="fa-solid fa-envelope mr-2"></i><?= htmlspecialchars(t('cardportal.next_email')) ?></li>
                         <li><i class="fa-solid fa-clock mr-2"></i><?= htmlspecialchars(t('cardportal.next_review')) ?></li>
                         <li><i class="fa-solid fa-id-card mr-2"></i><?= htmlspecialchars(t('cardportal.next_generate')) ?></li>
@@ -1355,7 +1355,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                     </ul>
                 </div>
                 <p class="mt-6">
-                    <a href="<?php echo getTenantUrl($companySlug, '/portal'); ?>" class="font-medium" style="color:#0086a6">
+                    <a href="<?php echo getTenantUrl($companySlug, '/portal'); ?>" class="font-medium" style="color:#00718c">
                         <i class="fa-solid fa-arrow-left mr-1"></i> <?= htmlspecialchars(t('cardportal.submit_another')) ?>
                     </a>
                 </p>
@@ -1900,7 +1900,7 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                         <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/'), ENT_QUOTES, 'UTF-8') ?>" class="hover:text-gray-700">Home</a>
                         <a href="<?= htmlspecialchars(getTenantUrl($companySlug, '/admin/login'), ENT_QUOTES, 'UTF-8') ?>" class="hover:text-gray-700">Admin Login</a>
                         <span class="text-gray-300">|</span>
-                        <span>Powered by <a href="<?php echo getBasePath(); ?>" class="hover:underline" style="color:#0086a6">Cardify</a></span>
+                        <span>Powered by <a href="<?php echo getBasePath(); ?>" class="hover:underline" style="color:#00718c">Cardify</a></span>
                     </div>
                 </div>
             </div>

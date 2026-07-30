@@ -139,7 +139,7 @@
 }
 
 [data-product="bhd-chat"] {
-  --color-accent:        #25d366;
+  --color-accent:        #15803d;  /* WhatsApp green #25d366 is 1.8:1 on white; this is 5.0:1 */
   --color-accent-hover:  #00a884;
   --color-accent-light:  rgba(37, 211, 102, 0.08);
   --color-accent-border: rgba(37, 211, 102, 0.25);

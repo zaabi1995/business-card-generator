@@ -60,11 +60,11 @@
 @keyframes cardifySpin { to { transform: rotate(360deg); } }
 
 .cardify-btn--primary {
-    background: var(--cardify-primary-500);
+    background: var(--cardify-ink);
     color: #ffffff;
-    border-color: var(--cardify-primary-500);
+    border-color: var(--cardify-ink);
 }
-.cardify-btn--primary:hover { background: var(--cardify-primary-600); border-color: var(--cardify-primary-600); }
+.cardify-btn--primary:hover { background: var(--cardify-primary-800); border-color: var(--cardify-primary-800); }
 .cardify-btn--primary:active { transform: translateY(1px); }
 
 .cardify-btn--secondary {

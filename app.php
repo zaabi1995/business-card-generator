@@ -26,7 +26,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
 .app-cta-ghost:hover{border-color:#7fd0e3}
 .app-device{background:#101828}
 .app-badge{background:#e6f5f9;color:#00708c}
-.app-feature-icon{background:#e6f5f9;color:#009bc1}
+.app-feature-icon{background:#e6f5f9;color:#00718c}
 .app-cta-onbrand{color:#0d1b21}
 .app-heading{color:#101828}
 /* The purge/subset tailwind build on this site omits these too. Same bug class
@@ -123,7 +123,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
              links to is a page crawlers reach late and rank low. -->
         <p class="mt-8 text-center text-gray-600">
             <?= $isAr ? 'تفاصيل القراءة الضوئية للبطاقات العربية والإنجليزية على الجهاز: ' : 'How the on-device Arabic and English card recognition works: ' ?>
-            <a href="<?= $isAr ? '/ar/business-card-scanner' : '/business-card-scanner' ?>" class="font-semibold" style="color:#009bc1"><?= $isAr ? 'ماسح بطاقات العمل' : 'the business card scanner' ?></a>
+            <a href="<?= $isAr ? '/ar/business-card-scanner' : '/business-card-scanner' ?>" class="font-semibold" style="color:#00718c"><?= $isAr ? 'ماسح بطاقات العمل' : 'the business card scanner' ?></a>
         </p>
         <div class="mt-10 rounded-3xl p-8 sm:p-10 text-white overflow-hidden relative" style="background:linear-gradient(135deg,#009bc1,#824598)">
             <div class="relative grid lg:grid-cols-[1fr_auto] gap-8 items-center">

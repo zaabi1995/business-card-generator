@@ -84,7 +84,7 @@ adminHeader(t('templates.page_title'), 'templates');
   <!-- Two paths: pick a design, or upload your own -->
   <div class="grid sm:grid-cols-2 gap-4 mb-8">
     <div class="rounded-2xl border-2 border-[#009bc1] bg-cyan-50/40 p-5">
-      <div class="text-lg font-bold text-gray-900"><i class="fa-solid fa-wand-magic-sparkles text-[#009bc1] me-2"></i><?= htmlspecialchars(t('templates.path_pick_title')) ?></div>
+      <div class="text-lg font-bold text-gray-900"><i class="fa-solid fa-wand-magic-sparkles text-[#00718c] me-2"></i><?= htmlspecialchars(t('templates.path_pick_title')) ?></div>
       <p class="text-sm text-gray-600 mt-1"><?= htmlspecialchars(t('templates.path_pick_sub')) ?></p>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-5">
@@ -120,7 +120,7 @@ adminHeader(t('templates.page_title'), 'templates');
             <?= csrfField() ?>
             <input type="hidden" name="action" value="apply_preset">
             <input type="hidden" name="preset" value="<?= htmlspecialchars($p['id']) ?>">
-            <button type="submit" class="px-4 py-2 rounded-lg bg-[#009bc1] hover:bg-[#0089ab] text-white text-sm font-semibold whitespace-nowrap"><?= htmlspecialchars(t('templates.use_btn')) ?></button>
+            <button type="submit" class="px-4 py-2 rounded-lg bg-[#00718c] hover:bg-[#005b73] text-white text-sm font-semibold whitespace-nowrap"><?= htmlspecialchars(t('templates.use_btn')) ?></button>
           </form>
         </div>
       </div>

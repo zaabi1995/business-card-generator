@@ -162,17 +162,17 @@ require_once INCLUDES_DIR . '/ui-header.php';
     transition: all .15s;
     cursor: pointer;
   }
-  .swatch-copy:hover { border-color: #009bc1; color: #009bc1; }
+  .swatch-copy:hover { border-color: #00718c; color: #00718c; }
   .swatch-copy.copied { border-color: #16a34a; color: #16a34a; }
-  .anchor-link:hover { color: #009bc1; }
-  .sticky-toc a.active { color: #009bc1; font-weight: 600; }
+  .anchor-link:hover { color: #00718c; }
+  .sticky-toc a.active { color: #00718c; font-weight: 600; }
   [x-cloak] { display: none !important; }
   @keyframes toastIn {
     from { opacity: 0; transform: translateY(8px) translateX(-50%); }
     to   { opacity: 1; transform: translateY(0) translateX(-50%); }
   }
   .toast-in { animation: toastIn .18s ease-out; }
-  .otp-input:focus { border-color: #009bc1; box-shadow: 0 0 0 3px rgba(0,155,193,.15); outline: none; }
+  .otp-input:focus { border-color: #00718c; box-shadow: 0 0 0 3px rgba(0,155,193,.15); outline: none; }
   /* shimmer skeleton */
   @keyframes shimmer {
     0% { background-position: -500px 0 }
