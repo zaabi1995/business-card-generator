@@ -293,7 +293,12 @@ class CardImageRenderer
         $lastLine = $output ? (string)end($output) : '';
         $decoded = json_decode($lastLine, true);
         if ($exitCode !== 0 || !is_array($decoded) || empty($decoded['success'])) {
-            throw new RuntimeException('renderer_process_failed');
+            $detail = is_array($decoded)
+                ? preg_replace('/[^a-zA-Z0-9._:-]/', '_', (string)($decoded['error'] ?? ''))
+                : '';
+            throw new RuntimeException(
+                'renderer_process_failed' . ($detail !== '' ? ':' . $detail : '')
+            );
         }
         return $decoded;
     }
