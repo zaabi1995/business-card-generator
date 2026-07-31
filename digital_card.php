@@ -56,6 +56,18 @@ try {
         }
     }
 
+    if (
+        $companySlug === 'demo'
+        && in_array(
+            $employeeId,
+            ['maya', 'maya-personal', 'maya-collective'],
+            true
+        )
+    ) {
+        require __DIR__ . '/store-showcase-card.php';
+        exit;
+    }
+
     if (empty($companySlug) || empty($employeeId)) {
         throw new Exception('Missing parameters');
     }
