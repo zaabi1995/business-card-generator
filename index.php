@@ -298,8 +298,35 @@ $siteLd = [
     ],
 ];
 $homeJsonLd = '<script type="application/ld+json">' . json_encode($siteLd, JSON_UNESCAPED_SLASHES) . '</script>';
+$scannerLd = [
+    '@context' => 'https://schema.org',
+    '@type' => 'MobileApplication',
+    '@id' => 'https://cardify.om/app#ios-app',
+    'name' => 'Cardify: Business Card Scanner',
+    'url' => 'https://cardify.om/app',
+    'downloadUrl' => 'https://apps.apple.com/om/app/cardify-business-card-scanner/id6790749589',
+    'installUrl' => 'https://apps.apple.com/om/app/cardify-business-card-scanner/id6790749589',
+    'applicationCategory' => 'BusinessApplication',
+    'operatingSystem' => 'iOS 16.4 or later, iPadOS 16.4 or later',
+    'description' => 'Free Arabic and English business card scanner for iPhone and iPad with on-device OCR, contact cleanup, QR and NFC sharing, digital cards and Apple Wallet.',
+    'inLanguage' => ['en', 'ar'],
+    'isAccessibleForFree' => true,
+    'offers' => [
+        '@type' => 'Offer',
+        'price' => '0',
+        'priceCurrency' => 'OMR',
+        'availability' => 'https://schema.org/InStock',
+    ],
+    'publisher' => ['@id' => 'https://cardify.om/#organization'],
+];
+$scannerJsonLd = '<script type="application/ld+json">' . json_encode($scannerLd, JSON_UNESCAPED_SLASHES) . '</script>';
+$appDiscoveryHead = '<meta name="apple-itunes-app" content="app-id=6790749589, app-argument=cardifyscan://">'
+    . '<meta property="al:ios:app_store_id" content="6790749589">'
+    . '<meta property="al:ios:app_name" content="Cardify: Business Card Scanner">'
+    . '<meta property="al:ios:url" content="cardifyscan://">'
+    . '<meta property="al:web:url" content="https://cardify.om/app">';
 
-$extraHead = $homeHreflang . $homeJsonLd . '<style>
+$extraHead = $homeHreflang . $homeJsonLd . $scannerJsonLd . $appDiscoveryHead . '<style>
     .hero-gradient { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #fffbeb 100%); }
     /* r6-80: the measured desktop shift was the mock-card column being
        re-centred when the Sora swap grew the text column 28px. Anchor the
@@ -1279,7 +1306,7 @@ HTML;
   "@type": "SoftwareApplication",
   "name": "Cardify",
   "applicationCategory": "BusinessApplication",
-  "operatingSystem": "Web, iOS, Android",
+  "operatingSystem": "Web browser on iOS, Android, macOS, Windows and Linux",
   "url": "https://cardify.om",
   "description": "Digital and printed business card SaaS for teams across the GCC. Bilingual EN+AR, QR vCard auto-save, Apple Wallet + Google Wallet, bulk team onboarding, local print fulfilment. Available in Oman, Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait.",
   "inLanguage": ["en", "ar"],
