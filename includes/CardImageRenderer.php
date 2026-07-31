@@ -310,7 +310,7 @@ class CardImageRenderer
         if ($realStaging === false || $realPath === false
             || strpos($realPath, $realStaging . DIRECTORY_SEPARATOR) !== 0
             || !is_file($realPath)
-            || filesize($realPath) < 256) {
+            || filesize($realPath) < 32) {
             throw new RuntimeException($side . '_render_missing');
         }
         $dimensions = @getimagesize($realPath);
