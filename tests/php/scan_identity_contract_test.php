@@ -40,6 +40,9 @@ $accountDeleteMigration = source(
 $accountDeleteCleanupMigration = source(
     $root . '/database/migrations/145_scan_account_deletion_cleanup.php'
 );
+$walletThemeMigration = source(
+    $root . '/database/migrations/148_profile_wallet_themes.php'
+);
 $accountDeleteCleanup = source(
     $root . '/includes/ScanAccountDeletionCleanup.php'
 );
@@ -178,6 +181,25 @@ contractCheck(
     strpos($switchCompany, 'membershipForEmployee') !== false
         && strpos($switchCompany, '$sameEmail') === false
         && strpos($switchCompany, '$samePhone') === false
+);
+contractCheck(
+    'Wallet appearance uses the shared profile and tenant identity model',
+    strpos(
+        $walletThemeMigration,
+        'CREATE TABLE IF NOT EXISTS wallet_themes'
+    ) !== false
+        && strpos(
+            $walletThemeMigration,
+            'CREATE TABLE IF NOT EXISTS profile_wallet_preferences'
+        ) !== false
+        && strpos(
+            $walletThemeMigration,
+            'UNIQUE KEY uniq_profile_wallet_preference (employee_id)'
+        ) !== false
+        && strpos(
+            $walletThemeMigration,
+            'KEY idx_wallet_theme_scope (company_id, is_active, sort_order)'
+        ) !== false
 );
 contractCheck(
     'OTP link verification consumes OtpService ok result',
