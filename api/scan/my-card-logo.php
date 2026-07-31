@@ -8,27 +8,35 @@
  */
 require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
+require_once INCLUDES_DIR . '/CardPolicy.php';
 header('Content-Type: application/json');
 $ctx = ScanAuth::requireEmployeeMutation();
 require_once __DIR__ . '/_ratelimit.php';
 scanRateLimit($ctx, 'my_card_logo', 120);
 
-// Company logo is company-scoped: on a MANAGED company only the admin / super-
-// admin may change it. Soft 200 + brand_locked flag (same contract as
-// my-card.php) so the app treats it as a lock, not a hard error.
-require_once __DIR__ . '/_brand_guard.php';
-if (!scanCanEditBrand(
-    Database::getInstance(),
-    (string) $ctx['account_id'],
-    (string) $ctx['employee_id']
-)) {
-    echo json_encode(['success' => false, 'error' => 'brand_locked']);
+$db = Database::getInstance();
+$company = $db->fetchOne(
+    'SELECT * FROM companies WHERE id = :company_id LIMIT 1',
+    ['company_id' => (string) $ctx['company_id']]
+);
+if (!is_array($company)) {
+    http_response_code(404);
+    echo json_encode(['success' => false, 'error' => 'company_not_found']);
+    exit;
+}
+$cardPolicy = CardPolicy::forContext($ctx, $company);
+if (!$cardPolicy['can_edit_design']) {
+    http_response_code(409);
+    echo json_encode([
+        'success' => false,
+        'error' => 'brand_locked',
+        'card_policy' => $cardPolicy,
+    ]);
     exit;
 }
 
 // Clear branch: remove the card's logo (no file needed).
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['clear'])) {
-    $db = Database::getInstance();
     $theme = $db->fetchOne("SELECT id FROM company_themes WHERE company_id = :cid", ['cid' => $ctx['company_id']]);
     if ($theme) { $db->update('company_themes', ['logo_path' => null], 'id = :id', ['id' => $theme['id']]); }
     echo json_encode(['success' => true, 'logo_url' => null]);

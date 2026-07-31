@@ -11,19 +11,16 @@ class CardPolicy
         bool $isSuperAdmin = false
     ): array {
         $role = strtolower(trim($membershipRole));
-        $canAdminister = $role === 'owner' || $isSuperAdmin;
-        if ($managed && !$canAdminister) {
+        if ($managed || $role !== 'owner') {
             return [
-                'mode' => 'managed_company',
+                'mode' => $managed ? 'managed_company' : 'unmanaged_company',
                 'can_edit_text' => true,
                 'can_edit_design' => false,
                 'can_choose_design' => false,
             ];
         }
         return [
-            'mode' => $managed
-                ? 'managed_company_admin'
-                : ($role === 'owner' ? 'personal' : 'unmanaged_company'),
+            'mode' => 'personal',
             'can_edit_text' => true,
             'can_edit_design' => true,
             'can_choose_design' => true,

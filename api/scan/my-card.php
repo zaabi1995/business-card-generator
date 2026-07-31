@@ -41,7 +41,6 @@ $ctx = $method === 'POST'
     : ScanAuth::requireEmployee();
 require_once __DIR__ . '/_ratelimit.php';
 scanRateLimit($ctx, 'my_card', 600);
-require_once __DIR__ . '/_brand_guard.php';
 
 try {
     $db = Database::getInstance();

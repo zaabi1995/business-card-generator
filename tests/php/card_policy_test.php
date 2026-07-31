@@ -33,12 +33,31 @@ if (is_file($policyPath)) {
             && $personal['can_choose_design'] === true
     );
     policyCheck(
-        'managed owner can administer company design',
-        CardPolicy::forState(true, 'owner')['can_edit_design'] === true
+        'managed owner design locked',
+        CardPolicy::forState(true, 'owner') === [
+            'mode' => 'managed_company',
+            'can_edit_text' => true,
+            'can_edit_design' => false,
+            'can_choose_design' => false,
+        ]
     );
     policyCheck(
-        'linked super admin can administer company design',
-        CardPolicy::forState(true, 'member', true)['can_edit_design'] === true
+        'linked super admin design locked',
+        CardPolicy::forState(true, 'member', true) === [
+            'mode' => 'managed_company',
+            'can_edit_text' => true,
+            'can_edit_design' => false,
+            'can_choose_design' => false,
+        ]
+    );
+    policyCheck(
+        'unmanaged company member design locked',
+        CardPolicy::forState(false, 'member') === [
+            'mode' => 'unmanaged_company',
+            'can_edit_text' => true,
+            'can_edit_design' => false,
+            'can_choose_design' => false,
+        ]
     );
 }
 

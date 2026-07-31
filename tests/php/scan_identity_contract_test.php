@@ -48,7 +48,7 @@ $accountDeleteCleanup = source(
 );
 $proStatus = source($root . '/api/scan/pro-status.php');
 $rateLimit = source($root . '/api/scan/_ratelimit.php');
-$brandGuard = source($root . '/api/scan/_brand_guard.php');
+$myCardLogo = source($root . '/api/scan/my-card-logo.php');
 $cardPolicy = source($root . '/includes/CardPolicy.php');
 $designs = source($root . '/api/scan/designs.php');
 $deleteAccount = source($root . '/api/scan/delete-account.php');
@@ -363,11 +363,10 @@ contractCheck(
         && strpos($rateLimit, "\$ctx['employee_id']") === false
 );
 contractCheck(
-    'brand authority uses membership role and immutable super-admin linkage',
-    strpos($brandGuard, 'membership_role') !== false
-        && strpos($brandGuard, 'isLinkedSuperAdmin') !== false
-        && strpos($brandGuard, 'admin_email') === false
-        && strpos($brandGuard, 'LOWER(TRIM(e.email))') === false
+    'native brand mutation uses the shared card policy',
+    strpos($myCardLogo, 'CardPolicy::forContext') !== false
+        && strpos($myCardLogo, 'scanCanEditBrand') === false
+        && strpos($myCardLogo, "['can_edit_design']") !== false
 );
 contractCheck(
     'profile list exposes stable identity metadata and server card policy',
