@@ -6,6 +6,7 @@ require_once __DIR__ . '/../config.php';
 requireAdmin();
 require_once INCLUDES_DIR . '/Auth.php';
 require_once INCLUDES_DIR . '/admin-layout.php';
+require_once INCLUDES_DIR . '/WalletThemePolicy.php';
 
 $db = Database::getInstance();
 $companyId = getCurrentCompanyId();
@@ -39,8 +40,125 @@ if (!$theme) {
     $theme = $db->fetchOne("SELECT * FROM company_themes WHERE id = :id", ['id' => $themeId]);
 }
 
+$walletAction = (string)($_POST['wallet_action'] ?? '');
+$isWalletAction = $_SERVER['REQUEST_METHOD'] === 'POST' && $walletAction !== '';
+if ($isWalletAction) {
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        die('Invalid request');
+    }
+    try {
+        $walletThemeId = trim((string)($_POST['wallet_theme_id'] ?? ''));
+        if ($walletAction === 'save') {
+            $styles = ['eventTicket', 'storeCard', 'generic'];
+            $style = (string)($_POST['wallet_style'] ?? 'eventTicket');
+            if (!in_array($style, $styles, true)) {
+                throw new InvalidArgumentException('wallet_theme_invalid');
+            }
+            $previewPath = trim((string)($_POST['wallet_preview_path'] ?? ''));
+            if (strpos($previewPath, '..') !== false) {
+                throw new InvalidArgumentException('wallet_theme_invalid');
+            }
+            if ($previewPath !== '') {
+                $allowedPrefix = '/uploads/companies/' . $companyId . '/';
+                if (strpos('/' . ltrim($previewPath, '/'), $allowedPrefix) !== 0) {
+                    throw new InvalidArgumentException('wallet_theme_invalid');
+                }
+                $previewPath = '/' . ltrim($previewPath, '/');
+            }
+            $validated = WalletThemePolicy::validateTheme([
+                'style' => $style,
+                'background_color' => (string)($_POST['wallet_background_color'] ?? ''),
+                'foreground_color' => (string)($_POST['wallet_foreground_color'] ?? ''),
+                'label_color' => (string)($_POST['wallet_label_color'] ?? ''),
+                'logo_mode' => (string)($_POST['wallet_logo_mode'] ?? 'company'),
+            ]);
+            $walletData = [
+                'name_en' => mb_substr(trim((string)($_POST['wallet_name_en'] ?? 'Wallet theme')), 0, 120),
+                'name_ar' => mb_substr(trim((string)($_POST['wallet_name_ar'] ?? '')), 0, 120),
+                'style' => $validated['style'],
+                'background_color' => $validated['background_color'],
+                'foreground_color' => $validated['foreground_color'],
+                'label_color' => $validated['label_color'],
+                'logo_mode' => $validated['logo_mode'],
+                'preview_path' => $previewPath !== '' ? $previewPath : null,
+                'is_default' => isset($_POST['wallet_is_default']) ? 1 : 0,
+                'is_active' => isset($_POST['wallet_is_active']) ? 1 : 0,
+                'sort_order' => max(0, min(9999, (int)($_POST['wallet_sort_order'] ?? 0))),
+            ];
+            if ($walletData['is_default'] === 1) {
+                $walletData['is_active'] = 1;
+            }
+            if ($walletData['name_en'] === '') {
+                throw new InvalidArgumentException('wallet_theme_invalid');
+            }
+            $db->beginTransaction();
+            try {
+                if ($walletData['is_default'] === 1) {
+                    $db->query(
+                        'UPDATE wallet_themes SET is_default = 0 WHERE company_id = :company_id',
+                        ['company_id' => $companyId]
+                    );
+                }
+                if ($walletThemeId !== '') {
+                    $owned = $db->fetchOne(
+                        'SELECT id FROM wallet_themes
+                          WHERE id = :id AND company_id = :company_id
+                          FOR UPDATE',
+                        ['id' => $walletThemeId, 'company_id' => $companyId]
+                    );
+                    if (!is_array($owned)) {
+                        throw new InvalidArgumentException('wallet_theme_not_found');
+                    }
+                    $db->update(
+                        'wallet_themes',
+                        $walletData,
+                        'id = :id AND company_id = :company_id',
+                        ['id' => $walletThemeId, 'company_id' => $companyId]
+                    );
+                } else {
+                    $walletThemeId = generateUUID();
+                    $db->insert('wallet_themes', array_merge($walletData, [
+                        'id' => $walletThemeId,
+                        'company_id' => $companyId,
+                    ]));
+                }
+                $db->commit();
+            } catch (Throwable $error) {
+                $db->rollback();
+                throw $error;
+            }
+            $message = 'Apple Wallet theme saved.';
+        } elseif (in_array($walletAction, ['publish', 'unpublish', 'archive'], true)) {
+            $owned = $db->fetchOne(
+                'SELECT id FROM wallet_themes
+                  WHERE id = :id AND company_id = :company_id',
+                ['id' => $walletThemeId, 'company_id' => $companyId]
+            );
+            if (!is_array($owned)) {
+                throw new InvalidArgumentException('wallet_theme_not_found');
+            }
+            $active = $walletAction === 'publish' ? 1 : 0;
+            $db->update(
+                'wallet_themes',
+                ['is_active' => $active, 'is_default' => 0],
+                'id = :id AND company_id = :company_id',
+                ['id' => $walletThemeId, 'company_id' => $companyId]
+            );
+            $message = $walletAction === 'publish'
+                ? 'Apple Wallet theme published.'
+                : 'Apple Wallet theme hidden.';
+        } else {
+            throw new InvalidArgumentException('wallet_theme_invalid');
+        }
+    } catch (Throwable $error) {
+        $message = 'The Apple Wallet theme could not be saved. Check its colors and settings.';
+        $messageType = 'error';
+        error_log('[admin/theme] wallet theme: ' . $error->getMessage());
+    }
+}
+
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$isWalletAction) {
     if (!validateCSRFToken($_POST['csrf_token'] ?? '')) { die('Invalid request'); }
     $primaryColor = $_POST['primary_color'] ?? '#009bc1';
     $secondaryColor = $_POST['secondary_color'] ?? '#0f3460';
@@ -151,6 +269,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Pick a real E-Card URL for the Preview button: first employee with an email
 // (company-wide settings apply to every employee), falling back to the public
 // portal if no employees exist yet.
+$walletThemes = $db->fetchAll(
+    'SELECT * FROM wallet_themes
+      WHERE company_id = :company_id
+      ORDER BY is_default DESC, sort_order ASC, updated_at DESC',
+    ['company_id' => $companyId]
+);
+
 $__firstEmployee = $db->fetchOne(
     "SELECT id, email FROM employees WHERE company_id = :cid AND email <> '' ORDER BY created_at ASC LIMIT 1",
     ['cid' => $companyId]
@@ -164,8 +289,8 @@ adminHeader('Branding & E-Card Settings', 'theme');
 
 <!-- Alert Message -->
 <?php if ($message): ?>
-<div class="mb-6 p-4 rounded-xl flex items-center gap-3 bg-green-50 border border-green-200 text-green-700">
-    <i class="fa-solid fa-circle-check"></i>
+<div class="mb-6 p-4 rounded-xl flex items-center gap-3 <?= $messageType === 'error' ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-green-50 border border-green-200 text-green-700' ?>">
+    <i class="fa-solid <?= $messageType === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check' ?>"></i>
     <?php echo sanitize($message); ?>
 </div>
 <?php endif; ?>
@@ -327,7 +452,7 @@ adminHeader('Branding & E-Card Settings', 'theme');
                     </div>
                     <?php endif; ?>
                     <input type="file" name="logo" accept="image/*" 
-                           class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 file:font-medium hover:file:bg-blue-100">
+                           class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-black file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 file:font-medium hover:file:bg-blue-100">
                     <p class="text-xs text-gray-500 mt-2">Recommended: PNG or SVG, max 500x200px</p>
                 </div>
                 
@@ -339,7 +464,7 @@ adminHeader('Branding & E-Card Settings', 'theme');
                     </div>
                     <?php endif; ?>
                     <input type="file" name="favicon" accept=".ico,.png,.jpg,.jpeg" 
-                           class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 file:font-medium hover:file:bg-blue-100">
+                           class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-black file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 file:font-medium hover:file:bg-blue-100">
                     <p class="text-xs text-gray-500 mt-2">Recommended: ICO or PNG, 32x32px or 64x64px</p>
                 </div>
             </div>
@@ -459,6 +584,147 @@ adminHeader('Branding & E-Card Settings', 'theme');
     </div>
 </form>
 
+<section class="mt-8 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="p-5 border-b border-gray-100">
+        <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+            <i class="fa-brands fa-apple text-gray-900"></i>
+            Apple Wallet themes
+        </h3>
+        <p class="text-sm text-gray-500 mt-1">
+            Create company choices for Wallet. Employees can choose any published company or Cardify theme.
+        </p>
+    </div>
+    <div class="p-6 grid xl:grid-cols-[1fr_1.3fr] gap-8">
+        <form method="post" id="wallet-theme-form" class="space-y-4">
+            <?php echo csrfField(); ?>
+            <input type="hidden" name="wallet_action" value="save">
+            <input type="hidden" name="wallet_theme_id" id="wallet_theme_id" value="">
+            <input type="hidden" name="wallet_preview_path" value="">
+            <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Name</label>
+                    <input name="wallet_name_en" id="wallet_name_en" maxlength="120" required
+                           class="w-full px-3 py-2.5 border border-gray-200 rounded-lg" placeholder="Executive teal">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Arabic name</label>
+                    <input name="wallet_name_ar" id="wallet_name_ar" maxlength="120" dir="rtl"
+                           class="w-full px-3 py-2.5 border border-gray-200 rounded-lg" placeholder="التنفيذي">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Wallet layout</label>
+                    <select name="wallet_style" id="wallet_style" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg">
+                        <option value="eventTicket">Event ticket</option>
+                        <option value="storeCard">Store card</option>
+                        <option value="generic">Generic</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Logo</label>
+                    <select name="wallet_logo_mode" id="wallet_logo_mode" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg">
+                        <option value="company">Company logo</option>
+                        <option value="cardify">Cardify logo</option>
+                        <option value="none">No logo</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+                <?php foreach ([
+                    'background' => ['Background', '#006b7d'],
+                    'foreground' => ['Text', '#ffffff'],
+                    'label' => ['Labels', '#ffffff'],
+                ] as $walletColorKey => [$walletColorLabel, $walletColorDefault]): ?>
+                <label class="text-xs font-semibold text-gray-600">
+                    <?= sanitize($walletColorLabel) ?>
+                    <input type="color" name="wallet_<?= sanitize($walletColorKey) ?>_color"
+                           id="wallet_<?= sanitize($walletColorKey) ?>_color"
+                           value="<?= sanitize($walletColorDefault) ?>"
+                           class="mt-1 w-full h-11 rounded-lg border border-gray-200">
+                </label>
+                <?php endforeach; ?>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-4">
+                <label class="text-sm text-gray-700">
+                    Order
+                    <input type="number" name="wallet_sort_order" id="wallet_sort_order" value="0" min="0" max="9999"
+                           class="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg">
+                </label>
+                <div class="flex items-end gap-5 pb-2">
+                    <label class="text-sm text-gray-700"><input type="checkbox" name="wallet_is_active" id="wallet_is_active" checked> Published</label>
+                    <label class="text-sm text-gray-700"><input type="checkbox" name="wallet_is_default" id="wallet_is_default"> Default</label>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium">
+                    Save Wallet theme
+                </button>
+                <button type="button" id="wallet-theme-reset" class="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg">
+                    New theme
+                </button>
+            </div>
+        </form>
+
+        <div class="space-y-3">
+            <?php if (!$walletThemes): ?>
+                <div class="p-6 rounded-xl bg-gray-50 text-sm text-gray-500">
+                    No company Wallet themes yet. Employees still have the global Cardify choices.
+                </div>
+            <?php endif; ?>
+            <?php foreach ($walletThemes as $walletTheme): ?>
+                <?php
+                $walletThemeEditorData = htmlspecialchars(json_encode([
+                    'id' => $walletTheme['id'],
+                    'name_en' => $walletTheme['name_en'],
+                    'name_ar' => $walletTheme['name_ar'],
+                    'style' => $walletTheme['style'],
+                    'logo_mode' => $walletTheme['logo_mode'],
+                    'background_color' => $walletTheme['background_color'],
+                    'foreground_color' => $walletTheme['foreground_color'],
+                    'label_color' => $walletTheme['label_color'],
+                    'sort_order' => (int)$walletTheme['sort_order'],
+                    'is_active' => (int)$walletTheme['is_active'] === 1,
+                    'is_default' => (int)$walletTheme['is_default'] === 1,
+                ], JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
+                ?>
+                <article class="p-4 border border-gray-200 rounded-xl flex gap-4 items-center">
+                    <img src="wallet-theme-preview.php?id=<?= rawurlencode((string)$walletTheme['id']) ?>"
+                         alt="" class="w-36 aspect-[1.58] object-cover rounded-lg border border-gray-100">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h4 class="font-semibold text-gray-900"><?= sanitize($walletTheme['name_en']) ?></h4>
+                            <?php if ((int)$walletTheme['is_default'] === 1): ?>
+                                <span class="text-[11px] px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">Default</span>
+                            <?php endif; ?>
+                            <span class="text-[11px] px-2 py-0.5 rounded-full <?= (int)$walletTheme['is_active'] === 1 ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-black' ?>">
+                                <?= (int)$walletTheme['is_active'] === 1 ? 'Published' : 'Hidden' ?>
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1"><?= sanitize($walletTheme['style']) ?></p>
+                        <div class="mt-3 flex gap-2 flex-wrap">
+                            <button type="button" data-wallet-theme="<?= $walletThemeEditorData ?>"
+                                    class="wallet-theme-edit text-xs px-3 py-1.5 bg-gray-100 rounded-lg">Edit</button>
+                            <form method="post">
+                                <?php echo csrfField(); ?>
+                                <input type="hidden" name="wallet_theme_id" value="<?= sanitize($walletTheme['id']) ?>">
+                                <input type="hidden" name="wallet_action" value="<?= (int)$walletTheme['is_active'] === 1 ? 'unpublish' : 'publish' ?>">
+                                <button class="text-xs px-3 py-1.5 bg-gray-100 rounded-lg">
+                                    <?= (int)$walletTheme['is_active'] === 1 ? 'Hide' : 'Publish' ?>
+                                </button>
+                            </form>
+                            <form method="post" onsubmit="return confirm('Hide this Wallet theme? Existing selections will fall back safely.');">
+                                <?php echo csrfField(); ?>
+                                <input type="hidden" name="wallet_theme_id" value="<?= sanitize($walletTheme['id']) ?>">
+                                <input type="hidden" name="wallet_action" value="archive">
+                                <button class="text-xs px-3 py-1.5 text-red-600 bg-red-50 rounded-lg">Archive</button>
+                            </form>
+                        </div>
+                    </div>
+                </article>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+
 <script>
 // Update color text inputs when color pickers change
 document.querySelectorAll('input[type="color"]').forEach(picker => {
@@ -482,6 +748,29 @@ function copyPortalLink() {
         });
     }
 }
+
+const walletThemeForm = document.getElementById('wallet-theme-form');
+const resetWalletThemeForm = () => {
+    walletThemeForm.reset();
+    document.getElementById('wallet_theme_id').value = '';
+    document.getElementById('wallet_background_color').value = '#006b7d';
+    document.getElementById('wallet_foreground_color').value = '#ffffff';
+    document.getElementById('wallet_label_color').value = '#ffffff';
+    document.getElementById('wallet_is_active').checked = true;
+};
+document.getElementById('wallet-theme-reset').addEventListener('click', resetWalletThemeForm);
+document.querySelectorAll('.wallet-theme-edit').forEach(button => {
+    button.addEventListener('click', () => {
+        const theme = JSON.parse(button.dataset.walletTheme);
+        Object.entries(theme).forEach(([key, value]) => {
+            const field = document.getElementById('wallet_' + key);
+            if (!field) return;
+            if (field.type === 'checkbox') field.checked = Boolean(value);
+            else field.value = value ?? '';
+        });
+        walletThemeForm.scrollIntoView({behavior: 'smooth', block: 'center'});
+    });
+});
 </script>
 
 <?php adminFooter(); ?>
