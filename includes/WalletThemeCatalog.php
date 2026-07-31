@@ -272,12 +272,7 @@ class WalletThemeCatalog
     private static function publicTheme(array $theme): array
     {
         $previewPath = trim((string) ($theme['preview_path'] ?? ''));
-        $previewUrl = null;
-        if ($previewPath !== '') {
-            $previewUrl = function_exists('imageUrl')
-                ? imageUrl($previewPath)
-                : $previewPath;
-        }
+        $previewUrl = self::canonicalPreviewUrl($previewPath);
         return [
             'id' => isset($theme['id']) && $theme['id'] !== ''
                 ? (string) $theme['id']
@@ -295,5 +290,26 @@ class WalletThemeCatalog
             'logo_mode' => (string) $theme['logo_mode'],
             'preview_url' => $previewUrl,
         ];
+    }
+
+    public static function canonicalPreviewUrl(string $previewPath): ?string
+    {
+        $previewPath = trim($previewPath);
+        if ($previewPath === '') {
+            return null;
+        }
+        if (preg_match('#^https://(?:[a-z0-9-]+\.)*cardify\.om(?:/|$)#i', $previewPath) === 1) {
+            return $previewPath;
+        }
+        $rendered = function_exists('imageUrl')
+            ? (string) imageUrl($previewPath)
+            : $previewPath;
+        if (preg_match('#^https://(?:[a-z0-9-]+\.)*cardify\.om(?:/|$)#i', $rendered) === 1) {
+            return $rendered;
+        }
+        $path = '/' . ltrim($rendered, '/');
+        return function_exists('getTenantUrl')
+            ? getTenantUrl(null, $path)
+            : 'https://cardify.om' . $path;
     }
 }
