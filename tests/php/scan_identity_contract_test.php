@@ -70,6 +70,7 @@ $allowedDeleteTables = [
     'scan_claim_tickets',
     'push_tokens',
     'card_designs',
+    'profile_wallet_preferences',
     'scans',
     'scan_passes',
     'scan_pro_receipts',
@@ -377,6 +378,7 @@ contractCheck(
         && strpos($deleteAccount, 'scan_company_create_operations') !== false
         && strpos($deleteAccount, 'DELETE FROM scans WHERE employee_id = ?') !== false
         && strpos($deleteAccount, 'DELETE FROM card_designs WHERE employee_id = ?') !== false
+        && strpos($deleteAccount, 'DELETE FROM profile_wallet_preferences WHERE employee_id = ?') !== false
         && strpos($deleteAccount, 'DELETE FROM scan_passes WHERE employee_id = ?') !== false
 );
 contractCheck(

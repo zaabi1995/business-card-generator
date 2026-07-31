@@ -378,6 +378,9 @@ try {
                 'DELETE FROM card_designs WHERE employee_id = ?'
             )->execute([$employeeId]);
             $pdo->prepare(
+                'DELETE FROM profile_wallet_preferences WHERE employee_id = ?'
+            )->execute([$employeeId]);
+            $pdo->prepare(
                 'DELETE FROM scans WHERE employee_id = ?'
             )->execute([$employeeId]);
             $pdo->prepare(
