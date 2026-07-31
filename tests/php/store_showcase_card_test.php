@@ -23,6 +23,18 @@ if (strpos($html, 'telephone') !== false || strpos($html, 'mailto:') !== false) 
     exit(1);
 }
 
+$employeeId = 'showcase-directory-1';
+ob_start();
+require dirname(__DIR__, 2) . '/store-showcase-card.php';
+$directoryHtml = (string) ob_get_clean();
+if (
+    strpos($directoryHtml, 'Nora Ahmed') === false
+    || strpos($directoryHtml, 'Studio North') === false
+) {
+    fwrite(STDERR, "Missing showcase directory profile\n");
+    exit(1);
+}
+
 $digitalCard = file_get_contents(dirname(__DIR__, 2) . '/digital_card.php');
 if (
     strpos((string) $digitalCard, "companySlug === 'demo'") === false

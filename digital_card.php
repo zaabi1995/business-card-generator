@@ -60,7 +60,16 @@ try {
         $companySlug === 'demo'
         && in_array(
             $employeeId,
-            ['maya', 'maya-personal', 'maya-collective'],
+            [
+                'maya',
+                'maya-personal',
+                'maya-collective',
+                'showcase-directory-1',
+                'showcase-directory-2',
+                'showcase-directory-3',
+                'showcase-directory-4',
+                'showcase-directory-5',
+            ],
             true
         )
     ) {
@@ -810,7 +819,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
             line-height: 1.35;
         }
 
-        /* Social Links — branded pills, mobile + desktop friendly */
+        /* Social Links, branded pills, mobile + desktop friendly */
         .social-links {
             display: flex;
             flex-wrap: wrap;
@@ -1345,7 +1354,7 @@ $switchThirdUrl = ($thirdCode !== '' && $thirdLabel !== '')
 <body class="<?php echo $isDarkPage ? 'force-dark' : 'force-light'; echo !empty($demoMeta) ? ' is-demo' : ''; ?>">
     <?php if (!empty($isDemoUnverified)): $__demoAr = (($locale ?? 'en') === 'ar'); ?>
     <div class="cf-demo-banner" dir="<?= $__demoAr ? 'rtl' : 'ltr' ?>">
-        <span><?= $__demoAr ? 'بطاقة تجريبية — فعّل بريدك للاحتفاظ بها' : 'Demo card — verify your email to keep it' ?></span>
+        <span><?= $__demoAr ? 'بطاقة تجريبية: فعّل بريدك للاحتفاظ بها' : 'Demo card: verify your email to keep it' ?></span>
         <a href="https://cardify.om">cardify.om →</a>
     </div>
     <?php endif; ?>
