@@ -44,6 +44,15 @@ myCardRenderCheck(
         && strpos($myCard, "\$response = ['success' => true, 'card' => \$card]") !== false
         && strpos($myCard, "\$response['brand_locked'] = \$brandLocked") !== false
 );
+myCardRenderCheck(
+    'server card policy protects managed design fields',
+    strpos($myCard, "require_once INCLUDES_DIR . '/CardPolicy.php'") !== false
+        && strpos($myCard, "\$response['card_policy'] = \$cardPolicy") !== false
+        && strpos($myCard, "'locked_fields'") !== false
+        && strpos($myCard, "'card_template_id'") !== false
+        && strpos($myCard, "'primary_color'") !== false
+        && strpos($myCard, "'dark_mode'") !== false
+);
 
 echo $failures === 0 ? "ALL PASS\n" : "$failures FAILED\n";
 exit($failures === 0 ? 0 : 1);

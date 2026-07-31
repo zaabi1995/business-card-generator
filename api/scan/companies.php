@@ -9,6 +9,7 @@
  */
 require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
+require_once INCLUDES_DIR . '/CardPolicy.php';
 
 header('Content-Type: application/json');
 $ctx = ScanAuth::requireEmployee();
@@ -23,7 +24,8 @@ $companies = [];
 $seen = [];
 
 $memberships = $db->fetchAll(
-    "SELECT m.employee_id, m.company_id, c.name, c.slug
+    "SELECT m.employee_id, m.company_id, m.membership_role,
+            c.name, c.slug, COALESCE(ct.managed, 0) AS managed
      FROM scan_account_memberships m
      JOIN scan_accounts a
        ON a.id = m.account_id
@@ -36,6 +38,7 @@ $memberships = $db->fetchAll(
      JOIN companies c
        ON c.id = m.company_id
       AND c.status = 'active'
+     LEFT JOIN company_themes ct ON ct.company_id = m.company_id
      WHERE m.account_id = :account_id",
     ['account_id' => $accountId]
 );
@@ -46,11 +49,27 @@ foreach ($memberships as $membership) {
         continue;
     }
     $seen[$companyId] = true;
+    $managed = (int) ($membership['managed'] ?? 0) === 1;
+    $role = (string) ($membership['membership_role'] ?? 'member');
+    $employeeId = (string) $membership['employee_id'];
+    $slug = (string) $membership['slug'];
     $companies[] = [
         'company_id' => $companyId,
-        'employee_id' => (string) $membership['employee_id'],
+        'employee_id' => $employeeId,
         'name' => (string) $membership['name'],
-        'slug' => (string) $membership['slug'],
+        'slug' => $slug,
+        'profile_type' => !$managed && $role === 'owner'
+            ? 'personal'
+            : 'company',
+        'public_url' => getTenantUrl(
+            $slug,
+            '/' . rawurlencode($employeeId)
+        ),
+        'card_policy' => CardPolicy::forState(
+            $managed,
+            $role,
+            $isSuperAdmin
+        ),
         'is_active' => $companyId === $activeCompanyId,
         'is_member' => true,
     ];
@@ -59,6 +78,7 @@ foreach ($memberships as $membership) {
 if ($isSuperAdmin) {
     $allCompanies = $db->fetchAll(
         "SELECT c.id AS company_id, c.name, c.slug,
+                COALESCE(ct.managed, 0) AS managed,
                 (
                     SELECT e.id
                     FROM employees e
@@ -69,6 +89,7 @@ if ($isSuperAdmin) {
                     LIMIT 1
                 ) AS active_employee_id
          FROM companies c
+         LEFT JOIN company_themes ct ON ct.company_id = c.id
          WHERE c.status = 'active'",
         []
     );
@@ -78,11 +99,23 @@ if ($isSuperAdmin) {
             continue;
         }
         $seen[$companyId] = true;
+        $employeeId = (string) $company['active_employee_id'];
+        $slug = (string) $company['slug'];
         $companies[] = [
             'company_id' => $companyId,
-            'employee_id' => (string) $company['active_employee_id'],
+            'employee_id' => $employeeId,
             'name' => (string) $company['name'],
-            'slug' => (string) $company['slug'],
+            'slug' => $slug,
+            'profile_type' => 'company',
+            'public_url' => getTenantUrl(
+                $slug,
+                '/' . rawurlencode($employeeId)
+            ),
+            'card_policy' => CardPolicy::forState(
+                (int) ($company['managed'] ?? 0) === 1,
+                'member',
+                true
+            ),
             'is_active' => $companyId === $activeCompanyId,
             'is_member' => false,
         ];

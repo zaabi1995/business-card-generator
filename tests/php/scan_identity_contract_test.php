@@ -49,6 +49,8 @@ $accountDeleteCleanup = source(
 $proStatus = source($root . '/api/scan/pro-status.php');
 $rateLimit = source($root . '/api/scan/_ratelimit.php');
 $brandGuard = source($root . '/api/scan/_brand_guard.php');
+$cardPolicy = source($root . '/includes/CardPolicy.php');
+$designs = source($root . '/api/scan/designs.php');
 $deleteAccount = source($root . '/api/scan/delete-account.php');
 $cardRender = source($root . '/api/scan/card-render.php');
 $proReport = source($root . '/api/scan/pro-report.php');
@@ -366,6 +368,20 @@ contractCheck(
         && strpos($brandGuard, 'isLinkedSuperAdmin') !== false
         && strpos($brandGuard, 'admin_email') === false
         && strpos($brandGuard, 'LOWER(TRIM(e.email))') === false
+);
+contractCheck(
+    'profile list exposes stable identity metadata and server card policy',
+    strpos($companies, "'profile_type'") !== false
+        && strpos($companies, "'public_url'") !== false
+        && strpos($companies, "'employee_id'") !== false
+        && strpos($companies, 'CardPolicy::forState') !== false
+);
+contractCheck(
+    'managed profile design mutations fail closed',
+    strpos($cardPolicy, 'scan_account_memberships') !== false
+        && strpos($cardPolicy, 'company_themes') !== false
+        && strpos($designs, "'error' => 'design_managed'") !== false
+        && strpos($designs, 'http_response_code(409)') !== false
 );
 contractCheck(
     'account deletion removes only immutable-account and native-app data',

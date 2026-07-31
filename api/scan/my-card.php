@@ -24,6 +24,7 @@ require_once INCLUDES_DIR . '/ScanAuth.php';
 require_once INCLUDES_DIR . '/CardifyConvention.php';
 require_once INCLUDES_DIR . '/ColorContrast.php';
 require_once INCLUDES_DIR . '/AppleWalletPass.php';
+require_once INCLUDES_DIR . '/CardPolicy.php';
 
 header('Content-Type: application/json');
 
@@ -61,6 +62,11 @@ try {
         echo json_encode(['success' => false, 'error' => 'company_not_found']);
         exit;
     }
+    $cardPolicy = CardPolicy::forContext($ctx, $company);
+    $brandLocked = !$cardPolicy['can_edit_design'];
+    $lockedFields = $brandLocked
+        ? ['primary_color', 'logo', 'card_template_id', 'dark_mode']
+        : [];
 
     if ($method === 'POST') {
         $body = json_decode(file_get_contents('php://input'), true) ?: [];
@@ -129,7 +135,10 @@ try {
         // printed card. Settable from the web self-edit and the admin console;
         // the app could not reach it at all, so someone using only the phone had
         // no say in what their own link shows. Validated, never free text.
-        if (array_key_exists('card_page_layout', $body)) {
+        if (
+            $cardPolicy['can_edit_design']
+            && array_key_exists('card_page_layout', $body)
+        ) {
             $wantLayout = strtolower(trim((string) $body['card_page_layout']));
             if (in_array($wantLayout, ['auto', 'card', 'photo'], true)) {
                 $merged['card_page_layout'] = $wantLayout;
@@ -143,7 +152,10 @@ try {
         }
 
         // dark_mode -> card_dark_mode_toggle (1/0). Accepts bool, 0/1, "true".
-        if (array_key_exists('dark_mode', $body)) {
+        if (
+            $cardPolicy['can_edit_design']
+            && array_key_exists('dark_mode', $body)
+        ) {
             $dm = $body['dark_mode'];
             $merged['card_dark_mode_toggle'] =
                 ($dm === true || $dm === 1 || $dm === '1' || strtolower((string) $dm) === 'true') ? 1 : 0;
@@ -162,7 +174,10 @@ try {
             $db->update('employees', ['fax' => $cap($body['fax'], 50)], 'id = :id AND company_id = :cid',
                 ['id' => $employeeId, 'cid' => $companyId]);
         }
-        if (array_key_exists('card_template_id', $body)) {
+        if (
+            $cardPolicy['can_edit_design']
+            && array_key_exists('card_template_id', $body)
+        ) {
             $tpl = $cap($body['card_template_id'], 100);
             $db->update('employees', ['card_template_id' => ($tpl !== '' ? $tpl : null)],
                 'id = :id AND company_id = :cid', ['id' => $employeeId, 'cid' => $companyId]);
@@ -172,15 +187,8 @@ try {
         // web theme editor writes. NEVER trust the posted hex: run it through
         // ColorContrast::safeAccent() first (unparseable -> platform teal;
         // too-light -> darkened to a readable accent).
-        $brandLocked = false;
         if (array_key_exists('primary_color', $body)) {
-            require_once __DIR__ . '/_brand_guard.php';
-            $canBrand = scanCanEditBrand(
-                $db,
-                (string) $ctx['account_id'],
-                $employeeId
-            );
-            $brandLocked = !$canBrand;
+            $canBrand = $cardPolicy['can_edit_design'];
             if ($canBrand) {
             $safe = ColorContrast::safeAccent((string) $body['primary_color']);
             $existingTheme = $db->fetchOne(
@@ -305,11 +313,7 @@ try {
         'dark_mode'        => (int) ($employee['card_dark_mode_toggle'] ?? 1) === 1,
         // Lets the app grey out the colour/logo editors for a managed-tenant
         // employee instead of only failing on save.
-        'can_edit_brand'   => scanCanEditBrand(
-            $db,
-            (string) $ctx['account_id'],
-            $employeeId
-        ),
+        'can_edit_brand'   => $cardPolicy['can_edit_design'],
     ];
 
     $slug = (string) ($company['slug'] ?? '');
@@ -399,9 +403,9 @@ try {
     }
 
     $response = ['success' => true, 'card' => $card];
-    if ($method === 'POST') {
-        $response['brand_locked'] = $brandLocked;
-    }
+    $response['brand_locked'] = $brandLocked;
+    $response['locked_fields'] = $lockedFields;
+    $response['card_policy'] = $cardPolicy;
     // json_encode returns FALSE on invalid UTF-8, and echoing that emits an
     // empty body with HTTP 200, which the app cannot parse and cannot recover
     // from. $cap() no longer produces such values, but a row corrupted before

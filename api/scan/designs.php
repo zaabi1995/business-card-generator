@@ -17,6 +17,7 @@
  */
 require_once __DIR__ . '/../../config.php';
 require_once INCLUDES_DIR . '/ScanAuth.php';
+require_once INCLUDES_DIR . '/CardPolicy.php';
 
 header('Content-Type: application/json');
 $method = $_SERVER['REQUEST_METHOD'];
@@ -35,7 +36,17 @@ $invalidateRender = function () use ($ctx) {
 
 $db = Database::getInstance();
 $emp = $ctx['employee_id'];
-$company = $ctx['company_id'];
+$companyId = $ctx['company_id'];
+$company = $db->fetchOne(
+    'SELECT * FROM companies WHERE id = :company_id LIMIT 1',
+    ['company_id' => $companyId]
+);
+if (!is_array($company)) {
+    http_response_code(404);
+    echo json_encode(['success' => false, 'error' => 'company_not_found']);
+    exit;
+}
+$cardPolicy = CardPolicy::forContext($ctx, $company);
 
 // ---- GET: list this employee's wallet ----
 if ($method === 'GET') {
@@ -52,13 +63,26 @@ if ($method === 'GET') {
         echo json_encode(['success' => false, 'error' => 'server_error']);
         exit;
     }
-    echo json_encode(['success' => true, 'designs' => $rows], JSON_UNESCAPED_UNICODE);
+    echo json_encode([
+        'success' => true,
+        'designs' => $rows,
+        'card_policy' => $cardPolicy,
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 if ($method !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'method_not_allowed']);
+    exit;
+}
+if (!$cardPolicy['can_choose_design']) {
+    http_response_code(409);
+    echo json_encode([
+        'success' => false,
+        'error' => 'design_managed',
+        'card_policy' => $cardPolicy,
+    ]);
     exit;
 }
 
@@ -110,7 +134,7 @@ try {
         $db->insert('card_designs', [
             'id' => $newId,
             'employee_id' => $emp,
-            'company_id' => $company,
+            'company_id' => $companyId,
             'name' => $name,
             'side' => $side,
             'pair_id' => $pairId,
