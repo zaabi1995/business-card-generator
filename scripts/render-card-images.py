@@ -4,6 +4,8 @@ import argparse
 import io
 import json
 import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -62,13 +64,23 @@ def _background(template: dict, input_dir: Path) -> Image.Image:
         return canvas
     try:
         if path.suffix.lower() == ".svg":
-            import cairosvg
+            try:
+                import cairosvg
 
-            rendered = cairosvg.svg2png(
-                url=str(path),
-                output_width=WIDTH,
-                output_height=HEIGHT,
-            )
+                rendered = cairosvg.svg2png(
+                    url=str(path),
+                    output_width=WIDTH,
+                    output_height=HEIGHT,
+                )
+            except ImportError:
+                rsvg = shutil.which("rsvg-convert")
+                if rsvg is None:
+                    raise RuntimeError("svg_renderer_unavailable")
+                rendered = subprocess.run(
+                    [rsvg, "--width", str(WIDTH), "--height", str(HEIGHT), str(path)],
+                    check=True,
+                    capture_output=True,
+                ).stdout
             layer = Image.open(io.BytesIO(rendered)).convert("RGBA")
         else:
             layer = Image.open(path).convert("RGBA")
@@ -118,8 +130,15 @@ def _font_candidates(field: dict, bold: bool, arabic: bool) -> list[Path]:
     return candidates
 
 
-def _font(field: dict, arabic: bool) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    size = max(8, min(180, int(round(float(field.get("fontSize", field.get("font_size", 24)))))))
+def _font(
+    field: dict,
+    arabic: bool,
+    size_override: int | None = None,
+) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    requested = size_override if size_override is not None else field.get(
+        "fontSize", field.get("font_size", 24)
+    )
+    size = max(8, min(180, int(round(float(requested)))))
     weight = str(field.get("fontWeight", field.get("font_weight", ""))).lower()
     bold = weight in {"bold", "600", "700", "800", "900"} or (weight.isdigit() and int(weight) >= 600)
     for candidate in _font_candidates(field, bold, arabic):
@@ -151,6 +170,8 @@ def _field_items(template: dict) -> list[tuple[str, dict]]:
 
 
 def _employee_value(key: str, payload: dict, field: dict) -> str:
+    if field.get("is_static"):
+        return str(field.get("detected_text") or field.get("text") or "")
     if field.get("text") not in (None, ""):
         return str(field["text"])
     employee = payload.get("employee") or {}
@@ -164,14 +185,29 @@ def _employee_value(key: str, payload: dict, field: dict) -> str:
     }
     resolved = aliases.get(key, key)
     if resolved == "company_en":
-        return str(company.get("name_en") or company.get("name") or "")
+        return str(employee.get("company_en") or company.get("name_en") or company.get("name") or "")
     if resolved == "company_ar":
-        return str(company.get("name_ar") or company.get("name") or "")
+        return str(employee.get("company_ar") or company.get("name_ar") or company.get("name") or "")
     value = employee.get(resolved)
     if value in (None, "") and resolved == "phone":
         value = employee.get("mobile")
     if value in (None, "") and resolved == "mobile":
         value = employee.get("phone")
+    company_fallbacks = {
+        "website": "default_website",
+        "website_ar": "default_website",
+        "fax": "default_fax",
+        "fax_ar": "default_fax",
+        "address": "default_address_en",
+        "address_en": "default_address_en",
+        "address_2_en": "default_address_2_en",
+        "address_ar": "default_address_ar",
+        "address_2_ar": "default_address_2_ar",
+    }
+    if value in (None, "") and resolved in company_fallbacks:
+        value = company.get(company_fallbacks[resolved])
+    if value in (None, ""):
+        value = field.get("detected_text")
     return "" if value is None else str(value)
 
 
@@ -199,7 +235,13 @@ def _draw_text(draw: ImageDraw.ImageDraw, template: dict, key: str, field: dict,
     fill = _color(field.get("fill", field.get("color")), "#111827")
     align = str(field.get("textAlign", field.get("text_align", "right" if arabic else "left"))).lower()
     origin = str(field.get("originX", field.get("origin_x", align))).lower()
-    anchor = "ra" if origin == "right" else "ma" if origin == "center" else "la"
+    width = float(field.get("width", 0) or 0)
+    if width > 0 and not field.get("is_static"):
+        requested_size = max(8, int(round(float(field.get("fontSize", field.get("font_size", 24))))))
+        while requested_size > 8 and draw.textlength(text, font=font) > width:
+            requested_size -= 1
+            font = _font(field, arabic, requested_size)
+    anchor = "rt" if origin == "right" else "mt" if origin == "center" else "lt"
     kwargs = {"fill": fill, "font": font, "anchor": anchor, "align": align}
     if arabic:
         kwargs["direction"] = "rtl"
@@ -257,6 +299,8 @@ def _render(payload: dict, template: dict, side: str, input_dir: Path) -> Image.
     qr_drawn = False
     for key, field in _field_items(template):
         if field.get("enabled", True) is False or field.get("visible", True) is False:
+            continue
+        if field.get("render_in_bg"):
             continue
         if key in {"qr", "qr_code", "qrcode"}:
             _draw_qr(canvas, template, field, str(payload.get("public_url") or ""))

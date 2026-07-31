@@ -1,11 +1,9 @@
 <?php
 /**
  * /api/scan/designs.php - the per-person "wallet" of card designs (card_designs).
- * These are PERSONAL designs, independent of the shared company brand, so they
- * are always editable by their owner and never gated by the brand lock. Reuses
- * the templates fields_json/settings_json format so the same render pipeline
- * (generate_card_html.php) draws them. Bearer-auth; every row is scoped to the
- * signed-in employee.
+ * These are personal designs, independent of the shared company brand. The
+ * server card policy decides whether the signed-in profile can edit them.
+ * Every row and mutation is scoped to the signed-in employee.
  *
  *   GET                       -> {success, designs:[...]}   (this employee's wallet)
  *   POST {action:'save', id?, name?, fields_json?, settings_json?, side?, pair_id?,
@@ -26,13 +24,7 @@ $ctx = $method === 'POST'
     : ScanAuth::requireEmployee();
 require_once __DIR__ . '/_ratelimit.php';
 scanRateLimit($ctx, 'designs', 600);
-require_once INCLUDES_DIR . '/CardRenderer.php';
-// A design change flips which layout renders, so drop this employee's
-// cached PNG; the public card + wallet regenerate from the active design.
-$invalidateRender = function () use ($ctx) {
-    try { CardRenderer::invalidateForEmployee($ctx['employee_id'], 'card_designs_change'); }
-    catch (\Throwable $e) { error_log('[scan/designs] invalidate: ' . $e->getMessage()); }
-};
+require_once INCLUDES_DIR . '/CardImageRenderer.php';
 
 $db = Database::getInstance();
 $emp = $ctx['employee_id'];
@@ -47,6 +39,30 @@ if (!is_array($company)) {
     exit;
 }
 $cardPolicy = CardPolicy::forContext($ctx, $company);
+$syncRender = function (string $reason) use ($emp): array {
+    try {
+        $render = CardImageRenderer::renderAndPromote((string)$emp, $reason);
+    } catch (CardRenderException $error) {
+        http_response_code(503);
+        echo json_encode([
+            'success' => false,
+            'error' => 'render_failed',
+            'operation_id' => $error->operationId(),
+        ]);
+        exit;
+    }
+    try {
+        require_once INCLUDES_DIR . '/ScanPassService.php';
+        require_once INCLUDES_DIR . '/ApnsProvider.php';
+        $registrations = ScanPassService::onCardChanged((string)$emp);
+        if ($registrations) {
+            apnsProvider()->pushPassUpdates(APPLE_WALLET_PASS_TYPE_ID, $registrations);
+        }
+    } catch (\Throwable $error) {
+        error_log('[scan/designs] wallet push: ' . $error->getMessage());
+    }
+    return $render;
+};
 
 // ---- GET: list this employee's wallet ----
 if ($method === 'GET') {
@@ -124,8 +140,8 @@ try {
             $db->getConnection()->prepare(
                 "UPDATE card_designs SET " . implode(', ', $sets) . " WHERE id = :id AND employee_id = :e"
             )->execute($params);
-            $invalidateRender();
-            echo json_encode(['success' => true, 'id' => $id]);
+            $render = $syncRender('card-design-save');
+            echo json_encode(['success' => true, 'id' => $id, 'render' => $render]);
             exit;
         }
 
@@ -144,8 +160,8 @@ try {
             'settings_json' => $settings,
             'is_active' => 0,
         ]);
-        $invalidateRender();
-        echo json_encode(['success' => true, 'id' => $newId]);
+        $render = $syncRender('card-design-create');
+        echo json_encode(['success' => true, 'id' => $newId, 'render' => $render]);
         exit;
     }
 
@@ -154,8 +170,8 @@ try {
         // Empty id = deactivate all -> the card falls back to the company brand.
         if ($id === '') {
             $db->getConnection()->prepare("UPDATE card_designs SET is_active = 0 WHERE employee_id = :e")->execute([':e' => $emp]);
-            $invalidateRender();
-            echo json_encode(['success' => true]);
+            $render = $syncRender('card-design-deactivate');
+            echo json_encode(['success' => true, 'render' => $render]);
             exit;
         }
         $owned = $db->fetchOne("SELECT pair_id FROM card_designs WHERE id = :id AND employee_id = :e", ['id' => $id, 'e' => $emp]);
@@ -173,8 +189,8 @@ try {
             $db->getConnection()->prepare("UPDATE card_designs SET is_active = 1 WHERE id = :id AND employee_id = :e")
                ->execute([':id' => $id, ':e' => $emp]);
         }
-        $invalidateRender();
-        echo json_encode(['success' => true]);
+        $render = $syncRender('card-design-activate');
+        echo json_encode(['success' => true, 'render' => $render]);
         exit;
     }
 
@@ -182,8 +198,8 @@ try {
         $id = trim((string) ($body['id'] ?? ''));
         $db->getConnection()->prepare("DELETE FROM card_designs WHERE id = :id AND employee_id = :e")
            ->execute([':id' => $id, ':e' => $emp]);
-        $invalidateRender();
-        echo json_encode(['success' => true]);
+        $render = $syncRender('card-design-delete');
+        echo json_encode(['success' => true, 'render' => $render]);
         exit;
     }
 } catch (\Throwable $ex) {

@@ -25,6 +25,7 @@ require_once INCLUDES_DIR . '/CardifyConvention.php';
 require_once INCLUDES_DIR . '/ColorContrast.php';
 require_once INCLUDES_DIR . '/AppleWalletPass.php';
 require_once INCLUDES_DIR . '/CardPolicy.php';
+require_once INCLUDES_DIR . '/CardImageRenderer.php';
 
 header('Content-Type: application/json');
 
@@ -204,55 +205,19 @@ try {
                     'primary_color' => $safe,
                 ]);
             }
-            // Brand colour changed: every cached card PNG for the company is now
-            // stale (same invalidation admin/theme.php runs).
-            require_once INCLUDES_DIR . '/CardRenderer.php';
-            try { CardRenderer::invalidateForCompany((string) $companyId, 'scan-my-card-theme'); }
-            catch (\Throwable $e) { error_log('[scan/my-card] invalidate: ' . $e->getMessage()); }
             }
         }
 
-        // The employee's own details just changed, so the baked card PNG is stale.
-        //
-        // Only the brand-colour branch above invalidated anything, and only for
-        // the whole company. An employee on a classic web-designed card who
-        // fixed their job title in the app saw the TEXT update everywhere while
-        // the pictured card kept the old title, because CardRenderer served the
-        // previously baked PNG until someone re-opened the web editor. Employees
-        // with an app preset escaped it only because applyForEmployee re-renders
-        // as a side effect.
-        // ONLY when something will actually re-bake afterwards.
-        //
-        // invalidateForEmployee NULLs generated_cards.*_path. It does not delete
-        // the PNG and it does not re-render. digital_card.php reads those columns
-        // directly and gates the whole card block on `if ($frontImage)`, so a
-        // NULLed row does not show a STALE card, it shows NO card. For a classic
-        // Fabric-designed employee nothing can re-bake server-side, so invalidating
-        // them turns a slightly-out-of-date image into a blank one, which is worse
-        // than the problem it was meant to fix. Measured: only 7 of 45 active
-        // template companies have has_vector_source, so 84% had no safety net.
-        //
-        // Employees on an app preset are already handled: CardPresets::
-        // applyForEmployee re-bakes in this same request. Vector companies
-        // self-heal via scripts/warm-card-previews.php on cron. Everyone else
-        // keeps the image they have until the Fabric editor regenerates it.
-        require_once INCLUDES_DIR . '/CardRenderer.php';
         try {
-            $canRebake = $db->fetchOne(
-                "SELECT 1 AS ok
-                 FROM templates
-                 WHERE company_id = :cid
-                   AND has_vector_source = 1
-                   AND is_active = 1
-                   AND deleted_at IS NULL
-                 LIMIT 1",
-                ['cid' => $companyId]
-            );
-            if (!empty($canRebake)) {
-                CardRenderer::invalidateForEmployee((string) $employeeId, 'scan-my-card-details');
-            }
-        } catch (\Throwable $e) {
-            error_log('[scan/my-card] invalidate employee: ' . $e->getMessage());
+            CardImageRenderer::renderAndPromote((string) $employeeId, 'scan-my-card');
+        } catch (CardRenderException $e) {
+            http_response_code(503);
+            echo json_encode([
+                'success' => false,
+                'error' => 'render_failed',
+                'operation_id' => $e->operationId(),
+            ]);
+            exit;
         }
 
         // Wallet pass auto-update: the card changed, so bump the pass version
@@ -267,21 +232,6 @@ try {
                 apnsProvider()->pushPassUpdates(APPLE_WALLET_PASS_TYPE_ID, $regs);
             }
         } catch (\Throwable $e) { error_log('[scan/my-card] wallet push: ' . $e->getMessage()); }
-
-        // Bake the app-chosen preset into the shared render cache so the public
-        // cardify.om card, Apple Wallet pass and OG image all show the same design
-        // (and follow any name/phone/colour edit). No-op unless a named preset.
-        require_once INCLUDES_DIR . '/CardPresets.php';
-        $freshEmp = $db->fetchOne('SELECT * FROM employees WHERE id = :id', ['id' => $employeeId]);
-        if (is_array($freshEmp) && CardPresets::exists(trim((string)($freshEmp['card_template_id'] ?? '')))) {
-            $freshTheme = $db->fetchOne('SELECT * FROM company_themes WHERE company_id = :cid LIMIT 1', ['cid' => $companyId]);
-            try {
-                CardPresets::applyForEmployee($company, is_array($freshTheme) ? $freshTheme : null,
-                    $freshEmp, trim((string) $freshEmp['card_template_id']));
-            } catch (Throwable $e) {
-                error_log('my-card applyForEmployee: ' . $e->getMessage());
-            }
-        }
 
         $employee = $db->fetchOne(
             "SELECT * FROM employees WHERE id = :id AND company_id = :cid",

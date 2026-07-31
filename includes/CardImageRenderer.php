@@ -213,12 +213,16 @@ class CardImageRenderer
 
         $employeePayload = self::only($employee, [
             'id', 'name', 'name_en', 'name_ar', 'position', 'position_en',
-            'position_ar', 'phone', 'mobile', 'email', 'website', 'address',
-            'address_en', 'address_ar', 'photo_path',
+            'position_ar', 'phone', 'phone_ar', 'mobile', 'mobile_ar', 'email',
+            'website', 'website_ar', 'fax', 'fax_ar', 'company_en', 'company_ar',
+            'address', 'address_en', 'address_2_en', 'address_ar', 'address_2_ar',
+            'photo', 'photo_path',
         ]);
         $companyPayload = self::only($company, [
             'id', 'name', 'name_en', 'name_ar', 'slug', 'phone', 'email',
             'website', 'address', 'address_en', 'address_ar', 'logo',
+            'default_website', 'default_fax', 'default_address_en',
+            'default_address_2_en', 'default_address_ar', 'default_address_2_ar',
         ]);
         $themePayload = is_array($theme) ? self::only($theme, [
             'primary_color', 'secondary_color', 'accent_color', 'logo_path',
