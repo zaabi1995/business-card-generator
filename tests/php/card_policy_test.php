@@ -24,13 +24,17 @@ if (is_file($policyPath)) {
             'can_choose_design' => false,
         ]
     );
-    $personal = CardPolicy::forState(false, 'owner');
+    $personal = CardPolicy::forState(false, 'owner', false, 'otp_signup');
     policyCheck(
         'personal owner full access',
         $personal['mode'] === 'personal'
             && $personal['can_edit_text'] === true
             && $personal['can_edit_design'] === true
             && $personal['can_choose_design'] === true
+    );
+    policyCheck(
+        'password signup owner is personal',
+        CardPolicy::forState(false, 'owner', false, 'password_signup') === $personal
     );
     policyCheck(
         'managed owner design locked',
@@ -53,6 +57,24 @@ if (is_file($policyPath)) {
     policyCheck(
         'unmanaged company member design locked',
         CardPolicy::forState(false, 'member') === [
+            'mode' => 'unmanaged_company',
+            'can_edit_text' => true,
+            'can_edit_design' => false,
+            'can_choose_design' => false,
+        ]
+    );
+    policyCheck(
+        'app-created company owner design locked',
+        CardPolicy::forState(false, 'owner', false, 'created_company') === [
+            'mode' => 'unmanaged_company',
+            'can_edit_text' => true,
+            'can_edit_design' => false,
+            'can_choose_design' => false,
+        ]
+    );
+    policyCheck(
+        'owner without personal provenance fails closed',
+        CardPolicy::forState(false, 'owner') === [
             'mode' => 'unmanaged_company',
             'can_edit_text' => true,
             'can_edit_design' => false,

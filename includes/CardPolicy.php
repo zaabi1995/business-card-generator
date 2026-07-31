@@ -8,10 +8,15 @@ class CardPolicy
     public static function forState(
         bool $managed,
         string $membershipRole,
-        bool $isSuperAdmin = false
+        bool $isSuperAdmin = false,
+        string $membershipSource = ''
     ): array {
         $role = strtolower(trim($membershipRole));
-        if ($managed || $role !== 'owner') {
+        $source = strtolower(trim($membershipSource));
+        $isPersonal = !$managed
+            && $role === 'owner'
+            && in_array($source, ['otp_signup', 'password_signup'], true);
+        if (!$isPersonal) {
             return [
                 'mode' => $managed ? 'managed_company' : 'unmanaged_company',
                 'can_edit_text' => true,
@@ -39,7 +44,8 @@ class CardPolicy
         }
         $row = Database::getInstance()->fetchOne(
             "SELECT m.membership_role,
-                    COALESCE(ct.managed, 0) AS managed
+                    COALESCE(ct.managed, 0) AS managed,
+                    m.source
                FROM scan_account_memberships m
                LEFT JOIN company_themes ct
                  ON ct.company_id = m.company_id
@@ -63,7 +69,8 @@ class CardPolicy
         return self::forState(
             (int) ($row['managed'] ?? 0) === 1,
             (string) ($row['membership_role'] ?? 'member'),
-            !empty($ctx['is_super_admin'])
+            !empty($ctx['is_super_admin']),
+            (string) ($row['source'] ?? '')
         );
     }
 }

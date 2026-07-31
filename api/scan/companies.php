@@ -24,7 +24,7 @@ $companies = [];
 $seen = [];
 
 $memberships = $db->fetchAll(
-    "SELECT m.employee_id, m.company_id, m.membership_role,
+    "SELECT m.employee_id, m.company_id, m.membership_role, m.source,
             c.name, c.slug, COALESCE(ct.managed, 0) AS managed
      FROM scan_account_memberships m
      JOIN scan_accounts a
@@ -53,23 +53,25 @@ foreach ($memberships as $membership) {
     $role = (string) ($membership['membership_role'] ?? 'member');
     $employeeId = (string) $membership['employee_id'];
     $slug = (string) $membership['slug'];
+    $policy = CardPolicy::forState(
+        $managed,
+        $role,
+        $isSuperAdmin,
+        (string) ($membership['source'] ?? '')
+    );
     $companies[] = [
         'company_id' => $companyId,
         'employee_id' => $employeeId,
         'name' => (string) $membership['name'],
         'slug' => $slug,
-        'profile_type' => !$managed && $role === 'owner'
+        'profile_type' => $policy['mode'] === 'personal'
             ? 'personal'
             : 'company',
         'public_url' => getTenantUrl(
             $slug,
             '/' . rawurlencode($employeeId)
         ),
-        'card_policy' => CardPolicy::forState(
-            $managed,
-            $role,
-            $isSuperAdmin
-        ),
+        'card_policy' => $policy,
         'is_active' => $companyId === $activeCompanyId,
         'is_member' => true,
     ];
@@ -114,7 +116,8 @@ if ($isSuperAdmin) {
             'card_policy' => CardPolicy::forState(
                 (int) ($company['managed'] ?? 0) === 1,
                 'member',
-                true
+                true,
+                'super_admin_review'
             ),
             'is_active' => $companyId === $activeCompanyId,
             'is_member' => false,
