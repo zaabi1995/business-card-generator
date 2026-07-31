@@ -19,15 +19,9 @@ $employeeId = (string) $ctx['employee_id'];
 $companyId = (string) $ctx['company_id'];
 $db = Database::getInstance();
 
-$passExists = static function () use ($db, $employeeId): bool {
+$passExists = static function () use ($employeeId): bool {
     try {
-        return (bool) $db->fetchOne(
-            "SELECT id
-               FROM scan_passes
-              WHERE employee_id = :employee_id AND revoked = 0
-              LIMIT 1",
-            ['employee_id' => $employeeId]
-        );
+        return ScanPassService::existsForEmployee($employeeId);
     } catch (Throwable $e) {
         return false;
     }

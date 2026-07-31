@@ -1,7 +1,7 @@
 /**
  * Cardify wallet-pass endpoint QA (Cat U actions 491 + 492, automatable
  * slice). Physical "tap to add to Apple Wallet / Google Wallet" install
- * is manual — see ops/qa-wallet-manual.md.
+ * is manual, see ops/qa-wallet-manual.md.
  *
  * Against prod we assert what's HTTP-observable:
  *
@@ -17,12 +17,31 @@
  *     suppresses it cleanly when the feature is disabled).
  */
 import { test, expect } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { KNOWN_CARD, BAD_UUID } from './fixtures';
 
 // 503 is the documented "wallet disabled" response (memory:
 // cardify.md "wallet certs pending"). Accept it alongside 2xx happy
 // path and standard 4xx not-found; still reject any other 5xx.
 const ACCEPT = [200, 302, 404, 410, 503];
+
+async function readPassJson(bytes: Buffer): Promise<Record<string, unknown>> {
+  const dir = await mkdtemp(join(tmpdir(), 'cardify-wallet-'));
+  const path = join(dir, 'card.pkpass');
+  try {
+    await writeFile(path, bytes);
+    return JSON.parse(
+      execFileSync('unzip', ['-p', path, 'pass.json'], {
+        encoding: 'utf8',
+      }),
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
 
 test.describe('Apple Wallet endpoint', () => {
   test('bad UUID returns a documented status with no PII in the body', async ({ request }) => {
@@ -39,8 +58,28 @@ test.describe('Apple Wallet endpoint', () => {
     const ct = res.headers()['content-type'] || '';
     if (res.status() === 200) {
       expect(ct).toMatch(/vnd\.apple\.pkpass|octet-stream/i);
+      const pass = await readPassJson(await res.body());
+      const hasStableServiceKeys =
+        typeof pass.serialNumber === 'string' &&
+        pass.serialNumber.length > 0 &&
+        typeof pass.webServiceURL === 'string' &&
+        String(pass.webServiceURL).startsWith('https://') &&
+        typeof pass.authenticationToken === 'string' &&
+        pass.authenticationToken.length >= 16;
+      expect(hasStableServiceKeys).toBe(true);
+      const supportedStyles = ['eventTicket', 'storeCard', 'generic'].filter(
+        (key) => pass[key] && typeof pass[key] === 'object',
+      );
+      expect(supportedStyles).toHaveLength(1);
+
+      const second = await request.get(
+        `/wallet_apple.php?i=${KNOWN_CARD.eid}`,
+      );
+      expect(second.status()).toBe(200);
+      const refreshed = await readPassJson(await second.body());
+      expect(refreshed.serialNumber).toBe(pass.serialNumber);
     }
-    // 503 body is a human-readable message — acceptable.
+    // 503 body is a human-readable message, acceptable.
   });
 });
 
@@ -48,16 +87,16 @@ test.describe('Digital card wallet affordance', () => {
   test('card page either exposes "Add to Wallet" or cleanly hides it', async ({ page }) => {
     await page.goto(`/${KNOWN_CARD.slug}/card/${KNOWN_CARD.eid}`, { waitUntil: 'networkidle' });
     // If wallet is wired, we expect a link mentioning Wallet / pkpass.
-    // If wallet is disabled, the affordance must be absent — NOT a
+    // If wallet is disabled, the affordance must be absent, not a
     // broken 503 image or a dangling "null" button.
     const walletLink = page.getByRole('link', { name: /wallet|pkpass|add to/i });
     const count = await walletLink.count();
     if (count > 0) {
-      // Wallet is on — link resolves (HEAD is enough).
+      // Wallet is on, link resolves (HEAD is enough).
       const href = await walletLink.first().getAttribute('href');
       expect(href).toMatch(/wallet|pkpass/i);
     } else {
-      // Wallet is off on this env — confirm no visible "null" or
+      // Wallet is off on this env, confirm no visible "null" or
       // stray 503 hint in the page.
       const body = (await page.locator('body').textContent()) ?? '';
       expect(body).not.toMatch(/undefined|\bnull\b/i);

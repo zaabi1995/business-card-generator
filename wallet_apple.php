@@ -23,6 +23,7 @@ try {
     require_once INCLUDES_DIR . '/WalletImage.php';
     require_once INCLUDES_DIR . '/CardRenderer.php';
     require_once INCLUDES_DIR . '/EmployeeSocials.php';
+    require_once INCLUDES_DIR . '/WalletThemeResolver.php';
 
     $employeeId  = trim($_GET['i'] ?? $_GET['employee_id'] ?? '');
     $companySlug = trim($_GET['c'] ?? $_GET['company_slug'] ?? '');
@@ -74,6 +75,11 @@ try {
         $company = findCompanyById($employee['company_id']);
     }
     $theme = $company ? loadCompanyTheme($company['id']) : null;
+    $walletTheme = WalletThemeResolver::forEmployee(
+        $employee,
+        $company ?: [],
+        $theme
+    );
     require_once INCLUDES_DIR . '/ScanPassService.php';
     $passInfo = ScanPassService::getOrCreateForEmployee((string)$employee['id'], (string)($company['id'] ?? ($employee['company_id'] ?? '')));
     $walletApex = function_exists('cardifyApexHost') ? cardifyApexHost() : 'cardify.om';
@@ -121,7 +127,7 @@ try {
     // Colors. Background = the tenant's brand colour; text auto-contrasts to its
     // luminance so labels stay crisp on any brand (the old fixed dark labelColor
     // went muddy on mid-tone brands).
-    $primaryHex = ($theme && !empty($theme['primary_color'])) ? $theme['primary_color'] : '#1a1a1a';
+    $primaryHex = $walletTheme['background_color'];
     $rgbOf = function (string $hex): array {
         $hex = ltrim($hex, '#');
         if (strlen($hex) === 3) { $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2]; }
@@ -131,8 +137,13 @@ try {
     $bgRgb = "rgb($br, $bgc, $bb)";
     $lum   = (0.299 * $br + 0.587 * $bgc + 0.114 * $bb) / 255; // 0 dark .. 1 light
     $isDarkBg   = $lum < 0.62;
-    $fgColor    = $isDarkBg ? 'rgb(255, 255, 255)' : 'rgb(17, 24, 39)';
-    $labelColor = $fgColor; // same hue as values; Apple sizes labels smaller for hierarchy
+    $fgColor = WalletThemePolicy::rgb(
+        $walletTheme['foreground_color']
+    );
+    $labelColor = WalletThemePolicy::rgb(
+        $walletTheme['label_color']
+    );
+    $walletStyle = $walletTheme['style'];
 
     // ---- Single-language pass in the site language ($lang) ----
     // storeCard MERGES secondaryFields + auxiliaryFields into ONE shared row, so
@@ -240,7 +251,9 @@ try {
     // 'uploads/' prefix (onboarding, apply_theme), others WITHOUT it (theme-builder), so
     // try every sensible resolution or the wallet logo silently disappears.
     $iconFs = null;
-    if ($theme && !empty($theme['logo_path'])) {
+    $logoFs = null;
+    $logoMode = (string) $walletTheme['logo_mode'];
+    if ($logoMode === 'company' && $theme && !empty($theme['logo_path'])) {
         $lp = ltrim((string) $theme['logo_path'], '/');
         $cands = [BASE_DIR . '/' . $lp, BASE_DIR . '/uploads/' . $lp];
         if (strpos($lp, 'uploads/') === 0) {
@@ -249,11 +262,20 @@ try {
         foreach ($cands as $c) {
             if (is_readable($c)) { $iconFs = $c; break; }
         }
+        $logoFs = $iconFs;
+    } elseif ($logoMode === 'cardify') {
+        $cardifyIcon = BASE_DIR . '/assets/images/cardify-icon-512.png';
+        $cardifyLogo = BASE_DIR . '/assets/images/logo.svg';
+        $iconFs = is_readable($cardifyIcon) ? $cardifyIcon : null;
+        $logoFs = is_readable($cardifyLogo) ? $cardifyLogo : $iconFs;
+    }
+    if ($iconFs === null) {
+        $cardifyIcon = BASE_DIR . '/assets/images/cardify-icon-512.png';
+        $iconFs = is_readable($cardifyIcon) ? $cardifyIcon : null;
     }
     // On a dark brand, prefer a "<name>-dark.<ext>" reverse logo (white text + brand
     // accents, e.g. otech-logo-dark.png) if the tenant uploaded one; else the plain logo
     // is auto-knocked out to white.
-    $logoFs = $iconFs;
     $logoIsReverse = false;
     if ($iconFs && $isDarkBg) {
         $darkCand = preg_replace('/(\.[A-Za-z0-9]+)$/', '-dark$1', $iconFs);
@@ -278,10 +300,7 @@ try {
     // a plain generic pass on older iOS via preferredStyleSchemes. Default OFF (legacy
     // eventTicket stays live for tenants) until device-verified; flip the global on with
     // APPLE_WALLET_POSTER_GENERIC=true in config. Per-request test override: ?poster=1|0.
-    $poster = defined('APPLE_WALLET_POSTER_GENERIC') && APPLE_WALLET_POSTER_GENERIC;
-    if (isset($_GET['poster'])) {
-        $poster = ($_GET['poster'] === '1' || strtolower((string) $_GET['poster']) === 'true');
-    }
+    $poster = $walletStyle === 'generic';
 
     if ($poster) {
         // ===== POSTER GENERIC (iOS 27 HIG) =====
@@ -356,7 +375,7 @@ try {
         // (no background) so it stays crisp.
         $bakedStrip = $isAr ? WalletImage::brandStripWithText($primaryHex, $nameRaw, $titleRaw) : [];
         $arBaked    = !empty($bakedStrip);
-        $styleKey   = $arBaked ? 'storeCard' : 'eventTicket';
+        $styleKey = $walletStyle;
 
         if ($arBaked) {
             $primaryFields   = [];

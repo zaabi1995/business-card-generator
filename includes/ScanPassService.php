@@ -108,6 +108,17 @@ class ScanPassService
         self::ensureSchema();
         return Database::getInstance()->fetchOne("SELECT * FROM scan_passes WHERE serial_number = :s", ['s' => $serial]) ?: null;
     }
+    public static function existsForEmployee(string $employeeId): bool
+    {
+        self::ensureSchema();
+        return (bool) Database::getInstance()->fetchOne(
+            "SELECT id
+               FROM scan_passes
+              WHERE employee_id = :employee_id AND revoked = 0
+              LIMIT 1",
+            ['employee_id' => $employeeId]
+        );
+    }
 
     /** Constant-time check of an ApplePass token against a serial. */
     public static function authorize(string $serial, string $token): bool
