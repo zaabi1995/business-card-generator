@@ -2,9 +2,9 @@
 /**
  * CardRenderer, single-source-of-truth lookup for an employee's canonical card.
  *
- * Cardify's rasterization pipeline is browser-side (Fabric.js exports PNG +
- * uploads via save_card_*.php). This class does NOT re-rasterize. It exposes
- * the canonical front/back PNG paths that EVERY consumer (digital_card.php,
+ * Cardify's canonical rasterization pipeline is server-side through
+ * CardImageRenderer. This class exposes the canonical front/back image paths
+ * that every consumer (digital_card.php,
  * card-pdf.php, wallet_apple/google.php, og-image, print-shop preview) MUST
  * use, plus invalidation + freshness helpers so the cache stays in sync with
  * the admin-designed template + brand theme.
@@ -17,6 +17,12 @@
  */
 class CardRenderer
 {
+    public static function regenerateForEmployee(string $employeeId, string $reason): array
+    {
+        require_once __DIR__ . '/CardImageRenderer.php';
+        return CardImageRenderer::renderAndPromote($employeeId, $reason);
+    }
+
     /**
      * Canonical lookup for an employee.
      *
