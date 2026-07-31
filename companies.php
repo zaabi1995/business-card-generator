@@ -246,6 +246,9 @@ if ($company) {
             $pageDescription = t('companies.company_page_desc_fallback', ['name' => $displayName, 'sector' => $secLabel, 'wilayat' => $wilLabel]);
         }
     }
+    // A composed description is the only place the length can be asserted: the
+    // authored strings all fit, the interpolated legal name is what overran.
+    $pageDescription = seo_fit_desc($pageDescription);
     $canonicalUrl = $baseUrl . $basePrefix . '/' . $company['slug'];
     $ogType = 'profile';
     // Per-company composed OG image (sector background + name overlay)
@@ -269,7 +272,7 @@ if ($company) {
         $formatsStr = implode(' + ', $availableFormats);
         $verifiedTag = $company['logo_status'] === 'verified' ? t('companies.verified_tag') : '';
         $pageTitle = t('companies.logo_title_en', ['name' => $displayName, 'formats' => $formatsStr, 'verified' => $verifiedTag]);
-        $pageDescription = mb_substr(t('companies.logo_desc_en', ['name' => $displayName, 'formats' => $formatsStr, 'sector' => $secLabel, 'wilayat' => $wilLabel]), 0, 155);
+        $pageDescription = seo_fit_desc(t('companies.logo_desc_en', ['name' => $displayName, 'formats' => $formatsStr, 'sector' => $secLabel, 'wilayat' => $wilLabel]));
     }
 
     $orgLd = [

@@ -98,7 +98,32 @@ if (!function_exists('seo_pick_title')) {
                 return $cand;
             }
         }
-        return $last;
+        return seo_fit_title($last, $max);
+    }
+}
+
+if (!function_exists('seo_fit_desc')) {
+    /**
+     * Fit a meta description to the 70-165 band's upper edge.
+     *
+     * The company-page fallback strings interpolate a legal name with no
+     * bound on its length, so three /ar/companies/ descriptions published at
+     * 176-199 characters while every fixed string in the file measured fine.
+     * A cap on the AUTHORED string cannot catch that: only the composed one
+     * can. Cuts on a word boundary so the tail is never a half word.
+     */
+    function seo_fit_desc(string $desc, int $max = 160): string
+    {
+        $desc = trim(preg_replace('/\s+/u', ' ', $desc));
+        if (mb_strlen($desc, 'UTF-8') <= $max) {
+            return $desc;
+        }
+        $cut = mb_substr($desc, 0, $max - 1, 'UTF-8');
+        $sp  = mb_strrpos($cut, ' ', 0, 'UTF-8');
+        if ($sp !== false && $sp >= (int) ($max * 0.6)) {
+            $cut = mb_substr($cut, 0, $sp, 'UTF-8');
+        }
+        return rtrim($cut, " ،,.-") . '…';
     }
 }
 
