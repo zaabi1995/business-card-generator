@@ -248,7 +248,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: auto_generate.php?employee_id=' . urlencode($result['id']) . '&return=employees&new=1');
                 exit;
             } else {
-                $message = $result['error'];
+                $message = ($result['error'] ?? '') === 'native_account_linked'
+                    ? t('employees.delete_native_account_linked')
+                    : ($result['error'] ?? t('common.error'));
                 $messageType = 'error';
             }
             break;

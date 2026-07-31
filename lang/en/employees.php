@@ -120,6 +120,7 @@ return [
     'edit_details'        => 'Edit details',
     'act_delete'          => 'Delete employee',
     'act_delete_confirm'  => 'Are you sure you want to delete this employee and their cards?',
+    'delete_native_account_linked' => 'This employee is linked to a Cardify mobile account. Delete that account in the app before removing the employee.',
 
     // Profile photo + card-page layout
     'photo_section_title' => 'Profile photo & card layout',

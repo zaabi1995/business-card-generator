@@ -731,6 +731,20 @@ class DatabaseAdapter {
         }
         
         try {
+            $membership = self::$db->fetchOne(
+                "SELECT account_id
+                 FROM scan_account_memberships
+                 WHERE employee_id = :employee_id
+                 LIMIT 1",
+                ['employee_id' => $id]
+            );
+            if (is_array($membership)) {
+                return [
+                    'success' => false,
+                    'error' => 'native_account_linked',
+                ];
+            }
+
             $where = 'id = :id';
             $params = ['id' => $id];
             if ($companyId) {

@@ -117,6 +117,7 @@ return [
     'edit_details'        => 'تعديل البيانات',
     'act_delete'          => 'حذف الموظف',
     'act_delete_confirm'  => 'هل أنت متأكد من حذف هذا الموظف وبطاقاته؟',
+    'delete_native_account_linked' => 'هذا الموظف مرتبط بحساب في تطبيق Cardify. احذف الحساب من التطبيق قبل حذف الموظف.',
 
     // Profile photo + card-page layout
     'photo_section_title' => 'الصورة الشخصية وتنسيق البطاقة',
