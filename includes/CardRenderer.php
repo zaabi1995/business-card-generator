@@ -263,9 +263,10 @@ class CardRenderer
                 }
                 // Fallback: if no .meta files exist yet (pre-Phase-8 cache),
                 // fall back to sweeping all PDFs as before.
-                if (empty(glob($cacheDir . '/*.meta')) && !empty(glob($cacheDir . '/*.pdf'))) {
-                    foreach (glob($cacheDir . '/*.pdf') as $f) {
-                        @unlink($f);
+                foreach (glob($cacheDir . '/*.pdf') ?: [] as $pdfFile) {
+                    $metaFile = preg_replace('/\.pdf$/', '.meta', $pdfFile);
+                    if (!is_string($metaFile) || !is_file($metaFile)) {
+                        @unlink($pdfFile);
                     }
                 }
             }
