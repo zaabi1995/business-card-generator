@@ -396,6 +396,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         <?= htmlspecialchars(t('landing.hero_subhead')) ?>
                         <strong class="text-gray-900"><?= htmlspecialchars(t('landing.hero_price_tag')) ?></strong>
                     </p>
+                    <p class="text-sm text-gray-600 mb-6 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                        <?= currentLocale() === 'ar'
+                            ? 'استخدم كارديفاي على iOS وأندرويد، وأضف بطاقتك إلى محفظة أبل أو محفظة جوجل، وامسح البطاقات الورقية عبر تطبيق iOS المجاني.'
+                            : 'Use Cardify on iOS and Android, add your card to Apple Wallet or Google Wallet, and scan paper cards with the free iOS app.' ?>
+                    </p>
 
                     <!-- CTA Buttons -->
                     <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-10">
