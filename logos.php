@@ -145,14 +145,14 @@ function sectorCounts(Database $db): array {
 
 // ---- terms ----
 if ($view === 'terms') {
-    $title = $isAr ? 'شروط استخدام مكتبة الشعارات' : 'Terms, Omani Logo Library';
+    $title = $isAr ? 'شروط استخدام مكتبة الشعارات العمانية | كارديفاي' : 'Terms, Omani Logo Library';
     include __DIR__ . '/data/logo_library/terms_view.php';
     return;
 }
 
 // ---- press ----
 if ($view === 'press') {
-    $title = $isAr ? 'الملف الإعلامي، مكتبة الشعارات العمانية' : 'Press Kit, Omani Logo Library';
+    $title = $isAr ? 'الملف الإعلامي، مكتبة الشعارات العمانية | كارديفاي' : 'Press Kit, Omani Logo Library';
     include __DIR__ . '/data/logo_library/press_view.php';
     return;
 }
@@ -198,7 +198,7 @@ $libStats  = logoLibraryStats($db);
 $featured  = featuredLogos($db, 8);
 $randomSlug = randomBrandSlug($db);
 $title     = $isAr
-    ? 'مكتبة الشعارات العمانية، ' . number_format($total) . '+ علامة عُمانية'
+    ? 'مكتبة الشعارات العمانية، ' . number_format($total) . '+ علامة | كارديفاي'
     : 'The Omani Logo Library, ' . number_format($total) . '+ Omani Brands';
 $canonical = 'https://cardify.om/logos' . ($page > 1 ? "?page=$page" : '');
 include __DIR__ . '/views/logos_hub.php';

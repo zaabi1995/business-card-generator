@@ -271,7 +271,9 @@ if ($company) {
         if (!empty($company['logo_webp_path']))     $availableFormats[] = 'WebP';
         $formatsStr = implode(' + ', $availableFormats);
         $verifiedTag = $company['logo_status'] === 'verified' ? t('companies.verified_tag') : '';
-        $pageTitle = t('companies.logo_title_en', ['name' => $displayName, 'formats' => $formatsStr, 'verified' => $verifiedTag]);
+        // The logo override composes its own title and bypassed seo_pick_title,
+        // which is why two AR company titles still published at 67 and 70.
+        $pageTitle = seo_fit_title(t('companies.logo_title_en', ['name' => $displayName, 'formats' => $formatsStr, 'verified' => $verifiedTag]));
         $pageDescription = seo_fit_desc(t('companies.logo_desc_en', ['name' => $displayName, 'formats' => $formatsStr, 'sector' => $secLabel, 'wilayat' => $wilLabel]));
     }
 
