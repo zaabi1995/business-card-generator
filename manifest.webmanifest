@@ -1,7 +1,7 @@
 {
   "name": "Cardify",
   "short_name": "Cardify",
-  "description": "Cardify business card workspace",
+  "description": "Create bilingual digital business cards for iPhone and Android, share by QR or NFC, and save cards to Apple Wallet or Google Wallet.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

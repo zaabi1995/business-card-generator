@@ -71,8 +71,14 @@ $ld = [
     '@graph'   => [
         [
             '@type'               => 'MobileApplication',
-            '@id'                 => 'https://cardify.om/business-card-scanner#app',
-            'name'                => $isAr ? 'Cardify, ماسح بطاقات العمل' : 'Cardify Business Card Scanner',
+            // r6-99: ONE app, ONE @id, locale-invariant identity. The Arabic
+            // name is alternateName; swapping name per locale under a shared
+            // @id is what made one app read as three entities.
+            '@id'                 => 'https://cardify.om/#app',
+            'name'                => 'Cardify: Business Card Scanner',
+            'alternateName'       => 'Cardify، ماسح بطاقات العمل',
+            'sameAs'              => $appStoreUrl,
+            'identifier'          => '6790749589',
             'operatingSystem'     => 'iOS 16.4 or later',
             'applicationCategory' => 'BusinessApplication',
             'applicationSubCategory' => 'Business card scanner',
@@ -81,9 +87,9 @@ $ld = [
             'downloadUrl'         => $appStoreUrl,
             'installUrl'          => $appStoreUrl,
             'softwareHelp'        => 'https://cardify.om/app',
-            'featureList'         => $isAr
-                ? ['قراءة ضوئية على الجهاز للبطاقات العربية والإنجليزية', 'مراجعة الحقول قبل الحفظ في جهات الاتصال', 'قراءة وكتابة NFC', 'بطاقة رقمية وبطاقة Apple Wallet', 'طلب طباعة البطاقة']
-                : ['On-device optical recognition of Arabic and English cards', 'Field review before saving to contacts', 'NFC read and write', 'Digital card and Apple Wallet pass', 'Ordering the card in print'],
+            // r6-99: locale-invariant, because both locales publish this same
+            // @id. The Arabic feature copy stays in the visible page body.
+            'featureList'         => ['On-device optical recognition of Arabic and English cards', 'Field review before saving to contacts', 'NFC read and write', 'Digital card and Apple Wallet pass', 'Ordering the card in print'],
             'offers'              => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'OMR'],
             'publisher'           => ['@type' => 'Organization', 'name' => 'BHD Group (Bin Haider Darwish L.L.C.)', 'url' => 'https://bhd.om/'],
         ],
