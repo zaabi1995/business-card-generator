@@ -24,7 +24,7 @@ $profiles = [
         'title_ar' => 'مصممة مستقلة',
         'company_en' => 'Personal',
         'company_ar' => 'شخصي',
-        'accent' => '#6d4aff',
+        'accent' => '#7c3aed',
     ],
     'maya-collective' => [
         'name_en' => 'Maya Hassan',
@@ -33,7 +33,7 @@ $profiles = [
         'title_ar' => 'شريكة تصميم',
         'company_en' => 'Design Collective',
         'company_ar' => 'مجموعة التصميم',
-        'accent' => '#6d4aff',
+        'accent' => '#7c3aed',
     ],
 ];
 
