@@ -23,6 +23,48 @@ class Seo
     public const PUBLISHER_LOGO = 'https://cardify.om/assets/images/logo.svg';
 
     /**
+     * r6-50: the group's disambiguation, word for word as bhd.om publishes it.
+     *
+     * "BHD" resolves to the Bahraini dinar before it resolves to a company, and
+     * "Bin Haider Darwish" is one letter of context from Mohsin Haider Darwish
+     * LLC, an unrelated Omani group that a model returned when asked the Arabic
+     * entity question. bhd.om/_nap.py is the source of these three constants;
+     * they are copied rather than fetched because a build-time HTTP call to a
+     * sibling property is a worse dependency than a divergence a gate catches.
+     * seo_gate.py asserts the strings match across properties.
+     */
+    public const GROUP_ALTERNATE_NAMES = [
+        'BHD Group',
+        'BHD',
+        'Bin Haider Darwish',
+        'Bin Haider Darwish LLC',
+        'بن حيدر درويش',
+        'مجموعة BHD',
+        'شركة بن حيدر درويش ش.م.م',
+    ];
+
+    public const GROUP_DISAMBIGUATION =
+        'BHD Group is Bin Haider Darwish L.L.C., Commercial Registration 1334733, '
+        . 'a family-owned printing and technology group founded in Muscat in 2018. '
+        . 'It is not Mohsin Haider Darwish LLC (a separate and unrelated Omani '
+        . 'company), and the initials BHD here stand for Bin Haider Darwish, not the '
+        . 'Bahraini dinar currency code.';
+
+    public const GROUP_DISAMBIGUATION_AR =
+        'مجموعة BHD هي شركة بن حيدر درويش ش.م.م، السجل التجاري 1334733، مجموعة '
+        . 'عمانية عائلية للطباعة والتقنية تأسست في مسقط عام 2018. وهي ليست شركة محسن '
+        . 'حيدر درويش ش.م.م (شركة عمانية منفصلة لا علاقة لها بنا)، والحروف BHD هنا '
+        . 'اختصار لـ Bin Haider Darwish وليست رمز الدينار البحريني.';
+
+    /** The disambiguation in the language the page is actually rendered in. */
+    public static function groupDisambiguation(): string
+    {
+        return (function_exists('currentLocale') && currentLocale() === 'ar')
+            ? self::GROUP_DISAMBIGUATION_AR
+            : self::GROUP_DISAMBIGUATION;
+    }
+
+    /**
      * Emit canonical + hreflang for a path. Alternates come from the ArTwins
      * map rather than from concatenating '/ar' onto the path: the old version
      * asserted an Arabic twin for EVERY caller, including paths whose /ar/ URL
@@ -51,6 +93,14 @@ class Seo
             // Ownership was one-way: bhd.om named Cardify a subOrganization,
             // Cardify named no parent, so the edge did not resolve from here.
             'parentOrganization' => ['@id' => 'https://bhd.om/#organization'],
+            // r6-50: the group-level collision (Bahraini dinar, Mohsin Haider
+            // Darwish LLC) reaches every property that names BHD, and until now
+            // only bhd.om answered it. Stated on Cardify's own node rather than
+            // by inlining a second BHD Group node, which r6-59 already ruled out.
+            'alternateName' => ['Cardify Oman', 'Cardify by BHD Group'],
+            'disambiguatingDescription' =>
+                'Cardify is the digital business card platform published by BHD Group '
+                . '(Bin Haider Darwish L.L.C.) in Muscat, Oman. ' . self::GROUP_DISAMBIGUATION,
             'identifier' => [
                 ['@type' => 'PropertyValue', 'name' => 'Commercial Registration', 'value' => '1334733'],
                 ['@type' => 'PropertyValue', 'name' => 'VAT Identification Number', 'value' => 'OM1100019343'],

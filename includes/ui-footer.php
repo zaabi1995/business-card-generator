@@ -93,7 +93,15 @@ elseif (!empty($minimalFooter)):
                     </ul>
                 </div>
             </div>
-            <div class="pt-6 border-t border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-gray-500">
+            <?php
+            // r6-50: the entity statement, visible and extractable, in the
+            // language the page is rendered in. A disambiguation that lives
+            // only in JSON-LD answers a crawler and not a reader, and half the
+            // models that got this wrong were reading rendered text.
+            require_once __DIR__ . '/Seo.php';
+            ?>
+            <p class="pt-6 border-t border-gray-800 text-xs text-gray-500 leading-relaxed"><?= htmlspecialchars(Seo::groupDisambiguation()) ?></p>
+            <div class="pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-gray-500">
                 <p><?= htmlspecialchars(t('footer.copyright', ['year' => date('Y'), 'brand' => $bn])) ?></p>
                 <p><?= htmlspecialchars(t('footer.made_oman')) ?></p>
                 <?php if ($freshIso): ?>

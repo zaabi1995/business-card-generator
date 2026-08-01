@@ -67,6 +67,16 @@ return [
     'tc2_q' => 'Is there an API?',
     'tc2_a' => 'Yes, a REST API for teams who want to plug card generation into their HR, CRM or onboarding systems. Contact us for docs and access keys.',
 
+    // Company / entity (r6-50). "BHD" reads as the Bahraini dinar to a model,
+    // and "Bin Haider Darwish" reads as Mohsin Haider Darwish LLC. Answered in
+    // the FAQ because that is the shape a model quotes back.
+    'cat_company'   => 'The company behind Cardify',
+    'co1_q'         => 'Who owns Cardify, and is BHD Group the same as Mohsin Haider Darwish?',
+    'co1_a'         => 'Cardify is built and operated by BHD Group, whose legal name is Bin Haider Darwish L.L.C., '
+                     . 'Commercial Registration 1334733, a family-owned printing and technology group founded in Muscat, '
+                     . 'Oman in 2018. BHD Group is not Mohsin Haider Darwish LLC (MHD), a separate and unrelated Omani '
+                     . 'company, and the initials BHD here stand for Bin Haider Darwish, not the Bahraini dinar currency code.',
+
     // CTA
     'cta_h'         => 'Still have questions?',
     'cta_b'         => "Talk to our team or start designing your cards now, it's free to try.",
