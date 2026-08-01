@@ -573,12 +573,20 @@
     --bhd-teal-100: #b8e7f1;
     --bhd-teal-200: #8ad6e7;
     --bhd-teal-300: #5cc5dc;
-    --bhd-teal-400: #2eb4d2;
-    --bhd-teal-500: #009bc1;  /* brand */
-    --bhd-teal-600: #0284a1;
+    --bhd-teal-400: #007792;
+    --bhd-teal-500: #00718c;  /* brand ink: text + white-on-brand CTAs */
+    --bhd-teal-600: #005a70;
     --bhd-teal-700: #036e87;
     --bhd-teal-800: #04586c;
     --bhd-teal-900: #063f4e;
+
+    /* The vivid brand cyan. WCAG 1.4.3 (text) needs 4.5:1 and this is 3.25:1
+       on white, so it may NOT carry text and may NOT sit under white text.
+       It clears 1.4.11 (3:1) so it is still correct for non-text use: chart
+       fills, decorative blocks, icon glyphs on dark, illustration accents.
+       Steps 400/500/600 above were darkened for exactly this reason; the
+       ramp is no longer a pure lightness scale of this hue by design. */
+    --bhd-teal-bright: #009bc1;
 }
 
 /* Solid backgrounds (brand CTAs) */
@@ -814,3 +822,43 @@ button.cardify-tap::after {
   block-size: 44px;
   transform: translateY(-50%);
 }
+
+/* =====================================================
+   WCAG 1.4.3 contrast floor for status/action colours
+   -----------------------------------------------------
+   The Tailwind green/amber/red utilities above are the stock palette, which
+   is tuned for FILLS BEHIND DARK TEXT. Cardify uses them the other way round,
+   as solid CTAs with white text ("Book a demo on WhatsApp", "Talk on
+   WhatsApp"), where green-500 measures 2.28:1 and fails 4.5:1 outright.
+
+   These rules darken only the steps that carry text. The tints (50/100) and
+   the light steps used for badges behind dark text are deliberately left
+   alone: darkening those would break the contrast in the other direction.
+
+   Verified with contrast_gate.py, which measures the rendered pixel rather
+   than the declared hex.
+   ===================================================== */
+:root {
+    --bhd-green-ink:       #15803d;  /* 5.0:1 under white text */
+    --bhd-green-ink-hover: #126430;  /* 6.9:1, hover/active */
+    --bhd-red-ink:         #b91c1c;  /* 5.9:1 under white text */
+}
+
+.bg-green-500,
+.bg-green-400            { background-color: var(--bhd-green-ink) !important; }
+.bg-green-600            { background-color: var(--bhd-green-ink-hover) !important; }
+.hover\:bg-green-600:hover,
+.hover\:bg-green-500:hover { background-color: var(--bhd-green-ink-hover) !important; }
+.to-green-500            { --tw-gradient-to: var(--bhd-green-ink) var(--tw-gradient-to-position) !important; }
+.to-green-600            { --tw-gradient-to: var(--bhd-green-ink-hover) var(--tw-gradient-to-position) !important; }
+.from-green-500          { --tw-gradient-from: var(--bhd-green-ink) var(--tw-gradient-from-position) !important; }
+
+/* Green as TEXT on a light surface fails at the stock steps too. */
+.text-green-500,
+.text-green-600          { color: var(--bhd-green-ink) !important; }
+.hover\:text-green-600:hover { color: var(--bhd-green-ink-hover) !important; }
+
+/* Same defect class, red destructive buttons with white labels. */
+.bg-red-500              { background-color: var(--bhd-red-ink) !important; }
+.hover\:bg-red-600:hover { background-color: #991b1b !important; }
+.text-red-500            { color: var(--bhd-red-ink) !important; }
