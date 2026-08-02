@@ -104,11 +104,17 @@ class Seo
             'disambiguatingDescription' =>
                 'Cardify is the digital business card platform published by BHD Group '
                 . '(Bin Haider Darwish L.L.C.) in Muscat, Oman. ' . self::GROUP_DISAMBIGUATION,
-            'identifier' => [
-                ['@type' => 'PropertyValue', 'name' => 'Commercial Registration', 'value' => '1334733'],
-                ['@type' => 'PropertyValue', 'name' => 'VAT Identification Number', 'value' => 'OM1100019343'],
-            ],
-            'vatID' => 'OM1100019343',
+            // r20-17: NO identifier / vatID here, deliberately. CR 1334733 and
+            // VATIN OM1100019343 register the LEGAL ENTITY Bin Haider Darwish
+            // L.L.C., which the estate defines once at
+            // https://bhd.om/#organization. Asserting them again on this @id
+            // (and on bhdoman.com/#business) made one registration number the
+            // key of three different nodes, which a resolver must read either as
+            // three companies sharing a registration or as an instruction to
+            // merge three entities. Cardify is a brand of that entity, so it
+            // carries parentOrganization and nothing else. index.php's live
+            // node already publishes this shape; this dormant helper is kept in
+            // step so activating it can never reintroduce the collision.
             'logo' => self::PUBLISHER_LOGO,
             // Live-probed 29 Jul 2026 (redirects followed, desktop UA):
             //   https://instagram.com/cardifyom              -> 200
