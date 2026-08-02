@@ -125,13 +125,28 @@ if ($step === 'verify' && !empty($_SESSION['mycard_identifier'])) {
 
 $identifier = trim($_POST['identifier'] ?? $_SESSION['mycard_identifier_raw'] ?? '');
 
-/** Send (or resend) a code to $deliveryId. Returns true when a send was allowed. */
-function mycard_dispatch(string $deliveryId, string $channel, string $employeeId, string $rawIdentifier): bool
+/**
+ * Remember who is verifying and move them to the code screen. Always runs,
+ * even when the send itself is throttled: a throttled user still has a live
+ * code in their inbox, so bouncing them back to step 1 would strand them.
+ */
+function mycard_begin_verify(string $deliveryId, string $channel, string $employeeId, string $rawIdentifier): void
 {
-    $file = mycard_bucket_path($deliveryId);
-    $now  = time();
+    $_SESSION['mycard_identifier']     = $deliveryId;
+    $_SESSION['mycard_identifier_raw'] = $rawIdentifier;
+    $_SESSION['mycard_channel']        = $channel;
+    $_SESSION['mycard_employee_id']    = $employeeId;
+    $_SESSION['mycard_pending_verify'] = true;
+    $_SESSION['mycard_notice']         = $channel === 'email'
+        ? t('mycard.sent_email') : t('mycard.sent_whatsapp');
+}
+
+/** Claim a send slot. False when the 60s or hourly cap says no. */
+function mycard_may_send(string $deliveryId): bool
+{
+    $now = time();
     $allowed = true;
-    mycard_bucket($file, function ($d) use ($now, &$allowed) {
+    mycard_bucket(mycard_bucket_path($deliveryId), function ($d) use ($now, &$allowed) {
         if ($now - (int) ($d['last'] ?? 0) < MYCARD_RESEND_S) { $allowed = false; return $d; }
         if ($now - (int) ($d['window_start'] ?? 0) > 3600) { $d['window_start'] = $now; $d['count'] = 0; }
         if ((int) ($d['count'] ?? 0) >= MYCARD_HOURLY_MAX) { $allowed = false; return $d; }
@@ -139,16 +154,7 @@ function mycard_dispatch(string $deliveryId, string $channel, string $employeeId
         $d['count'] = (int) ($d['count'] ?? 0) + 1;
         return $d;
     });
-    if (!$allowed) { return false; }
-
-    $_SESSION['mycard_identifier']      = $deliveryId;
-    $_SESSION['mycard_identifier_raw']  = $rawIdentifier;
-    $_SESSION['mycard_channel']         = $channel;
-    $_SESSION['mycard_employee_id']     = $employeeId;
-    $_SESSION['mycard_pending_verify']  = true;
-    $_SESSION['mycard_notice']          = $channel === 'email'
-        ? t('mycard.sent_email') : t('mycard.sent_whatsapp');
-    return true;
+    return $allowed;
 }
 
 // ---------------------------------------------------------------- step 1
@@ -161,6 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
         $emp = mycard_find_employee($companyId, $raw);
         $isEmail = strpos($raw, '@') !== false;
 
+        $mayDeliver = false;
         if ($emp) {
             // Deliver to the address ON FILE, never to what was typed: a typo
             // that still matched (last 8 digits) must not leak a code elsewhere.
@@ -168,7 +175,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
             $deliveryId = $isEmail
                 ? strtolower((string) $emp['email'])
                 : '968' . substr(mycard_digits((string) ($emp['mobile'] ?: $emp['phone'])), -8);
-            mycard_dispatch($deliveryId, $channel, (string) $emp['id'], $raw);
+            mycard_begin_verify($deliveryId, $channel, (string) $emp['id'], $raw);
+            $mayDeliver = mycard_may_send($deliveryId);
         } else {
             // No match: still show the code screen, still cost the attempt.
             $_SESSION['mycard_identifier']     = '';
@@ -182,7 +190,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'request') {
 
         // Answer immediately, deliver after. The user sees the code screen in
         // ~50ms instead of waiting on WhatsApp/SMTP.
-        $pendingSend = $emp ? [$_SESSION['mycard_identifier'], $_SESSION['mycard_channel']] : null;
+        $pendingSend = ($emp && $mayDeliver)
+            ? [$_SESSION['mycard_identifier'], $_SESSION['mycard_channel']]
+            : null;
         header('Location: /my-card');
         if (function_exists('fastcgi_finish_request')) {
             @session_write_close();
@@ -219,10 +229,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'verify') {
             header('Location: /my-card');
             exit;
         }
-        if (!mycard_dispatch($deliveryId, $channel, $employeeId, $rawIdent)) {
+        if (!mycard_may_send($deliveryId)) {
             $error = t('mycard.err_wait');
             $step  = 'verify';
         } else {
+            mycard_begin_verify($deliveryId, $channel, $employeeId, $rawIdent);
             header('Location: /my-card');
             if (function_exists('fastcgi_finish_request')) {
                 @session_write_close();
