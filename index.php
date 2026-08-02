@@ -308,6 +308,11 @@ $scannerLd = [
     '@type' => 'MobileApplication',
     '@id' => 'https://cardify.om/app#ios-app',
     'name' => 'Cardify: Business Card Scanner',
+    // r6-99: the app was findable under three names (App Store title, the
+    // short name on the home screen, and the Arabic transliteration the AR
+    // pages use) and asserted only one, so two of the three never resolved
+    // to this node.
+    'alternateName' => ['Cardify Scan', 'Cardify Business Card Scanner', 'كارديفاي'],
     'url' => 'https://cardify.om/app',
     'downloadUrl' => 'https://apps.apple.com/om/app/cardify-business-card-scanner/id6790749589',
     'installUrl' => 'https://apps.apple.com/om/app/cardify-business-card-scanner/id6790749589',
@@ -327,6 +332,7 @@ $scannerLd = [
         'priceCurrency' => 'OMR',
         'availability' => 'https://schema.org/InStock',
     ],
+    'sameAs' => ['https://apps.apple.com/om/app/cardify-business-card-scanner/id6790749589'],
     'publisher' => ['@id' => 'https://cardify.om/#organization'],
 ];
 $scannerJsonLd = '<script type="application/ld+json">' . json_encode($scannerLd, JSON_UNESCAPED_SLASHES) . '</script>';
@@ -1337,7 +1343,8 @@ HTML;
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "Organization",
+  "_comment_r6_99": "LocalBusiness is a SECOND @type on the one #organization node rather than a second node. Cardify is published from the BHD Group floor at HM Tower and a separate LocalBusiness node would have been a fifth BHD address on the estate, which is the defect r20-16 recorded. Address, phone and hours are the canonical block bhd.om/_nap.py owns, verbatim.",
+  "@type": ["Organization", "LocalBusiness"],
   "@id": "https://cardify.om/#organization",
   "name": "Cardify",
   "alternateName": ["Cardify Oman", "Cardify GCC"],
@@ -1348,9 +1355,21 @@ HTML;
   "description": "Business-identity platform for the Gulf: digital and printed business cards, public logo libraries, and the GCC Business Index. Built in Oman, expanding across Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait through 2026.",
   "address": {
     "@type": "PostalAddress",
-    "addressCountry": "OM",
-    "addressLocality": "Muscat"
+    "streetAddress": "HM Tower, Ground Floor, Bousher",
+    "postOfficeBoxNumber": "2237",
+    "addressLocality": "Muscat",
+    "addressRegion": "Muscat Governorate",
+    "postalCode": "133",
+    "addressCountry": "OM"
   },
+  "geo": { "@type": "GeoCoordinates", "latitude": 23.57176, "longitude": 58.4094427 },
+  "hasMap": "https://maps.app.goo.gl/nR785v4vyTB8edNq9",
+  "telephone": "+96898899100",
+  "priceRange": "OMR",
+  "openingHoursSpecification": [
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Saturday","Sunday","Monday","Tuesday","Wednesday","Thursday"], "opens": "09:00", "closes": "19:00" }
+  ],
+  "founder": { "@id": "https://bhd.om/#founder" },
   "foundingDate": "2024",
   "foundingLocation": {
     "@type": "Place",

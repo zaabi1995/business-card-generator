@@ -10,6 +10,7 @@
  * Public, cacheable, no session unless UTM params present.
  */
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/includes/CompanyIndex.php';
 require_once INCLUDES_DIR . '/Auth.php';
 
 $db = Database::getInstance();
@@ -72,7 +73,9 @@ function obiEscq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8')
 
 // --- Live aggregate stats (safe fallbacks if DB is unreachable) ---
 $stats = [
-    'total'          => (int) (Database::getInstance()->fetchOne("SELECT COUNT(*) c FROM om_companies")['c'] ?? 0),
+    // r6-99: the Dataset count and the sitemap URL list are now the same
+    // population, defined once in includes/CompanyIndex.php.
+    'total'          => (int) (CompanyIndex::count(Database::getInstance()) ?? 0),
     'large_count'    => 0,
     'medium_count'   => 0,
     'sector_count'   => count($SECTORS),
@@ -82,11 +85,15 @@ $stats = [
 
 try {
     $row = $db->fetchOne(
+        // r6-99: same population as CompanyIndex / the sitemap. Without the
+        // slug filter this block silently overwrote the shared count with the
+        // unfiltered one two lines after it was derived.
         "SELECT COUNT(*) AS total,
                 SUM(size_bucket = 'large')  AS large_count,
                 SUM(size_bucket = 'medium') AS medium_count,
                 MAX(updated_at) AS last_updated
-           FROM om_companies"
+           FROM om_companies
+          WHERE slug IS NOT NULL AND TRIM(slug) <> ''"
     );
     if ($row && (int) $row['total'] > 0) {
         $stats['total']        = (int) $row['total'];

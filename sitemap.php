@@ -26,6 +26,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 function smX($s) { return htmlspecialchars((string) $s, ENT_XML1 | ENT_QUOTES, 'UTF-8'); }
 
 require_once __DIR__ . '/includes/ArTwins.php';
+require_once __DIR__ . '/includes/CompanyIndex.php';
 
 /**
  * Render a single <url> entry.
@@ -245,7 +246,9 @@ if ($part === 'static') {
     // as a confirmed bilingual pair (hreflang reciprocity).
     if ($db) {
         try {
-            $rows = $db->fetchAll("SELECT slug, updated_at FROM om_companies ORDER BY size_bucket ASC, id ASC");
+            // r6-99: one definition of the index population, shared with the
+            // Dataset count on /oman-business-index. See includes/CompanyIndex.php.
+            $rows = CompanyIndex::rows($db);
             foreach ($rows as $c) {
                 $lastmod = date('Y-m-d', strtotime($c['updated_at']));
                 smUrlBilingual('/companies/' . $c['slug'], $lastmod, 'monthly', '0.5');
