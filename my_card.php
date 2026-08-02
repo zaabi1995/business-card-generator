@@ -19,7 +19,22 @@ require_once INCLUDES_DIR . '/TenantHost.php';
 require_once INCLUDES_DIR . '/EmployeeEditToken.php';
 
 if (class_exists('SecurityHeaders')) { SecurityHeaders::send(); }
-if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
+
+// This page is reached through index.php, which config.php treats as a public
+// SEO page and so skips session_start() for. Start it here with the SAME name
+// and domain config uses, or the flow lands on a second PHPSESSID cookie
+// alongside the app's CARDIFY_SID and the two drift apart.
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    $__h = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+    if ($__h === 'cardify.om' || (strlen($__h) > 11 && substr($__h, -11) === '.cardify.om')) {
+        ini_set('session.cookie_domain', '.cardify.om');
+        ini_set('session.name', 'CARDIFY_SID');
+    }
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.cookie_secure', 1);
+    ini_set('session.cookie_samesite', 'Lax');
+    session_start();
+}
 
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
