@@ -211,6 +211,7 @@ class CardifyConvention
             'includes','printshop','paymob','amwalpay','webhooks','install','cron',
             'storage','vendor','card','vcf','vcard','wallet','wallet-apple','wallet-google',
             'sitemap','robots','favicon','og','r','claim','preview','index','public',
+            'my-card',
         ];
     }
 

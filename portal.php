@@ -1105,6 +1105,9 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
     .issue-back:hover{color:var(--ink)}
     .issue-back[hidden]{display:none}
     .issue-enter{margin-inline-start:auto;font-size:11.5px;color:var(--ink-faint)}
+    .issue-haveacard{margin:18px 0 0;font-size:13px;color:var(--ink-faint);text-align:center}
+    .issue-haveacard a{color:var(--brand,#009bc1);font-weight:600;text-decoration:none}
+    .issue-haveacard a:hover{text-decoration:underline}
     .issue-enter b{background:#fff;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-weight:600}
     @media(max-width:919px){.issue-enter{display:none}}
     /* the old two-button preview/submit controls are driven by the step machine now */
@@ -1866,6 +1869,11 @@ $__ogUrl = $__ogScheme . '://' . ($_SERVER['HTTP_HOST'] ?? (defined('APP_HOST') 
                             <span class="issue-enter" id="issueEnter"><?= htmlspecialchars(t('portal.issue_enter_hint')) ?> <b>Enter</b></span>
                         </div>
                 </form>
+
+                        <p class="issue-haveacard">
+                            <?= htmlspecialchars(t('portal.already_have_card')) ?>
+                            <a href="/my-card"><?= htmlspecialchars(t('portal.edit_my_card_link')) ?></a>
+                        </p>
                     </section><!-- /.issue-flow -->
                 </div><!-- /.issue-grid -->
             </div><!-- /.issuance -->
