@@ -312,6 +312,11 @@ $scannerLd = [
     'downloadUrl' => 'https://apps.apple.com/om/app/cardify-business-card-scanner/id6790749589',
     'installUrl' => 'https://apps.apple.com/om/app/cardify-business-card-scanner/id6790749589',
     'applicationCategory' => 'BusinessApplication',
+    // r20-21: the web app and the Product node were both anonymous, so the
+    // three Cardify entities on this page never resolved to each other. Each
+    // now has an @id and the pair is reciprocal.
+    'applicationSuite' => 'Cardify',
+    'isRelatedTo' => ['@id' => 'https://cardify.om/#webapp'],
     'operatingSystem' => 'iOS 16.4 or later, iPadOS 16.4 or later',
     'description' => 'Free Arabic and English business card scanner for iPhone and iPad with on-device OCR, contact cleanup, QR and NFC sharing, digital cards and Apple Wallet.',
     'inLanguage' => ['en', 'ar'],
@@ -1305,7 +1310,12 @@ HTML;
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
+  "@id": "https://cardify.om/#webapp",
   "name": "Cardify",
+  "alternateName": "Cardify Web App",
+  "applicationSuite": "Cardify",
+  "publisher": { "@id": "https://cardify.om/#organization" },
+  "isRelatedTo": { "@id": "https://cardify.om/app#ios-app" },
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "Web browser on iOS, Android, macOS, Windows and Linux",
   "url": "https://cardify.om",
@@ -1388,7 +1398,9 @@ HTML;
 {
   "@context": "https://schema.org",
   "@type": "Product",
+  "@id": "https://cardify.om/#product",
   "name": "Cardify Business Card Platform",
+  "isRelatedTo": { "@id": "https://cardify.om/#webapp" },
   "image": "https://cardify.om/assets/images/cardify-og.png",
   "description": "SaaS for creating, managing, and printing branded digital + printed business cards for teams in Oman.",
   "brand": { "@type": "Brand", "name": "Cardify", "@id": "https://cardify.om/#brand" },

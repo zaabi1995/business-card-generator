@@ -118,11 +118,18 @@ elseif (!empty($minimalFooter)):
 // WebPage node keyed to this page's own canonical.
 if (empty($skipFooter) && $freshIso) {
     $__canon = $GLOBALS['canonicalUrl'] ?? ('https://cardify.om' . strtok($_SERVER['REQUEST_URI'] ?? '/', '?'));
+    // r20-22: the WebPage node carried no inLanguage, so /ar/#webpage was
+    // indistinguishable from its English twin to anything reading the graph
+    // rather than the <html lang> attribute. Derived from the same ArTwins
+    // path test the header uses for canonical + hreflang, so the three can
+    // never disagree about which side of the pair this page is.
+    require_once __DIR__ . '/ArTwins.php';
     echo '<script type="application/ld+json">' . json_encode([
         '@context'     => 'https://schema.org',
         '@type'        => 'WebPage',
         '@id'          => $__canon . '#webpage',
         'url'          => $__canon,
+        'inLanguage'   => ArTwins::isArabic($__canon) ? 'ar' : 'en',
         'dateModified' => $freshIso,
         'isPartOf'     => ['@id' => 'https://cardify.om/#website'],
         'publisher'    => ['@id' => 'https://cardify.om/#organization'],

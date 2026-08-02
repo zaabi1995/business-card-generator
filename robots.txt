@@ -4,12 +4,14 @@
 # rules. Asserted per (agent, path) by robots_gate.py.
 
 User-agent: *
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -33,12 +35,14 @@ Disallow: /storage/logos/pending/
 # === Named crawler groups. Same rule set, repeated by design. ===
 
 User-agent: GPTBot
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -60,12 +64,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: ChatGPT-User
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -87,12 +93,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: OAI-SearchBot
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -114,12 +122,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: ClaudeBot
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -141,12 +151,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: Claude-Web
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -168,12 +180,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: Claude-User
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -195,12 +209,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: Claude-SearchBot
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -222,12 +238,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: anthropic-ai
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -249,12 +267,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: Google-Extended
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -276,12 +296,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: PerplexityBot
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -303,12 +325,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: Perplexity-User
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -330,12 +354,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: Applebot
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -357,12 +383,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: Applebot-Extended
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -384,12 +412,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: CCBot
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -411,12 +441,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: Bytespider
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -438,12 +470,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: Meta-ExternalAgent
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -465,12 +499,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: FacebookBot
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -492,12 +528,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: Amazonbot
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -519,12 +557,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: MistralAI-User
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -546,12 +586,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: AI2Bot
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -573,12 +615,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: Diffbot
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/
@@ -600,12 +644,14 @@ Disallow: */admin/*
 Disallow: /storage/logos/pending/
 
 User-agent: DuckAssistBot
-Allow: /
+Allow: /*
 Allow: /api/logos/
 Allow: /storage/logos/indexed/
 Allow: /storage/logos/verified/
 Allow: /storage/og/logos/
-Disallow: /tools/
+Disallow: /tools/carousel-render
+Disallow: /tools/i18n_placeholder_gate.php
+Disallow: /tools/verify-ar-body.php
 Disallow: /admin/
 Disallow: /install/
 Disallow: /api/

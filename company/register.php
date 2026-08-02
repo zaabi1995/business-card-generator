@@ -491,6 +491,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } // end CSRF else
 }
 $minimalFooter = true; // compact footer for auth page
+// r20-6: the last auth page with no canonical. /company/register.php is
+// reachable with a referral, a claim ticket and a plan query string, so
+// without this every variant is its own indexable URL. Same shape as
+// login.php: self-canonical plus noindex,follow.
+$canonicalUrl = 'https://cardify.om/company/register.php';
+$metaRobots   = 'noindex,follow';
 require_once INCLUDES_DIR . '/ui-header.php';
 ?>
     <div class="flex min-h-full">
