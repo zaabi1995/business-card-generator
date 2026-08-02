@@ -1,26 +1,26 @@
 <?php
+// r21 20-23: the previous contents of this file were four fabricated testimonials
+// (Ahmed Al-Balushi / Fatima Al-Rashdi / Khalid Al-Habsi / Sara Al-Kindi), each with
+// an invented employer, job title and quote, one of which asserted a fabricated
+// "cut our admin work by 80%". None of those people or companies were customers.
+// Replaced with checkable product facts. Do NOT reintroduce a quote without a
+// named, contactable, consenting customer on file.
 return [
-    'kicker'    => 'Trusted in Oman',
-    'headline'  => 'Loved by Omani businesses',
-    'subhead'   => 'See what local companies have to say about Cardify.',
+    'kicker'    => 'Built in Oman',
+    'headline'  => 'What Cardify actually does',
+    'subhead'   => 'Four things you can verify before you pay anything.',
 
-    't1_title'  => 'Perfect for our growing team',
-    't1_quote'  => 'We designed one template and now all 50 of our employees have professional cards. The Arabic support is excellent and the print ordering feature saved us so much time.',
-    't1_author' => 'Ahmed Al-Balushi',
-    't1_role'   => 'Managing Director, Muscat Trading',
+    't1_title'  => 'Bilingual by default, not as an add-on',
+    't1_quote'  => 'Every card carries an English and an Arabic side, with right-to-left layout handled properly. Design and preview both languages free before you order a single print.',
 
-    't2_title'  => 'Finally, cards that represent our brand',
-    't2_quote'  => 'The visual editor is great. We built bilingual cards that match our brand guidelines exactly. Our sales team loves the QR tracking.',
-    't2_author' => 'Fatima Al-Rashdi',
-    't2_role'   => 'Marketing Manager, Gulf Solutions',
+    't2_title'  => 'Apple Wallet and Google Wallet passes',
+    't2_quote'  => 'Each card issues a real wallet pass alongside a QR vCard and NFC tap, so a contact saves to a phone without installing anything.',
 
-    't3_title'  => 'Free and feature-rich, unbelievable',
-    't3_quote'  => 'I could not believe it was free. We have used it for 6 months and only paid when we needed printed cards. The department feature keeps teams organised.',
-    't3_author' => 'Khalid Al-Habsi',
-    't3_role'   => 'HR Director, Oman Tech Services',
+    't3_title'  => 'Printed and delivered across Oman',
+    't3_quote'  => 'Cardify is built by BHD Group (Bin Haider Darwish L.L.C.) in Muscat, so the digital card and the printed card come from the same place. Printing starts at 6 OMR per card.',
 
-    't4_title'  => 'The employee portal is a game-changer',
-    't4_quote'  => 'Our employees request their own cards through the portal. We just approve and print. It cut our admin work by 80%. Strong recommend for any Omani company.',
-    't4_author' => 'Sara Al-Kindi',
-    't4_role'   => 'Operations Lead, Salalah Enterprises',
+    't4_title'  => 'Built for a whole roster, not one person',
+    't4_quote'  => 'Approve one template, upload your team, and every employee gets their own card. Staff can request and update their own details through the employee portal.',
+
+    'directory_cta' => 'Browse the companies using Cardify',
 ];

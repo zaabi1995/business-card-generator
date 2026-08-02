@@ -136,7 +136,7 @@ return [
     // r6-74: the AR home shipped an English title, meta description and one
     // English H2. Head fields and the dashboard block now route through t().
     'meta_title'         => 'Cardify, Digital & Printed Business Cards for the GCC',
-    'meta_desc'          => 'Bilingual Arabic/English digital and printed business cards for teams across the Gulf: Oman, Saudi Arabia, UAE, Qatar, Bahrain and Kuwait. QR vCard save, Apple Wallet, NFC, bulk provisioning. Free to start.',
+        'meta_desc'          => 'Bilingual digital and printed business cards for GCC teams. Works on iOS and Android with QR vCard, NFC, Apple Wallet, Google Wallet and bulk provisioning.',
     'dash_kicker'        => 'Dashboard Preview',
     'dash_headline'      => 'A powerful dashboard at your fingertips',
     'dash_body'          => 'Manage all your digital business cards from one intuitive interface. Track performance, update information, and share instantly.',

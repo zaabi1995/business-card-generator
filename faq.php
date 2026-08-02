@@ -2,7 +2,7 @@
 /**
  * Cardify, Frequently Asked Questions (Cat R action 437).
  *
- * 20 questions across 6 categories, fully bilingual via
+ * 21 questions across 7 categories, fully bilingual via
  * lang/{en,ar}/faq.php. JSON-LD FAQPage schema emitted via
  * Seo::faqPage() for Google rich-result eligibility.
  */
@@ -22,7 +22,7 @@ $showNavigation  = true;
 $bodyClass       = 'bg-gray-50' . ($isAr ? ' font-arabic' : '');
 $bodyAttributes  = $isAr ? 'dir="rtl" lang="ar"' : '';
 
-// Source of truth: category → list of key prefixes. 20 entries.
+// Source of truth: category → list of key prefixes. 21 entries.
 $categories = [
     'cat_start'   => ['icon' => 'fa-solid fa-rocket',          'keys' => ['gs1', 'gs2', 'gs3', 'gs4']],
     'cat_digital' => ['icon' => 'fa-solid fa-mobile-screen',   'keys' => ['dc1', 'dc2', 'dc3', 'dc4']],
@@ -30,11 +30,14 @@ $categories = [
     'cat_teams'   => ['icon' => 'fa-solid fa-users',           'keys' => ['tm1', 'tm2', 'tm3']],
     'cat_billing' => ['icon' => 'fa-solid fa-credit-card',     'keys' => ['bl1', 'bl2', 'bl3']],
     'cat_tech'    => ['icon' => 'fa-solid fa-gear',            'keys' => ['tc1', 'tc2']],
+    // r6-50: 21 entries now. The entity question is last because it is the
+    // least useful to a customer and the most useful to a model.
+    'cat_company' => ['icon' => 'fa-solid fa-building',        'keys' => ['co1']],
 ];
 
 require_once INCLUDES_DIR . '/ui-header.php';
 
-// JSON-LD via Seo helper, FAQPage across all 20 questions.
+// JSON-LD via Seo helper, FAQPage across all 21 questions.
 $faqPairs = [];
 foreach ($categories as $cat) {
     foreach ($cat['keys'] as $k) {

@@ -66,6 +66,13 @@ class I18n
             unset($_SESSION['cardify_lang']);
         }
 
+        // The URL PATH outranks ?lang=. Without this, nginx's
+        // `rewrite ^/ar/pricing$ /pricing.php?lang=ar last;` appends the
+        // client's own args after ours, so /ar/pricing?lang=en arrives as
+        // lang=ar&lang=en and PHP keeps the last one: an English body served
+        // at an Arabic URL. r6-47.
+        self::reconcilePathAndQuery();
+
         $locale = self::detect();
         self::$locale = $locale;
 
@@ -79,6 +86,79 @@ class I18n
                 $_SESSION['cardify_lang'] = $_GET['lang'];
             }
         }
+    }
+
+    /**
+     * Make the request PATH authoritative over the ?lang= query param.
+     *
+     * Two shapes were live before this existed, both measured on cardify.om:
+     *   /ar/pricing?lang=en  -> 200, lang="en" dir="ltr", Arabic share 0.002
+     *   /pricing?lang=ar     -> 200, lang="ar" dir="rtl", Arabic share 0.921
+     * The first is an English body at an Arabic URL, the second a second copy
+     * of the Arabic page at the English canonical. Both are duplicates that a
+     * crawler can reach, and both survive the switcher fix because they are a
+     * SERVER behaviour, not a link the switcher emits.
+     *
+     * Rules, deliberately narrow:
+     *   A. path under /ar/  -> locale is ar, full stop. An explicit ?lang=en
+     *      is read as "give me the English page" and 301s to the EN twin.
+     *   B. path not under /ar/ with ?lang=ar -> 301 to the Arabic twin, but
+     *      ONLY when ArTwins knows one exists. Everything ArTwins does not
+     *      map (/admin, /portal, /company, the app surfaces) keeps the old
+     *      query toggle untouched, which is what those pages opt into.
+     */
+    private static function reconcilePathAndQuery(): void
+    {
+        if (PHP_SAPI === 'cli') return;
+        $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+        if ($method !== 'GET' && $method !== 'HEAD') return;
+
+        // REQUEST_URI is the ORIGINAL client URI: nginx rewrites do not
+        // rewrite it, which is the whole reason the path is trustworthy here.
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        if ($uri === '') return;
+        $path = parse_url($uri, PHP_URL_PATH);
+        if (!is_string($path) || $path === '') return;
+
+        $wanted = (isset($_GET['lang']) && in_array($_GET['lang'], ['en', 'ar'], true))
+            ? $_GET['lang'] : null;
+        $isArPath = ($path === '/ar' || $path === '/ar/' || strpos($path, '/ar/') === 0);
+
+        if (!class_exists('ArTwins')) {
+            $twins = __DIR__ . '/ArTwins.php';
+            if (is_file($twins)) require_once $twins;
+        }
+
+        if ($isArPath) {
+            if ($wanted === 'en' && class_exists('ArTwins')) {
+                self::redirect(ArTwins::normalise($path), $uri);
+                return;
+            }
+            // The path already said Arabic. Overwrite whatever the duplicated
+            // query param left behind so page code reading $_GET['lang']
+            // directly agrees with the URL it was served at.
+            $_GET['lang'] = 'ar';
+            return;
+        }
+
+        if ($wanted === 'ar' && class_exists('ArTwins')) {
+            $arPath = ArTwins::arPath($path);
+            if ($arPath !== null) {
+                self::redirect($arPath, $uri);
+            }
+        }
+    }
+
+    /** 301 to $targetPath, carrying every query param except lang. */
+    private static function redirect(string $targetPath, string $originalUri): void
+    {
+        if (headers_sent()) return;
+        $query = parse_url($originalUri, PHP_URL_QUERY) ?: '';
+        parse_str($query, $params);
+        unset($params['lang']);
+        $suffix = $params ? ('?' . http_build_query($params)) : '';
+        header('Location: ' . $targetPath . $suffix, true, 301);
+        exit;
     }
 
     private static function detect(): string

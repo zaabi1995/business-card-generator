@@ -287,7 +287,12 @@ $siteLd = [
     'alternateName' => 'Cardify GCC',
     'url' => 'https://cardify.om/',
     'inLanguage' => ['en', 'ar'],
-    'publisher' => ['@type' => 'Organization', '@id' => 'https://cardify.om/#organization', 'name' => 'Cardify', 'url' => 'https://cardify.om'],
+    // r20-11: this was a 4-key Organization node under the SAME @id the page
+    // defines in full further down, so the document declared the entity twice
+    // and the shorter copy (no parent, no address, no logo) is the one a
+    // consumer meets first. A publisher slot takes a REFERENCE; the definition
+    // lives in exactly one place.
+    'publisher' => ['@id' => 'https://cardify.om/#organization'],
     'potentialAction' => [
         '@type' => 'SearchAction',
         'target' => [
@@ -1251,11 +1256,7 @@ HTML;
   "alternateName": ["Cardify Oman", "Cardify GCC"],
   "url": "https://cardify.om",
   "parentOrganization": { "@id": "https://bhd.om/#organization" },
-  "identifier": [
-    { "@type": "PropertyValue", "name": "Commercial Registration", "value": "1334733" },
-    { "@type": "PropertyValue", "name": "VAT Identification Number", "value": "OM1100019343" }
-  ],
-  "vatID": "OM1100019343",
+  "disambiguatingDescription": "Cardify is the digital business card platform published by BHD Group (Bin Haider Darwish L.L.C.) in Muscat, Oman. BHD Group is Bin Haider Darwish L.L.C., Commercial Registration 1334733, a family-owned printing and technology group founded in Muscat in 2018. It is not Mohsin Haider Darwish LLC (a separate and unrelated Omani company), and the initials BHD here stand for Bin Haider Darwish, not the Bahraini dinar currency code.",
   "logo": "https://cardify.om/assets/images/logo.svg",
   "description": "Business-identity platform for the Gulf: digital and printed business cards, public logo libraries, and the GCC Business Index. Built in Oman, expanding across Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait through 2026.",
   "address": {
