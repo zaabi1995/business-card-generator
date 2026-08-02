@@ -17,18 +17,56 @@ class PlatformStats
 {
     private const TTL = 21600; // 6h
 
-    /** @return array{companies:int,employees:int,cards:int,events:int,directory:int} */
+    /**
+     * Tenants that are actually using the product, as opposed to tenants that
+     * merely exist. r20-28: "Join the 64 Omani companies using Cardify" was a
+     * live COUNT(*) on `companies`, and therefore honest to its query and wrong
+     * about its meaning: of those rows, 12 had never created a single employee
+     * card, three were demo fixtures, six were BHD's own group entities, and
+     * several were throwaway signups. A live query pointed at the wrong table
+     * is the same defect class as a hardcoded number.
+     *
+     * The population this claims: has issued at least one card, is not a demo
+     * or showcase fixture, and is not us.
+     */
+    private const NOT_A_CUSTOMER = [
+        'BHD Group', 'BHD Oman', 'CupsByAA', 'Paper and Pen Company',
+        'Cardify', 'Adnan Haider Darwish', 'Bin Haider Darwish LLC',
+    ];
+
+    /** @return array{companies:int,issuing:int,employees:int,cards:int,events:int,directory:int} */
     public static function all(): array
     {
-        return Cache::remember('platform:stats:v1', self::TTL, function () {
+        return Cache::remember('platform:stats:v2', self::TTL, function () {
             return [
                 'companies' => self::count('companies'),
+                'issuing'   => self::issuingCompanies(),
                 'employees' => self::count('employees'),
                 'cards'     => self::count('generated_cards'),
                 'events'    => self::count('card_events'),
                 'directory' => self::count('om_companies'),
             ];
         });
+    }
+
+    private static function issuingCompanies(): int
+    {
+        try {
+            $db = Database::getInstance()->getConnection();
+            $ph = implode(',', array_fill(0, count(self::NOT_A_CUSTOMER), '?'));
+            $st = $db->prepare(
+                "SELECT COUNT(DISTINCT c.id) FROM companies c
+                   JOIN employees e ON e.company_id = c.id
+                   JOIN generated_cards g ON g.employee_id = e.id
+                  WHERE c.id NOT LIKE '%demo%'
+                    AND c.id NOT LIKE '%showcase%'
+                    AND c.name NOT IN ({$ph})"
+            );
+            $st->execute(self::NOT_A_CUSTOMER);
+            return (int) $st->fetchColumn();
+        } catch (Throwable $e) {
+            return 0;
+        }
     }
 
     private static function count(string $table): int

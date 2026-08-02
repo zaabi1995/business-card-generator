@@ -58,7 +58,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             <div class="text-gray-500 text-sm"><?= htmlspecialchars(t('about.stats_directory')) ?></div>
                         </div>
                         <div class="bg-white rounded-xl p-6 shadow-sm">
-                            <div class="text-3xl font-bold text-blue-600 mb-2"><?= number_format($stats['companies']) ?></div>
+                            <div class="text-3xl font-bold text-blue-600 mb-2"><?= number_format($stats['issuing']) ?></div>
                             <div class="text-gray-500 text-sm"><?= htmlspecialchars(t('about.stats_companies')) ?></div>
                         </div>
                         <div class="bg-white rounded-xl p-6 shadow-sm">

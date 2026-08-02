@@ -1,4 +1,4 @@
 <?php
 return [
-    'headline' => ':shown من :total شركة عُمانية تستخدم كارديفاي',
+    'headline' => ':shown من :total شركة تُصدر بطاقاتها عبر كارديفاي',
 ];

@@ -24,8 +24,12 @@ $canonicalUrl    = 'https://cardify.om/press-kit';
 $showNavigation  = true;
 
 $db = Database::getInstance();
-$companiesCount = 0;   // real value comes from the query below; never hardcode a public stat
-$logosCount     = 79;
+// r20-27: this page was outside the fix's surface list and published a
+// hardcoded 79/80+ against a real 106. A fallback literal IS a hardcoded
+// public stat, so both start null and the copy loses the number if the
+// query cannot run.
+$companiesCount = null;
+$logosCount     = null;
 try {
     $r = $db->fetchOne("SELECT COUNT(*) c FROM om_companies");
     if ($r) $companiesCount = (int) $r['c'];
@@ -160,11 +164,11 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-6"><?= htmlspecialchars(t('press.h2_numbers')) ?></h2>
             <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition">
-                    <div class="text-3xl font-extrabold text-gray-900"><?= number_format($companiesCount) ?></div>
+                    <div class="text-3xl font-extrabold text-gray-900"><?= $companiesCount !== null ? number_format($companiesCount) : '&mdash;' ?></div>
                     <div class="text-sm text-gray-600 mt-1.5 leading-relaxed"><?= htmlspecialchars(t('press.stat_companies')) ?></div>
                 </div>
                 <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition">
-                    <div class="text-3xl font-extrabold text-gray-900"><?= number_format($logosCount) ?><span class="text-blue-600">+</span></div>
+                    <div class="text-3xl font-extrabold text-gray-900"><?= $logosCount !== null ? number_format($logosCount) : '&mdash;' ?></div>
                     <div class="text-sm text-gray-600 mt-1.5 leading-relaxed"><?= htmlspecialchars(t('press.stat_logos')) ?></div>
                 </div>
                 <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-200 transition">
@@ -223,7 +227,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </div>
                             <div>
                                 <h3 class="text-xl font-bold text-gray-900"><?= htmlspecialchars(t('press.ds_logos_title')) ?></h3>
-                                <p class="text-gray-500 text-sm mt-0.5"><?= htmlspecialchars(t('press.ds_logos_sub')) ?></p>
+                                <p class="text-gray-500 text-sm mt-0.5"><?= htmlspecialchars($logosCount !== null ? t('press.ds_logos_sub', ['logos' => number_format($logosCount)]) : t('press.ds_logos_sub_nc')) ?></p>
                             </div>
                         </div>
                         <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-100 rounded-full px-3 py-1 text-xs font-semibold">
