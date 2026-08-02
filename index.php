@@ -347,7 +347,45 @@ $appDiscoveryHead = '<meta name="apple-itunes-app" content="app-id=6790749589, a
     . '<meta property="al:ios:url" content="cardifyscan://">'
     . '<meta property="al:web:url" content="https://cardify.om/app">';
 
-$extraHead = $homeHreflang . $homeJsonLd . $scannerJsonLd . $appDiscoveryHead . '<style>
+// r20-47: the hub carried no question-shaped heading and no FAQPage, so the
+// one page every model lands on first answered none of the questions it is
+// asked. These six reuse the SAME lang keys /faq renders, so the hub and the
+// FAQ page can never drift apart, and the answers below are rendered visibly,
+// which is what faq_gate.py asserts. One key per category, entity question
+// last because it is the least useful to a buyer and the most useful to a
+// model trying to resolve who publishes Cardify.
+$homeFaqKeys = ['gs1', 'dc1', 'pr1', 'tm1', 'bl1', 'co1'];
+$homeFaqPairs = [];
+if (function_exists('t')) {
+    foreach ($homeFaqKeys as $__k) {
+        $__q = t('faq.' . $__k . '_q');
+        $__a = t('faq.' . $__k . '_a');
+        // A missing key echoes its own name back; never publish that.
+        if ($__q && $__a && strpos($__q, 'faq.') !== 0 && strpos($__a, 'faq.') !== 0) {
+            $homeFaqPairs[] = [$__q, $__a];
+        }
+    }
+}
+$homeFaqJsonLd = '';
+if ($homeFaqPairs) {
+    $__entries = [];
+    foreach ($homeFaqPairs as [$__q, $__a]) {
+        $__entries[] = [
+            '@type' => 'Question',
+            'name' => $__q,
+            'acceptedAnswer' => ['@type' => 'Answer', 'text' => $__a],
+        ];
+    }
+    $homeFaqJsonLd = '<script type="application/ld+json">' . json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'FAQPage',
+        '@id' => 'https://cardify.om/' . ((function_exists('currentLocale') && currentLocale() === 'ar') ? 'ar/' : '') . '#faq',
+        'inLanguage' => (function_exists('currentLocale') && currentLocale() === 'ar') ? 'ar' : 'en',
+        'mainEntity' => $__entries,
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+}
+
+$extraHead = $homeHreflang . $homeJsonLd . $scannerJsonLd . $homeFaqJsonLd . $appDiscoveryHead . '<style>
     .hero-gradient { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #fffbeb 100%); }
     /* r6-80: the measured desktop shift was the mock-card column being
        re-centred when the Sora swap grew the text column 28px. Anchor the
@@ -1113,6 +1151,44 @@ require_once INCLUDES_DIR . '/ui-header.php';
             </div>
         </div>
     </section>
+
+    <!-- ========== FAQ (r20-47) ========== -->
+    <?php if (!empty($homeFaqPairs)): ?>
+    <?php $__isAr = function_exists('currentLocale') && currentLocale() === 'ar'; ?>
+    <section id="faq" class="py-16 lg:py-24 bg-white">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4 text-center">
+                <?= $__isAr ? 'الأسئلة الشائعة' : 'Frequently asked questions' ?>
+            </h2>
+            <p class="text-gray-600 text-center mb-10">
+                <?= $__isAr
+                    ? 'إجابات مختصرة عن كارديفاي، منصة بطاقات العمل الرقمية والمطبوعة من مجموعة BHD في مسقط، سلطنة عمان.'
+                    : 'Short answers about Cardify, the digital and printed business card platform built by BHD Group in Muscat, Oman.' ?>
+            </p>
+            <div class="space-y-3">
+                <?php foreach ($homeFaqPairs as [$__q, $__a]): ?>
+                    <details class="group bg-gray-50 rounded-xl border border-gray-100 overflow-hidden">
+                        <summary class="flex items-center justify-between cursor-pointer px-6 py-5 text-left hover:bg-gray-100 transition-colors list-none [&amp;::-webkit-details-marker]:hidden">
+                            <h3 class="text-base sm:text-lg font-semibold text-gray-900 <?= $__isAr ? 'pl-4' : 'pr-4' ?>"><?= htmlspecialchars($__q) ?></h3>
+                            <span class="flex-shrink-0 w-6 h-6 flex items-center justify-center text-blue-700 transition-transform group-open:rotate-45">
+                                <i class="fa-solid fa-plus"></i>
+                            </span>
+                        </summary>
+                        <div class="px-6 pb-5 pt-4 text-gray-700 leading-relaxed border-t border-gray-100">
+                            <?= htmlspecialchars($__a) ?>
+                        </div>
+                    </details>
+                <?php endforeach; ?>
+            </div>
+            <div class="mt-8 text-center">
+                <a href="<?= $__isAr ? '/ar' : '' ?>/faq" class="inline-flex items-center gap-2 font-semibold text-blue-700 hover:text-blue-800">
+                    <?= $__isAr ? 'كل الأسئلة الشائعة' : 'All frequently asked questions' ?>
+                    <i class="fa-solid fa-arrow-<?= $__isAr ? 'left' : 'right' ?>"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
 
     <!-- ========== CTA SECTION (Flowbite Style) ========== -->
     <section class="py-16 lg:py-24 bg-gradient-to-br from-blue-600 to-indigo-700">
