@@ -51,6 +51,17 @@ if (file_exists(__DIR__ . '/includes/TenantHost.php')) {
         $reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
         if ($reqPath === '/login' || $reqPath === '/login/') {
             require __DIR__ . '/tenant_login.php';
+        } elseif ($reqPath === '/my-card' || $reqPath === '/my-card/') {
+            // Employee self-service: OTP door onto their own card edit page.
+            if (isset($_GET['restart'])) {
+                if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
+                unset(
+                    $_SESSION['mycard_identifier'], $_SESSION['mycard_identifier_raw'],
+                    $_SESSION['mycard_channel'], $_SESSION['mycard_employee_id'],
+                    $_SESSION['mycard_pending_verify'], $_SESSION['mycard_notice']
+                );
+            }
+            require __DIR__ . '/my_card.php';
         } else {
             // Default: employee request portal. A bare single-token path that
             // is NOT the canonical "/" or "/portal" reaches here only as a

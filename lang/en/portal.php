@@ -234,4 +234,6 @@ return [
     'layout_card' => 'My business card',
     'layout_hint' => 'Your printed card stays available either way, behind a small link.',
 
+    'already_have_card' => 'Already have a card?',
+    'edit_my_card_link' => 'Edit it here',
 ];
