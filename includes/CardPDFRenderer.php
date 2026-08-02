@@ -472,6 +472,11 @@ class CardPDFRenderer
             // Skip baked-in fields (already in the bg PNG) and the QR slot.
             if (!empty($f['render_in_bg'])) continue;
             if ($key === 'qr_code')         continue;
+            // Skip switched-off fields. Fabric honours `enabled`, so without
+            // this the print PDF carries text the on-screen card does not:
+            // Otech shipped with mobile_ar disabled but populated on 218 of
+            // 261 staff, and it printed as a dark string over the card edge.
+            if (array_key_exists('enabled', $f) && !$f['enabled']) continue;
 
             // Two runtime-drawn kinds:
             //  - typed dynamic (is_static=false, value resolved from employee)
