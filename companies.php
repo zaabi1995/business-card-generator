@@ -468,8 +468,14 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                         // strongest heading carried no Arabic at all. Keep the Latin
                         // legal name (it is the registered one) and qualify it in
                         // Arabic so the heading is readable in the page's language.
+                        // The test is "does the rendered heading contain Arabic",
+                        // not "is name_ar empty": ~1 in 20 om_companies rows
+                        // stores the Latin legal name in name_ar, which is
+                        // non-empty and still leaves the H1 without a letter of
+                        // the page's own script.
                         $h1Text = $isAr ? ($company['name_ar'] ?: $company['name_en']) : $company['name_en'];
-                        $h1Qualifier = ($isAr && !$company['name_ar'])
+                        $h1HasArabic = (bool) preg_match('/[\x{0600}-\x{06FF}\x{0750}-\x{077F}\x{08A0}-\x{08FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}]/u', $h1Text);
+                        $h1Qualifier = ($isAr && !$h1HasArabic)
                             ? ' (' . $secLabel . ' في ' . $wilLabel . ')'
                             : '';
                     ?>
