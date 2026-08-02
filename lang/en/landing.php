@@ -97,7 +97,8 @@ return [
     'res_tool_nfc_title'   => 'NFC business card guide',
     'res_tool_nfc_sub'     => 'How tap-to-share works, step by step',
     'res_obi_title'      => 'Oman Business Index',
-    'res_obi_sub'        => 'Free public directory of the 2,414 largest enterprises in Oman, sourced from MoCIIP.',
+    'res_obi_sub'        => 'Free public directory of the :companies largest enterprises in Oman, sourced from MoCIIP.',
+    'res_obi_sub_nc'     => 'Free public directory of the largest enterprises in Oman, sourced from MoCIIP.',
     'res_obi_oil_gas'    => 'Oil & gas',
     'res_obi_construction' => 'Construction',
     'res_obi_finance'    => 'Finance & banking',
@@ -128,7 +129,7 @@ return [
     // Final CTA block
     'cta_supporting'     => 'Proudly supporting Omani businesses',
     'cta_title'          => 'Create Your First Card in Minutes',
-    'cta_sub'            => 'Join the :companies Omani companies using Cardify. Free platform, pay only when you print.',
+    'cta_sub'            => 'Join the :companies companies already issuing cards with Cardify. Free platform, pay only when you print.',
     'cta_start_trial'    => 'Get Started Free',
     'cta_see_how'        => 'See How It Works',
     'cta_free_starter'   => '100% Free Platform',

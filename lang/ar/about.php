@@ -14,7 +14,7 @@ return [
     'stats_directory' => 'شركة عمانية مفهرسة',
     'stats_scans'     => 'مشاهدة ومسح للبطاقات',
     'stats_users'     => 'مستخدمون نشطون',
-    'stats_companies' => 'شركة',
+    'stats_companies' => 'شركة تُصدر بطاقات',
     'stats_cards'     => 'بطاقة تم إنشاؤها',
     'stats_uptime'    => 'وقت التشغيل',
 

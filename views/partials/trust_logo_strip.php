@@ -21,7 +21,7 @@ $__dir  = $__isAr ? 'rtl' : 'ltr';
         <p class="text-center text-xs uppercase tracking-widest text-gray-500 mb-5">
             <?= htmlspecialchars(t('trust.headline', [
                 'shown' => number_format(count($__trustLogos)),
-                'total' => number_format(PlatformStats::all()['companies']),
+                'total' => number_format(PlatformStats::all()['issuing']),
             ])) ?>
         </p>
         <div class="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 opacity-70">

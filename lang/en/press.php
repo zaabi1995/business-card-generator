@@ -40,7 +40,8 @@ return [
     'btn_browse_companies'=> 'Browse companies',
 
     'ds_logos_title'      => 'Omani Logo Library',
-    'ds_logos_sub'        => '80+ Omani brand logos, ministries, sovereign bodies, corporates. SVG and PNG.',
+    'ds_logos_sub'        => ':logos Omani brand logos, ministries, sovereign bodies, corporates. SVG and PNG.',
+    'ds_logos_sub_nc'     => 'Omani brand logos, ministries, sovereign bodies, corporates. SVG and PNG.',
     'btn_browse_library'  => 'Browse library',
     'btn_terms'           => 'Terms of use',
     'btn_json'            => 'JSON API',

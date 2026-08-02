@@ -14,7 +14,7 @@ return [
     'stats_directory' => 'Omani companies indexed',
     'stats_scans'     => 'Card views & scans',
     'stats_users'     => 'Active users',
-    'stats_companies' => 'Companies',
+    'stats_companies' => 'Companies issuing cards',
     'stats_cards'     => 'Cards created',
     'stats_uptime'    => 'Uptime',
 

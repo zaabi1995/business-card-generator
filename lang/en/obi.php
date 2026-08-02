@@ -128,7 +128,7 @@ return [
     // Logo library companion
     'lib_eyebrow'   => 'Companion archive',
     'lib_heading'   => 'The Omani Logo Library',
-    'lib_body'      => 'Every company in this index can have a logo. :count+ Omani brand marks are already indexed, ministries, sovereign entities, banks, logistics, retail, and more. Search, filter by sector, and download SVG / PNG for identification and reference use.',
+    'lib_body'      => 'Every company in this index can have a logo. :count Omani brand marks are already indexed, ministries, sovereign entities, banks, logistics, retail, and more. Search, filter by sector, and download SVG / PNG for identification and reference use.',
     'lib_cta'       => 'Open the Logo Library',
     'lib_browse'    => 'Browse by sector',
     'lib_why_title' => 'Why a logo library?',

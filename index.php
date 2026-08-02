@@ -962,6 +962,12 @@ require_once INCLUDES_DIR . '/ui-header.php';
         $resLogosSub = $resLogosCount !== null
             ? t('landing.res_logos_sub', ['logos' => number_format($resLogosCount)])
             : t('landing.res_logos_sub_nc');
+        // r20-26: this sentence carried a hardcoded 2,414 while the hero on the
+        // same page said 2,502. One page, two sizes of one directory. Same rule
+        // as the two counts above: derive it, or drop the number from the copy.
+        $resObiSub = $resCompaniesCount !== null
+            ? t('landing.res_obi_sub', ['companies' => number_format($resCompaniesCount)])
+            : t('landing.res_obi_sub_nc');
     ?>
     <section id="resources" class="py-16 lg:py-24 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1017,7 +1023,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                         </div>
                         <h3 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars(t('landing.res_obi_title')) ?></h3>
                     </div>
-                    <p class="text-gray-600 mb-6"><?= htmlspecialchars(t('landing.res_obi_sub')) ?></p>
+                    <p class="text-gray-600 mb-6"><?= htmlspecialchars($resObiSub) ?></p>
                     <div class="grid grid-cols-2 gap-2 mb-6">
                         <?php foreach ([
                             'oil_gas'      => '/companies/sector/oil-gas',
@@ -1109,7 +1115,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
                 <?= htmlspecialchars(t('landing.cta_title')) ?>
             </h2>
             <p class="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
-                <?= htmlspecialchars(t('landing.cta_sub', ['companies' => number_format(PlatformStats::all()['companies'])])) ?>
+                <?= htmlspecialchars(t('landing.cta_sub', ['companies' => number_format(PlatformStats::all()['issuing'])])) ?>
             </p>
 
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
