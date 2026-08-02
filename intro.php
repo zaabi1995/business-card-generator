@@ -1091,7 +1091,7 @@ $basePath = getBasePath();
                     <span class="text-white/80">In Under 5 Minutes</span>
                 </h2>
                 <p class="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-                    <?= htmlspecialchars(number_format(PlatformStats::all()['companies'])) ?> Omani companies trust Cardify for their business cards.
+                    <?= htmlspecialchars(number_format(PlatformStats::all()['issuing'])) ?> companies issue their business cards with Cardify.
                     It's completely free to start, no credit card required.
                 </p>
                 

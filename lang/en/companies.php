@@ -3,6 +3,10 @@ return [
     // Index view
     'index_title'          => 'Oman Business Index, 2,500+ Largest Enterprises | Cardify',
     'index_desc'           => 'Free public directory of the 2,500+ largest and medium-sized enterprises in the Sultanate of Oman. Filter by sector, wilayat, and size, sourced from the MoCIIP public register.',
+    // 20-7: pages 2..N are self-canonical, so each one has to describe its own
+    // slice rather than repeat the hub's title and description.
+    'index_title_paged'    => 'Oman Business Index, Page :page of :last | Cardify',
+    'index_desc_paged'     => 'Page :page of :last of the Oman Business Index: companies from :first to :to, listed with sector, governorate and size. Free bilingual directory sourced from the MoCIIP public register.',
     'heading'              => 'Oman Business Index',
     'subheading'           => 'A free public directory of the :count largest and medium-sized enterprises in the Sultanate of Oman.',
     'search_label'         => 'Search',

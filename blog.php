@@ -268,7 +268,7 @@ require_once INCLUDES_DIR . '/ui-header.php';
         <!-- CTA Banner -->
         <div class="mt-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-8 text-center text-white">
             <h3 class="text-2xl font-bold mb-2"><?= htmlspecialchars(t('blog.cta_h3')) ?></h3>
-            <p class="text-blue-100 mb-6"><?= htmlspecialchars(t('blog.cta_body', ['companies' => number_format(PlatformStats::all()['companies'])])) ?></p>
+            <p class="text-blue-100 mb-6"><?= htmlspecialchars(t('blog.cta_body', ['companies' => number_format(PlatformStats::all()['issuing'])])) ?></p>
             <a href="<?= getBasePath() ?>intro" class="inline-block bg-white text-blue-700 font-semibold px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors">
                 <?= htmlspecialchars(t('blog.cta_button')) ?>
             </a>

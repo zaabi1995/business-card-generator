@@ -348,6 +348,24 @@ if ($company) {
 } else {
     $pageTitle = t('companies.index_title');
     $pageDescription = t('companies.index_desc');
+    // 20-7: r6-64 gave pages 2..N their own canonical but left them sharing one
+    // title and one meta description, so 41 self-canonical URLs described
+    // themselves identically. Name the slice each page actually carries: the
+    // page number, and the alphabetical range of the companies on it.
+    $lastPage = max(1, (int) ceil($totalCount / $perPage));
+    if ($page > 1) {
+        $firstName = $companies ? ($isAr ? ($companies[0]['name_ar'] ?: $companies[0]['name_en']) : $companies[0]['name_en']) : '';
+        $lastName  = $companies ? ($isAr ? (end($companies)['name_ar'] ?: end($companies)['name_en']) : end($companies)['name_en']) : '';
+        $pageTitle = t('companies.index_title_paged', ['page' => $page, 'last' => $lastPage]);
+        if ($firstName !== '' && $lastName !== '') {
+            $pageDescription = t('companies.index_desc_paged', [
+                'page'  => $page,
+                'last'  => $lastPage,
+                'first' => $firstName,
+                'to'    => $lastName,
+            ]);
+        }
+    }
     // r6-64: pages 2..N used to canonicalise to page 1, which told Google the
     // deeper pages were duplicates and cut the only crawl path to the 5,004
     // company pages below them. A paginated page is its own canonical. Search
@@ -356,7 +374,6 @@ if ($company) {
     $isFilteredView = ($q !== '' || $filterSector !== '' || $filterWilayat !== '');
     $pageSuffix = (!$isFilteredView && $page > 1) ? '?page=' . $page : '';
     $canonicalUrl = $baseUrl . $basePrefix . $pageSuffix;
-    $lastPage = max(1, (int) ceil($totalCount / $perPage));
     $seqHead = '';
     if (!$isFilteredView) {
         if ($page > 1) {
@@ -445,7 +462,18 @@ function escq($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
                     </div>
                 <?php endif; ?>
                 <div class="flex-1 min-w-0">
-                    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight"><?= escq($isAr ? ($company['name_ar'] ?: $company['name_en']) : $company['name_en']) ?></h1>
+                    <?php
+                        // 20-40: a company with no name_ar used to put a purely Latin
+                        // string in the H1 of an Arabic page, so the page's single
+                        // strongest heading carried no Arabic at all. Keep the Latin
+                        // legal name (it is the registered one) and qualify it in
+                        // Arabic so the heading is readable in the page's language.
+                        $h1Text = $isAr ? ($company['name_ar'] ?: $company['name_en']) : $company['name_en'];
+                        $h1Qualifier = ($isAr && !$company['name_ar'])
+                            ? ' (' . $secLabel . ' في ' . $wilLabel . ')'
+                            : '';
+                    ?>
+                    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight"><?= escq($h1Text) ?><?php if ($h1Qualifier): ?><span class="text-xl sm:text-2xl font-semibold text-gray-500"><?= escq($h1Qualifier) ?></span><?php endif; ?></h1>
                     <?php if (!$isAr && $company['name_ar']): ?>
                         <p class="mt-2 text-lg text-gray-500 font-arabic" dir="rtl"><?= escq($company['name_ar']) ?></p>
                     <?php elseif ($isAr && $company['name_en']): ?>
