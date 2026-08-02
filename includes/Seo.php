@@ -97,7 +97,10 @@ class Seo
             // Darwish LLC) reaches every property that names BHD, and until now
             // only bhd.om answered it. Stated on Cardify's own node rather than
             // by inlining a second BHD Group node, which r6-59 already ruled out.
-            'alternateName' => ['Cardify Oman', 'Cardify by BHD Group'],
+            // Same two alternates index.php's live node publishes. Seo::organization()
+            // currently has no caller (index.php hand-writes the node); keeping the
+            // two in step means activating this one cannot silently change the entity.
+            'alternateName' => ['Cardify Oman', 'Cardify GCC'],
             'disambiguatingDescription' =>
                 'Cardify is the digital business card platform published by BHD Group '
                 . '(Bin Haider Darwish L.L.C.) in Muscat, Oman. ' . self::GROUP_DISAMBIGUATION,
