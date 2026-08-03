@@ -3,12 +3,27 @@
  *
  * Override at CI time via env:
  *   KNOWN_CARD_SLUG=bhdoman
- *   KNOWN_CARD_EID=0dc7e708-bb76-41c5-913d-f37a03500d06
- *   KNOWN_CARD_NAME="Ali Al-Zaabi"
+ *   KNOWN_CARD_EID=<uuid of a card that will never be deactivated>
+ *   KNOWN_CARD_NAME="<name printed on that card>"
  *
- * Defaults point at a well-exercised production employee (Ali Al-Zaabi @ BHD Oman)
- * that has been live since launch. If this ever gets deactivated, bump the
- * defaults below and re-run.
+ * READ THIS BEFORE CHANGING THE DEFAULT AGAIN.
+ *
+ * This suite asserts against LIVE production data, so any card it names can be
+ * deactivated by ordinary business activity, and when that happens roughly 15
+ * tests turn red every night with 404s and 400s that look like product
+ * breakage. It has now happened twice: `muhammed.ali` was deactivated and
+ * emailed false failures for about three weeks, the default was moved here to
+ * fix it, and the replacement card
+ * (0dc7e708-bb76-41c5-913d-f37a03500d06) is itself returning 400 from
+ * card-pdf.php as of 3 Aug 2026.
+ *
+ * Swapping in another real employee only restarts that clock. The durable fix
+ * is a card that exists solely to be tested and is never deactivated, supplied
+ * via KNOWN_CARD_EID as a repository variable.
+ *
+ * Until that exists, assertFixtureAlive() below turns a dead fixture into ONE
+ * clear message naming the cause, instead of fifteen assertion failures that
+ * each look like a different bug.
  */
 export const KNOWN_CARD = {
   slug: process.env.KNOWN_CARD_SLUG || 'bhdoman',
@@ -27,3 +42,27 @@ export const BAD_UUID =
 
 export const cardPath = (slug = KNOWN_CARD.slug, eid = KNOWN_CARD.eid) =>
   `/${slug}/card/${eid}`;
+
+/**
+ * Fail fast and legibly when the fixture card no longer exists.
+ *
+ * A dead fixture is a DATA problem, not a product regression, and the two must
+ * not look the same in an inbox. Call this in a beforeAll: the suite then says
+ * "the card this suite points at is gone, set KNOWN_CARD_EID" once, rather than
+ * reporting a spray of 404s that reads like the site is broken.
+ */
+export async function assertFixtureAlive(request: {
+  get: (url: string) => Promise<{ status: () => number }>;
+}): Promise<void> {
+  const res = await request.get(`/card-pdf.php?i=${KNOWN_CARD.eid}`);
+  const status = res.status();
+  if (status === 200) return;
+  throw new Error(
+    [
+      `Fixture card is not usable: /card-pdf.php?i=${KNOWN_CARD.eid} returned ${status}.`,
+      'This is almost certainly a deactivated or deleted card, not a bug in the site.',
+      'Set KNOWN_CARD_EID (and KNOWN_CARD_SLUG / KNOWN_CARD_NAME) to a card that is',
+      'kept alive specifically for testing. See the note at the top of this file.',
+    ].join(' '),
+  );
+}
