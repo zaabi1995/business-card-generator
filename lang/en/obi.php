@@ -1,13 +1,13 @@
 <?php
 return [
     // Meta
-    'page_title' => 'Oman Business Index 2026: 2,500+ Largest Enterprises | Cardify',
-    'page_desc'  => 'Free public directory of the :count largest & medium enterprises in Oman, classified by sector and governorate, sourced from MoCIIP.',
+    'page_title' => 'Oman Business Index 2026: 2,500+ Large and Medium Enterprises | Cardify',
+    'page_desc'  => 'Free public directory of :count large and medium-sized enterprises in Oman, classified by sector and governorate, sourced from the MoCIIP public register.',
 
     // Hero
     'hero_badge'     => 'Research Report &middot; Edition 2026',
     'hero_h1_line1'  => 'Oman Business Index 2026:',
-    'hero_h1_line2'  => 'The :count Largest Enterprises',
+    'hero_h1_line2'  => 'The :count Large and Medium Enterprises',
     'hero_h1_suffix' => 'in the Sultanate',
     'hero_sub'       => 'A free, bilingual, public directory of large and medium-sized enterprises registered in Oman, sourced from the MoCIIP public register and classified by sector, governorate, and scale.',
     'hero_last_upd'  => 'Last updated',
@@ -35,7 +35,7 @@ return [
 
     'methodology'      => 'Methodology',
     'meth_p1'          => '<strong>Data source.</strong> The base list is the public enterprise register maintained by the Ministry of Commerce, Industry and Investment Promotion (MoCIIP) of the Sultanate of Oman. The register groups registered enterprises into four scale bands, micro, small, medium, large, using the official Omani thresholds on registered capital and declared headcount. The Oman Business Index includes only the "large" and "medium" bands; micro and small are excluded for signal-to-noise reasons.',
-    'meth_p2'          => '<strong>Enrichment.</strong> Two classification layers are added on top of the raw register. First, every record is mapped to one of :sectors canonical sectors (Oil &amp; Gas, Construction, Finance &amp; Banking, Manufacturing, and so on). Sector assignment uses a rules-based classifier over the company\'s registered commercial activity, validated by hand on the largest 100 records. Second, every record is mapped to one of :wilayats Omani governorates based on the primary registered address. Both the sector taxonomy and the governorate list are published on the dataset page and are stable between index updates.',
+    'meth_p2'          => '<strong>Enrichment.</strong> Two classification layers are added on top of the raw register. First, every record is mapped to one of :sectors canonical sectors (Oil &amp; Gas, Construction, Finance &amp; Banking, Manufacturing, and so on). Sector assignment uses a rules-based classifier over the company\'s registered commercial activity, validated by hand on the 100 largest records in the MoCIIP register. Second, every record is mapped to one of :wilayats Omani governorates based on the primary registered address. Both the sector taxonomy and the governorate list are published on the dataset page and are stable between index updates.',
     'meth_p3'          => '<strong>Update cadence.</strong> The index refreshes on a rolling quarterly basis against the live MoCIIP register. New registrations, band re-classifications, dissolutions, and English name normalisations are reconciled at each refresh. The timestamp at the top of this page reflects the most recent verification pass.',
     'meth_p4'          => '<strong>Disclaimers.</strong> This index is independent research published by Cardify. It is <em>not</em> endorsed by, affiliated with, or produced in cooperation with MoCIIP or any Omani government entity. The underlying data is public-record information used factually. Classifications (sector, governorate, scale) reflect the state of the register at the verification date; companies reorganise, rename, and re-register continuously. Cardify operates a takedown and correction policy: any listed enterprise may request an edit or removal via the contact form, and we act on verified requests within five working days.',
 
@@ -43,7 +43,7 @@ return [
     'key_findings_sub' => 'All figures below are computed live against the :total-record dataset at the time this page is served. They are not pre-rendered; they reflect the current state of the index.',
 
     'finding01_title'  => 'Five sectors hold most of the registered mass',
-    'finding01_body'   => 'The top five sectors by enterprise count concentrate the majority of Oman\'s large and medium businesses.',
+    'finding01_body'   => 'Ranked by enterprise count, five sectors concentrate the majority of Oman\'s large and medium businesses.',
     'finding01_unavail' => 'Sector breakdown temporarily unavailable.',
 
     'finding02_title'  => 'Muscat remains the overwhelming centre of gravity',
@@ -56,12 +56,12 @@ return [
     'finding03_medium' => 'Medium',
 
     'finding04_title'  => 'The thinnest sector signals the diversification frontier',
-    'finding04_body'   => '<strong>:sector</strong> is the smallest non-"other" sector in the index with just <strong>:count</strong> registered large-or-medium enterprise:plural. That thinness is less a judgment and more a hint: it marks segments of the Omani economy where the private-sector footprint is still forming, and where Vision 2040\'s diversification mandate has the most white space to work with.',
+    'finding04_body'   => '<strong>:sector</strong> is the smallest non-"other" sector in the index with just <strong>:count</strong> registered large-or-medium enterprise:plural. That thinness is less a judgment and more a hint: it marks segments of the Omani economy where the private-sector footprint is still forming, and where Vision 2040\'s diversification mandate has room to work.',
     'finding04_browse' => 'Browse :sector enterprises',
     'finding04_unavail' => 'Sector size distribution temporarily unavailable.',
 
     'finding05_title'  => 'Nationwide coverage, every governorate is represented',
-    'finding05_body'   => 'The index carries registered enterprises in all :wilayats governorates of the Sultanate. From the Musandam peninsula in the far north to Dhofar\'s frankincense coast in the south and the empty quarter of Al Wusta in between, the index is a full-country map of where substantive commercial activity is licensed. This is the first time, to our knowledge, that a dataset of this shape has been published freely.',
+    'finding05_body'   => 'The index carries registered enterprises in all :wilayats governorates of the Sultanate. From the Musandam peninsula in the far north to Dhofar\'s frankincense coast in the south and the empty quarter of Al Wusta in between, the index is a full-country map of where substantive commercial activity is licensed. The full index, including the sector and governorate fields, is published freely on the dataset page.',
 
     'top10_heading'    => 'Top 10 Flagship Enterprises',
     'top10_sub'        => 'A curated shortlist of ten flagship Omani enterprises, organisations that anchor the country\'s hydrocarbon, industrial, and financial backbone. Order is editorial and does not imply revenue ranking.',
@@ -122,7 +122,7 @@ return [
     // GCC upsell
     'gcc_eyebrow'   => 'Part of a larger federation',
     'gcc_heading'   => 'GCC Business Index 2026',
-    'gcc_body'      => 'Oman is the first country fully indexed. Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait are rolling out through 2026 under the same methodology.',
+    'gcc_body'      => 'Oman is indexed in full today. Saudi Arabia, UAE, Qatar, Bahrain, and Kuwait are rolling out through 2026 under the same methodology.',
     'gcc_cta'       => 'Open GCC index',
 
     // Logo library companion
