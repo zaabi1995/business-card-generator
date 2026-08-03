@@ -22,6 +22,9 @@ class I18n
     private static array $rtlLocales = ['ar'];
     private static array $loaded = []; // [locale][ns] => array
     private static bool $booted = false;
+    // Locale the request PATH dictates, on the bilingual tree only. Null means
+    // the path does not constrain the locale and the cookie/query may speak.
+    private static ?string $pathLocale = null;
     // Cookie key, bumped to v3 on 2026-04-25 to invalidate any sticky
     // cardify_lang_v2=ar cookies left over from earlier sessions. Default
     // is English; Arabic is opt-in via the language pill.
@@ -131,6 +134,12 @@ class I18n
 
         if ($isArPath) {
             if ($wanted === 'en' && class_exists('ArTwins')) {
+                // Persist the choice BEFORE leaving. redirect() strips lang=,
+                // so without this the explicit "English" click is forgotten the
+                // instant it is acted on and the stored ar preference is still
+                // the only thing left on the visitor.
+                self::persistCookie('en');
+                $_COOKIE[self::COOKIE_KEY] = 'en';
                 self::redirect(ArTwins::normalise($path), $uri);
                 return;
             }
@@ -146,6 +155,35 @@ class I18n
             if ($arPath !== null) {
                 self::redirect($arPath, $uri);
             }
+        }
+
+        // C. The COOKIE is a preference, not an address. 27-2.
+        //
+        // r6-47 made the path outrank ?lang= and stopped there, so detect()
+        // step 2 still read the cookie with no path check at all. Measured on
+        // production 2026-08-03, one request each, cookie cardify_lang_v3=ar:
+        //   GET /pricing -> 200, lang="ar" dir="rtl", 4331 Arabic chars,
+        //                   rel=canonical https://cardify.om/pricing
+        //   GET /about   -> 200, lang="ar", 2529 Arabic chars, canonical /about
+        //   GET /contact -> 200, lang="ar", 1955 Arabic chars, canonical /contact
+        // An Arabic body at the English canonical URL: the same duplicate the
+        // ?lang=ar rule above exists to kill, arriving through the other door.
+        //
+        // On the bilingual tree the URL decides the body and the cookie is
+        // ignored. It is NOT a redirect, and that is measured, not preferred:
+        // the Arabic page's own English switcher links to a BARE /pricing with
+        // no ?lang=en, so "cookie says ar -> 301 to /ar/" would send every
+        // English click straight back to Arabic, forever. Rendering English is
+        // the only reading of "the URL is authoritative" that leaves the
+        // switcher working.
+        //
+        // Scope is the same carve-out rule B uses: only paths ArTwins maps,
+        // i.e. exactly the URLs that publish a canonical + hreflang pair.
+        // /admin, /portal, /company and the app surfaces are unmapped and keep
+        // the cookie toggle they opt into.
+        if ($wanted === null && class_exists('ArTwins')
+            && ArTwins::arPath($path) !== null) {
+            self::$pathLocale = 'en';
         }
     }
 
@@ -163,6 +201,12 @@ class I18n
 
     private static function detect(): string
     {
+        // 0. The URL path, when it is part of the bilingual tree. Set only by
+        // reconcilePathAndQuery() rule C, and only to the one value the path
+        // can mean, so nothing below can serve a body the canonical contradicts.
+        if (self::$pathLocale !== null) {
+            return self::$pathLocale;
+        }
         // 1. query param
         if (isset($_GET['lang']) && in_array($_GET['lang'], self::$supported, true)) {
             return $_GET['lang'];
