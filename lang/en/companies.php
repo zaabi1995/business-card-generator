@@ -1,14 +1,14 @@
 <?php
 return [
     // Index view
-    'index_title'          => 'Oman Business Index, 2,500+ Largest Enterprises | Cardify',
-    'index_desc'           => 'Free public directory of the 2,500+ largest and medium-sized enterprises in the Sultanate of Oman. Filter by sector, wilayat, and size, sourced from the MoCIIP public register.',
+    'index_title'          => 'Oman Business Index, 2,500+ Large and Medium Enterprises | Cardify',
+    'index_desc'           => 'Free public directory of 2,500+ large and medium-sized enterprises in the Sultanate of Oman. Filter by sector, wilayat, and size, sourced from the MoCIIP public register.',
     // 20-7: pages 2..N are self-canonical, so each one has to describe its own
     // slice rather than repeat the hub's title and description.
     'index_title_paged'    => 'Oman Business Index, Page :page of :last | Cardify',
     'index_desc_paged'     => 'Page :page of :last of the Oman Business Index: companies from :first to :to, listed with sector, governorate and size. Free bilingual directory sourced from the MoCIIP public register.',
     'heading'              => 'Oman Business Index',
-    'subheading'           => 'A free public directory of the :count largest and medium-sized enterprises in the Sultanate of Oman.',
+    'subheading'           => 'A free public directory of :count large and medium-sized enterprises in the Sultanate of Oman.',
     'search_label'         => 'Search',
     'search_placeholder'   => 'Company name (EN or AR)...',
     'sector_label'         => 'Sector',
@@ -30,8 +30,8 @@ return [
     'hub_wilayat_subheading'  => ':count companies operating in :label governorate, listed in the Cardify Business Index.',
     'hub_sector_page_title'   => ':label Companies in Oman, Business Index | Cardify',
     'hub_wilayat_page_title'  => 'Companies in :label, Oman Business Index | Cardify',
-    'hub_sector_page_desc'    => 'Directory of :count leading :label enterprises in the Sultanate of Oman, part of the Cardify Oman Business Index.',
-    'hub_wilayat_page_desc'   => 'Directory of :count leading enterprises in :label, part of the Cardify Oman Business Index.',
+    'hub_sector_page_desc'    => 'Directory of :count :label companies registered in the Sultanate of Oman, with governorate, size and profile link for each. Part of the Cardify Oman Business Index.',
+    'hub_wilayat_page_desc'   => 'Directory of :count companies registered in :label, Oman, with sector, size and profile link for each. Part of the Cardify Oman Business Index.',
     'logos_eyebrow'           => 'Logos',
     'logos_available'         => ':count :label logos available',
     'open_sector_library'     => 'Open the sector library',
