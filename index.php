@@ -542,18 +542,21 @@ require_once INCLUDES_DIR . '/ui-header.php';
                             </div>
                         </div>
 
-                        <!-- Secondary Card -->
-                        <div class="float-delayed absolute top-52 -left-4 w-72 bg-gradient-to-br from-amber-400 to-amber-500 rounded-2xl card-shadow p-6 text-white">
+                        <!-- Secondary Card. r28 27-54: the gold was amber-400/500 with white
+                             text, measured 1.79-1.9:1. amber-700/800 puts white at 5.0:1 and the
+                             avatar disc at 7.1:1 while keeping the gold. Opacity-dimmed white was
+                             the other half of the failure, so the caption lines are solid white. -->
+                        <div class="float-delayed absolute top-52 -left-4 w-72 bg-gradient-to-br from-amber-700 to-amber-800 rounded-2xl card-shadow p-6 text-white">
                             <div class="flex items-start gap-4">
-                                <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold backdrop-blur-sm">
+                                <div class="w-14 h-14 rounded-full bg-black/20 flex items-center justify-center text-lg font-bold backdrop-blur-sm">
                                     SM
                                 </div>
                                 <div class="flex-1">
                                     <h3 class="font-bold text-lg">Sarah Miller</h3>
-                                    <p class="text-white/80 text-sm">Marketing Director</p>
+                                    <p class="text-white text-sm">Marketing Director</p>
                                 </div>
                             </div>
-                            <div class="mt-4 pt-4 border-t border-white/20 space-y-2 text-sm text-white/90">
+                            <div class="mt-4 pt-4 border-t border-white/40 space-y-2 text-sm text-white">
                                 <div class="flex items-center gap-3">
                                     <i class="fa-solid fa-envelope w-4"></i>
                                     <span>sarah@creativeco.com</span>
@@ -904,14 +907,14 @@ require_once INCLUDES_DIR . '/ui-header.php';
     </section>
 
     <!-- ========== WHY CARDIFY (checkable product facts) ==========
-         r28 20-23/27-54: this section used to be four fabricated customer testimonials.
+         r28 item 20-23: this section used to be four fabricated customer testimonials.
          r21 removed the invented names but left the attribution shell in place, so
-         production kept shipping quote marks, blockquote semantics, the deleted
-         people's initials (AA/FA/KH/SA) and the raw keys testimonials.tN_author /
-         testimonials.tN_role as visible text. Attribution markup is gone for good:
-         no <blockquote>, no quote glyph, no avatar, no author, no role. These are
-         product facts, not quotes. Do NOT reintroduce a quote or an attributed
-         card without a named, contactable, consenting customer on file. -->
+         production kept shipping quote marks, quote-element semantics, the deleted
+         people's initials and the raw i18n keys for author and role as visible text.
+         All attribution markup is gone for good: these are product facts, not quotes.
+         Do NOT reintroduce a quote or an attributed card without a named, contactable,
+         consenting customer on file. Keep this note free of literal tag text so it
+         cannot answer a gate that greps the served HTML. -->
     <section id="why-cardify" class="py-16 lg:py-24 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Section Header -->
