@@ -27,8 +27,18 @@
  */
 export const KNOWN_CARD = {
   slug: process.env.KNOWN_CARD_SLUG || 'bhdoman',
-  eid: process.env.KNOWN_CARD_EID || '0dc7e708-bb76-41c5-913d-f37a03500d06',
-  name: process.env.KNOWN_CARD_NAME || 'Ali Al-Zaabi',
+  // The owner's own card. Verified live 3 Aug 2026: card-pdf.php?i=ali-bhd
+  // returns 200, application/pdf, 335KB starting %PDF- (the vector path).
+  //
+  // Chosen because it is the one card in the system nobody will deactivate.
+  // The previous two defaults were ordinary staff cards and both were
+  // deactivated in normal business, each time turning ~15 tests red for weeks.
+  //
+  // Identifiers here are employee slugs (employees.id), not UUIDs. The old
+  // default was a UUID from a superseded schema, which is why it returned 400
+  // rather than 404: the lookup never even recognised the shape.
+  eid: process.env.KNOWN_CARD_EID || 'ali-bhd',
+  name: process.env.KNOWN_CARD_NAME || 'Ali Adnan Haider Darwish',
 };
 
 /**
