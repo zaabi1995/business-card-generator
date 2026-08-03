@@ -168,9 +168,17 @@ if (file_exists(INCLUDES_DIR . '/VCF.php')) {
     require_once INCLUDES_DIR . '/VCF.php';
 }
 
-// Get VCF URL (requires employee array and company array)
+// QR target for the card. Prefer the tenant share URL so a scan lands on the
+// card page, matching what the print pipeline encodes. Falls back to the
+// qr.php tracker form when no slug resolves.
 $vcfUrl = '';
-if (class_exists('VCF') && $employee && $company) {
+if ($employee && $company) {
+    if (!class_exists('CardifyConvention')) {
+        require_once INCLUDES_DIR . '/CardifyConvention.php';
+    }
+    $vcfUrl = CardifyConvention::employeeShareUrl((string)($company['slug'] ?? ''), $employee);
+}
+if ($vcfUrl === '' && class_exists('VCF') && $employee && $company) {
     $vcfUrl = VCF::getUrl($employee, $company);
 }
 

@@ -63,9 +63,17 @@ require_once INCLUDES_DIR . '/VCF.php';
 require_once INCLUDES_DIR . '/Billing.php';
 $vcfUrl = '';
 if ($currentCompany && $employee) {
-    // Use short employee ID format: /qr.php?i={id}, minimal URL = smallest QR code
-    $vcfUrl = (defined('APP_HOST') ? 'https://' . APP_HOST : 'https://cardify.om')
-              . '/qr.php?i=' . urlencode($employee['id'] ?? '');
+    // Tenant share URL (https://<slug>.cardify.om/<localpart>), so a scan opens
+    // the card page and matches what the print pipeline encodes. Shorter than
+    // the old tracker form too, which keeps the QR sparse and quick to scan.
+    if (!class_exists('CardifyConvention')) {
+        require_once INCLUDES_DIR . '/CardifyConvention.php';
+    }
+    $vcfUrl = CardifyConvention::employeeShareUrl((string)($currentCompany['slug'] ?? ''), $employee);
+    if ($vcfUrl === '') {
+        $vcfUrl = (defined('APP_HOST') ? 'https://' . APP_HOST : 'https://cardify.om')
+                  . '/qr.php?i=' . urlencode($employee['id'] ?? '');
+    }
 }
 
 // Get quality multiplier based on plan (free users get low DPI)

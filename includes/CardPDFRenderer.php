@@ -20,7 +20,7 @@ class CardPDFRenderer
      *   field right edge (x_pt + w_pt), matching Fabric + Arabic htmlbox
      *   (rule 47 convention: x = bbox LEFT edge).
      */
-    const RENDERER_VERSION = 22;
+    const RENDERER_VERSION = 23;
 
     /**
      * Render or fetch a cached vector PDF for one employee.
@@ -235,6 +235,21 @@ class CardPDFRenderer
             }
             unset($ps);
         }
+        // Printed-card QR target. Built here, not in Python, so the one
+        // canonical share-URL builder stays in PHP (reserved slugs, dotted
+        // localparts, /card/<id> fallback all live in CardifyConvention).
+        $qrUrl = '';
+        try {
+            if (!class_exists('CardifyConvention')) {
+                require_once INCLUDES_DIR . '/CardifyConvention.php';
+            }
+            if ($companySlug !== '') {
+                $qrUrl = CardifyConvention::employeeShareUrl($companySlug, $employee);
+            }
+        } catch (Throwable $e) {
+            $qrUrl = ''; // fall back to the qr.php tracker form in Python
+        }
+
         $template = [
             'import_dir'         => $importDir,
             'fonts_dir'          => $fontsDir,
@@ -242,6 +257,7 @@ class CardPDFRenderer
             'company_name'       => $companyName,
             'company_slug'       => $companySlug,
             'base_url'           => $baseUrl,
+            'qr_url'             => $qrUrl,
             'pages'              => $pages,
         ];
         $tmpTpl = tempnam(sys_get_temp_dir(), 'cpdftpl_') . '.json';
@@ -472,6 +488,11 @@ class CardPDFRenderer
             // Skip baked-in fields (already in the bg PNG) and the QR slot.
             if (!empty($f['render_in_bg'])) continue;
             if ($key === 'qr_code')         continue;
+            // Skip switched-off fields. Fabric honours `enabled`, so without
+            // this the print PDF carries text the on-screen card does not:
+            // Otech shipped with mobile_ar disabled but populated on 218 of
+            // 261 staff, and it printed as a dark string over the card edge.
+            if (array_key_exists('enabled', $f) && !$f['enabled']) continue;
 
             // Two runtime-drawn kinds:
             //  - typed dynamic (is_static=false, value resolved from employee)

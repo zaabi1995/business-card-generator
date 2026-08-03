@@ -33,6 +33,20 @@ $companyName = $company['name_en'] ?? $company['name'] ?? 'Company';
 
 try {
     $employees = loadEmployees($companyId) ?: [];
+    // Attach the canonical QR target per employee so the JS loop below never
+    // rebuilds the URL itself. CardifyConvention owns the reserved-slug and
+    // /card/<id> fallback rules; duplicating them in JS is how they drift.
+    if (!class_exists('CardifyConvention')) {
+        require_once INCLUDES_DIR . '/CardifyConvention.php';
+    }
+    $__slug = (string)($company['slug'] ?? '');
+    foreach ($employees as &$__emp) {
+        if (is_array($__emp)) {
+            $__emp['share_url'] = $__slug !== ''
+                ? CardifyConvention::employeeShareUrl($__slug, $__emp) : '';
+        }
+    }
+    unset($__emp);
     $templatesConfig = loadTemplates($companyId);
     $frontTemplate = getActiveFrontTemplate($companyId);
     $backTemplate = getActiveBackTemplate($companyId);
@@ -613,9 +627,11 @@ function batchGenerator() {
             let frontWebUrl = null;
             let backWebUrl = null;
 
-            const cardUrl = this.companySlug && employee.id
-                ? this.baseUrl + encodeURIComponent(this.companySlug) + '/card/' + encodeURIComponent(employee.id)
-                : null;
+            // Server-supplied share URL wins; the /card/<id> form is the fallback.
+            const cardUrl = employee.share_url
+                || (this.companySlug && employee.id
+                    ? this.baseUrl + encodeURIComponent(this.companySlug) + '/card/' + encodeURIComponent(employee.id)
+                    : null);
 
             // Check for department-specific templates
             let employeeFrontTemplate = this.frontTemplate;

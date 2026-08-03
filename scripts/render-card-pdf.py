@@ -857,7 +857,13 @@ def _draw_qr_code(page, qr_spec: dict, employee: dict, template: dict,
     # qr.php also accepts ?i=<employee id>, which keeps scan tracking and
     # resolves to the right card.
     emp_id = str(employee.get('id', '') or '')
-    if slug and email:
+    # Preferred: the tenant share URL that PHP built for us
+    # (https://<slug>.cardify.om/<localpart>), so a scan lands on the card
+    # itself. Falls back to the qr.php tracker form when it is absent.
+    share_url = str(template.get('qr_url', '') or '').strip()
+    if share_url:
+        qr_data = share_url
+    elif slug and email:
         qr_data = f'{base}qr.php?c={slug}&e={email}'
     elif emp_id:
         qr_data = f'{base}qr.php?i={emp_id}'
