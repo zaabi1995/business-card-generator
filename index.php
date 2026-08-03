@@ -1359,11 +1359,19 @@ require_once INCLUDES_DIR . '/ui-header.php';
 HTML;
 ?>
 
+<?php
+// bhd-group-seo-llm27-15: kept as a PHP comment, not a JSON-LD key. An
+// internal review note must not ship inside structured data.
+// r6-99:
+// LocalBusiness is a SECOND @type on the one #organization node rather than a second node. Cardify
+// is published from the BHD Group floor at HM Tower and a separate LocalBusiness node would have
+// been a fifth BHD address on the estate, which is the defect r20-16 recorded. Address, phone and
+// hours are the canonical block bhd.om/_nap.py owns, verbatim.
+?>
 <!-- JSON-LD Structured Data -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "_comment_r6_99": "LocalBusiness is a SECOND @type on the one #organization node rather than a second node. Cardify is published from the BHD Group floor at HM Tower and a separate LocalBusiness node would have been a fifth BHD address on the estate, which is the defect r20-16 recorded. Address, phone and hours are the canonical block bhd.om/_nap.py owns, verbatim.",
   "@type": ["Organization", "LocalBusiness"],
   "@id": "https://cardify.om/#organization",
   "name": "Cardify",
