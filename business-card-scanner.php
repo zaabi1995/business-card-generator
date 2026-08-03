@@ -132,8 +132,8 @@ $e = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
             </a>
             <p class="mt-4 text-sm text-gray-500">
                 <?= $isAr
-                    ? 'المسح وحفظ جهات الاتصال مجاناً. لسنا الأسرع ولا الأرخص في العالم، لكننا الوحيدون الذين يقرؤون بطاقتك العربية على الجهاز ويطبعون بطاقتك في مسقط.'
-                    : 'Scanning and saving contacts is free. We are not claiming the fastest or the cheapest scanner in the world; we are the one that reads your Arabic card on the device and prints your own card in Muscat.' ?>
+                    ? 'المسح وحفظ جهات الاتصال مجاناً. يقرأ الماسح البطاقات العربية والإنجليزية على الجهاز، وتطبع كارديفاي بطاقتك في مسقط.'
+                    : 'Scanning and saving contacts is free. The scanner reads Arabic and English cards on the device, and Cardify prints your own card in Muscat.' ?>
             </p>
         </div>
     </section>
