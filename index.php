@@ -774,7 +774,9 @@ require_once INCLUDES_DIR . '/ui-header.php';
             <div class="grid lg:grid-cols-2 gap-12 items-center">
                 <!-- Content -->
                 <div class="text-white">
-                    <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-white/80 bg-white/10 rounded-full uppercase tracking-wide">
+                    <!-- r28: white/80 on white/10 over this gradient measures 3.35:1 at the
+                         blue-600 end. Same shape as 27-54: dimmed white on a saturated ground. -->
+                    <span class="inline-flex items-center gap-2 py-1 px-3 mb-4 text-xs font-semibold text-white bg-white/20 rounded-full uppercase tracking-wide">
                         <i class="fa-solid fa-desktop"></i>
                         <?= htmlspecialchars(t('landing.dash_kicker')) ?>
                     </span>
