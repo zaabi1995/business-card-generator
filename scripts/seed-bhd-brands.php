@@ -32,8 +32,8 @@ $brands = [
         'size'     => 'large',
         'website'  => 'https://bhd.om',
         'file'     => 'bhd-group.svg',
-        'summary_en' => 'BHD Group — Oman\'s first AI-powered business conglomerate. 10 companies across printing, technology, digital platforms, and investments. Building Oman\'s Future.',
-        'summary_ar' => 'مجموعة بي إتش دي — أول مجموعة أعمال معززة بالذكاء الاصطناعي في سلطنة عمان. عشر شركات في الطباعة والتكنولوجيا والمنصات الرقمية والاستثمار.',
+        'summary_en' => 'BHD Group — a Muscat business group of thirteen operating companies across printing, technology, digital platforms, and investments. Building Oman\'s Future.',
+        'summary_ar' => 'مجموعة بي إتش دي — مجموعة أعمال في مسقط تضم ثلاث عشرة شركة تشغيلية في الطباعة والتكنولوجيا والمنصات الرقمية والاستثمار.',
     ],
     [
         'slug'     => 'bhd-printing-and-designing',
